@@ -171,7 +171,7 @@ const envSnapshot = {
   GITHUB_REPOSITORY,
   GITHUB_SERVER_URL,
   HOME,
-  // Build metadata (inlined by esbuild define).
+  // Build metadata, inlined by esbuild define.
   INLINED_CDXGEN_VERSION: getCdxgenVersion(),
   INLINED_COANA_VERSION: getCoanaVersion(),
   INLINED_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
@@ -247,7 +247,7 @@ const ENV = new Proxy(envSnapshot, {
     // Fall back to snapshot for build-time values (INLINED_*) and other non-env properties.
     if (isVitestMode && typeof prop === 'string') {
       // Check if the property exists in process.env.
-      // If it does, use it (allows tests to manipulate env vars).
+      // If it does, use it, allows tests to manipulate env vars.
       // If not, fall back to snapshot (for INLINED_* and other values).
       if (prop in process.env) {
         return process.env[prop]

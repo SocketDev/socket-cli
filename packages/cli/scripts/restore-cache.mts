@@ -7,10 +7,10 @@
  *   - gh CLI must be installed (https://cli.github.com/).
  *   - Must be in a git repository.
  *   - Must have network access to GitHub. Behavior:
- *   - Checks if build artifacts already exist (skip if present).
+ *   - Checks if build artifacts already exist, skip if present.
  *   - Computes cache key for current commit.
  *   - Attempts to download matching cache from GitHub Actions.
- *   - Silently fails if cache not available (no harm, no foul).
+ *   - Silently fails if cache not available, no harm, no foul.
  *   - Extracts cache to packages/cli/build/ and packages/cli/dist/.
  */
 

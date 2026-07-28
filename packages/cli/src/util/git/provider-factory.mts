@@ -23,7 +23,7 @@ export function createPrProvider(): PrProvider {
     return new GitLabProvider()
   }
 
-  // Default to GitHub (backward compatibility).
+  // Default to GitHub, backward compatibility.
   return new GitHubProvider()
 }
 

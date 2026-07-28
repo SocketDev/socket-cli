@@ -5,7 +5,7 @@
  *
  *   1. Octal numeric literals (0123) → Modern octal (0o123)
  *   2. Octal escape sequences in strings (\012) → Proper escapes
- *   3. With statements → Error (cannot be transformed safely)
+ *   3. With statements → Error, cannot be transformed safely
  *   4. Future reserved words as identifiers → Safe alternatives
  *   5. Adds 'use strict' directive if missing
  *
@@ -219,7 +219,7 @@ Strict Mode Transformation Stats:
       },
 
       /**
-       * Detect and error on 'with' statements (cannot be safely transformed)
+       * Detect and error on 'with' statements, cannot be safely transformed.
        *
        * @example
        *   // Input: with (obj) { x = 1 }
@@ -309,7 +309,7 @@ function convertOctalLiteral(value: string): number | undefined {
 function transformOctalEscapes(str: string): string {
   // Common octal escapes and their replacements
   const commonOctals = {
-    // Null (allowed in strict mode if not followed by digit)
+    // Null, allowed in strict mode if not followed by digit
     '\\0': '\\0',
     // Start of Heading
     '\\1': '\\x01',

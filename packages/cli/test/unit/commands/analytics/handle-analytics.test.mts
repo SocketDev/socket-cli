@@ -10,8 +10,8 @@
  * Missing repository name error when scope is 'repo' but repo is empty - Empty
  * analytics data handling for organization - Empty analytics data handling for
  * repository - Fetch error pass-through to output layer - Multiple output kinds
- * (json, markdown, text) - Different time ranges (7, 30 days) - Filepath
- * handling (with and without path)
+ * json, markdown, text - Different time ranges (7, 30 days) - Filepath
+ * handling, with and without path.
  *
  * Testing Approach: - Mock fetchOrgAnalyticsData and fetchRepoAnalyticsData -
  * Mock outputAnalytics to verify output layer calls - Use

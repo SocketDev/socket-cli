@@ -184,7 +184,7 @@ describe('cmd-organization', () => {
 
       // Reference-identity checks (=== inside the expect(actual) call): the
       // routed subcommand must BE the imported src module instance, so the
-      // -stable alias (a different module instance) can't stand in here.
+      // -stable alias, a different module instance, can't stand in here.
       expect(subcommands.dependencies === cmdOrganizationDependencies).toBe(
         true,
       )

@@ -91,7 +91,7 @@ export async function trackSubprocessError(
  *
  * @param command - Command name (e.g., 'npm', 'pip').
  * @param startTime - Start timestamp from trackSubprocessStart.
- * @param exitCode - Process exit code (null treated as error).
+ * @param exitCode - Process exit code, null treated as error.
  *
  * @returns Promise that resolves when tracking and flush complete.
  */

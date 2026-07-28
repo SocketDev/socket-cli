@@ -198,7 +198,7 @@ export async function extractBasicsTools(
  * Get paths to extracted basics tools.
  *
  * Note: toolsDir is expected to be the Python directory path returned by
- * extractBasicsTools(). For standalone binaries (trivy, trufflehog, opengrep),
+ * extractBasicsTools(). For standalone binaries, trivy, trufflehog, opengrep,
  * this function constructs paths based on the Python directory's parent
  * structure.
  *
@@ -259,7 +259,7 @@ export function getNodeSmolBasePath(): string {
   let nodeSmolHash = 'node-smol-placeholder'
 
   try {
-    // Try to get hash from process.smol API (if available in future node-smol).
+    // Try to get hash from process.smol API, if available in future node-smol.
     const processWithSmol = process as unknown as {
       smol?: { getHash?: (() => string) | undefined } | undefined
     }

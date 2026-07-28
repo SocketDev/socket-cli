@@ -3,7 +3,7 @@
  *
  * Tests the command that runs npm without the Socket wrapper.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * Test Coverage: - Command metadata, description, hidden flag - --dry-run flag
  * support - npm binary path resolution - Argument passing to npm - Process
  * spawning configuration - Exit code handling - Signal handling.
  *

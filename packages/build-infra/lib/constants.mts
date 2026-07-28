@@ -1,5 +1,5 @@
 /**
- * Shared constants for the build-pipeline orchestrator (socket-cli variant).
+ * Shared constants for the build-pipeline orchestrator, socket-cli variant.
  *
  * Mirrors the socket-btm/ultrathink/socket-tui/sdxgen API surface
  * (BUILD_STAGES, CHECKPOINTS, CHECKPOINT_CHAINS, validateCheckpointChain,
@@ -39,7 +39,7 @@ export const VALID_CHECKPOINT_VALUES = new Set(Object.values(CHECKPOINTS))
 
 /**
  * Checkpoint chain for socket-cli's build pipeline. Order: newest → oldest
- * (matching socket-btm convention).
+ * matching socket-btm convention.
  *
  * The SEA binary is built only for --force / --prod today; the chain is
  * declared including SEA so --clean-stage=sea works when it runs.

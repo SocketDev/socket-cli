@@ -56,7 +56,7 @@ export async function convertSbtToMaven({
       if (isTextMode) {
         process.exitCode = 1
         logger.fail('There were errors while running sbt')
-        // (In verbose mode, stderr was printed above, no need to repeat it)
+        // In verbose mode, stderr was printed above, no need to repeat it
         if (!verbose) {
           logger.group('[VERBOSE] stderr:')
           logger.error(output.stderr)

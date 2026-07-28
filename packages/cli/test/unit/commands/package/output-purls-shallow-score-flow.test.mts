@@ -123,7 +123,7 @@ describe('outputPurlsShallowScore', () => {
   it('does not flag a versioned PURL as missing when @latest companion is in the request (line 211)', () => {
     // The @latest dedup branch: when '@latest' is in the requested set
     // alongside a versioned PURL, the @latest entry is filtered out
-    // (not marked as missing) since the versioned data covers it.
+    // not marked as missing, since the versioned data covers it.
     outputPurlsShallowScore(
       ['pkg:npm/lodash@latest', 'pkg:npm/lodash@4.17.21'],
       { ok: true, data: [sampleArtifact] } as unknown,

@@ -225,7 +225,7 @@ export async function run(
     return false
   })
 
-  // oxlint-disable-next-line socket/sort-set-args -- elements are runtime variables (not literals), so there is no comparable sort order to enforce.
+  // oxlint-disable-next-line socket/sort-set-args -- elements are runtime variables, not literals, so there is no comparable sort order to enforce.
   const haves = new Set([ecoFilter, versionFilter, typeFilter])
   cli.input.some(str => {
     if (!haves.has(str)) {

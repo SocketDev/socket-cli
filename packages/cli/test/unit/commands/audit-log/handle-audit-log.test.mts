@@ -7,7 +7,7 @@
  *
  * Test Coverage: - Successful audit log fetch and output - Pagination handling
  * (different page numbers and perPage values) - Different log types (security,
- * access, all) - Multiple output kinds (json, text, markdown) - Fetch error
+ * access, all) - Multiple output kinds, json, text, markdown - Fetch error
  * pass-through to output layer - Empty audit log handling - Organization slug
  * parameter passing.
  *

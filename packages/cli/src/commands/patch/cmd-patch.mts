@@ -68,7 +68,7 @@ export async function run(
       parentName,
     })
     // No subcommand and no --help: missing input, show help and exit 2
-    // (matching the with-subcommands convention).
+    // matching the with-subcommands convention.
     cli.showHelp(2)
   }
 

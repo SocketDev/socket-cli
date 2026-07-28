@@ -5,7 +5,7 @@
  * Firewall (sfw). Validates argument forwarding, flag filtering, exit code
  * handling, and signal propagation.
  *
- * Test Coverage: - Command metadata (description, hidden status) - Argument
+ * Test Coverage: - Command metadata, description, hidden status - Argument
  * forwarding to sfw via spawnSfwDlx - Socket CLI flag filtering (removes
  * --config, --org, etc.) - Exit code defaults and handling - Signal propagation
  * from child process - Integration with meowOrExit for --help handling.

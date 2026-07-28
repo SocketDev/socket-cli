@@ -72,7 +72,7 @@ vi.mock(import('../../../../src/util/error/errors.mts'), () => ({
   getNetworkErrorDiagnostics: vi.fn(() => 'Network error diagnostics'),
 }))
 
-// Mock httpRequest from socket-lib (replaces fetch).
+// Mock httpRequest from socket-lib, replaces fetch.
 const mockHttpRequest = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/http-request/request'), () => ({
   httpRequest: mockHttpRequest,
@@ -297,7 +297,7 @@ describe('api utilities', () => {
     })
 
     it('logs info message when description + spinner + non-success result (lines 271)', async () => {
-      // success: false but it's the SDK-level non-success (not a thrown error).
+      // success: false but it's the SDK-level non-success, not a thrown error.
       const mockApiPromise = Promise.resolve({
         success: false,
         status: 500,

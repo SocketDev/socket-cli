@@ -1,7 +1,7 @@
 /**
  * Socket-basics spawning utilities for comprehensive security scanning.
  *
- * Spawns socket-basics (Python orchestration tool) with extracted security
+ * Spawns socket-basics, Python orchestration tool, with extracted security
  * tools to perform SAST, secret detection, and container scanning.
  */
 
@@ -146,11 +146,11 @@ export type SocketBasicsResult = {
 /**
  * Run socket-basics comprehensive security scanning.
  *
- * Spawns socket-basics (Python tool) to perform:
+ * Spawns socket-basics, Python tool, to perform:
  *
- * - SAST (Static Application Security Testing) via OpenGrep
+ * - SAST, Static Application Security Testing, via OpenGrep
  * - Secret detection via TruffleHog
- * - Container scanning via Trivy (if images are specified)
+ * - Container scanning via Trivy, if images are specified
  *
  * Environment Variables Set:
  *

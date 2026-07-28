@@ -5,9 +5,9 @@
  * IMPORTANT: Telemetry is ALWAYS scoped to an organization. Cannot track
  * telemetry without an org context.
  *
- * Features: - Singleton pattern (one instance per process) -
+ * Features: - Singleton pattern, one instance per process -
  * Organization-scoped tracking (required) - Event batching (auto-flush at batch
- * size) - Exit handlers (auto-flush on process exit) - Automatic session ID
+ * size) - Exit handlers, auto-flush on process exit - Automatic session ID
  * assignment - Explicit finalization via destroy() for controlled cleanup -
  * Graceful degradation (errors don't block CLI)
  *

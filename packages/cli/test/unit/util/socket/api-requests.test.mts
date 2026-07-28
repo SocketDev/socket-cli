@@ -3,7 +3,7 @@
  *
  * Purpose: Tests Socket API request/response utilities. Validates
  * queryApiSafeText, queryApiSafeJson, sendApiRequest, and the full
- * handleApiCallNoSpinner signature (SDK-response based overload).
+ * handleApiCallNoSpinner signature, SDK-response based overload.
  *
  * Testing Approach: Mocks fetch/axios to test API utilities. Uses.
  *
@@ -73,7 +73,7 @@ vi.mock(import('../../../../src/util/error/errors.mts'), () => ({
   getNetworkErrorDiagnostics: vi.fn(() => 'Network error diagnostics'),
 }))
 
-// Mock httpRequest from socket-lib (replaces fetch).
+// Mock httpRequest from socket-lib, replaces fetch.
 const mockHttpRequest = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/http-request/request'), () => ({
   httpRequest: mockHttpRequest,

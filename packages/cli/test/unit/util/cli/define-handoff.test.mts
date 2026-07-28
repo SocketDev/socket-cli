@@ -369,7 +369,7 @@ describe('defineHandoffCommand', () => {
         void cmd.run([], { url: import.meta.url } as ImportMeta, {
           parentName: 'socket',
         })
-        // Wait for the listener to register (async spawn resolution).
+        // Wait for the listener to register, async spawn resolution.
         await new Promise(resolve => setImmediate(resolve))
         child.emit('exit', 42, undefined)
         await new Promise(resolve => setImmediate(resolve))

@@ -3,7 +3,7 @@
  *
  * Tests the command that displays Socket analytics data.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * Test Coverage: - Command metadata, description, hidden flag - API token
  * requirement validation - Scope arguments: org vs repo - Time filter
  * validation (7, 30, 90 days) - Repository name when scope=repo - Output modes:
  * text, JSON, markdown - File output flag validation - Dry-run mode - Legacy

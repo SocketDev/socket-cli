@@ -4,7 +4,7 @@
  *   and performance command groups across 3 binary types:
  *
  *   - JS binary (npm CLI) - Always tested
- *   - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
+ *   - SEA binary, Single Executable Application - Optional via TEST_SEA_BINARY=1
  *   - Smol binary - Optional via TEST_SMOL_BINARY=1 Auto-build feature:
  *   - Missing binaries are automatically built without prompting (CI and local)
  *   - All builds use prebuilt binaries from socket-btm + binject (fast) Coverage:
@@ -19,7 +19,7 @@
  *   - Performance validation: help commands execute within 5 seconds The
  *     core/config/install-uninstall/manifest/organization command groups live
  *     in `binary-test-suite.e2e.test.mts`. Test strategy:
- *   - Minimum test per command: --help (validates command loads without auth)
+ *   - Minimum test per command: --help, validates command loads without auth
  *   - Auth-required commands: Basic execution test (with Socket API token)
  *   - Performance validation: Help commands execute within 5 seconds
  */

@@ -9,7 +9,7 @@
 import process from 'node:process'
 
 /**
- * Get the Socket Python CLI version (socketsecurity package) that should be
+ * Get the Socket Python CLI version, socketsecurity package, that should be
  * installed. This version is inlined at build time from bundle-tools.json.
  *
  * @returns Socket Python CLI version string (e.g., "0.8.0").

@@ -14,7 +14,7 @@
  * test/unit/commands/scan/create-scan-from-github-direct.test.mts (direct) -
  * test/unit/commands/scan/create-scan-from-github.test.mts (mock-surface) -
  * test/unit/commands/scan/create-scan-from-github-coverage-downloads.test.mts
- * (download-path coverage)
+ * download-path coverage.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -8,7 +8,7 @@
  * The orchestrator owns every moving part that today lives in each package's
  * 340-line build.mts:
  *
- * - Build mode + platform-arch detection (uses centralized helpers).
+ * - Build mode + platform-arch detection, uses centralized helpers.
  * - Loading external-tools.json + package.json `sources` metadata.
  * - Deriving a unified cache key from: node version, platform, arch, build mode,
  *   pinned tool versions, and source refs. Tool bump or source SHA bump
@@ -19,7 +19,7 @@
  *   --from-stage=<name> / --cache-key.
  *
  * A stage is `(ctx, params) => Promise<void>`. `ctx` carries derived values
- * shared by every stage (paths, mode, logger, tool versions, source meta).
+ * shared by every stage, paths, mode, logger, tool versions, source meta.
  * `params` holds stage-local overrides from the manifest.
  *
  * @module build-infra/lib/build-pipeline

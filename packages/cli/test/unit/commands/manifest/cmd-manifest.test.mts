@@ -5,7 +5,7 @@
  * ecosystems. This command uses meowWithSubcommands to delegate to specific
  * ecosystem commands.
  *
- * Test Coverage: - Command metadata (description, hidden) - Subcommand
+ * Test Coverage: - Command metadata, description, hidden - Subcommand
  * registration and routing - Hidden alias (yolo -> auto) - Flag passthrough to
  * subcommands.
  *

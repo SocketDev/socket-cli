@@ -122,7 +122,7 @@ describe('TelemetryService', () => {
         context: {},
       })
 
-      // Event should be queued, not sent immediately (unless batch size reached).
+      // Event should be queued, not sent immediately, unless batch size reached.
       expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
     })
 

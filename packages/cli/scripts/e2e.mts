@@ -77,7 +77,7 @@ export async function buildBinary(binaryType) {
 }
 
 export async function checkBinaryExists(binaryType) {
-  // For explicit binary requests (js, sea), check and auto-build if needed.
+  // For explicit binary requests, js, sea, check and auto-build if needed.
   if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
@@ -101,7 +101,7 @@ export async function checkBinaryExists(binaryType) {
     logger.log('')
   }
 
-  // For 'all', we'll skip missing binaries (handled by test suite).
+  // For 'all', we'll skip missing binaries, handled by test suite.
   return true
 }
 
@@ -117,10 +117,10 @@ export async function runVitest(binaryType) {
   }
 
   // Load external tool versions for INLINED_* env vars.
-  // This is required for tests to load external tool versions (coana, cdxgen, synp, etc).
+  // This is required for tests to load external tool versions, coana, cdxgen, synp, etc.
   const externalToolVersions = EnvironmentVariables.getTestVariables()
 
-  // Load .env.e2e configuration (falls back gracefully if missing).
+  // Load .env.e2e configuration, falls back gracefully if missing.
   const e2eEnv = loadEnvFile(path.join(ROOT_DIR, '.env.e2e'))
 
   // Resolve vitest path.

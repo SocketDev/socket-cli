@@ -9,7 +9,7 @@
  * Note: Yoga WASM and node-smol binaries are downloaded from socket-btm during
  * CLI build.
  *
- * Usage: pnpm run build # Smart build (skips unchanged) pnpm run build --force.
+ * Usage: pnpm run build # Smart build, skips unchanged, pnpm run build --force.
  *
  * # Force rebuild all + SEA for current platform pnpm run build:sea # Build SEA
  *

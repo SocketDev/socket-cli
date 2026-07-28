@@ -190,7 +190,7 @@ export function getTokenOrigin(): string {
 }
 
 /**
- * Determine if header should animate (shimmer effect).
+ * Determine if header should animate, shimmer effect.
  */
 export function shouldAnimateHeader(
   flags?: Record<string, unknown> | undefined,

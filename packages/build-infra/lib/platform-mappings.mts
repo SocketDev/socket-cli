@@ -47,7 +47,7 @@ const RELEASE_ARCH_MAP = Object.freeze({
  *
  * @param {string} platform - Node.js platform (darwin, linux, win32).
  * @param {string} arch - Node.js architecture (arm64, x64, ia32).
- * @param {string | undefined} [libc] - C library variant (musl, glibc) - Linux
+ * @param {string | undefined} [libc] - C library variant, musl, glibc - Linux
  *   only.
  *
  * @returns {string} Platform-arch string for assets (e.g., 'win-x64',
@@ -111,7 +111,7 @@ export async function getCurrentPlatformArch() {
   if (process.env['PLATFORM_ARCH']) {
     return process.env['PLATFORM_ARCH']
   }
-  // Respect LIBC environment variable for cross-compilation (set by workflows)
+  // Respect LIBC environment variable for cross-compilation, set by workflows
   // Falls back to isMusl() for host detection when not cross-compiling.
   const libc = process.env['LIBC'] || ((await isMusl()) ? 'musl' : undefined)
   // Respect TARGET_ARCH for cross-compilation (set by workflows/Makefiles)
@@ -120,12 +120,12 @@ export async function getCurrentPlatformArch() {
 }
 
 /**
- * Get platform-arch string for internal directory paths (download locations).
+ * Get platform-arch string for internal directory paths, download locations.
  * Uses Node.js platform naming directly (win32, darwin, linux).
  *
  * @param {string} platform - Node.js platform (darwin, linux, win32).
  * @param {string} arch - Node.js architecture (arm64, x64, ia32).
- * @param {string | undefined} [libc] - C library variant (musl, glibc) - Linux
+ * @param {string | undefined} [libc] - C library variant, musl, glibc - Linux
  *   only.
  *
  * @returns {string} Platform-arch string (e.g., 'win32-x64', 'linux-x64-musl').
@@ -191,7 +191,7 @@ export function getRequestedGlibcFloor(): string | undefined {
 }
 
 /**
- * Detect if running on musl libc (Alpine Linux).
+ * Detect if running on musl libc, Alpine Linux.
  *
  * @returns {Promise<boolean>} True if running on musl libc.
  */

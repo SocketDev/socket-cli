@@ -154,7 +154,7 @@ function main() {
   })
 
   // socket-lint: allow bare-spawn-access -- `spawn` here is node:child_process's
-  // native spawn (required directly above), which returns a bare ChildProcess;
+  // native spawn, required directly above, which returns a bare ChildProcess;
   // it is not the fleet `@socketsecurity/lib` spawn wrapper this rule guards.
   child.on('error', err => {
     fail(`Failed to start Socket CLI: ${err.message}`)

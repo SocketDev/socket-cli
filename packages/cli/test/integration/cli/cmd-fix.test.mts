@@ -9,19 +9,19 @@
  * Test Coverage:
  *
  * - Help text display and usage examples
- * - Dry-run behavior (validation without applying fixes)
+ * - Dry-run behavior, validation without applying fixes
  * - Vulnerability identification (GHSA IDs, CVE IDs, PURLs)
- * - Autopilot mode (auto-merge PRs)
+ * - Autopilot mode, auto-merge PRs
  * - Fix limit control (--limit flag)
- * - Version range styles (pin, preserve)
+ * - Version range styles, pin, preserve
  * - Major version update control (--no-major-updates)
  * - Direct dependency impact analysis (--show-affected-direct-dependencies)
  * - Minimum release age filtering (--minimum-release-age)
  * - Output formats (JSON, markdown, text)
  * - CI environment variable handling (GITHUB_TOKEN, GIT_USER_NAME,
  *   GIT_USER_EMAIL)
- * - Fixture testing (monorepos, vulnerable-deps projects)
- * - Error handling (invalid IDs, missing tokens, non-existent paths)
+ * - Fixture testing, monorepos, vulnerable-deps projects
+ * - Error handling, invalid IDs, missing tokens, non-existent paths
  *
  * CI/PR Workflow Features:
  *
@@ -51,7 +51,7 @@
  * - Src/commands/fix/cmd-fix.mts - Command definition
  * - Src/commands/fix/handle-fix.mts - Fix computation and application logic
  * - Src/commands/fix/output-fix.mts - Output formatting
- * - Test/fixtures/commands/fix/ - Test fixtures (monorepo, vulnerable-deps)
+ * - Test/fixtures/commands/fix/ - Test fixtures, monorepo, vulnerable-deps
  */
 
 import path from 'node:path'

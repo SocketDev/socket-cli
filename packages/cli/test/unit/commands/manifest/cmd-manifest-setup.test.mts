@@ -5,9 +5,9 @@
  * default flag values for manifest commands in a directory. Configuration is
  * stored in socket.json for persistent settings.
  *
- * Test Coverage: - Command metadata (description, hidden) - Dry-run behavior
- * with detailed output - Path resolution (relative to absolute) - Default path
- * handling (current directory) - Flag parsing (defaultOnReadError) - Handler
+ * Test Coverage: - Command metadata, description, hidden - Dry-run behavior
+ * with detailed output - Path resolution, relative to absolute - Default path
+ * handling, current directory - Flag parsing (defaultOnReadError) - Handler
  * invocation with correct parameters.
  *
  * Related Files: - src/commands/manifest/cmd-manifest-setup.mts - Command

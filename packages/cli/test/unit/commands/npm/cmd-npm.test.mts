@@ -5,7 +5,7 @@
  * The wrapper intercepts npm commands and forwards them to Socket Firewall
  * (sfw) for real-time security scanning.
  *
- * Test Coverage: - Command metadata (description, visibility) - Help text
+ * Test Coverage: - Command metadata, description, visibility - Help text
  * display - Dry-run behavior - Flag filtering (Socket CLI vs npm flags) -
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */

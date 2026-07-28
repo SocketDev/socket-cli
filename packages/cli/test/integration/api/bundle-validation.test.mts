@@ -54,7 +54,7 @@ export async function checkBundledDependencies(content: string): Promise<{
       }
     }
   } else {
-    // If we have dependencies, check that they remain external (not bundled).
+    // If we have dependencies, check that they remain external, not bundled.
     const deps = Object.keys(dependencies)
     for (let i = 0, { length } = deps; i < length; i += 1) {
       const dep = deps[i]

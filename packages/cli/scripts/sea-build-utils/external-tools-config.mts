@@ -15,7 +15,7 @@ export const logger = getDefaultLogger()
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
-// Entries live under the `tools` key (the shared external-tools shape).
+// Entries live under the `tools` key, the shared external-tools shape.
 export const externalTools = JSON.parse(
   readFileSync(externalToolsPath, 'utf8'),
 ).tools

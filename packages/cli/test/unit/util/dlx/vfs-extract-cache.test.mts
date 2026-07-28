@@ -140,7 +140,7 @@ describe('util/dlx/vfs-extract', () => {
     it('extracts tools when cache marker missing and mount succeeds', async () => {
       mockIsSeaBinary.mockReturnValue(true)
       // existsSync: cache marker (false), then per-tool toolPathWithExt
-      // existence check (false to trigger extraction), then final
+      // existence check, false to trigger extraction, then final
       // existsSync inside extractTool after mount (true), and final
       // post-extraction existsSync for cacheMarker write — true.
       mockExistsSync.mockImplementation((p: string) => {
@@ -169,7 +169,7 @@ describe('util/dlx/vfs-extract', () => {
         if (ps.endsWith('.extracting')) {
           return false
         }
-        // The very first existsSync call (cache marker presence check):
+        // The very first existsSync call, cache marker presence check:
         // return true so we enter the validate branch.
         // Then the first toolPath check returns false to invalidate.
         // Everything else returns true.

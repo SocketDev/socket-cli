@@ -127,7 +127,7 @@ export const PLATFORM_TARGETS = PLATFORM_CONFIGS.map(
  *
  * @param {string} platform - Node.js platform (darwin, linux, win32).
  *
- * @returns {string} Release platform (darwin, linux, win).
+ * @returns {string} Release platform, darwin, linux, win.
  */
 export function getReleasePlatform(platform: string) {
   return platform === 'win32' ? 'win' : platform
@@ -155,7 +155,7 @@ export interface PlatformTargetInfo {
 /**
  * Parse a platform target string into components. Handles formats:
  * darwin-arm64, linux-x64, linux-arm64-musl, win-x64, win32-x64 Accepts both
- * 'win' (release naming) and 'win32' (Node.js naming) for Windows.
+ * 'win', release naming, and 'win32' (Node.js naming) for Windows.
  *
  * @example
  *   parsePlatformTarget('darwin-arm64')

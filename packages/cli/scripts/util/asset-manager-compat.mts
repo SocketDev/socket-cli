@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs'
 
 import { AssetManager } from './asset-manager.mts'
 
-// Cache for libc detection (only need to check once per process).
+// Cache for libc detection, only need to check once per process.
 let cachedLibc
 
 /**
@@ -125,7 +125,7 @@ export async function downloadBinject(version) {
   const platform = process.platform
   const arch = process.arch
 
-  // Detect actual libc on Linux (musl for Alpine, glibc for standard distros).
+  // Detect actual libc on Linux, musl for Alpine, glibc for standard distros.
   const libc = detectMusl() ? 'musl' : undefined
 
   return assetManager.downloadBinary({

@@ -325,7 +325,7 @@ describe('detectAndValidatePackageEnvironment', () => {
     let callCount = 0
     mockSatisfies.mockImplementation(() => {
       callCount++
-      // First two calls return true (agent supported, node supported).
+      // First two calls return true, agent supported, node supported.
       // Third call returns false (pkgSupports.agent).
       // Fourth call returns false (pkgSupports.node).
       return callCount <= 2

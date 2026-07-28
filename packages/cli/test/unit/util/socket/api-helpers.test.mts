@@ -48,7 +48,7 @@ describe('getCommandRequirements', () => {
   it('returns requirements for a known command path', () => {
     // The exact requirements depend on requirements.json content, but
     // for a real command like "socket scan create" we get back an
-    // object with at least one known field (permissions or quota).
+    // object with at least one known field, permissions or quota.
     const result = getCommandRequirements('socket scan:create')
     if (result !== undefined) {
       expect(typeof result).toBe('object')

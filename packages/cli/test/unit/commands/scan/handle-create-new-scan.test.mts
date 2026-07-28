@@ -13,7 +13,7 @@
  *
  * Related Files: - src/commands/handleCreateNewScan.mts (implementation) -
  * test/unit/commands/scan/handle-create-new-scan-features.test.mts
- * (reachability, report, workspace, basics)
+ * reachability, report, workspace, basics.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

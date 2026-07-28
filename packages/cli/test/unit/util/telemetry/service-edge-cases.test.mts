@@ -147,7 +147,7 @@ describe('TelemetryService', () => {
     it('automatically flushes when batch size is reached', async () => {
       const client = await TelemetryService.getTelemetryClient('test-org')
 
-      // Add 10 events (default batch size).
+      // Add 10 events, default batch size.
       for (let i = 0; i < 10; i++) {
         client.track({
           event_sender_created_at: new Date().toISOString(),

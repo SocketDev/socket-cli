@@ -2,7 +2,7 @@
  * Integration tests for `socket scan reach` execution mode.
  *
  * Tests reachability analysis execution. This is one of three test files for
- * reach command (dry-run, validation, execution).
+ * reach command, dry-run, validation, execution.
  *
  * Test Coverage: - Reachability analysis execution - Issue detection - Output
  * generation - Real scan scenarios.

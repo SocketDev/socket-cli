@@ -87,7 +87,7 @@ export async function run(
   })
 
   // Supported inputs:
-  // - []        (no args)
+  // - [], no args
   // - ['org']
   // - ['org', '30']
   // - ['repo', 'name']

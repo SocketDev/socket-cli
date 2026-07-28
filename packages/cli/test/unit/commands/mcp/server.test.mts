@@ -4,7 +4,7 @@
  * Tests createConfiguredServer(config) — wires the low-level SDK `Server` class
  * with two request handlers (tools/list, tools/call) and the depscore tool. We
  * test by directly invoking the registered handlers via the SDK's `request()`
- * method (which round-trips through its internal validators).
+ * method, which round-trips through its internal validators.
  *
  * Test Coverage: - Server identifies itself with the configured name + version
  * - Capabilities advertise tools{} - tools/list returns exactly one tool
@@ -20,10 +20,10 @@
  *
  * Testing approach - Mock runDepscore so the test doesn't need a live SDK. -
  * Construct the real `Server`, retrieve its registered handlers via the SDK's
- * protected map (or by calling it directly), assert on the result shape.
+ * protected map, or by calling it directly, assert on the result shape.
  *
  * Related Files: - src/commands/mcp/server.mts - Implementation -
- * src/commands/mcp/depscore.mts - Tool worker (mocked here)
+ * src/commands/mcp/depscore.mts - Tool worker, mocked here.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

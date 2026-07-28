@@ -5,7 +5,7 @@
  * This command provides an overview of all config settings in one view.
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
- * validation - --full flag support (shows full tokens in plaintext) - Output
+ * validation - --full flag support, shows full tokens in plaintext - Output
  * format support (JSON, markdown, text)
  *
  * Security Note: By default, sensitive values like API tokens are redacted in

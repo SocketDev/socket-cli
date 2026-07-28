@@ -6,18 +6,18 @@
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
  * validation - Organization resolution (default org, --org flag,
- * auto-discovery) - Event type filtering (enum validation) - Pagination support
+ * auto-discovery) - Event type filtering, enum validation - Pagination support
  * (--page, --per-page flags) - Legacy flag detection and rejection (--type) -
- * Error handling (missing org, missing token, dry-run auto-discovery skip) -
+ * Error handling, missing org, missing token, dry-run auto-discovery skip -
  * Interactive vs non-interactive modes.
  *
  * Enterprise Feature: Requires Enterprise Plan subscription for audit log
  * access.
  *
  * Audit Event Types: - Organization changes (member roles, subscriptions,
- * settings) - API token operations (create, rotate, update, delete) - Label
- * management (create, delete, associate) - Security operations (alert triage,
- * report deletion) - Access control (invitations, transfers, removals)
+ * settings) - API token operations, create, rotate, update, delete - Label
+ * management, create, delete, associate - Security operations (alert triage,
+ * report deletion) - Access control, invitations, transfers, removals.
  *
  * Related Files: - src/commands/audit-log/cmd-audit-log.mts - Command
  * definition - src/commands/audit-log/handle-audit-log.mts - Audit log handler

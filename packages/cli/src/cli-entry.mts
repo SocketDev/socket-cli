@@ -14,7 +14,7 @@ import url, { fileURLToPath } from 'node:url'
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
 // during high-concurrency batch operations.
 // Bind the captured original so the reference is safe to call standalone
-// (and clear of the type-aware unbound-method rule).
+// and clear of the type-aware unbound-method rule.
 const originalEmitWarning = process.emitWarning.bind(process)
 process.emitWarning = function (warning, ...args) {
   if (
@@ -102,7 +102,7 @@ export async function writeBootstrapManifestEntry(): Promise<void> {
   }
 
   try {
-    // Extract cache key from path (last segment)
+    // Extract cache key from path, last segment
     const cacheKey = path.basename(cacheDir)
 
     // Read package.json to get installed version

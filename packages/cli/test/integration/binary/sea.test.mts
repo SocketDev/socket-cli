@@ -1,6 +1,6 @@
 /* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
- * @file Integration tests for SEA (Single Executable Application) binary.
+ * @file Integration tests for SEA, Single Executable Application, binary.
  */
 
 import path from 'node:path'
@@ -63,7 +63,7 @@ if (BINARY.enabled) {
             isolateConfig: false,
           })
 
-          // Note: --version currently shows help and exits with code 2 (known issue).
+          // Note: --version currently shows help and exits with code 2, known issue.
           // This test validates the CLI executes without crashing.
           expect(result.code).toBeGreaterThanOrEqual(0)
           expect(result.stdout.length).toBeGreaterThan(0)
@@ -1525,7 +1525,7 @@ if (BINARY.enabled) {
             },
           )
 
-          // JSON flag should be recognized (may fail due to auth, but shouldn't reject flag).
+          // JSON flag should be recognized, may fail due to auth, but shouldn't reject flag.
           expect(result.code).toBeGreaterThanOrEqual(0)
         },
       )

@@ -8,18 +8,18 @@
  * non-SEA installations.
  *
  * Key Functions: - checkForUpdates: Complete update check flow with caching
- * (npm only) - scheduleUpdateCheck: Non-blocking update check with
- * notifications (npm only)
+ * npm only - scheduleUpdateCheck: Non-blocking update check with
+ * notifications, npm only.
  *
  * Features: - TTL-based caching to avoid excessive registry requests -
  * Error-resistant implementation - Rate limiting and network timeout handling.
  *
  * Architecture: - Uses checker for npm registry lookups - Uses store for
  * persistent caching - Uses notifier for user messaging - Skips entirely for
- * SEA binaries (node-smol handles it)
+ * SEA binaries, node-smol handles it.
  *
- * Usage: - CLI startup update checks (npm installs only) - Background update
- * monitoring (npm installs only)
+ * Usage: - CLI startup update checks, npm installs only - Background update
+ * monitoring, npm installs only.
  */
 
 import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'

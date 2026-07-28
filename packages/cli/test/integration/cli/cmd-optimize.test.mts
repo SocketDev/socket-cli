@@ -2,15 +2,15 @@
  * Integration tests for `socket optimize` command.
  *
  * Tests the complete CLI flow of optimizing dependencies with @socketregistry
- * overrides. These tests use real CLI execution (not mocked) to verify
+ * overrides. These tests use real CLI execution, not mocked, to verify
  * end-to-end behavior.
  *
  * Test Coverage: - Command help output - Dry-run mode validation (no file
  * modifications) - Flag combinations (--pin, --prod, --dry-run)
  *
  * Package Manager Support: - npm: Shadow installation with security scanning
- * (tested via integration) - pnpm: Standard installation with CI-mode
- * configuration (tested here) - yarn: Standard installation (tested here)
+ * tested via integration - pnpm: Standard installation with CI-mode
+ * configuration, tested here - yarn: Standard installation, tested here.
  *
  * Note: Unit tests for mocked behavior were removed due to ESM module
  * resolution limitations. These integration tests provide comprehensive

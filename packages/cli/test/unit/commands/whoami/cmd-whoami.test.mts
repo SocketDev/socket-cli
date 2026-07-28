@@ -5,7 +5,7 @@
  *
  * Test Coverage:
  *
- * - Command metadata (description, hidden flag)
+ * - Command metadata, description, hidden flag
  * - Token detection from environment variable
  * - Token detection from config file
  * - No token (unauthenticated) scenario
@@ -87,7 +87,7 @@ const {
       // Invoke the help() callback so its template-string body is
       // recorded as covered; production meowOrExit only invokes it on
       // --help, which the test suite never exercises. cmd-whoami's
-      // help signature is (command, config) so we pass a fake config.
+      // help signature is, command, config, so we pass a fake config.
       if (args.config?.help) {
         try {
           args.config.help('socket whoami', { flags: {} })

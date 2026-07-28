@@ -160,7 +160,7 @@ describe('ascii-header', () => {
         const stripped = stripAnsi(logo)
         expect(stripped).toContain('|')
         expect(stripped).toContain('dev')
-        // With full color support, should use shimmer (contains bold)
+        // With full color support, should use shimmer, contains bold
         if (supportsFullColor()) {
           expect(logo).toContain('\x1b[1m')
         }

@@ -7,7 +7,7 @@
  * fetch-process-output pipeline.
  *
  * Test Coverage: - Successful batch fetch and output - Fetch failure handling -
- * Multiple output formats (json, text, markdown) - Empty PURL array handling -
+ * Multiple output formats, json, text, markdown - Empty PURL array handling -
  * Debug logging for successes and failures - Multiple package batch
  * processing.
  *

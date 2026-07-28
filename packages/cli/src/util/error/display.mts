@@ -114,7 +114,7 @@ export function formatErrorForDisplay(
       body = formattedStack
     }
 
-    // Handle error causes (chain of errors).
+    // Handle error causes, chain of errors.
     if (error.cause && showStack) {
       const causeLines = []
       let currentCause: unknown = error.cause

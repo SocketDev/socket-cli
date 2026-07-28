@@ -107,7 +107,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
     spinner?.stop()
-    // Only log success messages if a spinner was provided (opt-in to output).
+    // Only log success messages if a spinner was provided, opt-in to output.
     if (description && spinner) {
       const message = `Received Socket API response (after requesting ${description}).`
       if (sdkResult.success) {

@@ -6,7 +6,7 @@
  *
  * Test Coverage: - Successful config value retrieval - Missing config value
  * handling - Different config keys (apiToken, orgSlug, etc.) - Multiple output
- * kinds (json, text, markdown) - Output function integration.
+ * kinds, json, text, markdown - Output function integration.
  *
  * Testing Approach: - Mock getConfigValue from util/config.mts - Mock
  * outputConfigGet for output verification - Mock logger for error/success

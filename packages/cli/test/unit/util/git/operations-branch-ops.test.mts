@@ -107,7 +107,7 @@ describe('git utilities', () => {
       const { spawn } = vi.mocked(
         await import('@socketsecurity/lib-stable/process/spawn/child'),
       )
-      // gitLocalBranchExists resolves successfully (branch exists).
+      // gitLocalBranchExists resolves successfully, branch exists.
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       const result = await gitCreateBranch('existing-branch')

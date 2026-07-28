@@ -72,7 +72,7 @@ const SOCKET_PATCH_ASSETS: Record<string, string> = {
   'darwin-arm64': 'socket-patch-aarch64-apple-darwin.tar.gz',
   'darwin-x64': 'socket-patch-x86_64-apple-darwin.tar.gz',
   'linux-arm64': 'socket-patch-aarch64-unknown-linux-gnu.tar.gz',
-  // FALLBACK: musl build works on glibc systems (statically linked).
+  // FALLBACK: musl build works on glibc systems, statically linked.
   'linux-x64': 'socket-patch-x86_64-unknown-linux-musl.tar.gz',
   'win32-arm64': 'socket-patch-aarch64-pc-windows-msvc.zip',
   'win32-x64': 'socket-patch-x86_64-pc-windows-msvc.zip',
@@ -325,7 +325,7 @@ export function resolveSocketPatch(): BinaryResolution {
   }
 
   // Get SHA-256 checksum for integrity verification.
-  // In dev mode (checksums not inlined), returns undefined to allow development.
+  // In dev mode, checksums not inlined, returns undefined to allow development.
   // In production builds, missing checksums throw a HARD ERROR.
   const sha256 = requireSocketPatchChecksum(assetName)
 

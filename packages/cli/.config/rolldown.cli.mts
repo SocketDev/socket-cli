@@ -81,9 +81,9 @@ export function resolveSocketLibExternal(
 
 /**
  * Resolve socket-lib's internal `../constants/*` + `../external/*` specifiers
- * (and bare package re-exports from inside socket-lib's dist) to the prebuilt
+ * and bare package re-exports from inside socket-lib's dist, to the prebuilt
  * files in socket-lib's dist tree. Ported from the esbuild onResolve plugin to
- * a rolldown `resolveId` hook (importer-aware, same filters).
+ * a rolldown `resolveId` hook, importer-aware, same filters.
  */
 // An importer is "inside socket-lib's dist" whether it resolved through the
 // canonical `@socketsecurity/lib`, the `-stable` npm: alias, or a local
@@ -128,7 +128,7 @@ function resolveSocketLibInternalsPlugin(): Plugin {
     // collide with a DIFFERENT file's pre-existing `require_lib$10`, silently
     // rebinding e.g. Arborist's `pacote` to libnpmpack ("pacote.manifest is
     // not a function" during dlx installs). Rewrite the pre-suffixed factory
-    // names (file-internal, never imported across files) to a `$`-free form
+    // names, file-internal, never imported across files, to a `$`-free form
     // so the deconflicter can't generate a colliding name.
     load(id) {
       if (
@@ -193,7 +193,7 @@ function resolveSocketLibInternalsPlugin(): Plugin {
 }
 
 /**
- * Stub iconv-lite + encoding (bundling-problematic, unused at runtime). Ported
+ * Stub iconv-lite + encoding, bundling-problematic, unused at runtime. Ported
  * from the esbuild onResolve+onLoad namespace pattern to rolldown `resolveId`
  * (tag with a `\0stub:` id) + `load` (return empty CJS).
  */
@@ -205,7 +205,7 @@ function stubProblematicPackagesPlugin(): Plugin {
       // Source is the `encoding` or `iconv-lite` package, or a subpath of either:
       // ^                       anchors to start of string
       // (?:encoding|iconv-lite) matches exactly one of the two package names
-      // (?:$|\/)                end of string (bare name) or `/` (subpath like `iconv-lite/stream`)
+      // (?:$|\/)                end of string, bare name, or `/` (subpath like `iconv-lite/stream`)
       if (/^(?:encoding|iconv-lite)(?:$|\/)/.test(source)) {
         return { id: `${prefix}${source}` }
       }
@@ -249,7 +249,7 @@ const baseConfig = createBaseConfig(inlinedEnvVars)
 const config: RolldownOptions = {
   ...baseConfig,
   input: path.join(rootPath, 'src/cli-dispatch.mts'),
-  // .cs files (node-gyp on Windows) resolve to empty.
+  // .cs files, node-gyp on Windows, resolve to empty.
   moduleTypes: { '.cs': 'empty' },
   transform: {
     ...baseConfig.transform,
@@ -270,7 +270,7 @@ const config: RolldownOptions = {
     sourcemap: false,
     keepNames: true,
     // Single self-contained CLI file: inline dynamic imports into one chunk so
-    // `output.file` is valid (esbuild emitted one outfile by default).
+    // `output.file` is valid, esbuild emitted one outfile by default.
     codeSplitting: false,
     banner: `#!/usr/bin/env node\n"use strict";\n${IMPORT_META_URL_BANNER.js}`,
   },

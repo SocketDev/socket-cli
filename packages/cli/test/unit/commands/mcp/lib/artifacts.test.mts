@@ -2,8 +2,8 @@
  * Unit tests for the MCP command's artifact deduplicator.
  *
  * Tests deduplicateArtifacts(artifacts, platform?) — collapses multiple build
- * artifacts of the same package (different wheels, platform binaries) into one
- * representative per (type, namespace, name, version) tuple. Uses a priority
+ * artifacts of the same package, different wheels, platform binaries, into one
+ * representative per, type, namespace, name, version, tuple. Uses a priority
  * cascade: 1. Platform-matching artifact (when `platform` hint is given) 2.
  * Source distribution 3. Universal wheel 4. First artifact in the group.
  *
@@ -14,7 +14,7 @@
  * linux-{arm64,x64}, win32-{ia32,x64}) plus substring fallback for unknown
  * platforms - Source distribution preferred when no platform hint - Universal
  * wheel preferred when no sdist - First artifact wins as final fallback -
- * Missing namespace handled (key uses empty string) - Empty input returns empty
+ * Missing namespace handled, key uses empty string - Empty input returns empty
  * output.
  *
  * Related Files: - src/commands/mcp/lib/artifacts.mts - Implementation -

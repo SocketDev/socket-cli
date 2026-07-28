@@ -5,7 +5,7 @@
  * comprehensive metadata display across output formats.
  *
  * Test Coverage: - Detailed repository information formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Metadata field
+ * formatting - Multiple output formats, text, json, markdown - Metadata field
  * display.
  *
  * Testing Approach: Uses result helpers to create test data. Validates

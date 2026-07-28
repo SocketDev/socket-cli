@@ -104,7 +104,7 @@ export function handleGitHubApiError(
       }
     }
 
-    // Permission denied (valid token but insufficient permissions).
+    // Permission denied, valid token but insufficient permissions.
     if (status === 403 && !e.message.includes('rate limit')) {
       return {
         ok: false,

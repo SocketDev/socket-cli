@@ -12,7 +12,7 @@
  * Related Files:
  *
  * - Src/constants.mts (implementation)
- * - Src/constants/*.mts (source modules)
+ * - Src/constants/*.mts, source modules
  */
 
 import { describe, expect, it } from 'vitest'

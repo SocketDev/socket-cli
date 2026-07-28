@@ -4,7 +4,7 @@
  *
  * Resolution order for both Python and socketcli:
  *
- * 1. SOCKET_CLI_PYTHON_PATH / SOCKET_CLI_PYCLI_LOCAL_PATH env vars (local dev).
+ * 1. SOCKET_CLI_PYTHON_PATH / SOCKET_CLI_PYCLI_LOCAL_PATH env vars, local dev.
  * 2. Bundled Python from SEA VFS (SEA binary installations).
  * 3. Portable Python download via DLX (npm/pnpm/yarn installations).
  */

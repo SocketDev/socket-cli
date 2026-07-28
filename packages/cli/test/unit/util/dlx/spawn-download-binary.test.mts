@@ -150,7 +150,7 @@ describe('downloadGitHubReleaseBinary', () => {
     let calls = 0
     mockExistsSync.mockImplementation(() => {
       calls += 1
-      // First call (cached check) returns false. Subsequent: also false
+      // First call, cached check, returns false. Subsequent: also false
       // so it goes through full extraction flow.
       return false
     })
@@ -226,7 +226,7 @@ describe('downloadGitHubReleaseBinary', () => {
   it('throws when extracted binary is missing after tar extraction', async () => {
     // existsSync: cache-check false, lock-recheck false, final binary-check false.
     mockExistsSync.mockReturnValue(false)
-    // Make the spawn (tar extraction) succeed but final existsSync stays false.
+    // Make the spawn, tar extraction, succeed but final existsSync stays false.
 
     await expect(downloadGitHubReleaseBinary(baseSpec)).rejects.toThrow(
       /was not found inside/,
@@ -274,7 +274,7 @@ describe('downloadGitHubReleaseBinary', () => {
       }
       return undefined
     })
-    // First few existsSync calls: false (so binary doesn't appear during wait).
+    // First few existsSync calls: false, so binary doesn't appear during wait.
     // After enough waiting iterations we recurse — on recursion: binary appears.
     let existsCount = 0
     mockExistsSync.mockImplementation(() => {
@@ -375,7 +375,7 @@ describe('downloadGitHubReleaseBinary', () => {
   it('recovers from a stale lock (dead PID) and re-runs download', async () => {
     const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
 
-    // First writeFile: EEXIST (lock held). After the stale cleanup recurses,
+    // First writeFile: EEXIST, lock held. After the stale cleanup recurses,
     // the recursive call short-circuits on the cache check (existsSync below).
     let writeCount = 0
     mockFsWriteFile.mockImplementation(async () => {
@@ -430,8 +430,8 @@ describe('downloadGitHubReleaseBinary', () => {
     let existsCount = 0
     mockExistsSync.mockImplementation(() => {
       existsCount += 1
-      // 1st call (pre-lock cache check): false.
-      // 2nd call (post-lock recheck): true — early return.
+      // 1st call, pre-lock cache check: false.
+      // 2nd call, post-lock recheck: true — early return.
       return existsCount >= 2
     })
 

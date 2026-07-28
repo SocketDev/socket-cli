@@ -73,7 +73,7 @@ describe('addSocketWrapper', () => {
     mockAppendFile.mockRejectedValue(error)
 
     // The FileSystemError wraps the cause in the message; the path is
-    // stored on the `.path` property (not embedded in the message) to
+    // stored on the `.path` property, not embedded in the message, to
     // avoid display.formatErrorForDisplay double-printing it. Assert on
     // the message shape + the path property separately.
     await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(

@@ -13,7 +13,7 @@
  * - Flag-based config override (--config)
  * - Error handling for invalid JSON in config overrides
  *
- * Configuration Sources (in priority order):
+ * Configuration Sources, in priority order:
  *
  * 1. Environment variable (SOCKET_CLI_CONFIG)
  * 2. Command-line flag (--config)

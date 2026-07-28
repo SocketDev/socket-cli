@@ -273,7 +273,7 @@ describe('env-helpers', () => {
       mockGetSocketCliGithubToken.mockReturnValue('ghp_test_token')
       mockGitUser.SOCKET_CLI_GIT_USER_NAME = 'test-user'
       mockGitEmail.SOCKET_CLI_GIT_USER_EMAIL = 'test@example.com'
-      // Invalid GITHUB_REPOSITORY (no slash).
+      // Invalid GITHUB_REPOSITORY, no slash.
       mockGithubRepo.GITHUB_REPOSITORY = 'invalid-repo'
 
       const result = await getFixEnv()

@@ -7,7 +7,7 @@
  *
  * Test Coverage:
  *
- * - Command metadata (description, hidden)
+ * - Command metadata, description, hidden
  * - Default mode is stdio
  * - --http flag flips to HTTP mode
  * - MCP_HTTP_MODE=true env var also flips to HTTP mode
@@ -17,7 +17,7 @@
  * - --oauth-issuer / --oauth-client-id / --oauth-client-secret flags + matching
  *   SOCKET_OAUTH_* env fallbacks
  * - --oauth-required-scopes parses whitespace-separated string into array; empty
- *   string yields undefined (handler picks default)
+ *   string yields undefined, handler picks default
  * - All flags forwarded to handleMcp with the right shape
  *
  * Related Files:

@@ -118,7 +118,7 @@ describe('commands/package/parse-package-specifiers (fuzz)', () => {
   })
 
   // RESTRICTED-INPUT: under an alpha ecosystem, any empty package token makes
-  // the whole call invalid (the loop breaks on the first empty entry).
+  // the whole call invalid, the loop breaks on the first empty entry.
   test('alpha ecosystem with an empty package token is invalid', () => {
     fc.assert(
       fc.property(

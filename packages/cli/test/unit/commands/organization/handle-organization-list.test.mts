@@ -7,7 +7,7 @@
  * pipeline.
  *
  * Test Coverage: - Successful organization list fetch and output - Multiple
- * output format support (json, text, markdown) - Error handling and
+ * output format support, json, text, markdown - Error handling and
  * propagation.
  *
  * Testing Approach: Mocks fetchOrganization and outputOrganizationList modules
@@ -18,7 +18,7 @@
  * Command handler - src/commands/organization/fetch-organization-list.mts -
  * Organization list fetcher -
  * src/commands/organization/output-organization-list.mts - Output formatter
- * (not in test files)
+ * not in test files.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

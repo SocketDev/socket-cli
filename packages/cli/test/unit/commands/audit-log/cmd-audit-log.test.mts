@@ -3,7 +3,7 @@
  *
  * Tests the command that displays organization audit logs.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * Test Coverage: - Command metadata, description, hidden flag - API token
  * requirement validation - Organization slug handling - Type filter argument
  * parsing - Pagination flags: page, per-page - Output modes: text, JSON,
  * markdown - Dry-run mode - Legacy flag detection.

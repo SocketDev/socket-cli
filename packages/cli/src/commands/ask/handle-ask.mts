@@ -80,7 +80,7 @@ const PATTERNS = {
     explanation: 'Replacing dependencies with Socket registry alternatives',
     priority: 3,
   },
-  // Package safety patterns (medium priority).
+  // Package safety patterns, medium priority.
   package: {
     keywords: [
       'safe',
@@ -95,7 +95,7 @@ const PATTERNS = {
     explanation: 'Checking package security score',
     priority: 2,
   },
-  // Scan patterns (medium priority).
+  // Scan patterns, medium priority.
   scan: {
     keywords: [
       'scan',
@@ -242,7 +242,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   const isDryRun =
     lowerQuery.includes('dry run') || lowerQuery.includes('preview')
 
-  // Extract package name from original query (not normalized).
+  // Extract package name from original query, not normalized.
   let packageName: string | undefined
   const quotedMatch = query.match(/['"]([^'"]+)['"]/)
   if (quotedMatch) {
@@ -257,7 +257,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
     const pkgMatch = query.toLowerCase().match(packageNameRe)
     if (pkgMatch) {
       const candidate = pkgMatch[1]
-      // Only accept if it looks like a real package name (not common words).
+      // Only accept if it looks like a real package name, not common words.
       if (
         candidate &&
         (candidate.includes('@') ||

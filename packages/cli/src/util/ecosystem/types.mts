@@ -33,7 +33,7 @@ export type PURL_Type = components['schemas']['SocketPURL_Type']
 
 // Type checking utilities to ensure ecosystem types are properly aligned.
 // NOTE: Commented out because EcosystemString has additional types not in PURL_Type
-// (unknown, vcs, qpkg, swid) which causes type checking errors.
+// unknown, vcs, qpkg, swid, which causes type checking errors.
 // type ExpectNever<T extends never> = T
 // type MissingInEcosystemString = Exclude<PURL_Type, EcosystemString>
 // type ExtraInEcosystemString = Exclude<EcosystemString, PURL_Type>

@@ -2,7 +2,7 @@
  * Unit tests for parsePackageSpecifiers.
  *
  * Purpose: Tests the parser that converts user-provided package specifiers into
- * valid PURLs (Package URLs). Handles ecosystem prefixes, scoped packages,
+ * valid PURLs, Package URLs. Handles ecosystem prefixes, scoped packages,
  * mixed formats, and validates input correctness.
  *
  * Test Coverage: - Simple npm package parsing (e.g., "npm babel") - PURL with

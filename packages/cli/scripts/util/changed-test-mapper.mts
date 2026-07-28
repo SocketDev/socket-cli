@@ -159,7 +159,7 @@ function mapSourceToTests(filepath) {
   }
 
   // CLI-specific command mappings for files with multiple related tests.
-  // Commands with malware tests (npm, npx, pnpm, yarn).
+  // Commands with malware tests, npm, npx, pnpm, yarn.
   if (normalized.includes('src/commands/npm/cmd-npm.mts')) {
     return [
       'src/commands/npm/cmd-npm.test.mts',

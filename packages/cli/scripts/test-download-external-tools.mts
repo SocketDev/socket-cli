@@ -180,7 +180,7 @@ async function extractFromTarGz(archivePath, outputPath, binaryName) {
 }
 
 /**
- * Get current platform identifier (normalized for release naming). Uses 'win'
+ * Get current platform identifier, normalized for release naming. Uses 'win'
  * instead of 'win32' for Windows.
  */
 function getCurrentPlatform() {

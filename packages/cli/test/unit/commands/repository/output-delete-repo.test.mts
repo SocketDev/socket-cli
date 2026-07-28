@@ -5,7 +5,7 @@
  * confirmation messages and error formatting for deletion operations.
  *
  * Test Coverage: - Successful deletion output formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Deletion
+ * formatting - Multiple output formats, text, json, markdown - Deletion
  * confirmation messages.
  *
  * Testing Approach: Uses result helpers to create test data. Validates

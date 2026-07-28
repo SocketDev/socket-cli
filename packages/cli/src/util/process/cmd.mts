@@ -111,7 +111,7 @@ export function filterFlags(
       filtered.push(arg)
       // Handle flags that take values.
       if (flagsWithValueSet.has(arg)) {
-        // Include the next argument (the flag value).
+        // Include the next argument, the flag value.
         i += 1
         if (i < length) {
           filtered.push(argv[i]!)
@@ -120,10 +120,10 @@ export function filterFlags(
     } else if (flagsToFilterSet.has(arg)) {
       // Skip flags that take values.
       if (flagsWithValueSet.has(arg)) {
-        // Skip the next argument (the flag value).
+        // Skip the next argument, the flag value.
         i += 1
       }
-      // Skip boolean flags (no additional argument to skip).
+      // Skip boolean flags, no additional argument to skip.
     } else if (
       arg &&
       Array.from(flagsWithValueSet).some(flag => arg.startsWith(`${flag}=`))
@@ -151,13 +151,13 @@ export function isHelpFlag(cmdArg: string): boolean {
  * Merge Node flags into a NODE_OPTIONS value without clobbering an inherited
  * one.
  *
- * A child process' NODE_OPTIONS env var REPLACES (does not extend) the
+ * A child process' NODE_OPTIONS env var REPLACES, does not extend, the
  * parent's, so setting it to only our own flags silently drops any NODE_OPTIONS
  * the user configured globally. This joins, in order, the caller's existing
  * NODE_OPTIONS ahead of the flags we add so both are honoured.
  *
  * The value is intentionally not quoted: it is assigned directly to an env var
- * (not passed through a shell), and consumers that re-tokenize NODE_OPTIONS on
+ * not passed through a shell, and consumers that re-tokenize NODE_OPTIONS on
  * whitespace (e.g. Next.js) mishandle embedded quotes.
  */
 export function mergeNodeOptions(

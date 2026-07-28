@@ -9,7 +9,7 @@
  *
  * - JSON output formatting with complete audit log data
  * - Markdown output with table rendering
- * - Error handling with empty/invalid data (returns empty object or error report)
+ * - Error handling with empty/invalid data, returns empty object or error report
  * - Audit log metadata (org, type filter, page, perPage, next page)
  * - Event fields (event_id, created_at, type, user_email, ip_address, user_agent)
  * - Pagination information in output

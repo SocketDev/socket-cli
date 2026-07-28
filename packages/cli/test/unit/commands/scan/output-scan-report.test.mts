@@ -5,7 +5,7 @@
  * alert display, score formatting, and recommendation presentation.
  *
  * Test Coverage: - Successful operation output formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Edge case
+ * formatting - Multiple output formats, text, json, markdown - Edge case
  * handling.
  *
  * Testing Approach: Uses result helpers and fixtures to create test data.

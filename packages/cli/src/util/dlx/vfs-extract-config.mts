@@ -66,7 +66,7 @@ export const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
   // Note: npm CLI uses the sfw npm package via dlx instead.
   sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
   // socket-patch is a Rust binary downloaded from GitHub releases.
-  // As of v2.0.0, it's bundled directly (not as an npm package).
+  // As of v2.0.0, it's bundled directly, not as an npm package.
   'socket-patch': 'socket-patch',
   // trivy is a container/filesystem vulnerability scanner from GitHub releases (aquasecurity/trivy).
   trivy: 'trivy',
@@ -93,7 +93,7 @@ export function getNodeSmolBasePath(): string {
   let nodeSmolHash = 'node-smol-placeholder'
 
   try {
-    // Try to get hash from process.smol API (if available in future node-smol).
+    // Try to get hash from process.smol API, if available in future node-smol.
     const processWithSmol = process as unknown as {
       smol?: { getHash?: (() => string) | undefined } | undefined
     }

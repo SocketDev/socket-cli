@@ -163,7 +163,7 @@ export interface RunPipelineOptions {
    */
   getOutputFiles?: ((paths: BuildPaths) => string[]) | undefined
   /**
-   * Optional shared-path resolver (for source-cloned tarballs).
+   * Optional shared-path resolver, for source-cloned tarballs.
    */
   getSharedBuildPaths?: (() => SharedBuildPaths) | undefined
   /**
@@ -175,7 +175,7 @@ export interface RunPipelineOptions {
    */
   packageRoot: string
   /**
-   * Optional pre-build check (tool probing, disk space). Runs once before
+   * Optional pre-build check, tool probing, disk space. Runs once before
    * the first stage. Throws to abort the build.
    */
   preflight?: (() => Promise<void>) | undefined

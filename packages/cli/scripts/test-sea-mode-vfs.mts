@@ -41,7 +41,7 @@ export async function runVfsMode(platform) {
   logger.log(`VFS tar.gz: ${(vfsStats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.log('')
 
-  // Create minimal SEA config (no assets).
+  // Create minimal SEA config, no assets.
   const entryPoint = path.join(__dirname, 'test-entry.mts')
   const configPath = path.join(outputDir, 'sea-config-vfs.json')
   const blobPath = path.join(outputDir, 'sea-blob-vfs.blob')
@@ -109,7 +109,7 @@ export async function runVfsMode(platform) {
     throw new Error('binject injection failed')
   }
 
-  // Check signing (binject may auto-sign).
+  // Check signing, binject may auto-sign.
   if (process.platform === 'darwin') {
     const checkSign = await spawn('codesign', ['-d', outputPath])
     if (checkSign.code !== 0) {

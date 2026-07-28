@@ -257,7 +257,7 @@ describe('buildHelpLines', () => {
 
     it('skips empty buckets', () => {
       // Subcommands that only fill api + config; main and tools have
-      // no entries (and main has hero rows so it still renders).
+      // no entries, and main has hero rows so it still renders.
       const apiOnlySubs: Record<string, CliSubcommand> = {
         analytics: makeSubcommand('analytics description'),
         config: makeSubcommand('config description'),
@@ -322,7 +322,7 @@ describe('buildHelpLines', () => {
       // Hero rows still render.
       expect(blob).toContain('Main commands')
       expect(blob).toContain('socket scan create')
-      // No api / tools / config sections (no bucket assignments).
+      // No api / tools / config sections, no bucket assignments.
       expect(blob).not.toContain('Socket API')
       expect(blob).not.toContain('Local tools')
       expect(blob).not.toContain('CLI configuration')

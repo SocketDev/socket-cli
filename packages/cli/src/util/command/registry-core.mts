@@ -95,7 +95,7 @@ export class CommandRegistry implements ICommandRegistry {
   list(parent?: string | undefined): CommandDefinition[] {
     const commands = Array.from(this.commands.values())
 
-    // Remove duplicates (aliases point to same command)
+    // Remove duplicates, aliases point to same command
     const unique = Array.from(
       new Map(commands.map(cmd => [cmd.name, cmd])).values(),
     )
@@ -296,7 +296,7 @@ export class CommandRegistry implements ICommandRegistry {
       const flagDef = command.flags[flagName!]
 
       if (!flagDef) {
-        // Unknown flag - skip for now (could warn)
+        // Unknown flag - skip for now, could warn
         continue
       }
 

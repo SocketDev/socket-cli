@@ -29,7 +29,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
 
 // Load external tools configuration. Entries live under the `tools` key
-// (the shared external-tools shape).
+// the shared external-tools shape.
 const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
 const externalTools: Record<string, ExternalToolConfig> = JSON.parse(
   readFileSync(externalToolsPath, 'utf8'),

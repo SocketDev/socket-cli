@@ -21,14 +21,14 @@ export type Checksums = Record<string, string>
  *
  * @returns Parsed checksums or empty object.
  *
- * @throws Error if JSON is malformed (not empty).
+ * @throws Error if JSON is malformed, not empty.
  */
 export function parseChecksums(
   jsonString: string | undefined,
   toolName: string,
 ): Checksums {
   if (!jsonString) {
-    // In development mode (not inlined), return empty object.
+    // In development mode, not inlined, return empty object.
     // Build validation will catch missing checksums at build time.
     return {}
   }
@@ -42,8 +42,8 @@ export function parseChecksums(
 }
 
 /**
- * Require a checksum for an asset. In production builds (checksums inlined),
- * throws a hard error if asset is missing. In dev mode (checksums not inlined),
+ * Require a checksum for an asset. In production builds, checksums inlined,
+ * throws a hard error if asset is missing. In dev mode, checksums not inlined,
  * returns undefined to allow development.
  *
  * @param checksums - Parsed checksums object.

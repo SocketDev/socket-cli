@@ -7,7 +7,7 @@
  * and debug logging.
  *
  * Test Coverage: - Successful deep score fetch and output - Fetch failure
- * handling - Multiple output formats (json, text, markdown) - Debug logging for
+ * handling - Multiple output formats, json, text, markdown - Debug logging for
  * successful and failed fetches - Different PURL formats (unscoped, scoped,
  * version tags)
  *

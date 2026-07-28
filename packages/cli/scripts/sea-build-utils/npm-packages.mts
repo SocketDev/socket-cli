@@ -27,7 +27,7 @@ const logger = getDefaultLogger()
  */
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const externalToolsPath = path.join(__dirname, '../../bundle-tools.json')
-// Entries live under the `tools` key (the shared external-tools shape).
+// Entries live under the `tools` key, the shared external-tools shape.
 const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
 
 /**
@@ -61,7 +61,7 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
  * @param {string} externalToolsTarGz - Path to external tools tar.gz.
  * @param {string} platform - Platform identifier (darwin, linux, win32).
  * @param {string} arch - Architecture identifier (arm64, x64).
- * @param {boolean} [isMusl=false] - Whether this is musl libc (Linux only).
+ * @param {boolean} [isMusl=false] - Whether this is musl libc, Linux only.
  *
  * @returns Promise resolving to path of combined tar.gz.
  */
@@ -323,7 +323,7 @@ async function downloadNpmPackages() {
   logger.step('Downloading npm packages with full dependency trees')
   await safeMkdir(npmPackagesDir)
 
-  // Create unique temporary directory for package installation (prevents parallel build conflicts).
+  // Create unique temporary directory for package installation, prevents parallel build conflicts.
   const tempDir = normalizePath(
     path.join(npmPackagesDir, `temp-${process.pid}-${Date.now()}`),
   )

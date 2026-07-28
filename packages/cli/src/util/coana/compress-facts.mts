@@ -49,7 +49,7 @@ export type CompressedScanPaths = {
  * `<dir>/.socket.facts.json` resolve to the same storage path).
  *
  * Concurrent scans against the same source directory are already racy on
- * `.socket.facts.json` itself (coana writes to a single path), so the sibling
+ * `.socket.facts.json` itself, coana writes to a single path, so the sibling
  * `.br` doesn't introduce a new race.
  *
  * Caller MUST `await cleanup()` (typically in a `finally` block) once the

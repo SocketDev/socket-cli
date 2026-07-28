@@ -2,7 +2,7 @@
  * @file Minimal structural types for the subset of the Babel AST and plugin
  *   API used by the babel-plugin-*.mts transforms in this directory.
  *   `@babel/core` ships no type declarations for this repo's install, so
- *   these interfaces model only the node shapes and `t` (babel types)
+ *   these interfaces model only the node shapes and `t`, babel types
  *   methods each transform actually touches.
  */
 
@@ -97,7 +97,7 @@ export interface BabelPath<T extends BabelNode = BabelNode> {
 }
 
 /**
- * Minimal shape of the `t` (babel types) namespace used by these plugins.
+ * Minimal shape of the `t`, babel types, namespace used by these plugins.
  */
 export interface BabelTypes {
   booleanLiteral(value: boolean): BabelNode

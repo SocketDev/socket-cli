@@ -2,7 +2,7 @@
  * Integration tests for `socket manifest` root command.
  *
  * Tests the manifest generation root command which provides access to
- * ecosystem-specific SBOM (Software Bill of Materials) generation.
+ * ecosystem-specific SBOM, Software Bill of Materials, generation.
  *
  * Test Coverage:
  *

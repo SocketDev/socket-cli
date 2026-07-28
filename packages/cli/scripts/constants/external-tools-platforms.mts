@@ -33,7 +33,7 @@
  * - Socket-patch-aarch64-pc-windows-msvc.zip (win-arm64)
  * - Socket-patch-x86_64-pc-windows-msvc.zip (win-x64)
  *
- * MISSING BUILDS (using fallbacks):
+ * MISSING BUILDS, using fallbacks:
  *
  * - Linux-x64 (glibc): Using musl build as fallback. Musl binaries are statically
  *   linked and run on glibc systems without issues.
@@ -52,7 +52,7 @@
 export const PLATFORM_MAP_TOOLS = {
   __proto__: null,
 
-  // macOS ARM64 (Apple Silicon) - all native arm64.
+  // macOS ARM64, Apple Silicon - all native arm64.
   'darwin-arm64': {
     __proto__: null,
     opengrep: 'opengrep-core_osx_aarch64.tar.gz',
@@ -112,10 +112,10 @@ export const PLATFORM_MAP_TOOLS = {
     sfw: 'sfw-free-linux-x86_64',
     // FALLBACK: socket-patch v2.0.0 doesn't provide x86_64-unknown-linux-gnu build.
     // Using musl build as fallback. Musl binaries are statically linked and run
-    // on glibc systems without issues (the reverse is not true).
+    // on glibc systems without issues, the reverse is not true.
     // This is a safe fallback that works reliably.
     // TODO: Request x86_64-unknown-linux-gnu build from socket-patch team for consistency.
-    'socket-patch': 'socket-patch-x86_64-unknown-linux-musl.tar.gz', // FALLBACK: musl build (works on glibc).
+    'socket-patch': 'socket-patch-x86_64-unknown-linux-musl.tar.gz', // FALLBACK: musl build, works on glibc.
     trivy: 'trivy_0.69.2_Linux-64bit.tar.gz',
     trufflehog: 'trufflehog_3.93.1_linux_amd64.tar.gz',
   },

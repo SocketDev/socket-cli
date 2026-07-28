@@ -1,6 +1,6 @@
 /**
  * @file SEA binary builder - configuration, blob generation, and injection.
- *   Consolidated module for all SEA (Single Executable Application) build
+ *   Consolidated module for all SEA, Single Executable Application, build
  *   operations. Sections:
  *
  *   1. SEA Configuration Generation - Creates sea-config.json files.
@@ -29,9 +29,9 @@ import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
  * Generate SEA configuration file for Node.js single executable application.
  * Creates sea-config-{name}.json with blob output path and settings.
  *
- * Configuration includes: - Entry point (main file to bundle). - Output blob
+ * Configuration includes: - Entry point, main file to bundle. - Output blob
  * path. - Code cache enabled for optimization. - Snapshot disabled for
- * compatibility. - No bundled assets (minimizes size).
+ * compatibility. - No bundled assets, minimizes size.
  *
  * @example
  *   const configPath = await generateSeaConfig(
@@ -51,7 +51,7 @@ export async function generateSeaConfig(entryPoint, outputPath) {
   const configPath = normalizePath(
     path.join(configDir, `sea-config-${outputName}.json`),
   )
-  // Use relative paths in sea-config.json (binject requires relative paths).
+  // Use relative paths in sea-config.json, binject requires relative paths.
   const blobPathRelative = `sea-blob-${outputName}.blob`
   const mainPathRelative = path.relative(configDir, entryPoint)
 
@@ -85,13 +85,13 @@ export async function generateSeaConfig(entryPoint, outputPath) {
 // c8 ignore stop
 
 // =============================================================================
-// Section 2: SEA Blob Generation (handled by binject).
+// Section 2: SEA Blob Generation, handled by binject.
 // =============================================================================
 
 // Blob generation is now handled automatically by binject when --sea points to
 // a .json config file. The previous buildSeaBlob() function has been removed
 // because binject can generate the blob using the target binary's Node.js version,
-// which is critical for useCodeCache support (code cache is version-specific).
+// which is critical for useCodeCache support, code cache is version-specific.
 //
 // This eliminates the Node.js version mismatch issue where we were using the host
 // Node.js to generate blobs for node-smol targets with different Node.js versions.
@@ -145,7 +145,7 @@ export async function generateSeaConfig(entryPoint, outputPath) {
  * @param {string} outputPath - Path to the output SEA binary (may be same as
  *   nodeBinary).
  * @param {string} cacheId - Unique cache identifier for parallel builds
- *   (prevents interference).
+ *   prevents interference.
  * @param {string} [vfsTarGz] - Optional path to tar.gz file containing security
  *   tools for VFS bundling. If provided, security tools are compressed and
  *   embedded in the binary. If omitted, only the CLI code is bundled (no

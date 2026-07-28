@@ -118,7 +118,7 @@ async function checkFileForCdnRefs(filePath: string): Promise<CdnViolation[]> {
 
     return violations
   } catch (e) {
-    // Skip files we can't read (likely binary despite extension)
+    // Skip files we can't read, likely binary despite extension
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EISDIR' || error.message?.includes('ENOENT')) {
       return []

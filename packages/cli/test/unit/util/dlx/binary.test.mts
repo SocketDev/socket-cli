@@ -79,13 +79,13 @@ describe('binary', () => {
     })
 
     it('should clean expired entries based on maxAge', async () => {
-      // Clean with very short TTL (should clean old entries)
+      // Clean with very short TTL, should clean old entries
       const result = await cleanDlxCache(0)
       expect(result).toBeGreaterThanOrEqual(0)
     })
 
     it('should not clean fresh entries', async () => {
-      // Clean with very long TTL (should not clean anything)
+      // Clean with very long TTL, should not clean anything
       // 1 year
       const result = await cleanDlxCache(365 * 24 * 60 * 60 * 1000)
       expect(result).toBe(0)

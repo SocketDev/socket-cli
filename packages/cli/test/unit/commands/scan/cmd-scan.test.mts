@@ -180,7 +180,7 @@ describe('cmd-scan', () => {
 
       // Reference-identity checks (=== inside the expect(actual) call): the
       // routed subcommand must BE the imported src module instance, so the
-      // -stable alias (a different module instance) can't stand in here.
+      // -stable alias, a different module instance, can't stand in here.
       expect(subcommands.create === cmdScanCreate).toBe(true)
       expect(subcommands.del === cmdScanDel).toBe(true)
       expect(subcommands.diff === cmdScanDiff).toBe(true)

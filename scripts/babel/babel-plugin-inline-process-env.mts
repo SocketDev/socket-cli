@@ -78,7 +78,7 @@ export interface BabelPluginObject {
  * @example
  *   // With options: { env: { NODE_ENV: 'production' } }
  *   process.env.NODE_ENV // → 'production'
- *   process.env.DEBUG // → unchanged (not in env)
+ *   process.env.DEBUG // → unchanged, not in env
  *
  * @param {object} babel - Babel API object.
  * @param {object} options - Plugin options.

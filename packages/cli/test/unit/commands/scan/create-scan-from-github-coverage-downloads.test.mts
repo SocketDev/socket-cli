@@ -13,7 +13,7 @@
  * test/unit/commands/scan/create-scan-from-github-direct.test.mts (direct) -
  * test/unit/commands/scan/create-scan-from-github.test.mts (mock-surface) -
  * test/unit/commands/scan/create-scan-from-github-coverage.test.mts
- * (scan-flow coverage)
+ * scan-flow coverage.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -233,7 +233,7 @@ describe('create-scan-from-github (coverage)', () => {
       const fs = await import('node:fs/promises')
       const { mkdtempSync } = await import('node:fs')
       const dir = mkdtempSync(path.join(os.tmpdir(), 'sgh-stream-'))
-      // Use a flat path so we don't depend on safeMkdirSync (which is mocked).
+      // Use a flat path so we don't depend on safeMkdirSync, which is mocked.
       const target = path.join(dir, 'package.json')
 
       mockSocketHttpRequest.mockResolvedValueOnce({

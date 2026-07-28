@@ -172,12 +172,12 @@ export async function downloadGitHubReleaseBinary(
   }
 
   try {
-    // Re-check after acquiring lock (another process may have finished).
+    // Re-check after acquiring lock, another process may have finished.
     if (existsSync(binaryPath)) {
       return binaryPath
     }
 
-    // Download the archive using downloadBinary (handles caching internally).
+    // Download the archive using downloadBinary, handles caching internally.
     const url = `https://github.com/${owner}/${repo}/releases/download/${version}/${assetName}`
 
     const result = await downloadBinary({
@@ -191,7 +191,7 @@ export async function downloadGitHubReleaseBinary(
     const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
 
     if (isZip) {
-      // Extract zip using adm-zip (cross-platform, zero dependencies).
+      // Extract zip using adm-zip, cross-platform, zero dependencies.
       const zip = new AdmZip(result.binaryPath)
 
       // Security: validate all entries for path traversal before extraction.
@@ -310,7 +310,7 @@ export async function spawnToolVfs(
     )
   }
 
-  // Extract tools from VFS (returns paths directly).
+  // Extract tools from VFS, returns paths directly.
   const toolPaths = await extractExternalTools()
   if (!toolPaths) {
     throw new Error(

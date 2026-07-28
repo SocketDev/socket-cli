@@ -8,7 +8,7 @@
  * - Spawn{Tool} — auto-dispatch between the two based on isSeaBinary()
  *
  * The auto-dispatch and the GitHub-release flow are identical across the
- * pure-binary tools (trufflehog, trivy, opengrep). This factory encapsulates
+ * pure-binary tools, trufflehog, trivy, opengrep. This factory encapsulates
  * both so per-tool files can declare just `name + resolver` and get the rest.
  *
  * Hybrid tools that need local-path overrides or extra wiring (cdxgen, sfw,
@@ -61,7 +61,7 @@ export function defineAutoDispatch(config: {
 
 /**
  * Build a npm-CLI-mode spawner for a tool that ships strictly via GitHub
- * releases (trufflehog, trivy, opengrep). Throws a clearly-attributed
+ * releases, trufflehog, trivy, opengrep. Throws a clearly-attributed
  * resolver-contract error if the resolver returns a non-github-release type.
  */
 export function defineGitHubReleaseSpawn(config: {

@@ -7,7 +7,7 @@
  * Test Coverage:
  *
  * - Core properties (rootPath, distPath, homePath, WIN32 platform flag)
- * - Path properties validation (correct directory structure)
+ * - Path properties validation, correct directory structure
  * - URL defaults (API_V0_URL, NPM_REGISTRY_URL, SOCKET_PUBLIC_API_TOKEN)
  * - Environment variable overrides (via ENV object)
  * - Command constants (NPM, NPX, PNPM, YARN, NODE_MODULES, PACKAGE_JSON)

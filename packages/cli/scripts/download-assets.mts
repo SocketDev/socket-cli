@@ -126,7 +126,7 @@ async function downloadAsset(config) {
 }
 
 /**
- * Download multiple assets (parallel by default, sequential opt-in).
+ * Download multiple assets, parallel by default, sequential opt-in.
  *
  * Parallel mode is optimized for fast builds. Assets are downloaded
  * concurrently and have isolated subdirectories to minimize race conditions.
@@ -207,7 +207,7 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
 
   // Extract tar.gz using tar command. On Windows, Git-for-Windows GNU tar
   // needs --force-local (a bare `D:` prefix parses as a remote host) AND
-  // forward-slash paths (it mangles backslash-separated arguments).
+  // forward-slash paths, it mangles backslash-separated arguments.
   const tarArgs = [
     '-xzf',
     normalizePath(tarGzPath),

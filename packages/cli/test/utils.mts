@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename)
 
 // Set VITEST environment variable for test runs.
 // This disables interactive help menus in spawned CLI processes.
-// Must be set on process.env directly (not spread) to preserve
+// Must be set on process.env directly, not spread, to preserve
 // Windows environment variable proxy behavior.
 if (!process.env['VITEST']) {
   process.env['VITEST'] = '1'
@@ -35,9 +35,9 @@ const constants = {
 //   * Control characters in the Unicode range:
 //     - \u0000 to \u0007 (e.g., NUL, BEL)
 //     - \u0009 (Tab, but note: not \u0008 Backspace or \u000A Newline)
-//     - \u000B to \u001F (other non-printable control characters)
+//     - \u000B to \u001F, other non-printable control characters
 //   * All non-ASCII characters:
-//     - \u0080 to \uFFFF (extended Unicode)
+//     - \u0080 to \uFFFF, extended Unicode
 
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
@@ -162,7 +162,7 @@ export async function spawnSocketCli(
 }> {
   const {
     // Default to the workspace root, not process.cwd(): worker cwd differs
-    // between the fleet root vitest lane (repo root) and the packages/cli
+    // between the fleet root vitest lane, repo root, and the packages/cli
     // wrapper lane (packages/cli), and snapshots must match in both.
     cwd = WORKSPACE_ROOT,
     env: spawnEnv,

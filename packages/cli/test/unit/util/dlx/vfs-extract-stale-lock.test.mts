@@ -215,10 +215,10 @@ describe('util/dlx/vfs-extract', () => {
       mockIsSeaBinary.mockReturnValue(true)
       withMountReturning(async () => '/extracted')
       mockExistsSync.mockImplementation((p: string) => {
-        // Cache marker false, tool path true (so access check runs).
+        // Cache marker false, tool path true, so access check runs.
         return !p.endsWith('.extracted')
       })
-      // First access throws (not executable), then re-extract proceeds.
+      // First access throws, not executable, then re-extract proceeds.
       let accessCount = 0
       mockFsAccess.mockImplementation(async () => {
         accessCount += 1
@@ -244,7 +244,7 @@ describe('util/dlx/vfs-extract', () => {
         if (ps.endsWith('.extracting')) {
           return false
         }
-        // Cache marker: true on first call (validation phase). After
+        // Cache marker: true on first call, validation phase. After
         // recursion: marker is consulted again — false → enter extraction.
         if (ps.endsWith('.extracted')) {
           pass += 1

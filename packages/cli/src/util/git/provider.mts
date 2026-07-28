@@ -1,8 +1,8 @@
 /**
  * Provider interface for Pull Request / Merge Request operations.
  *
- * This abstraction allows Socket CLI to work with both GitHub (Pull Requests)
- * and GitLab (Merge Requests) using a unified interface.
+ * This abstraction allows Socket CLI to work with both GitHub, Pull Requests
+ * and GitLab, Merge Requests, using a unified interface.
  */
 
 export interface PrProvider {

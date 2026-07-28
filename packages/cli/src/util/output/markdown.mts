@@ -81,7 +81,7 @@ export function mdHeader(title: string, level = 1): string {
  *   mdKeyValue('Missing', undefined) // '**Missing**: N/A'
  *
  * @param label - The label text.
- * @param value - The value (string, number, or undefined)
+ * @param value - The value, string, number, or undefined.
  * @param escaped - Whether to escape markdown in value, defaults to false.
  *
  * @returns Markdown formatted key-value string
@@ -99,7 +99,7 @@ export function mdKeyValue(
 }
 
 /**
- * Create a markdown list (bullet or numbered).
+ * Create a markdown list, bullet or numbered.
  *
  * @example
  *   mdList(['item1', 'item2']) // '- item1\n- item2'
@@ -109,7 +109,7 @@ export function mdKeyValue(
  * @param items - Array of items to list.
  * @param options - Configuration options.
  * @param options.ordered - Create numbered list instead of bullets.
- * @param options.indent - Indentation level (for nested lists)
+ * @param options.indent - Indentation level, for nested lists.
  * @param options.truncateAt - Truncate list and show count if exceeds this.
  *
  * @returns Markdown formatted list string
@@ -159,7 +159,7 @@ export function mdList(
  *   // '## Info\n\nLine 1\nLine 2'
  *
  * @param title - Section title.
- * @param content - Section content (string or array of strings)
+ * @param content - Section content, string or array of strings.
  * @param level - Header level (1-6), defaults to 2.
  *
  * @returns Markdown formatted section

@@ -84,7 +84,7 @@ export interface DefineHandoffCommandOptions {
    */
   wrapperHint?: boolean | undefined
   /**
-   * If true, support `--dry-run` (renders sfw invocation and bails). Default
+   * If true, support `--dry-run`, renders sfw invocation and bails. Default
    * true.
    */
   supportDryRun?: boolean | undefined
@@ -148,7 +148,7 @@ export function buildHelp(
       for (let i = 0, { length } = examples; i < length; i += 1) {
         const example = examples[i]
         // Trim trailing whitespace so a bare-command example renders as
-        // `$ socket npm` (no trailing space) instead of `$ socket npm `.
+        // `$ socket npm`, no trailing space, instead of `$ socket npm `.
         lines.push(`      $ ${command} ${example}`.trimEnd())
       }
     }

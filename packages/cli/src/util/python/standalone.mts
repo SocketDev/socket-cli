@@ -4,7 +4,7 @@
  *   Both socket-basics and socketcli use the same Python runtime. Resolution
  *   Order:
  *
- *   1. SOCKET_CLI_PYCLI_LOCAL_PATH environment variable (local development)
+ *   1. SOCKET_CLI_PYCLI_LOCAL_PATH environment variable, local development
  *   2. Bundled Python from SEA VFS (SEA binary installations)
  *   3. Portable Python download via DLX (npm/pnpm/yarn installations) See also:
  *

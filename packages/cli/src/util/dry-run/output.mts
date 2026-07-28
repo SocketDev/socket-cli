@@ -5,7 +5,7 @@
  * they are not the command's payload. Per the stream discipline rule
  * (CLAUDE.md: SHARED STANDARDS), context belongs on stderr. This keeps `command
  * --json --dry-run` pipe-safe and also keeps dry-run previews visible to humans
- * running `command > file` (where stderr still goes to the terminal).
+ * running `command > file`, where stderr still goes to the terminal.
  */
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'

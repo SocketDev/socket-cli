@@ -7,7 +7,7 @@
  * runtime.
  *
  * Test Coverage: - getRepoDetails / getRepoBranchTree / getLastCommitDetails -
- * selectFocus / makeSure (interactive prompt wrappers) -
+ * selectFocus / makeSure, interactive prompt wrappers -
  * streamDownloadWithFetch error path.
  *
  * Related Files: - src/commands/scan/create-scan-from-github.mts

@@ -91,7 +91,7 @@ describe('cmd-pycli', () => {
 
       await cmdPyCli.run(['--strict-blocking'], importMeta, context)
 
-      // Success means exitCode is 0 or undefined (not an error code).
+      // Success means exitCode is 0 or undefined, not an error code.
       expect(process.exitCode).not.toBe(1)
     })
 

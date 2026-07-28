@@ -1,7 +1,7 @@
 /**
  * @file E2E tests for the `socket manifest` command family. Ported from
  *   `packages/cli/test/smoke.sh`'s manifest section (18 commands). Covers: each
- *   generator subcommand (auto, conda, gradle, kotlin, scala) at help / dry-run
+ *   generator subcommand, auto, conda, gradle, kotlin, scala, at help / dry-run
  *   / no-args invocation. No auth required — manifest generation is local.
  */
 

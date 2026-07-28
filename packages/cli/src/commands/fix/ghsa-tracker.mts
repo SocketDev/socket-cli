@@ -49,7 +49,7 @@ export function isPidAlive(pid: number): boolean {
     return true
   } catch (e) {
     const err = e as NodeJS.ErrnoException
-    // EPERM means process exists but no permission (treat as alive).
+    // EPERM means process exists but no permission, treat as alive.
     // ESRCH means process doesn't exist (dead).
     // All other errors (EINVAL, etc.) treat as dead to be safe.
     return err.code === 'EPERM'
@@ -141,7 +141,7 @@ export async function markGhsaFixed(
     }
     tracker.fixed.push(record)
 
-    // Sort by fixedAt descending (most recent first).
+    // Sort by fixedAt descending, most recent first.
     tracker.fixed.sort((a, b) => b.fixedAt.localeCompare(a.fixedAt))
 
     await saveGhsaTracker(cwd, tracker)

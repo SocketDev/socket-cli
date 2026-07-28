@@ -338,7 +338,7 @@ describe('fetchScanData', () => {
 
     const result = await fetchScanData('test-org', 'scan-123')
 
-    // Whitespace-only NDJSON should still parse to an array (possibly empty)
+    // Whitespace-only NDJSON should still parse to an array, possibly empty
     // — not the "not an array" branch. Fine, just confirm no crash.
     if (result.ok) {
       expect(Array.isArray(result.data.scan)).toBe(true)

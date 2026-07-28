@@ -12,7 +12,7 @@ import { NODE_MODULES } from './packages.mts'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const rootPath = path.resolve(__dirname, '../..')
 
-// Base directory paths (no dist dependency).
+// Base directory paths, no dist dependency.
 export const configPath = path.join(rootPath, '.config')
 export const externalPath = path.join(rootPath, 'external')
 export const srcPath = path.join(rootPath, 'src')

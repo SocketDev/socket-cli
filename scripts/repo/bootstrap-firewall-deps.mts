@@ -1,7 +1,7 @@
 /*
  * @file Bootstrap zero-dep Socket packages into node_modules/ before `pnpm
  *   install` runs, with Socket Firewall verification on each pinned tarball
- *   before extraction. Why: setup.mts (and downstream tooling) imports
+ *   before extraction. Why: setup.mts, and downstream tooling, imports
  *   `@socketsecurity/lib-stable` and other zero-dep Socket helpers at
  *   module-load time. On a fresh clone, `pnpm install` itself runs scripts that
  *   import these — but pnpm install hasn't completed yet, so the imports fail
@@ -9,7 +9,7 @@
  *   tarball from the npm registry, running it through Socket Firewall
  *   (refuse-on-alert), and extracting the verified tarball into
  *   node_modules/<scope>/<name>/. Subsequent pnpm install will see the
- *   directory and either keep it (if version matches) or replace it with the
+ *   directory and either keep it, if version matches, or replace it with the
  *   workspace-resolved version. Pinned versions come from
  *   `pnpm-workspace.yaml`'s `catalog:` — single source of truth. ---
  *   Repo-convention exceptions --- This script intentionally CANNOT depend on
@@ -143,7 +143,7 @@ function bootstrapErrorMessage(error: unknown): string {
 }
 
 /**
- * Read the pinned version of a package, checking (in order):
+ * Read the pinned version of a package, checking, in order:
  *
  * 1. `pnpm-workspace.yaml` `catalog:` entries
  * 2. Root `package.json` `dependencies` / `devDependencies` (skip "catalog:" /
@@ -181,12 +181,12 @@ const readPinnedVersion = (pkgName: string): string => {
           continue
         }
         // Catalog entry: `  'pkg-name': 'version'`
-        // \s+                — leading indentation (catalog entries are indented)
+        // \s+                — leading indentation, catalog entries are indented
         // ['"]?              — optional quote wrapping the package name
         // ([@A-Za-z0-9_/-]+) — group 1: package name, including `@scope/` prefix
         // \s*:\s*            — colon separator with optional surrounding whitespace
         // ['"]?              — optional quote wrapping the version value
-        // ([^'"\s]+)         — group 2: version string (no quotes, no whitespace)
+        // ([^'"\s]+)         — group 2: version string, no quotes, no whitespace
         // \s*$               — optional trailing whitespace before end of line
         const m = line.match(
           /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,

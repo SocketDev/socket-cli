@@ -5,7 +5,7 @@
  * handling and type preservation.
  *
  * Test Coverage: - Simple Map conversion - Nested Map handling - Null prototype
- * objects - Type preservation - Edge cases (empty, circular)
+ * objects - Type preservation - Edge cases, empty, circular.
  *
  * Testing Approach: Tests data structure transformation utilities.
  *

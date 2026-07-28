@@ -38,7 +38,7 @@ import {
 describe('constants/env', () => {
   describe('environment variable re-exports', () => {
     it('exports CI', () => {
-      // CI should be defined (boolean or undefined).
+      // CI should be defined, boolean or undefined.
       expect(typeof CI === 'boolean' || CI === undefined).toBe(true)
     })
 

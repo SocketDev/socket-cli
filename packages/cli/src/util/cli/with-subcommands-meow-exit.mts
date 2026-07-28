@@ -169,7 +169,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
 
   // Now test for help state. Run Meow again. If it exits now, it must be due
   // to wanting to print the help screen. But it would exit(0) and we want a
-  // consistent exit(2) for that case (missing input).
+  // consistent exit(2) for that case, missing input.
   process.exitCode = 2
   meow({
     argv,

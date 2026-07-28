@@ -3,9 +3,9 @@
  *   Standardized across all socket-* repositories. Usage: node
  *   scripts/cover.mts [options] Options: --quiet Suppress progress output
  *   --verbose Show detailed output --open Open coverage report in browser
- *   --code-only Run only code coverage (skip type coverage) --type-only Run
- *   only type coverage (skip code coverage) --summary Show only coverage
- *   summary (hide detailed output)
+ *   --code-only Run only code coverage, skip type coverage --type-only Run
+ *   only type coverage, skip code coverage --summary Show only coverage
+ *   summary, hide detailed output.
  */
 
 import {

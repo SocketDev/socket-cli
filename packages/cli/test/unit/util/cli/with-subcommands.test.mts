@@ -473,7 +473,7 @@ describe('meow-with-subcommands', () => {
     // and SOCKET_CLI_API_TOKEN. To exercise the config branches we must
     // clear ALL of them so the ambient dev-shell key doesn't win the
     // earlier (env) branch. Save/clear/restore via a helper so the env
-    // names (and the one legacy-alias exemption) live in a single place.
+    // names, and the one legacy-alias exemption, live in a single place.
     // socket-api-token-env: bootstrap -- this list intentionally names the
     // legacy SOCKET_API_KEY alias so the test can neutralize it.
     const TOKEN_ENV_KEYS = [

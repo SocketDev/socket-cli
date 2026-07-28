@@ -5,7 +5,7 @@
  * Materials). This command wraps the @cyclonedx/cdxgen tool with Socket CLI
  * integration.
  *
- * Test Coverage: - Command metadata (description, hidden) - Dry-run behavior -
+ * Test Coverage: - Command metadata, description, hidden - Dry-run behavior -
  * Unknown argument handling - Exit code handling with process.exit() - Signal
  * propagation with process.kill() - Lifecycle default setting - Empty-
  * components hard gate.

@@ -3,9 +3,9 @@
  *
  * Tests the command that creates scans for CI environments.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * Test Coverage: - Command metadata, description, hidden flag - --dry-run flag
  * support - --auto-manifest flag support - Handler invocation with correct
- * parameters - Git operation integration (branch, repo name) - Organization
+ * parameters - Git operation integration, branch, repo name - Organization
  * slug fetching.
  *
  * Testing Approach: - Mock logger to capture output - Mock meowOrExit to

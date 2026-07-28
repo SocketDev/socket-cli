@@ -5,7 +5,7 @@
  *   wrote to package.json; this helper provides the YAML-write path used when
  *   the host repo declares pnpm@11+ in its `packageManager` field. Comment
  *   preservation: uses the `yaml` package's Document API so existing
- *   `pnpm-workspace.yaml` formatting (comments, ordering, non-overrides keys)
+ *   `pnpm-workspace.yaml` formatting, comments, ordering, non-overrides keys
  *   survives merges. The `overrides:` block is created when missing.
  */
 

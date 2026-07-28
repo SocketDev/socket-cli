@@ -1,12 +1,12 @@
 /**
  * Unit tests for config unset command --dry-run flag.
  *
- * Tests --dry-run flag support (preview with remove operations) for the
+ * Tests --dry-run flag support, preview with remove operations, for the
  * unset command.
  *
  * Test Coverage:
  *
- * - --dry-run flag support (preview with remove operations)
+ * - --dry-run flag support, preview with remove operations
  * - Config path construction in dry-run mode
  * - Verification that the handler is not invoked in dry-run mode
  *

@@ -196,7 +196,7 @@ export async function outputDiffScan(
 
   // When forcing json, or dumping to file, serialize to string such that it
   // won't get truncated. The only way to dump the full raw JSON to stdout is
-  // to use `--json --file -` (the dash is a standard notation for stdout)
+  // to use `--json --file -`, the dash is a standard notation for stdout
   if (outputKind === 'json' || file) {
     await handleJson(result, file, dashboardMessage)
     return

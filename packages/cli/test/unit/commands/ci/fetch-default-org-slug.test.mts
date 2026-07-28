@@ -6,7 +6,7 @@
  *
  * Test Coverage:
  *
- * - Config file defaultOrg value (highest priority)
+ * - Config file defaultOrg value, highest priority
  * - SOCKET_CLI_ORG_SLUG environment variable
  * - Fallback to fetching first organization from API
  * - Error handling when no organizations exist

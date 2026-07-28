@@ -5,7 +5,7 @@
  * security. The wrapper intercepts bundler commands and forwards them to Socket
  * Firewall (sfw) for real-time security scanning.
  *
- * Test Coverage: - Command metadata (description, visibility) - Help text
+ * Test Coverage: - Command metadata, description, visibility - Help text
  * display - Flag filtering (Socket CLI vs bundler flags) - Exit code handling
  * with process.exit() - Signal propagation with process.kill()
  */

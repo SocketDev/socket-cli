@@ -13,7 +13,7 @@
  * - .bashrc present where the block was edited → falls back to removing
  *   sourcingCommand / completionCommand individually
  * - FindRemainingCompletionSetups discovers other targets
- * - HomePath unset edge case (skip the bashrc lookup entirely)
+ * - HomePath unset edge case, skip the bashrc lookup entirely
  *
  * Related Files:
  *

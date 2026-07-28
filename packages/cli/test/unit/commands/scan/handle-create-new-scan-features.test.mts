@@ -10,7 +10,7 @@
  * pipeline.
  *
  * Related Files: - src/commands/handleCreateNewScan.mts (implementation) -
- * test/unit/commands/scan/handle-create-new-scan.test.mts (core flow)
+ * test/unit/commands/scan/handle-create-new-scan.test.mts, core flow.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

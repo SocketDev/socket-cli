@@ -1,7 +1,7 @@
 /**
  * @file E2E tests for the `socket analytics` command family. Ported from
  *   `packages/cli/test/smoke.sh`'s analytics section (19 commands). Covers:
- *   default invocation / explicit scopes (org, repo, time-window), markdown +
+ *   default invocation / explicit scopes, org, repo, time-window, markdown +
  *   JSON output paths, --file output, and error-path checks for unknown flags /
  *   unknown scopes / unknown repos. Gated on `RUN_E2E_TESTS=1`. Auth-required
  *   tests additionally require a Socket API token.

@@ -2,7 +2,7 @@
  * Integration tests for `socket scan reach` validation logic.
  *
  * Tests input validation and error handling for reachability analysis. This is
- * one of three test files for reach command (dry-run, validation, execution).
+ * one of three test files for reach command, dry-run, validation, execution.
  *
  * Test Coverage: - Input validation - Error handling - Flag compatibility
  * checks - Path validation.

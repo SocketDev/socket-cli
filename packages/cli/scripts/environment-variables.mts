@@ -41,7 +41,7 @@ export class EnvironmentVariables {
       readFileSync(path.join(rootPath, 'package.json'), 'utf-8'),
     )
 
-    // Read version from socket package (the published package).
+    // Read version from socket package, the published package.
     // Uses centralized paths from package-builder.
     const socketPackageJson = JSON.parse(
       readFileSync(path.join(getPackageOutDir('cli'), 'package.json'), 'utf-8'),
@@ -61,7 +61,7 @@ export class EnvironmentVariables {
     } catch {}
 
     // Get external tool versions from bundle-tools.json. Entries live under
-    // the `tools` key (the shared external-tools shape).
+    // the `tools` key, the shared external-tools shape.
     const externalTools = JSON.parse(
       readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
     ).tools
@@ -91,7 +91,7 @@ export class EnvironmentVariables {
     const synpVersion = getExternalToolVersion('synp')
     // pypi packages use 'version' field.
     const pyCliVersion = getExternalToolVersion('socketsecurity')
-    // GitHub-released tools use 'version' field (release tag, any format).
+    // GitHub-released tools use 'version' field, release tag, any format.
     const opengrepVersion = getExternalToolVersion('opengrep')
     const pythonBuildTag = getExternalToolVersion('python', 'tag')
     const pythonVersion = getExternalToolVersion('python')
@@ -105,7 +105,7 @@ export class EnvironmentVariables {
     const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
     const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
 
-    // Compute version hash (matches Rollup implementation).
+    // Compute version hash, matches Rollup implementation.
     const randUuidSegment = crypto.randomUUID().split('-')[0]
     const versionHash = `${packageJson.version}:${gitHash}:${randUuidSegment}${
       publishedBuild ? '' : ':dev'
@@ -152,7 +152,7 @@ export class EnvironmentVariables {
   }
 
   /**
-   * Load external tool versions with error handling (for test environment).
+   * Load external tool versions with error handling, for test environment.
    * This is a safe subset that won't throw if files are missing.
    *
    * @returns {Object} Object with tool versions or empty object if loading

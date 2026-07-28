@@ -8,7 +8,7 @@
  * - Command metadata (description, hidden flag, CMD_NAME)
  * - Flag combinations (--json, --markdown, conflicting flags)
  * - Handler invocation with correct parameters (key, outputKind, no value)
- * - Output kind resolution (text, json, markdown)
+ * - Output kind resolution, text, json, markdown
  * - Verification that no value parameter is passed to handler
  *
  * Config key validation, --dry-run flag support, and edge cases live in

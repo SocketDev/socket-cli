@@ -378,7 +378,7 @@ describe('coanaFix (coverage)', () => {
 
     it('continues when closing a superseded PR throws', async () => {
       mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: 'applied' })
-      // 1st call (counting): [], 2nd call (existing for ghsa): [{7}], 3rd: []
+      // 1st call (counting): [], 2nd call, existing for ghsa: [{7}], 3rd: []
       mockGetSocketFixPrs
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([{ number: 7 }])

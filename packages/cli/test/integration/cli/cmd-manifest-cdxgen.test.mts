@@ -5,7 +5,7 @@
  * This command generates Software Bill of Materials for projects.
  *
  * Test Coverage: - Help text display via --help flag - Dry-run behavior
- * (--dry-run flag) - cdxgen alias routing (socket cdxgen) - Unknown argument
+ * (--dry-run flag) - cdxgen alias routing, socket cdxgen - Unknown argument
  * error handling - Banner and exit code validation.
  *
  * Related Files: - src/commands/manifest/cmd-manifest-cdxgen.mts - cdxgen
@@ -33,7 +33,7 @@ const binCliPath = getBinCliPath()
 // budget. Paying the download here once, under a timeout sized for a cold
 // network install, keeps the tests below measuring CLI routing/help behavior
 // instead of npm download throughput. No assertions: if this warm-up fails
-// (network flake), the tests still run and report their own failures.
+// network flake, the tests still run and report their own failures.
 beforeAll(async () => {
   await spawnSocketCli(binCliPath, [
     'manifest',

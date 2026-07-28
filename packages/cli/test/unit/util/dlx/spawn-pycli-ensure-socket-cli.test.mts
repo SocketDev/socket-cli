@@ -114,7 +114,7 @@ describe('ensureSocketPyCli', () => {
   })
 
   it('installs without checksums (dev mode) using pip install', async () => {
-    // First spawn (install check): code 1; second (pip install): code 0.
+    // First spawn, install check: code 1; second, pip install: code 0.
     let spawnCount = 0
     mockSpawn.mockImplementation(async () => {
       spawnCount += 1
@@ -289,7 +289,7 @@ describe('ensureSocketPyCli', () => {
       let killCount = 0
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         killCount += 1
-        // First kill (stale check): alive. Second+ (i=4 alive check): dead.
+        // First kill, stale check: alive. Second+ (i=4 alive check): dead.
         if (killCount === 1) {
           return true
         }
@@ -329,7 +329,7 @@ describe('ensureSocketPyCli', () => {
         return undefined
       })
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
-      // First readFile (stale check): valid PID. Second+ (i=4): throw.
+      // First readFile, stale check: valid PID. Second+ (i=4): throw.
       let readCount = 0
       mockFsReadFile.mockImplementation(async () => {
         readCount += 1
@@ -372,7 +372,7 @@ describe('ensureSocketPyCli', () => {
       let killCount = 0
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
         killCount += 1
-        // First kill (stale check, alive). Subsequent (i=4): EPERM (alive).
+        // First kill, stale check, alive. Subsequent (i=4): EPERM (alive).
         if (killCount === 1) {
           return true
         }

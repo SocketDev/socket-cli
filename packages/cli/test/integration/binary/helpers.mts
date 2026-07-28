@@ -78,7 +78,7 @@ export async function prepareBinary(
   let binaryExists = existsSync(binary.path)
 
   if (!binaryExists) {
-    // In CI: Skip building (rely on cache).
+    // In CI: Skip building, rely on cache.
     if (process.env.CI) {
       logger.log(`⊘ ${binary.name} (not cached)`)
       if (binaryType === 'sea') {

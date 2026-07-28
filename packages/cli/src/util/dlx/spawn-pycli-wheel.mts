@@ -54,7 +54,7 @@ export function convertCaretToPipRange(caretRange: string): string {
  *
  * @param packageName - PyPI package name (e.g., 'socketsecurity').
  * @param version - Exact version to download.
- * @param sha256 - Expected SHA-256 checksum (hex string).
+ * @param sha256 - Expected SHA-256 checksum, hex string.
  *
  * @returns Path to the downloaded wheel file, or null if download fails.
  */
@@ -99,7 +99,7 @@ export async function downloadPyPiWheel(
       wheelUrl = wheelInfo.url
     }
   } catch (e) {
-    // If we can't fetch from API, construct URL directly (may not work for all packages).
+    // If we can't fetch from API, construct URL directly, may not work for all packages.
     // This is a fallback; the API approach is more reliable.
     throw new InputError(
       `could not fetch PyPI metadata for ${packageName}==${version} from ${pypiUrl} (${getErrorCause(e)}); check your network or proxy settings, or try again if PyPI is rate-limiting`,

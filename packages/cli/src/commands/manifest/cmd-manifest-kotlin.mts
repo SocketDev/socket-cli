@@ -28,7 +28,7 @@ export interface KotlinFlags {
   verbose: boolean | undefined
 }
 
-// Design note: Gradle language commands (gradle, kotlin, scala) share similar code
+// Design note: Gradle language commands, gradle, kotlin, scala, share similar code
 // but maintain separate commands for clarity. This allows language-specific help text
 // and clearer user experience (e.g., "socket manifest kotlin" shows Kotlin-specific
 // help rather than generic gradle help). Future refactoring could extract shared logic

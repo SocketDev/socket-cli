@@ -1,6 +1,6 @@
 /**
  * Alias/command resolution and dispatch for the CLI sub-command router —
- * given the parsed command name, finds (or suggests) the matching
+ * given the parsed command name, finds, or suggests, the matching
  * sub-command and runs it.
  *
  * Extracted from with-subcommands.mts to keep that file under the 1000-line

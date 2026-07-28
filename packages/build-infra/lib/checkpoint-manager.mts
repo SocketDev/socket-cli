@@ -29,7 +29,7 @@ const logger = getDefaultLogger()
 
 /**
  * Platform/build metadata that feeds the cache key. Every field is optional
- * so callers can pass as much (or as little) as they know.
+ * so callers can pass as much, or as little, as they know.
  */
 export interface PlatformCacheKeyOptions {
   arch?: string | undefined
@@ -88,7 +88,7 @@ export function checkpointFile(
 }
 
 /**
- * Delete all checkpoints under a build dir (or a single package's scope).
+ * Delete all checkpoints under a build dir, or a single package's scope.
  */
 export async function cleanCheckpoint(
   buildDir: string,

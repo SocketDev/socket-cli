@@ -2,7 +2,7 @@
  * Unit tests for manifest cdxgen command.
  *
  * Tests flag handling for the cdxgen command that generates CycloneDX SBOMs
- * (Software Bill of Materials): help flag handling, cdxgen flag forwarding,
+ * Software Bill of Materials: help flag handling, cdxgen flag forwarding,
  * path argument handling, Socket-specific flag filtering, and edge cases.
  *
  * Related Files: - src/commands/manifest/cmd-manifest-cdxgen.mts - Command

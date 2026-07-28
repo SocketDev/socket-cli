@@ -75,7 +75,7 @@ export function valueToLiteral(t: BabelTypes, value: EnumValue): BabelNode {
  * Usage: Pass enum definitions via options.enums: { enums: { MyEnum: { Value1:
  * 0, Value2: 1 } } }
  *
- * Or let the plugin scan the code for enum declarations (limited support).
+ * Or let the plugin scan the code for enum declarations, limited support.
  *
  * @param {object} babel - Babel API object.
  * @param {object} options - Plugin options.

@@ -8,8 +8,8 @@
  *
  * Test Coverage: - Successful conversion and requirements output - Conversion
  * failure handling with error propagation - Multiple output format support
- * (text, json, markdown) - Verbose mode flag passing - Different working
- * directory handling (absolute, relative, current)
+ * text, json, markdown - Verbose mode flag passing - Different working
+ * directory handling, absolute, relative, current.
  *
  * Testing Approach: Mocks convertCondaToRequirements and outputRequirements
  * modules to test handler orchestration without actual file I/O. Uses test

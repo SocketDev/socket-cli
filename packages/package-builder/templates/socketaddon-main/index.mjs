@@ -87,7 +87,7 @@ export function loadNativeAddon() {
       const { fileURLToPath } = require('node:url')
       const { realpathSync, existsSync } = require('node:fs')
 
-      // Get the real path of this module (resolves pnpm symlinks).
+      // Get the real path of this module, resolves pnpm symlinks.
       const __dirname = dirname(fileURLToPath(import.meta.url))
       // Normalize to forward slashes so the separator-based checks below
       // work on Windows, where realpathSync returns backslash-separated

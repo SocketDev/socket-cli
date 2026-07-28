@@ -7,7 +7,7 @@
  * Related Files:
  *
  * - Src/commands/package/output-purls-deep-score.mts (implementation)
- * - Src/commands/package/fixtures/*.json (test fixtures)
+ * - Src/commands/package/fixtures/*.json, test fixtures
  */
 
 import { describe, expect, it } from 'vitest'
@@ -118,7 +118,7 @@ describe('package score output', async () => {
 
     it('renders empty-deep-results section (lines 189-210)', () => {
       // dependencyCount > 0 but transitively.alerts and capabilities empty
-      // → exercises lines 189-191 (no capabilities) and 208-210 (no alerts).
+      // → exercises lines 189-191, no capabilities, and 208-210, no alerts.
       const data = {
         purl: 'pkg:npm/silent@2.0.0',
         self: {

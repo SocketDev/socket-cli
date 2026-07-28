@@ -7,7 +7,7 @@
  * Normalized schema across all Socket repos: socket-btm: build tools (system
  * tools, pip packages) socket-cli: bundle tools (npm packages, GitHub release
  * binaries) socket-registry: CI tools (GitHub release binaries) ultrathink:
- * build tools (compilers, language toolchains)
+ * build tools, compilers, language toolchains.
  */
 
 import { Type } from '@sinclair/typebox'
@@ -16,7 +16,7 @@ import { validateSchema } from '@socketsecurity/lib-stable/schema/validate'
 
 const toolSchema = Type.Object(
   {
-    // Common fields (all repos).
+    // Common fields, all repos.
     description: Type.Optional(
       Type.String({ description: 'What the tool is used for' }),
     ),
@@ -39,7 +39,7 @@ const toolSchema = Type.Object(
       }),
     ),
 
-    // GitHub release fields (socket-cli bundle-tools, socket-registry).
+    // GitHub release fields, socket-cli bundle-tools, socket-registry.
     repository: Type.Optional(
       Type.String({ description: 'Repository in "github:owner/repo" format' }),
     ),
@@ -68,7 +68,7 @@ const toolSchema = Type.Object(
       ),
     ),
 
-    // npm package fields (socket-cli bundle-tools).
+    // npm package fields, socket-cli bundle-tools.
     integrity: Type.Optional(
       Type.String({ description: 'npm package integrity hash (sha512)' }),
     ),

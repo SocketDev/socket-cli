@@ -166,7 +166,7 @@ export async function getRepoBranchTree({
 }
 
 /**
- * Fetch repo metadata (default branch, plus the raw repo details payload).
+ * Fetch repo metadata, default branch, plus the raw repo details payload.
  */
 export async function getRepoDetails({
   orgGithub,

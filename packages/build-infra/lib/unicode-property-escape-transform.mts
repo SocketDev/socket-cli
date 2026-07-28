@@ -132,7 +132,7 @@ export function escapeForStringLiteral(str: string) {
     str
       // Backslash must be doubled.
       .replace(/\\/g, '\\\\')
-      // Escape quotes if needed (handled by keeping original quotes).
+      // Escape quotes if needed, handled by keeping original quotes.
       .replace(/"/g, '\\"')
       // Escape single quotes if needed.
       .replace(/'/g, "\\'")
@@ -221,12 +221,12 @@ export function transformUnicodePropertyEscapes(content: string) {
       // Get the original regex literal from source.
       const originalRegex = content.slice(start, end)
 
-      // Transform the pattern (using Babel's interpreted pattern for replacements).
+      // Transform the pattern, using Babel's interpreted pattern for replacements.
       const transformedPattern = transformRegexPattern(pattern)
 
       // Check if transformed pattern still has unsupported Unicode features.
       if (hasUnsupportedUnicodeFeatures(transformedPattern)) {
-        // Replace entire regex with /(?:)/ (no-op regex).
+        // Replace entire regex with /(?:)/ no-op regex.
         s.overwrite(start, end, '/(?:)/')
         return
       }
@@ -281,7 +281,7 @@ export function transformUnicodePropertyEscapes(content: string) {
         return
       }
 
-      // Must have at least 2 arguments (pattern, flags).
+      // Must have at least 2 arguments, pattern, flags.
       if (!node.arguments || node.arguments.length < 2) {
         return
       }

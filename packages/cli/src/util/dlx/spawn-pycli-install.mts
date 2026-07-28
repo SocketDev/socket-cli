@@ -117,7 +117,7 @@ export async function ensureSocketPyCli(
     const sha256 = checksums[wheelFilename]
 
     // If checksums are available, download verified wheel and install from local file.
-    // Otherwise fall back to pip install (dev mode or missing checksums).
+    // Otherwise fall back to pip install, dev mode or missing checksums.
     if (sha256) {
       const wheelPath = await downloadPyPiWheel(
         'socketsecurity',
@@ -157,7 +157,7 @@ export async function ensureSocketPyCli(
 /**
  * Whether the process at `pid` is still alive. Signal 0 sends no actual
  * signal, only checking existence/permission. EPERM means the process exists
- * but we lack permission to signal it (treat as alive); any other error
+ * but we lack permission to signal it, treat as alive; any other error
  * (e.g. ESRCH) means it's dead.
  */
 export function isProcessAlive(pid: number): boolean {

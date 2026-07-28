@@ -6,9 +6,9 @@
  * Test Coverage:
  *
  * - Command metadata (description, hidden flag, CMD_NAME)
- * - Config key validation (valid, invalid, missing keys)
- * - Value requirement validation (present, missing, empty)
- * - --dry-run flag support (preview with write operations)
+ * - Config key validation, valid, invalid, missing keys
+ * - Value requirement validation, present, missing, empty
+ * - --dry-run flag support, preview with write operations
  *
  * Testing Approach:
  *

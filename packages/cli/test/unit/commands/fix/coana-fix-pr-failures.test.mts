@@ -266,7 +266,7 @@ describe('coanaFix (coverage)', () => {
       mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: 'applied' })
       mockGitPushBranch.mockResolvedValueOnce(false)
       // gitRemoteBranchExists may be called twice: stale-branch check + cleanup
-      // (after push failure). Throw on the second call.
+      // after push failure. Throw on the second call.
       mockGitRemoteBranchExists
         .mockResolvedValueOnce(false)
         .mockRejectedValueOnce(new Error('stat fail'))
@@ -433,7 +433,7 @@ describe('coanaFix (coverage)', () => {
       mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: 'applied' })
       // Make getSocketFixPrs throw inside the loop body's try block.
       mockGetSocketFixPrs.mockReset()
-      // First call (the one outside the loop counting open PRs) returns empty.
+      // First call, the one outside the loop counting open PRs, returns empty.
       mockGetSocketFixPrs.mockResolvedValueOnce([])
       // Second call is inside the loop's try — throw to trigger the catch.
       mockGetSocketFixPrs.mockRejectedValueOnce(new Error('inner boom'))

@@ -161,7 +161,7 @@ export function generateReport(
   //   - error: healthy will end up as false, add alerts to report
   //   - warn: healthy unchanged, add alerts to report
   //   - monitor/ignore: no action
-  //   - defer: unknown (no action)
+  //   - defer: unknown, no action
 
   // Note: the server will emit alerts for license policy violations but
   //       those are only included if you set the flag when requesting the scan
@@ -187,7 +187,7 @@ export function generateReport(
         version = UNKNOWN_VALUE,
       } = artifact
 
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
       alerts?.forEach(
         (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
           const alertName = alert.type // => policy[type]

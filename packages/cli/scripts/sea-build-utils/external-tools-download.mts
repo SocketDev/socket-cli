@@ -24,7 +24,7 @@ import { downloadAndInstallTool } from './external-tools-install.mts'
  * - Trivy v0.69.1: Container and filesystem vulnerability scanner from Aqua
  *   Security.
  * - TruffleHog v3.93.1: Secret and credential detection from Truffle Security.
- * - OpenGrep v1.16.0: SAST/code analysis engine (fork of Semgrep).
+ * - OpenGrep v1.16.0: SAST/code analysis engine, fork of Semgrep.
  *
  * Platform Coverage (8/8 platforms):
  *

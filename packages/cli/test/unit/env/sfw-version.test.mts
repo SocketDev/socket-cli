@@ -1,7 +1,7 @@
 /**
  * Unit tests for Socket Firewall version getter.
  *
- * Purpose: Tests the version getter function for sfw (Socket Firewall).
+ * Purpose: Tests the version getter function for sfw, Socket Firewall.
  *
  * Test Coverage: - getSwfVersion function.
  *

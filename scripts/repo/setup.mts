@@ -6,8 +6,8 @@ import process from 'node:process'
  *
  *   - Node.js version (>=18.0.0)
  *   - pnpm version (>=10.21.0)
- *   - gh CLI (optional, for cache restoration)
- *   - Homebrew (if needed for installations) Actions:
+ *   - gh CLI, optional, for cache restoration
+ *   - Homebrew, if needed for installations, Actions:
  *   - Checks for required tools (Node.js, pnpm) and fails if missing
  *   - Auto-installs optional tools (gh CLI, brew/choco) if --install flag
  *     provided
@@ -18,9 +18,9 @@ import process from 'node:process'
  *   # Check prerequisites and restore GitHub cache pnpm run setup --install
  *
  *   Check and auto-install optional tools, then restore cache pnpm run setup
- *   --skip-prereqs # Only restore GitHub cache (skip prerequisite checks) pnpm
+ *   --skip-prereqs # Only restore GitHub cache, skip prerequisite checks, pnpm
  *   run setup --skip-gh-cache # Check prerequisites but skip GitHub cache
- *   restoration pnpm run setup --quiet # Minimal output (for postinstall)
+ *   restoration pnpm run setup --quiet # Minimal output, for postinstall
  *   Flags: --install Auto-install missing optional tools (gh CLI)
  *   --skip-prereqs Skip prerequisite checks (for CI use; still attempts cache
  *   restoration) --skip-gh-cache Skip GitHub cache restoration (useful when
@@ -158,7 +158,7 @@ async function main(): Promise<number> {
     required: true,
   })
 
-  // Check gh CLI (optional, with auto-install).
+  // Check gh CLI, optional, with auto-install.
   const ghOk = await ensureGhCli({ autoInstall })
 
   if (!quiet) {

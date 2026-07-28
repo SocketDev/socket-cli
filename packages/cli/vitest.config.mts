@@ -21,7 +21,7 @@ const FUZZ_TIME_MS = Number(process.env['FUZZ_TIME_MS']) || 15_000
 // Pin TZ in the parent process before vitest spawns its workers, so
 // every worker inherits TZ=UTC from spawn env. V8 caches the timezone
 // at the first Date op per-worker, so it must be present before any
-// test code (or vitest worker bootstrap) runs. test.env below sets it
+// test code, or vitest worker bootstrap, runs. test.env below sets it
 // on the worker for additional belt-and-suspenders coverage.
 if (!process.env['TZ']) {
   process.env['TZ'] = 'UTC'

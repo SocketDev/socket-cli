@@ -1,5 +1,5 @@
 /**
- * Bootstrap abstraction for SEA (Single Executable Application) subprocess
+ * Bootstrap abstraction for SEA, Single Executable Application, subprocess
  * handling.
  *
  * When running in a SEA binary, we need to distinguish between:

@@ -5,7 +5,7 @@
  * change summaries and diff formatting for update operations.
  *
  * Test Coverage: - Successful update output formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Updated field
+ * formatting - Multiple output formats, text, json, markdown - Updated field
  * highlighting.
  *
  * Testing Approach: Uses result helpers to create test data. Validates

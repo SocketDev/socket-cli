@@ -8,7 +8,7 @@
  *
  * Test Coverage: - Successful dependency list fetching with pagination - SDK
  * setup failure handling - API call error handling - Custom SDK options passing
- * (API token, base URL) - Pagination parameter validation (limit, offset) -
+ * (API token, base URL) - Pagination parameter validation, limit, offset -
  * Null prototype usage for security.
  *
  * Testing Approach: Uses SDK test helpers to mock setupSdk and handleApiCall

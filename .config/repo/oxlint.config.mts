@@ -21,7 +21,7 @@ export default defineConfig(
   config({
     // Burn-down state (2026-07-24): await-thenable, no-base-to-string,
     // no-unnecessary-type-conversion, restrict-template-expressions,
-    // no-floating-promises and unbound-method are DONE (entries deleted).
+    // no-floating-promises and unbound-method are DONE, entries deleted.
     // One rule remains — no-unsafe-type-assertion, now NARROWED to the
     // residue globs below (527 findings, ~63% in *.test.mts vitest mocks);
     // everything else enforces it. Clean a glob's findings, delete its entry.
@@ -32,7 +32,7 @@ export default defineConfig(
     overrides: [
       {
         files: [
-          // Test tree: vitest mock casts (the bulk of the residue).
+          // Test tree: vitest mock casts, the bulk of the residue.
           '**/packages/cli/test/**',
           // Command subsystems still carrying narrowing debt.
           '**/packages/cli/src/commands/fix/**',

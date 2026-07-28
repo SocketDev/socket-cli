@@ -72,7 +72,7 @@ export function runAgentInstall(
       'install',
       // Prevent interactive prompts in CI environments.
       '--config.confirmModulesPurge=false',
-      // Allow lockfile updates (required for optimization).
+      // Allow lockfile updates, required for optimization.
       '--no-frozen-lockfile',
       ...args,
     ]

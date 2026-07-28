@@ -279,7 +279,7 @@ export function preProcess(
 
   // Create a unique set of rows which represents each artifact that is returned
   // while deduping when the artifact (main) meta data only differs due to the
-  // .release field (observed with python, at least).
+  // .release field, observed with python, at least.
   // Merge the alerts for duped packages. Use lowest score between all of them.
   const rows: Map<string, DedupedArtifact> = new Map()
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
@@ -308,7 +308,7 @@ export function preProcess(
         row.score.license = artifact.score?.license ?? 100
       }
 
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
       artifact.alerts?.forEach(
         (alert: { type: string; severity?: string | undefined }) => {
           const severity = alert.severity ?? ''
@@ -321,7 +321,7 @@ export function preProcess(
       )
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed (not a standalone statement)
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
       artifact.alerts?.forEach(
         (alert: { type: string; severity?: string | undefined }) => {
           const severity = alert.severity ?? ''

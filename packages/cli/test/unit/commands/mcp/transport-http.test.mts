@@ -14,7 +14,7 @@
  * - Invalid Origin → 403 with JSON-RPC error envelope
  * - Allowed origins (mcp.socket.dev, mcp.socket-staging.dev, localhost variants)
  *   → request proceeds
- * - Localhost subdomain spoof rejected (Host strict-match)
+ * - Localhost subdomain spoof rejected, Host strict-match
  * - CORS headers set on origin-bearing requests
  * - OPTIONS preflight returns 200
  * - Unknown URL path → 404
@@ -153,7 +153,7 @@ describe('runHttpTransport — request URL parsing', () => {
   it('returns 400 + JSON-RPC error for an unparseable request URL', async () => {
     const { port } = await startServer()
     // `//` parses to throw on `new URL('//', 'http://localhost:N')`.
-    // httpRequest can't send `//` directly (it normalizes), so use raw
+    // httpRequest can't send `//` directly, it normalizes, so use raw
     // TCP to bypass the client-side normalization.
     const net = require('node:net') as typeof NetModule
     const body = await new Promise<string>((resolve, reject) => {
@@ -285,7 +285,7 @@ describe('runHttpTransport — origin / host validation', () => {
       socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
       socket.on('error', reject)
     })
-    // Host is bare 127.0.0.1 (no port), no Origin → falls through to
+    // Host is bare 127.0.0.1, no port, no Origin → falls through to
     // arm3 of the host check, which accepts. Then POST without
     // sessionId → 400.
     expect(response).toContain('400')
@@ -382,9 +382,9 @@ describe('runHttpTransport — origin / host validation', () => {
 describe('runHttpTransport — trust-proxy', () => {
   it('honors X-Forwarded-Proto/Host when trustProxy=true', async () => {
     const { port } = await startServer({ trustProxy: true })
-    // Forwarded host = mcp.socket.dev (an allowed host). Origin
+    // Forwarded host = mcp.socket.dev, an allowed host. Origin
     // omitted, so the validator falls back to host check, which uses
-    // the Host header (not X-Forwarded-Host). The forwarded headers
+    // the Host header, not X-Forwarded-Host. The forwarded headers
     // are observed by getRequestBaseUrl, which runs on the
     // /.well-known/oauth-protected-resource path. To exercise that
     // helper, use a path that triggers it — but OAuth is disabled,
@@ -619,7 +619,7 @@ describe('runHttpTransport — session reuse', () => {
       },
       method: 'DELETE',
     })
-    // DELETE with a valid session: 200 (session closed) is the
+    // DELETE with a valid session: 200, session closed, is the
     // expected response, but the SDK's session.close behavior may
     // surface as different statuses. Just assert it's not 404.
     expect(res.status).not.toBe(404)

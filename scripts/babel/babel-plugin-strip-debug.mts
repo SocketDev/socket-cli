@@ -120,7 +120,7 @@ export default function stripDebug(
         const { alternate, test } = path.node
 
         if (isDebugIdentifier(t, test, debugIds)) {
-          // Replace with alternate (false branch).
+          // Replace with alternate, false branch.
           path.replaceWith(alternate)
         }
       },

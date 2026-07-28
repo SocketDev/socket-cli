@@ -5,7 +5,7 @@
  * display and status messages.
  *
  * Test Coverage: - Successful operation output formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Data
+ * formatting - Multiple output formats, text, json, markdown - Data
  * presentation and formatting - Edge case handling.
  *
  * Testing Approach: Uses result helpers and fixtures to create test data.

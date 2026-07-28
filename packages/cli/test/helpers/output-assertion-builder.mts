@@ -143,7 +143,7 @@ export class OutputAssertion {
   }
 
   /**
-   * Assert command failed (non-zero exit code)
+   * Assert command failed, non-zero exit code.
    */
   failed(message?: string | undefined): this {
     expect(this.result.status, message).toBe(false)

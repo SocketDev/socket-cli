@@ -263,7 +263,7 @@ export async function meowWithSubcommands(
   } else {
     const tokenOverride = getSocketApiToken()
     if (tokenOverride) {
-      // This will set the token (even if there was a config override) and
+      // This will set the token, even if there was a config override, and
       // set it to readOnly, making sure the temp token won't be persisted.
       overrideConfigApiToken(tokenOverride)
     }
@@ -304,9 +304,9 @@ export async function meowWithSubcommands(
     subcommands,
   })
 
-  // Parse it again. Config overrides should now be applied (may affect help).
+  // Parse it again. Config overrides should now be applied, may affect help.
   // Note: this is displayed as help screen if the command does not override it
-  //       (which is the case for most sub-commands with sub-commands).
+  //       which is the case for most sub-commands with sub-commands.
   const cli2 = meow({
     argv,
     importMeta,

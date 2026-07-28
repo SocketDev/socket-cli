@@ -6,7 +6,7 @@
  *
  *   1. `.toLocaleString()` → Simple formatting with commas/basic date strings
  *   2. `Intl.*` APIs → Polyfills or basic implementations
- *   3. Unicode regex `\p{...}` → Character class alternatives (shared transform)
+ *   3. Unicode regex `\p{...}` → Character class alternatives, shared transform
  *   4. Unicode regex `/v` flag → Downgrade to `/u` or remove
  *   5. `.localeCompare()` → Basic string comparison
  *
@@ -134,7 +134,7 @@ export default function babelPluginWithIntlNone({
           const objectType = path.get('callee.object')
           const objectNode = objectType.node
 
-          // Check if it's likely a number (numeric literal or number-type identifier)
+          // Check if it's likely a number, numeric literal or number-type identifier
           const isNumber =
             t.isNumericLiteral(objectNode) ||
             (t.isIdentifier(objectNode) &&
@@ -357,7 +357,7 @@ export default function babelPluginWithIntlNone({
 
         // Handle /v flag (unicodeSets) - ES2024 feature requiring Unicode support.
         // The /v flag provides enhanced Unicode character class features.
-        // Downgrade to /u flag (basic Unicode) or remove if transforming.
+        // Downgrade to /u flag, basic Unicode, or remove if transforming.
         if (node.flags.includes('v')) {
           const pattern = node.pattern
           const newFlags = node.flags.replace('v', 'u')
@@ -408,7 +408,7 @@ export default function babelPluginWithIntlNone({
             },
           )
 
-          // Transform standalone \p{...} (not inside character class)
+          // Transform standalone \p{...} not inside character class
           const standaloneTransforms = {
             '\\p{Letter}': '[a-zA-Z]',
             '\\p{L}': '[a-zA-Z]',

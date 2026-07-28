@@ -117,7 +117,7 @@ async function main() {
       // file. V8 caches TZ after the first Date op per-worker, so
       // it must enter the worker via spawn env, not setupFiles.
       TZ: 'UTC',
-      // Inject external tool versions (normally inlined at build time).
+      // Inject external tool versions, normally inlined at build time.
       ...externalToolVersions,
     }
 

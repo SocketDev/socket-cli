@@ -2,7 +2,7 @@
  * Unified Socket CLI entry point.
  *
  * This single file handles all Socket CLI commands by detecting how it was
- * invoked: - socket (main CLI) - socket-npm (npm wrapper) - socket-npx (npx
+ * invoked: - socket (main CLI) - socket-npm, npm wrapper - socket-npx (npx
  * wrapper)
  *
  * Perfect for SEA packaging and single-file distribution.
@@ -23,7 +23,7 @@ const logger = getDefaultLogger()
 
 // Detect how this binary was invoked.
 export function getInvocationMode(): string {
-  // Check environment variable first (for explicit mode).
+  // Check environment variable first, for explicit mode.
   const envMode = process.env['SOCKET_CLI_MODE']
   if (envMode) {
     return envMode

@@ -1,5 +1,5 @@
 /**
- * Spawn socket-patch (Rust binary) for applying Socket-managed patches.
+ * Spawn socket-patch, Rust binary, for applying Socket-managed patches.
  *
  * - SpawnSocketPatchDlx: local override > GitHub release download > legacy npm
  *   dlx fallback.

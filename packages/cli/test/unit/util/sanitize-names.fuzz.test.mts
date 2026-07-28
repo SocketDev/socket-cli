@@ -1,7 +1,7 @@
 /**
  * @file Property/fuzz tests for util/sanitize-names (Tier-1 fast-check).
  *   `sanitizeName` is an untrusted-input normalizer (repo/owner names from CLI
- *   args, git remotes, API payloads). Its contract (read from source):
+ *   args, git remotes, API payloads). Its contract, read from source:
  *
  *   - output contains only A-Za-z0-9._- characters
  *   - no run of 2+ special (._-) characters
@@ -13,7 +13,7 @@
  *     truncation confound. never-throws + charset + length are asserted on
  *     unbounded input. `extractName` / `extractOwner` wrap `sanitizeName` with
  *     empty-input fallbacks; those fallbacks are asserted without importing the
- *     default constant (which would make a src value build the expected side).
+ *     default constant, which would make a src value build the expected side.
  */
 
 import fc from 'fast-check'
@@ -26,7 +26,7 @@ import {
 } from '../../../src/util/sanitize-names.mts'
 
 // Characters that survive sanitizeName verbatim: alphanumerics carry no special
-// meaning at all (they are never replaced, trimmed, or collapsed).
+// meaning at all, they are never replaced, trimmed, or collapsed.
 const ALNUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 
 const alnumWord = fc
@@ -62,7 +62,7 @@ describe('util/sanitize-names (fuzz)', () => {
     )
   })
 
-  // INVARIANT (structural, bounded to avoid the truncation confound): no
+  // INVARIANT, structural, bounded to avoid the truncation confound: no
   // leading or trailing special character.
   test('sanitizeName has no leading/trailing special char (no truncation)', () => {
     fc.assert(

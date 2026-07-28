@@ -175,7 +175,7 @@ export async function queryApiSafeTextWithStatus(
   if (!result.ok) {
     const { status } = result
     const durationMs = Date.now() - startTime
-    // Include response headers (for cf-ray) and a truncated body so
+    // Include response headers, for cf-ray, and a truncated body so
     // support tickets have everything needed to file against Cloudflare
     // or backend teams.
     debugApiResponse(description || 'Query API', status, undefined, {

@@ -1,5 +1,5 @@
 /**
- * SEA (Single Executable Application) detection utilities for Socket CLI.
+ * SEA, Single Executable Application, detection utilities for Socket CLI.
  * Provides reliable detection of whether the current process is running as a
  * Node.js Single Executable Application.
  *

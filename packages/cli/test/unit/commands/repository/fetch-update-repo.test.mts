@@ -6,7 +6,7 @@
  *
  * Test Coverage: - Successful repository update - SDK setup failure handling -
  * API call errors (404 not found, 403 forbidden) - Custom SDK options - Partial
- * updates (only changed fields) - Null prototype usage for security.
+ * updates, only changed fields - Null prototype usage for security.
  *
  * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
  * Validates parameter transformation and update workflows.

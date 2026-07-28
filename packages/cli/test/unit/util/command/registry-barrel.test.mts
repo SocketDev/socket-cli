@@ -3,7 +3,7 @@
  *
  * Purpose: Tests the command registry barrel exports.
  *
- * Test Coverage: - Named exports - Type exports (runtime verification)
+ * Test Coverage: - Named exports - Type exports, runtime verification.
  *
  * Related Files: - src/util/command/registry.mts (implementation)
  */

@@ -37,7 +37,7 @@ export const nodeNoWarningsFlags = getNodeNoWarningsFlags()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Static Base Paths (eagerly computed)
+// Static Base Paths, eagerly computed
 // In unified build, this file is bundled into dist/cli.js or build/cli.js, so __dirname will be the dist or build directory.
 // In normal build, this file stays in src/constants, so __dirname is src/constants.
 export const srcPath = path.resolve(__dirname, '..')
@@ -71,7 +71,7 @@ export const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET_DIR}.facts.json`
 // Update Store
 export const UPDATE_STORE_FILE_NAME = '.dlx-manifest.json'
 
-// Lazy Path Getters (computed on first access)
+// Lazy Path Getters, computed on first access
 
 // Package Manager Resolution Paths
 // Helper for creating require.

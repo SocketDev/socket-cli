@@ -10,7 +10,7 @@
  * successful logout.
  *
  * Logout Behavior: - Removes API token from local config - Clears default
- * organization setting - Does not revoke token on server (token remains valid)
+ * organization setting - Does not revoke token on server, token remains valid
  * - Preserves other config settings (API URL, proxy, etc.)
  *
  * Security Note: This command only clears local credentials. To revoke an API

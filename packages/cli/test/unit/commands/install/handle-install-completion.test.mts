@@ -3,7 +3,7 @@
  *
  * Purpose: Tests the command handler that installs shell tab completion support
  * for the Socket CLI. Validates the orchestration between setup and output
- * modules for different shell environments (bash, zsh, fish, powershell).
+ * modules for different shell environments, bash, zsh, fish, powershell.
  *
  * Test Coverage: - Successful completion installation for various shells -
  * Installation failure handling - Multiple shell target support (bash, zsh,

@@ -1,6 +1,6 @@
 /**
  * @file Frozen SEA base-asset pins for the socket-cli-controlled mirror.
- *   SocketDev/socket-btm is descoped and SocketDev/node-smol (its successor)
+ *   SocketDev/socket-btm is descoped and SocketDev/node-smol, its successor
  *   has no releases yet, so the frozen base assets SEA builds depend on are
  *   mirrored into asset-carrier releases on SocketDev/socket-cli itself:
  *

@@ -87,7 +87,7 @@ describe('cmd-pnpm', () => {
 
         await cmdPnpm.run(['install', 'lodash'], importMeta, context)
 
-        // Should set exitCode to 1 initially (before subprocess completes).
+        // Should set exitCode to 1 initially, before subprocess completes.
         expect(process.exitCode).toBe(1)
       })
 

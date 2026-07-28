@@ -12,7 +12,7 @@
  * - Tools that always misbehave → leave args alone and rely on the scrubber to
  *   clean up.
  *
- * Coverage is per (tool, subcommand). Flag forwarding is best-effort: unknown
+ * Coverage is per, tool, subcommand. Flag forwarding is best-effort: unknown
  * subcommands get universal env vars only, no args injected (safer than risking
  * "unknown option" failures from strict parsers like clipanion).
  */

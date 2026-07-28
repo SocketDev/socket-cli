@@ -3,7 +3,7 @@
  *
  * Machine-output mode (--json, --markdown, --quiet) promises that stdout
  * carries ONLY the command payload. The logger already routes its status
- * helpers (info, warn, success, fail, skip) to stderr, and the spinner routes
+ * helpers, info, warn, success, fail, skip, to stderr, and the spinner routes
  * its animation and status methods (including step / substep) to stderr. The
  * lib logger is the outlier: its `step` / `substep` helpers write to stdout,
  * so a command that reports progress with them contaminates the payload stream

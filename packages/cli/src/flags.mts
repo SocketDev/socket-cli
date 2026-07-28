@@ -65,7 +65,7 @@ export function getMaxOldSpaceSizeFlag(): number {
       maxOldSpaceSizeFlag = Math.floor(
         // Total system memory in MiB.
         (os.totalmem() / 1024 / 1024) *
-          // Set 75% of total memory (safe buffer to avoid system pressure).
+          // Set 75% of total memory, safe buffer to avoid system pressure.
           0.75,
       )
     }

@@ -8,7 +8,7 @@
  *
  * Test Coverage: - JSON format output for successful results - JSON format
  * error output with exit codes - Markdown/table format with chalk-table
- * rendering - Pagination metadata display (offset, limit, has more data) -
+ * rendering - Pagination metadata display, offset, limit, has more data -
  * Error messaging in markdown format with badges - Empty dependency list
  * handling - Default exit code setting when code is undefined.
  *

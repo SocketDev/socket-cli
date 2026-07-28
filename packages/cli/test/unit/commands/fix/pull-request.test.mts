@@ -9,7 +9,7 @@
  * Test Coverage: - Successful PR creation on first attempt - Retry logic for
  * transient 5xx errors - Non-retry behavior for 422 validation errors (e.g.,
  * duplicate PRs) - Custom retry count configuration - Exhausted retry handling
- * returning undefined - Exponential backoff during retries (via provider) -
+ * returning undefined - Exponential backoff during retries, via provider -
  * GHSA details passed to PR body generator.
  *
  * Testing Approach: Mocks Octokit GitHub client, PR provider abstraction, and
@@ -148,7 +148,7 @@ describe('pull-request', () => {
       mockGetOctokit.mockReturnValue(mockOctokit)
       mockCreatePrProvider.mockReturnValue(mockProvider)
 
-      // Provider succeeds after retries (retry logic is in provider).
+      // Provider succeeds after retries, retry logic is in provider.
       mockProvider.createPr.mockResolvedValue({
         number: 456,
         url: 'https://github.com/org/repo/pull/456',
@@ -181,7 +181,7 @@ describe('pull-request', () => {
     it('does not retry on 422 validation error', async () => {
       mockCreatePrProvider.mockReturnValue(mockProvider)
 
-      // Provider throws error (validation errors are not retried in provider).
+      // Provider throws error, validation errors are not retried in provider.
       mockProvider.createPr.mockRejectedValue(
         new Error('Validation Failed: A pull request already exists'),
       )
@@ -277,7 +277,7 @@ describe('pull-request', () => {
       mockGetOctokit.mockReturnValue(mockOctokit)
       mockCreatePrProvider.mockReturnValue(mockProvider)
 
-      // Provider succeeds (backoff logic is in provider).
+      // Provider succeeds, backoff logic is in provider.
       mockProvider.createPr.mockResolvedValue({
         number: 789,
         url: 'https://github.com/org/repo/pull/789',

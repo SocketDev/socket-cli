@@ -3,7 +3,7 @@
  *
  * Tests the command that triggers intentional errors for development/testing.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * Test Coverage: - Command metadata, description, hidden flag - --dry-run flag
  * support - Error throwing in default mode - JSON error output format -
  * Markdown error output format - --throw flag to force error throwing even with
  * output flags - Exit code behavior.

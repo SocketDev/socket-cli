@@ -19,7 +19,7 @@ interface WorkspaceFile {
    */
   path: string
   /**
-   * File content (string or JSON-serializable object)
+   * File content, string or JSON-serializable object.
    */
   content: string | Record<string, unknown>
 }

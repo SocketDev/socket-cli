@@ -93,7 +93,7 @@ module.exports = function inlineRequireCalls(babel) {
           // Get the default export (supports both ESM default and CJS module.exports).
           const value = module.default ?? module
 
-          // Verify the value is serializable (primitive or simple object).
+          // Verify the value is serializable, primitive or simple object.
           if (!isSerializable(value)) {
             throw new Error(
               'Cannot inline require: value is not serializable (got ' +

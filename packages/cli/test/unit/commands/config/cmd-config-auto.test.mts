@@ -4,7 +4,7 @@
  * Tests the command that automatically discovers and sets correct config
  * values.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - Config key
+ * Test Coverage: - Command metadata, description, hidden flag - Config key
  * validation - Flag combinations (--json, --markdown) - --dry-run flag support
  * - Handler invocation with correct parameters.
  *

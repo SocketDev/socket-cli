@@ -356,7 +356,7 @@ describe('CommandRegistry', () => {
     })
 
     it('throws when middleware calls next() more than once', async () => {
-      // Middleware function form: (ctx, next) => Promise<void>.
+      // Middleware function form: ctx, next => Promise<void>.
       registry.use(async (_ctx, next) => {
         await next()
         // Calling next() again — should trigger the dispatch detection.

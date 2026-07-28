@@ -27,7 +27,7 @@ const logger = getDefaultLogger()
  *
  * `transform.define` covers the static `process.env.X` reads; the post-write
  * env-var pass in `runBuild` catches the mangled `<id>.env["X"]` forms the
- * static define misses (same two-layer approach esbuild used).
+ * static define misses, same two-layer approach esbuild used.
  */
 export function createBaseConfig(
   inlinedEnvVars: Record<string, string>,
@@ -113,7 +113,7 @@ export function getInlinedEnvVars() {
 interface RunBuildOptions {
   // Post-write transforms applied to the emitted output text, in order. The
   // unicode-property-escape transform + env-var replacement run here because
-  // rolldown (like esbuild) can't express them as a pure config option.
+  // rolldown, like esbuild, can't express them as a pure config option.
   envVars?: Record<string, string> | undefined
   unicodeTransform?: boolean | undefined
 }

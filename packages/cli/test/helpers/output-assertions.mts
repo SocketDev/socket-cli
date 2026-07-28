@@ -141,7 +141,7 @@ export function expectMinLineCount(output: string, minLines: number): void {
 }
 
 /**
- * Assert output contains no ANSI color codes (is plain text).
+ * Assert output contains no ANSI color codes, is plain text.
  *
  * @example
  *   ;```typescript
@@ -235,7 +235,7 @@ export function expectStdoutContainsAny(
 }
 
 /**
- * Assert output contains table-like structure (aligned columns).
+ * Assert output contains table-like structure, aligned columns.
  *
  * @example
  *   ;```typescript
@@ -249,7 +249,7 @@ export function expectTableStructure(output: string): void {
 
   expect(lines.length, 'Expected at least 2 lines for table').toBeGreaterThan(1)
 
-  // Check if lines have consistent structure (similar lengths or alignment)
+  // Check if lines have consistent structure, similar lengths or alignment
   const lineLengths = lines.map(line => line.length)
   const avgLength =
     lineLengths.reduce((sum, len) => sum + len, 0) / lineLengths.length

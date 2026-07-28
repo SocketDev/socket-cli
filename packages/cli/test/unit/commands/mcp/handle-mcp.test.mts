@@ -12,7 +12,7 @@
  * - Stdio path without token → logs error, exits with code 1
  * - HTTP path with all three OAuth fields → calls runHttpTransport with the OAuth
  *   config
- * - HTTP path with token (no OAuth) → calls runHttpTransport without throwing
+ * - HTTP path with token, no OAuth → calls runHttpTransport without throwing
  * - HTTP path with partial OAuth (issuer + clientId, no secret) → logs error,
  *   exits with code 1
  * - HTTP path without OAuth and without token → logs error, exits with code 1

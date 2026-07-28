@@ -107,7 +107,7 @@ describe('util/dlx/vfs-extract', () => {
 
         const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
         mockFsWriteFile.mockRejectedValue(eexistErr)
-        // process.kill: alive (valid lock).
+        // process.kill: alive, valid lock.
         const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // After EEXIST and stale-check, we enter the wait loop. Make
@@ -180,17 +180,17 @@ describe('util/dlx/vfs-extract', () => {
           }
           return undefined
         })
-        // Keep kill alive (valid lock) so we proceed into poll loop.
+        // Keep kill alive, valid lock, so we proceed into poll loop.
         const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // Cache marker: false during all polls, then true at i=4 cache-marker
-        // re-check (which triggers recursion). After recursion: success.
+        // re-check, which triggers recursion. After recursion: success.
         let existsCalls = 0
         mockExistsSync.mockImplementation((p: string) => {
           const ps = p
           if (ps.endsWith('.extracted')) {
             existsCalls += 1
-            // First few calls: false (inside polling loop).
+            // First few calls: false, inside polling loop.
             // Around call 6+ (after i=4 wait check): true.
             return existsCalls >= 6
           }
@@ -223,7 +223,7 @@ describe('util/dlx/vfs-extract', () => {
         let killCount = 0
         const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
           killCount += 1
-          // First kill (stale check): alive (so we go into wait loop).
+          // First kill, stale check: alive, so we go into wait loop.
           // Second+ kill (i=4 alive check): dead.
           if (killCount === 1) {
             return true
@@ -258,7 +258,7 @@ describe('util/dlx/vfs-extract', () => {
         })
         const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
-        // First readFile (stale check): valid PID (so we enter wait loop).
+        // First readFile, stale check: valid PID, so we enter wait loop.
         // Second+ readFile (i=4 alive check): throws.
         let readCount = 0
         mockFsReadFile.mockImplementation(async () => {
@@ -289,7 +289,7 @@ describe('util/dlx/vfs-extract', () => {
         const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
         // existsSync: never true for marker; true for everything else
-        // (though we shouldn't reach tool checks).
+        // though we shouldn't reach tool checks.
         mockExistsSync.mockImplementation((p: string) => {
           return !p.endsWith('.extracted')
         })
@@ -380,8 +380,8 @@ describe('util/dlx/vfs-extract', () => {
           const ps = p
           if (ps.endsWith('.extracted')) {
             markerChecks += 1
-            // First 72 marker checks (inside loop): false. 73rd+: true
-            // (post-loop final).
+            // First 72 marker checks, inside loop: false. 73rd+: true
+            // post-loop final.
             return markerChecks > 72
           }
           return true

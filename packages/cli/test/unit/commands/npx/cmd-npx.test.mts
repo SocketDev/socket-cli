@@ -5,7 +5,7 @@
  * The wrapper intercepts npx commands and forwards them to Socket Firewall
  * (sfw) for real-time security scanning.
  *
- * Test Coverage: - Command metadata (description, visibility) - Help text
+ * Test Coverage: - Command metadata, description, visibility - Help text
  * display - Dry-run behavior - Flag filtering (Socket CLI vs npx flags) -
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
@@ -281,7 +281,7 @@ describe('cmd-npx', () => {
 
         await cmdNpx.run(['cowsay', 'hello'], importMeta, context)
 
-        // Should set exitCode to 1 initially (before subprocess completes).
+        // Should set exitCode to 1 initially, before subprocess completes.
         expect(process.exitCode).toBe(1)
       })
 

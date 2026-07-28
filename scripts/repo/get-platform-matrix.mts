@@ -28,7 +28,7 @@ const matrix: { include: MatrixEntry[] } = {
       arch: c.arch,
       libc: c.libc ?? undefined,
       platform: c.platform, // Node.js platform (win32 for Windows)
-      releasePlatform: c.releasePlatform, // Release naming (win for Windows)
+      releasePlatform: c.releasePlatform, // Release naming, win for Windows
       runner: c.runner,
     }),
   ),

@@ -69,7 +69,7 @@ export async function downloadAndInstallTool(
     sha256,
   })
 
-  // Extract binary (or handle standalone binaries).
+  // Extract binary, or handle standalone binaries.
   const isZip = assetName.endsWith('.zip')
   const isTarGz = assetName.endsWith('.tar.gz') || assetName.endsWith('.tgz')
   const isStandalone = !isZip && !isTarGz
@@ -245,7 +245,7 @@ export async function downloadAndInstallTool(
     }
 
     // Install socket_basics from GitHub source (not on PyPI).
-    // socket_basics orchestrates the security tools (trivy, trufflehog, opengrep).
+    // socket_basics orchestrates the security tools, trivy, trufflehog, opengrep.
     const socketBasicsConfig = externalTools['socket-basics']
     if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
       const repoPath = socketBasicsConfig.repository.replace(/^[^:]+:/, '')
@@ -278,7 +278,7 @@ export async function downloadAndInstallTool(
         sha256: archiveSha256,
       })
 
-      // Install from tarball using pip (handles building and dependencies).
+      // Install from tarball using pip, handles building and dependencies.
       const pipInstallResult = await spawn(pythonBinPath, [
         '-m',
         'pip',

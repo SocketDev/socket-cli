@@ -137,7 +137,7 @@ export class OAuthIntrospector {
       )
       return { ok: false }
     }
-    // `authHeader` is non-empty (guarded above), so split always
+    // `authHeader` is non-empty, guarded above, so split always
     // yields at least one element — `parts[0]` is always a string.
     const parts = authHeader.split(/\s+/u)
     const type = parts[0]!
@@ -219,8 +219,8 @@ export function buildProtectedResourceMetadata(
 }
 
 /**
- * Destroy a session by id. Closes the transport (catching synchronous throws)
- * and the server (swallowing async rejections), then deletes the session entry
+ * Destroy a session by id. Closes the transport, catching synchronous throws
+ * and the server, swallowing async rejections, then deletes the session entry
  * and logs.
  *
  * The transport-close try/catch and the server-close `.catch()` are here

@@ -7,11 +7,11 @@
  * Test Coverage: - Logger emits the start + ready messages -
  * createConfiguredServer is called with the supplied config -
  * StdioServerTransport is instantiated - server.connect(transport) is awaited
- * (function resolves only after the underlying connect resolves) - Errors from
+ * function resolves only after the underlying connect resolves - Errors from
  * connect propagate to the caller.
  *
  * Related Files: - src/commands/mcp/transport-stdio.mts - Implementation -
- * src/commands/mcp/server.mts - Server factory (mocked here)
+ * src/commands/mcp/server.mts - Server factory, mocked here.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

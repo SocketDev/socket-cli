@@ -210,7 +210,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
   }
 }
 
-// If the user wrote `--default-branch` (bare, no value) or
+// If the user wrote `--default-branch`, bare, no value, or
 // `--default-branch=`, meow would coerce it to an empty string and
 // silently persist a blank default-branch name on the repo record.
 // Detect that before meow parses so we can stop with an actionable

@@ -94,7 +94,7 @@ export async function configureGithub(
     required: false,
     // validate: async string => bool
   })
-  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup not provided by unit tests */
+  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup not provided by unit tests */
   if (defaultGithubApiUrl === undefined) {
     return canceledByUser()
   }

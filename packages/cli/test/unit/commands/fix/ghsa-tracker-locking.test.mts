@@ -126,7 +126,7 @@ describe('ghsa-tracker', () => {
       mockFsWriteFile.mockRejectedValueOnce(eexistError)
       mockFsWriteFile.mockResolvedValueOnce(undefined)
 
-      // Mock reading lock file to show stale lock (dead process).
+      // Mock reading lock file to show stale lock, dead process.
       mockFsReadFile.mockResolvedValueOnce('99999999')
 
       mockReadJson.mockResolvedValue(existingTracker)
@@ -156,7 +156,7 @@ describe('ghsa-tracker', () => {
 
       await markGhsaFixed(mockCwd, 'GHSA-lock-read-error', 123)
 
-      // Should still save the tracker (proceeds without lock).
+      // Should still save the tracker, proceeds without lock.
       expect(mockWriteJson).toHaveBeenCalled()
     })
 

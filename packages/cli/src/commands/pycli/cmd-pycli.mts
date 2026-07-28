@@ -8,7 +8,7 @@
  *
  * Features available via Python CLI: - --generate-license: Generate license
  * metadata for packages - --enable-sarif: Output in SARIF format -
- * --strict-blocking: Fail on any policy violations (not just new ones) -
+ * --strict-blocking: Fail on any policy violations, not just new ones -
  * --disable-blocking: Always exit 0 - --enable-gitlab-security: GitLab
  * Dependency Scanning format - --slack-webhook: Send notifications to Slack -
  * --save-manifest-tar: Archive manifests for audit trail.

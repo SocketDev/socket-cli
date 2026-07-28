@@ -104,7 +104,7 @@ export function debug(message: string): void {
 }
 
 /**
- * Finalize telemetry and clean up resources (async version). This should be
+ * Finalize telemetry and clean up resources, async version. This should be
  * called before process.exit to ensure telemetry is sent and resources are
  * cleaned up. Use this in async contexts like beforeExit handlers.
  *
@@ -124,7 +124,7 @@ export async function finalizeTelemetry(): Promise<void> {
  * async operations are not possible.
  *
  * Note: This is best-effort only. Events may be lost if the process exits
- * before flush completes. Prefer finalizeTelemetry() (async version) when
+ * before flush completes. Prefer finalizeTelemetry() async version, when
  * possible.
  */
 export function finalizeTelemetrySync(): void {
@@ -149,7 +149,7 @@ export function normalizeError(error: unknown): Error {
 /**
  * Normalize exit code to a number with default fallback.
  *
- * @param exitCode - Exit code (may be string, number, null, or undefined).
+ * @param exitCode - Exit code, may be string, number, null, or undefined.
  * @param defaultValue - Default value if exitCode is not a number.
  *
  * @returns Normalized exit code.
@@ -245,7 +245,7 @@ export function sanitizeErrorAttribute(
  * both normal exits (beforeExit) and common fatal signals.
  *
  * Flushing strategy: - Batch-based: Auto-flush when queue reaches 10 events. -
- * beforeExit: Async handler for clean shutdowns (when event loop empties). -
+ * beforeExit: Async handler for clean shutdowns, when event loop empties. -
  * Fatal signals (SIGINT, SIGTERM, SIGHUP): Best-effort sync flush. - Accepts
  * that forced exits (SIGKILL, process.exit()) may lose final events.
  *

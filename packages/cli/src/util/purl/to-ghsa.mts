@@ -62,7 +62,7 @@ export async function convertPurlToGhsas(
     }
 
     // Search for advisories affecting this package.
-    // Use '::' delimiter to avoid collisions (package names can contain hyphens).
+    // Use '::' delimiter to avoid collisions, package names can contain hyphens.
     const cacheKey = `purl-to-ghsa::${ecosystem}::${name}::${version || LATEST}`
     const octokit = getOctokit()
     const affects = version ? `${name}@${version}` : name

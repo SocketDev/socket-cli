@@ -1,7 +1,7 @@
 /**
  * @file E2E tests for the Socket CLI's top-level `--help` / `--version`
  *   behavior. Absorbed from the (now-deleted) critical-commands.e2e.test.mts
- *   "Basic commands (no auth required)" group. No auth required.
+ *   "Basic commands, no auth required, " group. No auth required.
  */
 
 import { describe, expect, it } from 'vitest'

@@ -77,7 +77,7 @@ export function ensureIpcInStdio(
  * @returns Path to system Node.js, or undefined
  */
 export function findSystemNodejsSync(): string | undefined {
-  // Use which to find 'node' in PATH (returns all matches).
+  // Use which to find 'node' in PATH, returns all matches.
   const nodePath = whichRealSync('node', { all: true, nothrow: true })
 
   if (!nodePath) {

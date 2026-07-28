@@ -130,7 +130,7 @@ async function main() {
     // If force build, always clean first.
     const shouldClean = force
 
-    // Phase 1: Clean (if needed).
+    // Phase 1: Clean, if needed.
     if (shouldClean) {
       if (!quiet) {
         logger.step('Phase 1: Cleaning…')

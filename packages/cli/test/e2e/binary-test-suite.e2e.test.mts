@@ -4,7 +4,7 @@
  *   groups across 3 binary types:
  *
  *   - JS binary (npm CLI) - Always tested
- *   - SEA binary (Single Executable Application) - Optional via TEST_SEA_BINARY=1
+ *   - SEA binary, Single Executable Application - Optional via TEST_SEA_BINARY=1
  *   - Smol binary - Optional via TEST_SMOL_BINARY=1 Auto-build feature:
  *   - Missing binaries are automatically built without prompting (CI and local)
  *   - All builds use prebuilt binaries from socket-btm + binject (fast) Coverage:
@@ -21,7 +21,7 @@
  *     organization policy security, organization quota The
  *     package/package-manager-wrapper/repository/scan/auth/performance command
  *     groups live in `binary-test-suite-more.e2e.test.mts`. Test strategy:
- *   - Minimum test per command: --help (validates command loads without auth)
+ *   - Minimum test per command: --help, validates command loads without auth
  *   - Auth-required commands: Basic execution test (with Socket API token)
  *   - Performance validation: Help commands execute within 5 seconds
  */
@@ -206,7 +206,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
           isolateConfig: false,
         })
 
-        // Note: --version currently shows help and exits with code 2 (known issue).
+        // Note: --version currently shows help and exits with code 2, known issue.
         // This test validates the CLI executes without crashing.
         expect(result.code).toBeGreaterThanOrEqual(0)
         expect(result.stdout.length).toBeGreaterThan(0)

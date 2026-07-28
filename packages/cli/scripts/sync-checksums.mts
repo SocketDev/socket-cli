@@ -4,7 +4,7 @@
  *
  * For each GitHub-released tool, this script:
  *
- * 1. Fetches checksums.txt from the release (if available)
+ * 1. Fetches checksums.txt from the release, if available
  * 2. Or downloads each asset and computes SHA-256 checksums
  * 3. Updates bundle-tools.json with the new checksums
  *
@@ -136,7 +136,7 @@ async function fetchGitHubReleaseChecksums(
   }
 
   // No checksums.txt - need to download assets and compute checksums.
-  // Only download assets that are in existingChecksums (to avoid downloading unnecessary files).
+  // Only download assets that are in existingChecksums, to avoid downloading unnecessary files.
   const assetNames = Object.keys(existingChecksums)
   if (assetNames.length === 0) {
     logger.log(`  No existing checksums to update and no checksums.txt found`)
@@ -189,7 +189,7 @@ export function parseChecksums(content) {
     if (!trimmed) {
       continue
     }
-    // Format: hash  filename (two spaces or whitespace between)
+    // Format: hash  filename, two spaces or whitespace between
     const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
     if (match) {
       checksums[match[2]] = match[1]

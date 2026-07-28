@@ -335,7 +335,7 @@ describe('util/dlx/vfs-extract', () => {
       mockFsChmod.mockRejectedValue(new Error('EPERM'))
       withMountReturning(async () => '/extracted/sfw')
 
-      // Should still succeed (chmod errors swallowed).
+      // Should still succeed, chmod errors swallowed.
       await expect(extractTool('sfw')).resolves.toBeTruthy()
     })
 

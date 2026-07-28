@@ -53,7 +53,7 @@ export async function cacheFetch<T>(
       // Re-check inflight after async readCache to prevent race.
       const inflightAfterRead = inflightRequests.get(key)
       if (inflightAfterRead) {
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- same-key inflight promise (see above): produced by the same fetcher, resolves to this call's T.
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- same-key inflight promise, see above: produced by the same fetcher, resolves to this call's T.
         return inflightAfterRead as Promise<T>
       }
 
@@ -87,7 +87,7 @@ export async function readCache(
 
   try {
     const entry = await readJson(cacheJsonPath)
-    // Handle both new format (with timestamp) and legacy format (without).
+    // Handle both new format, with timestamp, and legacy format (without).
     if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
       const { data, timestamp } = entry
       /* c8 ignore start - cache fresh-hit + legacy-format branches; tests pre-populate cache files in only one format */

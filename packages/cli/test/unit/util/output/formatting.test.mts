@@ -14,7 +14,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// oxlint-disable-next-line socket/no-src-import-in-test-expect -- getFlagListOutput is compared for reference identity against getFlagsHelpOutput (alias check), not used to build a derived expected value; the -stable alias would be a different module instance.
+// oxlint-disable-next-line socket/no-src-import-in-test-expect -- getFlagListOutput is compared for reference identity against getFlagsHelpOutput, alias check, not used to build a derived expected value; the -stable alias would be a different module instance.
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,

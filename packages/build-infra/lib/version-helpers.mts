@@ -4,7 +4,7 @@
  * The socket-btm version of this file also fetches Node.js release checksums
  * and extracts submodule SHAs for its native-binary builders; ultrathink's lang
  * wasm pipelines don't need any of that. Keep only getNodeVersion and
- * getToolVersion (the two the orchestrator imports).
+ * getToolVersion, the two the orchestrator imports.
  */
 
 import { promises as fs } from 'node:fs'

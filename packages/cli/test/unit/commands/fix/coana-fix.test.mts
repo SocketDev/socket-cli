@@ -391,7 +391,7 @@ describe('coanaFix (coverage)', () => {
     it('slices explicit ghsa list when shouldSpawnCoana and not discovering', async () => {
       // CI mode + explicit ghsas (not 'all') → goes through the
       // `else if (shouldSpawnCoana)` branch (line 351).
-      // The fix call runs once per id (no discovery first).
+      // The fix call runs once per id, no discovery first.
       mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: 'applied' })
       mockGitUnstagedModifiedFiles.mockResolvedValue({
         ok: true,

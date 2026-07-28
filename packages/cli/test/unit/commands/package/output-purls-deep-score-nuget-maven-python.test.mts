@@ -9,7 +9,7 @@
  * Related Files:
  *
  * - Src/commands/package/output-purls-deep-score.mts (implementation)
- * - Src/commands/package/fixtures/*.json (test fixtures)
+ * - Src/commands/package/fixtures/*.json, test fixtures
  */
 
 import { describe, expect, it } from 'vitest'

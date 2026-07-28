@@ -25,7 +25,7 @@ export async function convertGradleToMaven({
   outputKind?: OutputKind | undefined
   verbose: boolean
 }): Promise<CResult<ManifestResult>> {
-  // Note: Resolve bin relative to cwd (or use absolute path if provided).
+  // Note: Resolve bin relative to cwd, or use absolute path if provided.
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
@@ -79,7 +79,7 @@ export async function convertGradleToMaven({
       if (isTextMode) {
         process.exitCode = 1
         logger.fail(`Gradle exited with exit code ${output.code}`)
-        // (In verbose mode, stderr was printed above, no need to repeat it)
+        // In verbose mode, stderr was printed above, no need to repeat it
         if (!verbose) {
           logger.group('stderr:')
           logger.error(output.stderr)

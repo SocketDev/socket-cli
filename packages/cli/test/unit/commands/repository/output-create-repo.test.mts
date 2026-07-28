@@ -6,7 +6,7 @@
  * creation.
  *
  * Test Coverage: - Successful creation output formatting - Error message
- * formatting - Multiple output formats (text, json, markdown) - Repository
+ * formatting - Multiple output formats, text, json, markdown - Repository
  * metadata display.
  *
  * Testing Approach: Uses result helpers to create test data. Validates

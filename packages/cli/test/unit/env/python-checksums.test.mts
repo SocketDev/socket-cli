@@ -3,7 +3,7 @@
  *
  * Reads INLINED_PYTHON_CHECKSUMS from process.env directly so esbuild's define
  * plugin can inline the JSON at build time. Tests verify dev-mode fallback
- * (empty object), production parsing, and the require-checksum lookup path.
+ * empty object, production parsing, and the require-checksum lookup path.
  *
  * Related Files:
  *

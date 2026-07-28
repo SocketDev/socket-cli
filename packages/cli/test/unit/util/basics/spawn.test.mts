@@ -10,7 +10,7 @@
  * - Basics tools unavailable → "Basics tools not available"
  * - VFS extraction returns null → "Failed to extract basics tools"
  * - Python binary missing after extraction → "Python not found"
- * - PyCli already installed (skip pip install) → proceeds
+ * - PyCli already installed, skip pip install → proceeds
  * - PyCli not installed → pip install path; null spawn / non-zero exit / wrong
  *   version cases
  * - Socket_basics not installed → "must be pre-bundled" error
@@ -140,7 +140,7 @@ describe('runSocketBasics — preflight failures', () => {
   })
 
   it('returns "Python not found" when python is absent after extraction', async () => {
-    // First existsSync (check python) returns false.
+    // First existsSync, check python, returns false.
     mockExistsSync.mockReturnValueOnce(false)
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)

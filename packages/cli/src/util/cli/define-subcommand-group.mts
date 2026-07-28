@@ -50,7 +50,7 @@ export interface DefineSubcommandGroupOptions {
   /**
    * If true, pass the standard `commonFlags` (--dry-run, --help, --json,
    * --markdown, etc.) to meowWithSubcommands so the group's `--help` page lists
-   * them. Defaults to false (no flags surface).
+   * them. Defaults to false, no flags surface.
    *
    * Routers that previously declared `config = { flags: defineFlags({
    * ...commonFlags }) }` should pass `passCommonFlags: true` to preserve the

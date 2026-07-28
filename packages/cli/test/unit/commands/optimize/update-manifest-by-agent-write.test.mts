@@ -253,7 +253,7 @@ describe('update-manifest-by-agent', () => {
         const pnpmCalls = updateCalls.filter(([arg]) => 'pnpm' in arg)
         expect(pnpmCalls.length).toBeGreaterThan(0)
         // Latest pnpm-related update should not still have an overrides
-        // member (or the whole pnpm field should be undefined).
+        // member, or the whole pnpm field should be undefined.
         const lastPnpm = pnpmCalls.at(-1)![0].pnpm as
           | undefined
           | { overrides?: unknown | undefined }

@@ -43,7 +43,7 @@ export async function downloadPython(pythonDir: string): Promise<void> {
   const tarballName = 'python-standalone.tar.gz'
 
   // Get SHA-256 checksum for integrity verification.
-  // In dev mode (checksums not inlined), returns undefined to allow development.
+  // In dev mode, checksums not inlined, returns undefined to allow development.
   // In production builds, missing checksums throw a HARD ERROR.
   const sha256 = requirePythonChecksum(assetName)
 

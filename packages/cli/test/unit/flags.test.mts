@@ -130,7 +130,7 @@ describe('flags', () => {
     })
 
     it('handles invalid NODE_OPTIONS value gracefully', () => {
-      // Set NODE_OPTIONS with an invalid pattern (non-numeric after equals).
+      // Set NODE_OPTIONS with an invalid pattern, non-numeric after equals.
       // Since the regex only matches digits, this will fall through to default.
       mockValues.nodeOptions = '--max-old-space-size=abc'
       resetFlagCache()

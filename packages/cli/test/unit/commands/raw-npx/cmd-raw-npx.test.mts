@@ -3,7 +3,7 @@
  *
  * Tests the command that runs npx without the Socket wrapper.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - --dry-run flag
+ * Test Coverage: - Command metadata, description, hidden flag - --dry-run flag
  * support - npx binary path resolution - Argument passing to npx - Process
  * spawning configuration - Exit code handling - Signal handling.
  *

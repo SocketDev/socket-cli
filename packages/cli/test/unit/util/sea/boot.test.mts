@@ -1,7 +1,7 @@
 /**
  * Unit tests for SEA bootstrap utilities.
  *
- * Purpose: Tests SEA (Single Executable Application) bootstrap functionality.
+ * Purpose: Tests SEA, Single Executable Application, bootstrap functionality.
  * Validates subprocess detection and spawn option preparation.
  *
  * Test Coverage: - isSubprocess detection - shouldBypassBootstrap logic -

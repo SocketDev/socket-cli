@@ -7,7 +7,7 @@
  * the fetch/output pipeline.
  *
  * Test Coverage: - Successful fetch and output orchestration - Fetch failure
- * error handling - Multiple output kind support (json, table, markdown) - Large
+ * error handling - Multiple output kind support, json, table, markdown - Large
  * offset and limit parameter handling.
  *
  * Testing Approach: Mocks fetchDependencies and outputDependencies modules to

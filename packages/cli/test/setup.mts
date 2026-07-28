@@ -12,7 +12,7 @@ import { scrubAmbientSocketEnv } from '../../../test/repo/_shared/lib/scrub-sock
 process.env.DEBUG = ''
 delete process.env.NODE_DEBUG
 
-// Drop ambient Socket credentials (developer shell tokens) so spawned CLI
+// Drop ambient Socket credentials, developer shell tokens, so spawned CLI
 // children resolve tokens from each test's --config override, matching the
 // credential-free CI runners.
 scrubAmbientSocketEnv()

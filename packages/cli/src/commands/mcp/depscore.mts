@@ -15,7 +15,7 @@ const logger = getDefaultLogger()
 
 // JSON Schema for the depscore tool input. Authored in TypeBox so the
 // schema is type-safe at the call site; emitted as plain JSON Schema for
-// the MCP wire (no zod, no zod-to-json-schema round-trip).
+// the MCP wire, no zod, no zod-to-json-schema round-trip.
 export const DepscoreInputSchema = Type.Object({
   packages: Type.Array(
     Type.Object({

@@ -1,7 +1,7 @@
 /**
  * Unit tests for SEA detection utilities.
  *
- * Purpose: Tests the SEA (Single Executable Application) detection and related
+ * Purpose: Tests the SEA, Single Executable Application, detection and related
  * utilities.
  *
  * Test Coverage: - isSeaBinary function - getSeaBinaryPath function -

@@ -14,7 +14,7 @@ const logger = getDefaultLogger()
  */
 export interface PreparePackageOptions {
   /**
-   * Build method to set (for socketbin packages).
+   * Build method to set, for socketbin packages.
    */
   buildMethod?: string | undefined
   /**
@@ -38,7 +38,7 @@ export interface PreparePackageResult {
 /**
  * Prepares a package.json for publishing. - Removes private field - Sets
  * version if provided - Sets buildMethod if provided - Updates
- * optionalDependencies versions (for lockstep publishing)
+ * optionalDependencies versions, for lockstep publishing.
  *
  * @param {string} packageDir - Path to the package directory.
  * @param {object} [options] - Options.
@@ -88,7 +88,7 @@ export function preparePackageForPublish(
     }
   }
 
-  // Set buildMethod if provided (for socketbin packages).
+  // Set buildMethod if provided, for socketbin packages.
   if (buildMethod) {
     pkg.buildMethod = buildMethod
   }

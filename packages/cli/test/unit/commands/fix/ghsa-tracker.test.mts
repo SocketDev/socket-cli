@@ -55,7 +55,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('returns false for a PID that does not exist', () => {
-      // PID 0 / very large PID throws ESRCH (no such process).
+      // PID 0 / very large PID throws ESRCH, no such process.
       expect(isPidAlive(2 ** 22)).toBe(false)
     })
 

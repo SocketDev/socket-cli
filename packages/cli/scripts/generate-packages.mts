@@ -34,7 +34,7 @@ async function main(): Promise<void> {
     }
 
     if (result.code !== 0) {
-      // Use nullish coalescing to handle signal-killed processes (code is null).
+      // Use nullish coalescing to handle signal-killed processes, code is null.
       process.exitCode = result.code ?? 1
       throw new Error(
         `Package generation failed for ${script} with exit code ${result.code}`,

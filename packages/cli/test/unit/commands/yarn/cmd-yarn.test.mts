@@ -5,7 +5,7 @@
  * The wrapper intercepts yarn commands and forwards them to Socket Firewall
  * (sfw) for real-time security scanning.
  *
- * Test Coverage: - Command metadata (description, visibility) - Help text
+ * Test Coverage: - Command metadata, description, visibility - Help text
  * display - Dry-run behavior - Flag filtering (Socket CLI vs yarn flags) -
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
@@ -351,7 +351,7 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
 
-        // Should set exitCode to 1 initially (before subprocess completes).
+        // Should set exitCode to 1 initially, before subprocess completes.
         expect(process.exitCode).toBe(1)
       })
 

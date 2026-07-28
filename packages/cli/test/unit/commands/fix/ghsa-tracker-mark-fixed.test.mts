@@ -133,7 +133,7 @@ describe('ghsa-tracker', () => {
         { spaces: 2 },
       )
 
-      // Verify only one record exists (old one was removed).
+      // Verify only one record exists, old one was removed.
       const savedTracker = mockWriteJson.mock.calls[0][1] as GhsaTracker
       expect(savedTracker.fixed).toHaveLength(1)
     })

@@ -1,6 +1,6 @@
 /**
  * XDG_DATA_HOME environment variable. User-specific data directory following
- * XDG Base Directory specification (Unix systems).
+ * XDG Base Directory specification, Unix systems.
  */
 
 import { getXdgDataHome } from '@socketsecurity/lib-stable/env/xdg'

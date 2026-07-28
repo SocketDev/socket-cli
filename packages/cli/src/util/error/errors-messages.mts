@@ -46,7 +46,7 @@ export async function buildErrorCause(
     return quotaMessage
   }
 
-  // Skip adding reason if it's too similar to message (avoid redundancy).
+  // Skip adding reason if it's too similar to message, avoid redundancy.
   // Threshold of 0.7 means >70% word overlap indicates redundancy.
   if (reason && message !== reason) {
     const similarity = calculateStringSimilarity(message, reason)
@@ -60,7 +60,7 @@ export async function buildErrorCause(
 
 /**
  * Calculate similarity ratio between two strings using word overlap. Returns a
- * value between 0 (no overlap) and 1 (identical).
+ * value between 0, no overlap, and 1 (identical).
  */
 export function calculateStringSimilarity(str1: string, str2: string): number {
   if (str1 === str2) {

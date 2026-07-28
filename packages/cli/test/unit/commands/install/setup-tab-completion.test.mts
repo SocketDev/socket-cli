@@ -2,7 +2,7 @@
  * Unit tests for setupTabCompletion.
  *
  * Sets up bash tab completion: writes the completion script to its install
- * target (creating the parent dir when needed) and appends a source line to
+ * target, creating the parent dir when needed, and appends a source line to
  * ~/.bashrc when one isn't already present.
  *
  * Related Files:
@@ -119,7 +119,7 @@ describe('setupTabCompletion', () => {
   })
 
   it('does not re-append when sourcing line is already present', async () => {
-    // First read: completion script (for write).
+    // First read: completion script, for write.
     // Second read: bashrc that already contains the sourcing line.
     mockReadFileSync.mockReturnValueOnce('completion script content')
     mockReadFileSync.mockReturnValueOnce(

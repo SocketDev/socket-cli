@@ -28,7 +28,7 @@ export async function cleanupErrorBranches(
   cwd: string,
   remoteBranchExists: boolean,
 ): Promise<void> {
-  // Clean up remote branch if it exists (push may have succeeded before error).
+  // Clean up remote branch if it exists, push may have succeeded before error.
   // Safe to delete both remote and local since no PR was created.
   if (remoteBranchExists) {
     await gitDeleteRemoteBranch(branch, cwd)
@@ -51,7 +51,7 @@ export async function cleanupFailedPrBranches(
 }
 
 /**
- * Clean up a stale branch (both remote and local). Safe to delete both since no
+ * Clean up a stale branch, both remote and local. Safe to delete both since no
  * PR exists for this branch.
  *
  * Returns true if cleanup succeeded or should continue, false if should skip

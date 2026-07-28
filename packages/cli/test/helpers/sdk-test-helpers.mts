@@ -108,7 +108,7 @@ export async function setupSdkMockSuccess(
  * vi.mock() for the SDK modules before using this helper.
  *
  * @param message - Error message.
- * @param options - Error options (code, cause)
+ * @param options - Error options, code, cause.
  */
 export async function setupSdkSetupFailure(
   message: string,

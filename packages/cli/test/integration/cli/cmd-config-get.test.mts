@@ -17,7 +17,7 @@
  * - Backward compatibility with legacy env var names
  * - Platform-specific behavior (Windows Node 24+ skips)
  *
- * Configuration Precedence (highest to lowest):
+ * Configuration Precedence, highest to lowest:
  *
  * 1. Environment variables (SOCKET_CLI_API_TOKEN, SOCKET_CLI_API_KEY)
  * 2. Legacy environment variables (SOCKET_SECURITY_API_KEY)
@@ -35,7 +35,7 @@
  *
  * Platform-Specific Behavior:
  *
- * - Windows Node 24+ has known stderr assertion failures (skipped in tests)
+ * - Windows Node 24+ has known stderr assertion failures, skipped in tests
  *
  * Related Files:
  *

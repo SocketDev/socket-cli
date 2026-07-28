@@ -1,5 +1,5 @@
 /**
- * Build Socket SEA (Single Executable Application) binaries. Uses the frozen
+ * Build Socket SEA, Single Executable Application, binaries. Uses the frozen
  * pre-compiled node-smol base binaries mirrored into socket-cli base-assets-*
  * releases (SHA-256 pinned in constants/base-assets.mts, with a transition
  * fallback to the descoped socket-btm source releases).
@@ -7,8 +7,8 @@
  * Options: --target=<target> - Build for specific target (darwin-arm64,
  * linux-x64-musl, etc.) --platform=<platform> - Build for specific platform
  * (darwin, linux, win32) --arch=<arch> - Build for specific architecture (x64,
- * arm64) --libc=<libc> - Build for specific libc (musl, glibc) - Linux only
- * --all - Build for all platforms (default if no options)
+ * arm64) --libc=<libc> - Build for specific libc, musl, glibc - Linux only
+ * --all - Build for all platforms, default if no options.
  *
  * Environment: SOCKET_CLI_SEA_NODE_VERSION - Node.js version to use (default:
  * the frozen base pinned in constants/base-assets.mts)
@@ -51,7 +51,7 @@ function filterTargets(targets, config) {
       return false
     }
     if (cfg.libc) {
-      // Normalize: undefined/null → 'glibc' (default for Linux)
+      // Normalize: undefined/null → 'glibc', default for Linux
       const targetLibc =
         target.platform === 'linux' && !target.libc ? 'glibc' : target.libc
       if (targetLibc !== cfg.libc) {

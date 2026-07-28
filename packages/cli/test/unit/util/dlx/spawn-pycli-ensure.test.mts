@@ -271,7 +271,7 @@ describe('ensurePythonDlx', () => {
     const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
       throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' })
     })
-    // existsSync: false (cache check), false (still missing in retry's cache
+    // existsSync: false, cache check, false (still missing in retry's cache
     // check), then after download succeeds: true.
     let calls = 0
     mockExistsSync.mockImplementation(() => {

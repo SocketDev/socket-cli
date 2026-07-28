@@ -2,7 +2,7 @@
  * Unit tests for GitHubProvider.updatePr and its associated error-handling
  * paths on createPr / addComment.
  *
- * Purpose: Tests base-into-head merge updates (including conflict comments)
+ * Purpose: Tests base-into-head merge updates, including conflict comments
  * and the failure branches that surface a withGitHubRetry error as a thrown
  * exception.
  *

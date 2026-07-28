@@ -2,7 +2,7 @@
  * Clean stale caches across all packages.
  *
  * Usage: pnpm run clean:cache # Clean all stale caches pnpm run clean:cache
- * --all # Clean ALL caches (nuclear option) pnpm run clean:cache --dry-run #
+ * --all # Clean ALL caches, nuclear option, pnpm run clean:cache --dry-run #
  * Show what would be deleted.
  */
 

@@ -42,7 +42,7 @@ const BINARY_FLAGS = {
 }
 
 export async function checkBinaryExists(binaryType) {
-  // For explicit binary requests (js, sea), require binary to exist.
+  // For explicit binary requests, js, sea, require binary to exist.
   if (binaryType === 'js' || binaryType === 'sea') {
     const binaryPath = BINARY_PATHS[binaryType]
     if (!existsSync(binaryPath)) {
@@ -62,7 +62,7 @@ export async function checkBinaryExists(binaryType) {
     logger.log('')
   }
 
-  // For 'all', we'll skip missing binaries (handled by test suite).
+  // For 'all', we'll skip missing binaries, handled by test suite.
   return true
 }
 
@@ -105,7 +105,7 @@ export async function runVitest(binaryType) {
         ...process.env,
         // Automatically enable tests when explicitly running integration.mts.
         RUN_INTEGRATION_TESTS: '1',
-        // Inject external tool versions (normally inlined at build time).
+        // Inject external tool versions, normally inlined at build time.
         ...externalToolVersions,
         ...envVars,
       },

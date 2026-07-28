@@ -3,11 +3,11 @@
  *
  * Tests the command that retrieves and displays a single configuration value.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - Config key
- * validation (valid, invalid, missing keys) - Flag combinations (--json,
+ * Test Coverage: - Command metadata, description, hidden flag - Config key
+ * validation, valid, invalid, missing keys - Flag combinations (--json,
  * --markdown, conflicting flags) - --dry-run flag support (preview without
  * execution) - Handler invocation with correct parameters - Output kind
- * resolution (text, json, markdown)
+ * resolution, text, json, markdown.
  *
  * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
  * control flag values - Mock handleConfigGet to verify handler calls - Mock

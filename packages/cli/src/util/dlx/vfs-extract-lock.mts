@@ -5,7 +5,7 @@
  * File size hard cap. `extractExternalTools()` uses a lock file to make sure
  * only one process extracts the VFS tarball at a time; this module holds the
  * "wait for the other process to finish" loop and the shared cache-validation
- * helpers it (and the caller) both need.
+ * helpers it, and the caller, both need.
  */
 
 import { existsSync, promises as fs } from 'node:fs'

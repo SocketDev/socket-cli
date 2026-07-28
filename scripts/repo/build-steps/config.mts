@@ -48,7 +48,7 @@ export const TARGET_PACKAGES: Record<string, string> = {
 }
 
 /**
- * Build configuration for the CLI package — the first (and currently only)
+ * Build configuration for the CLI package — the first, and currently only
  * entry in the default build order, referenced directly by orchestration
  * steps that build the CLI before platform targets.
  */

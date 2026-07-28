@@ -18,7 +18,7 @@ import { downloadExternalTools, logger } from './downloads.mts'
 /**
  * Build a single SEA target for a specific platform. Orchestrates the complete
  * SEA build process: 1. Downloads node-smol binary for target platform. 2.
- * Downloads and packages security tools (if available). 3. Generates SEA
+ * Downloads and packages security tools, if available. 3. Generates SEA
  * configuration. 4. Injects blob and VFS into binary using binject.
  *
  * @example

@@ -222,7 +222,7 @@ async function startPatch(packageSpec) {
 
   // Extract path from output.
   // pnpm patch outputs: "Patch: You can now edit the package at:\n\n  /path/to/package\n\n..."
-  // We need to find the line with the path (starts with whitespace and contains the package name).
+  // We need to find the line with the path, starts with whitespace and contains the package name.
   const lines = result.stdout.split('\n')
   const packageNamePart = packageSpec.split('@')[0]
   const pathLine = lines.find(

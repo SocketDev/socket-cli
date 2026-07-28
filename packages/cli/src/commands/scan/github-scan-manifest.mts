@@ -78,7 +78,7 @@ export async function downloadManifestFile({
     fileData: { type: fileData.type, size: fileData.size },
   })
 
-  // Check if it's a file (not a directory).
+  // Check if it's a file, not a directory.
   if (Array.isArray(fileData) || fileData.type !== 'file') {
     return {
       ok: false,

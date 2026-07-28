@@ -1,13 +1,13 @@
 /**
  * VFS extraction utilities for external tools bundled in SEA binaries.
  *
- * Extracts external tools from the VFS (Virtual File System) embedded in SEA
+ * Extracts external tools from the VFS, Virtual File System, embedded in SEA
  * binaries and caches them for execution.
  *
  * Tool types:
  *
  * - Standalone binaries (GitHub releases): sfw, socket-patch
- * - Npm packages (with dependencies): cdxgen, coana, synp
+ * - Npm packages, with dependencies: cdxgen, coana, synp
  *
  * Build-time package preparation: npm packages use @npmcli/arborist to download
  * complete packages with node_modules/ and all production dependencies. See
@@ -232,7 +232,7 @@ export async function extractExternalTools(
   }
 
   try {
-    // Check if already extracted (cache marker exists).
+    // Check if already extracted, cache marker exists.
     if (existsSync(cacheMarker)) {
       debugNs('notice', 'External tools already extracted (cache marker found)')
       const { allValid, toolPaths } = buildAndValidateToolPaths(nodeSmolBase, {
@@ -291,7 +291,7 @@ export async function extractExternalTools(
     }
 
     // Verify all tools were extracted.
-    /* c8 ignore start -- defensive: the for-loop above unconditionally assigns toolPaths[tool] for every entry unless extractTool throws (which already aborts via the outer catch), so this length-mismatch branch is unreachable from tests. */
+    /* c8 ignore start -- defensive: the for-loop above unconditionally assigns toolPaths[tool] for every entry unless extractTool throws, which already aborts via the outer catch, so this length-mismatch branch is unreachable from tests. */
     if (Object.keys(toolPaths).length !== EXTERNAL_TOOLS.length) {
       const missingTools = EXTERNAL_TOOLS.filter(t => !toolPaths[t])
       throw new Error(

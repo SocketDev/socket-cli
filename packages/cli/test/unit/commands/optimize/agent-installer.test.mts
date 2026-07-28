@@ -7,8 +7,8 @@
  * Test Coverage: - pnpm: Special flags (--config.confirmModulesPurge=false,
  * --no-frozen-lockfile, CI=1) - yarn: Basic install command - Custom args
  * pass-through (--frozen-lockfile, --production, etc.) - Spinner integration
- * for progress indication - Unknown/future package managers (fallback behavior)
- * - Option merging (args, env, stdio)
+ * for progress indication - Unknown/future package managers, fallback behavior
+ * - Option merging, args, env, stdio.
  *
  * Npm Behavior (NOT tested here): - npm uses Socket Firewall (sfw) for security
  * scanning - This cannot be reliably mocked due to ESM module resolution issues

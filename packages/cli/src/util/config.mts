@@ -2,7 +2,7 @@
  * Configuration utilities for Socket CLI. Manages CLI configuration including
  * API tokens, org settings, and preferences.
  *
- * Configuration Hierarchy (highest priority first):
+ * Configuration Hierarchy, highest priority first:
  *
  * 1. Environment variables (SOCKET_CLI_*)
  * 2. Command-line --config flag
@@ -224,7 +224,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
           try {
             const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
             const decoded = Buffer.from(rawString, 'base64').toString('utf8')
-            // Check for invalid UTF-8 sequences (replacement character).
+            // Check for invalid UTF-8 sequences, replacement character.
             if (decoded.includes('\ufffd')) {
               throw new Error(
                 `SOCKET_CLI_CONFIG contains invalid UTF-8 after base64-decode (replacement-character in output); the env var may have been truncated or double-encoded — re-export it with \`echo '{...}' | base64\``,

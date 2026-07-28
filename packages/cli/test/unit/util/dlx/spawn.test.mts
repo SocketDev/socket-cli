@@ -58,7 +58,7 @@ describe('validatePackageName', () => {
   })
 
   it('rejects names containing ".." path traversal (passes regex, fails traversal check)', () => {
-    // `a..b` passes the regex (dots are allowed) but trips the traversal check.
+    // `a..b` passes the regex, dots are allowed, but trips the traversal check.
     expect(() => validatePackageName('a..b')).toThrow(/path traversal/)
   })
 

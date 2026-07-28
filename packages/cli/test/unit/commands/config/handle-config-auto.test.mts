@@ -6,7 +6,7 @@
  *
  * Test Coverage: - Successful config value discovery - Discovery failure
  * handling - Multiple config keys (apiToken, orgSlug, etc.) - Different output
- * kinds (json, text) - Output function integration.
+ * kinds, json, text - Output function integration.
  *
  * Testing Approach: - Mock discoverConfigValue from discover-config-value.mts -
  * Mock outputConfigAuto for output verification - Mock logger for error/success

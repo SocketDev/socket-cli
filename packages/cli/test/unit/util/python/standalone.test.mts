@@ -7,7 +7,7 @@
  * signatures.
  *
  * Related Files: - util/python/standalone.mts (implementation) -
- * util/dlx/spawn.mts (source module)
+ * util/dlx/spawn.mts, source module.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -20,7 +20,7 @@ import {
 } from '../../../../src/util/python/standalone.mts'
 
 // Also import directly from dlx/spawn to verify the re-exports match.
-// oxlint-disable-next-line socket/no-src-import-in-test-expect -- these bindings are compared for reference identity against standalone.mts's re-export, not used to build a derived expected value; the -stable alias would test a different (potentially stale) module instance.
+// oxlint-disable-next-line socket/no-src-import-in-test-expect -- these bindings are compared for reference identity against standalone.mts's re-export, not used to build a derived expected value; the -stable alias would test a different, potentially stale, module instance.
 import {
   ensurePython as dlxEnsurePython,
   ensurePythonDlx as dlxEnsurePythonDlx,

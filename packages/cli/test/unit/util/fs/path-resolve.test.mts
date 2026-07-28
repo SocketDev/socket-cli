@@ -281,7 +281,7 @@ describe('Path Resolve', () => {
       const workspace = await createTestWorkspace({})
 
       try {
-        // Create empty package.json directory (not a file)
+        // Create empty package.json directory, not a file
         await workspace.writeFile('package.json/.gitkeep', '')
 
         const actual = await sortedGetPackageFilesFullScans(

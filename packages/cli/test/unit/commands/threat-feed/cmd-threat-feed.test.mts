@@ -3,7 +3,7 @@
  *
  * Tests the command that displays the Socket threat feed.
  *
- * Test Coverage: - Command metadata (description, hidden flag) - API token
+ * Test Coverage: - Command metadata, description, hidden flag - API token
  * requirement validation - Organization slug handling - Filter flags:
  * ecosystem, type, package, version - Pagination flags: page, per-page,
  * direction - Output modes: text, JSON, markdown - Dry-run mode - Argument
@@ -422,7 +422,7 @@ describe('cmd-threat-feed', () => {
     })
 
     it('should combine flags and arguments correctly', async () => {
-      // Note: --filter flag doesn't work due to bug (see earlier test comment).
+      // Note: --filter flag doesn't work due to bug, see earlier test comment.
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdThreatFeed.run(

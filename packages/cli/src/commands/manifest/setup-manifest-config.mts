@@ -67,7 +67,7 @@ export async function setupConda(
     delete config.stdin
     if (infile) {
       config.infile = infile
-      /* c8 ignore start - interactive prompt clearing infile (empty input) requires raw inquirer mock setup */
+      /* c8 ignore start - interactive prompt clearing infile, empty input, requires raw inquirer mock setup */
     } else {
       delete config.infile
     }
@@ -97,7 +97,7 @@ export async function setupConda(
       delete config.stdout
       if (out) {
         config.outfile = out
-        /* c8 ignore start - interactive prompt clearing outfile (empty input) requires raw inquirer mock setup */
+        /* c8 ignore start - interactive prompt clearing outfile, empty input, requires raw inquirer mock setup */
       } else {
         delete config.outfile
       }
@@ -106,7 +106,7 @@ export async function setupConda(
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
+  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }
@@ -151,7 +151,7 @@ export async function setupGradle(
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
+  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }
@@ -398,7 +398,7 @@ export async function setupSbt(
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  /* c8 ignore start - interactive prompt cancellation (undefined return) requires raw inquirer mock setup */
+  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup */
   if (verbose === undefined) {
     return canceledByUser()
   }

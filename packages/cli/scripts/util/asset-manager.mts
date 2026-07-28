@@ -3,7 +3,7 @@
  *   functionality from download-assets.mts and sea-build-utils/downloads.mts.
  *   This module provides:
  *
- *   - Unified binary downloads (node-smol, binject) from the socket-cli
+ *   - Unified binary downloads, node-smol, binject, from the socket-cli
  *     base-assets mirror releases with SHA-256 verification, falling back to
  *     the descoped socket-btm source releases for one transition release
  *   - Version caching and validation
@@ -131,7 +131,7 @@ export class AssetManager {
   /**
    * Get download directory for a specific tool and platform.
    *
-   * @param {string} tool - Tool name (node-smol, binject).
+   * @param {string} tool - Tool name, node-smol, binject.
    * @param {string} platformArch - Platform-arch identifier.
    *
    * @returns {string} Absolute path to download directory.
@@ -204,7 +204,7 @@ export class AssetManager {
   }
 
   /**
-   * Download a binary asset (node-smol or binject).
+   * Download a binary asset, node-smol or binject.
    *
    * @param {Object} config - Download configuration.
    * @param {string} config.tool - Tool name ('node-smol' or 'binject').
@@ -392,7 +392,7 @@ export class AssetManager {
         }
       }
 
-      // Write version file (store full tag for consistency).
+      // Write version file, store full tag for consistency.
       await fs.writeFile(versionPath, tag, 'utf8')
 
       // Make executable on Unix.

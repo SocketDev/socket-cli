@@ -48,7 +48,7 @@ describe('parseChecksums', () => {
   it('coerces non-Error parse errors via String()', () => {
     // No good way to make JSON.parse throw a non-Error in tests; the
     // String(e) branch is exercised here via direct unit testing on
-    // a malformed string that triggers a SyntaxError (Error subclass).
+    // a malformed string that triggers a SyntaxError, Error subclass.
     expect(() => parseChecksums('{abc', 'X')).toThrow(/X.*not valid JSON/)
   })
 })

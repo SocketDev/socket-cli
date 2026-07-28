@@ -7,12 +7,12 @@
  *
  * Test Coverage:
  *
- * - RootCommands export validation (all expected commands present)
+ * - RootCommands export validation, all expected commands present
  * - Command object structure (run/handler methods, descriptions)
- * - RootAliases export validation (common aliases like audit, deps, org, pkg)
- * - Alias structure validation (description, argv properties)
+ * - RootAliases export validation, common aliases like audit, deps, org, pkg
+ * - Alias structure validation, description, argv properties
  * - Alias target validation (point to valid commands/subcommands)
- * - Package manager commands (npm, npx, pnpm, yarn)
+ * - Package manager commands, npm, npx, pnpm, yarn
  * - Special commands (wrapper, raw-npm, raw-npx, organization, repository, scan,
  *   optimize)
  *

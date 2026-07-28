@@ -259,7 +259,7 @@ describe('util/config', () => {
       // Set a config value.
       updateConfigValue('defaultOrg', 'test-org')
 
-      // Read it back immediately (from cache).
+      // Read it back immediately, from cache.
       const result = getConfigValue('defaultOrg')
       expect(result.ok).toBe(true)
       expect(result.data).toBe('test-org')

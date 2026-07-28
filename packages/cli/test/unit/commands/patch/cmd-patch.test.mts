@@ -279,7 +279,7 @@ describe('cmd-patch', () => {
 
     it('should strip Socket global flags before forwarding', async () => {
       // socket-patch is a strict clap CLI, so Socket CLI flags like --config
-      // (and its value) are filtered out of the forwarded argv.
+      // and its value, are filtered out of the forwarded argv.
       await cmdPatch.run(
         ['list', '--config', '{"apiToken":"x"}'],
         importMeta,

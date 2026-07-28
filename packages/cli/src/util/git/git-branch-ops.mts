@@ -29,7 +29,7 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
   'main',
   // inclusive-language: external-api — git's historical default branch.
   'master',
-  // Common in Git Flow workflows (main for stable, develop for ongoing work).
+  // Common in Git Flow workflows, main for stable, develop for ongoing work.
   'develop',
   // Used by teams adopting trunk-based development practices.
   'trunk',
@@ -75,7 +75,7 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   if (githubBaseRef) {
     return githubBaseRef
   }
-  // 2. If it's a branch (not a tag), GITHUB_REF_TYPE should be 'branch'.
+  // 2. If it's a branch, not a tag, GITHUB_REF_TYPE should be 'branch'.
   const githubRefType = getGithubRefType()
   const githubRefName = getGithubRefName()
   if (githubRefType === 'branch' && githubRefName) {
