@@ -19,7 +19,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import crypto from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 
-//#region template/bootstrap/src/helpers.mts
+//#region scripts/repo/gen/bootstrap/src/helpers.mts
 /**
  * Normalize bundle-manifest paths to their portable `/` wire format.
  */
@@ -190,7 +190,7 @@ function verifySegments(segmentsDir, manifest) {
 }
 
 //#endregion
-//#region template/bootstrap/src/applied-state.mts
+//#region scripts/repo/gen/bootstrap/src/applied-state.mts
 const SETTINGS_CANDIDATES = [
   '.config/repo/socket-wheelhouse.json',
   '.config/socket-wheelhouse.json',
@@ -338,7 +338,32 @@ function spliceFleetCanonicalContent(source, target) {
 }
 
 //#endregion
-//#region template/bootstrap/src/install-thin-prune.mts
+//#region template/base/scripts/fleet/_shared/github-tracked-surface.mts
+const ALWAYS_TRACKED_GITHUB_PREFIXES = [
+  '.github/actions/fleet/',
+  '.github/workflows/',
+]
+/**
+ * True when `relPath` (repo-relative, either separator) is part of the GitHub
+ * CI surface a member must keep git-tracked even when thin — a workflow file or
+ * a fleet composite action. `thinIgnoreEntries` gates on this so the untrack
+ * set can never strand CI: GitHub reads both surfaces from the committed tree
+ * before any fetch step runs, so a `git rm --cached` would break the member's
+ * CI outright.
+ */
+function isAlwaysTrackedGitHubSurface(relPath) {
+  const p = relPath.replaceAll('\\', '/')
+  for (
+    let i = 0, { length } = ALWAYS_TRACKED_GITHUB_PREFIXES;
+    i < length;
+    i += 1
+  )
+    if (p.startsWith(ALWAYS_TRACKED_GITHUB_PREFIXES[i])) return true
+  return false
+}
+
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/install-thin-prune.mts
 /**
  * The hybrid (segment + settingsSegment) path set thinIgnoreEntries excludes
  * from its wholly-fleet list.
@@ -353,7 +378,7 @@ function computeHybridPaths(manifest) {
 }
 
 //#endregion
-//#region template/bootstrap/src/yaml-merge.mts
+//#region scripts/repo/gen/bootstrap/src/yaml-merge.mts
 const COL0_KEY_RE = /^[A-Za-z][\w-]*:/
 /**
  * Parse a YAML string into an ordered list of top-level key blocks. Each block
@@ -612,7 +637,7 @@ function rewriteDispatchCommands(settings, make) {
 }
 
 //#endregion
-//#region template/bootstrap/src/settings.mts
+//#region scripts/repo/gen/bootstrap/src/settings.mts
 const FLEET_SETTINGS_BEGIN = '// <fleet-canonical>'
 const FLEET_SETTINGS_END = '// </fleet-canonical>'
 function cloneJson(value) {
@@ -714,7 +739,7 @@ function spliceRepoHookEntry(settings, event, matcher, hook) {
 }
 
 //#endregion
-//#region template/bootstrap/src/install-prune.mts
+//#region scripts/repo/gen/bootstrap/src/install-prune.mts
 /**
  * @file Installer-side manifest SYNC-PRUNE: the three operations that make a
  *   bundle refresh a true sync (place + prune) rather than an additive smear —
@@ -832,7 +857,7 @@ function pruneStaleFleetFiles(dest, manifest, previousFiles) {
 }
 
 //#endregion
-//#region template/bootstrap/src/install.mts
+//#region scripts/repo/gen/bootstrap/src/install.mts
 const logger$3 = getDefaultLogger()
 /**
  * Place every verified bundle file from `filesDir` into `dest`, creating
@@ -1055,6 +1080,13 @@ function normalizeManifestEntryPath(entry) {
  * sentinel that only the member's git history preserves; untracking one turns
  * the next fresh clone into a tail wipe.
  *
+ * The GitHub CI surface (`isAlwaysTrackedGitHubSurface` —
+ * `.github/workflows/**` and `.github/actions/fleet/**`) is HARD-excluded too:
+ * GitHub reads a workflow's cron and a `uses: ./.github/actions/...` composite
+ * from the committed default-branch tree BEFORE any fetch step runs, so
+ * untracking one breaks CI outright. The bundle still ships them; they reach
+ * members in the cascade COMMIT, tracked.
+ *
  * EVERY entry is EXPLICIT — one line per bundle file, never a blanket
  * `…/fleet/` dir entry. A dir blanket also swallows any future non-bundle
  * file that lands beside the payload, hiding it from git entirely; the
@@ -1067,7 +1099,12 @@ function thinIgnoreEntries(manifest) {
   const files = Object.keys(manifest.files)
   for (let i = 0, { length } = files; i < length; i += 1) {
     const p = normalizeBundlePath(files[i])
-    if (hybridPaths.has(p) || isFleetCanonicalSpliceFile(p)) continue
+    if (
+      hybridPaths.has(p) ||
+      isFleetCanonicalSpliceFile(p) ||
+      isAlwaysTrackedGitHubSurface(p)
+    )
+      continue
     entries.add(p)
   }
   return [...entries].toSorted()
@@ -1119,7 +1156,7 @@ function applyThinMode(config) {
 }
 
 //#endregion
-//#region template/bootstrap/src/lockstep.mts
+//#region scripts/repo/gen/bootstrap/src/lockstep.mts
 const FLEET_REF_RE = /^fleet-[0-9a-f]{7,}$/
 const FULL_SHA_RE = /^[0-9a-f]{40}$/
 const FUZZY_REF_RE = /[\^~*]|\b(?:canary|head|latest|lts|main|master|next)\b/i
@@ -1332,7 +1369,7 @@ function formatUpdateNotice(config) {
 }
 
 //#endregion
-//#region template/bootstrap/src/resolve.mts
+//#region scripts/repo/gen/bootstrap/src/resolve.mts
 /**
  * @file GitHub release resolution and lock-step assertion helpers.
  *   Extracted from fleet.mts to keep that file under the 500-line soft cap.
@@ -1436,7 +1473,7 @@ function resolveReleaseTemplateSha(ref, repo) {
 }
 
 //#endregion
-//#region template/bootstrap/src/status.mts
+//#region scripts/repo/gen/bootstrap/src/status.mts
 /**
  * @file Status display helpers for `fleet:status` — the read-only status verb.
  *   Extracted from fleet.mts to keep that file under the 500-line soft cap.
@@ -1534,7 +1571,7 @@ function statusJson(state) {
 }
 
 //#endregion
-//#region template/bootstrap/src/fleet.mts
+//#region scripts/repo/gen/bootstrap/src/fleet.mts
 const logger = getDefaultLogger()
 const DEFAULT_REPO = 'SocketDev/socket-wheelhouse'
 const MANIFEST_NAME = 'release-bundle-manifest.json'

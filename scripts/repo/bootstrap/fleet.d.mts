@@ -1,4 +1,4 @@
-//#region template/bootstrap/src/helpers.d.mts
+//#region scripts/repo/gen/bootstrap/src/helpers.d.mts
 type FleetCommentStyle = 'hash' | 'html' | 'slash';
 interface BundleManifest {
   readonly files: Record<string, string>;
@@ -116,7 +116,7 @@ declare function verifyBundleFiles(filesDir: string, manifest: BundleManifest): 
  */
 declare function verifySegments(segmentsDir: string, manifest: BundleManifest): string[];
 //#endregion
-//#region template/bootstrap/src/applied-state.d.mts
+//#region scripts/repo/gen/bootstrap/src/applied-state.d.mts
 declare function resolveSettingsPath(dest: string): string | undefined;
 /**
  * Default bundle ref for a member — `bundle.ref` in its wheelhouse settings
@@ -149,7 +149,7 @@ declare function readAppliedFiles(dest: string): string[] | undefined;
 declare function writeAppliedFiles(dest: string, files: readonly string[]): void;
 declare function writeAppliedRef(dest: string, ref: string): void;
 //#endregion
-//#region template/bootstrap/src/install-prune.d.mts
+//#region scripts/repo/gen/bootstrap/src/install-prune.d.mts
 /**
  * Apply the manifest's per-repo-owned file MOVES (`movedPaths`) — the rename
  * half of relocating a file the fleet does NOT byte-mirror. A plain tombstone
@@ -189,7 +189,7 @@ declare function removeTombstonedPaths(dest: string, manifest: FleetFileManifest
  */
 declare function pruneStaleFleetFiles(dest: string, manifest: FleetFileManifest, previousFiles: readonly string[] | undefined): number;
 //#endregion
-//#region template/bootstrap/src/install.d.mts
+//#region scripts/repo/gen/bootstrap/src/install.d.mts
 /**
  * Place every verified bundle file from `filesDir` into `dest`, creating
  * parent directories as needed. Sentinel-scoped ONLY for the DESIGNATED
@@ -271,6 +271,13 @@ interface FleetFileManifest {
  * sentinel that only the member's git history preserves; untracking one turns
  * the next fresh clone into a tail wipe.
  *
+ * The GitHub CI surface (`isAlwaysTrackedGitHubSurface` —
+ * `.github/workflows/**` and `.github/actions/fleet/**`) is HARD-excluded too:
+ * GitHub reads a workflow's cron and a `uses: ./.github/actions/...` composite
+ * from the committed default-branch tree BEFORE any fetch step runs, so
+ * untracking one breaks CI outright. The bundle still ships them; they reach
+ * members in the cascade COMMIT, tracked.
+ *
  * EVERY entry is EXPLICIT — one line per bundle file, never a blanket
  * `…/fleet/` dir entry. A dir blanket also swallows any future non-bundle
  * file that lands beside the payload, hiding it from git entirely; the
@@ -285,7 +292,7 @@ declare function thinIgnoreEntries(manifest: FleetFileManifest): string[];
  */
 declare function applyThinMode(config: ThinConfig): void;
 //#endregion
-//#region template/bootstrap/src/lockstep.d.mts
+//#region scripts/repo/gen/bootstrap/src/lockstep.d.mts
 type LockStepStateName = 'current' | 'out-of-sync' | 'update-available';
 interface LockStepConfig {
   readonly ref: string;
@@ -394,7 +401,7 @@ declare function formatUpdateNotice(config: {
   readonly color: boolean;
 }): string;
 //#endregion
-//#region template/bootstrap/src/resolve.d.mts
+//#region scripts/repo/gen/bootstrap/src/resolve.d.mts
 /**
  * @file GitHub release resolution and lock-step assertion helpers.
  *   Extracted from fleet.mts to keep that file under the 500-line soft cap.
@@ -429,7 +436,7 @@ declare function resolveNewestRef(repo: string): string | undefined;
  */
 declare function resolveReleaseTemplateSha(ref: string, repo: string): string | undefined;
 //#endregion
-//#region template/bootstrap/src/status.d.mts
+//#region scripts/repo/gen/bootstrap/src/status.d.mts
 /**
  * Fire the passive update notice opportunistically (update-notifier style). The
  * caller already resolved a newer release exists; this throttles to once/24h
@@ -452,7 +459,7 @@ declare function printStatusReport(state: LockStepState, config: {
  */
 declare function statusJson(state: LockStepState): Record<string, unknown>;
 //#endregion
-//#region template/bootstrap/src/yaml-merge.d.mts
+//#region scripts/repo/gen/bootstrap/src/yaml-merge.d.mts
 interface MergeWorkspaceConfig {
   readonly bundleFleetSections: string;
   readonly consumerYaml: string;
@@ -510,7 +517,7 @@ declare function mergeYamlKeyBlock(bundleBlock: {
  */
 declare function mergeWorkspaceYaml(config: MergeWorkspaceConfig): string;
 //#endregion
-//#region template/bootstrap/src/fleet.d.mts
+//#region scripts/repo/gen/bootstrap/src/fleet.d.mts
 declare function resolveRepoRoot(startDir: string): string;
 declare function parseArgs(argv: readonly string[]): InstallConfig;
 /**
