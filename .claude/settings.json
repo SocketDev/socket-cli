@@ -20,15 +20,6 @@
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs PreToolUse"
           }
         ]
-      },
-      {
-        "matcher": "Skill",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/skill-usage-logger/index.mts"
-          }
-        ]
       }
     ],
     "SessionStart": [
@@ -36,32 +27,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs SessionStart"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/repo/bootstrap/session-fetch.mjs"
           }
         ]
       },
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/broken-hook-detector/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/headroom-proxy-start/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/bundle-stale-reminder/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/oxlint-plugin-load-nudge/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/repo-map-refresh/index.mts"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs SessionStart"
           }
         ]
       }
@@ -72,23 +46,6 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs Stop"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/setup-security-tools/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/stale-process-sweeper/index.mts"
-          },
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/sweep-ds-store/index.mts"
           }
         ]
       }
