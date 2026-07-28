@@ -21,9 +21,9 @@
 // correct move was `git push origin feat/spawn-kill-tree:main` directly,
 // which would have been obvious if the branch hadn't been created at all.
 //
-// Allowed (passes through):
-//   - Committing on main/master (direct-push-to-main is the fleet default).
-//   - A branch with NO remote upstream (freshly cut this session).
+// Allowed, passes through:
+//   - Committing on main/master, direct-push-to-main is the fleet default.
+//   - A branch with NO remote upstream, freshly cut this session.
 //   - Bypass: `Allow branch-reuse bypass` in a recent turn.
 //
 // Fires as a PreToolUse Bash hook; exits 0 always (reminder-only).
