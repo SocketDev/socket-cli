@@ -10,7 +10,7 @@
  *   459 files, versus `createStripeClient` 43 times across 19. One-word names
  *   are ~61% unique; two-word ~88%; three-word ~96%. So an exported name that is
  *   a SINGLE generic token carries no domain signal and forces every future
- *   agent (and human) to read unrelated files to separate signal from noise.
+ *   agent, and human, to read unrelated files to separate signal from noise.
  *   (modem.dev, "How coding agents read your code".)
  *
  *   Scope is deliberately conservative: flag ONLY a single-word export whose one
@@ -25,7 +25,7 @@
  * Generic tokens that carry no domain signal. Lowercased; the predicate
  * lowercases the candidate before lookup. Verbs of pure mechanism plus the
  * classic filler nouns — the words that, standing alone as an export, tell a
- * reader (or a grepping agent) nothing about WHAT domain the symbol serves.
+ * reader, or a grepping agent, nothing about WHAT domain the symbol serves.
  */
 export const GENERIC_NAME_TOKENS: ReadonlySet<string> = new Set([
   'add',
@@ -43,6 +43,7 @@ export const GENERIC_NAME_TOKENS: ReadonlySet<string> = new Set([
   'delete',
   'diff',
   'emit',
+  'equals',
   'exec',
   'execute',
   'fetch',
@@ -59,6 +60,8 @@ export const GENERIC_NAME_TOKENS: ReadonlySet<string> = new Set([
   'make',
   'manager',
   'map',
+  'match',
+  'matches',
   'merge',
   'obj',
   'open',
