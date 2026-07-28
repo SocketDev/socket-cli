@@ -34,6 +34,7 @@
  */
 
 import { existsSync, symlinkSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -51,6 +52,28 @@ import {
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 const logger = getDefaultLogger()
+
+// Replaying already-verified commits into the throwaway land worktree must not
+// re-run git hooks. A cherry-pick fires the prepare-commit-msg / commit-msg
+// hooks (it does NOT set the rebase-merge / rebase-apply state the fleet
+// git-hook dispatcher self-skips on), and that worktree has no node_modules —
+// so the lib-importing hooks throw ERR_MODULE_NOT_FOUND and abort the land.
+// Pointing core.hooksPath at a path that holds no hooks disables them for the
+// replay; the diff was gated at edit time and re-asserted on the commit bytes
+// before the replay runs.
+const HOOK_FREE_GIT: readonly string[] = ['-c', `core.hooksPath=${os.devNull}`]
+
+// The extensions the fleet lint/format gates check — mirrors LINTABLE_EXTS in
+// scripts/fleet/lint.mts so the land re-assert scopes to exactly the same file
+// set the canonical gates do.
+const REASSERT_EXTS: ReadonlySet<string> = new Set([
+  '.cjs',
+  '.cts',
+  '.js',
+  '.mjs',
+  '.mts',
+  '.ts',
+])
 
 export interface LandPlan {
   base: string
@@ -129,19 +152,21 @@ export async function commitChangedFiles(
  * generated socket plugin, mirror-file filtering). A hand-rolled bare-oxlint
  * invocation here drifted from that plumbing twice (a `.mts` config bare
  * oxlint silently no-ops on; unfiltered mirror payload), so the wrapper's exit
- * code is the one signal this gate trusts.
+ * code is the one signal this gate trusts. Scopes the file set through the same
+ * `filterFormatIgnored` (isNeverGated + merged .prettierignore) the canonical
+ * gate uses, so a generated / vendored / dep-0 file the real gate skips never
+ * false-reds the land.
  */
 export async function lintLandsClean(
   repoDir: string,
   files: string[],
 ): Promise<boolean> {
-  const lintable = files.filter(
-    f =>
-      (f.endsWith('.mts') ||
-        f.endsWith('.ts') ||
-        f.endsWith('.mjs') ||
-        f.endsWith('.js')) &&
-      existsSync(path.join(repoDir, f)),
+  const lintable = filterFormatIgnored(
+    files.filter(
+      f =>
+        REASSERT_EXTS.has(path.extname(f)) && existsSync(path.join(repoDir, f)),
+    ),
+    { cwd: repoDir },
   )
   if (!lintable.length) {
     return true
@@ -183,67 +208,64 @@ export async function lintLandsClean(
 
 /**
  * Re-assert the edit-time FORMAT gate on the landing commits' changed files —
- * the oxfmt sibling of lintLandsClean. Threads `-c <oxfmtrc>` + `--ignore-path`
- * (a bare oxfmt checks against oxfmt DEFAULTS, not fleet style, and walks trees
- * the gate must skip). oxfmt --check's exit code IS the signal (0 = clean,
- * non-zero = would reformat) — reliable, unlike oxlint's, so key on it. spawn
- * throws on a non-zero exit carrying `.code`/`.exitCode`, so read the code off
- * either the resolved result or the caught error. Config is resolved
- * repoDir-relative like pickOxlintConfig; the fleet `.prettierignore` carries
- * the universal excludes (a repo overlay's extra ignores aren't merged here —
- * the one thing this trims vs format-scope.mts's buildOxfmtArgs). Returns true
- * when clean (or when there are no formattable files). Skipped by the caller
- * under --no-verify-format (e.g. a worktree without node_modules).
+ * the oxfmt sibling of lintLandsClean. Delegates to `scripts/fleet/format.mts
+ * --check <files>`, the canonical formatter that owns the config plumbing
+ * (`buildOxfmtArgs` threads the fleet oxfmtrc + merged `--ignore-path`, so a
+ * repo overlay's extra ignores are honored). The wrapper's exit code IS the
+ * signal (0 = clean, non-zero = would reformat). Scopes the file set through
+ * the same `filterFormatIgnored` (isNeverGated + merged .prettierignore) the
+ * canonical gate uses, so a generated / vendored / dep-0 file the real gate
+ * skips never false-reds the land. Returns true when clean (or when there are
+ * no formattable files). Skipped by the caller under --no-verify-format (e.g. a
+ * worktree without node_modules).
  */
 export async function formatLandsClean(
   repoDir: string,
   files: string[],
 ): Promise<boolean> {
-  const formattable = files.filter(
-    f =>
-      (f.endsWith('.mts') ||
-        f.endsWith('.ts') ||
-        f.endsWith('.mjs') ||
-        f.endsWith('.js')) &&
-      existsSync(path.join(repoDir, f)),
+  const formattable = filterFormatIgnored(
+    files.filter(
+      f =>
+        REASSERT_EXTS.has(path.extname(f)) && existsSync(path.join(repoDir, f)),
+    ),
+    { cwd: repoDir },
   )
   if (!formattable.length) {
     return true
   }
-  const fmtBin = path.join(repoDir, 'node_modules', '.bin', 'oxfmt')
-  if (!existsSync(fmtBin)) {
+  const formatWrapper = path.join(repoDir, 'scripts', 'fleet', 'format.mts')
+  if (
+    !existsSync(formatWrapper) ||
+    !existsSync(path.join(repoDir, 'node_modules', '.bin', 'oxfmt'))
+  ) {
     logger.warn(
-      'land: oxfmt not installed in this checkout; cannot re-assert the format gate. ' +
-        'Pass --no-verify-format to land anyway (only safe when the diff was format-clean at edit time).',
+      'land: the fleet format wrapper (or oxfmt) is not available in this checkout; ' +
+        'cannot re-assert the format gate. Pass --no-verify-format to land anyway ' +
+        '(only safe when the diff was format-clean at edit time).',
     )
     return false
   }
-  const oxfmtConfig = existsSync(
-    path.join(repoDir, '.config', 'repo', 'oxfmtrc.json'),
-  )
-    ? path.join('.config', 'repo', 'oxfmtrc.json')
-    : path.join('.config', 'fleet', 'oxfmtrc.json')
-  const ignorePath = path.join('.config', 'fleet', '.prettierignore')
   const result = (await spawn(
-    fmtBin,
-    [
-      '-c',
-      oxfmtConfig,
-      '--ignore-path',
-      ignorePath,
-      '--check',
-      '--no-error-on-unmatched-pattern',
-      ...formattable,
-    ],
-    { cwd: repoDir, stdioString: true },
+    process.execPath,
+    [formatWrapper, '--check', ...formattable],
+    // stdio MUST pipe — without it the lib spawn discards output and the
+    // failure detail below is lost.
+    { cwd: repoDir, stdio: 'pipe', stdioString: true },
   ).catch((e: unknown) => e)) as {
     code?: number | undefined
     exitCode?: number | undefined
+    stdout?: string | undefined
+    stderr?: string | undefined
   }
-  // 0 = clean. A non-zero code (would reformat), a crash, or an undefined code
-  // all read as not-clean — fail closed, never land an unverified diff.
-  const code = result?.exitCode ?? result?.code
-  return code === 0
+  const code = result?.code ?? result?.exitCode
+  if (code === 0) {
+    return true
+  }
+  const output = `${result?.stdout ?? ''}\n${result?.stderr ?? ''}`.trim()
+  if (output) {
+    logger.error(output.split('\n').slice(-40).join('\n'))
+  }
+  return false
 }
 
 export interface PickOutcome {
@@ -267,7 +289,14 @@ export async function cherryPickSeries(
   for (let i = 0, { length } = commits; i < length; i += 1) {
     const sha = commits[i]!
     const before = await git(worktreePath, ['rev-parse', 'HEAD'])
-    if (await gitOk(worktreePath, ['cherry-pick', '--empty=drop', sha])) {
+    if (
+      await gitOk(worktreePath, [
+        ...HOOK_FREE_GIT,
+        'cherry-pick',
+        '--empty=drop',
+        sha,
+      ])
+    ) {
       const after = await git(worktreePath, ['rev-parse', 'HEAD'])
       outcomes.push({
         sha,
@@ -284,7 +313,7 @@ export async function cherryPickSeries(
     if (!opInProgress) {
       // No pick started — an old git rejected `--empty=drop` itself. Plain
       // pick, then classify a failure by hand.
-      if (await gitOk(worktreePath, ['cherry-pick', sha])) {
+      if (await gitOk(worktreePath, [...HOOK_FREE_GIT, 'cherry-pick', sha])) {
         outcomes.push({ sha, outcome: 'applied' })
         continue
       }
@@ -293,11 +322,14 @@ export async function cherryPickSeries(
       (
         await git(worktreePath, ['diff', '--name-only', '--diff-filter=U'])
       ).trim().length > 0
-    if (!conflicted && (await gitOk(worktreePath, ['cherry-pick', '--skip']))) {
+    if (
+      !conflicted &&
+      (await gitOk(worktreePath, [...HOOK_FREE_GIT, 'cherry-pick', '--skip']))
+    ) {
       outcomes.push({ sha, outcome: 'skipped-already-landed' })
       continue
     }
-    await git(worktreePath, ['cherry-pick', '--abort'])
+    await git(worktreePath, [...HOOK_FREE_GIT, 'cherry-pick', '--abort'])
     outcomes.push({ sha, outcome: 'conflict' })
     return outcomes
   }
@@ -527,11 +559,12 @@ export async function main(): Promise<number> {
   }
 
   // Changed-file set shared by both edit-time re-assert gates (lint + format).
-  // Runs through the same never-gated pre-filter as lint.mts/format.mts —
-  // cascade-mirror payload and generated/vendored artifacts are gated at the
-  // template source only, and oxlint/oxfmt bypass their own ignorePatterns for
-  // explicitly-passed files, so an unfiltered set false-reds the land on
-  // dogfooded mirror bytes.
+  // lintLandsClean / formatLandsClean scope this through the same
+  // `filterFormatIgnored` (isNeverGated + merged .prettierignore) the canonical
+  // gates use — cascade-mirror payload and generated/vendored artifacts are
+  // gated at the template source only, and oxlint/oxfmt bypass their own
+  // ignorePatterns for explicitly-passed files, so an unfiltered set would
+  // false-red the land on dogfooded mirror bytes.
   const changed = new Set<string>()
   if (!skipLint || !skipFormat) {
     for (const sha of commits) {
@@ -540,7 +573,6 @@ export async function main(): Promise<number> {
       }
     }
   }
-  const allFiles = filterFormatIgnored([...changed], { cwd: repoDir })
 
   if (!skipLint || !skipFormat) {
     // Gate the COMMIT bytes: the tip of the landing set is checked out
@@ -551,7 +583,7 @@ export async function main(): Promise<number> {
       tipSha,
       async gateDir => {
         if (!skipLint) {
-          const clean = await lintLandsClean(gateDir, [...allFiles])
+          const clean = await lintLandsClean(gateDir, [...changed])
           if (!clean) {
             logger.error(
               'land: the landing commits do not lint clean (the lint-as-edit contract was bypassed).\n' +
@@ -564,7 +596,7 @@ export async function main(): Promise<number> {
           )
         }
         if (!skipFormat) {
-          const clean = await formatLandsClean(gateDir, [...allFiles])
+          const clean = await formatLandsClean(gateDir, [...changed])
           if (!clean) {
             logger.error(
               'land: the landing commits are not format-clean (the format-as-edit contract was bypassed).\n' +

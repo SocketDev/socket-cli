@@ -58,7 +58,7 @@ import { findInvocation } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import {
   bypassPhraseInAgentContent,
-  bypassPhrasePresent,
+  operatorBypassPresent,
 } from '../_shared/transcript.mts'
 
 // Pre-flight trigger: the dispatcher skips importing this guard unless the raw
@@ -106,10 +106,10 @@ export const check = bashGuard((command, payload) => {
   // reconcile, where the remote ACCEPTS the force push (branch protection is not
   // the backstop there), so it must be typed in full and scoped to this branch.
   if (
-    bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASES, undefined, {
+    operatorBypassPresent(payload.transcript_path, BYPASS_PHRASES, undefined, {
       optionalSuffix: true,
     }) ||
-    bypassPhrasePresent(
+    operatorBypassPresent(
       payload.transcript_path,
       `Allow force-with-lease ${offending.branch} bypass`,
     )

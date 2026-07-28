@@ -44,7 +44,7 @@ import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { commandsFor, isFleetSyncCommand } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { operatorBypassPresent } from '../_shared/transcript.mts'
 
 type RevertCheck = {
   // Canonical phrase the user must type to bypass.
@@ -776,7 +776,7 @@ export const check = bashGuard((command, payload): GuardResult => {
   // Look for the canonical bypass phrase in user turns. The match is
   // case-sensitive and substring-based — a paraphrase doesn't count.
   if (
-    bypassPhrasePresent(payload.transcript_path, triggered.check.bypassPhrase)
+    operatorBypassPresent(payload.transcript_path, triggered.check.bypassPhrase)
   ) {
     return undefined
   }

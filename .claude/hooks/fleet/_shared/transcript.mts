@@ -162,6 +162,41 @@ export function bypassPhrasePresent(
 }
 
 /**
+ * {@link bypassPhrasePresent} for an IRREVERSIBLE operation — force-push,
+ * history revert, protected-branch push. Identical, except a SUBAGENT can
+ * never satisfy it.
+ *
+ * The operator's grant authorizes the turn they typed it in, not every later
+ * destructive op a delegate happens to reach while the phrase is still in
+ * lookback. A subagent reads the SAME transcript as its orchestrator, so a
+ * plain `bypassPhrasePresent` hands a delegate the operator's authority for
+ * an operation the operator never saw. (Incident: an operator granted
+ * `Allow force-push bypass` to reconcile one repo; a delegate spawned later
+ * in the same session force-pushed a DIFFERENT repo on that inherited grant.)
+ *
+ * A delegate that needs an irreversible op names this guard in its FINAL TEXT
+ * — the only channel back to its parent, since a delegate cannot SendMessage
+ * the orchestrator — and the orchestrator, whose turns the operator actually
+ * reads, runs the op itself.
+ */
+export function operatorBypassPresent(
+  transcriptPath: string | undefined,
+  phrases: string | readonly string[],
+  lookbackUserTurns?: number | undefined,
+  options?: BypassMatchOptions | undefined,
+): boolean {
+  if (mostRecentAssistantIsSidechain(transcriptPath)) {
+    return false
+  }
+  return bypassPhrasePresent(
+    transcriptPath,
+    phrases,
+    lookbackUserTurns,
+    options,
+  )
+}
+
+/**
  * Returns the count of bypass phrases NOT YET CONSUMED by prior actions. The
  * caller supplies `priorActionCount` — usually a count of past tool-use
  * invocations that would have consumed a phrase if it had been present. The

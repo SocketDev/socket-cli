@@ -83,21 +83,53 @@ export async function runApprove(config: {
   otpFromFlag: string | undefined
   skipRelease?: boolean | undefined
   yes: boolean
+  // ── Injected collaborator seams (dependency injection). Every field
+  // defaults to the real import below, so omitting them leaves prod behavior
+  // unchanged; tests pass fakes to drive each decision path without spawning
+  // npm/pnpm/git/gh, prompting a TTY, or touching the registry. Typed as
+  // `typeof <realFn>` so a signature drift on the collaborator is a compile
+  // error here. ──
+  checkbox?: typeof checkbox | undefined
+  ensureIdentity?: typeof ensureNpmIdentity | undefined
+  fetchPriorProvenance?: typeof fetchPriorProvenanceMap | undefined
+  isPublished?: typeof isAlreadyPublished | undefined
+  listStaged?: typeof listStagedPackages | undefined
+  password?: typeof password | undefined
+  readPkg?: typeof readPackageJson | undefined
+  releaseGate?: typeof releaseBehindLiveGate | undefined
+  resolveLayout?: typeof resolveNpmWorkspaceLayout | undefined
+  runInheritTty?: typeof runInheritTty | undefined
+  scanEntry?: typeof scanStagedEntry | undefined
+  verifyEntry?: typeof verifyStagedEntry | undefined
 }): Promise<void> {
   const { dryRun, noScan, otpFromFlag, skipRelease, yes } = {
     __proto__: null,
     ...config,
   } as typeof config
+  // Resolve each injected seam to its real implementation when omitted.
+  const resolveLayout = config.resolveLayout ?? resolveNpmWorkspaceLayout
+  const ensureIdentity = config.ensureIdentity ?? ensureNpmIdentity
+  const listStaged = config.listStaged ?? listStagedPackages
+  const readPkg = config.readPkg ?? readPackageJson
+  const isPublished = config.isPublished ?? isAlreadyPublished
+  const verifyEntry = config.verifyEntry ?? verifyStagedEntry
+  const fetchPriorProvenance =
+    config.fetchPriorProvenance ?? fetchPriorProvenanceMap
+  const scanEntry = config.scanEntry ?? scanStagedEntry
+  const releaseGate = config.releaseGate ?? releaseBehindLiveGate
+  const runTty = config.runInheritTty ?? runInheritTty
+  const promptCheckbox = config.checkbox ?? checkbox
+  const promptPassword = config.password ?? password
   // Identity, not just auth: staged entries are maintainer-visible, so a
   // wrong-account login reads an empty stage list and the approve silently
   // no-ops. ensureNpmIdentity covers logged-out (delegates to login.mts) AND
   // wrong-user (TTY: consented logout/login rotation; otherwise fail loud).
-  const layout = resolveNpmWorkspaceLayout(rootPath)
-  if (!(await ensureNpmIdentity(layout.versionSource.name))) {
+  const layout = resolveLayout(rootPath)
+  if (!(await ensureIdentity(layout.versionSource.name))) {
     process.exitCode = 1
     return
   }
-  const staged = await listStagedPackages()
+  const staged = await listStaged()
   if (staged.length === 0) {
     logger.log('No packages currently staged.')
     return
@@ -115,7 +147,7 @@ export async function runApprove(config: {
   const localNames =
     layout.kind === 'multi'
       ? new Set(layout.packages.map(pkg => pkg.name))
-      : new Set([readPackageJson().name])
+      : new Set([readPkg().name])
   const localLabel = [...localNames].toSorted().join(', ')
   const ours: StageListEntry[] = []
   for (const entry of staged) {
@@ -143,7 +175,7 @@ export async function runApprove(config: {
     if (
       entry.name &&
       entry.version &&
-      !(await isAlreadyPublished(entry.name, entry.version))
+      !(await isPublished(entry.name, entry.version))
     ) {
       eligible.push(entry)
     }
@@ -183,7 +215,7 @@ export async function runApprove(config: {
         ? await verifyStagedPlatformEntry(entry, member, {
             downloadStagedTarball: defaultDownloadStagedTarball,
           })
-        : await verifyStagedEntry(entry)
+        : await verifyEntry(entry)
     if (verified) {
       verifiedEntries.push(entry)
     }
@@ -209,7 +241,7 @@ export async function runApprove(config: {
   // versions — a workflow drift signal). Cheap: one fetch per unique
   // name, abbreviated packument (no _npmUser needed; we only check
   // attestations presence as a proxy for "this name is OIDC-published").
-  const priorProvenance = await fetchPriorProvenanceMap(verifiedEntries)
+  const priorProvenance = await fetchPriorProvenance(verifiedEntries)
 
   const choices = buildApproveChoices(verifiedEntries, priorProvenance)
   let selected: string[] | undefined
@@ -223,7 +255,7 @@ export async function runApprove(config: {
     }
     selected = choices.map(c => c.value)
   } else {
-    selected = (await checkbox({
+    selected = (await promptCheckbox({
       message: 'Select staged packages to approve:',
       choices,
     })) as string[] | undefined
@@ -269,10 +301,10 @@ export async function runApprove(config: {
       // eslint-disable-next-line no-await-in-loop
       const scanOk =
         member && (member.platform || hasMachineBuiltPayload(member.manifest))
-          ? await scanStagedEntry(scanSubject, {
+          ? await scanEntry(scanSubject, {
               packTarball: () => defaultDownloadStagedTarball(stageId),
             })
-          : await scanStagedEntry(scanSubject)
+          : await scanEntry(scanSubject)
       if (scanOk) {
         scanned.push(stageId)
       }
@@ -311,7 +343,7 @@ export async function runApprove(config: {
       'No --otp supplied; npm opens a browser window (web-OTP) to authenticate each approve — complete the 2FA there.',
     )
   } else if (!otp) {
-    const entered = (await password({
+    const entered = (await promptPassword({
       message:
         '2FA OTP (TOTP code for batch; leave blank for browser web-OTP):',
       mask: '*',
@@ -333,7 +365,7 @@ export async function runApprove(config: {
     // TTY-wrapped: the registry's web-OTP challenge (no --otp) refuses
     // non-interactive stdio instead of opening the browser.
     // eslint-disable-next-line no-await-in-loop
-    const code = await runInheritTty('pnpm', args, rootPath)
+    const code = await runTty('pnpm', args, rootPath)
     if (code === 0) {
       approved += 1
       const entry = verifiedEntries.find(e => e.stageId === stageId)
@@ -374,8 +406,8 @@ export async function runApprove(config: {
   if (layout.kind === 'multi' && approvedEntries.length > 0) {
     const main = layout.main!
     const version = layout.versionSource.version
-    const released = await releaseBehindLiveGate({
-      isLive: () => isAlreadyPublished(main.name, version),
+    const released = await releaseGate({
+      isLive: () => isPublished(main.name, version),
       packAssets: () => packWorkspaceReleaseAssets(layout),
       pkg: { name: main.name, version },
       registry: 'npm',
@@ -391,8 +423,8 @@ export async function runApprove(config: {
       // The tag + immutable release are the LAST markers: cut them only once
       // the approved version is actually resolvable on the registry.
       // eslint-disable-next-line no-await-in-loop
-      const released = await releaseBehindLiveGate({
-        isLive: () => isAlreadyPublished(entry.name!, entry.version!),
+      const released = await releaseGate({
+        isLive: () => isPublished(entry.name!, entry.version!),
         pkg: { name: entry.name, version: entry.version },
         registry: 'npm',
       })

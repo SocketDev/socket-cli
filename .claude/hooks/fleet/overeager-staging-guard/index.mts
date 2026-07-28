@@ -60,7 +60,7 @@ import {
 } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { operatorBypassPresent } from '../_shared/transcript.mts'
 
 // Pre-flight trigger for the dispatcher: every block path runs through a
 // `git`-binary detector (`detectBroadGitAdd` → `commandsFor(_, 'git')`, and
@@ -224,7 +224,7 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
     }
     if (
       transcriptPath &&
-      bypassPhrasePresent(transcriptPath, BYPASS_PHRASES, 3)
+      operatorBypassPresent(transcriptPath, BYPASS_PHRASES, 3)
     ) {
       return undefined
     }
@@ -299,7 +299,7 @@ export function checkCommand(command: string, payload: ToolCallPayload) {
     }
     if (
       transcriptPath &&
-      bypassPhrasePresent(transcriptPath, COMMIT_SWEEP_BYPASS, 3)
+      operatorBypassPresent(transcriptPath, COMMIT_SWEEP_BYPASS, 3)
     ) {
       return undefined
     }

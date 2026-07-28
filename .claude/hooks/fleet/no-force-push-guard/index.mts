@@ -40,7 +40,10 @@ import type { GuardResult } from '../_shared/guard.mts'
 import { pushDestinations } from '../_shared/push-refspec.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
-import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import {
+  mostRecentAssistantIsSidechain,
+  operatorBypassPresent,
+} from '../_shared/transcript.mts'
 
 // Pre-flight trigger: every git-push command (force or not) carries the
 // literal `push` token, so this is the necessary substring the dispatcher
@@ -102,9 +105,25 @@ export function matchForcePush(command: string): ForcePushMatch | undefined {
   return undefined
 }
 
-export function blockMessage(command: string, match: ForcePushMatch): string {
+export function blockMessage(
+  command: string,
+  match: ForcePushMatch,
+  options?: { isSubagent?: boolean | undefined } | undefined,
+): string {
+  const opts = { __proto__: null, ...options } as {
+    isSubagent?: boolean | undefined
+  }
   const lines: string[] = []
   lines.push('[no-force-push-guard] Blocked: git push carries a force flag.')
+  if (opts.isSubagent) {
+    lines.push('')
+    lines.push('  A SUBAGENT cannot force-push, phrase or no phrase. The')
+    lines.push("  operator's grant authorizes the turn they typed it in, not a")
+    lines.push('  delegate reaching a different repo later in the session.')
+    lines.push('  End your turn naming this guard in your FINAL TEXT (that is')
+    lines.push('  what reaches the orchestrator — you cannot SendMessage it);')
+    lines.push('  the orchestrator runs the op itself.')
+  }
   lines.push(`  Match:   ${match.matchedSubstring}`)
   lines.push(`  Command: ${command}`)
   lines.push('')
@@ -188,11 +207,17 @@ export const check = bashGuard((command, payload): GuardResult => {
   }
 
   const phrases = [...ACCEPTED_PHRASES, ...scopedLeasePhrases(command)]
-  if (bypassPhrasePresent(payload.transcript_path, phrases)) {
+  // operatorBypassPresent, not bypassPhrasePresent: a subagent never inherits
+  // the operator's grant for an irreversible op (see its doc comment).
+  if (operatorBypassPresent(payload.transcript_path, phrases)) {
     return undefined
   }
 
-  return block(blockMessage(command, matched))
+  return block(
+    blockMessage(command, matched, {
+      isSubagent: mostRecentAssistantIsSidechain(payload.transcript_path),
+    }),
+  )
 })
 
 export const hook = defineHook({

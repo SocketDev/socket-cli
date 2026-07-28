@@ -45,6 +45,11 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   ],
   // Socket-original DEBUG/SOCKET_DEBUG normalizer.
   debug: [],
+  // Same minter port as github-pr-app-token, narrower contents:read scope for
+  // the thin-member payload fetch.
+  'github-payload-app-token': [
+    { portedAt: 'v3.2.0', upstream: 'actions/create-github-app-token' },
+  ],
   // Port of the RS256 JWT → installation → scoped access-token mint flow;
   // inputs client-id/private-key/owner/repositories mirror the upstream.
   'github-pr-app-token': [

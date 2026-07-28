@@ -62,6 +62,13 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // dirs — catches a hook added/removed without rebuilding, or a byte-cascaded
     // table referencing an absent hook dir (the concurrent-cargo dangle).
     () => run('node', ['scripts/fleet/check/dispatch-table-is-current.mts']),
+    // The BUILT artifacts (bundle.cjs, snapshot-bundle.cjs, excluded-bundle.cjs,
+    // and the snapshot-blob.path pin) carry the routing of a fresh table regen.
+    // dispatch-table-is-current stops at the table; a table can be current and
+    // verified while the executing artifact serves older routing — and the
+    // launcher prefers the pinned blob, so a stale snapshot beats a fresh bundle.
+    () =>
+      run('node', ['scripts/fleet/check/dispatch-artifacts-are-rebuilt.mts']),
     // Every settings.json dispatcher matcher covers the tools its bundled hooks
     // declare — a tool omitted from the coarse matcher never reaches the
     // dispatcher, so that hook silently never fires for it (how

@@ -142,7 +142,8 @@ export function findMissingAppPermissions(config) {
   const requested = config?.requested ?? {}
   const granted = config?.granted ?? {}
   const missing = []
-  const scopes = Object.keys(requested).toSorted()
+  // oxlint-disable-next-line unicorn/no-array-sort -- fresh copy
+  const scopes = Object.keys(requested).slice().sort()
   for (let i = 0, { length } = scopes; i < length; i += 1) {
     const scope = scopes[i]
     const wanted = requested[scope]

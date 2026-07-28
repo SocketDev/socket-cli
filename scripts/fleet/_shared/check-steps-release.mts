@@ -165,7 +165,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // outright. Proves the shipped fetcher honors isAlwaysTrackedGitHubSurface.
     // Runs per-tree (imports the member's own scripts/repo/bootstrap/fleet.mjs);
     // vacuous pass where that fetcher is absent.
-    () => run('node', ['scripts/fleet/check/thin-untrack-excludes-ci.mts']),
+    () => run('node', ['scripts/fleet/check/thin-untrack-set-is-ci-safe.mts']),
     // Every slashed pattern in .config/fleet/.prettierignore must be `**/`-anchored
     // or it silently matches nothing (oxfmt roots the matcher at the ignore file's
     // dir via Gitignore::new). Catches the footgun where a bare `vendor/**` looks

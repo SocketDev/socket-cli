@@ -7,7 +7,7 @@
  *   bundle still ships them, but they reach members in the cascade COMMIT,
  *   tracked. ONE declaration shared by the dep-0 bootstrap installer
  *   (`thinIgnoreEntries` excludes them) and the enforcing check
- *   (`thin-untrack-excludes-ci`), so the two can never disagree. Pure — no
+ *   (`thin-untrack-set-is-ci-safe`), so the two can never disagree. Pure — no
  *   imports — so rolldown inlines it into the dep-0 `fleet.mjs` without pulling
  *   anything into the bare-node fetcher. See
  *   docs/agents.md/fleet/thin-distribution.md ("Always tracked: the GitHub

@@ -38,6 +38,8 @@
 # same contract.
 **/bootstrap/fleet.mjs
 **/bootstrap/fleet.d.mts
+# The SessionStart fetch-kernel's declaration emit, from the same generator.
+**/bootstrap/session-fetch.d.mts
 
 # The rolldown-bundled fleet oxlint plugin (scripts/fleet/build-oxlint-bundle.mts
 # output) — generated + gitignored; oxfmt would fight the bundler output. The
