@@ -118,6 +118,78 @@ export function parsePermissions(rawInput) {
   return parsed
 }
 
+// Installation-permission strength, weakest first. A requested `write` is only
+// satisfied by `write` or `admin`; a scope the installation does not grant at
+// all ranks 0.
+const PERMISSION_RANK = { admin: 3, read: 1, write: 2 }
+
+// Turn an API permission key into the label the GitHub App settings page shows,
+// e.g. `pull_requests` -> `Pull requests`. Pure + exported so it is
+// unit-testable.
+export function formatAppPermissionLabel(scope) {
+  const words = scope.split('_').join(' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+// The scopes the REQUEST asks for that the installation's own grant does not
+// cover, each with what was wanted vs what is actually granted. This is the
+// PREFLIGHT: an installation missing a scope 422s the mint (or, worse, a widened
+// request lands and the permission is only exercised LATER — a promote PR 403ing
+// after the irreversible publish). Comparing the grant up front turns that into
+// a refusal before anything is published. Pure + exported so it is
+// unit-testable.
+export function findMissingAppPermissions(config) {
+  const requested = config?.requested ?? {}
+  const granted = config?.granted ?? {}
+  const missing = []
+  const scopes = Object.keys(requested).toSorted()
+  for (let i = 0, { length } = scopes; i < length; i += 1) {
+    const scope = scopes[i]
+    const wanted = requested[scope]
+    const have = granted[scope]
+    if ((PERMISSION_RANK[have] ?? 0) < (PERMISSION_RANK[wanted] ?? 0)) {
+      missing.push({ granted: have, scope, wanted })
+    }
+  }
+  return missing
+}
+
+// The four-part (What / Where / Saw vs. wanted / Fix) refusal for a permission
+// shortfall, ending in the exact GitHub App settings URL and the clicks to make
+// there. Pure + exported so it is unit-testable.
+export function formatAppPermissionShortfall(config) {
+  const missing = config?.missing ?? []
+  const owner = config?.owner ?? ''
+  const slug = config?.slug ?? ''
+  const url = `https://github.com/organizations/${owner}/settings/apps/${slug}`
+  const lines = [
+    `the ${slug} GitHub App installation on ${owner} does not grant every requested permission.`,
+    `  Where: GET /orgs/${owner}/installation, before any token is minted or anything is published.`,
+  ]
+  for (const entry of missing) {
+    lines.push(
+      `  Saw: ${entry.scope} = ${entry.granted ?? '<not granted>'}; wanted ${entry.wanted}.`,
+    )
+  }
+  lines.push(
+    `  A missing scope fails LATE otherwise — the mint 422s, or the permission is first`,
+    `  exercised after the irreversible publish (the promote PR 403s mid-release).`,
+    `  Fix: ${url}`,
+  )
+  for (const entry of missing) {
+    lines.push(
+      '    -> Permissions & events -> Repository permissions -> ' +
+        formatAppPermissionLabel(entry.scope) +
+        ' -> ' +
+        (entry.wanted === 'read' ? 'Read-only' : 'Read and write'),
+    )
+  }
+  lines.push(
+    `  Then accept the pending permission request on the ${owner} installation and re-run.`,
+  )
+  return lines.join('\n')
+}
+
 // Split a REPOSITORIES string (newline/comma repo NAMES) into the access-token
 // request's `repositories` array, or undefined when blank. Pure (the raw string
 // is the argument) + exported so it is unit-testable.
@@ -170,6 +242,27 @@ async function main() {
     die(`installation lookup returned no id. Saw: ${inst.body}.`)
   }
 
+  // PREFLIGHT: the installation's own grant must already cover every requested
+  // scope. Runs before the mint and therefore before any publish/promote — the
+  // widened `pull_requests: write` request is only exercised by the promote PR
+  // that follows a successful publish, so without this the shortfall surfaces
+  // as a 403 in the irreversible window.
+  if (permissions !== undefined) {
+    const missing = findMissingAppPermissions({
+      granted: installation.permissions,
+      requested: permissions,
+    })
+    if (missing.length) {
+      die(
+        formatAppPermissionShortfall({
+          missing,
+          owner,
+          slug: installation.app_slug ?? '<app>',
+        }),
+      )
+    }
+  }
+
   const tokenBody = {}
   if (permissions !== undefined) {
     tokenBody.permissions = permissions
@@ -189,7 +282,9 @@ async function main() {
         `Where: POST /app/installations/${installationId}/access_tokens. ` +
         `Saw: ${minted.body}. Fix: the requested permissions/repositories must be ` +
         `a subset of what the app's installation on ${owner} grants (a 422 means ` +
-        `the install lacks a requested scope).`,
+        `the install lacks a requested scope). Grant it at ` +
+        `https://github.com/organizations/${owner}/settings/apps/${installation.app_slug ?? '<app>'}` +
+        ` -> Permissions & events -> Repository permissions.`,
     )
   }
   const token = JSON.parse(minted.body).token

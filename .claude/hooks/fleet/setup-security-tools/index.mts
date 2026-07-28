@@ -50,7 +50,7 @@ import {
   getShimsDir,
   missingCoreShims,
 } from './lib/shims.mts'
-import { isHookEntrypoint } from '../_shared/entrypoint.mts'
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 interface Finding {
@@ -307,71 +307,43 @@ export function repairShims(home: string): Finding[] {
   ]
 }
 
-/* c8 ignore start - main() and its entrypoint guard only execute when the script is
-   invoked directly via process.argv; covered by integration tests that spawn a
-   subprocess, not by in-process import */
-async function main(): Promise<void> {
-  // Read the Stop payload from stdin. We use `transcript_path` to
-  // scan the most recent assistant turn for the 401 error signature.
-  // Drain even if we can't parse so the pipe doesn't buffer-stall.
-  let payloadRaw = ''
-  await new Promise<void>(resolve => {
-    process.stdin.on('data', d => {
-      payloadRaw += d.toString('utf8')
-    })
-    process.stdin.on('end', () => resolve())
-    process.stdin.on('error', () => resolve())
-    // Short timeout so we don't hang on stdin that never closes.
-    setTimeout(() => resolve(), 200)
-  })
-  let transcriptPath: string | undefined
-  if (payloadRaw) {
-    try {
-      const payload = JSON.parse(payloadRaw) as {
-        transcript_path?: string | undefined
-      }
-      if (typeof payload.transcript_path === 'string') {
-        transcriptPath = payload.transcript_path
-      }
-    } catch {
-      // Malformed payload — skip the 401 scan but still run the
-      // shim/edition checks.
+export const hook = defineHook({
+  /* c8 ignore start - check() runs real machine-state probes (shim dir, keychain,
+     transcript scan); covered by integration tests that spawn a subprocess */
+  check: async payload => {
+    const findings: Finding[] = []
+
+    // Auto-repair pass first. If shims/ is empty AND we have the binary
+    // + regen script, rebuild silently — this covers the common "moved
+    // to .broken-backup/" failure shape. After repair, checkShims()
+    // sees a populated shims/ dir and stays quiet, so the operator
+    // gets one notice line instead of a wall of diagnostics.
+    const home = process.env['HOME']
+    if (home) {
+      findings.push(...repairShims(home))
     }
-  }
 
-  const findings: Finding[] = []
+    findings.push(...(await checkShims()))
+    findings.push(...checkEdition())
+    // The Stop payload carries transcript_path; scan the most recent
+    // assistant turn for the 401 error signature when present.
+    const transcriptPath = payload.transcript_path
+    if (transcriptPath) {
+      findings.push(...(await checkToken401(transcriptPath)))
+    }
 
-  // Auto-repair pass first. If shims/ is empty AND we have the binary
-  // + regen script, rebuild silently — this covers the common "moved
-  // to .broken-backup/" failure shape. After repair, checkShims()
-  // sees a populated shims/ dir and stays quiet, so the operator
-  // gets one notice line instead of a wall of diagnostics.
-  const home = process.env['HOME']
-  if (home) {
-    findings.push(...repairShims(home))
-  }
+    if (findings.length === 0) {
+      return undefined
+    }
+    const lines = ['[setup-security-tools] Health check:']
+    for (let i = 0, { length } = findings; i < length; i += 1) {
+      lines.push(`  • ${findings[i]!.message}`)
+    }
+    return notify(lines.join('\n'))
+  },
+  /* c8 ignore stop */
+  event: 'Stop',
+  type: 'nudge',
+})
 
-  findings.push(...(await checkShims()))
-  findings.push(...checkEdition())
-  if (transcriptPath) {
-    findings.push(...(await checkToken401(transcriptPath)))
-  }
-
-  if (findings.length === 0) {
-    return
-  }
-  process.stderr.write('[setup-security-tools] Health check:\n')
-  for (let i = 0, { length } = findings; i < length; i += 1) {
-    const f = findings[i]!
-    process.stderr.write(`  • ${f.message}\n`)
-  }
-}
-
-if (isHookEntrypoint(import.meta.url)) {
-  main().catch(e => {
-    process.stderr.write(
-      `[setup-security-tools] health-check error (allowing): ${e}\n`,
-    )
-  })
-}
-/* c8 ignore stop */
+void runHook(hook, import.meta.url)

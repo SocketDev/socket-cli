@@ -20,7 +20,10 @@ export type GatePlan =
   | { registry: 'none' }
 
 export interface FetchLike {
-  (url: string): Promise<{ ok: boolean; text(): Promise<string> }>
+  (
+    url: string,
+    init?: { headers?: Record<string, string> | undefined } | undefined,
+  ): Promise<{ ok: boolean; text(): Promise<string> }>
 }
 
 export declare function versionFromTag(tag: string): string
@@ -41,6 +44,16 @@ export declare function indexHasVersion(
   indexBody: string,
   version: string,
 ): boolean
+
+export declare const NO_CACHE_HEADERS: {
+  'cache-control': string
+  pragma: string
+}
+
+export declare function cacheBustedNpmUrl(
+  url: string,
+  nonce?: string | undefined,
+): string
 
 export declare function checkNpmLive(
   name: string,

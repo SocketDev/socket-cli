@@ -10,6 +10,17 @@ name: 'Install'
 description: 'Install pnpm dependencies and provision agentshield (sfw shims are set up by the setup action)'
 
 inputs:
+  fleet-payload-token:
+    description: >-
+      Read-only GitHub token the thin-distribution bootstrap fetch uses to
+      download the fleet release bundle from the private wheelhouse. Empty for a
+      non-thin member (whose `prepare` fetch no-ops, needing no token). Mapped to
+      GH_TOKEN on the install step ONLY — `pnpm install` fires the `prepare`
+      lifecycle, which shells `gh release download` in
+      scripts/repo/bootstrap/fleet.mjs; `gh` reads GH_TOKEN for the cross-repo
+      private read. Pass the github-payload-app-token output.
+    required: false
+    default: ''
   frozen-lockfile:
     description: 'Pass --frozen-lockfile to pnpm install'
     required: false
@@ -25,6 +36,12 @@ runs:
     - name: Install dependencies
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      # GH_TOKEN is env-mapped (never interpolated into the run body — zizmor
+      # template-injection) so the bootstrap fetch `prepare` fires during
+      # `pnpm install` can authenticate the private wheelhouse release download.
+      # Empty for a non-thin member, where that fetch no-ops and needs no token.
+      env:
+        GH_TOKEN: ${{ inputs.fleet-payload-token }}
       run: |
         if [ -z "$SFW_BIN" ] || [ ! -x "$SFW_BIN" ]; then
           echo "Error: sfw is not installed — run the setup-and-install action first" >&2

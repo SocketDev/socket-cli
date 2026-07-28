@@ -4,7 +4,7 @@ npm's account-mutating operations — `publish`, `login`, `deprecate`, `owner`,
 `access`, `unpublish` — require 2FA. On a real terminal npm runs a browser
 web-auth flow: it prints
 
-```
+```text
 Authenticate your account at:
 https://www.npmjs.com/auth/cli/<id>
 Press ENTER to open in the browser...
@@ -25,7 +25,7 @@ opens the browser, and polls the registry until the human approves.
 
 Run npm through the fleet PTY wrapper:
 
-```
+```bash
 node scripts/fleet/npm-web-auth.mts <publish|login|deprecate|owner|access|...> [args...]
 ```
 

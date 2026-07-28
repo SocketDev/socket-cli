@@ -32,11 +32,9 @@ import { appendFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getSocketAppDir } from '@socketsecurity/lib-stable/paths/socket'
-import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
-const logger = getDefaultLogger()
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
 
 // Customizable via the HEADROOM_PROXY_PORT env var; defaults to 7779 (the
 // legacy token-minifier port headroom replaced, so the fleet-canonical
@@ -73,21 +71,6 @@ const PROXY_CMD_MARKER = 'headroom'
 const PROBE_TIMEOUT_MS = 250
 const SPAWN_WAIT_BUDGET_MS = 2500
 const SPAWN_POLL_INTERVAL_MS = 100
-
-/**
- * Emit additionalContext (visible in the transcript) so a user skimming the
- * session log sees what the hook did. Optional — Claude Code reads it as
- * informational text, not as an action.
- */
-export function emitSessionStartContext(message: string): void {
-  const out = {
-    hookSpecificOutput: {
-      hookEventName: 'SessionStart',
-      additionalContext: `[headroom] ${message}`,
-    },
-  }
-  process.stdout.write(JSON.stringify(out))
-}
 
 interface ProbeOutcome {
   healthy: boolean
@@ -140,7 +123,7 @@ export function sleep(ms: number): Promise<void> {
  * the lockdown wrapper, so the spawned proxy has telemetry + model fetch forced
  * off.
  */
-/* c8 ignore start - spawnDetached spawns the real headroom binary at BIN_PATH; requires the installed binary on disk and is only called from c8-ignored main() */
+/* c8 ignore start - spawnDetached spawns the real headroom binary at BIN_PATH; requires the installed binary on disk and is only called from the c8-ignored check() */
 export function spawnDetached(): void {
   // The lib's spawn returns a thenable-with-extras shape: it has the promise
   // interface AND a `process: ChildProcess` field. We don't await — we just
@@ -157,7 +140,7 @@ export function spawnDetached(): void {
   })
   // Best-effort start: swallow the spawn promise rejection so a missing or
   // non-executable binary (e.g. a broken install → exit 126) fails CLOSED —
-  // main()'s health poll then reports "not healthy" and continues with the
+  // the check()'s health poll then reports "not healthy" and continues with the
   // direct endpoint. Without this catch the rejection is unhandled and crashes
   // the SessionStart hook.
   result.catch(() => undefined)
@@ -245,74 +228,60 @@ export function writeAnthropicBaseUrlToEnvFile(): void {
   }
 }
 
-/* c8 ignore start - main() orchestrates real machine state: live probeHealth, existsSync(BIN_PATH), spawnDetached, and a polling loop — none controllable in-process */
-async function main(): Promise<void> {
-  // (1) Already running?
-  const initial = await probeHealth()
-  if (initial.healthy) {
-    writeAnthropicBaseUrlToEnvFile()
-    emitSessionStartContext(
-      `proxy already healthy on :${PROXY_PORT}; ANTHROPIC_BASE_URL set.`,
-    )
-    return
-  }
-
-  // (2) Port responded, but not healthy — reap OUR wedged instance if that's
-  // what holds it; otherwise the port belongs to something else (fail-closed).
-  if (initial.status !== undefined) {
-    const reaped = await reapWedgedProxy()
-    if (reaped === 0) {
-      emitSessionStartContext(
-        `port ${PROXY_PORT} responded with status ${initial.status} (not our proxy); skipping.`,
-      )
-      return
-    }
-    emitSessionStartContext(
-      `reaped ${reaped} wedged proxy instance(s) on :${PROXY_PORT}; restarting.`,
-    )
-  }
-
-  // (3) Binary installed?
-  if (!existsSync(BIN_PATH)) {
-    emitSessionStartContext(
-      `binary not found at ${BIN_PATH}; run \`pnpm run setup-security-tools\` (installs headroom). ` +
-        `Continuing with direct api.anthropic.com.`,
-    )
-    return
-  }
-
-  // (4) Start it + wait for health.
-  spawnDetached()
-  const deadline = Date.now() + SPAWN_WAIT_BUDGET_MS
-  while (Date.now() < deadline) {
-    await sleep(SPAWN_POLL_INTERVAL_MS)
-    const probe = await probeHealth()
-    if (probe.healthy) {
+export const hook = defineHook({
+  /* c8 ignore start - check() orchestrates real machine state: live probeHealth, existsSync(BIN_PATH), spawnDetached, and a polling loop — none controllable in-process */
+  check: async () => {
+    // (1) Already running?
+    const initial = await probeHealth()
+    if (initial.healthy) {
       writeAnthropicBaseUrlToEnvFile()
-      emitSessionStartContext(
-        `started proxy on :${PROXY_PORT} (telemetry + model fetch locked off); ANTHROPIC_BASE_URL set.`,
+      return notify(
+        `[headroom] proxy already healthy on :${PROXY_PORT}; ANTHROPIC_BASE_URL set.`,
       )
-      return
     }
-  }
 
-  // Spawn fired but didn't come healthy in the budget. Fail-closed.
-  emitSessionStartContext(
-    `proxy failed to become healthy within ${SPAWN_WAIT_BUDGET_MS}ms; ` +
-      `continuing with direct api.anthropic.com.`,
-  )
-}
-/* c8 ignore stop */
+    // (2) Port responded, but not healthy — reap OUR wedged instance if that's
+    // what holds it; otherwise the port belongs to something else (fail-closed).
+    if (initial.status !== undefined) {
+      const reaped = await reapWedgedProxy()
+      if (reaped === 0) {
+        return notify(
+          `[headroom] port ${PROXY_PORT} responded with status ${initial.status} (not our proxy); skipping.`,
+        )
+      }
+    }
 
-// Entrypoint-guarded: run main() only when invoked directly, NOT when the test
-// imports this module for its pure helpers (else the proxy-reap side effects
-// fire on import inside the node --test runner).
-/* c8 ignore next - entrypoint guard only fires when the script is run directly */
-if (isHookEntrypoint(import.meta.url)) {
-  /* c8 ignore start - direct-invocation body: logger + process.exit only reachable when run as a CLI */
-  main().catch(e => {
-    logger.fail(`headroom-proxy-start hook error: ${String(e)}`)
-    process.exit(0)
-  })
+    // (3) Binary installed?
+    if (!existsSync(BIN_PATH)) {
+      return notify(
+        `[headroom] binary not found at ${BIN_PATH}; run \`pnpm run setup-security-tools\` (installs headroom). ` +
+          `Continuing with direct api.anthropic.com.`,
+      )
+    }
+
+    // (4) Start it + wait for health.
+    spawnDetached()
+    const deadline = Date.now() + SPAWN_WAIT_BUDGET_MS
+    while (Date.now() < deadline) {
+      await sleep(SPAWN_POLL_INTERVAL_MS)
+      const probe = await probeHealth()
+      if (probe.healthy) {
+        writeAnthropicBaseUrlToEnvFile()
+        return notify(
+          `[headroom] started proxy on :${PROXY_PORT} (telemetry + model fetch locked off); ANTHROPIC_BASE_URL set.`,
+        )
+      }
+    }
+
+    // Spawn fired but didn't come healthy in the budget. Fail-closed.
+    return notify(
+      `[headroom] proxy failed to become healthy within ${SPAWN_WAIT_BUDGET_MS}ms; ` +
+        `continuing with direct api.anthropic.com.`,
+    )
+  },
   /* c8 ignore stop */
-}
+  event: 'SessionStart',
+  type: 'nudge',
+})
+
+void runHook(hook, import.meta.url)

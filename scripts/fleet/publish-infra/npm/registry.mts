@@ -4,6 +4,8 @@
  *   staged-publish approver, trusted-publisher attribution).
  */
 
+import crypto from 'node:crypto'
+
 import {
   httpJson,
   HttpResponseError,
@@ -12,6 +14,36 @@ import {
 import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
 
 import type { RegistryLatestRead } from '../../lib/release-anchor.mts'
+
+/**
+ * A cache-busting registry read: the packument URL with a unique `_cb` nonce
+ * query param appended, plus no-cache request headers layered over `accept`.
+ *
+ * WHY: the npm registry serves packuments through a CDN that caches them for
+ * MINUTES. A release gate that trusts a cached read can see a version that is
+ * already LIVE on the registry as ABSENT — or read a stale `dist-tags.latest`
+ * — and mis-decide. The @socketregistry/packageurl-js@X.Y.Z near-miss staged
+ * an already-published version because both `npm view` and a raw packument
+ * fetch were served a stale CDN copy that still showed the prior version. A
+ * unique query param defeats the CDN cache key; `Cache-Control: no-cache` +
+ * `Pragma: no-cache` defeat any intermediary proxy. Pure — `nonce` is
+ * injectable so a test can assert the exact busting applied.
+ */
+export function cacheBustedRead(
+  url: string,
+  accept: string,
+  nonce: string = crypto.randomUUID(),
+): { headers: Record<string, string>; url: string } {
+  const separator = url.includes('?') ? '&' : '?'
+  return {
+    headers: {
+      accept,
+      'cache-control': 'no-cache',
+      pragma: 'no-cache',
+    },
+    url: `${url}${separator}_cb=${nonce}`,
+  }
+}
 
 /**
  * The registry `dist-tags.latest` for a package, distinguishing "the registry
@@ -26,11 +58,12 @@ export async function fetchLatestPublishedVersionChecked(
   name: string,
 ): Promise<RegistryLatestRead> {
   const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const read = cacheBustedRead(url, 'application/vnd.npm.install-v1+json')
   try {
     const json = await httpJson<{
       'dist-tags'?: { latest?: string | undefined } | undefined
-    }>(url, {
-      headers: { accept: 'application/vnd.npm.install-v1+json' },
+    }>(read.url, {
+      headers: read.headers,
       timeout: 15_000,
     })
     return { latest: json['dist-tags']?.latest, reachable: true }
@@ -68,6 +101,12 @@ export async function fetchLatestPublishedVersion(
 export interface RegistryReleaseState {
   latest: string | undefined
   timeMap: Record<string, string>
+  /**
+   * The LIVE `versions` set — what is public right now. Together with the
+   * time map it splits publish history: never published, currently
+   * published, and published-then-unpublished.
+   */
+  versions: string[]
 }
 
 /**
@@ -80,19 +119,25 @@ export async function fetchRegistryReleaseState(
   name: string,
 ): Promise<RegistryReleaseState | undefined> {
   const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  // Full packument — the abbreviated install-v1 format drops `time`.
+  const read = cacheBustedRead(url, 'application/json')
   try {
     const json = await httpJson<{
       'dist-tags'?: { latest?: string | undefined } | undefined
       time?: Record<string, string> | undefined
-    }>(url, {
-      // Full packument — the abbreviated install-v1 format drops `time`.
-      headers: { accept: 'application/json' },
+      versions?: Record<string, unknown> | undefined
+    }>(read.url, {
+      headers: read.headers,
       timeout: 15_000,
     })
     if (!json.time || typeof json.time !== 'object') {
       return undefined
     }
-    return { latest: json['dist-tags']?.latest, timeMap: json.time }
+    return {
+      latest: json['dist-tags']?.latest,
+      timeMap: json.time,
+      versions: Object.keys(json.versions ?? {}),
+    }
   } catch {
     return undefined
   }
@@ -112,16 +157,53 @@ export async function isAlreadyPublished(
   version: string,
 ): Promise<boolean> {
   const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const read = cacheBustedRead(url, 'application/vnd.npm.install-v1+json')
   try {
     const json = await httpJson<{
       versions?: Record<string, unknown> | undefined
-    }>(url, {
-      headers: { accept: 'application/vnd.npm.install-v1+json' },
+    }>(read.url, {
+      headers: read.headers,
       timeout: 15_000,
     })
     return Boolean(json.versions && version in json.versions)
   } catch {
     return false
+  }
+}
+
+/**
+ * The registry publish state the verify-before-stage guard reads in one
+ * cache-busted packument fetch: the `dist-tags.latest` pointer and every
+ * published version string. Returns `{ latest: undefined, versions: [] }` on
+ * ANY failure — a version absent from an unreadable packument reads as "not
+ * published", so the guard falls through to an ordinary stage attempt (which
+ * the registry itself rejects with a 409 if the read was wrong), never a false
+ * "already published" skip.
+ */
+export interface PublishedState {
+  latest: string | undefined
+  versions: string[]
+}
+
+export async function fetchPublishedState(
+  name: string,
+): Promise<PublishedState> {
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const read = cacheBustedRead(url, 'application/vnd.npm.install-v1+json')
+  try {
+    const json = await httpJson<{
+      'dist-tags'?: { latest?: string | undefined } | undefined
+      versions?: Record<string, unknown> | undefined
+    }>(read.url, {
+      headers: read.headers,
+      timeout: 15_000,
+    })
+    return {
+      latest: json['dist-tags']?.latest,
+      versions: Object.keys(json.versions ?? {}),
+    }
+  } catch {
+    return { latest: undefined, versions: [] }
   }
 }
 
@@ -225,11 +307,15 @@ export async function fetchVersionTrustInfo(
       | undefined
   }
   try {
-    const headers: Record<string, string> =
+    const accept =
       variant === 'abbreviated'
-        ? { accept: 'application/vnd.npm.install-v1+json' }
-        : { accept: 'application/json' }
-    json = await httpJson<typeof json>(url, { headers, timeout: 15_000 })
+        ? 'application/vnd.npm.install-v1+json'
+        : 'application/json'
+    const read = cacheBustedRead(url, accept)
+    json = await httpJson<typeof json>(read.url, {
+      headers: read.headers,
+      timeout: 15_000,
+    })
   } catch {
     return {}
   }
@@ -263,6 +349,46 @@ export async function fetchVersionTrustInfo(
  * never registered vs. registered-but-claims-drifted. Returns the diagnosis
  * lines to log (empty outside GitHub Actions).
  */
+/**
+ * Post-failure diagnosis for a stage-conflict (E409-shaped) upload failure:
+ * the target version is NOT publicly published, yet the stage was refused —
+ * a staged (unpublished) entry for that exact version already exists, and
+ * staging is one-shot per version while an entry lives. The remedy is
+ * REJECT-AND-RETRY THE SAME VERSION, never a bump past it: an unpublished
+ * version number is not burned, and bumping strands it (the incident shape:
+ * a hollow stage survived an incomplete reject, the flow bumped to the next
+ * patch, and the hollow entry later went public beside the good one).
+ * Returns the lines to log, or [] when the target is already public (the
+ * verify-before-stage gate owns that case) or the packument is unreachable.
+ */
+export async function diagnoseStageConflict(
+  name: string,
+  version: string,
+  options?:
+    | {
+        fetchState?: ((name: string) => Promise<PublishedState>) | undefined
+      }
+    | undefined,
+): Promise<string[]> {
+  const { fetchState = fetchPublishedState } = {
+    __proto__: null,
+    ...options,
+  } as { fetchState?: ((name: string) => Promise<PublishedState>) | undefined }
+  const published = await fetchState(name)
+  if (published.versions.includes(version)) {
+    return []
+  }
+  return [
+    `Probable cause: a staged (unpublished) entry for ${name}@${version} already exists.`,
+    `  Where: npm staging — staging is one-shot per version while an entry lives.`,
+    `  Saw: the stage was refused, yet ${version} is not visible on the public registry.`,
+    `  Fix: as a package maintainer, run \`pnpm stage list\`, then`,
+    `  \`pnpm stage reject <stageId>\` for the stale entry, and re-stage the`,
+    `  SAME version. Do NOT bump past it: the number is only burned once`,
+    `  published, and a surviving stale stage can be approved by mistake later.`,
+  ]
+}
+
 export async function diagnoseStagedAuthFailure(
   name: string,
 ): Promise<string[]> {

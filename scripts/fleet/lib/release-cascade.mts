@@ -84,12 +84,27 @@ export const RELEASE_CASCADE_GRAPH: Readonly<
     },
     { kind: 'registry-manifest-entry', repo: 'socket-registry' },
     { kind: 'follow-up-release', repo: 'socket-registry' },
+    // socket-sdk-js has zero runtime dependencies and BUNDLES packageurl-js
+    // into its published dist at build time, so a packageurl-js bump changes
+    // sdk's shipped bytes and reaches consumers only when sdk cuts its own
+    // release — the catalog pin alone never ships it. See the bundling helpers
+    // below for the machine-checked form of this obligation.
+    { kind: 'follow-up-release', repo: 'socket-sdk-js' },
   ],
   '@socketsecurity/lib': [
     {
       kind: 'catalog-pin',
       repos: ['socket-packageurl-js', 'socket-sdk-js', FLEET_CATALOG],
     },
+    // socket-packageurl-js and socket-sdk-js both have zero runtime
+    // dependencies and BUNDLE socket-lib into their published dist — it is a
+    // devDependency compiled in at build time, not resolved at install. An
+    // upstream socket-lib bump therefore changes each downstream's shipped
+    // bytes, so it ships only when that downstream cuts a follow-up release,
+    // NOT on the catalog pin alone. A socket-lib bump owes real downstream
+    // releases, not just catalog pins — the bundling helpers below prove it.
+    { kind: 'follow-up-release', repo: 'socket-packageurl-js' },
+    { kind: 'follow-up-release', repo: 'socket-sdk-js' },
   ],
   '@socketsecurity/sdk': [{ kind: 'catalog-pin', repos: [FLEET_CATALOG] }],
 }
@@ -112,6 +127,165 @@ export function flattenObligations(pkgName: string): CascadeEdge[] {
     }
   }
   return edges
+}
+
+/*
+ * Bundling awareness — WHY the follow-up-release edges above exist, and how the
+ * graph PROVES it declared one for every bundled pair.
+ *
+ * socket-packageurl-js and socket-sdk-js ship ZERO runtime `dependencies`:
+ * they compile their devDependencies straight into `dist/**` at build time.
+ * socket-lib is inlined into packageurl-js's and sdk's published dist; sdk
+ * additionally inlines packageurl-js. So an upstream bump does not reach a
+ * downstream's consumers by a catalog pin alone — it changes the downstream's
+ * shipped BYTES, and those bytes go out only when the downstream cuts its OWN
+ * release. That is precisely a `follow-up-release` obligation. The helpers
+ * below let the settle-check assert the graph declared one for every bundled
+ * pair, so a future bundled dep can't be silently under-declared and left to
+ * operator memory — the failure mode that reasoned "a socket-lib bump owes
+ * only catalog pins" and missed the downstream releases entirely.
+ */
+
+/**
+ * The package.json fields this module reads to decide bundling. A loose,
+ * forward-compatible subset — every field optional, unknown extras ignored.
+ */
+export interface RepoManifest {
+  readonly dependencies?: Readonly<Record<string, string>> | undefined
+  readonly devDependencies?: Readonly<Record<string, string>> | undefined
+  readonly exports?: unknown | undefined
+  readonly files?: readonly string[] | undefined
+  readonly main?: string | undefined
+  readonly module?: string | undefined
+  readonly types?: string | undefined
+}
+
+// True when `value` names a path into a `dist/` build directory: a bare
+// `dist/...` or a `./dist/...` / nested `/dist/...` reference, but never a
+// same-name FILE like `dist.js` (the char after `dist` must be `/` or the end).
+function referencesDist(value: unknown): boolean {
+  return typeof value === 'string' && /(?:^|[./])dist(?:\/|$)/.test(value)
+}
+
+// Recursively true when any leaf string in an `exports` tree references dist/.
+// `exports` is an arbitrarily nested subpath -> conditions -> target map.
+function hasDistTarget(node: unknown): boolean {
+  if (typeof node === 'string') {
+    return referencesDist(node)
+  }
+  if (Array.isArray(node)) {
+    return node.some(hasDistTarget)
+  }
+  if (node && typeof node === 'object') {
+    return Object.values(node).some(hasDistTarget)
+  }
+  return false
+}
+
+/**
+ * True when the repo ships a BUNDLED build directory — its entry points
+ * (`main`/`module`/`types`), its published `files`, or its `exports` targets
+ * resolve into `dist/`. The signal that its devDependencies are compiled into
+ * the shipped artifact rather than resolved at install time.
+ */
+export function shipsBundledDist(pkgJson: RepoManifest): boolean {
+  if (
+    referencesDist(pkgJson.main) ||
+    referencesDist(pkgJson.module) ||
+    referencesDist(pkgJson.types)
+  ) {
+    return true
+  }
+  if (Array.isArray(pkgJson.files) && pkgJson.files.some(referencesDist)) {
+    return true
+  }
+  return pkgJson.exports !== undefined && hasDistTarget(pkgJson.exports)
+}
+
+/**
+ * True when `repoPkgJson` BUNDLES `depName` into its published artifact: the
+ * repo has zero runtime `dependencies` (or `depName` is absent from them), the
+ * dep is a `devDependency` (compiled in at build time, not installed), AND the
+ * repo ships a bundled `dist/`. When all three hold an upstream `depName` bump
+ * changes this repo's shipped bytes, so it OWES a follow-up release — a catalog
+ * pin absorbs the version but never ships it.
+ */
+export function bundlesDependency(
+  repoPkgJson: RepoManifest,
+  depName: string,
+): boolean {
+  const deps = repoPkgJson.dependencies ?? {}
+  const zeroRuntimeDeps = Object.keys(deps).length === 0
+  const depAbsentFromRuntime = !(depName in deps)
+  const inDevDependencies = depName in (repoPkgJson.devDependencies ?? {})
+  return (
+    (zeroRuntimeDeps || depAbsentFromRuntime) &&
+    inDevDependencies &&
+    shipsBundledDist(repoPkgJson)
+  )
+}
+
+/**
+ * Every downstream repo the graph declares an obligation for, excluding the
+ * FLEET_CATALOG sentinel — the set of sibling clones the bundling assert reads.
+ */
+export function downstreamRepos(): string[] {
+  const repos = new Set<string>()
+  const declSets = Object.values(RELEASE_CASCADE_GRAPH)
+  for (let i = 0, { length } = declSets; i < length; i += 1) {
+    const decls = declSets[i]!
+    for (const decl of decls) {
+      if (decl.kind === 'catalog-pin') {
+        for (const repo of decl.repos) {
+          if (repo !== FLEET_CATALOG) {
+            repos.add(repo)
+          }
+        }
+      } else if (decl.repo !== FLEET_CATALOG) {
+        repos.add(decl.repo)
+      }
+    }
+  }
+  return [...repos]
+}
+
+/**
+ * One bundled upstream->downstream pair the graph FAILS to declare a
+ * follow-up-release edge for — a bundled dep whose bump would ship stale.
+ */
+export interface UndeclaredBundledEdge {
+  pkg: string
+  repo: string
+}
+
+/**
+ * Assert every bundled upstream->downstream pair carries a matching
+ * follow-up-release edge. For each graph upstream package and each downstream
+ * repo whose manifest BUNDLES it, the graph must declare a `follow-up-release`
+ * edge for that repo; a bundled pair with no such edge is returned so the
+ * caller can go red. Pure over already-read manifests, so a missing sibling
+ * clone is simply absent from `reposByDir` and never a false positive. An empty
+ * result means every bundled pair is declared.
+ */
+export function findUndeclaredBundledEdges(
+  reposByDir: Readonly<Record<string, RepoManifest>>,
+): UndeclaredBundledEdge[] {
+  const missing: UndeclaredBundledEdge[] = []
+  const pkgs = Object.keys(RELEASE_CASCADE_GRAPH)
+  for (let i = 0, { length } = pkgs; i < length; i += 1) {
+    const pkg = pkgs[i]!
+    const followUpRepos = new Set(
+      flattenObligations(pkg)
+        .filter(edge => edge.kind === 'follow-up-release')
+        .map(edge => edge.repo),
+    )
+    for (const [repo, pkgJson] of Object.entries(reposByDir)) {
+      if (bundlesDependency(pkgJson, pkg) && !followUpRepos.has(repo)) {
+        missing.push({ pkg, repo })
+      }
+    }
+  }
+  return missing
 }
 
 /**

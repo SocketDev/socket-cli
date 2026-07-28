@@ -15,7 +15,7 @@
 // prefer-async-spawn: sync-required — top-level CLI build runner; the flow is
 // sequential (regenerate table, then bundle, then check the artifact).
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -34,14 +34,8 @@ import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import {
   liftMirrorLockSync,
-  withMirrorLockLiftedSync,
+  writeThroughMirrorLock,
 } from './_shared/mirror-lock.mts'
-
-// The dispatch table + manifest live inside the cascade-locked hook
-// mirror; regeneration must lift the read-only lock around the write.
-function writeThroughLock(filePath: string, content: string): void {
-  withMirrorLockLiftedSync(filePath, () => writeFileSync(filePath, content))
-}
 
 const logger = getDefaultLogger()
 
@@ -132,11 +126,11 @@ function main(): void {
     logger.log('dispatch-table.mts + dispatch-manifest.json are current.')
     return
   }
-  writeThroughLock(DISPATCH_TABLE_PATH, generated)
+  writeThroughMirrorLock(DISPATCH_TABLE_PATH, generated)
   // The dep-0 bootstrap dispatcher routes off the manifest; regenerate it in
   // lock-step with the table so the two never drift (this is the dogfood path —
   // build-hook-bundle writes the table directly, not via gen/hook-dispatch).
-  writeThroughLock(DISPATCH_MANIFEST_PATH, generatedManifest)
+  writeThroughMirrorLock(DISPATCH_MANIFEST_PATH, generatedManifest)
 
   // Dogfood: the wheelhouse carries template/base/ (a member does not). Mirror
   // the generated table + manifest into the template so its CI readers + the
@@ -150,11 +144,11 @@ function main(): void {
   if (existsSync(templateDispatchDir)) {
     // Also through the lock: a pre-fix dogfood mirror propagated 0444 onto
     // these template artifacts, and the lift is a no-op when writable.
-    writeThroughLock(
+    writeThroughMirrorLock(
       path.join(templateDispatchDir, 'dispatch-table.mts'),
       generated,
     )
-    writeThroughLock(
+    writeThroughMirrorLock(
       path.join(
         REPO_ROOT,
         'template/base/.claude/hooks/fleet/_shared/dispatch-manifest.json',

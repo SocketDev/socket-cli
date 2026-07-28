@@ -42,7 +42,12 @@ const logger = getDefaultLogger()
 // emitted object — most-specific first — so consumers/bundlers match correctly.
 export interface ExportConditions {
   source?: string | undefined
-  browser?: ExportConditions | undefined
+  // `browser` takes one of two shapes. A nested conditions object is a
+  // self-routing browser-safe leaf — browser resolves to the SAME file's
+  // types/default. A bare string is a browser BUILD override — browser resolves
+  // to a `.browser.<ext>` sibling of the `default` target, ordered after `types`
+  // so `types` still wins for type resolution.
+  browser?: ExportConditions | string | undefined
   types?: string | undefined
   default?: string | undefined
 }
@@ -73,15 +78,23 @@ export interface ExportsConfig {
   readonly files?: readonly string[] | undefined
   // `ignore` — exclusion globs on top of the built-in privacy taxonomy.
   readonly ignore?: readonly string[] | undefined
-  // `browser` — glob patterns (matched against the post-strip export path)
-  // whose leaves are browser-safe; each gets a self-routing `browser` condition
-  // in `exports`. Covers a subtree (`./arrays/**`) or a browser-impl leaf
-  // (`**/browser`). Declaring ANY browser-safe surface ALSO triggers the
+  // `browser` — glob patterns (matched against the post-strip export path) that
+  // declare sibling-LESS leaves browser-safe; each match gets a self-routing
+  // `browser` condition — browser resolves to the SAME file. Covers a subtree
+  // (`./arrays/**`) or a browser-impl leaf (`**/browser`). This is the glob's
+  // ONLY role: a browser OVERRIDE — an entry with a `.browser.<ext>` build
+  // sibling next to its `default` target, `dist/index.browser.js` beside
+  // `dist/index.js` — is detected automatically and needs NO glob; that entry
+  // gets a `browser` condition pointing at the sibling (ordered after `types`)
+  // and the sibling is consumed rather than emitted as its own `./index.browser`
+  // entry. Declaring ANY browser glob ALSO triggers the
   // top-level package.json `browser` field: the engine infers it, stubbing
   // every Node builtin (from `node:module`'s `builtinModules`) to `false` —
   // bare key + `node:`-prefixed twin — so a downstream browser bundle gets an
   // empty stub instead of a hard build error on a `node:*` import reachable
-  // from a browser-safe entry. No explicit builtin list: the engine owns it.
+  // from a browser-safe entry. No explicit builtin list: the engine owns it. An
+  // auto sibling override alone does NOT trigger the stubbing — it declares one
+  // specific browser build, not a browser-safe subtree.
   readonly browser?: readonly string[] | undefined
   // Re-pointer aliases (barrels). Optional `browserTo` adds a browser-condition
   // override (./logger → ./logger/browser).
@@ -263,35 +276,98 @@ export function matchesGlob(target: string, pattern: string): boolean {
   return re.test(cleanTarget)
 }
 
-// Splice a `browser` condition (pointing at the same target) BEFORE the other
-// conditions for browser-safe leaves — signals the entry is browser-safe. A
-// leaf qualifies when its export path matches any `browser` glob.
+// The `.browser.<ext>` build sibling of a runtime target: `./dist/index.js` →
+// `./dist/index.browser.js`. Returns undefined when the target is not runtime
+// JavaScript. General over the runtime extension (`.js` / `.mjs` / `.cjs`).
+export function browserSiblingTarget(target: string): string | undefined {
+  const match = /\.[cm]?js$/.exec(target)
+  if (!match) {
+    return undefined
+  }
+  const ext = match[0]
+  return `${target.slice(0, -ext.length)}.browser${ext}`
+}
+
+// The export path whose runtime target is `siblingTarget`, so a matched entry's
+// `.browser` build sibling can be consumed as an override instead of standing
+// alone. Undefined when no entry resolves that file.
+function browserSiblingEntry(
+  map: Record<string, ExportConditions | string>,
+  siblingTarget: string,
+): string | undefined {
+  for (const { 0: key, 1: value } of Object.entries(map)) {
+    const target = typeof value === 'string' ? value : value.default
+    if (target === siblingTarget) {
+      return key
+    }
+  }
+  return undefined
+}
+
+// Add a `browser` condition to two kinds of entry:
+//   - OVERRIDE (automatic, needs NO glob): an entry whose `default` target has a
+//     `.browser.<ext>` build sibling. The `browser` condition points at that
+//     sibling and the sibling's own entry is consumed (never its own export).
+//     Order: source?, types, browser, default — `types` precedes every runtime
+//     condition so nodenext resolves types before the browser build. A sibling
+//     override ALWAYS wins, whether or not a `browser` glob is configured.
+//   - SELF-ROUTE (glob-driven): a sibling-LESS entry whose export path matches a
+//     `browser` glob. The `browser` condition points at the SAME file, spliced
+//     most-specific first (before `types`) as a nested conditions object, to
+//     signal the entry is browser-safe.
+// An entry with neither a build sibling nor a `browser` glob match is untouched.
 export function applyBrowserConditions(
   map: Record<string, ExportConditions | string>,
   config: ExportsConfig,
 ): void {
   const browser = config.browser ?? []
-  if (!browser.length) {
-    return
-  }
+  // Plan before mutating so a build sibling consumed as an override is neither
+  // self-routed nor left as its own entry, whatever the map iteration order.
+  const overrides = new Map<string, string>()
+  const selfRoutes = new Set<string>()
+  const consumed = new Set<string>()
   for (const { 0: exportPath, 1: value } of Object.entries(map)) {
-    if (typeof value !== 'object') {
+    if (typeof value !== 'object' || value.browser) {
       continue
     }
-    if (!browser.some(g => matchesGlob(exportPath, g))) {
-      continue
+    const siblingTarget = value.default
+      ? browserSiblingTarget(value.default)
+      : undefined
+    const siblingPath = siblingTarget
+      ? browserSiblingEntry(map, siblingTarget)
+      : undefined
+    if (
+      siblingTarget !== undefined &&
+      siblingPath !== undefined &&
+      siblingPath !== exportPath
+    ) {
+      // Auto override — a build sibling exists; no glob required.
+      overrides.set(exportPath, siblingTarget)
+      consumed.add(siblingPath)
+    } else if (browser.some(g => matchesGlob(exportPath, g))) {
+      // No sibling, but a glob marks this leaf browser-safe → self-route.
+      selfRoutes.add(exportPath)
     }
-    if (value.browser) {
-      continue
-    }
-    const { source, types, default: def } = value
-    const next: ExportConditions = {
+  }
+  for (const exportPath of consumed) {
+    delete map[exportPath]
+    overrides.delete(exportPath)
+    selfRoutes.delete(exportPath)
+  }
+  for (const { 0: exportPath, 1: siblingTarget } of overrides) {
+    const value = map[exportPath] as ExportConditions
+    const { default: def, source, types } = value
+    map[exportPath] = { source, types, browser: siblingTarget, default: def }
+  }
+  for (const exportPath of selfRoutes) {
+    const value = map[exportPath] as ExportConditions
+    const { default: def, source, types } = value
+    map[exportPath] = {
       source,
       browser: { types, default: def },
       types,
       default: def,
     }
-    map[exportPath] = next
   }
 }
 

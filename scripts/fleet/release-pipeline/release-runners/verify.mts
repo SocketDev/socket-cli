@@ -13,7 +13,11 @@ import path from 'node:path'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { hashTarball } from '../../lib/verify-release-hashes.mts'
+import { describeNpmIdentity } from '../../publish-infra/npm/auth-identity.mts'
 import { StageListAuthError } from '../../publish-infra/npm/shared.mts'
+import { verifyStagedPlatformEntry } from '../../publish-infra/npm/staged-workspace.mts'
+import { hasMachineBuiltPayload } from '../../publish-infra/npm/workspace-plan.mts'
+import { resolveNpmWorkspaceLayout } from '../../publish-infra/npm/workspace.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
 
 import type { StageListEntry } from '../../publish-infra/npm/shared.mts'
@@ -100,11 +104,19 @@ export async function runVerifyStage(config: {
     e => e.name === pkg.name && e.version === cfg.targetVersion,
   )
   if (!entry) {
+    // Staged entries are maintainer-visible: a wrong-account login reads an
+    // empty list even when the stage succeeded, so the failure names WHO was
+    // looking (the wrong-user trap that cost a real debugging session).
+    // Seamed, like every other effect here — tests stub it.
+    const identity = await seams.identityFor(pkg.name)
     return {
       detail:
         `no staged entry for ${pkg.name}@${cfg.targetVersion}.\n` +
         `  Where: pnpm stage list --json (${staged.length} entr${staged.length === 1 ? 'y' : 'ies'} total)\n` +
-        `  Fix: run the stage-publish stage first, and check npm auth (pnpm stage list).`,
+        describeNpmIdentity(identity, pkg.name)
+          .map(line => `  ${line}`)
+          .join('\n') +
+        `\n  Fix: run the stage-publish stage first, and check npm auth (pnpm stage list).`,
       status: 'failed',
     }
   }
@@ -200,6 +212,58 @@ export async function verifyAgainstRegistry(config: {
     return {
       detail: `the packument for ${pkg.name}@${cfg.targetVersion} exposes no dist.shasum/integrity to compare against`,
       status: 'mismatch',
+    }
+  }
+  // A machine-built payload (.wasm/.node) has no local byte-twin — the
+  // published artifact came from the CI build, so a local re-pack ALWAYS
+  // diverges on those bytes. The honest axis is STRUCTURAL, on the published
+  // tarball itself (the same gate staged platform entries use), and the
+  // release checksums hash the downloaded registry bytes — the content the
+  // tag marks. Routed for workspace members; a plain single-package repo has
+  // no generated machine-built subject today.
+  const layout = resolveNpmWorkspaceLayout(cfg.cwd)
+  const member =
+    layout.kind === 'multi'
+      ? layout.packages.find(p => p.name === pkg.name)
+      : undefined
+  if (member && (member.platform || hasMachineBuiltPayload(member.manifest))) {
+    const published = await seams.downloadRegistryTarball(
+      pkg.name,
+      cfg.targetVersion,
+    )
+    if (!published) {
+      return {
+        detail: `the published tarball for ${pkg.name}@${cfg.targetVersion} could not be downloaded for the structural verify`,
+        status: 'mismatch',
+      }
+    }
+    const structuralOk = await verifyStagedPlatformEntry(
+      {
+        name: pkg.name,
+        stageId: 'published-registry-tarball',
+        version: cfg.targetVersion,
+      },
+      member,
+      { downloadStagedTarball: () => Promise.resolve(published) },
+    )
+    if (!structuralOk) {
+      return {
+        detail: `the published tarball for ${pkg.name}@${cfg.targetVersion} failed the structural payload verify (see the gate's log above)`,
+        status: 'mismatch',
+      }
+    }
+    const publishedDigest = hashTarball(published)
+    return {
+      detail:
+        `registry truth for ${pkg.name}@${cfg.targetVersion}: machine-built ` +
+        `payload verified structurally on the published tarball (sha1 ${publishedDigest.shasum})`,
+      releaseChecksums: {
+        sha1: publishedDigest.shasum,
+        sha512: publishedDigest.integrity.replace(/^sha512-/, ''),
+        tarballName: path.basename(published),
+        version: cfg.targetVersion,
+      },
+      status: 'match',
     }
   }
   const tarballPath = await seams.packTarball(pkg.name, cfg.targetVersion)

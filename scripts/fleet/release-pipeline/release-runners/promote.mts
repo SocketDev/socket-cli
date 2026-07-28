@@ -11,6 +11,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { hashTarball } from '../../lib/verify-release-hashes.mts'
+import { formatReleaseGapFailure } from '../../_shared/release-gap-recovery.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
 
 import type { RunnerSeams, StageOutcome } from '../seams.mts'
@@ -210,10 +211,22 @@ export async function runReleaseStage(config: {
     const { assets } = prepared
     ensureOptions = { packAssets: () => Promise.resolve(assets) }
   }
-  await seams.ensureRelease(
+  const ensured = await seams.ensureRelease(
     { name: pkg.name, version: pkg.version },
     ensureOptions,
   )
+  if (ensured === false) {
+    return {
+      detail: formatReleaseGapFailure({
+        name: pkg.name,
+        registry: 'npm',
+        saw: 'ensureTagAndRelease reported failure (its step error is logged above)',
+        version: pkg.version,
+        where: 'release-pipeline release stage (release-runners/promote.mts)',
+      }),
+      status: 'failed',
+    }
+  }
   const view = await seams.runCapture(
     'gh',
     ['release', 'view', tagName, '--json', 'tagName,isDraft'],
@@ -221,9 +234,13 @@ export async function runReleaseStage(config: {
   )
   if (view.code !== 0) {
     return {
-      detail:
-        `release ${tagName} not visible after ensureTagAndRelease (gh release view exited ${view.code}).\n` +
-        `  Fix: read the ensureTagAndRelease log above, repair the tag/release, re-run.`,
+      detail: formatReleaseGapFailure({
+        name: pkg.name,
+        registry: 'npm',
+        saw: `gh release view ${tagName} exited ${view.code} right after ensureTagAndRelease reported success`,
+        version: pkg.version,
+        where: 'release-pipeline release stage (release-runners/promote.mts)',
+      }),
       status: 'failed',
     }
   }

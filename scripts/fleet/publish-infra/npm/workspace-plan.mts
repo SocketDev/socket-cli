@@ -2,11 +2,11 @@
  * @file Pure planning over a resolved multi-package npm workspace layout
  *   (workspace.mts): version-lockstep drift detection, dependency-aware
  *   publish-order computation (pnpm -r publish's topological semantics),
- *   hollow platform-package detection, and the formatting-preserving lockstep
- *   bump-write planner. Everything here is pure over its inputs (plus
- *   existsSync probes against the real tree for the hollow gate) and
- *   unit-tested against fixture trees; the fs-reading layout resolution lives
- *   in workspace.mts.
+ *   absent- and hollow-platform-package detection, and the
+ *   formatting-preserving lockstep bump-write planner. Everything here is pure
+ *   over its inputs (plus existsSync probes against the real tree for the
+ *   hollow gate) and unit-tested against fixture trees; the fs-reading layout
+ *   resolution lives in workspace.mts.
  */
 
 import { existsSync } from 'node:fs'
@@ -17,6 +17,11 @@ import type {
   WorkspaceManifestShape,
   WorkspacePackage,
 } from './workspace.mts'
+
+export interface AbsentPlatformPackageReport {
+  missing: string[]
+  owner: WorkspacePackage
+}
 
 export interface HollowPackageReport {
   missing: string[]
@@ -132,6 +137,21 @@ export function computePublishOrder(packages: readonly WorkspacePackage[]): {
 }
 
 /**
+ * True when the manifest's declared payload carries a machine-built artifact
+ * (.wasm / .node). Such a payload has no local byte-twin — it comes from the
+ * CI build, and a re-build on a different host/toolchain legitimately differs
+ * byte-for-byte — so pre-approve verification must be STRUCTURAL on the
+ * staged bytes (verifyStagedPlatformEntry), never a local-pack byte-compare.
+ */
+export function hasMachineBuiltPayload(
+  manifest: WorkspaceManifestShape,
+): boolean {
+  return requiredPayloadFiles(manifest).some(
+    rel => rel.endsWith('.wasm') || rel.endsWith('.node'),
+  )
+}
+
+/**
  * The concrete payload files a platform package's manifest declares: the
  * literal (glob-free) `files` entries plus `main`, sorted. The hollow gate
  * requires them on disk pre-publish; the approve-time structural verify
@@ -181,6 +201,69 @@ export function findHollowPackages(
     const missing = required.filter(rel => !existsSync(path.join(pkg.dir, rel)))
     if (missing.length > 0) {
       reports.push({ missing, pkg })
+    }
+  }
+  return reports
+}
+
+/**
+ * True when `depName` is one of `ownerName`'s own generated platform siblings:
+ * either `@<owner>/<platformId>` (the decmpfs shape — the unscoped loader
+ * `decmpfs` owns `@decmpfs/darwin-arm64`) or `<owner>-<platformId>` (the stuie
+ * shape — `@stuie/core` owns `@stuie/core-darwin-arm64`). An unrelated
+ * third-party optional dependency matches neither, so it is never mistaken for
+ * a platform package this repo is expected to ship.
+ */
+function isPlatformSiblingName(ownerName: string, depName: string): boolean {
+  if (depName.startsWith(`${ownerName}-`)) {
+    return true
+  }
+  const scope = ownerName.startsWith('@')
+    ? ownerName.slice(1).split('/')[0]!
+    : ownerName
+  return depName.startsWith(`@${scope}/`)
+}
+
+/**
+ * Absent-platform-package detection: a loader that DECLARES sibling platform
+ * packages in `optionalDependencies` must have every one of them on disk as a
+ * real package directory at publish time. An absent directory is invisible to
+ * the hollow gate (which can only inspect dirs that exist), yet publishing the
+ * loader anyway ships `optionalDependencies` pointing at names that 404 — every
+ * consumer install breaks. Repos gitignore their generated `npm/<platformId>/`
+ * dirs, so a clean CI checkout has NONE of them until the platform matrix build
+ * stages the artifacts; that is exactly the shape this catches.
+ *
+ * The expected set comes from the loader's own declaration, never from what
+ * happens to be on disk: every generator-owning package's exact-version
+ * (`X.Y.Z…`) `optionalDependencies` row naming one of its platform siblings.
+ * A name the by-convention discovery in workspace.mts already resolved to a
+ * package directory is present (its payload is the hollow gate's business);
+ * anything left over is missing. Pure over the discovered packages.
+ */
+export function findAbsentPlatformPackages(
+  packages: readonly WorkspacePackage[],
+): AbsentPlatformPackageReport[] {
+  const discovered = new Set(packages.map(pkg => pkg.name))
+  const reports: AbsentPlatformPackageReport[] = []
+  for (const owner of packages) {
+    if (!owner.generatorPath) {
+      continue
+    }
+    const missing: string[] = []
+    for (const [depName, spec] of Object.entries(
+      owner.manifest.optionalDependencies ?? {},
+    )) {
+      if (
+        /^\d/.test(spec) &&
+        isPlatformSiblingName(owner.name, depName) &&
+        !discovered.has(depName)
+      ) {
+        missing.push(depName)
+      }
+    }
+    if (missing.length > 0) {
+      reports.push({ missing: missing.toSorted(), owner })
     }
   }
   return reports

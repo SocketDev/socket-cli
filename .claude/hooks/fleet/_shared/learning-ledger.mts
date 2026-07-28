@@ -29,6 +29,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { resolveRepoRoot } from './repo-root.mts'
+
 // The canonical learning taxonomy. Caliber ships two divergent vocabularies
 // (an auto-distill set and a manual `save-learning` set); this reconciles them
 // into ONE, taking the auto set (marked authoritative in its prompt) as the
@@ -156,12 +158,21 @@ export interface LearningLedger {
 const EMPTY_LEDGER: LearningLedger = { entries: [], updatedAt: 0 }
 
 /**
- * Resolve the store root: `<projectDir>/node_modules/.cache/<store>` when a
- * project dir is available, else the OS temp dir. Pure, no IO.
+ * Resolve the store root: `<repo root of projectDir>/node_modules/.cache/
+ * <store>` when a project dir is available, else the OS temp dir. The
+ * git-toplevel anchor is what keeps the store out of
+ * `template/base/node_modules` when a caller's dir sits under a workspace
+ * glob (see repo-root.mts).
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(projectDir, 'node_modules', '.cache', 'fleet', STORE_NAME)
+    return path.join(
+      resolveRepoRoot(projectDir),
+      'node_modules',
+      '.cache',
+      'fleet',
+      STORE_NAME,
+    )
   }
   return path.join(
     process.env['TMPDIR'] ??

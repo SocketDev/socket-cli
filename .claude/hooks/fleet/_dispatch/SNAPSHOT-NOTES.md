@@ -9,6 +9,11 @@ runtime `loadBundleB()` splice anymore; the frozen `dispatch()` runs the whole
 set. Built + boots + byte-equivalent to the live per-hook path on Node 22, 24,
 26 (snapshot == cold dispatch.mts == compile-cache index.cjs).
 
+Scope note (lint): "snapshot caching" for the linter is NOT a V8 blob — oxlint is
+a native napi binary with no `--snapshot-blob`. The equivalent startup win for
+lint is the pre-bundled rolldown `oxlint-plugin.mjs` (already live, cascaded, and
+shipped); there is no V8 snapshot to add there, so that premise is settled.
+
 ## Migrating the last 10 — the prior hybrid remainder — into the frozen bundle
 
 The 10 that previously could not freeze — 8 acorn-WASM guards + check-new-deps

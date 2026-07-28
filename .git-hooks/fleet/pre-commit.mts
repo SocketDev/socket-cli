@@ -480,7 +480,6 @@ const main = (): number => {
       stripTemplateLayer(file).startsWith('template/.claude/hooks/') ||
       stripTemplateLayer(file).startsWith('template/.git-hooks/') ||
       stripTemplateLayer(file).startsWith('template/scripts/') ||
-      stripTemplateLayer(file).startsWith('template/bootstrap/') ||
       normalizePath(file).includes('/external/') ||
       normalizePath(file).includes('/vendor/') ||
       normalizePath(file).includes('/upstream/') ||

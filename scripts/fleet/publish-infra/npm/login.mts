@@ -14,9 +14,8 @@ import process from 'node:process'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 
+import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
 import { logger, runCapture, runInherit } from '../shared.mts'
-
-const NPM_REGISTRY = 'https://registry.npmjs.org'
 
 // Best-effort: pop the default browser at `url`. Non-fatal when it can't
 // (headless / CI) — the caller prints the URL either way.
@@ -45,7 +44,7 @@ async function openBrowser(url: string, cwd: string): Promise<void> {
 async function webLogin(home: string): Promise<boolean> {
   // `npm-auth-type: web` is load-bearing: without it the registry 401s the
   // session create (it gates the endpoint on the client declaring web auth).
-  const created = await httpRequest(`${NPM_REGISTRY}/-/v1/login`, {
+  const created = await httpRequest(`${NPM_REGISTRY_URL}/-/v1/login`, {
     body: '{}',
     headers: {
       'content-type': 'application/json',

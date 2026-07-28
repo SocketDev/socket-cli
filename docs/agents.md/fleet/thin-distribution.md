@@ -42,7 +42,7 @@ both are required (and enforced):
 
 - **Belt (dev / clone)** — `package.json` `prepare` starts with
   `node scripts/repo/bootstrap/prepare.mts` (`PREPARE_FETCH` in
-  `template/bootstrap/src/install.mts`),
+  `scripts/repo/gen/bootstrap/src/install.mts`),
   which runs `node scripts/repo/bootstrap/fleet.mjs --if-current` then reconciles the
   install. A fresh clone / `pnpm install` fetches + applies the pinned bundle
   BEFORE the (itself-untracked) install-git-hooks step + any chained build.
@@ -60,12 +60,20 @@ both are required (and enforced):
 
 ## Enforcement (code-is-law)
 
-`checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member
-that went thin (its `.gitignore` untracks the fleet payload — detected by the
-`scripts/fleet/` untrack entry, which every repo has but only a thin one
-gitignores) is missing the prepare belt. A non-thin member (it tracks the
-payload) is exempt. Run `node scripts/repo/bootstrap/fleet.mjs --wire` to add the belt +
-`sync-fleet` script. The CI suspenders are enforced by the `ci.yml`-shape check
+Thin membership is a roster capability: the canonical roster
+(`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`) opts a member into
+`thin` via its `optIns` array, alongside `freeform-readme` and `squash-history`.
+That roster is the single source of truth — `isThinOptIn` (in the shared
+`fleet-roster.mts`) resolves it, and `KNOWN_OPT_INS` in the same module is the
+enum every opt-in value is validated against, so a typo is rejected by
+`fleet-members-are-onboarded`.
+
+`checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member the
+roster opts into `thin` is missing the prepare belt — its fresh clones / CI
+would otherwise run against a missing payload. A non-thin member (the roster
+does not opt it into `thin`) tracks the payload and is exempt. Run
+`node scripts/repo/bootstrap/fleet.mjs --wire` to add the belt + `sync-fleet`
+script. The CI suspenders are enforced by the `ci.yml`-shape check
 (workflow-fleet-block), which pins the fleet block that runs the
 setup-and-install composite.
 
@@ -86,7 +94,7 @@ A bundle update reaches a thin member as a true SYNC, and two different
 mechanisms prune what a new release dropped:
 
 - **The applied-files record**: after placing the bundle,
-  `pruneStaleFleetFiles()` (`template/bootstrap/src/install.mts`) deletes any file the
+  `pruneStaleFleetFiles()` (`scripts/repo/gen/bootstrap/src/install.mts`) deletes any file the
   LAST-applied manifest owned (the `applied-files` record under
   `node_modules/.cache/`) that the fetched manifest no longer lists. Renames,
   deletions, and additions inside a mirror tree need NO bookkeeping — but the
@@ -98,7 +106,7 @@ mechanisms prune what a new release dropped:
   `scripts/repo/sync-scaffolding/manifest/bundle.json`): the durable deletion
   record. The cascade fixer `safeDelete`s each path in every member, AND
   `make-release-bundle` ships the same list in the bundle manifest as
-  `removedPaths`, which both installers (`template/bootstrap/src/install.mts`
+  `removedPaths`, which both installers (`scripts/repo/gen/bootstrap/src/install.mts`
   `removeTombstonedPaths()` + `scripts/fleet/fetch-fleet-bundle.mts`) delete
   after placement — so a moved/retired path heals on the next refresh even
   with no applied-files record. A move must ship its deletion: retire a path,

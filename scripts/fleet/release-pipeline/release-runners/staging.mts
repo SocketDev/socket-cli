@@ -15,7 +15,6 @@ import {
 } from '../../publish-infra/remote-npm-publish.mts'
 import { headIsOnOrigin } from '../gate-runners.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
-import { deriveReleaseLevel } from '../stages.mts'
 
 import type { RunnerSeams, StageOutcome } from '../seams.mts'
 
@@ -44,19 +43,18 @@ export async function runBumpStage(config: {
   }
   // A committed `X.Y.Z-prerelease` hint already names the landing spot.
   // When the target IS the hint's base, bump.mts consumes the hint on its
-  // own — run it with no --release-as instead of deriving a level (the
-  // hint's base is never a sequential increment of the hint itself).
+  // own — run it with no --release-as. Otherwise forward the USER-named
+  // version EXACTLY (`--release-as X.Y.Z`): translating it into a level is
+  // lossy, because bump.mts increments from the released base (registry +
+  // last tag), never the manifest, so base+level can land on a different
+  // version than the one the user named.
   const hinted = versionHintFrom(pkg.version)
   const hintNamesTarget = hinted === cfg.targetVersion
   const levelArgs: string[] = []
   let bumpMode = `the committed ${pkg.version} hint`
   if (!hintNamesTarget) {
-    const derived = deriveReleaseLevel(pkg.version, cfg.targetVersion)
-    if (derived.error !== undefined) {
-      return { detail: derived.error, status: 'failed' }
-    }
-    levelArgs.push('--release-as', derived.level)
-    bumpMode = `--release-as ${derived.level}`
+    levelArgs.push('--release-as', cfg.targetVersion)
+    bumpMode = `--release-as ${cfg.targetVersion}`
   }
   // Overlay-first: a repo-specific scripts/repo/bump.mts (monorepo / custom
   // bumps, e.g. socket-registry's publishConfig.directory subject) wins over

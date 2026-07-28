@@ -26,6 +26,7 @@
  *     Usage: TAG=v1.2.3 node scripts/fleet/registry-liveness-gate.mjs
  */
 
+import crypto from 'node:crypto'
 import { existsSync, globSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -137,9 +138,9 @@ export function indexHasVersion(indexBody, version) {
   return indexBody.includes(`"vers":"${version}"`)
 }
 
-async function fetchOk(url, fetchImpl, logError) {
+async function fetchOk(url, fetchImpl, logError, init) {
   try {
-    return await fetchImpl(url)
+    return await fetchImpl(url, init)
   } catch (error) {
     // The old `curl -fsS` printed its transport error and failed the gate;
     // map a thrown fetch the same way.
@@ -148,8 +149,29 @@ async function fetchOk(url, fetchImpl, logError) {
   }
 }
 
+// No-cache request headers for a release-liveness read.
+// WHY: the npm registry CDN caches version reads for MINUTES; a liveness gate
+// that trusts a cached read can see a version that is already LIVE as absent (a
+// stale 404) and refuse to cut the release. The headers defeat any intermediary
+// proxy; `cacheBustedNpmUrl` defeats the CDN cache key.
+export const NO_CACHE_HEADERS = {
+  'cache-control': 'no-cache',
+  pragma: 'no-cache',
+}
+
 /**
- * True when `name@version` resolves on the npm registry.
+ * A liveness URL with a unique `_cb` nonce appended so a stale CDN copy can
+ * never answer. `nonce` is injectable so a test can assert the exact busting.
+ */
+export function cacheBustedNpmUrl(url, nonce = crypto.randomUUID()) {
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}_cb=${nonce}`
+}
+
+/**
+ * True when `name@version` resolves on the npm registry. The read is cache-
+ * busted (unique nonce + no-cache headers) so a stale CDN packument cannot
+ * report a live version as absent.
  */
 export async function checkNpmLive(
   name,
@@ -158,9 +180,10 @@ export async function checkNpmLive(
   logError = console.error,
 ) {
   const res = await fetchOk(
-    `https://registry.npmjs.org/${name}/${version}`,
+    cacheBustedNpmUrl(`https://registry.npmjs.org/${name}/${version}`),
     fetchImpl,
     logError,
+    { headers: NO_CACHE_HEADERS },
   )
   return res !== undefined && res.ok
 }

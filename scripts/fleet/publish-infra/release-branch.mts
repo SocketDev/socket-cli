@@ -30,9 +30,13 @@ import { logger } from './shared.mts'
 export interface ReleaseEnv {
   // Branch the successful publish fast-forwards (the dispatch branch, e.g. 'main').
   readonly mainBranch: string
+  // PR App token with pull_requests:write — the promote PR's create /
+  // auto-merge / merge calls, which the release App's contents:write cannot
+  // make. Two apps, two least-privilege grants.
+  readonly prToken: string
   // Repo in "owner/name" form.
   readonly repo: string
-  // Release App token with contents:write.
+  // Release App token with contents:write — branch refs and the bump commit.
   readonly token: string
 }
 
@@ -54,9 +58,16 @@ export interface BumpResult {
 }
 
 /**
- * Resolve the CI release environment (repo, dispatch branch, release App
- * token). Throws loud — What / Where / Fix — when any piece is missing, since a
- * CI bump can neither branch nor promote without all three.
+ * Resolve the CI release environment (repo, dispatch branch, and BOTH app
+ * tokens). Throws loud — What / Where / Saw vs. wanted / Fix — when any piece
+ * is missing.
+ *
+ * This is the PROMOTE PREFLIGHT. It runs at bump time, before anything is
+ * staged or published, and the PR App token is required here rather than at the
+ * moment the promote PR is opened — that moment is AFTER the irreversible
+ * registry publish, where a missing token strands a live version on a throwaway
+ * branch. Demanding both tokens up front turns that into a refusal nothing has
+ * paid for yet.
  */
 export function resolveReleaseEnv(): ReleaseEnv {
   const repo = process.env['GITHUB_REPOSITORY']
@@ -65,14 +76,30 @@ export function resolveReleaseEnv(): ReleaseEnv {
   // NOT the default github.token — least-privilege + verified/app-attributed.
   const token =
     process.env['RELEASE_APP_TOKEN'] || process.env['GH_TOKEN'] || ''
-  if (!repo || !mainBranch || !token) {
+  // The PR App token. A separate app because the promote PR needs
+  // pull_requests:write, which the release App's installation does not grant
+  // (and must not: it stays a contents:write app).
+  const prToken = process.env['PR_APP_TOKEN'] || ''
+  const missing = [
+    ...(repo ? [] : ['GITHUB_REPOSITORY']),
+    ...(mainBranch ? [] : ['GITHUB_REF_NAME']),
+    ...(token ? [] : ['RELEASE_APP_TOKEN (or GH_TOKEN)']),
+    ...(prToken ? [] : ['PR_APP_TOKEN']),
+  ]
+  if (!repo || !mainBranch || !token || !prToken) {
     throw new Error(
-      '[release-branch] the CI bump needs GITHUB_REPOSITORY, GITHUB_REF_NAME, ' +
-        'and a release App token (RELEASE_APP_TOKEN / GH_TOKEN) in the ' +
-        'environment. Set them in the publish workflow step, then re-run.',
+      `[release-branch] the CI bump is missing ${missing.join(', ')}.\n` +
+        `  Where: the publish workflow's step env, read before anything is staged.\n` +
+        `  Wanted: GITHUB_REPOSITORY + GITHUB_REF_NAME, a release App token\n` +
+        `  (contents:write, for the branch + bump commit) AND a PR App token\n` +
+        `  (pull_requests:write, for the promote PR that lands the bump on the\n` +
+        `  default branch).\n` +
+        `  Fix: mint both in the workflow — ./.github/actions/fleet/github-release-app-token\n` +
+        `  and ./.github/actions/fleet/github-pr-app-token — and pass them as\n` +
+        `  RELEASE_APP_TOKEN and PR_APP_TOKEN on the publish step.`,
     )
   }
-  return { mainBranch, repo, token }
+  return { mainBranch, prToken, repo, token }
 }
 
 /**
@@ -170,13 +197,15 @@ export async function promoteReleaseBranch(
     head: branch,
     repo: env.repo,
     title: commitSubject,
-    token: env.token,
+    // PR App token: the create + auto-merge + merge calls all need
+    // pull_requests:write, which the release App does not carry.
+    token: env.prToken,
   })
   const queued = await enablePullRequestAutoMerge({
     commitHeadline: commitSubject,
     pullRequestId: pr.nodeId,
     repo: env.repo,
-    token: env.token,
+    token: env.prToken,
   })
   if (queued) {
     logger.success(
@@ -191,7 +220,7 @@ export async function promoteReleaseBranch(
     commitTitle: commitSubject,
     number: pr.number,
     repo: env.repo,
-    token: env.token,
+    token: env.prToken,
   })
   logger.success(
     `[release-branch] opened PR #${pr.number} (${branch} → ${env.mainBranch}) ` +

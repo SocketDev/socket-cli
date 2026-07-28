@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file PTY wrapper for npm's browser-based 2FA web-auth flow, for `npm
  *   publish|login|deprecate|owner|access|...` run from a NON-interactive agent
  *   shell. WHY THIS EXISTS. npm's write operations require 2FA. On a real

@@ -64,6 +64,11 @@ const DUAL_SEP_RE_PATTERNS: readonly RegExp[] = [
   /\[\\?\/\]/, // `[/]` or `[\/]` alone (rare; included for completeness)
   /\[\/\\\\\]/, // `[/\\]` — slash + escaped backslash
   /\[\\\\\/\]/, // `[\\/]` — escaped backslash + slash
+  // `[/\]` — slash + SINGLE backslash: the `new RegExp("[/\\]")` constructor
+  // branch tests the JS-string VALUE, which carries one less escaping level
+  // than raw regex source (the reverse order `[\/]`-as-value already matches
+  // the first pattern above).
+  /\[\/\\\]/,
 ]
 
 // Path-flavored token signal — if any of these appear in the same

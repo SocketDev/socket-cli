@@ -32,6 +32,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   'authoring-spec': { family: 'plan', mode: 'mutating' },
   'building-tdd': { family: 'build', mode: 'mutating' },
   'cascading-fleet': { family: 'fleet', mode: 'mutating' },
+  'cascading-socket-lib-release': { family: 'fleet', mode: 'mutating' },
   'cleaning-ci': { family: 'maintain', mode: 'mutating' },
   'codifying-disciplines': { family: 'fleet', mode: 'mixed' },
   'consolidating-commits': { family: 'ship', mode: 'mutating' },
@@ -116,6 +117,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
  * this list so members don't fail for a skill they are not supposed to carry.
  */
 export const WHEELHOUSE_ONLY_SKILLS: readonly string[] = [
+  'cascading-socket-lib-release',
   'onboarding-fleet-member',
 ]
 

@@ -46,6 +46,7 @@ import { fileURLToPath } from 'node:url'
 
 import { actedOnPath, isFleetTarget } from '../_shared/fleet-context.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import { resolveRepoRoot } from '../_shared/repo-root.mts'
 import {
   BUMP_SUBJECT_RE,
   bumpCommitMessage,
@@ -117,16 +118,20 @@ export function newestMtime(dir: string): number {
 // older than the newest src file. Fail-open (no failure) when there is no `src/`
 // (nothing to measure) so non-source repos aren't blocked.
 function coverageFreshnessFailure(cwd: string): string | undefined {
-  const srcDir = path.join(cwd, 'src')
+  // Hooks run against the TARGET repo, not this repo's root, so the lookup
+  // starts at the payload cwd — resolved to that repo's git toplevel, since a
+  // session standing in a subdirectory would otherwise see neither `src/` nor
+  // the summary and wave a stale-coverage bump through (see
+  // _shared/repo-root.mts).
+  const repoRoot = resolveRepoRoot(cwd)
+  const srcDir = path.join(repoRoot, 'src')
   if (!existsSync(srcDir)) {
     return undefined
   }
   // The coverage runner writes the merged summary under the fleet coverage
-  // cache (node_modules/.cache/fleet/coverage/coverage-summary.json). Hooks run
-  // against the target repo's cwd, not this repo's root, so this is a cwd-joined
-  // literal rather than the REPO_ROOT-anchored paths.mts constant.
+  // cache (node_modules/.cache/fleet/coverage/coverage-summary.json).
   const summary = path.join(
-    cwd,
+    repoRoot,
     'node_modules',
     '.cache',
     'fleet',

@@ -16,6 +16,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+// oxlint-disable-next-line socket/prefer-async-spawn -- one blocking rev-parse on the mutex path; the caller is already sequential.
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 export const GIT_MUTEX_STALE_MS = 3 * 60 * 1000
@@ -37,8 +39,31 @@ export interface GitRunLike {
   out: string
 }
 
+/**
+ * Repo-ROOT for `dir` (its git toplevel), falling back to `dir` when git
+ * cannot answer. Callers pass an arbitrary cwd — land-work passes the
+ * session's — and anchoring the mutex on that raw path writes
+ * `<cwd>/node_modules/` wherever the caller happened to stand. When that cwd
+ * sits under a workspace-glob ancestor (e.g. `template/base/**`), the new
+ * node_modules reads to pnpm as a manifest-less importer and EVERY
+ * `pnpm run <script>` in the repo dies ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND.
+ * Runtime state belongs at the repo root's node_modules/.cache/fleet/ —
+ * exactly one store per checkout, per the runtime-state doctrine.
+ */
+export function resolveRepoRoot(dir: string): string {
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: dir })
+  const out = top.status === 0 ? String(top.stdout ?? '').trim() : ''
+  return out === '' ? dir : out
+}
+
 function mutexDir(repoDir: string): string {
-  return path.join(repoDir, 'node_modules', '.cache', 'fleet', 'git-mutex')
+  return path.join(
+    resolveRepoRoot(repoDir),
+    'node_modules',
+    '.cache',
+    'fleet',
+    'git-mutex',
+  )
 }
 
 function sleep(ms: number): Promise<void> {

@@ -51,6 +51,10 @@ jobs:
     outputs:
       has-gap: ${{ steps.gap.outputs.has-gap }}
       gaps: ${{ steps.gap.outputs.gaps }}
+      # gap | clean | skipped | degraded — a no-gap run says WHICH it was, so
+      # a registry blip or a repo the healer has no arm for can never read as
+      # a verified-clean cron.
+      status: ${{ steps.gap.outputs.status }}
     steps:
       # First step can't call the local ./.github/actions/fleet/checkout
       # composite (nothing checked out yet); bootstrap the workspace with the
@@ -79,7 +83,10 @@ jobs:
       # Deliberately NO setup-and-install: reconcile-gap.mts is dependency-free
       # by design (node builtins only) so the cron's common no-gap path runs on
       # the runner's preinstalled Node — modern runner images strip .mts types
-      # natively. Registry-less repos (private, no package name) self-skip.
+      # natively. The npm subject comes from the publish engine's own workspace
+      # layout resolver, so a private workspace root resolves to its published
+      # member instead of self-skipping; a repo whose only registry channel the
+      # healer has no arm for fails LOUD rather than reporting a clean cron.
       - name: Detect tag gaps
         id: gap
         env:

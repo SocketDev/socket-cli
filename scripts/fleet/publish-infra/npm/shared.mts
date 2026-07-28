@@ -7,9 +7,40 @@
 
 import os from 'node:os'
 
-import { extractFirstJson, rootPath, runCapture } from '../shared.mts'
+import {
+  extractFirstJson,
+  logApproveHandoff,
+  rootPath,
+  runCapture,
+} from '../shared.mts'
 import { fetchVersionTrustInfo } from './registry.mts'
 import { resolveNpmWorkspaceLayout } from './workspace.mts'
+
+// The approve leg an operator runs after staging. `npm:publish` is
+// channel-enforced on every npm-registry member (RELEASE_SCRIPTS_BY_CHANNEL),
+// so this resolves in exactly the repos that reach the staged message, and it
+// routes through publish-pipeline.mts — the entry verify-before-publish-guard
+// sanctions.
+export const NPM_APPROVE_COMMAND = 'pnpm run npm:publish -- --approve'
+
+// Who owns the promotion, stated once so nobody reads approve.mts to find out.
+// It runs `pnpm stage approve` against the registry itself (approve.mts's
+// runApprove), so the operator's only manual step is the 2FA challenge.
+export const NPM_APPROVE_OWNERSHIP =
+  'That command performs the npm promotion itself: it runs `pnpm stage ' +
+  'approve` against the registry from your machine, then creates the git tag ' +
+  'and GitHub release once the version resolves as live. Your only manual ' +
+  'step is the 2FA challenge it prompts for.'
+
+/**
+ * Print the staged-to-approve handoff for the npm registry. Called ONCE at the
+ * end of a staging run — single subject or multi-package workspace — so the
+ * actionable command is the last thing on screen rather than a tail repeated
+ * per package.
+ */
+export function logNpmApproveHandoff(): void {
+  logApproveHandoff(NPM_APPROVE_COMMAND, NPM_APPROVE_OWNERSHIP)
+}
 
 /**
  * Raised when the staged-entry listing could not be AUTHENTICATED. The stage

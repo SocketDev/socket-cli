@@ -18,7 +18,12 @@ import { withPinnedReadme } from '../pin-readme.mts'
 import { releaseBehindLiveGate } from '../release.mts'
 import { logger, rootPath, runCapture, runInherit } from '../shared.mts'
 import { isAlreadyPublished } from './registry.mts'
-import { cratePath, crateSha256, readCargoPackage } from './shared.mts'
+import {
+  cratePath,
+  crateSha256,
+  logCargoApproveHandoff,
+  readCargoPackage,
+} from './shared.mts'
 
 /**
  * Run `cargo package` (with `--locked` unless `locked` is false) and return the
@@ -174,9 +179,9 @@ export async function runStaged(config: {
       logger.success(
         `Verified + packaged ${pkg.name}@${pkg.version}. NOTHING is public ` +
           'yet — crates.io has no staging endpoint, so this is a verified, ' +
-          'hashed artifact awaiting a downstream `--approve`. Publishing is ' +
-          'PERMANENT (a version can only be yanked, never overwritten).',
+          'hashed artifact awaiting a downstream `--approve`.',
       )
+      logCargoApproveHandoff()
     },
   )
 }

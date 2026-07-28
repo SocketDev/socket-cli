@@ -7,6 +7,14 @@
 // suspicion window for typosquats / postinstall-script malware / etc.
 // Adding to the exclude list bypasses that protection.
 //
+// Socket-owned scopes are EXEMPT: `@socketregistry/*` and `@socketsecurity/*`
+// are first-party packages Socket itself publishes, blanket-excluded from the
+// soak in `.npmrc` (`min-release-age-exclude[]=@socketregistry/*` /
+// `@socketsecurity/*`). The soak defends against THIRD-PARTY supply-chain
+// attacks; there is no external attacker to soak against on a registry Socket
+// controls, so a same-day `@socketregistry/*` bump is never a soak violation and
+// this guard does not flag it.
+//
 // Detection model:
 //   - Fires only on Edit / Write to files named `pnpm-workspace.yaml`.
 //   - For Edit: applies new_string-over-old_string to current file contents,
@@ -98,6 +106,16 @@ export function extractExcludeNames(yamlText: string): Set<string> {
   return out
 }
 
+// Socket-owned first-party scopes, blanket soak-excluded in `.npmrc`. An
+// exclude entry for one of these — the `@scope/*` glob itself or any concrete
+// member (`@socketregistry/packageurl-js`, `@socketregistry/foo@1.4.8`) — is
+// policy-exempt, not a bypass case, so the guard never blocks it.
+const SOCKET_OWNED_SCOPES = ['@socketregistry/', '@socketsecurity/'] as const
+
+export function isSocketOwnedScope(name: string): boolean {
+  return SOCKET_OWNED_SCOPES.some(scope => name.startsWith(scope))
+}
+
 export const check = editGuard((filePath, _content, payload) => {
   if (path.basename(filePath) !== 'pnpm-workspace.yaml') {
     return undefined
@@ -113,7 +131,8 @@ export const check = editGuard((filePath, _content, payload) => {
 
   const added: string[] = []
   for (const name of afterNames) {
-    if (!beforeNames.has(name)) {
+    // Socket-owned first-party scopes are soak-exempt by policy — never flag them.
+    if (!beforeNames.has(name) && !isSocketOwnedScope(name)) {
       added.push(name)
     }
   }
@@ -134,9 +153,11 @@ export const check = editGuard((filePath, _content, payload) => {
       '  postinstall-malware suspicion window. Adding to `exclude[]`',
       '  bypasses that protection for the listed packages.',
       '',
-      '  Legitimate cases (rare):',
-      '    - Emergency CVE patch published < 7 days ago.',
-      '    - First-party package you control.',
+      '  Socket-owned scopes (`@socketregistry/*`, `@socketsecurity/*`) are',
+      '  already soak-exempt in `.npmrc` and are never flagged here — this block',
+      '  is for a THIRD-PARTY package still inside the malware-suspicion window.',
+      '',
+      '  Legitimate case (rare): an emergency CVE patch published < 7 days ago.',
       '',
       "  Don't hand-edit the exclude list — run the canonical helper, which",
       '  looks up the npm publish date and writes the dated annotation for you:',

@@ -158,6 +158,14 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
             output: '',
             skipped: !process.env['FLEET_CHECK_RELEASE'],
           }),
+    // The thin-distribution untrack set must NEVER contain a CI-critical GitHub
+    // path. A thin member git-untracks whatever thinIgnoreEntries returns; GitHub
+    // reads .github/workflows/** + .github/actions/fleet/** from the committed
+    // tree BEFORE any fetch could repopulate them, so untracking one breaks CI
+    // outright. Proves the shipped fetcher honors isAlwaysTrackedGitHubSurface.
+    // Runs per-tree (imports the member's own scripts/repo/bootstrap/fleet.mjs);
+    // vacuous pass where that fetcher is absent.
+    () => run('node', ['scripts/fleet/check/thin-untrack-excludes-ci.mts']),
     // Every slashed pattern in .config/fleet/.prettierignore must be `**/`-anchored
     // or it silently matches nothing (oxfmt roots the matcher at the ignore file's
     // dir via Gitignore::new). Catches the footgun where a bare `vendor/**` looks
@@ -195,6 +203,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // workflow bumped 1.4.3 → 1.4.4, so 1.4.3 was never published). Network read
     // → release-tier; fail-open when no published version / registry unreachable.
     releaseStep(['scripts/fleet/check/version-is-not-ahead-of-published.mts']),
+    // Every version PUBLISHED to npm has its v<version> tag on origin AND a
+    // published GitHub release. The promote is irreversible and the tag +
+    // release are cut in a separate leg after it, so a leg that produces
+    // nothing leaves a half-done release nothing else detects. Scoped to the
+    // TAG ERA (anchored at the earliest published version that carries a tag),
+    // so pre-discipline history is not a backlog. Network reads → release tier;
+    // fail-open offline / without gh auth.
+    releaseStep([
+      'scripts/fleet/check/published-versions-have-releases.mts',
+      '--quiet',
+    ]),
     // A multi-crate cargo workspace keeps every publishable crate BARE — a
     // `-prerelease` breaks inter-crate `^X.Y.Z` resolution. The hint is OPTIONAL
     // for a single crate (the release bumps from the published version by
@@ -325,6 +344,18 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     () =>
       run('node', [
         'scripts/fleet/check/publish-workflows-are-conventionally-named.mts',
+        '--quiet',
+      ]),
+    // A bot workflow that GPG-signs commits MUST use the BARE
+    // socket-bot@users.noreply.github.com committer email — the UID on the
+    // registered BOT_GPG_PRIVATE_KEY key. The numeric-prefixed form lands
+    // Unverified and a "Require commit signing" ruleset rejects the push (it
+    // broke the wheelhouse release orchestrator's bump push). STRICT (exit 1):
+    // a hard push-blocker, not a style nit. The numeric form is for the
+    // non-GPG / web-flow path only.
+    () =>
+      run('node', [
+        'scripts/fleet/check/bot-signing-email-matches-key.mts',
         '--quiet',
       ]),
   ]

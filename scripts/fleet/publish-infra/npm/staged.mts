@@ -32,13 +32,20 @@ import {
 import { withPinnedReadme } from '../pin-readme.mts'
 import { withPrunedPackManifest } from './pack-manifest.mts'
 import { verifyPackedPayload } from './pack-preflight.mts'
-import { diagnoseStagedAuthFailure, isAlreadyPublished } from './registry.mts'
+import {
+  diagnoseStageConflict,
+  diagnoseStagedAuthFailure,
+  fetchPublishedState,
+  isAlreadyPublished,
+} from './registry.mts'
 import type { StageListEntry } from './shared.mts'
-import { isStagingExpected } from './shared.mts'
+import { isStagingExpected, logNpmApproveHandoff } from './shared.mts'
 import {
   packWorkspaceMemberTarball,
   runWorkspacePublish,
+  verifyStagedPlatformEntry,
 } from './staged-workspace.mts'
+import { hasMachineBuiltPayload } from './workspace-plan.mts'
 import { resolveNpmWorkspaceLayout } from './workspace.mts'
 import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { tarExecutable } from '../../_shared/tar-executable.mts'
@@ -63,6 +70,38 @@ function pinTargetFor(subject: ReleaseSubject): {
     rootPath: subject.rootPath,
     version: subject.version,
   }
+}
+
+export type StageDecision = 'already-published' | 'stage'
+
+/**
+ * The verify-BEFORE-stage decision: should a target version be STAGED, or is it
+ * ALREADY PUBLISHED? Pure so it is unit-tested without the network.
+ *
+ * WHY: staging a version that is already live returns a confusing
+ * `[E409] Cannot stage previously published version`, and an operator who
+ * retries just re-hits the 409. When the target is already on the registry
+ * there is nothing to stage — the caller skips straight to
+ * verify/approve/release+reconcile, where the release stage cuts the tag + GH
+ * release if they are missing. Both the `versions` list AND `dist-tags.latest`
+ * are consulted: a match on either is proof the version is published, so a
+ * partial read that dropped the version from `versions` but still named it
+ * `latest` is still caught. The reads that feed this MUST be cache-busted (see
+ * registry.mts:cacheBustedRead) — a stale CDN packument that omits a live
+ * version would otherwise green-light a doomed stage.
+ */
+export function stageAction(config: {
+  publishedLatest: string | undefined
+  publishedVersions: readonly string[]
+  target: string
+}): StageDecision {
+  const { publishedLatest, publishedVersions, target } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  const published =
+    target === publishedLatest || publishedVersions.includes(target)
+  return published ? 'already-published' : 'stage'
 }
 
 /**
@@ -94,11 +133,24 @@ export async function runStaged(
     `Staging ${pkg.name}@${pkg.version} (tag=${tag})${dryRun ? ' [dry-run]' : ''}`,
   )
 
-  if (await isAlreadyPublished(pkg.name, pkg.version)) {
-    logger.fail(
-      `${pkg.name}@${pkg.version} is already published. Bump the version and try again.`,
+  // Verify BEFORE staging: a cache-busted packument read (never a stale CDN
+  // copy) settles whether the target is already live. If it is, staging would
+  // return a confusing `[E409] Cannot stage previously published version`, so
+  // skip the stage cleanly and let the pipeline advance — the release stage
+  // cuts the tag + GH release if they are still missing.
+  const published = await fetchPublishedState(pkg.name)
+  if (
+    stageAction({
+      publishedLatest: published.latest,
+      publishedVersions: published.versions,
+      target: pkg.version,
+    }) === 'already-published'
+  ) {
+    logger.success(
+      `${pkg.name}@${pkg.version} already published — nothing to stage; ` +
+        `proceed to verify/approve/release+reconcile (the release stage cuts ` +
+        `the tag + GH release if missing).`,
     )
-    process.exitCode = 1
     return
   }
 
@@ -163,6 +215,9 @@ export async function runStaged(
   }
   if (code !== 0) {
     logger.fail(`pnpm stage publish exited ${code}`)
+    for (const line of await diagnoseStageConflict(pkg.name, pkg.version)) {
+      logger.fail(line)
+    }
     for (const line of await diagnoseStagedAuthFailure(pkg.name)) {
       logger.fail(line)
     }
@@ -174,9 +229,8 @@ export async function runStaged(
       `Dry-run complete for ${pkg.name}@${pkg.version}. Re-run without --dry-run to upload.`,
     )
   } else {
-    logger.success(
-      `Staged ${pkg.name}@${pkg.version}. Run \`pnpm run publish -- --approve\` locally to promote — the git tag and GitHub release are created at approve time, when the package goes public.`,
-    )
+    logger.success(`Staged ${pkg.name}@${pkg.version}.`)
+    logNpmApproveHandoff()
   }
 }
 
@@ -210,11 +264,30 @@ export async function runDirect(
     `Direct-publishing ${pkg.name}@${pkg.version} (tag=${tag})${dryRun ? ' [dry-run]' : ''}`,
   )
 
-  if (await isAlreadyPublished(pkg.name, pkg.version)) {
-    logger.fail(
-      `${pkg.name}@${pkg.version} is already published. Bump the version and try again.`,
+  // Verify BEFORE publishing: a cache-busted packument read settles whether the
+  // target is already live. If it is, re-publishing errors; skip the upload and
+  // heal idempotently — ensure the tag + GH release exist behind the liveness
+  // gate — instead of failing.
+  const published = await fetchPublishedState(pkg.name)
+  if (
+    stageAction({
+      publishedLatest: published.latest,
+      publishedVersions: published.versions,
+      target: pkg.version,
+    }) === 'already-published'
+  ) {
+    logger.success(
+      `${pkg.name}@${pkg.version} already published — nothing to publish; ` +
+        `ensuring the tag + GH release exist.`,
     )
-    process.exitCode = 1
+    const released = await releaseBehindLiveGate({
+      isLive: () => isAlreadyPublished(pkg.name, pkg.version),
+      pkg: { name: pkg.name, version: pkg.version },
+      registry: 'npm',
+    })
+    if (!released) {
+      process.exitCode = 1
+    }
     return
   }
 
@@ -473,6 +546,39 @@ export async function compareExtractedTarballs(
  * CONTENTS per-file — equality there is the honest integrity axis. `pack`,
  * `hashLocalTarball`, and `downloadStagedTarball` are injectable for tests.
  */
+/**
+ * Route a staged entry to the verification axis its payload supports. A
+ * generated platform package or a machine-built payload (.wasm / .node) has
+ * no local byte-twin, so it verifies STRUCTURALLY on the staged bytes
+ * (verifyStagedPlatformEntry) — and the downloaded staged tarball is copied
+ * to `<rootPath>/<name>-<version>.tgz` so the release-asset checksum pickup
+ * hashes the bytes that actually shipped, never a divergent local re-pack.
+ * Everything else keeps the local-pack byte-compare gate (verifyStagedEntry).
+ */
+export async function verifyStagedEntryRouted(
+  entry: StageListEntry,
+): Promise<boolean> {
+  const layout = resolveNpmWorkspaceLayout(rootPath)
+  const member =
+    entry.name && layout.kind === 'multi'
+      ? layout.packages.find(pkg => pkg.name === entry.name)
+      : undefined
+  if (member && (member.platform || hasMachineBuiltPayload(member.manifest))) {
+    const ok = await verifyStagedPlatformEntry(entry, member, {
+      downloadStagedTarball: defaultDownloadStagedTarball,
+    })
+    if (ok && entry.name && entry.version && entry.stageId) {
+      const staged = await defaultDownloadStagedTarball(entry.stageId)
+      if (staged) {
+        const assetName = `${entry.name.replace(/^@/, '').replace('/', '-')}-${entry.version}.tgz`
+        await fs.copyFile(staged, path.join(rootPath, assetName))
+      }
+    }
+    return ok
+  }
+  return verifyStagedEntry(entry)
+}
+
 export async function verifyStagedEntry(
   entry: StageListEntry,
   options?:

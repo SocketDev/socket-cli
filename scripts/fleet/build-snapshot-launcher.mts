@@ -48,13 +48,17 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import crypto from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
 import { DISPATCH_DIR } from './gen/hook-dispatch.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import {
+  liftMirrorLockSync,
+  writeThroughMirrorLock,
+} from './_shared/mirror-lock.mts'
 
 const require = createRequire(import.meta.url)
 const { blobPath } = require(
@@ -215,6 +219,12 @@ function buildHostLauncher(): boolean {
     isWin && spawnSync('gcc', ['--version'], { stdio: 'ignore' }).status === 0
   const { args, cc } = selectCompiler(src, outBin, { haveGcc, isWin })
 
+  // The launcher binary lives inside the cascade-locked hook mirror; a prior
+  // cascade leaves it 0555, and the linker cannot overwrite a read-only output
+  // (`ld: can't write output file`). Lift the lock so cc can rewrite it — the
+  // binary is a gitignored generated output, freed the same way rolldown's
+  // outputs are in build-hook-snapshot.mts.
+  liftMirrorLockSync(outBin)
   const r = spawnSync(cc, args, { stdio: 'inherit' })
   if (r.status !== 0 || !existsSync(outBin)) {
     process.stderr.write(`${cc} failed (exit ${String(r.status)}).\n`)
@@ -234,8 +244,19 @@ function writeSidecars(): void {
     .digest('hex')
     .slice(0, 16)
   const blobOut = blobPath('dispatch', sourceHash)
-  writeFileSync(path.join(DISPATCH_DIR, 'node.path'), `${process.execPath}\n`)
-  writeFileSync(path.join(DISPATCH_DIR, 'snapshot-blob.path'), `${blobOut}\n`)
+  // Both sidecars live inside the cascade-locked hook mirror (a prior cascade
+  // leaves node.path 0444). A plain writeFileSync EACCESes on node.path and
+  // never reaches snapshot-blob.path — the launcher then can't read the blob
+  // path and perma-fails-open to the compile-cache baseline. Route through the
+  // shared lift-around-write so each write survives the lock.
+  writeThroughMirrorLock(
+    path.join(DISPATCH_DIR, 'node.path'),
+    `${process.execPath}\n`,
+  )
+  writeThroughMirrorLock(
+    path.join(DISPATCH_DIR, 'snapshot-blob.path'),
+    `${blobOut}\n`,
+  )
   process.stdout.write(
     `  node.path=${process.execPath}\n  snapshot-blob.path=${blobOut}\n`,
   )

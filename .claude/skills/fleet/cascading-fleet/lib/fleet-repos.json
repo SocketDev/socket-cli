@@ -104,7 +104,7 @@
     {
       "name": "skills",
       "description": "Shared Claude Code skills + agent content for the fleet",
-      "optIns": ["freeform-readme"],
+      "optIns": ["freeform-readme", "squash-history", "thin"],
       "publishes": "none"
     },
     {

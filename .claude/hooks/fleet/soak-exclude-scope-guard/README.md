@@ -11,7 +11,7 @@ The `minimumReleaseAgeExclude:` block in `pnpm-workspace.yaml` is a
 that delays installing any release until it's been visible in the
 public registry long enough for the ecosystem to flag bad code.
 
-Adding a third-party package (e.g. `defu`, `@anthropic-ai/*`) to
+Adding a third-party package (e.g. `cowsay`, `@types/*`) to
 the exclude list defeats the purpose of the gate for that package.
 
 A common mistake is reaching for `overrides:` to get around the
@@ -21,7 +21,7 @@ overriding to a too-new release stays blocked. The gate is doing
 its job — the right move is to wait for the 7-day window to pass.
 
 Example: an automated PR that drops a third-party scope like
-`@anthropic-ai/*` into `minimumReleaseAgeExclude` across sibling
+`@types/*` into `minimumReleaseAgeExclude` across sibling
 repos has to be reverted everywhere, since the exclude weakens the
 soak gate for every release of that scope.
 

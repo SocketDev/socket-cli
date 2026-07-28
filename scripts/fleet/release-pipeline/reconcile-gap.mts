@@ -9,15 +9,25 @@
  *   depth-1 checkout with the runner's preinstalled Node — no pnpm install —
  *   so the cron's common no-gap path stays near-free. Top-level imports are
  *   node builtins + dependency-free fleet modules (constants/npm-registry.mts,
- *   _shared/is-main-module.mts, _shared/release-subject.mts) ONLY; anything
+ *   _shared/is-main-module.mts, reconcile-gap-subject.mts) ONLY; anything
  *   heavier loads via dynamic import inside the mode that needs it.
  *
+ *   NEVER FALSE-GREEN. Every early return is either a GENUINE no-op with its
+ *   reason logged, or a loud non-zero exit. A skip the operator cannot tell
+ *   apart from a verified-clean run is the failure this healer exists to
+ *   prevent: a `status` output (`gap` / `clean` / `skipped` / `degraded`)
+ *   names which one happened, and every non-clean outcome writes the job
+ *   summary too, so a degraded run never reads as a healthy one.
+ *
  *   Modes:
- *   - default: read the package's PUBLIC packument + the remote v* tag list,
- *     compute the gap set (every published version missing its tag — not just
- *     latest — ratcheted to versions above the newest existing tag), and emit
- *     `has-gap` / `gaps` GitHub outputs. Registry-less repos (private, no
- *     name) self-skip with has-gap=false.
+ *   - default: resolve the repo's npm subject through the SAME workspace
+ *     layout resolver the publish engine uses (a private workspace root
+ *     redirects to its publishable member — decmpfs publishes
+ *     `napi/decmpfs`, not the private root), read that package's PUBLIC
+ *     packument + the remote v* tag list, compute the gap set (every
+ *     published version missing its tag — not just latest — ratcheted to
+ *     versions above the newest existing tag), and emit `has-gap` / `gaps` /
+ *     `status` GitHub outputs.
  *   - `--flip <version>`: resolve the version's CONTENT COMMIT — the bump
  *     commit where package.json flipped to that version — via the anchor
  *     logic bump.mts exports (findVersionFlipCommit; dynamic import, needs
@@ -36,7 +46,7 @@ import { promisify } from 'node:util'
 
 import { NPM_REGISTRY_URL } from '../constants/npm-registry.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { resolveReleaseSubject } from '../_shared/release-subject.mts'
+import { resolveGapSubject } from './reconcile-gap-subject.mts'
 
 const execFileP = promisify(execFile)
 
@@ -173,57 +183,67 @@ export function capGaps(
   }
 }
 
-interface PackageSubject {
-  name?: string | undefined
-  private?: boolean | undefined
-}
-
 /**
- * The healer's subject: the PUBLISH SUBJECT resolved through
- * publishConfig.directory — a redirected monorepo's root is private, but its
- * subject publishes, so the tag-gap healer must cover it instead of
- * self-skipping on the root's `private: true`. Fail-open on any read/resolve
- * failure: the cron treats an unresolvable subject as registry-less and skips
- * this run. Exported for tests.
+ * One packument read's outcome. The three cases mean genuinely different
+ * things to the cron and must never collapse into a single "unreadable":
+ *
+ * - `live` — the versions that are public right now.
+ * - `absent` — a 404: the package has never been published. A GENUINE no-op.
+ * - `degraded` — a 5xx, a rate limit, a timeout, a DNS failure. Nothing was
+ *   learned this run, so nothing can be claimed about the gap set either.
  */
-export function readPackageSubject(repoRoot: string): PackageSubject {
-  try {
-    const subject = resolveReleaseSubject(repoRoot)
-    return { name: subject.name || undefined, private: subject.private }
-  } catch {
-    return {}
-  }
-}
+export type PackumentRead =
+  | { kind: 'absent' }
+  | { kind: 'degraded'; detail: string }
+  | { kind: 'live'; versions: string[] }
 
 /**
  * Published versions from ONE public, unauthenticated abbreviated-packument
  * read — the keys of `versions` list exactly the versions that are live
  * right now; unpublished versions drop out, so the healer can never tag one.
- * Returns undefined on any failure: the caller treats an unreadable registry
- * as "nothing to do this run" and the next cron retries.
  */
-async function fetchPublishedVersions(
-  name: string,
-): Promise<string[] | undefined> {
+async function fetchPublishedVersions(name: string): Promise<PackumentRead> {
   const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  let res: Response
   try {
     // socket-lint: allow global-fetch -- this CLI is dependency-free by
     // design: the workflow's gap job runs it with no pnpm install, so the
     // lib-stable http helpers are out of reach here.
-    const res = await fetch(url, {
+    res = await fetch(url, {
       headers: { accept: 'application/vnd.npm.install-v1+json' },
       signal: AbortSignal.timeout(30_000),
     })
-    if (!res.ok) {
-      return undefined
+  } catch (e) {
+    return {
+      detail: String(e).split('\n')[0] ?? 'fetch failed',
+      kind: 'degraded',
     }
-    const json = (await res.json()) as {
+  }
+  if (res.status === 404) {
+    return { kind: 'absent' }
+  }
+  if (!res.ok) {
+    return { detail: `HTTP ${res.status} from ${url}`, kind: 'degraded' }
+  }
+  let json: { versions?: Record<string, unknown> | undefined }
+  try {
+    json = (await res.json()) as {
       versions?: Record<string, unknown> | undefined
     }
-    return json.versions ? Object.keys(json.versions) : undefined
-  } catch {
-    return undefined
+  } catch (e) {
+    return {
+      detail: `unparseable packument body: ${String(e).split('\n')[0]}`,
+      kind: 'degraded',
+    }
   }
+  // A 200 with no `versions` map is a packument shape the healer does not
+  // understand — never read it as "nothing published".
+  return json.versions
+    ? { kind: 'live', versions: Object.keys(json.versions) }
+    : {
+        detail: `packument for ${name} carries no versions map`,
+        kind: 'degraded',
+      }
 }
 
 /**
@@ -255,6 +275,21 @@ function emitOutput(name: string, value: string): void {
   const outPath = process.env['GITHUB_OUTPUT']
   if (outPath) {
     appendFileSync(outPath, `${name}=${value}\n`)
+    return
+  }
+  // Local runs have no GITHUB_OUTPUT and want none. Inside Actions its
+  // absence is fatal: the reconcile job reads `has-gap` off this file, so a
+  // dropped write reads as "no gap" and the healer skips a real one silently.
+  if (process.env['GITHUB_ACTIONS'] === 'true') {
+    throw new Error(
+      `Cannot emit the gap job's "${name}" output: GITHUB_OUTPUT is unset.\n` +
+        `  Where: the release-reconcile gap step's environment.\n` +
+        `  Saw vs wanted: GITHUB_ACTIONS=true with no GITHUB_OUTPUT path; ` +
+        `wanted the runner-provided output file. The reconcile job gates on ` +
+        `has-gap, so a dropped write would silently skip a real tag gap.\n` +
+        `  Fix: run this step through the standard runner environment — do ` +
+        `not clear GITHUB_OUTPUT in the step's env: block.`,
+    )
   }
 }
 
@@ -275,44 +310,71 @@ function fail(line: string): void {
   process.stderr.write(`${line}\n`)
 }
 
-function emitNoGap(reason: string): void {
+/**
+ * A run that found no gap to heal. `skipped` is a GENUINE no-op — the repo has
+ * nothing on a registry to reconcile against. `degraded` means the run learned
+ * nothing: a registry or git read failed, so "no gap" was never established.
+ *
+ * A degraded run stays exit-0 on purpose. This is a 30-minute cron on every
+ * fleet repo; going red on an npm blip would page the whole fleet and get the
+ * schedule auto-disabled. It pays for that with visibility instead — a
+ * `status=degraded` output and a job-summary line, so a degraded run can never
+ * be mistaken for a verified-clean one on the surfaces an operator reads.
+ */
+function emitNoGap(status: 'clean' | 'degraded' | 'skipped', reason: string) {
   emitOutput('has-gap', 'false')
   emitOutput('gaps', '[]')
-  say(`no tag gap: ${reason}`)
+  emitOutput('status', status)
+  say(`no tag gap (${status}): ${reason}`)
+  if (status !== 'clean') {
+    emitSummary(`release-reconcile ${status}: ${reason}`)
+  }
 }
 
-async function runGapMode(): Promise<void> {
-  const pkg = readPackageSubject(REPO_ROOT)
-  if (!pkg.name || pkg.private === true) {
+/**
+ * The gap job's whole decision. Takes the repo root so the healer can be
+ * driven read-only against any checkout — it reads a registry, reads remote
+ * tags, and writes GitHub outputs; it never cuts a tag, pushes, or publishes.
+ */
+export async function runGapMode(repoRoot: string): Promise<void> {
+  const subject = resolveGapSubject(repoRoot)
+  if (subject.kind === 'none') {
+    emitNoGap('skipped', subject.reason)
+    return
+  }
+  const packument = await fetchPublishedVersions(subject.name)
+  if (packument.kind === 'absent') {
     emitNoGap(
-      pkg.private === true
-        ? 'private package — no registry to reconcile against'
-        : 'no package.json name — registry-less repo',
+      'skipped',
+      `${subject.name} has never been published — no registry history to reconcile against`,
     )
     return
   }
-  const published = await fetchPublishedVersions(pkg.name)
-  if (published === undefined) {
-    // Fail-open for the CRON: an unreadable packument is a transient, and a
-    // red run every 30 minutes is noise; the next run retries. Say so loudly.
+  if (packument.kind === 'degraded') {
     emitNoGap(
-      `packument for ${pkg.name} unreadable this run — retrying on the next cron`,
+      'degraded',
+      `packument for ${subject.name} unreadable this run, so no gap set was computed ` +
+        `— retrying on the next cron: ${packument.detail}`,
     )
     return
   }
+  const published = packument.versions
   let tags: string[]
   try {
-    tags = await fetchRemoteTags(REPO_ROOT)
+    tags = await fetchRemoteTags(repoRoot)
   } catch (e) {
     emitNoGap(
-      `git ls-remote --tags failed this run — retrying on the next cron: ${String(e).split('\n')[0]}`,
+      'degraded',
+      `git ls-remote --tags failed this run, so no gap set was computed ` +
+        `— retrying on the next cron: ${String(e).split('\n')[0]}`,
     )
     return
   }
   const gaps = computeTagGaps({ publishedVersions: published, tagNames: tags })
   if (!gaps.length) {
     emitNoGap(
-      `${pkg.name}: no published version above the newest v* tag is missing its tag ` +
+      'clean',
+      `${subject.name}: no published version above the newest v* tag is missing its tag ` +
         `(${published.length} published)`,
     )
     return
@@ -320,13 +382,14 @@ async function runGapMode(): Promise<void> {
   const { deferredCount, selected } = capGaps(gaps)
   emitOutput('has-gap', 'true')
   emitOutput('gaps', JSON.stringify(selected))
+  emitOutput('status', 'gap')
   say(
-    `tag gap: ${pkg.name} has ${gaps.length} published version${gaps.length === 1 ? '' : 's'} ` +
+    `tag gap: ${subject.name} has ${gaps.length} published version${gaps.length === 1 ? '' : 's'} ` +
       `without a v* tag — reconciling ${selected.join(', ')}` +
       (deferredCount ? ` now; ${deferredCount} deferred to the next run` : ''),
   )
   emitSummary(
-    `release-reconcile gap: \`${pkg.name}\` — ${gaps.join(', ')} published but untagged` +
+    `release-reconcile gap: \`${subject.name}\` — ${gaps.join(', ')} published but untagged` +
       (deferredCount ? ` — healing ${selected.length} this run` : ''),
   )
 }
@@ -340,8 +403,8 @@ async function runFlipMode(version: string): Promise<void> {
   if (!flip) {
     fail(
       `no content commit found for ${version}.\n` +
-        `  Where: git log -S over package.json from HEAD — the bump commit that flipped version to ${version}.\n` +
-        `  Saw: no reachable commit whose package.json reads ${version} while its parent does not.\n` +
+        `  Where: git log -S over the workspace's version-source manifest from HEAD — the bump commit that flipped version to ${version}.\n` +
+        `  Saw: no reachable commit whose version-source manifest reads ${version} while its parent does not.\n` +
         `  Fix: history rewrite or squash removed the bump commit — reconcile this version by hand ` +
         `at the exact published content; the healer never guesses a commit to tag.`,
     )
@@ -365,7 +428,7 @@ async function main(): Promise<void> {
     await runFlipMode(version)
     return
   }
-  await runGapMode()
+  await runGapMode(REPO_ROOT)
 }
 
 if (isMainModule(import.meta.url)) {

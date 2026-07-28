@@ -9,7 +9,7 @@
  *   gen/hook-dispatch) all import it, so the lift semantics cannot drift.
  */
 
-import { chmodSync, promises as fs, statSync } from 'node:fs'
+import { chmodSync, promises as fs, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 /**
@@ -88,6 +88,21 @@ export function liftMirrorLockSync(filePath: string): void {
   if ((mode & 0o200) === 0) {
     chmodSync(filePath, mode | 0o200)
   }
+}
+
+/**
+ * Write `data` to a cascade-locked mirror file in one call: lift the read-only
+ * lock, write, restore the prior mode (0444 stays 0444). A writable or missing
+ * target writes untouched. This is the single sanctioned way for a
+ * writeFileSync generator to (re)write a mirror file — a plain writeFileSync
+ * EACCESes on a locked target, and every dispatch-dir writer routes through
+ * here so the lift-around-write cannot be forgotten again.
+ */
+export function writeThroughMirrorLock(
+  filePath: string,
+  data: string | NodeJS.ArrayBufferView,
+): void {
+  withMirrorLockLiftedSync(filePath, () => writeFileSync(filePath, data))
 }
 
 /**

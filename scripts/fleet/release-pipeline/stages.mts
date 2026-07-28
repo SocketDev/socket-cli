@@ -3,14 +3,10 @@
  *   receipt-currency rules (tree stages key on the HEAD sha they passed at;
  *   release stages key on the user-named target version), the run plan
  *   (which stages still need to run, and the bump HARD STOP when no
- *   `--version` has been named), and the user-version → `--release-as` level
- *   derivation. Everything here is a pure function over plain data — the
- *   effectful runners live in runners.mts.
+ *   `--version` has been named). Everything here is a pure function over
+ *   plain data — the effectful runners live in runners.mts.
  */
 
-import { computeNextVersion } from '../lib/changelog.mts'
-
-import type { BumpLevel } from '../lib/changelog.mts'
 import type { PipelineState, StageReceipt } from './state.mts'
 
 /**
@@ -256,47 +252,4 @@ export function restampTreeReceipts(
     }
   }
   return { ...state, stages }
-}
-
-export type LevelDerivation =
-  | { error: string; level?: undefined }
-  | { error?: undefined; level: BumpLevel }
-
-const SEMVER_RE = /^\d+\.\d+\.\d+$/
-
-/**
- * Derive the `--release-as` level that makes bump.mts land EXACTLY on the
- * user-named target version. The pipeline never writes a version number
- * itself — bump.mts owns the write; this only names the level. A target that
- * is not one of the three exact increments of `current` is an error (the Fix
- * names the sanctioned alternatives, including the user-committed
- * `X.Y.Z-prerelease` hint bump.mts honors).
- */
-export function deriveReleaseLevel(
-  current: string,
-  target: string,
-): LevelDerivation {
-  if (!SEMVER_RE.test(target)) {
-    return {
-      error:
-        `--version must be a plain X.Y.Z semver (saw "${target}"). ` +
-        `Prerelease/build suffixes are not releasable targets here.`,
-    }
-  }
-  const levels: readonly BumpLevel[] = ['patch', 'minor', 'major']
-  for (let i = 0, { length } = levels; i < length; i += 1) {
-    const level = levels[i]!
-    if (computeNextVersion(current, level) === target) {
-      return { level }
-    }
-  }
-  return {
-    error:
-      `--version ${target} is not a sequential bump of the current ` +
-      `${current} (next: patch ${computeNextVersion(current, 'patch')}, ` +
-      `minor ${computeNextVersion(current, 'minor')}, major ` +
-      `${computeNextVersion(current, 'major')}). Fix: name one of those, or ` +
-      `commit the hint version "${target}-prerelease" to package.json ` +
-      `yourself (bump.mts consumes committed hints), then re-run.`,
-  }
 }

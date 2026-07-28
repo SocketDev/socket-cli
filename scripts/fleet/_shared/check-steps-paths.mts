@@ -67,6 +67,15 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // someone left in-tree (a full fleet-scaffold copy) that gets swept into
     // cascade commits — fail loud so it's removed, not gitignored.
     () => run('node', ['scripts/fleet/check/member-dirs-are-not-nested.mts']),
+    // Sibling stray-dir gate: pnpm reads any dir holding `node_modules/` as a
+    // workspace importer, so one sitting above a workspace glob with no
+    // package.json beside it takes EVERY `pnpm run <script>` down with
+    // ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND. Incident: a fleet script anchored its
+    // cache at a template/base/** file and wrote template/base/node_modules/.
+    () =>
+      run('node', [
+        'scripts/fleet/check/workspace-importers-have-manifests.mts',
+      ]),
     // A package's `exports` map and its public file surface must agree: every
     // exports target resolves to a real file (no stale map entry that throws
     // ERR_MODULE_NOT_FOUND for consumers), and every public built file (privacy
@@ -392,12 +401,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Every fleet/repo CLI entrypoint must FAIL SOFT (use runMain / a .catch),
     // never crash the user with a raw unhandled-rejection stack trace.
     () => run('node', ['scripts/fleet/check/entry-scripts-are-fail-soft.mts']),
-    // No package.json may use a `link:` protocol dependency — non-portable,
-    // outside the lockfile integrity guarantees, breaks the zero-dep bundle
-    // contract. Use workspace: (in-repo) or catalog: (centrally pinned).
+    // No committed dependency spec resolves through a local filesystem path
+    // the repo does not carry: a hand-written `link:`/`file:` spec in a
+    // package.json dependency block, or a pnpm-GENERATED lockfile `link:`
+    // pointing at an untracked (generated/gitignored) directory. Use
+    // workspace: (in-repo), catalog: (centrally pinned), or a registry range.
     () =>
       run('node', [
-        'scripts/fleet/check/package-deps-have-no-link-protocol.mts',
+        'scripts/fleet/check/dependency-specs-are-registry-or-workspace.mts',
       ]),
     // Per-platform tail packages match their naming domain: binaries (bin/
     // payload) use pnpm pack-app triplets (linux-x64, glibc unsuffixed); ABI/

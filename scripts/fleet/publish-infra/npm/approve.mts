@@ -15,6 +15,10 @@ import process from 'node:process'
 
 import { checkbox, password } from '@socketsecurity/lib-stable/stdio/prompts'
 
+import {
+  APPROVE_IS_NOT_A_RESUME_PATH,
+  releaseGapRecoveryCommand,
+} from '../../_shared/release-gap-recovery.mts'
 import { releaseBehindLiveGate } from '../release.mts'
 import { logger, rootPath, runInheritTty } from '../shared.mts'
 import { isAlreadyPublished } from './registry.mts'
@@ -25,19 +29,18 @@ import {
   listStagedPackages,
   readPackageJson,
 } from './shared.mts'
-import { ensureNpmLogin } from './login.mts'
+import { ensureNpmIdentity } from './auth-identity.mts'
 import { scanStagedEntry } from './scan.mts'
 import { defaultDownloadStagedTarball, verifyStagedEntry } from './staged.mts'
 import {
   packWorkspaceReleaseAssets,
   verifyStagedPlatformEntry,
 } from './staged-workspace.mts'
+import { hasMachineBuiltPayload } from './workspace-plan.mts'
 import {
   findWorkspacePackageByName,
   resolveNpmWorkspaceLayout,
 } from './workspace.mts'
-
-export { ensureNpmLogin }
 
 export interface ApproveChoice {
   checked: boolean
@@ -85,7 +88,12 @@ export async function runApprove(config: {
     __proto__: null,
     ...config,
   } as typeof config
-  if (!(await ensureNpmLogin())) {
+  // Identity, not just auth: staged entries are maintainer-visible, so a
+  // wrong-account login reads an empty stage list and the approve silently
+  // no-ops. ensureNpmIdentity covers logged-out (delegates to login.mts) AND
+  // wrong-user (TTY: consented logout/login rotation; otherwise fail loud).
+  const layout = resolveNpmWorkspaceLayout(rootPath)
+  if (!(await ensureNpmIdentity(layout.versionSource.name))) {
     process.exitCode = 1
     return
   }
@@ -104,7 +112,6 @@ export async function runApprove(config: {
   // artifact that is perfectly good in its own repo. "Ours" is the full
   // publishable-name set: the single subject for a plain repo, every
   // workspace member (loader + platform packages) for a multi layout.
-  const layout = resolveNpmWorkspaceLayout(rootPath)
   const localNames =
     layout.kind === 'multi'
       ? new Set(layout.packages.map(pkg => pkg.name))
@@ -142,7 +149,16 @@ export async function runApprove(config: {
     }
   }
   if (eligible.length === 0) {
+    // This filter runs BEFORE the tag + GitHub release leg, so an operator who
+    // re-runs --approve to heal a missing tag lands here and exits zero having
+    // cut nothing. Name the real resume path rather than let the no-op read as
+    // "already done".
     logger.log('All staged entries are already published; nothing to approve.')
+    logger.log(
+      `  ${APPROVE_IS_NOT_A_RESUME_PATH}\n` +
+        `  If a published version is missing its tag or GitHub release, heal it with\n` +
+        `  ${releaseGapRecoveryCommand('<version>')}`,
+    )
     return
   }
 
@@ -162,11 +178,12 @@ export async function runApprove(config: {
       ? findWorkspacePackageByName(layout, entry.name)
       : undefined
     // eslint-disable-next-line no-await-in-loop
-    const verified = member?.platform
-      ? await verifyStagedPlatformEntry(entry, member, {
-          downloadStagedTarball: defaultDownloadStagedTarball,
-        })
-      : await verifyStagedEntry(entry)
+    const verified =
+      member && (member.platform || hasMachineBuiltPayload(member.manifest))
+        ? await verifyStagedPlatformEntry(entry, member, {
+            downloadStagedTarball: defaultDownloadStagedTarball,
+          })
+        : await verifyStagedEntry(entry)
     if (verified) {
       verifiedEntries.push(entry)
     }
@@ -250,11 +267,12 @@ export async function runApprove(config: {
       const member = findWorkspacePackageByName(layout, entry.name)
       const scanSubject = { name: entry.name, version: entry.version }
       // eslint-disable-next-line no-await-in-loop
-      const scanOk = member?.platform
-        ? await scanStagedEntry(scanSubject, {
-            packTarball: () => defaultDownloadStagedTarball(stageId),
-          })
-        : await scanStagedEntry(scanSubject)
+      const scanOk =
+        member && (member.platform || hasMachineBuiltPayload(member.manifest))
+          ? await scanStagedEntry(scanSubject, {
+              packTarball: () => defaultDownloadStagedTarball(stageId),
+            })
+          : await scanStagedEntry(scanSubject)
       if (scanOk) {
         scanned.push(stageId)
       }

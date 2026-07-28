@@ -67,12 +67,42 @@ try {
 // Reaches `process.stderr` only when called (bundle-load failure), not at
 // module eval — accessing the stream at eval time would capture a TTY/pipe
 // handle on every import.
+//
+// This is the fleet hook-system HEALTH NET, and it lives HERE — in the
+// hand-written loader, OUTSIDE `_dist/bundle.cjs` — on purpose: a net that
+// detects "the bundle failed to load" cannot live inside the bundle it checks.
+// Every dispatched event routes through this loader, so a missing/broken bundle
+// means every fleet hook is silently OFF until it is rebuilt (source repo) or
+// re-fetched (member). On the SessionStart event the loader ALSO emits a loud,
+// actionable notice on Claude Code's SessionStart channel (stdout
+// additionalContext) so the failure surfaces in the transcript instead of
+// scrolling past as one stderr line; other events stay quiet (one stderr line).
 function reportBundleLoadFailure(e) {
+  const detail = String(e && e.message ? e.message : e)
   process.stderr.write(
-    '[fleet-hook-dispatch] bundle load failed (fail-open): ' +
-      String(e?.message ? e.message : e) +
-      '\n',
+    '[fleet-hook-dispatch] bundle load failed (fail-open): ' + detail + '\n',
   )
+  // argv layout: `node .../index.cjs <Event>` — the event is argv[2].
+  if (process.argv[2] === 'SessionStart') {
+    try {
+      process.stdout.write(
+        JSON.stringify({
+          hookSpecificOutput: {
+            hookEventName: 'SessionStart',
+            additionalContext:
+              '[fleet-hook-dispatch] The fleet hook bundle failed to load — every ' +
+              'fleet hook is OFF this session (fail-open). Rebuild it in the ' +
+              'wheelhouse with `node scripts/fleet/build-hook-bundle.mts`, or in a ' +
+              'member re-fetch the release payload (reinstall / `pnpm run prepare`). ' +
+              'Error: ' +
+              detail,
+          },
+        }),
+      )
+    } catch {
+      // Never let the health notice itself wedge the session.
+    }
+  }
   process.exit(0)
 }
 

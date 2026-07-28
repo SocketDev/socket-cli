@@ -13,10 +13,13 @@
  *   whose RECEIVER is a separator regex (a manual match — `/[/\\]/.test(p)` on
  *   an un-normalized path). No autofix — the rewrite is contextual (the right
  *   shape is `normalizePath(p)` at the input boundary, not a local
- *   substitution), so the AI-fix tier handles it. Skips the normalize helper
- *   itself (`paths/normalize`), where the canonical separator rewrite
- *   legitimately lives. Pairs with the `path-regex-normalize-nudge` Stop hook +
- *   the `socket/cross-platform-path-matching` doctrine.
+ *   substitution), so the AI-fix tier handles it. Skips the two files where the
+ *   canonical separator rewrite legitimately lives: lib's own
+ *   `paths/normalize`, and the fleet's dep-0 counterpart
+ *   `scripts/fleet/_shared/unix-path.mts` — the leaf a bare-checkout module
+ *   (the release-reconcile gap job, a hook script) calls when lib-stable is
+ *   unreachable. Pairs with the `path-regex-normalize-nudge` Stop hook + the
+ *   `socket/cross-platform-path-matching` doctrine.
  */
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -39,6 +42,13 @@ const SEPARATOR_REWRITE_PATTERNS: ReadonlySet<string> = new Set([
   '[\\\\/]',
   '\\\\',
 ])
+
+// The files that IMPLEMENT the canonical separator rewrite, so the rule must
+// not point them at themselves: lib-stable's `paths/normalize` leaf, and the
+// fleet's dep-0 `_shared/unix-path.mts` for modules that load before any pnpm
+// install and therefore cannot import lib-stable.
+const CANONICAL_REWRITE_HOME_RE =
+  /\/(?:_shared\/unix-path|paths\/normalize)\.[mc]?[jt]s$/
 
 // A regex literal whose source rewrites path separators.
 function isSeparatorRewriteRegex(node: AstNode): boolean {
@@ -72,9 +82,10 @@ const rule = {
     const filename = normalizePath(
       context.filename ?? context.getFilename?.() ?? '',
     )
-    // The normalize helper itself is where the canonical separator rewrite
-    // lives — never steer it at itself.
-    if (/\/paths\/normalize\.[mc]?[jt]s$/.test(filename)) {
+    // The two canonical separator-rewrite homes — lib's `paths/normalize` and
+    // the fleet's dep-0 `_shared/unix-path.mts` — are where the rewrite is the
+    // implementation, so never steer the rule at them.
+    if (CANONICAL_REWRITE_HOME_RE.test(filename)) {
       return {}
     }
     return {

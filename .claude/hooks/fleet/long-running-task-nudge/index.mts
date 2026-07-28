@@ -48,6 +48,7 @@ import {
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveRepoRoot } from '../_shared/repo-root.mts'
 import { WAITING_DISCIPLINE_GUIDANCE } from '../_shared/waiting-discipline.mts'
 
 // First and second (escalated) age tiers, in minutes. Named constants are the
@@ -311,12 +312,21 @@ export function formatLongrunNudge(warned: readonly WarnDecision[]): string {
 // ── Thin fs shell ─────────────────────────────────────────────────────────
 
 /**
- * The warn-once store dir. Prefers `<projectDir>/node_modules/.cache/<name>`;
- * falls back to the OS temp dir. Pure — no IO.
+ * The warn-once store dir. Prefers
+ * `<repo root of projectDir>/node_modules/.cache/<name>`; falls back to the OS
+ * temp dir. The git-toplevel anchor is what keeps the store out of
+ * `template/base/node_modules` when a caller's dir sits under a workspace glob
+ * (see _shared/repo-root.mts).
  */
 export function resolveSeenStoreDir(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(projectDir, 'node_modules', '.cache', 'fleet', STORE_NAME)
+    return path.join(
+      resolveRepoRoot(projectDir),
+      'node_modules',
+      '.cache',
+      'fleet',
+      STORE_NAME,
+    )
   }
   return path.join(
     process.env['TMPDIR'] ??

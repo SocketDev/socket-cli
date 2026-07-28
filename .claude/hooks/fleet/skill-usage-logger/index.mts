@@ -8,7 +8,7 @@
 // Format: `<ISO-timestamp>\t<skill-name>\t<cwd>\n`
 //
 // The hook is read-only telemetry. Every failure path falls open
-// (exit 0, no log write) so a broken log directory or unparseable
+// (no log write, silent allow) so a broken log directory or unparseable
 // payload never costs the user a Skill call.
 //
 // Disable for one session: set `SOCKET_SKILL_USAGE_LOG=` (empty).
@@ -17,33 +17,8 @@ import { appendFileSync, existsSync, mkdirSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { isHookEntrypoint } from '../_shared/entrypoint.mts'
 
-interface ToolInput {
-  readonly tool_name?: string | undefined
-  readonly tool_input?:
-    | {
-        readonly skill?: string | undefined
-      }
-    | undefined
-  // Claude Code passes the path it stores per-project session state at.
-  // We mirror it for the log file so the audit script can colocate.
-  readonly transcript_path?: string | undefined
-}
-
-/* c8 ignore start - subprocess-only: reads process.stdin piped from Claude Code */
-async function readStdin(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = ''
-    process.stdin.setEncoding('utf8')
-    process.stdin.on('data', chunk => {
-      data += chunk
-    })
-    process.stdin.on('end', () => resolve(data))
-    process.stdin.on('error', reject)
-  })
-}
-/* c8 ignore stop */
+import { defineHook, runHook } from '../_shared/guard.mts'
 
 // Resolve the per-project log path. Caller may override via env. The
 // canonical path lives next to Claude Code's per-project state at
@@ -86,82 +61,61 @@ export function buildLine(
   return `${timestamp}\t${safeSkill}\t${safeCwd}\n`
 }
 
-/* c8 ignore start - subprocess-only: calls process.exit() and reads stdin, runs only when spawned by Claude Code */
-async function main(): Promise<void> {
-  let raw: string
-  try {
-    raw = await readStdin()
-  } catch {
-    process.exit(0)
-  }
-  if (!raw) {
-    process.exit(0)
-  }
-  let payload: ToolInput
-  try {
-    payload = JSON.parse(raw) as ToolInput
-  } catch {
-    process.exit(0)
-  }
-  if (payload.tool_name !== 'Skill') {
-    process.exit(0)
-  }
-  const skillName = payload.tool_input?.skill
-  if (!skillName || typeof skillName !== 'string') {
-    process.exit(0)
-  }
-
-  const logPath = resolveLogPath(
-    process.env['SOCKET_SKILL_USAGE_LOG'],
-    payload.transcript_path,
-    os.homedir(),
-  )
-  if (!logPath) {
-    process.exit(0)
-  }
-
-  const dir = path.dirname(logPath)
-  try {
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true })
+export const hook = defineHook({
+  check: payload => {
+    if (payload.tool_name !== 'Skill') {
+      return undefined
     }
-  } catch {
-    process.exit(0)
-  }
-
-  // Cap the log at 1 MB. The audit script reads the full file; an
-  // unbounded log would surprise the runner. At ~80 bytes per line,
-  // 1 MB ≈ 13k invocations — months of normal usage.
-  try {
-    if (existsSync(logPath)) {
-      const stats = statSync(logPath)
-      if (stats.size > 1024 * 1024) {
-        process.exit(0)
+    const skillName = payload.tool_input?.skill
+    if (!skillName || typeof skillName !== 'string') {
+      return undefined
+    }
+    const logPath = resolveLogPath(
+      process.env['SOCKET_SKILL_USAGE_LOG'],
+      payload.transcript_path,
+      os.homedir(),
+    )
+    if (!logPath) {
+      return undefined
+    }
+    const dir = path.dirname(logPath)
+    try {
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
       }
+    } catch {
+      // Unwritable log dir — fall open (no telemetry, never a blocked call).
+      return undefined
     }
-  } catch {
-    // Stat failure is fine — caller can still append.
-  }
+    // Cap the log at 1 MB. The audit script reads the full file; an
+    // unbounded log would surprise the runner. At ~80 bytes per line,
+    // 1 MB ≈ 13k invocations — months of normal usage.
+    try {
+      if (existsSync(logPath)) {
+        const stats = statSync(logPath)
+        if (stats.size > 1024 * 1024) {
+          return undefined
+        }
+      }
+    } catch {
+      // Stat failure is fine — caller can still append.
+    }
+    const timestamp = new Date().toISOString()
+    // process.cwd() is unstable for a hook subprocess — anchor on the
+    // agent-provided project-root env var instead, falling back to the
+    // home dir so the log line never records an empty column.
+    const cwd = process.env['CLAUDE_PROJECT_DIR'] || os.homedir()
+    const line = buildLine(timestamp, skillName, cwd)
+    try {
+      appendFileSync(logPath, line)
+    } catch {
+      // Disk full / permissions / read-only fs — fall open.
+    }
+    return undefined
+  },
+  event: 'PreToolUse',
+  matcher: ['Skill'],
+  type: 'nudge',
+})
 
-  const timestamp = new Date().toISOString()
-  // process.cwd() is unstable for a hook subprocess — anchor on the
-  // agent-provided project-root env var instead, falling back to the
-  // home dir so the log line never records an empty column.
-  const cwd = process.env['CLAUDE_PROJECT_DIR'] || os.homedir()
-  const line = buildLine(timestamp, skillName, cwd)
-
-  try {
-    appendFileSync(logPath, line)
-  } catch {
-    // Disk full / permissions / read-only fs — fall open.
-  }
-  process.exit(0)
-}
-
-if (isHookEntrypoint(import.meta.url)) {
-  main().catch(() => {
-    // Last-resort fall-open. Telemetry must never cost the user a tool call.
-    process.exit(0)
-  })
-}
-/* c8 ignore stop */
+void runHook(hook, import.meta.url)

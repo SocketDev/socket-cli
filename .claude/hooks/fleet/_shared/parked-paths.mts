@@ -18,6 +18,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { resolveRepoRoot } from './repo-root.mts'
+
 // Generous by hook standards: a park typically waits on a doc/decision that
 // arrives within a working day. Re-park to extend.
 export const PARKED_TTL_MS = 24 * 60 * 60 * 1000
@@ -41,8 +43,9 @@ export interface ParkedEntry {
  * under OS temp when node_modules doesn't exist yet.
  */
 export function resolveParkedFile(projectDir: string | undefined): string {
-  const base =
-    projectDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? FALLBACK_PROJECT_DIR
+  const base = resolveRepoRoot(
+    projectDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? FALLBACK_PROJECT_DIR,
+  )
   const cacheDir = path.join(base, 'node_modules', '.cache')
   if (existsSync(path.join(base, 'node_modules'))) {
     return path.join(cacheDir, 'fleet', 'socket-parked-paths', 'parked.json')

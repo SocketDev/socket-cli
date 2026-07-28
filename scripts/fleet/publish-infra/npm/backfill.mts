@@ -10,10 +10,13 @@
  *   gap, the bump stage is bypassed, and the staged publish runs behind five
  *   hard guards that keep the mode gap-fill-only:
  *
- *   1. The version must be absent from the registry `time` map — never published,
- *      and never published-then-unpublished. The time map is the registry's
- *      permanent publish ledger, so it is the one source that can prove
- *      absence; an unreadable ledger fails CLOSED.
+ *   1. The version must not be CURRENTLY published. The registry `time` map
+ *      (the permanent publish ledger) plus the live `versions` set split the
+ *      history three ways: never published (backfillable), published and
+ *      still live (refused — nothing to fill), and published-then-UNPUBLISHED
+ *      (backfillable — the staging-era registry frees an unpublished number,
+ *      and the stage attempt is server-side rejectable, so the registry
+ *      itself arbitrates). An unreadable ledger or versions set fails CLOSED.
  *   2. The version must be LOWER than registry latest. Backfill can only fill a
  *      gap behind history — it is never a way to skip the bump gate forward.
  *   3. The dist-tag must be explicitly non-`latest`. A backfill never moves the
@@ -26,9 +29,9 @@
 
 import { lt } from '@socketsecurity/lib-stable/versions/compare'
 
-import { logger } from '../shared.mts'
+import { logger, rootPath } from '../shared.mts'
 import { fetchRegistryReleaseState } from './registry.mts'
-import { readPackageJson } from './shared.mts'
+import { resolveNpmWorkspaceLayout } from './workspace.mts'
 
 // A release or prerelease semver. Guard 5 already pins the version to the
 // checked-out manifest; this only rejects obvious non-versions early with a
@@ -48,6 +51,11 @@ export interface BackfillGateInput {
    * The package.json version of the CHECKED-OUT content.
    */
   manifestVersion: string
+  /**
+   * The live registry `versions` set, or undefined when it could not be
+   * read — which fails CLOSED alongside the time map.
+   */
+  publishedVersions: readonly string[] | undefined
   /**
    * The registry packument `time` map, or undefined when it could not be
    * read — which fails CLOSED: absence from the ledger can't be proven, so
@@ -73,6 +81,7 @@ export function evaluateBackfillGate(
     distTag,
     latestVersion,
     manifestVersion,
+    publishedVersions,
     timeMap,
   } = cfg
   if (!BACKFILL_VERSION_RE.test(backfillVersion)) {
@@ -136,27 +145,36 @@ export function evaluateBackfillGate(
         'of it. Use the normal bump/release path to move forward.',
     }
   }
-  // Guard 1: never published, never published-then-unpublished. The time map
-  // keeps an entry for every version ever published — including versions
-  // later unpublished — so presence there is disqualifying, and an
-  // unreadable map fails CLOSED.
-  if (!timeMap) {
+  // Guard 1: not CURRENTLY published. The time map is the permanent ledger;
+  // the live versions set says what is public NOW. Never-published passes; a
+  // live version refuses (nothing to fill); published-then-UNPUBLISHED
+  // passes — the staging-era registry frees an unpublished number, and the
+  // stage attempt is server-side rejectable, so the registry itself is the
+  // final arbiter. Unreadable state fails CLOSED.
+  if (!timeMap || !publishedVersions) {
     return {
       ok: false,
       reason:
-        "the registry time map could not be read, so the version's " +
-        'publish history is unverifiable — refusing rather than guessing. ' +
-        'Retry when the registry is reachable.',
+        "the registry ledger could not be read, so the version's publish " +
+        'history is unverifiable — refusing rather than guessing. Retry ' +
+        'when the registry is reachable.',
+    }
+  }
+  if (publishedVersions.includes(backfillVersion)) {
+    return {
+      ok: false,
+      reason:
+        `${backfillVersion} is currently published — there is no gap to ` +
+        'fill. Unpublish it first if the artifact is wrong, or pick a ' +
+        'different version.',
     }
   }
   if (Object.hasOwn(timeMap, backfillVersion)) {
-    return {
-      ok: false,
-      reason:
-        `${backfillVersion} appears in the registry time map — it was ` +
-        'published before, even if later unpublished. A version number is ' +
-        'burned once used; pick a different gap.',
-    }
+    logger.warn(
+      `${backfillVersion} was published before and later unpublished — ` +
+        'backfilling the freed number; the registry rejects the stage if ' +
+        'it disagrees.',
+    )
   }
   return { ok: true }
 }
@@ -213,26 +231,31 @@ export async function runBackfillGate(config: {
     checkoutRef: string | undefined
     distTag: string | undefined
   }
-  const pkg = readPackageJson()
-  const state = await fetchRegistryReleaseState(pkg.name)
+  // The publish SUBJECT, not the repo root: a multi-package workspace's
+  // version source is the main member (a 0.0.0 root is a versionless
+  // placeholder), so the gate must read the member's manifest and query the
+  // member's packument.
+  const subject = resolveNpmWorkspaceLayout(rootPath).versionSource
+  const state = await fetchRegistryReleaseState(subject.name)
   const verdict = evaluateBackfillGate({
     backfillVersion: cfg.backfillVersion,
     checkoutRef: cfg.checkoutRef,
     distTag: cfg.distTag,
     latestVersion: state?.latest,
-    manifestVersion: pkg.version,
+    manifestVersion: subject.version,
+    publishedVersions: state?.versions,
     timeMap: state?.timeMap,
   })
   if (!verdict.ok) {
     logger.fail(
-      `Backfill gate REFUSED ${pkg.name}@${cfg.backfillVersion}.\n` +
+      `Backfill gate REFUSED ${subject.name}@${cfg.backfillVersion}.\n` +
         `  Why: ${verdict.reason}`,
     )
     return false
   }
   logger.log(
-    `Backfill gate passed: ${pkg.name}@${cfg.backfillVersion} is an unused ` +
-      `gap below latest ${state!.latest}; staging under dist-tag ` +
+    `Backfill gate passed: ${subject.name}@${cfg.backfillVersion} is an ` +
+      `unused gap below latest ${state!.latest}; staging under dist-tag ` +
       `"${cfg.distTag}".`,
   )
   return true

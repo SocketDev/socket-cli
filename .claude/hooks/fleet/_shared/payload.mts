@@ -71,6 +71,10 @@ export interface ToolInput {
   // backgrounding (a backgrounded git commit hides its bounded pre-commit's
   // completion) read it. Optional + unknown so a shape surprise can't crash.
   readonly run_in_background?: unknown | undefined
+  // Skill: the skill name a `Skill` tool call names (skill-usage-logger reads
+  // it to record which skill fired). Optional + unknown so a shape surprise
+  // can't crash the narrow.
+  readonly skill?: unknown | undefined
 }
 
 /**

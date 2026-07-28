@@ -31,6 +31,23 @@ export interface FleetRoster {
   readonly repos: readonly FleetRepo[]
 }
 
+// The complete set of capability opt-ins a roster entry may declare in its
+// `optIns` array. This tuple is the single source of truth for which
+// capabilities exist — a member opts into one by listing it, and any value
+// outside this set is a typo the roster validator rejects. Kept sorted.
+//   - freeform-readme: public README is exempt from the five-section skeleton.
+//   - squash-history: default branch is squashed on a cadence (local is
+//     canonical, origin holds pre-squash history).
+//   - thin: member is a thin-distribution consumer — it untracks the
+//     wholly-fleet payload and fetches it from the release bundle.
+export const KNOWN_OPT_INS = [
+  'freeform-readme',
+  'squash-history',
+  'thin',
+] as const
+
+export type FleetOptIn = (typeof KNOWN_OPT_INS)[number]
+
 /**
  * Identify the canonical repo name for the checkout at `cwd`. Prefer the GitHub
  * remote slug (survives checkout-dir renames like `socket-cli-fix-foo`); fall
@@ -101,6 +118,38 @@ export function isOptedIn(
 }
 
 /**
+ * True when `value` is one of the KNOWN_OPT_INS capabilities. A member's
+ * `optIns` entry that fails this predicate is a typo, not a capability.
+ */
+export function isKnownOptIn(value: string): value is FleetOptIn {
+  return (KNOWN_OPT_INS as readonly string[]).includes(value)
+}
+
+/**
+ * Validate every member's `optIns` against KNOWN_OPT_INS. Returns one error
+ * string per unrecognized opt-in (naming the member, the bad value, and the
+ * known set). An empty array means the roster's capability declarations are all
+ * valid — so a new capability validates only after it is added to
+ * KNOWN_OPT_INS, and a typo like `thn` is rejected.
+ */
+export function validateRosterOptIns(roster: FleetRoster): string[] {
+  const errors: string[] = []
+  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
+    const repo = roster.repos[i]!
+    const optIns = repo.optIns ?? []
+    for (let j = 0, count = optIns.length; j < count; j += 1) {
+      const optIn = optIns[j]!
+      if (!isKnownOptIn(optIn)) {
+        errors.push(
+          `${repo.name}: unknown opt-in "${optIn}" — known opt-ins are ${KNOWN_OPT_INS.join(', ')}.`,
+        )
+      }
+    }
+  }
+  return errors
+}
+
+/**
  * The release profile for `repoName` — `js` | `node` | `binary` | `custom` |
  * `none`. Selects the packager + which release workflow a repo enables.
  * Defaults to `none` when unset or the repo is absent.
@@ -116,13 +165,11 @@ export function publishProfile(roster: FleetRoster, repoName: string): string {
 }
 
 /**
- * True when the checkout at `repoRoot` is opted into the squash-history
- * cadence. For such a repo, local <default-branch> is canonical and origin
- * holds the pre-squash history — a diverged / orphan main is EXPECTED, resolved
- * by a force-push (`SQUASH_HISTORY=1 git push --force-with-lease`), never a
- * fast-land cherry-pick onto origin.
+ * True when the checkout at `repoRoot` has opted into `optIn` — loads the
+ * repo's roster and resolves its canonical name, then checks its `optIns`.
+ * Returns false when the roster is missing or the name is unresolvable.
  */
-export function isSquashOptIn(repoRoot: string): boolean {
+export function isRepoOptedIn(repoRoot: string, optIn: FleetOptIn): boolean {
   const roster = loadRosterFromRepo(repoRoot)
   if (!roster) {
     return false
@@ -131,5 +178,26 @@ export function isSquashOptIn(repoRoot: string): boolean {
   if (!name) {
     return false
   }
-  return isOptedIn(roster, name, 'squash-history')
+  return isOptedIn(roster, name, optIn)
+}
+
+/**
+ * True when the checkout at `repoRoot` is opted into the squash-history
+ * cadence. For such a repo, local <default-branch> is canonical and origin
+ * holds the pre-squash history — a diverged / orphan main is EXPECTED, resolved
+ * by a force-push (`SQUASH_HISTORY=1 git push --force-with-lease`), never a
+ * fast-land cherry-pick onto origin.
+ */
+export function isSquashOptIn(repoRoot: string): boolean {
+  return isRepoOptedIn(repoRoot, 'squash-history')
+}
+
+/**
+ * True when the checkout at `repoRoot` is a thin-distribution consumer — it
+ * untracks the wholly-fleet payload and fetches it from the release bundle.
+ * The roster is the single source of truth for thin membership: enforcement
+ * (the belt-wiring check) derives from this, never from a hand-maintained list.
+ */
+export function isThinOptIn(repoRoot: string): boolean {
+  return isRepoOptedIn(repoRoot, 'thin')
 }

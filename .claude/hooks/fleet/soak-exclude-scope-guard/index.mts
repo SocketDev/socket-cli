@@ -25,15 +25,22 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
 
 // Fleet-internal first-party scopes published by trusted Socket pipelines —
-// soak-exempt by design. The danger the guard targets is a third-party
-// scope-glob (the 2026-04-06 `@anthropic-ai/*` incident), not a fleet repo's
-// own scope. `@stuie` is the first-party scope of the stuie fleet repo.
+// soak-exempt by design. What the guard targets is a third-party entry: a
+// bare package like `cowsay`, or worse a scope glob like `@types/*` that
+// exempts everything ever published under it. A fleet repo's own scope is
+// not that risk. Besides the `@socket*` publishing scopes, every entry
+// below belongs to a fleet repo that publishes from its own OIDC pipeline,
+// so soaking it only delays the fleet behind itself.
 const ALLOWED_SCOPES = new Set([
+  '@abitious',
+  '@decmpfs',
+  '@node-smol',
   '@socketaddon',
   '@socketbin',
   '@socketregistry',
   '@socketsecurity',
   '@stuie',
+  '@ultrathink',
 ])
 
 const SECTION_HEADER = /^minimumReleaseAgeExclude:\s*$/
@@ -156,7 +163,7 @@ export const check = editGuard((filePath, _content, payload) => {
     '  `minimumReleaseAgeExclude:` is a security-policy bypass for Socket',
     '  first-party scopes only:',
     '',
-    '    @socketaddon/* @socketbin/* @socketregistry/* @socketsecurity/* @stuie/*',
+    `    ${[...ALLOWED_SCOPES].map(scope => `${scope}/*`).join(' ')}`,
     '',
     '  Adding a third-party package weakens the malware-protection soak gate.',
     '',

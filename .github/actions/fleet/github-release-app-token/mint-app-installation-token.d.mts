@@ -4,6 +4,25 @@
  *   no build step), so the pure, unit-tested surface is declared here.
  */
 
+export interface MissingAppPermission {
+  granted: string | undefined
+  scope: string
+  wanted: string
+}
+
+export declare function findMissingAppPermissions(config: {
+  granted?: Record<string, string> | undefined
+  requested?: Record<string, string> | undefined
+}): MissingAppPermission[]
+
+export declare function formatAppPermissionLabel(scope: string): string
+
+export declare function formatAppPermissionShortfall(config: {
+  missing?: readonly MissingAppPermission[] | undefined
+  owner?: string | undefined
+  slug?: string | undefined
+}): string
+
 export declare function parsePermissions(
   rawInput: string | undefined,
 ): Record<string, string> | undefined

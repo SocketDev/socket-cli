@@ -71,6 +71,22 @@ inputs:
       there and pnpm fails with a store mismatch.
     required: false
     default: ''
+  payload-token-client-id:
+    description: >-
+      Client ID of the GitHub App that mints the thin-distribution read-only
+      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
+      skips the mint entirely: a non-thin member needs no token, and its
+      `prepare` fetch no-ops. A thin member sets this so CI can download the
+      private wheelhouse release bundle during install.
+    required: false
+    default: ''
+  payload-token-private-key:
+    description: >-
+      Private key of the payload-token GitHub App — pass
+      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
+      payload-token-client-id is set.
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -114,9 +130,25 @@ runs:
       with:
         working-directory: ${{ inputs.working-directory }}
 
+    - name: Mint fleet payload read token
+      # Thin-distribution CI auth: mint a contents:read-only token scoped to the
+      # payload repo so the bootstrap fetch (`gh release download` fired by the
+      # `prepare` lifecycle during the install below) can read the private
+      # wheelhouse release bundle. Gated on the client-id: a non-thin member
+      # (and any caller not passing credentials) skips the mint, and its fetch
+      # no-ops with an empty token. The minted token is masked by the minter and
+      # only ever leaves this composite via the step output consumed below.
+      id: payload-token
+      if: inputs.payload-token-client-id != ''
+      uses: ./.github/actions/fleet/github-payload-app-token
+      with:
+        client-id: ${{ inputs.payload-token-client-id }}
+        private-key: ${{ inputs.payload-token-private-key }}
+
     - name: Install dependencies
       uses: ./.github/actions/fleet/install
       with:
+        fleet-payload-token: ${{ steps.payload-token.outputs.token }}
         working-directory: ${{ inputs.working-directory }}
 
     - name: Save pnpm store

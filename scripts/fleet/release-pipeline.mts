@@ -39,7 +39,6 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { versionHintFrom } from './lib/changelog.mts'
 import { renderOwedAfterRelease } from './lib/release-cascade.mts'
 import { REPO_ROOT } from './paths.mts'
 import { runCapture } from './publish-infra/shared.mts'
@@ -60,7 +59,6 @@ import {
 } from './release-pipeline/release-runners.mts'
 import { readPkg } from './release-pipeline/seams.mts'
 import {
-  deriveReleaseLevel,
   isReceiptCurrent,
   localGatesGreenAt,
   planRun,
@@ -649,20 +647,17 @@ async function main(): Promise<void> {
     return
   }
   if (cli.namedVersion !== undefined) {
-    // The version comes from the USER — the pipeline only validates that
-    // bump.mts can land exactly there (or already has). A committed
-    // `X.Y.Z-prerelease` hint whose base IS the named version needs no level
-    // derivation: bump.mts consumes the hint directly.
-    if (
-      pkg.version !== cli.namedVersion &&
-      versionHintFrom(pkg.version) !== cli.namedVersion
-    ) {
-      const derived = deriveReleaseLevel(pkg.version, cli.namedVersion)
-      if (derived.error !== undefined) {
-        logger.fail(derived.error)
-        process.exitCode = 1
-        return
-      }
+    // The version comes from the USER — the pipeline only checks the shape
+    // here. bump.mts owns the real landing validation (ahead of the released
+    // base, no major smuggling) when the bump stage forwards the named
+    // version via `--release-as X.Y.Z`.
+    if (!/^\d+\.\d+\.\d+$/.test(cli.namedVersion)) {
+      logger.fail(
+        `--version must be a plain X.Y.Z semver (saw "${cli.namedVersion}"). ` +
+          `Prerelease/build suffixes are not releasable targets here.`,
+      )
+      process.exitCode = 1
+      return
     }
     if (
       state.targetVersion !== undefined &&

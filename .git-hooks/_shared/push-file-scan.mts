@@ -191,7 +191,6 @@ export const scanFilesInRange = (range: string): number => {
       !layerless.startsWith('template/.claude/hooks/') &&
       !layerless.startsWith('template/.git-hooks/') &&
       !layerless.startsWith('template/scripts/') &&
-      !layerless.startsWith('template/bootstrap/') &&
       !normalizePath(file).includes('/external/') &&
       !normalizePath(file).includes('/vendor/') &&
       !normalizePath(file).includes('/upstream/') &&

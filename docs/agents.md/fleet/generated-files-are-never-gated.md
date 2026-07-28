@@ -21,7 +21,7 @@ The fix is to pre-filter the file list before it reaches the tool.
 predicate; `filterFormatIgnored()` applies it **before** the `template/**` keep,
 so the artifacts drop out even inside the wheelhouse canon. It covers:
 
-- the dep-0 fetcher bundle (`scripts/repo/bootstrap/fleet.mjs`) — `template/bootstrap/src/*` IS gated;
+- the dep-0 fetcher bundle (`scripts/repo/bootstrap/fleet.mjs`) — `scripts/repo/gen/bootstrap/src/*` IS gated;
 - `.d.ts` / `.d.mts` / `.d.cts` compiler output;
 - `_dispatch/` hook bundles and gh-aw `*.lock.yml` compiled workflows;
 - directories a generator or upstream owns: `acorn`, `build`, `coverage`, `dist`,

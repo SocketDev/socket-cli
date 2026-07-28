@@ -25,6 +25,36 @@ export const rootPath = REPO_ROOT
 const WIN32 = process.platform === 'win32'
 
 /**
+ * The staged-to-approve handoff block, printed ONCE when a staging run
+ * finishes. Two lines: the copy-pasteable command, anchored with `cd` at the
+ * absolute repo it must run from (a staged package promoted from the wrong
+ * checkout releases the wrong project), and one sentence naming what that
+ * command owns so nobody re-derives it from the source. Pure — every staging
+ * path shares this shape and a test asserts the text.
+ */
+export function formatApproveHandoff(
+  approveCommand: string,
+  ownership: string,
+  repoPath: string = rootPath,
+): string[] {
+  return [`Next: cd ${repoPath} && ${approveCommand}`, ownership]
+}
+
+/**
+ * Print `formatApproveHandoff`'s block through the publish logger.
+ */
+export function logApproveHandoff(
+  approveCommand: string,
+  ownership: string,
+  repoPath: string = rootPath,
+): void {
+  const lines = formatApproveHandoff(approveCommand, ownership, repoPath)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    logger.log(lines[i]!)
+  }
+}
+
+/**
  * Spawn a command and forward stdio (interactive). Returns the exit code. Used
  * when the user needs to see / interact with the live output stream
  * (publish/approve prompts, gh upload progress).

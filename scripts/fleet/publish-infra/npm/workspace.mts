@@ -22,15 +22,23 @@
  *     writes, publish order, hollow detection) live in workspace-plan.mts; the
  *     fs-reading resolvers here fail LOUD (What / Where / Saw-vs-wanted / Fix),
  *     never silently fall back to a private root manifest.
+ *
+ *   DEPENDENCY-FREE BY DESIGN: node builtins plus the dep-0 leaves
+ *   `lib/workspace-yaml.mts`, `_shared/release-subject.mts`, and
+ *   `_shared/unix-path.mts` — nothing from lib-stable. The release-reconcile
+ *   gap job resolves its npm subject through `resolveNpmWorkspaceLayout` on a
+ *   bare depth-1 checkout with no pnpm install, so ONE layout resolver serves
+ *   both the installed publish engine and the dep-0 healer. Keep it that way:
+ *   a lib-stable import here blinds the healer on every private-root
+ *   workspace repo.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-
 import { parseListBlock } from '../../lib/workspace-yaml.mts'
 import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
+import { toUnixPath } from '../../_shared/unix-path.mts'
 
 import type { ReleaseSubject } from '../../_shared/release-subject.mts'
 
@@ -141,7 +149,7 @@ function isPublishableManifest(
  * and single-level `dir/*` globs only. Exported for tests.
  */
 export function expandWorkspaceGlob(rootPath: string, glob: string): string[] {
-  const segments = normalizePath(glob).split('/').filter(Boolean)
+  const segments = toUnixPath(glob).split('/').filter(Boolean)
   let dirs = [rootPath]
   for (let i = 0, { length } = segments; i < length; i += 1) {
     const segment = segments[i]!
@@ -245,8 +253,8 @@ export function discoverWorkspacePackages(
       name: manifest.name,
       platform: false,
       platformOwner: undefined,
-      relDir: normalizePath(path.relative(rootPath, dir)),
-      relManifestPath: normalizePath(path.relative(rootPath, manifestPath)),
+      relDir: toUnixPath(path.relative(rootPath, dir)),
+      relManifestPath: toUnixPath(path.relative(rootPath, manifestPath)),
       version: manifest.version,
     }
     byDir.set(dir, pkg)
@@ -288,8 +296,8 @@ export function discoverWorkspacePackages(
       const owner = packages[j]!
       if (
         pkg !== owner &&
-        normalizePath(pkg.dir).startsWith(
-          `${normalizePath(path.join(owner.dir, 'npm'))}/`,
+        toUnixPath(pkg.dir).startsWith(
+          `${toUnixPath(path.join(owner.dir, 'npm'))}/`,
         )
       ) {
         pkg.platform = true
@@ -351,7 +359,7 @@ export function resolveNpmWorkspaceLayout(
       subject,
       versionSource: {
         name: subject.name,
-        relManifestPath: normalizePath(
+        relManifestPath: toUnixPath(
           path.relative(rootPath, subject.manifestPath),
         ),
         version: subject.version,
@@ -391,7 +399,14 @@ export function resolveNpmWorkspaceLayout(
     )
   }
   const main = selectMainPackage(packages, rootPath)
-  const rootHasVersion = typeof root?.version === 'string' && !!root.version
+  // A 0.0.0 root is the private-placeholder convention (the root never bumps
+  // and never publishes) — versionless for layout purposes, so the MAIN
+  // member is the version source and release versions live on the package
+  // that actually ships.
+  const rootHasVersion =
+    typeof root?.version === 'string' &&
+    !!root.version &&
+    root.version !== '0.0.0'
   return {
     kind: 'multi',
     main,

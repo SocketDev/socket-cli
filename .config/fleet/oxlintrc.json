@@ -279,6 +279,7 @@
     "**/.config/repo/vitest.config.mts",
     "**/.mcp.json",
     "**/test/fleet/nock-loopback-passthrough.test.mts",
+    "**/test/fleet/publish-infra-placeholder.test.mts",
     "#fleet-canonical-end"
   ]
 }

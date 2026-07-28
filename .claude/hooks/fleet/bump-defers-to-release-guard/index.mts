@@ -243,11 +243,17 @@ export function bumpViolationIn(command: string): BumpViolation | undefined {
     // The release bump script is the `bump.mts` FILE — match it on a path-
     // segment boundary (`lockstep/auto-bump.mts`, the upstream pin bumper the
     // updating-lockstep skill drives, shares the raw suffix but is a
-    // different surface with its own commit flow).
-    const script = cmd.args.find(a => {
-      const arg = normalizePath(a)
-      return arg === 'bump.mts' || arg.endsWith('/bump.mts')
-    })
+    // different surface with its own commit flow), and ONLY in the script
+    // position (the first non-flag arg): a bump.mts path appearing later in
+    // argv is another script's TARGET (`node lint.mts .../bump.mts`), not a
+    // bump run.
+    const scriptArg = cmd.args.find(a => !a.startsWith('-'))
+    const script =
+      scriptArg !== undefined &&
+      (normalizePath(scriptArg) === 'bump.mts' ||
+        normalizePath(scriptArg).endsWith('/bump.mts'))
+        ? scriptArg
+        : undefined
     if (script && !cmd.args.includes('--dry-run')) {
       const releaseAs = cmd.args[cmd.args.indexOf('--release-as') + 1]
       return {

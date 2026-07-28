@@ -10,7 +10,27 @@ import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { rootPath, runCapture } from '../shared.mts'
+import { logApproveHandoff, rootPath, runCapture } from '../shared.mts'
+
+// The approve leg an operator runs after a cargo staging run. `cargo:publish`
+// is the channel-enforced script for every crates-registry member.
+export const CARGO_APPROVE_COMMAND = 'pnpm run cargo:publish -- --approve'
+
+// Who owns the promotion, stated once so nobody reads cargo/approve.mts to find
+// out. It runs `cargo publish --locked` itself, then cuts the tag + release.
+export const CARGO_APPROVE_OWNERSHIP =
+  'That command performs the crates.io publish itself: it runs `cargo publish ' +
+  '--locked` from your machine, then creates the git tag and GitHub release ' +
+  'once the version resolves as live. Publishing is PERMANENT — a version can ' +
+  'only be yanked, never overwritten.'
+
+/**
+ * Print the staged-to-approve handoff for crates.io. Called ONCE at the end of
+ * a staging run so the actionable command is the last thing on screen.
+ */
+export function logCargoApproveHandoff(): void {
+  logApproveHandoff(CARGO_APPROVE_COMMAND, CARGO_APPROVE_OWNERSHIP)
+}
 
 export interface CargoPackage {
   name: string
@@ -44,19 +64,23 @@ export function isPublishable(publish: unknown): boolean {
 }
 
 /**
- * Every publishable package in the workspace, projected to `CargoPackage`, from
- * `cargo metadata --format-version 1 --no-deps`. Returns `[]` when nothing is
- * publishable (every package sets `publish = false`). Throws LOUD when
- * `cargo metadata` fails, its JSON can't be parsed, or a publishable package is
- * missing a field. The version-discipline checks iterate every entry (a
- * workspace can publish several crates); the publish path (`readCargoPackage`)
- * selects one.
+ * Every publishable package in the workspace at `cwd`, projected to
+ * `CargoPackage`, from `cargo metadata --format-version 1 --no-deps`. Defaults
+ * to this checkout; a caller configuring another repo (the trusted-publisher
+ * CLI's `--path <dir>`) passes that repo's root so crate discovery reads the
+ * workspace it is actually targeting. Returns `[]` when nothing is publishable
+ * (every package sets `publish = false`). Throws LOUD when `cargo metadata`
+ * fails, its JSON can't be parsed, or a publishable package is missing a field.
+ * The version-discipline checks iterate every entry (a workspace can publish
+ * several crates); the publish path (`readCargoPackage`) selects one.
  */
-export async function readPublishableCargoPackages(): Promise<CargoPackage[]> {
+export async function readPublishableCargoPackages(
+  cwd: string = rootPath,
+): Promise<CargoPackage[]> {
   const { code, stdout } = await runCapture(
     'cargo',
     ['metadata', '--format-version', '1', '--no-deps'],
-    rootPath,
+    cwd,
   )
   if (code !== 0) {
     throw new Error(

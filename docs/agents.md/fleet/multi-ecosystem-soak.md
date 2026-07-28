@@ -62,6 +62,14 @@ per-ecosystem list (cargo / go / brew), every entry dated with its reason,
 consulted by every gate. npm keeps its existing surfaces (`SOCKET_SCOPES`,
 pnpm `minimumReleaseAgeExclude` with `# published | removable` annotations).
 
+Socket-owned scopes (`@socketregistry/*`, `@socketsecurity/*`) are blanket
+soak-exempt via `.npmrc` `min-release-age-exclude[]` — first-party artifacts
+Socket itself publishes, so a same-day bump is NEVER a soak violation and needs
+no dated annotation (unlike a third-party emergency exclude). The soak defends
+against third-party supply-chain attacks; there is no external attacker on a
+registry Socket controls. `minimum-release-age-guard` skips these scopes
+(`isSocketOwnedScope`), so never hold or hand-verify a publish date for one.
+
 ## Healing
 
 A missing/drifted derived artifact heals through the doctor, never by hand:

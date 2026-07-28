@@ -14,18 +14,20 @@
  *        writing the blob into the ephemeral snapshot cache.
  *
  *   The blob path comes from the SHARED `snapshot-cache-path.cjs` — the same key
- *   derivation the loader uses — so it lands in `os.tmpdir()/node-snapshot-cache/
- *   <node-ver × arch × V8tag × uid>/<entry>-<content-hash>.blob`. The runtime tag
- *   means a node/arch/V8 change writes a fresh dir (never a refuse-to-boot blob in
- *   the active path); the content hash means a bundle edit writes a fresh blob
- *   (the loader misses → fails open to index.cjs).
+ *   derivation the loader uses — so it lands in `node_modules/.cache/fleet/
+ *   node-snapshot-cache/<node-ver × arch × V8tag × uid>/<entry>-<content-hash>.blob`.
+ *   The runtime tag means a node/arch/V8 change writes a fresh dir (never a
+ *   refuse-to-boot blob in the active path); the content hash means a bundle edit
+ *   writes a fresh blob (the loader misses → fails open to index.cjs). That cache
+ *   is NOT OS-reaped, so after a successful build `pruneStaleBlobs` deletes the
+ *   prior content-hashed blobs keep-active-only.
  *
  *   Usage: `node scripts/fleet/build-hook-snapshot.mts`
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import crypto from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
@@ -48,7 +50,7 @@ import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import {
   liftMirrorLockSync,
-  withMirrorLockLiftedSync,
+  writeThroughMirrorLock,
 } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
@@ -74,9 +76,12 @@ const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
 // exact same path at runtime, so the generator and the loader can never disagree
 // on where a blob lives or how it's keyed. One source of truth, by construction.
 const require = createRequire(import.meta.url)
-const { blobPath } = require(
+const { blobPath, pruneStaleBlobs } = require(
   path.join(DISPATCH_DIR, 'snapshot-cache-path.cjs'),
-) as { blobPath: (entryId: string, sourceHash: string) => string }
+) as {
+  blobPath: (entryId: string, sourceHash: string) => string
+  pruneStaleBlobs: (keepBlobPath: string) => void
+}
 
 /**
  * Content-key a built bundle — sha256, first 16 hex — the same derivation the
@@ -114,23 +119,17 @@ function main(): void {
   // EXCLUDED table (the sibling runtime bundle's source). The outputs live
   // inside the cascade-locked hook mirror; lift the read-only lock around
   // each regeneration write.
-  withMirrorLockLiftedSync(DISPATCH_TABLE_PATH, () =>
-    writeFileSync(
-      DISPATCH_TABLE_PATH,
-      generateDispatchTableSource(FLEET_HOOKS_DIR),
-    ),
+  writeThroughMirrorLock(
+    DISPATCH_TABLE_PATH,
+    generateDispatchTableSource(FLEET_HOOKS_DIR),
   )
-  withMirrorLockLiftedSync(DISPATCH_TABLE_SNAPSHOT_PATH, () =>
-    writeFileSync(
-      DISPATCH_TABLE_SNAPSHOT_PATH,
-      generateDispatchTableSource(FLEET_HOOKS_DIR, 'snapshot'),
-    ),
+  writeThroughMirrorLock(
+    DISPATCH_TABLE_SNAPSHOT_PATH,
+    generateDispatchTableSource(FLEET_HOOKS_DIR, 'snapshot'),
   )
-  withMirrorLockLiftedSync(DISPATCH_TABLE_EXCLUDED_PATH, () =>
-    writeFileSync(
-      DISPATCH_TABLE_EXCLUDED_PATH,
-      generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
-    ),
+  writeThroughMirrorLock(
+    DISPATCH_TABLE_EXCLUDED_PATH,
+    generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
   )
 
   mkdirSync(DISPATCH_DIR, { recursive: true })
@@ -188,7 +187,7 @@ function main(): void {
   // Content-key on the built bundle — the loader hashes snapshot-bundle.cjs the
   // same way (sha256, first 16 hex), so the blob written here is exactly the one
   // the loader looks for. A bundle change → new hash → new blob; the stale one is
-  // orphaned in tmpdir and reaped, never booted.
+  // an orphan that node_modules/.cache never OS-reaps, so it is pruned below.
   const sourceHash = computeSourceHash(readFileSync(SNAPSHOT_BUNDLE))
   const blobOut = blobPath('dispatch', sourceHash)
   mkdirSync(path.dirname(blobOut), { recursive: true })
@@ -209,6 +208,10 @@ function main(): void {
     return
   }
   logger.log(`Built ${blobOut}.`)
+  // Reclaim orphans from prior bundle edits — keep only the blob just built. The
+  // launcher's snapshot-blob.path sidecar (frozen next by build-snapshot-launcher)
+  // will name exactly this one, so every other blob is a stale content hash.
+  pruneStaleBlobs(blobOut)
 }
 
 if (isMainModule(import.meta.url)) {

@@ -1,4 +1,4 @@
-/**
+/*
  * @file GitHub-safe mermaid analysis + rewrite. GitHub renders a mermaid
  *   block with floating control clusters INSIDE the diagram container —
  *   two buttons top-right and a six-button pan/zoom cluster mid-right —

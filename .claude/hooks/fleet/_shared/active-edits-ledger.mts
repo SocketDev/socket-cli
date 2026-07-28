@@ -34,6 +34,8 @@ import path from 'node:path'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import { resolveRepoRoot } from './repo-root.mts'
+
 // TTL after which a ledger file is considered stale (actor exited or idle).
 // 15 minutes — generous enough for a slow turn; tight enough to not persist
 // across the next session started in the same project.
@@ -109,12 +111,20 @@ export function computeActorId(
 
 /**
  * Resolve the cache store root. Prefers
- * `<projectDir>/node_modules/.cache/<store>` when a project dir is available;
- * falls back to the OS temp dir. Pure, no IO.
+ * `<repo root of projectDir>/node_modules/.cache/<store>` when a project dir
+ * is available; falls back to the OS temp dir. The git-toplevel anchor is
+ * what keeps the store out of `template/base/node_modules` when a caller's
+ * dir sits under a workspace glob (see repo-root.mts).
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(projectDir, 'node_modules', '.cache', 'fleet', STORE_NAME)
+    return path.join(
+      resolveRepoRoot(projectDir),
+      'node_modules',
+      '.cache',
+      'fleet',
+      STORE_NAME,
+    )
   }
   return path.join(
     process.env['TMPDIR'] ??

@@ -9,8 +9,10 @@
   "scripts": {
     "test": "node --test test/*.test.mts"
   },
+  "dependencies": {
+    "@socketsecurity/lib-stable": "catalog:"
+  },
   "devDependencies": {
-    "@socketsecurity/lib-stable": "catalog:",
     "@types/node": "catalog:"
   }
 }

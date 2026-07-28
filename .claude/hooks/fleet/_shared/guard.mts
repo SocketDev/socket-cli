@@ -43,6 +43,7 @@ import { bypassPhrasePresent } from './transcript.mts'
 
 import type { BypassMatchOptions } from './transcript.mts'
 import { resolveProjectDir } from './project-dir.mts'
+import { resolveRepoRoot } from './repo-root.mts'
 
 // Lazily resolved, NOT eagerly at module-eval. The shared logger graph
 // (`@socketsecurity/lib`'s logger → primordials/globals) captures `SharedArray
@@ -286,8 +287,12 @@ function recordGuardEvent(
   hookName: string | undefined,
 ): void {
   try {
+    // resolveProjectDir()'s last-resort fallback walks up from this file's own
+    // location, which under the wheelhouse is `template/base` — mkdir'ing
+    // node_modules there poisons pnpm workspace resolution for the whole
+    // checkout. Anchor on the git toplevel so every input lands on one store.
     const dir = path.join(
-      resolveProjectDir(),
+      resolveRepoRoot(resolveProjectDir()),
       'node_modules',
       '.cache',
       'fleet',

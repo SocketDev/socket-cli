@@ -32,6 +32,7 @@ import process from 'node:process'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
+import { resolveRepoRoot } from '../_shared/repo-root.mts'
 
 // A Codex companion "quick check" gets ONE minute of wall clock; past it the
 // companion must wrap up and hand off sustained work to a full agent session.
@@ -81,10 +82,13 @@ export function isOwnSessionId(
 
 // The marker file holding a companion's first-tool-call timestamp, keyed by the
 // companion id (sanitized to a safe filename). Runtime state — never tracked.
+// Anchored on the git toplevel: `projectDir` is a raw session cwd, and joining
+// node_modules onto one under a workspace glob (`template/base/**`) poisons
+// pnpm resolution for the whole checkout (see _shared/repo-root.mts).
 export function markerFile(projectDir: string, companionId: string): string {
   const safe = companionId.replace(/[^A-Za-z0-9_-]/g, '')
   return path.join(
-    projectDir,
+    resolveRepoRoot(projectDir),
     'node_modules',
     '.cache',
     'fleet',

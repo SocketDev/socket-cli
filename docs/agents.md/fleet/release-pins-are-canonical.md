@@ -18,7 +18,7 @@ persisted pin stores **only exact canonical values**.
 
 Two layers, deliberately paired (code-is-law):
 
-- **Write time** — `template/bootstrap/src/lockstep.mts` (`validateRef` /
+- **Write time** — `scripts/repo/gen/bootstrap/src/lockstep.mts` (`validateRef` /
   `validateCascadeSha`, the dep-0 fetcher) and
   the cascade stamper's config module (`validateBundleBlock`, in the
   template source's `scripts/repo/sync-scaffolding/`) reject a

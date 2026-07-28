@@ -1,8 +1,8 @@
 name: Release app token
 description: >-
   Mint a short-lived GitHub App installation token for the Socket RELEASE app
-  (create releases, push tags). Org-wide when owner is set, so the token reaches
-  member repos. Fleet-shared: authored in socket-wheelhouse's socket-registry override,
+  (create releases, push tags, and open + squash-merge the version-bump promote
+  PR). Org-wide when owner is set, so the token reaches member repos. Fleet-shared: authored in socket-wheelhouse's socket-registry override,
   cascaded into socket-registry, and consumed fleet-wide via
   `uses: ./.github/actions/fleet/github-release-app-token`.
 
@@ -39,6 +39,17 @@ runs:
     # privilege: PERMISSIONS is the exact scope this app needs; zizmor doesn't
     # inspect a run-step mint, so app-tokens-are-scoped.mts is the sole gate that
     # PERMISSIONS is present + non-blank.
+    # This app is contents:write ONLY — tags, releases, branch refs, and the
+    # signed bump commit. Its installation grants nothing more, so a wider
+    # request 422s the mint outright. The publish promote leg (release-branch.mts
+    # opens a PR from `<channel>-publish-v<version>` and squash auto-merges it)
+    # needs pull_requests:write, which the sibling `github-pr-app-token` action
+    # already carries; workflows mint both and pass RELEASE_APP_TOKEN +
+    # PR_APP_TOKEN side by side.
+    # Requesting a scope is not the same as HOLDING it: the minter preflights
+    # the installation's own grant against PERMISSIONS before it mints, and
+    # refuses with the App settings URL when the grant falls short, so a scope
+    # gap surfaces at the mint rather than deep inside a release.
     - id: app-token
       shell: bash
       env:

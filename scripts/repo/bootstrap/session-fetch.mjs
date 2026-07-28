@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+/**
+ * @file SessionStart fetch-kernel for a THIN fleet member. A plain `git clone`
+ *   of a thin member that a developer or Claude opens WITHOUT first running
+ *   `pnpm install` has no `.claude/hooks/fleet` payload — it is gitignored and
+ *   fetched, never committed — so the fleet hooks silently do not fire. This
+ *   kernel runs at SessionStart from a TRACKED location (it survives a thin
+ *   untrack), detects the absent payload, and re-materializes it through the
+ *   SAME dep-0 bootstrap fetcher: `scripts/repo/bootstrap/fleet.mjs
+ *   --if-current`. It never reimplements fetching — it shells the fetcher.
+ *   Dep-0: node: builtins only, so it runs before node_modules exists. Plain
+ *   `.mjs` (never type-stripped) so it runs on any Node the developer has —
+ *   copied verbatim into the cascaded bootstrap payload by
+ *   `scripts/repo/gen/bootstrap.mts`, beside `fleet.mjs`. Idempotent + fast:
+ *   when the payload is already present it does a single existsSync check and
+ *   exits — the common case. Fail-open: a missing fetcher, absent node_modules,
+ *   or a failed fetch NEVER blocks the session; the kernel warns on STDERR and
+ *   exits 0. Because `fleet.mjs` imports the published
+ *   `@socketsecurity/lib-stable`, it needs node_modules to run — so a bare
+ *   clone with no install cannot self-fetch; the kernel detects that and points
+ *   the developer at `pnpm install` instead of dumping a module-not-found
+ *   stack. USAGE (settings.json SessionStart hook): node
+ *   scripts/repo/bootstrap/session-fetch.mjs.
+ */
+
+import { spawnSync } from 'node:child_process'
+import { existsSync, realpathSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+/**
+ * Ensure the fleet payload is present, materializing it via the bootstrap
+ * fetcher when it is absent. Always returns 0 — the kernel is FAIL-OPEN, so a
+ * SessionStart hook can never block the session on it. Warnings go to STDERR;
+ * STDOUT is left clean so SessionStart never injects fetcher chatter as
+ * context.
+ */
+export function ensurePayload(repoRoot) {
+  const plan = planFetch(repoRoot)
+  if (plan.action === 'present') {
+    return 0
+  }
+  if (plan.action === 'no-fetcher') {
+    warn(
+      'fleet payload absent and the bootstrap fetcher ' +
+        '(scripts/repo/bootstrap/fleet.mjs) is missing — run `pnpm install`.',
+    )
+    return 0
+  }
+  if (plan.action === 'no-deps') {
+    warn(
+      'fleet payload absent and node_modules is missing — run `pnpm install` ' +
+        'to materialize the fleet hooks.',
+    )
+    return 0
+  }
+  const result = spawnSync(process.execPath, [plan.fleet, '--if-current'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  })
+  if ((result.status ?? 1) !== 0) {
+    warn(
+      'fleet payload fetch reported a problem — continuing; run ' +
+        '`pnpm install` if the fleet hooks are missing.',
+    )
+    const detail = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim()
+    if (detail) {
+      process.stderr.write(`${detail}\n`)
+    }
+  }
+  return 0
+}
+
+/**
+ * Realpath both sides: Node resolves the REAL path for `import.meta.url` while
+ * `process.argv[1]` keeps the path as invoked, so a bare URL equality silently
+ * skips the CLI body under a symlinked invocation.
+ */
+export function isMainModule() {
+  const entry = process.argv[1]
+  if (!entry) {
+    return false
+  }
+  try {
+    return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(entry)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Cheap sentinel check: the hook entry `.claude/hooks/fleet/index.cjs` is the
+ * file every dispatch event invokes and lives inside the untracked thin
+ * payload, so its presence means the payload is materialized enough for the
+ * hooks to fire. A non-thin member tracks it, so this is always true there and
+ * the kernel is inert.
+ */
+export function payloadPresent(repoRoot) {
+  return existsSync(
+    path.join(repoRoot, '.claude', 'hooks', 'fleet', 'index.cjs'),
+  )
+}
+
+/**
+ * Decide what the kernel must do, as a pure function of on-disk state (no
+ * spawn, no I/O beyond existsSync) so every branch is unit-testable:
+ *
+ * - `present` the payload is already materialized — no-op.
+ * - `no-fetcher` the payload is absent AND the bootstrap fetcher is missing.
+ * - `no-deps` the payload + fetcher exist but node_modules does not, so the
+ *   fetcher (which imports lib-stable) cannot run.
+ * - `fetch` the payload is absent and the fetcher can run — carries the absolute
+ *   `fleet` path to invoke.
+ */
+export function planFetch(repoRoot) {
+  if (payloadPresent(repoRoot)) {
+    return { action: 'present' }
+  }
+  const fleet = path.join(repoRoot, 'scripts', 'repo', 'bootstrap', 'fleet.mjs')
+  if (!existsSync(fleet)) {
+    return { action: 'no-fetcher' }
+  }
+  if (!existsSync(path.join(repoRoot, 'node_modules'))) {
+    return { action: 'no-deps' }
+  }
+  return { action: 'fetch', fleet }
+}
+
+/**
+ * Walk up to the nearest package.json ancestor — the same repo-root rule as the
+ * sibling bootstrap files, kept dep-0 (node: builtins only). Falls back to the
+ * positional three-up if none is found (this file lives three levels deep at
+ * scripts/repo/bootstrap/); never throws — the kernel must stay robust.
+ */
+export function resolveRepoRoot(startDir) {
+  let cur = startDir
+  const { root } = path.parse(cur)
+  while (cur && cur !== root) {
+    if (existsSync(path.join(cur, 'package.json'))) {
+      return cur
+    }
+    const parent = path.dirname(cur)
+    if (parent === cur) {
+      break
+    }
+    cur = parent
+  }
+  return path.resolve(startDir, '..', '..', '..')
+}
+
+/**
+ * Emit a fail-open warning on STDERR. STDOUT is reserved so a SessionStart hook
+ * never injects kernel output into the session context.
+ */
+export function warn(message) {
+  process.stderr.write(`fleet-session-fetch: ${message}\n`)
+}
+
+if (isMainModule()) {
+  process.exitCode = ensurePayload(
+    resolveRepoRoot(path.dirname(fileURLToPath(import.meta.url))),
+  )
+}
