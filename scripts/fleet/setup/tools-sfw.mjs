@@ -100,6 +100,15 @@ export function posixRealShimLines(cmd, sfwBin, real) {
     `  exec "${real}" "$@"`,
     'fi',
     `export ${sentinel}=1`,
+    // Only sfw-ENTERPRISE parses this (src/sfw-enterprise/config.ts); it is
+    // inert for the free build, so setting it unconditionally is safe.
+    // Enterprise's built-in default is 'block', which fails dev workflows
+    // that reach hosts outside registries[] — and, once
+    // SocketDev/firewall#147 lands, a registry hostname that resolves to a
+    // LOCAL address (a test mock aliased via /etc/hosts) also becomes an
+    // unknown host, so 'block' would newly break those setups too. Setting
+    // 'ignore' keeps both working; registry scanning is unaffected either
+    // way, since it is decided before the unknown-host policy runs.
     'export SFW_UNKNOWN_HOST_ACTION=ignore',
     // uv-only: opt the Socket Firewall into malware scanning of the packages a
     // `uv` install resolves, parallel to the pnpm supply-chain gate. Harmless

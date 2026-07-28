@@ -47,6 +47,7 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
+import { findBackupBranchesWithUnreleasedCommits } from './lib/backup-branch.mts'
 import {
   bumpLevelFor,
   changelogHeading,
@@ -79,6 +80,10 @@ import { runCapture, runInherit } from './publish-infra/shared.mts'
 
 import type { NpmWorkspaceLayout } from './publish-infra/npm/workspace.mts'
 
+import type {
+  BackupBranchGitExec,
+  BackupBranchUnreleased,
+} from './lib/backup-branch.mts'
 import type { BumpLevel, ConventionalCommit } from './lib/changelog.mts'
 import type { ReleaseDerivation, ReleaseLane } from './lib/release-anchor.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
@@ -505,6 +510,58 @@ function warnDerivationInvisibleCommits(
 }
 
 /**
+ * Warn — loud, never fail — when a fleet backup / recovery branch carries
+ * commits `baseRef` can't reach. A release derives its CHANGELOG from the
+ * commits reachable from HEAD; work parked on a `backup-*` / `backup/*` branch
+ * and never landed would ship SILENTLY OMITTED — the lose-work failure the
+ * fleet guards against. Surfaces to the log and, in CI, the job summary via
+ * GITHUB_STEP_SUMMARY. Never auto-merges: landing or discarding the backup is
+ * the operator's call. The git exec is injected so the whole path is unit
+ * testable without real branches. Runs pre-derive, before any file is written,
+ * so `--dry-run` surfaces the same warning with no side effects.
+ */
+async function warnBackupBranchesWithUnreleased(
+  baseRef: string,
+  exec: BackupBranchGitExec,
+): Promise<void> {
+  let found: BackupBranchUnreleased[]
+  try {
+    found = await findBackupBranchesWithUnreleasedCommits(baseRef, exec)
+  } catch {
+    // The scan is best-effort — a git failure never blocks the release.
+    return
+  }
+  if (found.length === 0) {
+    return
+  }
+  const detail = found
+    .map(
+      b =>
+        `  ${b.branch} — ${b.commits.length} commit(s) not on ${baseRef}:\n` +
+        b.commits.map(c => `      ${c}`).join('\n'),
+    )
+    .join('\n')
+  const body =
+    `${found.length} backup branch(es) carry commit(s) NOT reachable from ` +
+    `${baseRef} — a release cut now would SILENTLY OMIT that parked work:\n` +
+    `${detail}\n` +
+    `  Fix: land the backup branch (merge / cherry-pick into ${baseRef}) or ` +
+    `discard it before releasing — the bump never auto-merges backup work.`
+  logger.warn(body)
+  const summaryPath = process.env['GITHUB_STEP_SUMMARY']
+  if (summaryPath) {
+    try {
+      appendFileSync(
+        summaryPath,
+        `### bump warning: backup branches with unreleased commits\n\n${body}\n`,
+      )
+    } catch (e) {
+      logger.warn(`Could not append the CI job summary: ${e}`)
+    }
+  }
+}
+
+/**
  * Apply the multi-package LOCKSTEP bump: rewrite every publishable member
  * manifest (+ the versioned root) to `nextVersion` — root `version` field and
  * exact sibling pins (the loader's optionalDependencies rows) together — then
@@ -717,6 +774,15 @@ async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
+
+  // PRE-DERIVE: surface any backup / recovery branch carrying commits HEAD
+  // can't reach. The derivation below only sees commits reachable from HEAD, so
+  // work parked on a `backup-*` / `backup/*` branch would be silently omitted
+  // from the release. Loud warning, never a merge — the operator lands or
+  // discards the backup. Runs before any write, so --dry-run surfaces it too.
+  await warnBackupBranchesWithUnreleased('HEAD', args =>
+    runCapture('git', args, rootPath),
+  )
 
   // ONE derivation resolves the released base (registry latest + last tag,
   // NEVER the manifest — a pre-bumped package.json would otherwise skip a

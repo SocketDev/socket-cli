@@ -149,6 +149,164 @@ declare function readAppliedFiles(dest: string): string[] | undefined;
 declare function writeAppliedFiles(dest: string, files: readonly string[]): void;
 declare function writeAppliedRef(dest: string, ref: string): void;
 //#endregion
+//#region scripts/repo/gen/bootstrap/src/bundle-source.d.mts
+type BundleFetchFn = (config: {
+  readonly ref: string;
+  readonly repo: string;
+  readonly tmp: string;
+}) => Promise<FetchedFiles>;
+interface FetchedFiles {
+  readonly manifest: string;
+  readonly tarball: string;
+}
+interface FetchedBundle extends FetchedFiles {
+  readonly source: 'gh-release' | 'ghcr';
+}
+/**
+ * Derive the GHCR fleet-bundle package repo from the gh `owner/repo`. GHCR
+ * package paths are lowercase: `SocketDev/socket-wheelhouse` →
+ * `socketdev/socket-wheelhouse/fleet-bundle`.
+ */
+declare function ghcrBundleRepo(repo: string): string;
+/**
+ * Extract just the release-bundle manifest from the bundle tarball root (the
+ * tarball ships it beside files/ + segments/), so the GHCR path yields the same
+ * on-disk `sourceManifest` file the gh-release path downloads separately.
+ */
+declare function extractManifestFromTarball(tarball: string, destDir: string): string;
+/**
+ * Default GHCR fetch: anonymous OCI pull of the fleet-bundle tarball, then pull
+ * the manifest out of it. Throws on any failure so the selector can fall back.
+ */
+declare function ghcrFetchBundle(config: {
+  readonly ref: string;
+  readonly repo: string;
+  readonly tmp: string;
+}): Promise<FetchedFiles>;
+/**
+ * Default GitHub-Release fetch (the fallback): `gh release download` of the
+ * tarball + manifest assets. Throws with an actionable message when the release
+ * lacks either asset.
+ */
+declare function ghReleaseFetchBundle(config: {
+  readonly ref: string;
+  readonly repo: string;
+  readonly tmp: string;
+}): Promise<FetchedFiles>;
+/**
+ * Fetch the fleet bundle: GHCR primary, GitHub-Release fallback. Tries the
+ * anonymous OCI pull first; on ANY failure logs the reason to STDERR and falls
+ * back to `gh release download`. Returns the on-disk tarball + manifest paths
+ * plus which source served them. The injectable `ghcrFetch` / `ghFetch` seams
+ * let tests drive both paths without network.
+ */
+declare function fetchBundleSource(config: {
+  readonly ghFetch?: BundleFetchFn | undefined;
+  readonly ghcrFetch?: BundleFetchFn | undefined;
+  readonly ref: string;
+  readonly repo: string;
+  readonly tmp: string;
+}): Promise<FetchedBundle>;
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/ghcr-fetch.d.mts
+declare const GHCR_HOST = "ghcr.io";
+declare const MANIFEST_ACCEPT: string;
+interface GhcrHttpResponse {
+  readonly body: Buffer;
+  readonly headers: NodeJS.Dict<string | string[]>;
+  readonly status: number;
+}
+interface GhcrHttpOptions {
+  readonly headers?: Record<string, string> | undefined;
+}
+type GhcrHttpGetFn = (url: string, options?: GhcrHttpOptions | undefined) => Promise<GhcrHttpResponse>;
+interface AuthChallenge {
+  readonly realm: string;
+  readonly scope: string | undefined;
+  readonly service: string | undefined;
+}
+interface OciLayer {
+  readonly annotations?: Record<string, string> | undefined;
+  readonly digest?: string | undefined;
+  readonly mediaType?: string | undefined;
+}
+interface OciManifest {
+  readonly config?: {
+    digest?: string | undefined;
+  } | undefined;
+  readonly layers?: readonly OciLayer[] | undefined;
+  readonly manifests?: ReadonlyArray<{
+    digest?: string | undefined;
+  }> | undefined;
+  readonly mediaType?: string | undefined;
+}
+interface PullBundleConfig {
+  readonly destDir: string;
+  readonly httpFn?: GhcrHttpGetFn | undefined;
+  readonly registry?: string | undefined;
+  readonly repo: string;
+  readonly tag: string;
+}
+/**
+ * Read the first value of a possibly-array HTTP header.
+ */
+declare function firstHeader(value: string | string[] | undefined): string | undefined;
+/**
+ * Dep-0 HTTPS GET returning raw bytes. Follows storage redirects (GHCR serves
+ * blobs from a redirected backend), dropping the Authorization header on any
+ * redirect so a pre-signed storage URL is never handed a stale bearer.
+ */
+declare function httpGet(url: string, options?: GhcrHttpOptions | undefined): Promise<GhcrHttpResponse>;
+/**
+ * Parse a `WWW-Authenticate: Bearer realm="...",service="...",scope="..."`
+ * challenge into its realm/service/scope. Returns undefined for a non-Bearer or
+ * realm-less header. Reimplements docker.mts parseWwwAuthenticate dep-0.
+ */
+declare function parseWwwAuthenticate(header: string): AuthChallenge | undefined;
+/**
+ * The GHCR anonymous pull-token URL for a repository.
+ */
+declare function ghcrTokenUrl(repo: string, registry: string): string;
+/**
+ * Extract the bearer token from a token-endpoint JSON body (either `token` or
+ * `access_token`). Returns undefined when neither is present / parseable.
+ */
+declare function tokenFromBody(body: Buffer): string | undefined;
+/**
+ * Obtain an anonymous pull token. Hits the documented token endpoint first; on
+ * anything but a usable token, falls back to the 401 WWW-Authenticate challenge
+ * form (probe /v2/, follow the advertised realm). Fails loud when no token can
+ * be obtained.
+ */
+declare function getGhcrToken(repo: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<string>;
+/**
+ * GET one manifest by tag or digest. Resolves a multi-arch index to its first
+ * sub-manifest so a concrete image manifest (carrying the artifact layer) is
+ * always returned. Fails loud on a non-2xx.
+ */
+declare function fetchOciManifest(repo: string, ref: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<OciManifest>;
+/**
+ * Choose the tarball layer from an artifact manifest: prefer a layer whose
+ * `org.opencontainers.image.title` ends in `.tar.gz`, then a gzip/tar media
+ * type, else the sole layer. Throws when no usable layer exists.
+ */
+declare function pickBundleLayer(manifest: OciManifest): OciLayer;
+/**
+ * GET a blob by digest (following the storage redirect). Fails loud on a
+ * non-2xx.
+ */
+declare function fetchBlob(repo: string, digest: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<Buffer>;
+/**
+ * The SHA-256 hex digest of a Buffer.
+ */
+declare function sha256Hex(buf: Buffer): string;
+/**
+ * Pull the fleet-bundle tarball from GHCR and write it to `destDir`. Verifies
+ * the blob's SHA-256 against the manifest layer digest before writing — a
+ * mismatch aborts (fail closed). Returns the written tarball path.
+ */
+declare function pullFleetBundleTarball(config: PullBundleConfig): Promise<string>;
+//#endregion
 //#region scripts/repo/gen/bootstrap/src/install-prune.d.mts
 /**
  * Apply the manifest's per-repo-owned file MOVES (`movedPaths`) — the rename
@@ -534,4 +692,4 @@ declare function runStatus(config: InstallConfig): number;
 declare function installFleet(config: InstallConfig): Promise<number>;
 declare function isMainModule(): boolean;
 //#endregion
-export { BundleConfig, BundleManifest, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FleetCommentStyle, FleetFileManifest, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, PREPARE_FETCH, RefValidation, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, formatLockStepError, formatUpdateNotice, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isMainModule, legacyBeginMarker, legacyEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseYamlEntryChunks, parseYamlKeyBlocks, printStatusReport, pruneStaleFleetFiles, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };
+export { AuthChallenge, BundleConfig, BundleFetchFn, BundleManifest, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FetchedBundle, FetchedFiles, FleetCommentStyle, FleetFileManifest, GHCR_HOST, GhcrHttpGetFn, GhcrHttpOptions, GhcrHttpResponse, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MANIFEST_ACCEPT, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, OciLayer, OciManifest, PREPARE_FETCH, PullBundleConfig, RefValidation, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, extractManifestFromTarball, fetchBlob, fetchBundleSource, fetchOciManifest, firstHeader, formatLockStepError, formatUpdateNotice, getGhcrToken, ghReleaseFetchBundle, ghcrBundleRepo, ghcrFetchBundle, ghcrTokenUrl, httpGet, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isMainModule, legacyBeginMarker, legacyEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseWwwAuthenticate, parseYamlEntryChunks, parseYamlKeyBlocks, pickBundleLayer, printStatusReport, pruneStaleFleetFiles, pullFleetBundleTarball, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, sha256Hex, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, tokenFromBody, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };

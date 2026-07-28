@@ -24,6 +24,7 @@
 // PostToolUse, not PreToolUse: we react after the push has gone out and CI
 // has been triggered; we don't predict it. Never blocks (notify, exit 0).
 
+import { GIT_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
@@ -42,7 +43,8 @@ const DRY_RUN_FLAGS = new Set(['--dry-run', '-n'])
 // not a regex, so a chained / substituted / quoted "git push" is handled.
 export function isGitPush(command: string): boolean {
   for (const cmd of commandsFor(command, 'git')) {
-    const firstArg = cmd.args.find(a => !a.startsWith('-'))
+    // Shared parse: `git -C /path push` would otherwise read the path.
+    const firstArg = positionalArgs(cmd.args, GIT_VALUE_FLAGS, 1)[0]
     if (firstArg !== 'push') {
       continue
     }

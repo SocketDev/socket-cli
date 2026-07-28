@@ -502,8 +502,14 @@ runs:
           fi
           if [ -n "$REAL" ]; then
             REAL="$(msys_to_win_path "$REAL")"
-            # SFW_UNKNOWN_HOST_ACTION=ignore: only sfw-enterprise reads this
-            # env var (sfw-free hardcodes 'ignore' internally). Enterprise's
+            # SFW_UNKNOWN_HOST_ACTION=ignore: only sfw-enterprise PARSES
+            # this env var (src/sfw-enterprise/config.ts); it is simply
+            # inert for the free build. Once SocketDev/firewall#147 lands,
+            # a registry hostname that RESOLVES to a local address (a test
+            # mock aliased via /etc/hosts) is also classified unknown, so
+            # 'block' would newly break those setups — 'ignore' keeps them
+            # working. Registry scanning is unaffected either way: it is
+            # decided before the unknown-host policy runs. Enterprise's
             # built-in default is 'block', which fails dev workflows that hit
             # hosts outside the registries[] allowlist (Anthropic API, GitHub
             # clones, telemetry, etc.). Setting 'ignore' lets non-allowlisted

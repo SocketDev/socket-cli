@@ -8,17 +8,58 @@ import {
   readdirSync,
   realpathSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import crypto from 'node:crypto'
 import { execFileSync } from 'node:child_process'
+import https from 'node:https'
 
+//#region scripts/repo/gen/bootstrap/src/dep0-io.mts
+/**
+ * @file Dep-0 I/O shim for the fleet bundle fetcher. `fleet.mjs` — the built
+ *   bootstrap fetcher — runs on a BARE clone with NO node_modules, before the
+ *   published `@socketsecurity/lib-stable` exists, so it cannot import the lib
+ *   logger or lib safeDelete. This module supplies node:-builtin-only stand-ins
+ *   that rolldown inlines into the single-file bundle: a logger whose `log`
+ *   writes to STDOUT (preserving the `--json` machine-readable contract) and
+ *   whose `error` writes to STDERR, plus a fail-open recursive delete. The two
+ *   lint carve-outs the dep-0 constraint forces (`socket/prefer-safe-delete`,
+ *   `socket/no-console-prefer-logger`) live ONLY here, so every other src/
+ *   module stays carve-out-free.
+ */
+/**
+ * Return the shared dep-0 logger. Mirrors the lib `getDefaultLogger()` factory
+ * shape so call sites read identically (`const logger = getDep0Logger()`).
+ */
+function getDep0Logger() {
+  return dep0Logger
+}
+/**
+ * Fail-open recursive delete. The dep-0 fetcher cannot import the lib
+ * `safeDeleteSync`, so it wraps node's `rmSync` with the same force + recursive
+ * fail-open semantics: a missing path is a no-op, never a throw.
+ */
+function rm(targetPath) {
+  rmSync(targetPath, {
+    force: true,
+    recursive: true,
+  })
+}
+const dep0Logger = {
+  error(...args) {
+    console.error(...args)
+  },
+  log(...args) {
+    console.log(...args)
+  },
+}
+
+//#endregion
 //#region scripts/repo/gen/bootstrap/src/helpers.mts
 /**
  * Normalize bundle-manifest paths to their portable `/` wire format.
@@ -280,9 +321,9 @@ function writeAppliedRef(dest, ref) {
   mkdirSync(path.dirname(p), { recursive: true })
   writeFileSync(p, `${ref}\n`)
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
-  if (existsSync(legacy)) safeDeleteSync(legacy)
+  if (existsSync(legacy)) rm(legacy)
   const flat = path.join(dest, FLAT_APPLIED_MARKER)
-  if (existsSync(flat)) safeDeleteSync(flat)
+  if (existsSync(flat)) rm(flat)
 }
 
 //#endregion
@@ -293,7 +334,7 @@ const FLEET_CANONICAL_SPLICE_FILES = [
   '.config/fleet/.prettierignore',
 ]
 /**
- * True when `relPath` (repo-relative, either separator) is a designated
+ * True when `relPath`, repo-relative, either separator, is a designated
  * segment file — the path gate every splice call site checks first.
  */
 function isFleetCanonicalSpliceFile(relPath) {
@@ -344,7 +385,7 @@ const ALWAYS_TRACKED_GITHUB_PREFIXES = [
   '.github/workflows/',
 ]
 /**
- * True when `relPath` (repo-relative, either separator) is part of the GitHub
+ * True when `relPath`, repo-relative, either separator, is part of the GitHub
  * CI surface a member must keep git-tracked even when thin — a workflow file or
  * a fleet composite action. `thinIgnoreEntries` gates on this so the untrack
  * set can never strand CI: GitHub reads both surfaces from the committed tree
@@ -552,15 +593,15 @@ const DISPATCH_EVENTS = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop']
 const INDEX_REL = '.claude/hooks/fleet/index.cjs'
 const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
 /**
- * The compile-cache baseline command for an event (the cascaded canonical).
+ * The compile-cache baseline command for an event, the cascaded canonical.
  */
 function baselineCommand(event) {
   return `node "$CLAUDE_PROJECT_DIR"/${INDEX_REL} ${event}`
 }
 /**
- * A dispatch command for `event` in either form (baseline or launcher). Used to
+ * A dispatch command for `event` in either form, baseline or launcher. Used to
  * recognize an existing dispatch entry regardless of which path it's wired to,
- * so a rewrite is idempotent and replaces (never duplicates) the entry.
+ * so a rewrite is idempotent and replaces, never duplicates, the entry.
  */
 function isDispatchCommand(command, event) {
   return (
@@ -606,7 +647,7 @@ function launcherWiredEvents(settings) {
  * Rewrite every recognized dispatch command in `settings` to the form
  * `make(event)` produces. Returns the number of commands changed. Mutates in
  * place; the caller decides whether to persist. Passing `baselineCommand` as
- * `make` CANONICALIZES (both forms collapse to the baseline) — the shape the
+ * `make` CANONICALIZES, both forms collapse to the baseline — the shape the
  * fleet-drift comparison needs so a launcher-wired host doesn't read as drift.
  */
 function rewriteDispatchCommands(settings, make) {
@@ -751,7 +792,7 @@ function spliceRepoHookEntry(settings, event, matcher, hook) {
  *   install.mts along the sync-prune seam to hold that file under the line cap;
  *   install.mts re-exports these so its public surface (and fleet.mts's
  *   re-export of it) is unchanged. Dep-0, same invariant as install.mts (node:
- *   builtins + lib-stable only, never the in-repo socket-lib).
+ *   builtins only, never socket-lib).
  */
 /**
  * Apply the manifest's per-repo-owned file MOVES (`movedPaths`) — the rename
@@ -785,7 +826,7 @@ function applyMovedPaths(dest, manifest) {
     const fromAbs = path.join(dest, from)
     if (!existsSync(fromAbs)) continue
     const toAbs = path.join(dest, to)
-    if (existsSync(toAbs)) safeDeleteSync(fromAbs)
+    if (existsSync(toAbs)) rm(fromAbs)
     else {
       mkdirSync(path.dirname(toAbs), { recursive: true })
       renameSync(fromAbs, toAbs)
@@ -817,7 +858,7 @@ function removeTombstonedPaths(dest, manifest) {
       continue
     const abs = path.join(dest, rel)
     if (existsSync(abs)) {
-      safeDeleteSync(abs)
+      rm(abs)
       removed += 1
     }
   }
@@ -849,7 +890,7 @@ function pruneStaleFleetFiles(dest, manifest, previousFiles) {
     if (kept.has(rel)) continue
     const abs = path.join(dest, rel)
     if (existsSync(abs)) {
-      safeDeleteSync(abs)
+      rm(abs)
       pruned += 1
     }
   }
@@ -858,7 +899,7 @@ function pruneStaleFleetFiles(dest, manifest, previousFiles) {
 
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/install.mts
-const logger$3 = getDefaultLogger()
+const logger$4 = getDep0Logger()
 /**
  * Place every verified bundle file from `filesDir` into `dest`, creating
  * parent directories as needed. Sentinel-scoped ONLY for the DESIGNATED
@@ -925,7 +966,7 @@ function untrackGeneratedOutputs(dest, generatedPaths) {
       },
     )
   } catch (e) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: untracking generated outputs failed (non-fatal) — ${errorMessage(e)}`,
     )
   }
@@ -964,7 +1005,7 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
   if (segment === void 0) return 0
   const sourcePath = path.join(segmentsDir, segmentFileName(segment.path))
   if (!existsSync(sourcePath)) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: Claude settings segment missing at ${sourcePath} — refusing to merge.`,
     )
     return 1
@@ -981,7 +1022,7 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
     writeFileSync(targetPath, `${JSON.stringify(merged, void 0, 2)}\n`)
     return 0
   } catch (e) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: Claude settings merge failed for ${targetPath}: ${errorMessage(e)}. Nothing written.`,
     )
     return 1
@@ -997,7 +1038,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
   if (ws === void 0) return 0
   const fleetFile = path.join(segmentsDir, 'pnpm-workspace.yaml.fleet')
   if (!existsSync(fleetFile)) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: workspace segment file missing at ${fleetFile} — skipping workspace merge`,
     )
     return 0
@@ -1017,7 +1058,7 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
       }),
     )
   } catch (e) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: pnpm-workspace.yaml merge failed — ${errorMessage(e)}. Nothing written.`,
     )
     return 1
@@ -1038,7 +1079,7 @@ const FLEET_STATUS_SCRIPT = 'node scripts/repo/bootstrap/fleet.mjs --status'
 function wirePackageJson(dest) {
   const pkgPath = path.join(dest, 'package.json')
   if (!existsSync(pkgPath)) {
-    logger$3.log(
+    logger$4.log(
       `install-fleet: --wire: no package.json at ${pkgPath} — skipping`,
     )
     return
@@ -1149,7 +1190,7 @@ function applyThinMode(config) {
         },
       )
     } catch (e) {
-      logger$3.log(
+      logger$4.log(
         `install-fleet: --thin: git rm --cached failed (non-fatal) — ${errorMessage(e)}`,
       )
     }
@@ -1378,8 +1419,8 @@ function formatUpdateNotice(config) {
  *   Lock-step note: assertLockStep enforces the cascadeSha === templateSha
  *   invariant but does not resolve refs itself — see resolveReleaseTemplateSha.
  */
-const logger$2 = getDefaultLogger()
-const MANIFEST_NAME$1 = 'release-bundle-manifest.json'
+const logger$3 = getDep0Logger()
+const MANIFEST_NAME$2 = 'release-bundle-manifest.json'
 /**
  * Assert the lock-step invariant before applying a release: the member's pinned
  * `bundle.cascadeSha` MUST equal the release's `templateSha`.
@@ -1395,7 +1436,7 @@ function assertLockStep(config) {
   }
   if (cascadeSha === void 0) return true
   if (cascadeSha === manifestTemplateSha) return true
-  logger$2.error(
+  logger$3.error(
     formatLockStepError({
       cascadeSha,
       pinnedTemplateSha: manifestTemplateSha,
@@ -1455,20 +1496,383 @@ function resolveReleaseTemplateSha(ref, repo) {
         '--repo',
         repo,
         '--pattern',
-        MANIFEST_NAME$1,
+        MANIFEST_NAME$2,
         '--dir',
         tmp,
       ],
       { stdio: ['ignore', 'ignore', 'ignore'] },
     )
-    const manifestPath = path.join(tmp, MANIFEST_NAME$1)
+    const manifestPath = path.join(tmp, MANIFEST_NAME$2)
     if (!existsSync(manifestPath)) return
     const json = JSON.parse(readFileSync(manifestPath, 'utf8'))
     return typeof json.templateSha === 'string' ? json.templateSha : void 0
   } catch {
     return
   } finally {
-    safeDeleteSync(tmp)
+    rm(tmp)
+  }
+}
+
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/ghcr-fetch.mts
+const GHCR_HOST = 'ghcr.io'
+const MANIFEST_ACCEPT = [
+  'application/vnd.oci.image.manifest.v1+json',
+  'application/vnd.oci.image.index.v1+json',
+  'application/vnd.docker.distribution.manifest.v2+json',
+  'application/vnd.docker.distribution.manifest.list.v2+json',
+].join(', ')
+const MAX_REDIRECTS = 5
+/**
+ * Read the first value of a possibly-array HTTP header.
+ */
+function firstHeader(value) {
+  return Array.isArray(value) ? value[0] : value
+}
+/**
+ * Dep-0 HTTPS GET returning raw bytes. Follows storage redirects (GHCR serves
+ * blobs from a redirected backend), dropping the Authorization header on any
+ * redirect so a pre-signed storage URL is never handed a stale bearer.
+ */
+function httpGet(url, options) {
+  return httpGetWithRedirects(url, options?.headers ?? {}, 0)
+}
+function httpGetWithRedirects(url, headers, redirectCount) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, { headers }, res => {
+        const status = res.statusCode ?? 0
+        const location = firstHeader(res.headers['location'])
+        if (
+          status >= 300 &&
+          status < 400 &&
+          location &&
+          redirectCount < MAX_REDIRECTS
+        ) {
+          res.resume()
+          const nextUrl = new URL(location, url).toString()
+          const nextHeaders = Object.create(null)
+          for (const key of Object.keys(headers))
+            if (key.toLowerCase() !== 'authorization')
+              nextHeaders[key] = headers[key]
+          resolve(httpGetWithRedirects(nextUrl, nextHeaders, redirectCount + 1))
+          return
+        }
+        const chunks = []
+        res.on('data', chunk => chunks.push(chunk))
+        res.on('end', () => {
+          resolve({
+            body: Buffer.concat(chunks),
+            headers: res.headers,
+            status,
+          })
+        })
+      })
+      .on('error', reject)
+  })
+}
+/**
+ * Parse a `WWW-Authenticate: Bearer realm="...",service="...",scope="..."`
+ * challenge into its realm/service/scope. Returns undefined for a non-Bearer or
+ * realm-less header. Reimplements docker.mts parseWwwAuthenticate dep-0.
+ */
+function parseWwwAuthenticate(header) {
+  const bearer = /^\s*Bearer\s+(.*)$/i.exec(header)
+  if (!bearer) return
+  const params = Object.create(null)
+  for (const match of bearer[1].matchAll(/(\w+)="([^"]*)"/g))
+    params[match[1]] = match[2]
+  const realm = params['realm']
+  if (!realm) return
+  return {
+    realm,
+    scope: params['scope'],
+    service: params['service'],
+  }
+}
+/**
+ * The GHCR anonymous pull-token URL for a repository.
+ */
+function ghcrTokenUrl(repo, registry) {
+  return `https://${registry}/token?scope=repository:${repo}:pull&service=${registry}`
+}
+/**
+ * Extract the bearer token from a token-endpoint JSON body (either `token` or
+ * `access_token`). Returns undefined when neither is present / parseable.
+ */
+function tokenFromBody(body) {
+  try {
+    const json = JSON.parse(body.toString('utf8'))
+    return json.token || json.access_token || void 0
+  } catch {
+    return
+  }
+}
+/**
+ * Obtain an anonymous pull token. Hits the documented token endpoint first; on
+ * anything but a usable token, falls back to the 401 WWW-Authenticate challenge
+ * form (probe /v2/, follow the advertised realm). Fails loud when no token can
+ * be obtained.
+ */
+async function getGhcrToken(repo, registry, httpFn = httpGet) {
+  const primary = await httpFn(ghcrTokenUrl(repo, registry), {
+    headers: { accept: 'application/json' },
+  })
+  const primaryToken =
+    primary.status >= 200 && primary.status < 300
+      ? tokenFromBody(primary.body)
+      : void 0
+  if (primaryToken) return primaryToken
+  const header = firstHeader(
+    (await httpFn(`https://${registry}/v2/`)).headers['www-authenticate'],
+  )
+  const challenge = header ? parseWwwAuthenticate(header) : void 0
+  if (!challenge)
+    throw new Error(`Cannot obtain a GHCR anonymous pull token.
+  Where: https://${registry}/token and /v2/ for repo ${repo}\n  Saw:   no token in the endpoint body and no parseable Bearer challenge
+  Fix:   confirm the package is public and speaks the OCI token flow.`)
+  const params = new URLSearchParams()
+  if (challenge.service) params.set('service', challenge.service)
+  params.set('scope', challenge.scope ?? `repository:${repo}:pull`)
+  const res = await httpFn(`${challenge.realm}?${params.toString()}`, {
+    headers: { accept: 'application/json' },
+  })
+  const token = tokenFromBody(res.body)
+  if (!token)
+    throw new Error(`Cannot obtain a GHCR anonymous pull token.
+  Where: ${challenge.realm} for repo ${repo}\n  Saw:   HTTP ${res.status} with no token in the body\n  Fix:   confirm the package is public and speaks the OCI token flow.`)
+  return token
+}
+/**
+ * GET one manifest by tag or digest. Resolves a multi-arch index to its first
+ * sub-manifest so a concrete image manifest (carrying the artifact layer) is
+ * always returned. Fails loud on a non-2xx.
+ */
+async function fetchOciManifest(repo, ref, token, registry, httpFn = httpGet) {
+  const res = await httpFn(`https://${registry}/v2/${repo}/manifests/${ref}`, {
+    headers: {
+      accept: MANIFEST_ACCEPT,
+      authorization: `Bearer ${token}`,
+    },
+  })
+  if (res.status < 200 || res.status >= 300)
+    throw new Error(`GHCR manifest fetch failed.
+  Where: /v2/${repo}/manifests/${ref} on ${registry}\n  Saw:   HTTP ${res.status}\n  Fix:   confirm the tag exists and the package is public.`)
+  const manifest = JSON.parse(res.body.toString('utf8'))
+  if (
+    (!manifest.layers || manifest.layers.length === 0) &&
+    manifest.manifests &&
+    manifest.manifests.length > 0
+  ) {
+    const sub = manifest.manifests[0].digest
+    if (!sub)
+      throw new Error(`GHCR manifest index had no sub-manifest digest.
+  Where: /v2/${repo}/manifests/${ref} on ${registry}\n  Saw:   empty manifests[]
+  Fix:   confirm the artifact publishes at least one manifest.`)
+    return fetchOciManifest(repo, sub, token, registry, httpFn)
+  }
+  return manifest
+}
+/**
+ * Choose the tarball layer from an artifact manifest: prefer a layer whose
+ * `org.opencontainers.image.title` ends in `.tar.gz`, then a gzip/tar media
+ * type, else the sole layer. Throws when no usable layer exists.
+ */
+function pickBundleLayer(manifest) {
+  const layers = manifest.layers ?? []
+  if (layers.length === 0)
+    throw new Error(
+      'GHCR artifact manifest carried no layers.\n  Where: the fleet-bundle OCI manifest\n  Saw:   layers[] empty\n  Fix:   confirm the publish step pushed the tarball as a layer.',
+    )
+  const byTitle = layers.find(layer =>
+    (layer.annotations?.['org.opencontainers.image.title'] ?? '').endsWith(
+      '.tar.gz',
+    ),
+  )
+  const byMedia = layers.find(layer => {
+    const mediaType = layer.mediaType ?? ''
+    return mediaType.includes('gzip') || mediaType.includes('tar')
+  })
+  const chosen = byTitle ?? byMedia ?? layers[0]
+  if (!chosen.digest)
+    throw new Error(
+      'GHCR artifact tarball layer carried no digest.\n  Where: the fleet-bundle OCI manifest layer\n  Saw:   missing layer.digest\n  Fix:   confirm the publish step recorded the blob digest.',
+    )
+  return chosen
+}
+/**
+ * GET a blob by digest (following the storage redirect). Fails loud on a
+ * non-2xx.
+ */
+async function fetchBlob(repo, digest, token, registry, httpFn = httpGet) {
+  const res = await httpFn(`https://${registry}/v2/${repo}/blobs/${digest}`, {
+    headers: {
+      accept: 'application/octet-stream',
+      authorization: `Bearer ${token}`,
+    },
+  })
+  if (res.status < 200 || res.status >= 300)
+    throw new Error(`GHCR blob fetch failed.
+  Where: /v2/${repo}/blobs/${digest} on ${registry}\n  Saw:   HTTP ${res.status}\n  Fix:   confirm the blob was pushed and the package is public.`)
+  return res.body
+}
+/**
+ * The SHA-256 hex digest of a Buffer.
+ */
+function sha256Hex(buf) {
+  return crypto.createHash('sha256').update(buf).digest('hex')
+}
+/**
+ * Pull the fleet-bundle tarball from GHCR and write it to `destDir`. Verifies
+ * the blob's SHA-256 against the manifest layer digest before writing — a
+ * mismatch aborts (fail closed). Returns the written tarball path.
+ */
+async function pullFleetBundleTarball(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  const registry = cfg.registry ?? 'ghcr.io'
+  const httpFn = cfg.httpFn ?? httpGet
+  const token = await getGhcrToken(cfg.repo, registry, httpFn)
+  const layer = pickBundleLayer(
+    await fetchOciManifest(cfg.repo, cfg.tag, token, registry, httpFn),
+  )
+  const blob = await fetchBlob(cfg.repo, layer.digest, token, registry, httpFn)
+  const actual = `sha256:${sha256Hex(blob)}`
+  if (actual !== layer.digest)
+    throw new Error(`GHCR bundle blob failed SHA-256 verification.
+  Where: /v2/${cfg.repo}/blobs/${layer.digest} on ${registry}\n  Saw:   ${actual}\n  Wanted: ${layer.digest}\n  Fix:   the blob is corrupt or was tampered with; re-pull or re-publish.`)
+  const tarballPath = path.join(
+    cfg.destDir,
+    `socket-wheelhouse-fleet-${cfg.tag}.tar.gz`,
+  )
+  writeFileSync(tarballPath, blob)
+  return tarballPath
+}
+
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/bundle-source.mts
+const logger$2 = getDep0Logger()
+const MANIFEST_NAME$1 = 'release-bundle-manifest.json'
+/**
+ * Derive the GHCR fleet-bundle package repo from the gh `owner/repo`. GHCR
+ * package paths are lowercase: `SocketDev/socket-wheelhouse` →
+ * `socketdev/socket-wheelhouse/fleet-bundle`.
+ */
+function ghcrBundleRepo(repo) {
+  return `${repo.toLowerCase()}/fleet-bundle`
+}
+/**
+ * Extract just the release-bundle manifest from the bundle tarball root (the
+ * tarball ships it beside files/ + segments/), so the GHCR path yields the same
+ * on-disk `sourceManifest` file the gh-release path downloads separately.
+ */
+function extractManifestFromTarball(tarball, destDir) {
+  run(tarExecutable(process.platform, process.env['SystemRoot']), [
+    '-xzf',
+    tarball,
+    '-C',
+    destDir,
+    MANIFEST_NAME$1,
+  ])
+  return path.join(destDir, MANIFEST_NAME$1)
+}
+/**
+ * Default GHCR fetch: anonymous OCI pull of the fleet-bundle tarball, then pull
+ * the manifest out of it. Throws on any failure so the selector can fall back.
+ */
+async function ghcrFetchBundle(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  const tarball = await pullFleetBundleTarball({
+    destDir: cfg.tmp,
+    repo: ghcrBundleRepo(cfg.repo),
+    tag: cfg.ref,
+  })
+  return {
+    manifest: extractManifestFromTarball(tarball, cfg.tmp),
+    tarball,
+  }
+}
+/**
+ * Default GitHub-Release fetch (the fallback): `gh release download` of the
+ * tarball + manifest assets. Throws with an actionable message when the release
+ * lacks either asset.
+ */
+async function ghReleaseFetchBundle(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  run('gh', [
+    'release',
+    'download',
+    cfg.ref,
+    '--repo',
+    cfg.repo,
+    '--pattern',
+    '*.tar.gz',
+    '--pattern',
+    MANIFEST_NAME$1,
+    '--dir',
+    cfg.tmp,
+  ])
+  const manifest = path.join(cfg.tmp, MANIFEST_NAME$1)
+  if (!existsSync(manifest))
+    throw new Error(`release ${cfg.ref} has no ${MANIFEST_NAME$1} asset.`)
+  const tarball = readdirSync(cfg.tmp).find(f => f.endsWith('.tar.gz'))
+  if (!tarball) throw new Error(`release ${cfg.ref} has no .tar.gz asset.`)
+  return {
+    manifest,
+    tarball: path.join(cfg.tmp, tarball),
+  }
+}
+/**
+ * Fetch the fleet bundle: GHCR primary, GitHub-Release fallback. Tries the
+ * anonymous OCI pull first; on ANY failure logs the reason to STDERR and falls
+ * back to `gh release download`. Returns the on-disk tarball + manifest paths
+ * plus which source served them. The injectable `ghcrFetch` / `ghFetch` seams
+ * let tests drive both paths without network.
+ */
+async function fetchBundleSource(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  const ghcrFetch = cfg.ghcrFetch ?? ghcrFetchBundle
+  const ghFetch = cfg.ghFetch ?? ghReleaseFetchBundle
+  try {
+    const fetched = await ghcrFetch({
+      ref: cfg.ref,
+      repo: cfg.repo,
+      tmp: cfg.tmp,
+    })
+    logger$2.error(
+      `install-fleet: fetched ${cfg.ref} from ghcr (${ghcrBundleRepo(cfg.repo)}).`,
+    )
+    return {
+      ...fetched,
+      source: 'ghcr',
+    }
+  } catch (e) {
+    logger$2.error(
+      `install-fleet: ghcr pull failed for ${cfg.ref} (${errorMessage(e)}); falling back to gh release download.`,
+    )
+  }
+  const fetched = await ghFetch({
+    ref: cfg.ref,
+    repo: cfg.repo,
+    tmp: cfg.tmp,
+  })
+  logger$2.error(
+    `install-fleet: fetched ${cfg.ref} from gh release (${cfg.repo}).`,
+  )
+  return {
+    ...fetched,
+    source: 'gh-release',
   }
 }
 
@@ -1482,7 +1886,7 @@ function resolveReleaseTemplateSha(ref, repo) {
  *   Lock-step note: the sibling lockstep.mts module owns the lock-step state
  *   machine; this file only formats and renders it.
  */
-const logger$1 = getDefaultLogger()
+const logger$1 = getDep0Logger()
 /**
  * Fire the passive update notice opportunistically (update-notifier style). The
  * caller already resolved a newer release exists; this throttles to once/24h
@@ -1572,7 +1976,7 @@ function statusJson(state) {
 
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/fleet.mts
-const logger = getDefaultLogger()
+const logger = getDep0Logger()
 const DEFAULT_REPO = 'SocketDev/socket-wheelhouse'
 const MANIFEST_NAME = 'release-bundle-manifest.json'
 function resolveRepoRoot(startDir) {
@@ -1720,42 +2124,21 @@ async function installFleet(config) {
         return 1
       }
       logger.log(`install-fleet: using local bundle ${sourceTarball}.`)
-    } else {
-      logger.log(`install-fleet: downloading ${ref} from ${repo}…`)
+    } else
       try {
-        run('gh', [
-          'release',
-          'download',
+        const fetched = await fetchBundleSource({
           ref,
-          '--repo',
           repo,
-          '--pattern',
-          '*.tar.gz',
-          '--pattern',
-          MANIFEST_NAME,
-          '--dir',
           tmp,
-        ])
+        })
+        sourceTarball = fetched.tarball
+        sourceManifest = fetched.manifest
       } catch (e) {
         logger.log(
-          `install-fleet: download failed for ${repo}@${ref}: ${errorMessage(e)}. Check the tag exists and gh is authenticated.`,
+          `install-fleet: fetch failed for ${repo}@${ref}: ${errorMessage(e)}. Check the tag exists (GHCR package public or gh authenticated).`,
         )
         return 1
       }
-      sourceManifest = path.join(tmp, MANIFEST_NAME)
-      if (!existsSync(sourceManifest)) {
-        logger.log(
-          `install-fleet: release ${ref} has no ${MANIFEST_NAME} asset.`,
-        )
-        return 1
-      }
-      const tarball = readdirSync(tmp).find(f => f.endsWith('.tar.gz'))
-      if (!tarball) {
-        logger.log(`install-fleet: release ${ref} has no .tar.gz asset.`)
-        return 1
-      }
-      sourceTarball = path.join(tmp, tarball)
-    }
     const manifest = readManifest(sourceManifest)
     const sourceRef = ref || `local-${manifest.version}`
     const extractDir = path.join(tmp, 'extracted')
@@ -1842,7 +2225,7 @@ async function installFleet(config) {
     )
     return 0
   } finally {
-    safeDeleteSync(tmp)
+    rm(tmp)
   }
 }
 function isMainModule() {
@@ -1865,6 +2248,8 @@ if (isMainModule()) {
 export {
   ERR_LOCKSTEP_MISMATCH,
   FLEET_STATUS_SCRIPT,
+  GHCR_HOST,
+  MANIFEST_ACCEPT,
   PREPARE_FETCH,
   SYNC_FLEET_SCRIPT,
   UPDATE_NOTIFIER_OPT_OUT_ENV,
@@ -1875,8 +2260,19 @@ export {
   computeSha256,
   endMarker,
   errorMessage,
+  extractManifestFromTarball,
+  fetchBlob,
+  fetchBundleSource,
+  fetchOciManifest,
+  firstHeader,
   formatLockStepError,
   formatUpdateNotice,
+  getGhcrToken,
+  ghReleaseFetchBundle,
+  ghcrBundleRepo,
+  ghcrFetchBundle,
+  ghcrTokenUrl,
+  httpGet,
   installFiles,
   installFleet,
   installSegments,
@@ -1892,10 +2288,13 @@ export {
   normalizeBundlePath,
   normalizeManifestEntryPath,
   parseArgs,
+  parseWwwAuthenticate,
   parseYamlEntryChunks,
   parseYamlKeyBlocks,
+  pickBundleLayer,
   printStatusReport,
   pruneStaleFleetFiles,
+  pullFleetBundleTarball,
   readAppliedFiles,
   readAppliedRef,
   readBundleConfig,
@@ -1911,12 +2310,14 @@ export {
   run,
   runStatus,
   segmentFileName,
+  sha256Hex,
   shouldShowNotice,
   spliceFleetBlock,
   statusJson,
   tarExecutable,
   tarExtractArgs,
   thinIgnoreEntries,
+  tokenFromBody,
   untrackGeneratedOutputs,
   validateBundleBlock,
   validateCascadeSha,

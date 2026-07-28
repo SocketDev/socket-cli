@@ -56,6 +56,7 @@ import path from 'node:path'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { GH_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardBlock, GuardResult } from '../_shared/guard.mts'
 import { findInvocation, parseCommands } from '../_shared/shell-command.mts'
@@ -377,7 +378,8 @@ function isAuthMaintenanceCommand(command: string): boolean {
     if (c.binary !== 'gh') {
       return false
     }
-    const verbs = c.args.filter(a => !a.startsWith('-'))
+    // Shared parse: `gh --repo o/r auth …` must not read o/r as the verb.
+    const verbs = positionalArgs(c.args, GH_VALUE_FLAGS)
     return (
       verbs[0] === 'auth' &&
       (verbs[1] === 'login' ||

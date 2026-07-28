@@ -13,14 +13,12 @@
  *   copied verbatim into the cascaded bootstrap payload by
  *   `scripts/repo/gen/bootstrap.mts`, beside `fleet.mjs`. Idempotent + fast:
  *   when the payload is already present it does a single existsSync check and
- *   exits — the common case. Fail-open: a missing fetcher, absent node_modules,
- *   or a failed fetch NEVER blocks the session; the kernel warns on STDERR and
- *   exits 0. Because `fleet.mjs` imports the published
- *   `@socketsecurity/lib-stable`, it needs node_modules to run — so a bare
- *   clone with no install cannot self-fetch; the kernel detects that and points
- *   the developer at `pnpm install` instead of dumping a module-not-found
- *   stack. USAGE (settings.json SessionStart hook): node
- *   scripts/repo/bootstrap/session-fetch.mjs.
+ *   exits — the common case. Fail-open: a missing fetcher or a failed fetch
+ *   NEVER blocks the session; the kernel warns on STDERR and exits 0.
+ *   `fleet.mjs` is dep-0 (node: builtins only), so it runs even on a bare clone
+ *   with no node_modules — the kernel shells it to self-fetch the payload the
+ *   moment a session opens, before any `pnpm install`. USAGE (settings.json
+ *   SessionStart hook): node scripts/repo/bootstrap/session-fetch.mjs.
  */
 
 import { spawnSync } from 'node:child_process'
@@ -45,13 +43,6 @@ export function ensurePayload(repoRoot) {
     warn(
       'fleet payload absent and the bootstrap fetcher ' +
         '(scripts/repo/bootstrap/fleet.mjs) is missing — run `pnpm install`.',
-    )
-    return 0
-  }
-  if (plan.action === 'no-deps') {
-    warn(
-      'fleet payload absent and node_modules is missing — run `pnpm install` ' +
-        'to materialize the fleet hooks.',
     )
     return 0
   }
@@ -108,10 +99,9 @@ export function payloadPresent(repoRoot) {
  *
  * - `present` the payload is already materialized — no-op.
  * - `no-fetcher` the payload is absent AND the bootstrap fetcher is missing.
- * - `no-deps` the payload + fetcher exist but node_modules does not, so the
- *   fetcher (which imports lib-stable) cannot run.
- * - `fetch` the payload is absent and the fetcher can run — carries the absolute
- *   `fleet` path to invoke.
+ * - `fetch` the payload is absent and the dep-0 fetcher is present — carries the
+ *   absolute `fleet` path to invoke. `fleet.mjs` is dep-0, so this holds even
+ *   with no node_modules: a bare clone self-fetches.
  */
 export function planFetch(repoRoot) {
   if (payloadPresent(repoRoot)) {
@@ -120,9 +110,6 @@ export function planFetch(repoRoot) {
   const fleet = path.join(repoRoot, 'scripts', 'repo', 'bootstrap', 'fleet.mjs')
   if (!existsSync(fleet)) {
     return { action: 'no-fetcher' }
-  }
-  if (!existsSync(path.join(repoRoot, 'node_modules'))) {
-    return { action: 'no-deps' }
   }
   return { action: 'fetch', fleet }
 }

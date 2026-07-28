@@ -54,7 +54,6 @@
     {
       "name": "abitious",
       "description": "napi-rs alternative — ship native .node addons as compressed hybrid .node via decmpfs",
-      "optIns": ["squash-history"],
       "publishes": "cargo"
     },
     {

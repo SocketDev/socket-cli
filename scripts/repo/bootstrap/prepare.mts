@@ -30,9 +30,6 @@ import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-const logger = getDefaultLogger()
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 // Function declarations hoist, so the sorted-position definition below is
@@ -132,7 +129,8 @@ export function isMainModule(): boolean {
 }
 
 export function log(message: string): void {
-  logger.log(`fleet-prepare: ${message}`)
+  // oxlint-disable-next-line socket/no-console-prefer-logger -- dep-0 bootstrap prepare doctor runs on a bare clone with no node_modules: cannot import the lib logger; console.log writes to STDOUT.
+  console.log(`fleet-prepare: ${message}`)
 }
 
 /**

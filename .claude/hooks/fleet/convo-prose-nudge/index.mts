@@ -18,6 +18,7 @@
 // invocations — no regex command matching. A parse failure exits 0 silently
 // (fail-open — a nudge must never block on its own bug).
 
+import { GH_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import {
@@ -65,7 +66,9 @@ const ANTIPATTERN_CHECKS: ReadonlyArray<{
 export function isGhPrOrIssuePost(cmd: Command): boolean {
   // args[0] = topic (pr / issue), args[1] = subcommand (create / edit / comment)
   // but global flags like --repo can appear before the topic, so scan.
-  const nonFlags = cmd.args.filter(a => !a.startsWith('-'))
+  // Shared parse: the comment above is right that --repo can precede the
+  // topic, but a plain flag filter keeps --repo's VALUE as the first word.
+  const nonFlags = positionalArgs(cmd.args, GH_VALUE_FLAGS)
   if (nonFlags.length < 2) {
     return false
   }

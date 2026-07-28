@@ -11,9 +11,9 @@
  *   `fetch-depth: 1` carries no tags, so the engine derives from zero, proposes
  *   0.1.0, and then trips the half-applied-bump gate against the historical
  *   CHANGELOG sections that already describe shipped versions — a red publish
- *   run with a misleading message. Real failure: decmpfs run 30226873755; fixed
- *   by putting `fetch-tags: true` on the npm-publish checkout (b8c6d6861),
- *   dogfooded in 3ab03edf4, proven when decmpfs then derived 0.1.2 → 0.1.3.
+ *   run with a misleading message. The fix is `fetch-tags: true` on the
+ *   publish checkout, which restores the version anchor and lets the engine
+ *   derive the true next patch.
  *
  *   That fix was one line in one cascade-owned file with fleet-wide blast
  *   radius, protected by nothing but a comment. This gate is the protection.

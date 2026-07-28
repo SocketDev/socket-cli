@@ -20,7 +20,7 @@ catalog:
   '@shadscan/cli': 0.2.0
   '@sinclair/typebox': 0.34.52
   '@socketregistry/packageurl-js': 1.4.8
-  '@socketsecurity/lib': 6.3.0
+  '@socketsecurity/lib': 6.4.0
   '@socketsecurity/registry': 2.0.5
   '@socketsecurity/sdk': 4.1.2
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.8'

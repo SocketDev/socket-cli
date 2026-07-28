@@ -41,6 +41,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { NPM_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor, commandWorkingDir } from '../_shared/shell-command.mts'
 
@@ -83,8 +84,11 @@ export function detectNpmAuth(command: string): NpmAuthDetection {
       // OTP supplied: no browser needed. no-npm-otp-flag-guard owns this case.
       continue
     }
-    // The operation is the first non-flag token.
-    const op = args.find(a => !a.startsWith('-'))
+    // The operation is the first POSITIONAL token — not merely the first
+    // non-flag one. `npm --otp 123456 publish` returns the OTP under the
+    // naive form, so this guard missed the very 2FA invocation it exists
+    // for. Shared parse skips a value flag and the token it consumes.
+    const op = positionalArgs(args, NPM_VALUE_FLAGS, 1)[0]
     if (op && (AUTH_OPERATIONS as readonly string[]).includes(op)) {
       return { detected: true, operation: op }
     }
