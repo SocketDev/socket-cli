@@ -10,7 +10,7 @@ import {
   resolveScopedToolAuthToken,
   textToolResult,
 } from './tool-auth.mts'
-import { isSocketOrgSlug } from './tool-input.mts'
+import { describeToolArgument, isSocketOrgSlug } from './tool-input.mts'
 
 import type { ToolSpec } from './tool-types.mts'
 
@@ -82,7 +82,7 @@ export function defineAlertsTool(): ToolSpec {
       const orgSlug = readToolString(args, 'org_slug')
       if (!orgSlug || !isSocketOrgSlug(orgSlug)) {
         return errorToolResult(
-          `Listing Socket alerts failed. Where: the \`org_slug\` argument. Saw: ${JSON.stringify(orgSlug ?? null)}, wanted an organization slug of letters, digits, dots, hyphens, or underscores. Fix: call the \`organizations\` tool and pass one of the slugs it lists.`,
+          `Listing Socket alerts failed. Where: the \`org_slug\` argument. Saw: ${describeToolArgument(orgSlug)}, wanted an organization slug of letters, digits, dots, hyphens, or underscores. Fix: call the \`organizations\` tool and pass one of the slugs it lists.`,
         )
       }
       const apiToken = resolveScopedToolAuthToken(

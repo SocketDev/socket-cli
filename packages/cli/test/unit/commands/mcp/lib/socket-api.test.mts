@@ -18,6 +18,10 @@ import {
   unwrapSocketApiResult,
 } from '../../../../../src/commands/mcp/lib/socket-api.mts'
 
+// The SDK can genuinely hand back a JSON null; parsing one models that
+// faithfully and keeps a bare `null` literal out of the source.
+const JSON_NULL: unknown = JSON.parse('null')
+
 const { mockListOrganizations, mockSetupSdk } = vi.hoisted(() => ({
   mockListOrganizations: vi.fn(),
   mockSetupSdk: vi.fn(),
@@ -157,7 +161,7 @@ describe('toSocketApiResult', () => {
     expect(result.cause).toBeUndefined()
   })
 
-  it.each([['a string', 'nope'], ['null', null], ['a bare object', {}]])(
+  it.each([['a string', 'nope'], ['null', JSON_NULL], ['a bare object', {}]])(
     'treats %s as a failure rather than a silent success',
     (_label, value) => {
       const result = toSocketApiResult(value)

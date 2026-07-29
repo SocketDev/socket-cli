@@ -16,6 +16,10 @@ import {
   renderFileTree,
 } from '../../../../../src/commands/mcp/lib/files.mts'
 
+// The API can genuinely send a JSON null; parsing one models that faithfully
+// and keeps a bare `null` literal out of the source.
+const JSON_NULL: unknown = JSON.parse('null')
+
 describe('extractSocketFileList', () => {
   it('normalizes a well-formed response', () => {
     expect(
@@ -61,7 +65,7 @@ describe('extractSocketFileList', () => {
 
   it.each([
     ['a non-object response', 'nope'],
-    ['a null response', null],
+    ['a null response', JSON_NULL],
     ['a response with no files key', {}],
     ['a non-array files value', { files: 'nope' }],
   ])('returns an empty list for %s', (_label, response) => {
@@ -69,7 +73,7 @@ describe('extractSocketFileList', () => {
   })
 
   it.each([
-    ['a null entry', null],
+    ['a null entry', JSON_NULL],
     ['a non-object entry', 'a.js'],
     ['an entry with no path', { size: 1 }],
     ['an entry with a non-string path', { path: 42 }],

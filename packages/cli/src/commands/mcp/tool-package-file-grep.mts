@@ -25,7 +25,7 @@ export const PACKAGE_FILE_GREP_TOOL_DESCRIPTION =
 // keeps a pathological pattern from pinning the process indefinitely.
 export const MAX_GREP_PATTERN_LENGTH = 512
 export const MAX_GREP_LINE_CHARS = 4096
-export const GREP_BUDGET_MS = 2_000
+export const GREP_BUDGET_MS = 2000
 const GREP_BUDGET_CHECK_INTERVAL = 128
 
 export const PackageFileGrepInputSchema = Type.Object({
@@ -67,70 +67,6 @@ export const PackageFileGrepInputSchema = Type.Object({
 export interface GrepScanResult {
   budgetExceeded: boolean
   matchIndexes: number[]
-}
-
-/**
- * Collect the indexes of matching lines, stopping at `maxMatches` or when the
- * time budget runs out.
- */
-export function scanLinesForPattern(
-  lines: string[],
-  pattern: RegExp,
-  maxMatches: number,
-  budgetMs = GREP_BUDGET_MS,
-): GrepScanResult {
-  const deadline = Date.now() + budgetMs
-  const matchIndexes: number[] = []
-  for (let i = 0; i < lines.length; i += 1) {
-    if (
-      i > 0 &&
-      i % GREP_BUDGET_CHECK_INTERVAL === 0 &&
-      Date.now() > deadline
-    ) {
-      return { budgetExceeded: true, matchIndexes }
-    }
-    const line = lines[i]!
-    const probe =
-      line.length > MAX_GREP_LINE_CHARS
-        ? line.slice(0, MAX_GREP_LINE_CHARS)
-        : line
-    if (pattern.test(probe)) {
-      matchIndexes.push(i)
-      if (matchIndexes.length >= maxMatches) {
-        break
-      }
-    }
-  }
-  return { budgetExceeded: false, matchIndexes }
-}
-
-/**
- * Render matched lines in `grep -n` form, inserting `--` separators between
- * non-adjacent context windows.
- */
-export function renderGrepMatches(
-  lines: string[],
-  matchIndexes: number[],
-  contextLines: number,
-): string {
-  const lineWidth = String(lines.length).length
-  const formatLine = (idx: number, sep: '-' | ':'): string =>
-    `${String(idx + 1).padStart(lineWidth, ' ')}${sep} ${lines[idx]}`
-  const out: string[] = []
-  let lastPrinted = -1
-  for (let m = 0; m < matchIndexes.length; m += 1) {
-    const matchIdx = matchIndexes[m]!
-    const start = Math.max(0, matchIdx - contextLines)
-    const end = Math.min(lines.length - 1, matchIdx + contextLines)
-    if (contextLines > 0 && lastPrinted >= 0 && start > lastPrinted + 1) {
-      out.push('--')
-    }
-    for (let i = Math.max(start, lastPrinted + 1); i <= end; i += 1) {
-      out.push(formatLine(i, i === matchIdx ? ':' : '-'))
-    }
-    lastPrinted = end
-  }
-  return out.join('\n')
 }
 
 export function definePackageFileGrepTool(): ToolSpec {
@@ -209,4 +145,64 @@ export function definePackageFileGrepTool(): ToolSpec {
     name: PACKAGE_FILE_GREP_TOOL_NAME,
     title: 'Package File Grep Tool',
   }
+}
+
+/**
+ * Render matched lines in `grep -n` form, inserting `--` separators between
+ * non-adjacent context windows.
+ */
+export function renderGrepMatches(
+  lines: string[],
+  matchIndexes: number[],
+  contextLines: number,
+): string {
+  const lineWidth = String(lines.length).length
+  const formatLine = (idx: number, sep: '-' | ':'): string =>
+    `${String(idx + 1).padStart(lineWidth, ' ')}${sep} ${lines[idx]}`
+  const out: string[] = []
+  let lastPrinted = -1
+  for (let m = 0; m < matchIndexes.length; m += 1) {
+    const matchIdx = matchIndexes[m]!
+    const start = Math.max(0, matchIdx - contextLines)
+    const end = Math.min(lines.length - 1, matchIdx + contextLines)
+    if (contextLines > 0 && lastPrinted >= 0 && start > lastPrinted + 1) {
+      out.push('--')
+    }
+    for (let i = Math.max(start, lastPrinted + 1); i <= end; i += 1) {
+      out.push(formatLine(i, i === matchIdx ? ':' : '-'))
+    }
+    lastPrinted = end
+  }
+  return out.join('\n')
+}
+
+/**
+ * Collect the indexes of matching lines, stopping at `maxMatches` or when the
+ * time budget runs out.
+ */
+export function scanLinesForPattern(
+  lines: string[],
+  pattern: RegExp,
+  maxMatches: number,
+  budgetMs = GREP_BUDGET_MS,
+): GrepScanResult {
+  const deadline = Date.now() + budgetMs
+  const matchIndexes: number[] = []
+  for (let i = 0; i < lines.length; i += 1) {
+    if (i > 0 && i % GREP_BUDGET_CHECK_INTERVAL === 0 && Date.now() > deadline) {
+      return { budgetExceeded: true, matchIndexes }
+    }
+    const line = lines[i]!
+    const probe =
+      line.length > MAX_GREP_LINE_CHARS
+        ? line.slice(0, MAX_GREP_LINE_CHARS)
+        : line
+    if (pattern.test(probe)) {
+      matchIndexes.push(i)
+      if (matchIndexes.length >= maxMatches) {
+        break
+      }
+    }
+  }
+  return { budgetExceeded: false, matchIndexes }
 }

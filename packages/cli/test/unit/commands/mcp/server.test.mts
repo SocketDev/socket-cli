@@ -214,8 +214,10 @@ describe('createConfiguredServer — tools/call handler', () => {
       {},
     )) as ToolCallResponse
     expect(mockRunDepscore).toHaveBeenCalledTimes(1)
+    // The schema stamps defaults for ecosystem and version, so the resolved
+    // request carries them even when the caller omitted both.
     expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
-      packages: [{ depname: 'lodash' }],
+      packages: [{ depname: 'lodash', ecosystem: 'npm', version: 'unknown' }],
     })
     expect(result.content[0]!.text).toBe('ok')
     expect(result.isError).toBeUndefined()

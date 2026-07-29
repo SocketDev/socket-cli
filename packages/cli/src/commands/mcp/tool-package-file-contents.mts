@@ -5,7 +5,11 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getOrFetchSocketBlob } from './lib/blob-cache.mts'
 import { readToolString } from './tool-args.mts'
 import { errorToolResult, textToolResult } from './tool-auth.mts'
-import { isSocketBlobHash, truncateToolLabel } from './tool-input.mts'
+import {
+  describeToolArgument,
+  isSocketBlobHash,
+  truncateToolLabel,
+} from './tool-input.mts'
 
 import type { ToolSpec } from './tool-types.mts'
 
@@ -26,20 +30,6 @@ export const PackageFileContentsInputSchema = Type.Object({
     }),
   ),
 })
-
-/**
- * Reject a hash that is not a Socket content-addressed blob token. Shared by
- * the two blob-reading tools so both refuse the same inputs.
- */
-export function invalidBlobHashResult(
-  what: string,
-  hash: string | undefined,
-): string | undefined {
-  if (hash && isSocketBlobHash(hash)) {
-    return undefined
-  }
-  return `${what} failed. Where: the \`hash\` argument. Saw: ${JSON.stringify(hash ?? null)}, wanted a Socket blob hash beginning with Q or S as printed by \`package_files\`. Fix: call \`package_files\` and copy one of the hashes it lists.`
-}
 
 export function definePackageFileContentsTool(): ToolSpec {
   return {
@@ -73,4 +63,18 @@ export function definePackageFileContentsTool(): ToolSpec {
     name: PACKAGE_FILE_CONTENTS_TOOL_NAME,
     title: 'Package File Contents Tool',
   }
+}
+
+/**
+ * Reject a hash that is not a Socket content-addressed blob token. Shared by
+ * the two blob-reading tools so both refuse the same inputs.
+ */
+export function invalidBlobHashResult(
+  what: string,
+  hash: string | undefined,
+): string | undefined {
+  if (hash && isSocketBlobHash(hash)) {
+    return undefined
+  }
+  return `${what} failed. Where: the \`hash\` argument. Saw: ${describeToolArgument(hash)}, wanted a Socket blob hash beginning with Q or S as printed by \`package_files\`. Fix: call \`package_files\` and copy one of the hashes it lists.`
 }
