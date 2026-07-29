@@ -56,11 +56,13 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 | ------------------ | ---------------------------------- | ---------------------------- | ---------- |
 | **manifest**       | `manifest/cmd-manifest.mts`        | Parent command               | Parent     |
 | ├─ manifest auto   | `manifest/cmd-manifest-auto.mts`   | Auto-detect manifests        | Subcommand |
+| ├─ manifest bazel  | `manifest/bazel/cmd-manifest-bazel.mts` | Bazel → maven_install.json / requirements.txt | Subcommand |
 | ├─ manifest cdxgen | `manifest/cmd-manifest-cdxgen.mts` | @cyclonedx/cdxgen (SBOM)     | Subcommand |
 | ├─ manifest conda  | `manifest/cmd-manifest-conda.mts`  | conda.yml → requirements.txt | Subcommand |
-| ├─ manifest gradle | `manifest/cmd-manifest-gradle.mts` | Gradle → pom.xml             | Subcommand |
-| ├─ manifest kotlin | `manifest/cmd-manifest-kotlin.mts` | Kotlin (Gradle) → pom.xml    | Subcommand |
-| ├─ manifest scala  | `manifest/cmd-manifest-scala.mts`  | Scala SBT → pom.xml          | Subcommand |
+| ├─ manifest gradle | `manifest/cmd-manifest-gradle.mts` | Gradle → Socket facts / pom  | Subcommand |
+| ├─ manifest kotlin | `manifest/cmd-manifest-kotlin.mts` | Kotlin (Gradle) → facts/pom  | Subcommand |
+| ├─ manifest maven  | `manifest/cmd-manifest-maven.mts`  | Maven → Socket facts         | Subcommand |
+| ├─ manifest scala  | `manifest/cmd-manifest-scala.mts`  | Scala SBT → facts/pom        | Subcommand |
 | └─ manifest setup  | `manifest/cmd-manifest-setup.mts`  | Interactive manifest config  | Subcommand |
 
 ### Organization Commands (1 parent + 6 subcommands, including nested)

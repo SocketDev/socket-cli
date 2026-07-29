@@ -1,0 +1,2 @@
+workspace(name = "migration_fixture")
+# Stub — repo is mid-migration; Bzlmod is authoritative.
