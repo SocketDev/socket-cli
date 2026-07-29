@@ -10,6 +10,13 @@
  * This abstraction should be used anywhere we need to spawn Node.js, replacing
  * direct calls to spawn(process.execPath, ...) or spawn(getExecPath(), ...).
  *
+ * A SEA binary has no interpreter of its own to lend a child JavaScript file,
+ * so it looks one up on PATH — and it does that while its working directory is
+ * a repository checkout the CLI did not author. That lookup goes through the
+ * trusted resolver: a `node` inside the checkout is never selected, and the
+ * child receives a PATH with the poisoned entries removed so its own
+ * grandchildren cannot walk back into the checkout.
+ *
  * Example usage:
  *
  * ```typescript
@@ -17,16 +24,20 @@
  * spawn(getExecPath(), ['script.js', ...args], { stdio: 'inherit' })
  *
  * // Use:
- * spawnNode(['script.js', ...args], { stdio: 'inherit' })
+ * await spawnNode(['script.js', ...args], { stdio: 'inherit' })
  * ```
  */
 
-import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
+import process from 'node:process'
+
 import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { buildSystemToolEnv, findSystemTool } from './system-tool.mts'
 import { sendBootstrapHandshake } from '../sea/boot.mjs'
 import { isSeaBinary } from '../sea/detect.mjs'
+
+import type { SystemToolOptions, SystemToolResolution } from './system-tool.mts'
 
 import type { StdioOptions } from 'node:child_process'
 import type {
@@ -34,6 +45,19 @@ import type {
   SpawnOptions,
   SpawnResult,
 } from '@socketsecurity/lib-stable/process/spawn/types'
+
+export type NodeExecutableResolution = {
+  /**
+   * Absolute path to the Node.js interpreter to spawn.
+   */
+  executable: string
+  /**
+   * PATH the child may search, with every poisoned entry already removed.
+   * Undefined when the interpreter is this process's own and no PATH lookup
+   * happened, so there is nothing for the resolver to sanitize.
+   */
+  searchPath: string | undefined
+}
 
 /**
  * Narrows a spawned process to the shape required by `sendBootstrapHandshake`
@@ -70,52 +94,49 @@ export function ensureIpcInStdio(
 }
 
 /**
- * Find system Node.js binary in PATH (excluding the current SEA binary).
+ * Find a system Node.js outside the protected root, excluding the current SEA
+ * binary.
  *
- * Returns the path to system Node.js if found, undefined otherwise.
+ * The trusted resolver returns one winner rather than a ranked list, so a
+ * winner that is this process's own executable means the SEA binary is itself
+ * installed as `node`; there is no system interpreter to delegate to and the
+ * IPC-handshake fallback takes over.
  *
- * @returns Path to system Node.js, or undefined
+ * @returns The resolved interpreter and its sanitized search path, or undefined
  */
-export function findSystemNodejsSync(): string | undefined {
-  // Use which to find 'node' in PATH, returns all matches.
-  const nodePath = whichRealSync('node', { all: true, nothrow: true })
-
-  if (!nodePath) {
+export async function findSystemNodejs(
+  options?: SystemToolOptions | undefined,
+): Promise<SystemToolResolution | undefined> {
+  const resolution = await findSystemTool('node', options)
+  if (!resolution || resolution.executable === process.execPath) {
     return undefined
   }
-
-  // which with all:true returns string[] if multiple matches, string if single match.
-  const nodePaths = Array.isArray(nodePath) ? nodePath : [nodePath]
-
-  // Find first Node.js that isn't our SEA binary.
-  const currentExecPath = process.execPath
-  const systemNode = nodePaths.find(p => p !== currentExecPath)
-
-  return systemNode
+  return resolution
 }
 
 /**
- * Get the Node.js executable path to use for spawning.
+ * Get the Node.js executable to use for spawning, plus the PATH its child may
+ * search.
  *
- * Priority: 1. System Node.js (if we're a SEA and system Node.js exists) 2.
- * Current execPath (process.execPath)
- *
- * @returns Path to Node.js executable
+ * Priority: 1. System Node.js (if we're a SEA and a trusted system Node.js
+ * exists) 2. Current execPath (process.execPath)
  */
-export function getNodeExecutablePathSync(): string {
-  // If not a SEA, use standard getExecPath().
+export async function resolveNodeExecutable(
+  options?: SystemToolOptions | undefined,
+): Promise<NodeExecutableResolution> {
+  // If not a SEA, use standard getExecPath(); no PATH lookup takes place.
   if (!isSeaBinary()) {
-    return getExecPath()
+    return { executable: getExecPath(), searchPath: undefined }
   }
 
   // For SEA binaries, try to find system Node.js.
-  const systemNode = findSystemNodejsSync()
+  const systemNode = await findSystemNodejs(options)
   if (systemNode) {
     return systemNode
   }
 
   // Fall back to SEA binary itself (will use IPC handshake).
-  return process.execPath
+  return { executable: process.execPath, searchPath: undefined }
 }
 
 /**
@@ -155,25 +176,32 @@ export interface SpawnNodeOptions extends SpawnOptions {
  *
  * @returns Spawn result with process handle
  */
-export function spawnNode(
+export async function spawnNode(
   args: string[] | readonly string[],
   options?: SpawnNodeOptions | undefined,
   extra?: SpawnExtra | undefined,
-): SpawnResult {
+): Promise<SpawnResult> {
   const { ipc, ...spawnOpts } = {
     __proto__: null,
     ...options,
   } as SpawnNodeOptions
 
-  // Get the Node.js executable path to use.
-  const nodePath = getNodeExecutablePathSync()
+  // Get the Node.js executable to use, plus the PATH its child may search.
+  const { executable, searchPath } = await resolveNodeExecutable(
+    spawnOpts.cwd === undefined ? undefined : { cwd: String(spawnOpts.cwd) },
+  )
 
   // Spawn the Node.js process.
   const spawnResult = spawn(
-    nodePath,
+    executable,
     args,
     {
       ...spawnOpts,
+      ...(searchPath === undefined
+        ? {}
+        : {
+            env: buildSystemToolEnv(spawnOpts.env ?? process.env, searchPath),
+          }),
       // Always ensure stdio includes 'ipc' for handshake.
       // System Node.js will ignore the handshake message.
       // SEA subprocess will use it to skip bootstrap.

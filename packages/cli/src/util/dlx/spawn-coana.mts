@@ -19,7 +19,8 @@ import { getCliVersion } from '../../env/cli-version.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
-import { getNodeExecutablePathSync } from '../spawn/spawn-node.mts'
+import { buildSystemToolEnv } from '../spawn/system-tool.mts'
+import { resolveNodeExecutable } from '../spawn/spawn-node.mts'
 
 import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { CResult } from '../../types.mjs'
@@ -93,22 +94,27 @@ export async function spawnCoanaDlx(
     if (resolution.type === 'local') {
       const detection = detectExecutableType(resolution.path)
 
-      const finalEnv = {
+      const baseEnv = {
         ...process.env,
         ...mixinsEnv,
         ...spawnEnv,
       }
 
-      const spawnArgs =
-        detection.type === 'binary' ? args : [resolution.path, ...args]
-      const spawnCommand =
-        detection.type === 'binary'
-          ? resolution.path
-          : getNodeExecutablePathSync()
+      // A local override that is a JS file needs an interpreter, and a SEA
+      // build has to find one on PATH; resolve it trustedly and pass the child
+      // the sanitized PATH so its own lookups cannot reach back into the
+      // checkout.
+      const nodeResolution =
+        detection.type === 'binary' ? undefined : await resolveNodeExecutable()
+      const spawnArgs = nodeResolution ? [resolution.path, ...args] : [...args]
+      const spawnCommand = nodeResolution?.executable ?? resolution.path
 
       const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,
-        env: finalEnv,
+        env:
+          nodeResolution?.searchPath === undefined
+            ? baseEnv
+            : buildSystemToolEnv(baseEnv, nodeResolution.searchPath),
         stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
       })
 

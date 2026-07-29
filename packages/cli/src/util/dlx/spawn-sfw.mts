@@ -21,7 +21,8 @@ import {
   applyMachineModeIfActive,
   inferSubcommand,
 } from '../spawn/apply-machine-mode.mts'
-import { getNodeExecutablePathSync } from '../spawn/spawn-node.mts'
+import { buildSystemToolEnv } from '../spawn/system-tool.mts'
+import { resolveNodeExecutable } from '../spawn/spawn-node.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
@@ -61,22 +62,27 @@ export async function spawnSfwDlx(
       ...options,
     } as DlxOptions
 
-    const spawnArgs =
-      detection.type === 'binary'
-        ? effectiveArgs
-        : [resolution.path, ...effectiveArgs]
-    const spawnCommand =
-      detection.type === 'binary'
-        ? resolution.path
-        : getNodeExecutablePathSync()
+    // A local override that is a JS file needs an interpreter, and a SEA build
+    // has to find one on PATH; resolve it trustedly and pass the child the
+    // sanitized PATH so its own lookups cannot reach back into the checkout.
+    const nodeResolution =
+      detection.type === 'binary' ? undefined : await resolveNodeExecutable()
+    const spawnArgs = nodeResolution
+      ? [resolution.path, ...effectiveArgs]
+      : [...effectiveArgs]
+    const spawnCommand = nodeResolution?.executable ?? resolution.path
+    const baseEnv = {
+      ...process.env,
+      ...innerApplied.env,
+      ...spawnEnv,
+    }
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
-      env: {
-        ...process.env,
-        ...innerApplied.env,
-        ...spawnEnv,
-      },
+      env:
+        nodeResolution?.searchPath === undefined
+          ? baseEnv
+          : buildSystemToolEnv(baseEnv, nodeResolution.searchPath),
       stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
