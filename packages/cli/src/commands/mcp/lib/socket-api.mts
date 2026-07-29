@@ -152,7 +152,7 @@ export async function resolveSocketSdkForToken(
   const result = await setupSdk({ apiToken })
   if (!result.ok) {
     throw new Error(
-      result.cause || result.message || 'Failed to set up the Socket SDK',
+      result.cause || result.message || 'Failed to set up Socket SDK',
     )
   }
   sdkCache.set(apiToken, result.data)
