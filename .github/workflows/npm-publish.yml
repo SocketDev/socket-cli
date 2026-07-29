@@ -8,22 +8,37 @@ on:
         required: false
         default: 'latest'
         type: string
+      dry-run:
+        description: 'Build everything but do NOT publish, tag, or cut a release. Defaults to true so an accidental dispatch never reaches the registry — set to false for a real release.'
+        required: false
+        default: true
+        type: boolean
       debug:
         description: 'Enable debug output'
         required: false
         default: '0'
         type: string
-        options:
-          - '0'
-          - '1'
 
 permissions:
   contents: read
+
+# Serialize publishes per dist-tag. Two concurrent dispatches with the same
+# tag would race on `npm publish` (one wins, the other 409s). Don't cancel an
+# in-flight publish — a half-published release is worse than a queued one.
+concurrency:
+  group: publish-${{ inputs.dist-tag }}
+  cancel-in-progress: false
 
 jobs:
   build:
     name: Build and Publish
     runs-on: ubuntu-latest
+    # npm's trusted-publisher config pins this GitHub environment name (npm TP
+    # is PER-PACKAGE, not per-branch: the socket / @socketsecurity/cli /
+    # @socketsecurity/cli-with-sentry entries point at npm-publish.yml + the
+    # npm-publish environment). The OIDC token exchange 404s if this job runs
+    # outside it — so v1.x publishes from the same workflow filename + env as main.
+    environment: npm-publish
 
     permissions:
       # `contents: write` needed to create the v<version> tag via gh api
@@ -34,6 +49,34 @@ jobs:
       id-token: write # NPM trusted publishing via OIDC
 
     steps:
+      # npm trusted publishing authorizes on repository + workflow filename +
+      # GitHub environment. It does NOT pin a branch, and the `npm-publish`
+      # environment has no deployment-branch policy (verified 2026-07-28:
+      # `deployment_branch_policy: null`, zero protection rules). So a
+      # `workflow_dispatch` from ANY ref that can reach this workflow mints a
+      # valid publish token, and `dist-tag` defaults to `latest` — a dispatch
+      # from an old release branch or an attacker-pushed branch could
+      # overwrite `socket@latest` with whatever that ref builds.
+      #
+      # This is the in-repo half of the mitigation: `latest` may only be
+      # published from the default branch. Any other ref must pick an explicit
+      # non-latest tag (next, beta, canary, backport, ...), which is how the
+      # v1.x line should publish anyway. Setting a deployment-branch policy on
+      # the environment is the other half and is worth doing too — this guard
+      # does not depend on it.
+      - name: Guard the latest dist-tag to the default branch
+        if: ${{ inputs.dist-tag == 'latest' }}
+        env:
+          REF: ${{ github.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+            echo "Refusing to publish dist-tag 'latest' from $REF." >&2
+            echo "Only refs/heads/$DEFAULT_BRANCH may publish 'latest'." >&2
+            echo "Re-dispatch from the default branch, or pick a non-latest dist-tag." >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
         with:
           persist-credentials: false
@@ -57,6 +100,7 @@ jobs:
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
             curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            # shellcheck disable=SC1003 # `tr -d '\\'` strips the leading backslash GNU coreutils prepends to a checksum line when the path has a backslash (Windows RUNNER_TEMP).
             ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
@@ -131,6 +175,7 @@ jobs:
               exit 1
             fi
             curl -fsSL -o "$SFW_BIN" "$DOWNLOAD_URL"
+            # shellcheck disable=SC1003 # `tr -d '\\'` strips the leading backslash GNU coreutils prepends to a checksum line when the path has a backslash (Windows RUNNER_TEMP).
             ACTUAL_SHA256="$( (sha256sum "$SFW_BIN" 2>/dev/null || shasum -a 256 "$SFW_BIN") | cut -d' ' -f1 | tr -d '\\')"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET} (${REPO}@v${SFW_VERSION})!" >&2
@@ -220,32 +265,43 @@ jobs:
           fi
           bash src/commands/manifest/scripts/maven-extension/build-jar.sh
 
+      # All three publishes use npm trusted publishing (OIDC): no long-lived
+      # NPM_TOKEN is set, so npm mints a short-lived registry token from the
+      # `id-token: write` OIDC token at publish time and attaches provenance.
+      # Each package (`socket`, `@socketsecurity/cli`,
+      # `@socketsecurity/cli-with-sentry`) must have a matching trusted
+      # publisher configured on npm for SocketDev/socket-cli + this workflow
+      # file + the v1.x branch, or the publish 404s on the token exchange.
+      #
+      # The publish steps are skipped entirely on a dry run (inputs.dry-run
+      # defaults to true), so an accidental dispatch builds but never reaches
+      # the registry. When skipped, publish_socket.outcome is not 'success',
+      # so the tag + release steps below also skip.
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Publish socket
         id: publish_socket
+        if: ${{ inputs.dry-run == false }}
         run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        continue-on-error: true
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        continue-on-error: true
+      - name: Publish @socketsecurity/cli (legacy)
+        if: ${{ inputs.dry-run == false }}
+        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        continue-on-error: true
+      - name: Publish @socketsecurity/cli-with-sentry
+        if: ${{ inputs.dry-run == false }}
+        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # zizmor: ignore[secrets-outside-env]
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
       # Create v<version> git tag at the published commit SHA after a
@@ -256,14 +312,21 @@ jobs:
       #   - existing tag at different SHA → hard-fail (operator recovery
       #     required)
       # Gated on the first publish step (publish_socket — the `socket` npm
-      # package) actually succeeding; the cli / cli-with-sentry publishes
-      # use `continue-on-error: true` and don't gate the tag.
+      # package) actually succeeding.
+      #
+      # None of the three publishes carries `continue-on-error: true`. They
+      # used to, which made a 1-of-3 release look green: if `socket` landed
+      # and either of the other two failed, this step still ran and cut a
+      # v<version> tag plus an IMMUTABLE GitHub Release describing artifacts
+      # that were never published. Recovery from that is a version burn, so a
+      # failed publish now fails the job and no tag or release is created.
       #
       # Uses gh api (not `git push`) so the token only lives in this step's
       # env, never written to `.git/config` by an earlier `actions/checkout`
       # with persist-credentials: true (which would leak it to every later
       # step including `pnpm install` postinstall scripts).
       - name: Tag release (idempotent)
+        id: tag
         if: steps.publish_socket.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -272,6 +335,10 @@ jobs:
           PUBLISHED_SHA=$(git rev-parse HEAD)
           PUBLISHED_VERSION=$(node -p "require('./package.json').version")
           TAG="v$PUBLISHED_VERSION"
+          # Emit the tag before any early exit so the release step below can
+          # consume it on every non-error path (fresh tag AND the same-SHA
+          # no-op).
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
           # Look up any existing tag ref. gh api exits non-zero on 404 (tag
           # absent) and writes the error body to stdout, so branch on the
@@ -307,3 +374,32 @@ jobs:
             -f "ref=refs/tags/$TAG" \
             -f "sha=$PUBLISHED_SHA"
           echo "Created tag $TAG at $PUBLISHED_SHA"
+
+      # Cut the immutable GitHub Release for the tag, idempotently. ORDER
+      # RULE: the tag + GH release are the FINAL markers of a release — they
+      # only exist AFTER the npm publish is confirmed live (this step is gated
+      # on the same publish_socket success as the tag step, and runs after
+      # it). Uses gh release (gh api under the hood) so GH_TOKEN only lives in
+      # this step's env, never written to `.git/config`. Skips cleanly if a
+      # release already exists for the tag so re-runs are safe.
+      - name: Cut GitHub release (idempotent)
+        if: steps.publish_socket.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — no-op."
+            exit 0
+          fi
+          # --verify-tag: refuse to create if the tag ref is somehow missing
+          # (the tag step above creates it; this guards against a race).
+          # --generate-notes: auto-populate notes from commits since the last
+          # release.
+          gh release create "$TAG" \
+            --repo "$REPO" \
+            --title "$TAG" \
+            --verify-tag \
+            --generate-notes
+          echo "Created GitHub release $TAG"
