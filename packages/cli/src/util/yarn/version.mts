@@ -2,13 +2,20 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_VERSION } from '../../constants/cli.mts'
-import { getYarnBinPath } from '../yarn/paths.mts'
+import { getYarnBinPathDetails } from '../yarn/paths.mts'
 
 let cachedIsYarnBerry: boolean | undefined
 export function isYarnBerry(): boolean {
   if (cachedIsYarnBerry === undefined) {
     try {
-      const yarnBinPath = getYarnBinPath()
+      // Detection must degrade to `false` when yarn is absent or is only
+      // reachable through a project-controlled bin directory. getYarnBinPath()
+      // calls process.exit(127) in that case, which no catch block can trap.
+      const yarnBinPath = getYarnBinPathDetails().path
+      if (!yarnBinPath) {
+        cachedIsYarnBerry = false
+        return cachedIsYarnBerry
+      }
       const result = spawnSync(yarnBinPath, [FLAG_VERSION], {
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly

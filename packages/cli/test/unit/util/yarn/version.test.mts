@@ -7,8 +7,8 @@
  * Test Coverage: - isYarnBerry detection - Version parsing - Caching behavior -
  * Error handling.
  *
- * Testing Approach: Mocks spawnSync and getYarnBinPath to simulate different
- * yarn versions.
+ * Testing Approach: Mocks spawnSync and getYarnBinPathDetails to simulate
+ * different yarn versions.
  *
  * Related Files: - util/yarn/version.mts (implementation)
  */
@@ -21,7 +21,7 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
 }))
 
 vi.mock(import('../../../../src/util/yarn/paths.mts'), () => ({
-  getYarnBinPath: vi.fn(() => '/usr/bin/yarn'),
+  getYarnBinPathDetails: vi.fn(() => ({ path: '/usr/bin/yarn' })),
 }))
 
 describe('yarn version utilities', () => {
@@ -34,7 +34,12 @@ describe('yarn version utilities', () => {
       await import('@socketsecurity/lib-stable/process/spawn/child')
     const pathsModule = await import('../../../../src/util/yarn/paths.mts')
     spawnSyncMock = spawnModule.spawnSync as ReturnType<typeof vi.fn>
-    getYarnBinPathMock = pathsModule.getYarnBinPath as ReturnType<typeof vi.fn>
+    getYarnBinPathMock = pathsModule.getYarnBinPathDetails as ReturnType<
+      typeof vi.fn
+    >
+    // clearAllMocks() resets calls but keeps implementations, so re-seed the
+    // default here to stop a per-test override leaking into later tests.
+    getYarnBinPathMock.mockReturnValue({ path: '/usr/bin/yarn' })
   })
 
   afterEach(() => {
@@ -146,6 +151,20 @@ describe('yarn version utilities', () => {
       const result = isYarnBerry()
 
       expect(result).toBe(false)
+    })
+
+    it('returns false when yarn resolves to no trusted path', async () => {
+      // Yarn reachable only through a project-controlled bin directory is
+      // filtered out, leaving no path. Detection must degrade to false rather
+      // than exiting the process, which no catch block could trap.
+      getYarnBinPathMock.mockReturnValue({ path: undefined })
+
+      const { isYarnBerry } =
+        await import('../../../../src/util/yarn/version.mts')
+      const result = isYarnBerry()
+
+      expect(result).toBe(false)
+      expect(spawnSyncMock).not.toHaveBeenCalled()
     })
 
     it('returns false when an error is thrown', async () => {
