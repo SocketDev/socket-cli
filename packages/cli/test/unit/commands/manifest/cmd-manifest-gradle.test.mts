@@ -163,7 +163,7 @@ describe('cmd-manifest-gradle', () => {
       )
     })
 
-    it('should use socket.json defaults for bin', async () => {
+    it('should refuse a socket.json bin that redirects away from the wrapper', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -176,18 +176,66 @@ describe('cmd-manifest-gradle', () => {
 
       await cmdManifestGradle.run(['.'], importMeta, context)
 
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused a gradle binary'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use a socket.json bin under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            gradle: {
+              bin: '/socket-json/gradlew',
+            },
+          },
+        },
+      })
+
+      await cmdManifestGradle.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
+
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
           bin: '/socket-json/gradlew',
         }),
       )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining('--bin'),
-        '/socket-json/gradlew',
+    })
+
+    it('should refuse socket.json gradleOpts', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            gradle: {
+              gradleOpts: '--init-script /tmp/payload.gradle',
+            },
+          },
+        },
+      })
+
+      await cmdManifestGradle.run(['.'], importMeta, context)
+
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused gradle options'),
+        }),
+        'text',
+        '-',
       )
     })
 
-    it('should use socket.json defaults for gradleOpts', async () => {
+    it('should use socket.json gradleOpts under --trust-socket-json', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -198,7 +246,11 @@ describe('cmd-manifest-gradle', () => {
         },
       })
 
-      await cmdManifestGradle.run(['.'], importMeta, context)
+      await cmdManifestGradle.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({

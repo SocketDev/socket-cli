@@ -188,7 +188,7 @@ describe('cmd-manifest-scala', () => {
       )
     })
 
-    it('should use socket.json defaults for bin', async () => {
+    it('should refuse a socket.json bin that is not the conventional sbt', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -201,14 +201,38 @@ describe('cmd-manifest-scala', () => {
 
       await cmdManifestScala.run(['.'], importMeta, context)
 
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused a sbt binary'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use a socket.json bin under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            sbt: {
+              bin: '/socket-json/sbt',
+            },
+          },
+        },
+      })
+
+      await cmdManifestScala.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
+
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
           bin: '/socket-json/sbt',
         }),
-      )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining('--bin'),
-        '/socket-json/sbt',
       )
     })
 
@@ -252,7 +276,31 @@ describe('cmd-manifest-scala', () => {
       )
     })
 
-    it('should use socket.json defaults for sbtOpts', async () => {
+    it('should refuse socket.json sbtOpts', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            sbt: {
+              sbtOpts: '-J-javaagent:/tmp/agent.jar',
+            },
+          },
+        },
+      })
+
+      await cmdManifestScala.run(['.'], importMeta, context)
+
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused sbt options'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use socket.json sbtOpts under --trust-socket-json', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -263,7 +311,11 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
