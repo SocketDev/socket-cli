@@ -131,8 +131,6 @@
     "npm-package-arg": "catalog:",
     "open": "catalog:",
     "package-builder": "workspace:1.0.0",
-    "registry-auth-token": "catalog:",
-    "registry-url": "catalog:",
     "rolldown": "catalog:",
     "semver": "catalog:",
     "ssri": "catalog:",

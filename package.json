@@ -158,8 +158,6 @@
     "playwright-core": "catalog:",
     "portless": "catalog:",
     "postject": "catalog:",
-    "registry-auth-token": "catalog:",
-    "registry-url": "catalog:",
     "regjsparser": "catalog:",
     "rolldown": "catalog:",
     "semver": "catalog:",
