@@ -62,7 +62,7 @@ export interface DepscoreToolResult {
   isError?: boolean | undefined
 }
 
-export interface DepscoreOptions {
+export interface DepscoreConfig {
   apiToken: string
 }
 
@@ -86,7 +86,7 @@ export function formatScore(jsonData: ArtifactData): string {
 
 export async function runDepscore(
   input: DepscoreInput,
-  config: DepscoreOptions,
+  config: DepscoreConfig,
 ): Promise<DepscoreToolResult> {
   const cfg = { __proto__: null, ...config } as typeof config
   const { packages, platform } = input

@@ -10,7 +10,7 @@ import type { ServerConfig } from './server.mts'
 
 const logger = getDefaultLogger()
 
-export interface HandleMcpOptions {
+export interface HandleMcpConfig {
   http: boolean
   oauthClientId?: string | undefined
   oauthClientSecret?: string | undefined
@@ -22,7 +22,7 @@ export interface HandleMcpOptions {
 
 const DEFAULT_OAUTH_REQUIRED_SCOPES = ['packages:list'] as const
 
-export async function handleMcp(config: HandleMcpOptions): Promise<void> {
+export async function handleMcp(config: HandleMcpConfig): Promise<void> {
   const cfg = { __proto__: null, ...config } as typeof config
   const ENV = constants['ENV'] as { INLINED_VERSION?: string | undefined }
   const version = ENV.INLINED_VERSION || '0.0.0'
