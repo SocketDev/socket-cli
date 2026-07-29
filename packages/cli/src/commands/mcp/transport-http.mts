@@ -1,8 +1,10 @@
-import crypto from 'node:crypto'
 import { createServer } from 'node:http'
 
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
+import { toNodeHandler } from '@modelcontextprotocol/node'
+import {
+  createMcpHandler,
+  isInitializeRequest,
+} from '@modelcontextprotocol/server'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -10,30 +12,24 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { createConfiguredServer } from './server.mts'
 import {
   buildProtectedResourceMetadata,
-  destroySessionEntry,
   getProtectedResourceMetadataUrl,
   getRequestBaseUrl,
   getRequestHeaderValue,
   handleRequestSafely,
   isLocalhostOrigin,
-  makeOnTransportClose,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
   OAuthIntrospector,
-  reapIdleSessions,
   writeJson,
 } from './transport-http-helpers.mts'
 
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js'
-import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
+import type { NodeMcpRequestHandler } from '@modelcontextprotocol/node'
+import type { AuthInfo } from '@modelcontextprotocol/server'
 import type { ServerConfig } from './server.mts'
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 
 const logger = getDefaultLogger()
 
-const SESSION_TTL_MS = 30 * 60 * 1000
-const SESSION_REAP_INTERVAL_MS = 60_000
-// Cap a single buffered POST body. MCP JSON-RPC requests are small; this
+// Cap a single buffered request body. MCP JSON-RPC requests are small; this
 // bounds memory against an unbounded/streaming body (DoS).
 const MAX_MCP_REQUEST_BODY_BYTES = 4 * 1024 * 1024
 
@@ -49,19 +45,13 @@ export type AuthenticatedRequest = IncomingMessage & {
   auth?: AuthInfo | undefined
 }
 
-// MCP's `transport.handleRequest()` parameter is the stricter
-// `auth?: AuthInfo` (no `| undefined`) under our
-// exactOptionalPropertyTypes. Cast our internal type to this at the
-// call boundary when handing off; that's the narrow constraint, not
-// our internal shape.
-// oxlint-disable-next-line socket/optional-explicit-undefined -- SDK target type uses `auth?: AuthInfo` (no `| undefined`); under exactOptionalPropertyTypes the bare-undefined form rejects this assignment. Pair to the SDK shape, not the local AuthenticatedRequest.
-export type McpHandleRequest = IncomingMessage & { auth?: AuthInfo }
-
-export interface Session {
-  lastActivity: number
-  server: Server
-  transport: StreamableHTTPServerTransport
-}
+// The request shape the MCP adapter accepts. It types `auth` as the stricter
+// `auth?: AuthInfo` (no `| undefined`) and `method` / `url` as plain optional
+// strings, while @types/node types the latter two `string | undefined` — which
+// exactOptionalPropertyTypes refuses. Node always sets both on a server
+// request, so re-state them and pair to the SDK's own parameter type at the
+// call boundary rather than widening the local AuthenticatedRequest.
+export type McpHandleRequest = Parameters<NodeMcpRequestHandler>[0]
 
 export interface HttpTransportConfig extends ServerConfig {
   // Permit a loopback OAuth issuer. Off by default so the SSRF guard on the
@@ -73,6 +63,106 @@ export interface HttpTransportConfig extends ServerConfig {
   oauthRequiredScopes: readonly string[]
   port: number
   trustProxy: boolean
+}
+
+/**
+ * Parse a buffered body when there is one, log a 2025-era initialize, and hand
+ * the request to the MCP handler. Wrapped in `handleRequestSafely` so a parse
+ * failure or a handler throw becomes a JSON-RPC -32603 rather than a dead
+ * socket. `peer` is the Origin, or the Host when the client sent no Origin.
+ */
+export async function dispatchToMcp(
+  mcpHandler: NodeMcpRequestHandler,
+  req: AuthenticatedRequest,
+  res: ServerResponse,
+  body: string | undefined,
+  peer: string,
+): Promise<void> {
+  await handleRequestSafely(req.method ?? 'GET', res, logger, async () => {
+    const parsedBody: unknown = body ? JSON.parse(body) : undefined
+    if (parsedBody !== undefined && isInitializeRequest(parsedBody)) {
+      const clientInfo = parsedBody.params?.clientInfo
+      logger.info(
+        `Client connected: ${clientInfo?.name || 'unknown'} v${clientInfo?.version || 'unknown'} from ${peer}`,
+      )
+    }
+    const mcpReq = Object.assign(req, {
+      method: req.method ?? 'GET',
+      url: req.url ?? '/',
+    }) as McpHandleRequest
+    await mcpHandler(mcpReq, res, parsedBody)
+  })
+}
+
+/**
+ * Buffer a request body under the byte cap.
+ *
+ * The MCP adapter reads the request stream itself and enforces no size limit,
+ * so the body is buffered here and handed over pre-parsed — with a parsed body
+ * the adapter reads nothing from `req`.
+ *
+ * Resolves `undefined` when the caller must not dispatch: either the body blew
+ * the cap and a 413 was written, or the client went away mid-upload. The cap is
+ * measured in raw BYTES, not decoded string length — a multibyte payload
+ * carries up to 4 bytes per JS character, so a char-length check would let a
+ * body several times the cap through.
+ */
+export function readCappedRequestBody(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<string | undefined> {
+  return new Promise<string | undefined>(resolve => {
+    let body = ''
+    let bytes = 0
+    let settled = false
+    const settle = (value: string | undefined) => {
+      if (!settled) {
+        settled = true
+        resolve(value)
+      }
+    }
+    req.on('data', (chunk: string | Buffer) => {
+      if (settled) {
+        return
+      }
+      bytes +=
+        typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length
+      if (bytes > MAX_MCP_REQUEST_BODY_BYTES) {
+        body = ''
+        // The buffer is already released and every later chunk is dropped, so
+        // memory is bounded from here on. The socket still has to survive
+        // long enough for the client to READ the 413: it is typically still
+        // mid-upload, and tearing the socket down — even after the response
+        // flushes — resets its pending writes, so it reports a connection
+        // error instead of the refusal. Announce the close, answer, then let
+        // the rest of the upload drain into the void. A client that never
+        // ends cannot hold the socket: the unref'd backstop closes it.
+        res.setHeader('Connection', 'close')
+        writeJson(res, 413, {
+          error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
+        })
+        settle(undefined)
+        req.resume()
+        const backstop = setTimeout(() => {
+          req.destroy()
+        }, OVERSIZED_BODY_DRAIN_MS)
+        backstop.unref()
+        req.once('end', () => {
+          clearTimeout(backstop)
+        })
+        return
+      }
+      body += chunk.toString()
+    })
+    req.on('end', () => {
+      settle(body)
+    })
+    // A client that disconnects mid-upload never fires 'end'; settle so the
+    // awaiting handler doesn't hang on a promise nobody can resolve.
+    req.on('close', () => {
+      settle(undefined)
+    })
+  })
 }
 
 export async function runHttpTransport(
@@ -108,26 +198,23 @@ export async function runHttpTransport(
     }
   }
 
-  const sessions = new Map<string, Session>()
-
-  const destroySession = (id: string): void =>
-    destroySessionEntry(id, sessions, logger)
-
-  const tickReaper = () =>
-    reapIdleSessions(
-      Date.now(),
-      SESSION_TTL_MS,
-      sessions,
-      destroySession,
-      logger,
-    )
-  // First tick runs immediately — the session map is empty so this is
-  // a no-op, but it gives the test surface a deterministic way to
-  // invoke the reaper (and gives coverage tools a one-shot through
-  // the function body).
-  tickReaper()
-  const reapInterval = setInterval(tickReaper, SESSION_REAP_INTERVAL_MS)
-  reapInterval.unref()
+  // One handler for the process. It calls the factory per exchange and closes
+  // the instance afterwards, so a factory — not a shared instance — is what
+  // gets passed in. Serving is stateless: there is no session table, and the
+  // 2025-era session operations (GET, DELETE) are answered by the handler's own
+  // 405 rather than a hand-rolled session map.
+  const mcpHandler = toNodeHandler(
+    createMcpHandler(() => createConfiguredServer(config), {
+      onerror: error => {
+        logger.error(`MCP request failed: ${errorMessage(error)}`)
+      },
+    }),
+    {
+      onerror: error => {
+        logger.error(`MCP adapter failed: ${errorMessage(error)}`)
+      },
+    },
+  )
 
   const allowedOrigins = [
     'https://mcp.socket.dev',
@@ -162,6 +249,7 @@ export async function runHttpTransport(
 
     const origin = getRequestHeaderValue(req.headers.origin).trim()
     const host = getRequestHeaderValue(req.headers.host).trim()
+    const peer = origin || host
     const isAllowedHost =
       host === `localhost:${config.port}` ||
       host === `127.0.0.1:${config.port}` ||
@@ -251,6 +339,9 @@ export async function runHttpTransport(
       }
     }
 
+    // Auth runs on every request and fails closed: nothing past this point is
+    // reachable without a bearer the introspector accepted. There is no
+    // unauthenticated fall-through to the operator's own token.
     if (introspector) {
       const authResult = await introspector.authenticateRequest(
         authenticatedReq,
@@ -262,163 +353,19 @@ export async function runHttpTransport(
       }
     }
 
-    if (req.method === 'POST') {
-      let body = ''
-      let bytes = 0
-      let aborted = false
-      req.on('data', (chunk: string | Buffer) => {
-        if (aborted) {
-          return
-        }
-        // Cap the buffered request body so an unbounded stream can't exhaust
-        // memory (DoS). MCP JSON-RPC payloads are small; 4 MiB is generous.
-        // Measure the raw BYTES, not the decoded string length — a multibyte
-        // payload carries up to 4 bytes per JS character, so a char-length
-        // check would let a body several times the cap through.
-        bytes +=
-          typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length
-        if (bytes > MAX_MCP_REQUEST_BODY_BYTES) {
-          aborted = true
-          body = ''
-          // The buffer is already released and every later chunk is dropped, so
-          // memory is bounded from here on. The socket still has to survive
-          // long enough for the client to READ the 413: it is typically still
-          // mid-upload, and tearing the socket down — even after the response
-          // flushes — resets its pending writes, so it reports a connection
-          // error instead of the refusal. Announce the close, answer, then let
-          // the rest of the upload drain into the void. A client that never
-          // ends cannot hold the socket: the unref'd backstop closes it.
-          res.setHeader('Connection', 'close')
-          writeJson(res, 413, {
-            error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
-          })
-          req.resume()
-          const backstop = setTimeout(() => {
-            req.destroy()
-          }, OVERSIZED_BODY_DRAIN_MS)
-          backstop.unref()
-          req.once('end', () => {
-            clearTimeout(backstop)
-          })
-          return
-        }
-        body += chunk.toString()
-      })
-      req.on('end', () => {
-        if (aborted) {
-          return
-        }
-        void handleRequestSafely('POST', res, logger, async () => {
-          const jsonData = JSON.parse(body)
-          const sessionId =
-            getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
-          const session = sessionId ? sessions.get(sessionId) : undefined
-          let transport = session?.transport
-
-          if (!transport && isInitializeRequest(jsonData)) {
-            const clientInfo = jsonData.params?.clientInfo
-            logger.info(
-              `Client connected: ${clientInfo?.name || 'unknown'} v${clientInfo?.version || 'unknown'} from ${origin || host}`,
-            )
-            const server = createConfiguredServer(config)
-            const newTransport = new StreamableHTTPServerTransport({
-              enableJsonResponse: true,
-              onsessionclosed: id => {
-                destroySession(id)
-              },
-              onsessioninitialized: id => {
-                sessions.set(id, {
-                  lastActivity: Date.now(),
-                  server,
-                  transport: newTransport,
-                })
-              },
-              sessionIdGenerator: () => crypto.randomUUID(),
-            })
-            // eslint-disable-next-line unicorn/prefer-add-event-listener -- MCP SDK exposes onclose as a setter, not an EventTarget.
-            newTransport.onclose = makeOnTransportClose(
-              () => newTransport.sessionId,
-              destroySession,
-            )
-            transport = newTransport
-            await server.connect(transport as Transport)
-          }
-
-          if (!transport) {
-            writeJson(res, 400, {
-              error: {
-                code: -32_000,
-                message:
-                  'Bad Request: No valid session. Send initialize first.',
-              },
-              id: undefined,
-              jsonrpc: '2.0',
-            })
-            return
-          }
-
-          if (sessionId) {
-            const activeSession = sessions.get(sessionId)
-            if (activeSession) {
-              activeSession.lastActivity = Date.now()
-            }
-          }
-
-          await transport.handleRequest(
-            authenticatedReq as McpHandleRequest,
-            res,
-            jsonData,
-          )
-        })
-      })
-      return
-    }
-
+    // GET carries no body, so it goes straight to the handler, which answers
+    // the 2025-era standalone-stream request with its own 405.
     if (req.method === 'GET') {
-      const sessionId =
-        getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
-      const session = sessionId ? sessions.get(sessionId) : undefined
-      if (!session) {
-        writeJson(res, 404, {
-          error: {
-            code: -32_000,
-            message: 'Not Found: Invalid or expired session. Re-initialize.',
-          },
-          id: undefined,
-          jsonrpc: '2.0',
-        })
-        return
-      }
-      await handleRequestSafely('GET', res, logger, async () => {
-        session.lastActivity = Date.now()
-        await session.transport.handleRequest(
-          authenticatedReq as McpHandleRequest,
-          res,
-        )
-      })
+      await dispatchToMcp(mcpHandler, authenticatedReq, res, undefined, peer)
       return
     }
 
-    if (req.method === 'DELETE') {
-      const sessionId =
-        getRequestHeaderValue(req.headers['mcp-session-id']) || undefined
-      const transport = sessionId
-        ? sessions.get(sessionId)?.transport
-        : undefined
-      if (!transport) {
-        writeJson(res, 404, {
-          error: {
-            code: -32_000,
-            message: 'Not Found: Invalid or expired session.',
-          },
-          id: undefined,
-          jsonrpc: '2.0',
-        })
+    if (req.method === 'DELETE' || req.method === 'POST') {
+      const body = await readCappedRequestBody(req, res)
+      if (body === undefined) {
         return
       }
-      await handleRequestSafely('DELETE', res, logger, async () => {
-        await transport.handleRequest(authenticatedReq as McpHandleRequest, res)
-      })
+      await dispatchToMcp(mcpHandler, authenticatedReq, res, body, peer)
       return
     }
 

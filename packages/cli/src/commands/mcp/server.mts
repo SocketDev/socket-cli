@@ -1,10 +1,6 @@
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js'
+import { Server } from '@modelcontextprotocol/server'
 
 import { defineAlertsTool } from './tool-alerts.mts'
 import { defineDepscoreTool } from './tool-depscore.mts'
@@ -15,6 +11,7 @@ import { definePackageFileGrepTool } from './tool-package-file-grep.mts'
 import { definePackageFilesTool } from './tool-package-files.mts'
 import { defineThreatFeedTool } from './tool-threat-feed.mts'
 
+import type { ServerContext, Tool } from '@modelcontextprotocol/server'
 import type {
   ToolContext,
   ToolHandler,
@@ -99,11 +96,11 @@ export function createConfiguredServer(config: ServerConfig): Server {
     sharedApiToken: config.sharedApiToken ?? false,
   }
 
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  server.setRequestHandler('tools/list', () => ({
     tools: toolListing,
   }))
 
-  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+  server.setRequestHandler('tools/call', async (request, ctx) => {
     const { arguments: args, name } = request.params
 
     const entry = toolEntries.get(name)
@@ -135,7 +132,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
 
     const result = await entry.handler(
       toolArgs,
-      toToolHandlerExtra(extra),
+      toToolHandlerExtra(ctx),
       context,
     )
     return {
@@ -143,28 +140,39 @@ export function createConfiguredServer(config: ServerConfig): Server {
         text: c.text,
         type: 'text' as const,
       })),
-      isError: result.isError,
+      ...(result.isError === undefined ? {} : { isError: result.isError }),
     }
   })
 
   return server
 }
 
-// Convert TypeBox schema to a JSON Schema literal for MCP wire output.
-// TypeBox values are JSON Schema natively; cloning produces a plain
-// object the SDK serializes without zod-specific machinery.
-export function schemaToJsonSchema(schema: object): Record<string, unknown> {
+// Convert a TypeBox schema to a JSON Schema literal for MCP wire output.
+// TypeBox values are JSON Schema natively, but every node carries symbol-keyed
+// metadata (`Symbol(TypeBox.Kind)`, `Symbol(TypeBox.Optional)`) that JSON
+// Schema has no place for. The JSON round trip is the copy: a transport that
+// hands objects over by reference would otherwise pass the symbols straight to
+// a consumer whose result validator rejects them.
+export function schemaToJsonSchema(schema: object): Tool['inputSchema'] {
   return JSON.parse(JSON.stringify(schema))
 }
+
+/**
+ * The slice of the SDK's per-request context this server reads. Narrowed from
+ * `ServerContext` so the adapter below stays honest about its input while
+ * remaining trivially constructible in a test.
+ */
+export type ToolHandlerContext = Pick<ServerContext, 'http'>
 
 /**
  * Adapt the SDK's per-request handler context to the SDK-free
  * `ToolHandlerExtra` the tool modules read. This is the only place a tool's
  * auth input is shaped by the SDK, so an SDK major that moves `authInfo`
- * changes this function and nothing else.
+ * changes this function and nothing else. `ctx.http` is populated only on an
+ * HTTP transport, so a stdio caller gets an empty extra and falls back to the
+ * configured token inside the tool body.
  */
-export function toToolHandlerExtra(extra: {
-  authInfo?: { token?: string | undefined } | undefined
-}): ToolHandlerExtra {
-  return extra.authInfo ? { authInfo: { token: extra.authInfo.token } } : {}
+export function toToolHandlerExtra(ctx: ToolHandlerContext): ToolHandlerExtra {
+  const authInfo = ctx.http?.authInfo
+  return authInfo ? { authInfo: { token: authInfo.token } } : {}
 }

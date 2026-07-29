@@ -81,5 +81,5 @@ export async function handleMcp(config: HandleMcpConfig): Promise<void> {
     )
     process.exit(1)
   }
-  await runStdioTransport(baseConfig)
+  runStdioTransport(baseConfig)
 }
