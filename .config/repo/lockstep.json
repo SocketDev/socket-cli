@@ -1,11 +1,15 @@
 {
   "$schema": "../fleet/lockstep.schema.json",
   "area": "socket-cli",
-  "description": "Lock-step manifest. socket-cli's only upstream tie is the MCP TypeScript SDK: `socket mcp` is written against the v2 serving entries, tracked sparse so only the serving surface counts as drift.",
+  "description": "Lock-step manifest. Both of socket-cli's upstream ties are MCP: the TypeScript SDK `socket mcp` is written against, tracked sparse so only the serving surface counts as drift, and `@socketsecurity/mcp`, whose fixes socket-cli absorbs until that package is retired.",
   "upstreams": {
     "modelcontextprotocol-typescript-sdk": {
       "submodule": "upstream/modelcontextprotocol-typescript-sdk",
       "repo": "https://github.com/modelcontextprotocol/typescript-sdk"
+    },
+    "socket-mcp": {
+      "submodule": "upstream/socket-mcp",
+      "repo": "https://github.com/SocketDev/socket-mcp"
     }
   },
   "rows": [
@@ -20,6 +24,31 @@
       "pinned_tag": "@modelcontextprotocol/server@2.0.0",
       "conformance_test": "packages/cli/test/unit/commands/mcp/transport-http.test.mts",
       "notes": "`socket mcp` consumes the SDK as an npm dependency, not vendored source, so the port is behavioral: server.mts registers handlers by the string method names the low-level `Server` dispatches on, transport-stdio.mts hands a factory to `serveStdio`, and transport-http.mts composes `createMcpHandler` with `toNodeHandler`. Those four entry points live under the cone, which is why drift is scoped to `packages/server/src` (serving entries + the low-level Server) and `packages/middleware/node/src` (the node:http adapter). The rest of the monorepo — the codemod, the express/fastify/hono middlewares, server-legacy — is deliberately outside the port. `major-gate` because a v2 minor is additive to these entries while a major moved them once already (v1's `Server` + `StreamableHTTPServerTransport` became `createMcpHandler`, and HTTP went stateless)."
+    },
+    {
+      "kind": "feature-parity",
+      "id": "mcp/socket-mcp-absorption",
+      "upstream": "socket-mcp",
+      "criticality": 10,
+      "local_area": "packages/cli/src/commands/mcp",
+      "test_area": "packages/cli/test/unit/commands/mcp",
+      "code_patterns": [
+        "checkResourceAllowed\\(",
+        "resourceUrlFromServerUrl\\(",
+        "SOCKET_OAUTH_REQUIRE_AUDIENCE",
+        "openid-configuration",
+        "export function schemaToJsonSchema\\(",
+        "'ecosystem'\\)\\s*\\?\\?\\s*'npm'",
+        "size and blob hash"
+      ],
+      "test_patterns": [
+        "(?:describe|it)\\(\\s*['\"][^'\"]*\\baud",
+        "SOCKET_OAUTH_REQUIRE_AUDIENCE",
+        "openid-configuration",
+        "schemaToJsonSchema",
+        "defaults the ecosystem to npm"
+      ],
+      "notes": "Transitional row. socket-cli is absorbing `@socketsecurity/mcp` and retiring it (.claude/plans/absorb-socket-mcp.md), so this exists to catch upstream fixes mechanically until the absorption lands — delete the row together with the `upstream/socket-mcp` reference block when socket-mcp is archived. `criticality: 10` is the security anchor: socket-cli accepts a bearer token whose `aud` names a DIFFERENT resource server, a confused-deputy hole socket-mcp closed in 8ffa40d with RFC 8707 audience validation against the resource identifier `buildProtectedResourceMetadata` publishes, plus RFC 8414 path-inserted discovery probing so a path-bearing issuer cannot resolve another tenant's metadata. The pin is v0.0.20, the newest release, and every fix being adopted landed on main after it, so review against `git diff v0.0.20..origin/main` in the materialized clone rather than the pinned tree alone. Five of the seven code patterns and three of the five test patterns are written against the post-adoption code and do not match yet, so the row is deliberately in drift until that pass lands; the two that do match (`schemaToJsonSchema`, the boundary-resolved `ecosystem` default) pin fixes f5ca88e and da4c9fd/f03f989, which socket-cli already carries."
     }
   ]
 }
