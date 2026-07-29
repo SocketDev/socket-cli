@@ -28,6 +28,14 @@ const ORG_SLUG_REGEXP = /^[a-z0-9](?:[a-z0-9._-]{0,98}[a-z0-9])?$/iu
 // host prefixes them `Q` (single blob) or `S` (chunked manifest).
 const BLOB_HASH_REGEXP = /^[QS][A-Za-z0-9_-]{15,511}$/u
 
+/**
+ * Render a rejected argument for an error message. Quotes a string so an empty
+ * or whitespace-only value is visible, and names an absent one in words.
+ */
+export function describeToolArgument(value: string | undefined): string {
+  return value === undefined ? 'nothing' : JSON.stringify(value)
+}
+
 export function isBoundedToolString(value: string, maxLength: number): boolean {
   return value.length > 0 && value.length <= maxLength
 }

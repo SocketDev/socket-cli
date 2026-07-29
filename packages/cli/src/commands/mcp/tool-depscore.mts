@@ -61,16 +61,17 @@ export function readDepscoreInput(
     if (typeof depname !== 'string') {
       continue
     }
-    const entry: DepscoreInput['packages'][number] = { depname }
+    // The schema marks these optional but stamps a default, so the static type
+    // has them required. Applying the defaults here rather than deep inside the
+    // worker makes the resolved request explicit at the boundary; the values
+    // match what runDepscore substituted anyway.
     const ecosystem = 'ecosystem' in item ? item.ecosystem : undefined
-    if (typeof ecosystem === 'string') {
-      entry.ecosystem = ecosystem
-    }
     const version = 'version' in item ? item.version : undefined
-    if (typeof version === 'string') {
-      entry.version = version
-    }
-    packages.push(entry)
+    packages.push({
+      depname,
+      ecosystem: typeof ecosystem === 'string' ? ecosystem : 'npm',
+      version: typeof version === 'string' ? version : 'unknown',
+    })
   }
   const platform = args['platform']
   return {

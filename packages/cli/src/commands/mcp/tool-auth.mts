@@ -30,17 +30,6 @@ export function errorToolResult(text: string): ToolCallResult {
 }
 
 /**
- * Resolve the token a public-data tool should use: the per-request OAuth token
- * first, then the server's configured token.
- */
-export function resolveToolAuthToken(
-  requestToken: string | undefined,
-  context: ToolContext,
-): string | undefined {
-  return requestToken || context.getApiToken() || undefined
-}
-
-/**
  * Resolve the token an org-scoped tool should use. The per-request OAuth token
  * always wins. The configured token is only acceptable when it is the local
  * user's own; a shared operator token is refused.
@@ -56,6 +45,17 @@ export function resolveScopedToolAuthToken(
     return undefined
   }
   return context.getApiToken() || undefined
+}
+
+/**
+ * Resolve the token a public-data tool should use: the per-request OAuth token
+ * first, then the server's configured token.
+ */
+export function resolveToolAuthToken(
+  requestToken: string | undefined,
+  context: ToolContext,
+): string | undefined {
+  return requestToken || context.getApiToken() || undefined
 }
 
 export function textToolResult(text: string): ToolCallResult {

@@ -17,7 +17,7 @@ import type { ToolSpec } from './tool-types.mts'
 export const PACKAGE_FILE_GREP_TOOL_NAME = 'package_file_grep'
 
 export const PACKAGE_FILE_GREP_TOOL_DESCRIPTION =
-  'Search a single package file for lines matching a JavaScript regular expression. Pass the `hash` printed next to each entry in `package_files` output. The file is fetched once per session and cached, so repeated greps on the same hash skip the network. Returns matching lines with line numbers (grep -n style); binary files are refused. Useful for locating a symbol, import, or string inside a dependency without reading the whole file.'
+  'Search a single file from a package for lines matching a JavaScript regular expression. Pass the `hash` printed next to each entry in `package_files` output. The file is fetched from Socket once per session and cached, so repeated greps on the same hash skip the network. Returns matching lines with line numbers (grep -n style); binary files are refused. Useful for locating a specific symbol, import, or string inside a dependency without dumping the whole file.'
 
 // A caller-supplied regular expression runs against caller-chosen content, so
 // the scan is bounded three ways: the pattern is length-capped, each line is
@@ -46,7 +46,8 @@ export const PackageFileGrepInputSchema = Type.Object({
   }),
   maxMatches: Type.Optional(
     Type.Integer({
-      description: 'Cap on matching lines returned (default: 100, max: 500)',
+      description:
+        'Cap on number of matching lines returned (default: 100, max: 500)',
       maximum: 500,
       minimum: 1,
     }),
@@ -54,7 +55,7 @@ export const PackageFileGrepInputSchema = Type.Object({
   path: Type.Optional(
     Type.String({
       description:
-        'Optional file path, used for display only; it does not affect the lookup',
+        'Optional file path for display only; does not affect the lookup',
     }),
   ),
   pattern: Type.String({
@@ -81,7 +82,11 @@ export function scanLinesForPattern(
   const deadline = Date.now() + budgetMs
   const matchIndexes: number[] = []
   for (let i = 0; i < lines.length; i += 1) {
-    if (i > 0 && i % GREP_BUDGET_CHECK_INTERVAL === 0 && Date.now() > deadline) {
+    if (
+      i > 0 &&
+      i % GREP_BUDGET_CHECK_INTERVAL === 0 &&
+      Date.now() > deadline
+    ) {
       return { budgetExceeded: true, matchIndexes }
     }
     const line = lines[i]!

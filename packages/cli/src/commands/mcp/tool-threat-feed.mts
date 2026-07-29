@@ -21,7 +21,7 @@ import type { ToolSpec } from './tool-types.mts'
 export const THREAT_FEED_TOOL_NAME = 'threat_feed'
 
 export const THREAT_FEED_TOOL_DESCRIPTION =
-  "Look up items in a Socket organization's threat feed. Requires `org_slug` — call the `organizations` tool first if you don't have it. Returns recently flagged packages (malware, typosquats, obfuscated code) with a `nextPageCursor` for pagination. Narrow with `filter` for the threat category (default `mal` for malware), `ecosystem` for a registry, or `name`/`version` for one package."
+  "Look up items in the Socket organization threat feed with the `threat_feed` tool. Requires `org_slug` — call the `organizations` tool first if you don't have it. Returns recently flagged packages (malware, typosquats, obfuscated code, etc.) along with a `nextPageCursor` for pagination. Use `filter` to narrow the threat category (default `mal` for malware), `ecosystem` to scope to a registry, or `name`/`version` to look up a specific package. Pass the previous response's cursor as `cursor` to fetch the next page."
 
 export const ThreatFeedInputSchema = Type.Object({
   created_after: Type.Optional(

@@ -12,7 +12,7 @@ import type { ToolSpec } from './tool-types.mts'
 export const PACKAGE_FILE_CONTENTS_TOOL_NAME = 'package_file_contents'
 
 export const PACKAGE_FILE_CONTENTS_TOOL_DESCRIPTION =
-  'Read a single file from a package. Pass the `hash` printed next to each entry in `package_files` output. Returns up to 1 MB of UTF-8 text; binary files return metadata only.'
+  'Read a single file from a package using the `package_file_contents` tool from Socket. Pass the `hash` printed next to each entry in `package_files` output. Returns up to 1 MB of UTF-8 text; binary files return metadata only.'
 
 export const PackageFileContentsInputSchema = Type.Object({
   hash: Type.String({
@@ -22,7 +22,7 @@ export const PackageFileContentsInputSchema = Type.Object({
   path: Type.Optional(
     Type.String({
       description:
-        'Optional file path, used for display only; it does not affect the lookup',
+        'Optional file path for display only; does not affect the lookup',
     }),
   ),
 })

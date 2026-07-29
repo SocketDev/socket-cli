@@ -15,8 +15,15 @@ import {
   DEFAULT_BLOB_MAX_BYTES,
   fetchSocketBlob,
   isStringArray,
-  SOCKET_USER_CONTENT_URL,
 } from '../../../../../src/commands/mcp/lib/blob.mts'
+
+// Pinned literal rather than the module's own constant: building the expected
+// URL from the code under test would hide a change of host.
+const EXPECTED_USER_CONTENT_URL = 'https://socketusercontent.com'
+
+// The API can genuinely send a JSON null; parsing one models that faithfully
+// and keeps a bare `null` literal out of the source.
+const JSON_NULL: unknown = JSON.parse('null')
 
 const { mockHttpRequest } = vi.hoisted(() => ({
   mockHttpRequest: vi.fn(),
@@ -55,7 +62,7 @@ describe('fetchSocketBlob — single blob', () => {
     mockHttpRequest.mockResolvedValue(okResponse('x'))
     await fetchSocketBlob('Qabc')
     expect(mockHttpRequest.mock.calls[0]![0]).toBe(
-      `${SOCKET_USER_CONTENT_URL}/blob/Qabc`,
+      `${EXPECTED_USER_CONTENT_URL}/blob/Qabc`,
     )
   })
 
@@ -63,7 +70,7 @@ describe('fetchSocketBlob — single blob', () => {
     mockHttpRequest.mockResolvedValue(okResponse('x'))
     await fetchSocketBlob('Qa/b')
     expect(mockHttpRequest.mock.calls[0]![0]).toBe(
-      `${SOCKET_USER_CONTENT_URL}/blob/Qa%2Fb`,
+      `${EXPECTED_USER_CONTENT_URL}/blob/Qa%2Fb`,
     )
   })
 
@@ -243,7 +250,7 @@ describe('isStringArray', () => {
     expect(isStringArray([])).toBe(true)
   })
 
-  it.each([[['a', 1]], [null], ['abc'], [{ 0: 'a' }]])(
+  it.each([[['a', 1]], [JSON_NULL], ['abc'], [{ 0: 'a' }]])(
     'rejects %s',
     value => {
       expect(isStringArray(value)).toBe(false)

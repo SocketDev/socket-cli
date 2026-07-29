@@ -15,7 +15,7 @@ import type { ToolSpec } from './tool-types.mts'
 export const ORGANIZATIONS_TOOL_NAME = 'organizations'
 
 export const ORGANIZATIONS_TOOL_DESCRIPTION =
-  'List the Socket organizations the authenticated user belongs to. Use this to discover the `org_slug` values the other org-scoped tools (`alerts`, `threat_feed`) need, or when the user asks which organizations they have access to.'
+  'List the Socket organizations the authenticated user belongs to with the `organizations` tool. Use this to discover the `org_slug` values needed by other org-scoped tools (e.g. `alerts`, `threat_feed`), or when the user asks which organizations they have access to.'
 
 export const OrganizationsInputSchema = Type.Object({})
 

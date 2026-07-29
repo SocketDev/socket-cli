@@ -54,6 +54,25 @@ export interface RawBlobResult {
 let cachedUserAgent: string | undefined
 
 /**
+ * Decode bytes as strict UTF-8. Returns undefined when the bytes are not valid
+ * UTF-8 or carry a NUL, both of which mark the content as binary.
+ */
+export function decodeUtf8Text(bytes: Uint8Array): string | undefined {
+  // A NUL in the first 4 KB is a cheap, reliable binary tell.
+  const probeEnd = Math.min(bytes.length, 4096)
+  for (let i = 0; i < probeEnd; i += 1) {
+    if (bytes[i] === 0) {
+      return undefined
+    }
+  }
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Fetch one blob and decode it. Chunked (`S`-prefixed) hashes are reassembled
  * from their manifest first.
  */
@@ -209,25 +228,6 @@ export async function fetchSocketRawBlobBytes(
     bytes: new Uint8Array(res.arrayBuffer()),
     contentType:
       typeof contentTypeHeader === 'string' ? contentTypeHeader : undefined,
-  }
-}
-
-/**
- * Decode bytes as strict UTF-8. Returns undefined when the bytes are not valid
- * UTF-8 or carry a NUL, both of which mark the content as binary.
- */
-export function decodeUtf8Text(bytes: Uint8Array): string | undefined {
-  // A NUL in the first 4 KB is a cheap, reliable binary tell.
-  const probeEnd = Math.min(bytes.length, 4096)
-  for (let i = 0; i < probeEnd; i += 1) {
-    if (bytes[i] === 0) {
-      return undefined
-    }
-  }
-  try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
-  } catch {
-    return undefined
   }
 }
 

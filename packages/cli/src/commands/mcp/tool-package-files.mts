@@ -18,31 +18,33 @@ import type { ToolSpec } from './tool-types.mts'
 export const PACKAGE_FILES_TOOL_NAME = 'package_files'
 
 export const PACKAGE_FILES_TOOL_DESCRIPTION =
-  'List the files published in a package. Returns a tree of paths, sizes, and blob hashes for any package on a supported ecosystem (npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx). Useful for inspecting what a dependency ships before installing it. Pass one of the printed hashes to `package_file_contents` to read a file, or to `package_file_grep` to search it.'
+  "List the files published in a package using the `package_files` tool from Socket. Returns a tree of paths and sizes for any package on a supported ecosystem (npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx). Useful for inspecting what a dependency ships before installing it. After calling this, use `package_file_contents` with one of the paths to read the file's contents."
 
+// Declared in socket-mcp's order so the emitted `required` array matches the
+// published server's `tools/list` payload element for element.
 export const PackageFilesInputSchema = Type.Object({
+  ecosystem: Type.String({
+    default: 'npm',
+    description:
+      'Package ecosystem (e.g., npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx)',
+  }),
+  depname: Type.String({
+    description:
+      'Package name (e.g., "lodash", "@babel/core", "org.springframework:spring-core", "meta/pyrefly" for openvsx)',
+  }),
+  version: Type.String({ description: 'Package version' }),
   artifactId: Type.Optional(
     Type.String({
       description:
         'Per-version artifact disambiguator (e.g. PyPI filename, Maven artifact id, NuGet asset). Required when an ecosystem ships multiple artifacts per version.',
     }),
   ),
-  depname: Type.String({
-    description:
-      'Package name (e.g. "lodash", "@babel/core", "org.springframework:spring-core", "meta/pyrefly" for openvsx)',
-  }),
-  ecosystem: Type.String({
-    default: 'npm',
-    description:
-      'Package ecosystem (e.g. npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx)',
-  }),
   platform: Type.Optional(
     Type.String({
       description:
         "Platform qualifier for ecosystems with per-OS/arch artifacts (e.g. openvsx: 'linux-x64', 'darwin-arm64', 'win32-x64').",
     }),
   ),
-  version: Type.String({ description: 'Package version' }),
 })
 
 /**
@@ -90,7 +92,10 @@ export function definePackageFilesTool(): ToolSpec {
         ['artifactId', artifactId],
         ['platform', platform],
       ] as const) {
-        if (value !== undefined && !isBoundedToolString(value, MAX_PURL_FIELD_LENGTH)) {
+        if (
+          value !== undefined &&
+          !isBoundedToolString(value, MAX_PURL_FIELD_LENGTH)
+        ) {
           return errorToolResult(
             `Listing package files failed. Where: the \`${label}\` argument. Saw: ${value.length} characters, wanted at most ${MAX_PURL_FIELD_LENGTH}. Fix: pass the package coordinate itself, not a document.`,
           )

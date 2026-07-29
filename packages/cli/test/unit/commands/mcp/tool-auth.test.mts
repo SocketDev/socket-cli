@@ -12,13 +12,17 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  AUTH_REQUIRED_MSG,
   authRequiredToolResult,
   errorToolResult,
   resolveScopedToolAuthToken,
   resolveToolAuthToken,
   textToolResult,
 } from '../../../../src/commands/mcp/tool-auth.mts'
+
+// Spelled out rather than imported: an expected value built from the module
+// under test would pass even if that module's wording regressed.
+const EXPECTED_AUTH_REQUIRED_MSG =
+  'Authentication is required. Run `socket login`, or set SOCKET_API_TOKEN, for stdio mode. In HTTP mode, connect through OAuth so the request carries your own Socket token.'
 
 const localContext = {
   getApiToken: () => 'local_user_token',
@@ -110,10 +114,10 @@ describe('tool result helpers', () => {
   it('returns the shared auth-required text', () => {
     const result = authRequiredToolResult()
     expect(result.isError).toBe(true)
-    expect(result.content[0]!.text).toBe(AUTH_REQUIRED_MSG)
+    expect(result.content[0]!.text).toBe(EXPECTED_AUTH_REQUIRED_MSG)
   })
 
   it('points the user at socket login rather than leaking configuration detail', () => {
-    expect(AUTH_REQUIRED_MSG).toContain('socket login')
+    expect(authRequiredToolResult().content[0]!.text).toContain('socket login')
   })
 })

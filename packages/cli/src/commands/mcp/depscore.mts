@@ -10,7 +10,6 @@ import { buildSocketReportUrl } from './lib/socket-report-url.mts'
 
 import type { ArtifactData } from './lib/artifacts.mts'
 import type { SocketSdk } from '@socketsecurity/sdk-stable'
-import type { Static } from '@sinclair/typebox'
 
 const logger = getDefaultLogger()
 
@@ -20,23 +19,21 @@ const logger = getDefaultLogger()
 export const DepscoreInputSchema = Type.Object({
   packages: Type.Array(
     Type.Object({
+      // Declared in socket-mcp's order so the emitted `required` array matches
+      // the published server's `tools/list` payload element for element.
+      ecosystem: Type.String({
+        default: 'npm',
+        description:
+          'Package ecosystem (PURL type): npm (JS/TS), pypi (Python), golang (Go), maven (Java/Scala/Kotlin), gem (Ruby), nuget (.NET), cargo (Rust), composer (PHP; "packagist" also accepted). See https://docs.socket.dev/docs/language-support',
+      }),
       depname: Type.String({
         description: 'The name of the dependency',
       }),
-      ecosystem: Type.Optional(
-        Type.String({
-          default: 'npm',
-          description:
-            'The package ecosystem (e.g., npm, pypi, gem, golang, maven, nuget, cargo)',
-        }),
-      ),
-      version: Type.Optional(
-        Type.String({
-          default: 'unknown',
-          description:
-            "The version of the dependency, use 'unknown' if not known",
-        }),
-      ),
+      version: Type.String({
+        default: 'unknown',
+        description:
+          "The version of the dependency, use 'unknown' if not known",
+      }),
     }),
     {
       description: 'Array of packages to check',
@@ -50,7 +47,22 @@ export const DepscoreInputSchema = Type.Object({
   ),
 })
 
-export type DepscoreInput = Static<typeof DepscoreInputSchema>
+export interface DepscorePackageInput {
+  depname: string
+  ecosystem?: string | undefined
+  version?: string | undefined
+}
+
+/**
+ * What `runDepscore` accepts. `ecosystem` and `version` are required on the
+ * advertised schema — that is the wire contract socket-mcp publishes — but the
+ * worker still fills in `npm` and `unknown` for a caller that omits them, so
+ * the internal type keeps them optional.
+ */
+export interface DepscoreInput {
+  packages: DepscorePackageInput[]
+  platform?: string | undefined
+}
 
 export const DEPSCORE_TOOL_NAME = 'depscore'
 

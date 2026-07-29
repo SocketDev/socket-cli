@@ -17,7 +17,7 @@ import type { ToolSpec } from './tool-types.mts'
 export const ALERTS_TOOL_NAME = 'alerts'
 
 export const ALERTS_TOOL_DESCRIPTION =
-  "List the latest security alerts for a Socket organization. Requires `org_slug` — call the `organizations` tool first if you don't have it. Filter by severity, category, status, artifact type or name, alert type, and repo. Use this to surface supply-chain, vulnerability, quality, license, and maintenance issues across the organization's monitored packages. Results are paginated: pass the previous response's `endCursor` as `cursor` to fetch the next page."
+  "List the latest security alerts for a Socket organization with the `alerts` tool. Requires `org_slug` — call the `organizations` tool first if you don't have it. Supports filtering by severity, category, status, artifact type/name, alert type, and repo. Use this to surface supply-chain, vulnerability, quality, license, and maintenance issues across the org's monitored packages. Results are paginated — pass the previous response's `endCursor` as `cursor` to fetch the next page."
 
 export const AlertsInputSchema = Type.Object({
   alert_type: Type.Optional(

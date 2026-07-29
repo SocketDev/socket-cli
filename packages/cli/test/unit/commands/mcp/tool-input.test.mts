@@ -21,9 +21,12 @@ import {
   isBoundedToolString,
   isSocketBlobHash,
   isSocketOrgSlug,
-  MAX_TOOL_LABEL_LENGTH,
   truncateToolLabel,
 } from '../../../../src/commands/mcp/tool-input.mts'
+
+// Pinned literal rather than the module's own constant: an expected value taken
+// from the code under test cannot catch that constant changing.
+const EXPECTED_MAX_TOOL_LABEL_LENGTH = 256
 
 describe('isSocketOrgSlug', () => {
   it.each(['my-org', 'socket', 'a1', 'my.org', 'my_org', 'Acme-2'])(
@@ -104,8 +107,10 @@ describe('truncateToolLabel', () => {
   })
 
   it('clips a long label and marks the clip', () => {
-    const result = truncateToolLabel('a'.repeat(MAX_TOOL_LABEL_LENGTH + 50))
-    expect(result).toHaveLength(MAX_TOOL_LABEL_LENGTH + 1)
+    const result = truncateToolLabel(
+      'a'.repeat(EXPECTED_MAX_TOOL_LABEL_LENGTH + 50),
+    )
+    expect(result).toHaveLength(EXPECTED_MAX_TOOL_LABEL_LENGTH + 1)
     expect(result.endsWith('…')).toBe(true)
   })
 
