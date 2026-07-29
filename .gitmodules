@@ -8,3 +8,11 @@
 	sparse-checkout = packages/server/src packages/middleware/node/src
 	verify = none
 # socket-mcp-v0.0.20 sha256:733ce4682d596d382fb97a952d3e472714baaf1c9bd2d4ac60251e4de562e1ae
+[submodule "upstream/socket-mcp"]
+	ref = 1a91bda1241fa934eabf023d132aa437446acca0
+	path = upstream/socket-mcp
+	url = https://github.com/SocketDev/socket-mcp.git
+	branch = v0.0.20
+	shallow = true
+	sparse-checkout = /lib/ /index.ts
+	verify = none

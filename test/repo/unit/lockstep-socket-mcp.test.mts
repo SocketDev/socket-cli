@@ -1,3 +1,4 @@
+// socket-lint: mirror-exempt — the unit under test is the socket-mcp lock-step wiring (the manifest row plus its .gitmodules block), not any one of the four harness modules the assertions drive.
 /**
  * @file The socket-mcp lock-step wiring holds. socket-cli is absorbing
  *   `@socketsecurity/mcp`, and the `mcp/socket-mcp-absorption` row plus the
