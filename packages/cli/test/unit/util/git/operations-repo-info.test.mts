@@ -378,5 +378,4 @@ describe('git utilities', () => {
       vi.resetModules()
     })
   })
-
 })

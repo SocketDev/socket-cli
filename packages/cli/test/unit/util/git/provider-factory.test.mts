@@ -127,7 +127,9 @@ describe('getGitRemoteUrl', () => {
       code: 0,
       stdout: '  HTTPS://Github.COM/Org/Repo.git  \n',
     })
-    await expect(getGitRemoteUrl()).resolves.toBe('https://github.com/org/repo.git')
+    await expect(getGitRemoteUrl()).resolves.toBe(
+      'https://github.com/org/repo.git',
+    )
   })
 
   it('returns empty string when git config exits non-zero', async () => {
