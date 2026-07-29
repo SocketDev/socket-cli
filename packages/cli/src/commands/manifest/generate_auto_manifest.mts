@@ -1,10 +1,13 @@
-import path from 'node:path'
-
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import {
+  resolveGradleInvocation,
+  resolveSbtInvocation,
+} from './manifest-build-trust.mts'
+import { outputManifest } from './output-manifest.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
@@ -17,11 +20,13 @@ export async function generateAutoManifest({
   cwd,
   detected,
   outputKind,
+  trustSocketJson,
   verbose,
 }: {
   detected: GeneratableManifests
   cwd: string
   outputKind: OutputKind
+  trustSocketJson: boolean
   verbose: boolean
 }) {
   const sockJson = readOrDefaultSocketJson(cwd)
@@ -32,46 +37,57 @@ export async function generateAutoManifest({
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
     const isTextMode = outputKind === 'text'
-    if (isTextMode) {
-      logger.log('Detected a Scala sbt build, generating pom files with sbt…')
-    }
-    await convertSbtToMaven({
-      // Note: `sbt` is more likely to be resolved against PATH env
-      bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
+    // Auto-manifest has no command line of its own, so every sbt value here
+    // comes from the scanned repository's socket.json.
+    const invocation = resolveSbtInvocation({
+      cliBin: undefined,
+      cliOpts: undefined,
       cwd,
-      out: sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
-      outputKind,
-      sbtOpts:
-        sockJson.defaults?.manifest?.sbt?.sbtOpts
-          ?.split(' ')
-          .map(s => s.trim())
-          .filter(Boolean) ?? [],
-      verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+      socketJson: sockJson,
+      trustSocketJson,
     })
+    if (!invocation.ok) {
+      await outputManifest(invocation, outputKind, '-')
+    } else {
+      if (isTextMode) {
+        logger.log('Detected a Scala sbt build, generating pom files with sbt…')
+      }
+      await convertSbtToMaven({
+        bin: invocation.data.bin,
+        cwd,
+        out: sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
+        outputKind,
+        sbtOpts: invocation.data.opts,
+        verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+      })
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
     const isTextMode = outputKind === 'text'
-    if (isTextMode) {
-      logger.log(
-        'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator…',
-      )
-    }
-    await convertGradleToMaven({
-      // Note: Resolve bin relative to cwd (path.resolve handles absolute paths correctly).
-      // We don't resolve against $PATH since gradlew is typically a local wrapper script.
-      bin: sockJson.defaults?.manifest?.gradle?.bin
-        ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
-        : path.join(cwd, 'gradlew'),
+    const invocation = resolveGradleInvocation({
+      cliBin: undefined,
+      cliOpts: undefined,
       cwd,
-      outputKind,
-      verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
-      gradleOpts:
-        sockJson.defaults?.manifest?.gradle?.gradleOpts
-          ?.split(' ')
-          .map(s => s.trim())
-          .filter(Boolean) ?? [],
+      socketJson: sockJson,
+      trustSocketJson,
     })
+    if (!invocation.ok) {
+      await outputManifest(invocation, outputKind, '-')
+    } else {
+      if (isTextMode) {
+        logger.log(
+          'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator…',
+        )
+      }
+      await convertGradleToMaven({
+        bin: invocation.data.bin,
+        cwd,
+        outputKind,
+        verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
+        gradleOpts: invocation.data.opts,
+      })
+    }
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {

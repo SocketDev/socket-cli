@@ -13,6 +13,7 @@ import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
 import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
 import { isDebugNs } from '../debug.mts'
+import { redactSecretsFromText } from '../redact-secrets-from-text.mts'
 import {
   AuthError,
   ConfigError,
@@ -165,7 +166,16 @@ export function formatErrorForDisplay(
     body = opts.cause
   }
 
-  return { body, message, title }
+  // Last-mile secret redaction. Every dispatch-level error the CLI prints —
+  // terminal or --json — is assembled here, so this single call covers the
+  // whole error output path. An exception message can carry a request URL with
+  // a query token, a spawn command line with `--api-token`, or a registry URL
+  // with userinfo; none of that should reach a terminal or a CI log.
+  return {
+    body: body === undefined ? undefined : redactSecretsFromText(body),
+    message: redactSecretsFromText(message),
+    title: redactSecretsFromText(title),
+  }
 }
 
 /**

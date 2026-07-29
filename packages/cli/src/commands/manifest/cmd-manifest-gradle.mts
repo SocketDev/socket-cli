@@ -4,6 +4,7 @@ import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
+import { resolveGradleInvocation } from './manifest-build-trust.mts'
 import { outputManifest } from './output-manifest.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
@@ -25,6 +26,7 @@ const logger = getDefaultLogger()
 export interface GradleFlags {
   bin: string | undefined
   gradleOpts: string | undefined
+  trustSocketJson: boolean | undefined
   verbose: boolean | undefined
 }
 
@@ -43,6 +45,11 @@ const config = {
       description:
         'Additional options to pass on to ./gradlew, see `./gradlew --help`',
     },
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the binary and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
+    },
     verbose: {
       type: 'boolean',
       description: 'Print debug messages',
@@ -58,6 +65,12 @@ const config = {
     Uses gradle, preferably through your local project \`gradlew\`, to generate a
     \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
     global \`gradle\` binary but that may not work (hard to predict).
+
+    The default binary is \`CWD/gradlew\`. A ${SOCKET_JSON} that points \`bin\`
+    somewhere else, or that sets \`gradleOpts\`, is refused unless you pass
+    --trust-socket-json: those values choose what gets executed and the
+    repository being scanned owns that file. Pass --bin and --gradle-opts
+    yourself to override the defaults without trusting ${SOCKET_JSON}.
 
     The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
     or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is Java's
@@ -119,28 +132,24 @@ export async function run(
     `override: ${SOCKET_JSON} gradle: ${JSON.stringify(sockJson?.defaults?.manifest?.gradle)}`,
   )
 
-  let { bin, gradleOpts, verbose } = cli.flags
+  const { bin: binFlag, gradleOpts: gradleOptsFlag, trustSocketJson } = cli.flags
 
-  // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (!bin) {
-    if (sockJson.defaults?.manifest?.gradle?.bin) {
-      bin = sockJson.defaults?.manifest?.gradle?.bin
-      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
-    } else {
-      bin = path.join(cwd, 'gradlew')
-    }
+  let { verbose } = cli.flags
+
+  const invocation = resolveGradleInvocation({
+    cliBin: binFlag,
+    cliOpts: gradleOptsFlag,
+    cwd,
+    socketJson: sockJson,
+    trustSocketJson: Boolean(trustSocketJson),
+  })
+  if (!invocation.ok) {
+    await outputManifest(invocation, outputKind, '-')
+    return
   }
-  if (!gradleOpts) {
-    if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
-      gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      logger.info(
-        `Using default --gradle-opts from ${SOCKET_JSON}:`,
-        gradleOpts,
-      )
-    } else {
-      gradleOpts = ''
-    }
-  }
+
+  const { bin, opts: gradleOpts } = invocation.data
+
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
       verbose = sockJson.defaults?.manifest?.gradle?.verbose
