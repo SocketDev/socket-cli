@@ -16,6 +16,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
 import { resolveCdxgen } from './resolve-binary.mjs'
+import { getNodeExecutablePathSync } from '../spawn/spawn-node.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
@@ -43,7 +44,10 @@ export async function spawnCdxgenDlx(
 
     const spawnArgs =
       detection.type === 'binary' ? args : [resolution.path, ...args]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+    const spawnCommand =
+      detection.type === 'binary'
+        ? resolution.path
+        : getNodeExecutablePathSync()
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,

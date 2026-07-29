@@ -81,7 +81,7 @@ describe('spawnSfwDlx', () => {
     await spawnSfwDlx(['npm'], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'node',
+      process.execPath,
       ['/local/sfw.js', 'npm'],
       expect.objectContaining({ stdio: 'inherit' }),
     )

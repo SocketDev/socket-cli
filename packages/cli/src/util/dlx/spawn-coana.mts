@@ -19,6 +19,7 @@ import { getCliVersion } from '../../env/cli-version.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { getNodeExecutablePathSync } from '../spawn/spawn-node.mts'
 
 import type { CoanaDlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { CResult } from '../../types.mjs'
@@ -101,7 +102,9 @@ export async function spawnCoanaDlx(
       const spawnArgs =
         detection.type === 'binary' ? args : [resolution.path, ...args]
       const spawnCommand =
-        detection.type === 'binary' ? resolution.path : 'node'
+        detection.type === 'binary'
+          ? resolution.path
+          : getNodeExecutablePathSync()
 
       const spawnPromise = spawn(spawnCommand, spawnArgs, {
         ...dlxOptions,

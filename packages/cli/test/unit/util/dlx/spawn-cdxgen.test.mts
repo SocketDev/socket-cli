@@ -65,7 +65,7 @@ describe('spawnCdxgenDlx', () => {
     await spawnCdxgenDlx([], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'node',
+      process.execPath,
       ['/local/cdxgen.js'],
       expect.any(Object),
     )

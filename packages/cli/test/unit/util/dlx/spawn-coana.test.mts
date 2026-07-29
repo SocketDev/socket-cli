@@ -108,7 +108,7 @@ describe('spawnCoanaDlx', () => {
     await spawnCoanaDlx([], undefined, undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'node',
+      process.execPath,
       ['/local/coana.js'],
       expect.any(Object),
     )

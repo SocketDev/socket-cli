@@ -67,7 +67,7 @@ describe('spawnSocketPatchDlx', () => {
     await spawnSocketPatchDlx([], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'node',
+      process.execPath,
       ['/local/socket-patch.js'],
       expect.any(Object),
     )

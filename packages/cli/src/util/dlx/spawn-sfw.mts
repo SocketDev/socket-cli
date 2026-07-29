@@ -21,6 +21,7 @@ import {
   applyMachineModeIfActive,
   inferSubcommand,
 } from '../spawn/apply-machine-mode.mts'
+import { getNodeExecutablePathSync } from '../spawn/spawn-node.mts'
 
 import type { DlxOptions, DlxSpawnResult } from './spawn.mts'
 import type { StdioOptions } from 'node:child_process'
@@ -64,7 +65,10 @@ export async function spawnSfwDlx(
       detection.type === 'binary'
         ? effectiveArgs
         : [resolution.path, ...effectiveArgs]
-    const spawnCommand = detection.type === 'binary' ? resolution.path : 'node'
+    const spawnCommand =
+      detection.type === 'binary'
+        ? resolution.path
+        : getNodeExecutablePathSync()
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
