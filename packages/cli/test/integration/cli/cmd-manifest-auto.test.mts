@@ -43,11 +43,18 @@ describe('socket manifest auto', async () => {
           
               Options
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+                --trust-socket-json  Run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.
                 --verbose           Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
           
               Tries to figure out what language your target repo uses. If it finds a
               supported case then it will try to generate the manifest file for that
               language with the default or detected settings.
+          
+              Gradle and sbt run a build binary. This command has no --bin of its own, so
+              it uses \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that
+              points \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused
+              unless you pass --trust-socket-json: those values choose what gets executed
+              and the repository being scanned owns that file.
           
               Note: you can exclude languages from being auto-generated if you don't want
                     them to. Run \`socket manifest setup\` in the same dir to disable it.
@@ -80,15 +87,21 @@ describe('socket manifest auto', async () => {
 
       // manifest auto scans the cwd for generatable manifest targets and
       // reports when none exist; there is no dry-run bail anymore.
-      expect(stdout).toMatchInlineSnapshot(
-        `"No manifest targets detected in the specified directory."`,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest auto\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest auto\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute auto-detect and generate 1 manifest file(s)
+
+          Command: manifest generators
+          Arguments: [PROJECT]
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'should exit with code 0 when nothing to generate').toBe(0)

@@ -46,6 +46,12 @@ describe('socket manifest conda', async () => {
               Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
                     contents of a file to have it processed.
           
+              A socket.json \`infile\` or \`outfile\` that resolves outside CWD is
+              refused unless you pass --trust-socket-json: the repository being scanned
+              owns that file, and the output content comes from its own environment.yml.
+              Pass --file and --out yourself to read or write outside CWD without trusting
+              socket.json.
+          
               Options
                 --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
                 --json              Output as JSON
@@ -54,6 +60,7 @@ describe('socket manifest conda', async () => {
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --stdin             Read the input from stdin (supersedes --file)
                 --stdout            Print resulting requirements.txt to stdout (supersedes --out)
+                --trust-socket-json  Read and write the paths declared in socket.json even when they leave the project. Off by default because the scanned repository controls that file.
                 --verbose           Print debug messages
           
               Examples

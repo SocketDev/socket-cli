@@ -48,6 +48,7 @@ describe('socket ci', async () => {
               Options
                 --auto-manifest     Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+                --trust-socket-json  Run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.
           
               This command is intended to use in CI runs to allow automated systems to
               accept or reject a current build. It will use the default org of the
@@ -58,6 +59,11 @@ describe('socket ci', async () => {
               but is not enabled by default since the CI is less likely to be set up with
               all the necessary dev tooling. Enable it if you want the scan to include
               locally generated manifests like for gradle and sbt.
+          
+              With --auto-manifest, gradle and sbt run a build binary. The defaults are
+              \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that points
+              \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+              you also pass --trust-socket-json.
           
               Examples
                 $ socket ci
