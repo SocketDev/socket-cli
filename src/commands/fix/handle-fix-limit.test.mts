@@ -383,6 +383,140 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
   })
 
+  describe('GHSA discovery failure propagation', () => {
+    it('propagates a failed discovery spawn instead of reporting success', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: false,
+        message: 'Coana exited with code 1',
+        cause:
+          'Socket compute-artifacts failed: upstream timeout (code=timeout)',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toBe('Coana exited with code 1')
+      // Discovery failed, so no fix call should follow.
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails when discovery returns no output', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/no output/i)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails when the final discovery output line is not JSON', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '["GHSA-aaaa-aaaa-aaaa"]\nnpm notice: a new version is available',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/could not parse/i)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails when discovery output parses to a non-array', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '{}',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/unexpected vulnerability list/i)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails when discovery output is an array of non-strings', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: '[123]',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/unexpected vulnerability list/i)
+    })
+
+    it('still succeeds when warnings precede the JSON array on the final line', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: 'some warning\n["GHSA-aaaa-aaaa-aaaa"]',
+      })
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: 'fix applied',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
+    })
+
+    it('propagates discovery failures in PR mode', async () => {
+      mockGetFixEnv.mockResolvedValue({
+        baseBranch: 'main',
+        githubToken: 'test-token',
+        gitEmail: 'test@example.com',
+        gitUser: 'test-user',
+        isCi: true,
+        repoInfo: {
+          defaultBranch: 'main',
+          owner: 'test-owner',
+          repo: 'test-repo',
+        },
+      })
+      mockGetSocketFixPrs.mockResolvedValue([])
+
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: false,
+        message: 'Coana exited with code 1',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+        prLimit: 2,
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toBe('Coana exited with code 1')
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('--id filtering in local mode', () => {
     it('should process all provided GHSA IDs in local mode (prLimit ignored)', async () => {
       const ghsas = [
