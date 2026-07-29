@@ -21,9 +21,15 @@
  * hash.
  */
 
-// Git executable resolution extracted to keep this file under the
-// 1000-line File-size cap. See git-path.mts.
-export { getGitPath } from './git-path.mts'
+// Trusted git resolution + the hygiene chokepoint every git call goes
+// through. See spawn-git.mts.
+export {
+  type GitExecutableResolution,
+  type ResolveGitExecutableOptions,
+  type SpawnGitOptions,
+  resolveGitExecutable,
+  spawnGit,
+} from './spawn-git.mts'
 
 // Branch operations extracted to keep this file under the 1000-line
 // File-size cap. See git-branch-ops.mts.

@@ -68,7 +68,7 @@ export async function cleanupSocketFixPrs(
   }
 
   const cachesToSave = new Map<string, JsonContent>()
-  const provider = createPrProvider()
+  const provider = await createPrProvider()
 
   const settledMatches = await Promise.allSettled(
     contextualMatches.map(async ({ context, match }) => {
@@ -375,7 +375,7 @@ export async function openSocketFixPr(
     ...options,
   } as OpenSocketFixPrOptions
 
-  const provider = createPrProvider()
+  const provider = await createPrProvider()
 
   try {
     const result = await provider.createPr({

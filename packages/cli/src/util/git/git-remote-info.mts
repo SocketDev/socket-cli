@@ -15,11 +15,10 @@ import {
 } from '@socketsecurity/lib-stable/env/github'
 import { envAsString } from '@socketsecurity/lib-stable/env/string'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOCKET_DEFAULT_REPOSITORY } from '../../constants/socket.mts'
 import { extractName, extractOwner } from '../sanitize-names.mts'
-import { getGitPath } from './git-path.mts'
+import { spawnGit } from './spawn-git.mts'
 
 import type { CResult } from '../../types.mjs'
 
@@ -35,9 +34,9 @@ export async function getRepoInfo(
 ): Promise<RepoInfo | undefined> {
   let info: RepoInfo | undefined
   try {
-    const gitBin = await getGitPath()
-    const result = await spawn(gitBin, ['remote', 'get-url', 'origin'], {
+    const result = await spawnGit(['remote', 'get-url'], {
       cwd,
+      operands: ['origin'],
     })
 
     if (!result) {
@@ -72,17 +71,13 @@ export async function getRepoOwner(
 export async function gitBranch(
   cwd = process.cwd(),
 ): Promise<string | undefined> {
-  // No annotation: the literal keeps the `stdioString?: true` overload of
-  // `spawn`, so `stdout` is typed `string` without a cast.
-  const stdioPipeOptions = { cwd }
   // Try symbolic-ref first which returns the branch name or fails in a
   // detached HEAD state.
   try {
-    const gitSymbolicRefResult = await spawn(
-      'git',
-      ['symbolic-ref', '--short', 'HEAD'],
-      stdioPipeOptions,
-    )
+    const gitSymbolicRefResult = await spawnGit(['symbolic-ref', '--short'], {
+      cwd,
+      operands: ['HEAD'],
+    })
     return gitSymbolicRefResult.stdout
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
@@ -104,11 +99,10 @@ export async function gitBranch(
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.
   try {
-    const gitRevParseResult = await spawn(
-      'git',
-      ['rev-parse', '--short', 'HEAD'],
-      stdioPipeOptions,
-    )
+    const gitRevParseResult = await spawnGit(['rev-parse', '--short'], {
+      cwd,
+      operands: ['HEAD'],
+    })
     return gitRevParseResult.stdout
   } catch (e) {
     // Both methods failed, likely not in a git repo.
@@ -120,15 +114,8 @@ export async function gitBranch(
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
 ): Promise<CResult<string[]>> {
-  // No annotation: the literal keeps the `stdioString?: true` overload of
-  // `spawn`, so `stdout` is typed `string` without a cast.
-  const stdioPipeOptions = { cwd }
   try {
-    const gitDiffResult = await spawn(
-      'git',
-      ['diff', '--name-only'],
-      stdioPipeOptions,
-    )
+    const gitDiffResult = await spawnGit(['diff', '--name-only'], { cwd })
     const changedFilesDetails = gitDiffResult.stdout
     const relPaths = changedFilesDetails.split('\n')
     return {

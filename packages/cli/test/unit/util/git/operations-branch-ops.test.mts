@@ -12,6 +12,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetEnv } from '@socketsecurity/lib-stable/env/rewire'
 
 import {
+  listGitArgvTails,
+  toGitArgvTail,
+} from '../../../../test/helpers/git-spawn-assertions.mts'
+import {
   gitCheckoutBranch,
   gitCleanFdx,
   gitCreateBranch,
@@ -29,10 +33,18 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/errors'), () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
-// Mock whichReal().
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: vi.fn().mockResolvedValue('git'),
-}))
+// Pin git resolution so argv assertions do not depend on the host PATH.
+vi.mock(
+  import('../../../../src/util/trusted-executable.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    defaultProtectedRoot: vi.fn().mockResolvedValue('/repo'),
+    resolveTrustedExecutable: vi.fn().mockResolvedValue({
+      environment: { PATH: '/usr/bin' },
+      executable: '/usr/bin/git',
+    }),
+  }),
+)
 
 vi.mock(import('../../../../src/constants/cli.mts'), () => ({
   FLAG_QUIET: '--quiet',
@@ -62,10 +74,8 @@ describe('git utilities', () => {
 
       const result = await gitCheckoutBranch('main')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['checkout', 'main'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['checkout'], ['main']),
       )
     })
 
@@ -91,15 +101,11 @@ describe('git utilities', () => {
 
       const result = await gitCreateBranch('new-feature')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['show-ref', '--quiet', 'refs/heads/new-feature'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['show-ref', '--quiet'], ['refs/heads/new-feature']),
       )
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['branch', 'new-feature'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['branch'], ['new-feature']),
       )
     })
 
@@ -113,10 +119,8 @@ describe('git utilities', () => {
       const result = await gitCreateBranch('existing-branch')
       expect(result).toBe(true)
       // Only the show-ref call should occur — no `git branch` create.
-      expect(spawn).not.toHaveBeenCalledWith(
-        'git',
-        ['branch', 'existing-branch'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).not.toContainEqual(
+        toGitArgvTail(['branch'], ['existing-branch']),
       )
     })
 
@@ -142,10 +146,8 @@ describe('git utilities', () => {
 
       const result = await gitDeleteBranch('old-feature')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['branch', '-D', 'old-feature'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['branch', '-D'], ['old-feature']),
       )
     })
 
@@ -169,10 +171,8 @@ describe('git utilities', () => {
 
       const result = await gitPushBranch('feature')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['push', '--force', '--set-upstream', 'origin', 'feature'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['push', '--force', '--set-upstream'], ['origin', 'feature']),
       )
     })
 
@@ -213,10 +213,8 @@ describe('git utilities', () => {
 
       const result = await gitCleanFdx()
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['clean', '-fdx'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['clean', '-fdx']),
       )
     })
 
@@ -240,10 +238,8 @@ describe('git utilities', () => {
 
       const result = await gitResetHard('origin/main')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['reset', '--hard', 'origin/main'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['reset', '--hard'], ['origin/main']),
       )
     })
 
@@ -266,15 +262,11 @@ describe('git utilities', () => {
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       await gitEnsureIdentity('Test User', 'test@example.com')
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['config', '--get', 'user.email'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['config', '--get'], ['user.email']),
       )
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['config', '--get', 'user.name'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['config', '--get'], ['user.name']),
       )
     })
 
@@ -285,7 +277,7 @@ describe('git utilities', () => {
       // Reject `git config --get` so configValue stays undefined != desired value;
       // then `git config <prop> <value>` resolves successfully.
       spawn.mockImplementation((_cmd: unknown, args: unknown) => {
-        if (args?.[1] === '--get') {
+        if (args?.includes('--get')) {
           return Promise.reject(new Error('not set')) as unknown
         }
         return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as unknown
@@ -293,15 +285,11 @@ describe('git utilities', () => {
 
       await gitEnsureIdentity('Test User', 'test@example.com')
       // Verify the set calls happened.
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['config', 'user.email', 'test@example.com'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['config'], ['user.email', 'test@example.com']),
       )
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['config', 'user.name', 'Test User'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['config'], ['user.name', 'Test User']),
       )
     })
 
@@ -311,7 +299,7 @@ describe('git utilities', () => {
       )
       // Reject get; reject set.
       spawn.mockImplementation((_cmd: unknown, args: unknown) => {
-        if (args?.[1] === '--get') {
+        if (args?.includes('--get')) {
           return Promise.reject(new Error('not set')) as unknown
         }
         return Promise.reject(new Error('config set failed')) as unknown
