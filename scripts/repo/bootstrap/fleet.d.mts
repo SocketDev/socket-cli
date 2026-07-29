@@ -163,9 +163,9 @@ interface FetchedBundle extends FetchedFiles {
   readonly source: 'gh-release' | 'ghcr';
 }
 /**
- * Derive the GHCR fleet-bundle package repo from the gh `owner/repo`. GHCR
+ * Derive the GHCR fleet-pack package repo from the gh `owner/repo`. GHCR
  * package paths are lowercase: `SocketDev/socket-wheelhouse` →
- * `socketdev/socket-wheelhouse/fleet-bundle`.
+ * `socketdev/socket-wheelhouse/fleet-pack`.
  */
 declare function ghcrBundleRepo(repo: string): string;
 /**
@@ -175,7 +175,7 @@ declare function ghcrBundleRepo(repo: string): string;
  */
 declare function extractManifestFromTarball(tarball: string, destDir: string): string;
 /**
- * Default GHCR fetch: anonymous OCI pull of the fleet-bundle tarball, then pull
+ * Default GHCR fetch: anonymous OCI pull of the fleet-pack tarball, then pull
  * the manifest out of it. Throws on any failure so the selector can fall back.
  */
 declare function ghcrFetchBundle(config: {
@@ -301,7 +301,7 @@ declare function fetchBlob(repo: string, digest: string, token: string, registry
  */
 declare function sha256Hex(buf: Buffer): string;
 /**
- * Pull the fleet-bundle tarball from GHCR and write it to `destDir`. Verifies
+ * Pull the fleet-pack tarball from GHCR and write it to `destDir`. Verifies
  * the blob's SHA-256 against the manifest layer digest before writing — a
  * mismatch aborts (fail closed). Returns the written tarball path.
  */
@@ -367,7 +367,7 @@ declare function installFiles(filesDir: string, dest: string, manifest: BundleMa
  * from the git index after placement. The bundle SHIPS these files — placement
  * writes them to disk — while the fleet gitignore block ignores them and
  * `generated-outputs-are-untracked` forbids TRACKING them. A member that
- * historically committed one (bundle.cjs et al., before the ignore existed)
+ * historically committed one (fleet-pack.cjs et al., before the ignore existed)
  * heals on the next refresh: the file stays on disk, but leaves the index.
  * Non-fatal by design — a non-git dest or an already-clean index is a no-op
  * (`--ignore-unmatch`).
@@ -477,7 +477,7 @@ interface RefValidation {
 }
 /**
  * Validate a `bundle.ref` value at WRITE time. Rejects an empty, fuzzy, ranged,
- * or aliased ref — only an exact `fleet-bundle-<hex>` tag is legal. Returns the
+ * or aliased ref — only an exact `fleet-pack-<hex>` tag is legal. Returns the
  * list of problems (empty === valid).
  */
 declare function validateRef(ref: unknown): RefValidation;
@@ -582,7 +582,7 @@ declare function assertLockStep(config: {
   readonly ref: string;
 }): boolean;
 /**
- * Resolve the NEWEST `fleet-bundle-<hex>` release tag via `gh release list`.
+ * Resolve the NEWEST `fleet-pack-<hex>` release tag via `gh release list`.
  * Returns the latest tag, or undefined when none / offline. The list is
  * newest-first.
  */

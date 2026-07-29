@@ -16,9 +16,10 @@
 // would reject the relay.
 //
 // Surfaces + policy:
-//   - SendMessage / Task / Agent payloads: RAW match on the whole tool_input —
-//     even a quoted or code-fenced phrase is a relay attempt (the receiver may
-//     unwrap it), so no use-vs-mention allowance.
+//   - SendMessage / Task / Agent payloads: RAW match on every string in the
+//     tool_input, each scanned on its own. Even a quoted or code-fenced
+//     phrase is a relay attempt, because the receiver can unwrap it, so no
+//     use-vs-mention allowance applies here.
 //   - Write / Edit / MultiEdit content: use-vs-mention applies (quoted spans +
 //     code fences are stripped first, so docs/tests that MENTION a phrase in
 //     backticks or string literals stay editable), and the trees that
@@ -26,6 +27,17 @@
 //     docs/agents.md/**, .config/fleet/**).
 //   - The phrase list/shape is shared with the detection side via
 //     _shared/authorization-phrases.mts, so the two guards can never drift.
+//   - Matching runs on a rendered-text normal form (_shared/evasion-
+//     normalize.mts): invisible characters, Unicode confusables, combining
+//     marks, numeric HTML references, and markup that splits a word all fold
+//     away, because each of those still RENDERS as the phrase to the human
+//     who would retype it. Encodings that render as something else — base64,
+//     percent-escapes, a backslash escape, an intra-word `_` — are left
+//     alone; folding them would block ordinary prose for no gain.
+//
+// Consolidation: these normalization primitives are the fleet-local twin of
+// the concealed-text detector planned for socket-lib. When that ships, this
+// module should consume it instead of keeping a parallel confusable table.
 //
 // Skipped silently: other tools, empty payloads, exempt paths, clean text.
 //
@@ -35,15 +47,20 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { findAuthorizationPhrase } from '../_shared/authorization-phrases.mts'
+import { collapseIntraWordMarkup } from '../_shared/evasion-normalize.mts'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { readFilePath, readWriteContent } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { stripCodeFences, stripQuotedSpans } from '../_shared/transcript.mts'
 
-// Dispatcher pre-flight: every authorization phrase starts with Allow/allow —
-// `llow` is a necessary substring of any payload that could match.
-export const triggers: readonly string[] = ['llow']
+// No dispatcher pre-flight. A substring trigger (`llow`) was a fair filter
+// while the matcher keyed on literal spelling, but the normalizer now folds
+// confusables, combining marks, numeric HTML references, and word-splitting
+// markup — so `Allоw` with a Cyrillic `о`, or `&#65;llow`, carries no ASCII
+// `llow` at all. A pre-filter the defended-against evasion can defeat is not
+// an optimization, it is the bypass. The check is a handful of regexes.
+export const triggers: readonly string[] = []
 
 // Message-bearing tools whose payload another agent/session receives verbatim.
 const MESSAGE_TOOLS = new Set(['Agent', 'SendMessage', 'Task'])
@@ -59,6 +76,32 @@ const EXEMPT_PATH_SEGMENTS = [
   '/docs/agents.md/',
   '/.config/fleet/',
 ] as const
+
+/**
+ * Every string anywhere in a tool payload, at any depth. Arrays and nested
+ * objects are walked; non-string leaves are dropped.
+ */
+export function stringLeaves(value: unknown): string[] {
+  const out: string[] = []
+  const stack: unknown[] = [value]
+  while (stack.length > 0) {
+    const current = stack.pop()
+    if (typeof current === 'string') {
+      if (current) {
+        out.push(current)
+      }
+      continue
+    }
+    if (Array.isArray(current)) {
+      stack.push(...current)
+      continue
+    }
+    if (current && typeof current === 'object') {
+      stack.push(...Object.values(current))
+    }
+  }
+  return out
+}
 
 function isPhraseDocumentationPath(filePath: string): boolean {
   const normalized = `/${normalizePath(filePath)}`
@@ -93,13 +136,24 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     return undefined
   }
   if (MESSAGE_TOOLS.has(tool)) {
-    // RAW scan of the full payload, message, prompt, summary, any field: a
-    // quoted relay is still a relay. JSON-escaped line breaks are folded to
-    // spaces so a phrase split across lines still matches — the receiving
-    // side's scanner folds real newlines the same way.
-    const flattened = JSON.stringify(input).replace(/\\[nrt]/g, ' ')
-    const found = findAuthorizationPhrase(flattened)
-    return found ? teach(found, `${tool} payload`) : undefined
+    // RAW scan of every string in the payload — message, prompt, summary, any
+    // field, at any depth. No use-vs-mention allowance: a quoted relay is
+    // still a relay, because the receiver can unwrap it.
+    //
+    // Each string is scanned ON ITS OWN rather than as one flattened blob.
+    // Flattening would splice unrelated fields together across the JSON
+    // punctuation between them, and `{"a": "allow the cache", "b": "bypass
+    // here"}` is ordinary payload prose, not a grant. The cost is that a
+    // phrase deliberately split across two fields is not caught; no receiving
+    // surface guarantees those fields render adjacent, and the alternative
+    // blocks innocent payloads, which is how a guard gets switched off.
+    for (const leaf of stringLeaves(input)) {
+      const found = findAuthorizationPhrase(leaf)
+      if (found) {
+        return teach(found, `${tool} payload`)
+      }
+    }
+    return undefined
   }
   if (EDIT_TOOLS.has(tool)) {
     const filePath = readFilePath(payload)
@@ -122,8 +176,14 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     }
     // Use-vs-mention: a phrase in backticks / quotes is documentation, and the
     // detection scanner would never accept it from a file anyway.
+    //
+    // Word-splitting markup is collapsed FIRST: ``A`llow` push…`` is a word cut
+    // in half, not a code span, and letting stripCodeFences see it would turn
+    // an evasion into an exemption. collapseIntraWordMarkup only fires on a
+    // split word, so a span wrapping a whole phrase still reaches the
+    // strippers intact.
     const found = findAuthorizationPhrase(
-      stripQuotedSpans(stripCodeFences(content)),
+      stripQuotedSpans(stripCodeFences(collapseIntraWordMarkup(content))),
     )
     return found
       ? teach(found, `file write (${filePath ?? 'unknown path'})`)

@@ -57,7 +57,7 @@
  *     string-literal `import('node:fs')` is snapshottable.
  *
  *   WHAT "SNAPSHOT-ELIGIBLE" MEANS — the modules that freeze into the dispatch
- *   bundle: the `_dispatch/` + `_shared/` graph, always bundled, and each
+ *   bundle: the `_shared/` + `_shared/` graph, always bundled, and each
  *   BUNDLE-SAFE hook `index.mts` — exactly the maker's criterion in
  *   `scripts/fleet/gen/hook-dispatch.mts` (an entrypoint guard
  *   `import.meta.url === \`file://${process.argv[1]}\`` AND `export function
@@ -92,7 +92,7 @@ const TLA_BYPASS_RE = /socket-lint:\s*allow\s+top-level-await/
 // snapshot blocker or import-time handle is a ONE-LINE addition to the relevant
 // set — add a trailing note saying WHY the pattern is a handle/IO blocker.
 // Seeded from the empirically-found snapshot blockers
-// (see template/base/.claude/hooks/fleet/_dispatch/snapshot-notes.md): every
+// (see template/base/.claude/hooks/fleet/_shared/snapshot-notes.md): every
 // entry below corresponds to a `[Foreign]`-handle / WASM / circular-init
 // failure that actually aborted `--build-snapshot`.
 
@@ -180,7 +180,7 @@ function isLazy(node: AstNode): boolean {
 // dynamic import) fire ONLY in modules that freeze into the V8 dispatch bundle.
 // That set is the rolldown bundle's input closure — mirror the maker
 // (scripts/fleet/gen/hook-dispatch.mts), DON'T re-derive a different notion:
-//   - the `_dispatch/` + `_shared/` graph, always bundled, and
+//   - the `_shared/` + `_shared/` graph, always bundled, and
 //   - each BUNDLE-SAFE hook `index.mts` — entrypoint-guarded AND `export run`.
 // Matched on the absolute file path (works in a real repo AND the RuleTester,
 // which controls the path tail via `filename:`), plus — for a hook index file —
@@ -189,7 +189,7 @@ function isLazy(node: AstNode): boolean {
 // is never flagged.
 
 // Path is inside the fleet dispatch graph that is unconditionally bundled:
-// `.claude/hooks/fleet/_dispatch/**` or `.claude/hooks/fleet/_shared/**`.
+// `.claude/hooks/fleet/_shared/**` or `.claude/hooks/fleet/_shared/**`.
 const BUNDLED_GRAPH_PATH_RE =
   /[\\/]\.claude[\\/]hooks[\\/]fleet[\\/]_(?:dispatch|shared)[\\/]/
 
@@ -206,7 +206,7 @@ const EXPORT_RUN_RE = /export\s+(?:async\s+)?function\s+run\s*\(/
 
 /**
  * True when the file being linted freezes into the V8 dispatch bundle, so the
- * snapshot-eligible-only clauses apply. The `_dispatch`/`_shared` graph is
+ * snapshot-eligible-only clauses apply. The `_shared`/`_shared` graph is
  * always eligible; a hook `index` is eligible only when its source carries the
  * maker's bundle-safe markers (so an `await runHook(...)` entrypoint hook,
  * which the maker never bundles, is correctly NOT eligible).

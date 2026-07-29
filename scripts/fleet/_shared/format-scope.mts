@@ -178,9 +178,9 @@ export function parseIgnoreGlobs(content: string): string[] {
 // The GENERATED / VENDORED / dep-0 path segments — artifacts a bundler, codegen
 // step, or upstream owns, never hand-written. These are dropped from the gate in
 // EVERY scope, even under template/ (which otherwise stays gated as the
-// wheelhouse canon): the built bootstrap/fleet.mjs, the _dispatch hook bundle, and the build/vendor/upstream trees
-// live
-// beside hand-written template sources but must never be format- or lint-gated.
+// wheelhouse canon): the built bootstrap/fleet.mjs, the hook build's outputs,
+// and the build/vendor/upstream trees live beside hand-written template sources
+// but must never be format- or lint-gated.
 // The MIRROR exclusions (.claude / .agents / **/fleet/**) are deliberately NOT
 // here — template/ dogfoods those. Twin of the generated/vendored entries in
 // .config/fleet/.prettierignore (+ scripts/fleet/constants/generated-globs.mts).
@@ -196,13 +196,62 @@ export const NEVER_GATED_SEGMENTS: ReadonlySet<string> = new Set([
   'vendor',
 ])
 
+// Basenames the hook build EMITS into `.claude/hooks/fleet/_shared/` — the
+// rolldown packs, the three dispatch tables, the dispatch manifest, the native
+// snapshot launcher, and its frozen `*.path` sidecars. `index.cjs` is the
+// pre-v1.0.16 generated loader some members still carry at this depth.
+// Matched by EXACT basename, never by the directory: `_shared/` is a
+// hand-written library (the dispatcher sources, the hook helper modules) that
+// the gate owns, and only these emitted files sit inside it. Twin of the
+// `**​/.claude/hooks/fleet/_shared/*` entries in the fleet .gitignore block;
+// the emitting paths themselves are owned by scripts/fleet/paths.mts.
+export const GENERATED_HOOK_SHARED_BASENAMES: ReadonlySet<string> = new Set([
+  'dispatch-launcher',
+  'dispatch-launcher.exe',
+  'dispatch-manifest.json',
+  'dispatch-table-excluded.mts',
+  'dispatch-table-snapshot.mts',
+  'dispatch-table.mts',
+  'excluded-fleet-pack.cjs',
+  'fleet-pack.cjs',
+  'index.cjs',
+  'node.path',
+  'snapshot-blob.path',
+  'snapshot-fleet-pack.cjs',
+])
+
+/**
+ * Whether `filePath` is an OUTPUT of the hook build: anything under the
+ * exclusively generated `.claude/hooks/fleet/_dist/` dir, or one of the
+ * {@link GENERATED_HOOK_SHARED_BASENAMES} the build writes into the
+ * hand-written `_shared/` library beside its own sources.
+ */
+export function isGeneratedHookArtifact(filePath: string): boolean {
+  const segments = normalizePath(filePath).split('/')
+  const { length } = segments
+  // `hooks/fleet/_dist/**` is exclusively rolldown output.
+  for (let i = 2; i < length; i += 1) {
+    if (
+      segments[i] === '_dist' &&
+      segments[i - 1] === 'fleet' &&
+      segments[i - 2] === 'hooks'
+    ) {
+      return true
+    }
+  }
+  if (length < 2 || segments[length - 2] !== '_shared') {
+    return false
+  }
+  return GENERATED_HOOK_SHARED_BASENAMES.has(segments[length - 1]!)
+}
+
 /**
  * Whether `unixPath` is a generated / vendored / dep-0 artifact that must never
  * be format- or lint-gated in any scope — the built dep-0 fetcher bundle, a
- * `_dispatch/` hook bundle, a gh-aw `*.lock.yml`, a `.d.ts` type declaration,
- * or anything under a {@link NEVER_GATED_SEGMENTS} directory. Applied BEFORE
- * the `template/**` keep so those artifacts drop out even inside the wheelhouse
- * canon.
+ * hook-build output ({@link isGeneratedHookArtifact}), a gh-aw `*.lock.yml`, a
+ * `.d.ts` type declaration, or anything under a {@link NEVER_GATED_SEGMENTS}
+ * directory. Applied BEFORE the `template/**` keep so those artifacts drop out
+ * even inside the wheelhouse canon.
  */
 export function isNeverGated(filePath: string): boolean {
   const p = normalizePath(filePath)
@@ -217,8 +266,7 @@ export function isNeverGated(filePath: string): boolean {
     return true
   }
   if (
-    p.includes('/_dispatch/') ||
-    p.includes('/hooks/fleet/_dist/') ||
+    isGeneratedHookArtifact(p) ||
     p.endsWith('/hooks/fleet/index.cjs') ||
     p.endsWith('.lock.yml')
   ) {

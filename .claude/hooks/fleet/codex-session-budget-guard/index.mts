@@ -19,7 +19,7 @@
 // Underivable transcript paths fail OPEN.
 //
 // On the companion's FIRST tool call the guard stamps a start marker under
-// node_modules/.cache; every later call re-reads it, and once the budget is
+// .cache; every later call re-reads it, and once the budget is
 // spent every further call blocks with a hand-off message.
 //
 // Fail-open on any IO error: a guard bug must never wedge a legitimate
@@ -82,14 +82,13 @@ export function isOwnSessionId(
 
 // The marker file holding a companion's first-tool-call timestamp, keyed by the
 // companion id, sanitized to a safe filename. Runtime state — never tracked.
-// Anchored on the git toplevel: `projectDir` is a raw session cwd, and joining
-// node_modules onto one under a workspace glob (`template/base/**`) poisons
-// pnpm resolution for the whole checkout (see _shared/repo-root.mts).
+// Anchored on the git toplevel: `projectDir` is a raw session cwd, so joining
+// the store onto one scatters a `.cache/` per caller — including one inside
+// `template/base/`, the cascade payload (see _shared/repo-root.mts).
 export function markerFile(projectDir: string, companionId: string): string {
   const safe = companionId.replace(/[^A-Za-z0-9_-]/g, '')
   return path.join(
     resolveRepoRoot(projectDir),
-    'node_modules',
     '.cache',
     'fleet',
     STORE,

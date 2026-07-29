@@ -71,7 +71,7 @@ export async function withMirrorLockLifted<T>(
 
 /**
  * Lift the lock from ONE file with no re-lock — for generated outputs a
- * child process rewrites (rolldown writing _dist/bundle.cjs cannot lift
+ * child process rewrites (rolldown writing _dist/fleet-pack.cjs cannot lift
  * for itself). Generated outputs are regenerated freely and should never
  * carry the mirror lock; this clears one that an earlier cascade applied.
  * Missing file is a no-op.

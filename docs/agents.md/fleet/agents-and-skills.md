@@ -37,8 +37,8 @@ The **code-security loop** is four chained skills, each leg resumable (see [`sec
 - `/fleet:triaging-findings`: N blind verifiers per finding → `TRIAGE.json` (verify, dedupe, exploitability re-rank, owner routing; read-only)
 - `/fleet:patching-findings`: per true-positive, patch agent + blind reviewer → applied commits (mutating; `--dry-run` previews)
 
-- Shared subskills in `.claude/skills/_shared/`
-- **Handing off to another agent**: see [`agent-delegation.md`](agent-delegation.md) for when to reach for the `delegate` subagent (OpenCode → Fireworks/Synthetic/Kimi), `Explore`, `Plan`, vs. driving the skill CLIs directly. The CLI-subprocess contract used by skills lives in [`_shared/multi-agent-backends.md`](../../.claude/skills/fleet/_shared/multi-agent-backends.md).
+- Shared subskills in `.claude/skills/fleet/_shared/`
+- **Handing off to another agent**: see [`agent-delegation.md`](agent-delegation.md) for when to reach for the `delegate` subagent (OpenCode → Fireworks/Synthetic/Kimi), `Explore`, `Plan`, vs. driving the skill CLIs directly. The CLI-subprocess contract used by skills lives in [`multi-agent-backends.md`](../../.claude/skills/fleet/_shared/multi-agent-backends.md).
 
 ## Skill scope: fleet vs partial vs unique
 
@@ -56,7 +56,7 @@ Audit the current classification with `node scripts/run-skill-fleet.mts --list-s
 
 ## Running skills across the fleet
 
-`scripts/run-skill-fleet.mts` (in the fleet source repo) spawns one headless `claude --print` agent per fleet repo, in parallel (concurrency 4 by default), with the four lockdown flags set per the _Programmatic Claude calls_ rule above. Per-skill profile table maps known skills to sensible tool/allow/disallow lists; override with `--tools` / `--allow` / `--disallow`. Per-repo logs land in `node_modules/.cache/repo/fleet-skill/<timestamp>-<skill>/<repo>.log`. Uses `Promise.allSettled` semantics; one repo's failure doesn't abort the rest.
+`scripts/repo/run-skill-fleet.mts` (in the fleet source repo) spawns one headless `claude --print` agent per fleet repo, in parallel (concurrency 4 by default), with the four lockdown flags set per the _Programmatic Claude calls_ rule above. Per-skill profile table maps known skills to sensible tool/allow/disallow lists; override with `--tools` / `--allow` / `--disallow`. Per-repo logs land in `.cache/repo/fleet-skill/<timestamp>-<skill>/<repo>.log`. Uses `Promise.allSettled` semantics; one repo's failure doesn't abort the rest.
 
 ```bash
 # Run from inside the fleet source repo:

@@ -95,7 +95,7 @@ live in vendored / build-output trees that the before/after diff already treats
 as pre-existing, so this fires on newly hand-introduced bombs. To keep the
 guard's own tests from seeding these payloads into the tree, every test payload
 (injection and DoS alike) is assembled at runtime from fragments in
-`test/payloads.mts` — nothing scannable is stored on disk.
+`.claude/hooks/fleet/prompt-injection-guard/test/payloads.mts` — nothing scannable is stored on disk.
 
 ## Untrusted contributors (new-account drive-by)
 

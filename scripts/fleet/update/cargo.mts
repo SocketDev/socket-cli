@@ -39,7 +39,7 @@ const logger = getDefaultLogger()
  * https://github.com/rust-lang/cargo/issues/17009), drop back to the stable pin
  * and retire this nightly constant.
  */
-export const RUST_UPDATER_TOOLCHAIN = 'nightly-2026-07-20'
+export const RUST_UPDATER_TOOLCHAIN = 'nightly-2026-07-28'
 
 /**
  * The registry config key that carries the soak threshold. The

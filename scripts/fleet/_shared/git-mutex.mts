@@ -5,7 +5,7 @@
  *   fail, and the fail-open landing contract swallowed it. Two remedies, both
  *   advisory and bounded:
  *
- *   - acquireGitMutex: a per-repo lock under `node_modules/.cache/fleet/` (atomic
+ *   - acquireGitMutex: a per-repo lock under `.cache/fleet/` (atomic
  *     mkdir) so concurrent landers queue instead of colliding. Stale locks
  *     dead pid or past the stale window, are stolen, so a crashed session
  *     never wedges the repo.
@@ -42,12 +42,10 @@ export interface GitRunLike {
 /**
  * Repo-ROOT for `dir`, its git toplevel, falling back to `dir` when git
  * cannot answer. Callers pass an arbitrary cwd — land-work passes the
- * session's — and anchoring the mutex on that raw path writes
- * `<cwd>/node_modules/` wherever the caller happened to stand. When that cwd
- * sits under a workspace-glob ancestor (e.g. `template/base/**`), the new
- * node_modules reads to pnpm as a manifest-less importer and EVERY
- * `pnpm run <script>` in the repo dies ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND.
- * Runtime state belongs at the repo root's node_modules/.cache/fleet/ —
+ * session's — and anchoring the mutex on that raw path writes a
+ * `<cwd>/.cache/` wherever the caller happened to stand, so two landers in
+ * the same checkout take two different locks and the mutex stops meaning
+ * anything. Runtime state belongs at the repo root's `.cache/fleet/` —
  * exactly one store per checkout, per the runtime-state doctrine.
  */
 export function resolveRepoRoot(dir: string): string {
@@ -57,13 +55,7 @@ export function resolveRepoRoot(dir: string): string {
 }
 
 function mutexDir(repoDir: string): string {
-  return path.join(
-    resolveRepoRoot(repoDir),
-    'node_modules',
-    '.cache',
-    'fleet',
-    'git-mutex',
-  )
+  return path.join(resolveRepoRoot(repoDir), '.cache', 'fleet', 'git-mutex')
 }
 
 function sleep(ms: number): Promise<void> {

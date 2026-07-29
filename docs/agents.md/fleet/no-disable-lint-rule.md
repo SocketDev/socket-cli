@@ -5,9 +5,8 @@
 Lint rules exist to catch real classes of bug or style drift. Adding `"some-rule": "off"` (or `"warn"`) to any of these files weakens the gate **for every file matching that selector**, not just the one violation that triggered the temptation:
 
 - `.config/fleet/oxlintrc.json`
-- `.config/fleet/oxlintrc.dogfood.json`
-- `template/.config/oxlintrc.json`
-- `template/.config/oxlintrc.dogfood.json`
+- `.config/repo/oxlintrc.dogfood.json`
+- `template/base/.config/fleet/oxlintrc.json`
 - Any `.eslintrc*` or `eslint.config.*`
 
 The fleet rule: **fix the underlying code**. The lint config is reserved for fleet-wide policy changes; individual call-site exemptions belong in code.

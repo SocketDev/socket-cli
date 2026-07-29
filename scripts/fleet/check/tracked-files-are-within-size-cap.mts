@@ -29,9 +29,9 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024
 const ALLOWED_LARGE_SUFFIXES: readonly string[] = [
   // Rolldown-bundled fleet hook dispatcher, its V8-snapshot variant, and the
   // excluded-hooks companion bundle, non-bundle-safe hooks, same build.
-  '.claude/hooks/fleet/_dist/bundle.cjs',
-  '.claude/hooks/fleet/_dispatch/excluded-bundle.cjs',
-  '.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs',
+  '.claude/hooks/fleet/_dist/fleet-pack.cjs',
+  '.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs',
+  '.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs',
 ]
 
 export function isAllowedLargeFile(relativePath: string): boolean {

@@ -6,8 +6,8 @@
  *   sanctioned-dirty instead of re-blocking every turn. One checkout-scoped
  *   file, not per-actor: parking states an intent about the PATH, so it holds
  *   for every session sharing the checkout. Storage follows the runtime-state
- *   rule: `node_modules/.cache/fleet/socket-parked-paths/parked.json`, falling back
- *   to OS temp when node_modules is unavailable. Entries expire after
+ *   rule: `.cache/fleet/socket-parked-paths/parked.json`, falling back to
+ *   OS temp when the repo root cannot be resolved. Entries expire after
  *   PARKED_TTL_MS, a parked path is a short-lived instruction, not config, and
  *   are cleared explicitly on the user's next go-ahead. Every reader
  *   fail-opens to "nothing parked" — a broken ledger must not wedge Stop.
@@ -38,17 +38,22 @@ export interface ParkedEntry {
 
 /**
  * Absolute path of the parked ledger for a checkout. Prefers
- * `<projectDir>/node_modules/.cache/fleet/socket-parked-paths/parked.json`
- * (dep-0 runtime state, never tracked); falls back to a checkout-keyed file
- * under OS temp when node_modules doesn't exist yet.
+ * `<projectDir>/.cache/fleet/socket-parked-paths/parked.json` (dep-0 runtime
+ * state, never tracked); falls back to a checkout-keyed file under OS temp
+ * when the resolved root does not exist.
  */
 export function resolveParkedFile(projectDir: string | undefined): string {
   const base = resolveRepoRoot(
     projectDir ?? process.env['CLAUDE_PROJECT_DIR'] ?? FALLBACK_PROJECT_DIR,
   )
-  const cacheDir = path.join(base, 'node_modules', '.cache')
-  if (existsSync(path.join(base, 'node_modules'))) {
-    return path.join(cacheDir, 'fleet', 'socket-parked-paths', 'parked.json')
+  if (existsSync(base)) {
+    return path.join(
+      base,
+      '.cache',
+      'fleet',
+      'socket-parked-paths',
+      'parked.json',
+    )
   }
   const key = base.replace(/[^A-Za-z0-9]+/g, '-')
   return path.join(os.tmpdir(), 'socket-parked-paths', `${key}.json`)

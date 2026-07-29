@@ -15,27 +15,41 @@
 // alone, so a repo-only target breaks every install (the sdk 4.0.3 manifest
 // shipped `preinstall` → scripts/fleet/setup/… with no such file packed).
 //
+// And it gates the tarball's STRUCTURE, read from the verbose (`tar -tvzf`)
+// listing's mode column: every entry is a regular file or a directory (a
+// symlink, hardlink, device node, or FIFO in a tarball is an extraction-time
+// escape primitive), no duplicate entry paths (which extractor wins is
+// extractor-defined, so a benign first copy can be shadowed by a hostile
+// second), no `..` path segment or backslash, and every declared `bin` /
+// `directories.bin` target carries the user+group+other executable bit — a
+// non-executable bin ships a package whose CLI cannot run.
+//
 // Private packages (`"private": true`) never publish, so the check passes
 // without packing. The pipeline (release program 13d) runs this before every
 // staged publish; `check --all` runs it too.
 //
 // Usage: node scripts/fleet/check/pack-contents-are-clean.mts [--quiet]
 
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs'
-import os from 'node:os'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-// oxlint-disable-next-line socket/prefer-async-spawn -- sync CLI check; pack + tar listing are sequential by nature.
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { findDanglingLifecycleScripts } from '../_shared/lifecycle-scripts.mts'
 import { isCoveredByFiles } from '../_shared/pack-files.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { packAndInspect } from '../_shared/pack-inspect.mts'
+import {
+  classifyPackStructure,
+  findNonExecutablePackBins,
+  findPackBinTargets,
+  formatNonExecutablePackBinReport,
+  formatPackStructureReport,
+} from '../_shared/pack-structure.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { withPrunedPackManifest } from '../publish-infra/npm/pack-manifest.mts'
 
@@ -45,6 +59,32 @@ import type { DanglingLifecycleScript } from '../_shared/lifecycle-scripts.mts'
 // this check — the implementation moved to _shared/pack-files.mts so the
 // publish pack surface shares the one files-field matcher.
 export { isCoveredByFiles } from '../_shared/pack-files.mts'
+
+// Re-exported for the packAndInspect consumers/tests that import it from this
+// check — the pack + list + extract plumbing moved to _shared/pack-inspect.mts
+// so the structure gate and the packed-bytes leak gate share one pack surface.
+export { packAndInspect } from '../_shared/pack-inspect.mts'
+export type {
+  PackInspection,
+  PackListingEntry,
+} from '../_shared/pack-inspect.mts'
+
+// Re-exported for the same reason: the structural classifiers moved to
+// _shared/pack-structure.mts to keep this check under the file-size cap, and
+// tests drive them through the check that owns the gate.
+export {
+  classifyPackStructure,
+  describePackEntryType,
+  findNonExecutablePackBins,
+  findPackBinTargets,
+  formatNonExecutablePackBinReport,
+  formatPackStructureReport,
+  packModeIsExecutable,
+} from '../_shared/pack-structure.mts'
+export type {
+  NonExecutablePackBin,
+  PackStructureFinding,
+} from '../_shared/pack-structure.mts'
 
 const logger = getDefaultLogger()
 
@@ -119,17 +159,6 @@ export function classifyPackEntries(
   return { clean, hidden, outsideFiles, scaffolding }
 }
 
-export interface PackInspection {
-  /**
-   * Tarball entries, stripped of the leading `package/`.
-   */
-  readonly entries: string[]
-  /**
-   * The `scripts` map of the PACKED package.json, what consumers install.
-   */
-  readonly packedScripts: Record<string, unknown> | undefined
-}
-
 /**
  * The dangling lifecycle scripts of a PACKED manifest: every declared
  * preinstall/install/postinstall/prepare/prepack whose `node <path>` target
@@ -144,61 +173,6 @@ export function findPackedManifestDanglers(
   return findDanglingLifecycleScripts(packedScripts, rel =>
     entrySet.has(normalizePath(rel)),
   )
-}
-
-/**
- * Pack the package at `pkgRoot` into a temp dir and return the tarball's
- * entry list (stripped of the leading `package/`) plus the packed manifest's
- * `scripts` map. Undefined on pack/tar failure, the caller fails loud.
- */
-export function packAndInspect(pkgRoot: string): PackInspection | undefined {
-  const dest = mkdtempSync(path.join(os.tmpdir(), 'pack-clean-'))
-  const packed = spawnSync('pnpm', ['pack', '--pack-destination', dest], {
-    cwd: pkgRoot,
-    timeout: 180_000,
-  })
-  if (packed.status !== 0) {
-    return undefined
-  }
-  // pnpm prints the tarball path as the last non-empty stdout line.
-  const lines = String(packed.stdout ?? '')
-    .split('\n')
-    .map(s => s.trim())
-    .filter(Boolean)
-  const tarball = lines.at(-1)
-  if (!tarball || !existsSync(tarball)) {
-    return undefined
-  }
-  const listed = spawnSync('tar', ['-tzf', tarball], { timeout: 60_000 })
-  if (listed.status !== 0) {
-    return undefined
-  }
-  const entries = String(listed.stdout ?? '')
-    .split('\n')
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(e => e.replace(/^package\//, ''))
-  // The manifest consumers actually install is the one INSIDE the tarball —
-  // the on-disk manifest can differ (pnpm's exportable rewrite, the publish
-  // pipeline's pack-time pruning), so read the packed bytes.
-  const manifestRead = spawnSync(
-    'tar',
-    ['-xzOf', tarball, 'package/package.json'],
-    { timeout: 60_000 },
-  )
-  if (manifestRead.status !== 0) {
-    return undefined
-  }
-  let packedScripts: Record<string, unknown> | undefined
-  try {
-    const packedManifest = JSON.parse(String(manifestRead.stdout ?? '')) as {
-      scripts?: Record<string, unknown> | undefined
-    }
-    packedScripts = packedManifest.scripts
-  } catch {
-    return undefined
-  }
-  return { entries, packedScripts }
 }
 
 async function main(): Promise<void> {
@@ -232,12 +206,27 @@ async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
-  const { entries, packedScripts } = inspection
+  const { entries, listing, packedManifest, packedScripts } = inspection
   const { hidden, outsideFiles, scaffolding } = classifyPackEntries(
     entries,
     pkg.files,
   )
   const danglers = findPackedManifestDanglers(packedScripts, entries)
+  const structure = classifyPackStructure(listing)
+  if (structure.length) {
+    logger.fail(formatPackStructureReport(pkg.name ?? 'package', structure))
+    process.exitCode = 1
+  }
+  const nonExecBins = findNonExecutablePackBins(
+    listing,
+    findPackBinTargets(packedManifest, entries),
+  )
+  if (nonExecBins.length) {
+    logger.fail(
+      formatNonExecutablePackBinReport(pkg.name ?? 'package', nonExecBins),
+    )
+    process.exitCode = 1
+  }
   if (danglers.length) {
     const lines = [
       `[pack-contents-are-clean] ${pkg.name ?? 'package'} PACKED manifest declares ${danglers.length} lifecycle script${danglers.length === 1 ? '' : 's'} whose target is not in the tarball — consumer installs will break:`,
@@ -259,7 +248,12 @@ async function main(): Promise<void> {
   }
   const bad = scaffolding.length + hidden.length + outsideFiles.length
   if (bad === 0) {
-    if (!quiet && danglers.length === 0) {
+    if (
+      !quiet &&
+      danglers.length === 0 &&
+      structure.length === 0 &&
+      nonExecBins.length === 0
+    ) {
       logger.success(
         `[pack-contents-are-clean] tarball is clean (${entries.length} entries).`,
       )

@@ -84,7 +84,7 @@ until a stderr-carrying assert printed the block text.
 Fix: recover drive-letter targets from the RAW command, gated on the
 tokenizer having seen a real drive-ish token (a raw-only regex harvests prose
 mentions — the substring-scanner class). See `lastCdTarget` in
-`_shared/fleet-context.mts`.
+`.claude/hooks/fleet/_shared/fleet-context.mts`.
 
 ## 8. Short spawn timeouts die to win32 process-creation latency
 
@@ -97,7 +97,7 @@ stopped enforcing on windows exactly this way (a chained-command test caught
 it: `0 !== 2`, an allow where a block was due).
 
 Fix: wrap a LOCAL process-spawn timeout in `spawnTimeoutMs(<ms>)` from
-`_shared/spawn-timeout.mts` (win32 gets 6x headroom; POSIX keeps the base — a
+`.claude/hooks/fleet/_shared/spawn-timeout.mts` (win32 gets 6x headroom; POSIX keeps the base — a
 missing binary still fails fast via ENOENT, so the ceiling only extends
 patience for a present-but-slow process). A NETWORK spawn (`gh api`,
 `gh pr list`) keeps its raw bounded timeout — scaling a network budget by

@@ -10,7 +10,10 @@
  *   body, marks a breaking change. Only user-visible types reach the CHANGELOG
  *   (feat / fix / perf / revert); chore / ci / docs / test / style / build /
  *   refactor are omitted because the CHANGELOG records user-visible behavior,
- *   not internal churn.
+ *   not internal churn. Of those, a DEV-scoped commit (changelog-scopes.mts —
+ *   hooks, cascade, CI, lint/check gates, …) is internal churn to a CONSUMER
+ *   even though it is user-visible to the fleet, so it segments into the
+ *   version's `### Internal` subsection instead of Added/Changed/Fixed.
  */
 
 import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
@@ -19,10 +22,10 @@ import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 import {
   renderBullet,
   renderSectionMap,
-  SECTION_ORDER,
   TYPE_TO_SECTION,
   unreleasedRange,
 } from './changelog-render.mts'
+import { INTERNAL_SECTION, isDevScope } from './changelog-scopes.mts'
 
 // Record separator between commits, unit separator between fields — both
 // control chars that never appear in a commit subject/body, so a `git log
@@ -278,25 +281,21 @@ export function generateChangelogSection(config: {
     // A breaking commit is user-visible whatever its type — an unmapped type
     // (refactor!, chore!) still lands, under Changed, so a `!` can never
     // vanish from the CHANGELOG.
-    const section =
+    const rawSection =
       TYPE_TO_SECTION[commit.type] ?? (commit.breaking ? 'Changed' : undefined)
-    if (!section) {
+    if (!rawSection) {
       continue
     }
+    // A dev-scoped commit is internal churn to a CONSUMER even though it is
+    // user-visible to the fleet itself — it segments into `### Internal`
+    // instead of Added/Changed/Fixed so the prod sections stay reader-facing.
+    const section = isDevScope(commit.scope) ? INTERNAL_SECTION : rawSection
     const bullets = bySection.get(section) ?? []
     bullets.push(renderBullet(commit))
     bySection.set(section, bullets)
   }
 
-  const blocks: string[] = [heading]
-  for (let i = 0, { length } = SECTION_ORDER; i < length; i += 1) {
-    const section = SECTION_ORDER[i]!
-    const bullets = bySection.get(section)
-    if (bullets && bullets.length > 0) {
-      blocks.push(`### ${section}\n\n${bullets.join('\n')}`)
-    }
-  }
-  return blocks.join('\n\n')
+  return renderSectionMap(heading, bySection)
 }
 
 /**

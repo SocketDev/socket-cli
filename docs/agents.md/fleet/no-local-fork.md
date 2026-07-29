@@ -1,22 +1,22 @@
 # Never fork fleet-canonical files locally
 
-Fleet-canonical files (anything tracked by `scripts/sync-scaffolding/manifest.mts`) MUST be edited in `template/...` and cascaded out. Never branched locally in a downstream fleet repo.
+Fleet-canonical files (anything tracked by `scripts/repo/sync-scaffolding/manifest.mts`) MUST be edited in `template/...` and cascaded out. Never branched locally in a downstream fleet repo.
 
 ## Canonical surfaces
 
 These directories and files cascade fleet-wide. They are **not** repo-local:
 
 - `.config/fleet/oxlint-plugin/`: plugin index + rules
-- `.git-hooks/`: commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory; wired by `scripts/install-git-hooks.mts` at `pnpm install` time)
+- `.git-hooks/`: commit-msg / pre-commit / pre-push entry shims + .mts helpers (git invokes the shims when `core.hooksPath` is set to this directory; wired by `scripts/fleet/install-git-hooks.mts` at `pnpm install` time)
 - `.claude/hooks/`: PreToolUse / PostToolUse hooks
 - `.claude/skills/fleet/_shared/`: shared skill helpers
 - `CLAUDE.md` fleet block (between the `<fleet-canonical>` markers)
 - `docs/agents.md/fleet/`: fleet-canonical CLAUDE.md offshoot references (applies to every socket-\* repo)
-- `docs/agents.md/wheelhouse/`: docs about the wheelhouse cascade mechanism itself — this file lives here
+- `docs/agents.md/fleet/`: docs about the wheelhouse cascade mechanism itself — this file lives here
 - Downstream repos may add their own `docs/agents.md/<repo>/` subdirectory for repo-specific docs. Those are NOT fleet-canonical.
 - Anything else listed in the sync manifest
 
-If unsure, check `scripts/sync-scaffolding/manifest.mts`. Tracked = canonical.
+If unsure, check `scripts/repo/sync-scaffolding/manifest.mts`. Tracked = canonical.
 
 ## How to apply
 
@@ -88,7 +88,7 @@ Never debug or hand-patch the member's copy of code that's byte-copied from the 
   ← postamble (repo-owned: architecture, commands, domain rules)
 ```
 
-- The **canonical block** between the `<fleet-canonical>` markers IS fleet-canonical. Apply the no-fork rule + the trust-the-wheelhouse rule there. Edit only in `template/CLAUDE.md` and cascade.
+- The **canonical block** between the `<fleet-canonical>` markers IS fleet-canonical. Apply the no-fork rule + the trust-the-wheelhouse rule there. Edit only in `template/base/CLAUDE.md` and cascade.
 - The **preamble** (file header, fleet/repo split blurb) and the **postamble** (`🏗️ Project-Specific` section after the END marker) are **repo-owned**. You CAN and SHOULD edit them in a downstream repo.
 
 ### When to trim preamble + postamble

@@ -111,6 +111,14 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // a wrong `files` field publishes silently otherwise. Skips `"private":
     // true` workspaces (never publish).
     releaseStep(['scripts/fleet/check/pack-contents-are-clean.mts']),
+    // The release gate for the tarball's BYTES: extracts every text-like
+    // entry and scans it for private/internal path shapes, fleet-DENIED
+    // domains, and credential value shapes — using the same canonical
+    // matchers the source-level scanners use. A build step can bake a build
+    // machine's home path, an internal host, or a secret into dist output
+    // that no source scan sees, and a published tarball is immutable. Skips
+    // `"private": true` workspaces (never publish).
+    releaseStep(['scripts/fleet/check/pack-bytes-have-no-private-refs.mts']),
     // A published bundled dist must be MAPLESS + UNMINIFIED — Socket ships
     // readable, unobscured code. In scope only when package.json `files`
     // includes "dist" AND a rolldown/rollup config exists; vacuous pass
@@ -141,6 +149,54 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // create the repo AND update the roster together. Report-mode + network-gated
     // (a 404 can mean private + no token access), skips cleanly in offline lanes.
     releaseStep(['scripts/fleet/check/member-repos-resolve.mts']),
+    // Every member's publish-shaped environment (npm-publish / cargo-publish /
+    // github-release) must carry a deployment branch policy, and the
+    // pre-rename legacy names (publish / release) must not exist. Trusted
+    // publishing pins repo + workflow + ENVIRONMENT — never a branch — and
+    // in-workflow ref guards travel with the dispatched ref, so the
+    // environment policy is the only server-side gate; null means any ref can
+    // publish. Settings drift is invisible to the cascade — this is its
+    // ratchet. Strict (fleet burned to zero 2026-07-28); skips cleanly when
+    // gh is unauthenticated / member checkout / no roster.
+    releaseStep([
+      'scripts/fleet/check/publish-environments-are-branch-restricted.mts',
+    ]),
+    // Every member's default branch must carry effective branch rules:
+    // deletion blocked everywhere, force-push blocked except squash-history
+    // opt-ins (their flatten flow lease-pushes main by design). Reads
+    // EFFECTIVE rules (rules/branches/main), so a disabled ruleset counts as
+    // absent — the socket-cli trap. --fix manages exactly one repo ruleset
+    // (fleet-main-protection) and never touches any other. Strict; skips
+    // cleanly off the release tier / member checkouts / no gh.
+    releaseStep(['scripts/fleet/check/main-branch-rules-are-enforced.mts']),
+    // Every member's default GITHUB_TOKEN must be read-only and Actions must
+    // not be able to approve pull requests — a compromised workflow step
+    // otherwise gets a write token and can satisfy review gates. --fix is a
+    // single PUT per repo, but the write->read flip refuses fail-safe unless
+    // every workflow file on the default branch declares a top-level
+    // permissions: block. Strict; skips cleanly off the release tier /
+    // member checkouts / no gh.
+    releaseStep(['scripts/fleet/check/workflow-token-is-read-only.mts']),
+    // Version tags must be IMMUTABLE: a tag-target ruleset carrying deletion
+    // + non_fast_forward on refs/tags/v* — tags trigger publish/release
+    // workflows, and without this anyone with push can move or delete one.
+    // Creation is deliberately unrestricted so release flows can push tags.
+    // --fix manages exactly one ruleset (fleet-tag-protection). Strict; skips
+    // cleanly off the release tier / member checkouts / no gh.
+    releaseStep(['scripts/fleet/check/release-tags-are-immutable.mts']),
+    // NAMES-ONLY secrets/variables inventory: every repo's live Actions
+    // secret names must match the declared expectation (undeclared stray =
+    // exfil staging / attacker-added; missing = broken CI credential). No
+    // --fix — values are unreadable and deleting an unknown secret is a
+    // human call; the remedy is declaring it in the law or provisioning /
+    // deleting by hand. Strict; skips cleanly off-tier / member / no gh.
+    releaseStep(['scripts/fleet/check/actions-secrets-are-declared.mts']),
+    // Every repo webhook must match the declared allowlist (URL-prefix,
+    // secrets stripped) — an attacker-added hook is silent event egress and
+    // nothing else would ever notice one. No --fix: widening the declared
+    // allowlist is the remedy for sanctioned hooks, hand-deletion for
+    // hostile ones. Strict; skips cleanly off-tier / member / no gh.
+    releaseStep(['scripts/fleet/check/webhooks-are-allowlisted.mts']),
     // The dep-0 fetcher (bootstrap/fleet.mjs) is a rolldown-inlined build artifact;
     // fail loud if it drifts from its bootstrap/src/* source (rebuild: node
     // scripts/repo/gen/bootstrap.mts). Wheelhouse-only — the build script
@@ -230,7 +286,7 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // committed regardless of how it was staged.
     () => run('node', ['scripts/fleet/check/tracked-symlinks-are-safe.mts']),
     // README coverage badge matches the latest coverage run. When
-    // node_modules/.cache/fleet/coverage/coverage-summary.json (vitest
+    // .cache/fleet/coverage/coverage-summary.json (vitest
     // json-summary) exists AND the README
     // carries a populated `![Coverage](…coverage-NN%…)` badge, the percent must
     // equal the rounded line-coverage total. Fails open when not checkable (no
@@ -291,17 +347,20 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // Persisted release pins store ONLY exact canonical values — the belt twin of
     // the write-time bundle-pin validators (bootstrap/src/lockstep.mts +
     // sync-scaffolding/socket-wheelhouse-config.mts). Asserts the committed
-    // bundle.ref is an exact fleet-bundle-<hex> tag (no latest/main/head/stable/
+    // bundle.ref is an exact fleet-pack-<hex> tag (no latest/main/head/stable/
     // newest alias), bundle.cascadeSha / a manifest templateSha is a bare 40-hex SHA, and
     // no alias is stored beside a canonical value. Pure local reads → always on;
     // vacuous pass where nothing is pinned (the producer / a non-thin member).
     () => run('node', ['scripts/fleet/check/release-pins-are-canonical.mts']),
-    // llms.txt structural freshness: compares H1 + section titles + ordered link
-    // pairs of the committed file against deterministic extraction. Prose is never
-    // diffed — the check is credential-free and member-safe fail-open (no file or
-    // no package.json → skip).
+    // Freshness of the two export-driven doc artifacts, one gate per artifact so
+    // a failure names the ONE generator that owns the path — following the
+    // remediation can never rewrite the other file. Each generator runs its own
+    // `--check`: fail-open where the member did not set the `docs` opt-in or has
+    // no export surface, and staleness compared on whitespace-normalized text so
+    // a formatter's table alignment is not drift.
+    () => run('node', ['scripts/fleet/make-api-md.mts', '--check', '--quiet']),
     () =>
-      run('node', ['scripts/fleet/check/llms-txt-is-current.mts', '--quiet']),
+      run('node', ['scripts/fleet/make-llms-txt.mts', '--check', '--quiet']),
     // Test mirror-naming convention: every unit test basename matches the basename
     // of its one first-party static import. Run with --strict so violations exit
     // non-zero; mirror-exempt markers on skip files suppress known exceptions.
@@ -317,6 +376,22 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // (exits 0) — the fleet backlog of raw invocations predates this gate; flip
     // to --strict once it clears.
     () => run('node', ['scripts/fleet/check/test-scripts-are-deferred.mts']),
+    // Test files vitest collects must import vitest, not node:test — vitest
+    // loads a node:test file, registers nothing, and reports "no tests": a
+    // green run with zero coverage. The Edit/Write hook tier cannot see files
+    // created via heredoc/patch/cascade; this judges the TREE. Restored
+    // 2026-07-28 after a cascade deleted the root-only original (it was never
+    // template-first and never registered — this registration is the fix).
+    () => run('node', ['scripts/fleet/check/test-files-are-vitest-run.mts']),
+    // The sibling half: a declared test/coverage command and the repo's test
+    // files must actually MEET. Three exit-0 defects it names — a command whose
+    // include globs match nothing (bun-security-scanner's cover leg drives
+    // vitest over a `bun test` suite and prints 0.00%), a test file no declared
+    // command collects, and a file only an opt-in lane reaches while the
+    // `test` / `cover` gate never does. Static: package.json names the runner,
+    // the vitest config module supplies the globs.
+    () =>
+      run('node', ['scripts/fleet/check/test-files-are-runner-collected.mts']),
     // external-tools.json shared entries match the wheelhouse copy: the
     // cascade-owned setup actions read this per-repo-owned data file at runtime,
     // so stale copies break CI setup (five repos on 2026-07-08). Compares only

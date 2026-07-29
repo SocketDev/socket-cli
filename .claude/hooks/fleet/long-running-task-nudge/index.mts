@@ -70,7 +70,7 @@ export const AUTOFIX_FIRST_GUIDANCE: readonly string[] = [
 
 const MS_PER_MINUTE = 60_000
 
-// Store for warn-once state: node_modules/.cache/<name>, dep-0 runtime state,
+// Store for warn-once state: .cache/<name>, dep-0 runtime state,
 // never tracked. Falls back to the OS temp dir.
 const STORE_NAME = 'socket-long-running-task-nudge'
 
@@ -313,20 +313,14 @@ export function formatLongrunNudge(warned: readonly WarnDecision[]): string {
 
 /**
  * The warn-once store dir. Prefers
- * `<repo root of projectDir>/node_modules/.cache/<name>`; falls back to the OS
- * temp dir. The git-toplevel anchor is what keeps the store out of
- * `template/base/node_modules` when a caller's dir sits under a workspace glob
- * (see _shared/repo-root.mts).
+ * `<repo root of projectDir>/.cache/<name>`; falls back to the OS temp dir.
+ * The git-toplevel anchor is what keeps every caller on ONE store instead
+ * of scattering a `.cache/` per cwd — including one inside
+ * `template/base/`, the cascade payload (see _shared/repo-root.mts).
  */
 export function resolveSeenStoreDir(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(
-      resolveRepoRoot(projectDir),
-      'node_modules',
-      '.cache',
-      'fleet',
-      STORE_NAME,
-    )
+    return path.join(resolveRepoRoot(projectDir), '.cache', 'fleet', STORE_NAME)
   }
   return path.join(
     process.env['TMPDIR'] ??

@@ -18,7 +18,7 @@
  *   1. Taxonomy + pure text ops (`normalizeLearning`, `isSimilarLearning`).
  *   2. Pure correction-signal detection (`detectCorrectionSignal`).
  *   3. Thin fs shell (`recordOccurrence`, `readLedger`, `pruneLedger`) over a
- *      dep-0 runtime-state store at `node_modules/.cache/fleet/socket-learning-ledger/`
+ *      dep-0 runtime-state store at `.cache/fleet/socket-learning-ledger/`
  *      — never tracked; OS-temp fallback.
  *
  *   Fail-open contract: every fs function returns a safe default on IO / parse
@@ -158,21 +158,15 @@ export interface LearningLedger {
 const EMPTY_LEDGER: LearningLedger = { entries: [], updatedAt: 0 }
 
 /**
- * Resolve the store root: `<repo root of projectDir>/node_modules/.cache/
+ * Resolve the store root: `<repo root of projectDir>/.cache/
  * <store>` when a project dir is available, else the OS temp dir. The
- * git-toplevel anchor is what keeps the store out of
- * `template/base/node_modules` when a caller's dir sits under a workspace
- * glob (see repo-root.mts).
+ * git-toplevel anchor is what keeps every caller on ONE store instead of
+ * scattering a `.cache/` per cwd — including one inside `template/base/`,
+ * the cascade payload (see repo-root.mts).
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(
-      resolveRepoRoot(projectDir),
-      'node_modules',
-      '.cache',
-      'fleet',
-      STORE_NAME,
-    )
+    return path.join(resolveRepoRoot(projectDir), '.cache', 'fleet', STORE_NAME)
   }
   return path.join(
     process.env['TMPDIR'] ??

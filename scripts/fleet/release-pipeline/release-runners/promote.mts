@@ -15,6 +15,7 @@ import { hashTarball } from '../../lib/verify-release-hashes.mts'
 import { formatReleaseGapFailure } from '../../_shared/release-gap-recovery.mts'
 import {
   buildPtyInvocation,
+  logger,
   NON_INTERACTIVE_RENDER_ENV,
   PTY_FILE_STDOUT_MESSAGE,
   stdoutIsFileBacked,
@@ -84,21 +85,26 @@ export async function runApproveStep(config: {
     !cfg.dryRun && !isTty
       ? buildPtyInvocation(cfg.platform ?? process.platform, 'node', args)
       : undefined
-  // Refuse before spawning rather than let script(1) die with no output. The
-  // promote is the one step where an opaque exit-1 is most expensive to
-  // diagnose, and a captured/backgrounded run lands here every time.
-  if (pty && (cfg.stdoutIsFile ?? stdoutIsFileBacked())) {
-    return { detail: PTY_FILE_STDOUT_MESSAGE, status: 'failed' }
+  // A file-backed stdout cannot take script(1) directly, but the pumped
+  // form gives the PTY child a pipe and forwards the bytes on, so the
+  // web-OTP flow proceeds instead of refusing — a captured/backgrounded
+  // run lands here every time, and the 2026-07-29 odai approve proved
+  // the refusal just moves the work to a human re-plumbing their shell.
+  const pumped = Boolean(pty && (cfg.stdoutIsFile ?? stdoutIsFileBacked()))
+  if (pumped) {
+    logger.log(`[pty] ${PTY_FILE_STDOUT_MESSAGE}`)
   }
   // The PTY re-enables the child's spinners; force plain rendering so the
   // scan gate's progress display cannot flood the captured stream.
   const code = pty
-    ? await seams.runInherit(
-        pty.command,
-        pty.args,
-        cfg.cwd,
-        NON_INTERACTIVE_RENDER_ENV,
-      )
+    ? pumped
+      ? await seams.runPtyPumped(pty, cfg.cwd, NON_INTERACTIVE_RENDER_ENV)
+      : await seams.runInherit(
+          pty.command,
+          pty.args,
+          cfg.cwd,
+          NON_INTERACTIVE_RENDER_ENV,
+        )
     : await seams.runInherit('node', args, cfg.cwd)
   if (code !== 0) {
     return {

@@ -53,8 +53,8 @@ export const TEMPLATE_PAYLOAD_IGNORES: readonly string[] = [
   '**/*.d.ts',
   '**/.claude/hooks/fleet/_dist/**',
   '**/.claude/hooks/fleet/index.cjs',
-  '**/.claude/hooks/fleet/_dispatch/excluded-bundle.cjs',
-  '**/.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs',
+  '**/.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs',
+  '**/.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs',
   '**/wasm_exec.js',
 ]
 

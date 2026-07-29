@@ -289,7 +289,7 @@ export async function formatLandsClean(
 
 /**
  * Generate the hook dispatch table into `repoDir`. The whole-project type gate
- * resolves imports across the tree — including `_dispatch/dispatch-table.mts`,
+ * resolves imports across the tree — including `_shared/dispatch-table.mts`,
  * which is generated, not committed, so a fresh land / gate worktree lacks it
  * and tsc would false-red on the missing module rather than surface real type
  * errors. Running the generator first makes the type check honest. A repo whose

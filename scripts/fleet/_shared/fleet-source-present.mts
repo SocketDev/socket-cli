@@ -1,6 +1,6 @@
 /**
  * @file Presence probes for fleet SOURCE trees. A bundle-only member runs
- *   hooks from `.claude/hooks/fleet/_dist/bundle.cjs` and lint rules from
+ *   hooks from `.claude/hooks/fleet/_dist/fleet-pack.cjs` and lint rules from
  *   `.config/fleet/oxlint-plugin.mjs` — the per-hook / per-rule SOURCE dirs
  *   live only in the wheelhouse. Source-shape checks (registry docs, dispatch
  *   regen, CLAUDE.md citation resolution, enforcer inventory) validate SOURCE,
@@ -12,7 +12,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
 // Count `<name>/index.mts` dirs (skipping `_`-prefixed infra like `_shared/` +
-// `_dispatch/`) under a fleet source root. 0 = no source ships here.
+// `_shared/`) under a fleet source root. 0 = no source ships here.
 function countSourceDirs(root: string): number {
   let entries
   try {

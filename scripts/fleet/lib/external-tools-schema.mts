@@ -28,15 +28,32 @@ export const PackageManager = Type.Union([
   Type.Literal('pnpm'),
 ])
 
-// How a GitHub-hosted tool ships: a release asset, a source archive, or a
-// locked uv project, Python security-hook tools. The `uv-project` kind is a
-// package pinned via a committed pyproject.toml + uv.lock closure, installed
-// with `uv sync --locked` (e.g. headroom-ai — see
-// scripts/fleet/install-headroom.mts — and skillspector). The fleet installs
-// every Python tool through the pinned uv, never pipx.
+// How a tool reaches the machine. This is the DISCRIMINANT: every consumer
+// (updater, installer, pin-sync check) switches on it rather than inferring the
+// shape from whichever optional fields happen to be present. Inferring is what
+// let `agentshield` and `synp` — npm tools spelled with `purl` instead of
+// `repository: "npm:…"` — fall through the updater as "unrecognized shape".
+//
+//   archive     — GitHub source archive.
+//   asset       — GitHub release asset; per-platform binaries in `platforms`.
+//   uv-project  — package pinned via a committed pyproject.toml + uv.lock
+//                 closure, installed with `uv sync --locked` (headroom-ai,
+//                 skillspector). Every Python tool goes through the pinned uv,
+//                 never pipx.
+//   npm-tarball — ONE platform-agnostic registry tarball plus a top-level
+//                 `integrity` (npm itself, agentshield, synp).
+//   rustup      — Rust toolchain channel; rustup reads rust-toolchain.toml.
+//   gomod       — Go toolchain; the `go` directive in go.mod.
+//   system      — supplied by the OS or the operator (git, cmake, ninja). The
+//                 fleet installs nothing, and `version` is a MINIMUM rather
+//                 than an exact pin.
 export const ReleaseKind = Type.Union([
   Type.Literal('archive'),
   Type.Literal('asset'),
+  Type.Literal('gomod'),
+  Type.Literal('npm-tarball'),
+  Type.Literal('rustup'),
+  Type.Literal('system'),
   Type.Literal('uv-project'),
 ])
 
@@ -110,6 +127,20 @@ export const ToolEntry = Type.Object(
     packageManager: Type.Optional(PackageManager),
     repository: Type.Optional(Type.String()),
     release: Type.Optional(ReleaseKind),
+    // Every file that must carry the same value as `version`. `version` is the
+    // single source of truth and each entry here is a copy kept in step with
+    // it, so the sync check reads one direction only and there is never a
+    // question of which file wins.
+    //
+    // Format is `<repo-relative-path>#<locator>`, where the locator kind is
+    // implied by the file: `rust-toolchain.toml#toolchain.channel`,
+    // `go.mod#toolchain`, `docker/fleet/rust-base.Dockerfile#ARG RUST_VERSION`,
+    // `scripts/fleet/update/cargo.mts#RUST_UPDATER_TOOLCHAIN`. A whole-file
+    // pin (`.node-version`) takes the path with no `#`.
+    //
+    // This field is what replaces the per-tool sync checks: one generic check
+    // walks it for every tool instead of each tool getting hand-written one.
+    derived: Type.Optional(Type.Array(Type.String())),
     // Upstream source repo URL + its tag for a tool built from source rather
     // than fetched as a release artifact (e.g. socket-btm's zig, built from
     // the Codeberg mirror).

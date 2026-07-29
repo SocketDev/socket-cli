@@ -30,7 +30,11 @@ import {
   defaultPackTarball,
   verifyStagedEntryRouted,
 } from '../publish-infra/npm/staged.mts'
-import { runCapture, runInherit } from '../publish-infra/shared.mts'
+import {
+  runCapture,
+  runInherit,
+  runPtyPumped,
+} from '../publish-infra/shared.mts'
 
 import type { StageListEntry } from '../publish-infra/npm/shared.mts'
 import type { ReceiptStatus, ReleaseChecksums } from './state.mts'
@@ -109,6 +113,13 @@ export interface RunnerSeams {
         env?: NodeJS.ProcessEnv | undefined,
       ) => Promise<number>)
     | undefined
+  runPtyPumped?:
+    | ((
+        pty: { command: string; args: readonly string[] },
+        cwd: string,
+        env?: NodeJS.ProcessEnv | undefined,
+      ) => Promise<number>)
+    | undefined
   sleep?: ((ms: number) => Promise<void>) | undefined
   verifyEntry?: ((entry: StageListEntry) => Promise<boolean>) | undefined
 }
@@ -142,6 +153,11 @@ export interface ResolvedSeams {
   runInherit: (
     cmd: string,
     args: string[],
+    cwd: string,
+    env?: NodeJS.ProcessEnv | undefined,
+  ) => Promise<number>
+  runPtyPumped: (
+    pty: { command: string; args: readonly string[] },
     cwd: string,
     env?: NodeJS.ProcessEnv | undefined,
   ) => Promise<number>
@@ -211,6 +227,7 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
     registryLive: s.registryLive ?? defaultRegistryLive,
     runCapture: s.runCapture ?? runCapture,
     runInherit: s.runInherit ?? runInherit,
+    runPtyPumped: s.runPtyPumped ?? runPtyPumped,
     sleep: s.sleep ?? defaultSleep,
     verifyEntry: s.verifyEntry ?? verifyStagedEntryRouted,
   }

@@ -214,13 +214,7 @@ function persistSuiteFailureOutput(
   result: SuiteResult,
 ): string | undefined {
   try {
-    const dir = path.join(
-      rootPath,
-      'node_modules',
-      '.cache',
-      'fleet',
-      'fleet-cover',
-    )
+    const dir = path.join(rootPath, '.cache', 'fleet', 'fleet-cover')
     mkdirSync(dir, { recursive: true })
     const file = path.join(dir, `last-failure-${name}.log`)
     writeFileSync(

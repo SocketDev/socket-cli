@@ -42,7 +42,7 @@ are exempt. They hold no rule to enforce.
 
 Both `uncodified-lesson-nudge` and `compound-lessons-nudge` are transcript-scoped
 in isolation — they see only the current session, so the same trap surfacing in a
-DIFFERENT session next week reads as a fresh one-off. `_shared/learning-ledger.mts`
+DIFFERENT session next week reads as a fresh one-off. `.claude/hooks/fleet/_shared/learning-ledger.mts`
 adds the missing cross-session memory: a deterministic, local-only recurrence
 counter.
 
@@ -55,7 +55,7 @@ counter.
   `RECURRENCE_THRESHOLD` (2), the nudge escalates from "consider codifying" to
   "this recurred across N sessions — codify it THIS turn." The nudge fires on
   evidence rather than prose.
-- **Where it lives.** `node_modules/.cache/fleet/socket-learning-ledger/` — dep-0
+- **Where it lives.** `.cache/fleet/socket-learning-ledger/` — dep-0
   runtime state, never tracked, OS-temp fallback, fail-open (a broken ledger
   yields 0 and the base nudge still fires). No network, no telemetry, no LLM at
   any point — detection is regex + counters.

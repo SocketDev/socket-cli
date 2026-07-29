@@ -1,5 +1,5 @@
 /*
- * @file Repo-scoped fixer lock — a pidfile under node_modules/.cache/fleet/
+ * @file Repo-scoped fixer lock — a pidfile under .cache/fleet/
  *   that serializes tree-mutating fixer runs (fix.mts, lint.mts --fix) so
  *   concurrent or zombie fixers can never race the same working tree (three
  *   orphaned fixers raced socket-lib for minutes, 2026-07). Semantics:
@@ -45,13 +45,7 @@ export type FixerLockResult =
  * the tracked tree.
  */
 export function fixerLockPath(repoRoot: string): string {
-  return path.join(
-    repoRoot,
-    'node_modules',
-    '.cache',
-    'fleet',
-    'fixer.lock.json',
-  )
+  return path.join(repoRoot, '.cache', 'fleet', 'fixer.lock.json')
 }
 
 /**

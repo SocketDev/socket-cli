@@ -31,9 +31,11 @@
  * Fails open on parse / payload errors, a guard bug must not block edits.
  */
 
+import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { resolveEditedText } from '../_shared/payload.mts'
 
 const DOC_LINK_RE = /docs\/agents\.md\/(?:fleet|repo)\//
 
@@ -79,7 +81,26 @@ export function addsUndeferredRule(content: string): boolean {
   return !DOC_LINK_RE.test(content)
 }
 
-export const check = editGuard((filePath, content) => {
+// The lines the edit ADDS or REWRITES, taken from the full post-edit document.
+// A partial-line Edit's `new_string` can be a fragment whose doc link lives in
+// the untouched tail of the same line — judging the fragment false-positives on
+// a reword. Judging full resulting lines can't. `undefined` before (a new file)
+// means every line is added.
+export function resultingChangedLines(
+  before: string | undefined,
+  after: string,
+): string {
+  if (before === undefined) {
+    return after
+  }
+  const beforeLines = new Set(before.split('\n'))
+  return after
+    .split('\n')
+    .filter(line => !beforeLines.has(line))
+    .join('\n')
+}
+
+export const check = editGuard((filePath, content, payload) => {
   if (!isClaudeMd(filePath) || !content) {
     return undefined
   }
@@ -91,7 +112,19 @@ export const check = editGuard((filePath, content) => {
   ) {
     return undefined
   }
-  if (!addsUndeferredRule(content)) {
+  // Judge the FULL resulting changed lines, not the raw new_string fragment.
+  // Fall back to the fragment when the post-edit text can't be resolved (the
+  // edit wouldn't apply anyway — the tool call itself is about to error).
+  const after = resolveEditedText(payload)
+  let scanText = content
+  if (after !== undefined) {
+    let before: string | undefined
+    try {
+      before = readFileSync(filePath, 'utf8')
+    } catch {}
+    scanText = resultingChangedLines(before, after)
+  }
+  if (!addsUndeferredRule(scanText)) {
     return undefined
   }
   return block(

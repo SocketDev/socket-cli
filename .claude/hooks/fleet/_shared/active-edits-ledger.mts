@@ -13,7 +13,7 @@
  *
  *   3. Thin fs shell (`readActorLedger`, `writeActorLedger`,
  *      `listOtherActorLedgerPaths`, `sweepStaleLedgers`) — wraps the pure
- *      core with real disk IO under `node_modules/.cache/fleet/socket-active-edits/`
+ *      core with real disk IO under `.cache/fleet/socket-active-edits/`
  *      (dep-0 runtime-state store; never tracked).
  *
  * Fail-open contract: every function returns a safe default on IO / parse
@@ -54,8 +54,8 @@ export const COLLISION_WINDOW_MS = 5 * 60 * 1000
 // `deriveSubagentsDir` / `hasLiveBackgroundChild`.
 export const CHILD_LIVE_WINDOW_MS = 5 * 60 * 1000
 
-// Store location: `node_modules/.cache/<store>` — dep-0 runtime state, never
-// tracked. Falls back to OS temp when node_modules/.cache is unavailable.
+// Store location: `.cache/<store>` — dep-0 runtime state, never
+// tracked. Falls back to OS temp when .cache is unavailable.
 const STORE_NAME = 'socket-active-edits'
 
 /**
@@ -111,20 +111,15 @@ export function computeActorId(
 
 /**
  * Resolve the cache store root. Prefers
- * `<repo root of projectDir>/node_modules/.cache/<store>` when a project dir
+ * `<repo root of projectDir>/.cache/<store>` when a project dir
  * is available; falls back to the OS temp dir. The git-toplevel anchor is
- * what keeps the store out of `template/base/node_modules` when a caller's
- * dir sits under a workspace glob (see repo-root.mts).
+ * what keeps every caller on ONE store instead of scattering a `.cache/`
+ * per cwd — including one inside `template/base/`, the cascade payload
+ * (see repo-root.mts).
  */
 export function resolveStoreRoot(projectDir: string | undefined): string {
   if (projectDir) {
-    return path.join(
-      resolveRepoRoot(projectDir),
-      'node_modules',
-      '.cache',
-      'fleet',
-      STORE_NAME,
-    )
+    return path.join(resolveRepoRoot(projectDir), '.cache', 'fleet', STORE_NAME)
   }
   return path.join(
     process.env['TMPDIR'] ??

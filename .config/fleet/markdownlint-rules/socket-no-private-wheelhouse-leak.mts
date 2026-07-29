@@ -23,8 +23,8 @@ const FORBIDDEN_TOKEN_RE = /socket-wheelhouse/i
 // the per-repo settings file (socket-wheelhouse.json / the root
 // .socket-wheelhouse.json alternative), its schema module
 // (socket-wheelhouse-schema.mts), and the dep-0 bootstrap cache dir
-// (node_modules/.cache/socket-wheelhouse/ or the tiered
-// node_modules/.cache/fleet/socket-wheelhouse/). All are artifacts on the
+// (.cache/socket-wheelhouse/ or the tiered
+// .cache/fleet/socket-wheelhouse/). All are artifacts on the
 // reader's own machine, not links to the private repo.
 const SETTINGS_FILENAME_RE =
   /\.?socket-wheelhouse\.json|socket-wheelhouse-schema\.mts|\.cache\/(?:fleet\/)?socket-wheelhouse\b/i

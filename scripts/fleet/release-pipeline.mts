@@ -23,7 +23,7 @@
  *   7. bump — bump.mts writes CHANGELOG + the bump commit (LAST commit)
  *
  *   Receipts live in a state file under
- *   node_modules/.cache/fleet/socket-release-pipeline/ shared with publish-pipeline
+ *   .cache/fleet/socket-release-pipeline/ shared with publish-pipeline
  *   — never the tracked tree — so a re-run resumes at the first missing/stale
  *   stage. `--dry-run` walks the stages without mutations (registry reads +
  *   tmp-dir packs allowed).

@@ -42,7 +42,7 @@
  *   the published-version gates, and the USER-gate stops.
  *
  *   Receipts live in a state file under
- *   node_modules/.cache/fleet/socket-lib-cascade/ — never the tracked tree — so
+ *   .cache/fleet/socket-lib-cascade/ — never the tracked tree — so
  *   a re-run resumes at the first incomplete stage. It coordinates rather than
  *   races: when another session is mid-release on a downstream repo the
  *   orchestrator detects the in-flight state from that repo's release-pipeline
@@ -274,14 +274,7 @@ const DOWNSTREAM_PIPELINE_DIR = 'socket-release-pipeline'
  * Resolve the cascade state-file path for a repo root.
  */
 export function statePath(repoRoot: string): string {
-  return path.join(
-    repoRoot,
-    'node_modules',
-    '.cache',
-    'fleet',
-    STATE_DIR_NAME,
-    STATE_FILE_NAME,
-  )
+  return path.join(repoRoot, '.cache', 'fleet', STATE_DIR_NAME, STATE_FILE_NAME)
 }
 
 /**
@@ -624,7 +617,6 @@ export function siblingRepoDir(projectsDir: string, repo: string): string {
 export function downstreamStatePath(repoDir: string): string {
   return path.join(
     repoDir,
-    'node_modules',
     '.cache',
     'fleet',
     DOWNSTREAM_PIPELINE_DIR,

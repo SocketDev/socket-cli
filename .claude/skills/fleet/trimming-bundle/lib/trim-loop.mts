@@ -82,7 +82,7 @@ export function readStubTokens(configSource: string): string[] {
 
 // Rewrite the rolldown config's stubPattern alternation to exactly `tokens`.
 // Throws when the config has no recognizable stubPattern — the skill's
-// precondition check (createLibStubPlugin import) should have caught that.
+// precondition check (createBundleStubPlugin import) should have caught that.
 export function writeStubTokens(
   configSource: string,
   tokens: readonly string[],
@@ -90,7 +90,7 @@ export function writeStubTokens(
   if (!STUB_PATTERN_RE.test(configSource)) {
     throw new Error(
       'No `const stubPattern = /(?:…)\\.js$/` found in rolldown.config.mts. ' +
-        'The skill requires createLibStubPlugin to be wired with an editable ' +
+        'The skill requires createBundleStubPlugin to be wired with an editable ' +
         'stubPattern before the trim loop can run.',
     )
   }

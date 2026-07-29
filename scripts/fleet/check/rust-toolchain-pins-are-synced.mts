@@ -144,20 +144,37 @@ export function runCheck(
       })
     }
   }
-  // Derived copy 2: the cargo soak updater's nightly.
-  const cargoMts = path.join(
+  // Derived copy 2: the cargo soak updater's nightly. Template-first, matching
+  // the canonical lookup above — in the wheelhouse the live scripts/fleet tree
+  // is a cascade mirror written read-only (0444), so a fix aimed there dies on
+  // EACCES; and even where it could write, the next cascade would replace the
+  // file from the template and silently undo the sync. A member repo ships no
+  // template/, so it falls back to its own copy.
+  const templateCargoMts = path.join(
+    repoRoot,
+    'template',
+    'base',
+    'scripts',
+    'fleet',
+    'update',
+    'cargo.mts',
+  )
+  const rootCargoMts = path.join(
     repoRoot,
     'scripts',
     'fleet',
     'update',
     'cargo.mts',
   )
+  const cargoMts = existsSync(templateCargoMts)
+    ? templateCargoMts
+    : rootCargoMts
   if (existsSync(cargoMts)) {
     const content = readFileSync(cargoMts, 'utf8')
     const saw = parseUpdaterToolchain(content)
     if (saw && saw !== canonical) {
       drifts.push({
-        where: 'RUST_UPDATER_TOOLCHAIN (scripts/fleet/update/cargo.mts)',
+        where: `RUST_UPDATER_TOOLCHAIN (${path.relative(repoRoot, cargoMts)})`,
         saw,
         next: withUpdaterToolchain(content, canonical),
         path: cargoMts,

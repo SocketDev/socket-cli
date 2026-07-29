@@ -191,7 +191,7 @@ const TYPE_CHECK_TSCONFIG = path.join('.config', 'fleet', 'tsconfig.check.json')
 const TSC_BIN = path.join('node_modules', 'typescript', 'bin', 'tsc')
 
 // Regenerate the hook dispatch table so the whole-project type gate can resolve
-// the generated `_dispatch` modules (`dispatch-table.mts` + variants), which are
+// the generated `_shared` modules (`dispatch-table.mts` + variants), which are
 // gitignored and absent in a fresh checkout. The write lands on gitignored
 // paths, so it never dirties the tracked tree, and this runs AFTER
 // scanDispatchDrift in the push sequence so a fresh regen here cannot mask a

@@ -24,7 +24,7 @@ inputs:
   node-version:
     description: 'Node.js version'
     required: false
-    default: '26.3.0'
+    default: '26.5.0'
   scope:
     description: 'npm registry scope for package authentication'
     required: false

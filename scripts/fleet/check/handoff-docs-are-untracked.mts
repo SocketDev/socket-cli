@@ -18,9 +18,12 @@
  *   session-handoff-nudge/) carry basenames README.md / index.mts /
  *   package.json and never match. A doc already under `.claude/plans/` is
  *   gitignored, so `git ls-files` never lists it — the clean pass every repo
- *   starts from. Exit: 0 — no tracked handoff doc, or git is unavailable; 1 —
- *   at least one. Usage: node
- *   scripts/fleet/check/handoff-docs-are-untracked.mts [--quiet]
+ *   starts from. `--fix` untracks each offender (`git rm --cached`) and moves
+ *   it into `.claude/plans/` (via _shared/untrack-offenders.mts), then RE-RUNS
+ *   the detection — the re-check, not the executor, decides the exit. Exit: 0
+ *   — no tracked handoff doc, or git is unavailable; 1 — at least one (or
+ *   residual offenders after `--fix`). Usage: node
+ *   scripts/fleet/check/handoff-docs-are-untracked.mts [--fix] [--quiet]
  */
 
 import path from 'node:path'
@@ -32,6 +35,12 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  executeUntrackActions,
+  formatUntrackAction,
+  planUntrackActions,
+} from '../_shared/untrack-offenders.mts'
+import type { UntrackAction } from '../_shared/untrack-offenders.mts'
 
 const logger = getDefaultLogger()
 
@@ -73,22 +82,53 @@ export function findTrackedHandoffDocs(lsFilesOutput: string): string[] {
   return out.toSorted()
 }
 
-async function main(): Promise<void> {
-  let output = ''
+/**
+ * The `--fix` plan for tracked handoff docs: per offender, untrack it (`git rm
+ * --cached`) AND rehome it into the gitignored `.claude/plans/` (`mv`), after
+ * one leading `mkdir -p`. Pure — offenders in, actions out — so the plan
+ * unit-tests without a filesystem.
+ */
+export function planFix(offenders: readonly string[]): UntrackAction[] {
+  return planUntrackActions(offenders, 'move-to-plans', { plansDir: PLANS_DIR })
+}
+
+/**
+ * Run the detection: the tracked handoff docs right now, or `undefined` when
+ * git is unavailable (another gate's concern; this belt is vacuous there).
+ */
+async function detectOffenders(): Promise<string[] | undefined> {
   try {
     const result = (await spawn('git', ['ls-files'], {
       cwd: REPO_ROOT,
       stdio: 'pipe',
       stdioString: true,
     })) as { stdout?: string | undefined }
-    output = String(result?.stdout ?? '')
+    return findTrackedHandoffDocs(String(result?.stdout ?? ''))
   } catch {
+    return undefined
+  }
+}
+
+async function main(): Promise<void> {
+  const fix = process.argv.includes('--fix')
+  let offenders = await detectOffenders()
+  if (offenders === undefined) {
     // git unavailable — another gate's concern; this belt is vacuous, never a
     // false-green failure on a non-git tree.
     process.exitCode = 0
     return
   }
-  const offenders = findTrackedHandoffDocs(output)
+  if (offenders.length > 0 && fix) {
+    const failures = executeUntrackActions(planFix(offenders), REPO_ROOT)
+    for (let i = 0, { length } = failures; i < length; i += 1) {
+      const f = failures[i]!
+      logger.warn(
+        `handoff-docs-are-untracked: fix step failed: ${formatUntrackAction(f.action)} — ${f.detail}`,
+      )
+    }
+    // Success is measured by the RE-CHECK, never by executor belief.
+    offenders = (await detectOffenders()) ?? []
+  }
   if (offenders.length === 0) {
     if (!process.argv.includes('--quiet')) {
       logger.log('handoff-docs-are-untracked: no handoff doc is tracked.')
@@ -97,7 +137,7 @@ async function main(): Promise<void> {
     return
   }
   logger.fail(
-    `handoff-docs-are-untracked: ${offenders.length} handoff doc(s) are git-tracked:`,
+    `handoff-docs-are-untracked: ${offenders.length} handoff doc(s) are git-tracked${fix ? ' after --fix' : ''}:`,
   )
   for (let i = 0, { length } = offenders; i < length; i += 1) {
     logger.fail(`  ${offenders[i]!}`)
@@ -107,8 +147,8 @@ async function main(): Promise<void> {
       `         work-state, not source — their one home is the gitignored ${PLANS_DIR}/.\n` +
       '  Where: the path(s) above.\n' +
       `  Wanted: handoff docs stay out of version control (16 repos never carry them).\n` +
-      `  Fix:   \`git rm --cached <path>\` then \`mv <path> ${PLANS_DIR}/\` — the doc\n` +
-      `         becomes gitignored + untracked, and git ls-files stops listing it.`,
+      `  Fix:   re-run with \`--fix\` — each doc is untracked and moved into\n` +
+      `         ${PLANS_DIR}/ (gitignored), then the detection re-runs to confirm.`,
   )
   process.exitCode = 1
 }

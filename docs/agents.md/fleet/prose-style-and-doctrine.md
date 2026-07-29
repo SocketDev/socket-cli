@@ -62,7 +62,7 @@ corporate or internet-meme registers.
   Conventional Commits format owns those), error messages (What/Where/Saw/Fix
   owns those), API reference, identifiers.
 - **A saying is no smuggling route.** Every entry in the anti-pattern lists
-  below and in `references/phrases.md` stays banned even when it is
+  below and in `.claude/skills/fleet/prose/references/phrases.md` stays banned even when it is
   idiomatic — the sincerity announcements and the business-jargon list most of
   all.
 
@@ -97,14 +97,14 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 - Honesty framing: the bare word ("honest", "honestly", "honesty"), "in all
   honesty", "to be honest", "if I'm honest", "Frankly," — just state the claim.
   Claiming honesty implies the rest is not. This is a CATEGORICAL ban, not a
-  heuristic: one matcher (`_shared/honesty-framing.mts`) backs all three
+  heuristic: one matcher (`.claude/hooks/fleet/_shared/honesty-framing.mts`) backs all three
   enforcers, so the rule fires the same on chat, `gh` bodies, and doc writes.
   A warranted adverbial use is rare; the per-surface bypass phrase covers it.
 - AI-slop tells (purple-prose words like delve/tapestry, importance puffery,
   weasel attribution, colon reveals, faux-insight, summary-recap): the shared
-  `_shared/ai-slop-patterns.mts` matcher backs all three enforcers, the same
+  `.claude/hooks/fleet/_shared/ai-slop-patterns.mts` matcher backs all three enforcers, the same
   DRY model as the honesty matcher. The full banned-word + pattern set with
-  fixes lives in the prose skill's `references/phrases.md`; run human-facing
+  fixes lives in the prose skill's `.claude/skills/fleet/prose/references/phrases.md`; run human-facing
   prose through it.
 
 ## Operating doctrine
@@ -132,4 +132,4 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 | `.claude/rules/fleet/prose-style-and-doctrine.md` | Compact reference for the skill + rule docs |
 
 See also: `.claude/skills/fleet/prose/SKILL.md`,
-`references/conversational.md`.
+`.claude/skills/fleet/prose/references/conversational.md`.

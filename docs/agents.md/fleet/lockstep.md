@@ -1,6 +1,6 @@
 # Lockstep — upstream drift tracking
 
-Companion to the `### Drift watch` rule in `template/CLAUDE.md`. The lockstep
+Companion to the `### Drift watch` rule in `template/base/CLAUDE.md`. The lockstep
 harness is a read-only drift detector for a repo's upstream relationships:
 vendored file forks, pinned submodules, behavioral reimplementations, spec
 conformance, and sibling language ports. One manifest declares what must stay
@@ -15,7 +15,7 @@ same word, different subsystem (see
 
 - **Location.** `resolveManifestRoot` (`scripts/fleet/lockstep/manifest.mts`)
   reads `<repo-root>/lockstep.json` when present, then the segregated
-  `.config/repo/lockstep.json`, then legacy loose `.config/lockstep.json`. The
+  `.config/repo/lockstep.json`, then legacy loose `.config/lockstep.json`. The <!-- docs-refs-ignore: legacy fallback location, deliberately absent here -->
   manifest is repo-owned content — rows differ per repo, so it lives under
   `.config/repo/`
   (`scripts/repo/sync-scaffolding/manifest/files.mts`, `EXPECTED_FILES`
@@ -52,7 +52,7 @@ skip):
 - **`version-pin`** — a submodule pinned to the `.gitmodules` `ref =`, which is
   the SINGLE authoritative pin (per `no-upstream-gitlink-guard` +
   `uses-sha-verify-guard`). The row's `pinned_sha` is OPTIONAL and DERIVED from
-  that ref (`resolvePinnedSha` in `gen/gitmodules-hash.mts`,
+  that ref (`resolvePinnedSha` in `scripts/fleet/gen/gitmodules-hash.mts`,
   injected by `loadManifestTree`); it is present only on legacy manifests and is
   migrated away — dropped — on the next auto-bump. `pinned_tag` is
   informational. A stored `pinned_sha` that DISAGREES with the `.gitmodules` ref
@@ -246,9 +246,9 @@ single-file analogue of the multi-file `BEGIN LOCK-STEP HEADER` block:
 `<upstream-path>` is the path inside the upstream submodule, matching the
 covering row's `upstream_path`; `<sha>` is the 40-hex commit the mirror was
 copied at, matching `forked_at_sha`. Grammar + parser live once in the oxlint
-plugin's `lib/comment-markers.mts`; the rule-facing `isLockstepMirror(context)`
+plugin's `.config/fleet/oxlint-plugin/lib/comment-markers.mts`; the rule-facing `isLockstepMirror(context)`
 and the one-source `LOCKSTEP_MIRROR_EXEMPT_RULES` list live in
-`lib/lockstep-mirror.mts`.
+`.config/fleet/oxlint-plugin/lib/lockstep-mirror.mts`.
 
 How the exemption is bounded — it is NOT a blanket dir ignore:
 

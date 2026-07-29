@@ -17,11 +17,11 @@
  *   Two structural signals (both derived from `paths.mts`, both member-safe —
  *   `paths.mts` cascades; the gitignore-block source does not):
  *     - `_dist/` is EXCLUSIVELY build output: no tracked file may live under it.
- *     - the named generated files in mixed dirs (`_dispatch/dispatch-table*.mts`,
- *       `excluded-bundle.cjs`, `_shared/dispatch-manifest.json`, the oxlint
+ *     - the named generated files in mixed dirs (`_shared/dispatch-table*.mts`,
+ *       `excluded-fleet-pack.cjs`, `_shared/dispatch-manifest.json`, the oxlint
  *       `.mjs`) may never be tracked.
  *
- *   Bundle-placed generated outputs — bundle.cjs, the dispatch table + manifest,
+ *   Bundle-placed generated outputs — fleet-pack.cjs, the dispatch table + manifest,
  *   the release manifest's `generatedPaths` — EXIST ON DISK in every member:
  *   the release bundle ships them, the fleet gitignore block ignores them, and
  *   the installer untracks any historically committed copy. On-disk presence is

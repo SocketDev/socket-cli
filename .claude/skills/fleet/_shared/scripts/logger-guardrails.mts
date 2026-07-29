@@ -88,7 +88,7 @@ const DEFAULT_EXCLUDE = [
   '**/dist/**',
   '**/node_modules/**',
   '**/coverage/**',
-  '**/node_modules/.cache/**',
+  '**/.cache/**',
   '**/test/fixtures/**',
   '**/test/packages/**',
   '**/*.d.ts',

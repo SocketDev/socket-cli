@@ -4,7 +4,7 @@ Code that writes per-checkout or runtime metadata — applied-ref markers, fetch
 state, memoized lookups, downloaded artifacts — must be deliberate. Scattered,
 undocumented, or repo-tracked state turns into drift, dirty worktrees, and
 invisible behavior nobody can audit. (Not hypothetical: the bootstrap fetcher's
-applied-ref marker first lived at `.config/fleet/.bundle-applied` — inside the
+applied-ref marker first lived at `.config/fleet/.bundle-applied` — inside the <!-- docs-refs-ignore: retired legacy marker path -->
 tracked tree — so every thin consumer that ran the fetcher carried it as an
 untracked, dirty file.)
 
@@ -20,16 +20,31 @@ untracked, dirty file.)
   - **Can import socket-lib → `cacache`.** Content-addressable, integrity-checked,
     TTL-capable, lives in the OS cache dir. Use it for anything cache-shaped
     (fetched artifacts, expensive memoized lookups).
-  - **dep-0 (can't import socket-lib) → `node_modules/.cache/{fleet,repo}/<name>/`.**
-    The standard tool-cache convention: gitignored via `node_modules`, reachable
-    with only a path (walk to the nearest `node_modules`). The segment is the
-    WRITING code's tier — cascaded fleet code writes under `fleet/`, repo-owned
-    code under `repo/` — mirroring `.claude/hooks/{fleet,repo}`. The bootstrap
-    fetcher (`scripts/repo/bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload +
+  - **dep-0 (can't import socket-lib) → `<repo root>/.cache/{fleet,repo}/<name>/`.**
+    Gitignored by the fleet block's `**/.cache/` glob and reachable with only a
+    path (walk to the git toplevel). The segment is the WRITING code's tier —
+    cascaded fleet code writes under `fleet/`, repo-owned code under `repo/` —
+    mirroring `.claude/hooks/{fleet,repo}`. The bootstrap fetcher
+    (`scripts/repo/bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload +
     socket-lib exist, so it is strictly dep-0 —
-    `node_modules/.cache/fleet/socket-wheelhouse/` is its cacache-equivalent.
+    `.cache/fleet/socket-wheelhouse/` is its cacache-equivalent.
 
-- **Call out invisible state LOUDLY.** cacache and `node_modules/.cache` are
+- **The store sits at the repo root, never inside `node_modules/`.** A package
+  `clean` and a `rm -rf node_modules` both delete the dependency tree, and a
+  store underneath it goes with them — taking coverage reports, the hook bundle
+  cache, and the active-edits ledger that live hook processes are mid-write on.
+  That is not hypothetical: a member's `clean` recursively removed the store and
+  died on `ENOTEMPTY` because concurrent hooks were writing into it. Scope a
+  `clean` to build output; the cache root is not build output. The oxlint rule
+  `socket/prefer-repo-root-dot-cache` holds this at edit time, and every path is
+  constructed once in the package's `paths.mts` (`TOOL_CACHE_DIR` →
+  `FLEET_CACHE_DIR` / `REPO_CACHE_DIR`).
+
+- **A user-home cache is a different thing.** `~/.socket/_state/` and any
+  XDG `$XDG_CACHE_HOME` store are per-USER, shared across checkouts; the
+  repo-root `.cache/` is per-CHECKOUT. Never resolve one to the other.
+
+- **Call out invisible state LOUDLY.** cacache and `.cache` are
   harder to SEE — they are not files in the repo. That invisibility is the
   hazard, not a feature: undocumented cache state is forgotten, surprising when
   stale, and impossible to audit. Every store must be named in "Known state
@@ -38,15 +53,16 @@ untracked, dirty file.)
 
 ## Known state stores
 
-- **`bundle.ref`** (`.config/socket-wheelhouse.json`) — a CUSTOM pin (not a
-  standard field): the wheelhouse bundle ref (`fleet-bundle-<sha>`) a thin consumer
+- **`bundle.ref`** (`.config/repo/socket-wheelhouse.json`) — a CUSTOM pin (not a
+  standard field): the wheelhouse bundle ref (`fleet-pack-<sha>`) a thin consumer
   fetches. The fleet's equivalent of a payload lockfile pin; the version decision
   lives in exactly one auditable place. This one IS tracked — it's config, not
   runtime state.
-- **`node_modules/.cache/fleet/socket-wheelhouse/bundle-applied`** (dep-0 fetcher
+- **`.cache/fleet/socket-wheelhouse/bundle-applied`** (dep-0 fetcher
   cache) — the bootstrap fetcher records the `bundle.ref` it last applied so
   `scripts/repo/bootstrap/fleet.mjs --if-current` skips a redundant warm fetch in local dev. A
-  fresh clone / CI has no `node_modules/.cache`, so the fetch runs. Inspect:
-  `cat node_modules/.cache/fleet/socket-wheelhouse/bundle-applied`; clear: delete it (or
+  fresh clone / CI has no `.cache`, so the fetch runs. Inspect:
+  `cat .cache/fleet/socket-wheelhouse/bundle-applied`; clear: delete it (or
   the whole `.cache` dir) and the next `prepare` re-fetches. The fetcher migrates
-  away the legacy in-tree `.config/fleet/.bundle-applied` on write.
+  away the legacy in-tree `.config/fleet/.bundle-applied` on write, plus the <!-- docs-refs-ignore: retired legacy marker path -->
+  superseded `node_modules/.cache` marker paths a pre-relocation member carries.

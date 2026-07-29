@@ -11,7 +11,7 @@ Two paired fleet rules captured under one doc because they're symbiotic — expo
 - Tests need to reach helpers directly — coverage holes appear whenever a test has to go through the public API to exercise an internal helper.
 - The `socket/export-top-level-functions` oxlint rule enforces this for all four top-level declaration kinds — function, interface, type alias, and class (one `Program > …Declaration` visitor each, shared autofix that prepends `export`).
 
-**Past incident.** socket-packageurl-js had `interface PurlObject` private at `src/purl-type.mts`. Tests of per-type validators (`PurlType.npm.validate(...)`) had to cast `PurlType` to `any` to call `.validate` because the helper namespace's generic shape didn't propagate the per-type signatures. The `any` cast hid every other type error on those call sites. The fix was to `export interface PurlObject` so tests can import it and type the shape correctly.
+**Past incident.** socket-packageurl-js had `interface PurlObject` private at its `src/purl-type.mts`. <!-- docs-refs-ignore: path in the socket-packageurl-js repo --> Tests of per-type validators (`PurlType.npm.validate(...)`) had to cast `PurlType` to `any` to call `.validate` because the helper namespace's generic shape didn't propagate the per-type signatures. The `any` cast hid every other type error on those call sites. The fix was to `export interface PurlObject` so tests can import it and type the shape correctly.
 
 ## NO `any` ever
 
@@ -32,7 +32,7 @@ When tests or scripts touch a value of unknown shape, the right choices are:
 - Scoped oxlint override on `test/**` that disables `typescript/no-explicit-any`. The `socket/no-file-scope-oxlint-disable` rule + the wider _Don't disable lint rules_ policy both forbid this — fix the underlying types instead.
 - Per-line `oxlint-disable-next-line typescript/no-explicit-any` as a default. The disable comments are reserved for genuinely intractable cases (third-party type holes) and need a `-- <reason>` annotation.
 
-**Past incident.** socket-sdk-js's `test/unit/bundle-validation.test.mts` had `path: any` params in babel visitors (`ImportDeclaration(path: any)`, `CallExpression(path: any)`, etc.). A bulk `: any` → `: unknown` sed pass kept the code compiling but broke every `path.node.X` access downstream (TS18046 cascade). The right fix was importing `import type { NodePath } from '@babel/traverse'` + `import type * as t from '@babel/types'` and typing each visitor as `NodePath<t.ImportDeclaration>` etc., then guarding `callee.type === 'Identifier'` before reading `callee.name`. Slower to type out, much safer.
+**Past incident.** socket-sdk-js's `test/unit/bundle-validation.test.mts` had `path: any` params <!-- docs-refs-ignore: path in the socket-sdk-js repo --> in babel visitors (`ImportDeclaration(path: any)`, `CallExpression(path: any)`, etc.). A bulk `: any` → `: unknown` sed pass kept the code compiling but broke every `path.node.X` access downstream (TS18046 cascade). The right fix was importing `import type { NodePath } from '@babel/traverse'` + `import type * as t from '@babel/types'` and typing each visitor as `NodePath<t.ImportDeclaration>` etc., then guarding `callee.type === 'Identifier'` before reading `callee.name`. Slower to type out, much safer.
 
 ## When generics don't propagate
 

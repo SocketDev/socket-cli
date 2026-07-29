@@ -1,6 +1,6 @@
 # Plan storage
 
-Companion to the _Plan storage_ fleet rule in `template/CLAUDE.md`. The inline rule is one sentence. This doc carries the rationale, the migration guidance for legacy `docs/plans/` content, and the per-repo extension pattern.
+Companion to the _Plan storage_ fleet rule in `template/base/CLAUDE.md`. The inline rule is one sentence. This doc carries the rationale, the migration guidance for legacy `docs/plans/*` content, and the per-repo extension pattern.
 
 ## What counts as a "plan"
 
@@ -15,7 +15,7 @@ work in progress or work about to start**:
 
 What is **not** a plan (and belongs elsewhere):
 
-- Permanent architecture docs: `docs/architecture/` or a top-level `<topic>.md` (tracked).
+- Permanent architecture docs: an `architecture/` dir under `docs/` or a top-level `<topic>.md` (tracked).
 - API reference: JSDoc / TSDoc / Rustdoc / README.
 - Onboarding / contributor docs: `CONTRIBUTING.md` (tracked).
 - Incident post-mortems: if the lesson is worth keeping, it goes into CLAUDE.md as a rule with a `**Why:**` line per the _Compound lessons_ rule. The post-mortem itself can stay in `.claude/plans/` as scratch.
@@ -26,7 +26,7 @@ What is **not** a plan (and belongs elsewhere):
 
 One location per repo. Never:
 
-- `docs/plans/`: tracked; defeats the rule.
+- `docs/plans/*`: tracked; defeats the rule.
 - `<pkg>/docs/plans/`: tracked + duplicates the convention per-package.
 - `<pkg>/.claude/plans/`: sub-package `.claude/` is a fleet-convention smell; CLAUDE itself reads the repo-root `.claude/` for the operator's current session.
 
@@ -35,7 +35,7 @@ multiple plans coexist comfortably. Worktrees get their own `.claude/plans/` tha
 
 ## Untracked-by-default
 
-The fleet `template/.gitignore` already excludes `/.claude/*` with an
+The fleet `template/base/.gitignore` already excludes `/.claude/*` with an
 explicit allowlist:
 
 ```gitignore
@@ -68,11 +68,11 @@ Plans capture state: what we're about to do, what we've ruled out, what the LOC 
 These are the surfaces that actually stay accurate, because they're
 written at the moment of the change rather than weeks before it.
 
-**Past incident:** socket-btm grew three parallel `plans/` directories (`docs/plans/`, `packages/*/docs/plans/`, `.claude/plans/`). Same content type, three locations, all tracked, all drifting. The rule is one location, untracked.
+**Past incident:** socket-btm grew three parallel `plans/` directories (`docs/plans/*`, `packages/*/docs/plans/`, `.claude/plans/`). Same content type, three locations, all tracked, all drifting. The rule is one location, untracked.
 
-## Migrating legacy `docs/plans/` content
+## Migrating legacy `docs/plans/*` content
 
-If you find a tracked plan in `docs/plans/` or `<pkg>/docs/plans/`:
+If you find a tracked plan in `docs/plans/*` or `<pkg>/docs/plans/`:
 
 1. **Stop and ask the user before relocating.** Moving the file requires
    rewriting every reference (test files, READMEs, source comments,
@@ -94,7 +94,7 @@ If you find a tracked plan in `docs/plans/` or `<pkg>/docs/plans/`:
 Downstream repos can add their own plan-storage rules in **their own**
 CLAUDE.md (outside the fleet block). Common extensions:
 
-- A per-repo `.claude/plans/README.md` listing currently-active plans
+- A per-repo `README.md` under `.claude/plans/` listing currently-active plans
   with a one-line description. That README is also untracked (under
   `/.claude/*`) but operators in a fresh worktree won't have it; the
   list is regenerable from `ls -1 .claude/plans/`.
@@ -108,6 +108,6 @@ don't change the fleet rule.
 ## How this interacts with other fleet rules
 
 - **`markdown-filename-guard`**: the hook accepts lowercase-hyphenated `.md` files under either `docs/` or `.claude/` (any depth). It will NOT block a `docs/plans/<name>.md` write; the guard is filename-only, not content-aware. The plan-storage convention is enforced by this rule, not by the filename guard.
-- **No fleet fork**: this doc is fleet-canonical (lives under `template/docs/agents.md/fleet/`). Downstream copies are read-only. Edit here and cascade.
+- **No fleet fork**: this doc is fleet-canonical (lives under `template/base/docs/agents.md/fleet/`). Downstream copies are read-only. Edit here and cascade.
 - **Drift watch**: if you find a downstream repo carrying its own diverged
   copy of this doc, reconcile back to fleet-canonical.

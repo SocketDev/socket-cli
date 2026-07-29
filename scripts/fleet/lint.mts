@@ -7,7 +7,9 @@
  *   Lint files modified in the working tree vs HEAD. --staged Lint files in the
  *   git index (used by .git-hooks/pre-commit). --all Lint the entire workspace.
  *   Flags: --fix Auto-fix issues. --quiet Suppress progress output. If the
- *   chosen scope has no lintable files, the script is a no-op. Config or
+ *   chosen scope has no lintable files, the run checks nothing and says so ("0
+ *   files checked — this is NOT a pass") instead of reporting "Lint passed";
+ *   the whole-tree verdict comes only from --all. Config or
  *   infrastructure changes (.config/fleet/oxlintrc.json,
  *   .config/fleet/oxfmtrc.json, tsconfig*.json, pnpm-lock.yaml, .config/**,
  *   scripts/**, package.json) escalate to `--all` automatically, since they can
@@ -126,6 +128,35 @@ export function resolveExplicitFiles(argv: readonly string[]): string[] {
 }
 
 /**
+ * The zero-scope verdict. A run whose scope resolves to NO lintable files
+ * checked nothing, so it is not a pass — but a bare "No modified files;
+ * skipping lint." line reads exactly like a green gate, and a clean-tree run
+ * hid 15 lint errors and a type error behind that reading. Every zero-scope
+ * exit prints this line INSTEAD of "Lint passed", so the operator can tell
+ * "nothing was wrong" apart from "nothing was checked".
+ */
+export function zeroScopeNotice(scopeMode: string): string {
+  return (
+    `0 files checked — this is NOT a pass. ` +
+    `Scope ${scopeMode.toUpperCase()} resolved to no lintable files.\n` +
+    'For the whole-tree verdict: pnpm run lint --all'
+  )
+}
+
+/**
+ * Emit the zero-scope verdict. Routed through `logger.warn`, not `log`, so
+ * `--quiet` cannot swallow it: the flag suppresses progress, and this is the
+ * verdict. The exit code stays 0 — `.git-hooks/fleet/pre-commit`
+ * (`lint --staged`), the pre-push chain, and the worktree land re-assert
+ * (explicit file args) all run this over sets that legitimately hold nothing
+ * lintable, and a non-zero exit would red-light every docs-only commit. `--all`
+ * never reaches a zero scope, so it needs no exit-code change to stay honest.
+ */
+function warnZeroScope(scopeMode: string): void {
+  logger.warn(zeroScopeNotice(scopeMode))
+}
+
+/**
  * The loud-scope contract for fix runs: a `--fix` outside `--all` only touches
  * the files git already sees as changed, so a repo-wide autofix campaign run
  * that way is a SILENT no-op on the whole backlog (two delegated wave runs
@@ -160,6 +191,15 @@ function lintFileSet(scopeLabel: string, files: string[]): void {
   log(
     `Lint scope: ${scopeLabel} (${lintable.length} of ${files.length} files lintable)`,
   )
+  // Nothing lintable survived the filters: say so as the verdict rather than
+  // letting runFiles() return 0 and print "Lint passed" over an empty set.
+  if (lintable.length === 0) {
+    warnZeroScope(scopeLabel)
+    if (fix) {
+      log(fixScopeReminder(scopeLabel))
+    }
+    return
+  }
   process.exitCode = runFiles(lintable)
   if (process.exitCode === 0) {
     log('Lint passed')
@@ -220,7 +260,7 @@ function runLint(): void {
   const files = mode === 'staged' ? getStagedFiles() : getModifiedFiles()
 
   if (files.length === 0) {
-    log(`No ${mode} files; skipping lint.`)
+    warnZeroScope(mode)
     if (fix) {
       log(fixScopeReminder(mode))
     }

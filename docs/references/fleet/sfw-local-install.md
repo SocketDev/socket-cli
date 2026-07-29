@@ -42,7 +42,7 @@ older lib versions).
 
 ### 2. Download the enterprise binary
 
-Pull the version + sha256 from `socket-registry/.config/repo/external-tools.json`
+Pull the version + sha256 from `socket-registry/.config/repo/external-tools.json` <!-- docs-refs-ignore: cross-repo pointer into the socket-registry checkout -->
 (canonical fleet pin):
 
 ```bash
@@ -103,7 +103,7 @@ fails with a generic "command not found" instead of a self-explanatory
 "× sfw: nuget is not installed on this runner. Install NuGet from …".
 
 See the canonical CI version in
-[`socket-registry/.github/actions/setup/action.yml`](https://github.com/SocketDev/socket-registry/blob/main/.github/actions/setup/action.yml)
+[socket-registry/.github/actions/setup/action.yml](https://github.com/SocketDev/socket-registry/blob/main/.github/actions/setup/action.yml)
 under the "Create sfw shims" step. (An older per-machine rack at
 `~/.socket/sfw/shims` with its own `regenerate-shims.sh` may still exist
 on long-lived machines; it is legacy — prefer the fleet generator.)
@@ -125,7 +125,7 @@ the version number.
 ## Drift watch
 
 The sfw version + per-platform sha256s live in
-`socket-registry/.config/repo/external-tools.json`. When CI bumps that file, your
+`socket-registry/.config/repo/external-tools.json`. <!-- docs-refs-ignore: cross-repo pointer into the socket-registry checkout --> When CI bumps that file, your
 local install drifts. Re-run the install steps above whenever you pull
 socket-registry. The local file `~/.socket/_wheelhouse/bin/sfw-<old-version>` is
 safe to keep — the `sfw` symlink is what matters.

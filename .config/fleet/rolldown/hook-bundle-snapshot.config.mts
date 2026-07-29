@@ -3,7 +3,7 @@
  *   bundle. Identical to `hook-bundle.config.mts` except the input is the
  *   snapshot build entry (`dispatch-snapshot-entry.mts`), which registers a
  *   V8 deserialize-main fn instead of running the CLI at module eval, and the
- *   output is `_dispatch/snapshot-bundle.cjs` — the CJS file fed to
+ *   output is `_shared/snapshot-fleet-pack.cjs` — the CJS file fed to
  *   `node --build-snapshot`. SPIKE: lives alongside the production config; if
  *   the snapshot path lands, fold the two configs into one parametrized maker.
  */
@@ -17,13 +17,13 @@ import {
   DISPATCH_TABLE_SNAPSHOT_PATH,
 } from '../../../scripts/fleet/paths.mts'
 import { createLibSnapshotFixPlugin } from './lib-snapshot-fix.mts'
-import { createLibStubPlugin } from '../../repo/rolldown/lib-stub.mts'
+import { createBundleStubPlugin } from '../../repo/rolldown/bundle-stub.mts'
 
 // Route every `./dispatch-table.mts` import (dispatch.mts + the snapshot
 // entry) to the snapshot-SAFE table variant: hooks tagged
 // `@dispatch-snapshot-exclude` must not reach the build pass — their
 // module-eval graphs hold native [Foreign] handles V8 refuses to serialize
-// (CheckGlobalAndEternalHandles fatal). They ship in excluded-bundle.cjs,
+// (CheckGlobalAndEternalHandles fatal). They ship in excluded-fleet-pack.cjs,
 // spliced in at runtime by deserialize-main.
 function createSnapshotTableAliasPlugin() {
   return {
@@ -45,7 +45,7 @@ const config: RolldownOptions = {
   external: [/^node:/],
   input: path.join(DISPATCH_DIR, 'dispatch-snapshot-entry.mts'),
   output: {
-    file: path.join(DISPATCH_DIR, 'snapshot-bundle.cjs'),
+    file: path.join(DISPATCH_DIR, 'snapshot-fleet-pack.cjs'),
     // BUILD-PASS-ONLY global shim, prepended before any module-eval. V8's
     // `--build-snapshot` builder context does NOT expose `SharedArrayBuffer` as a
     // global, but `@socketsecurity/lib`'s `primordials/globals.js` captures it
@@ -135,7 +135,7 @@ const config: RolldownOptions = {
     // overlay dir to populate. The real path is the upstream lib release
     // deferring these two constructions + a version bump.
     createLibSnapshotFixPlugin(),
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern: /@socketsecurity\/lib(?:-stable)?\/.*\/(?:globs|sorts)\.js$/,
     }),
     // SNAPSHOT-ONLY stub: replace the interactive prompts surface with a no-op.
@@ -146,7 +146,7 @@ const config: RolldownOptions = {
     // dispatch hot path — the dispatcher surfaces verdict DATA itself. Same
     // never-reached rationale as the logger stub; keeps the production bundle's
     // prompts intact while letting the snapshot build.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern: /@socketsecurity\/lib(?:-stable)?\/.*\/stdio\/prompts\.js$/,
       stubCode: 'module.exports = new Proxy({}, { get: () => () => {} });',
     }),
@@ -164,7 +164,7 @@ const config: RolldownOptions = {
     // the dispatch path. Same never-reached rationale as the logger + prompts
     // stubs; the production bundle keeps the real spinner. This is what unblocks
     // the 56 spawn-graph hooks for bundle A.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern:
         /@socketsecurity\/lib(?:-stable)?\/.*\/spinner\/default\.js$/,
       stubCode:
@@ -183,7 +183,7 @@ const config: RolldownOptions = {
     // / `runGuard`, the only logger consumers, are standalone-entry paths the
     // snapshot deserialize-main never calls. Stubbing it here keeps the
     // PRODUCTION bundle's logger intact while letting the snapshot build.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern: /@socketsecurity\/lib(?:-stable)?\/.*\/logger\/default\.js$/,
       stubCode:
         'const noop = () => {};' +
@@ -206,7 +206,7 @@ const config: RolldownOptions = {
     // `TypeError: SemVer is not a constructor` on Node 22, 24, AND 26 (the inlined
     // circular-require ordering, NOT the isolated `new Comparator` pattern — that
     // alone snapshots fine; it is rolldown's bundled module-init order that breaks).
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern:
         /@socketsecurity\/lib(?:-stable)?\/.*\/external\/semver\.js$/,
       stubCode:
@@ -232,7 +232,7 @@ const config: RolldownOptions = {
     // cacache module-eval, and its handle, is deferred to runtime. Standalone
     // aube / the production bundle keep the eager `_internal.js`. This is what
     // unblocks check-new-deps for bundle A.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern:
         /@socketsecurity\/lib(?:-stable)?\/.*\/cacache\/_internal\.js$/,
       stubCode:
@@ -266,7 +266,7 @@ const config: RolldownOptions = {
     // -main never makes. `getSemver()` is likewise deferred. Standalone aube /
     // the production bundle keep the real eager `_internal.js`. This is what
     // unblocks brew-supply-chain-guard for bundle A.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern:
         /@socketsecurity\/lib(?:-stable)?\/.*\/versions\/_internal\.js$/,
       stubCode:

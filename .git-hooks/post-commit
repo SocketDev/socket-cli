@@ -7,6 +7,12 @@
 # tier's failure doesn't skip the other); the dispatcher's own exit status
 # reflects the last failure for visibility.
 
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
 # HUSKY=0 skips this hook for the current invocation — the husky-compatible
 # whole-chain escape (details in the pre-commit dispatcher).
 if [ "${HUSKY-}" = "0" ]; then

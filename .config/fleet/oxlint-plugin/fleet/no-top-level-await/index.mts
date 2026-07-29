@@ -47,7 +47,7 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Disallow top-level `await` at module scope. Fleet bundles publish to CJS and CJS does not support top-level await.',
+        'Disallow top-level `await` at module scope. Fleet packs publish to CJS and CJS does not support top-level await.',
       category: 'Best Practices',
       recommended: true,
     },

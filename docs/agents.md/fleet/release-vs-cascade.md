@@ -29,7 +29,7 @@ Some files sit *inside* a cascaded dir-mirror but must NOT be committed. They ar
    (`scripts/repo/sync-scaffolding/dir-mirror-skip.mts`) — the shared skip
    predicate drops them from the dir-mirror **check** and **fix**, so the cascade
    never commits or copies them;
-2. gitignored fleet-wide (the `**/.claude/hooks/fleet/_dispatch/*.cjs` block in
+2. gitignored fleet-wide (the `**/.claude/hooks/fleet/_shared/*.cjs` block in
    the `.gitignore` fleet-canonical section) — including the wheelhouse's own
    `template/base/` mirror copies;
 3. still shipped by `make-release-bundle` — its raw walk of `template/base`
@@ -37,8 +37,8 @@ Some files sit *inside* a cascaded dir-mirror but must NOT be committed. They ar
    the release tarball and the bootstrap extracts them.
 
 The current members of the set are the three rolldown-generated hook bundles —
-`bundle.cjs` (the plain-require baseline), `excluded-bundle.cjs`, and
-`snapshot-bundle.cjs` — ~11 MB of build output that used to be committed to every
+`fleet-pack.cjs` (the plain-require baseline), `excluded-fleet-pack.cjs`, and
+`snapshot-fleet-pack.cjs` — ~11 MB of build output that used to be committed to every
 repo. Their loaders **fail open** when a bundle is absent, and
 `setup:3-hook-snapshot` rebuilds all three, so a member that has cascaded but not
 yet fetched the release simply runs with inert (not broken) fast-path hooks until
@@ -61,8 +61,8 @@ so it is neither cascaded nor packaged in the release — the source is enough.
   `.codex` moved to the generated-untracked class (`CODEX_ADAPTER_PATHS` is the
   single authority the gitignore fleet block references).
 - **Cross-harness adapters** (`.cursor/`, `.windsurf/`, `.clinerules/`, `.kiro/`,
-  `AGENTS.md`, `.github/copilot-instructions.md`) — generated per-repo/per-platform
-  by `gen/harness-adapters.mts` — a tracked symlink checks out wrong on Windows.
+  `AGENTS.md`, a `copilot-instructions.md` under `.github/`) — generated per-repo/per-platform
+  by `scripts/fleet/gen/harness-adapters.mts` — a tracked symlink checks out wrong on Windows.
 - **`.janus/`** (per-repo Janus ticket queue) — a fresh queue is created per-repo
   by `janus init` at setup / adoption; there is no canonical seed content, the
   queue is repo-local and dynamic. See

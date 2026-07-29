@@ -33,64 +33,27 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { MANIFEST_RELATIVE_PATHS } from '../external-tools/_shared.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// The registries, from the one list that already enumerates them — hard-coding
-// a second copy here would be the very duplication this check exists to stop.
-// `template/base/` entries are dropped: those are cascade mirrors of the live
-// files, guaranteed identical by sync-scaffolding, so counting both would
-// report every tool as duplicated with itself.
-export const REGISTRY_PATHS: readonly string[] = MANIFEST_RELATIVE_PATHS.filter(
-  p => !p.startsWith('template/base/'),
-)
+// The registries, fleet-wide first. A tool belongs to exactly one scope.
+export const REGISTRY_PATHS: readonly string[] = [
+  '.config/repo/external-tools.json',
+  'scripts/fleet/setup/external-tools.json',
+]
 
 // Fleet tools still also declared per-repo, pending consolidation into
 // `setup/`. Each MUST stay byte-identical across its copies. Shrink this list;
 // never grow it.
 export const DUPLICATED_TOOLS: readonly string[] = [
-  'janus',
   'pnpm',
   'sfw-enterprise',
   'sfw-free',
   'uv',
   'zizmor',
 ]
-
-// The fields every registry must agree on for the same tool. Registry-specific
-// install metadata is deliberately excluded — see the comment in
-// findDuplicateTools.
-export const SHARED_FACT_KEYS: readonly string[] = [
-  'platforms',
-  'release',
-  'repository',
-  'version',
-]
-
-/**
- * The comparable identity of a tool entry: the shared facts only, with the
- * version normalized so `v1.13.1` and `1.13.1` are the same pin rather than a
- * phantom drift.
- */
-export function sharedFacts(entry: unknown): string {
-  const e = (entry ?? {}) as Record<string, unknown>
-  const out: Record<string, unknown> = { __proto__: null } as never
-  for (let i = 0, { length } = SHARED_FACT_KEYS; i < length; i += 1) {
-    const key = SHARED_FACT_KEYS[i]!
-    if (!(key in e)) {
-      continue
-    }
-    const value = e[key]
-    out[key] =
-      key === 'version' && typeof value === 'string'
-        ? value.replace(/^v/, '')
-        : value
-  }
-  return JSON.stringify(out, Object.keys(out).toSorted())
-}
 
 export interface DuplicateFinding {
   readonly files: readonly string[]
@@ -152,17 +115,16 @@ export function findDuplicateTools(
       findings.push({ files, kind: 'unlisted', tool })
       continue
     }
-    // A listed duplicate is tolerated only while the SHARED FACTS agree.
-    // Not byte-equality: each registry legitimately carries its own install
-    // metadata — the fleet one has `binaryName` + `notes`, the security-tools
-    // one has `ecosystems` / `installDir` — and demanding identical entries
-    // would force junk fields into registries that do not use them. What must
-    // never disagree is what the tool IS: which version, from which repo,
-    // released how, for which platforms.
+    // A listed duplicate is tolerated only while its copies agree.
     const shapes = new Set(
       registries
         .filter(r => tool in r.tools)
-        .map(r => sharedFacts(r.tools[tool])),
+        .map(r =>
+          JSON.stringify(
+            r.tools[tool],
+            Object.keys(r.tools[tool] as object).toSorted(),
+          ),
+        ),
     )
     if (shapes.size > 1) {
       findings.push({ files, kind: 'drifted', tool })

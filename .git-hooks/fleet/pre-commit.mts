@@ -381,8 +381,8 @@ const main = (): number => {
       // real `npx <pkg>` examples. Their SOURCES are scanned; the built
       // artifact is exempt (flagging it blocks every cascade that ships
       // a rebuilt bundle).
-      normalizePath(file).endsWith('/hooks/fleet/_dist/bundle.cjs') ||
-      normalizePath(file).endsWith('/_dispatch/snapshot-bundle.cjs')
+      normalizePath(file).endsWith('/hooks/fleet/_dist/fleet-pack.cjs') ||
+      normalizePath(file).endsWith('/_shared/snapshot-fleet-pack.cjs')
     ) {
       continue
     }

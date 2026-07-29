@@ -58,7 +58,7 @@ export function isGeneratedPath(filePath: string): boolean {
     base === 'pnpm-lock.yaml' ||
     base.endsWith('.snap') ||
     /\.min\.[^/]+$/.test(base) ||
-    (base === 'bundle.cjs' && normalizedFilePath.includes('_dispatch/')) ||
+    (base === 'fleet-pack.cjs' && normalizedFilePath.includes('_shared/')) ||
     /(?:^|\/)(?:build|dist)\//.test(normalizedFilePath)
   )
 }

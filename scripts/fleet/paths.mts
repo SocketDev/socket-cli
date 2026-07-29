@@ -16,7 +16,7 @@
  *   nearest one. Two flavors of path live in this file:
  *
  *   1. STATIC CONSTANTS — paths that don't depend on runtime input. Example:
- *      `REPO_ROOT`, `CONFIG_DIR`, `NODE_MODULES_CACHE_DIR`. Importable as-is.
+ *      `REPO_ROOT`, `CONFIG_DIR`, `TOOL_CACHE_DIR`. Importable as-is.
  *   2. RESOLVER FUNCTIONS — paths that need a search, multiple accepted locations
  *      or runtime input, a target directory, a package name. Example:
  *      `findSocketWheelhouseConfig(repoRoot)` resolves
@@ -122,26 +122,32 @@ export function lockstepManifestCandidates(repoRoot: string): string[] {
 export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
 
 /**
- * Absolute path to the repo's tool-cache root. Fleet convention: every
- * per-repo tool cache lives under here (vitest, taze, our own audit caches,
- * etc.). Auto-gitignored via the fleet's `**∕.cache/` rule. Build tools also
- * write here (oxlint, etc.). Segmented into `fleet/` + `repo/` below.
+ * Absolute path to the repo's tool-cache root — a repo-root `.cache/`. Fleet
+ * convention: every per-repo tool cache and every piece of per-repo runtime
+ * state lives under here (coverage, the hook bundle cache, the active-edits
+ * ledger, our own audit caches). Auto-gitignored via the fleet's `**∕.cache/`
+ * rule. Segmented into `fleet/` + `repo/` below.
+ *
+ * It sits at the repo root, NOT inside the dependency tree, because the store
+ * has to outlive it: `rm -rf node_modules` and a package `clean` both took the
+ * old location with them, destroying state that concurrent hook processes were
+ * still writing (one such `clean` died on `ENOTEMPTY` mid-sweep). A `clean`
+ * scopes to build output; the cache root is not build output.
  */
-// oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- NODE_MODULES_DIR is the canonical node_modules root; the rule's per-arg check can't see through identifiers.
-export const NODE_MODULES_CACHE_DIR = path.join(NODE_MODULES_DIR, '.cache')
+export const TOOL_CACHE_DIR = path.join(REPO_ROOT, '.cache')
 
 /**
  * Fleet-owned tool-cache segment: fleet-managed caches (coverage, hooks,
  * snapshots, etc.) live under here — mirroring the `.claude/hooks/{fleet,repo}`
  * / `.github/actions/{fleet,repo}` segmentation.
  */
-export const FLEET_CACHE_DIR = path.join(NODE_MODULES_CACHE_DIR, 'fleet')
+export const FLEET_CACHE_DIR = path.join(TOOL_CACHE_DIR, 'fleet')
 
 /**
  * Repo-owned tool-cache segment: caches specific to THIS repo (not fleet
  * tooling) live under here.
  */
-export const REPO_CACHE_DIR = path.join(NODE_MODULES_CACHE_DIR, 'repo')
+export const REPO_CACHE_DIR = path.join(TOOL_CACHE_DIR, 'repo')
 
 /**
  * Single coverage home. Every tier's report is persisted here as one distinctly
@@ -262,13 +268,13 @@ export const FLEET_HOOKS_DIR = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
  * generated tables. Built artifacts land in `DIST_DIR`; the hand-written
  * loader sits at `FLEET_HOOK_INDEX_PATH` above both.
  */
-export const DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_dispatch')
+export const DISPATCH_DIR = path.join(FLEET_HOOKS_DIR, '_shared')
 
 /**
- * Built hook artifacts, rolldown output. This dir plus the loader is the
- * ENTIRE hook payload a member receives: `.claude/hooks/fleet/index.cjs` +
- * `.claude/hooks/fleet/_dist/bundle.cjs`. Underscore-prefixed so the hook-dir
- * scanners skip it, like `_shared/` and `_dispatch/`.
+ * Built hook artifacts, rolldown output. This dir plus the loader is the ENTIRE
+ * hook payload a member receives: `.claude/hooks/fleet/index.cjs` +
+ * `.claude/hooks/fleet/_dist/fleet-pack.cjs`. Underscore-prefixed so the
+ * hook-dir scanners skip it, like `_shared/` and `_shared/`.
  */
 export const DIST_DIR = path.join(FLEET_HOOKS_DIR, '_dist')
 
@@ -295,18 +301,18 @@ export const DISPATCH_TABLE_EXCLUDED_PATH = path.join(
   'dispatch-table-excluded.mts',
 )
 // Snapshot-experiment artifact (spliced in by the V8 deserialize path only —
-// the full `bundle.cjs` already carries every hook). Wheelhouse-only, never
-// shipped, so it stays beside its tables in `_dispatch/`.
+// the full `fleet-pack.cjs` already carries every hook). Wheelhouse-only, never
+// shipped, so it stays beside its tables in `_shared/`.
 export const EXCLUDED_BUNDLE_PATH = path.join(
   DISPATCH_DIR,
-  'excluded-bundle.cjs',
+  'excluded-fleet-pack.cjs',
 )
 
 /**
  * The GENERATED dispatch manifest the dep-0 bootstrap dispatcher
  * (`_shared/dispatch.mts`) routes off. Emitted by gen/hook-dispatch alongside
  * the dispatch tables — never hand-maintained. Lives in `_shared/` (not
- * `_dispatch/`) because the bootstrap runtime path reads it directly.
+ * `_shared/`) because the bootstrap runtime path reads it directly.
  */
 export const DISPATCH_MANIFEST_PATH = path.join(
   FLEET_HOOKS_DIR,
@@ -322,7 +328,7 @@ export const DISPATCH_ENTRY_PATH = path.join(DISPATCH_DIR, 'dispatch-entry.mts')
 /**
  * The CJS hook bundle (rolldown output; release-shipped, gitignored).
  */
-export const HOOK_BUNDLE_PATH = path.join(DIST_DIR, 'bundle.cjs')
+export const HOOK_BUNDLE_PATH = path.join(DIST_DIR, 'fleet-pack.cjs')
 
 /**
  * The fleet oxlint plugin source dir + its rolldown-bundled artifact. Members

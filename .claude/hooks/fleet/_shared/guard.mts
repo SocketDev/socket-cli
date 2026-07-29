@@ -266,7 +266,7 @@ export function guardBlocked(): boolean {
 
 // ── Guard-event log ─────────────────────────────────────────────────────
 // Every non-silent verdict appends one JSONL record under
-// node_modules/.cache/fleet/guard-events/ — the observability layer for
+// .cache/fleet/guard-events/ — the observability layer for
 // guard precision: repeated blocks on one file within minutes are the
 // word-golf signature of a false positive, and without a record those
 // incidents vanish into reworded retries. Aggregate with
@@ -288,12 +288,11 @@ function recordGuardEvent(
 ): void {
   try {
     // resolveProjectDir()'s last-resort fallback walks up from this file's own
-    // location, which under the wheelhouse is `template/base` — mkdir'ing
-    // node_modules there poisons pnpm workspace resolution for the whole
-    // checkout. Anchor on the git toplevel so every input lands on one store.
+    // location, which under the wheelhouse is `template/base` — writing the
+    // store there drops a `.cache/` inside the cascade payload. Anchor on the
+    // git toplevel so every input lands on one store.
     const dir = path.join(
       resolveRepoRoot(resolveProjectDir()),
-      'node_modules',
       '.cache',
       'fleet',
       'guard-events',
@@ -527,7 +526,7 @@ export async function runHook(
 export function isGuardRunContext(moduleUrl: string | undefined): boolean {
   // A snapshot BUILD pass is never a run context. A bundled hook's `runHook`
   // sits in the snapshot bundle's top-level eval graph, and when
-  // `node --build-snapshot <bundle.cjs>` is given an ABSOLUTE entry path,
+  // `node --build-snapshot <fleet-pack.cjs>` is given an ABSOLUTE entry path,
   // `process.argv[1]` equals the bundle's `pathToFileURL(__filename).href` — so
   // the entrypoint test below would hold and `runGuard` would `await
   // readPayload()` on never-closing stdin during the build, hanging it. Gating

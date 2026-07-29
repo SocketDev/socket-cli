@@ -84,7 +84,7 @@ The line `Lock-step with X` says "go look here"; the note `Lock-step note:` says
 
 ## 6. Don't let lock-step references rot
 
-Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after `crates/parser-stmt/` is renamed is worse than no reference. It lies to the reader.
+Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after the `parser-stmt` crate directory is renamed is worse than no reference. It lies to the reader.
 
 Two cheap defenses:
 
@@ -131,7 +131,7 @@ Rules:
 - **Mandatory: name + cross-refs.** First line is the file's purpose. Body lists `Lock-step with <Lang>: <path>` for every peer in the quadruplet, and `Lock-step from <Lang>: <path>` if the file is a port. The path forms are the same ones validated in §5.
 - **No timestamps, no authors, no per-impl prose.** Anything that differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
 
-The gate (`scripts/fleet/check/lock-step-headers-match.mts`, registered in the same opt-in `.config/repo/lock-step-refs.json` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
+The gate (`scripts/fleet/check/lock-step-headers-match.mts`, registered in the same per-repo opt-in `lock-step-refs.json` under `.config/repo/` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
 
 ## Scope
 

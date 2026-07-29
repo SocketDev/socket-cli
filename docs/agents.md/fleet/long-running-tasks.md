@@ -25,7 +25,7 @@ Paths anchor on `os.homedir()` and the payload `transcript_path`, never a hardco
 
 ## Warn once per tier
 
-The hook warns once per task per threshold crossing. It keeps a fail-open JSON store at `node_modules/.cache/socket-long-running-task-nudge/<session>.json` mapping each task id to the highest tier already warned. A task re-warns only when it crosses into a higher tier, so a steady `PostToolUse` stream does not spam the same notice.
+The hook warns once per task per threshold crossing. It keeps a fail-open JSON store at `.cache/socket-long-running-task-nudge/<session>.json` mapping each task id to the highest tier already warned. A task re-warns only when it crosses into a higher tier, so a steady `PostToolUse` stream does not spam the same notice.
 
 ## Caveat
 
@@ -47,4 +47,4 @@ Three clauses govern waiting on anything long-running:
 2. When active polling is genuinely required because no notification exists, cap each silent interval at 60-90 seconds and emit an interim one-liner every cycle: what changed, what is still pending.
 3. Status updates name concrete progress, a result count or a last-activity age, never a bare "still running".
 
-The mechanical slice is enforced by `waiting-discipline-nudge` (PreToolUse Bash): a foreground command whose longest single `sleep` invocation totals 120 seconds or more, bare or chained with a poll, draws the rule before the silence starts. The rule text is `WAITING_DISCIPLINE_GUIDANCE` in `_shared/waiting-discipline.mts`, shared with this hook's own nudge so an orchestrator told to check a grinding task also sees how to wait on it. The judgment slice, choosing to end the turn instead of camping on the result, lives with the speech rules in [judgment-and-self-evaluation](judgment-and-self-evaluation.md).
+The mechanical slice is enforced by `waiting-discipline-nudge` (PreToolUse Bash): a foreground command whose longest single `sleep` invocation totals 120 seconds or more, bare or chained with a poll, draws the rule before the silence starts. The rule text is `WAITING_DISCIPLINE_GUIDANCE` in `.claude/hooks/fleet/_shared/waiting-discipline.mts`, shared with this hook's own nudge so an orchestrator told to check a grinding task also sees how to wait on it. The judgment slice, choosing to end the turn instead of camping on the result, lives with the speech rules in [judgment-and-self-evaluation](judgment-and-self-evaluation.md).

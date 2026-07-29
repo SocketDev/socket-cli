@@ -44,6 +44,10 @@ export const ALLOWED_CDN_HOSTS: readonly string[] = [
   // rustup one-line installer host (`https://sh.rustup.rs`) — an allowed Rust
   // installer CDN for convenience-installer bootstraps.
   'sh.rustup.rs',
+  // Socket's public package-content host. The CLI's MCP package-file tools
+  // (package_file_contents / package_file_grep) read blob content from it, so
+  // agents verify those reads against the live host.
+  'socketusercontent.com',
   // Official Rust distribution CDN: versioned rustup-init binaries + .sha256
   // (docker/fleet/{rust,acorn}-base.Dockerfile pin + verify rustup-init).
   'static.rust-lang.org',

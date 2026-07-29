@@ -5,7 +5,7 @@
  *   caller's preferred dir (usually the hook payload's `cwd`), then the
  *   agent-provided `CLAUDE_PROJECT_DIR`, then a last-resort walk up from this
  *   file's own location (`.claude/hooks/fleet/_shared/`) to the repo root.
- *   The bundled copy lives at `.claude/hooks/fleet/_dispatch/` — the same
+ *   The bundled copy lives at `.claude/hooks/fleet/_shared/` — the same
  *   depth, so the fixed walk holds for both source and bundle.
  */
 

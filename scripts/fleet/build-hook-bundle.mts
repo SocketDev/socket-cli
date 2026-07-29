@@ -4,7 +4,7 @@
  *   table (`gen/hook-dispatch.mts`) so the bundle reflects the current
  *   bundle-safe hook set, then runs rolldown with
  *   `.config/fleet/rolldown/hook-bundle.config.mts` to emit the minified CJS
- *   `_dist/bundle.cjs`.
+ *   `_dist/fleet-pack.cjs`.
  *   The hand-written `index.cjs` loader (NOT bundled) turns on the V8
  *   compile cache, then `require()`s the bundle. Output is CJS so the compile
  *   cache reliably persists; see docs/agents.md/fleet/hook-bundle.md.
@@ -89,11 +89,11 @@ export function classifyBundleBuild(config: {
 
 function main(): void {
   // A bundle-only member has no hook source to bundle — a rebuild here would
-  // replace the release-shipped bundle.cjs with an EMPTY one, silently
+  // replace the release-shipped fleet-pack.cjs with an EMPTY one, silently
   // disabling every fleet hook (index.cjs fails open). Built at the source repo.
   if (!hasFleetHookSource(REPO_ROOT)) {
     logger.log(
-      '[build-hook-bundle] no fleet hook source (bundle-only) — bundle.cjs ships via the release bundle.',
+      '[build-hook-bundle] no fleet hook source (bundle-only) — fleet-pack.cjs ships via the release bundle.',
     )
     return
   }
@@ -139,7 +139,7 @@ function main(): void {
   // wheelhouse-only sync-scaffolding paths) so this file stays cascade-safe.
   const templateDispatchDir = path.join(
     REPO_ROOT,
-    'template/base/.claude/hooks/fleet/_dispatch',
+    'template/base/.claude/hooks/fleet/_shared',
   )
   if (existsSync(templateDispatchDir)) {
     // Also through the lock: a pre-fix dogfood mirror propagated 0444 onto

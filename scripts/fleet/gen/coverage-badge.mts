@@ -2,7 +2,7 @@
 /**
  * @file Regenerate the repo-local coverage badge from the latest coverage run.
  *   Reads the line-coverage total from
- *   `node_modules/.cache/fleet/coverage/coverage-summary.json` (the vitest
+ *   `.cache/fleet/coverage/coverage-summary.json` (the vitest
  *   `json-summary` reporter), renders the optimized badge SVG to
  *   `assets/repo/badges/coverage.svg`, and migrates a README still carrying the
  *   retired shields.io badge line — or the legacy pre-badges/ asset path — to
@@ -67,8 +67,7 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
   const pct = readCoveragePct(cfg.repoRoot)
   if (pct === undefined) {
     logger.error(
-      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
-      'gen/coverage-badge: no coverage data at node_modules/.cache/fleet/coverage/coverage-summary.json. Run `pnpm run cover` first (the json-summary reporter emits it), then re-run.',
+      'gen/coverage-badge: no coverage data at .cache/fleet/coverage/coverage-summary.json. Run `pnpm run cover` first (the json-summary reporter emits it), then re-run.',
     )
     return 1
   }

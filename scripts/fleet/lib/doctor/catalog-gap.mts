@@ -157,7 +157,7 @@ export function diagnoseCatalogGaps(config: {
   let fleetCatalog: Record<string, string> = {}
   if (cfg.fleetYaml === undefined) {
     findings.push({
-      fix: 'Re-cascade from the wheelhouse (node scripts/fleet/fetch-fleet-bundle.mts) to restore .config/fleet/pnpm-workspace.fleet.yaml.',
+      fix: 'Re-cascade from the wheelhouse (node scripts/fleet/fetch-fleet-pack.mts) to restore .config/fleet/pnpm-workspace.fleet.yaml.',
       fixable: false,
       saw: 'file not found at .config/fleet/ (or the pre-relocation repo root)',
       wanted:

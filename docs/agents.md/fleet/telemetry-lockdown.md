@@ -1,6 +1,6 @@
 # Telemetry / phone-home lockdown
 
-Companion to the `### Supply-chain & network` rule in `template/CLAUDE.md`.
+Companion to the `### Supply-chain & network` rule in `template/base/CLAUDE.md`.
 Policy: **we never silently phone home.** Every dependency and external tool is
 held to telemetry-off, enforced fail-closed at two layers, re-checked on every
 software update. The sfw CDN allowlist is the runtime backstop regardless.
@@ -16,21 +16,21 @@ software update. The sfw CDN allowlist is the runtime backstop regardless.
    - `REVIEWED_TELEMETRY` is the audited baseline. Any SDK **not** in it FAILS —
      so an SDK ADDED by a dep bump or a new tool is caught and forced through a
      human review + an explicit accept-with-reason.
-   - Runs as a `check --all` gate (`check/telemetry-deps-are-reviewed.mts`) AND
+   - Runs as a `check --all` gate (`scripts/fleet/check/telemetry-deps-are-reviewed.mts`) AND
      as a Pass-4 scan in `scripts/fleet/update.mts` (every `pnpm run update`
      re-checks the refreshed lockfile).
 2. **Per-tool runtime lockdown**: a tool's OWN telemetry (not a third-party SDK,
    so invisible to the dep scanner) is forced off at the launch chokepoint. See
    headroom: its `bin/headroom` is a wrapper that exports
    `HEADROOM_TELEMETRY=off` + `HEADROOM_TELEMETRY_WARN=off` + `HF_HUB_OFFLINE=1`
-   before exec (`setup-security-tools/lib/headroom.mts`), a load-time invariant
+   before exec (`.claude/hooks/fleet/setup-security-tools/lib/headroom.mts`), a load-time invariant
    throws if the lockdown is weakened (fail-closed import), and
-   `check/headroom-is-telemetry-locked-down.mts` gates it. Audit:
+   `scripts/fleet/check/headroom-is-telemetry-locked-down.mts` gates it. Audit:
    `.claude/reports/headroom-telemetry-audit.md`.
 
 ## Fleet no-phone-home env (`FLEET_ENV`)
 
-A universal env set — `_shared/fleet-env.mts` — applied on EVERY surface to force
+A universal env set — `.claude/hooks/fleet/_shared/fleet-env.mts` — applied on EVERY surface to force
 telemetry / update-notifier opt-outs fail-closed:
 
 - `NO_UPDATE_NOTIFIER=1` — the npm + pnpm update-notifier registry check.
@@ -47,7 +47,7 @@ telemetry / update-notifier opt-outs fail-closed:
 
 One source of truth, consumed three ways: `setup-security-tools` persists it into
 the dev shell-rc, the reusable CI workflow sets it in `env:`, and `spawnAiAgent`
-injects it into every spawned agent. `check/telemetry-env-is-disabled.mts`
+injects it into every spawned agent. `scripts/fleet/check/telemetry-env-is-disabled.mts`
 asserts it fail-closed.
 
 ## Reviewing a finding (when the scan fails)

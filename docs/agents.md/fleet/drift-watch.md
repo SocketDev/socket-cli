@@ -1,6 +1,6 @@
 # Drift watch
 
-Companion to the `### Drift watch` rule in `template/CLAUDE.md`. The inline section gives the headline. This file enumerates where drift hides, how to check, and the cascade-PR convention.
+Companion to the `### Drift watch` rule in `template/base/CLAUDE.md`. The inline section gives the headline. This file enumerates where drift hides, how to check, and the cascade-PR convention.
 
 ## The principle
 
@@ -33,7 +33,7 @@ The recovery model is symmetric. If a cascade over-applies or applies a stale va
 - **`.github/workflows/*.yml` + `.github/actions/fleet/*`**: cascade-owned
   whole files (see "Workflows and composites are inlined" below); a member
   copy that differs from the template is drift.
-- **`template/CLAUDE.md` fleet block** (between the `<fleet-canonical>` markers): must be byte-identical across the fleet.
+- **`template/base/CLAUDE.md` fleet block** (between the `<fleet-canonical>` markers): must be byte-identical across the fleet.
 - **`template/.claude/hooks/*`**: same hook code in every repo; diverged hook code is drift.
 - **`lockstep.json` `pinned_sha` rows**: upstream submodules tracked by socket-btm (lsquic, yoga, etc.). Harness + auto-bump: [`lockstep.md`](lockstep.md).
 - **`.gitmodules` `# name-version` annotations** (enforced by `.claude/hooks/fleet/gitmodules-comment-guard/`).
@@ -45,7 +45,7 @@ Fleet CI runs entirely from files committed in each member repo. The
 fleet-canonical `ci.yml` header states the contract: "Fleet CI runs check +
 test using the LOCAL composite actions under `.github/actions/` (inlined — no
 cross-repo reusable, no `uses:@sha` for first-party)"
-(`template/base/.github/workflows/ci.yml:4-6`). Composite actions cascade
+(`template/presets/.github/workflows/ci.yml`, header comment). Composite actions cascade
 per-subdir under `.github/actions/fleet/<name>/` with local `uses: ./` refs;
 workflow files cascade whole (`prune-workflow-runs.yml`, `npm-publish.yml`,
 the gh-aw `.md`/`.lock.yml` pairs — see the mirror entries in
@@ -77,7 +77,7 @@ member ([`thin-distribution.md`](thin-distribution.md)).
 
 A composite action reads its data dependencies at runtime via
 `${GITHUB_ACTION_PATH}/../…` — e.g. `setup` reads `external-tools.json` and
-`.github/actions/lib/`. There is no `uses:` line for that edge, so a SHA pin to
+`.github/actions/fleet/_shared/`. There is no `uses:` line for that edge, so a SHA pin to
 `setup` silently captures `external-tools.json` AS IT WAS at that SHA. The
 DEEPEST pin in a chain therefore decides tool versions, not the entrypoint — and
 a content change to the data file leaves every older pin stale with nothing to

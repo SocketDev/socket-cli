@@ -23,8 +23,8 @@ message polish are throwaway: they exist only until the next squash.
   in the tree and on every public surface regardless of squashing).
 - **Identify a squash repo:** it ships `.claude/skills/fleet/squashing-history/`
   (or `refreshing-history`), and is listed with `optIns: ['squash-history']` in
-  the cascade roster (`cascading-fleet/lib/fleet-repos.json`), which is the signal
-  the guards key off via `isSquashOptIn()` in `_shared/fleet-roster.mts`.
+  the cascade roster (`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`), which is the signal
+  the guards key off via `isSquashOptIn()` in `.claude/hooks/fleet/_shared/fleet-roster.mts`.
   Non-squash repos keep their real log, where commit hygiene is permanent and
   worth the care.
 - **The staging/commit guards relax here.** Because commit order and granularity

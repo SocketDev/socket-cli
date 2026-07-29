@@ -30,7 +30,13 @@ import {
   readPackageJson,
 } from './shared.mts'
 import { ensureNpmIdentity } from './auth-identity.mts'
-import { scanStagedEntry } from './scan.mts'
+import { preflightSocketScanAuth, scanStagedEntry } from './scan.mts'
+import {
+  browserStagedRequested,
+  downloadStagedTarballInPage,
+  openStagedBrowserSession,
+} from './staged-browser-read.mts'
+import type { StagedBrowserSession } from './staged-browser-read.mts'
 import { defaultDownloadStagedTarball, verifyStagedEntry } from './staged.mts'
 import {
   packWorkspaceReleaseAssets,
@@ -89,16 +95,20 @@ export async function runApprove(config: {
   // npm/pnpm/git/gh, prompting a TTY, or touching the registry. Typed as
   // `typeof <realFn>` so a signature drift on the collaborator is a compile
   // error here. ──
+  browserRequested?: typeof browserStagedRequested | undefined
   checkbox?: typeof checkbox | undefined
+  downloadStagedInPage?: typeof downloadStagedTarballInPage | undefined
   ensureIdentity?: typeof ensureNpmIdentity | undefined
   fetchPriorProvenance?: typeof fetchPriorProvenanceMap | undefined
   isPublished?: typeof isAlreadyPublished | undefined
   listStaged?: typeof listStagedPackages | undefined
+  openStagedSession?: typeof openStagedBrowserSession | undefined
   password?: typeof password | undefined
   readPkg?: typeof readPackageJson | undefined
   releaseGate?: typeof releaseBehindLiveGate | undefined
   resolveLayout?: typeof resolveNpmWorkspaceLayout | undefined
   runInheritTty?: typeof runInheritTty | undefined
+  scanAuth?: typeof preflightSocketScanAuth | undefined
   scanEntry?: typeof scanStagedEntry | undefined
   verifyEntry?: typeof verifyStagedEntry | undefined
 }): Promise<void> {
@@ -116,6 +126,10 @@ export async function runApprove(config: {
   const fetchPriorProvenance =
     config.fetchPriorProvenance ?? fetchPriorProvenanceMap
   const scanEntry = config.scanEntry ?? scanStagedEntry
+  const browserRequested = config.browserRequested ?? browserStagedRequested
+  const openStagedSession = config.openStagedSession ?? openStagedBrowserSession
+  const downloadStagedInPage =
+    config.downloadStagedInPage ?? downloadStagedTarballInPage
   const releaseGate = config.releaseGate ?? releaseBehindLiveGate
   const runTty = config.runInheritTty ?? runInheritTty
   const promptCheckbox = config.checkbox ?? checkbox
@@ -286,44 +300,95 @@ export async function runApprove(config: {
   if (noScan) {
     logger.log('--no-scan: skipping the Socket full-scan gate.')
   } else {
-    const scanned: string[] = []
-    for (let i = 0, { length } = selected; i < length; i += 1) {
-      const stageId = selected[i]!
-      const entry = verifiedEntries.find(e => e.stageId === stageId)
-      if (!entry?.name || !entry.version) {
-        continue
-      }
-      // Platform packages scan the DOWNLOADED staged tarball — the artifact
-      // the structural verify gate just checked — since a local pack cannot
-      // reproduce their CI-built payload.
-      const member = findWorkspacePackageByName(layout, entry.name)
-      const scanSubject = { name: entry.name, version: entry.version }
-      // eslint-disable-next-line no-await-in-loop
-      const scanOk =
-        member && (member.platform || hasMachineBuiltPayload(member.manifest))
-          ? await scanEntry(scanSubject, {
-              packTarball: () => defaultDownloadStagedTarball(stageId),
-            })
-          : await scanEntry(scanSubject)
-      if (scanOk) {
-        scanned.push(stageId)
-      }
-    }
-    if (scanned.length === 0) {
+    // One auth preflight for the whole batch: token resolution (with the
+    // browser-assisted mint on an interactive run), a cheap quota verify,
+    // and the org slug — so a missing/expired token surfaces here, not
+    // per-entry mid-gate.
+    const scanAuth = config.scanAuth ?? preflightSocketScanAuth
+    const scanContext = await scanAuth()
+    if (!scanContext) {
       logger.fail(
-        'No selected package passed the Socket scan gate; nothing approved.',
+        'Socket scan gate unavailable; nothing approved. (--no-scan skips the gate explicitly.)',
       )
       process.exitCode = 1
       return
     }
-    if (scanned.length < selected.length) {
-      logger.fail(
-        `${selected.length - scanned.length}/${selected.length} failed the scan gate; ` +
-          `approving only the ${scanned.length} that scanned clean.`,
-      )
-      process.exitCode = 1
+    // Optional browser-read passback: with --staged-browser (or
+    // SOCKET_STAGED_BROWSER=1) open one signed-in npm session and pull each
+    // staged tarball's bytes THROUGH it — the staged view + tarball are
+    // session-only, invisible to the registry API. The gate then scans exactly
+    // what npm has staged. Opened once for the whole batch; closed in finally.
+    let browserSession: StagedBrowserSession | undefined
+    if (browserRequested()) {
+      try {
+        browserSession = await openStagedSession()
+      } catch (e) {
+        logger.fail(
+          `Browser-read staged passback failed to open; nothing approved. ${String(e)}`,
+        )
+        process.exitCode = 1
+        return
+      }
     }
-    gated = scanned
+    try {
+      const scanned: string[] = []
+      for (let i = 0, { length } = selected; i < length; i += 1) {
+        const stageId = selected[i]!
+        const entry = verifiedEntries.find(e => e.stageId === stageId)
+        if (!entry?.name || !entry.version) {
+          continue
+        }
+        const member = findWorkspacePackageByName(layout, entry.name)
+        const scanSubject = { name: entry.name, version: entry.version }
+        // Artifact source precedence: a browser-read session (its bytes are
+        // npm's actual staged upload) → the registry-API staged download for
+        // platform/machine-built packages a local pack can't reproduce → a
+        // local pack (byte-identical once the shasum gate passed).
+        let packTarball:
+          | ((name: string, version: string) => Promise<string | undefined>)
+          | undefined
+        if (browserSession) {
+          const stagedTar = browserSession.tarballs.find(
+            t => t.packageName === entry.name && t.version === entry.version,
+          )
+          if (stagedTar) {
+            packTarball = () =>
+              downloadStagedInPage(browserSession!.page, stagedTar)
+          }
+        }
+        if (
+          !packTarball &&
+          member &&
+          (member.platform || hasMachineBuiltPayload(member.manifest))
+        ) {
+          packTarball = () => defaultDownloadStagedTarball(stageId)
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const scanOk = packTarball
+          ? await scanEntry(scanSubject, { context: scanContext, packTarball })
+          : await scanEntry(scanSubject, { context: scanContext })
+        if (scanOk) {
+          scanned.push(stageId)
+        }
+      }
+      if (scanned.length === 0) {
+        logger.fail(
+          'No selected package passed the Socket scan gate; nothing approved.',
+        )
+        process.exitCode = 1
+        return
+      }
+      if (scanned.length < selected.length) {
+        logger.fail(
+          `${selected.length - scanned.length}/${selected.length} failed the scan gate; ` +
+            `approving only the ${scanned.length} that scanned clean.`,
+        )
+        process.exitCode = 1
+      }
+      gated = scanned
+    } finally {
+      await browserSession?.close()
+    }
   }
 
   // OTP resolution order:

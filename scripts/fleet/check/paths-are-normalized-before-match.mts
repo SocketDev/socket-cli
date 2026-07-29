@@ -38,7 +38,7 @@ const SOURCE_FILE_RE = /\.(?:[cm]?tsx?|ts)$/
 // Bundled / generated directories to skip.
 // require-regex-comment: skip generated bundle, vendor, and node_modules dirs.
 const SKIP_DIR_RE =
-  /_dispatch\/(?:bundle|snapshot-bundle)\.cjs|\/node_modules\/|\/vendor\/|\/third_party\/|\/upstream\/|\/build\//
+  /_shared\/(?:bundle|snapshot-bundle)\.cjs|\/node_modules\/|\/vendor\/|\/third_party\/|\/upstream\/|\/build\//
 
 // Path-like variable name heuristics, same shape as the lint rule.
 // require-regex-comment: path-like variable name suffix/prefix patterns.
@@ -76,6 +76,30 @@ export interface PathFinding {
   readonly varName: string
 }
 
+// The authoritative gate is the `socket/normalize-path-before-match` lint rule,
+// so its sanctioned suppression clears this belt check too. Without this, a
+// call site that legitimately needs the raw path (and carries the annotated
+// oxlint disable) can pass lint and still red-light `check --all`, with no
+// marker that clears both.
+// require-regex-comment: the oxlint suppression comment for this rule, on the
+// line itself or the line above it.
+const LINT_SUPPRESSION_RE =
+  /oxlint-disable-(?:next-)?line\b[^\n]*\bsocket\/normalize-path-before-match\b/
+
+/**
+ * True when `lines[index]` carries the rule's oxlint suppression, either
+ * inline or as the preceding `oxlint-disable-next-line` comment.
+ */
+export function isLintSuppressed(
+  lines: readonly string[],
+  index: number,
+): boolean {
+  return (
+    LINT_SUPPRESSION_RE.test(lines[index] ?? '') ||
+    LINT_SUPPRESSION_RE.test(lines[index - 1] ?? '')
+  )
+}
+
 /**
  * Scan the raw text of a source file for un-normalized path operations.
  * Returns one finding per affected line.
@@ -94,6 +118,9 @@ export function scan(filePath: string, rawText: string): PathFinding[] {
       continue
     }
     if (INLINE_NORMALIZE_IDIOM_RE.test(line)) {
+      continue
+    }
+    if (isLintSuppressed(lines, i)) {
       continue
     }
     const varName = m[1] ?? ''

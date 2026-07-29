@@ -26,7 +26,7 @@
  *   resolves by hoisting luck alone — green until the next prune/relink, then
  *   every hook event dies at once with `ERR_MODULE_NOT_FOUND: Cannot find
  *   package '@socketsecurity/lib-stable'`. Hook dirs without a manifest
- *   (`_dispatch`, `_dist`, `_shared`) resolve against the root and are covered
+ *   (`_shared`, `_dist`, `_shared`) resolve against the root and are covered
  *   by the first pass alone.
  *   Fails loud (What / Where / Saw / Wanted / Fix) listing every undeclared
  *   specifier + the importing file — never a silent skip. Usage: node
@@ -231,7 +231,7 @@ export function findUndeclaredImports(
  * the nearest `package.json` at or above the file's directory, bounded by
  * `repoRoot`. A hook dir carrying its own `package.json` is a pnpm workspace
  * package, so that manifest — NOT the repo root one — decides what gets linked
- * into its `node_modules`. A hook dir without one (`_dispatch`, `_dist`,
+ * into its `node_modules`. A hook dir without one (`_shared`, `_dist`,
  * `_shared`) resolves against the root manifest.
  */
 export function governingManifestPath(

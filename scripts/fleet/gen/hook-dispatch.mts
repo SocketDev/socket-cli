@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /*
  * @file Generate the STATIC hook dispatch table the rolldown bundle is built
- *   from. The dispatcher (`_dispatch/dispatch.mts`) can't use a dynamic
+ *   from. The dispatcher (`_shared/dispatch-bundled.mts`) can't use a dynamic
  *   `import(path.join(HOOKS_DIR, rel))` — a dynamic specifier is opaque to the
  *   bundler, so nothing would get bundled. This maker scans
  *   `.claude/hooks/fleet/<name>/index.mts` (via `collectEligibleHooks` in
  *   `_shared/dispatch-scan.mts`), keeps only the hooks that are BUNDLE-SAFE
  *   (entrypoint-guarded so importing them doesn't fire `main()`, AND exporting a
  *   pure `run(payload)`), and writes
- *   `.claude/hooks/fleet/_dispatch/dispatch-table.mts`: one STATIC `import` per
+ *   `.claude/hooks/fleet/_shared/dispatch-table.mts`: one STATIC `import` per
  *   eligible hook, grouped by hook event. Re-run after adding/removing an
  *   eligible hook, then rebuild the bundle (`build-hook-bundle.mts`).
  *
@@ -60,13 +60,13 @@ const VARIANT_BANNER: Record<TableVariant, string> = {
   __proto__: null,
   excluded:
     '// Snapshot-EXCLUDED hooks only (@dispatch-snapshot-exclude): bundled to\n' +
-    '// excluded-bundle.cjs and spliced in by deserialize-main at runtime.',
+    '// excluded-fleet-pack.cjs and spliced in by deserialize-main at runtime.',
   full: '// Static dispatch table: every bundle-safe fleet hook, grouped by event.',
   snapshot:
     '// Snapshot-SAFE hooks only (no @dispatch-snapshot-exclude): the set frozen\n' +
     '// into the V8 startup snapshot. EXCLUDED_HOOK_HINTS names the event→tools\n' +
     '// surface of the split-out hooks so deserialize-main loads\n' +
-    '// excluded-bundle.cjs only when a dispatch could need it.',
+    '// excluded-fleet-pack.cjs only when a dispatch could need it.',
 } as Record<TableVariant, string>
 
 /**
@@ -162,7 +162,7 @@ export function renderDispatchTable(
     `// Re-run the maker after adding/removing an eligible hook, then rebuild\n` +
     `// the bundle with scripts/fleet/build-hook-bundle.mts.\n` +
     `\n` +
-    `import type { DispatchHookEntry } from './dispatch.mts'\n` +
+    `import type { DispatchHookEntry } from './dispatch-hook.mts'\n` +
     `\n` +
     (importLines.length ? importLines.join('\n') + '\n\n' : '\n') +
     `export const DISPATCH_TABLE: Record<string, readonly DispatchHookEntry[]> = {\n` +
@@ -330,7 +330,7 @@ function main(): void {
   // spawn does not.
   const templateDispatch = path.join(
     REPO_ROOT,
-    'template/base/.claude/hooks/fleet/_dispatch',
+    'template/base/.claude/hooks/fleet/_shared',
   )
   if (existsSync(templateDispatch)) {
     // The template mirror is cascade-locked read-only in the wheelhouse just

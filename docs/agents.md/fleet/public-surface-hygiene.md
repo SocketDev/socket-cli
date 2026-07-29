@@ -11,11 +11,11 @@ The rules apply even when hooks are not installed. They're invariants, not enfor
 
 ## Private / internal paths in source comments
 
-A SOURCE-code comment must never carry an internal/private path. The incident that codified this: an agent leaked a scaffolding-repo `.claude/plans/<doc>.md` path into a public napi-rs source file's comment (`crates/.../src/lib.rs`). That single line discloses internal fleet repo layout, an operator-local working-notes location, and a dev-box checkout path to anyone reading the shipped source.
+A SOURCE-code comment must never carry an internal/private path. The incident that codified this: an agent leaked a scaffolding-repo `.claude/plans/<doc>.md` path into a public napi-rs source file's comment (a `crates/<crate>/src/lib.rs`). That single line discloses internal fleet repo layout, an operator-local working-notes location, and a dev-box checkout path to anyone reading the shipped source.
 
 Blocked inside comment syntax (string literals and real code are left alone):
 
-- **`.claude/plans/…` / `.claude/reports/…`** — untracked operator-local working notes; they never ship and a source file must not point at one.
+- **`.claude/plans/` / `.claude/reports/`** — untracked operator-local working notes; they never ship and a source file must not point at one.
 - **`socket-<repo>/.claude/…`** — another fleet repo's private `.claude/` tree (cross-repo internal layout).
 - **`/Users/<name>/…`** — an absolute home path (leaks the username + on-disk layout).
 - **`../socket-<repo>/…`** — a sibling fleet-repo relative path (presumes a parent dir that only exists on a dev box; see the no-cross-repo-relative-paths rule).
@@ -55,7 +55,7 @@ Never `gh workflow run|dispatch` against publish/release workflows. The user run
 - Edits to `.github/workflows/*.y*ml` auto-lint via local `actionlint` (enforced by `.claude/hooks/fleet/actionlint-on-workflow-edit/`).
 - A workflow that commits, pushes, or tags must NOT set `actions/checkout` `persist-credentials: false` — it strips the token a later `git push` step needs, and the push fails with an auth error that looks unrelated. **Why:** adding `persist-credentials: false` for hardening on a workflow that pushes breaks the push step.
 - `schedule:`-triggered runs have no `inputs`, so a job-level `if: inputs.X` (or `github.event.inputs.X`) is always falsy on a cron fire. Guard schedule-vs-dispatch branches with `github.event_name` instead. **Why:** a job gated on `inputs.dry-run` never runs on its cron schedule.
-- A workflow can't use the default `GITHUB_TOKEN` to trigger another workflow (push / PR / issue events it creates are suppressed; only `workflow_dispatch` / `repository_dispatch` fire). Full failure modes + the PAT / dispatch workarounds in [`github-token-limitations.md`](github-token-limitations.md).
+- A workflow can't use the default `GITHUB_TOKEN` to trigger another workflow (push / PR / issue events it creates are suppressed; only `workflow_dispatch` / `repository_shared` fire). Full failure modes + the PAT / dispatch workarounds in [`github-token-limitations.md`](github-token-limitations.md).
 
 ## `pull_request_target` is privileged
 
@@ -76,7 +76,7 @@ Every fleet member's root `README.md` carries the canonical five level-2 section
 in order — `Why this repo exists` / `Install` / `Usage` / `Development` /
 `License` — plus the universal social-follow badges (X / Twitter + Bluesky) under
 the title, no the fleet source repo leak, no sibling-relative script commands.
-Canonical skeleton: `template/README.md`.
+Canonical skeleton: `template/base/README.md`.
 
 Some repos are not infra repos. The VS Code + browser extensions and the skills
 directory ship **public product / marketplace READMEs** whose structure is owned
@@ -90,7 +90,7 @@ The rule is enforced across four surfaces, all reading the one roster:
 
 - Edit-time: `.claude/hooks/fleet/readme-fleet-shape-guard/` (skips the section
   check when the target repo is `freeform-readme`).
-- Lint-time: `.config/fleet/markdownlint-rules/socket-readme-required-sections`
+- Lint-time: `.config/fleet/markdownlint-rules/socket-readme-required-sections.mts`
   (bails via `_shared/freeform-readme-optin`); `socket-readme-social-badges` always
   runs.
 - Sync-time: `scripts/repo/sync-scaffolding/checks/readme-skeleton-drift.mts`

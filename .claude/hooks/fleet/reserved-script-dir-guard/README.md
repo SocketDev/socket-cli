@@ -13,7 +13,7 @@ An Edit/Write whose `file_path` is under one of these `scripts/` dirs:
 - `scripts/dist/` — `dist/` is the output dir, not a script dir
 - `scripts/node_modules/` — install dir
 - `scripts/coverage/` — coverage report output
-- `scripts/cache/` — tool cache (belongs in `node_modules/.cache/`)
+- `scripts/cache/` — tool cache (belongs in `.cache/`)
 
 ## What it allows
 

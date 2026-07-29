@@ -17,12 +17,12 @@ Two halves, by design — the Anthropic Agent-Skills best-practices split:
 
 `plan` then `fetch` (parallel, capped) then `annotate` (signals) then `dedupe` then reciprocal-rank `fuse` then `render`.
 
-- `lib/plan.mts` validates the model-supplied query plan; a bare topic defaults to one subquery over the keyless sources.
-- `lib/fetch.mts` fans out one job per (subquery, source), caps concurrency (sources rate-limit), annotates each stream with local scores, drops sub-floor-relevance noise, and returns streams keyed by `streamKeyOf(label, source)`.
-- `lib/signals.mts` and `lib/relevance.mts` carry freshness decay, per-source engagement weights, and token-overlap relevance with programming synonym groups (js/javascript, ts/typescript, and so on). Ported coefficient-for-coefficient from the upstream `signals.py` and `relevance.py`.
-- `lib/dedupe.mts` does trigram + token Jaccard near-duplicate collapse (from `dedupe.py`).
-- `lib/rank.mts` does weighted reciprocal-rank fusion, a per-author cap, source diversity, and URL canonicalization (from `fusion.py`). The stream-key format lives only in `streamKeyOf`/`parseStreamKey`.
-- `lib/render/` emits the `--emit=compact` badge, evidence envelope, and pass-through footer, using the marker constants in `lib/markers.mts`.
+- `scripts/fleet/researching-recency/lib/plan.mts` validates the model-supplied query plan; a bare topic defaults to one subquery over the keyless sources.
+- `scripts/fleet/researching-recency/lib/fetch.mts` fans out one job per (subquery, source), caps concurrency (sources rate-limit), annotates each stream with local scores, drops sub-floor-relevance noise, and returns streams keyed by `streamKeyOf(label, source)`.
+- `scripts/fleet/researching-recency/lib/signals.mts` and `scripts/fleet/researching-recency/lib/relevance.mts` carry freshness decay, per-source engagement weights, and token-overlap relevance with programming synonym groups (js/javascript, ts/typescript, and so on). Ported coefficient-for-coefficient from the upstream `signals.py` and `relevance.py`.
+- `scripts/fleet/researching-recency/lib/dedupe.mts` does trigram + token Jaccard near-duplicate collapse (from `dedupe.py`).
+- `scripts/fleet/researching-recency/lib/rank.mts` does weighted reciprocal-rank fusion, a per-author cap, source diversity, and URL canonicalization (from `fusion.py`). The stream-key format lives only in `streamKeyOf`/`parseStreamKey`.
+- `scripts/fleet/researching-recency/lib/render/` emits the `--emit=compact` badge, evidence envelope, and pass-through footer, using the marker constants in `scripts/fleet/researching-recency/lib/markers.mts`.
 
 ## Sources
 
@@ -41,7 +41,7 @@ The opt-in sources (X, Bluesky) read their credential from a process env var loa
 
 ## Contract enforcement
 
-The SKILL.md prose and the engine output share literal marker strings: the badge prefix, the evidence-envelope and footer comment fences. Those live once in `lib/markers.mts`. The `researching-recency-contract-is-current` check imports them and asserts the SKILL.md still quotes them, so the prose contract can't silently drift from what the engine emits.
+The SKILL.md prose and the engine output share literal marker strings: the badge prefix, the evidence-envelope and footer comment fences. Those live once in `scripts/fleet/researching-recency/lib/markers.mts`. The `researching-recency-contract-is-current` check imports them and asserts the SKILL.md still quotes them, so the prose contract can't silently drift from what the engine emits.
 
 ## Tests
 

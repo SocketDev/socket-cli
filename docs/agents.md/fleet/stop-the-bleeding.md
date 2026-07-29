@@ -1,6 +1,6 @@
 # Stop the bleeding
 
-Companion to the `### Drift watch` rule in `template/CLAUDE.md`. Drift watch says the newer version is canonical and older repos catch up. This file covers the **order of operations** when a cascaded file is actively _broken_ in a downstream repo — not just stale, but blocking work.
+Companion to the `### Drift watch` rule in `template/base/CLAUDE.md`. Drift watch says the newer version is canonical and older repos catch up. This file covers the **order of operations** when a cascaded file is actively _broken_ in a downstream repo — not just stale, but blocking work.
 
 ## The principle
 
@@ -18,7 +18,7 @@ So do both, in order.
 ## Order of operations
 
 1. **Stop the bleeding (downstream).** Make the smallest local fix that unblocks — typically matching the file to its current template form — the template is canonical per [Drift watch](drift-watch.md). Commit the downstream work.
-2. **Reconcile upstream (wheelhouse), right after.** Apply the canonical fix to `template/` (+ `scripts/sync-scaffolding/manifest.mts` if the file's required-set or path changed). "Right after" means this turn or the next — not a deferred backlog item — _unless_ a concurrent session is editing the same wheelhouse files (see [parallel-claude-sessions](parallel-claude-sessions.md); work in a clean tree, never clobber in-flight edits).
+2. **Reconcile upstream (wheelhouse), right after.** Apply the canonical fix to `template/` (+ `scripts/repo/sync-scaffolding/manifest.mts` if the file's required-set or path changed). "Right after" means this turn or the next — not a deferred backlog item — _unless_ a concurrent session is editing the same wheelhouse files (see [parallel-claude-sessions](parallel-claude-sessions.md); work in a clean tree, never clobber in-flight edits).
 3. **Test it.** Run the affected script / hook in the wheelhouse (or a member with the deps installed) before pushing.
 4. **Push to cascade.** Push directly to the wheelhouse `main`; the `template/` change then flows to every fleet repo via `node scripts/sync-scaffolding.mts --all --fix` (or the per-repo `--target` form). Use the `chore(wheelhouse): cascade <fix>` convention from Drift watch.
 

@@ -9,7 +9,7 @@ cascaded **runner** (`scripts/fleet/test.mts`, `cover.mts`, the cascaded
 cascaded, never in the release bundle.
 
 `test/fleet/` holds only cascaded helpers + setup (`_shared/lib`,
-`scripts/setup.mts`) — never a `*.test.*` file. There is no cascaded TEST tier.
+`test/fleet/scripts/setup.mts`) — never a `*.test.*` file. There is no cascaded TEST tier.
 
 ## Homes
 
@@ -33,7 +33,7 @@ All wheelhouse-only. The cascaded trees (`.claude/hooks/fleet`,
 - **area** (optional) — e.g. `hooks`, `hooks-shared`, `lint-rules`, `git-hooks`,
   `sync-scaffolding`. Tests of fleet scripts sit flat under the category.
 - Tests import the source under a relative path; a hook / lint-rule test that
-  targets a cascaded dir-mirror source reads it under `template/base/…`.
+  targets a cascaded dir-mirror source reads it under `template/base/**`.
 
 ## Enforcement (code-is-law)
 
@@ -41,6 +41,6 @@ All wheelhouse-only. The cascaded trees (`.claude/hooks/fleet`,
 - **No test in a cascaded tree**: `cascaded-fleet-trees-have-no-tests` (in
   `check --all`) + the edit-time guard fail loud if a `*.test.*` appears under
   any cascaded tree — absolute, no exceptions. Put it under `test/repo/`.
-- **No test in the cascade manifest**: `manifest/files.mts` lists no `*.test.*`
+- **No test in the cascade manifest**: `scripts/repo/sync-scaffolding/manifest/files.mts` lists no `*.test.*`
   file — its `test/fleet/**` entries are helpers + setup only — so the cascade
   never carries a wheelhouse test to a member.

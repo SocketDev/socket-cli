@@ -1,6 +1,6 @@
 # GITHUB_TOKEN cannot trigger other workflows
 
-GitHub Actions suppresses every event created with the default `GITHUB_TOKEN` — pushes, `pull_request` open/close/reopen, issue events, tag creation. The only events that still fire are `workflow_dispatch` and `repository_dispatch`. This is a hardcoded platform behavior that prevents a workflow from recursively triggering itself.
+GitHub Actions suppresses every event created with the default `GITHUB_TOKEN` — pushes, `pull_request` open/close/reopen, issue events, tag creation. The only events that still fire are `workflow_dispatch` and `repository_shared`. This is a hardcoded platform behavior that prevents a workflow from recursively triggering itself.
 
 **Why this matters:** an automated PR opened by a job using `GITHUB_TOKEN` (e.g. a `generate.yml` or `weekly-update.yml` flow) leaves required CI and enterprise-audit checks stuck at "Waiting for workflow to run" — the `pull_request` event that would start them never fires.
 
@@ -15,6 +15,6 @@ GitHub Actions suppresses every event created with the default `GITHUB_TOKEN` �
 ## What works
 
 - A **PAT** or **GitHub App token** (not `GITHUB_TOKEN`) on the step that opens the PR / pushes — events it creates fire normally.
-- `workflow_dispatch` / `repository_dispatch` from the same job — these are the two events `GITHUB_TOKEN` is allowed to raise, so a dispatch-driven downstream workflow is the supported chaining mechanism.
+- `workflow_dispatch` / `repository_shared` from the same job — these are the two events `GITHUB_TOKEN` is allowed to raise, so a dispatch-driven downstream workflow is the supported chaining mechanism.
 
 When designing a workflow that must trigger another workflow, reach for a dispatch event or a non-default token from the start; don't ship a `GITHUB_TOKEN` push/PR and discover the silence later.

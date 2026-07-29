@@ -17,9 +17,11 @@
  *     (machine-specific + loop-prone — a symlink into the repo should be
  *     relative), OR
  *   - any tracked `node_modules` (it is gitignored; tracking it at all is the
- *     bug, symlink or not). Exit: 0 clean / 1 a bad symlink is tracked.
- *     Detection is shared with the guard via
- *     _shared/self-referential-symlink.mts.
+ *     bug, symlink or not). `--fix` untracks each offender (`git rm --cached`,
+ *     via _shared/untrack-offenders.mts) and RE-RUNS the detection — the
+ *     re-check, not the executor, decides the exit. Exit: 0 clean / 1 a bad
+ *     symlink is tracked (or residual after `--fix`). Detection is shared with
+ *     the guard via _shared/self-referential-symlink.mts.
  */
 
 import path from 'node:path'
@@ -30,7 +32,13 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { classifyTrackedSymlink } from '../lib/self-referential-symlink.mts'
+import {
+  executeUntrackActions,
+  formatUntrackAction,
+  planUntrackActions,
+} from '../_shared/untrack-offenders.mts'
 import type { BadSymlink } from '../lib/self-referential-symlink.mts'
+import type { UntrackAction } from '../_shared/untrack-offenders.mts'
 
 const logger = getDefaultLogger()
 
@@ -72,8 +80,17 @@ function readLinkTarget(repoRoot: string, oid: string): string {
   return r.status === 0 ? String(r.stdout ?? '').trim() : ''
 }
 
-function main(): void {
-  const repoRoot = REPO_ROOT
+/**
+ * The `--fix` plan for bad tracked symlinks: `git rm --cached` per offender —
+ * the working-copy entry stays, and .gitignore keeps it untracked afterward.
+ * Pure — offender paths in, actions out — so the plan unit-tests without git.
+ */
+export function planFix(offenderPaths: readonly string[]): UntrackAction[] {
+  return planUntrackActions(offenderPaths, 'rm-cached')
+}
+
+// Run the detection over the current index state.
+function detectOffenders(repoRoot: string): BadSymlink[] {
   const bad: BadSymlink[] = []
   const links = trackedSymlinks(repoRoot)
   for (let i = 0, { length } = links; i < length; i += 1) {
@@ -84,18 +101,41 @@ function main(): void {
       bad.push(verdict)
     }
   }
+  return bad
+}
+
+function main(): void {
+  const repoRoot = REPO_ROOT
+  const fix = process.argv.includes('--fix')
+  let bad = detectOffenders(repoRoot)
+  if (bad.length && fix) {
+    const offenderPaths: string[] = []
+    for (let i = 0, { length } = bad; i < length; i += 1) {
+      offenderPaths.push(bad[i]!.linkPath)
+    }
+    const failures = executeUntrackActions(planFix(offenderPaths), repoRoot)
+    for (let i = 0, { length } = failures; i < length; i += 1) {
+      const f = failures[i]!
+      logger.warn(
+        `[tracked-symlinks-are-safe] fix step failed: ${formatUntrackAction(f.action)} — ${f.detail}`,
+      )
+    }
+    // Success is measured by the RE-CHECK, never by executor belief.
+    bad = detectOffenders(repoRoot)
+  }
   if (bad.length) {
     logger.fail(
-      '[tracked-symlinks-are-safe] tracked symlink(s) are self-referential / repo-internal-absolute:',
+      `[tracked-symlinks-are-safe] tracked symlink(s) are self-referential / repo-internal-absolute${fix ? ' after --fix' : ''}:`,
     )
     for (let i = 0, { length } = bad; i < length; i += 1) {
       const b = bad[i]!
       logger.error(`  ✗ ${b.linkPath} → ${b.target}  (${b.reason})`)
     }
     logger.error(
-      '  Untrack it: `git rm --cached <path>` (the real path stays; .gitignore ' +
-        'then keeps it untracked). A symlink that must stay should be RELATIVE, ' +
-        'never an absolute path inside the repo.',
+      '  Fix: re-run with `--fix` — each offender is untracked (the real path ' +
+        'stays; .gitignore then keeps it untracked) and the detection re-runs. ' +
+        'A symlink that must stay should be RELATIVE, never an absolute path ' +
+        'inside the repo.',
     )
     process.exitCode = 1
     return

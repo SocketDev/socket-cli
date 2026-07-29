@@ -7,9 +7,13 @@
  *   SHA and is forbidden (see docs/agents.md/fleet/upstream-references.md). The
  *   write-time twin is `no-upstream-gitlink-guard`; this belt re-asserts the
  *   invariant over the committed index — catching a gitlink hand-staged past
- *   the guard. Exit: 0 — no tracked upstream gitlink, or git is unavailable; 1
- *   — at least one `160000` entry under `upstream/`. Usage: node
- *   scripts/fleet/check/upstream-gitlinks-are-absent.mts [--quiet]
+ *   the guard. `--fix` drops each gitlink from the index (`git update-index
+ *   --force-remove`, which keeps `.gitmodules`; a gitlink is exactly the entry
+ *   `git rm --cached` mishandles — via _shared/untrack-offenders.mts) and
+ *   RE-RUNS the detection — the re-check, not the executor, decides the exit.
+ *   Exit: 0 — no tracked upstream gitlink, or git is unavailable; 1 — at least
+ *   one `160000` entry under `upstream/` (or residual after `--fix`). Usage:
+ *   node scripts/fleet/check/upstream-gitlinks-are-absent.mts [--fix] [--quiet]
  */
 
 import process from 'node:process'
@@ -20,6 +24,12 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  executeUntrackActions,
+  formatUntrackAction,
+  planUntrackActions,
+} from '../_shared/untrack-offenders.mts'
+import type { UntrackAction } from '../_shared/untrack-offenders.mts'
 
 const logger = getDefaultLogger()
 
@@ -51,22 +61,55 @@ export function findTrackedUpstreamGitlinks(
   return out.toSorted()
 }
 
-async function main(): Promise<void> {
-  let output = ''
+/**
+ * The `--fix` plan for tracked upstream gitlinks: `git update-index
+ * --force-remove` per offender — the one remover that drops a `160000` entry
+ * unconditionally while leaving `.gitmodules` untouched, and the `.gitmodules`
+ * ref stays the pin of record. NOT `git rm --cached`, which balks on gitlink
+ * entries. Pure — offenders in, actions out — so the plan unit-tests without
+ * git.
+ */
+export function planFix(offenders: readonly string[]): UntrackAction[] {
+  return planUntrackActions(offenders, 'force-remove')
+}
+
+/**
+ * Run the detection: the tracked upstream gitlinks right now, or `undefined`
+ * when git is unavailable (another gate's concern; this belt is vacuous there).
+ */
+async function detectOffenders(): Promise<string[] | undefined> {
   try {
     const result = (await spawn('git', ['ls-files', '--stage'], {
       cwd: REPO_ROOT,
       stdio: 'pipe',
       stdioString: true,
     })) as { stdout?: string | undefined }
-    output = String(result?.stdout ?? '')
+    return findTrackedUpstreamGitlinks(String(result?.stdout ?? ''))
   } catch {
+    return undefined
+  }
+}
+
+async function main(): Promise<void> {
+  const fix = process.argv.includes('--fix')
+  let offenders = await detectOffenders()
+  if (offenders === undefined) {
     // git unavailable — another gate's concern; this belt is vacuous, never a
     // false-green failure on a non-git tree.
     process.exitCode = 0
     return
   }
-  const offenders = findTrackedUpstreamGitlinks(output)
+  if (offenders.length > 0 && fix) {
+    const failures = executeUntrackActions(planFix(offenders), REPO_ROOT)
+    for (let i = 0, { length } = failures; i < length; i += 1) {
+      const f = failures[i]!
+      logger.warn(
+        `upstream-gitlinks-are-absent: fix step failed: ${formatUntrackAction(f.action)} — ${f.detail}`,
+      )
+    }
+    // Success is measured by the RE-CHECK, never by executor belief.
+    offenders = (await detectOffenders()) ?? []
+  }
   if (offenders.length === 0) {
     if (!process.argv.includes('--quiet')) {
       logger.log(
@@ -77,7 +120,7 @@ async function main(): Promise<void> {
     return
   }
   logger.fail(
-    `upstream-gitlinks-are-absent: ${offenders.length} gitlink(s) tracked under upstream/:`,
+    `upstream-gitlinks-are-absent: ${offenders.length} gitlink(s) tracked under upstream/${fix ? ' after --fix' : ''}:`,
   )
   for (let i = 0, { length } = offenders; i < length; i += 1) {
     logger.fail(`  ${offenders[i]!}`)
@@ -86,7 +129,8 @@ async function main(): Promise<void> {
     '  What:  an upstream/ reference is tracked as a gitlink (a 160000 index entry).\n' +
       '  Where: the path(s) above.\n' +
       '  Wanted: upstream/ references are .gitmodules-only — the ref + sha256: IS the pin, no gitlink.\n' +
-      '  Fix:   git update-index --force-remove <path> (drops the gitlink, keeps .gitmodules).',
+      '  Fix:   re-run with `--fix` — each gitlink is dropped from the index\n' +
+      '         (.gitmodules stays), then the detection re-runs to confirm.',
   )
   process.exitCode = 1
 }

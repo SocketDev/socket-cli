@@ -57,6 +57,12 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // a renamed/dropped script can't leave a dead `pnpm run` citation shipping
     // fleet-wide. Skips `allowed-tools:` frontmatter (Bash() permission globs).
     () => run('node', ['scripts/fleet/check/pnpm-run-citations-resolve.mts']),
+    // Sibling of doc-references-resolve for the docs/ tree: every repo-path
+    // shaped citation in CLAUDE.md / README.md / docs/**.md must exist in the
+    // working tree. The 2026-07-28 fleet audit's worst findings were release
+    // and architecture docs whose every named script was fiction. Report-mode
+    // until the fleet backlog burns down (member-ci rollout pattern).
+    () => run('node', ['scripts/fleet/check/docs-file-references-resolve.mts']),
     // Sibling of the two above for the skill-NAME surface: every command that
     // delegates in prose ("Run the `<name>` skill") must name a real
     // .claude/skills/**/<name>/SKILL.md, so a renamed/moved skill can't leave a

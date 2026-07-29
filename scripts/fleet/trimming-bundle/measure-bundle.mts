@@ -35,7 +35,7 @@ const logger = getDefaultLogger()
 export interface Preconditions {
   distExists: boolean
   rolldownConfigImportsStub: boolean
-  libStubPresent: boolean
+  bundleStubPresent: boolean
 }
 
 export interface BundleMeasurement {
@@ -75,13 +75,13 @@ export function checkPreconditions(repoDir: string): Preconditions {
   let rolldownConfigImportsStub = false
   if (existsSync(configPath)) {
     rolldownConfigImportsStub = readFileSync(configPath, 'utf8').includes(
-      'createLibStubPlugin',
+      'createBundleStubPlugin',
     )
   }
-  const libStubPresent = existsSync(
-    path.join(repoDir, '.config', 'repo', 'rolldown', 'lib-stub.mts'),
+  const bundleStubPresent = existsSync(
+    path.join(repoDir, '.config', 'repo', 'rolldown', 'bundle-stub.mts'),
   )
-  return { distExists, libStubPresent, rolldownConfigImportsStub }
+  return { distExists, bundleStubPresent, rolldownConfigImportsStub }
 }
 
 export async function measureBundle(
@@ -128,7 +128,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         `bundle size: ${m.bundleSizeBytes} bytes across ${m.perFileSizes.length} file(s)`,
       )
       logger.info(
-        `preconditions: dist=${m.preconditions.distExists} stub-import=${m.preconditions.rolldownConfigImportsStub} lib-stub=${m.preconditions.libStubPresent}`,
+        `preconditions: dist=${m.preconditions.distExists} stub-import=${m.preconditions.rolldownConfigImportsStub} bundle-stub=${m.preconditions.bundleStubPresent}`,
       )
       for (let i = 0, n = Math.min(5, m.perFileSizes.length); i < n; i += 1) {
         const f = m.perFileSizes[i]!

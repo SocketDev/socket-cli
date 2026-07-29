@@ -5,7 +5,7 @@
  *   hazards this helper closes. (1) Snapshot builds: the hook-dispatch SNAPSHOT
  *   bundle imports each bundled hook's pure helper, so the hook's whole module
  *   — including its guard — lands in the bundle's top-level eval graph. When
- *   `node --build-snapshot <bundle.cjs>` is given an ABSOLUTE entry path,
+ *   `node --build-snapshot <fleet-pack.cjs>` is given an ABSOLUTE entry path,
  *   `process.argv[1]` is that absolute path and rolldown's CJS lowering of
  *   `import.meta.url` (`pathToFileURL(__filename).href`) resolves to the SAME
  *   absolute file URL — the equality holds, `main()` fires DURING THE BUILD

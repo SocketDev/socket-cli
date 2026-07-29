@@ -5,7 +5,7 @@
 // it stays plain CJS so V8's compile cache reliably caches AND auto-flushes it
 // (a type-stripped .mts loader did not auto-flush: a normal exit left zero
 // cache files). It turns the compile cache on, pointing at the repo's
-// node_modules/.cache/fleet/fleet-hooks dir, then requires the CJS bundle. The
+// .cache/fleet/fleet-hooks dir, then requires the CJS bundle. The
 // dispatcher reads the event from process.argv[2], which settings.json passes
 // as `node .../hooks/fleet/index.cjs <Event>`. This loader is hand-written and
 // lives ABOVE `_dist/` — that dir holds exclusively build output.
@@ -20,8 +20,8 @@ const fs = require('node:fs')
 // for the live .claude/hooks/fleet/ copy, but the identical
 // template/base/ SEED copy resolves 3-up to `template/base/` — so when a test or
 // tool executes the seed, enableCompileCache writes a stray
-// template/base/node_modules/.cache. Anchoring at the workspace marker keeps the
-// cache in the repo's real node_modules in both cases.
+// template/base/.cache — inside the cascade payload. Anchoring at the
+// workspace marker keeps the cache in the repo's real root in both cases.
 function findRepoRoot(start) {
   let dir = start
   for (let i = 0; i < 10; i += 1) {
@@ -52,7 +52,7 @@ try {
   // node_modules to anchor to, and a guessed path is worse than no cache.
   if (repoRoot) {
     require('node:module').enableCompileCache?.(
-      path.join(repoRoot, 'node_modules', '.cache', 'fleet', 'fleet-hooks'),
+      path.join(repoRoot, '.cache', 'fleet', 'fleet-hooks'),
     )
   }
 } catch {
@@ -61,7 +61,7 @@ try {
 }
 
 // enableCompileCache (above) only caches modules required AFTER it runs, so it
-// MUST precede the first non-builtin require. Keep `./_dist/bundle.cjs` — and every
+// MUST precede the first non-builtin require. Keep `./_dist/fleet-pack.cjs` — and every
 // other non-builtin require — BELOW this line; only `node:` builtins (path / fs
 // / module) may load above.
 // Reaches `process.stderr` only when called (bundle-load failure), not at
@@ -69,7 +69,7 @@ try {
 // handle on every import.
 //
 // This is the fleet hook-system HEALTH NET, and it lives HERE — in the
-// hand-written loader, OUTSIDE `_dist/bundle.cjs` — on purpose: a net that
+// hand-written loader, OUTSIDE `_dist/fleet-pack.cjs` — on purpose: a net that
 // detects "the bundle failed to load" cannot live inside the bundle it checks.
 // Every dispatched event routes through this loader, so a missing/broken bundle
 // means every fleet hook is silently OFF until it is rebuilt (source repo) or
@@ -107,7 +107,7 @@ function reportBundleLoadFailure(e) {
 }
 
 try {
-  require('./_dist/bundle.cjs')
+  require('./_dist/fleet-pack.cjs')
 } catch (e) {
   // Fail-open: a broken/missing bundle must never wedge a tool call.
   // settings.json wires every dispatched event through THIS loader, so a

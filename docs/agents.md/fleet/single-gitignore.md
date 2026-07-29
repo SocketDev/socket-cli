@@ -16,7 +16,7 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
   this repo ignore" across the tree. A root-only `**/`-anchored pattern reaches
   any depth — including the `template/base/` mirror — so nesting buys nothing.
 - **Scoped ignores use `**/` anchoring, not nesting.** To ignore a generated
-  artifact deep in the tree (e.g. the `_dispatch/` build output), add a
+  artifact deep in the tree (e.g. the `_shared/` build output), add a
   `**/<path>` line to the root block — it matches the live copy AND the
   `template/base/` mirror in one line.
 - **Vendored / untracked-by-default trees are exempt.** A `.gitignore` inside a
@@ -38,6 +38,6 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
 Ignore rules scattered across nested files are the same defect as any
 duplicated source of truth: the answer to "what is ignored here" stops being
 greppable in one file, the generator can no longer own the whole set, and a
-stray nested file (like the `_dispatch/.gitignore` this rule retired) silently
+stray nested file (like the `_shared/.gitignore` this rule retired) silently
 diverges from the canonical block. One file, one place. See also
 [`single-source-of-truth`](single-source-of-truth.md).

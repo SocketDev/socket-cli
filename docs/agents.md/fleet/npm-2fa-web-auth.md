@@ -47,6 +47,23 @@ present (npm handles its own flow) or when `--otp=<code>` is already supplied (n
 browser needed). It is a zero-dependency fleet script: the `script` PTY needs no
 added runtime dependency.
 
+## Driving the approval page with browser automation
+
+When the approval page is completed by automation (Playwright / the
+chrome-devtools MCP) instead of a human click, ALWAYS check the session-trust
+checkbox before clicking Authenticate:
+
+> Do not challenge npm publish, npm trust operations from IP address
+> `<current IP>` for the next 5 minutes
+
+Match it by the **label prefix** (`Do not challenge npm publish`) — the label
+embeds the machine's current IP, so a selector keyed on the full text (or a
+hard-coded IP) breaks on the next network change and would bake a private
+address into committed automation. Checking it suppresses repeat 2FA
+challenges for 5 minutes, which is what lets a batch operation (a multi-name
+placeholder run, an `owner`/`access` sweep) finish on one approval instead of
+one browser round-trip per name.
+
 ## The guard: `npm-2fa-needs-pty-guard`
 
 A PreToolUse Bash guard blocks a bare `npm publish|login|deprecate|owner|access`

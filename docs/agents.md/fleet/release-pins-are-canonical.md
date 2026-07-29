@@ -7,8 +7,8 @@ persisted pin stores **only exact canonical values**.
 
 ## The canonical forms
 
-- `bundle.ref` — an exact `fleet-bundle-<hex>` release tag
-  (`fleet-bundle-a1b2c3d`), the content-addressed template-SHA stamp. No
+- `bundle.ref` — an exact `fleet-pack-<hex>` release tag
+  (`fleet-pack-a1b2c3d`), the content-addressed template-SHA stamp. No
   semver, no range, no `latest`/`main`/`stable`/`newest` alias.
 - `bundle.cascadeSha` — a bare 40-hex git SHA (lowercase, no `v` prefix, no
   range, no alias). A manifest's `templateSha` is the same shape.
@@ -28,7 +28,7 @@ Two layers, deliberately paired (code-is-law):
   to invent a ref (see `fix-bundle-pin.mts`).
 - **Belt** — `scripts/fleet/check/release-pins-are-canonical.mts` re-asserts the
   invariant over the **committed** tree: the effective
-  `.config/…/socket-wheelhouse.json` `bundle` block and any git-tracked
+  `.config/repo/socket-wheelhouse.json` `bundle` block and any git-tracked
   `release-bundle-manifest.json`. This catches a pin hand-edited past the write
   gate, or a member config that predates it. It does not relax or duplicate the
   write-time shape check — it re-asserts it, and additionally names `stable` and

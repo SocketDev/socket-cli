@@ -6,10 +6,10 @@
  *   Fleet hooks reach a running agent through a three-step chain, each step
  *   consuming the previous step's output:
  *
- *     gen/hook-dispatch.mts   -> _dispatch/dispatch-table*.mts   (routing)
- *     build-hook-bundle.mts   -> _dist/bundle.cjs                (table INLINED)
- *     build-hook-snapshot.mts -> _dispatch/{snapshot,excluded}-bundle.cjs + blob
- *     build-snapshot-launcher -> _dispatch/snapshot-blob.path, blob pin
+ *     gen/hook-dispatch.mts   -> _shared/dispatch-table*.mts   (routing)
+ *     build-hook-bundle.mts   -> _dist/fleet-pack.cjs                (table INLINED)
+ *     build-hook-snapshot.mts -> _shared/{snapshot,excluded}-fleet-pack.cjs + blob
+ *     build-snapshot-launcher -> _shared/snapshot-blob.path, blob pin
  *
  *   `dispatch-table-is-current` asserts step 1's output matches the hook dirs.
  *   This gate asserts steps 2-4 were rebuilt AFTER it: the launcher prefers the
@@ -25,7 +25,7 @@
  *   over the current hook dirs — not to the on-disk table, which is itself
  *   rebuilt by the same commands and would agree with a stale sibling. The blob
  *   leg reuses the existing content keying: `build-hook-snapshot.mts` names the
- *   blob `dispatch-<sha256-16 of snapshot-bundle.cjs>.blob`, so re-deriving that
+ *   blob `dispatch-<sha256-16 of snapshot-fleet-pack.cjs>.blob`, so re-deriving that
  *   hash says whether `snapshot-blob.path` pins a blob built from the CURRENT
  *   snapshot bundle.
  *
@@ -60,7 +60,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-const SNAPSHOT_BUNDLE_PATH = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
+const SNAPSHOT_BUNDLE_PATH = path.join(DISPATCH_DIR, 'snapshot-fleet-pack.cjs')
 const SNAPSHOT_BLOB_PIN_PATH = path.join(DISPATCH_DIR, 'snapshot-blob.path')
 
 // The exact rebuild sequence, in order. Each step consumes the previous one's
@@ -123,17 +123,17 @@ export interface DispatchScanResult {
 export const DISPATCH_ARTIFACT_SPECS: readonly DispatchArtifactSpec[] = [
   {
     artifactPath: HOOK_BUNDLE_PATH,
-    moduleSuffix: '_dispatch/dispatch-table.mts',
+    moduleSuffix: '_shared/dispatch-table.mts',
     variant: 'full',
   },
   {
     artifactPath: SNAPSHOT_BUNDLE_PATH,
-    moduleSuffix: '_dispatch/dispatch-table-snapshot.mts',
+    moduleSuffix: '_shared/dispatch-table-snapshot.mts',
     variant: 'snapshot',
   },
   {
     artifactPath: EXCLUDED_BUNDLE_PATH,
-    moduleSuffix: '_dispatch/dispatch-table-excluded.mts',
+    moduleSuffix: '_shared/dispatch-table-excluded.mts',
     variant: 'excluded',
   },
 ]
@@ -427,7 +427,7 @@ export function scanDispatchArtifacts(config: {
       failures.push(
         `  Where: ${normalizePath(path.relative(cfg.repoRoot, cfg.snapshotBlobPinPath))}\n` +
           `  Saw:   pins ${path.basename(normalizePath(pinnedBlobPath))}, an EXISTING blob built from a different snapshot bundle\n` +
-          `         (wanted: dispatch-${expectedHash}.blob, the content key of the current snapshot-bundle.cjs)`,
+          `         (wanted: dispatch-${expectedHash}.blob, the content key of the current snapshot-fleet-pack.cjs)`,
       )
     }
   }

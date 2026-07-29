@@ -8,7 +8,7 @@ member repos**.
 
 Repo-agnostic files copied verbatim. Edit only in `template/base/...`; they
 mirror to every member unchanged. The whole content is fleet-owned — repo-local
-content must live OUTSIDE these trees (e.g. the `.claude/hooks/repo/` carve-out).
+content must live OUTSIDE these trees (e.g. the `.claude/hooks/repo/**` carve-out).
 These ship in the **release bundle** (`make-release-bundle.mts`), not per-file
 cascade.
 

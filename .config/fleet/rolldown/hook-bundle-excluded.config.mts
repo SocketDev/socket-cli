@@ -18,7 +18,7 @@ import {
   DISPATCH_DIR,
   EXCLUDED_BUNDLE_PATH,
 } from '../../../scripts/fleet/paths.mts'
-import { createLibStubPlugin } from '../../repo/rolldown/lib-stub.mts'
+import { createBundleStubPlugin } from '../../repo/rolldown/bundle-stub.mts'
 
 const config: RolldownOptions = {
   external: [/^node:/],
@@ -38,13 +38,13 @@ const config: RolldownOptions = {
     // Same reachability stubs as the main bundle — the excluded hooks run in
     // a plain runtime process, but the glob/sort subgraphs are still dead
     // weight on the dispatch path.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern: /@socketsecurity\/lib(?:-stable)?\/.*\/(?:globs|sorts)\.js$/,
     }),
     // Lazy-semver proxy, same rationale as hook-bundle.config.mts: inlined
     // semver's circular comparator require breaks at module-eval; defer to
     // first access.
-    createLibStubPlugin({
+    createBundleStubPlugin({
       stubPattern:
         /@socketsecurity\/lib(?:-stable)?\/.*\/external\/semver\.js$/,
       stubCode:

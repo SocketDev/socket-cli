@@ -36,12 +36,12 @@ fleet block, and hundreds of references key off its path). `AGENTS.md` is a
 
 Codex + OpenCode discover skills **one level deep** (`<root>/<name>/SKILL.md`), so
 the fleet's segmented `.claude/skills/{fleet,repo}/<name>/` is invisible to them.
-`gen/agents-skills-mirror.mts` generates a flat mirror at
+`scripts/fleet/gen/agents-skills-mirror.mts` generates a flat mirror at
 `.agents/skills/<tier>-<name>/` (e.g. `fleet-codifying-disciplines`) with the
 frontmatter `name:` rewritten to match the dir. OpenCode validates name === dir,
 so the mirror is a generated COPY rather than a symlink. Claude keeps reading
 `.claude/skills/`; Codex + OpenCode read the mirror. The mirror is generated and
-git-untracked: the cascade regenerates it (`sync-scaffolding/fix-agents-mirror.mts`)
+git-untracked: the cascade regenerates it (`scripts/repo/sync-scaffolding/fix-agents-mirror.mts`)
 and the `agents-skills-mirror-nudge` hook flags a hand-edited skill source, so
 no `check --all` gate verifies it.
 

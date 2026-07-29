@@ -52,8 +52,8 @@ const TOP_DECL_RE =
 
 const SOURCE_EXTS = new Set<string>(['.cjs', '.cts', '.mjs', '.mts', '.ts'])
 const SKIP_DIRS = new Set<string>([
-  '_dispatch',
   '_dist',
+  '_shared',
   '.git',
   '.repo-map',
   'build',

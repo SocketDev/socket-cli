@@ -8,14 +8,14 @@
  *
  *   The cascaded, fleet-canonical `settings.json` points every dispatch event at
  *   `node "$CLAUDE_PROJECT_DIR"/.claude/hooks/fleet/index.cjs <Event>`
- *   — the V8 COMPILE-CACHE path. That bundle (`index.cjs` → `bundle.cjs`) holds
+ *   — the V8 COMPILE-CACHE path. That bundle (`index.cjs` → `fleet-pack.cjs`) holds
  *   the COMPLETE 190-hook set and is correct on every OS/arch with zero
  *   per-machine state, so it is the always-safe baseline that ships to every
  *   fleet repo. It is also the launcher's own fail-open target.
  *
  *   On top of that baseline this step adds the faster path for THIS machine:
  *
- *     1. Rebuild the production bundle (`index.cjs`/`bundle.cjs`), the snapshot
+ *     1. Rebuild the production bundle (`index.cjs`/`fleet-pack.cjs`), the snapshot
  *        bundle, and the runtime-keyed blob, so the compile-cache baseline is
  *        current and a matching blob exists for the host node × arch × V8 tag.
  *     2. Compile the native launcher for the HOST os/arch + freeze its sidecars
@@ -133,7 +133,7 @@ function main(): void {
   }
 
   // A bundle-only member has no hook source — the rebuild passes below would
-  // replace the release-shipped bundle.cjs with an empty one. The snapshot
+  // replace the release-shipped fleet-pack.cjs with an empty one. The snapshot
   // fast path is a source-repo affordance only.
   if (!hasFleetHookSource(REPO_ROOT)) {
     logger.log(

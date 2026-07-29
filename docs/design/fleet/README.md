@@ -310,8 +310,8 @@ the build. Example output:
   All status colors clear WCAG AA.
 ```
 
-If you add a new color combination, add it to `.config/contrast.json` so
-the lint covers it.
+If you add a new color combination, add it to the `design.contrast` block of
+your repo's `.config/repo/socket-wheelhouse.json` marker so the lint covers it.
 
 ## Animations
 

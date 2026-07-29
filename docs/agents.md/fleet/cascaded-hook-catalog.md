@@ -12,7 +12,7 @@ or changing a cascaded hook/rule.
 ## Hook config + `_shared` helpers
 
 - **Claude Code hook config** — wires every fleet hook into its lifecycle event.
-  NOT byte-copied (settings.json is handled by `checks/settings-merge.mts` as a
+  NOT byte-copied (settings.json is handled by `scripts/repo/sync-scaffolding/checks/settings-merge.mts` as a
   partial-canonical file): the fleet portion comes from the template's
   settings.json, but each fleet repo can additionally wire `hooks/repo/<name>/`
   entries via the per-hook `hook.json` declaration. The fixer merges template +
@@ -64,7 +64,7 @@ or changing a cascaded hook/rule.
 ## Reminder family (Stop hooks)
 
 Stop hooks that emit informational stderr (never block) when the most-recent
-assistant turn matches a pattern. All share `_shared/stop-nudge.mts`. Listed
+assistant turn matches a pattern. All share `.claude/hooks/fleet/_shared/stop-nudge.mts`. Listed
 in `.claude/settings.json` under the Stop block; missing any breaks every Stop
 hook in the repo. Members include comment-tone, perfectionist,
 parallel-agent-on-stop-nudge, squash-history-nudge,
@@ -150,7 +150,8 @@ phrase (where one exists):
 - **overeager-staging-guard** — PreToolUse(Bash) refusing `git add` far from a
   commit step. Every repo MUST ship the dir (settings.json `Bash` matcher load contract).
 - **private-name-nudge** — PreToolUse(Bash) refusing literal personal identifiers
-  (canonical list at `.claude/private-names.json`).
+  (pattern-based at write time — deliberately no canonical name list, since a
+  denylist would itself leak the names).
 - **new-hook-claude-md-guard** — PreToolUse(Edit|Write) refusing a new
   `.claude/hooks/<name>/index.mts` unless CLAUDE.md cites `(enforced by …)`.
 - **no-blind-keychain-read-guard** — PreToolUse(Bash) refusing direct keychain
@@ -160,12 +161,12 @@ phrase (where one exists):
   `--keep-redundant-commits`. Bypass: `Allow empty-commit bypass`.
 - **no-token-in-dotenv-guard** — PreToolUse(Edit|Write) refusing a real API token
   in `.env`/`.envrc`. Bypass: `Allow dotenv-token bypass`. Uses
-  `_shared/token-patterns.mts`.
+  `.claude/hooks/fleet/_shared/token-patterns.mts`.
 - **setup-security-tools** — Stop health-check for broken SFW shims + edition
   mismatches; reports, never auto-installs. Platform-aware token/shim repair
   (macOS Keychain / Linux secret-tool / Windows CredentialManager).
 - **setup-firewall / setup-claude-scanners / setup-basics-tools / setup-misc-tools**
-  — four scoped install entrypoints importing from the umbrella's `lib/installers.mts`.
+  — four scoped install entrypoints importing from the umbrella's `.claude/hooks/fleet/setup-security-tools/lib/installers.mts`.
 - **setup-signing** — detect signing method (1Password SSH agent → `~/.ssh` keys →
   GPG) and configure git commit signing.
 - **claude-md-section-size-guard** — PreToolUse(Edit|Write) capping per-`###`-section
@@ -195,6 +196,6 @@ Long-form expansions of the fleet-canonical CLAUDE.md rules live under
 `docs/agents.md/fleet/`, which cascades via the `docs/agents.md/fleet` directory
 entry (per-file entries redundant — the rm-and-copy dir mirror covers them).
 `no-local-fork.md` is among them (linked by both no-fleet-fork-guard
-and the CLAUDE.md fleet block). The old `docs/agents.md/wheelhouse/` tier is
+and the CLAUDE.md fleet block). The old `wheelhouse/` tier under `docs/agents.md/` is
 retired (tombstoned in `REMOVED_FILES`); downstream repos may add their own
 `docs/agents.md/<repo>/` subdirectory for repo-specific docs.

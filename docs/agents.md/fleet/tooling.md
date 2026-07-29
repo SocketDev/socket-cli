@@ -24,7 +24,7 @@ For file + content search in a git-indexed tree, reach for the **fff** MCP tools
 
 A Python project uses [`uv`](https://docs.astral.sh/uv/) (Astral), pinned in `external-tools.json` (currently `0.11.21`). uv is the Python analog of the fleet's pnpm model: a hash-verified `uv.lock` plus an `exclude-newer` soak. The dev shortcut for one-off CLI tools stays `pipx install <pkg>==<ver>` (pinned). Never bare `pip`/`pip3` (`.claude/hooks/fleet/prefer-pipx-over-pip-guard/`).
 
-A project opts into uv with a `[tool.uv]` table in `pyproject.toml`. Such a project MUST commit a `uv.lock` and pin the soak; `scripts/fleet/check/uv-lockfiles-are-current.mts` (in `check --all`) fails otherwise. Both the check and any future guard read `_shared/uv-config.mts`.
+A project opts into uv with a `[tool.uv]` table in `pyproject.toml`. Such a project MUST commit a `uv.lock` and pin the soak; `scripts/fleet/check/uv-lockfiles-are-current.mts` (in `check --all`) fails otherwise. Both the check and any future guard read `.claude/hooks/fleet/_shared/uv-config.mts`.
 
 - **Lockfile.** `uv lock` writes `uv.lock` with per-dependency hashes; uv verifies them on install, so no separate `--require-hashes`. Commit it like `pnpm-lock.yaml`.
 - **Reproducible CI.** `uv sync --locked` installs strictly from the lock and errors if it's stale (the `--frozen-lockfile` analog). `uv sync --frozen` skips the staleness check. `uv lock --check` asserts the lock is current with no side effects.
@@ -41,7 +41,7 @@ uv is pre-1.0 (`0.x`) — adopted as a noted exception to the stable-1.0+ rule b
 
 ## ripgrep: `-r` never clusters
 
-rg's `-r` (`--replace`) takes a value, so inside a short-flag cluster it consumes the REST of the cluster as the replacement text: `rg -rln <pattern>` parses as `rg --replace 'ln' <pattern>`. Every match is rewritten to the literal text `ln` instead of listing files with line numbers, and the command still exits 0, so the corruption is easy to miss. Spell `-r` separately (`rg -l -n`), use long flags, or pass `--replace '<text>'` only when a replacement is meant. `-r` last in a cluster (`-lnr <text>`) and standalone `-r <text>` read the next argument as the replacement and are fine. Nudged by `.claude/hooks/fleet/rg-replace-flag-nudge/`.
+rg's `-r` (`--replace`) takes a value, so inside a short-flag cluster it consumes the REST of the cluster as the replacement text: `rg -rln <pattern>` parses as `rg --replace 'ln' <pattern>`. Every match is rewritten to the literal text `ln` instead of listing files with line numbers, and the command still exits 0, so the corruption is easy to miss. Spell `-r` separately (`rg -l -n`), use long flags, or pass `--replace '<text>'` only when a replacement is meant. `-r` last in a cluster (`-lnr <text>`) and standalone `-r <text>` read the next argument as the replacement and are fine. BLOCKED by `.claude/hooks/fleet/rg-replace-flag-guard/`, bypass slug `rg-replace-cluster`.
 
 ## Reserved `scripts/` dir names
 
@@ -49,7 +49,7 @@ Script tiers are `scripts/fleet/` + `scripts/repo/`; name any other dir for its 
 
 ## CDN allowlist
 
-A `curl`/`wget`/`fetch` to an off-allowlist host is blocked — fetch only from approved public package registries / CDNs (`_shared/cdn-allowlist.mts` seed; public hosts only, NEVER an internal `*.svc.cluster.local`). Bypass `Allow cdn-allowlist bypass` (`.claude/hooks/fleet/cdn-allowlist-guard/`).
+A `curl`/`wget`/`fetch` to an off-allowlist host is blocked — fetch only from approved public package registries / CDNs (`.claude/hooks/fleet/_shared/cdn-allowlist.mts` seed; public hosts only, NEVER an internal `*.svc.cluster.local`). Bypass `Allow cdn-allowlist bypass` (`.claude/hooks/fleet/cdn-allowlist-guard/`).
 
 ## Package-manager auto-update OFF
 
@@ -57,7 +57,7 @@ Every package manager the fleet uses for tooling (`brew`/`choco`/`winget`/`scoop
 
 ## Homebrew supply-chain hardening (macOS)
 
-Homebrew 6.0.0 added two opt-in supply-chain controls. The fleet requires both, plus the version floor they depend on — a `brew` below 6.0.0 or with a knob unset is blocked at invocation (`.claude/hooks/fleet/brew-supply-chain-guard/`), audited in `check --all` (`scripts/fleet/check/brew-supply-chain-is-hardened.mts`), and set by `setup-security-tools` (persists both knobs into the managed shell-rc block). All three read `_shared/brew-supply-chain.mts`.
+Homebrew 6.0.0 added two opt-in supply-chain controls. The fleet requires both, plus the version floor they depend on — a `brew` below 6.0.0 or with a knob unset is blocked at invocation (`.claude/hooks/fleet/brew-supply-chain-guard/`), audited in `check --all` (`scripts/fleet/check/brew-supply-chain-is-hardened.mts`), and set by `setup-security-tools` (persists both knobs into the managed shell-rc block). All three read `.claude/hooks/fleet/_shared/brew-supply-chain.mts`.
 
 - **`HOMEBREW_REQUIRE_TAP_TRUST=1`** — refuse to evaluate a third-party tap's code until it is explicitly trusted (`brew trust user/repo`, or `--formula`/`--cask`/`--command` for a single item). Closes the tap-as-RCE surface. Official taps stay trusted by default. See <https://docs.brew.sh/Tap-Trust>.
 - **`HOMEBREW_CASK_OPTS_REQUIRE_SHA=1`** — refuse a cask whose download has no pinned checksum (`sha256 :no_check`). See <https://docs.brew.sh/Supply-Chain-Security>.
@@ -66,7 +66,7 @@ Both env knobs are silently ignored by an older Homebrew, so the **≥6.0.0 vers
 
 ## Sparkle GUI-app auto-update OFF (macOS)
 
-macOS GUI apps the fleet uses for tooling that self-update via the [Sparkle](https://sparkle-project.org/) framework (e.g. OrbStack, bundle `dev.kdrag0n.MacVirt`) must have auto-update disabled. A Sparkle install can swap a tool version under a running build or scan, and it rides the app's own update channel outside the soak gate. Set by `setup-security-tools`, audited in `check --all` (`scripts/fleet/check/sparkle-auto-update-is-disabled.mts`); both read `_shared/sparkle-auto-update.mts`. There's no PreToolUse guard: a GUI app self-updates with no Bash invocation to gate, so persist plus audit are the surfaces.
+macOS GUI apps the fleet uses for tooling that self-update via the [Sparkle](https://sparkle-project.org/) framework (e.g. OrbStack, bundle `dev.kdrag0n.MacVirt`) must have auto-update disabled. A Sparkle install can swap a tool version under a running build or scan, and it rides the app's own update channel outside the soak gate. Set by `setup-security-tools`, audited in `check --all` (`scripts/fleet/check/sparkle-auto-update-is-disabled.mts`); both read `.claude/hooks/fleet/_shared/sparkle-auto-update.mts`. There's no PreToolUse guard: a GUI app self-updates with no Bash invocation to gate, so persist plus audit are the surfaces.
 
 The disable writes two Sparkle prefs into the app's defaults domain — a user-level `defaults write` overrides the Info.plist default:
 
@@ -75,7 +75,7 @@ defaults write dev.kdrag0n.MacVirt SUAutomaticallyUpdate -bool false
 defaults write dev.kdrag0n.MacVirt SUEnableAutomaticChecks -bool false
 ```
 
-`SUEnableAutomaticChecks=false` stops the background update check; `SUAutomaticallyUpdate=false` stops silent install of a found update. Add a new Sparkle app by appending to `SPARKLE_APPS` in `_shared/sparkle-auto-update.mts` (id, name, bundle-id domain); the persist and audit pick it up automatically.
+`SUEnableAutomaticChecks=false` stops the background update check; `SUAutomaticallyUpdate=false` stops silent install of a found update. Add a new Sparkle app by appending to `SPARKLE_APPS` in `.claude/hooks/fleet/_shared/sparkle-auto-update.mts` (id, name, bundle-id domain); the persist and audit pick it up automatically.
 
 ## Lint/fix scope: modified by default, `--all` for waves
 
@@ -107,11 +107,11 @@ Vitest `include` globs must not match `node:test` files. Mismatched runners prod
 
 ## Bundler
 
-`rolldown`, NOT `esbuild`. The fleet standardizes on rolldown for direct bundling (see `template/.config/rolldown/`). Transitive esbuild deps (e.g. via vitest) are unavoidable today. The rule is no _new direct_ esbuild use anywhere in the fleet.
+`rolldown`, NOT `esbuild`. The fleet standardizes on rolldown for direct bundling (see `template/base/.config/fleet/rolldown/` and the plugins under `template/base/.config/repo/rolldown/`). Transitive esbuild deps (e.g. via vitest) are unavoidable today. The rule is no _new direct_ esbuild use anywhere in the fleet.
 
 ## Engine-gate folding (`engine-gate-fold`)
 
-`.config/repo/rolldown/engine-gate-fold.mts` (`createEngineGateFoldPlugin`) precomputes semver-vs-runtime engine gates in bundled (vendored) code from the `engines.node` of the package being built. Vendored deps ship gates like `useNative = node.satisfies('>=16.7.0')` (the @npmcli/fs `lib/common/node.js` shape) whose losing branch — usually a polyfill — is dead weight the bundler can't drop because the gate looks dynamic. Motivating incident: socket-packageurl-js's bundled `dist/exists.js` crashed at require-time on exactly that vendored gate.
+`.config/repo/rolldown/engine-gate-fold.mts` (`createEngineGateFoldPlugin`) precomputes semver-vs-runtime engine gates in bundled (vendored) code from the `engines.node` of the package being built. Vendored deps ship gates like `useNative = node.satisfies('>=16.7.0')` (the @npmcli/fs `lib/common/node.js` shape) whose losing branch — usually a polyfill — is dead weight the bundler can't drop because the gate looks dynamic. Motivating incident: socket-packageurl-js's bundled `dist/exists.js` crashed at require-time on exactly that vendored gate. <!-- docs-refs-ignore: package-internal paths in other packages/repos -->
 
 - **Statically-safe shapes only, string-literal ranges only**: `satisfies(process.version, 'R')` / `semver.satisfies(process.version, 'R')` and comparator forms `gte|gt|lte|lt(process.version, 'V')` when the callee provably binds to the `semver` package, plus `helper.satisfies('R')` when the callee resolves to a vendored node-version helper module structurally verified to wrap `semver.satisfies(process.version, range)`. Anything dynamic stays untouched.
 - **Verdicts are interval math against `engines.node`** (read once at plugin creation; the factory throws without a valid range): engines ⊆ gate-range → literal `true`; provably disjoint → literal `false`; partial overlap → untouched. Unbounded floors are honest: `>=99` under engines `>=18` is a partial overlap — a future node 99 exists in both sets — not a false fold — provable `false` comes from upper-bounded gates (`lt(process.version, '18.0.0')` under `>=18`) or bounded engines unions (`^18 || ^20` vs `>=99`).
@@ -120,7 +120,7 @@ Vitest `include` globs must not match `node:test` files. Mismatched runners prod
 
 ## Factory-collision guards (`factory-collision`)
 
-`.config/repo/rolldown/factory-collision.mts` guards the nested-bundle factory-collision class: re-bundling a file that is ITSELF a bundler output — a pre-bundled dependency like socket-lib's `dist/external/npm-pack.js` — carries pre-suffixed CJS factory bindings such as `require_node$2`, and rolldown's identifier deconflicter can rename another `require_node` onto exactly that pre-existing name in the same emitted scope. The later `var` declaration silently clobbers the earlier, so an unrelated binding resolves to the wrong module at runtime. Motivating incidents: socket-cli's dlx crash — Arborist's `pacote` rebound to libnpmpack via a colliding `require_lib$10` — and socket-packageurl-js's `dist/exists.js` require-time crash, where two `var require_node$2` in one scope turned `node.satisfies` into a class.
+`.config/repo/rolldown/factory-collision.mts` guards the nested-bundle factory-collision class: re-bundling a file that is ITSELF a bundler output — a pre-bundled dependency like socket-lib's `dist/external/npm-pack.js` — carries pre-suffixed CJS factory bindings such as `require_node$2`, and rolldown's identifier deconflicter can rename another `require_node` onto exactly that pre-existing name in the same emitted scope. The later `var` declaration silently clobbers the earlier, so an unrelated binding resolves to the wrong module at runtime. Motivating incidents: socket-cli's dlx crash — Arborist's `pacote` rebound to libnpmpack via a colliding `require_lib$10` — and socket-packageurl-js's `dist/exists.js` require-time crash, where two `var require_node$2` in one scope turned `node.satisfies` into a class. <!-- docs-refs-ignore: dist paths inside other repos' bundles -->
 
 Two independent guards; adopt either or both in the repo's `rolldown.config.mts` `plugins`:
 
@@ -132,7 +132,7 @@ Two independent guards; adopt either or both in the repo's `rolldown.config.mts`
 
 Build-inlined constants use the `process.env.INLINED_*` naming convention (mirrors socket-cli: `INLINED_VERSION`, `INLINED_NAME`, …). The `INLINED_` prefix flags at a glance that a value is substituted at build time, not read from the real environment at runtime.
 
-Substitution is done by `template/.config/rolldown/define-guarded.mts` (`defineGuardedPlugin`), an esbuild-`define`-equivalent that only rewrites _read_ positions — it never touches assignment targets, `delete` / `++` / `--` operands, or dynamic `process.env[expr]` access (so `delete process.env.DEBUG` stays valid, unlike oxc's built-in `define`).
+Substitution is done by `template/base/.config/repo/rolldown/define-guarded.mts` (`defineGuardedPlugin`), an esbuild-`define`-equivalent that only rewrites _read_ positions — it never touches assignment targets, `delete` / `++` / `--` operands, or dynamic `process.env[expr]` access (so `delete process.env.DEBUG` stays valid, unlike oxc's built-in `define`).
 
 - **Source must use quoted bracket access**: `process.env['INLINED_EXTENSION_VERSION']`. `process.env` is an index-signature type, so TypeScript (TS4111) forbids dot access. The plugin normalizes dot and quoted-bracket access to the same dotted define key, so one `'process.env.INLINED_X'` key matches `process.env.INLINED_X`, `process.env['INLINED_X']`, and `process.env["INLINED_X"]`.
 - **Define key is the dotted form**: `defineGuardedPlugin({ 'process.env.INLINED_X': JSON.stringify(value) })`. Values are already-quoted source text (same contract as esbuild / oxc `define`).
@@ -162,7 +162,7 @@ Drift is directional. A pin behind a newer `external-tools.json` warns and conti
 node scripts/repo/cascade-fleet.mts --pnpm 11.3.0 [--dry-run] [--self]
 ```
 
-The bump stage (`pipeline-stages.mts#runBump` → `tools/<tool>.mts#applyToRegistry`) downloads every platform binary from upstream, recomputes sha256 ourselves (integrity = binary-download + own-checksum, never trust in upstream-published values), writes `socket-registry/.config/repo/external-tools.json`, and commits. Tools with a `sourceDir` override (node, npm) write the wheelhouse root instead (`.node-version` / `package.json` engines).
+The bump stage (`pipeline-stages.mts#runBump` → `tools/<tool>.mts#applyToRegistry`) downloads every platform binary from upstream, recomputes sha256 ourselves (integrity = binary-download + own-checksum, never trust in upstream-published values), writes socket-registry's `.config/repo/external-tools.json`, and commits. Tools with a `sourceDir` override (node, npm) write the wheelhouse root instead (`.node-version` / `package.json` engines).
 
 **Propagation is the sync-scaffolding cascade, not this script.** external-tools.json is a cascaded file — after a bump, run the cascade to fan it out to every member. The former registry-hosted reconcile / gate / propagate stages (which pinned members to a socket-registry SHA) were retired with the socket-registry shared-source model; fleet actions now live in each repo as `.github/actions/fleet/*`, referenced by local `./` path, so there is no cross-repo pin to rewrite. (`--skip-ci-wait` / `--ci-timeout` are vestigial no-ops from the retired gate stage.)
 
@@ -226,7 +226,7 @@ Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule upd
 
 ## `npm-run-all2` + `node --run` opt-in
 
-The fleet pins `npm-run-all2: 9.0.0` in the wheelhouse catalog. Every repo that depends on it MUST also declare the top-level `"npm-run-all2": { "nodeRun": true }` key in its own `package.json`. That key tells npm-run-all2 9.x to execute each script via `node --run` instead of the package manager CLI. `run-s build:*` and `run-p test:*` chains skip the per-script pnpm startup cost, which is non-trivial for N-script fan-outs. Inherited limitations from `node --run` (no `pre`/`post` lifecycle hooks; no `npm_*` env injection: `NODE_RUN_SCRIPT_NAME` + `NODE_RUN_PACKAGE_JSON_PATH` replace them; `node_modules/.bin` still on PATH) are acceptable for the fleet because none of our canonical scripts rely on those features. Enforced by `scripts/sync-scaffolding/checks/package-npm-run-all2-noderun.mts`: `npm_run_all2_node_run_missing` findings auto-fix.
+The fleet pins `npm-run-all2: 9.0.0` in the wheelhouse catalog. Every repo that depends on it MUST also declare the top-level `"npm-run-all2": { "nodeRun": true }` key in its own `package.json`. That key tells npm-run-all2 9.x to execute each script via `node --run` instead of the package manager CLI. `run-s build:*` and `run-p test:*` chains skip the per-script pnpm startup cost, which is non-trivial for N-script fan-outs. Inherited limitations from `node --run` (no `pre`/`post` lifecycle hooks; no `npm_*` env injection: `NODE_RUN_SCRIPT_NAME` + `NODE_RUN_PACKAGE_JSON_PATH` replace them; `node_modules/.bin` still on PATH) are acceptable for the fleet because none of our canonical scripts rely on those features. Enforced by `scripts/repo/sync-scaffolding/checks/package-npm-run-all2-noderun.mts`: `npm_run_all2_node_run_missing` findings auto-fix.
 
 ## Backward compatibility (npm-run-all2)
 

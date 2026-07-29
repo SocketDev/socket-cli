@@ -36,7 +36,7 @@ won't false-fire.
 - `findLast` / `findLastIndex` → reverse-iterate, or a manual loop from the end.
 - `Object.groupBy` / `Map.groupBy` → a `reduce` / loop building the groups.
 - `Promise.withResolvers` → the SDK's guarded `promiseWithResolvers` polyfill
-  (`socket-sdk-js/src/utils.mts`), or a manual executor that captures
+  (socket-sdk-js's `src/utils.mts`), or a manual executor that captures <!-- docs-refs-ignore: path in the socket-sdk-js repo -->
   `resolve`/`reject`.
 - `Array.fromAsync` → a `for await … of` loop pushing into an array.
 

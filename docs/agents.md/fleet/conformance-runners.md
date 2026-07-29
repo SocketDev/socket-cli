@@ -31,7 +31,7 @@ packages/<pkg>/
 
 External corpora live at `test/fixtures/<corpus>/`, NOT `upstream/`.
 Build-time submodules use `upstream/`; test-time corpora use
-`test/fixtures/`. The distinction signals whether bumping the
+`test/fixtures/<corpus>/`. The distinction signals whether bumping the
 submodule affects shipped artifacts. See related
 [`../fleet/untracked-by-default.md`](untracked-by-default.md) for
 adjacent rules on vendored trees.
@@ -82,7 +82,7 @@ Avoid spawning a persisted `.mjs` _entry file_ inside the binary. If you ever mu
 
 ### 3. Integration vitest wrapper (auto-gate)
 
-A ~20-line `.test.mts` under `test/integration/` that:
+A ~20-line `.test.mts` at `test/integration/<corpus>-<scope>.test.mts` that:
 
 1. Resolves the built binary (returns `undefined` if no build exists).
 2. Computes `skipIf` from that.
@@ -123,7 +123,7 @@ is a manual ritual the dev has to remember.
 
 ### 4. Unit tests for the pure modules
 
-A `.test.mts` under `test/unit/` covering the classifier exhaustively.
+A `.test.mts` at `test/unit/<corpus>-<scope>.test.mts` covering the classifier exhaustively.
 At minimum: every transition (success/failure × allowed/disallowed),
 stale-allowlist (test passes that's in the allowlist), and
 prefix-match edge cases.
@@ -173,8 +173,8 @@ The runner should always exit non-zero on (a) unexpected failure (test not in al
 
 As of 2026-05, the closest-to-canonical implementations in the fleet:
 
-- `socket-btm/packages/temporal-infra/test/scripts/test262-temporal-runner.mts`: best module split + unit-tested classifier.
-- `socket-btm/packages/node-smol-builder/test/scripts/wpt-streams-runner.mts`: best integration wrapper shape.
+- `socket-btm/packages/temporal-infra/test/scripts/test262-temporal-runner.mts`: best module split + unit-tested classifier. <!-- docs-refs-ignore: path in the socket-btm repo -->
+- `socket-btm/packages/node-smol-builder/test/scripts/wpt-streams-runner.mts`: best integration wrapper shape. <!-- docs-refs-ignore: path in the socket-btm repo -->
 
 When in doubt, mirror temporal-infra's `test262/` subdirectory split.
 
@@ -197,6 +197,6 @@ When in doubt, mirror temporal-infra's `test262/` subdirectory split.
 
 ## Related skills + docs
 
-- `.claude/skills/running-test262/SKILL.md`: how to invoke runners per repo.
+- `.claude/skills/fleet/running-test262/SKILL.md`: how to invoke runners per repo.
 - [`untracked-by-default.md`](untracked-by-default.md): adjacent rules for vendored / build-copied trees.
 - [`parser-comments.md`](parser-comments.md): lock-step comment conventions for cross-language parser ports (relevant when a single package has multiple language lanes, each with its own runner).

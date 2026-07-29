@@ -1,6 +1,6 @@
 /**
  * @file Release-pipeline state store. One JSON file under
- *   `node_modules/.cache/fleet/socket-release-pipeline/` (runtime state NEVER
+ *   `.cache/fleet/socket-release-pipeline/` (runtime state NEVER
  *   lives in the tracked tree) records a receipt per completed stage so a
  *   pipeline run is resumable: a re-run skips stages whose receipts are still
  *   current and picks up at the first missing/stale one. Pure helpers
@@ -113,14 +113,7 @@ export const STATE_FILE_NAME = 'state.json'
  * Resolve the state file path for a repo root.
  */
 export function statePath(repoRoot: string): string {
-  return path.join(
-    repoRoot,
-    'node_modules',
-    '.cache',
-    'fleet',
-    STATE_DIR_NAME,
-    STATE_FILE_NAME,
-  )
+  return path.join(repoRoot, '.cache', 'fleet', STATE_DIR_NAME, STATE_FILE_NAME)
 }
 
 /**

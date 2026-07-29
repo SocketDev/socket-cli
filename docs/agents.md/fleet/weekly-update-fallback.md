@@ -4,7 +4,7 @@ The fleet's weekly dependency update runs two ways. The gh-aw workflow is the pr
 
 ## Primary: the gh-aw workflow
 
-`socket-registry/.github/workflows/weekly-update.lock.yml` (compiled from `weekly-update.md`) runs the update as a GitHub Agentic Workflow. It adds three things a plain job can't: a per-run and 24h AI-credit budget, a firewall egress allowlist for the agent, and a web-flow-signed safe-output PR. The 12 fleet delegators `uses:` it on a schedule. This is what runs in production.
+socket-registry's `.github/workflows/weekly-update.lock.yml` (compiled from `weekly-update.md`) runs the update as a GitHub Agentic Workflow. It adds three things a plain job can't: a per-run and 24h AI-credit budget, a firewall egress allowlist for the agent, and a web-flow-signed safe-output PR. The 12 fleet delegators `uses:` it on a schedule. This is what runs in production.
 
 ## Fallback: `pnpm run weekly-update` (plain, non-gh-aw)
 

@@ -13,10 +13,14 @@
  *   accrues under `## [Unreleased]`, and the bump promotes it into the
  *   release section (the sdk 4.0.2 cached-scan bullets were dropped by a
  *   stricter exact-match rule). A present `[Unreleased]` section is never a
- *   finding. A published version (version == last tag) is historical and not
- *   re-validated. Fail-open: any uncertainty (no tag, shallow clone,
- *   unreachable registry, unresolvable range anchor, unreadable CHANGELOG)
- *   skips rather than false-fails. Usage: node
+ *   finding. `bulletSet` collects every `- ` line in the section flat, with no
+ *   regard for which `### <Section>` it sits under — a dev-scoped bullet the
+ *   generator segments into `### Internal` (changelog-scopes.mts) still
+ *   satisfies the comparison the same as one left under Added/Changed/Fixed,
+ *   so the segmented shape never false-fails. A published version (version ==
+ *   last tag) is historical and not re-validated. Fail-open: any uncertainty
+ *   (no tag, shallow clone, unreachable registry, unresolvable range anchor,
+ *   unreadable CHANGELOG) skips rather than false-fails. Usage: node
  *   scripts/fleet/check/changelog-is-commit-derived.mts.
  */
 
@@ -117,7 +121,10 @@ export function bulletSet(section: string): Set<string> {
  * derived set are tolerated by construction: hand-written bullets are
  * human-owned — they accrue under `## [Unreleased]` and the bump promotes
  * them into the release section — so a hand SUPERSET of the derived bullets
- * is a healthy section, never drift. Losing derived content stays red.
+ * is a healthy section, never drift. Losing derived content stays red. Both
+ * sides go through `bulletSet`, which reads `- ` lines without regard for
+ * subsection, so a dev-scoped bullet the generator segments under
+ * `### Internal` is compared exactly like one left under Added/Changed/Fixed.
  */
 export function missingDerivedBullets(
   section: string,

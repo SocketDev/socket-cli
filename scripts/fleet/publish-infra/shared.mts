@@ -150,13 +150,43 @@ export function stdoutIsFileBacked(): boolean {
 }
 
 export const PTY_FILE_STDOUT_MESSAGE =
-  'refusing to wrap this command in a PTY: stdout is a file.\n' +
+  'stdout is a file — pumping the PTY through a pipe.\n' +
   '  What:  script(1) cannot allocate a pseudo-terminal onto a file-backed\n' +
-  '         stdout — the child exits 1 having produced no output.\n' +
-  '  Where: the PTY wrapper used for npm/pnpm browser web-OTP prompts.\n' +
-  '  Saw:   fd 1 is a regular file; wanted a terminal or a pipe.\n' +
-  '  Fix:   drop the `> file` redirect (pipe it instead, e.g. `| tail -40`),\n' +
-  '         or run the command in a real terminal.'
+  '         stdout, so the wrapper gives the PTY child a PIPE and pumps its\n' +
+  '         output into the file itself. The browser web-OTP flow proceeds.\n' +
+  '  Where: the PTY wrapper used for npm/pnpm browser web-OTP prompts.'
+
+/**
+ * The pipe-pump form of the PTY run: script(1) is happy writing to a pipe,
+ * and the pump writes those bytes on to the file-backed stdout. This is how a
+ * `> file` redirect or an agent harness capture still gets a working web-OTP
+ * flow instead of a refusal — the 2026-07-29 odai approve hit exactly that.
+ * Uses lib-stable spawn's enriched promise: `.process` exposes the child's
+ * piped streams, so no raw child_process import is needed.
+ */
+export function runPtyPumped(
+  pty: { command: string; args: readonly string[] },
+  cwd: string,
+  env?: NodeJS.ProcessEnv | undefined,
+): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const childPromise = spawn(pty.command, [...pty.args], {
+      cwd,
+      ...(env ? { env: { ...process.env, ...env } } : {}),
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+    // Same treatment as runInherit: the exit code resolves below, so the
+    // enriched promise's non-zero rejection must be swallowed.
+    void childPromise.catch(() => undefined)
+    const child = childPromise.process
+    child.stdout?.on('data', (chunk: Buffer) => process.stdout.write(chunk))
+    child.stderr?.on('data', (chunk: Buffer) => process.stderr.write(chunk))
+    child.on('error', reject)
+    child.on('exit', code => {
+      resolve(code ?? 0)
+    })
+  })
+}
 
 export function runInheritTty(
   cmd: string,
@@ -172,8 +202,8 @@ export function runInheritTty(
     return runInherit(cmd, args, cwd, env)
   }
   if (stdoutIsFileBacked()) {
-    logger.fail(`[pty] ${PTY_FILE_STDOUT_MESSAGE}`)
-    return Promise.resolve(1)
+    logger.log(`[pty] ${PTY_FILE_STDOUT_MESSAGE}`)
+    return runPtyPumped(pty, cwd, env)
   }
   return runInherit(pty.command, pty.args, cwd, env)
 }

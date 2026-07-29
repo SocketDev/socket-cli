@@ -58,11 +58,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // `enforcement:` disposition when a local memory store exists; skips clean
     // in CI. See memory→code-is-law (#240).
     () => run('node', ['scripts/fleet/check/memories-are-codified.mts']),
-    // The _dispatch/dispatch-table.mts matches a fresh regen over the tree's hook
+    // The _shared/dispatch-table.mts matches a fresh regen over the tree's hook
     // dirs — catches a hook added/removed without rebuilding, or a byte-cascaded
     // table referencing an absent hook dir, the concurrent-cargo dangle.
     () => run('node', ['scripts/fleet/check/dispatch-table-is-current.mts']),
-    // The BUILT artifacts (bundle.cjs, snapshot-bundle.cjs, excluded-bundle.cjs,
+    // The BUILT artifacts (fleet-pack.cjs, snapshot-fleet-pack.cjs, excluded-fleet-pack.cjs,
     // and the snapshot-blob.path pin) carry the routing of a fresh table regen.
     // dispatch-table-is-current stops at the table; a table can be current and
     // verified while the executing artifact serves older routing — and the
@@ -255,6 +255,19 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // commit path itself. No-ops where the repo carries no
     // .git-hooks/fleet/pre-commit.
     () => run('node', ['scripts/fleet/check/precommit-steps-are-bounded.mts']),
+    // A shell hook that runs a fallible command and drops its non-zero status
+    // is a gate that only PRINTS. The fleet pre-commit ran the Socket security
+    // step as a bare `node …/pre-commit.mts`, so every refusal that file owns
+    // (secrets, .DS_Store, private paths, catastrophic mass deletion) printed
+    // and was ignored in every cascaded repo. Reviewing the logic never finds
+    // this class — only checking the boundary between the logic and its
+    // consequence does. Covers the whole .git-hooks/ corpus (dispatchers,
+    // fleet/, repo/, _shared/*.sh); accepts `set -e`, `|| exit $?`, an
+    // if-condition, `exec`, and a documented `|| true`.
+    () =>
+      run('node', [
+        'scripts/fleet/check/git-hooks-have-exit-status-propagation.mts',
+      ]),
     // Every hook dir must be WIRED — gen/hook-dispatch discovers + wires each by
     // its defineHook `hook` export (dispatched) or a SIDE_EFFECT entry (spawned).
     // ADVISORY, never fails: surface `_shared/` hook-helper exports with no
@@ -262,6 +275,18 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // hard-gate: some are consumed out-of-repo, user-global dispatch, and removal
     // is a judgment call. The fleet DRY sweep is plan-only.
     () => run('node', ['scripts/fleet/check/shared-hook-helpers-are-used.mts']),
+    // A security primitive with no callers is not a control. An export whose
+    // doc names the threat it refuses (an SSRF gate, a shadow-bin walker, a
+    // PATH de-poisoning resolver) must have a non-test caller in this repo —
+    // tests prove it works, never that it is wired, and a dormant one reads as
+    // coverage to the next person who greps for it. A primitive legitimately
+    // awaiting a caller records that in its own doc (`@unused <reason>` /
+    // `@security-disposition <reason>`); silence fails. Zero candidates warns
+    // loudly rather than false-greening.
+    () =>
+      run('node', [
+        'scripts/fleet/check/security-primitives-have-consumers.mts',
+      ]),
     // Error messages are UI (CLAUDE.md "Error messages"): no bare vague-only
     // `throw new Error("invalid")` across the source tree. Commit-time twin of the
     // error-message-quality-nudge Stop hook — shares the classifier so the two

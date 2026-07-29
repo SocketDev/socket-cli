@@ -2,7 +2,7 @@
 /**
  * @file Aggregate the guard-event log into per-hook precision stats. Every
  *   block/notify verdict lands in
- *   `node_modules/.cache/fleet/guard-events/events.jsonl`; this reads it and
+ *   `.cache/fleet/guard-events/events.jsonl`; this reads it and
  *   reports, per hook: blocks, notifies, distinct files, and RETRY-SUSPECTS —
  *   the same hook blocking the same file 2+ times inside a short window,
  *   which is what an operator word-golfing around a false positive looks
@@ -126,13 +126,7 @@ export function aggregate(events: readonly GuardEvent[]): HookStats[] {
 }
 
 export function main(): number {
-  const dir = path.join(
-    REPO_ROOT,
-    'node_modules',
-    '.cache',
-    'fleet',
-    'guard-events',
-  )
+  const dir = path.join(REPO_ROOT, '.cache', 'fleet', 'guard-events')
   const sources = ['events.1.jsonl', 'events.jsonl']
     .map(name => path.join(dir, name))
     .filter(p => existsSync(p))

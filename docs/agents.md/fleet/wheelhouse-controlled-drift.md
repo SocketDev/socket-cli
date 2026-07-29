@@ -2,11 +2,11 @@
 
 A **wheelhouse-controlled** file is one the wheelhouse owns byte-for-byte and
 distributes to every fleet member. There are two distribution channels, and both
-read the SAME canonical source (`template/base/…`):
+read the SAME canonical source (`template/base/**`):
 
 1. **The GitHub-Release bundle** — `scripts/repo/make-release-bundle.mts`
    collects the byte-canonical mirror (`IDENTICAL_FILES`, from
-   `manifest/bundle.json`'s `mirror[]`) plus every present
+   `scripts/repo/sync-scaffolding/manifest/bundle.json`'s `mirror[]`) plus every present
    `OPTIONAL_IDENTICAL_FILES` entry, hashes each, and ships the tarball a member
    fetches with the dep-0 bootstrap.
 2. **The commit cascade** — `scripts/repo/sync-scaffolding` mirrors the same set
@@ -37,7 +37,7 @@ guarantee:
 Every file under `template/base/` MUST be reachable by exactly one channel:
 
 - **`IDENTICAL_FILES` (mirror)** — byte-canonical everywhere; file entries and
-  delete-and-replace dir entries in `manifest/bundle.json` `mirror[]`.
+  delete-and-replace dir entries in `scripts/repo/sync-scaffolding/manifest/bundle.json` `mirror[]`.
 - **`OPTIONAL_IDENTICAL_FILES`** — byte-canonical *when present*; missing is fine
   (opt-in per member).
 - **`PRESET_FILES`** — seeded once from `template/presets/` (sources live there,

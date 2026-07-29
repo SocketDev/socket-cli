@@ -25,13 +25,13 @@ git history then carries only what it owns, not thousands of mirrored files.
 The untrack set is computed by `scripts/repo/bootstrap/fleet.mjs --thin` (`thinIgnoreEntries`):
 it collapses only to the `fleet/` tier (convention-guaranteed all-fleet) and
 lists every other wholly-fleet file EXACTLY — so it can NEVER catch a repo-owned
-sibling (`.claude/hooks/repo/`, `.config/repo/`, the member's own
+sibling (`.claude/hooks/repo/**`, `.config/repo/`, the member's own
 `.github/workflows/ci.yml`).
 
 ## The ref pin
 
 A thin member pins which bundle to fetch in its wheelhouse settings file:
-`.config/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-bundle-<sha>" }`. That
+`.config/repo/socket-wheelhouse.json` → `"bundle": { "ref": "fleet-pack-<sha>" }`. That
 file is the single member-owned config surface. The bootstrap defaults its
 `--ref` from there, so the pin lives in exactly one place.
 
@@ -47,7 +47,7 @@ both are required (and enforced):
   install. A fresh clone / `pnpm install` fetches + applies the pinned bundle
   BEFORE the (itself-untracked) install-git-hooks step + any chained build.
   `--if-current` is idempotent: it skips when the pinned ref is already applied
-  — a local marker at `node_modules/.cache/fleet/socket-wheelhouse/bundle-applied` —
+  — a local marker at `.cache/fleet/socket-wheelhouse/bundle-applied` —
   so warm installs do no network, and it no-ops in a non-thin repo (nothing
   pinned → nothing to fetch).
 - **Suspenders (CI)** — the same belt, exercised by CI's install step: the
@@ -68,7 +68,7 @@ That roster is the single source of truth — `isThinOptIn` (in the shared
 enum every opt-in value is validated against, so a typo is rejected by
 `fleet-members-are-onboarded`.
 
-`checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member the
+`scripts/repo/sync-scaffolding/checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member the
 roster opts into `thin` is missing the prepare belt — its fresh clones / CI
 would otherwise run against a missing payload. A non-thin member (the roster
 does not opt it into `thin`) tracks the payload and is exempt. Run
@@ -96,18 +96,18 @@ mechanisms prune what a new release dropped:
 - **The applied-files record**: after placing the bundle,
   `pruneStaleFleetFiles()` (`scripts/repo/gen/bootstrap/src/install.mts`) deletes any file the
   LAST-applied manifest owned (the `applied-files` record under
-  `node_modules/.cache/`) that the fetched manifest no longer lists. Renames,
+  `.cache/`) that the fetched manifest no longer lists. Renames,
   deletions, and additions inside a mirror tree need NO bookkeeping — but the
   record is per-workspace state: a fresh clone, a CI checkout, or a member
   whose record began after a move prunes nothing (the v1.0.12
-  `.github/actions/fleet/lib` → `_shared` move orphaned `lib/` fleet-wide
+  `lib` → `_shared` move under `.github/actions/fleet/` orphaned `lib/` fleet-wide
   exactly this way).
 - **Tombstones** (`removed[]` in
   `scripts/repo/sync-scaffolding/manifest/bundle.json`): the durable deletion
   record. The cascade fixer `safeDelete`s each path in every member, AND
   `make-release-bundle` ships the same list in the bundle manifest as
   `removedPaths`, which both installers (`scripts/repo/gen/bootstrap/src/install.mts`
-  `removeTombstonedPaths()` + `scripts/fleet/fetch-fleet-bundle.mts`) delete
+  `removeTombstonedPaths()` + `scripts/fleet/fetch-fleet-pack.mts`) delete
   after placement — so a moved/retired path heals on the next refresh even
   with no applied-files record. A move must ship its deletion: retire a path,
   add its tombstone in the same change. Belt on both legs: a tombstone the
@@ -119,7 +119,7 @@ tombstone a fleet-mirrored path.** A tombstone overlapping an ACTIVE
 delete-and-replace mirror root is at best redundant and at worst a
 self-destruct — the orphan pass would delete the freshly-copied tree on every
 cascade — so the module THROWS at load time on any overlap. A RETIRED mirror
-tier (removed from the manifest, e.g. the old cascaded `test/unit/fleet`) is
+tier (removed from the manifest, e.g. the old cascaded `test/unit/fleet/**` tree) is
 no longer mirrored and legitimately gets a tombstone; the overlap check is the
 sole gate.
 
@@ -132,7 +132,7 @@ Claude session kernel, and a few at-rest pin files. A steady-state wave then
 lands in each member as a commit touching **1-3 files**:
 
 - the ref pin bump — `bundle.ref` + `bundle.cascadeSha` in
-  `.config/socket-wheelhouse.json` (always),
+  `.config/repo/socket-wheelhouse.json` (always),
 - hybrid files, IF their fleet blocks changed,
 - tracked kernel / workflow / composite files, IF they changed.
 
@@ -140,7 +140,7 @@ Everything else arrives via the belt fetch on the next `pnpm install`.
 
 ## Commands
 
-- `node scripts/repo/bootstrap/fleet.mjs --ref fleet-bundle-<sha> --thin --wire` — convert a repo to
+- `node scripts/repo/bootstrap/fleet.mjs --ref fleet-pack-<sha> --thin --wire` — convert a repo to
   thin: fetch + apply, untrack the payload, write the belt.
 - `node scripts/repo/bootstrap/fleet.mjs --if-current` — the belt/CI fetch (idempotent, ref
   from settings).

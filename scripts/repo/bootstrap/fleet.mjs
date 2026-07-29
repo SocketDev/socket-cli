@@ -243,12 +243,12 @@ function resolveSettingsPath(dest) {
     if (existsSync(p)) return p
   }
 }
-const APPLIED_MARKER =
-  'node_modules/.cache/fleet/socket-wheelhouse/bundle-applied'
-const APPLIED_FILES_MARKER =
-  'node_modules/.cache/fleet/socket-wheelhouse/applied-files'
-const FLAT_APPLIED_MARKER =
-  'node_modules/.cache/socket-wheelhouse/bundle-applied'
+const APPLIED_MARKER = '.cache/fleet/socket-wheelhouse/bundle-applied'
+const APPLIED_FILES_MARKER = '.cache/fleet/socket-wheelhouse/applied-files'
+const SUPERSEDED_APPLIED_MARKERS = [
+  'node_modules/.cache/fleet/socket-wheelhouse/bundle-applied',
+  'node_modules/.cache/socket-wheelhouse/bundle-applied',
+]
 const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
 /**
  * Default bundle ref for a member — `bundle.ref` in its wheelhouse settings
@@ -322,8 +322,10 @@ function writeAppliedRef(dest, ref) {
   writeFileSync(p, `${ref}\n`)
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
   if (existsSync(legacy)) rm(legacy)
-  const flat = path.join(dest, FLAT_APPLIED_MARKER)
-  if (existsSync(flat)) rm(flat)
+  for (const rel of SUPERSEDED_APPLIED_MARKERS) {
+    const superseded = path.join(dest, rel)
+    if (existsSync(superseded)) rm(superseded)
+  }
 }
 
 //#endregion
@@ -591,7 +593,7 @@ function mergeWorkspaceYaml(config) {
 //#region template/base/scripts/fleet/_shared/hook-wiring.mts
 const DISPATCH_EVENTS = ['PreToolUse', 'PostToolUse', 'SessionStart', 'Stop']
 const INDEX_REL = '.claude/hooks/fleet/index.cjs'
-const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
+const LAUNCHER_REL = '.claude/hooks/fleet/_shared/dispatch-launcher'
 /**
  * The compile-cache baseline command for an event, the cascaded canonical.
  */
@@ -941,7 +943,7 @@ function installFiles(filesDir, dest, manifest) {
  * from the git index after placement. The bundle SHIPS these files — placement
  * writes them to disk — while the fleet gitignore block ignores them and
  * `generated-outputs-are-untracked` forbids TRACKING them. A member that
- * historically committed one (bundle.cjs et al., before the ignore existed)
+ * historically committed one (fleet-pack.cjs et al., before the ignore existed)
  * heals on the next refresh: the file stays on disk, but leaves the index.
  * Non-fatal by design — a non-git dest or an already-clean index is a no-op
  * (`--ignore-unmatch`).
@@ -1198,12 +1200,12 @@ function applyThinMode(config) {
 
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/lockstep.mts
-const FLEET_REF_RE = /^fleet-bundle-[0-9a-f]{7,40}$/
+const FLEET_REF_RE = /^fleet-pack-[0-9a-f]{7,40}$/
 const FULL_SHA_RE = /^[0-9a-f]{40}$/
 const FUZZY_REF_RE = /[\^~*]|\b(?:canary|head|latest|lts|main|master|next)\b/i
 /**
  * Validate a `bundle.ref` value at WRITE time. Rejects an empty, fuzzy, ranged,
- * or aliased ref — only an exact `fleet-bundle-<hex>` tag is legal. Returns the
+ * or aliased ref — only an exact `fleet-pack-<hex>` tag is legal. Returns the
  * list of problems (empty === valid).
  */
 function validateRef(ref) {
@@ -1217,11 +1219,11 @@ function validateRef(ref) {
   }
   if (FUZZY_REF_RE.test(ref))
     errors.push(
-      `\`bundle.ref\` must be an exact \`fleet-bundle-<hex>\` tag — no range/alias (\`^\` \`~\` \`*\` \`latest\` \`lts\` \`main\` …); got ${JSON.stringify(ref)}.`,
+      `\`bundle.ref\` must be an exact \`fleet-pack-<hex>\` tag — no range/alias (\`^\` \`~\` \`*\` \`latest\` \`lts\` \`main\` …); got ${JSON.stringify(ref)}.`,
     )
   if (!FLEET_REF_RE.test(ref))
     errors.push(
-      `\`bundle.ref\` must match ${String(FLEET_REF_RE)} (a \`fleet-bundle-<hex>\` release tag); got ${JSON.stringify(ref)}.`,
+      `\`bundle.ref\` must match ${String(FLEET_REF_RE)} (a \`fleet-pack-<hex>\` release tag); got ${JSON.stringify(ref)}.`,
     )
   return {
     ok: errors.length === 0,
@@ -1340,8 +1342,7 @@ function formatLockStepError(parts) {
     `  Fix:    re-cascade to the pin — \`node scripts/repo/sync-scaffolding/cli.mts --target . --fix\` — OR re-pin bundle.ref to the release whose templateSha is ${cascadeSha}.`,
   ].join('\n')
 }
-const NOTICE_STORE_REL =
-  'node_modules/.cache/fleet/socket-wheelhouse/update-notice.json'
+const NOTICE_STORE_REL = '.cache/fleet/socket-wheelhouse/update-notice.json'
 const TWENTY_FOUR_HOURS_MS = 1440 * 60 * 1e3
 const UPDATE_NOTIFIER_OPT_OUT_ENV = 'WHEELHOUSE_NO_UPDATE_NOTIFIER'
 function readNoticeStore(dest) {
@@ -1446,7 +1447,7 @@ function assertLockStep(config) {
   return false
 }
 /**
- * Resolve the NEWEST `fleet-bundle-<hex>` release tag via `gh release list`.
+ * Resolve the NEWEST `fleet-pack-<hex>` release tag via `gh release list`.
  * Returns the latest tag, or undefined when none / offline. The list is
  * newest-first.
  */
@@ -1473,7 +1474,7 @@ function resolveNewestRef(repo) {
     for (const row of rows)
       if (
         typeof row.tagName === 'string' &&
-        /^fleet-bundle-[0-9a-f]{7,40}$/.test(row.tagName)
+        /^fleet-pack-[0-9a-f]{7,40}$/.test(row.tagName)
       )
         return row.tagName
     return
@@ -1686,7 +1687,7 @@ function pickBundleLayer(manifest) {
   const layers = manifest.layers ?? []
   if (layers.length === 0)
     throw new Error(
-      'GHCR artifact manifest carried no layers.\n  Where: the fleet-bundle OCI manifest\n  Saw:   layers[] empty\n  Fix:   confirm the publish step pushed the tarball as a layer.',
+      'GHCR artifact manifest carried no layers.\n  Where: the fleet-pack OCI manifest\n  Saw:   layers[] empty\n  Fix:   confirm the publish step pushed the tarball as a layer.',
     )
   const byTitle = layers.find(layer =>
     (layer.annotations?.['org.opencontainers.image.title'] ?? '').endsWith(
@@ -1700,7 +1701,7 @@ function pickBundleLayer(manifest) {
   const chosen = byTitle ?? byMedia ?? layers[0]
   if (!chosen.digest)
     throw new Error(
-      'GHCR artifact tarball layer carried no digest.\n  Where: the fleet-bundle OCI manifest layer\n  Saw:   missing layer.digest\n  Fix:   confirm the publish step recorded the blob digest.',
+      'GHCR artifact tarball layer carried no digest.\n  Where: the fleet-pack OCI manifest layer\n  Saw:   missing layer.digest\n  Fix:   confirm the publish step recorded the blob digest.',
     )
   return chosen
 }
@@ -1727,7 +1728,7 @@ function sha256Hex(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex')
 }
 /**
- * Pull the fleet-bundle tarball from GHCR and write it to `destDir`. Verifies
+ * Pull the fleet-pack tarball from GHCR and write it to `destDir`. Verifies
  * the blob's SHA-256 against the manifest layer digest before writing — a
  * mismatch aborts (fail closed). Returns the written tarball path.
  */
@@ -1760,12 +1761,12 @@ async function pullFleetBundleTarball(config) {
 const logger$2 = getDep0Logger()
 const MANIFEST_NAME$1 = 'release-bundle-manifest.json'
 /**
- * Derive the GHCR fleet-bundle package repo from the gh `owner/repo`. GHCR
+ * Derive the GHCR fleet-pack package repo from the gh `owner/repo`. GHCR
  * package paths are lowercase: `SocketDev/socket-wheelhouse` →
- * `socketdev/socket-wheelhouse/fleet-bundle`.
+ * `socketdev/socket-wheelhouse/fleet-pack`.
  */
 function ghcrBundleRepo(repo) {
-  return `${repo.toLowerCase()}/fleet-bundle`
+  return `${repo.toLowerCase()}/fleet-pack`
 }
 /**
  * Extract just the release-bundle manifest from the bundle tarball root (the
@@ -1783,7 +1784,7 @@ function extractManifestFromTarball(tarball, destDir) {
   return path.join(destDir, MANIFEST_NAME$1)
 }
 /**
- * Default GHCR fetch: anonymous OCI pull of the fleet-bundle tarball, then pull
+ * Default GHCR fetch: anonymous OCI pull of the fleet-pack tarball, then pull
  * the manifest out of it. Throws on any failure so the selector can fall back.
  */
 async function ghcrFetchBundle(config) {
@@ -2100,7 +2101,7 @@ async function installFleet(config) {
       return 0
     }
     logger.log(
-      'install-fleet: no --ref and no `bundle.ref` in .config/repo/socket-wheelhouse.json. Pass --ref fleet-bundle-<sha> or set bundle.ref.',
+      'install-fleet: no --ref and no `bundle.ref` in .config/repo/socket-wheelhouse.json. Pass --ref fleet-pack-<sha> or set bundle.ref.',
     )
     return 1
   }

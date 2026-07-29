@@ -17,8 +17,8 @@ Authored source is a JS/TS file (`.ts` / `.mts` / `.cts` / `.tsx` / `.js` /
 
 - a test file — `*.test.*` / `*.spec.*` / `*.vitest.*`, or anything under a
   `test/`, `tests/`, or `__tests__/` directory;
-- generated / mechanical — a `build/**` or `dist/**` tree, the `_dispatch/`
-  bundle, a `*.min.*` artifact, a `*.generated.*` output, `bundle.cjs`, or
+- generated / mechanical — a `build/**` or `dist/**` tree, the `_shared/`
+  bundle, a `*.min.*` artifact, a `*.generated.*` output, `fleet-pack.cjs`, or
   `index.cjs`;
 - a build/tool config (`*.config.*`) or a bare type declaration (`*.d.ts`).
 

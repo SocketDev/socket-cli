@@ -10,7 +10,7 @@ what this rule prevents.
 
 | Kind | Home | Tracked? | How members get it |
 |---|---|---|---|
-| **Source** | `template/make/…`, `template/base/…` | ✅ | canonical, cascaded (or wheelhouse-only) |
+| **Source** | `template/make/**`, `template/base/**` | ✅ | canonical, cascaded (or wheelhouse-only) |
 | **Generated output** | `_dist/`, the oxlint `.mjs`, dispatch tables, snapshot blobs | ❌ gitignored | built locally or fetched from the release bundle |
 | **Dep-0 seed** | `scripts/repo/bootstrap/fleet.mjs`, `.npmrc` | ✅ — the ONLY committed generated artifacts | cascaded live seed |
 

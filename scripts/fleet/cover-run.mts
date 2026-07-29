@@ -193,13 +193,7 @@ export function captureEnvSnapshot(): EnvSnapshot {
 export function collectLiveActorNotes(windowMs: number): string[] {
   const out: string[] = []
   try {
-    const dir = path.join(
-      rootPath,
-      'node_modules',
-      '.cache',
-      'fleet',
-      'socket-active-edits',
-    )
+    const dir = path.join(rootPath, '.cache', 'fleet', 'socket-active-edits')
     for (const entry of readdirSync(dir)) {
       if (!entry.endsWith('.json')) {
         continue

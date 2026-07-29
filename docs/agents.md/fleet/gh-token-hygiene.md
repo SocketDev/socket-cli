@@ -117,7 +117,7 @@ Local timestamp tracking is advisory. A malicious process can backdate the file.
 
 ## What this doesn't defend against
 
-- **Already-running malware with current token.** The token is already in keychain memory. Rotation matters for the next exfil; the current breach is mitigated by signed-commit enforcement, branch protection, and audit-log alerting (see _Wave 2_ in `.claude/plans/gh-token-hygiene-hook.md`).
+- **Already-running malware with current token.** The token is already in keychain memory. Rotation matters for the next exfil; the current breach is mitigated by signed-commit enforcement, branch protection, and audit-log alerting (see _Wave 2_ of the gh-token-hygiene-hook plan under `.claude/plans/`).
 - **Phished OAuth flows.** A user typing credentials into a malicious login page bypasses every local defense. Phishing-resistant MFA (WebAuthn / passkeys) is the answer; the fleet doesn't enforce that here.
 - **Compromised dependencies pulling tokens via gh subprocess.** A malicious npm package can `spawn('gh', ['auth', 'token'])` and exfiltrate. The defense is supply-chain review (Socket scanning + minimumReleaseAge + checked deps).
 

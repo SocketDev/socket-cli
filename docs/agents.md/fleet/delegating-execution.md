@@ -43,7 +43,7 @@ Fable's current `suspended: true` in `model-pricing.json` is runtime data the sp
 
 - `grilling-plan` — stress-test a plan's CONTENT with the user before building; run it before this skill when the design is unsettled.
 - `delegating-execution` — route the EXECUTION of a settled scope across tiers.
-- `_shared/multi-agent-backends.md` — the CLI-subprocess layer (codex/opencode/kimi) for non-Anthropic delegation; this skill is the Workflow-harness tier layer above it.
+- `.claude/skills/fleet/_shared/multi-agent-backends.md` — the CLI-subprocess layer (codex/opencode/kimi) for non-Anthropic delegation; this skill is the Workflow-harness tier layer above it.
 
 ## Staged verification ladder
 
@@ -67,4 +67,4 @@ files → full CI.)
 - `scripts/fleet/check/ai-spawns-have-paired-effort.mts` — scans `.claude/workflows/**/*.js` agent() calls (extended to cover the workflow glob).
 - `scripts/fleet/check/fable-spawns-have-opus-fallback.mts` — verifies no direct Fable spawn omits the refusal check.
 - `scripts/fleet/check/mutating-skills-have-model.mts` — verifies the skill frontmatter declares `model:`.
-- `test/repo/unit/delegating-execution.test.mts` — unit matrix for the full phase × sensitivity table.
+- `test/repo/unit/route.test.mts` — unit matrix for the full phase × sensitivity table.

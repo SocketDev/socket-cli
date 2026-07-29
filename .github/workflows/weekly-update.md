@@ -18,9 +18,9 @@ on:
     # Daily 08:00 UTC — /updating-daily soaked-exclusion promotion (an hour
     # before the Monday run so soaked bypasses are promoted first).
     - cron: '0 8 * * *'
-  # workflow_dispatch keeps the workflow trial-able (`gh aw trial` / `gh aw run`
-  # both require it) and manually runnable — a manual run does the full weekly
-  # update.
+  # workflow_dispatch keeps the workflow trial-able (`gh aw trial` / `gh aw
+  # run` both require it) and manually runnable — a manual run does the full
+  # weekly update.
   workflow_dispatch:
 
 engine:

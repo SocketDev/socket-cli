@@ -4,6 +4,12 @@
 # repo hook if present. Either returning non-zero blocks the commit (escape
 # with --no-verify, gated by the `Allow no-verify bypass` phrase). No stdin.
 
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
 # HUSKY=0 skips the whole .git-hooks/ chain for this invocation — the
 # husky-compatible escape (`HUSKY=0 git commit …`; export it for a session).
 # Heavier than --no-verify: it covers every hook type, including ones git

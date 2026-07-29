@@ -65,10 +65,32 @@
                   "type": "string"
                 },
                 {
+                  "const": "gomod",
+                  "type": "string"
+                },
+                {
+                  "const": "npm-tarball",
+                  "type": "string"
+                },
+                {
+                  "const": "rustup",
+                  "type": "string"
+                },
+                {
+                  "const": "system",
+                  "type": "string"
+                },
+                {
                   "const": "uv-project",
                   "type": "string"
                 }
               ]
+            },
+            "derived": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "source": {
               "type": "string"

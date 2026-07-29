@@ -13,7 +13,7 @@
  *     COMPILE-CACHE path — correct on every OS/arch with zero per-machine
  *     state. The fleet-cascaded canonical, and the launcher's own fail-open
  *     target.
- *     launcher "$CLAUDE_PROJECT_DIR"/…/_dispatch/dispatch-launcher <Event> the
+ *     launcher "$CLAUDE_PROJECT_DIR"/…/_shared/dispatch-launcher <Event> the
  *     per-host native launcher that re-execs `node --snapshot-blob …` (the V8
  *     startup-snapshot fast path). Built by setup; gitignored; fails open to
  *     the baseline. It is the SAME fleet dispatch slot, just realized for this
@@ -36,7 +36,7 @@ export const DISPATCH_EVENTS = [
 ] as const
 
 export const INDEX_REL = '.claude/hooks/fleet/index.cjs'
-export const LAUNCHER_REL = '.claude/hooks/fleet/_dispatch/dispatch-launcher'
+export const LAUNCHER_REL = '.claude/hooks/fleet/_shared/dispatch-launcher'
 
 /**
  * The compile-cache baseline command for an event, the cascaded canonical.

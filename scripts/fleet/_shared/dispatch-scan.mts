@@ -19,7 +19,7 @@ const EXPORT_HOOK_RE = /export\s+const\s+hook\s*=\s*defineHook\s*\(/
 // HTTPParser, module-eval semver construction, …) declares
 // `@dispatch-snapshot-exclude` in its header. It stays in the FULL table
 // (index.cjs path) but is split out of the snapshot bundle into
-// `excluded-bundle.cjs`, which deserialize-main splices in at runtime.
+// `excluded-fleet-pack.cjs`, which deserialize-main splices in at runtime.
 const SNAPSHOT_EXCLUDE_RE = /@dispatch-snapshot-exclude\b/
 const DISPATCH_EVENT_RE = /\bevent\s*:\s*['"]([^'"]+)['"]/
 const DISPATCH_TOOLS_RE = /\bmatcher\s*:\s*\[([^\]]*)\]/

@@ -129,10 +129,9 @@ function coverageFreshnessFailure(cwd: string): string | undefined {
     return undefined
   }
   // The coverage runner writes the merged summary under the fleet coverage
-  // cache (node_modules/.cache/fleet/coverage/coverage-summary.json).
+  // cache (.cache/fleet/coverage/coverage-summary.json).
   const summary = path.join(
     repoRoot,
-    'node_modules',
     '.cache',
     'fleet',
     'coverage',
@@ -140,8 +139,7 @@ function coverageFreshnessFailure(cwd: string): string | undefined {
   )
   if (!existsSync(summary)) {
     return (
-      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
-      'no node_modules/.cache/fleet/coverage/coverage-summary.json — run ' +
+      'no .cache/fleet/coverage/coverage-summary.json — run ' +
       '`pnpm run cover` on the current tree before the bump (the json-summary ' +
       'reporter emits it).'
     )
@@ -156,7 +154,7 @@ function coverageFreshnessFailure(cwd: string): string | undefined {
   /* c8 ignore stop */
   if (newestMtime(srcDir) > summaryMtime) {
     return (
-      'node_modules/.cache/fleet/coverage/coverage-summary.json is older than ' +
+      '.cache/fleet/coverage/coverage-summary.json is older than ' +
       'the latest src/ change — re-run `pnpm run cover` so coverage reflects ' +
       'the code being released.'
     )

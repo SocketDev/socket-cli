@@ -1,6 +1,6 @@
 # Version bumps
 
-Companion to the `### Version bumps` rule in `template/CLAUDE.md`. The inline section gives the headline. This file is the ordered sequence, the CHANGELOG filter, and the rationale.
+Companion to the `### Version bumps` rule in `template/base/CLAUDE.md`. The inline section gives the headline. This file is the ordered sequence, the CHANGELOG filter, and the rationale.
 
 ## The sequence (order matters)
 
@@ -23,7 +23,7 @@ pnpm run cover       # tests pass AND the coverage threshold holds
 `pnpm run cover` is part of the wave, not optional: it runs the suite under
 coverage and fails if a test fails or coverage drops below the repo's
 threshold. It also emits
-`node_modules/.cache/fleet/coverage/coverage-summary.json` (the `json-summary`
+`.cache/fleet/coverage/coverage-summary.json` (the `json-summary`
 reporter). After it passes, refresh the README coverage badge from that summary
 and commit the refresh:
 

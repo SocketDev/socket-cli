@@ -50,7 +50,7 @@ new pattern is a one-line addition.
 
 The seeded denylist is grounded in the empirically-found snapshot blockers
 documented in
-`template/base/.claude/hooks/fleet/_dispatch/snapshot-notes.md` — every entry
+`template/base/.claude/hooks/fleet/_shared/snapshot-notes.md` — every entry
 corresponds to a `[Foreign]`-handle / WASM / circular-init failure that actually
 aborted `--build-snapshot`.
 
@@ -82,7 +82,7 @@ survive the synchronous, statically-frozen snapshot build:
 rolldown bundle's input closure), mirroring the maker
 (`scripts/fleet/gen/hook-dispatch.mts`):
 
-- the `_dispatch/` and `_shared/` dispatch graph (always bundled), and
+- the `_shared/` and `_shared/` dispatch graph (always bundled), and
 - each **bundle-safe** hook `index.mts` — one carrying the maker's two markers:
   the entrypoint guard `import.meta.url === \`file://${process.argv[1]}\`` **and**
   `export function run(`.
@@ -96,7 +96,7 @@ in a real repo and in the RuleTester's tmp-dir fixtures.
 A genuine runtime entrypoint that lives inside the dispatch graph dirs but is
 **not** a bundle member — e.g. `_shared/dispatch.mts`, the live
 runtime dynamic-dispatch script run via `settings.json` (the static
-`_dispatch/` bundle supersedes it) — opts out with a per-line disable carrying
+`_shared/` bundle supersedes it) — opts out with a per-line disable carrying
 that reason.
 
 ## Fix

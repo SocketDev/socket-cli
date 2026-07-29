@@ -13,6 +13,13 @@
 // so it does NOT overlap compound-lessons-nudge (which fires on a REPEAT
 // finding made without rule-promotion) — one surface per concern.
 //
+// Nor does it overlap memory-enforcement-stamp-guard. That guard is a
+// PreToolUse BLOCK on a mechanical, decidable invariant: the frontmatter must
+// carry an `enforcement:` key at all. This nudge is a Stop-time JUDGMENT on a
+// stamped memory's substance: the lesson has an enforceable shape but cites no
+// real enforcer, so go codify it. Mechanical/blocking and judgment/advisory are
+// different concerns; keep them on separate surfaces.
+//
 // Detection (the turn's own tool calls, never memory CONTENT beyond the write):
 //   - a Write/Edit/MultiEdit to a path under a memory store
 //     (`…/.claude/projects/<slug>/memory/*.md`), whose written content has
@@ -31,14 +38,10 @@ import {
 } from '../_shared/learning-ledger.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { readLastAssistantToolUses } from '../_shared/transcript.mts'
+import { isMemoryStorePath } from '../_shared/memory-store.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
-// Memory-store path shape, separator-normalized: …/.claude/projects/<slug>/memory/<file>.md
-const MEMORY_PATH_RE = /\/\.claude\/projects\/[^/]+\/memory\/[^/]+\.md$/
-
-export function isMemoryPath(filePath: string): boolean {
-  return MEMORY_PATH_RE.test(filePath.replaceAll('\\', '/'))
-}
+export { isMemoryStorePath as isMemoryPath }
 
 // An enforceable lesson: a feedback/project memory whose body states an
 // always/never/MUST-shaped rule or a build/release step. Reference/user memories
@@ -81,7 +84,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     }
     const filePath =
       typeof evt.input['file_path'] === 'string' ? evt.input['file_path'] : ''
-    if (!filePath || !isMemoryPath(filePath)) {
+    if (!filePath || !isMemoryStorePath(filePath)) {
       continue
     }
     // The written text: Write `content`, Edit `new_string`. (MultiEdit edits are

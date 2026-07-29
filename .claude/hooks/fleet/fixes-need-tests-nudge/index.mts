@@ -67,12 +67,12 @@ export function isGeneratedPath(filePath: string): boolean {
     // A build/dist output tree.
     /(?:^|\/)(?:build|dist)\//.test(normalized) ||
     // The generated hook-dispatch tree (table + bundle live here).
-    /(?:^|\/)_dispatch\//.test(normalized) ||
+    /(?:^|\/)_shared\//.test(normalized) ||
     // A minified artifact.
     /\.min\.[^/]+$/.test(base) ||
     // A code-generator output marker.
     base.includes('.generated.') ||
-    base === 'bundle.cjs' ||
+    base === 'fleet-pack.cjs' ||
     base === 'index.cjs'
   )
 }

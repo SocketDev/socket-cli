@@ -18,7 +18,7 @@
  *   alias tokens the discipline names) over what is committed.
  *
  *   What it asserts, per the report `cross-agent-config-aliasing-notes.md`:
- *     1. `bundle.ref` is an EXACT `fleet-bundle-<hex>` tag — no `latest`/`main`/
+ *     1. `bundle.ref` is an EXACT `fleet-pack-<hex>` tag — no `latest`/`main`/
  *        `head`/`stable`/`newest`/range/alias.
  *     2. `bundle.cascadeSha` (and a manifest `templateSha`) is a bare 40-hex SHA.
  *     3. No pin stores BOTH an alias and its canonical form — any non-canonical
@@ -50,10 +50,10 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// An EXACT `fleet-bundle-<hex>` release tag — the only legal `bundle.ref`
+// An EXACT `fleet-pack-<hex>` release tag — the only legal `bundle.ref`
 // value. The hex is the template SHA stamp (7-40 hex); no semver, no range,
 // no alias.
-const CANONICAL_REF_RE = /^fleet-bundle-[0-9a-f]{7,40}$/
+const CANONICAL_REF_RE = /^fleet-pack-[0-9a-f]{7,40}$/
 // A bare full-length git SHA — exactly 40 lowercase hex chars. No `v` prefix, no
 // range, no alias. The legal `bundle.cascadeSha` + manifest `templateSha` value.
 const CANONICAL_SHA_RE = /^[0-9a-f]{40}$/
@@ -113,14 +113,14 @@ export function classifyReleasePin(label: string, pin: unknown): PinFinding[] {
           findings.push({
             field,
             reason:
-              'persisted ref carries a fuzzy alias token (latest/main/head/stable/newest/next/…); a release pin stores only an exact fleet-bundle-<hex> tag — canonicalize the alias at input time, never persist it',
+              'persisted ref carries a fuzzy alias token (latest/main/head/stable/newest/next/…); a release pin stores only an exact fleet-pack-<hex> tag — canonicalize the alias at input time, never persist it',
             value,
           })
         } else if (!CANONICAL_REF_RE.test(value)) {
           findings.push({
             field,
             reason:
-              'persisted ref is not an exact fleet-bundle-<hex> release tag',
+              'persisted ref is not an exact fleet-pack-<hex> release tag',
             value,
           })
         }
@@ -251,7 +251,7 @@ export async function main(): Promise<void> {
   logger.error(
     '  What:  a release pin persisted a fuzzy/aliased or non-canonical value.\n' +
       '  Where: the above field(s) in a committed socket-wheelhouse config / release manifest.\n' +
-      '  Wanted: bundle.ref = an exact fleet-bundle-<hex> tag; bundle.cascadeSha / templateSha = a bare 40-hex SHA; no alias stored beside the canonical value.\n' +
+      '  Wanted: bundle.ref = an exact fleet-pack-<hex> tag; bundle.cascadeSha / templateSha = a bare 40-hex SHA; no alias stored beside the canonical value.\n' +
       '  Fix:   resolve the alias at input time and re-stamp the pin — `node scripts/repo/sync-scaffolding/cli.mts --target . --fix` — so only exact canonical values persist.',
   )
   process.exitCode = 1

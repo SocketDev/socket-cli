@@ -4,9 +4,9 @@
 // renamed-from: bundle-stale-guard
 //
 // Fires after an Edit/Write whose path is a hook-bundle SOURCE: the
-// `_dispatch/` dispatcher, the generated `dispatch-table.mts`, any bundled
+// `_shared/` dispatcher, the generated `dispatch-table.mts`, any bundled
 // hook's `index.mts`, or anything under `_shared/`. When the edited source is
-// NEWER than the built `_dist/bundle.cjs`, the bundle is stale and the
+// NEWER than the built `_dist/fleet-pack.cjs`, the bundle is stale and the
 // operator is reminded to rebuild it with
 // `node scripts/fleet/build-hook-bundle.mts`.
 //
@@ -30,25 +30,25 @@ import { readFilePath } from '../_shared/payload.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
-const BUNDLE_REL = '.claude/hooks/fleet/_dist/bundle.cjs'
+const BUNDLE_REL = '.claude/hooks/fleet/_dist/fleet-pack.cjs'
 // The wheelhouse holds TWO bundles: the live one (above) and the cascaded
 // canonical under template/base/. A hook-source edit leaves both stale until
 // `build-hook-bundle.mts` rebuilds them, so the reminder must watch both.
 const TEMPLATE_BUNDLE_REL = `template/base/${BUNDLE_REL}`
-const DISPATCH_DIR_FRAGMENT = '.claude/hooks/fleet/_dispatch/'
+const DISPATCH_DIR_FRAGMENT = '.claude/hooks/fleet/_shared/'
 const SHARED_DIR_FRAGMENT = '.claude/hooks/fleet/_shared/'
 const FLEET_HOOK_INDEX_RE = /\.claude\/hooks\/fleet\/[^/]+\/index\.mts$/
 
 /**
  * Returns true when filePath is a source that the hook bundle is built from:
- * the dispatcher / dispatch-table under `_dispatch/`, any fleet hook's
+ * the dispatcher / dispatch-table under `_shared/`, any fleet hook's
  * `index.mts`, or anything under `_shared/`. Path is normalized to `/` first
  * so the match is the same on darwin / linux / win32.
  */
 export function isBundledSource(filePath: string): boolean {
   const norm = normalizePath(filePath)
   if (norm.endsWith(BUNDLE_REL) || norm.includes(`${DISPATCH_DIR_FRAGMENT}`)) {
-    // The bundle output itself is not a source; only the .mts under _dispatch/.
+    // The bundle output itself is not a source; only the .mts under _shared/.
     if (norm.endsWith(BUNDLE_REL)) {
       return false
     }

@@ -276,7 +276,7 @@ export function badgeAssetPath(repoRoot: string): string {
 }
 
 // The line-coverage total percent from a coverage `coverage-summary.json` (the
-// `json-summary` reporter's shape, under node_modules/.cache/fleet/coverage/).
+// `json-summary` reporter's shape, under .cache/fleet/coverage/).
 // Returns undefined when the file is absent or shapeless — the caller decides
 // whether that's fail-open, the check, or an error (the writer, which needs a
 // real number).

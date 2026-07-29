@@ -41,11 +41,11 @@ const logger = getDefaultLogger()
 
 // The dispatcher is wired EITHER as the compile-cache baseline
 // (`index.cjs <Event>`) OR the per-machine snapshot fast-path launcher
-// (`_dispatch/dispatch-launcher <Event>`, from setup/hook-snapshot.mts, which
+// (`_shared/dispatch-launcher <Event>`, from setup/hook-snapshot.mts, which
 // fail-opens to that baseline). Both front-end the SAME bundled dispatcher, so
 // either counts as the wired dispatcher entry for coverage.
 const DISPATCHER_CMD_RE =
-  /(?:_dispatch\/dispatch-launcher|hooks\/fleet\/index\.cjs)\s+(\w+)/
+  /(?:_shared\/dispatch-launcher|hooks\/fleet\/index\.cjs)\s+(\w+)/
 
 export interface DispatcherEntry {
   readonly matcher: string | undefined

@@ -23,9 +23,25 @@ so the artifacts drop out even inside the wheelhouse canon. It covers:
 
 - the dep-0 fetcher bundle (`scripts/repo/bootstrap/fleet.mjs`) — `scripts/repo/gen/bootstrap/src/*` IS gated;
 - `.d.ts` / `.d.mts` / `.d.cts` compiler output;
-- `_dispatch/` hook bundles and gh-aw `*.lock.yml` compiled workflows;
+- hook-build outputs and gh-aw `*.lock.yml` compiled workflows;
 - directories a generator or upstream owns: `acorn`, `build`, `coverage`, `dist`,
   `external`, `fixtures`, `out`, `third_party`, `upstream`, `vendor`.
+
+## `_shared/` is source, not a bundle
+
+`.claude/hooks/fleet/_shared/` and `scripts/fleet/_shared/` are hand-written
+libraries, so they are **gated like any other source**. Only the files the hook
+build EMITS into them are exempt, and `isGeneratedHookArtifact()` matches those
+by exact basename — `fleet-pack.cjs`, `excluded-fleet-pack.cjs`,
+`snapshot-fleet-pack.cjs`, the three `dispatch-table*.mts`,
+`dispatch-manifest.json`, `dispatch-launcher[.exe]`, `node.path`,
+`snapshot-blob.path`, and the pre-v1.0.16 `_shared/index.cjs` loader — plus
+everything under the exclusively-generated `_dist/`. The basename list is the
+twin of the `**/.claude/hooks/fleet/_shared/*` entries in the fleet `.gitignore`
+block; the emitting paths are owned by `scripts/fleet/paths.mts`.
+
+Matching the `_shared/` DIRECTORY instead would exempt every shared library in
+the fleet from lint and format — the exemption must name the artifact.
 
 The **mirror** exclusions (`.claude/`, `.agents/`, `**/fleet/**`) are deliberately
 NOT in `isNeverGated` — `template/` dogfoods those (they are the canon every
@@ -34,7 +50,7 @@ member mirrors), so they stay gated at the wheelhouse source.
 ## Generate them compliant
 
 The corollary: a generator writes output that already passes the gate, so it never
-needs to be linted. `gen/bootstrap.mts` runs `format.mts` on its bundle
+needs to be linted. `scripts/repo/gen/bootstrap.mts` runs `format.mts` on its bundle
 as the last build step; codegen steps self-format the same way (`code-first-then-ai`:
 repair the generator's format call, never hand-format the artifact). If a generated
 file is dirty against the gate, fix the generator — do not add it back to the walk.

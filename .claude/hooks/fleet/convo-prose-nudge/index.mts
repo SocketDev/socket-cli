@@ -2,7 +2,8 @@
 // Claude Code PreToolUse hook — convo-prose-nudge.
 //
 // Fires when Claude is about to run a `gh pr create|edit|comment` or
-// `gh issue create|edit|comment` command whose `--body`/`-b` value contains
+// `gh issue create|edit|comment` command whose body — given inline via
+// `--body`/`-b`, or as a file via `--body-file`/`-F` — contains
 // AI-scaffolding antipatterns: throat-clearing openers ("I've gone ahead
 // and…", "Let me…", "In this PR, I…", "I took a look and…"), closing filler
 // ("Let me know if you have any questions!", "Hope this helps!"), and honesty
@@ -17,6 +18,8 @@
 // dispatch filter). Uses the fleet AST parser (commandsFor) to detect `gh`
 // invocations — no regex command matching. A parse failure exits 0 silently
 // (fail-open — a nudge must never block on its own bug).
+
+import { readFileSync } from 'node:fs'
 
 import { GH_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
@@ -78,8 +81,14 @@ export function isGhPrOrIssuePost(cmd: Command): boolean {
 }
 
 /**
- * Extract the value of `--body`/`-b` from the arg list of a parsed `gh`
- * Command. Returns `undefined` when no body argument is found.
+ * Extract the body text from the arg list of a parsed `gh` Command. Reads
+ * inline `--body`/`-b` values and, for `--body-file`/`-F`, the file's contents
+ * — `gh` treats the two as equivalent, so checking only the inline form lets
+ * every file-backed body reach GitHub unreviewed. An unreadable file yields
+ * `undefined` so the nudge stays fail-open. `-F -` (stdin) has no readable
+ * path and is skipped.
+ *
+ * Returns `undefined` when no body argument is found.
  */
 export function extractBodyArg(cmd: Command): string | undefined {
   const { args } = cmd
@@ -91,8 +100,29 @@ export function extractBodyArg(cmd: Command): string | undefined {
     if (arg.startsWith('--body=')) {
       return arg.slice('--body='.length)
     }
+    if (arg === '--body-file' || arg === '-F') {
+      return readBodyFile(args[i + 1])
+    }
+    if (arg.startsWith('--body-file=')) {
+      return readBodyFile(arg.slice('--body-file='.length))
+    }
   }
   return undefined
+}
+
+/**
+ * Read a `--body-file` path, returning `undefined` when it is absent, is the
+ * stdin sentinel, or cannot be read.
+ */
+export function readBodyFile(filePath: string | undefined): string | undefined {
+  if (!filePath || filePath === '-') {
+    return undefined
+  }
+  try {
+    return readFileSync(filePath, 'utf8')
+  } catch {
+    return undefined
+  }
 }
 
 // A body this size reads as a wall of text on GitHub; past either bound the

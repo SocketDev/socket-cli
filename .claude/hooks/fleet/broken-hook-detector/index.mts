@@ -38,7 +38,7 @@
 //   real work in the wheelhouse and any source-carrying checkout.
 //
 // Bundling this hook makes it SELF-CONTAINED: rolldown inlines the reachable
-//   `@socketsecurity/lib-stable` slices into `_dist/bundle.cjs`, so the recovery
+//   `@socketsecurity/lib-stable` slices into `_dist/fleet-pack.cjs`, so the recovery
 //   net keeps running even when node_modules is gutted — the exact state it
 //   recovers from. (It SPAWNS the package manager for the gutted repair, but
 //   never resolves a pnpm-installed module at runtime — documented exemption
@@ -47,7 +47,7 @@
 //
 // Project-dir + every derived path resolve at RUNTIME inside check() (never at
 //   module scope) so the hook is correct whether it runs from the require-time
-//   `_dist/bundle.cjs` (member + wheelhouse index.cjs path) or frozen into the
+//   `_dist/fleet-pack.cjs` (member + wheelhouse index.cjs path) or frozen into the
 //   V8 startup snapshot, wheelhouse launcher path — a module-scope
 //   `process.env` read would freeze to the build-time value in the snapshot.
 //

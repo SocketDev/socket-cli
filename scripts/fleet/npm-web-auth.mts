@@ -25,10 +25,20 @@
  *      `start` on it, then keep the process alive until npm exits and propagate
  *      npm's exit code. NO-OP PASSTHROUGH. When a real TTY is present npm
  *      handles its own flow, and when `--otp=<code>` is already supplied no
- *      browser is needed, so in both cases this wrapper execs npm directly with
- *      inherited stdio and does nothing else. Usage: node
+ *      browser is needed, so in both cases this wrapper execs the tool directly
+ *      with inherited stdio and does nothing else. TOOL SELECTION. `login` and
+ *      `adduser` run through `pnpm login` when pnpm is on PATH: pnpm 11 drives
+ *      the SAME browser web-auth flow (verified 2026-07-28 — it prints
+ *      "Authenticate your account at:" + an npmjs.com/login URL this watcher
+ *      already matches) and, being pnpm, it passes the `devEngines` gate that
+ *      makes bare `npm login` fail EBADDEVENGINES inside every pnpm-enforced
+ *      fleet repo (the odai 0.0.1 release hit exactly that). Both tools write
+ *      the token to the same user-level ~/.npmrc, so a pnpm login serves npm
+ *      commands afterward. `--npm` forces npm (stripped before exec), and an
+ *      `--otp` run stays on npm since pnpm login takes no OTP flag. Every
+ *      other operation stays on npm. Usage: node
  *      scripts/fleet/npm-web-auth.mts
- *      <publish|login|deprecate|owner|access|...> [args]
+ *      <publish|login|deprecate|owner|access|...> [args] [--npm]
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- PTY streaming + detached opener + exact exit-code propagation need raw child_process control; see the per-call rationale on runUnderPty/runInherit/openInBrowser.
@@ -36,6 +46,7 @@ import { spawn as nodeSpawn } from 'node:child_process'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
@@ -108,6 +119,46 @@ export function hasOtpFlag(args: readonly string[]): boolean {
   return args.some(a => a === '--otp' || a.startsWith('--otp='))
 }
 
+export interface AuthToolPlan {
+  readonly tool: 'npm' | 'pnpm'
+  readonly args: readonly string[]
+}
+
+/**
+ * Pick the tool that runs this operation. `login`/`adduser` and the staged-
+ * publish ops (`stage list|approve|reject`) go through pnpm when it is
+ * available — same browser web-auth flow, and pnpm 11 keeps its OWN valid
+ * token in config.yaml while a stale ~/.npmrc entry can leave bare npm
+ * 401ing (the odai 0.0.1 release hit exactly that: pnpm whoami answered
+ * while npm whoami failed). pnpm is also immune to the `devEngines` gate
+ * that fails bare npm inside a fleet repo. `--npm` forces npm, stripped
+ * from the args before exec, and an `--otp` run stays on npm, which owns
+ * that flag. Everything else stays npm. Pure; exported for tests.
+ */
+export function resolveAuthTool(
+  argv: readonly string[],
+  config: { pnpmAvailable: boolean },
+): AuthToolPlan {
+  const opts = { __proto__: null, ...config } as { pnpmAvailable: boolean }
+  const forceNpm = argv.includes('--npm')
+  const args = argv.filter(a => a !== '--npm')
+  const operation = args[0]
+  const isLogin = operation === 'adduser' || operation === 'login'
+  const isStage = operation === 'stage'
+  if (
+    (isLogin || isStage) &&
+    opts.pnpmAvailable &&
+    !forceNpm &&
+    !hasOtpFlag(args)
+  ) {
+    return {
+      tool: 'pnpm',
+      args: isLogin ? ['login', ...args.slice(1)] : args,
+    }
+  }
+  return { tool: 'npm', args }
+}
+
 export interface PtyInvocation {
   readonly command: string
   readonly args: readonly string[]
@@ -123,16 +174,17 @@ export interface PtyInvocation {
 export function buildPtyInvocation(
   platform: NodeJS.Platform,
   npmArgs: readonly string[],
+  tool: 'npm' | 'pnpm' = 'npm',
 ): PtyInvocation | undefined {
   if (platform === 'win32') {
     return undefined
   }
   if (platform === 'linux') {
-    const inner = ['npm', ...npmArgs].map(quoteForShell).join(' ')
+    const inner = [tool, ...npmArgs].map(quoteForShell).join(' ')
     return { command: 'script', args: ['-q', '-c', inner, '/dev/null'] }
   }
-  // macOS + the BSDs: `script -q /dev/null npm <args...>`.
-  return { command: 'script', args: ['-q', '/dev/null', 'npm', ...npmArgs] }
+  // macOS + the BSDs: `script -q /dev/null <tool> <args...>`.
+  return { command: 'script', args: ['-q', '/dev/null', tool, ...npmArgs] }
 }
 
 // Minimal single-quote shell escaping for the Linux `script -c` command string.
@@ -240,15 +292,28 @@ function runUnderPty(pty: PtyInvocation, config: RunConfig): Promise<number> {
  * state / env. Resolves with the exit code to propagate.
  */
 export async function runNpmWebAuth(config: RunConfig): Promise<number> {
-  const args = [...config.argv]
+  const plan = resolveAuthTool(config.argv, { pnpmAvailable: pnpmOnPath() })
+  const args = [...plan.args]
   if (isPassthrough({ isTty: config.isTty, args })) {
-    return runInherit('npm', args, config.env, config.cwd)
+    return runInherit(plan.tool, args, config.env, config.cwd)
   }
-  const pty = buildPtyInvocation(config.platform, args)
+  const pty = buildPtyInvocation(config.platform, args, plan.tool)
   if (!pty) {
-    return runInherit('npm', args, config.env, config.cwd)
+    return runInherit(plan.tool, args, config.env, config.cwd)
   }
   return runUnderPty(pty, config)
+}
+
+// True when pnpm resolves on PATH — the impure availability probe behind
+// resolveAuthTool's pure planning. A miss quietly keeps the npm path.
+function pnpmOnPath(): boolean {
+  try {
+    // oxlint-disable-next-line socket/prefer-async-spawn -- one-shot sync availability probe before the exec path is chosen.
+    const result = spawnSync('pnpm', ['--version'], { stdio: 'ignore' })
+    return result.status === 0
+  } catch {
+    return false
+  }
 }
 
 function usage(): string {

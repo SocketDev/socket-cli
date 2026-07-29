@@ -23,9 +23,9 @@ packages/<pkg>/
 
 All TypeScript files are `.mts` per the fleet `.mts`-runner rule: config, schema, and `db.mts`. drizzle-kit's esbuild-based loader reads `.mts` for both the config and the `schema:` target (verified, drizzle-kit 0.31.9). The one exception is `migrations/`: drizzle-kit _generates_ those as plain `.sql` DDL files (+ a `meta/` snapshot dir), not TypeScript. They're generated data artifacts, like a lockfile, so the `.mts` rule does not apply; never hand-rename a migration to `.mts`.
 
-- **`.config/drizzle.config.mts`**, not a root `drizzle.config.ts`. Per the fleet `.config/` placement + `.mts`-runner rules. drizzle-kit reads it via `--config .config/drizzle.config.mts`.
+- **`.config/drizzle.config.mts`**, not a root `drizzle.config.ts`. Per the fleet `.config/` placement + `.mts`-runner rules. drizzle-kit reads it via `--config .config/drizzle.config.mts`. <!-- docs-refs-ignore: convention path for drizzle-using member repos -->
 - **`schema/` directory**, one file per domain, with an `index.mts` barrel that `db.mts` binds. Don't inline tables in `db.mts`.
-- **`db.mts` is the single client factory.** One `createDb(options)` that takes pool config as typed options (no `process.env` reads inside it) plus a `createDbFromEnv()` that reads the DB URL env var. depot's `packages/store/db.ts` is the reference shape (depot predates the fleet `.mts` convention; new repos use `.mts`).
+- **`db.mts` is the single client factory.** One `createDb(options)` that takes pool config as typed options (no `process.env` reads inside it) plus a `createDbFromEnv()` that reads the DB URL env var. the `db.ts` in `depot/packages/store/` is the reference shape (depot predates the fleet `.mts` convention; new repos use `.mts`).
 
 ## .config/drizzle.config.mts
 
@@ -57,7 +57,7 @@ export default defineConfig({
 
 drizzle-kit accepts the `.mts` extension and an explicit `--config` path
 (verified with drizzle-kit 0.31.9: its esbuild-based loader bundles
-`.config/drizzle.config.mts` and runs). Invoke from the package root so
+`.config/drizzle.config.mts` and runs). Invoke from the package root so <!-- docs-refs-ignore: convention path for drizzle-using member repos -->
 the cwd-relative `schema` / `out` paths resolve:
 
 ```bash
@@ -107,7 +107,7 @@ Full precedence: explicit `url` argument → `POSTGRES_URL` → `DATABASE_URL` �
 
 ## Validation: typebox, not the ORM
 
-Drizzle covers the database boundary (table shape, query types). For validating data crossing a _wire_ boundary (API request/response, config files, IPC payloads), use **`@sinclair/typebox`**, the fleet's canonical schema-validation library. Don't reach for zod / valibot / ajv-with-hand-schemas. depot's `packages/types` defines its exposed + internal types as TypeBox schemas. The two layers are complementary: typebox guards what comes in off the wire, Drizzle types what goes to the database.
+Drizzle covers the database boundary (table shape, query types). For validating data crossing a _wire_ boundary (API request/response, config files, IPC payloads), use **`@sinclair/typebox`**, the fleet's canonical schema-validation library. Don't reach for zod / valibot / ajv-with-hand-schemas. the `depot/packages/types` package defines its exposed + internal types as TypeBox schemas. The two layers are complementary: typebox guards what comes in off the wire, Drizzle types what goes to the database.
 
 ## When NOT to add a database
 
@@ -115,4 +115,4 @@ Most fleet repos are libraries, parsers, or CLIs with no persistent state; they 
 
 ## Reference implementation
 
-`depot/packages/store/` is the canonical worked example: `db.ts` (pooled postgres-js client with typed pool options), `schema/` (pg-core tables), `drizzle.config.ts` (being migrated to `.config/drizzle.config.mts` per fleet convention), and pglite-backed test-helpers. `depot/packages/events-store/` shows a second data domain with the same shape.
+`depot/packages/store/` is the canonical worked example: `db.ts` (pooled postgres-js client with typed pool options), `schema/` (pg-core tables), `drizzle.config.ts` (being migrated to `.config/drizzle.config.mts` per fleet convention) <!-- docs-refs-ignore: convention path for drizzle-using member repos -->, and pglite-backed test-helpers. `depot/packages/events-store/` shows a second data domain with the same shape.

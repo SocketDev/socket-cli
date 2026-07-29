@@ -82,7 +82,7 @@ If the user's request is based on a misconception — the file doesn't exist any
 
 ## Verify rendered output before commit
 
-For UI / frontend / render-shape changes (`*.html`, `*.css`, `scripts/tour.mts`, any file whose output is visual):
+For UI / frontend / render-shape changes (`*.html`, `*.css`, a repo's `tour.mts`-style demo script, any file whose output is visual):
 
 1. Make the change.
 2. Rebuild the artifact.

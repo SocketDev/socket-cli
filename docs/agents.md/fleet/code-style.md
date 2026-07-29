@@ -50,7 +50,7 @@ Edit tool, never `sed` / `awk`.
 
 ## Generated reports
 
-Quality scans, security audits, perf snapshots, anything an automated tool emits: write to `.claude/reports/` (naturally gitignored as part of `.claude/*`, no separate rule needed). Never commit reports to a tracked `reports/`, `docs/reports/`, or similarly-named tracked directory. Dated reports rot the moment they land and the directory becomes a graveyard. The current state of the repo is the report; tools regenerate findings on demand. If a finding is worth keeping past one run, fix it or open an issue. Don't pickle it as a markdown file.
+Quality scans, security audits, perf snapshots, anything an automated tool emits: write to `.claude/reports/` (naturally gitignored as part of `.claude/*`, no separate rule needed). Never commit reports to a tracked `reports/`, `docs/reports/*`, or similarly-named tracked directory. Dated reports rot the moment they land and the directory becomes a graveyard. The current state of the repo is the report; tools regenerate findings on demand. If a finding is worth keeping past one run, fix it or open an issue. Don't pickle it as a markdown file.
 
 ## Inclusive language
 
@@ -106,7 +106,7 @@ See [`parser-comments.md`](parser-comments.md) §5–7 for the full Lock-step co
 
 ## `Promise.race` / `Promise.any` in loops
 
-Never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/plugging-promise-race/SKILL.md`.
+Never re-race a pool that survives across iterations (the handlers stack). See `.claude/skills/fleet/plugging-promise-race/SKILL.md`.
 
 ## Prefer `Promise.allSettled` for order-independent batches
 
@@ -161,7 +161,7 @@ Non-throwing wrappers end in `Safe` (`safeDelete`, `safeDeleteSync`, `applySafe`
 
 ## `node:smol-*` modules
 
-Feature-detect, then require. From outside socket-btm (socket-lib, socket-cli, anywhere else): `import { isBuiltin } from 'node:module'; if (isBuiltin('node:smol-X')) { const mod = require('node:smol-X') }`. The `node:smol-*` namespace is provided by socket-btm's smol Node binary; on stock Node `isBuiltin` returns false and the require would throw. Wrap the loader in a `/*@__NO_SIDE_EFFECTS__*/` lazy-load that caches the result. See `socket-lib/src/smol/util.ts` and `socket-lib/src/smol/primordial.ts` for canonical shape. **Inside** socket-btm's `additions/source-patched/` JS — the smol binary's own bootstrap code — use `internalBinding('smol_X')` directly. That's the C++-binding access path and it's guaranteed available there.
+Feature-detect, then require. From outside socket-btm (socket-lib, socket-cli, anywhere else): `import { isBuiltin } from 'node:module'; if (isBuiltin('node:smol-X')) { const mod = require('node:smol-X') }`. The `node:smol-*` namespace is provided by socket-btm's smol Node binary; on stock Node `isBuiltin` returns false and the require would throw. Wrap the loader in a `/*@__NO_SIDE_EFFECTS__*/` lazy-load that caches the result. See `socket-lib/src/smol/util.ts` and `socket-lib/src/smol/primordial.ts` for canonical shape. <!-- docs-refs-ignore: paths in the socket-lib repo --> **Inside** socket-btm's `additions/source-patched/` JS — the smol binary's own bootstrap code — use `internalBinding('smol_X')` directly. That's the C++-binding access path and it's guaranteed available there.
 
 ## Agent-readability: name for grep
 

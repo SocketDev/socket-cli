@@ -44,7 +44,7 @@ Skills where mistakes ship as security incidents or false-negative review passes
 - `scanning-quality` — static-analysis bug/race/insecure-default detection
 - `scanning-security` — multi-tool security scan + grading
 
-The `.claude/agents/security-reviewer.md` subagent also declares `model: claude-opus-4-8` for the same reason.
+The `.claude/agents/fleet/security-reviewer.md` subagent also declares `model: claude-opus-4-8` for the same reason.
 
 ## Tier 4 — `claude-fable-5` (apex escalation, never a default)
 
@@ -57,9 +57,9 @@ No skill, workflow, agent, or programmatic `claude` call declares Fable as its d
 
 Two operational notes for Fable-targeted prompts, from Anthropic's Fable prompting guide (<https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5>). Never instruct it to echo or reproduce its reasoning as response text, because that trips the `reasoning_extraction` refusal and silently falls back to Opus. Expect longer turns, so structure long runs to check asynchronously rather than block. Fable's safety classifiers (offensive-cyber plus bio) can return `stop_reason: "refusal"` on benign security work, so configure fallback to Opus 4.8.
 
-Fable runs adaptive thinking only: it is always on, with no manual thinking-mode or `budget_tokens` control, so effort is the only depth dial and its recommended range tops out at `xhigh` — the `max` level belongs to Opus. The lib reflects this. `buildArgs` (`src/ai/spawn.mts`) omits `--effort` for a Fable or Mythos model rather than pass a level it ignores, and the multi-agent backend registry (`src/ai/backends.mts`) does the same.
+Fable runs adaptive thinking only: it is always on, with no manual thinking-mode or `budget_tokens` control, so effort is the only depth dial and its recommended range tops out at `xhigh` — the `max` level belongs to Opus. The lib reflects this. `buildArgs` (socket-lib's `src/ai/spawn.mts`) omits `--effort` for a Fable or Mythos model rather than pass a level it ignores, and the multi-agent backend registry (socket-lib's `src/ai/backends.mts`) does the same. <!-- docs-refs-ignore: src/ai/ paths live in socket-lib -->
 
-The code-level encoding of this ladder is `@socketsecurity/lib`'s `AI_TIER` table (`src/ai/tier.mts`). The `fable` row pins `{ model: 'claude-fable-5', effort: 'xhigh' }` (xhigh is Fable's recommended ceiling; the spawn layer then drops the flag for Fable anyway), and the `token-spend-guard` hook now nudges when Fable runs mechanical work, the same as Opus. Availability-gated routing (`src/ai/route.mts`) resolves a tier to its preferred engine only when that CLI exists and is keyed, falling back to a cross-engine equivalent (Codex GPT-5.5, then an open-weight provider) otherwise.
+The code-level encoding of this ladder is `@socketsecurity/lib`'s `AI_TIER` table (socket-lib's `src/ai/tier.mts`). <!-- docs-refs-ignore: src/ai/ paths live in socket-lib --> The `fable` row pins `{ model: 'claude-fable-5', effort: 'xhigh' }` (xhigh is Fable's recommended ceiling; the spawn layer then drops the flag for Fable anyway), and the `token-spend-guard` hook now nudges when Fable runs mechanical work, the same as Opus. Availability-gated routing (`src/ai/route.mts`) resolves a tier to its preferred engine only when that CLI exists and is keyed, falling back to a cross-engine equivalent (Codex GPT-5.5, then an open-weight provider) otherwise.
 
 ## Cost-optimized decomposition (plan high, execute cheap)
 
@@ -81,7 +81,7 @@ The strongest split keeps Claude on the two judgment phases and hands the token-
 - **Execute** → Codex GPT-5.5 at `xhigh`, driven through the `codex` CLI. Codex does the file edits, feature work, refactors, and mechanical sweeps from the brief and hands back a complete diff. This runs on the ChatGPT-plan seat, so the generation tokens never touch the Claude weekly quota.
 - **Review** → Fable 5 at `xhigh`. Critically read the Codex diff for correctness, contract adherence, and test impact; run verification (`pnpm run check`, `pnpm test`); accept, or loop Codex with specific corrections. The cycle repeats until the diff passes review.
 
-Fable never writes the code, Codex never decides the design. A note on the Fable effort levels. Fable runs adaptive thinking only: thinking is always on, there is no manual thinking-mode or token-budget knob, so effort is the single dial. Its recommended range tops out at `xhigh` (start at `high`, step to `xhigh` for the most capability-sensitive work); `max` belongs to Opus, not to Fable's recommended ladder. So planning runs `high` and the review pass runs `xhigh`, the most thorough setting Fable's own guidance recommends. The lib does not even forward `--effort` to a Fable model (`buildArgs` in `src/ai/spawn.mts` drops it, since Fable ignores the dial), so set the tier and let Fable self-pace. Because the bulk of generation runs on the ChatGPT plan rather than Claude, this preserves a large share of the Claude weekly headroom (in practice roughly half) for the planning and review calls that genuinely need apex reasoning. That headroom, not dollars, is the binding constraint under a subscription (see below).
+Fable never writes the code, Codex never decides the design. A note on the Fable effort levels. Fable runs adaptive thinking only: thinking is always on, there is no manual thinking-mode or token-budget knob, so effort is the single dial. Its recommended range tops out at `xhigh` (start at `high`, step to `xhigh` for the most capability-sensitive work); `max` belongs to Opus, not to Fable's recommended ladder. So planning runs `high` and the review pass runs `xhigh`, the most thorough setting Fable's own guidance recommends. The lib does not even forward `--effort` to a Fable model (`buildArgs` in `src/ai/spawn.mts` drops it, since Fable ignores the dial), so set the tier and let Fable self-pace. Because the bulk of generation runs on the ChatGPT plan rather than Claude, this preserves a large share of the Claude weekly headroom (in practice roughly half) for the planning and review calls that genuinely need apex reasoning. That headroom, not dollars, is the binding constraint under a subscription (see below). <!-- docs-refs-ignore: src/ai/ paths live in socket-lib -->
 
 ### Subscription vs metered API — what you are actually rationing
 
@@ -103,7 +103,7 @@ Forking copies the parent conversation context to the new model; that has token 
 
 ## AI-assisted lint fix routing
 
-The same tiering applies to `scripts/fleet/ai-lint-fix/cli.mts`, which spawns a headless `claude --print` per file to apply rule-driven rewrites. Routing lives in `scripts/fleet/ai-lint-fix/rule-guidance.mts`:
+The same tiering applies to `scripts/fleet/ai-lint-fix.mts`, which spawns a headless `claude --print` per file to apply rule-driven rewrites. Routing lives in `scripts/fleet/ai-lint-fix/rule-guidance.mts`:
 
 - `RULE_MODEL_TIER` — per-rule tier label (`haiku` | `sonnet` | `opus`).
 - `TIER_MODEL` — tier-label → model-ID map. Single source of truth for global model bumps.

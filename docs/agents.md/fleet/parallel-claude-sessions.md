@@ -1,6 +1,6 @@
 # Parallel Claude sessions
 
-Companion to the `### Parallel Claude sessions` rule in `template/CLAUDE.md`. The inline section gives the headline plus the worktree recipe. This file holds the full prohibition list, the worktree recipe broken down, and the umbrella rule.
+Companion to the `### Parallel Claude sessions` rule in `template/base/CLAUDE.md`. The inline section gives the headline plus the worktree recipe. This file holds the full prohibition list, the worktree recipe broken down, and the umbrella rule.
 
 ## The problem
 
@@ -84,7 +84,7 @@ Cross-repo imports go through `@socketsecurity/lib/...` and `@socketregistry/...
 
 ## Active-edits ledger — coordinating concurrent actors
 
-The ledger is a per-actor JSON file under `node_modules/.cache/fleet/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
+The ledger is a per-actor JSON file under `.cache/fleet/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
 
 Three hooks build on it:
 
@@ -104,7 +104,7 @@ The excuse-detector (slice 4) gates on ledger presence: when a live foreign acto
 
 ## Never overwrite a file another session is editing
 
-A plain `Edit` / `Write` to a file another session has dirty silently clobbers their uncommitted work — and they may clobber yours right back, edit-for-edit, until one of you stops. (When two sessions share one checkout and both keep re-writing the same source + test files, each pass reverts the other's fixes and neither change ever lands.) The `parallel-agent-edit-guard` hook blocks an Edit/Write/NotebookEdit whose target is **foreign** — dirty, not authored by this session, changed within 30 min — so the clobber is refused before it lands. Companion to `parallel-agent-staging-guard` (git-op version) + `parallel-agent-on-stop-nudge` (turn-end signal); all share `_shared/foreign-paths.mts`. When it fires: let the other session commit first, work on a different file, or use a `git worktree` for an isolated edit. Bypass (only if the other edit is abandoned): `Allow parallel-agent-edit bypass`.
+A plain `Edit` / `Write` to a file another session has dirty silently clobbers their uncommitted work — and they may clobber yours right back, edit-for-edit, until one of you stops. (When two sessions share one checkout and both keep re-writing the same source + test files, each pass reverts the other's fixes and neither change ever lands.) The `parallel-agent-edit-guard` hook blocks an Edit/Write/NotebookEdit whose target is **foreign** — dirty, not authored by this session, changed within 30 min — so the clobber is refused before it lands. Companion to `parallel-agent-staging-guard` (git-op version) + `parallel-agent-on-stop-nudge` (turn-end signal); all share `.claude/hooks/fleet/_shared/foreign-paths.mts`. When it fires: let the other session commit first, work on a different file, or use a `git worktree` for an isolated edit. Bypass (only if the other edit is abandoned): `Allow parallel-agent-edit bypass`.
 
 ## The umbrella rule
 
@@ -206,7 +206,7 @@ the primary session.
 
 `codex-session-budget-guard` (PreToolUse) enforces this: the companion's first
 tool call stamps a start marker under
-`node_modules/.cache/fleet/socket-codex-session/`, and once the 1-minute wall-clock
+`.cache/fleet/socket-codex-session/`, and once the 1-minute wall-clock
 budget is spent every further tool call blocks with a hand-off message. Sustained
 work belongs in a full Claude session. The user lifts it for one session by
 typing `Allow codex-long-session bypass`.

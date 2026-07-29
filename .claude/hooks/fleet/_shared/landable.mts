@@ -15,9 +15,19 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 // Tracked-but-generated paths that live inside source areas yet are never
 // hand-authored — a formatter/build/lockfile step writes them. Neither the
 // auto-lander nor a human commits them by hand; their generator owns them.
+// A hook `_shared/` or `_dist/` directory is hand-written source EXCEPT for the
+// files the hook build emits into it, so the entries below name those outputs
+// rather than the directory. Twin of GENERATED_HOOK_SHARED_BASENAMES in
+// scripts/fleet/_shared/format-scope.mts, which applies the same distinction to
+// the lint/format gate.
 export const GENERATED_PATTERNS = [
   /(?:^|\/)pnpm-lock\.yaml$/,
-  /(?:^|\/)_dispatch\/bundle\.cjs$/,
+  // The rolldown hook packs: `_dist/fleet-pack.cjs` plus the wheelhouse-only
+  // `_shared/{excluded,snapshot}-fleet-pack.cjs` snapshot variants.
+  /(?:^|\/)_(?:dist|shared)\/[\w-]*fleet-pack\.cjs$/,
+  // The generated dispatch tables + manifest that sit beside the hand-written
+  // dispatcher sources in `_shared/`.
+  /(?:^|\/)_shared\/dispatch-(?:manifest\.json|table(?:-excluded|-snapshot)?\.mts)$/,
   /(?:^|\/)(?:build|dist|coverage|coverage-isolated)\//,
 ]
 

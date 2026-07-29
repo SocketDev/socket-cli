@@ -39,6 +39,17 @@ const SKIP_DIRS = new Set([
   'vendor',
 ])
 
+// Agent worktrees are full checkouts of this repo living inside it, so the
+// walk would find their manifests and rewrite source another session is
+// editing. Matched on the path rather than the directory name so a repo that
+// legitimately owns a `worktrees/` directory keeps its Rust formatted.
+const WORKTREE_ROOT = '.claude/worktrees'
+
+export function isAgentWorktreePath(dirPath: string): boolean {
+  const p = normalizePath(dirPath)
+  return p === WORKTREE_ROOT || p.endsWith(`/${WORKTREE_ROOT}`)
+}
+
 export function findWorkspaceManifests(root: string): string[] {
   const manifests: string[] = []
   const stack = [root]
@@ -67,7 +78,9 @@ export function findWorkspaceManifests(root: string): string[] {
         continue
       }
       if (st.isDirectory()) {
-        stack.push(abs)
+        if (!isAgentWorktreePath(abs)) {
+          stack.push(abs)
+        }
       } else if (name === 'Cargo.toml') {
         manifests.push(abs)
       }

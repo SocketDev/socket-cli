@@ -77,7 +77,7 @@ the author.
   not read as AI.** The skill strips the tells that make text sound
   machine-written — throat-clearers, emphasis crutches, adverb/hedge stacking,
   business jargon, meta-commentary, em-dash chains, and false-contrast
-  reversals (`references/phrases.md`, `structures.md`); `anti-prose-guard` and
+  reversals (`.claude/skills/fleet/prose/references/phrases.md`, `structures.md`); `anti-prose-guard` and
   `convo-prose-nudge` enforce them. Junior-dev level and complete sentences are
   part of that same pass, not a separate voice.
 - **Comment only — never approve, never request-changes/reject.** Post with

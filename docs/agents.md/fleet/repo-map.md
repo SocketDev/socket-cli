@@ -96,4 +96,4 @@ Two hooks make the cache actually get used, not just exist:
 Engine, skill, workflow, and both hooks are fleet-tier — cascaded to every member
 so the orient-first discipline holds fleet-wide. The engine is the single owner;
 the skill and hooks are thin wrappers that defer to it. Fix parsing/behavior in
-`gen/repo-map.mts`, not in the wrappers.
+`scripts/fleet/gen/repo-map.mts`, not in the wrappers.

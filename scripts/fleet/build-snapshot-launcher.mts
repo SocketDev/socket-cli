@@ -67,7 +67,7 @@ const { blobPath } = require(
 
 const POSIX_SRC = path.join(DISPATCH_DIR, 'dispatch-launcher.c')
 const WIN_SRC = path.join(DISPATCH_DIR, 'dispatch-launcher-win.c')
-const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
+const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-fleet-pack.cjs')
 
 /**
  * Per-platform build recipe. The HOST row is what `main()` runs; the others are
@@ -272,7 +272,7 @@ function main(): void {
   }
   if (action === 'missing-bundle') {
     process.stderr.write(
-      'snapshot-bundle.cjs missing — run build-hook-snapshot.mts first.\n',
+      'snapshot-fleet-pack.cjs missing — run build-hook-snapshot.mts first.\n',
     )
     process.exitCode = 2
     return

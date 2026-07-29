@@ -90,6 +90,23 @@ export function normalizeOxlintJson(payload: OxlintJsonOutput): OxlintFile[] {
   return Array.from(byFile, ([filePath, messages]) => ({ filePath, messages }))
 }
 
+/**
+ * Whether an oxlint invocation should be widened to the whole tree by
+ * appending `.`.
+ *
+ * Only when the caller named no target at all. Explicit file arguments win
+ * over scope, matching lint.mts — appending `.` beside them sends the AI pass
+ * over every file in the repo while the deterministic pass correctly stays on
+ * the named ones. Pure.
+ */
+export function shouldScanWholeTree(passthrough: readonly string[]): boolean {
+  return (
+    !passthrough.some(a => !a.startsWith('-')) &&
+    !passthrough.includes('--all') &&
+    !passthrough.includes('--staged')
+  )
+}
+
 export async function runLintJson(
   passthrough: readonly string[],
 ): Promise<OxlintFile[]> {
@@ -102,7 +119,7 @@ export async function runLintJson(
     '--config=.config/fleet/oxlintrc.json',
     ...passthrough.filter(a => a !== '--all'),
   ]
-  if (!passthrough.includes('--all') && !passthrough.includes('--staged')) {
+  if (shouldScanWholeTree(passthrough)) {
     args.push('.')
   }
   let stdout = ''

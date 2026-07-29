@@ -65,7 +65,7 @@ with an empty justification fails.
 - `build-microarch-is-portable` (`scripts/fleet/check/`) scans build-config
   surfaces — `.cargo/config*.toml` + `config.repo.toml`, CI workflows
   (`.github/workflows/*.{yml,yaml}` RUSTFLAGS/GOAMD64 env), `mise.toml` /
-  `mise/config.toml`, `Justfile`/`Makefile`, and `.cargo/*.sh` build scripts —
+  `**/mise/config.toml`, `Justfile`/`Makefile`, and `.cargo/*.sh` build scripts —
   and fails on an un-annotated microarch pin or a standing marker with an empty
   justification. Prose that merely DISCUSSES the pin (`.md`, `.mts`) is out of
   scope. The pure detectors ship a self-test under

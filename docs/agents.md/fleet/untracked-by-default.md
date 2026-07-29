@@ -39,7 +39,7 @@ deps/<libname>/*
 
 …the single allowlisted file is **our custom hand-written glue** that the build script must not clobber.
 
-**Worked example**: `packages/node-smol-builder/additions/source-patched/deps/libdeflate/`:
+**Worked example**: `packages/node-smol-builder/additions/source-patched/deps/libdeflate/` (in the socket-btm repo): <!-- docs-refs-ignore: path in the socket-btm repo -->
 
 ```text
 packages/node-smol-builder/additions/source-patched/deps/libdeflate/*

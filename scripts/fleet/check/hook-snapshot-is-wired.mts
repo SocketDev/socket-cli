@@ -46,7 +46,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 const LAUNCHER = path.join(DISPATCH_DIR, 'dispatch-launcher')
-const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-bundle.cjs')
+const SNAPSHOT_BUNDLE = path.join(DISPATCH_DIR, 'snapshot-fleet-pack.cjs')
 const INDEX_CJS = path.join(DISPATCH_DIR, 'index.cjs')
 const SETTINGS = path.join(REPO_ROOT, '.claude', 'settings.json')
 const BUILD_SNAPSHOT_SCRIPT = path.join(

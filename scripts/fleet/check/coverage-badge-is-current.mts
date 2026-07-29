@@ -4,7 +4,7 @@
  *   coverage run. The README references `assets/repo/badges/coverage.svg` (a
  *   generated, optimized SVG — no third-party badge host) and the SVG's
  *   stamped percent must equal the rounded line-coverage total from
- *   `node_modules/.cache/fleet/coverage/coverage-summary.json` (the vitest
+ *   `.cache/fleet/coverage/coverage-summary.json` (the vitest
  *   json-summary reporter). The
  *   commit-time twin of `gen/coverage-badge.mts --check`; they share
  *   `lib/coverage-badge.mts` so the writer and the gate can't disagree.
@@ -46,8 +46,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 const logger = getDefaultLogger()
 
 const FIX_HINT =
-  // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- socket-lint FP: the string already targets node_modules/.cache/ — it's a human-facing message, and the rule's string matcher can't see the node_modules/ prefix on the same path.
-  '  Fix: run `node scripts/fleet/gen/coverage-badge.mts` and commit the refreshed badge (it regenerates from node_modules/.cache/fleet/coverage/coverage-summary.json).'
+  '  Fix: run `node scripts/fleet/gen/coverage-badge.mts` and commit the refreshed badge (it regenerates from .cache/fleet/coverage/coverage-summary.json).'
 
 export interface CoverageBadgeCheckConfig {
   // Suppress the success line (check --all batch mode).
