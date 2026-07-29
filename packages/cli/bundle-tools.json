@@ -3,9 +3,9 @@
   "tools": {
     "@coana-tech/cli": {
       "description": "Coana CLI for static analysis and reachability detection",
-      "version": "15.3.17",
+      "version": "15.9.5",
       "packageManager": "npm",
-      "integrity": "sha512-CMIVavPZdW7GqzwfDgemvkRWgRWZI62vXAG1NWLJx4VCqKpHb6udMJLfabSYl+lcFQTSzfcQUUTVRt+KvpA/1w==",
+      "integrity": "sha512-RWL5CnK4q1k5Mo+vDlDSZWqVyhUTQ22zjfnHrkm94dwg8PHOyCAQgkHkl5opeLSoKm4T+lOPzMrrx5O7gblWvg==",
       "bundled": true
     },
     "@cyclonedx/cdxgen": {

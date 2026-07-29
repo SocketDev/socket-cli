@@ -220,7 +220,7 @@ describe('socket fix', async () => {
                 --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
                 --ecosystems        Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.
                 --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
-                --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.3.17.
+                --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.9.5.
                 --id                Provide a list of vulnerability identifiers to compute fixes for:
                                         - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
                                         - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2026-1234) - automatically converted to GHSA
