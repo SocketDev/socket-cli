@@ -15,8 +15,8 @@
  *
  * Related Files:
  *
- * - Src/util/spawn/system-tool.mts (implementation)
- * - Src/util/trusted-executable.mts (the resolver it wraps)
+ * - Src/util/spawn/system-tool.mts — the wrapper under test
+ * - Src/util/trusted-executable.mts — the resolver it wraps
  *
  * The fixture is real files under the OS temp dir: the resolver decides on
  * realpath canonicalization, which an fs mock would erase. One checkout is
@@ -76,16 +76,16 @@ beforeAll(() => {
   mkdirSync(shadowBin, { recursive: true })
   mkdirSync(systemBin, { recursive: true })
 
-  for (let i = 0, { length } = shimDirs; i < length; i += 1) {
-    const dir = shimDirs[i]!
-    for (let i = 0, { length } = SHADOWED_TOOLS; i < length; i += 1) {
-      const tool = SHADOWED_TOOLS[i]!
-      writeExecutable(dir, tool)
+  const shimTargets = [...shimDirs, systemBin]
+  for (let i = 0, { length } = shimTargets; i < length; i += 1) {
+    const dir = shimTargets[i]!
+    for (
+      let j = 0, { length: toolCount } = SHADOWED_TOOLS;
+      j < toolCount;
+      j += 1
+    ) {
+      writeExecutable(dir, SHADOWED_TOOLS[j]!)
     }
-  }
-  for (let i = 0, { length } = SHADOWED_TOOLS; i < length; i += 1) {
-    const tool = SHADOWED_TOOLS[i]!
-    writeExecutable(systemBin, tool)
   }
   // The checkout's own directories come first, the way a poisoned `.envrc` or
   // a `npm run` script would order them.
@@ -112,8 +112,7 @@ describe('a checkout that ships its own tool shims', () => {
 
       expect(resolution?.executable).toBe(path.join(systemBin, tool))
       for (let i = 0, { length } = shimDirs; i < length; i += 1) {
-        const dir = shimDirs[i]!
-        expect(resolution?.executable).not.toContain(dir)
+        expect(resolution?.executable).not.toContain(shimDirs[i]!)
       }
     },
   )
