@@ -199,6 +199,43 @@ describe('spawnCoanaDlx', () => {
     )
   })
 
+  it('forwards SOCKET_CALLER_USER_AGENT so coana can chain our UA', async () => {
+    mockResolveCoana.mockReturnValue({
+      type: 'dlx',
+      details: { name: '@coana-tech/cli', version: '1.0.0' },
+    })
+    mockSpawnDlx.mockResolvedValue({
+      spawnPromise: Promise.resolve({ stdout: undefined }),
+    })
+
+    await spawnCoanaDlx([], 'org', undefined, undefined)
+
+    const env = mockSpawnDlx.mock.calls[0]![2].env
+    expect(env['SOCKET_CALLER_USER_AGENT']).toMatch(
+      /^\S+\/\S+ node\/\S+ \S+\/\S+$/,
+    )
+  })
+
+  it('lets a caller-supplied SOCKET_CALLER_USER_AGENT win', async () => {
+    mockResolveCoana.mockReturnValue({
+      type: 'dlx',
+      details: { name: '@coana-tech/cli', version: '1.0.0' },
+    })
+    mockSpawnDlx.mockResolvedValue({
+      spawnPromise: Promise.resolve({ stdout: undefined }),
+    })
+
+    await spawnCoanaDlx(
+      [],
+      'org',
+      { env: { SOCKET_CALLER_USER_AGENT: 'caller/1.0' } },
+      undefined,
+    )
+
+    const env = mockSpawnDlx.mock.calls[0]![2].env
+    expect(env['SOCKET_CALLER_USER_AGENT']).toBe('caller/1.0')
+  })
+
   it('strips npm_package_* from the dlx child env', async () => {
     vi.stubEnv('npm_package_dependencies_lodash', '^4.0.0')
     vi.stubEnv('npm_config_registry', 'https://registry.example/')

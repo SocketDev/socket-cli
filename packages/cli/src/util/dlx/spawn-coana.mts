@@ -19,6 +19,7 @@ import { getCliVersion } from '../../env/cli-version.mts'
 import { getErrorCause } from '../error/errors.mts'
 import { isSeaBinary } from '../sea/detect.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from '../socket/sdk.mjs'
+import { getCliUserAgent } from '../socket/user-agent.mts'
 import { buildSystemToolEnv } from '../spawn/system-tool.mts'
 import { resolveNodeExecutable } from '../spawn/spawn-node.mts'
 
@@ -67,6 +68,10 @@ export async function spawnCoanaDlx(
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: getCliVersion(),
+    // Coana appends this to its own outbound User-Agent, so a Socket API
+    // request that originated in a CLI-launched coana run is attributable to
+    // the CLI version that launched it.
+    SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
@@ -181,6 +186,10 @@ export async function spawnCoanaVfs(
 
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: getCliVersion(),
+    // Coana appends this to its own outbound User-Agent, so a Socket API
+    // request that originated in a CLI-launched coana run is attributable to
+    // the CLI version that launched it.
+    SOCKET_CALLER_USER_AGENT: getCliUserAgent(),
   }
   const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
