@@ -74,6 +74,32 @@ vi.mock('./branch-cleanup.mts', () => ({
   cleanupSuccessfulPrLocalBranch: vi.fn(),
 }))
 
+// Discovery always uses `find-vulnerabilities --output-file`: mock Coana by
+// writing the structured result file on the discovery call and succeeding on
+// the fix call.
+function mockDiscoveryEnvelope(envelope: {
+  ghsaIds: string[]
+  artifactCount?: number
+  filteredArtifactCount?: number
+}) {
+  mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+    if (args[0] === 'find-vulnerabilities') {
+      const idx = args.indexOf('--output-file')
+      expect(idx).toBeGreaterThan(-1)
+      await fs.writeFile(
+        args[idx + 1]!,
+        JSON.stringify({
+          artifactCount: envelope.ghsaIds.length,
+          filteredArtifactCount: envelope.ghsaIds.length,
+          ...envelope,
+        }),
+      )
+      return { ok: true, data: '' }
+    }
+    return { ok: true, data: 'fix applied' }
+  })
+}
+
 describe('socket fix --pr-limit behavior verification', () => {
   const baseConfig: FixConfig = {
     all: false,
@@ -211,11 +237,7 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('should return early when no GHSAs are provided and none are discovered', async () => {
-      // Discovery returns empty array.
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: JSON.stringify([]),
-      })
+      mockDiscoveryEnvelope({ ghsaIds: [] })
 
       const result = await coanaFix({
         ...baseConfig,
@@ -230,16 +252,8 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('should discover vulnerabilities when no GHSAs are provided', async () => {
-      // First call is for discovery (returns vulnerability IDs).
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: JSON.stringify(['GHSA-aaaa-aaaa-aaaa', 'GHSA-bbbb-bbbb-bbbb']),
-      })
-
-      // Second call is to apply fixes to the discovered IDs.
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: 'fix applied',
+      mockDiscoveryEnvelope({
+        ghsaIds: ['GHSA-aaaa-aaaa-aaaa', 'GHSA-bbbb-bbbb-bbbb'],
       })
 
       const result = await coanaFix({
@@ -284,23 +298,13 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('should process only N GHSAs when --pr-limit N is specified in PR mode', async () => {
-      const ghsas = [
-        'GHSA-aaaa-aaaa-aaaa',
-        'GHSA-bbbb-bbbb-bbbb',
-        'GHSA-cccc-cccc-cccc',
-        'GHSA-dddd-dddd-dddd',
-      ]
-
-      // First call discovers vulnerabilities.
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: JSON.stringify(ghsas),
-      })
-
-      // Subsequent calls are for individual GHSA fixes.
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
+      mockDiscoveryEnvelope({
+        ghsaIds: [
+          'GHSA-aaaa-aaaa-aaaa',
+          'GHSA-bbbb-bbbb-bbbb',
+          'GHSA-cccc-cccc-cccc',
+          'GHSA-dddd-dddd-dddd',
+        ],
       })
 
       mockGitUnstagedModifiedFiles.mockResolvedValue({
@@ -321,12 +325,6 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
 
     it('should adjust prLimit based on existing open PRs', async () => {
-      const ghsas = [
-        'GHSA-aaaa-aaaa-aaaa',
-        'GHSA-bbbb-bbbb-bbbb',
-        'GHSA-cccc-cccc-cccc',
-      ]
-
       // Mock 1 existing open PR.
       mockGetSocketFixPrs.mockResolvedValueOnce([
         { number: 123, state: 'OPEN' },
@@ -335,14 +333,12 @@ describe('socket fix --pr-limit behavior verification', () => {
       // Second call returns no open PRs for specific GHSAs.
       mockGetSocketFixPrs.mockResolvedValue([])
 
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: JSON.stringify(ghsas),
-      })
-
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
+      mockDiscoveryEnvelope({
+        ghsaIds: [
+          'GHSA-aaaa-aaaa-aaaa',
+          'GHSA-bbbb-bbbb-bbbb',
+          'GHSA-cccc-cccc-cccc',
+        ],
       })
 
       mockGitUnstagedModifiedFiles.mockResolvedValue({
@@ -407,88 +403,6 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
     })
 
-    it('fails when discovery returns no output', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: '',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(false)
-      expect(result.message).toMatch(/no output/i)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-    })
-
-    it('fails when the final discovery output line is not JSON', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: '["GHSA-aaaa-aaaa-aaaa"]\nnpm notice: a new version is available',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(false)
-      expect(result.message).toMatch(/could not parse/i)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-    })
-
-    it('fails when discovery output parses to a non-array', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: '{}',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(false)
-      expect(result.message).toMatch(/unexpected vulnerability list/i)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-    })
-
-    it('fails when discovery output is an array of non-strings', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: '[123]',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(false)
-      expect(result.message).toMatch(/unexpected vulnerability list/i)
-    })
-
-    it('still succeeds when warnings precede the JSON array on the final line', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: 'some warning\n["GHSA-aaaa-aaaa-aaaa"]',
-      })
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
-    })
-
     it('propagates discovery failures in PR mode', async () => {
       mockGetFixEnv.mockResolvedValue({
         baseBranch: 'main',
@@ -521,28 +435,16 @@ describe('socket fix --pr-limit behavior verification', () => {
     })
   })
 
-  describe('structured discovery output (--output-file)', () => {
-    it('passes --output-file and reads the result file when Coana supports it', async () => {
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
-        if (args[0] === 'find-vulnerabilities') {
-          const idx = args.indexOf('--output-file')
-          expect(idx).toBeGreaterThan(-1)
-          await fs.writeFile(
-            args[idx + 1]!,
-            JSON.stringify({
-              ghsaIds: ['GHSA-aaaa-aaaa-aaaa'],
-              artifactCount: 3,
-              filteredArtifactCount: 3,
-            }),
-          )
-          return { ok: true, data: '' }
-        }
-        return { ok: true, data: 'fix applied' }
+  describe('structured discovery result (--output-file)', () => {
+    it('reads discovered GHSA IDs from the result file', async () => {
+      mockDiscoveryEnvelope({
+        ghsaIds: ['GHSA-aaaa-aaaa-aaaa'],
+        artifactCount: 3,
+        filteredArtifactCount: 3,
       })
 
       const result = await coanaFix({
         ...baseConfig,
-        coanaVersion: '15.9.7',
         ghsas: [],
       })
 
@@ -550,33 +452,11 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
     })
 
-    it('does not pass --output-file to older Coana versions', async () => {
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: JSON.stringify(['GHSA-aaaa-aaaa-aaaa']),
-      })
-      mockSpawnCoanaDlx.mockResolvedValueOnce({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        coanaVersion: '15.9.6',
-        ghsas: [],
-      })
-
-      expect(result.ok).toBe(true)
-      const discoveryArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      expect(discoveryArgs).not.toContain('--output-file')
-    })
-
     it('fails when Coana does not write the result file', async () => {
       mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: '' })
 
       const result = await coanaFix({
         ...baseConfig,
-        coanaVersion: '15.9.7',
         ghsas: [],
       })
 
@@ -594,7 +474,6 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       const result = await coanaFix({
         ...baseConfig,
-        coanaVersion: '15.9.7',
         ghsas: [],
       })
 
@@ -611,7 +490,6 @@ describe('socket fix --pr-limit behavior verification', () => {
 
       const result = await coanaFix({
         ...baseConfig,
-        coanaVersion: '15.9.7',
         ghsas: [],
       })
 
@@ -621,23 +499,15 @@ describe('socket fix --pr-limit behavior verification', () => {
 
     it('warns when the backend resolved zero artifacts', async () => {
       const warnSpy = vi.spyOn(logger, 'warn')
-      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
-        const idx = args.indexOf('--output-file')
-        await fs.writeFile(
-          args[idx + 1]!,
-          JSON.stringify({
-            ghsaIds: [],
-            artifactCount: 0,
-            filteredArtifactCount: 0,
-          }),
-        )
-        return { ok: true, data: '' }
+      mockDiscoveryEnvelope({
+        ghsaIds: [],
+        artifactCount: 0,
+        filteredArtifactCount: 0,
       })
 
       try {
         const result = await coanaFix({
           ...baseConfig,
-          coanaVersion: '15.9.7',
           ghsas: [],
         })
 

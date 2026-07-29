@@ -2,8 +2,6 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import semver from 'semver'
-
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
@@ -65,11 +63,6 @@ type DiscoverGhsaIdsOptions = {
   silence?: boolean | undefined
   spinner?: Spinner | undefined
 }
-
-// First Coana version with `find-vulnerabilities --output-file`, which writes
-// a structured JSON result ({ ghsaIds, artifactCount, filteredArtifactCount })
-// instead of relying on the final stdout line.
-const COANA_STRUCTURED_DISCOVERY_MIN_VERSION = '15.9.7'
 
 type StructuredDiscoveryResult = {
   ghsaIds?: unknown
@@ -144,18 +137,13 @@ async function discoverGhsaIds(
     ...options,
   } as DiscoverGhsaIdsOptions
 
-  const resolvedCoanaVersion =
-    options?.coanaVersion ??
-    process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
-  // Local Coana builds (SOCKET_CLI_COANA_LOCAL_PATH) are assumed current.
-  const useStructuredOutput =
-    !!process.env['SOCKET_CLI_COANA_LOCAL_PATH'] ||
-    (!!resolvedCoanaVersion &&
-      !!semver.valid(resolvedCoanaVersion) &&
-      semver.gte(resolvedCoanaVersion, COANA_STRUCTURED_DISCOVERY_MIN_VERSION))
-  const outputFile = useStructuredOutput
-    ? path.join(os.tmpdir(), `socket-fix-discovery-${Date.now()}.json`)
-    : undefined
+  // Coana writes a structured JSON result ({ ghsaIds, artifactCount,
+  // filteredArtifactCount }) via --output-file (available since coana 15.9.7,
+  // older than the pinned @coana-tech/cli version).
+  const outputFile = path.join(
+    os.tmpdir(),
+    `socket-fix-discovery-${Date.now()}.json`,
+  )
 
   const foundCResult = await spawnCoanaDlx(
     [
@@ -163,7 +151,8 @@ async function discoverGhsaIds(
       cwd,
       '--manifests-tar-hash',
       tarHash,
-      ...(outputFile ? ['--output-file', outputFile] : []),
+      '--output-file',
+      outputFile,
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
       ...(packageManagers?.length
         ? ['--package-managers', ...packageManagers]
@@ -182,47 +171,11 @@ async function discoverGhsaIds(
     return foundCResult
   }
 
-  if (outputFile) {
-    try {
-      return await readStructuredDiscoveryResult(outputFile, silence)
-    } finally {
-      await fs.rm(outputFile, { force: true }).catch(() => {})
-    }
-  }
-
-  // Coana prints ghsaIds as json-formatted string on the final line of the output.
-  const lastLine = foundCResult.data.trim().split('\n').pop()
-  if (!lastLine) {
-    return {
-      ok: false,
-      message: 'Coana returned no output while discovering vulnerabilities',
-      cause:
-        'Expected a JSON array of GHSA IDs on the final line of `find-vulnerabilities` output.',
-    }
-  }
-
-  let parsed: unknown
   try {
-    parsed = JSON.parse(lastLine)
-  } catch {
-    return {
-      ok: false,
-      message: 'Could not parse the vulnerability list returned by Coana',
-      cause:
-        'Expected a JSON array of GHSA IDs on the final line of `find-vulnerabilities` output, got:\n' +
-        `  ${lastLine}`,
-    }
+    return await readStructuredDiscoveryResult(outputFile, silence)
+  } finally {
+    await fs.rm(outputFile, { force: true }).catch(() => {})
   }
-
-  if (!Array.isArray(parsed) || parsed.some(id => typeof id !== 'string')) {
-    return {
-      ok: false,
-      message: 'Coana returned an unexpected vulnerability list',
-      cause: `Expected a JSON array of GHSA ID strings, got:\n  ${lastLine}`,
-    }
-  }
-
-  return { ok: true, data: parsed }
 }
 
 export async function coanaFix(
