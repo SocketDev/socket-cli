@@ -120,7 +120,7 @@ export const reachabilityFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     description:
-      'When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.',
+      'When using this option, reachability analysis is performed using only pre-generated CDX, SPDX, and Socket facts files in your project instead of resolving dependencies itself.',
   },
 }
 
