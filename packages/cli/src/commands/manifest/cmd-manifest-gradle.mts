@@ -189,24 +189,18 @@ export async function run(
   }
 
   if (dryRun) {
-    const args = [cwd]
-    if (bin) {
-      args.push('--bin', bin)
-    }
-    if (gradleOpts) {
-      args.push('--gradle-opts', gradleOpts)
+    const args = [cwd, '--bin', bin]
+    if (gradleOpts.length) {
+      args.push('--gradle-opts', gradleOpts.join(' '))
     }
     outputDryRunExecute('gradlew', args, 'generate pom.xml from Gradle project')
     return
   }
 
   const result = await convertGradleToMaven({
-    bin: bin,
+    bin,
     cwd,
-    gradleOpts: (gradleOpts || '')
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    gradleOpts,
     outputKind,
     verbose: verbose,
   })

@@ -317,4 +317,53 @@ describe('error/display', () => {
       expect(result.message).not.toMatch(/\x1b\[/)
     })
   })
+
+  describe('secret redaction', () => {
+    // Obviously fake credentials. Full pattern coverage lives in
+    // test/unit/util/redact-secrets-from-text.test.mts; these assert the
+    // dispatch-level error path actually routes through the redactor.
+    const SYNTHETIC_TOKEN = 'ghp_SYNTHETIC00000000000000'
+    const SYNTHETIC_URL =
+      'https://SYNTHETIC_USER:SYNTHETIC_PASSPHRASE@registry.test/pkg'
+
+    it('redacts a credential in the terminal message', () => {
+      const error = new NetworkError(
+        `Request failed with GITHUB_TOKEN=${SYNTHETIC_TOKEN}`,
+      )
+
+      const result = formatErrorForTerminal(error)
+
+      expect(result).not.toContain(SYNTHETIC_TOKEN)
+      expect(result).toContain('GITHUB_TOKEN=[redacted]')
+    })
+
+    it('redacts URL userinfo in the JSON cause', () => {
+      const error = new NetworkError(`Fetch failed for ${SYNTHETIC_URL}`)
+
+      const result = formatErrorForJson(error)
+
+      expect(result.cause).not.toContain('SYNTHETIC_PASSPHRASE')
+      expect(result.cause).toContain('https://[redacted]@registry.test/pkg')
+    })
+
+    it('redacts a credential carried by the cause chain', () => {
+      const error = new Error('Scan failed', {
+        cause: new Error(`upstream said x-api-key: ${SYNTHETIC_TOKEN}`),
+      })
+
+      const result = formatErrorForDisplay(error)
+
+      expect(result.message).not.toContain(SYNTHETIC_TOKEN)
+      expect(result.message).toContain('x-api-key: [redacted]')
+    })
+
+    it('redacts a credential in the stack body', () => {
+      const error = new Error('spawn failed')
+      error.stack = `Error: spawn failed\n    at run (socket --api-token ${SYNTHETIC_TOKEN})`
+
+      const result = formatErrorForDisplay(error, { showStack: true })
+
+      expect(result.body).not.toContain(SYNTHETIC_TOKEN)
+    })
+  })
 })

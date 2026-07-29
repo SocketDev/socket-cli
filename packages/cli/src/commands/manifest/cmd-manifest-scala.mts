@@ -4,6 +4,7 @@ import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
+import { resolveSbtInvocation } from './manifest-build-trust.mts'
 import { outputManifest } from './output-manifest.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
@@ -27,6 +28,7 @@ export interface ScalaFlags {
   out: string | undefined
   sbtOpts: string | undefined
   stdout: boolean | undefined
+  trustSocketJson: boolean | undefined
   verbose: boolean | undefined
 }
 
@@ -52,6 +54,11 @@ const config = {
     sbtOpts: {
       type: 'string',
       description: 'Additional options to pass on to sbt, as per `sbt --help`',
+    },
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the binary and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
     },
     verbose: {
       type: 'boolean',
@@ -84,6 +91,12 @@ const config = {
       development and production, you must run them separately.
 
     You can specify --bin to override the path to the \`sbt\` binary to invoke.
+
+    The default binary is the \`sbt\` on your PATH. A ${SOCKET_JSON} that points
+    \`bin\` somewhere else, or that sets \`sbtOpts\`, is refused unless you pass
+    --trust-socket-json: those values choose what gets executed and the
+    repository being scanned owns that file. Pass --bin and --sbt-opts yourself
+    to override the defaults without trusting ${SOCKET_JSON}.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
@@ -134,17 +147,24 @@ export async function run(
     `override: ${SOCKET_JSON} sbt: ${JSON.stringify(sockJson?.defaults?.manifest?.sbt)}`,
   )
 
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
+  const { bin: binFlag, sbtOpts: sbtOptsFlag, trustSocketJson } = cli.flags
 
-  // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (!bin) {
-    if (sockJson.defaults?.manifest?.sbt?.bin) {
-      bin = sockJson.defaults?.manifest?.sbt?.bin
-      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
-    } else {
-      bin = 'sbt'
-    }
+  let { out, stdout, verbose } = cli.flags
+
+  const invocation = resolveSbtInvocation({
+    cliBin: binFlag,
+    cliOpts: sbtOptsFlag,
+    cwd,
+    socketJson: sockJson,
+    trustSocketJson: Boolean(trustSocketJson),
+  })
+  if (!invocation.ok) {
+    await outputManifest(invocation, outputKind, '-')
+    return
   }
+
+  const { bin, opts: sbtOpts } = invocation.data
+
   if (
     stdout === undefined &&
     sockJson.defaults?.manifest?.sbt?.stdout !== undefined
@@ -160,14 +180,6 @@ export async function run(
       logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
       out = './socket.pom.xml'
-    }
-  }
-  if (!sbtOpts) {
-    if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
-      sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      logger.info(`Using default --sbt-opts from ${SOCKET_JSON}:`, sbtOpts)
-    } else {
-      sbtOpts = ''
     }
   }
   if (
@@ -211,29 +223,23 @@ export async function run(
   }
 
   if (dryRun) {
-    const args = [cwd]
-    if (bin) {
-      args.push('--bin', bin)
-    }
+    const args = [cwd, '--bin', bin]
     if (out) {
       args.push('--out', out)
     }
-    if (sbtOpts) {
-      args.push('--sbt-opts', sbtOpts)
+    if (sbtOpts.length) {
+      args.push('--sbt-opts', sbtOpts.join(' '))
     }
     outputDryRunExecute('sbt', args, 'generate pom.xml from Scala project')
     return
   }
 
   const result = await convertSbtToMaven({
-    bin: bin,
+    bin,
     cwd: cwd,
     out: out,
     outputKind,
-    sbtOpts: sbtOpts
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean),
+    sbtOpts,
     verbose: verbose,
   })
 
