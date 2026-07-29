@@ -29,6 +29,7 @@
  */
 
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
 import { getExecPath } from '@socketsecurity/lib-stable/constants/node'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -187,8 +188,13 @@ export async function spawnNode(
   } as SpawnNodeOptions
 
   // Get the Node.js executable to use, plus the PATH its child may search.
+  // The child's own working directory is the checkout to protect, and spawn
+  // accepts it as either a path or a file URL.
+  const { cwd } = spawnOpts
   const { executable, searchPath } = await resolveNodeExecutable(
-    spawnOpts.cwd === undefined ? undefined : { cwd: String(spawnOpts.cwd) },
+    cwd === undefined
+      ? undefined
+      : { cwd: typeof cwd === 'string' ? cwd : fileURLToPath(cwd) },
   )
 
   // Spawn the Node.js process.
