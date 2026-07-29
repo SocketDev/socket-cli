@@ -51,8 +51,15 @@ vi.mock(
   }),
 )
 
+import { promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+
 import {
   convertSbtToMaven,
+  findProjectRootAboveTarget,
   resolveSbtExecutable,
 } from '../../../../src/commands/manifest/convert-sbt-to-maven.mts'
 
@@ -296,5 +303,107 @@ describe('resolveSbtExecutable', () => {
       expect(result.data.executable).toBe('C:\\tools\\sbt.bat')
     }
     expect(mockFindSystemTool).not.toHaveBeenCalled()
+  })
+})
+
+describe('findProjectRootAboveTarget', () => {
+  it('returns the parent of the nearest target ancestor', () => {
+    expect(
+      findProjectRootAboveTarget('/proj/module/target/scala-2.13/foo.pom'),
+    ).toBe('/proj/module')
+  })
+
+  it('returns the parent when the pom sits directly in target', () => {
+    expect(findProjectRootAboveTarget('/proj/target/foo.pom')).toBe('/proj')
+  })
+
+  it('returns undefined when no target ancestor exists', () => {
+    expect(findProjectRootAboveTarget('/proj/module/foo.pom')).toBeUndefined()
+  })
+})
+
+describe('convertSbtToMaven target/ lift-out', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockFindSystemTool.mockResolvedValue({
+      executable: SYSTEM_SBT,
+      searchPath: SAFE_PATH,
+    })
+  })
+
+  it('copies poms out of target/ to the project root', async () => {
+    const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'sbt-liftout-'))
+    try {
+      const targetDir = path.join(scratch, 'module', 'target', 'scala-2.13')
+      await fs.mkdir(targetDir, { recursive: true })
+      const pomA = path.join(targetDir, 'a.pom')
+      const pomB = path.join(targetDir, 'b.pom')
+      await fs.writeFile(pomA, '<project>a</project>')
+      await fs.writeFile(pomB, '<project>b</project>')
+      mockSpawn.mockResolvedValueOnce({
+        stdout: `Wrote ${pomA}\nWrote ${pomB}\n`,
+        stderr: '',
+      })
+
+      const result = await convertSbtToMaven({
+        ...baseOpts,
+        cwd: scratch,
+        out: 'pom.xml',
+      })
+
+      expect(result.ok).toBe(true)
+      const lifted = path.join(scratch, 'module', 'pom.xml')
+      if (result.ok) {
+        expect(result.data.files).toEqual([lifted, lifted])
+      }
+      expect(await fs.readFile(lifted, 'utf8')).toBe('<project>b</project>')
+    } finally {
+      await safeDelete(scratch)
+    }
+  })
+
+  it('honors a full --out path for a single generated pom', async () => {
+    const scratch = await fs.mkdtemp(path.join(os.tmpdir(), 'sbt-liftout-'))
+    try {
+      const targetDir = path.join(scratch, 'target')
+      await fs.mkdir(targetDir, { recursive: true })
+      const pom = path.join(targetDir, 'only.pom')
+      await fs.writeFile(pom, '<project>only</project>')
+      mockSpawn.mockResolvedValueOnce({
+        stdout: `Wrote ${pom}\n`,
+        stderr: '',
+      })
+
+      const result = await convertSbtToMaven({
+        ...baseOpts,
+        cwd: scratch,
+        out: 'nested/dir/output.pom.xml',
+      })
+
+      expect(result.ok).toBe(true)
+      const dest = path.join(scratch, 'nested', 'dir', 'output.pom.xml')
+      if (result.ok) {
+        expect(result.data.files).toEqual([dest])
+      }
+      expect(await fs.readFile(dest, 'utf8')).toBe('<project>only</project>')
+    } finally {
+      await safeDelete(scratch)
+    }
+  })
+
+  it('leaves a pom in place when it has no target ancestor', async () => {
+    mockSpawn.mockResolvedValueOnce({
+      stdout: 'Wrote /proj/a.pom\nWrote /proj/b.pom\n',
+      stderr: '',
+    })
+
+    const result = await convertSbtToMaven(baseOpts)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.files).toEqual(['/proj/a.pom', '/proj/b.pom'])
+    }
+    expect(mockLogger.warn).toHaveBeenCalled()
   })
 })

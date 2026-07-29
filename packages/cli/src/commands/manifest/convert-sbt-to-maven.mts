@@ -1,5 +1,7 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
@@ -157,17 +159,71 @@ export async function convertSbtToMaven({
         message,
         data: { files: poms },
       }
-    } else if (isTextMode) {
-      logger.success(`Generated ${poms.length} pom files`)
+    }
+
+    if (out === '-') {
+      return {
+        ok: true,
+        data: {
+          files: poms,
+          type: 'sbt',
+          success: true,
+        },
+      }
+    }
+
+    // sbt writes poms inside each project's `target/` directory, which is
+    // typically gitignored. Copy them out to a sibling of `target/` so
+    // downstream SBOM/scan steps see them.
+    const copied: string[] = []
+    const outBasename = path.basename(out) || 'pom.xml'
+    for (let i = 0, { length } = poms; i < length; i += 1) {
+      const pomPath = poms[i]!
+      let destPath: string
+      if (poms.length === 1 && out !== outBasename) {
+        // Honor the full `--out` path verbatim when exactly one pom was
+        // produced and the user (or default) supplied a path, not just a
+        // bare filename.
+        destPath = path.resolve(cwd, out)
+      } else {
+        const projectRoot = findProjectRootAboveTarget(pomPath)
+        if (!projectRoot) {
+          if (isTextMode) {
+            logger.warn(
+              `Could not locate \`target/\` ancestor for \`${pomPath}\`, leaving in place`,
+            )
+          }
+          copied.push(pomPath)
+          continue
+        }
+        destPath = path.join(projectRoot, outBasename)
+      }
+      try {
+        await fs.mkdir(path.dirname(destPath), { recursive: true })
+        await fs.copyFile(pomPath, destPath)
+        copied.push(destPath)
+      } catch (e) {
+        if (isTextMode) {
+          logger.warn(
+            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${errorMessage(e)}`,
+          )
+        }
+      }
+    }
+
+    if (isTextMode) {
+      logger.success(
+        `Generated ${copied.length} pom file${copied.length === 1 ? '' : 's'}`,
+      )
       // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
-      poms.forEach(fn => logger.log('-', fn))
+      copied.forEach(fn => logger.log('-', fn))
       logger.success('OK')
     }
 
     return {
       ok: true,
       data: {
-        files: poms,
+        files: copied,
         type: 'sbt',
         success: true,
       },
@@ -194,6 +250,26 @@ export async function convertSbtToMaven({
       cause: errorMessage(e),
     }
   }
+}
+
+/**
+ * Walk up from a pom path to find a `target` directory ancestor and return
+ * its parent (the project root). Returns undefined if no `target` ancestor
+ * is found, which means the file cannot safely be lifted out of the ignored
+ * build dir.
+ */
+export function findProjectRootAboveTarget(
+  pomPath: string,
+): string | undefined {
+  let dir = path.dirname(pomPath)
+  const { root } = path.parse(dir)
+  while (dir !== root) {
+    if (path.basename(dir) === 'target') {
+      return path.dirname(dir)
+    }
+    dir = path.dirname(dir)
+  }
+  return undefined
 }
 
 /**
