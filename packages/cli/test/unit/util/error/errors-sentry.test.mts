@@ -20,9 +20,9 @@ const SYNTHETIC_TOKEN = 'ghp_SYNTHETIC00000000000000'
 
 describe('redactExceptionForCapture', () => {
   it('redacts a thrown string', () => {
-    expect(
-      redactExceptionForCapture(`GITHUB_TOKEN=${SYNTHETIC_TOKEN}`),
-    ).toBe('GITHUB_TOKEN=[redacted]')
+    expect(redactExceptionForCapture(`GITHUB_TOKEN=${SYNTHETIC_TOKEN}`)).toBe(
+      'GITHUB_TOKEN=[redacted]',
+    )
   })
 
   it('redacts the error message', () => {
