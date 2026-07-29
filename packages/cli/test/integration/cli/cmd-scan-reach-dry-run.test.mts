@@ -66,7 +66,7 @@ describe('socket scan reach - dry-run tests', async () => {
                 --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
                 --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
                 --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
-                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
                 --reach-enable-analysis-splitting  Enable analysis splitting, allowing Coana to split reachability analysis into multiple runs per workspace.
                 --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
                 --reach-min-severity  Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.

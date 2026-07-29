@@ -2,7 +2,7 @@ import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { reachabilityFlags } from './reachability-flags.mts'
 import { InputError } from '../../util/error/errors.mts'
-import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
+import { getReachabilityEcosystemChoices } from '../../util/ecosystem/types.mts'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { ReachabilityTargetValidation } from './validate-reachability-target.mts'
@@ -87,11 +87,12 @@ export function computeReachabilityFlagUsage(
 }
 
 /**
- * Validate `--reach-ecosystems` values against the supported ecosystem list.
+ * Validate `--reach-ecosystems` against the set Coana's reachability engine
+ * accepts, which is narrower than the full purl-type list.
  */
 export function validateReachEcosystems(rawValues: string[]): PURL_Type[] {
   const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
+  const validEcosystems = getReachabilityEcosystemChoices()
   for (let i = 0, { length } = rawValues; i < length; i += 1) {
     const ecosystem = rawValues[i]!
     if (!validEcosystems.includes(ecosystem)) {

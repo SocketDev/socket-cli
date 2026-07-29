@@ -1,8 +1,7 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-
 import { assertNoNegationPatterns } from './exclude-paths.mts'
+import { validateReachEcosystems } from './cmd-scan-create-checks.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
 import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
@@ -12,7 +11,6 @@ import { InputError } from '../../util/error/errors.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
@@ -25,7 +23,6 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
 export interface ScanReachFlags {
@@ -178,18 +175,8 @@ export async function run(
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
   assertNoNegationPatterns(excludePaths)
 
-  // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (let i = 0, { length } = reachEcosystemsRaw; i < length; i += 1) {
-    const ecosystem = reachEcosystemsRaw[i]!
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new InputError(
-        `--reach-ecosystems must be one of: ${joinAnd(validEcosystems)} (saw: "${ecosystem}"); pass a supported ecosystem like --reach-ecosystems=${validEcosystems[0]}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  // Validate ecosystem values against the reachability-supported set.
+  const reachEcosystems = validateReachEcosystems(reachEcosystemsRaw)
 
   const processCwd = process.cwd()
   const cwd =

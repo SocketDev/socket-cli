@@ -91,6 +91,26 @@ export const ALL_ECOSYSTEMS = [
 // export type _Check_ALL_ECOSYSTEMS_has_no_extras =
 //   ExpectNever<ExtraInAllEcosystems>
 
+// Purl types accepted by Coana's reachability `--purl-types` gate
+// (@coana-tech/cli `getAdvisoryEcosystemFromPurlType`), a strict subset of
+// ALL_ECOSYSTEMS. Anything outside this set is rejected by the engine partway
+// through the scan with an opaque error, so validate it at the CLI instead.
+// Keep in sync when bumping @coana-tech/cli.
+export const REACHABILITY_SUPPORTED_ECOSYSTEMS = [
+  'cargo',
+  'composer',
+  'gem',
+  'golang',
+  'maven',
+  'npm',
+  'nuget',
+  'pypi',
+] as const satisfies readonly PURL_Type[]
+
 export function getEcosystemChoicesForMeow(): string[] {
   return [...ALL_ECOSYSTEMS]
+}
+
+export function getReachabilityEcosystemChoices(): string[] {
+  return [...REACHABILITY_SUPPORTED_ECOSYSTEMS]
 }

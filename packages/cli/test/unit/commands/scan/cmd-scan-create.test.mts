@@ -773,6 +773,28 @@ describe('cmd-scan-create', () => {
       ).rejects.toThrow(/--reach-ecosystems must be one of/)
     })
 
+    it('should reject an ecosystem the reachability engine cannot analyze', async () => {
+      // conda is a valid purl type but is outside coana's --purl-types gate,
+      // so it must fail at the CLI rather than partway through the scan.
+      mockHasDefaultApiToken.mockReturnValueOnce(true)
+
+      await expect(
+        cmdScanCreate.run(
+          [
+            '--org',
+            'test-org',
+            '--reach',
+            '--reach-ecosystems',
+            'conda',
+            '.',
+            '--no-interactive',
+          ],
+          importMeta,
+          context,
+        ),
+      ).rejects.toThrow(/--reach-ecosystems must be one of/)
+    })
+
     it('should pass --commit-hash flag to handleCreateNewScan', async () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 

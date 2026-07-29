@@ -54,6 +54,7 @@ describe('socket scan create', async () => {
                 --report-level      Which policy level alerts should be reported (default 'error')
                 --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
                 --tmp               Set the visibility (true/false) of the scan in your dashboard.
+                --trust-socket-json  With --auto-manifest, run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.
                 --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
           
               Reachability Options (when --reach is used)
@@ -62,7 +63,7 @@ describe('socket scan create', async () => {
                 --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
                 --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
                 --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
-                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
                 --reach-enable-analysis-splitting  Enable analysis splitting, allowing Coana to split reachability analysis into multiple runs per workspace.
                 --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
                 --reach-min-severity  Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.
@@ -102,6 +103,12 @@ describe('socket scan create', async () => {
               is not designated as the "default branch". It is disabled when using --tmp.
           
               You can use \`socket scan setup\` to configure certain repo flag defaults.
+          
+              With --auto-manifest, gradle and sbt run a build binary. The defaults are
+              \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that points
+              \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+              you also pass --trust-socket-json: those values choose what gets executed
+              and the repository being scanned owns that file.
           
               Examples
                 $ socket scan create
@@ -149,6 +156,7 @@ describe('socket scan create', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan create\`, cwd: <redacted>
 
+        i Detected 1 manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.
 
         [DryRun]: Would upload scan
 
