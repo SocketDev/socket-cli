@@ -189,7 +189,11 @@ export function scanLinesForPattern(
   const deadline = Date.now() + budgetMs
   const matchIndexes: number[] = []
   for (let i = 0; i < lines.length; i += 1) {
-    if (i > 0 && i % GREP_BUDGET_CHECK_INTERVAL === 0 && Date.now() > deadline) {
+    if (
+      i > 0 &&
+      i % GREP_BUDGET_CHECK_INTERVAL === 0 &&
+      Date.now() > deadline
+    ) {
       return { budgetExceeded: true, matchIndexes }
     }
     const line = lines[i]!
