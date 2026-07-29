@@ -73,6 +73,7 @@ export type HandleCreateNewScanConfig = {
   reportLevel: REPORT_LEVEL
   targets: string[]
   tmp: boolean
+  trustSocketJson: boolean
   workspace?: string | undefined
 }
 
@@ -97,6 +98,7 @@ export async function handleCreateNewScan({
   reportLevel,
   targets,
   tmp,
+  trustSocketJson,
   workspace,
 }: HandleCreateNewScanConfig): Promise<void> {
   debugNs(
@@ -129,6 +131,7 @@ export async function handleCreateNewScan({
       detected,
       cwd,
       outputKind,
+      trustSocketJson,
       verbose: false,
     })
     logger.info('Auto-generation finished. Proceeding with Scan creation.')

@@ -1,5 +1,9 @@
+import path from 'node:path'
+
 import { resolveRealBinSync } from '@socketsecurity/lib-stable/bin/resolve'
+import { isShadowBinPath } from '@socketsecurity/lib-stable/bin/shadow'
 import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
   createSupportedFilesFilter,
@@ -10,10 +14,30 @@ import {
 import type { SupportedFiles } from './glob.mts'
 import type { SocketYml } from '../socket-yaml.mts'
 
-export function findBinPathDetailsSync(binName: string): {
+export type BinPathTrustOptions = {
+  cwd?: string | undefined
+}
+
+/**
+ * First PATH candidate for `binName` that the scanned project cannot control.
+ *
+ * `whichRealSync` returns every match in PATH order, and the leading matches
+ * are the ones a checkout can plant: a `node_modules/.bin` shim installed by
+ * its own dependencies, a binary in the directory the CLI was invoked from
+ * (which the PATH lookup searches ahead of PATH itself on Windows). Those
+ * candidates are skipped, so the first system match wins.
+ */
+export function findBinPathDetailsSync(
+  binName: string,
+  options?: BinPathTrustOptions | undefined,
+): {
   name: string
   path: string | undefined
 } {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as BinPathTrustOptions
   const rawBinPaths =
     whichRealSync(binName, {
       all: true,
@@ -29,7 +53,16 @@ export function findBinPathDetailsSync(binName: string): {
   let theBinPath: string | undefined
   for (let i = 0, { length } = binPaths; i < length; i += 1) {
     const binPath = binPaths[i]!
-    theBinPath = resolveRealBinSync(binPath)
+    if (isProjectControlledBinPath(binPath, { cwd })) {
+      continue
+    }
+    // Unwrapping a `.cmd`/shell wrapper can land on a script the project
+    // controls even when the wrapper itself sits in a system directory.
+    const realBinPath = resolveRealBinSync(binPath)
+    if (isProjectControlledBinPath(realBinPath, { cwd })) {
+      continue
+    }
+    theBinPath = realBinPath
     break
   }
   return { name: binName, path: theBinPath }
@@ -62,5 +95,33 @@ export async function getPackageFilesForScan(
       filter,
       socketConfig,
     },
+  )
+}
+
+/**
+ * Whether a binary path is reachable by the project under inspection: a
+ * `node_modules/.bin` shadow bin, or anything at or beneath the working
+ * directory.
+ */
+export function isProjectControlledBinPath(
+  binPath: string | undefined,
+  options?: BinPathTrustOptions | undefined,
+): boolean {
+  if (!binPath) {
+    return false
+  }
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as BinPathTrustOptions
+  const binDirPath = path.dirname(binPath)
+  if (isShadowBinPath(binDirPath)) {
+    return true
+  }
+  const normalizedCwd = normalizePath(path.resolve(cwd))
+  const normalizedBinDirPath = normalizePath(path.resolve(binDirPath))
+  return (
+    normalizedBinDirPath === normalizedCwd ||
+    normalizedBinDirPath.startsWith(`${normalizedCwd}/`)
   )
 }

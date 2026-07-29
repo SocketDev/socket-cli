@@ -5,6 +5,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
@@ -23,6 +24,11 @@ const config = {
   description: 'Auto-detect build and attempt to generate manifest file',
   flags: defineFlags({
     ...commonFlags,
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the build binaries and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
+    },
     verbose: {
       type: 'boolean',
       default: false,
@@ -40,6 +46,12 @@ const config = {
     Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
+
+    Gradle and sbt run a build binary. This command has no --bin of its own, so
+    it uses \`CWD/gradlew\` and the \`sbt\` on your PATH. A ${SOCKET_JSON} that
+    points \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused
+    unless you pass --trust-socket-json: those values choose what gets executed
+    and the repository being scanned owns that file.
 
     Note: you can exclude languages from being auto-generated if you don't want
           them to. Run \`socket manifest setup\` in the same dir to disable it.
@@ -70,7 +82,12 @@ export async function run(
     parentName,
   })
   // Feature request: Pass outputKind to manifest generators for json/md output support.
-  const { json, markdown, verbose: verboseFlag } = cli.flags
+  const {
+    json,
+    markdown,
+    trustSocketJson,
+    verbose: verboseFlag,
+  } = cli.flags
 
   const dryRun = cli.flags['dryRun']
 
@@ -130,6 +147,7 @@ export async function run(
     detected,
     cwd,
     outputKind,
+    trustSocketJson: Boolean(trustSocketJson),
     verbose,
   })
 

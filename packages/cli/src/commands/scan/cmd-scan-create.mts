@@ -72,6 +72,7 @@ export interface ScanCreateFlags {
   reportLevel: REPORT_LEVEL
   setAsAlertsPage: boolean
   tmp: boolean
+  trustSocketJson?: boolean | undefined
   workspace: string
 }
 
@@ -167,6 +168,12 @@ export async function run(
 
     You can use \`socket scan setup\` to configure certain repo flag defaults.
 
+    With --auto-manifest, gradle and sbt run a build binary. The defaults are
+    \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that points
+    \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+    you also pass --trust-socket-json: those values choose what gets executed
+    and the repository being scanned owns that file.
+
     Examples
       $ ${command}
       $ ${command} ./proj --json
@@ -255,7 +262,7 @@ export async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
-  const { basics } = cli.flags as unknown as ScanCreateFlags
+  const { basics, trustSocketJson } = cli.flags as unknown as ScanCreateFlags
 
   let {
     autoManifest,
@@ -434,6 +441,7 @@ export async function run(
     reportLevel,
     targets,
     tmp: tmp,
+    trustSocketJson: Boolean(trustSocketJson),
     workspace: (workspace && workspace) || '',
   })
 }

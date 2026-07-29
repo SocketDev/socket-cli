@@ -27,9 +27,17 @@ export function detectCiPullRequestNumber(): number {
   return match ? Number(match[1]) : 0
 }
 
-export async function handleCi(autoManifest: boolean): Promise<void> {
+export async function handleCi(config: {
+  autoManifest: boolean
+  trustSocketJson: boolean
+}): Promise<void> {
+  const { autoManifest, trustSocketJson } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+
   debug('Starting CI scan')
-  debugDir({ autoManifest })
+  debugDir({ autoManifest, trustSocketJson })
 
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
@@ -91,5 +99,6 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     targets: ['.'],
     // Don't set 'tmp' when 'pendingHead' is true.
     tmp: false,
+    trustSocketJson,
   })
 }

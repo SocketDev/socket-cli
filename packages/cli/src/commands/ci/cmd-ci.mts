@@ -1,5 +1,6 @@
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
@@ -27,6 +28,11 @@ const config = {
       description:
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the build binaries and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
+    },
   }),
   help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
@@ -44,6 +50,11 @@ const config = {
     but is not enabled by default since the CI is less likely to be set up with
     all the necessary dev tooling. Enable it if you want the scan to include
     locally generated manifests like for gradle and sbt.
+
+    With --auto-manifest, gradle and sbt run a build binary. The defaults are
+    \`CWD/gradlew\` and the \`sbt\` on your PATH. A ${SOCKET_JSON} that points
+    \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+    you also pass --trust-socket-json.
 
     Examples
       $ ${command}
@@ -72,6 +83,7 @@ export async function run(
 
   const dryRun = cli.flags['dryRun']
   const autoManifest = cli.flags['autoManifest']
+  const trustSocketJson = cli.flags['trustSocketJson']
 
   if (dryRun) {
     const orgSlugCResult = await getDefaultOrgSlug()
@@ -94,5 +106,8 @@ export async function run(
     return
   }
 
-  await handleCi(autoManifest)
+  await handleCi({
+    autoManifest: Boolean(autoManifest),
+    trustSocketJson: Boolean(trustSocketJson),
+  })
 }

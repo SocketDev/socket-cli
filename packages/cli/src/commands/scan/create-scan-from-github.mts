@@ -285,6 +285,8 @@ export async function scanOneRepo(
     reportLevel: REPORT_LEVEL_ERROR,
     targets: ['.'],
     tmp: false,
+    // Auto-manifest is off here, so no build binary runs.
+    trustSocketJson: false,
   })
 
   return { ok: true, data: { scanCreated: true } }

@@ -26,6 +26,7 @@ import {
 import {
   findBinPathDetailsSync,
   getPackageFilesForScan,
+  isProjectControlledBinPath,
 } from '../../../../src/util/fs/path-resolve.mts'
 import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
@@ -451,6 +452,127 @@ describe('Path Resolve', () => {
         name: 'npm',
         path: '/usr/local/bin/npm',
       })
+    })
+
+    it('skips a node_modules/.bin shim and takes the first system match', async () => {
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'node_modules/.bin/npm', content: '#!/bin/sh\n' },
+          { path: 'system/bin/npm', content: '#!/bin/sh\n' },
+        ],
+      })
+
+      try {
+        const shadowBinPath = workspace.resolve('node_modules/.bin/npm')
+        const systemBinPath = workspace.resolve('system/bin/npm')
+        mockWhichRealSync.mockReturnValue([shadowBinPath, systemBinPath])
+
+        const result = findBinPathDetailsSync('npm', { cwd: '/elsewhere' })
+
+        expect(result).toEqual({ name: 'npm', path: systemBinPath })
+      } finally {
+        await workspace.cleanup()
+      }
+    })
+
+    it('skips a candidate served by the working directory', async () => {
+      const workspace = await createTestWorkspace({
+        files: [
+          { path: 'repo/npm', content: '#!/bin/sh\n' },
+          { path: 'system/bin/npm', content: '#!/bin/sh\n' },
+        ],
+      })
+
+      try {
+        const repoBinPath = workspace.resolve('repo/npm')
+        const systemBinPath = workspace.resolve('system/bin/npm')
+        mockWhichRealSync.mockReturnValue([repoBinPath, systemBinPath])
+
+        const result = findBinPathDetailsSync('npm', {
+          cwd: workspace.resolve('repo'),
+        })
+
+        expect(result).toEqual({ name: 'npm', path: systemBinPath })
+      } finally {
+        await workspace.cleanup()
+      }
+    })
+
+    it('skips a wrapper that unwraps into the working directory', async () => {
+      const workspace = await createTestWorkspace({
+        files: [{ path: 'shim/npm-cli.js', content: '' }],
+      })
+
+      try {
+        const unwrappedPath = workspace.resolve('shim/npm-cli.js')
+        mockWhichRealSync.mockReturnValue(['/usr/local/bin/npm'])
+        mockResolveRealBinSync.mockReturnValue(unwrappedPath)
+
+        const result = findBinPathDetailsSync('npm', { cwd: workspace.path })
+
+        expect(result).toEqual({ name: 'npm', path: undefined })
+      } finally {
+        mockResolveRealBinSync.mockImplementation((p: string) => p)
+        await workspace.cleanup()
+      }
+    })
+
+    it('reports no path when every candidate is project controlled', async () => {
+      const workspace = await createTestWorkspace({
+        files: [{ path: 'node_modules/.bin/npm', content: '#!/bin/sh\n' }],
+      })
+
+      try {
+        mockWhichRealSync.mockReturnValue([
+          workspace.resolve('node_modules/.bin/npm'),
+        ])
+
+        const result = findBinPathDetailsSync('npm', { cwd: workspace.path })
+
+        expect(result).toEqual({ name: 'npm', path: undefined })
+      } finally {
+        await workspace.cleanup()
+      }
+    })
+  })
+
+  describe('isProjectControlledBinPath', () => {
+    it('flags a node_modules/.bin shim', () => {
+      expect(
+        isProjectControlledBinPath('/repo/node_modules/.bin/npm', {
+          cwd: '/elsewhere',
+        }),
+      ).toBe(true)
+    })
+
+    it('flags the working directory itself', () => {
+      expect(isProjectControlledBinPath('/repo/npm', { cwd: '/repo' })).toBe(
+        true,
+      )
+    })
+
+    it('flags a descendant of the working directory', () => {
+      expect(
+        isProjectControlledBinPath('/repo/bin/npm', { cwd: '/repo' }),
+      ).toBe(true)
+    })
+
+    it('allows a system directory', () => {
+      expect(
+        isProjectControlledBinPath('/usr/local/bin/npm', { cwd: '/repo' }),
+      ).toBe(false)
+    })
+
+    it('allows a sibling directory with a shared prefix', () => {
+      expect(
+        isProjectControlledBinPath('/repo-tools/bin/npm', { cwd: '/repo' }),
+      ).toBe(false)
+    })
+
+    it('allows an undefined path', () => {
+      expect(isProjectControlledBinPath(undefined, { cwd: '/repo' })).toBe(
+        false,
+      )
     })
   })
 })

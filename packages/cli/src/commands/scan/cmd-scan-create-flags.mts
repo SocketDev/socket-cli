@@ -129,6 +129,12 @@ export const generalFlags: MeowFlags = {
       'Set the visibility (true/false) of the scan in your dashboard.',
     shortFlag: 't',
   },
+  trustSocketJson: {
+    type: 'boolean',
+    default: false,
+    description:
+      'With --auto-manifest, run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.',
+  },
   workspace: {
     type: 'string',
     default: '',
