@@ -11,6 +11,8 @@
  * - Src/commands/manifest/manifest-build-trust.mts
  */
 
+import { mkdirSync, mkdtempSync, symlinkSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
@@ -121,6 +123,61 @@ describe('resolveCondaOutfile', () => {
 
     expect(result.ok).toBe(true)
     expect(result.ok && result.data).toBe('/tmp/mine.txt')
+  })
+})
+
+describe('conda path containment follows symlinks', () => {
+  // path.resolve collapses `..` but follows no symlink, so a link inside the
+  // project pointing outward reads as contained while the real read/write
+  // lands outside it. Both directions need a real filesystem to prove.
+  function projectWithEscapingSymlink(): { escape: string; project: string } {
+    const base = mkdtempSync(path.join(os.tmpdir(), 'conda-trust-'))
+    const project = path.join(base, 'project')
+    const outside = path.join(base, 'outside')
+    mkdirSync(project)
+    mkdirSync(outside)
+    const escape = path.join(project, 'escape')
+    symlinkSync(outside, escape, 'dir')
+    return { escape, project }
+  }
+
+  it('refuses an outfile reached through a symlink out of the project', () => {
+    const { project } = projectWithEscapingSymlink()
+
+    const result = resolveCondaOutfile({
+      cliOut: undefined,
+      cwd: project,
+      socketJson: socketJsonWithConda({ outfile: 'escape/pwned.txt' }),
+      trustSocketJson: false,
+    })
+
+    expect(result.ok).toBe(false)
+  })
+
+  it('refuses an infile reached through a symlink out of the project', () => {
+    const { project } = projectWithEscapingSymlink()
+
+    const result = resolveCondaInfile({
+      cliFile: undefined,
+      cwd: project,
+      socketJson: socketJsonWithConda({ infile: 'escape/secrets.yml' }),
+      trustSocketJson: false,
+    })
+
+    expect(result.ok).toBe(false)
+  })
+
+  it('allows a real path inside the project', () => {
+    const { project } = projectWithEscapingSymlink()
+
+    const result = resolveCondaOutfile({
+      cliOut: undefined,
+      cwd: project,
+      socketJson: socketJsonWithConda({ outfile: 'build/requirements.txt' }),
+      trustSocketJson: false,
+    })
+
+    expect(result.ok).toBe(true)
   })
 })
 

@@ -14,6 +14,7 @@
  * `--trust-socket-json`.
  */
 
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import { FLAG_JSON } from '../../constants/cli.mjs'
@@ -25,6 +26,35 @@ import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../util/socket/json.mts'
 
 export const TRUST_SOCKET_JSON_FLAG = '--trust-socket-json'
+
+/**
+ * Canonicalize an absolute path for a containment test, tolerating a target
+ * that does not exist yet.
+ *
+ * `isPathWithinRoot` requires realpathed arguments: `path.resolve` collapses
+ * `..` lexically but follows no symlink, so `<cwd>/link/passwd` where `link`
+ * points at `/etc` reads as inside the project while the read lands outside
+ * it. A write target legitimately may not exist, so canonicalize the deepest
+ * existing ancestor and re-append the rest.
+ */
+export function canonicalizeForContainment(target: string): string {
+  let existing = target
+  const trailing = []
+  // The loop terminates: each step removes a segment, and the filesystem root
+  // is its own parent, which realpathSync always resolves.
+  for (;;) {
+    try {
+      return path.join(realpathSync(existing), ...trailing.toReversed())
+    } catch {
+      const parent = path.dirname(existing)
+      if (parent === existing) {
+        return target
+      }
+      trailing.push(path.basename(existing))
+      existing = parent
+    }
+  }
+}
 
 /**
  * Read a bin path out of untrusted input. socket.json is parsed JSON and a
@@ -159,7 +189,13 @@ export function resolveCondaInfile({
   }
 
   const resolved = path.resolve(cwd, socketJsonFile)
-  if (!trustSocketJson && !isPathWithinRoot(cwd, resolved)) {
+  if (
+    !trustSocketJson &&
+    !isPathWithinRoot(
+      canonicalizeForContainment(cwd),
+      canonicalizeForContainment(resolved),
+    )
+  ) {
     return refuseSocketJsonPath({
       cwd,
       field: 'defaults.manifest.conda.infile',
@@ -204,7 +240,13 @@ export function resolveCondaOutfile({
   }
 
   const resolved = path.resolve(cwd, socketJsonOut)
-  if (!trustSocketJson && !isPathWithinRoot(cwd, resolved)) {
+  if (
+    !trustSocketJson &&
+    !isPathWithinRoot(
+      canonicalizeForContainment(cwd),
+      canonicalizeForContainment(resolved),
+    )
+  ) {
     return refuseSocketJsonPath({
       cwd,
       field: 'defaults.manifest.conda.outfile',
