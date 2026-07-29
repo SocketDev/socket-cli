@@ -113,8 +113,12 @@ describe('git utilities', () => {
         delete process.env['GIT_SSH_COMMAND']
       }
 
+      const call = spawn.mock.calls[0]
+      if (!call) {
+        throw new Error('spawn was never called')
+      }
       const childEnv = (
-        spawn.mock.calls[0]?.[2] as {
+        call[2] as {
           env: Record<string, string | undefined>
         }
       ).env
@@ -215,7 +219,10 @@ describe('git utilities', () => {
       const result = await gitPushBranch('feature')
       expect(result).toBe(true)
       expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
-        toGitArgvTail(['push', '--force', '--set-upstream'], ['origin', 'feature']),
+        toGitArgvTail(
+          ['push', '--force', '--set-upstream'],
+          ['origin', 'feature'],
+        ),
       )
     })
 

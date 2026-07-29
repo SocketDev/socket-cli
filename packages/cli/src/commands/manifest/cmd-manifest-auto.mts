@@ -142,7 +142,7 @@ export async function run(
     detected,
     cwd,
     outputKind,
-    trustSocketJson: Boolean(trustSocketJson),
+    trustSocketJson,
     verbose,
   })
 

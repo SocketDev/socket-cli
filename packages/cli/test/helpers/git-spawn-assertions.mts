@@ -27,7 +27,7 @@ export type RecordedSpawnCall = {
  *   ])
  */
 export function listGitArgvTails(
-  calls: ReadonlyArray<RecordedSpawnCall>,
+  calls: readonly RecordedSpawnCall[],
 ): string[][] {
   const { length: prefixLength } = listGitHygieneArgs()
   const tails: string[][] = []
@@ -48,5 +48,7 @@ export function toGitArgvTail(
   args: string[] | readonly string[],
   operands?: string[] | readonly string[] | undefined,
 ): string[] {
-  return operands?.length ? [...args, GIT_OPERAND_FENCE, ...operands] : [...args]
+  return operands?.length
+    ? [...args, GIT_OPERAND_FENCE, ...operands]
+    : [...args]
 }

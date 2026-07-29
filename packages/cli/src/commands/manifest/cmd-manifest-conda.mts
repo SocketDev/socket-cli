@@ -152,7 +152,7 @@ export async function run(
       cliFile: filename,
       cwd,
       socketJson: sockJson,
-      trustSocketJson: Boolean(trustSocketJson),
+      trustSocketJson,
     })
     if (!infile.ok) {
       await outputRequirements(infile, outputKind, '-')
@@ -174,7 +174,7 @@ export async function run(
       cliOut: out,
       cwd,
       socketJson: sockJson,
-      trustSocketJson: Boolean(trustSocketJson),
+      trustSocketJson,
     })
     if (!outfile.ok) {
       await outputRequirements(outfile, outputKind, '-')

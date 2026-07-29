@@ -107,7 +107,7 @@ export async function run(
   }
 
   await handleCi({
-    autoManifest: Boolean(autoManifest),
-    trustSocketJson: Boolean(trustSocketJson),
+    autoManifest,
+    trustSocketJson,
   })
 }

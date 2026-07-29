@@ -145,7 +145,7 @@ export async function run(
     cliOpts: gradleOptsFlag,
     cwd,
     socketJson: sockJson,
-    trustSocketJson: Boolean(trustSocketJson),
+    trustSocketJson,
   })
   if (!invocation.ok) {
     await outputManifest(invocation, outputKind, '-')

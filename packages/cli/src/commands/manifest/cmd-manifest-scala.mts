@@ -156,7 +156,7 @@ export async function run(
     cliOpts: sbtOptsFlag,
     cwd,
     socketJson: sockJson,
-    trustSocketJson: Boolean(trustSocketJson),
+    trustSocketJson,
   })
   if (!invocation.ok) {
     await outputManifest(invocation, outputKind, '-')

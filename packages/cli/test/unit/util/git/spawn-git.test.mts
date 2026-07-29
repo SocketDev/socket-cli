@@ -9,7 +9,8 @@
  *
  * - The resolved command is an absolute path, never the bare name `git`.
  * - Every `GIT_*` variable is dropped from the child environment, PATH is
- *   replaced with the sanitized search path, and `GIT_TERMINAL_PROMPT=0` is set.
+ *   replaced with the sanitized search path, and `GIT_TERMINAL_PROMPT=0` is
+ *   set.
  * - The hygiene `-c` overrides and the two top-level flags precede the
  *   subcommand.
  * - An operand spelled `--upload-pack=…` lands after `--end-of-options`, so git
@@ -19,15 +20,29 @@
  * Related Files: - src/util/git/spawn-git.mts (implementation)
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
-const { mockDefaultProtectedRoot, mockIsDebug, mockResolveTrustedExecutable, mockSpawn } =
-  vi.hoisted(() => ({
-    mockDefaultProtectedRoot: vi.fn(),
-    mockIsDebug: vi.fn(),
-    mockResolveTrustedExecutable: vi.fn(),
-    mockSpawn: vi.fn(),
-  }))
+import type * as SpawnGitModule from '../../../../src/util/git/spawn-git.mts'
+
+const {
+  mockDefaultProtectedRoot,
+  mockIsDebug,
+  mockResolveTrustedExecutable,
+  mockSpawn,
+} = vi.hoisted(() => ({
+  mockDefaultProtectedRoot: vi.fn(),
+  mockIsDebug: vi.fn(),
+  mockResolveTrustedExecutable: vi.fn(),
+  mockSpawn: vi.fn(),
+}))
 
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
@@ -46,16 +61,27 @@ vi.mock(
   }),
 )
 
-const {
-  GIT_OPERAND_FENCE,
-  buildGitChildEnv,
-  clearGitExecutableCache,
-  gitQuietStdio,
-  listGitHygieneArgs,
-  omitGitEnvVars,
-  resolveGitExecutable,
-  spawnGit,
-} = await import('../../../../src/util/git/spawn-git.mts')
+let GIT_OPERAND_FENCE: typeof SpawnGitModule.GIT_OPERAND_FENCE
+let buildGitChildEnv: typeof SpawnGitModule.buildGitChildEnv
+let clearGitExecutableCache: typeof SpawnGitModule.clearGitExecutableCache
+let gitQuietStdio: typeof SpawnGitModule.gitQuietStdio
+let listGitHygieneArgs: typeof SpawnGitModule.listGitHygieneArgs
+let omitGitEnvVars: typeof SpawnGitModule.omitGitEnvVars
+let resolveGitExecutable: typeof SpawnGitModule.resolveGitExecutable
+let spawnGit: typeof SpawnGitModule.spawnGit
+
+beforeAll(async () => {
+  ;({
+    GIT_OPERAND_FENCE,
+    buildGitChildEnv,
+    clearGitExecutableCache,
+    gitQuietStdio,
+    listGitHygieneArgs,
+    omitGitEnvVars,
+    resolveGitExecutable,
+    spawnGit,
+  } = await import('../../../../src/util/git/spawn-git.mts'))
+})
 
 const TRUSTED_GIT = '/usr/bin/git'
 const SAFE_PATH = '/usr/bin:/bin'
@@ -64,7 +90,10 @@ const HOSTILE_REPO = '/tmp/hostile-checkout'
 function lastSpawnCall(): {
   args: string[]
   cmd: string
-  options: { cwd?: string; env?: Record<string, string | undefined> }
+  options: {
+    cwd?: string | undefined
+    env?: Record<string, string | undefined> | undefined
+  }
 } {
   const call = mockSpawn.mock.calls.at(-1)
   if (!call) {
@@ -105,7 +134,7 @@ describe('omitGitEnvVars', () => {
       PATH: '/usr/bin',
     })
 
-    expect(Object.keys(result).sort()).toStrictEqual(['HOME', 'PATH'])
+    expect(Object.keys(result).toSorted()).toStrictEqual(['HOME', 'PATH'])
   })
 
   it('matches the GIT_ prefix case-insensitively', () => {

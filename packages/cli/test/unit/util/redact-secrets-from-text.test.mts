@@ -29,7 +29,7 @@ const BODY = 'SYNTHETIC00000000000000'
 // The fleet secret-content guard scans tracked files for a literal
 // `sktsec_<body>`, so the synthetic Socket token is assembled at load time
 // instead of sitting in the source as one token-shaped string.
-const SOCKET_TOKEN = `${'sktsec_'}${BODY}`
+const SOCKET_TOKEN = `sktsec_${BODY}`
 
 const SYNTHETIC_SECRETS: readonly string[] = [
   // openai-secret-key.
