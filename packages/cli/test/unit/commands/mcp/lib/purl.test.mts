@@ -1,11 +1,13 @@
 /**
  * Unit tests for the MCP command's PURL builder.
  *
- * Tests buildPurl(ecosystem, depname, version) — a thin wrapper around.
+ * Tests buildPurl(ecosystem, depname, version, qualifiers) — a thin wrapper
+ * around.
  *
  * @socketregistry/packageurl-js that handles per-ecosystem
  * namespace/name splitting (npm scoped @scope/name, maven
- * groupId:artifactId, golang module path).
+ * groupId:artifactId, golang module path, composer vendor/package,
+ * openvsx publisher/extension).
  *
  * Test Coverage:
  * - Bare names across all ecosystems (npm, pypi, gem, cargo, nuget, etc.)
@@ -15,7 +17,11 @@
  * - maven coords with `/` separator: groupId/artifactId
  * - golang nested paths: github.com/user/repo → namespace=github.com/user, name=repo
  * - golang single-segment: bare name
- * - Sentinel versions (`unknown`, `1.0.0`, '') → omitted from PURL
+ * - composer vendor/package split, packagist → composer type alias
+ * - openvsx → vscode type with an auto-added repository_url qualifier
+ * - Caller-supplied qualifiers, including overriding the openvsx default
+ * - Sentinel versions (`unknown`, '') → omitted from PURL; `1.0.0` omitted
+ *   for npm/pypi only
  * - Real version preserved
  * - Ecosystem case folded to lowercase (NPM → npm)
  *
@@ -120,12 +126,11 @@ describe('buildPurl', () => {
       expect(buildPurl('gem', 'rails', '7.1.0')).toBe('pkg:gem/rails@7.1.0')
     })
 
-    it('builds a bare cargo PURL (1.0.0 is treated as a placeholder)', () => {
-      // The buildPurl helper treats `1.0.0` as a placeholder (matching
-      // upstream socket-mcp behavior) and omits it. Real Cargo crates
-      // pin to specific versions in practice, so this matches how the
-      // depscore tool gets called.
-      expect(buildPurl('cargo', 'serde', '1.0.0')).toBe('pkg:cargo/serde')
+    it('keeps a cargo 1.0.0 because the placeholder rule is npm/pypi only', () => {
+      // `1.0.0` is a model default standing in for "I don't know the version"
+      // on npm and pypi, so it is dropped there. Every other ecosystem takes
+      // it at face value — a crate really can be at 1.0.0.
+      expect(buildPurl('cargo', 'serde', '1.0.0')).toBe('pkg:cargo/serde@1.0.0')
     })
 
     it('preserves real cargo versions other than 1.0.0', () => {
@@ -137,6 +142,65 @@ describe('buildPurl', () => {
     it('builds a bare nuget PURL', () => {
       expect(buildPurl('nuget', 'Newtonsoft.Json', '13.0.3')).toBe(
         'pkg:nuget/Newtonsoft.Json@13.0.3',
+      )
+    })
+  })
+
+  describe('composer ecosystem', () => {
+    it('splits vendor/package into namespace + name', () => {
+      expect(buildPurl('composer', 'laravel/framework', '11.0.0')).toBe(
+        'pkg:composer/laravel/framework@11.0.0',
+      )
+    })
+
+    it('aliases the packagist registry name to the composer PURL type', () => {
+      expect(buildPurl('packagist', 'symfony/console', '7.0.0')).toBe(
+        'pkg:composer/symfony/console@7.0.0',
+      )
+    })
+
+    it('treats a vendor-less name as a bare name', () => {
+      expect(buildPurl('composer', 'monolog', '3.5.0')).toBe(
+        'pkg:composer/monolog@3.5.0',
+      )
+    })
+  })
+
+  describe('openvsx ecosystem', () => {
+    it('rewrites openvsx to the vscode type and adds the repository_url qualifier', () => {
+      // packageurl-js percent-encodes the slashes in a qualifier value.
+      expect(buildPurl('openvsx', 'meta/pyrefly', '1.0.0')).toBe(
+        'pkg:vscode/meta/pyrefly@1.0.0?repository_url=https:%2F%2Fopen-vsx.org',
+      )
+    })
+
+    it('keeps a real 1.0.0 because extensions genuinely publish it', () => {
+      expect(buildPurl('openvsx', 'meta/pyrefly', '1.0.0')).toContain('@1.0.0')
+    })
+
+    it('does not add repository_url for a bare vscode type', () => {
+      expect(buildPurl('vscode', 'ms-python/python', '2024.1.0')).toBe(
+        'pkg:vscode/ms-python/python@2024.1.0',
+      )
+    })
+  })
+
+  describe('qualifiers', () => {
+    it('passes caller-supplied qualifiers through', () => {
+      expect(
+        buildPurl('npm', 'lodash', '4.17.21', {
+          repository_url: 'https://r.example.com',
+        }),
+      ).toBe('pkg:npm/lodash@4.17.21?repository_url=https:%2F%2Fr.example.com')
+    })
+
+    it('lets a caller override the openvsx repository_url default', () => {
+      expect(
+        buildPurl('openvsx', 'meta/pyrefly', '1.0.0', {
+          repository_url: 'https://mirror.example.com',
+        }),
+      ).toBe(
+        'pkg:vscode/meta/pyrefly@1.0.0?repository_url=https:%2F%2Fmirror.example.com',
       )
     })
   })
