@@ -66,7 +66,7 @@ export function createSupportedFilesFilter(
 ): (filepath: string) => boolean {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return (filepath: string) =>
-    micromatch.some(filepath, patterns, { dot: true })
+    micromatch.some(filepath, patterns, { dot: true, nocase: true })
 }
 
 export function getSupportedFilePatterns(
@@ -340,7 +340,7 @@ export function isReportSupportedFile(
   supportedFiles: SupportedFiles,
 ) {
   const patterns = getSupportedFilePatterns(supportedFiles)
-  return micromatch.some(filepath, patterns, { dot: true })
+  return micromatch.some(filepath, patterns, { dot: true, nocase: true })
 }
 
 export function pathsToGlobPatterns(
