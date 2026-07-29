@@ -37,6 +37,11 @@ const SESSION_REAP_INTERVAL_MS = 60_000
 // bounds memory against an unbounded/streaming body (DoS).
 const MAX_MCP_REQUEST_BODY_BYTES = 4 * 1024 * 1024
 
+// How long an over-cap upload may keep draining after it has been refused,
+// so the client can finish writing and read the 413. Past this the socket is
+// closed regardless — a client that never ends must not hold it open.
+const OVERSIZED_BODY_DRAIN_MS = 5000
+
 // Our internal type accepts `auth: undefined` explicitly so callers can
 // pass an undefined-stamped request without ceremony (spread, conditional
 // assignment, etc.).
@@ -277,16 +282,23 @@ export async function runHttpTransport(
           body = ''
           // The buffer is already released and every later chunk is dropped, so
           // memory is bounded from here on. The socket still has to survive
-          // long enough to deliver the 413: destroying it while the client is
-          // mid-upload races the response and the client sees a connection
-          // reset instead of the refusal. Announce the close, answer, then tear
-          // the socket down once the response has flushed.
+          // long enough for the client to READ the 413: it is typically still
+          // mid-upload, and tearing the socket down — even after the response
+          // flushes — resets its pending writes, so it reports a connection
+          // error instead of the refusal. Announce the close, answer, then let
+          // the rest of the upload drain into the void. A client that never
+          // ends cannot hold the socket: the unref'd backstop closes it.
           res.setHeader('Connection', 'close')
           writeJson(res, 413, {
             error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
           })
-          res.once('finish', () => {
+          req.resume()
+          const backstop = setTimeout(() => {
             req.destroy()
+          }, OVERSIZED_BODY_DRAIN_MS)
+          backstop.unref()
+          req.once('end', () => {
+            clearTimeout(backstop)
           })
           return
         }
