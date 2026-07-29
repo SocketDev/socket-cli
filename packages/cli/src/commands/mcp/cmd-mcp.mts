@@ -92,9 +92,12 @@ export async function run(
     Usage
       $ ${command} [options]
 
-    The Socket MCP server exposes the \`depscore\` tool: AI clients can ask
-    for dependency security scores across npm, PyPI, RubyGems, Go modules,
-    Maven, NuGet, and Cargo without leaving the chat.
+    The Socket MCP server exposes seven read-only tools, so AI clients can
+    reach Socket without leaving the chat: \`depscore\` for dependency
+    security scores across npm, PyPI, RubyGems, Go modules, Maven, NuGet and
+    Cargo; \`organizations\`, \`alerts\` and \`threat_feed\` for org-scoped
+    reporting; and \`package_files\`, \`package_file_contents\` and
+    \`package_file_grep\` for reading a published package's own files.
 
     Modes
       stdio (default)  Speak JSON-RPC over stdin/stdout — suitable for
