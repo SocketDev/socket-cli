@@ -97,6 +97,14 @@ async function readStructuredDiscoveryResult(
     }
   }
 
+  if (parsed === null || typeof parsed !== 'object') {
+    return {
+      ok: false,
+      message: 'Coana wrote an unexpected vulnerability discovery result',
+      cause: `Expected a JSON object with a ghsaIds string array, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
   const { artifactCount, ghsaIds } = parsed as StructuredDiscoveryResult
   if (!Array.isArray(ghsaIds) || ghsaIds.some(id => typeof id !== 'string')) {
     return {
@@ -168,6 +176,7 @@ async function discoverGhsaIds(
   )
 
   if (!foundCResult.ok) {
+    await fs.rm(outputFile, { force: true }).catch(() => {})
     return foundCResult
   }
 

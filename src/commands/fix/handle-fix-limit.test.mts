@@ -497,6 +497,44 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.message).toMatch(/unexpected vulnerability discovery/i)
     })
 
+    it.each(['null', '[1, 2]', '42', '"text"'])(
+      'fails cleanly when the result file is %s instead of an object',
+      async body => {
+        mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+          const idx = args.indexOf('--output-file')
+          await fs.writeFile(args[idx + 1]!, body)
+          return { ok: true, data: '' }
+        })
+
+        const result = await coanaFix({
+          ...baseConfig,
+          ghsas: [],
+        })
+
+        expect(result.ok).toBe(false)
+        expect(result.message).toMatch(/unexpected vulnerability discovery/i)
+      },
+    )
+
+    it('removes the discovery temp file when the spawn fails', async () => {
+      let outputFile = ''
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        const idx = args.indexOf('--output-file')
+        outputFile = args[idx + 1]!
+        await fs.writeFile(outputFile, JSON.stringify({ ghsaIds: [] }))
+        return { ok: false, message: 'Coana exited with code 1' }
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(outputFile).not.toBe('')
+      await expect(fs.stat(outputFile)).rejects.toThrow()
+    })
+
     it('warns when the backend resolved zero artifacts', async () => {
       const warnSpy = vi.spyOn(logger, 'warn')
       mockDiscoveryEnvelope({
