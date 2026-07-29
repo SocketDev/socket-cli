@@ -235,6 +235,27 @@ describe('coanaFix (coverage)', () => {
     setupHappyDefaults()
   })
 
+  describe('.socket.facts.json guard', () => {
+    it('fails and names the artifact instead of uploading it', async () => {
+      mockGetPackageFilesForScan.mockResolvedValue([
+        '/test/cwd/package.json',
+        '/test/cwd/.socket.facts.json',
+      ])
+
+      const result = await coanaFix({
+        ...baseConfig,
+        ghsas: ['GHSA-1111-1111-1111'],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toContain('.socket.facts.json')
+      expect((result as { cause: string }).cause).toContain(
+        '/test/cwd/.socket.facts.json',
+      )
+      expect(mockHandleApiCall).not.toHaveBeenCalled()
+    })
+  })
+
   describe('local mode info messages', () => {
     it('logs the partial-missing CI env info when some present and some missing', async () => {
       mockCheckCiEnvVars.mockReturnValue({

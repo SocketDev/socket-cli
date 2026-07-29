@@ -1,6 +1,7 @@
 import path from 'node:path'
 
 import { debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import { runCiCoanaFix } from './coana-fix-ci.mts'
 import { runLocalCoanaFix } from './coana-fix-local.mts'
@@ -64,13 +65,22 @@ export async function coanaFix(
     cwd,
   })
 
-  // Exclude any .socket.facts.json files that happen to be in the scan
-  // folder before the analysis was run.
-  const filepathsToUpload = scanFilepaths.filter(
-    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  // A .socket.facts.json in the scan folder is an analysis artifact from an
+  // earlier run, not a manifest. Uploading it silently poisons the fix input,
+  // so stop and name the files to delete.
+  const factsFiles = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON,
   )
+  if (factsFiles.length) {
+    spinner?.stop()
+    return {
+      ok: false,
+      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} among the manifest files collected under ${cwd}`,
+      cause: `Delete the following ${pluralize('file', { count: factsFiles.length })} and run socket fix again:\n${factsFiles.map(p => `  - ${p}`).join('\n')}`,
+    }
+  }
   const uploadCResult = (await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
+    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
       pathsRelativeTo: cwd,
     }),
     {
