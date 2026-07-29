@@ -172,6 +172,19 @@ export function meow<const F extends MeowFlags = MeowFlags>(
       multiple: flag.isMultiple,
     }
 
+    // Register the kebab-case spelling as a declared option too. yargs only
+    // camel-expands input it recognizes; an undeclared `--ignore-unresolved`
+    // for a declared `ignoreUnresolved` boolean otherwise consumes the next
+    // positional as its value and parses false.
+    const kebabName = name.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)
+    if (kebabName !== name && !(kebabName in flags)) {
+      parseArgsOptions[kebabName] = {
+        type,
+        default: flag.default,
+        multiple: flag.isMultiple,
+      }
+    }
+
     // Handle aliases.
     const aliases = flag.aliases || (flag.alias ? [flag.alias].flat() : [])
     for (let i = 0, { length } = aliases; i < length; i += 1) {
@@ -189,6 +202,9 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     options: parseArgsOptions,
     strict: !collectUnknownFlags,
     allowPositionals: true,
+    // A repeatable flag takes one value per occurrence; a greedy array flag
+    // would swallow the positional that follows it (`--exclude-paths x .`).
+    configuration: { 'greedy-arrays': false },
   }
 
   const parsed = parseArgs(config)
