@@ -14,6 +14,7 @@ import { getConfigValueOrUndef } from '../config.mts'
 
 import { assertSafeSocketApiBaseUrl } from './safe-base-url.mts'
 import { getExtraCaCerts } from './sdk.mts'
+import { getCliUserAgent } from './user-agent.mts'
 
 import type { HttpRequestOptions } from '@socketsecurity/lib-stable/http-request/request-types'
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
@@ -31,18 +32,25 @@ export function getDefaultApiBaseUrl(): string | undefined {
   return API_V0_URL
 }
 
-// Wraps httpRequest with extra CA certificates from SSL_CERT_FILE.
+// Wraps httpRequest with extra CA certificates from SSL_CERT_FILE and the CLI
+// User-Agent. These requests bypass the SDK, so without the header the Socket
+// API sees only the lib's generic agent and cannot attribute the traffic to a
+// CLI version. A caller-supplied User-Agent still wins.
 export async function socketHttpRequest(
   url: string,
   options?: HttpRequestOptions | undefined,
 ): Promise<HttpResponse> {
   const ca = getExtraCaCerts()
-  /* c8 ignore start - SSL_CERT_FILE not set in tests; getExtraCaCerts returns undefined */
-  if (ca) {
-    return await httpRequest(url, { ...(options ?? {}), ca })
+  const opts = { __proto__: null, ...options } as HttpRequestOptions
+  const requestOptions: HttpRequestOptions = {
+    ...opts,
+    headers: {
+      'User-Agent': getCliUserAgent(),
+      ...opts.headers,
+    },
+    ...(ca ? { ca } : {}),
   }
-  /* c8 ignore stop */
-  return await httpRequest(url, options)
+  return await httpRequest(url, requestOptions)
 }
 
 // Safe wrapper for `response.text()` in error-handling code paths.
