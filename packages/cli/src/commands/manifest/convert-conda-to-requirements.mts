@@ -76,7 +76,10 @@ export async function convertCondaToRequirements(
       }
     }
   } else {
-    const filepath = path.join(cwd, filename)
+    // path.resolve, not path.join: callers hand us the absolute path the
+    // socket.json containment check already approved, and path.join would
+    // re-root it under cwd.
+    const filepath = path.resolve(cwd, filename)
 
     if (verbose) {
       logger.info(`[VERBOSE] target: ${filepath}`)

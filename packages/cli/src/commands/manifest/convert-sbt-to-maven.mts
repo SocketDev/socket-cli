@@ -10,6 +10,11 @@ import type { ManifestResult } from './output-manifest.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
+/**
+ * `out` is a stdout switch, not a write destination: sbt writes the poms itself
+ * and the only thing read from `out` is the `out === '-'` comparison below. It
+ * needs no path containment check.
+ */
 export async function convertSbtToMaven({
   bin,
   cwd,

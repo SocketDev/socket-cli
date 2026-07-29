@@ -3,6 +3,11 @@ import path from 'node:path'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import {
+  resolveCondaInfile,
+  resolveCondaOutfile,
+} from './manifest-build-trust.mts'
+import { outputRequirements } from './output-requirements.mts'
 import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import {
   ENVIRONMENT_YAML,
@@ -33,6 +38,7 @@ export interface CondaFlags {
   out: string
   stdin: boolean | undefined
   stdout: boolean | undefined
+  trustSocketJson: boolean | undefined
   verbose: boolean | undefined
 }
 
@@ -60,6 +66,11 @@ const config = {
       type: 'boolean',
       description: `Print resulting ${REQUIREMENTS_TXT} to stdout (supersedes --out)`,
     },
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Read and write the paths declared in ${SOCKET_JSON} even when they leave the project. Off by default because the scanned repository controls that file.`,
+    },
     verbose: {
       type: 'boolean',
       description: 'Print debug messages',
@@ -77,6 +88,12 @@ const config = {
 
     Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
           contents of a file to have it processed.
+
+    A ${SOCKET_JSON} \`infile\` or \`outfile\` that resolves outside CWD is
+    refused unless you pass --trust-socket-json: the repository being scanned
+    owns that file, and the output content comes from its own ${ENVIRONMENT_YML}.
+    Pass --file and --out yourself to read or write outside CWD without trusting
+    ${SOCKET_JSON}.
 
     Options
       ${getFlagListOutput(helpConfig.flags)}
@@ -107,7 +124,9 @@ export async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags
+  const { dryRun, json, markdown, trustSocketJson } = cli.flags
+
+  const outputKind = getOutputKind(json, markdown)
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -128,13 +147,18 @@ export async function run(
   }
   if (stdin) {
     filename = '-'
-  } else if (!filename) {
-    if (sockJson.defaults?.manifest?.conda?.infile) {
-      filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
-    } else {
-      filename = ENVIRONMENT_YML
+  } else {
+    const infile = resolveCondaInfile({
+      cliFile: filename,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson: Boolean(trustSocketJson),
+    })
+    if (!infile.ok) {
+      await outputRequirements(infile, outputKind, '-')
+      return
     }
+    filename = infile.data
   }
   if (
     stdout === undefined &&
@@ -145,13 +169,18 @@ export async function run(
   }
   if (stdout) {
     out = '-'
-  } else if (!out) {
-    if (sockJson.defaults?.manifest?.conda?.outfile) {
-      out = sockJson.defaults?.manifest?.conda?.outfile
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
-    } else {
-      out = REQUIREMENTS_TXT
+  } else {
+    const outfile = resolveCondaOutfile({
+      cliOut: out,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson: Boolean(trustSocketJson),
+    })
+    if (!outfile.ok) {
+      await outputRequirements(outfile, outputKind, '-')
+      return
     }
+    out = outfile.data
   }
   if (
     verbose === undefined &&
@@ -171,8 +200,6 @@ export async function run(
     logger.log('- output:', out)
     logger.groupEnd()
   }
-
-  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
