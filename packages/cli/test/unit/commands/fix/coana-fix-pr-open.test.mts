@@ -173,6 +173,7 @@ const baseConfig: FixConfig = {
   disableMajorUpdates: false,
   ecosystems: [],
   exclude: [],
+  excludePaths: [],
   ghsas: [],
   include: [],
   minSatisfying: false,

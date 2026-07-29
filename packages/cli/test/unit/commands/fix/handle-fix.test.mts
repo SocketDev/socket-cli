@@ -264,6 +264,7 @@ describe('handleFix', () => {
       disableMajorUpdates: false,
       ecosystems: ['npm'],
       exclude: [],
+      excludePaths: [],
       ghsas: ['GHSA-1234-5678-9abc'],
       include: [],
       minSatisfying: false,
@@ -316,6 +317,7 @@ describe('handleFix', () => {
       disableMajorUpdates: false,
       ecosystems: [],
       exclude: [],
+      excludePaths: [],
       ghsas: [
         'GHSA-1234-5678-9abc',
         'CVE-2021-44228',

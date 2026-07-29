@@ -63,6 +63,18 @@ export const generalFlags: MeowFlags = {
     description:
       'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
     isMultiple: true,
+    // --exclude-paths covers both manifest discovery and workspace filtering.
+    // --exclude keeps the narrower fix-application-only semantic for scripts
+    // that depend on "detect everywhere, write fixes outside the excluded
+    // workspace", so it stays wired but out of the help listing.
+    hidden: true,
+  },
+  excludePaths: {
+    type: 'string',
+    default: [],
+    description:
+      'Skip matching paths entirely: manifests under them are not uploaded, and fixes are not applied to workspaces under them. Patterns are matched relative to the target directory. Bare directory names are auto-extended to recursive globs (e.g. `tests` becomes `tests/**`). Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags. Use this to skip directories the current user cannot read so they do not abort manifest collection.',
+    isMultiple: true,
   },
   fixVersion: {
     type: 'string',

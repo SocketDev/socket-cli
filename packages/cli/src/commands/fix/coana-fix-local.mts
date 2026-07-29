@@ -34,6 +34,7 @@ export async function runLocalCoanaFix(
     disableMajorUpdates,
     ecosystems,
     exclude,
+    excludePaths,
     ghsas,
     include,
     minimumReleaseAge,
@@ -42,6 +43,10 @@ export async function runLocalCoanaFix(
     showAffectedDirectDependencies,
     spinner,
   } = fixConfig
+  // --exclude-paths is the canonical path exclusion; forward it to coana's
+  // workspace filter alongside the legacy --exclude entries so a matched path
+  // is skipped consistently across manifest upload and fix application.
+  const coanaExcludePatterns = [...exclude, ...excludePaths]
   const { coanaSilenceArgs, coanaStdio, shouldDiscoverGhsaIds, tarHash } =
     context
 
@@ -100,7 +105,9 @@ export async function runLocalCoanaFix(
           ? ['--minimum-release-age', minimumReleaseAge]
           : []),
         ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
+        ...(coanaExcludePatterns.length
+          ? ['--exclude', ...coanaExcludePatterns]
+          : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(!applyFixes ? [FLAG_DRY_RUN] : []),
         '--output-file',

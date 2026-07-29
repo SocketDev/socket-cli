@@ -219,7 +219,7 @@ describe('socket fix', async () => {
                                     See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
                 --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
                 --ecosystems        Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.
-                --exclude           Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
+                --exclude-paths     Skip matching paths entirely: manifests under them are not uploaded, and fixes are not applied to workspaces under them. Patterns are matched relative to the target directory. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. Use this to skip directories the current user cannot read so they do not abort manifest collection.
                 --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.9.5.
                 --id                Provide a list of vulnerability identifiers to compute fixes for:
                                         - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)

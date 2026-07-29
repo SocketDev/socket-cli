@@ -115,6 +115,7 @@ export async function handleFix({
   disableMajorUpdates,
   ecosystems,
   exclude,
+  excludePaths,
   ghsas,
   include,
   minSatisfying,
@@ -142,6 +143,7 @@ export async function handleFix({
     disableMajorUpdates,
     ecosystems,
     exclude,
+    excludePaths,
     ghsas,
     include,
     minSatisfying,
@@ -167,6 +169,7 @@ export async function handleFix({
       disableMajorUpdates,
       ecosystems,
       exclude,
+      excludePaths,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only.
       ghsas: await convertIdsToGhsas(ghsas),
       include,

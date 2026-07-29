@@ -108,6 +108,7 @@ describe('cmd-fix', () => {
           disableMajorUpdates: false,
           ecosystems: [],
           exclude: [],
+          excludePaths: [],
           ghsas: [],
           include: [],
           minimumReleaseAge: '',
@@ -186,6 +187,29 @@ describe('cmd-fix', () => {
           ecosystems: ['npm'],
         }),
       )
+    })
+
+    it('should pass --exclude-paths to handleFix', async () => {
+      await cmdFix.run(
+        ['--exclude-paths', 'data/postgres/pgdata'],
+        importMeta,
+        context,
+      )
+
+      expect(mockHandleFix).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludePaths: ['data/postgres/pgdata'],
+        }),
+      )
+    })
+
+    it('should reject a negated --exclude-paths pattern', async () => {
+      await cmdFix.run(['--exclude-paths', '!keep-me'], importMeta, context)
+
+      expect(mockLogger.fail).toHaveBeenCalledWith(
+        expect.stringContaining('negation patterns'),
+      )
+      expect(mockHandleFix).not.toHaveBeenCalled()
     })
 
     it('should accept --ecosystems case-insensitively', async () => {

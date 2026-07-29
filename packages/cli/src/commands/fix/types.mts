@@ -14,6 +14,7 @@ export type FixConfig = {
   disableMajorUpdates: boolean
   ecosystems: PURL_Type[]
   exclude: string[]
+  excludePaths: string[]
   ghsas: string[]
   include: string[]
   minimumReleaseAge: string

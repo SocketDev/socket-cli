@@ -26,6 +26,7 @@ import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
 import { RangeStyles } from '../../util/semver.mts'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
+import { assertNoNegationPatterns } from '../scan/exclude-paths.mts'
 
 import type { DryRunAction } from '../../util/dry-run/output.mts'
 
@@ -44,6 +45,7 @@ export interface FixFlags {
   disableExternalToolChecks: boolean
   ecosystems: string[]
   exclude: string[]
+  excludePaths: string[]
   fixVersion: string | undefined
   include: string[]
   json: boolean
@@ -143,6 +145,7 @@ export async function run(
     disableExternalToolChecks,
     ecosystems,
     exclude,
+    excludePaths,
     fixVersion,
     include,
     json,
@@ -284,6 +287,14 @@ export async function run(
 
   const includePatterns = cmdFlagValueToArray(include)
   const excludePatterns = cmdFlagValueToArray(exclude)
+  const excludePathsPatterns = cmdFlagValueToArray(excludePaths)
+  try {
+    assertNoNegationPatterns(excludePathsPatterns)
+  } catch (e) {
+    logger.fail((e as Error).message)
+    process.exitCode = 1
+    return
+  }
 
   if (dryRun) {
     const actions: DryRunAction[] = [
@@ -354,6 +365,7 @@ export async function run(
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
+    excludePaths: excludePathsPatterns,
     ghsas,
     include: includePatterns,
     minimumReleaseAge,

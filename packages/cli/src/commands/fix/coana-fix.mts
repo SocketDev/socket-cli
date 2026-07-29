@@ -11,6 +11,7 @@ import { findSocketYmlSync } from '../../util/config.mts'
 import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
 import { handleApiCall } from '../../util/socket/api.mjs'
 import { setupSdk } from '../../util/socket/sdk.mjs'
+import { excludePathToProjectIgnorePath } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'
@@ -22,7 +23,8 @@ export type { GhsaFixResult } from './coana-fix-ci.mts'
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
-  const { all, cwd, ghsas, orgSlug, outputKind, spinner } = fixConfig
+  const { all, cwd, excludePaths, ghsas, orgSlug, outputKind, spinner } =
+    fixConfig
 
   // Under json/markdown mode we route coana's chatter away from our
   // stdout (its JSON report comes from --output-file, not stdout, so
@@ -60,8 +62,26 @@ export async function coanaFix(
     ? socketYmlResult.data?.parsed
     : undefined
 
+  // --exclude-paths joins socket.yml's projectIgnorePaths so manifest
+  // discovery skips those subtrees. Without it a directory the running user
+  // cannot enter aborts collection before coana is ever invoked, and the user
+  // has no way to route around it.
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
-    config: socketConfig,
+    config: effectiveSocketConfig,
     cwd,
   })
 
