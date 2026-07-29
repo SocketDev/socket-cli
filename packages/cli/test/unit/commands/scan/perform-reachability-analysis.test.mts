@@ -15,7 +15,7 @@
  * - Empty target relative-resolves to '.'
  * - UploadManifests=false skips the manifest upload
  * - UploadManifests=true with orgSlug+packagePaths runs upload
- * - .socket.facts.json filtered out of upload list
+ * - .socket.facts.json kept in the upload list (compute-artifacts input)
  * - SDK setup failure short-circuits with the SDK error
  * - Upload failure surfaces the upload error
  * - Missing tarHash in upload response → error
@@ -288,7 +288,10 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('filters out .socket.facts.json paths from upload list', async () => {
+  it('uploads .socket.facts.json paths as compute-artifacts input', async () => {
+    // Producer-written facts files (`socket manifest gradle --facts`, the
+    // auto-manifest fan-out) are legitimate INPUT to coana, so the upload
+    // list keeps them instead of stripping them.
     mockSetupSdk.mockResolvedValueOnce({
       ok: true,
       data: { uploadManifestFiles: mockUploadManifestFiles },
@@ -307,12 +310,13 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const apiCallSpec = mockHandleApiCall.mock.calls[0][0]
-    // The first arg to handleApiCall is the SDK promise; we just want
-    // to confirm uploadManifestFiles was given the filtered list.
     expect(mockUploadManifestFiles).toHaveBeenCalledTimes(1)
     const [, filepaths] = mockUploadManifestFiles.mock.calls[0]
-    expect(filepaths).toEqual(['pkg/package.json'])
+    expect(filepaths).toEqual([
+      'pkg/package.json',
+      'sub/.socket.facts.json',
+      'pkg/.socket.facts.json',
+    ])
   })
 
   it('returns the SDK setup error when setupSdk fails', async () => {

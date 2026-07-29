@@ -38,6 +38,22 @@ export interface SocketJson {
     | {
         manifest?:
           | {
+              bazel?:
+                | {
+                    bazel?: string | undefined
+                    bazelFlags?: string | undefined
+                    bazelOutputBase?: string | undefined
+                    bazelRc?: string | undefined
+                    bin?: string | undefined
+                    disabled?: boolean | undefined
+                    // Bazel ecosystems auto-manifest extracts; defaults to
+                    // ['maven']. PyPI is opt-in: ['maven', 'pypi'].
+                    ecosystems?: string[] | undefined
+                    out?: string | undefined
+                    perRepoTimeout?: number | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
               conda?:
                 | {
                     disabled?: boolean | undefined
@@ -53,7 +69,22 @@ export interface SocketJson {
                 | {
                     disabled?: boolean | undefined
                     bin?: string | undefined
+                    excludeConfigs?: string | undefined
+                    facts?: boolean | undefined
                     gradleOpts?: string | undefined
+                    ignoreUnresolved?: boolean | undefined
+                    includeConfigs?: string | undefined
+                    verbose?: boolean | undefined
+                  }
+                | undefined
+              maven?:
+                | {
+                    disabled?: boolean | undefined
+                    bin?: string | undefined
+                    excludeConfigs?: string | undefined
+                    ignoreUnresolved?: boolean | undefined
+                    includeConfigs?: string | undefined
+                    mavenOpts?: string | undefined
                     verbose?: boolean | undefined
                   }
                 | undefined
@@ -63,6 +94,10 @@ export interface SocketJson {
                     infile?: string | undefined
                     stdin?: boolean | undefined
                     bin?: string | undefined
+                    excludeConfigs?: string | undefined
+                    facts?: boolean | undefined
+                    ignoreUnresolved?: boolean | undefined
+                    includeConfigs?: string | undefined
                     outfile?: string | undefined
                     sbtOpts?: string | undefined
                     stdout?: boolean | undefined

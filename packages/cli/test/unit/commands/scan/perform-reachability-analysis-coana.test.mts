@@ -9,6 +9,8 @@
  *
  * - Every reachability flag → matching --flag in coana args
  * - Empty reachEcosystems → no --purl-types
+ * - Resolved-paths sidecar → temp file + --compute-artifacts-sidecar, cleaned up
+ *   after the run
  * - Machine mode adds --silent and stdio: 'ignore'
  * - Coana failure logs error and returns the failure CResult
  * - Coana success extracts scan ID from outputFilePath
@@ -20,6 +22,9 @@
  * - Test/unit/commands/scan/perform-reachability-analysis.test.mts - Plan checks,
  *   target normalization, manifest upload, and repo/branch env
  */
+
+import { existsSync, readFileSync } from 'node:fs'
+import os from 'node:os'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -215,6 +220,84 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--exclude-dirs')
+  })
+})
+
+describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
+  const sidecar = [
+    {
+      // oxlint-disable-next-line socket/prefer-undefined-over-null -- frozen sidecar contract serializes an explicit JSON null
+      classifier: null,
+      ext: 'jar',
+      group: 'org.example',
+      name: 'lib',
+      sources: [],
+      targets: ['/proj/libs/lib.jar'],
+      version: '1.0.0',
+    },
+  ]
+
+  it('writes the sidecar to a temp file, passes the flag, and cleans up', async () => {
+    let sidecarArgPath: string | undefined
+    let contentAtSpawnTime: string | undefined
+    mockSpawnCoanaDlx.mockImplementationOnce(async (args: string[]) => {
+      const flagIndex = args.indexOf('--compute-artifacts-sidecar')
+      sidecarArgPath = flagIndex === -1 ? undefined : args[flagIndex + 1]
+      if (sidecarArgPath) {
+        contentAtSpawnTime = readFileSync(sidecarArgPath, 'utf8')
+      }
+      return { ok: true, data: undefined }
+    })
+
+    await performReachabilityAnalysis({
+      reachabilityOptions: baseReachOpts,
+      resolvedPathsSidecar: sidecar,
+      target: '.',
+    })
+
+    expect(sidecarArgPath).toMatch(/socket-compute-artifacts-sidecar-.*\.json/)
+    expect(sidecarArgPath).toContain(os.tmpdir())
+    expect(contentAtSpawnTime).toBe(JSON.stringify(sidecar))
+    // The temp file is cleaned up once the run finishes.
+    expect(existsSync(sidecarArgPath!)).toBe(false)
+  })
+
+  it('cleans up the temp sidecar when coana fails', async () => {
+    let sidecarArgPath: string | undefined
+    mockSpawnCoanaDlx.mockImplementationOnce(async (args: string[]) => {
+      const flagIndex = args.indexOf('--compute-artifacts-sidecar')
+      sidecarArgPath = flagIndex === -1 ? undefined : args[flagIndex + 1]
+      return { ok: false, message: 'coana crashed' }
+    })
+
+    const result = await performReachabilityAnalysis({
+      reachabilityOptions: baseReachOpts,
+      resolvedPathsSidecar: sidecar,
+      target: '.',
+    })
+
+    expect(result.ok).toBe(false)
+    expect(sidecarArgPath).toBeDefined()
+    expect(existsSync(sidecarArgPath!)).toBe(false)
+  })
+
+  it('omits --compute-artifacts-sidecar when no sidecar is provided', async () => {
+    await performReachabilityAnalysis({
+      reachabilityOptions: baseReachOpts,
+      target: '.',
+    })
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
+    expect(args).not.toContain('--compute-artifacts-sidecar')
+  })
+
+  it('omits --compute-artifacts-sidecar for an empty sidecar', async () => {
+    await performReachabilityAnalysis({
+      reachabilityOptions: baseReachOpts,
+      resolvedPathsSidecar: [],
+      target: '.',
+    })
+    const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
+    expect(args).not.toContain('--compute-artifacts-sidecar')
   })
 })
 

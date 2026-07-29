@@ -219,6 +219,10 @@ describe('handleCreateNewScan', () => {
 
     mockReadOrDefaultSocketJson.mockReturnValue({})
     mockDetectManifestActions.mockResolvedValue({ detected: true })
+    mockGenerateAutoManifest.mockResolvedValue({
+      generatedFiles: [],
+      resolvedPathsSidecar: undefined,
+    })
     mockFetchSupportedScanFileNames.mockResolvedValue(
       createSuccessResult(new Set(['package.json'])),
     )
@@ -230,11 +234,41 @@ describe('handleCreateNewScan', () => {
     expect(readOrDefaultSocketJson).toHaveBeenCalledWith('/test/project')
     expect(detectManifestActions).toHaveBeenCalled()
     expect(generateAutoManifest).toHaveBeenCalledWith({
+      computeArtifactsSidecar: false,
       detected: { detected: true },
       cwd: '/test/project',
+      excludePaths: [],
       outputKind: 'json',
+      trustSocketJson: undefined,
       verbose: false,
     })
+  })
+
+  it('extends scan targets with auto-manifest generated files', async () => {
+    mockReadOrDefaultSocketJson.mockReturnValue({})
+    mockDetectManifestActions.mockResolvedValue({ bazel: true })
+    mockGenerateAutoManifest.mockResolvedValue({
+      generatedFiles: [
+        '/test/project/.socket-auto-manifest/root__maven.maven_install.json',
+      ],
+      resolvedPathsSidecar: undefined,
+    })
+    mockFetchSupportedScanFileNames.mockResolvedValue(
+      createSuccessResult(new Set(['package.json'])),
+    )
+    mockGetPackageFilesForScan.mockResolvedValue(['/test/project/package.json'])
+    mockCheckCommandInput.mockReturnValue(true)
+
+    await handleCreateNewScan({ ...mockConfig, autoManifest: true })
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      [
+        '.',
+        '/test/project/.socket-auto-manifest/root__maven.maven_install.json',
+      ],
+      expect.anything(),
+      expect.anything(),
+    )
   })
 
   it('handles no eligible files found', async () => {

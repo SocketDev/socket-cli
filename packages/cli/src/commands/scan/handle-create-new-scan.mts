@@ -46,6 +46,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
 export type HandleCreateNewScanConfig = {
@@ -121,19 +122,32 @@ export async function handleCreateNewScan({
     workspace,
   })
 
+  // Scan targets grow with generated manifests (e.g. Bazel writes synthetic
+  // files under a dot-directory the file walk would skip).
+  let scanTargets = targets
+  // Sidecar forwarded to reachability; populated only when reach runs.
+  let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
     debugNs('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir('inspect', { detected })
-    await generateAutoManifest({
-      detected,
+    const autoManifestResult = await generateAutoManifest({
+      computeArtifactsSidecar: reach.runReachabilityAnalysis,
       cwd,
+      detected,
+      excludePaths: reach.excludePaths,
       outputKind,
       trustSocketJson,
       verbose: false,
     })
+    resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
+    if (autoManifestResult.generatedFiles.length) {
+      scanTargets = [
+        ...new Set([...targets, ...autoManifestResult.generatedFiles]),
+      ]
+    }
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
@@ -175,10 +189,14 @@ export async function handleCreateNewScan({
       target: targets[0]!,
     })
 
-  const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    config: effectiveSocketConfig,
-    cwd,
-  })
+  const packagePaths = await getPackageFilesForScan(
+    scanTargets,
+    supportedFiles,
+    {
+      config: effectiveSocketConfig,
+      cwd,
+    },
+  )
 
   spinner.successAndStop(
     `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
@@ -255,6 +273,7 @@ export async function handleCreateNewScan({
       packagePaths,
       reachabilityOptions: mergedReachabilityOptions,
       repoName,
+      resolvedPathsSidecar,
       spinner,
       target: firstTarget,
     })
