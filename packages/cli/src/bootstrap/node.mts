@@ -29,6 +29,10 @@ import {
   getCliPackageName,
   getDlxDir,
 } from './shared/paths.mjs'
+import {
+  needsShellForBinPath,
+  resolveSystemBinPath,
+} from './shared/system-bin-paths.mjs'
 
 const logger = getDefaultLogger()
 
@@ -46,10 +50,21 @@ export async function downloadCli(): Promise<void> {
   logger.error(`Downloading ${packageName}...`)
 
   return new Promise((resolve, reject) => {
+    const npmPath = resolveSystemBinPath('npm')
+    if (!npmPath) {
+      reject(
+        new Error(
+          `Cannot download ${packageName}: npm was not found in any trusted PATH directory (the working directory and node_modules/.bin are excluded). Install Node.js, which ships npm, or add npm's directory to PATH, then re-run.`,
+        ),
+      )
+      return
+    }
+
     const npmPackProcess = spawn(
-      'npm',
+      npmPath,
       ['pack', packageName, '--pack-destination', dlxDir],
       {
+        shell: needsShellForBinPath(npmPath),
         stdio: ['ignore', 'pipe', 'inherit'],
       },
     )
@@ -74,10 +89,21 @@ export async function downloadCli(): Promise<void> {
 
         await safeMkdir(cliDir, { recursive: true })
 
+        const tarPath = resolveSystemBinPath('tar')
+        if (!tarPath) {
+          reject(
+            new Error(
+              `Cannot extract ${tarballPath}: tar was not found in any trusted PATH directory (the working directory and node_modules/.bin are excluded). Install tar, or add its directory to PATH, then re-run.`,
+            ),
+          )
+          return
+        }
+
         const tarExtractProcess = spawn(
-          'tar',
+          tarPath,
           ['-xzf', tarballPath, '-C', cliDir, '--strip-components=1'],
           {
+            shell: needsShellForBinPath(tarPath),
             stdio: 'inherit',
           },
         )
