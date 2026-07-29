@@ -279,6 +279,69 @@ describe('util/fs/glob', () => {
       process.platform === 'win32' ||
       (typeof process.getuid === 'function' && process.getuid() === 0)
 
+    async function globInTempTree(
+      files: Record<string, string>,
+      patterns: string[],
+    ): Promise<string[]> {
+      const { globWithGitIgnore } =
+        await import('../../../../src/util/fs/glob.mts')
+      const realTmp = mkdtempSync(path.join(os.tmpdir(), 'socket-glob-tree-'))
+      try {
+        const relPaths = Object.keys(files)
+        for (let i = 0, { length } = relPaths; i < length; i += 1) {
+          const relPath = relPaths[i]!
+          const absPath = path.join(realTmp, relPath)
+          mkdirSync(path.dirname(absPath), { recursive: true })
+          writeFileSync(absPath, files[relPath]!)
+        }
+        const results = await globWithGitIgnore(patterns, { cwd: realTmp })
+        return results
+          .map(p => normalizePath(path.relative(realTmp, p)))
+          .toSorted()
+      } finally {
+        safeDeleteSync(realTmp)
+      }
+    }
+
+    it('excludes a Python virtual environment detected via pyvenv.cfg', async () => {
+      // A venv can use any directory name; the reliable signal is the
+      // pyvenv.cfg marker at its root. Manifests inside it must not surface.
+      const results = await globInTempTree(
+        {
+          'requirements.txt': '',
+          'myenv/pyvenv.cfg': 'home = /usr/bin\nversion = 3.11.0\n',
+          'myenv/requirements.txt': '',
+          'myenv/lib/python3.11/site-packages/foo/setup.py': '',
+        },
+        ['**/requirements.txt', '**/setup.py'],
+      )
+      expect(results).toEqual(['requirements.txt'])
+    })
+
+    it('excludes a `.venv` directory by name', async () => {
+      const results = await globInTempTree(
+        {
+          'package.json': '{}',
+          '.venv/lib/site-packages/foo/package.json': '{}',
+        },
+        ['**/*.json'],
+      )
+      expect(results).toEqual(['package.json'])
+    })
+
+    it('keeps a non-venv directory named `venv` without a pyvenv.cfg', async () => {
+      // Guards against over-exclusion: a bare `venv` dir is only skipped when
+      // it actually holds a pyvenv.cfg, never by name alone.
+      const results = await globInTempTree(
+        {
+          'package.json': '{}',
+          'venv/package.json': '{}',
+        },
+        ['**/*.json'],
+      )
+      expect(results).toEqual(['package.json', 'venv/package.json'])
+    })
+
     it.skipIf(skipUnreadableDirTest)(
       'skips an unreadable directory instead of throwing EACCES',
       async () => {

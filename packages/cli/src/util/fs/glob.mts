@@ -49,9 +49,17 @@ export const IGNORED_DIRS = [
   // Taken from globby:
   // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
   'flow-typed',
+  // Conventional Python virtual environment dir. Arbitrarily-named venvs are
+  // detected via their pyvenv.cfg marker during the discovery walk below.
+  '.venv',
 ] as const
 
 const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
+
+// Marker file at the root of every Python virtual environment (stdlib `venv`
+// per PEP 405, and virtualenv >= 20). Detects venvs that do not use a
+// conventional directory name.
+const PYVENV_CFG = 'pyvenv.cfg'
 
 export function createSupportedFilesFilter(
   supportedFiles: SupportedFiles,
@@ -135,33 +143,45 @@ export async function globWithGitIgnore(
     ignores.add(pattern)
   }
 
-  // The .gitignore discovery walk honors the same directory exclusions as the
-  // package walk below. Without them an unreadable subtree — a postgres
-  // `pgdata` directory owned by another uid, a Docker volume mount — makes
-  // fast-glob throw `EACCES: permission denied, scandir` here, before
-  // projectIgnorePaths (which is where --exclude-paths lands) reaches the main
-  // walk. `suppressErrors` is the backstop: a directory the user cannot read
-  // cannot hold manifests they could scan, so skip it instead of aborting the
-  // whole run. Negated patterns are dropped — in a discovery walk they can only
-  // re-include a subtree, never prevent a crash, and fast-glob handles `!`
-  // ignore entries inconsistently.
-  const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
-    absolute: true,
-    cwd,
-    dot: true,
-    ignore: [...DEFAULT_IGNORE_FOR_GIT_IGNORE, ...projectIgnoreGlobs]
-      .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
-      .map(stripTrailingSlashFromIgnorePattern),
-    suppressErrors: true,
-  }) as AsyncIterable<string>
+  // The discovery walk — .gitignore files plus pyvenv.cfg venv markers — honors
+  // the same directory exclusions as the package walk below. Without them an
+  // unreadable subtree (a postgres `pgdata` directory owned by another uid, a
+  // Docker volume mount) makes fast-glob throw `EACCES: permission denied,
+  // scandir` here, before projectIgnorePaths (which is where --exclude-paths
+  // lands) reaches the main walk. `suppressErrors` is the backstop: a directory
+  // the user cannot read cannot hold manifests they could scan, so skip it
+  // instead of aborting the whole run. Negated patterns are dropped — in a
+  // discovery walk they can only re-include a subtree, never prevent a crash,
+  // and fast-glob handles `!` ignore entries inconsistently. Folding pyvenv.cfg
+  // discovery into this walk avoids a second full-tree traversal.
+  const discoveryStream = fastGlob.globStream(
+    ['**/.gitignore', `**/${PYVENV_CFG}`],
+    {
+      absolute: true,
+      cwd,
+      dot: true,
+      ignore: [...DEFAULT_IGNORE_FOR_GIT_IGNORE, ...projectIgnoreGlobs]
+        .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
+        .map(stripTrailingSlashFromIgnorePattern),
+      suppressErrors: true,
+    },
+  ) as AsyncIterable<string>
   for await (const ignorePatterns of transform(
-    gitIgnoreStream,
-    async (filepath: string) =>
-      ignoreFileToGlobPatterns(
+    discoveryStream,
+    async (filepath: string) => {
+      if (path.basename(filepath) === PYVENV_CFG) {
+        // A pyvenv.cfg sits at the venv root, so exclude the whole directory.
+        const relDir = normalizePath(path.relative(cwd, path.dirname(filepath)))
+        // An empty relDir means the scan target itself is a venv root; emitting
+        // `/**` there would exclude everything the user explicitly targeted.
+        return relDir ? [`${relDir}/**`] : []
+      }
+      return ignoreFileToGlobPatterns(
         (await safeReadFile(filepath, { encoding: 'utf8' })) ?? '',
         filepath,
         cwd,
-      ),
+      )
+    },
     { concurrency: 8 },
   )) {
     for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
