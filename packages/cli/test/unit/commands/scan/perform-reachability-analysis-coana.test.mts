@@ -11,7 +11,7 @@
  * - Empty reachEcosystems → no --purl-types
  * - Resolved-paths sidecar → temp file + --compute-artifacts-sidecar, cleaned up
  *   after the run
- * - Machine mode adds --silent and stdio: 'ignore'
+ * - Machine mode adds --silent and routes coana stdout to stderr
  * - Coana failure logs error and returns the failure CResult
  * - Coana success extracts scan ID from outputFilePath
  * - Custom outputPath wins over DOT_SOCKET_DOT_FACTS_JSON
@@ -302,7 +302,7 @@ describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
 })
 
 describe('performReachabilityAnalysis — machine-output mode', () => {
-  it('adds --silent and uses stdio: ignore in machine mode', async () => {
+  it('adds --silent and routes coana stdout to stderr in machine mode', async () => {
     mockGetMachineOutputMode.mockReturnValue(true)
     await performReachabilityAnalysis({
       reachabilityOptions: baseReachOpts,
@@ -311,7 +311,8 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     const opts = mockSpawnCoanaDlx.mock.calls[0][2]
     expect(args[0]).toBe('--silent')
-    expect(opts.stdio).toBe('ignore')
+    // Payload owns stdout; coana progress goes to fd 2 so it stays visible.
+    expect(opts.stdio).toEqual(['inherit', 2, 'inherit'])
   })
 
   it('keeps stdio: inherit in interactive mode', async () => {

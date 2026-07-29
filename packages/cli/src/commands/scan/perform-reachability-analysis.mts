@@ -21,6 +21,7 @@ import { setupSdk } from '../../util/socket/sdk.mjs'
 import { socketDevLink } from '../../util/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
+import type { StdioOptions } from 'node:child_process'
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mjs'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
@@ -273,16 +274,23 @@ export async function performReachabilityAnalysis(
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
+  // Under --json/--markdown the final payload owns stdout, and coana streams
+  // its progress there under 'inherit'. Route the child's stdout to our stderr
+  // (fd 2) instead of dropping it: `2>/dev/null` still isolates the payload,
+  // and a human watching a long reachability run keeps seeing progress. stdin
+  // and stderr stay inherited. Text mode inherits stdout unchanged.
+  const coanaStdio: StdioOptions = machineMode
+    ? ['inherit', 2, 'inherit']
+    : 'inherit'
+
   try {
-    // Run Coana with the manifests tar hash. Under machine mode we drop
-    // coana stdout; --silent plus 'ignore' ensures our own stdout stays
-    // pipe-safe for --json consumers.
+    // Run Coana with the manifests tar hash.
     const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
       coanaVersion: reachabilityOptions.reachVersion || undefined,
       cwd,
       env: coanaEnv,
       spinner,
-      stdio: machineMode ? 'ignore' : 'inherit',
+      stdio: coanaStdio,
     })
 
     /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
