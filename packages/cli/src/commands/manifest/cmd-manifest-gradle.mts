@@ -132,7 +132,11 @@ export async function run(
     `override: ${SOCKET_JSON} gradle: ${JSON.stringify(sockJson?.defaults?.manifest?.gradle)}`,
   )
 
-  const { bin: binFlag, gradleOpts: gradleOptsFlag, trustSocketJson } = cli.flags
+  const {
+    bin: binFlag,
+    gradleOpts: gradleOptsFlag,
+    trustSocketJson,
+  } = cli.flags
 
   let { verbose } = cli.flags
 

@@ -57,7 +57,8 @@ export async function generateAutoManifest({
       await convertSbtToMaven({
         bin: invocation.data.bin,
         cwd,
-        out: sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
+        out:
+          sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
         outputKind,
         sbtOpts: invocation.data.opts,
         verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
