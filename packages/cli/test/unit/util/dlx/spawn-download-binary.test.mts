@@ -14,7 +14,9 @@ const mockDownloadBinary = vi.hoisted(() => vi.fn())
 const mockGetDlxCachePath = vi.hoisted(() => vi.fn(() => '/tmp/dlx-cache'))
 const mockSafeDelete = vi.hoisted(() => vi.fn(async () => {}))
 const mockSafeMkdir = vi.hoisted(() => vi.fn(async () => {}))
-const mockWhichReal = vi.hoisted(() => vi.fn(async () => '/usr/bin/tar'))
+const mockFindSystemTool = vi.hoisted(() =>
+  vi.fn(async () => ({ executable: '/usr/bin/tar', searchPath: '/usr/bin' })),
+)
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
 const mockFsWriteFile = vi.hoisted(() => vi.fn(async () => {}))
 const mockFsReadFile = vi.hoisted(() => vi.fn(async () => '12345'))
@@ -57,9 +59,13 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeMkdir: mockSafeMkdir,
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: mockWhichReal,
-}))
+vi.mock(
+  import('../../../../src/util/spawn/system-tool.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    findSystemTool: mockFindSystemTool,
+  }),
+)
 
 vi.mock(import('node:fs'), () => ({
   existsSync: mockExistsSync,
@@ -111,7 +117,10 @@ describe('downloadGitHubReleaseBinary', () => {
     mockAdmZipGetEntries.mockReturnValue([])
     mockAdmZipExtractAllTo.mockReset()
     mockAdmZipCtor.mockClear()
-    mockWhichReal.mockResolvedValue('/usr/bin/tar')
+    mockFindSystemTool.mockResolvedValue({
+      executable: '/usr/bin/tar',
+      searchPath: '/usr/bin',
+    })
   })
 
   it('short-circuits when the binary is already cached', async () => {
@@ -145,8 +154,10 @@ describe('downloadGitHubReleaseBinary', () => {
     expect(result).toContain('tool')
   })
 
-  it('throws when tar is not on PATH and archive is tar.gz', async () => {
-    mockWhichReal.mockResolvedValue(undefined)
+  it('throws when no trusted tar resolves and archive is tar.gz', async () => {
+    mockFindSystemTool.mockResolvedValue(
+      undefined as unknown as { executable: string; searchPath: string },
+    )
     let calls = 0
     mockExistsSync.mockImplementation(() => {
       calls += 1

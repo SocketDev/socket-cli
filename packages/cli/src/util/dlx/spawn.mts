@@ -32,9 +32,9 @@ import {
 import { dlxPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 
 import type { GitHubReleaseSpec } from './resolve-binary.mjs'
+import { extractTarball } from './tarball.mts'
 import {
   areExternalToolsAvailable,
   extractExternalTools,
@@ -229,13 +229,7 @@ export async function downloadGitHubReleaseBinary(
     } else if (isTarGz) {
       // Extract tar.gz using system tar.
       // Note: tar has built-in path traversal protection by default.
-      const tarPath = await whichReal('tar', { nothrow: true })
-      if (!tarPath || Array.isArray(tarPath)) {
-        throw new InputError(
-          `tar is required to extract ${assetName} but was not found on PATH; install tar (e.g. \`apt install tar\`, \`brew install gnu-tar\`) and re-run`,
-        )
-      }
-      await spawn(tarPath, ['-xzf', result.binaryPath, '-C', cacheDir], {})
+      await extractTarball(result.binaryPath, cacheDir)
     } else {
       throw new InputError(
         `archive format of ${assetName} is not supported (expected .zip or .tar.gz / .tgz); check the asset name in bundle-tools.json and the release's actual asset list`,

@@ -17,8 +17,6 @@ import {
   getDlxCachePath,
 } from '@socketsecurity/lib-stable/dlx/binary'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
@@ -28,6 +26,7 @@ import {
 } from '../basics/vfs-extract.mts'
 import { getPythonBuildTag } from '../../env/python-build-tag.mts'
 import { isProcessAlive } from './spawn-pycli-install.mts'
+import { extractTarball } from './tarball.mts'
 import { requirePythonChecksum } from '../../env/python-checksums.mts'
 import { getPythonVersion } from '../../env/python-version.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../../env/socket-cli-python-path.mts'
@@ -56,13 +55,7 @@ export async function downloadPython(pythonDir: string): Promise<void> {
   })
 
   // Extract the tarball to pythonDir.
-  const tarPath = await whichReal('tar', { nothrow: true })
-  if (!tarPath || Array.isArray(tarPath)) {
-    throw new InputError(
-      `tar is required to extract the Python standalone archive but was not found on PATH; install tar (e.g. \`apt install tar\`, \`brew install gnu-tar\`) and re-run`,
-    )
-  }
-  await spawn(tarPath, ['-xzf', result.binaryPath, '-C', pythonDir], {})
+  await extractTarball(result.binaryPath, pythonDir)
 }
 
 /**

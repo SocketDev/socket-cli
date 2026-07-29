@@ -1,9 +1,8 @@
 /**
  * Unit tests for util/dlx/spawn-pycli.
  *
- * Covers convertCaretToPipRange, downloadPyPiWheel, downloadPython,
- * getPythonBinPath, getPythonCachePath, getPythonStandaloneInfo, and
- * isSocketPyCliInstalled.
+ * Covers convertCaretToPipRange, downloadPyPiWheel, getPythonBinPath,
+ * getPythonCachePath, getPythonStandaloneInfo, and isSocketPyCliInstalled.
  *
  * Related Files:
  *
@@ -21,7 +20,9 @@ const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnNode = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
 const mockGetDlxCachePath = vi.hoisted(() => vi.fn(() => '/tmp/dlx'))
-const mockWhichReal = vi.hoisted(() => vi.fn(async () => '/usr/bin/tar'))
+const mockFindSystemTool = vi.hoisted(() =>
+  vi.fn(async () => ({ executable: '/usr/bin/tar', searchPath: '/usr/bin' })),
+)
 const mockSafeMkdir = vi.hoisted(() => vi.fn(async () => {}))
 const mockSafeDelete = vi.hoisted(() => vi.fn(async () => {}))
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
@@ -59,9 +60,13 @@ vi.mock(import('@socketsecurity/lib-stable/dlx/binary'), () => ({
   getDlxCachePath: mockGetDlxCachePath,
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: mockWhichReal,
-}))
+vi.mock(
+  import('../../../../src/util/spawn/system-tool.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    findSystemTool: mockFindSystemTool,
+  }),
+)
 
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeMkdir: mockSafeMkdir,
@@ -133,7 +138,6 @@ vi.mock(import('../../../../src/env/python-checksums.mts'), () => ({
 import {
   convertCaretToPipRange,
   downloadPyPiWheel,
-  downloadPython,
   getPythonBinPath,
   getPythonCachePath,
   getPythonStandaloneInfo,
@@ -419,44 +423,6 @@ describe('downloadPyPiWheel', () => {
     })
     const result = await downloadPyPiWheel('pkg', '1.0.0', undefined)
     expect(result).toContain('pkg-1.0.0-py3-none-any.whl')
-  })
-})
-
-describe('downloadPython', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    mockSafeMkdir.mockResolvedValue(undefined)
-    mockDownloadBinary.mockResolvedValue({ binaryPath: '/dl/python.tar.gz' })
-    mockSpawn.mockResolvedValue({ stdout: '' })
-    mockWhichReal.mockResolvedValue('/usr/bin/tar')
-    Object.defineProperty(process, 'platform', {
-      value: 'linux',
-      configurable: true,
-    })
-    Object.defineProperty(process, 'arch', {
-      value: 'x64',
-      configurable: true,
-    })
-  })
-
-  it('throws when tar is not on PATH', async () => {
-    mockWhichReal.mockResolvedValue(undefined)
-    await expect(downloadPython('/dest')).rejects.toThrow(/tar is required/)
-  })
-
-  it('throws when whichReal returns array (multiple match)', async () => {
-    mockWhichReal.mockResolvedValue(['/a', '/b'] as never)
-    await expect(downloadPython('/dest')).rejects.toThrow(/tar is required/)
-  })
-
-  it('downloads and extracts python', async () => {
-    await downloadPython('/dest')
-    expect(mockDownloadBinary).toHaveBeenCalled()
-    expect(mockSpawn).toHaveBeenCalledWith(
-      '/usr/bin/tar',
-      ['-xzf', '/dl/python.tar.gz', '-C', '/dest'],
-      expect.any(Object),
-    )
   })
 })
 

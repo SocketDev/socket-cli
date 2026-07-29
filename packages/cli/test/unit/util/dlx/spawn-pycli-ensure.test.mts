@@ -1,7 +1,9 @@
 /**
  * Unit tests for util/dlx/spawn-pycli.
  *
- * Covers ensurePython and ensurePythonDlx.
+ * Covers downloadPython, ensurePython, and ensurePythonDlx — the provisioning
+ * half of the Python CLI helpers, including the trusted `tar` the extraction
+ * step runs.
  *
  * Related Files:
  *
@@ -16,7 +18,9 @@ import type * as NodeFs from 'node:fs'
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
 const mockGetDlxCachePath = vi.hoisted(() => vi.fn(() => '/tmp/dlx'))
-const mockWhichReal = vi.hoisted(() => vi.fn(async () => '/usr/bin/tar'))
+const mockFindSystemTool = vi.hoisted(() =>
+  vi.fn(async () => ({ executable: '/usr/bin/tar', searchPath: '/usr/bin' })),
+)
 const mockSafeMkdir = vi.hoisted(() => vi.fn(async () => {}))
 const mockSafeDelete = vi.hoisted(() => vi.fn(async () => {}))
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
@@ -50,9 +54,13 @@ vi.mock(import('@socketsecurity/lib-stable/dlx/binary'), () => ({
   getDlxCachePath: mockGetDlxCachePath,
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: mockWhichReal,
-}))
+vi.mock(
+  import('../../../../src/util/spawn/system-tool.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    findSystemTool: mockFindSystemTool,
+  }),
+)
 
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeMkdir: mockSafeMkdir,
@@ -105,6 +113,7 @@ vi.mock(import('../../../../src/env/python-checksums.mts'), () => ({
 }))
 
 import {
+  downloadPython,
   ensurePython,
   ensurePythonDlx,
 } from '../../../../src/util/dlx/spawn-pycli.mts'
@@ -173,7 +182,10 @@ describe('ensurePythonDlx', () => {
     mockFsChmod.mockResolvedValue(undefined)
     mockDownloadBinary.mockResolvedValue({ binaryPath: '/dl/python.tar.gz' })
     mockSpawn.mockResolvedValue({ stdout: '' })
-    mockWhichReal.mockResolvedValue('/usr/bin/tar')
+    mockFindSystemTool.mockResolvedValue({
+      executable: '/usr/bin/tar',
+      searchPath: '/usr/bin',
+    })
   })
 
   it('returns existing binary when already present', async () => {
@@ -348,5 +360,62 @@ describe('ensurePythonDlx', () => {
     } finally {
       restoreTimers()
     }
+  })
+})
+
+describe('downloadPython', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockSafeMkdir.mockResolvedValue(undefined)
+    mockDownloadBinary.mockResolvedValue({ binaryPath: '/dl/python.tar.gz' })
+    mockSpawn.mockResolvedValue({ stdout: '' })
+    mockFindSystemTool.mockResolvedValue({
+      executable: '/usr/bin/tar',
+      searchPath: '/usr/bin',
+    })
+    Object.defineProperty(process, 'platform', {
+      value: 'linux',
+      configurable: true,
+    })
+    Object.defineProperty(process, 'arch', {
+      value: 'x64',
+      configurable: true,
+    })
+  })
+
+  it('throws when no trusted tar resolves', async () => {
+    mockFindSystemTool.mockResolvedValue(
+      undefined as unknown as { executable: string; searchPath: string },
+    )
+
+    await expect(downloadPython('/dest')).rejects.toThrow(/tar is required/)
+  })
+
+  it('names the untrusted checkout when no trusted tar resolves', async () => {
+    mockFindSystemTool.mockResolvedValue(
+      undefined as unknown as { executable: string; searchPath: string },
+    )
+
+    await expect(downloadPython('/dest')).rejects.toThrow(/untrusted checkout/)
+  })
+
+  it('hands the extraction child the sanitized PATH', async () => {
+    await downloadPython('/dest')
+
+    const options = mockSpawn.mock.calls.at(-1)?.[2] as {
+      env?: Record<string, string | undefined> | undefined
+    }
+    expect(options.env?.['PATH']).toBe('/usr/bin')
+  })
+
+  it('spawns the resolved absolute tar, never the bare name', async () => {
+    await downloadPython('/dest')
+
+    expect(mockDownloadBinary).toHaveBeenCalled()
+    expect(mockSpawn).toHaveBeenCalledWith(
+      '/usr/bin/tar',
+      ['-xzf', '/dl/python.tar.gz', '-C', '/dest'],
+      expect.any(Object),
+    )
   })
 })
