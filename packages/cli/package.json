@@ -25,7 +25,8 @@
     "data/**",
     "dist/**",
     "logo-dark.png",
-    "logo-light.png"
+    "logo-light.png",
+    "DISCLOSURE"
   ],
   "scripts": {
     "build": "node --max-old-space-size=8192 --import=./scripts/load.mts scripts/build.mts",
@@ -193,5 +194,8 @@
       "yaml": "catalog:",
       "yargs-parser": "catalog:"
     }
+  },
+  "contentPolicy": {
+    "class": "dual-use"
   }
 }

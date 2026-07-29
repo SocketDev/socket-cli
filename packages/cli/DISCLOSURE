@@ -1,0 +1,23 @@
+# Dual-use disclosure
+
+Package: @socketsecurity/cli
+Content policy class: dual-use (https://docs.npmjs.com/policies/dual-use)
+
+## Dual-use functionality
+
+This package is a security research utility. It ships the `socket`,
+`socket-npm`, and `socket-npx` executables, which wrap and shim other package
+managers, intercept dependency installation, scan dependency trees and
+package contents, and report findings to the socket.dev security API.
+Package-manager shimming, install interception, and bulk package inspection
+are behaviors that can resemble malicious software to automated scanning.
+
+## Intended legitimate use
+
+Defensive supply-chain security analysis for developers and CI: surfacing
+known-malicious, hijacked, typosquatted, or policy-violating dependencies
+before they run, and providing socket.dev scan results from the command line.
+The package provides no exploitation, persistence, exfiltration, or
+obfuscation capability, and transmits only the package identifiers and scan
+artifacts needed for analysis. Source and issue tracker:
+https://github.com/SocketDev/socket-cli

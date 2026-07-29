@@ -11,5 +11,11 @@
   },
   "vite": {
     "allowEsbuild": "esbuild resolves only as vite 8's optional peer and is never invoked; nothing imports it and the bundler is rolldown"
+  },
+  "contentPolicy": {
+    "class": "dual-use",
+    "packages": [
+      "packages/cli"
+    ]
   }
 }

@@ -2,9 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/SocketDev/socket-wheelhouse-schema.json",
   "title": "socket-wheelhouse per-repo config",
-  "description": "Per-repo socket-wheelhouse config. Two valid locations: `.config/socket-wheelhouse.json` (primary) or `.socket-wheelhouse.json` at the repo root (alternative). Both are first-class — pick the location that fits your repo's convention.",
+  "description": "Per-repo socket-wheelhouse config, at `.config/repo/socket-wheelhouse.json` (the segregated member surface).",
   "type": "object",
-  "required": ["schemaVersion", "repoName", "repo", "build"],
+  "required": [
+    "schemaVersion",
+    "repoName",
+    "repo",
+    "build"
+  ],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
@@ -24,7 +29,9 @@
       "description": "Repo shape.",
       "additionalProperties": false,
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "description": "Package layout. `solo` = one `package.json` at root, no `packages/`. `mono` = pnpm workspaces under `packages/`.",
@@ -42,13 +49,16 @@
       }
     },
     "build": {
-      "description": "How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package.",
+      "description": "How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package; `from: crates-registry` + `type: rust` is a native Rust crate (crates.io provides integrity, so no release-checksums cascade).",
       "additionalProperties": false,
       "type": "object",
-      "required": ["from", "type"],
+      "required": [
+        "from",
+        "type"
+      ],
       "properties": {
         "from": {
-          "description": "Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release.",
+          "description": "Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).",
           "anyOf": [
             {
               "const": "npm-registry",
@@ -57,11 +67,19 @@
             {
               "const": "github-release",
               "type": "string"
+            },
+            {
+              "const": "crates-registry",
+              "type": "string"
+            },
+            {
+              "const": "go-registry",
+              "type": "string"
             }
           ]
         },
         "type": {
-          "description": "Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value).",
+          "description": "Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value). `rust` = a native Rust crate (single crate or a Cargo workspace of crates) published to crates.io — no JS build. `go` = a native Go module with no JS build (symmetric to `rust`).",
           "anyOf": [
             {
               "const": "js",
@@ -74,46 +92,492 @@
             {
               "const": "binary",
               "type": "string"
-            }
-          ]
-        }
-      }
-    },
-    "bundle": {
-      "additionalProperties": false,
-      "description": "Lock-step release-cascade pin. Both fields are written TOGETHER by the cascade (cascadeSha) and the re-pin path (ref) — never hand-edited. The dep-0 fetcher's lock-step verify asserts `cascadeSha === templateSha of the release at ref` before applying.",
-      "type": "object",
-      "required": ["ref", "cascadeSha"],
-      "properties": {
-        "ref": {
-          "description": "The pinned fleet release tag the bundle is fetched from. An EXACT `fleet-<hex>` tag only — no semver, no range (`^`/`~`), no alias (`latest`/`lts`/`main`). Write-time validation rejects a fuzzy/ranged/aliased value.",
-          "pattern": "^fleet-[0-9a-f]{7,}$",
-          "type": "string"
-        },
-        "cascadeSha": {
-          "description": "The wheelhouse template commit SHA the last commit-cascade landed. A bare full-length git SHA (40 lowercase hex chars) — never a `v`-prefix, range, or alias. Must equal the `templateSha` of the release at `ref` (the lock-step invariant).",
-          "pattern": "^[0-9a-f]{40}$",
-          "type": "string"
-        }
-      }
-    },
-    "release": {
-      "additionalProperties": false,
-      "description": "Release / version-bump policy.",
-      "type": "object",
-      "properties": {
-        "versionPolicy": {
-          "description": "Version-bump policy enforced by bump.mts. `standard` (default): derive major/minor/patch from Conventional Commits. `patch-only`: reject any major/minor bump — only the patch may increment (e.g. socket-wheelhouse stays 1.0.x).",
-          "anyOf": [
+            },
             {
-              "const": "standard",
+              "const": "rust",
               "type": "string"
             },
             {
-              "const": "patch-only",
+              "const": "go",
               "type": "string"
             }
           ]
+        },
+        "runtime": {
+          "description": "JS/TS execution runtime for a `type: js` repo — mirrors package.json `devEngines.runtime.name`. `node` (default, omit to get it) = the fleet standard: pnpm for deps, vitest for tests, node to run. `bun` = a Bun repo (bunfig.toml + bun.lock + `bun test`). `deno` = a Deno repo (deno.json + `deno test`). For any non-node runtime the cascade relaxes its pnpm/vitest/node expectations and keeps the repo’s own toolchain intact. Ignored for native builds (`rust`/`go`/`addon`/`binary`).",
+          "anyOf": [
+            {
+              "const": "node",
+              "type": "string"
+            },
+            {
+              "const": "bun",
+              "type": "string"
+            },
+            {
+              "const": "deno",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "secondaries": {
+      "description": "Additional publish channels beyond the primary `build` — e.g. a Rust crate (crates-registry/rust) that also ships a `.node` addon to npm carries `{from:npm-registry, type:addon}`. Each channel gets its own publish workflow.",
+      "type": "array",
+      "items": {
+        "description": "An additional publish channel beyond the primary `build`, e.g. `{from:npm-registry, type:addon}` for a `.node` addon shipped alongside a Rust crate.",
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "from",
+          "type"
+        ],
+        "properties": {
+          "from": {
+            "description": "Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).",
+            "anyOf": [
+              {
+                "const": "npm-registry",
+                "type": "string"
+              },
+              {
+                "const": "github-release",
+                "type": "string"
+              },
+              {
+                "const": "crates-registry",
+                "type": "string"
+              },
+              {
+                "const": "go-registry",
+                "type": "string"
+              }
+            ]
+          },
+          "type": {
+            "description": "Artifact kind. `js` = plain JS package. `addon` = `.node` native addon. `binary` = a native binary (executable or wasm module — wasm is a binary format, so it lives here, not its own value). `rust` = a native Rust crate (single crate or a Cargo workspace of crates) published to crates.io — no JS build. `go` = a native Go module with no JS build (symmetric to `rust`).",
+            "anyOf": [
+              {
+                "const": "js",
+                "type": "string"
+              },
+              {
+                "const": "addon",
+                "type": "string"
+              },
+              {
+                "const": "binary",
+                "type": "string"
+              },
+              {
+                "const": "rust",
+                "type": "string"
+              },
+              {
+                "const": "go",
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "ai": {
+      "description": "Keyless local AI opt-ins. Per-repo, default all-off.",
+      "type": "object",
+      "properties": {
+        "localAssist": {
+          "description": "Opt into keyless single-shot AI assists via the locai CLI from SocketDev/odai — on-device backends such as Gemini Nano through headless Chrome, a loopback llama-server, or the deterministic simulator; no ANTHROPIC_API_KEY involved. Summary-class tasks only, read by scripts/fleet/_shared/locai.mts consumers such as the land-work commit-body summarizer. Default false; when no locai backend resolves the assist is a clean skip, never a failure.",
+          "type": "boolean"
+        }
+      }
+    },
+    "claude": {
+      "description": "Claude Code opt-ins.",
+      "type": "object",
+      "properties": {
+        "includeSecurityScanSkill": {
+          "description": "Ship `.claude/skills/fleet/scanning-security/SKILL.md`.",
+          "type": "boolean"
+        },
+        "includeSharedSkills": {
+          "description": "Ship `.claude/skills/fleet/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build.",
+          "type": "boolean"
+        },
+        "includeUpdatingSkill": {
+          "description": "Ship the dependency-update skill. Reserved — no consumer wired today.",
+          "type": "boolean"
+        }
+      }
+    },
+    "cover": {
+      "additionalProperties": false,
+      "description": "Coverage config the `cover` suite reads (folded in from the former .config/repo/cover.json): per-suite run overrides + per-metric thresholds. Absent = fleet defaults.",
+      "type": "object",
+      "properties": {
+        "suites": {
+          "description": "Per-suite cover overrides, keyed by suite name (unit, shared, isolated, …).",
+          "type": "object",
+          "patternProperties": {
+            "^(.*)$": {
+              "additionalProperties": false,
+              "type": "object",
+              "properties": {
+                "config": {
+                  "description": "Explicit vitest config path override (repo-root-relative) for this suite; defaults to the repo-first resolution of the suite basename.",
+                  "type": "string"
+                },
+                "runExclude": {
+                  "description": "Globs passed as `vitest --exclude` for this suite — skips running matching test files (e.g. a cross-package test that would pollute this repo’s coverage denominator).",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "thresholds": {
+          "additionalProperties": false,
+          "description": "Per-metric coverage thresholds (percent) the cover suite enforces; an absent metric inherits the fleet default.",
+          "type": "object",
+          "properties": {
+            "statements": {
+              "type": "number"
+            },
+            "branches": {
+              "type": "number"
+            },
+            "functions": {
+              "type": "number"
+            },
+            "lines": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "design": {
+      "additionalProperties": false,
+      "description": "Per-repo design budgets (opt-in; only repos shipping UI assets set this).",
+      "type": "object",
+      "properties": {
+        "contrast": {
+          "additionalProperties": false,
+          "description": "WCAG color-contrast budget for the repo.",
+          "type": "object",
+          "required": [
+            "files"
+          ],
+          "properties": {
+            "files": {
+              "description": "Files with contrast pairs to verify.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "description": "A file and the set of contrast pairs to verify within it.",
+                "type": "object",
+                "required": [
+                  "path",
+                  "checks"
+                ],
+                "properties": {
+                  "path": {
+                    "description": "Repo-relative path to the file whose colors are checked.",
+                    "type": "string"
+                  },
+                  "checks": {
+                    "description": "The contrast pairs to verify in this file.",
+                    "type": "array",
+                    "items": {
+                      "additionalProperties": false,
+                      "description": "One foreground/background contrast pair to verify.",
+                      "type": "object",
+                      "required": [
+                        "selector",
+                        "bg"
+                      ],
+                      "properties": {
+                        "selector": {
+                          "description": "CSS selector (regex-escaped) whose foreground color is checked.",
+                          "type": "string"
+                        },
+                        "bg": {
+                          "description": "Background color (hex) the foreground is measured against.",
+                          "type": "string"
+                        },
+                        "minRatio": {
+                          "description": "Minimum contrast ratio. Defaults to 4.5 (WCAG AA).",
+                          "type": "number"
+                        },
+                        "label": {
+                          "description": "Human-readable label for the check.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "docker": {
+      "additionalProperties": false,
+      "description": "Per-repo Docker infrastructure (opt-in; only repos maintaining base images set this).",
+      "type": "object",
+      "properties": {
+        "prebakes": {
+          "additionalProperties": false,
+          "description": "Layered prebaked base-image manifest.",
+          "type": "object",
+          "required": [
+            "registry",
+            "prebakes"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "registry": {
+              "description": "Registry images are pushed to / pulled from.",
+              "type": "string"
+            },
+            "registryDescription": {
+              "description": "What the registry namespace is for, including the long-form browse URL when the registry value is a short form.",
+              "type": "string"
+            },
+            "pins": {
+              "additionalProperties": false,
+              "description": "Maximally-pinned build inputs injected as build-args.",
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "ubuntuDigest": {
+                  "pattern": "^sha256:[0-9a-f]{64}$",
+                  "description": "Digest the ubuntu roots FROM, pinning the OS layer.",
+                  "type": "string"
+                },
+                "ubuntuTag": {
+                  "description": "Human-readable ubuntu tag the digest corresponds to.",
+                  "type": "string"
+                },
+                "aptSnapshot": {
+                  "pattern": "^[0-9]{8}T[0-9]{6}Z$",
+                  "description": "Snapshot timestamp (YYYYMMDDTHHMMSSZ) apt is pinned to, freezing transitive deps.",
+                  "type": "string"
+                },
+                "go": {
+                  "additionalProperties": false,
+                  "description": "Go toolchain version + per-arch sha256.",
+                  "type": "object",
+                  "required": [
+                    "version",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "version": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "amd64",
+                        "arm64"
+                      ],
+                      "properties": {
+                        "amd64": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "arm64": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "rustup": {
+                  "additionalProperties": false,
+                  "description": "rustup-init version + per-arch sha256 (mirrors the .sha256 rustup publishes beside each binary).",
+                  "type": "object",
+                  "required": [
+                    "version",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "version": {
+                      "type": "string"
+                    },
+                    "sha256": {
+                      "additionalProperties": false,
+                      "type": "object",
+                      "required": [
+                        "amd64",
+                        "arm64"
+                      ],
+                      "properties": {
+                        "amd64": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        },
+                        "arm64": {
+                          "pattern": "^[0-9a-f]{64}$",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "emsdkVersion": {
+                  "type": "string"
+                }
+              }
+            },
+            "prebakes": {
+              "description": "Each prebaked base image, ordered bottom-up.",
+              "type": "array",
+              "items": {
+                "additionalProperties": false,
+                "description": "One prebaked base image.",
+                "type": "object",
+                "required": [
+                  "name",
+                  "status",
+                  "from",
+                  "installs",
+                  "purpose"
+                ],
+                "properties": {
+                  "name": {
+                    "pattern": "^[a-z0-9][a-z0-9._/-]*$",
+                    "description": "Image name. Toolchain-named, not output-named.",
+                    "type": "string"
+                  },
+                  "status": {
+                    "description": "`active` = built + pushed today; `planned` = designed only.",
+                    "anyOf": [
+                      {
+                        "const": "active",
+                        "type": "string"
+                      },
+                      {
+                        "const": "planned",
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "from": {
+                    "description": "Parent image: another prebake `name`, or an external `<image>:<tag>`.",
+                    "type": "string"
+                  },
+                  "vendorSource": {
+                    "description": "Upstream recipe this layer is built from when vendored rather than pulled.",
+                    "type": "string"
+                  },
+                  "dockerfile": {
+                    "pattern": "^(?:packages/[a-z0-9-]+/docker|docker/(?:fleet|repo))/[a-z0-9-]+\\.Dockerfile$",
+                    "description": "Repo-relative path to the Dockerfile that builds it.",
+                    "type": "string"
+                  },
+                  "installs": {
+                    "description": "Toolchains/packages this layer adds on top of `from`.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "libc": {
+                    "description": "libc variants built.",
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "const": "glibc",
+                          "type": "string"
+                        },
+                        {
+                          "const": "musl",
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  },
+                  "platforms": {
+                    "description": "Target platforms (Docker `os/arch`).",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "tagFrom": {
+                    "description": "Source of the content hash deciding when to rebuild.",
+                    "type": "string"
+                  },
+                  "warmTargets": {
+                    "description": "Intermediate Dockerfile stages baked cache-only (--target, no tag/push) BEFORE the full build, so a final-stage failure cannot cancel and lose their in-flight layers.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "project": {
+                    "description": "Build-cache project id, if any.",
+                    "type": "string"
+                  },
+                  "consumers": {
+                    "description": "Repos / builders that FROM this base.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "purpose": {
+                    "minLength": 1,
+                    "description": "Why this layer exists and what lands on it.",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "docs": {
+      "additionalProperties": false,
+      "description": "Per-repo opt-in for the fleet doc generators. Only a repo with a published export surface sets this; an unset block means neither artifact is generated or gated.",
+      "type": "object",
+      "properties": {
+        "apiMd": {
+          "description": "Generate `docs/api.md` from the package.json `exports` map via `scripts/fleet/make-api-md.mts`. Off unless set to true.",
+          "type": "boolean"
+        },
+        "llmsTxt": {
+          "description": "Generate the root `llms.txt` export index from the package.json `exports` map via `scripts/fleet/make-llms-txt.mts`. Off unless set to true.",
+          "type": "boolean"
+        }
+      }
+    },
+    "github": {
+      "description": "GitHub-related fleet config.",
+      "type": "object",
+      "properties": {
+        "apps": {
+          "description": "GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/fleet/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -142,6 +606,115 @@
             },
             {
               "const": "lint-test",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "lint": {
+      "description": "oxlint profile.",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "description": "`standard` requires the fleet plugin set (import + typescript + unicorn). `rich` opts into a wider set; check the runner for the exact basenames currently exempted.",
+          "anyOf": [
+            {
+              "const": "standard",
+              "type": "string"
+            },
+            {
+              "const": "rich",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "lockstep": {
+      "additionalProperties": false,
+      "description": "Opt-in config for the `lock-step-ref-nudge` hook — validates `Lock-step with/from <Lang>: <path>` code comments against real impl paths. Absent = malformed-shape checks only (stale-path checks off).",
+      "type": "object",
+      "properties": {
+        "roots": {
+          "description": "Per-language impl roots the hook resolves `Lock-step with <Lang>: <path>` refs against, most-preferred first. Keys are the `<Lang>` tokens used in comments (`Rust`, `C++`, `TS`, …); values are repo-relative candidate dirs.",
+          "type": "object",
+          "patternProperties": {
+            "^(.*)$": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "scan": {
+          "description": "Directories the lock-step comment scanner walks for `Lock-step` refs.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extensions": {
+          "description": "Source-file extensions (leading dot) the comment scanner considers.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pathsAllowlist": {
+      "description": "Exemptions for the path-hygiene gate (scripts/fleet/check/paths-are-canonical.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.",
+      "type": "array",
+      "items": {
+        "description": "One exemption for the path-hygiene gate.",
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "properties": {
+          "rule": {
+            "description": "Rule letter (A, B, C, D, F, G). Omit to match any rule.",
+            "type": "string"
+          },
+          "file": {
+            "description": "Substring match against the relative file path.",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "Substring match against the offending snippet.",
+            "type": "string"
+          },
+          "line": {
+            "description": "Exact line number. Strict — no fuzz tolerance.",
+            "type": "number"
+          },
+          "snippet_hash": {
+            "description": "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/fleet/check/paths-are-canonical.mts --show-hashes`.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why this site is genuinely exempt. Required.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "release": {
+      "additionalProperties": false,
+      "description": "Release / version-bump policy.",
+      "type": "object",
+      "properties": {
+        "versionPolicy": {
+          "description": "Version-bump policy enforced by bump.mts. `standard` (default): derive major/minor/patch from Conventional Commits. `patch-only`: reject any major/minor bump — only the patch may increment (e.g. socket-wheelhouse stays 1.0.x).",
+          "anyOf": [
+            {
+              "const": "standard",
+              "type": "string"
+            },
+            {
+              "const": "patch-only",
               "type": "string"
             }
           ]
@@ -177,22 +750,58 @@
         }
       }
     },
-    "lint": {
-      "description": "oxlint profile.",
+    "vite": {
+      "description": "vite/rolldown posture knobs read by scripts/fleet/check/vite-is-rolldown-native.mts.",
       "type": "object",
       "properties": {
-        "profile": {
-          "description": "`standard` requires the fleet plugin set (import + typescript + unicorn). `rich` opts into a wider set; check the runner for the exact basenames currently exempted.",
-          "anyOf": [
-            {
-              "const": "standard",
-              "type": "string"
+        "allowEsbuild": {
+          "description": "Reasoned opt-out of the esbuild ban in vite-is-rolldown-native for a legitimate NON-BUNDLER esbuild use (e.g. an opt-in minify pass that dynamic-imports esbuild, a browser-bundle e2e arm). The vite<8 floor stays unconditional and the build bundler stays rolldown; this only tolerates esbuild as a declared test/dev dependency. The string is the why — name the consuming module(s).",
+          "type": "string"
+        }
+      }
+    },
+    "vitest": {
+      "description": "Tuning for the canonical vitest config (.config/repo/vitest.config.mts).",
+      "type": "object",
+      "properties": {
+        "conformanceExclude": {
+          "description": "Heavy external-suite / cross-impl conformance wrapper globs excluded from the DEFAULT (unit) + cover suites, keeping the unit pass inside the fleet under-a-minute budget. A repo setting this MUST pair it with an explicit `test:conformance` runner so the tier never silently drops.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lanes": {
+          "description": "Test LANES: a SPEED category orthogonal to test TYPE (unit/integration/e2e). `fast` is the implicit complement of `mid`+`slow`. The runner's `--lane <fast|mid|slow>` flag selects one; bare `pnpm test` defaults to `fast`.",
+          "type": "object",
+          "properties": {
+            "mid": {
+              "description": "Globs for the `mid` lane — isolated in-process suites (env-mutating / vi.mock / fs-heavy). Skipped by the bare `pnpm test` fast lane; run via `pnpm run test:mid`. Coverage + CI run every lane, so nothing is cut.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
-            {
-              "const": "rich",
-              "type": "string"
+            "slow": {
+              "description": "Globs for the `slow` lane — heavy suites (subprocess-per-case, e.g. hook integration specs). Skipped by the bare `pnpm test` fast lane; run via `pnpm run test:slow`. Coverage + CI run every lane, so nothing is cut.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
-          ]
+          }
+        },
+        "legacyScriptTests": {
+          "description": "Repo-relative paths of legacy script-style test files (self-executing scripts, not vitest suites) excluded from every vitest tier. Each file keeps running through its own runner; listing it here keeps the tier configs from picking it up.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unitBudgetMs": {
+          "minimum": 1000,
+          "description": "Wall-clock budget for the unit test suites under cover.mts, in milliseconds. Fleet default 60000 (under a minute). A suite exceeding the budget gets a loud report-only warning pointing at the slow/mid lanes (`vitest.lanes`); the gate ratchets to a hard failure once the fleet conforms.",
+          "type": "number"
         }
       }
     },
@@ -204,34 +813,12 @@
           "description": "Ship `.github/workflows/ci.yml`.",
           "type": "boolean"
         },
-        "weeklyUpdate": {
-          "description": "Ship `.github/workflows/weekly-update.yml`.",
-          "type": "boolean"
-        },
         "provenance": {
           "description": "Repo publishes with npm provenance (OIDC). Hint for setup helpers; not enforced by the checker today.",
           "type": "boolean"
         },
         "requirePinnedFullSha": {
           "description": "Enforce 40-char SHA pins on every `uses:` ref. Defaults to true; an opt-out is reserved for special cases (e.g. workflow-dispatch test rigs) and currently has no consumer.",
-          "type": "boolean"
-        }
-      }
-    },
-    "claude": {
-      "description": "Claude Code opt-ins.",
-      "type": "object",
-      "properties": {
-        "includeSecurityScanSkill": {
-          "description": "Ship `.claude/skills/fleet/scanning-security/SKILL.md`.",
-          "type": "boolean"
-        },
-        "includeSharedSkills": {
-          "description": "Ship `.claude/skills/fleet/_shared/*` — env-check, path-guard-rule, report-format, security-tools, verify-build.",
-          "type": "boolean"
-        },
-        "includeUpdatingSkill": {
-          "description": "Ship the dependency-update skill. Reserved — no consumer wired today.",
           "type": "boolean"
         }
       }
@@ -293,51 +880,27 @@
         }
       }
     },
-    "github": {
-      "description": "GitHub-related fleet config.",
+    "contentPolicy": {
+      "description": "npm dual-use content policy declaration per https://docs.npmjs.com/policies/dual-use. When class is dual-use, every listed package root must carry contentPolicy.class dual-use in its package.json, ship a DISCLOSURE file at the package root describing the dual-use functionality and its intended legitimate use, include DISCLOSURE in the npm files allowlist, keep the declaration across all future versions, and publish only interactively with 2FA or via staged publish with 2FA at promotion — never a direct token or OIDC final publish.",
+      "additionalProperties": false,
       "type": "object",
+      "required": [
+        "class",
+        "packages"
+      ],
       "properties": {
-        "apps": {
-          "description": "GitHub App slugs that must be installed on the repo (e.g. `cursor`, `socket-security`, `socket-trufflehog`). Audited by `scripts/fleet/lint-github-settings.mts` — apps whose installation cannot be reliably detected via check-suites are trusted via this manifest.",
+        "class": {
+          "description": "npm content policy class.",
+          "const": "dual-use",
+          "type": "string"
+        },
+        "packages": {
+          "description": "Repo-relative package roots that must carry the declaration and DISCLOSURE.",
           "type": "array",
           "items": {
             "type": "string"
-          }
-        }
-      }
-    },
-    "pathsAllowlist": {
-      "description": "Exemptions for the path-hygiene gate (scripts/fleet/check/paths-are-canonical.mts). Each entry needs a `reason`; prefer narrow entries (rule + file + snippet_hash + pattern) over blanket file-level exempts.",
-      "type": "array",
-      "items": {
-        "description": "One exemption for the path-hygiene gate.",
-        "type": "object",
-        "required": ["reason"],
-        "properties": {
-          "rule": {
-            "description": "Rule letter (A, B, C, D, F, G). Omit to match any rule.",
-            "type": "string"
           },
-          "file": {
-            "description": "Substring match against the relative file path.",
-            "type": "string"
-          },
-          "pattern": {
-            "description": "Substring match against the offending snippet.",
-            "type": "string"
-          },
-          "line": {
-            "description": "Exact line number. Strict — no fuzz tolerance.",
-            "type": "number"
-          },
-          "snippet_hash": {
-            "description": "12-char SHA-256 prefix of the normalized snippet (whitespace collapsed). Drift-resistant: keeps matching after reformatting that doesn't change the offending construction. Get via `node scripts/fleet/check/paths-are-canonical.mts --show-hashes`.",
-            "type": "string"
-          },
-          "reason": {
-            "description": "Why this site is genuinely exempt. Required.",
-            "type": "string"
-          }
+          "minItems": 1
         }
       }
     }
