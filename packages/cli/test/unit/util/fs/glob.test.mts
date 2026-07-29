@@ -263,6 +263,26 @@ describe('util/fs/glob', () => {
     })
   })
 
+  describe('stripTrailingSlashFromIgnorePattern', () => {
+    it('strips the trailing slash fast-glob would choke on', async () => {
+      const { stripTrailingSlashFromIgnorePattern } =
+        await import('../../../../src/util/fs/glob.mts')
+      expect(stripTrailingSlashFromIgnorePattern('**/dist/')).toBe('**/dist')
+    })
+
+    it('leaves a pattern without a trailing slash alone', async () => {
+      const { stripTrailingSlashFromIgnorePattern } =
+        await import('../../../../src/util/fs/glob.mts')
+      expect(stripTrailingSlashFromIgnorePattern('**/dist')).toBe('**/dist')
+    })
+
+    it('leaves a lone slash alone', async () => {
+      const { stripTrailingSlashFromIgnorePattern } =
+        await import('../../../../src/util/fs/glob.mts')
+      expect(stripTrailingSlashFromIgnorePattern('/')).toBe('/')
+    })
+  })
+
   describe('ignoreFileLinesToGlobPatterns', () => {
     it('skips blank and comment lines', async () => {
       const { ignoreFileLinesToGlobPatterns } =
