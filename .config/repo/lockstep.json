@@ -1,7 +1,25 @@
 {
   "$schema": "../fleet/lockstep.schema.json",
   "area": "socket-cli",
-  "description": "Lock-step manifest. socket-cli is a CLI distribution with no submodule upstreams or sibling language ports — empty rows is the expected state.",
-  "upstreams": {},
-  "rows": []
+  "description": "Lock-step manifest. socket-cli's only upstream tie is the MCP TypeScript SDK: `socket mcp` is written against the v2 serving entries, tracked sparse so only the serving surface counts as drift.",
+  "upstreams": {
+    "modelcontextprotocol-typescript-sdk": {
+      "submodule": "upstream/modelcontextprotocol-typescript-sdk",
+      "repo": "https://github.com/modelcontextprotocol/typescript-sdk"
+    }
+  },
+  "rows": [
+    {
+      "kind": "version-pin",
+      "id": "mcp-sdk-serving-entries",
+      "upstream": "modelcontextprotocol-typescript-sdk",
+      "criticality": 8,
+      "upgrade_policy": "major-gate",
+      "materialization": "sparse",
+      "sparse_cone": ["packages/server/src", "packages/middleware/node/src"],
+      "pinned_tag": "@modelcontextprotocol/server@2.0.0",
+      "conformance_test": "packages/cli/test/unit/commands/mcp/transport-http.test.mts",
+      "notes": "`socket mcp` consumes the SDK as an npm dependency, not vendored source, so the port is behavioral: server.mts registers handlers by the string method names the low-level `Server` dispatches on, transport-stdio.mts hands a factory to `serveStdio`, and transport-http.mts composes `createMcpHandler` with `toNodeHandler`. Those four entry points live under the cone, which is why drift is scoped to `packages/server/src` (serving entries + the low-level Server) and `packages/middleware/node/src` (the node:http adapter). The rest of the monorepo — the codemod, the express/fastify/hono middlewares, server-legacy — is deliberately outside the port. `major-gate` because a v2 minor is additive to these entries while a major moved them once already (v1's `Server` + `StreamableHTTPServerTransport` became `createMcpHandler`, and HTTP went stateless)."
+    }
+  ]
 }

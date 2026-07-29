@@ -1,0 +1,10 @@
+# modelcontextprotocol-typescript-sdk-@modelcontextprotocol/server@2.0.0 sha256:d7efafedd46edf7d5b7eae7496d6215297cbd476e93bcc6872676495500fc968
+[submodule "upstream/modelcontextprotocol-typescript-sdk"]
+	ref = cc4b41617ce3601b1290d67216ea0b194a3cd9ac
+	path = upstream/modelcontextprotocol-typescript-sdk
+	url = https://github.com/modelcontextprotocol/typescript-sdk.git
+	branch = @modelcontextprotocol/server@2.0.0
+	shallow = true
+	sparse-checkout = packages/server/src packages/middleware/node/src
+	verify = none
+# socket-mcp-v0.0.20 sha256:733ce4682d596d382fb97a952d3e472714baaf1c9bd2d4ac60251e4de562e1ae
