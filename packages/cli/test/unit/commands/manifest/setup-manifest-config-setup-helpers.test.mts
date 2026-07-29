@@ -171,7 +171,12 @@ describe('setup-manifest-config', () => {
       mockInput
         .mockResolvedValueOnce('/usr/bin/gradle')
         .mockResolvedValueOnce('--debug --info')
-      mockSelect.mockResolvedValueOnce('yes')
+        .mockResolvedValueOnce('') // includeConfigs
+        .mockResolvedValueOnce('') // excludeConfigs
+      mockSelect
+        .mockResolvedValueOnce('') // facts default
+        .mockResolvedValueOnce('') // ignoreUnresolved default
+        .mockResolvedValueOnce('yes') // verbose
       const config: unknown = {}
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
@@ -181,8 +186,15 @@ describe('setup-manifest-config', () => {
     })
 
     it('clears bin/gradleOpts when user empties them', async () => {
-      mockInput.mockResolvedValueOnce('').mockResolvedValueOnce('')
-      mockSelect.mockResolvedValueOnce('')
+      mockInput
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('') // includeConfigs
+        .mockResolvedValueOnce('') // excludeConfigs
+      mockSelect
+        .mockResolvedValueOnce('') // facts default
+        .mockResolvedValueOnce('') // ignoreUnresolved default
+        .mockResolvedValueOnce('') // verbose default
       const config: unknown = { bin: 'old', gradleOpts: 'old', verbose: true }
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
@@ -192,8 +204,15 @@ describe('setup-manifest-config', () => {
     })
 
     it('sets verbose=false when user picks "no"', async () => {
-      mockInput.mockResolvedValueOnce('./gradlew').mockResolvedValueOnce('')
-      mockSelect.mockResolvedValueOnce('no')
+      mockInput
+        .mockResolvedValueOnce('./gradlew')
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('') // includeConfigs
+        .mockResolvedValueOnce('') // excludeConfigs
+      mockSelect
+        .mockResolvedValueOnce('') // facts default
+        .mockResolvedValueOnce('') // ignoreUnresolved default
+        .mockResolvedValueOnce('no') // verbose
       const config: unknown = {}
       const result = await setupGradle(config)
       expect(result.ok).toBe(true)
@@ -234,6 +253,7 @@ describe('setup-manifest-config', () => {
         .mockResolvedValueOnce('/usr/bin/sbt')
         .mockResolvedValueOnce('-Dsbt.opts=foo')
       mockSelect
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('yes') // stdout
         .mockResolvedValueOnce('yes') // verbose
       const config: unknown = {}
@@ -248,6 +268,7 @@ describe('setup-manifest-config', () => {
     it('clears bin and sbtOpts when user empties them', async () => {
       mockInput.mockResolvedValueOnce('').mockResolvedValueOnce('')
       mockSelect
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('yes') // stdout
         .mockResolvedValueOnce('') // verbose default
       const config: unknown = { bin: 'old', sbtOpts: 'old', verbose: true }

@@ -12,9 +12,13 @@
  * - Src/commands/manifest/manifest-build-trust.mts
  */
 
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
+
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import {
   readBuildToolBin,
@@ -65,7 +69,33 @@ describe('readBuildToolBin', () => {
 })
 
 describe('resolveGradleInvocation', () => {
-  it('defaults to the project wrapper with no socket.json', () => {
+  const tmpDirs: string[] = []
+
+  afterEach(async () => {
+    await safeDelete(tmpDirs.splice(0))
+  })
+
+  it('defaults to the project wrapper when it exists', () => {
+    const tmpCwd = mkdtempSync(path.join(os.tmpdir(), 'gradle-trust-'))
+    tmpDirs.push(tmpCwd)
+    writeFileSync(path.join(tmpCwd, 'gradlew'), '')
+
+    const result = resolveGradleInvocation({
+      cliBin: undefined,
+      cliOpts: undefined,
+      cwd: tmpCwd,
+      socketJson: undefined,
+      trustSocketJson: false,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.data).toEqual({
+      bin: path.join(tmpCwd, 'gradlew'),
+      opts: [],
+    })
+  })
+
+  it('falls back to gradle on PATH when the project ships no wrapper', () => {
     const result = resolveGradleInvocation({
       cliBin: undefined,
       cliOpts: undefined,
@@ -75,7 +105,7 @@ describe('resolveGradleInvocation', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect(result.ok && result.data).toEqual({ bin: GRADLEW, opts: [] })
+    expect(result.ok && result.data).toEqual({ bin: 'gradle', opts: [] })
   })
 
   it('honors a socket.json bin that names the wrapper the CLI would pick', () => {
@@ -214,7 +244,9 @@ describe('resolveGradleInvocation', () => {
     })
 
     expect(result.ok).toBe(true)
-    expect(result.ok && result.data.bin).toBe(GRADLEW)
+    // CWD ships no wrapper, so the non-string bin falls through to the PATH
+    // default.
+    expect(result.ok && result.data.bin).toBe('gradle')
   })
 })
 

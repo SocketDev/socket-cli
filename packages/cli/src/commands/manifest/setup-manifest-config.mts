@@ -3,17 +3,22 @@ import path from 'node:path'
 
 import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
+import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import {
-  askForBin,
   askForEnabled,
   askForInputFile,
   askForOutputFile,
   askForStdout,
   askForVerboseFlag,
 } from './setup-manifest-config-prompts.mts'
+import {
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config-jvm.mts'
+import { canceledByUser, notCanceled } from './setup-manifest-config-shared.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { readSocketJsonSync, writeSocketJson } from '../../util/socket/json.mts'
@@ -25,22 +30,22 @@ const logger = getDefaultLogger()
 export {
   askForBin,
   askForEnabled,
+  askForFactsFlag,
+  askForIgnoreUnresolvedFlag,
   askForInputFile,
   askForOutputFile,
   askForStdout,
   askForVerboseFlag,
 } from './setup-manifest-config-prompts.mts'
 
-export function canceledByUser(): CResult<{ canceled: boolean }> {
-  logger.log('')
-  logger.info('User canceled')
-  logger.log('')
-  return { ok: true, data: { canceled: true } }
-}
+export {
+  setupFactsOptions,
+  setupGradle,
+  setupMaven,
+  setupSbt,
+} from './setup-manifest-config-jvm.mts'
 
-export function notCanceled(): CResult<{ canceled: boolean }> {
-  return { ok: true, data: { canceled: false } }
-}
+export { canceledByUser, notCanceled } from './setup-manifest-config-shared.mts'
 
 export async function setupConda(
   config: NonNullable<
@@ -120,51 +125,6 @@ export async function setupConda(
   return notCanceled()
 }
 
-export async function setupGradle(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
-  >,
-): Promise<CResult<{ canceled: boolean }>> {
-  const bin = await askForBin(config.bin || './gradlew')
-  if (bin === undefined) {
-    return canceledByUser()
-  }
-  if (bin) {
-    config.bin = bin
-  } else {
-    delete config.bin
-  }
-
-  const opts = await input({
-    message: '(--gradle-opts) Enter gradle options to pass through',
-    default: config.gradleOpts || '',
-    required: false,
-    // validate: async string => bool
-  })
-  if (opts === undefined) {
-    return canceledByUser()
-  }
-  if (opts) {
-    config.gradleOpts = opts
-  } else {
-    delete config.gradleOpts
-  }
-
-  const verbose = await askForVerboseFlag(config.verbose)
-  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup */
-  if (verbose === undefined) {
-    return canceledByUser()
-  }
-  /* c8 ignore stop */
-  if (verbose === 'no' || verbose === 'yes') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
-  }
-
-  return notCanceled()
-}
-
 export async function setupManifestConfig(
   cwd: string,
   defaultOnReadError = false,
@@ -211,22 +171,29 @@ export async function setupManifestConfig(
     {
       name: 'Gradle'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files through gradle',
+      description: 'Generate a Socket facts file or pom.xml through gradle',
     },
     {
       name: 'Kotlin (gradle)'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files (for Kotlin) through gradle',
+      description:
+        'Generate a Socket facts file or pom.xml (for Kotlin) through gradle',
+    },
+    {
+      name: 'Maven'.padEnd(30, ' '),
+      value: 'maven',
+      description: 'Generate a Socket facts file through maven',
     },
     {
       name: 'Scala (gradle)'.padEnd(30, ' '),
       value: 'gradle',
-      description: 'Generate pom.xml files (for Scala) through gradle',
+      description:
+        'Generate a Socket facts file or pom.xml (for Scala) through gradle',
     },
     {
       name: 'Scala (sbt)'.padEnd(30, ' '),
       value: 'sbt',
-      description: 'Generate pom.xml files through sbt',
+      description: 'Generate a Socket facts file or pom.xml through sbt',
     },
   ]
 
@@ -295,6 +262,13 @@ export async function setupManifestConfig(
       result = await setupGradle(sockJson.defaults.manifest.gradle)
       break
     }
+    case 'maven': {
+      if (!sockJson.defaults.manifest.maven) {
+        sockJson.defaults.manifest.maven = {}
+      }
+      result = await setupMaven(sockJson.defaults.manifest.maven)
+      break
+    }
     case 'sbt': {
       if (!sockJson.defaults.manifest.sbt) {
         sockJson.defaults.manifest.sbt = {}
@@ -336,78 +310,4 @@ export async function setupManifestConfig(
   }
 
   return canceledByUser()
-}
-
-export async function setupSbt(
-  config: NonNullable<
-    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
-  >,
-): Promise<CResult<{ canceled: boolean }>> {
-  const bin = await askForBin(config.bin || 'sbt')
-  if (bin === undefined) {
-    return canceledByUser()
-  }
-  if (bin) {
-    config.bin = bin
-  } else {
-    delete config.bin
-  }
-
-  const opts = await input({
-    message: '(--sbt-opts) Enter sbt options to pass through',
-    default: config.sbtOpts || '',
-    required: false,
-    // validate: async string => bool
-  })
-  if (opts === undefined) {
-    return canceledByUser()
-  }
-  if (opts) {
-    config.sbtOpts = opts
-  } else {
-    delete config.sbtOpts
-  }
-
-  const stdout = await askForStdout(config.stdout)
-  if (stdout === undefined) {
-    return canceledByUser()
-  }
-  if (stdout === 'yes') {
-    config.stdout = true
-  } else if (stdout === 'no') {
-    config.stdout = false
-  } else {
-    delete config.stdout
-  }
-
-  if (config.stdout !== true) {
-    const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
-    if (out === undefined) {
-      return canceledByUser()
-    }
-    if (out === '-') {
-      config.stdout = true
-    } else {
-      delete config.stdout
-      if (out) {
-        config.outfile = out
-      } else {
-        delete config.outfile
-      }
-    }
-  }
-
-  const verbose = await askForVerboseFlag(config.verbose)
-  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup */
-  if (verbose === undefined) {
-    return canceledByUser()
-  }
-  /* c8 ignore stop */
-  if (verbose === 'no' || verbose === 'yes') {
-    config.verbose = verbose === 'yes'
-  } else {
-    delete config.verbose
-  }
-
-  return notCanceled()
 }

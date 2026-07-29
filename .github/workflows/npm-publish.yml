@@ -258,7 +258,7 @@ jobs:
           if [ -n "${JAVA_HOME_17_X64:-}" ]; then
             export JAVA_HOME="$JAVA_HOME_17_X64"
           fi
-          bash src/commands/manifest/scripts/maven-extension/build-jar.sh
+          bash packages/cli/src/commands/manifest/scripts/maven-extension/build-jar.sh
 
       # All three publishes use npm trusted publishing (OIDC): no long-lived
       # NPM_TOKEN is set, so npm mints a short-lived registry token from the
@@ -273,7 +273,7 @@ jobs:
       # defaults to true), so an accidental dispatch builds but never reaches
       # the registry. When skipped, publish_socket.outcome is not 'success',
       # so the tag + release steps below also skip.
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+      - run: INLINED_PUBLISHED_BUILD=1 pnpm run build:dist
       - name: Publish socket
         id: publish_socket
         if: ${{ inputs.dry-run == false }}
@@ -282,7 +282,7 @@ jobs:
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
+      - run: INLINED_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Publish @socketsecurity/cli (legacy)
@@ -292,7 +292,7 @@ jobs:
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
+      - run: INLINED_PUBLISHED_BUILD=1 INLINED_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Publish @socketsecurity/cli-with-sentry

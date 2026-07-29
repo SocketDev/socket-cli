@@ -35,6 +35,7 @@
     "restore-cache": "node --import=./scripts/load.mts scripts/restore-cache.mts",
     "build:sea": "node --max-old-space-size=8192 --import=./scripts/load.mts scripts/build-sea.mts",
     "build:js": "node scripts/build-js.mts",
+    "build:maven-extension": "bash src/commands/manifest/scripts/maven-extension/build-jar.sh",
     "dev:watch": "pnpm run build:watch",
     "check": "node ../../scripts/fleet/check.mts",
     "check-ci": "pnpm run check",

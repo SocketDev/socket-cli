@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>tech.coana</groupId>
+  <artifactId>coana-maven-extension</artifactId>
+  <version>1.0</version>
+  <!-- A Maven CORE EXTENSION (not a plugin): loaded from a loose jar via
+       -Dmaven.ext.class.path=<jar>, so nothing is installed in the user's local repository and
+       their pom.xml is untouched. It only GATHERS the resolved dependency graph and emits the
+       flat line-protocol records the TS assembler turns into the Socket facts SBOM —
+       no JSON / hashing here, identical contract to the Gradle init script and SBT plugin. -->
+  <packaging>jar</packaging>
+  <name>Coana Maven extension</name>
+  <description>Core extension that emits Coana's dependency-graph records (socket-facts) without a local-repo install.</description>
+
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Maven core APIs to compile against; runtime is provided by whatever Maven loads the
+         extension (verified 3.2.5 .. 4.x). -->
+    <maven.version>3.9.6</maven.version>
+  </properties>
+
+  <!-- Stable jar name so the TS runner can resolve it by a fixed path. -->
+  <build>
+    <finalName>coana-maven-extension</finalName>
+    <plugins>
+      <!-- Generate META-INF/sisu/javax.inject.Named so the container discovers our @Named
+           lifecycle participant when the jar is on the ext class path. -->
+      <plugin>
+        <groupId>org.eclipse.sisu</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
+        <version>0.9.0.M3</version>
+        <executions>
+          <execution>
+            <id>index-project</id>
+            <goals>
+              <goal>main-index</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Single self-contained jar, merging the Sisu indexes from our code and from the bundled
+           maven-dependency-tree so the container discovers everything in the ext realm. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.5.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/sisu/javax.inject.Named</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer"/>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Maven core APIs: present in the core realm at runtime, so provided (not bundled). -->
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>${maven.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>${maven.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-artifact</artifactId>
+      <version>${maven.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-api</artifactId>
+      <version>1.9.18</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- maven-dependency-tree pulls this at compile scope; it's in the core realm at runtime, so
+         declare it provided to keep it out of the shaded jar. -->
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-util</artifactId>
+      <version>1.9.18</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.36</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- NOT part of Maven core: bundled (shaded) into the extension jar. -->
+    <dependency>
+      <groupId>org.apache.maven.shared</groupId>
+      <artifactId>maven-dependency-tree</artifactId>
+      <version>3.3.0</version>
+    </dependency>
+  </dependencies>
+</project>

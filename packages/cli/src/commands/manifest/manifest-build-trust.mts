@@ -14,9 +14,10 @@
  * `--trust-socket-json`.
  */
 
-import { realpathSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 
+import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { FLAG_JSON } from '../../constants/cli.mjs'
 import { ENVIRONMENT_YML, REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
@@ -283,7 +284,9 @@ export function resolveGradleInvocation({
   )
   const socketJsonOpts = socketJson?.defaults?.manifest?.gradle?.gradleOpts
 
-  let bin = wrapperBin
+  // Prefer the project wrapper, which pins the expected gradle version; fall
+  // back to `gradle` on PATH when the project ships none.
+  let bin = existsSync(wrapperBin) ? wrapperBin : 'gradle'
   if (cliBinPath) {
     bin = path.resolve(cwd, cliBinPath)
   } else if (socketJsonBin) {
@@ -314,6 +317,70 @@ export function resolveGradleInvocation({
           'Gradle options redirect execution: `-I`/`--init-script` and `--include-build` load arbitrary build logic, `-g`/`--gradle-user-home` points at an `init.d` directory Gradle runs on startup, and `-D org.gradle.java.home` / `-D org.gradle.jvmargs` choose the JVM and its agents.',
         saw: splitBuildToolOpts(socketJsonOpts).join(' '),
         tool: 'gradle',
+      })
+    }
+    opts = splitBuildToolOpts(socketJsonOpts)
+  }
+
+  return { ok: true, data: { bin, opts } }
+}
+
+/**
+ * Decide which maven binary and options a run may use.
+ */
+export function resolveMavenInvocation({
+  cliBin,
+  cliOpts,
+  cwd,
+  socketJson,
+  trustSocketJson,
+}: {
+  cliBin: unknown
+  cliOpts: unknown
+  cwd: string
+  socketJson: SocketJson | undefined
+  trustSocketJson: boolean
+}): CResult<BuildToolInvocation> {
+  const wrapperBin = path.join(cwd, 'mvnw')
+  const cliBinPath = readBuildToolBin(cliBin)
+  const socketJsonBin = readBuildToolBin(
+    socketJson?.defaults?.manifest?.maven?.bin,
+  )
+  const socketJsonOpts = socketJson?.defaults?.manifest?.maven?.mavenOpts
+
+  // Prefer the project wrapper, which pins the expected maven version; fall
+  // back to `mvn` on PATH when the project ships none.
+  let bin = existsSync(wrapperBin) ? wrapperBin : 'mvn'
+  if (cliBinPath) {
+    bin = path.resolve(cwd, cliBinPath)
+  } else if (socketJsonBin) {
+    const resolved = path.resolve(cwd, socketJsonBin)
+    if (!trustSocketJson && resolved !== wrapperBin) {
+      return refuseSocketJsonBin({
+        cwd,
+        field: 'defaults.manifest.maven.bin',
+        flag: '--bin',
+        saw: socketJsonBin,
+        tool: 'maven',
+        wanted: `the project wrapper \`${wrapperBin}\``,
+      })
+    }
+    bin = resolved
+  }
+
+  let opts: string[] = []
+  if (cliOpts) {
+    opts = splitBuildToolOpts(cliOpts)
+  } else if (splitBuildToolOpts(socketJsonOpts).length) {
+    if (!trustSocketJson) {
+      return refuseSocketJsonOpts({
+        cwd,
+        field: 'defaults.manifest.maven.mavenOpts',
+        flag: '--maven-opts',
+        reason:
+          'Maven options redirect execution: `-Dmaven.ext.class.path` loads arbitrary extension jars, `-s`/`--settings` and `-t`/`--toolchains` point Maven at repository-supplied configuration, and `-Dmaven.repo.local` relocates the artifact store the build executes from.',
+        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
+        tool: 'maven',
       })
     }
     opts = splitBuildToolOpts(socketJsonOpts)
@@ -391,7 +458,8 @@ export interface BuildToolInvocation {
 }
 
 /**
- * Split a space-separated option string into argv tokens. A value-taking flag
+ * Split an option string into argv tokens, honoring quotes so a value with
+ * spaces (`-s "my settings.xml"`) survives as one token. A value-taking flag
  * whose value meow could not capture (`--gradle-opts --info`) arrives as a
  * boolean, so anything that is not a string yields no tokens.
  */
@@ -399,8 +467,5 @@ export function splitBuildToolOpts(raw: unknown): string[] {
   if (typeof raw !== 'string') {
     return []
   }
-  return raw
-    .split(' ')
-    .map(s => s.trim())
-    .filter(Boolean)
+  return parseBuildToolOpts(raw)
 }

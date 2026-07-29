@@ -49,6 +49,61 @@ export async function askForEnabled(
   })
 }
 
+export async function askForFactsFlag(
+  current: boolean | undefined,
+): Promise<string | undefined> {
+  return await select({
+    message: '(--facts / --pom) Which manifest should this generate?',
+    choices: [
+      {
+        name: 'Socket facts (default)',
+        value: 'yes',
+        description:
+          'Generate a .socket.facts.json file describing the resolved dependency graph',
+      },
+      {
+        name: 'pom.xml',
+        value: 'no',
+        description: 'Generate pom.xml manifest files instead (the --pom path)',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting; uses the default (Socket facts)',
+      },
+    ],
+    default: current === true ? 'yes' : current === false ? 'no' : '',
+  })
+}
+
+export async function askForIgnoreUnresolvedFlag(
+  current: boolean | undefined,
+): Promise<string | undefined> {
+  return await select({
+    message:
+      '(--ignore-unresolved) Warn on unresolved dependencies instead of failing?',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Fail the run when a declared dependency cannot resolve',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'Warn and continue; unresolved dependencies are omitted from the facts file',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default: current === true ? 'yes' : current === false ? 'no' : '',
+  })
+}
+
 export async function askForInputFile(
   defaultName = '',
 ): Promise<string | undefined> {

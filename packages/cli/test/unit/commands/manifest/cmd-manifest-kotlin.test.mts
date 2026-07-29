@@ -40,6 +40,9 @@ vi.mock(
 const mockConvertGradleToMaven = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: { files: [] } }),
 )
+const mockConvertToFacts = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 const mockOutputManifest = vi.hoisted(() => vi.fn())
 const mockReadOrDefaultSocketJson = vi.hoisted(() =>
   vi.fn().mockReturnValue({}),
@@ -56,6 +59,13 @@ vi.mock(
   import('../../../../src/commands/manifest/output-manifest.mts'),
   () => ({
     outputManifest: mockOutputManifest,
+  }),
+)
+
+vi.mock(
+  import('../../../../src/commands/manifest/convert-gradle-to-facts.mts'),
+  () => ({
+    convertGradleToFacts: mockConvertToFacts,
   }),
 )
 
@@ -114,10 +124,12 @@ describe('cmd-manifest-kotlin', () => {
     })
 
     it('should call convertGradleToMaven with correct default parameters', async () => {
-      await cmdManifestKotlin.run(['.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith({
-        bin: expect.stringMatching(/gradlew$/),
+        // The test cwd ships no gradlew wrapper, so the default falls back to
+        // `gradle` on PATH.
+        bin: expect.stringMatching(/^gradle$|gradlew$/),
         cwd: expect.stringContaining('/'),
         gradleOpts: [],
         outputKind: 'text',
@@ -127,7 +139,7 @@ describe('cmd-manifest-kotlin', () => {
 
     it('should pass custom --bin flag to convertGradleToMaven', async () => {
       await cmdManifestKotlin.run(
-        ['--bin', '/custom/gradle', '.'],
+        ['--pom', '--bin', '/custom/gradle', '.'],
         importMeta,
         context,
       )
@@ -142,7 +154,7 @@ describe('cmd-manifest-kotlin', () => {
     it('should parse and pass --gradle-opts flag', async () => {
       // Use = syntax for values that look like flags.
       await cmdManifestKotlin.run(
-        ['--gradle-opts=--stacktrace --info', '.'],
+        ['--pom', '--gradle-opts=--stacktrace --info', '.'],
         importMeta,
         context,
       )
@@ -155,7 +167,11 @@ describe('cmd-manifest-kotlin', () => {
     })
 
     it('should pass --verbose flag to convertGradleToMaven', async () => {
-      await cmdManifestKotlin.run(['--verbose', '.'], importMeta, context)
+      await cmdManifestKotlin.run(
+        ['--pom', '--verbose', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -175,7 +191,7 @@ describe('cmd-manifest-kotlin', () => {
         },
       })
 
-      await cmdManifestKotlin.run(['.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
       expect(mockOutputManifest).toHaveBeenCalledWith(
@@ -200,7 +216,7 @@ describe('cmd-manifest-kotlin', () => {
       })
 
       await cmdManifestKotlin.run(
-        ['--trust-socket-json', '.'],
+        ['--pom', '--trust-socket-json', '.'],
         importMeta,
         context,
       )
@@ -223,7 +239,7 @@ describe('cmd-manifest-kotlin', () => {
         },
       })
 
-      await cmdManifestKotlin.run(['.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
       expect(mockOutputManifest).toHaveBeenCalledWith(
@@ -248,7 +264,7 @@ describe('cmd-manifest-kotlin', () => {
       })
 
       await cmdManifestKotlin.run(
-        ['--trust-socket-json', '.'],
+        ['--pom', '--trust-socket-json', '.'],
         importMeta,
         context,
       )
@@ -261,7 +277,11 @@ describe('cmd-manifest-kotlin', () => {
     })
 
     it('should reject multiple directory arguments', async () => {
-      await cmdManifestKotlin.run(['dir1', 'dir2'], importMeta, context)
+      await cmdManifestKotlin.run(
+        ['--pom', 'dir1', 'dir2'],
+        importMeta,
+        context,
+      )
 
       expect(process.exitCode).toBe(2)
       expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
@@ -271,7 +291,7 @@ describe('cmd-manifest-kotlin', () => {
       const result = { ok: true, data: { files: ['pom.xml'] } }
       mockConvertGradleToMaven.mockResolvedValueOnce(result)
 
-      await cmdManifestKotlin.run(['--json', '.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '--json', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -285,7 +305,11 @@ describe('cmd-manifest-kotlin', () => {
       const result = { ok: true, data: { files: [] } }
       mockConvertGradleToMaven.mockResolvedValueOnce(result)
 
-      await cmdManifestKotlin.run(['--markdown', '.'], importMeta, context)
+      await cmdManifestKotlin.run(
+        ['--pom', '--markdown', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -296,17 +320,21 @@ describe('cmd-manifest-kotlin', () => {
     })
 
     it('should not call outputManifest in text mode', async () => {
-      await cmdManifestKotlin.run(['.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '.'], importMeta, context)
 
       expect(mockOutputManifest).not.toHaveBeenCalled()
     })
 
-    it('should default bin to gradlew in cwd', async () => {
-      await cmdManifestKotlin.run(['/absolute/path'], importMeta, context)
+    it('should default bin to gradle on PATH when no wrapper exists', async () => {
+      await cmdManifestKotlin.run(
+        ['--pom', '/absolute/path'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
-          bin: path.join('/absolute/path', 'gradlew'),
+          bin: 'gradle',
           cwd: '/absolute/path',
         }),
       )
@@ -325,7 +353,7 @@ describe('cmd-manifest-kotlin', () => {
       })
 
       await cmdManifestKotlin.run(
-        ['--bin', '/cli/gradlew', '--verbose', '.'],
+        ['--pom', '--bin', '/cli/gradlew', '--verbose', '.'],
         importMeta,
         context,
       )
@@ -349,7 +377,7 @@ describe('cmd-manifest-kotlin', () => {
         },
       })
 
-      await cmdManifestKotlin.run(['.'], importMeta, context)
+      await cmdManifestKotlin.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertGradleToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -360,6 +388,91 @@ describe('cmd-manifest-kotlin', () => {
         expect.stringContaining('Using default --verbose'),
         true,
       )
+    })
+  })
+  describe('facts generation', () => {
+    const importMeta = { url: 'file:///test/cmdManifestKotlin.mts' }
+    const context = { parentName: 'socket manifest' }
+
+    it('generates facts by default with expected parameters', async () => {
+      await cmdManifestKotlin.run(['.'], importMeta, context)
+
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+      expect(mockConvertToFacts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludeConfigs: '',
+          excludePaths: [],
+          ignoreUnresolved: false,
+          includeConfigs: '',
+          verbose: false,
+        }),
+      )
+    })
+
+    it('forwards --include-configs, --exclude-configs, and --ignore-unresolved', async () => {
+      await cmdManifestKotlin.run(
+        [
+          '--include-configs=*CompileClasspath',
+          '--exclude-configs=test*',
+          '--ignore-unresolved',
+          '.',
+        ],
+        importMeta,
+        context,
+      )
+
+      expect(mockConvertToFacts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludeConfigs: 'test*',
+          ignoreUnresolved: true,
+          includeConfigs: '*CompileClasspath',
+        }),
+      )
+    })
+
+    it('forwards --exclude-paths as an array', async () => {
+      await cmdManifestKotlin.run(
+        ['--exclude-paths=vendor,legacy', '.'],
+        importMeta,
+        context,
+      )
+
+      expect(mockConvertToFacts).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludePaths: ['vendor', 'legacy'],
+        }),
+      )
+    })
+
+    it('warns and keeps facts when --pom and --facts are both passed', async () => {
+      await cmdManifestKotlin.run(
+        ['--pom', '--facts', '.'],
+        importMeta,
+        context,
+      )
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('mutually exclusive'),
+      )
+      expect(mockConvertToFacts).toHaveBeenCalled()
+      expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+    })
+
+    it('honors a socket.json facts:false default untrusted', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            gradle: {
+              facts: false,
+            },
+          },
+        },
+      })
+
+      await cmdManifestKotlin.run(['.'], importMeta, context)
+
+      expect(mockConvertToFacts).not.toHaveBeenCalled()
+      expect(mockConvertGradleToMaven).toHaveBeenCalled()
     })
   })
 })

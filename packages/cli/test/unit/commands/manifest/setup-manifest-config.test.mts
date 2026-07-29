@@ -116,14 +116,19 @@ describe('setup-manifest-config', () => {
 
     it('completes flow for gradle + write yes (lines 143-147)', async () => {
       // setupGradle prompts: askForBin (input), gradle-opts (input),
+      // askForFactsFlag (select), facts options (input, input, select),
       // askForVerboseFlag (select). Then outer write-yes prompt.
       mockSelect
         .mockResolvedValueOnce('gradle') // target ecosystem
+        .mockResolvedValueOnce('') // askForFactsFlag (default)
+        .mockResolvedValueOnce('') // askForIgnoreUnresolvedFlag (default)
         .mockResolvedValueOnce('') // askForVerboseFlag (default)
         .mockResolvedValueOnce(true) // write yes
       mockInput
         .mockResolvedValueOnce('./gradlew') // bin
         .mockResolvedValueOnce('') // gradle-opts
+        .mockResolvedValueOnce('') // include-configs
+        .mockResolvedValueOnce('') // exclude-configs
       const result = await setupManifestConfig('/cwd')
       expect(result.ok).toBe(true)
       expect(mockWriteSocketJson).toHaveBeenCalled()
@@ -132,6 +137,7 @@ describe('setup-manifest-config', () => {
     it('sbt: stdout=yes skips outfile prompt (line 341-342)', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('yes') // stdout = yes
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(true) // write yes
@@ -145,6 +151,7 @@ describe('setup-manifest-config', () => {
     it('sbt: stdout=no leads to outfile prompt (line 343-344)', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('no') // stdout = no
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(true) // write yes
@@ -159,6 +166,7 @@ describe('setup-manifest-config', () => {
     it('sbt: outfile="-" promotes stdout to true (line 354-355)', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('') // stdout default
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(true) // write yes
@@ -173,6 +181,7 @@ describe('setup-manifest-config', () => {
     it('sbt: outfile empty deletes outfile config (line 360-361)', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // ecosystem
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('') // stdout default
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(true) // write yes
@@ -187,6 +196,7 @@ describe('setup-manifest-config', () => {
     it('completes flow for sbt + write yes', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt') // target ecosystem
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('') // stdout default
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(true) // write yes
@@ -202,6 +212,7 @@ describe('setup-manifest-config', () => {
     it('cancels when user picks "no" at write-config prompt', async () => {
       mockSelect
         .mockResolvedValueOnce('sbt')
+        .mockResolvedValueOnce('no') // facts: pom mode
         .mockResolvedValueOnce('') // stdout default
         .mockResolvedValueOnce('') // verbose default
         .mockResolvedValueOnce(false) // do not write
