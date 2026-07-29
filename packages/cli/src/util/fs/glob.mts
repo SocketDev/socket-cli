@@ -123,23 +123,36 @@ export async function globWithGitIgnore(
   const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
 
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
-  if (Array.isArray(projectIgnorePaths)) {
-    const ignorePatterns = ignoreFileLinesToGlobPatterns(
-      projectIgnorePaths,
-      path.join(cwd, '.gitignore'),
-      cwd,
-    )
-    for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
-      const pattern = ignorePatterns[i]!
-      ignores.add(pattern)
-    }
+  const projectIgnoreGlobs = Array.isArray(projectIgnorePaths)
+    ? ignoreFileLinesToGlobPatterns(
+        projectIgnorePaths,
+        path.join(cwd, '.gitignore'),
+        cwd,
+      )
+    : []
+  for (let i = 0, { length } = projectIgnoreGlobs; i < length; i += 1) {
+    const pattern = projectIgnoreGlobs[i]!
+    ignores.add(pattern)
   }
 
+  // The .gitignore discovery walk honors the same directory exclusions as the
+  // package walk below. Without them an unreadable subtree — a postgres
+  // `pgdata` directory owned by another uid, a Docker volume mount — makes
+  // fast-glob throw `EACCES: permission denied, scandir` here, before
+  // projectIgnorePaths (which is where --exclude-paths lands) reaches the main
+  // walk. `suppressErrors` is the backstop: a directory the user cannot read
+  // cannot hold manifests they could scan, so skip it instead of aborting the
+  // whole run. Negated patterns are dropped — in a discovery walk they can only
+  // re-include a subtree, never prevent a crash, and fast-glob handles `!`
+  // ignore entries inconsistently.
   const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
     dot: true,
-    ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
+    ignore: [...DEFAULT_IGNORE_FOR_GIT_IGNORE, ...projectIgnoreGlobs]
+      .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
+      .map(stripTrailingSlashFromIgnorePattern),
+    suppressErrors: true,
   }) as AsyncIterable<string>
   for await (const ignorePatterns of transform(
     gitIgnoreStream,
@@ -174,6 +187,12 @@ export async function globWithGitIgnore(
       ? [...defaultIgnore]
       : [...ignores].map(stripTrailingSlashFromIgnorePattern),
     ...additionalOptions,
+    // Skip directories the running user cannot read rather than aborting the
+    // whole walk on the first EACCES; the .gitignore discovery walk above
+    // carries the full rationale. Pinned after `...additionalOptions` so a
+    // caller's options bag cannot flip it back to `false` and re-introduce the
+    // crash — this is a safety invariant, not a tunable.
+    suppressErrors: true,
   } as GlobOptions
 
   // When no filter is provided and no negated patterns exist, use the fast path.

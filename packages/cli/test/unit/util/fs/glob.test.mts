@@ -10,9 +10,14 @@
  * Related Files: - util/fs/glob.mts (implementation)
  */
 
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 // Mock homePath.
 vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
@@ -261,6 +266,48 @@ describe('util/fs/glob', () => {
         'packages/cli/package.json',
       )
     })
+  })
+
+  describe('globWithGitIgnore', () => {
+    // Reproduces the reported `socket fix` crash: a project holding a directory
+    // the running user cannot enter (a postgres `pgdata` dir owned by another
+    // uid, mode drwx------) made fast-glob throw `EACCES: permission denied,
+    // scandir` during manifest discovery. Uses the real filesystem because
+    // permission bits are what is under test; skipped under root (perm checks
+    // are bypassed) and on Windows (no POSIX directory perms).
+    const skipUnreadableDirTest =
+      process.platform === 'win32' ||
+      (typeof process.getuid === 'function' && process.getuid() === 0)
+
+    it.skipIf(skipUnreadableDirTest)(
+      'skips an unreadable directory instead of throwing EACCES',
+      async () => {
+        const { globWithGitIgnore } =
+          await import('../../../../src/util/fs/glob.mts')
+        const realTmp = mkdtempSync(path.join(os.tmpdir(), 'socket-glob-perm-'))
+        const unreadable = path.join(realTmp, 'data/postgres/pgdata')
+        try {
+          mkdirSync(unreadable, { recursive: true })
+          writeFileSync(path.join(realTmp, 'package.json'), '{}')
+          // Files inside the directory must never surface — the user cannot
+          // read them, so they cannot be scanned.
+          writeFileSync(path.join(unreadable, 'PG_VERSION'), '17')
+          chmodSync(unreadable, 0o000)
+
+          const results = await globWithGitIgnore(['**/*'], { cwd: realTmp })
+
+          expect(results.map(normalizePath)).toEqual([
+            normalizePath(path.join(realTmp, 'package.json')),
+          ])
+        } finally {
+          // Restore perms so recursive cleanup can descend into the locked dir.
+          try {
+            chmodSync(unreadable, 0o755)
+          } catch {}
+          safeDeleteSync(realTmp)
+        }
+      },
+    )
   })
 
   describe('stripTrailingSlashFromIgnorePattern', () => {
