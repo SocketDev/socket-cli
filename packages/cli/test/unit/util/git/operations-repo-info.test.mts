@@ -12,6 +12,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetEnv } from '@socketsecurity/lib-stable/env/rewire'
 
 import {
+  listGitArgvTails,
+  toGitArgvTail,
+} from '../../../../test/helpers/git-spawn-assertions.mts'
+import {
   detectDefaultBranch,
   getRepoInfo,
   getRepoName,
@@ -31,10 +35,18 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/errors'), () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
-// Mock whichReal().
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: vi.fn().mockResolvedValue('git'),
-}))
+// Pin git resolution so argv assertions do not depend on the host PATH.
+vi.mock(
+  import('../../../../src/util/trusted-executable.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    defaultProtectedRoot: vi.fn().mockResolvedValue('/repo'),
+    resolveTrustedExecutable: vi.fn().mockResolvedValue({
+      environment: { PATH: '/usr/bin' },
+      executable: '/usr/bin/git',
+    }),
+  }),
+)
 
 vi.mock(import('../../../../src/constants/cli.mts'), () => ({
   FLAG_QUIET: '--quiet',
@@ -215,10 +227,8 @@ describe('git utilities', () => {
 
       const result = await gitDeleteRemoteBranch('old-feature')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['push', 'origin', '--delete', 'old-feature'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['push', '--delete'], ['origin', 'old-feature']),
       )
     })
 
@@ -242,10 +252,8 @@ describe('git utilities', () => {
 
       const result = await gitLocalBranchExists('main')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['show-ref', '--quiet', 'refs/heads/main'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['show-ref', '--quiet'], ['refs/heads/main']),
       )
     })
 
@@ -273,10 +281,8 @@ describe('git utilities', () => {
 
       const result = await gitRemoteBranchExists('main')
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['ls-remote', '--heads', 'origin', 'main'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['ls-remote', '--heads'], ['origin', 'main']),
       )
     })
 
@@ -313,15 +319,11 @@ describe('git utilities', () => {
       spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
 
       await gitResetAndClean('main', '/test/dir')
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['reset', '--hard', 'main'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['reset', '--hard'], ['main']),
       )
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['clean', '-fdx'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['clean', '-fdx']),
       )
     })
   })
@@ -359,32 +361,22 @@ describe('git utilities', () => {
     })
   })
 
-  describe('getGitPath', () => {
-    it('throws a helpful error when whichReal returns null (line 58)', async () => {
-      // Reset modules so the module-level _gitPath cache is fresh and
-      // whichReal can be mocked to return null without other tests
-      // having already filled the cache.
+  describe('resolveGitExecutable', () => {
+    it('throws when nothing runnable resolves outside the checkout', async () => {
       vi.resetModules()
-      vi.doMock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-        whichReal: vi.fn().mockResolvedValue(undefined),
+      vi.doMock(import('../../../../src/util/trusted-executable.mts'), () => ({
+        defaultProtectedRoot: vi.fn().mockResolvedValue('/repo'),
+        findEnvPathValue: vi.fn().mockReturnValue('/usr/bin'),
+        resolveTrustedExecutable: vi.fn().mockResolvedValue(undefined),
       }))
-      const { getGitPath: freshGetGitPath } =
+      const { resolveGitExecutable } =
         await import('../../../../src/util/git/operations.mts')
-      await expect(freshGetGitPath()).rejects.toThrow(/whichReal returned null/)
-      vi.doUnmock(import('@socketsecurity/lib-stable/bin/which'))
-      vi.resetModules()
-    })
-
-    it('throws when whichReal returns multiple matches', async () => {
-      vi.resetModules()
-      vi.doMock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-        whichReal: vi.fn().mockResolvedValue(['/usr/bin/git', '/opt/bin/git']),
-      }))
-      const { getGitPath: freshGetGitPath } =
-        await import('../../../../src/util/git/operations.mts')
-      await expect(freshGetGitPath()).rejects.toThrow(/multiple matches/)
-      vi.doUnmock(import('@socketsecurity/lib-stable/bin/which'))
+      await expect(resolveGitExecutable({ cwd: '/repo' })).rejects.toThrow(
+        /Cannot resolve a trusted git executable/,
+      )
+      vi.doUnmock(import('../../../../src/util/trusted-executable.mts'))
       vi.resetModules()
     })
   })
+
 })

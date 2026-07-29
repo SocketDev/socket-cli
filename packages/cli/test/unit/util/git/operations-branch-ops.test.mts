@@ -79,6 +79,49 @@ describe('git utilities', () => {
       )
     })
 
+    it('spawns the resolved git path, never the bare name', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
+
+      await gitCheckoutBranch('main')
+      expect(spawn.mock.calls[0]?.[0]).toBe('/usr/bin/git')
+    })
+
+    it('fences a branch name spelled like an option', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
+
+      await gitCheckoutBranch('--upload-pack=touch /tmp/pwned')
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['checkout'], ['--upload-pack=touch /tmp/pwned']),
+      )
+    })
+
+    it('strips GIT_* from the child environment', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockResolvedValue({ status: 0, stdout: '', stderr: '' } as unknown)
+      process.env['GIT_SSH_COMMAND'] = 'sh -c evil'
+      try {
+        await gitCheckoutBranch('main')
+      } finally {
+        delete process.env['GIT_SSH_COMMAND']
+      }
+
+      const childEnv = (
+        spawn.mock.calls[0]?.[2] as {
+          env: Record<string, string | undefined>
+        }
+      ).env
+      expect(childEnv).not.toHaveProperty('GIT_SSH_COMMAND')
+      expect(childEnv['GIT_TERMINAL_PROMPT']).toBe('0')
+    })
+
     it('returns false when checkout spawn rejects (lines 261-264)', async () => {
       const { spawn } = vi.mocked(
         await import('@socketsecurity/lib-stable/process/spawn/child'),

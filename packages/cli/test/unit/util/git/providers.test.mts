@@ -87,14 +87,14 @@ describe('provider-factory', () => {
     it('returns GitLabProvider when GITLAB_HOST is set', async () => {
       const providerFactory =
         await import('../../../../src/util/git/provider-factory.mts')
-      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue(
+      vi.spyOn(providerFactory, 'getGitRemoteUrl').mockResolvedValue(
         'https://github.com/owner/repo.git',
       )
 
       process.env.GITLAB_HOST = 'https://gitlab.example.com'
       process.env.GITLAB_TOKEN = 'test-token'
 
-      const provider = providerFactory.createPrProvider()
+      const provider = await providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('gitlab')
       expect(provider.supportsGraphQL()).toBe(false)
     })
@@ -102,9 +102,9 @@ describe('provider-factory', () => {
     it('falls back to GitHubProvider when git command fails', async () => {
       const providerFactory =
         await import('../../../../src/util/git/provider-factory.mts')
-      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
+      vi.spyOn(providerFactory, 'getGitRemoteUrl').mockResolvedValue('')
 
-      const provider = providerFactory.createPrProvider()
+      const provider = await providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('github')
       expect(provider.supportsGraphQL()).toBe(true)
     })
@@ -112,9 +112,9 @@ describe('provider-factory', () => {
     it('falls back to GitHubProvider for empty remote', async () => {
       const providerFactory =
         await import('../../../../src/util/git/provider-factory.mts')
-      vi.spyOn(providerFactory, 'getGitRemoteUrlSync').mockReturnValue('')
+      vi.spyOn(providerFactory, 'getGitRemoteUrl').mockResolvedValue('')
 
-      const provider = providerFactory.createPrProvider()
+      const provider = await providerFactory.createPrProvider()
       expect(provider.getProviderName()).toBe('github')
       expect(provider.supportsGraphQL()).toBe(true)
     })

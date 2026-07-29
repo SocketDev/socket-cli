@@ -17,6 +17,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resetEnv, setEnv } from '@socketsecurity/lib-stable/env/rewire'
 
 import {
+  listGitArgvTails,
+  toGitArgvTail,
+} from '../../../../test/helpers/git-spawn-assertions.mts'
+import {
   getBaseBranch,
   gitBranch,
   gitCommit,
@@ -31,10 +35,18 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/errors'), () => ({
   isSpawnError: vi.fn(e => e?.isSpawnError),
 }))
 
-// Mock whichReal().
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
-  whichReal: vi.fn().mockResolvedValue('git'),
-}))
+// Pin git resolution so argv assertions do not depend on the host PATH.
+vi.mock(
+  import('../../../../src/util/trusted-executable.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    defaultProtectedRoot: vi.fn().mockResolvedValue('/repo'),
+    resolveTrustedExecutable: vi.fn().mockResolvedValue({
+      environment: { PATH: '/usr/bin' },
+      executable: '/usr/bin/git',
+    }),
+  }),
+)
 
 vi.mock(import('../../../../src/constants/cli.mts'), () => ({
   FLAG_QUIET: '--quiet',
@@ -169,10 +181,8 @@ describe('git utilities', () => {
 
       const result = await gitBranch()
       expect(result).toBe('feature-branch\n')
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['symbolic-ref', '--short', 'HEAD'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['symbolic-ref', '--short'], ['HEAD']),
       )
     })
 
@@ -266,15 +276,11 @@ describe('git utilities', () => {
         },
       )
       expect(result).toBe(true)
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['add', 'file1.txt', 'file2.txt'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['add'], ['file1.txt', 'file2.txt']),
       )
-      expect(spawn).toHaveBeenCalledWith(
-        'git',
-        ['commit', '-m', 'Test commit'],
-        expect.any(Object),
+      expect(listGitArgvTails(spawn.mock.calls)).toContainEqual(
+        toGitArgvTail(['commit', '-m', 'Test commit']),
       )
     })
 
@@ -286,10 +292,8 @@ describe('git utilities', () => {
 
       const result = await gitCommit('Test commit', [], { cwd: '/test/dir' })
       expect(result).toBe(false)
-      expect(spawn).not.toHaveBeenCalledWith(
-        'git',
+      expect(listGitArgvTails(spawn.mock.calls)).not.toContainEqual(
         expect.arrayContaining(['add']),
-        expect.any(Object),
       )
     })
 
@@ -318,7 +322,7 @@ describe('git utilities', () => {
       )
       // Allow add to succeed, fail on commit.
       spawn.mockImplementation((_cmd: unknown, args: unknown) => {
-        if (args?.[0] === 'commit') {
+        if (args?.includes('commit')) {
           return Promise.reject(new Error('commit failed')) as unknown
         }
         return Promise.resolve({ status: 0, stdout: '', stderr: '' }) as unknown
