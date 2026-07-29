@@ -116,6 +116,9 @@ const mockMeowOrExit = vi.hoisted(() =>
     if (argv.includes('--auto-manifest')) {
       flags['autoManifest'] = true
     }
+    if (argv.includes('--trust-socket-json')) {
+      flags['trustSocketJson'] = true
+    }
 
     const help = options.config?.help ? options.config.help('socket ci') : ''
 
@@ -169,13 +172,19 @@ describe('cmd-ci', () => {
       it('should call handler with autoManifest false by default', async () => {
         await cmdCI.run([], importMeta, context)
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: false,
+          trustSocketJson: false,
+        })
       })
 
       it('should call handler with autoManifest true when flag provided', async () => {
         await cmdCI.run(['--auto-manifest'], importMeta, context)
 
-        expect(mockHandleCi).toHaveBeenCalledWith(true)
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: true,
+          trustSocketJson: false,
+        })
       })
 
       it('should call handler exactly once', async () => {
@@ -293,21 +302,40 @@ describe('cmd-ci', () => {
       it('should default to false', async () => {
         await cmdCI.run([], importMeta, context)
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: false,
+          trustSocketJson: false,
+        })
       })
 
       it('should pass true when flag provided', async () => {
         await cmdCI.run(['--auto-manifest'], importMeta, context)
 
-        expect(mockHandleCi).toHaveBeenCalledWith(true)
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: true,
+          trustSocketJson: false,
+        })
+      })
+
+      it('should pass trustSocketJson through when the flag is provided', async () => {
+        await cmdCI.run(
+          ['--auto-manifest', '--trust-socket-json'],
+          importMeta,
+          context,
+        )
+
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: true,
+          trustSocketJson: true,
+        })
       })
 
       it('should handle boolean conversion correctly', async () => {
         await cmdCI.run(['--auto-manifest'], importMeta, context)
 
-        const [autoManifest] = mockHandleCi.mock.calls[0]
-        expect(typeof autoManifest).toBe('boolean')
-        expect(autoManifest).toBe(true)
+        const [config] = mockHandleCi.mock.calls[0]
+        expect(typeof config.autoManifest).toBe('boolean')
+        expect(config.autoManifest).toBe(true)
       })
     })
 
@@ -394,7 +422,10 @@ describe('cmd-ci', () => {
 
         await cmdCI.run(readonlyArgv, importMeta, context)
 
-        expect(mockHandleCi).toHaveBeenCalledWith(false)
+        expect(mockHandleCi).toHaveBeenCalledWith({
+          autoManifest: false,
+          trustSocketJson: false,
+        })
       })
 
       it('should handle all git operations returning null', async () => {

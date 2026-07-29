@@ -19,6 +19,7 @@ const mockHandleManifestConda = vi.hoisted(() => vi.fn().mockResolvedValue({}))
 const mockReadOrDefaultSocketJson = vi.hoisted(() =>
   vi.fn().mockReturnValue({}),
 )
+const mockOutputManifest = vi.hoisted(() => vi.fn())
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
   log: vi.fn(),
@@ -44,6 +45,12 @@ vi.mock(
   import('../../../../src/commands/manifest/handle-manifest-conda.mts'),
   () => ({
     handleManifestConda: mockHandleManifestConda,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/manifest/output-manifest.mts'),
+  () => ({
+    outputManifest: mockOutputManifest,
   }),
 )
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
@@ -72,6 +79,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: true,
     })
 
@@ -86,6 +94,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, sbt: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -107,6 +116,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, sbt: true },
       outputKind: 'json',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -123,13 +133,14 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, sbt: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
     expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
   })
 
-  it('forwards sbt overrides from socket.json (bin/outfile/sbtOpts/verbose)', async () => {
+  it('refuses a socket.json sbt bin and opts without the trust flag', async () => {
     mockReadOrDefaultSocketJson.mockReturnValueOnce({
       defaults: {
         manifest: {
@@ -147,6 +158,40 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, sbt: true },
       outputKind: 'text',
+      trustSocketJson: false,
+      verbose: false,
+    })
+
+    expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+    expect(mockOutputManifest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        message: expect.stringContaining('Refused a sbt binary'),
+      }),
+      'text',
+      '-',
+    )
+  })
+
+  it('forwards sbt overrides from socket.json under the trust flag', async () => {
+    mockReadOrDefaultSocketJson.mockReturnValueOnce({
+      defaults: {
+        manifest: {
+          sbt: {
+            bin: '/custom/sbt',
+            outfile: 'custom-pom.xml',
+            sbtOpts: '--debug --noisy',
+            verbose: true,
+          },
+        },
+      },
+    })
+
+    await generateAutoManifest({
+      cwd: '/proj',
+      detected: { ...baseDetected, sbt: true },
+      outputKind: 'text',
+      trustSocketJson: true,
       verbose: false,
     })
 
@@ -165,6 +210,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, gradle: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -178,7 +224,7 @@ describe('generateAutoManifest', () => {
     )
   })
 
-  it('forwards gradle overrides from socket.json (relative bin resolved)', async () => {
+  it('refuses a socket.json gradle bin outside the wrapper without the trust flag', async () => {
     mockReadOrDefaultSocketJson.mockReturnValueOnce({
       defaults: {
         manifest: {
@@ -195,6 +241,69 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, gradle: true },
       outputKind: 'json',
+      trustSocketJson: false,
+      verbose: false,
+    })
+
+    expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+    expect(mockOutputManifest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        message: expect.stringContaining('Refused a gradle binary'),
+      }),
+      'json',
+      '-',
+    )
+  })
+
+  it('refuses socket.json gradleOpts even when the bin is the wrapper', async () => {
+    mockReadOrDefaultSocketJson.mockReturnValueOnce({
+      defaults: {
+        manifest: {
+          gradle: {
+            gradleOpts: '--init-script /tmp/payload.gradle',
+          },
+        },
+      },
+    })
+
+    await generateAutoManifest({
+      cwd: '/proj',
+      detected: { ...baseDetected, gradle: true },
+      outputKind: 'text',
+      trustSocketJson: false,
+      verbose: false,
+    })
+
+    expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
+    expect(mockOutputManifest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        message: expect.stringContaining('Refused gradle options'),
+      }),
+      'text',
+      '-',
+    )
+  })
+
+  it('forwards gradle overrides from socket.json under the trust flag', async () => {
+    mockReadOrDefaultSocketJson.mockReturnValueOnce({
+      defaults: {
+        manifest: {
+          gradle: {
+            bin: 'tools/gradlew',
+            gradleOpts: '--info --stacktrace',
+            verbose: true,
+          },
+        },
+      },
+    })
+
+    await generateAutoManifest({
+      cwd: '/proj',
+      detected: { ...baseDetected, gradle: true },
+      outputKind: 'json',
+      trustSocketJson: true,
       verbose: false,
     })
 
@@ -216,6 +325,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, gradle: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -227,6 +337,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, conda: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -259,6 +370,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, conda: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -280,6 +392,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected, conda: true },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 
@@ -291,6 +404,7 @@ describe('generateAutoManifest', () => {
       cwd: '/proj',
       detected: { ...baseDetected },
       outputKind: 'text',
+      trustSocketJson: false,
       verbose: false,
     })
 

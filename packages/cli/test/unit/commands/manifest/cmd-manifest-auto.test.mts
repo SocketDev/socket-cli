@@ -139,10 +139,25 @@ describe('cmd-manifest-auto', () => {
         detected,
         cwd: expect.stringContaining('/'),
         outputKind: 'text',
+        trustSocketJson: false,
         verbose: false,
       })
       expect(mockLogger.success).toHaveBeenCalledWith(
         expect.stringContaining('2 targets'),
+      )
+    })
+
+    it('should pass trustSocketJson through when the flag is provided', async () => {
+      mockDetectManifestActions.mockResolvedValueOnce({ count: 1 })
+
+      await cmdManifestAuto.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
+
+      expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
+        expect.objectContaining({ trustSocketJson: true }),
       )
     })
 

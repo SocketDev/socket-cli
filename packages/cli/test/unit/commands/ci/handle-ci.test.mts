@@ -135,7 +135,7 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('feature-branch')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({ pullRequest: 482 }),
@@ -153,7 +153,7 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('feature-branch')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockGetDefaultOrgSlug).toHaveBeenCalled()
     expect(mockGitBranch).toHaveBeenCalledWith('/test/project')
@@ -182,6 +182,7 @@ describe('handleCi', () => {
       reportLevel: 'error',
       targets: ['.'],
       tmp: false,
+      trustSocketJson: false,
     })
   })
 
@@ -194,7 +195,7 @@ describe('handleCi', () => {
     mockDetectDefaultBranch.mockResolvedValue('main')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockGitBranch).toHaveBeenCalled()
     expect(mockDetectDefaultBranch).toHaveBeenCalledWith('/test/project')
@@ -213,7 +214,7 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('develop')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(true)
+    await handleCi({ autoManifest: true, trustSocketJson: false })
 
     expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -230,7 +231,7 @@ describe('handleCi', () => {
     }
     mockGetDefaultOrgSlug.mockResolvedValue(error)
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(process.exitCode).toBe(401)
     expect(mockSerializeResultJson).toHaveBeenCalledWith(error)
@@ -246,7 +247,7 @@ describe('handleCi', () => {
     mockGetDefaultOrgSlug.mockResolvedValue(error)
     mockSerializeResultJson.mockReturnValue('{"error":"Unknown error"}')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(process.exitCode).toBe(1)
     expect(logger.log).toHaveBeenCalled()
@@ -260,10 +261,13 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('debug-branch')
     mockGetRepoName.mockResolvedValue('debug-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockDebug).toHaveBeenCalledWith('Starting CI scan')
-    expect(mockDebugDir).toHaveBeenCalledWith({ autoManifest: false })
+    expect(mockDebugDir).toHaveBeenCalledWith({
+      autoManifest: false,
+      trustSocketJson: false,
+    })
     expect(mockDebug).toHaveBeenCalledWith(
       'CI scan for debug-org/debug-repo on branch debug-branch',
     )
@@ -282,7 +286,7 @@ describe('handleCi', () => {
     }
     mockGetDefaultOrgSlug.mockResolvedValue(error)
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockDebug).toHaveBeenCalledWith('Failed to get default org slug')
     expect(mockDebugDir).toHaveBeenCalledWith({ orgSlugCResult: error })
