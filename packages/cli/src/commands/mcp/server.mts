@@ -6,20 +6,80 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
-import {
-  DEPSCORE_TOOL_DESCRIPTION,
-  DEPSCORE_TOOL_NAME,
-  DepscoreInputSchema,
-  runDepscore,
-} from './depscore.mts'
+import { defineAlertsTool } from './tool-alerts.mts'
+import { defineDepscoreTool } from './tool-depscore.mts'
+import { withToolLogging } from './tool-logging.mts'
+import { defineOrganizationsTool } from './tool-organizations.mts'
+import { definePackageFileContentsTool } from './tool-package-file-contents.mts'
+import { definePackageFileGrepTool } from './tool-package-file-grep.mts'
+import { definePackageFilesTool } from './tool-package-files.mts'
+import { defineThreatFeedTool } from './tool-threat-feed.mts'
+
+import type {
+  ToolContext,
+  ToolHandler,
+  ToolHandlerExtra,
+  ToolSpec,
+} from './tool-types.mts'
 
 export interface ServerConfig {
   getApiToken: () => string | undefined
   serverName: string
+  // True when the configured token belongs to a deploy operator rather than the
+  // caller — HTTP mode with OAuth, where each request carries its own bearer.
+  // Org-scoped tools refuse to fall back to a shared token.
+  sharedApiToken?: boolean | undefined
   version: string
 }
 
-const depscoreInputCheck = TypeCompiler.Compile(DepscoreInputSchema)
+/**
+ * The canonical tool set, in the order clients see it in `tools/list`.
+ *
+ * All seven ship by default. Every tool is a read against the Socket API using
+ * the caller's own credentials, and each one is reachable through a CLI command
+ * the same token already authorizes, so none of them widens what the operator
+ * can see. Gating the org-scoped three behind a flag would only hide them: an
+ * MCP client discovers tools from `tools/list`, so a tool a user must first
+ * know about in order to enable is a tool nobody finds.
+ */
+export function buildSocketToolSpecs(): ToolSpec[] {
+  return [
+    defineDepscoreTool(),
+    defineOrganizationsTool(),
+    defineAlertsTool(),
+    defineThreatFeedTool(),
+    definePackageFilesTool(),
+    definePackageFileContentsTool(),
+    definePackageFileGrepTool(),
+  ]
+}
+
+export interface ToolEntry {
+  check: ReturnType<typeof TypeCompiler.Compile>
+  handler: ToolHandler
+}
+
+const toolSpecs = buildSocketToolSpecs()
+
+// Compiled once at module load rather than per server instance: HTTP mode
+// builds a fresh Server per session, and the schemas never vary.
+const toolEntries = new Map<string, ToolEntry>(
+  toolSpecs.map(spec => [
+    spec.name,
+    {
+      check: TypeCompiler.Compile(spec.inputSchema),
+      handler: withToolLogging(spec.name, spec.handler),
+    },
+  ]),
+)
+
+const toolListing = toolSpecs.map(spec => ({
+  ...(spec.annotations ? { annotations: spec.annotations } : {}),
+  description: spec.description,
+  inputSchema: schemaToJsonSchema(spec.inputSchema),
+  name: spec.name,
+  title: spec.title,
+}))
 
 export function createConfiguredServer(config: ServerConfig): Server {
   const server = new Server(
@@ -34,38 +94,38 @@ export function createConfiguredServer(config: ServerConfig): Server {
     },
   )
 
+  const context: ToolContext = {
+    getApiToken: config.getApiToken,
+    sharedApiToken: config.sharedApiToken ?? false,
+  }
+
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: [
-      {
-        annotations: {
-          readOnlyHint: true,
-        },
-        description: DEPSCORE_TOOL_DESCRIPTION,
-        inputSchema: schemaToJsonSchema(DepscoreInputSchema),
-        name: DEPSCORE_TOOL_NAME,
-        title: 'Dependency Score Tool',
-      },
-    ],
+    tools: toolListing,
   }))
 
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { arguments: args, name } = request.params
 
-    if (name !== DEPSCORE_TOOL_NAME) {
+    const entry = toolEntries.get(name)
+    if (!entry) {
       return {
         content: [{ text: `Unknown tool: ${name}`, type: 'text' as const }],
         isError: true,
       }
     }
 
-    if (!depscoreInputCheck.Check(args)) {
-      const errors = [...depscoreInputCheck.Errors(args)]
+    const toolArgs: Record<string, unknown> = { ...args }
+    // Typed as boolean so the compiler's type predicate does not narrow
+    // `toolArgs` away from the record shape the handlers read.
+    const isValid: boolean = entry.check.Check(toolArgs)
+    if (!isValid) {
+      const errors = [...entry.check.Errors(toolArgs)]
         .map(e => `${e.path}: ${e.message}`)
         .join('; ')
       return {
         content: [
           {
-            text: `Invalid arguments for ${DEPSCORE_TOOL_NAME}: ${errors}`,
+            text: `Invalid arguments for ${name}: ${errors}`,
             type: 'text' as const,
           },
         ],
@@ -73,23 +133,11 @@ export function createConfiguredServer(config: ServerConfig): Server {
       }
     }
 
-    const authToken = extra.authInfo?.token || config.getApiToken()
-
-    if (!authToken) {
-      return {
-        content: [
-          {
-            text: 'Authentication is required. Configure SOCKET_API_TOKEN for stdio mode or connect through OAuth-enabled HTTP mode.',
-            type: 'text' as const,
-          },
-        ],
-        isError: true,
-      }
-    }
-
-    const result = await runDepscore(args, {
-      apiToken: authToken,
-    })
+    const result = await entry.handler(
+      toolArgs,
+      toToolHandlerExtra(extra),
+      context,
+    )
     return {
       content: result.content.map(c => ({
         text: c.text,
@@ -107,4 +155,16 @@ export function createConfiguredServer(config: ServerConfig): Server {
 // object the SDK serializes without zod-specific machinery.
 export function schemaToJsonSchema(schema: object): Record<string, unknown> {
   return JSON.parse(JSON.stringify(schema))
+}
+
+/**
+ * Adapt the SDK's per-request handler context to the SDK-free
+ * `ToolHandlerExtra` the tool modules read. This is the only place a tool's
+ * auth input is shaped by the SDK, so an SDK major that moves `authInfo`
+ * changes this function and nothing else.
+ */
+export function toToolHandlerExtra(extra: {
+  authInfo?: { token?: string | undefined } | undefined
+}): ToolHandlerExtra {
+  return extra.authInfo ? { authInfo: { token: extra.authInfo.token } } : {}
 }

@@ -3,9 +3,9 @@ import { Type } from '@sinclair/typebox'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { setupSdk } from '../../util/socket/sdk.mts'
 import { deduplicateArtifacts } from './lib/artifacts.mts'
 import { buildPurl } from './lib/purl.mts'
+import { resolveSocketSdkForToken } from './lib/socket-api.mts'
 
 import type { ArtifactData } from './lib/artifacts.mts'
 import type { SocketSdk } from '@socketsecurity/sdk-stable'
@@ -83,25 +83,6 @@ export function formatScore(jsonData: ArtifactData): string {
   return `${purl}: No score found`
 }
 
-// Memoize SDK clients per token. Stdio mode shares one client across all
-// tool calls; HTTP+OAuth mode constructs one per distinct token.
-const sdkCache = new Map<string, SocketSdk>()
-
-export async function getSdk(apiToken: string): Promise<SocketSdk> {
-  const cached = sdkCache.get(apiToken)
-  if (cached) {
-    return cached
-  }
-  const result = await setupSdk({ apiToken })
-  if (!result.ok) {
-    throw new Error(
-      result.cause || result.message || 'Failed to set up Socket SDK',
-    )
-  }
-  sdkCache.set(apiToken, result.data)
-  return result.data
-}
-
 export async function runDepscore(
   input: DepscoreInput,
   config: DepscoreOptions,
@@ -126,7 +107,7 @@ export async function runDepscore(
 
   let sdk: SocketSdk
   try {
-    sdk = await getSdk(cfg.apiToken)
+    sdk = await resolveSocketSdkForToken(cfg.apiToken)
   } catch (e) {
     const message = errorMessage(e)
     logger.error(`SDK setup failed: ${message}`)

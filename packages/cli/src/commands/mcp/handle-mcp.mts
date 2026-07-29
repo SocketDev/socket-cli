@@ -55,6 +55,12 @@ export async function handleMcp(config: HandleMcpOptions): Promise<void> {
     }
     await runHttpTransport({
       ...baseConfig,
+      // With OAuth on, each request carries its own bearer and the server binds
+      // every interface, so the configured token is the operator's rather than
+      // the caller's. Marking it shared makes the org-scoped tools refuse to
+      // fall back to it — one caller must never read another tenant's data
+      // through the operator's credentials.
+      sharedApiToken: oauthEnabled,
       // A local development stack runs its OAuth issuer on localhost, which
       // the SSRF guard refuses by default. SOCKET_CLI_DEBUG opens that gate.
       oauthAllowLocalIssuer: Boolean(SOCKET_CLI_DEBUG),
