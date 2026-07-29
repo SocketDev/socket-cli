@@ -6,6 +6,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { deduplicateArtifacts } from './lib/artifacts.mts'
 import { buildPurl } from './lib/purl.mts'
 import { resolveSocketSdkForToken } from './lib/socket-api.mts'
+import { buildSocketReportUrl } from './lib/socket-report-url.mts'
 
 import type { ArtifactData } from './lib/artifacts.mts'
 import type { SocketSdk } from '@socketsecurity/sdk-stable'
@@ -78,7 +79,7 @@ export function formatScore(jsonData: ArtifactData): string {
         return `${key}: ${displayValue}`
       })
       .join(', ')
-    return `${purl}: ${scoreEntries}`
+    return `${purl}: ${scoreEntries}\n  Report: ${buildSocketReportUrl(jsonData)}`
   }
   return `${purl}: No score found`
 }
