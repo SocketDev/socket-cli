@@ -125,6 +125,13 @@ export const generalFlags: MeowFlags = {
     default: '',
     description: 'Path to store upgrades as a JSON file at this path.',
   },
+  packageManagers: {
+    type: 'string',
+    default: [],
+    description:
+      'Limit fix analysis to specific package managers within an ecosystem (e.g. NPM, PNPM, YARN, MAVEN, POETRY). Accepts space- or comma-separated values and is case-insensitive. When combined with --ecosystems, an artifact must satisfy both filters.',
+    isMultiple: true,
+  },
   prLimit: {
     aliases: ['limit'],
     type: 'number',

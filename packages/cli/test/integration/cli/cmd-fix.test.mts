@@ -233,6 +233,7 @@ describe('socket fix', async () => {
                 --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
                 --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
                 --output-file       Path to store upgrades as a JSON file at this path.
+                --package-managers  Limit fix analysis to specific package managers within an ecosystem (e.g. NPM, PNPM, YARN, MAVEN, POETRY). Accepts space- or comma-separated values and is case-insensitive. When combined with --ecosystems, an artifact must satisfy both filters.
                 --pr-limit          Maximum number of pull requests to create in CI mode (default 10). Has no effect in local mode.
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').

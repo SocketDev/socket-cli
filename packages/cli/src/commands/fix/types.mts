@@ -22,6 +22,7 @@ export type FixConfig = {
   orgSlug: string
   outputFile: string
   outputKind: OutputKind
+  packageManagers: string[]
   prCheck: boolean
   prLimit: number
   rangeStyle: RangeStyle

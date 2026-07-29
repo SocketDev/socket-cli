@@ -38,6 +38,7 @@ export async function runLocalCoanaFix(
     ghsas,
     include,
     minimumReleaseAge,
+    packageManagers,
     outputFile,
     prLimit,
     showAffectedDirectDependencies,
@@ -107,6 +108,9 @@ export async function runLocalCoanaFix(
         ...(include.length ? ['--include', ...include] : []),
         ...(coanaExcludePatterns.length
           ? ['--exclude', ...coanaExcludePatterns]
+          : []),
+        ...(packageManagers.length
+          ? ['--package-managers', ...packageManagers]
           : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(!applyFixes ? [FLAG_DRY_RUN] : []),

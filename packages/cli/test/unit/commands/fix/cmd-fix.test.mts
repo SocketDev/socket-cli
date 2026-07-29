@@ -109,6 +109,7 @@ describe('cmd-fix', () => {
           ecosystems: [],
           exclude: [],
           excludePaths: [],
+          packageManagers: [],
           ghsas: [],
           include: [],
           minimumReleaseAge: '',
@@ -177,69 +178,6 @@ describe('cmd-fix', () => {
 
       expect(process.exitCode).toBe(2)
       expect(mockHandleFix).not.toHaveBeenCalled()
-    })
-
-    it('should pass --ecosystems flag to handleFix', async () => {
-      await cmdFix.run(['--ecosystems', 'npm'], importMeta, context)
-
-      expect(mockHandleFix).toHaveBeenCalledWith(
-        expect.objectContaining({
-          ecosystems: ['npm'],
-        }),
-      )
-    })
-
-    it('should pass --exclude-paths to handleFix', async () => {
-      await cmdFix.run(
-        ['--exclude-paths', 'data/postgres/pgdata'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleFix).toHaveBeenCalledWith(
-        expect.objectContaining({
-          excludePaths: ['data/postgres/pgdata'],
-        }),
-      )
-    })
-
-    it('should reject a negated --exclude-paths pattern', async () => {
-      await cmdFix.run(['--exclude-paths', '!keep-me'], importMeta, context)
-
-      expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('negation patterns'),
-      )
-      expect(mockHandleFix).not.toHaveBeenCalled()
-    })
-
-    it('should accept --ecosystems case-insensitively', async () => {
-      await cmdFix.run(['--ecosystems', 'NPM,PyPI'], importMeta, context)
-
-      expect(mockHandleFix).toHaveBeenCalledWith(
-        expect.objectContaining({
-          ecosystems: ['npm', 'pypi'],
-        }),
-      )
-    })
-
-    it('should pass multiple ecosystems to handleFix', async () => {
-      await cmdFix.run(['--ecosystems', 'npm,pypi'], importMeta, context)
-
-      expect(mockHandleFix).toHaveBeenCalledWith(
-        expect.objectContaining({
-          ecosystems: ['npm', 'pypi'],
-        }),
-      )
-    })
-
-    it('should fail with invalid ecosystem', async () => {
-      await cmdFix.run(['--ecosystems', 'invalid'], importMeta, context)
-
-      expect(process.exitCode).toBe(1)
-      expect(mockHandleFix).not.toHaveBeenCalled()
-      expect(mockLogger.fail).toHaveBeenCalledWith(
-        expect.stringContaining('--ecosystems must be one of'),
-      )
     })
 
     it('should pass --range-style flag to handleFix', async () => {

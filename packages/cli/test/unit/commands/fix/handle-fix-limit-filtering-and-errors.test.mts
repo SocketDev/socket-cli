@@ -125,6 +125,7 @@ describe('socket fix --limit behavior verification', () => {
     ecosystems: [],
     exclude: [],
     excludePaths: [],
+    packageManagers: [],
     ghsas: [],
     include: [],
     minSatisfying: false,

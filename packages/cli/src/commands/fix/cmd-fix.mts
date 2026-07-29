@@ -16,6 +16,10 @@ import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import {
+  COANA_PACKAGE_MANAGERS,
+  isCoanaPackageManager,
+} from '../../util/ecosystem/coana-package-managers.mts'
 import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
@@ -46,6 +50,7 @@ export interface FixFlags {
   ecosystems: string[]
   exclude: string[]
   excludePaths: string[]
+  packageManagers: string[]
   fixVersion: string | undefined
   include: string[]
   json: boolean
@@ -147,6 +152,7 @@ export async function run(
     exclude,
     excludePaths,
     fixVersion,
+    packageManagers,
     include,
     json,
     majorUpdates,
@@ -192,6 +198,24 @@ export async function run(
       return
     }
     validatedEcosystems.push(ecosystem as PURL_Type)
+  }
+
+  // Coana uppercases --package-managers input and rejects unknown values, so
+  // normalize and validate here for the same UX and an early failure.
+  const packageManagersRaw = cmdFlagValueToArray(packageManagers).map(value =>
+    value.toUpperCase(),
+  )
+  const validatedPackageManagers: string[] = []
+  for (let i = 0, { length } = packageManagersRaw; i < length; i += 1) {
+    const packageManager = packageManagersRaw[i]!
+    if (!isCoanaPackageManager(packageManager)) {
+      logger.fail(
+        `--package-managers must be one of: ${joinAnd([...COANA_PACKAGE_MANAGERS])} (saw: "${packageManager}"); pass a supported package manager like --package-managers=${COANA_PACKAGE_MANAGERS[0]}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    validatedPackageManagers.push(packageManager)
   }
 
   const ghsas = arrayUnique([
@@ -373,6 +397,7 @@ export async function run(
     orgSlug,
     outputFile,
     outputKind,
+    packageManagers: validatedPackageManagers,
     prCheck,
     prLimit,
     rangeStyle,

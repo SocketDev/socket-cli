@@ -175,6 +175,7 @@ const baseConfig: FixConfig = {
   ecosystems: [],
   exclude: [],
   excludePaths: [],
+  packageManagers: [],
   ghsas: [],
   include: [],
   minSatisfying: false,

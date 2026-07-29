@@ -76,6 +76,7 @@ export async function runGhsaFixLoop(
     excludePaths,
     include,
     minimumReleaseAge,
+    packageManagers,
     showAffectedDirectDependencies,
     spinner,
   } = fixConfig
@@ -130,6 +131,9 @@ export async function runGhsaFixLoop(
         ...(include.length ? ['--include', ...include] : []),
         ...(coanaExcludePatterns.length
           ? ['--exclude', ...coanaExcludePatterns]
+          : []),
+        ...(packageManagers.length
+          ? ['--package-managers', ...packageManagers]
           : []),
         ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ...(debugFlag ? ['--debug'] : []),
