@@ -54,7 +54,7 @@ export const generalFlags: MeowFlags = {
     type: 'string',
     default: [],
     description:
-      'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
+      'Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.',
     isMultiple: true,
   },
   exclude: {

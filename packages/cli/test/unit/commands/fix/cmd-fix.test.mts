@@ -188,6 +188,16 @@ describe('cmd-fix', () => {
       )
     })
 
+    it('should accept --ecosystems case-insensitively', async () => {
+      await cmdFix.run(['--ecosystems', 'NPM,PyPI'], importMeta, context)
+
+      expect(mockHandleFix).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ecosystems: ['npm', 'pypi'],
+        }),
+      )
+    })
+
     it('should pass multiple ecosystems to handleFix', async () => {
       await cmdFix.run(['--ecosystems', 'npm,pypi'], importMeta, context)
 

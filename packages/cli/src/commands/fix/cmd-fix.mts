@@ -170,8 +170,11 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  // Process comma-separated values for ecosystems flag.
-  const ecosystemsRaw = cmdFlagValueToArray(ecosystems)
+  // Process comma-separated values for ecosystems flag. The choice list is
+  // lowercase, so normalize the input for a case-insensitive match.
+  const ecosystemsRaw = cmdFlagValueToArray(ecosystems).map(value =>
+    value.toLowerCase(),
+  )
 
   // Validate ecosystem values early, before dry-run check.
   const validatedEcosystems: PURL_Type[] = []
