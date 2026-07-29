@@ -7,6 +7,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { onnxSemanticMatch } from './onnx-match.mts'
 import { outputAskCommand } from './output-ask.mts'
 import { normalizeQuery, wordOverlapMatch } from './word-overlap-match.mts'
+import { isSeaBinary } from '../../util/sea/detect.mts'
 
 // Re-export the matchers + helpers so existing import paths keep working.
 export {
@@ -152,6 +153,24 @@ const ENVIRONMENT_KEYWORDS = {
 } as const
 
 /**
+ * Arguments that re-enter this CLI through `process.execPath`.
+ *
+ * A SEA binary is itself the CLI, so the command is passed straight through.
+ * Otherwise the entry script running under Node is prepended. Returns
+ * undefined when the entry script is unknown, which happens only outside a
+ * normal CLI launch (`node -e`).
+ */
+export function getCliReentryArgv(
+  command: string[] | readonly string[],
+): string[] | undefined {
+  if (isSeaBinary()) {
+    return [...command]
+  }
+  const entryPath = process.argv[1]
+  return entryPath ? [entryPath, ...command] : undefined
+}
+
+/**
  * Read package.json to get context.
  */
 export async function getProjectContext(cwd: string): Promise<{
@@ -208,7 +227,15 @@ export async function handleAsk(config: HandleAskOptions): Promise<void> {
   logger.log('🚀 Executing…')
   logger.log('')
 
-  const result = await spawn('socket', intent.command, {
+  const reentryArgv = getCliReentryArgv(intent.command)
+  if (!reentryArgv) {
+    logger.error(
+      `Unable to re-run the Socket CLI: the entry script is unknown (process.argv[1] is empty). Run it yourself: socket ${intent.command.join(' ')}`,
+    )
+    process.exit(1)
+  }
+
+  const result = await spawn(process.execPath, reentryArgv, {
     stdio: 'inherit',
     cwd: process.cwd(),
   })

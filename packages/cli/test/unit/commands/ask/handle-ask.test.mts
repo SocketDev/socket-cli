@@ -14,6 +14,7 @@ import {
   cosineSimilarity,
   ensureCommandEmbeddings,
   extractWords,
+  getCliReentryArgv,
   getEmbedding,
   getEmbeddingPipeline,
   handleAsk,
@@ -66,6 +67,11 @@ vi.mock(import('@socketsecurity/lib-stable/env/home'), () => ({
   getHome: mockGetHome,
 }))
 
+const mockIsSeaBinary = vi.hoisted(() => vi.fn(() => false))
+vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
+  isSeaBinary: mockIsSeaBinary,
+}))
+
 describe('handleAsk', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -99,12 +105,36 @@ describe('handleAsk', () => {
     expect(mockOutputAskCommand).toHaveBeenCalled()
     expect(mockLogger.log).toHaveBeenCalledWith('🚀 Executing…')
     expect(mockSpawn).toHaveBeenCalledWith(
-      'socket',
-      expect.arrayContaining(['scan']),
+      process.execPath,
+      expect.arrayContaining([process.argv[1], 'scan']),
       expect.objectContaining({
         stdio: 'inherit',
       }),
     )
+  })
+
+  it('re-enters through the CLI entry script when not a SEA binary', () => {
+    expect(getCliReentryArgv(['scan', 'create'])).toEqual([
+      process.argv[1],
+      'scan',
+      'create',
+    ])
+  })
+
+  it('re-enters the SEA binary directly with no entry script', () => {
+    mockIsSeaBinary.mockReturnValueOnce(true)
+
+    expect(getCliReentryArgv(['scan', 'create'])).toEqual(['scan', 'create'])
+  })
+
+  it('reports an unknown entry script instead of guessing one', () => {
+    const originalArgv1 = process.argv[1]
+    process.argv[1] = ''
+    try {
+      expect(getCliReentryArgv(['scan'])).toBeUndefined()
+    } finally {
+      process.argv[1] = originalArgv1 as string
+    }
   })
 
   it('should handle spawn returning null', async () => {
