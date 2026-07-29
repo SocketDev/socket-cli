@@ -287,6 +287,12 @@ export function setupTelemetryExitHandlers(): void {
         /* c8 ignore start - signal handler body fires only on real signal delivery; tests don't dispatch signals */
         debug(`Signal ${signal} received, attempting sync flush`)
         finalizeTelemetrySync()
+        // Registering a handler replaces Node's default terminate-on-signal, so
+        // without this the CLI flushes telemetry and then keeps running — Ctrl+C
+        // does nothing. Exit with the conventional 128 + signum instead of
+        // re-raising: re-raising races the rest of the shutdown and can leave
+        // the wrong exit code behind.
+        process.exit(128 + (os.constants.signals[signal] ?? 0))
         /* c8 ignore stop */
       })
       /* c8 ignore start - process.on rarely throws for SIGINT/SIGTERM/SIGHUP; cross-platform defensive */
