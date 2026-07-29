@@ -11,14 +11,14 @@
  *
  * Key Functions:
  *
- * - resolveTrustedExecutable: Resolve a command name (or literal path) to a
- *   canonical executable outside the protected root, paired with an
- *   environment whose PATH has every poisoned entry removed.
- * - defaultProtectedRoot: The outermost `.git`-marked ancestor of a directory,
- *   so a nested worktree cannot escape protection by way of its parent.
- * - listExecutableProbes: The per-platform suffix table probed for a bare
- *   command name.
- * - isPathWithinRoot: Containment test used for every trust decision.
+ * - ResolveTrustedExecutable: Resolve a command name (or literal path) to a
+ *   canonical executable outside the protected root, paired with an environment
+ *   whose PATH has every poisoned entry removed.
+ * - DefaultProtectedRoot: The outermost `.git`-marked ancestor of a directory, so
+ *   a nested worktree cannot escape protection by way of its parent.
+ * - ListExecutableProbes: The per-platform suffix table probed for a bare command
+ *   name.
+ * - IsPathWithinRoot: Containment test used for every trust decision.
  *
  * Usage: Resolve once per spawn site, then spawn the returned absolute
  * `executable` with the returned `environment` — never the bare name, which
@@ -52,7 +52,7 @@ export type TrustedExecutableOptions = {
 // A Windows candidate that already carries an executable suffix must not have
 // a second one appended (`python.exe` -> `python.exe.exe`).
 // require-regex-comment: trailing Windows executable suffix, case-insensitive.
-const WINDOWS_EXECUTABLE_SUFFIX_RE = /\.(?:exe|com)$/iu
+const WINDOWS_EXECUTABLE_SUFFIX_RE = /\.(?:com|exe)$/iu
 
 /**
  * Resolve a path to its canonical form, or undefined when it does not resolve.
@@ -126,6 +126,29 @@ export function isPathWithinRoot(root: string, target: string): boolean {
       !relativePath.startsWith(`..${path.sep}`) &&
       !path.isAbsolute(relativePath))
   )
+}
+
+/**
+ * Whether a canonical path is a regular file the current user may execute.
+ *
+ * POSIX asks for the exec bit (X_OK); Windows has no exec bit, so presence
+ * (F_OK) is the strongest signal available there.
+ */
+export async function isRunnableFile(
+  target: string,
+  options?: TrustedExecutableOptions | undefined,
+): Promise<boolean> {
+  const opts = { __proto__: null, ...options } as TrustedExecutableOptions
+  const { windows = WIN32 } = opts
+  try {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- probes the exec bit (X_OK); existsSync cannot express a permission check.
+    await fs.access(target, windows ? fsConstants.F_OK : fsConstants.X_OK)
+    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() metadata to reject directories and devices, not existence.
+    const stats = await fs.stat(target)
+    return stats.isFile()
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -214,11 +237,7 @@ export async function resolveTrustedExecutable(
   } else {
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const entry = entries[i]!
-      for (
-        let j = 0, { length: probeCount } = probes;
-        j < probeCount;
-        j += 1
-      ) {
+      for (let j = 0, { length: probeCount } = probes; j < probeCount; j += 1) {
         const probe = probes[j]!
         lookups.push({
           entry,
@@ -229,8 +248,12 @@ export async function resolveTrustedExecutable(
     }
   }
 
+  // First pass decides which PATH entries are poisoned. Selection cannot
+  // happen in the same pass: a `.cmd` probe LATER in the same directory can
+  // condemn the entry that an earlier `.exe` probe already matched, and a
+  // binary served from a condemned directory must not win.
   const unsafeEntries = new Set<string>()
-  let executable: string | undefined
+  const hits: Array<{ canonical: string; entry: string | undefined }> = []
   for (let i = 0, { length } = lookups; i < length; i += 1) {
     const lookup = lookups[i]!
     const canonical = await canonicalizePath(lookup.target)
@@ -246,20 +269,21 @@ export async function resolveTrustedExecutable(
       }
       continue
     }
-    // Keep scanning after a winner is found: a later probe may still poison a
-    // PATH entry that has to leave the sanitized environment.
-    if (!lookup.runnable || executable !== undefined) {
+    if (lookup.runnable) {
+      hits.push({ canonical, entry: lookup.entry })
+    }
+  }
+
+  let executable: string | undefined
+  for (let i = 0, { length } = hits; i < length; i += 1) {
+    const hit = hits[i]!
+    if (hit.entry !== undefined && unsafeEntries.has(hit.entry)) {
       continue
     }
-    try {
-      // oxlint-disable-next-line socket/prefer-exists-sync -- probes the exec bit (X_OK); existsSync cannot express a permission check.
-      await fs.access(canonical, windows ? fsConstants.F_OK : fsConstants.X_OK)
-      // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() metadata to reject directories and devices, not existence.
-      const stats = await fs.stat(canonical)
-      if (stats.isFile()) {
-        executable = canonical
-      }
-    } catch {}
+    if (await isRunnableFile(hit.canonical, { windows })) {
+      executable = hit.canonical
+      break
+    }
   }
   if (executable === undefined) {
     return undefined
