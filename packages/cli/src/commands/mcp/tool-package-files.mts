@@ -18,16 +18,20 @@ import type { ToolSpec } from './tool-types.mts'
 export const PACKAGE_FILES_TOOL_NAME = 'package_files'
 
 export const PACKAGE_FILES_TOOL_DESCRIPTION =
-  "List the files published in a package using the `package_files` tool from Socket. Returns a tree of paths and sizes for any package on a supported ecosystem (npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx). Useful for inspecting what a dependency ships before installing it. After calling this, use `package_file_contents` with one of the paths to read the file's contents."
+  "List the files published in a package using the `package_files` tool from Socket. Returns a tree of file paths, each with its size and blob hash, for any package on a supported ecosystem (npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx). Useful for inspecting what a dependency ships before installing it. After calling this, pass a file's `hash` to `package_file_contents` to read that file, or to `package_file_grep` to search it for a pattern."
 
 // Declared in socket-mcp's order so the emitted `required` array matches the
-// published server's `tools/list` payload element for element.
+// published server's `tools/list` payload element for element. An argument the
+// handler defaults is advertised optional: a client that compiles this schema
+// into a request validator would otherwise reject calls the server serves.
 export const PackageFilesInputSchema = Type.Object({
-  ecosystem: Type.String({
-    default: 'npm',
-    description:
-      'Package ecosystem (e.g., npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx)',
-  }),
+  ecosystem: Type.Optional(
+    Type.String({
+      default: 'npm',
+      description:
+        'Package ecosystem (e.g., npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx)',
+    }),
+  ),
   depname: Type.String({
     description:
       'Package name (e.g., "lodash", "@babel/core", "org.springframework:spring-core", "meta/pyrefly" for openvsx)',
