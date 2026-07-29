@@ -13,6 +13,7 @@ export async function askForBin(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
       '(--bin) What should be the command to execute? Usually your build binary.' +
+      ' Anything other than the conventional default needs --trust-socket-json at run time.' +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
