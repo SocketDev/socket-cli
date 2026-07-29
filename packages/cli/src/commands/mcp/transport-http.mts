@@ -275,10 +275,19 @@ export async function runHttpTransport(
         if (bytes > MAX_MCP_REQUEST_BODY_BYTES) {
           aborted = true
           body = ''
+          // The buffer is already released and every later chunk is dropped, so
+          // memory is bounded from here on. The socket still has to survive
+          // long enough to deliver the 413: destroying it while the client is
+          // mid-upload races the response and the client sees a connection
+          // reset instead of the refusal. Announce the close, answer, then tear
+          // the socket down once the response has flushed.
+          res.setHeader('Connection', 'close')
           writeJson(res, 413, {
             error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
           })
-          req.destroy()
+          res.once('finish', () => {
+            req.destroy()
+          })
           return
         }
         body += chunk.toString()
