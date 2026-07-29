@@ -5,8 +5,8 @@
  * Tests runHttpTransport(config) by booting a real HTTP server on an ephemeral
  * port and hitting it with @socketsecurity/lib/http-request. This exercises the
  * full request pipeline (origin/host validation, CORS, OAuth introspection,
- * well-known endpoints, session map, StreamableHTTPServerTransport hand-off)
- * without poking at private internals.
+ * well-known endpoints, body cap, stateless MCP hand-off) without poking at
+ * private internals.
  *
  * Test Coverage:
  *
@@ -22,8 +22,8 @@
  * - GET / without sessionId → 404
  * - DELETE / without sessionId → 404
  * - POST / without sessionId and without initialize body → 400
- * - POST / initialize creates a session (Mcp-Session-Id header returned,
- *   subsequent calls routed)
+ * - Stateless serving: no Mcp-Session-Id is minted, a bare tools/list is served
+ *   without a prior initialize, and GET / DELETE get the handler's 405
  * - OAuth disabled: requests proceed without Authorization
  * - OAuth enabled: well-known/oauth-protected-resource returned
  * - OAuth enabled: missing Authorization → 401 with WWW-Authenticate
@@ -33,11 +33,15 @@
  * - OAuth enabled: expired token → 401
  * - OAuth enabled: token introspection error → 500
  *
+ * The four security properties this transport must not lose get their own
+ * named describes: loopback-only bind when unauthenticated, fail-closed auth,
+ * Host + Origin validation, and the byte-measured request body cap.
+ *
  * Related Files:
  *
  * - Src/commands/mcp/transport-http.mts - Implementation
  * - Src/commands/mcp/server.mts - Server factory (real)
- * - @modelcontextprotocol/sdk/server/streamableHttp - Transport (real)
+ * - @modelcontextprotocol/server - createMcpHandler (real)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -48,6 +52,7 @@ import { runHttpTransport } from '../../../../src/commands/mcp/transport-http.mt
 
 import type * as HttpModule from 'node:http'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
+import type { AddressInfo } from 'node:net'
 import type * as NetModule from 'node:net'
 
 const mockLogger = vi.hoisted(() => ({
@@ -77,18 +82,143 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: vi.fn(() => 'test_default'),
 }))
 
-// We boot a real http.Server and need to tear it down between tests.
-// runHttpTransport doesn't return a stop handle, so we discover the
-// server via process._getActiveHandles() — but that's flaky. Better:
-// scrape the listening port from the logger and rely on process exit
-// to clean up at the test-file boundary. To work around server state
-// bleeding between tests, each test uses a fresh ephemeral port and
-// constructs a new transport.
+const { createdServers } = vi.hoisted(() => ({
+  createdServers: [] as HttpModule.Server[],
+}))
+
+// Wrap `createServer` so every listener this file boots is reachable: a test
+// can read the address the kernel actually bound (the loopback-bind property)
+// and afterEach can close it. The wrapper is otherwise transparent.
+vi.mock(import('node:http'), async importOriginal => {
+  const actual = await importOriginal<typeof HttpModule>()
+  const createServer = ((...args: Parameters<typeof actual.createServer>) => {
+    const server = actual.createServer(...args)
+    createdServers.push(server)
+    return server
+  }) as typeof actual.createServer
+  return {
+    ...actual,
+    createServer,
+    default: { ...actual.default, createServer },
+  }
+})
+
+// runHttpTransport doesn't return a stop handle, so `startServer` picks the
+// listener out of `createdServers` and afterEach closes it. Each test still
+// takes a fresh ephemeral port so a lingering keep-alive socket from the
+// previous test can never answer for the next one.
+// Mirrors MAX_MCP_REQUEST_BODY_BYTES in the transport. Restated here rather
+// than imported: a value used to BUILD an expectation must not come from the
+// module under test, or the assertion moves with the bug.
+const BODY_CAP_BYTES = 4 * 1024 * 1024
 
 let nextPort = 23_900
 
 function freshPort(): number {
   return nextPort++
+}
+
+let nextIssuerPort = 23_800
+
+function freshIssuerPort(): number {
+  return nextIssuerPort++
+}
+
+// Stand up a tiny in-memory OAuth issuer on a per-test ephemeral port so each
+// scenario gets a fresh server (port collisions across tests caused
+// ECONNRESET when we shared one).
+async function mockIssuerServer(opts: {
+  introspectionResponse:
+    | Record<string, unknown>
+    | (() => Record<string, unknown>)
+  introspectionStatus?: number | undefined
+}): Promise<{ url: string; close: () => Promise<void> }> {
+  const { createServer } = require('node:http') as typeof HttpModule
+  const issuerPort = freshIssuerPort()
+  const server = createServer((req, res) => {
+    if (req.url === '/.well-known/oauth-authorization-server') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(
+        JSON.stringify({
+          issuer: `http://127.0.0.1:${issuerPort}`,
+          authorization_endpoint: `http://127.0.0.1:${issuerPort}/authorize`,
+          token_endpoint: `http://127.0.0.1:${issuerPort}/token`,
+          introspection_endpoint: `http://127.0.0.1:${issuerPort}/introspect`,
+        }),
+      )
+      return
+    }
+    if (req.url === '/introspect') {
+      res.writeHead(opts.introspectionStatus ?? 200, {
+        'Content-Type': 'application/json',
+      })
+      const body =
+        typeof opts.introspectionResponse === 'function'
+          ? opts.introspectionResponse()
+          : opts.introspectionResponse
+      res.end(JSON.stringify(body))
+      return
+    }
+    res.writeHead(404)
+    res.end()
+  })
+  await new Promise<void>(resolve => {
+    server.listen(issuerPort, '127.0.0.1', () => resolve())
+  })
+  return {
+    url: `http://127.0.0.1:${issuerPort}`,
+    close: () =>
+      new Promise<void>(resolve => {
+        server.close(() => resolve())
+      }),
+  }
+}
+
+function initializeBody(clientName = 'test', clientVersion = '0.0.1'): string {
+  return JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: clientName, version: clientVersion },
+    },
+  })
+}
+
+/**
+ * Speak raw HTTP so a test can control headers `httpRequest` would normalize
+ * (a `//` path, a bare `Host`, an absent `Accept`). Reads until the server
+ * stops sending or `idleMs` passes with no data — the SDK's 2025-era stateless
+ * fallback answers over SSE and leaves the connection keep-alive, so waiting
+ * for socket end would stall on the keep-alive timeout.
+ */
+function rawRequest(
+  port: number,
+  message: string,
+  idleMs = 300,
+): Promise<string> {
+  const net = require('node:net') as typeof NetModule
+  return new Promise<string>((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let idle: NodeJS.Timeout | undefined
+    const socket = net.connect(port, '127.0.0.1', () => {
+      socket.write(message)
+    })
+    const finish = () => {
+      clearTimeout(idle)
+      socket.destroy()
+      resolve(Buffer.concat(chunks).toString('utf8'))
+    }
+    socket.on('data', c => {
+      chunks.push(c)
+      clearTimeout(idle)
+      idle = setTimeout(finish, idleMs)
+    })
+    socket.on('end', finish)
+    socket.on('error', reject)
+  })
 }
 
 const baseConfig = {
@@ -124,17 +254,10 @@ async function startServer(
     port,
     trustProxy: overrides.trustProxy ?? false,
   }
+  const createdBefore = createdServers.length
   await runHttpTransport(config)
-  return { port }
+  return { port, server: createdServers[createdBefore]! }
 }
-
-// Track all servers we've started so we can close them via the
-// process-level handles map. Node's `http.Server.close()` requires a
-// reference; we don't have one. Instead, each test uses a unique port
-// and lets the test runner exit clean up.
-//
-// To avoid port exhaustion across tests, set a low concurrency for
-// vitest if this file flakes.
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -150,7 +273,19 @@ beforeEach(() => {
   })
 })
 
-afterEach(() => {
+afterEach(async () => {
+  // Close every listener this test booted. Keep-alive sockets outlive the
+  // response on the SSE path, so drop them explicitly or close() never
+  // completes.
+  await Promise.allSettled(
+    createdServers.splice(0).map(
+      server =>
+        new Promise<void>(resolve => {
+          server.closeAllConnections()
+          server.close(() => resolve())
+        }),
+    ),
+  )
   // Drain any pending logger calls.
   vi.clearAllMocks()
 })
@@ -161,18 +296,10 @@ describe('runHttpTransport — request URL parsing', () => {
     // `//` parses to throw on `new URL('//', 'http://localhost:N')`.
     // httpRequest can't send `//` directly, it normalizes, so use raw
     // TCP to bypass the client-side normalization.
-    const net = require('node:net') as typeof NetModule
-    const body = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `GET // HTTP/1.1\r\nHost: localhost:${port}\r\nConnection: close\r\n\r\n`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
+    const body = await rawRequest(
+      port,
+      `GET // HTTP/1.1\r\nHost: localhost:${port}\r\nConnection: close\r\n\r\n`,
+    )
     expect(body).toContain('400')
     expect(body).toContain('Bad Request: Invalid URL')
   })
@@ -193,7 +320,7 @@ describe('runHttpTransport — health endpoint', () => {
   })
 })
 
-describe('runHttpTransport — origin / host validation', () => {
+describe('runHttpTransport — Host and Origin validation (DNS rebinding)', () => {
   it('rejects an unknown origin with 403 + JSON-RPC error', async () => {
     const { port } = await startServer()
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
@@ -209,8 +336,8 @@ describe('runHttpTransport — origin / host validation', () => {
 
   it('accepts a localhost origin', async () => {
     const { port } = await startServer()
-    // POST without sessionId or initialize — should reach the body
-    // handler and return 400, NOT 403.
+    // Serving is stateless, so this reaches the MCP handler and comes back
+    // with the tool list rather than a session error.
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json, text/event-stream',
@@ -220,7 +347,8 @@ describe('runHttpTransport — origin / host validation', () => {
       method: 'POST',
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
+    expect(res.text()).toContain('depscore')
   })
 
   it('accepts the production mcp.socket.dev origin', async () => {
@@ -234,7 +362,7 @@ describe('runHttpTransport — origin / host validation', () => {
       method: 'POST',
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
   })
 
   it('accepts requests without an Origin when Host is localhost', async () => {
@@ -247,97 +375,62 @@ describe('runHttpTransport — origin / host validation', () => {
       method: 'POST',
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     })
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
   })
 
   it('accepts bare localhost (no port) in Host header', async () => {
     const { port } = await startServer()
-    // Use raw TCP so we can set Host without auto-appending the port.
-    const net = require('node:net') as typeof NetModule
-    const response = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `GET /health HTTP/1.1\r\n` +
-            `Host: localhost\r\n` +
-            `Connection: close\r\n\r\n`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
+    // Raw TCP so we can set Host without auto-appending the port.
     // /health bypasses Origin validation but the test confirms the
     // bare-localhost host parsing branch in the HTTP server.
+    const response = await rawRequest(
+      port,
+      `GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n`,
+    )
     expect(response).toContain('200')
   })
 
   it('accepts bare 127.0.0.1 in Host header', async () => {
     const { port } = await startServer()
-    const net = require('node:net') as typeof NetModule
-    const response = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `POST / HTTP/1.1\r\n` +
-            `Host: 127.0.0.1\r\n` +
-            `Content-Type: application/json\r\n` +
-            `Accept: application/json, text/event-stream\r\n` +
-            `Content-Length: 2\r\n` +
-            `Connection: close\r\n\r\n{}`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
     // Host is bare 127.0.0.1, no port, no Origin → falls through to
-    // arm3 of the host check, which accepts. Then POST without
-    // sessionId → 400.
-    expect(response).toContain('400')
+    // arm3 of the host check, which accepts.
+    const response = await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: 127.0.0.1\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Accept: application/json, text/event-stream\r\n` +
+        `Content-Length: 2\r\n` +
+        `Connection: close\r\n\r\n{}`,
+    )
+    expect(response).not.toContain('403')
   })
 
   it('accepts mcp.socket.dev as a Host (not just Origin)', async () => {
     const { port } = await startServer()
-    const net = require('node:net') as typeof NetModule
-    const response = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `POST / HTTP/1.1\r\n` +
-            `Host: mcp.socket.dev\r\n` +
-            `Content-Type: application/json\r\n` +
-            `Accept: application/json, text/event-stream\r\n` +
-            `Content-Length: 2\r\n` +
-            `Connection: close\r\n\r\n{}`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
-    expect(response).toContain('400')
+    const response = await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: mcp.socket.dev\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Accept: application/json, text/event-stream\r\n` +
+        `Content-Length: 2\r\n` +
+        `Connection: close\r\n\r\n{}`,
+    )
+    expect(response).not.toContain('403')
   })
 
   it('rejects a request with no Origin and a non-allowlist Host (logs "missing")', async () => {
     const { port } = await startServer()
     // Send via raw TCP with a Host that's none of the allowed values
     // and no Origin header.
-    const net = require('node:net') as typeof NetModule
-    const response = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `POST / HTTP/1.1\r\n` +
-            `Host: evil.example.com\r\n` +
-            `Content-Length: 2\r\n` +
-            `Connection: close\r\n\r\n{}`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
+    const response = await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: evil.example.com\r\n` +
+        `Content-Length: 2\r\n` +
+        `Connection: close\r\n\r\n{}`,
+    )
     expect(response).toContain('403')
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Rejected request from invalid origin: missing'),
@@ -352,6 +445,17 @@ describe('runHttpTransport — origin / host validation', () => {
       body: '{}',
     })
     expect(res.status).toBe(403)
+  })
+
+  it('rejects a foreign Host on the OAuth metadata path too', async () => {
+    const { port } = await startServer()
+    const response = await rawRequest(
+      port,
+      `GET /.well-known/oauth-protected-resource HTTP/1.1\r\n` +
+        `Host: attacker.example\r\n` +
+        `Connection: close\r\n\r\n`,
+    )
+    expect(response).toContain('403')
   })
 
   it('sets CORS Access-Control-Allow-Origin when Origin is present', async () => {
@@ -385,17 +489,42 @@ describe('runHttpTransport — origin / host validation', () => {
   })
 })
 
+describe('runHttpTransport — loopback-only bind when unauthenticated', () => {
+  it('binds 127.0.0.1 when no OAuth introspector is configured', async () => {
+    const { server } = await startServer()
+    // Without per-client authentication the server must not be reachable
+    // from the network: the Host-header check is spoofable by a non-browser
+    // client and is not an auth boundary.
+    expect((server.address() as AddressInfo).address).toBe('127.0.0.1')
+    expect(mockLogger.info).toHaveBeenCalledWith(
+      expect.stringContaining('(bound to 127.0.0.1)'),
+    )
+  })
+
+  it('binds every interface once OAuth authenticates each request', async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: { active: true, scope: 'packages:list' },
+    })
+    try {
+      const { server } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const { address } = server.address() as AddressInfo
+      expect(['::', '0.0.0.0']).toContain(address)
+    } finally {
+      await issuer.close()
+    }
+  })
+})
+
 describe('runHttpTransport — trust-proxy', () => {
   it('honors X-Forwarded-Proto/Host when trustProxy=true', async () => {
     const { port } = await startServer({ trustProxy: true })
-    // Forwarded host = mcp.socket.dev, an allowed host. Origin
-    // omitted, so the validator falls back to host check, which uses
-    // the Host header, not X-Forwarded-Host. The forwarded headers
-    // are observed by getRequestBaseUrl, which runs on the
-    // /.well-known/oauth-protected-resource path. To exercise that
-    // helper, use a path that triggers it — but OAuth is disabled,
-    // so it returns 404. Easier: just verify the request goes through
-    // when X-Forwarded-Proto says https and Host is localhost.
+    // The forwarded headers are read by getRequestBaseUrl, which feeds the
+    // advertised OAuth metadata URL. Verify the request goes through when
+    // X-Forwarded-Proto says https and Host is localhost.
     const res = await httpRequest(`http://127.0.0.1:${port}/health`, {
       headers: {
         'x-forwarded-proto': 'https',
@@ -411,18 +540,7 @@ describe('runHttpTransport — Accept header patching', () => {
   it('patches Accept when missing application/json + text/event-stream (POST init)', async () => {
     const { port } = await startServer()
     // Send POST with only `application/json` in Accept; the SDK would
-    // 406 without the patch. The init succeeds → session created →
-    // patch worked.
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
-      },
-    }
+    // 406 without the patch.
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json',
@@ -430,55 +548,43 @@ describe('runHttpTransport — Accept header patching', () => {
         'content-type': 'application/json',
       },
       method: 'POST',
-      body: JSON.stringify(initBody),
+      body: initializeBody(),
     })
     expect(res.status).toBe(200)
-    expect(res.headers['mcp-session-id']).toBeTypeOf('string')
+    expect(res.text()).toContain('protocolVersion')
   })
 
   it('patches Accept when header is missing entirely', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
-      },
-    }
     // Use raw TCP so httpRequest doesn't auto-add Accept.
-    const net = require('node:net') as typeof NetModule
-    const body = JSON.stringify(initBody)
-    const response = await new Promise<string>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `POST / HTTP/1.1\r\n` +
-            `Host: localhost:${port}\r\n` +
-            `Content-Type: application/json\r\n` +
-            `Origin: http://localhost:${port}\r\n` +
-            `Content-Length: ${Buffer.byteLength(body)}\r\n` +
-            `Connection: close\r\n\r\n${body}`,
-        )
-      })
-      const chunks: Buffer[] = []
-      socket.on('data', c => chunks.push(c))
-      socket.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-      socket.on('error', reject)
-    })
+    const body = initializeBody()
+    const response = await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: localhost:${port}\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Origin: http://localhost:${port}\r\n` +
+        `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+        `Connection: close\r\n\r\n${body}`,
+    )
     expect(response).toContain('200')
-    expect(response.toLowerCase()).toContain('mcp-session-id')
+    expect(response).toContain('protocolVersion')
   })
+})
 
+describe('runHttpTransport — request body size cap', () => {
   it('answers 413 for a multibyte body over the byte cap but under the char cap', async () => {
-    // The cap is 4 MiB. 1.5M copies of a 3-byte character is 4.5 MB on the
-    // wire but only 1.5M JS characters, so a string-length check would let it
-    // through. The cap must be measured in bytes.
+    // The cap is 4 MiB. 1.1M copies of a two-character multibyte pair is well
+    // over 4 MiB on the wire but under 4M JS characters, so a string-length
+    // check would let it through. The cap must be measured in bytes.
     const { port } = await startServer()
     const oversized = `{"pad":"${'éé'.repeat(1_100_000)}"}`
-    expect(oversized.length).toBeLessThan(4 * 1024 * 1024)
-    expect(Buffer.byteLength(oversized)).toBeGreaterThan(4 * 1024 * 1024)
+    expect(oversized.length).toBeLessThan(BODY_CAP_BYTES)
+    expect(Buffer.byteLength(oversized)).toBeGreaterThan(BODY_CAP_BYTES)
+    // Reading a status here at all is the drain assertion: the refusal is
+    // written while the client is still uploading, and destroying the socket
+    // at that point resets its pending writes, so the client would see a
+    // connection error instead of the 413.
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       body: oversized,
       headers: {
@@ -489,26 +595,98 @@ describe('runHttpTransport — Accept header patching', () => {
       method: 'POST',
     })
     expect(res.status).toBe(413)
+    expect(JSON.parse(res.text()).error).toContain('exceeds')
+  })
+
+  it('never hands an over-cap body to the MCP handler', async () => {
+    const { port } = await startServer()
+    // A well-formed initialize, padded past the cap. It must be refused
+    // before the handler ever parses it, so the connect log never fires.
+    const pad = 'x'.repeat(BODY_CAP_BYTES + 1024)
+    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {
+          protocolVersion: '2024-11-05',
+          capabilities: {},
+          clientInfo: { name: 'padded', version: '0.0.1' },
+          pad,
+        },
+      }),
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        origin: `http://localhost:${port}`,
+      },
+      method: 'POST',
+    })
+    expect(res.status).toBe(413)
+    expect(mockLogger.info).not.toHaveBeenCalledWith(
+      expect.stringContaining('Client connected: padded'),
+    )
+  })
+
+  it('accepts a body just under the cap', async () => {
+    const { port } = await startServer()
+    const pad = 'x'.repeat(BODY_CAP_BYTES - 1024)
+    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/list',
+        params: { pad },
+      }),
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        origin: `http://localhost:${port}`,
+      },
+      method: 'POST',
+    })
+    expect(res.status).toBe(200)
   })
 })
 
-describe('runHttpTransport — session reuse', () => {
-  it('handles initialize with a stale Mcp-Session-Id header (creates new session)', async () => {
+describe('runHttpTransport — stateless serving', () => {
+  it('mints no Mcp-Session-Id on initialize', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
+    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+      headers: {
+        accept: 'application/json, text/event-stream',
+        origin: `http://localhost:${port}`,
+        'content-type': 'application/json',
       },
-    }
-    // Pass a non-existent session ID with an initialize body. The
-    // server should ignore the stale ID, create a fresh session, and
-    // reach the `if (sessionId) { sessions.get(...) }` lookup-miss
-    // branch on lines 297-302.
+      method: 'POST',
+      body: initializeBody('test-client'),
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers['mcp-session-id']).toBeUndefined()
+  })
+
+  it('serves a tools/list with no prior initialize and no session header', async () => {
+    const { port } = await startServer()
+    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+      headers: {
+        accept: 'application/json, text/event-stream',
+        origin: `http://localhost:${port}`,
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/list',
+        params: {},
+      }),
+    })
+    expect(res.status).toBe(200)
+    expect(res.text()).toContain('package_file_grep')
+  })
+
+  it('ignores a stale Mcp-Session-Id rather than rejecting the request', async () => {
+    const { port } = await startServer()
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json, text/event-stream',
@@ -517,138 +695,34 @@ describe('runHttpTransport — session reuse', () => {
         'mcp-session-id': 'stale-session-that-doesnt-exist',
       },
       method: 'POST',
-      body: JSON.stringify(initBody),
+      body: initializeBody(),
     })
     expect(res.status).toBe(200)
-    expect(res.headers['mcp-session-id']).toBeTypeOf('string')
-    expect(res.headers['mcp-session-id']).not.toBe(
-      'stale-session-that-doesnt-exist',
-    )
+    expect(res.headers['mcp-session-id']).toBeUndefined()
   })
 
-  it('routes follow-up POST to the same session via Mcp-Session-Id', async () => {
+  it('answers GET / with 405 — there is no standalone session stream', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
-      },
-    }
-    const init = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(initBody),
-    })
-    expect(init.status).toBe(200)
-    const sessionId = init.headers['mcp-session-id'] as string
-    expect(sessionId).toBeTypeOf('string')
-
-    // Follow-up call with the session id should reach the transport.
-    const followup = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-        'mcp-session-id': sessionId,
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'tools/list',
-        params: {},
-      }),
-    })
-    // The tools/list call resolves through the SDK transport. We
-    // accept any 2xx status — exact response shape depends on SDK
-    // negotiation timing but a 200 means the session was found and
-    // the request was dispatched.
-    expect(followup.status).toBe(200)
-  })
-
-  it('routes GET / with a valid Mcp-Session-Id', async () => {
-    const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
-      },
-    }
-    const init = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(initBody),
-    })
-    const sessionId = init.headers['mcp-session-id'] as string
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json, text/event-stream',
         origin: `http://localhost:${port}`,
-        'mcp-session-id': sessionId,
       },
       method: 'GET',
-      // GET to / streams SSE; allow it to proceed but timeout fast
-      // so the test doesn't hang waiting for events.
-      timeout: 1500,
-    }).catch(e => {
-      // SSE streams hold the connection open; httpRequest may abort
-      // with a timeout. As long as we don't hit a 404 status before
-      // the timeout, the session was found and routed.
-      return { status: 0, headers: {}, body: Buffer.from(''), text: () => '' }
     })
-    expect((res as { status: number }).status).not.toBe(404)
+    expect(res.status).toBe(405)
   })
 
-  it('routes DELETE / with a valid Mcp-Session-Id', async () => {
+  it('answers DELETE / with 405 — there is no session to tear down', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test', version: '0.0.1' },
-      },
-    }
-    const init = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(initBody),
-    })
-    const sessionId = init.headers['mcp-session-id'] as string
     const res = await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json, text/event-stream',
         origin: `http://localhost:${port}`,
-        'mcp-session-id': sessionId,
       },
       method: 'DELETE',
     })
-    // DELETE with a valid session: 200, session closed, is the
-    // expected response, but the SDK's session.close behavior may
-    // surface as different statuses. Just assert it's not 404.
-    expect(res.status).not.toBe(404)
+    expect(res.status).toBe(405)
   })
 })
 
@@ -688,61 +762,8 @@ describe('runHttpTransport — routing', () => {
     expect(res.status).toBe(405)
   })
 
-  it('GET / without sessionId returns 404', async () => {
-    const { port } = await startServer()
-    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: { origin: `http://localhost:${port}` },
-      method: 'GET',
-    })
-    expect(res.status).toBe(404)
-    const body = JSON.parse(res.text())
-    expect(body.error.message).toContain('Invalid or expired session')
-  })
-
-  it('DELETE / without sessionId returns 404', async () => {
-    const { port } = await startServer()
-    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: { origin: `http://localhost:${port}` },
-      method: 'DELETE',
-    })
-    expect(res.status).toBe(404)
-  })
-
-  it('POST / without sessionId and without initialize returns 400', async () => {
-    const { port } = await startServer()
-    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/list',
-        params: {},
-      }),
-    })
-    expect(res.status).toBe(400)
-    const body = JSON.parse(res.text())
-    expect(body.error.message).toContain('No valid session')
-  })
-
   it('logs "unknown" client name/version when clientInfo fields are empty', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        // Empty strings → both `?.name || 'unknown'` and `?.version
-        // || 'unknown'` short-circuit to the right-hand fallback.
-        clientInfo: { name: '', version: '' },
-      },
-    }
     await httpRequest(`http://127.0.0.1:${port}/`, {
       headers: {
         accept: 'application/json, text/event-stream',
@@ -750,7 +771,9 @@ describe('runHttpTransport — routing', () => {
         'content-type': 'application/json',
       },
       method: 'POST',
-      body: JSON.stringify(initBody),
+      // Empty strings → both `?.name || 'unknown'` and `?.version ||
+      // 'unknown'` short-circuit to the right-hand fallback.
+      body: initializeBody('', ''),
     })
     expect(mockLogger.info).toHaveBeenCalledWith(
       expect.stringContaining('Client connected: unknown vunknown'),
@@ -759,64 +782,21 @@ describe('runHttpTransport — routing', () => {
 
   it('logs the host when origin is absent on initialize', async () => {
     const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'noorigin', version: '1.0.0' },
-      },
-    }
     // Use raw TCP to omit Origin entirely.
-    const net = require('node:net') as typeof NetModule
-    const body = JSON.stringify(initBody)
-    await new Promise<void>((resolve, reject) => {
-      const socket = net.connect(port, '127.0.0.1', () => {
-        socket.write(
-          `POST / HTTP/1.1\r\n` +
-            `Host: localhost:${port}\r\n` +
-            `Content-Type: application/json\r\n` +
-            `Accept: application/json, text/event-stream\r\n` +
-            `Content-Length: ${Buffer.byteLength(body)}\r\n` +
-            `Connection: close\r\n\r\n${body}`,
-        )
-      })
-      socket.on('data', () => {})
-      socket.on('end', () => resolve())
-      socket.on('error', reject)
-    })
+    const body = initializeBody('noorigin', '1.0.0')
+    await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: localhost:${port}\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Accept: application/json, text/event-stream\r\n` +
+        `Content-Length: ${Buffer.byteLength(body)}\r\n` +
+        `Connection: close\r\n\r\n${body}`,
+    )
     // Origin is empty → logs use the Host instead.
     expect(mockLogger.info).toHaveBeenCalledWith(
       expect.stringContaining(`from localhost:${port}`),
     )
-  })
-
-  it('POST / initialize creates a session and returns Mcp-Session-Id', async () => {
-    const { port } = await startServer()
-    const initBody = {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: {
-        protocolVersion: '2024-11-05',
-        capabilities: {},
-        clientInfo: { name: 'test-client', version: '0.0.1' },
-      },
-    }
-    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
-      headers: {
-        accept: 'application/json, text/event-stream',
-        origin: `http://localhost:${port}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(initBody),
-    })
-    expect(res.status).toBe(200)
-    expect(res.headers['mcp-session-id']).toBeTypeOf('string')
-    expect((res.headers['mcp-session-id'] as string).length).toBeGreaterThan(0)
   })
 })
 
@@ -892,63 +872,7 @@ describe('runHttpTransport — OAuth disabled', () => {
   })
 })
 
-describe('runHttpTransport — OAuth enabled', () => {
-  // Stand up a tiny in-memory OAuth issuer on a per-test ephemeral
-  // port so each scenario gets a fresh server (port collisions across
-  // tests caused ECONNRESET when we shared one).
-
-  let nextIssuerPort = 23_800
-  function freshIssuerPort(): number {
-    return nextIssuerPort++
-  }
-
-  async function mockIssuerServer(opts: {
-    introspectionResponse:
-      | Record<string, unknown>
-      | (() => Record<string, unknown>)
-    introspectionStatus?: number | undefined
-  }): Promise<{ url: string; close: () => Promise<void> }> {
-    const { createServer } = require('node:http') as typeof HttpModule
-    const issuerPort = freshIssuerPort()
-    const server = createServer((req, res) => {
-      if (req.url === '/.well-known/oauth-authorization-server') {
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(
-          JSON.stringify({
-            issuer: `http://127.0.0.1:${issuerPort}`,
-            authorization_endpoint: `http://127.0.0.1:${issuerPort}/authorize`,
-            token_endpoint: `http://127.0.0.1:${issuerPort}/token`,
-            introspection_endpoint: `http://127.0.0.1:${issuerPort}/introspect`,
-          }),
-        )
-        return
-      }
-      if (req.url === '/introspect') {
-        res.writeHead(opts.introspectionStatus ?? 200, {
-          'Content-Type': 'application/json',
-        })
-        const body =
-          typeof opts.introspectionResponse === 'function'
-            ? opts.introspectionResponse()
-            : opts.introspectionResponse
-        res.end(JSON.stringify(body))
-        return
-      }
-      res.writeHead(404)
-      res.end()
-    })
-    await new Promise<void>(resolve => {
-      server.listen(issuerPort, '127.0.0.1', () => resolve())
-    })
-    return {
-      url: `http://127.0.0.1:${issuerPort}`,
-      close: () =>
-        new Promise<void>(resolve => {
-          server.close(() => resolve())
-        }),
-    }
-  }
-
+describe('runHttpTransport — auth is enforced on every request, fail-closed', () => {
   it('returns 401 with WWW-Authenticate when Authorization header is missing', async () => {
     const issuer = await mockIssuerServer({
       introspectionResponse: { active: true, scope: 'packages:list' },
@@ -972,6 +896,84 @@ describe('runHttpTransport — OAuth enabled', () => {
       expect(res.headers['www-authenticate']).toContain(
         'error="invalid_request"',
       )
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('refuses an unauthenticated tools/list instead of falling through to the operator token', async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: { active: true, scope: 'packages:list' },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: {},
+        }),
+      })
+      expect(res.status).toBe(401)
+      // The MCP handler must never have run: no tool metadata leaks.
+      expect(res.text()).not.toContain('depscore')
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('refuses an unauthenticated GET', async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: { active: true, scope: 'packages:list' },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          origin: `http://localhost:${port}`,
+        },
+        method: 'GET',
+      })
+      expect(res.status).toBe(401)
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('refuses an unauthenticated DELETE', async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: { active: true, scope: 'packages:list' },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          origin: `http://localhost:${port}`,
+        },
+        method: 'DELETE',
+      })
+      expect(res.status).toBe(401)
     } finally {
       await issuer.close()
     }
@@ -1093,7 +1095,9 @@ describe('runHttpTransport — OAuth enabled', () => {
       await issuer.close()
     }
   })
+})
 
+describe('runHttpTransport — OAuth enabled', () => {
   it('proceeds through the request pipeline on a valid OAuth token', async () => {
     const issuer = await mockIssuerServer({
       introspectionResponse: {
@@ -1108,16 +1112,6 @@ describe('runHttpTransport — OAuth enabled', () => {
         oauthClientSecret: 'csec',
         oauthIssuer: issuer.url,
       })
-      const initBody = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'initialize',
-        params: {
-          protocolVersion: '2024-11-05',
-          capabilities: {},
-          clientInfo: { name: 'oauth-client', version: '0.0.1' },
-        },
-      }
       const res = await httpRequest(`http://127.0.0.1:${port}/`, {
         headers: {
           accept: 'application/json, text/event-stream',
@@ -1126,12 +1120,52 @@ describe('runHttpTransport — OAuth enabled', () => {
           'content-type': 'application/json',
         },
         method: 'POST',
-        body: JSON.stringify(initBody),
+        body: initializeBody('oauth-client'),
       })
-      // Auth succeeds → request reaches initialize handler → 200 +
-      // Mcp-Session-Id.
+      // Auth succeeds → request reaches the initialize handler.
       expect(res.status).toBe(200)
-      expect(res.headers['mcp-session-id']).toBeTypeOf('string')
+      expect(res.text()).toContain('protocolVersion')
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it("hands the caller's own bearer to the tool layer, not the operator token", async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: {
+        active: true,
+        client_id: 'user-app',
+        scope: 'packages:list',
+      },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          authorization: 'Bearer caller-own-token',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'depscore',
+            arguments: { packages: [{ depname: 'lodash' }] },
+          },
+        }),
+      })
+      // The bearer rides req.auth → ctx.http.authInfo → toToolHandlerExtra.
+      expect(mockSetupSdk).toHaveBeenCalledWith(
+        expect.objectContaining({ apiToken: 'caller-own-token' }),
+      )
     } finally {
       await issuer.close()
     }

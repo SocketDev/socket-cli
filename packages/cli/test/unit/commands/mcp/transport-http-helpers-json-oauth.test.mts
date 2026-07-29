@@ -5,7 +5,8 @@
  * primitive / malformed - getProtectedResourceMetadataUrl: appends well-known
  * path - buildProtectedResourceMetadata: includes all required fields -
  * writeJson: status code, headers, body - writeOAuthError: with and without
- * resourceMetadataUrl.
+ * resourceMetadataUrl - handleRequestSafely: success / thrown error /
+ * already-streaming / non-Error throw - module-level constants.
  *
  * Related Files: - src/commands/mcp/transport-http-helpers.mts - Implementation
  * - src/commands/mcp/transport-http.mts - Caller (HTTP server)
@@ -18,6 +19,9 @@ import type { ServerResponse } from 'node:http'
 import {
   buildProtectedResourceMetadata,
   getProtectedResourceMetadataUrl,
+  handleRequestSafely,
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+  OAUTH_WELL_KNOWN_PATH,
   parseJsonObject,
   writeJson,
   writeOAuthError,
@@ -188,5 +192,80 @@ describe('writeOAuthError', () => {
     const { res, writeHead } = makeRes()
     writeOAuthError(res, 403, 'insufficient_scope', 'no scope')
     expect(writeHead).toHaveBeenCalledWith(403, expect.any(Object))
+  })
+})
+
+describe('handleRequestSafely', () => {
+  it('runs the handler and returns silently when no error is thrown', async () => {
+    const { end, res, writeHead } = makeRes()
+    const log = { error: vi.fn() }
+    const fn = vi.fn(async () => {
+      // Pretend the handler wrote its own response.
+    })
+    await handleRequestSafely('POST', res, log, fn)
+    expect(fn).toHaveBeenCalled()
+    expect(log.error).not.toHaveBeenCalled()
+    expect(writeHead).not.toHaveBeenCalled()
+    expect(end).not.toHaveBeenCalled()
+  })
+
+  it('logs and writes a 500 JSON-RPC envelope when the handler throws', async () => {
+    const { end, res, writeHead } = makeRes()
+    Object.defineProperty(res, 'headersSent', { value: false, writable: true })
+    const log = { error: vi.fn() }
+    await handleRequestSafely('GET', res, log, async () => {
+      throw new Error('transport boom')
+    })
+    expect(log.error).toHaveBeenCalledWith(
+      expect.stringContaining('Error processing GET request:'),
+    )
+    expect(log.error).toHaveBeenCalledWith(
+      expect.stringContaining('transport boom'),
+    )
+    expect(writeHead).toHaveBeenCalledWith(500, expect.any(Object))
+    const body = JSON.parse(end.mock.calls[0]![0] as string)
+    expect(body.error.code).toBe(-32_603)
+    expect(body.error.message).toBe('Internal server error')
+    expect(body.id).toBe(undefined)
+    expect(body.jsonrpc).toBe('2.0')
+  })
+
+  it('does not call writeHead when response is already streaming (headersSent=true)', async () => {
+    const { res, writeHead } = makeRes()
+    Object.defineProperty(res, 'headersSent', { value: true, writable: false })
+    const log = { error: vi.fn() }
+    await handleRequestSafely('DELETE', res, log, async () => {
+      throw new Error('mid-stream failure')
+    })
+    expect(log.error).toHaveBeenCalled()
+    // The 500 envelope must NOT be written when the SDK has already
+    // started the response, otherwise the worker crashes.
+    expect(writeHead).not.toHaveBeenCalled()
+  })
+
+  it('coerces non-Error throws via the template literal', async () => {
+    const { res } = makeRes()
+    Object.defineProperty(res, 'headersSent', { value: false, writable: true })
+    const log = { error: vi.fn() }
+    await handleRequestSafely('POST', res, log, async () => {
+      throw 'plain string error'
+    })
+    expect(log.error).toHaveBeenCalledWith(
+      'Error processing POST request: plain string error',
+    )
+  })
+})
+
+describe('module-level constants', () => {
+  it('exposes the OAuth well-known path', () => {
+    expect(OAUTH_WELL_KNOWN_PATH).toBe(
+      '/.well-known/oauth-authorization-server',
+    )
+  })
+
+  it('exposes the protected-resource metadata path', () => {
+    expect(OAUTH_PROTECTED_RESOURCE_METADATA_PATH).toBe(
+      '/.well-known/oauth-protected-resource',
+    )
   })
 })
