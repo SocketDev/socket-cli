@@ -48,6 +48,9 @@ const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
 const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
 const mockPluralize = vi.hoisted(() => vi.fn(str => str))
+const mockFinalizeTier1Scan = vi.hoisted(() =>
+  vi.fn(async () => ({ ok: true, data: undefined })),
+)
 
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
@@ -66,6 +69,13 @@ vi.mock(
   import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
+  }),
+)
+
+vi.mock(
+  import('../../../../src/commands/scan/finalize-tier1-scan.mts'),
+  () => ({
+    finalizeTier1Scan: mockFinalizeTier1Scan,
   }),
 )
 
@@ -156,6 +166,90 @@ describe('handleScanReach', () => {
       uploadManifests: true,
     })
     expect(mockOutput).toHaveBeenCalled()
+  })
+
+  it('finalizes the tier1 row with no full-scan id', async () => {
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      ok: true,
+      data: ['package.json'],
+    })
+    mockGetPackageFilesForScan.mockResolvedValue(['/project/package.json'])
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-abc',
+      },
+    })
+
+    await handleScanReach({
+      cwd: '/project',
+      interactive: false,
+      orgSlug: 'test-org',
+      outputKind: 'json',
+      outputPath: '',
+      reachabilityOptions: {
+        excludePaths: [],
+        reachAnalysisTimeout: 300,
+        reachAnalysisMemoryLimit: 2048,
+        reachDisableAnalytics: false,
+        reachEcosystems: [],
+        reachExcludePaths: [],
+        reachMinSeverity: 'low',
+        reachSkipCache: false,
+        reachUseUnreachableFromPrecomputation: false,
+      },
+      targets: ['src'],
+    })
+
+    expect(mockFinalizeTier1Scan).toHaveBeenCalledWith('tier1-abc')
+  })
+
+  it('warns but still emits output when tier1 finalize fails', async () => {
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      ok: true,
+      data: ['package.json'],
+    })
+    mockGetPackageFilesForScan.mockResolvedValue(['/project/package.json'])
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-abc',
+      },
+    })
+    mockFinalizeTier1Scan.mockResolvedValueOnce({
+      ok: false,
+      message: 'finalize failed',
+      cause: 'server said no',
+    } as never)
+
+    await handleScanReach({
+      cwd: '/project',
+      interactive: false,
+      orgSlug: 'test-org',
+      outputKind: 'json',
+      outputPath: '',
+      reachabilityOptions: {
+        excludePaths: [],
+        reachAnalysisTimeout: 300,
+        reachAnalysisMemoryLimit: 2048,
+        reachDisableAnalytics: false,
+        reachEcosystems: [],
+        reachExcludePaths: [],
+        reachMinSeverity: 'low',
+        reachSkipCache: false,
+        reachUseUnreachableFromPrecomputation: false,
+      },
+      targets: ['src'],
+    })
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('finalize failed'),
+    )
+    expect(mockOutputScanReach).toHaveBeenCalled()
   })
 
   it('handles supported files fetch failure', async () => {

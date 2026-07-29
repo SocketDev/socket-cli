@@ -6,6 +6,7 @@ const logger = getDefaultLogger()
 
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import { findSocketYmlSync } from '../../util/config.mts'
@@ -104,6 +105,23 @@ export async function handleScanReach({
   })
 
   spinner.stop()
+
+  // A standalone reachability run has no full scan to bind to, but the tier1
+  // reachability row coana registered still has to reach its DONE terminal
+  // state — otherwise it sits at the post-coana intermediate state forever and
+  // is indistinguishable from a stuck run. The endpoint accepts a null full
+  // scan id for this flow (finalizeTier1Scan normalizes the omitted argument to
+  // the wire null). Best-effort: a finalize failure must not block the
+  // user-visible reachability output.
+  const tier1Id = result.ok ? result.data?.tier1ReachabilityScanId : undefined
+  if (tier1Id) {
+    const finalizeResult = await finalizeTier1Scan(tier1Id)
+    if (!finalizeResult.ok) {
+      logger.warn(
+        `Failed to finalize tier1 reachability scan: ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
+      )
+    }
+  }
 
   const resolvedOutputPath = result.ok ? result.data.reachabilityReport : ''
   await outputScanReach(result, {
