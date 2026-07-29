@@ -23,6 +23,7 @@ import {
   createSuccessResult,
 } from '../../../helpers/mocks.mts'
 import { handleCreateNewScan } from '../../../../src/commands/scan/handle-create-new-scan.mts'
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -312,5 +313,151 @@ describe('handleCreateNewScan', () => {
         outputKind: 'json',
       },
     )
+  })
+
+  describe('reachability facts file cleanup', () => {
+    // These run against a real tmp cwd and the real safeDelete so the
+    // assertions observe actual on-disk state after submission.
+    async function setupTmpProject() {
+      const path = await import('node:path')
+      const os = await import('node:os')
+      const fs = await import('node:fs')
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cli-scan-facts-'))
+      const factsPath = path.join(tmpDir, '.socket.facts.json')
+      mockFetchSupportedScanFileNames.mockResolvedValue(
+        createSuccessResult(new Set(['package.json'])),
+      )
+      mockGetPackageFilesForScan.mockResolvedValue([
+        path.join(tmpDir, 'package.json'),
+      ])
+      mockCheckCommandInput.mockReturnValue(true)
+      return { factsPath, fs, tmpDir }
+    }
+
+    it('deletes a facts file it generated after a successful submission', async () => {
+      const { factsPath, fs, tmpDir } = await setupTmpProject()
+      try {
+        // Coana writes the facts file during the analysis, not before it.
+        mockPerformReachabilityAnalysis.mockImplementation(async () => {
+          fs.writeFileSync(factsPath, '{}', 'utf8')
+          return createSuccessResult({
+            reachabilityReport: factsPath,
+            tier1ReachabilityScanId: 'tier1-scan-456',
+          })
+        })
+        mockFetchCreateOrgFullScan.mockResolvedValue(
+          createSuccessResult({ id: 'scan-789' }),
+        )
+
+        await handleCreateNewScan({
+          ...mockConfig,
+          cwd: tmpDir,
+          reach: {
+            excludePaths: [],
+            reachExcludePaths: [],
+            runReachabilityAnalysis: true,
+          },
+        })
+
+        expect(fs.existsSync(factsPath)).toBe(false)
+      } finally {
+        safeDeleteSync(tmpDir)
+      }
+    })
+
+    it('keeps a facts file it generated when the submission fails', async () => {
+      const { factsPath, fs, tmpDir } = await setupTmpProject()
+      try {
+        mockPerformReachabilityAnalysis.mockImplementation(async () => {
+          fs.writeFileSync(factsPath, '{}', 'utf8')
+          return createSuccessResult({
+            reachabilityReport: factsPath,
+            tier1ReachabilityScanId: 'tier1-scan-456',
+          })
+        })
+        mockFetchCreateOrgFullScan.mockResolvedValue(
+          createErrorResult('upload failed'),
+        )
+
+        await handleCreateNewScan({
+          ...mockConfig,
+          cwd: tmpDir,
+          reach: {
+            excludePaths: [],
+            reachExcludePaths: [],
+            runReachabilityAnalysis: true,
+          },
+        })
+
+        expect(fs.existsSync(factsPath)).toBe(true)
+      } finally {
+        safeDeleteSync(tmpDir)
+      }
+    })
+
+    it('keeps a facts file that pre-existed the run', async () => {
+      const { factsPath, fs, tmpDir } = await setupTmpProject()
+      try {
+        // The file is on disk before the analysis, so it was not produced by
+        // this run (e.g. the user pre-generated it) and must be preserved.
+        fs.writeFileSync(factsPath, '{}', 'utf8')
+        mockPerformReachabilityAnalysis.mockResolvedValue(
+          createSuccessResult({
+            reachabilityReport: factsPath,
+            tier1ReachabilityScanId: 'tier1-scan-456',
+          }),
+        )
+        mockFetchCreateOrgFullScan.mockResolvedValue(
+          createSuccessResult({ id: 'scan-789' }),
+        )
+
+        await handleCreateNewScan({
+          ...mockConfig,
+          cwd: tmpDir,
+          reach: {
+            excludePaths: [],
+            reachExcludePaths: [],
+            runReachabilityAnalysis: true,
+          },
+        })
+
+        expect(fs.existsSync(factsPath)).toBe(true)
+      } finally {
+        safeDeleteSync(tmpDir)
+      }
+    })
+
+    it('keeps the facts file when --reach-use-only-pregenerated-sboms is set', async () => {
+      const { factsPath, fs, tmpDir } = await setupTmpProject()
+      try {
+        // In pregenerated-SBOMs mode the user manages their own artifacts, so
+        // the facts file is left in place even though this run wrote it.
+        mockPerformReachabilityAnalysis.mockImplementation(async () => {
+          fs.writeFileSync(factsPath, '{}', 'utf8')
+          return createSuccessResult({
+            reachabilityReport: factsPath,
+            tier1ReachabilityScanId: 'tier1-scan-456',
+          })
+        })
+        mockFetchCreateOrgFullScan.mockResolvedValue(
+          createSuccessResult({ id: 'scan-789' }),
+        )
+
+        await handleCreateNewScan({
+          ...mockConfig,
+          cwd: tmpDir,
+          reach: {
+            excludePaths: [],
+            reachExcludePaths: [],
+            reachUseOnlyPregeneratedSboms: true,
+            runReachabilityAnalysis: true,
+          },
+        })
+
+        expect(fs.existsSync(factsPath)).toBe(true)
+      } finally {
+        safeDeleteSync(tmpDir)
+      }
+    })
   })
 })
