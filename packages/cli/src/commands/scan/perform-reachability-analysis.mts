@@ -312,10 +312,19 @@ export async function performReachabilityAnalysis(
       ? {
           ok: true,
           data: {
-            // Use the actual output filename for the scan.
+            // Use the actual output filename for the scan. Keep it
+            // `cwd`-relative so the upload (which relativizes against `cwd`)
+            // and the post-success delete (`path.resolve(cwd, …)`) keep
+            // working.
             reachabilityReport: outputFilePath,
-            tier1ReachabilityScanId:
-              extractTier1ReachabilityScanId(outputFilePath),
+            // Coana is spawned with `cwd`, so it writes the facts file there.
+            // Reading the bare relative path resolves against `process.cwd()`
+            // and misses the file whenever `cwd !== process.cwd()` (`--cwd
+            // <dir>`), which silently drops the tier 1 scan id and skips
+            // finalize downstream.
+            tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+              path.resolve(cwd, outputFilePath),
+            ),
           },
         }
       : coanaResult

@@ -26,6 +26,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { performReachabilityAnalysis } from '../../../../src/commands/scan/perform-reachability-analysis.mts'
@@ -353,6 +355,21 @@ describe('performReachabilityAnalysis — coana result handling', () => {
       expect(result.data.reachabilityReport).toBe('.socket.facts.json')
       expect(result.data.tier1ReachabilityScanId).toBe('scan-xyz')
     }
+  })
+
+  it('reads the facts file relative to the scan cwd, not process.cwd()', async () => {
+    // Coana is spawned with `cwd`, so the facts file lands there. Resolving
+    // the read against process.cwd() missed it under `--cwd <dir>` and the
+    // tier 1 id came back undefined.
+    mockExtractTier1ReachabilityScanId.mockReturnValue('scan-xyz')
+    await performReachabilityAnalysis({
+      cwd: '/elsewhere/project',
+      reachabilityOptions: baseReachOpts,
+      target: '.',
+    })
+    expect(mockExtractTier1ReachabilityScanId).toHaveBeenCalledWith(
+      path.resolve('/elsewhere/project', '.socket.facts.json'),
+    )
   })
 
   it('uses outputPath when provided', async () => {

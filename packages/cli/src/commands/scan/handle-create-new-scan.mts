@@ -385,6 +385,14 @@ export async function handleCreateNewScan({
 
   if (reach && scanId && tier1ReachabilityScanId) {
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+  } else if (reach && reachabilityReport && scanId) {
+    // Reachability ran and a scan was created, but no tier 1 scan id came out
+    // of the facts file. Say so instead of skipping finalize in silence — the
+    // tier 1 row otherwise stays stuck and the full scan is never linked to
+    // its reachability report.
+    logger.warn(
+      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
+    )
   }
 
   if (fullScanCResult.ok && reachabilityReport && generatedFactsFile) {
