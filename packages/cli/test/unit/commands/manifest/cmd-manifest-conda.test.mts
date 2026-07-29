@@ -4,6 +4,8 @@
  * Tests the command that converts Conda environment.yml to requirements.txt.
  */
 
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cmdManifestConda } from '../../../../src/commands/manifest/cmd-manifest-conda.mts'
@@ -33,11 +35,19 @@ const mockHandleManifestConda = vi.hoisted(() => vi.fn())
 const mockReadOrDefaultSocketJson = vi.hoisted(() =>
   vi.fn().mockReturnValue({}),
 )
+const mockOutputRequirements = vi.hoisted(() => vi.fn())
 
 vi.mock(
   import('../../../../src/commands/manifest/handle-manifest-conda.mts'),
   () => ({
     handleManifestConda: mockHandleManifestConda,
+  }),
+)
+
+vi.mock(
+  import('../../../../src/commands/manifest/output-requirements.mts'),
+  () => ({
+    outputRequirements: mockOutputRequirements,
   }),
 )
 
@@ -233,7 +243,51 @@ describe('cmd-manifest-conda', () => {
 
       expect(mockHandleManifestConda).toHaveBeenCalledWith(
         expect.objectContaining({
-          filename: 'custom-default.yml',
+          filename: path.join(process.cwd(), 'custom-default.yml'),
+        }),
+      )
+    })
+
+    it('should refuse a socket.json infile that escapes cwd', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            conda: {
+              infile: '../../../etc/passwd',
+            },
+          },
+        },
+      })
+
+      await cmdManifestConda.run([], importMeta, context)
+
+      expect(mockHandleManifestConda).not.toHaveBeenCalled()
+      expect(mockOutputRequirements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused a conda input path'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use an escaping socket.json infile under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            conda: {
+              infile: '../sibling.yml',
+            },
+          },
+        },
+      })
+
+      await cmdManifestConda.run(['--trust-socket-json'], importMeta, context)
+
+      expect(mockHandleManifestConda).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filename: path.resolve(process.cwd(), '../sibling.yml'),
         }),
       )
     })
@@ -273,7 +327,51 @@ describe('cmd-manifest-conda', () => {
 
       expect(mockHandleManifestConda).toHaveBeenCalledWith(
         expect.objectContaining({
-          out: 'custom-output.txt',
+          out: path.join(process.cwd(), 'custom-output.txt'),
+        }),
+      )
+    })
+
+    it('should refuse a socket.json outfile that escapes cwd', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            conda: {
+              outfile: '/tmp/socket-cli-conda-escape.txt',
+            },
+          },
+        },
+      })
+
+      await cmdManifestConda.run([], importMeta, context)
+
+      expect(mockHandleManifestConda).not.toHaveBeenCalled()
+      expect(mockOutputRequirements).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused a conda output path'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use an escaping socket.json outfile under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            conda: {
+              outfile: '/tmp/socket-cli-conda-escape.txt',
+            },
+          },
+        },
+      })
+
+      await cmdManifestConda.run(['--trust-socket-json'], importMeta, context)
+
+      expect(mockHandleManifestConda).toHaveBeenCalledWith(
+        expect.objectContaining({
+          out: '/tmp/socket-cli-conda-escape.txt',
         }),
       )
     })

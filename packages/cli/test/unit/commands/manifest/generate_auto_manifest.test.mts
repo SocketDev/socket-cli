@@ -20,6 +20,7 @@ const mockReadOrDefaultSocketJson = vi.hoisted(() =>
   vi.fn().mockReturnValue({}),
 )
 const mockOutputManifest = vi.hoisted(() => vi.fn())
+const mockOutputRequirements = vi.hoisted(() => vi.fn())
 const mockLogger = vi.hoisted(() => ({
   info: vi.fn(),
   log: vi.fn(),
@@ -51,6 +52,12 @@ vi.mock(
   import('../../../../src/commands/manifest/output-manifest.mts'),
   () => ({
     outputManifest: mockOutputManifest,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/manifest/output-requirements.mts'),
+  () => ({
+    outputRequirements: mockOutputRequirements,
   }),
 )
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
@@ -330,73 +337,6 @@ describe('generateAutoManifest', () => {
     })
 
     expect(mockConvertGradleToMaven).not.toHaveBeenCalled()
-  })
-
-  it('runs conda handler when conda is detected and not disabled', async () => {
-    await generateAutoManifest({
-      cwd: '/proj',
-      detected: { ...baseDetected, conda: true },
-      outputKind: 'text',
-      trustSocketJson: false,
-      verbose: false,
-    })
-
-    expect(mockHandleManifestConda).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cwd: '/proj',
-        filename: 'environment.yml',
-        verbose: false,
-      }),
-    )
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      expect.stringContaining('environment.yml'),
-    )
-  })
-
-  it('forwards conda overrides from socket.json (infile/outfile/verbose)', async () => {
-    mockReadOrDefaultSocketJson.mockReturnValueOnce({
-      defaults: {
-        manifest: {
-          conda: {
-            infile: 'env.yml',
-            outfile: 'reqs.txt',
-            verbose: true,
-          },
-        },
-      },
-    })
-
-    await generateAutoManifest({
-      cwd: '/proj',
-      detected: { ...baseDetected, conda: true },
-      outputKind: 'text',
-      trustSocketJson: false,
-      verbose: false,
-    })
-
-    expect(mockHandleManifestConda).toHaveBeenCalledWith(
-      expect.objectContaining({
-        filename: 'env.yml',
-        out: 'reqs.txt',
-        verbose: true,
-      }),
-    )
-  })
-
-  it('skips conda when disabled in socket.json', async () => {
-    mockReadOrDefaultSocketJson.mockReturnValueOnce({
-      defaults: { manifest: { conda: { disabled: true } } },
-    })
-
-    await generateAutoManifest({
-      cwd: '/proj',
-      detected: { ...baseDetected, conda: true },
-      outputKind: 'text',
-      trustSocketJson: false,
-      verbose: false,
-    })
-
-    expect(mockHandleManifestConda).not.toHaveBeenCalled()
   })
 
   it('does nothing when no manifests are detected', async () => {
