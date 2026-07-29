@@ -5,7 +5,7 @@
  * and the manifest validation that keeps a malformed reply from producing a
  * silently short read. `httpRequest` is mocked — no test touches the network.
  *
- * Related Files: - src/commands/mcp/lib/blob.mts
+ * Related Files: - src/commands/mcp/lib/blob.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -36,7 +36,8 @@ vi.mock(import('@socketsecurity/lib-stable/http-request/request'), () => ({
 function okResponse(body: string | Uint8Array, contentType = 'text/plain') {
   const bytes = typeof body === 'string' ? Buffer.from(body, 'utf8') : body
   return {
-    arrayBuffer: () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    arrayBuffer: () =>
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
     headers: { 'content-type': contentType },
     ok: true,
     status: 200,

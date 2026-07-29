@@ -3,11 +3,11 @@
  *
  * Bootstrap runs system tools while the working directory is a repository
  * checkout the CLI did not author, and a bare command name is resolved by a
- * lookup that prepends `process.cwd()` ahead of every PATH entry on Windows —
- * a checkout shipping `npm.cmd` in its root wins over the system install.
+ * lookup that prepends `process.cwd()` ahead of every PATH entry on Windows — a
+ * checkout shipping `npm.cmd` in its root wins over the system install.
  * Bootstrap therefore resolves its tools here, against a PATH stripped of
- * relative entries, entries under the working directory, and `node_modules/.bin`
- * shadow directories, and spawns the absolute result.
+ * relative entries, entries under the working directory, and
+ * `node_modules/.bin` shadow directories, and spawns the absolute result.
  *
  * This file is bundled into bootstrap, not imported at runtime, so it stays
  * small and free of CLI imports.
@@ -110,7 +110,11 @@ export function resolveSystemBinPath(
   const searchPaths = getTrustedBinSearchPaths(opts)
   for (let i = 0, { length } = searchPaths; i < length; i += 1) {
     const searchPath = searchPaths[i]!
-    for (let j = 0, { length: suffixCount } = suffixes; j < suffixCount; j += 1) {
+    for (
+      let j = 0, { length: suffixCount } = suffixes;
+      j < suffixCount;
+      j += 1
+    ) {
       const candidate = path.join(searchPath, `${binName}${suffixes[j]!}`)
       if (existsSync(candidate)) {
         return candidate

@@ -4,7 +4,7 @@
  * The namespace rendering differs per ecosystem, and getting it wrong produces
  * a link that 404s, so each shape is pinned.
  *
- * Related Files: - src/commands/mcp/lib/socket-report-url.mts
+ * Related Files: - src/commands/mcp/lib/socket-report-url.mts.
  */
 
 import { describe, expect, it } from 'vitest'

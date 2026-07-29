@@ -6,11 +6,11 @@
  * - `resolveToolAuthToken` serves tools that read public, non-tenant data
  *   (package scores). The configured token is an acceptable fallback because
  *   the answer is the same for every caller.
- * - `resolveScopedToolAuthToken` serves org-scoped tools (organizations,
- *   alerts, threat feed, package file lists). It refuses a shared operator
- *   token, so an authenticated caller can never read the operator's private org
- *   data. It fails closed: no per-request token and a shared configured token
- *   yields `undefined`, and the tool answers AUTH_REQUIRED.
+ * - `resolveScopedToolAuthToken` serves org-scoped tools (organizations, alerts,
+ *   threat feed, package file lists). It refuses a shared operator token, so an
+ *   authenticated caller can never read the operator's private org data. It
+ *   fails closed: no per-request token and a shared configured token yields
+ *   `undefined`, and the tool answers AUTH_REQUIRED.
  */
 
 import type { ToolCallResult, ToolContext } from './tool-types.mts'

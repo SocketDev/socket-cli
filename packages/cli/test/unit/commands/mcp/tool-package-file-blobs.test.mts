@@ -8,7 +8,7 @@
  * slice, and wall-clock budget — are the reason these tests exist.
  *
  * Related Files: - src/commands/mcp/tool-package-file-contents.mts -
- * src/commands/mcp/tool-package-file-grep.mts
+ * src/commands/mcp/tool-package-file-grep.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -202,9 +202,7 @@ describe('scanLinesForPattern', () => {
   const lines = ['alpha', 'beta', 'gamma', 'beta']
 
   it('collects every matching index', () => {
-    expect(
-      scanLinesForPattern(lines, /beta/, 100).matchIndexes,
-    ).toEqual([1, 3])
+    expect(scanLinesForPattern(lines, /beta/, 100).matchIndexes).toEqual([1, 3])
   })
 
   it('stops at the match cap', () => {

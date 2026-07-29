@@ -6,7 +6,7 @@
  * `resolveScopedToolAuthToken` fails closed; `resolveToolAuthToken` (public,
  * non-tenant data) may fall back.
  *
- * Related Files: - src/commands/mcp/tool-auth.mts
+ * Related Files: - src/commands/mcp/tool-auth.mts.
  */
 
 import { describe, expect, it } from 'vitest'

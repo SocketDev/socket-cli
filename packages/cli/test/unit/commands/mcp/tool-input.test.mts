@@ -7,7 +7,7 @@
  * positive ones.
  *
  * Related Files: - src/commands/mcp/tool-input.mts -
- * src/commands/mcp/tool-args.mts
+ * src/commands/mcp/tool-args.mts.
  */
 
 import { describe, expect, it } from 'vitest'

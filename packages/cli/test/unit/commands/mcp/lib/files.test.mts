@@ -4,7 +4,7 @@
  * The API response is untrusted input, so `extractSocketFileList` is tested for
  * what it drops as much as for what it keeps.
  *
- * Related Files: - src/commands/mcp/lib/files.mts
+ * Related Files: - src/commands/mcp/lib/files.mts.
  */
 
 import { describe, expect, it } from 'vitest'

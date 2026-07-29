@@ -6,7 +6,7 @@
  * interesting surface alongside the usual auth gating.
  *
  * Related Files: - src/commands/mcp/tool-package-files.mts -
- * src/commands/mcp/lib/files.mts
+ * src/commands/mcp/lib/files.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -91,7 +91,9 @@ describe('package_files tool', () => {
       localContext,
     )
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]!.text).toContain('pkg:npm/lodash@4.17.21 — 2 files')
+    expect(result.content[0]!.text).toContain(
+      'pkg:npm/lodash@4.17.21 — 2 files',
+    )
     expect(result.content[0]!.text).toContain('index.js')
   })
 

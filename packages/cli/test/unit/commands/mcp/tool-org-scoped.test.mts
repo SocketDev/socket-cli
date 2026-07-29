@@ -8,7 +8,7 @@
  * onto documented query parameters rather than passed through.
  *
  * Related Files: - src/commands/mcp/tool-organizations.mts -
- * src/commands/mcp/tool-alerts.mts - src/commands/mcp/tool-threat-feed.mts
+ * src/commands/mcp/tool-alerts.mts - src/commands/mcp/tool-threat-feed.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

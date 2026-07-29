@@ -41,13 +41,19 @@ import type {
   SpawnResult,
 } from '@socketsecurity/lib-stable/process/spawn/types'
 
-/** The stdio shape `spawn` accepts, named so call sites can annotate it. */
+/**
+ * The stdio shape `spawn` accepts, named so call sites can annotate it.
+ */
 export type GitStdio = NonNullable<SpawnOptions['stdio']>
 
 export type GitExecutableResolution = {
-  /** Canonical absolute path to a git that lives outside the protected root. */
+  /**
+   * Canonical absolute path to a git that lives outside the protected root.
+   */
   executable: string
-  /** PATH the child may search, with every poisoned entry already removed. */
+  /**
+   * PATH the child may search, with every poisoned entry already removed.
+   */
   searchPath: string
 }
 
@@ -88,8 +94,8 @@ export const GIT_OPERAND_FENCE = '--end-of-options'
  *
  * - `core.fsmonitor=false` — the value may name a command git runs while
  *   refreshing the index.
- * - `core.hooksPath=` — the scanned repository's own `pre-commit`,
- *   `commit-msg`, and `post-checkout` hooks must not run during `socket fix`.
+ * - `core.hooksPath=` — the scanned repository's own `pre-commit`, `commit-msg`,
+ *   and `post-checkout` hooks must not run during `socket fix`.
  * - `credential.helper=` — an empty value resets the helper chain, and because
  *   `-c` sorts last it drops a repository-supplied `!sh -c 'evil'` helper that
  *   would otherwise execute on any network operation.
@@ -125,8 +131,8 @@ const gitExecutableCache = new Map<string, GitExecutableResolution>()
  * `GIT_INDEX_FILE`, `GIT_CONFIG_*`, `GIT_SSH_COMMAND`, `GIT_ASKPASS`,
  * `GIT_EXTERNAL_DIFF`, and `GIT_PAGER` in one rule, so a poisoned `.envrc` or
  * parent environment cannot redirect the child. `GIT_TERMINAL_PROMPT=0` is set
- * afterwards: without it a `ls-remote` or `push` running under `stdio: 'ignore'`
- * blocks forever on an invisible credential prompt.
+ * afterwards: without it a `ls-remote` or `push` running under `stdio:
+ * 'ignore'` blocks forever on an invisible credential prompt.
  */
 export function buildGitChildEnv(
   env: Readonly<Record<string, string | undefined>>,

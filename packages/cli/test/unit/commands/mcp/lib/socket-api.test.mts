@@ -4,7 +4,7 @@
  * Covers the alerts query mapping, the What/Where/Saw/Fix error message shape,
  * the SDK-result envelope re-derivation, and the per-token SDK memoization.
  *
- * Related Files: - src/commands/mcp/lib/socket-api.mts
+ * Related Files: - src/commands/mcp/lib/socket-api.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -70,8 +70,9 @@ describe('buildSocketAlertsQuery', () => {
   })
 
   it('maps the cursor onto startAfterCursor', () => {
-    expect(buildSocketAlertsQuery({ cursor: 'abc' }).get('startAfterCursor'))
-      .toBe('abc')
+    expect(
+      buildSocketAlertsQuery({ cursor: 'abc' }).get('startAfterCursor'),
+    ).toBe('abc')
   })
 
   it('sets per_page only when it is a number', () => {
@@ -80,8 +81,9 @@ describe('buildSocketAlertsQuery', () => {
   })
 
   it('percent-encodes a value rather than letting it split the query', () => {
-    expect(buildSocketAlertsQuery({ severity: 'high&admin=1' }).toString())
-      .toContain('high%26admin%3D1')
+    expect(
+      buildSocketAlertsQuery({ severity: 'high&admin=1' }).toString(),
+    ).toContain('high%26admin%3D1')
   })
 })
 
@@ -126,8 +128,9 @@ describe('socketApiErrorMessage', () => {
 
 describe('toSocketApiResult', () => {
   it('passes a success envelope through', () => {
-    expect(toSocketApiResult({ data: { a: 1 }, status: 200, success: true }))
-      .toEqual({ data: { a: 1 }, status: 200, success: true })
+    expect(
+      toSocketApiResult({ data: { a: 1 }, status: 200, success: true }),
+    ).toEqual({ data: { a: 1 }, status: 200, success: true })
   })
 
   it('passes a failure envelope through', () => {
@@ -161,19 +164,24 @@ describe('toSocketApiResult', () => {
     expect(result.cause).toBeUndefined()
   })
 
-  it.each([['a string', 'nope'], ['null', JSON_NULL], ['a bare object', {}]])(
-    'treats %s as a failure rather than a silent success',
-    (_label, value) => {
-      const result = toSocketApiResult(value)
-      expect(result.success).toBe(false)
-    },
-  )
+  it.each([
+    ['a string', 'nope'],
+    ['null', JSON_NULL],
+    ['a bare object', {}],
+  ])('treats %s as a failure rather than a silent success', (_label, value) => {
+    const result = toSocketApiResult(value)
+    expect(result.success).toBe(false)
+  })
 })
 
 describe('unwrapSocketApiResult', () => {
   it('returns the data on success', () => {
     expect(
-      unwrapSocketApiResult({ data: 'ok', status: 200, success: true }, 'w', 'p'),
+      unwrapSocketApiResult(
+        { data: 'ok', status: 200, success: true },
+        'w',
+        'p',
+      ),
     ).toBe('ok')
   })
 
@@ -190,7 +198,12 @@ describe('unwrapSocketApiResult', () => {
   it('prefers the cause over the error text', () => {
     expect(() =>
       unwrapSocketApiResult(
-        { cause: 'token expired', error: 'Unauthorized', status: 401, success: false },
+        {
+          cause: 'token expired',
+          error: 'Unauthorized',
+          status: 401,
+          success: false,
+        },
         'w',
         'p',
       ),

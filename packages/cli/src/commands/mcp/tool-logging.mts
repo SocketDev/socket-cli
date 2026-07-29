@@ -19,7 +19,10 @@ import type { ToolCallResult, ToolHandler } from './tool-types.mts'
 
 const logger = getDefaultLogger()
 
-export function withToolLogging(name: string, handler: ToolHandler): ToolHandler {
+export function withToolLogging(
+  name: string,
+  handler: ToolHandler,
+): ToolHandler {
   return async (args, extra, context): Promise<ToolCallResult> => {
     debug(`mcp tool call: ${name} ${JSON.stringify(args)}`)
     try {

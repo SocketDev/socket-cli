@@ -155,9 +155,9 @@ describe('bootstrap/shared/system-bin-paths', () => {
 
   describe('toComparableBinPath', () => {
     it('normalizes separators', () => {
-      expect(
-        toComparableBinPath('C:\\Tools\\bin', { windows: false }),
-      ).toBe('C:/Tools/bin')
+      expect(toComparableBinPath('C:\\Tools\\bin', { windows: false })).toBe(
+        'C:/Tools/bin',
+      )
     })
 
     it('folds case on Windows', () => {
