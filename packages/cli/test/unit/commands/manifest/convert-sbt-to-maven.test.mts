@@ -29,6 +29,7 @@ const mockSpinner = vi.hoisted(() => ({
   start: vi.fn(),
   stop: vi.fn(),
 }))
+const mockFindSystemTool = vi.hoisted(() => vi.fn())
 
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
@@ -42,8 +43,21 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
+vi.mock(
+  import('../../../../src/util/spawn/system-tool.mts'),
+  async importOriginal => ({
+    ...(await importOriginal()),
+    findSystemTool: mockFindSystemTool,
+  }),
+)
 
-import { convertSbtToMaven } from '../../../../src/commands/manifest/convert-sbt-to-maven.mts'
+import {
+  convertSbtToMaven,
+  resolveSbtExecutable,
+} from '../../../../src/commands/manifest/convert-sbt-to-maven.mts'
+
+const SYSTEM_SBT = '/usr/local/bin/sbt'
+const SAFE_PATH = '/usr/local/bin:/usr/bin'
 
 const baseOpts = {
   bin: 'sbt',
@@ -58,6 +72,10 @@ describe('convertSbtToMaven', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.exitCode = undefined
+    mockFindSystemTool.mockResolvedValue({
+      executable: SYSTEM_SBT,
+      searchPath: SAFE_PATH,
+    })
   })
 
   it('returns error when sbt writes to stderr', async () => {
@@ -191,9 +209,92 @@ describe('convertSbtToMaven', () => {
     await convertSbtToMaven({ ...baseOpts, sbtOpts: ['--debug', '--noisy'] })
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      'sbt',
+      SYSTEM_SBT,
       ['makePom', '--debug', '--noisy'],
       expect.any(Object),
     )
+  })
+
+  it('spawns the resolved absolute sbt, never the bare name', async () => {
+    mockSpawn.mockResolvedValueOnce({
+      stdout: 'Wrote /proj/foo.pom\n',
+      stderr: '',
+    })
+
+    await convertSbtToMaven(baseOpts)
+
+    const call = mockSpawn.mock.calls.at(-1)
+    expect(call?.[0]).toBe(SYSTEM_SBT)
+    expect(call?.[0]).not.toBe('sbt')
+  })
+
+  it('hands the child the sanitized PATH', async () => {
+    mockSpawn.mockResolvedValueOnce({
+      stdout: 'Wrote /proj/foo.pom\n',
+      stderr: '',
+    })
+
+    await convertSbtToMaven(baseOpts)
+
+    const options = mockSpawn.mock.calls.at(-1)?.[2] as {
+      env?: Record<string, string | undefined> | undefined
+    }
+    expect(options.env?.['PATH']).toBe(SAFE_PATH)
+  })
+
+  it('fails with an actionable message instead of spawning the bare name', async () => {
+    mockFindSystemTool.mockResolvedValue(undefined)
+
+    const result = await convertSbtToMaven(baseOpts)
+
+    expect(result.ok).toBe(false)
+    expect(mockSpawn).not.toHaveBeenCalled()
+    if (!result.ok) {
+      expect(result.message).toContain('Could not resolve the `sbt` executable')
+      expect(result.cause).toContain('untrusted checkout')
+      expect(result.cause).toContain('brew install sbt')
+    }
+  })
+})
+
+describe('resolveSbtExecutable', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFindSystemTool.mockResolvedValue({
+      executable: SYSTEM_SBT,
+      searchPath: SAFE_PATH,
+    })
+  })
+
+  it('resolves a bare name through the trusted lookup', async () => {
+    const result = await resolveSbtExecutable('sbt', '/proj')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.executable).toBe(SYSTEM_SBT)
+      expect(result.data.environment?.['PATH']).toBe(SAFE_PATH)
+    }
+    expect(mockFindSystemTool).toHaveBeenCalledWith('sbt', { cwd: '/proj' })
+  })
+
+  it('spawns an operator-named path as written', async () => {
+    const result = await resolveSbtExecutable('./tools/sbt', '/proj')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.executable).toBe('./tools/sbt')
+      expect(result.data.environment).toBeUndefined()
+    }
+    expect(mockFindSystemTool).not.toHaveBeenCalled()
+  })
+
+  it('spawns an operator-named Windows path as written', async () => {
+    const result = await resolveSbtExecutable('C:\\tools\\sbt.bat', '/proj')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.executable).toBe('C:\\tools\\sbt.bat')
+    }
+    expect(mockFindSystemTool).not.toHaveBeenCalled()
   })
 })
