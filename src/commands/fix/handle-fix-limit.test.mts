@@ -1,4 +1,8 @@
+import { promises as fs } from 'node:fs'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
 
@@ -514,6 +518,139 @@ describe('socket fix --pr-limit behavior verification', () => {
       expect(result.ok).toBe(false)
       expect(result.message).toBe('Coana exited with code 1')
       expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('structured discovery output (--output-file)', () => {
+    it('passes --output-file and reads the result file when Coana supports it', async () => {
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        if (args[0] === 'find-vulnerabilities') {
+          const idx = args.indexOf('--output-file')
+          expect(idx).toBeGreaterThan(-1)
+          await fs.writeFile(
+            args[idx + 1]!,
+            JSON.stringify({
+              ghsaIds: ['GHSA-aaaa-aaaa-aaaa'],
+              artifactCount: 3,
+              filteredArtifactCount: 3,
+            }),
+          )
+          return { ok: true, data: '' }
+        }
+        return { ok: true, data: 'fix applied' }
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        coanaVersion: '15.9.7',
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not pass --output-file to older Coana versions', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: JSON.stringify(['GHSA-aaaa-aaaa-aaaa']),
+      })
+      mockSpawnCoanaDlx.mockResolvedValueOnce({
+        ok: true,
+        data: 'fix applied',
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        coanaVersion: '15.9.6',
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(true)
+      const discoveryArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
+      expect(discoveryArgs).not.toContain('--output-file')
+    })
+
+    it('fails when Coana does not write the result file', async () => {
+      mockSpawnCoanaDlx.mockResolvedValueOnce({ ok: true, data: '' })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        coanaVersion: '15.9.7',
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/did not write/i)
+      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+    })
+
+    it('fails when the result file is not valid JSON', async () => {
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        const idx = args.indexOf('--output-file')
+        await fs.writeFile(args[idx + 1]!, 'not json')
+        return { ok: true, data: '' }
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        coanaVersion: '15.9.7',
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/could not parse/i)
+    })
+
+    it('fails when ghsaIds in the result file is not a string array', async () => {
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        const idx = args.indexOf('--output-file')
+        await fs.writeFile(args[idx + 1]!, JSON.stringify({ ghsaIds: [123] }))
+        return { ok: true, data: '' }
+      })
+
+      const result = await coanaFix({
+        ...baseConfig,
+        coanaVersion: '15.9.7',
+        ghsas: [],
+      })
+
+      expect(result.ok).toBe(false)
+      expect(result.message).toMatch(/unexpected vulnerability discovery/i)
+    })
+
+    it('warns when the backend resolved zero artifacts', async () => {
+      const warnSpy = vi.spyOn(logger, 'warn')
+      mockSpawnCoanaDlx.mockImplementation(async (args: string[]) => {
+        const idx = args.indexOf('--output-file')
+        await fs.writeFile(
+          args[idx + 1]!,
+          JSON.stringify({
+            ghsaIds: [],
+            artifactCount: 0,
+            filteredArtifactCount: 0,
+          }),
+        )
+        return { ok: true, data: '' }
+      })
+
+      try {
+        const result = await coanaFix({
+          ...baseConfig,
+          coanaVersion: '15.9.7',
+          ghsas: [],
+        })
+
+        expect(result.ok).toBe(true)
+        expect(result.data?.fixedAll).toBe(false)
+        // Discovery succeeded with an empty list, so no fix call follows.
+        expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringMatching(/0 artifacts/i),
+        )
+      } finally {
+        warnSpy.mockRestore()
+      }
     })
   })
 

@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import semver from 'semver'
+
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
@@ -64,6 +66,64 @@ type DiscoverGhsaIdsOptions = {
   spinner?: Spinner | undefined
 }
 
+// First Coana version with `find-vulnerabilities --output-file`, which writes
+// a structured JSON result ({ ghsaIds, artifactCount, filteredArtifactCount })
+// instead of relying on the final stdout line.
+const COANA_STRUCTURED_DISCOVERY_MIN_VERSION = '15.9.7'
+
+type StructuredDiscoveryResult = {
+  ghsaIds?: unknown
+  artifactCount?: unknown
+  filteredArtifactCount?: unknown
+}
+
+async function readStructuredDiscoveryResult(
+  outputFile: string,
+  silence: boolean,
+): Promise<CResult<string[]>> {
+  let raw: string
+  try {
+    raw = await fs.readFile(outputFile, 'utf8')
+  } catch {
+    return {
+      ok: false,
+      message: 'Coana did not write a vulnerability discovery result file',
+      cause: `Expected \`find-vulnerabilities --output-file\` to create ${outputFile}.`,
+    }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return {
+      ok: false,
+      message:
+        'Could not parse the vulnerability discovery result written by Coana',
+      cause: `Expected JSON in ${outputFile}, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
+  const { artifactCount, ghsaIds } = parsed as StructuredDiscoveryResult
+  if (!Array.isArray(ghsaIds) || ghsaIds.some(id => typeof id !== 'string')) {
+    return {
+      ok: false,
+      message: 'Coana wrote an unexpected vulnerability discovery result',
+      cause: `Expected a JSON object with a ghsaIds string array, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
+  // Zero artifacts means the backend resolved nothing — suspicious when
+  // manifests were uploaded, so warn even though discovery itself succeeded.
+  if (artifactCount === 0 && !silence) {
+    logger.warn(
+      'The Socket backend resolved 0 artifacts, so vulnerability discovery may be incomplete.',
+    )
+  }
+
+  return { ok: true, data: ghsaIds }
+}
+
 /**
  * Discovers GHSA IDs by running coana without applying fixes.
  * Returns a list of GHSA IDs, optionally limited.
@@ -84,12 +144,26 @@ async function discoverGhsaIds(
     ...options,
   } as DiscoverGhsaIdsOptions
 
+  const resolvedCoanaVersion =
+    options?.coanaVersion ??
+    process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']
+  // Local Coana builds (SOCKET_CLI_COANA_LOCAL_PATH) are assumed current.
+  const useStructuredOutput =
+    !!process.env['SOCKET_CLI_COANA_LOCAL_PATH'] ||
+    (!!resolvedCoanaVersion &&
+      !!semver.valid(resolvedCoanaVersion) &&
+      semver.gte(resolvedCoanaVersion, COANA_STRUCTURED_DISCOVERY_MIN_VERSION))
+  const outputFile = useStructuredOutput
+    ? path.join(os.tmpdir(), `socket-fix-discovery-${Date.now()}.json`)
+    : undefined
+
   const foundCResult = await spawnCoanaDlx(
     [
       'find-vulnerabilities',
       cwd,
       '--manifests-tar-hash',
       tarHash,
+      ...(outputFile ? ['--output-file', outputFile] : []),
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
       ...(packageManagers?.length
         ? ['--package-managers', ...packageManagers]
@@ -106,6 +180,14 @@ async function discoverGhsaIds(
 
   if (!foundCResult.ok) {
     return foundCResult
+  }
+
+  if (outputFile) {
+    try {
+      return await readStructuredDiscoveryResult(outputFile, silence)
+    } finally {
+      await fs.rm(outputFile, { force: true }).catch(() => {})
+    }
   }
 
   // Coana prints ghsaIds as json-formatted string on the final line of the output.
