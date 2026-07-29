@@ -339,6 +339,14 @@ minimumReleaseAgeExclude:
   - 'js-yaml@5.2.2'
   # published: 2026-07-24 | removable: 2026-07-31
   - '@shadscan/cli@0.2.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/client@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/core@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/node@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/server@2.0.0'
 
 # Refuse transitive dependencies declared via git/tarball/local-tarball
 # specs — an npm package shouldn't be allowed to drag in a git URL we
