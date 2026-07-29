@@ -2,25 +2,22 @@
  * Unit tests for the MCP server factory.
  *
  * Tests createConfiguredServer(config) — wires the low-level SDK `Server` class
- * with two request handlers (tools/list, tools/call) and the depscore tool. We
- * test by directly invoking the registered handlers via the SDK's `request()`
- * method, which round-trips through its internal validators.
+ * with two request handlers (tools/list, tools/call) and the full Socket tool
+ * set. We test by invoking the registered handlers directly.
  *
- * Test Coverage: - Server identifies itself with the configured name + version
- * - Capabilities advertise tools{} - tools/list returns exactly one tool
- * (depscore) with the right metadata (name, description, inputSchema as plain
- * JSON Schema, readOnlyHint annotation, title) - tools/call dispatches to
- * runDepscore and returns its result - tools/call rejects unknown tool names
- * with isError + message - tools/call validates input via the TypeBox-compiled
- * checker (rejects missing/wrong-typed `packages` field) - tools/call uses the
- * per-request OAuth token from extra.authInfo when present (HTTP+OAuth path) -
- * tools/call falls back to config.getApiToken() when authInfo is absent (stdio
- * path) - tools/call surfaces "Authentication is required." when no token is
- * available from either source.
+ * Test Coverage:
  *
- * Testing approach - Mock runDepscore so the test doesn't need a live SDK. -
- * Construct the real `Server`, retrieve its registered handlers via the SDK's
- * protected map, or by calling it directly, assert on the result shape.
+ * - Server identifies itself with the configured name + version
+ * - Capabilities advertise tools{}
+ * - Tools/list returns every tool with plain-JSON-Schema input schemas and a
+ *   readOnlyHint annotation
+ * - Tools/call dispatches to runDepscore and returns its result
+ * - Tools/call rejects unknown tool names with isError + message
+ * - Tools/call validates input via the TypeBox-compiled checker
+ * - Tools/call uses the per-request OAuth token from extra.authInfo
+ * - Tools/call falls back to config.getApiToken() when authInfo is absent
+ * - Tools/call surfaces "Authentication is required." with no token
+ * - A handler that throws becomes an isError result, not a protocol failure
  *
  * Related Files: - src/commands/mcp/server.mts - Implementation -
  * src/commands/mcp/depscore.mts - Tool worker, mocked here.
@@ -33,7 +30,11 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js'
 
-import { createConfiguredServer } from '../../../../src/commands/mcp/server.mts'
+import {
+  buildSocketToolSpecs,
+  createConfiguredServer,
+  toToolHandlerExtra,
+} from '../../../../src/commands/mcp/server.mts'
 
 import type * as DepscoreModule from '../../../../src/commands/mcp/depscore.mts'
 
@@ -62,9 +63,24 @@ type AnyServer = {
   >
 }
 
+type ToolListing = {
+  tools: Array<{
+    annotations?: { readOnlyHint?: boolean | undefined } | undefined
+    description: string
+    inputSchema: Record<string, unknown>
+    name: string
+    title?: string | undefined
+  }>
+}
+
+type ToolCallResponse = {
+  content: Array<{ text: string; type: string }>
+  isError?: boolean | undefined
+}
+
 function getHandler(
   server: ReturnType<typeof createConfiguredServer>,
-  schema: typeof ListToolsRequestSchema | typeof CallToolRequestSchema,
+  schema: typeof CallToolRequestSchema | typeof ListToolsRequestSchema,
 ) {
   const internal = server as unknown as AnyServer
   const method = (schema as unknown as { shape: { method: { value: string } } })
@@ -92,8 +108,6 @@ beforeEach(() => {
 describe('createConfiguredServer — construction', () => {
   it('creates a Server with the configured name and version', () => {
     const server = createConfiguredServer(baseConfig)
-    // The SDK Server stores serverInfo internally; round-trip via the
-    // protocol's getter for the server's implementation info.
     const info = (
       server as unknown as { _serverInfo: { name: string; version: string } }
     )._serverInfo
@@ -110,51 +124,78 @@ describe('createConfiguredServer — construction', () => {
   })
 })
 
-describe('createConfiguredServer — tools/list handler', () => {
-  it('returns the single depscore tool', async () => {
-    const server = createConfiguredServer(baseConfig)
-    const handler = getHandler(server, ListToolsRequestSchema)
-    const result = (await handler(
-      { method: 'tools/list', params: {} },
-      {},
-    )) as {
-      tools: Array<{
-        name: string
-        description: string
-        title?: string | undefined
-        annotations?: { readOnlyHint?: boolean | undefined } | undefined
-        inputSchema: Record<string, unknown>
-      }>
-    }
-    expect(result.tools).toHaveLength(1)
-    expect(result.tools[0].name).toBe('depscore')
-    expect(result.tools[0].title).toBe('Dependency Score Tool')
-    expect(result.tools[0].annotations?.readOnlyHint).toBe(true)
-    expect(result.tools[0].description).toContain('depscore')
+describe('buildSocketToolSpecs', () => {
+  it('exposes the full Socket tool set by default', () => {
+    expect(buildSocketToolSpecs().map(s => s.name)).toEqual([
+      'depscore',
+      'organizations',
+      'alerts',
+      'threat_feed',
+      'package_files',
+      'package_file_contents',
+      'package_file_grep',
+    ])
   })
 
-  it('emits a plain JSON Schema (no TypeBox symbols/keys)', async () => {
+  it('gives every tool a unique name, a title, and a description', () => {
+    const specs = buildSocketToolSpecs()
+    expect(new Set(specs.map(s => s.name)).size).toBe(specs.length)
+    for (const spec of specs) {
+      expect(spec.title.length).toBeGreaterThan(0)
+      expect(spec.description.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('marks every tool read-only — no Socket tool mutates state', () => {
+    for (const spec of buildSocketToolSpecs()) {
+      expect(spec.annotations?.readOnlyHint).toBe(true)
+    }
+  })
+})
+
+describe('createConfiguredServer — tools/list handler', () => {
+  it('lists every tool with its metadata', async () => {
     const server = createConfiguredServer(baseConfig)
     const handler = getHandler(server, ListToolsRequestSchema)
     const result = (await handler(
       { method: 'tools/list', params: {} },
       {},
-    )) as {
-      tools: Array<{ inputSchema: Record<string, unknown> }>
+    )) as ToolListing
+    expect(result.tools).toHaveLength(7)
+    const depscore = result.tools.find(t => t.name === 'depscore')
+    expect(depscore?.title).toBe('Dependency Score Tool')
+    expect(depscore?.annotations?.readOnlyHint).toBe(true)
+    expect(depscore?.description).toContain('depscore')
+  })
+
+  it('emits plain JSON Schema for every tool (no TypeBox symbols)', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, ListToolsRequestSchema)
+    const result = (await handler(
+      { method: 'tools/list', params: {} },
+      {},
+    )) as ToolListing
+    for (const tool of result.tools) {
+      expect(() => JSON.parse(JSON.stringify(tool.inputSchema))).not.toThrow()
+      expect(tool.inputSchema['type']).toBe('object')
+      const symbolKeys = Reflect.ownKeys(tool.inputSchema).filter(
+        k => typeof k === 'symbol',
+      )
+      expect(symbolKeys).toHaveLength(0)
     }
-    const schema = result.tools[0].inputSchema
-    // Round-trippable through JSON.
-    expect(() => JSON.parse(JSON.stringify(schema))).not.toThrow()
-    // Has the expected shape.
-    expect(schema['type']).toBe('object')
-    expect(schema['properties']).toBeDefined()
-    const props = schema['properties'] as Record<string, unknown>
-    expect(props['packages']).toBeDefined()
-    expect(props['platform']).toBeDefined()
-    // No symbol-keyed TypeBox metadata.
-    const ownKeys = Reflect.ownKeys(schema)
-    const symbolKeys = ownKeys.filter(k => typeof k === 'symbol')
-    expect(symbolKeys).toHaveLength(0)
+  })
+
+  it('advertises org_slug as required on the org-scoped tools', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, ListToolsRequestSchema)
+    const result = (await handler(
+      { method: 'tools/list', params: {} },
+      {},
+    )) as ToolListing
+    for (const name of ['alerts', 'threat_feed']) {
+      const tool = result.tools.find(t => t.name === name)
+      expect(tool?.inputSchema['required']).toContain('org_slug')
+    }
   })
 })
 
@@ -166,20 +207,17 @@ describe('createConfiguredServer — tools/call handler', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'depscore',
           arguments: { packages: [{ depname: 'lodash' }] },
+          name: 'depscore',
         },
       },
       {},
-    )) as {
-      content: Array<{ text: string; type: string }>
-      isError?: boolean | undefined
-    }
+    )) as ToolCallResponse
     expect(mockRunDepscore).toHaveBeenCalledTimes(1)
-    expect(mockRunDepscore.mock.calls[0][0]).toEqual({
+    expect(mockRunDepscore.mock.calls[0]![0]).toEqual({
       packages: [{ depname: 'lodash' }],
     })
-    expect(result.content[0].text).toBe('ok')
+    expect(result.content[0]!.text).toBe('ok')
     expect(result.isError).toBeUndefined()
   })
 
@@ -189,19 +227,13 @@ describe('createConfiguredServer — tools/call handler', () => {
     const result = (await handler(
       {
         method: 'tools/call',
-        params: {
-          name: 'unknown-tool',
-          arguments: {},
-        },
+        params: { arguments: {}, name: 'unknown-tool' },
       },
       {},
-    )) as {
-      content: Array<{ text: string; type: string }>
-      isError?: boolean | undefined
-    }
+    )) as ToolCallResponse
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0].text).toContain('Unknown tool: unknown-tool')
+    expect(result.content[0]!.text).toContain('Unknown tool: unknown-tool')
   })
 
   it('returns isError + validation message when arguments are missing the packages field', async () => {
@@ -210,16 +242,13 @@ describe('createConfiguredServer — tools/call handler', () => {
     const result = (await handler(
       {
         method: 'tools/call',
-        params: { name: 'depscore', arguments: {} },
+        params: { arguments: {}, name: 'depscore' },
       },
       {},
-    )) as {
-      content: Array<{ text: string; type: string }>
-      isError?: boolean | undefined
-    }
+    )) as ToolCallResponse
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0].text).toContain('Invalid arguments for depscore')
+    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
   })
 
   it('returns isError when packages is the wrong shape (string instead of array)', async () => {
@@ -228,15 +257,26 @@ describe('createConfiguredServer — tools/call handler', () => {
     const result = (await handler(
       {
         method: 'tools/call',
-        params: { name: 'depscore', arguments: { packages: 'not-an-array' } },
+        params: { arguments: { packages: 'not-an-array' }, name: 'depscore' },
       },
       {},
-    )) as {
-      content: Array<{ text: string; type: string }>
-      isError?: boolean | undefined
-    }
+    )) as ToolCallResponse
     expect(result.isError).toBe(true)
-    expect(result.content[0].text).toContain('Invalid arguments for depscore')
+    expect(result.content[0]!.text).toContain('Invalid arguments for depscore')
+  })
+
+  it('validates the org-scoped tools before any network call', async () => {
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
+    const result = (await handler(
+      {
+        method: 'tools/call',
+        params: { arguments: { org_slug: 42 }, name: 'alerts' },
+      },
+      {},
+    )) as ToolCallResponse
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Invalid arguments for alerts')
   })
 
   it('uses the OAuth token from extra.authInfo when present', async () => {
@@ -246,8 +286,8 @@ describe('createConfiguredServer — tools/call handler', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'depscore',
           arguments: { packages: [{ depname: 'foo' }] },
+          name: 'depscore',
         },
       },
       { authInfo: { token: 'oauth_user_token_xyz' } },
@@ -265,8 +305,8 @@ describe('createConfiguredServer — tools/call handler', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'depscore',
           arguments: { packages: [{ depname: 'foo' }] },
+          name: 'depscore',
         },
       },
       {},
@@ -287,17 +327,61 @@ describe('createConfiguredServer — tools/call handler', () => {
       {
         method: 'tools/call',
         params: {
-          name: 'depscore',
           arguments: { packages: [{ depname: 'foo' }] },
+          name: 'depscore',
         },
       },
       {},
-    )) as {
-      content: Array<{ text: string; type: string }>
-      isError?: boolean | undefined
-    }
+    )) as ToolCallResponse
     expect(mockRunDepscore).not.toHaveBeenCalled()
     expect(result.isError).toBe(true)
-    expect(result.content[0].text).toContain('Authentication is required')
+    expect(result.content[0]!.text).toContain('Authentication is required')
+  })
+
+  it('converts a thrown handler into an isError result rather than failing the session', async () => {
+    mockRunDepscore.mockRejectedValueOnce(new Error('boom'))
+    const server = createConfiguredServer(baseConfig)
+    const handler = getHandler(server, CallToolRequestSchema)
+    const result = (await handler(
+      {
+        method: 'tools/call',
+        params: {
+          arguments: { packages: [{ depname: 'foo' }] },
+          name: 'depscore',
+        },
+      },
+      {},
+    )) as ToolCallResponse
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('boom')
+  })
+
+  it('refuses the org-scoped tools when the configured token is a shared operator token', async () => {
+    const server = createConfiguredServer({
+      ...baseConfig,
+      sharedApiToken: true,
+    })
+    const handler = getHandler(server, CallToolRequestSchema)
+    const result = (await handler(
+      {
+        method: 'tools/call',
+        params: { arguments: {}, name: 'organizations' },
+      },
+      {},
+    )) as ToolCallResponse
+    expect(result.isError).toBe(true)
+    expect(result.content[0]!.text).toContain('Authentication is required')
+  })
+})
+
+describe('toToolHandlerExtra', () => {
+  it('carries the auth token through', () => {
+    expect(toToolHandlerExtra({ authInfo: { token: 'abc' } })).toEqual({
+      authInfo: { token: 'abc' },
+    })
+  })
+
+  it('yields an empty extra when the transport supplied no auth info', () => {
+    expect(toToolHandlerExtra({})).toEqual({})
   })
 })
