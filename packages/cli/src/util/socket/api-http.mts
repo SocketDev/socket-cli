@@ -12,16 +12,20 @@ import { CONFIG_KEY_API_BASE_URL } from '../../constants/config.mts'
 import { API_V0_URL } from '../../constants/socket.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 
+import { assertSafeSocketApiBaseUrl } from './safe-base-url.mts'
 import { getExtraCaCerts } from './sdk.mts'
 
 import type { HttpRequestOptions } from '@socketsecurity/lib-stable/http-request/request-types'
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 
-// The Socket API server that should be used for operations.
+// The Socket API server that should be used for operations. Throws when the
+// operator points it at a host the SSRF guard refuses, rather than silently
+// falling back to the public API and sending their data there.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     getSocketCliApiBaseUrl() || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   if (isNonEmptyString(baseUrl)) {
+    assertSafeSocketApiBaseUrl(baseUrl)
     return baseUrl
   }
   return API_V0_URL

@@ -35,6 +35,7 @@ import { rootCertificates } from 'node:tls'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import { debug as debugLib } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import {
@@ -67,6 +68,8 @@ import { getConfigValueOrUndef } from '../config.mts'
 import { debugApiRequest, debugApiResponse } from '../debug.mts'
 import { trackCliEvent } from '../telemetry/integration.mts'
 
+import { assertSafeSocketApiBaseUrl } from './safe-base-url.mts'
+
 import type { CResult } from '../../types.mts'
 import type {
   FileValidationResult,
@@ -85,13 +88,19 @@ let extraCaCertsResolved = false
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let defaultToken: string | undefined
 
-// The Socket API server that should be used for operations.
+// The Socket API server that should be used for operations. A value that does
+// not parse as a URL is ignored; a value that parses but resolves to a private
+// host throws, so a redirected token destination fails loud.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     getSocketCliApiBaseUrl() ||
     getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ||
     undefined
-  return isUrl(baseUrl) ? baseUrl : undefined
+  if (!isNonEmptyString(baseUrl) || !isUrl(baseUrl)) {
+    return undefined
+  }
+  assertSafeSocketApiBaseUrl(baseUrl)
+  return baseUrl
 }
 
 export function getDefaultApiToken(): string | undefined {
@@ -203,7 +212,21 @@ export async function setupSdk(
     apiProxy = getDefaultProxyUrl()
   }
 
-  const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
+  // `socket login --api-base-url` supplies this directly, so guard the
+  // resolved value rather than trusting the getter alone.
+  let apiBaseUrl: string | undefined
+  try {
+    apiBaseUrl = opts.apiBaseUrl ?? getDefaultApiBaseUrl()
+    if (isNonEmptyString(apiBaseUrl)) {
+      assertSafeSocketApiBaseUrl(apiBaseUrl)
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      message: 'Configuration Error',
+      cause: errorMessage(e),
+    }
+  }
 
   // Usage of HttpProxyAgent vs. HttpsProxyAgent based on the chart at:
   // https://github.com/delvedor/hpagent?tab=readme-ov-file#usage

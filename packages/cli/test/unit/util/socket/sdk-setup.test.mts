@@ -83,6 +83,7 @@ import { setupSdk } from '../../../../src/util/socket/sdk.mts'
 describe('SDK Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
     mockGetSocketCliNoApiToken.mockReturnValue(false)
     mockGetSocketApiToken.mockReturnValue(undefined)
     mockGetSocketCliApiBaseUrl.mockReturnValue(undefined)
@@ -126,6 +127,37 @@ describe('SDK Utilities', () => {
         'mock-sdk-value-12345',
         expect.objectContaining({
           baseUrl: 'https://custom.api.socket.dev',
+        }),
+      )
+    })
+
+    it('returns a Configuration Error for a private apiBaseUrl', async () => {
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+        apiBaseUrl: 'https://10.0.0.5/v0/',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.message).toBe('Configuration Error')
+        expect(result.cause).toContain('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS')
+      }
+      expect(mockSocketSdkConstructor).not.toHaveBeenCalled()
+    })
+
+    it('accepts a private apiBaseUrl listed in SOCKET_CLI_ALLOWED_PRIVATE_HOSTS', async () => {
+      vi.stubEnv('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS', '10.0.0.5')
+
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+        apiBaseUrl: 'https://10.0.0.5/v0/',
+      })
+
+      expect(result.ok).toBe(true)
+      expect(mockSocketSdkConstructor).toHaveBeenCalledWith(
+        'mock-sdk-value-12345',
+        expect.objectContaining({
+          baseUrl: 'https://10.0.0.5/v0/',
         }),
       )
     })

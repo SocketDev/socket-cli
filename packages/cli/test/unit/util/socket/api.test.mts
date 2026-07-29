@@ -5,15 +5,15 @@
  * and response parsing.
  *
  * Test Coverage: - API call wrapper (handleApiCall) - Error response parsing -
- * Rate limit handling - getDefaultApiBaseUrl - getErrorMessageForHttpStatusCode
- * - handleApiCallNoSpinner - logPermissionsFor403 - queryApi function.
+ * Rate limit handling - getErrorMessageForHttpStatusCode -
+ * handleApiCallNoSpinner - logPermissionsFor403 - queryApi function.
  *
  * Testing Approach: Mocks fetch/axios to test API utilities. Uses.
  *
  * @socketsecurity/sdk testing utilities for mock responses.
  *
  * Related Files: - util/socket/api.mts (implementation) -
- * api-requests.test.mts.
+ * api-requests.test.mts - api-base-url.test.mts.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -100,7 +100,6 @@ function createHttpResponse(opts: {
 
 import { overrideCachedConfig } from '../../../../src/util/config.mts'
 import {
-  getDefaultApiBaseUrl,
   getErrorMessageForHttpStatusCode,
   handleApiCall,
   handleApiCallNoSpinner,
@@ -121,35 +120,6 @@ describe('api utilities', () => {
     vi.unstubAllEnvs()
     mockHttpRequest.mockReset()
     mockGetDefaultApiToken.mockReset()
-  })
-
-  describe('getDefaultApiBaseUrl', () => {
-    it('returns environment variable when set', async () => {
-      // Use vi.stubEnv to properly mock environment variable.
-      vi.stubEnv('SOCKET_CLI_API_BASE_URL', 'https://custom.api.url')
-      // In VITEST mode, ENV uses process.env directly via Proxy.
-      const result = getDefaultApiBaseUrl()
-      expect(result).toBe('https://custom.api.url')
-    })
-
-    it('falls back to config value when env not set', async () => {
-      // Ensure env is not set by deleting it.
-      delete process.env['SOCKET_CLI_API_BASE_URL']
-      // Set config value using overrideCachedConfig (expects JSON string).
-      overrideCachedConfig('{"apiBaseUrl": "https://config.api.url"}')
-
-      const result = getDefaultApiBaseUrl()
-      expect(result).toBe('https://config.api.url')
-    })
-
-    it('returns default API_V0_URL when neither env nor config set', async () => {
-      // Ensure env is not set by deleting it.
-      delete process.env['SOCKET_CLI_API_BASE_URL']
-      // Config is already cleared in beforeEach with overrideCachedConfig({}).
-
-      const result = getDefaultApiBaseUrl()
-      expect(result).toBe('https://api.socket.dev/v0/')
-    })
   })
 
   describe('getErrorMessageForHttpStatusCode', () => {

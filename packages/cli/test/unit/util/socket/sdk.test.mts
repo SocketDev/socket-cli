@@ -89,6 +89,7 @@ import {
 describe('SDK Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.unstubAllEnvs()
     mockGetSocketCliNoApiToken.mockReturnValue(false)
     mockGetSocketApiToken.mockReturnValue(undefined)
     mockGetSocketCliApiBaseUrl.mockReturnValue(undefined)
@@ -119,6 +120,31 @@ describe('SDK Utilities', () => {
       mockGetSocketCliApiBaseUrl.mockReturnValue('not-a-valid-url')
       const url = getDefaultApiBaseUrl()
       expect(url).toBeUndefined()
+    })
+
+    it('refuses an RFC-1918 host', () => {
+      mockGetSocketCliApiBaseUrl.mockReturnValue('https://192.168.1.10/v0/')
+      expect(() => getDefaultApiBaseUrl()).toThrow(
+        /Socket API base URL is refused/,
+      )
+    })
+
+    it('refuses the cloud metadata address', () => {
+      mockGetSocketCliApiBaseUrl.mockReturnValue('http://169.254.169.254/v0/')
+      expect(() => getDefaultApiBaseUrl()).toThrow(
+        /Socket API base URL is refused/,
+      )
+    })
+
+    it('refuses a non-http(s) scheme', () => {
+      mockGetSocketCliApiBaseUrl.mockReturnValue('file:///etc/passwd')
+      expect(() => getDefaultApiBaseUrl()).toThrow(/must use http\(s\)/)
+    })
+
+    it('permits a private host listed in SOCKET_CLI_ALLOWED_PRIVATE_HOSTS', () => {
+      vi.stubEnv('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS', '192.168.1.10')
+      mockGetSocketCliApiBaseUrl.mockReturnValue('https://192.168.1.10/v0/')
+      expect(getDefaultApiBaseUrl()).toBe('https://192.168.1.10/v0/')
     })
   })
 
