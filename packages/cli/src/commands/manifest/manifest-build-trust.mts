@@ -21,19 +21,13 @@ import type { SocketJson } from '../../util/socket/json.mts'
 
 export const TRUST_SOCKET_JSON_FLAG = '--trust-socket-json'
 
-export interface BuildToolInvocation {
-  bin: string
-  opts: string[]
-}
-
 /**
- * Split a space-separated option string into argv tokens.
+ * Read a bin path out of untrusted input. socket.json is parsed JSON and a
+ * meow value-taking flag can arrive as a boolean, so both sources can hand us
+ * a non-string.
  */
-export function splitBuildToolOpts(raw: string | undefined): string[] {
-  return (raw ?? '')
-    .split(' ')
-    .map(s => s.trim())
-    .filter(Boolean)
+export function readBuildToolBin(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim() : ''
 }
 
 /**
@@ -107,19 +101,22 @@ export function resolveGradleInvocation({
   socketJson,
   trustSocketJson,
 }: {
-  cliBin: string | undefined
-  cliOpts: string | undefined
+  cliBin: unknown
+  cliOpts: unknown
   cwd: string
   socketJson: SocketJson | undefined
   trustSocketJson: boolean
 }): CResult<BuildToolInvocation> {
   const wrapperBin = path.join(cwd, 'gradlew')
-  const socketJsonBin = socketJson?.defaults?.manifest?.gradle?.bin
+  const cliBinPath = readBuildToolBin(cliBin)
+  const socketJsonBin = readBuildToolBin(
+    socketJson?.defaults?.manifest?.gradle?.bin,
+  )
   const socketJsonOpts = socketJson?.defaults?.manifest?.gradle?.gradleOpts
 
   let bin = wrapperBin
-  if (cliBin) {
-    bin = path.resolve(cwd, cliBin)
+  if (cliBinPath) {
+    bin = path.resolve(cwd, cliBinPath)
   } else if (socketJsonBin) {
     const resolved = path.resolve(cwd, socketJsonBin)
     if (!trustSocketJson && resolved !== wrapperBin) {
@@ -146,7 +143,7 @@ export function resolveGradleInvocation({
         flag: '--gradle-opts',
         reason:
           'Gradle options redirect execution: `-I`/`--init-script` and `--include-build` load arbitrary build logic, `-g`/`--gradle-user-home` points at an `init.d` directory Gradle runs on startup, and `-D org.gradle.java.home` / `-D org.gradle.jvmargs` choose the JVM and its agents.',
-        saw: socketJsonOpts ?? '',
+        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
         tool: 'gradle',
       })
     }
@@ -166,8 +163,8 @@ export function resolveSbtInvocation({
   socketJson,
   trustSocketJson,
 }: {
-  cliBin: string | undefined
-  cliOpts: string | undefined
+  cliBin: unknown
+  cliOpts: unknown
   cwd: string
   socketJson: SocketJson | undefined
   trustSocketJson: boolean
@@ -175,12 +172,15 @@ export function resolveSbtInvocation({
   // `sbt` is installed system-wide, so the conventional invocation is the bare
   // name resolved against PATH rather than a project-local wrapper.
   const pathBin = 'sbt'
-  const socketJsonBin = socketJson?.defaults?.manifest?.sbt?.bin
+  const cliBinPath = readBuildToolBin(cliBin)
+  const socketJsonBin = readBuildToolBin(
+    socketJson?.defaults?.manifest?.sbt?.bin,
+  )
   const socketJsonOpts = socketJson?.defaults?.manifest?.sbt?.sbtOpts
 
   let bin = pathBin
-  if (cliBin) {
-    bin = cliBin
+  if (cliBinPath) {
+    bin = cliBinPath
   } else if (socketJsonBin) {
     if (!trustSocketJson && socketJsonBin !== pathBin) {
       return refuseSocketJsonBin({
@@ -206,7 +206,7 @@ export function resolveSbtInvocation({
         flag: '--sbt-opts',
         reason:
           'sbt options redirect execution: `-J` passes JVM arguments straight through, `-D sbt.global.base` / `-D sbt.boot.directory` relocate the plugin and launcher directories sbt loads, and a bare argument is an sbt command such as `eval`, which evaluates Scala.',
-        saw: socketJsonOpts ?? '',
+        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
         tool: 'sbt',
       })
     }
@@ -214,4 +214,24 @@ export function resolveSbtInvocation({
   }
 
   return { ok: true, data: { bin, opts } }
+}
+
+export interface BuildToolInvocation {
+  bin: string
+  opts: string[]
+}
+
+/**
+ * Split a space-separated option string into argv tokens. A value-taking flag
+ * whose value meow could not capture (`--gradle-opts --info`) arrives as a
+ * boolean, so anything that is not a string yields no tokens.
+ */
+export function splitBuildToolOpts(raw: unknown): string[] {
+  if (typeof raw !== 'string') {
+    return []
+  }
+  return raw
+    .split(' ')
+    .map(s => s.trim())
+    .filter(Boolean)
 }

@@ -1,7 +1,8 @@
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { GitHubProvider } from './github-provider.mts'
 import { GitLabProvider } from './gitlab-provider.mts'
+import { spawnGit } from './spawn-git.mts'
 
 import type { PrProvider } from './provider.mts'
 
@@ -11,8 +12,8 @@ import type { PrProvider } from './provider.mts'
  * Auto-detects GitHub vs GitLab based on the remote origin URL. Falls back to
  * GitHub for backward compatibility.
  */
-export function createPrProvider(): PrProvider {
-  const remoteUrl = getGitRemoteUrlSync()
+export async function createPrProvider(): Promise<PrProvider> {
+  const remoteUrl = await getGitRemoteUrl()
 
   // Check for GitLab.
   if (
@@ -28,23 +29,24 @@ export function createPrProvider(): PrProvider {
 }
 
 /**
- * Gets the git remote origin URL synchronously.
+ * Gets the git remote origin URL.
  *
  * Uses `git config` to read the remote.origin.url setting. Exported for testing
  * purposes.
  */
-export function getGitRemoteUrlSync(): string {
+export async function getGitRemoteUrl(): Promise<string> {
   try {
-    const result = spawnSync('git', ['config', '--get', 'remote.origin.url'], {
+    const result = await spawnGit(['config', '--get'], {
+      operands: ['remote.origin.url'],
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    if (result.status === 0 && result.stdout) {
-      const remoteUrl = result.stdout
-      return remoteUrl.trim().toLowerCase()
+    if (result.code === 0 && result.stdout) {
+      return result.stdout.trim().toLowerCase()
     }
-  } catch {
-    // Ignore errors - will fall back to GitHub.
+  } catch (e) {
+    // Expected when there is no origin remote or no git repository.
+    debugDir({ message: 'git config --get remote.origin.url failed', error: e })
   }
 
   return ''

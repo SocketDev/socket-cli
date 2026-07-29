@@ -4,9 +4,12 @@
  *
  * Extracted from operations.mts to keep that file under the 1000-line
  * File size hard cap.
+ *
+ * Every branch name here can originate from `GITHUB_BASE_REF`,
+ * `GITHUB_REF_NAME`, or the scanned repository's `socket.json`, so it travels
+ * as a `spawnGit` operand and is fenced behind `--end-of-options`.
  */
 
-import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import {
   getGithubBaseRef,
@@ -14,14 +17,11 @@ import {
   getGithubRefType,
 } from '@socketsecurity/lib-stable/env/github'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_QUIET } from '../../constants/cli.mts'
 import { SOCKET_DEFAULT_BRANCH } from '../../constants/socket.mts'
 import { debugGit } from '../debug.mts'
-import { getGitPath } from './git-path.mts'
-
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
+import { gitQuietStdio, spawnGit } from './spawn-git.mts'
 
 // Listed in order of check preference.
 const COMMON_DEFAULT_BRANCH_NAMES = [
@@ -84,8 +84,10 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const gitBin = await getGitPath()
-    const result = await spawn(gitBin, ['remote', 'show', 'origin'], { cwd })
+    const result = await spawnGit(['remote', 'show'], {
+      cwd,
+      operands: ['origin'],
+    })
 
     if (!result) {
       return 'main'
@@ -107,13 +109,12 @@ export async function gitCheckoutBranch(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['checkout', branch], stdioIgnoreOptions)
+    await spawnGit(['checkout'], {
+      cwd,
+      operands: [branch],
+      stdio: gitQuietStdio(),
+    })
     debugGit(`checkout ${branch}`, true)
     return true
   } catch (e) {
@@ -129,13 +130,12 @@ export async function gitCreateBranch(
   if (await gitLocalBranchExists(branch)) {
     return true
   }
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['branch', branch], stdioIgnoreOptions)
+    await spawnGit(['branch'], {
+      cwd,
+      operands: [branch],
+      stdio: gitQuietStdio(),
+    })
     debugGit(`branch ${branch}`, true)
     return true
   } catch (e) {
@@ -148,14 +148,13 @@ export async function gitDeleteBranch(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
     // Will throw with exit code 1 if branch does not exist.
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['branch', '-D', branch], stdioIgnoreOptions)
+    await spawnGit(['branch', '-D'], {
+      cwd,
+      operands: [branch],
+      stdio: gitQuietStdio(),
+    })
     return true
   } catch (e) {
     // Expected failure when branch doesn't exist.
@@ -171,17 +170,13 @@ export async function gitDeleteRemoteBranch(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
     // Will throw with exit code 1 if branch does not exist.
-    await spawn(
-      'git',
-      ['push', 'origin', '--delete', branch],
-      stdioIgnoreOptions,
-    )
+    await spawnGit(['push', '--delete'], {
+      cwd,
+      operands: ['origin', branch],
+      stdio: gitQuietStdio(),
+    })
     return true
   } catch (e) {
     // Expected failure when remote branch doesn't exist.
@@ -197,17 +192,13 @@ export async function gitLocalBranchExists(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
     // Will throw with exit code 1 if the branch does not exist.
-    await spawn(
-      'git',
-      ['show-ref', FLAG_QUIET, `refs/heads/${branch}`],
-      stdioIgnoreOptions,
-    )
+    await spawnGit(['show-ref', FLAG_QUIET], {
+      cwd,
+      operands: [`refs/heads/${branch}`],
+      stdio: gitQuietStdio(),
+    })
     return true
   } catch {
     // Expected when branch doesn't exist - no logging needed.
@@ -219,16 +210,12 @@ export async function gitPushBranch(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
-    await spawn(
-      'git',
-      ['push', '--force', '--set-upstream', 'origin', branch],
-      stdioIgnoreOptions,
-    )
+    await spawnGit(['push', '--force', '--set-upstream'], {
+      cwd,
+      operands: ['origin', branch],
+      stdio: gitQuietStdio(),
+    })
     debugGit(`push ${branch}`, true)
     return true
   } catch (e) {
@@ -249,13 +236,11 @@ export async function gitRemoteBranchExists(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
   try {
-    const lsRemoteResult = await spawn(
-      'git',
-      ['ls-remote', '--heads', 'origin', branch],
-      stdioPipeOptions,
-    )
+    const lsRemoteResult = await spawnGit(['ls-remote', '--heads'], {
+      cwd,
+      operands: ['origin', branch],
+    })
     return lsRemoteResult.stdout.length > 0
   } catch (e) {
     // Expected when remote is not accessible or branch doesn't exist.

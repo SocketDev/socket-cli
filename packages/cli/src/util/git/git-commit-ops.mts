@@ -4,18 +4,18 @@
  *
  * Extracted from operations.mts to keep that file under the 1000-line
  * File size hard cap.
+ *
+ * The commit here is the live trigger for a scanned repository's `pre-commit`
+ * and `commit-msg` hooks, so every call goes through `spawnGit`, which forces
+ * `core.hooksPath` empty.
  */
 
-import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
 import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
 import { debugGit } from '../debug.mts'
-import { getGitPath } from './git-path.mts'
-
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
+import { gitQuietStdio, spawnGit } from './spawn-git.mts'
 
 export type GitCreateAndPushBranchOptions = {
   cwd?: string | undefined
@@ -24,13 +24,8 @@ export type GitCreateAndPushBranchOptions = {
 }
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['clean', '-fdx'], stdioIgnoreOptions)
+    await spawnGit(['clean', '-fdx'], { cwd, stdio: gitQuietStdio() })
     debugGit('clean -fdx', true)
     return true
   } catch (e) {
@@ -56,13 +51,9 @@ export async function gitCommit(
 
   await gitEnsureIdentity(user || '', email || '', cwd)
 
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
+  const stdio = gitQuietStdio()
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['add', ...filepaths], stdioIgnoreOptions)
+    await spawnGit(['add'], { cwd, operands: filepaths, stdio })
     debugGit('add', true, { count: filepaths.length })
   } catch (e) {
     debugGit('add', false, { error: e })
@@ -71,8 +62,9 @@ export async function gitCommit(
   }
 
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['commit', '-m', commitMsg], stdioIgnoreOptions)
+    // `commitMsg` is CLI-authored and is consumed as the value of `-m`, so it
+    // is never parsed as an option and needs no operand fence.
+    await spawnGit(['commit', '-m', commitMsg], { cwd, stdio })
     debugGit('commit', true)
     return true
   } catch (e) {
@@ -87,7 +79,6 @@ export async function gitEnsureIdentity(
   email: string,
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
   const identEntries: Array<[string, string]> = [
     ['user.email', email],
     ['user.name', name],
@@ -97,11 +88,10 @@ export async function gitEnsureIdentity(
       let configValue: string | Buffer | undefined
       try {
         // Will throw with exit code 1 if the config property is not set.
-        const gitConfigResult = await spawn(
-          'git',
-          ['config', '--get', prop],
-          stdioPipeOptions,
-        )
+        const gitConfigResult = await spawnGit(['config', '--get'], {
+          cwd,
+          operands: [prop],
+        })
         configValue = gitConfigResult.stdout
       } catch (e) {
         // Expected when config property is not set.
@@ -111,13 +101,12 @@ export async function gitEnsureIdentity(
         })
       }
       if (configValue !== value) {
-        const stdioIgnoreOptions: SpawnOptions = {
-          cwd,
-          stdio: isDebug() ? 'inherit' : 'ignore',
-        }
         try {
-          const gitBin = await getGitPath()
-          await spawn(gitBin, ['config', prop, value], stdioIgnoreOptions)
+          await spawnGit(['config'], {
+            cwd,
+            operands: [prop, value],
+            stdio: gitQuietStdio(),
+          })
         } catch (e) {
           debug(`Failed to set git config: ${prop}`)
           debugDir(e)
@@ -142,13 +131,12 @@ export async function gitResetHard(
   branch = 'HEAD',
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  }
   try {
-    const gitBin = await getGitPath()
-    await spawn(gitBin, ['reset', '--hard', branch], stdioIgnoreOptions)
+    await spawnGit(['reset', '--hard'], {
+      cwd,
+      operands: [branch],
+      stdio: gitQuietStdio(),
+    })
     debugGit(`reset --hard ${branch}`, true)
     return true
   } catch (e) {

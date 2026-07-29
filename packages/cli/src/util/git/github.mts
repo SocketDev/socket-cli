@@ -36,17 +36,16 @@ import { Octokit } from '@octokit/rest'
 
 import { isDebugNs } from '@socketsecurity/lib-stable/debug/namespace'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { parseUrl } from '@socketsecurity/lib-stable/url/parse'
 
 import { cacheFetch } from './github-cache.mts'
+import { spawnGit } from './spawn-git.mts'
 import { GITHUB_API_URL } from '../../env/github-api-url.mts'
 import { GITHUB_SERVER_URL } from '../../env/github-server-url.mts'
 import { SOCKET_CLI_GITHUB_TOKEN } from '../../env/socket-cli-github-token.mts'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { components } from '@octokit/openapi-types'
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 export type { CacheEntry } from './github-cache.mts'
 export { cacheFetch, readCache, writeCache } from './github-cache.mts'
@@ -248,17 +247,20 @@ export async function setGitRemoteGithubRepoUrl(
   }
   /* c8 ignore stop */
   const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
-  }
   // Redact the access token from the debug line — the real URL is still
   // passed to spawn, but the token must never reach logs.
   const redactedUrl = `https://x-access-token:***@${host}/${owner}/${repo}`
   const quotedCmd = `\`git remote set-url origin ${redactedUrl}\``
   debugNs('stdio', `spawn: ${quotedCmd}`)
   try {
-    await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
+    // `spawnGit` is what keeps the token out of a repository-supplied `git`
+    // shim: it resolves git outside the checkout under audit before the
+    // credential ever reaches argv.
+    await spawnGit(['remote', 'set-url'], {
+      cwd,
+      operands: ['origin', url],
+      stdio: isDebugNs('stdio') ? 'inherit' : 'ignore',
+    })
     return true
     /* c8 ignore start - git command failure path; tests run in real cwd with valid git */
   } catch (e) {
