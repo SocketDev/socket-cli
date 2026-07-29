@@ -32,6 +32,9 @@
  * - OAuth enabled: missing required scope → 403 insufficient_scope
  * - OAuth enabled: expired token → 401
  * - OAuth enabled: token introspection error → 500
+ * - RFC 8707: a token whose aud names another resource → 401, a token whose aud
+ *   names this one → served, an absent aud → served by default and refused once
+ *   require-audience is on
  *
  * The four security properties this transport must not lose get their own
  * named describes: loopback-only bind when unauthenticated, fail-closed auth,
@@ -233,6 +236,7 @@ async function startServer(
     oauthClientId: string
     oauthClientSecret: string
     oauthIssuer: string
+    oauthRequireAudience: boolean
     oauthRequiredScopes: readonly string[]
     port: number
     trustProxy: boolean
@@ -249,6 +253,7 @@ async function startServer(
     oauthClientId: overrides.oauthClientId ?? '',
     oauthClientSecret: overrides.oauthClientSecret ?? '',
     oauthIssuer: overrides.oauthIssuer ?? '',
+    oauthRequireAudience: overrides.oauthRequireAudience ?? false,
     oauthRequiredScopes:
       overrides.oauthRequiredScopes ?? (['packages:list'] as const),
     port,
@@ -1190,6 +1195,153 @@ describe('runHttpTransport — OAuth enabled', () => {
       expect(body.authorization_servers).toEqual([issuer.url])
       expect(body.scopes_supported).toEqual(['packages:list'])
       expect(body.resource_name).toBe('Socket MCP Server')
+      expect(body.bearer_methods_supported).toEqual(['header'])
+      // The advertised identifier is exactly what the audience check compares
+      // against, so a client that requests a token for this value gets one this
+      // server accepts.
+      expect(body.resource).toBe(`http://127.0.0.1:${port}/`)
+    } finally {
+      await issuer.close()
+    }
+  })
+})
+
+describe('runHttpTransport — RFC 8707 audience binding', () => {
+  it('refuses a token whose aud names another resource server', async () => {
+    // Confused deputy: the same authorization server introspects the token as
+    // active, but it was minted for a resource on another port — a different
+    // resource identifier, and so a different resource server.
+    const issuer = await mockIssuerServer({
+      introspectionResponse: {
+        active: true,
+        aud: 'http://127.0.0.1:9/',
+        client_id: 'user-app',
+        scope: 'packages:list',
+      },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          authorization: 'Bearer token-for-another-resource',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/list',
+          params: {},
+        }),
+      })
+      expect(res.status).toBe(401)
+      expect(res.headers['www-authenticate']).toContain('invalid_token')
+      // The MCP handler must never have run: no tool metadata leaks.
+      expect(res.text()).not.toContain('depscore')
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('accepts a token whose aud names this resource server', async () => {
+    const port = freshPort()
+    const issuer = await mockIssuerServer({
+      introspectionResponse: {
+        active: true,
+        aud: `http://127.0.0.1:${port}/`,
+        client_id: 'user-app',
+        scope: 'packages:list',
+      },
+    })
+    try {
+      await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+        port,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          authorization: 'Bearer token-for-this-resource',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: initializeBody('audience-bound-client'),
+      })
+      expect(res.status).toBe(200)
+      expect(res.text()).toContain('protocolVersion')
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('accepts a token carrying no aud claim by default', async () => {
+    // Socket's introspection endpoint does not emit `aud` yet, so absence must
+    // stay accepted or every current deployment breaks.
+    const issuer = await mockIssuerServer({
+      introspectionResponse: {
+        active: true,
+        client_id: 'user-app',
+        scope: 'packages:list',
+      },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          authorization: 'Bearer audience-less-token',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: initializeBody('audience-less-client'),
+      })
+      expect(res.status).toBe(200)
+    } finally {
+      await issuer.close()
+    }
+  })
+
+  it('refuses a token carrying no aud claim once require-audience is on', async () => {
+    const issuer = await mockIssuerServer({
+      introspectionResponse: {
+        active: true,
+        client_id: 'user-app',
+        scope: 'packages:list',
+      },
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+        oauthRequireAudience: true,
+      })
+      const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+        headers: {
+          accept: 'application/json, text/event-stream',
+          authorization: 'Bearer audience-less-token',
+          origin: `http://localhost:${port}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+        body: initializeBody('audience-less-client'),
+      })
+      expect(res.status).toBe(401)
+      expect(res.headers['www-authenticate']).toContain('invalid_token')
     } finally {
       await issuer.close()
     }

@@ -3,9 +3,11 @@
  *
  * Test Coverage (100% target): - parseJsonObject: valid object / array / null /
  * primitive / malformed - getProtectedResourceMetadataUrl: appends well-known
- * path - buildProtectedResourceMetadata: includes all required fields -
- * writeJson: status code, headers, body - writeOAuthError: with and without
- * resourceMetadataUrl - handleRequestSafely: success / thrown error /
+ * path - getOAuthResourceIdentifier: strips fragment / path -
+ * buildProtectedResourceMetadata: includes all required fields -
+ * buildOAuthScopeParameter: joins, drops non-resource scopes - writeJson:
+ * status code, headers, body - writeOAuthError: with and without
+ * resourceMetadataUrl / scope - handleRequestSafely: success / thrown error /
  * already-streaming / non-Error throw - module-level constants.
  *
  * Related Files: - src/commands/mcp/transport-http-helpers.mts - Implementation
@@ -17,17 +19,17 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ServerResponse } from 'node:http'
 
 import {
+  buildOAuthResourceScopes,
+  buildOAuthScopeParameter,
   buildProtectedResourceMetadata,
+  getOAuthResourceIdentifier,
   getProtectedResourceMetadataUrl,
   handleRequestSafely,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
-  OAUTH_WELL_KNOWN_PATH,
   parseJsonObject,
   writeJson,
   writeOAuthError,
 } from '../../../../src/commands/mcp/transport-http-helpers.mts'
-
-import type { OAuthMetadata } from '../../../../src/commands/mcp/transport-http-helpers.mts'
 
 describe('parseJsonObject', () => {
   it('returns the parsed object on valid JSON', () => {
@@ -101,25 +103,73 @@ describe('getProtectedResourceMetadataUrl', () => {
   })
 })
 
+describe('getOAuthResourceIdentifier', () => {
+  it('reduces any request base URL to the server root', () => {
+    expect(
+      getOAuthResourceIdentifier(new URL('https://api.example.com/mcp')).href,
+    ).toBe('https://api.example.com/')
+  })
+
+  it('drops an RFC 8707-forbidden fragment', () => {
+    expect(
+      getOAuthResourceIdentifier(new URL('https://api.example.com/#frag')).href,
+    ).toBe('https://api.example.com/')
+  })
+
+  it('keeps the port, which is part of the resource identity', () => {
+    expect(
+      getOAuthResourceIdentifier(new URL('http://127.0.0.1:8080/')).href,
+    ).toBe('http://127.0.0.1:8080/')
+  })
+})
+
+describe('buildOAuthScopeParameter', () => {
+  it('joins the required scopes with a single space', () => {
+    expect(buildOAuthScopeParameter(['a:read', 'b:write'])).toBe(
+      'a:read b:write',
+    )
+  })
+
+  it('is empty when no scope is enforced', () => {
+    expect(buildOAuthScopeParameter([])).toBe('')
+  })
+
+  it('drops offline_access, which has no meaning on a resource server', () => {
+    expect(buildOAuthResourceScopes(['offline_access', 'a:read'])).toEqual([
+      'a:read',
+    ])
+    expect(buildOAuthScopeParameter(['offline_access'])).toBe('')
+  })
+})
+
 describe('buildProtectedResourceMetadata', () => {
   it('packages issuer + resource + scopes + name', () => {
     const baseUrl = new URL('https://api.example.com/')
-    const metadata = {
-      authorization_endpoint: 'https://auth.example.com/authorize',
-      introspection_endpoint: 'https://auth.example.com/introspect',
-      issuer: 'https://auth.example.com',
-      token_endpoint: 'https://auth.example.com/token',
-    } satisfies OAuthMetadata
-    const result = buildProtectedResourceMetadata(baseUrl, metadata, [
-      'a:read',
-      'b:write',
-    ])
+    const result = buildProtectedResourceMetadata(
+      baseUrl,
+      'https://auth.example.com',
+      ['a:read', 'b:write'],
+    )
     expect(result).toEqual({
       authorization_servers: ['https://auth.example.com'],
+      bearer_methods_supported: ['header'],
       resource: 'https://api.example.com/',
       resource_name: 'Socket MCP Server',
       scopes_supported: ['a:read', 'b:write'],
     })
+  })
+
+  it('publishes the server root even when the request carried a path', () => {
+    // The published `resource` and the audience-checked identifier must not
+    // drift: a client requesting a token for the advertised value has to end up
+    // with a token this server accepts. Both come from
+    // getOAuthResourceIdentifier, which reduces any request URL to the root.
+    const result = buildProtectedResourceMetadata(
+      new URL('https://api.example.com/mcp'),
+      'https://auth.example.com',
+      [],
+    )
+    expect(result['resource']).toBe('https://api.example.com/')
   })
 })
 
@@ -193,6 +243,31 @@ describe('writeOAuthError', () => {
     writeOAuthError(res, 403, 'insufficient_scope', 'no scope')
     expect(writeHead).toHaveBeenCalledWith(403, expect.any(Object))
   })
+
+  it('appends the scope parameter so a client can request what is missing', () => {
+    const { res, writeHead } = makeRes()
+    writeOAuthError(
+      res,
+      403,
+      'insufficient_scope',
+      'no scope',
+      'https://api.example.com/.well-known/oauth-protected-resource',
+      'packages:list',
+    )
+    const headers = writeHead.mock.calls[0][1] as Record<string, string>
+    expect(headers['WWW-Authenticate']).toBe(
+      'Bearer error="insufficient_scope", error_description="no scope", resource_metadata="https://api.example.com/.well-known/oauth-protected-resource", scope="packages:list"',
+    )
+  })
+
+  it('omits the scope parameter when no scope is enforced', () => {
+    const { res, writeHead } = makeRes()
+    writeOAuthError(res, 401, 'invalid_token', 'expired', undefined, '')
+    const headers = writeHead.mock.calls[0][1] as Record<string, string>
+    expect(headers['WWW-Authenticate']).toBe(
+      'Bearer error="invalid_token", error_description="expired"',
+    )
+  })
 })
 
 describe('handleRequestSafely', () => {
@@ -257,12 +332,6 @@ describe('handleRequestSafely', () => {
 })
 
 describe('module-level constants', () => {
-  it('exposes the OAuth well-known path', () => {
-    expect(OAUTH_WELL_KNOWN_PATH).toBe(
-      '/.well-known/oauth-authorization-server',
-    )
-  })
-
   it('exposes the protected-resource metadata path', () => {
     expect(OAUTH_PROTECTED_RESOURCE_METADATA_PATH).toBe(
       '/.well-known/oauth-protected-resource',

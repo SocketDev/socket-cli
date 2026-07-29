@@ -12,12 +12,12 @@
  *
  * Related Files:
  *
- * - Src/commands/mcp/transport-http-helpers.mts - Implementation
+ * - Src/commands/mcp/oauth-introspector.mts - Implementation
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OAuthIntrospector } from '../../../../src/commands/mcp/transport-http-helpers.mts'
+import { OAuthIntrospector } from '../../../../src/commands/mcp/oauth-introspector.mts'
 
 import type { ServerResponse } from 'node:http'
 import type { IncomingMessage } from 'node:http'
@@ -90,7 +90,12 @@ export function makeReq(authHeader?: string | undefined) {
   } as unknown as IncomingMessage
 }
 
-const log = { error: vi.fn() }
+const log = { error: vi.fn(), warn: vi.fn() }
+
+// The request base URL every scenario authenticates against. Both the
+// resource-metadata URL in WWW-Authenticate and the audience the token is
+// checked against are derived from it.
+const BASE_URL = new URL('https://api.example.com/')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -124,11 +129,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const intro = newIntrospectorWithMetadataPrimed()
     await prime(intro)
     const { res, writeHead } = makeRes()
-    const result = await intro.authenticateRequest(
-      makeReq(),
-      res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
-    )
+    const result = await intro.authenticateRequest(makeReq(), res, BASE_URL)
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
       401,
@@ -145,7 +146,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Basic abc='),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
@@ -180,7 +181,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('SingleToken'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     // Single token, no scheme: type = 'SingleToken', token = undefined.
     // First clause fails: 'singletoken' !== 'bearer' → true → 401.
@@ -200,7 +201,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Bearer'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
@@ -220,7 +221,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Bearer abc'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(log.error).toHaveBeenCalledWith(
@@ -236,11 +237,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     await prime(intro)
     mockHttpRequest.mockRejectedValueOnce('plain string')
     const { res } = makeRes()
-    await intro.authenticateRequest(
-      makeReq('Bearer abc'),
-      res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
-    )
+    await intro.authenticateRequest(makeReq('Bearer abc'), res, BASE_URL)
     expect(log.error).toHaveBeenCalledWith(
       expect.stringContaining('Token verification failed: plain string'),
     )
@@ -256,7 +253,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Bearer abc'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
@@ -286,7 +283,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Bearer abc'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
@@ -310,7 +307,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     const result = await intro.authenticateRequest(
       makeReq('Bearer abc'),
       res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
+      BASE_URL,
     )
     expect(result.ok).toBe(false)
     expect(writeHead).toHaveBeenCalledWith(
@@ -337,11 +334,7 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     )
     const req = makeReq('Bearer some-token')
     const { res } = makeRes()
-    const result = await intro.authenticateRequest(
-      req,
-      res,
-      'https://api.example.com/.well-known/oauth-protected-resource',
-    )
+    const result = await intro.authenticateRequest(req, res, BASE_URL)
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.authInfo.token).toBe('some-token')

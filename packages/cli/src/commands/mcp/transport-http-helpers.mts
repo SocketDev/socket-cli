@@ -1,20 +1,19 @@
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
-import { assertSafeHttpUrl } from '@socketsecurity/lib-stable/url/assert-safe'
+/**
+ * Transport-level helpers shared by the `socket mcp` HTTP server: request
+ * header / base-URL reading, JSON and RFC 6750 error responses, and the RFC
+ * 9728 protected-resource metadata this server publishes.
+ *
+ * Discovery lives in `oauth-discovery.mts`; the bearer pipeline lives in
+ * `oauth-introspector.mts`.
+ */
 
-import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
+import { resourceUrlFromServerUrl } from '@modelcontextprotocol/server'
+
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
 import type { AuthInfo } from '@modelcontextprotocol/server'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-export interface OAuthMetadata {
-  authorization_endpoint: string
-  introspection_endpoint: string
-  issuer: string
-  token_endpoint: string
-  [key: string]: unknown
-}
-
-export const OAUTH_WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server'
 export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
   '/.well-known/oauth-protected-resource'
 
@@ -23,238 +22,55 @@ export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
 // the OAuth metadata URLs this server advertises.
 const FORWARDED_HOST_RE = /^[a-z0-9.-]+(?::\d+)?$/iu
 
+// RFC 6749 §3.3 reserves no meaning for `offline_access` on a resource server.
+// It is an OIDC refresh-token request scope, not something a resource server
+// requires of an access token, so it never reaches `scopes_supported` or a
+// WWW-Authenticate challenge.
+const NON_RESOURCE_SCOPES = new Set(['offline_access'])
+
 export type AuthenticatedRequest = IncomingMessage & {
   auth?: AuthInfo | undefined
 }
 
-export interface OAuthIntrospectorOptions {
-  // Permit a loopback issuer / introspection endpoint. Off by default: both
-  // URLs are fetched server-side, so a loopback or private-range value is an
-  // SSRF pivot. Only a local development stack should turn this on.
-  allowLocalIssuer?: boolean | undefined
+/**
+ * The scopes this resource advertises and enforces: the operator's configured
+ * list minus scopes that are meaningless on a resource server.
+ */
+export function buildOAuthResourceScopes(
+  requiredScopes: readonly string[],
+): string[] {
+  return requiredScopes.filter(scope => !NON_RESOURCE_SCOPES.has(scope))
 }
 
-export class OAuthIntrospector {
-  private metadataPromise: Promise<OAuthMetadata> | undefined
-  private readonly allowLocalIssuer: boolean
-  private readonly clientId: string
-  private readonly clientSecret: string
-  private readonly issuer: string
-  private readonly requiredScopes: readonly string[]
-  private readonly log: { error: (msg: string) => void }
-  constructor(
-    issuer: string,
-    clientId: string,
-    clientSecret: string,
-    requiredScopes: readonly string[],
-    log: { error: (msg: string) => void },
-    options?: OAuthIntrospectorOptions | undefined,
-  ) {
-    const opts = { __proto__: null, ...options } as OAuthIntrospectorOptions
-    this.allowLocalIssuer = opts.allowLocalIssuer ?? false
-    this.clientId = clientId
-    this.clientSecret = clientSecret
-    this.issuer = issuer
-    this.requiredScopes = requiredScopes
-    this.log = log
-  }
-
-  async loadMetadata(): Promise<OAuthMetadata> {
-    if (!this.metadataPromise) {
-      const promise = (async () => {
-        // The issuer is operator-supplied. SSRF-guard it so a misconfigured
-        // or hostile value can't point discovery at an internal host.
-        const issuerUrl = assertSafeHttpUrl(this.issuer, {
-          allowLocalhost: this.allowLocalIssuer,
-          label: 'OAuth issuer',
-        })
-        const url = new URL(OAUTH_WELL_KNOWN_PATH, issuerUrl).href
-        const response: HttpResponse = await httpRequest(url, { method: 'GET' })
-        const responseText = response.text()
-        if (response.status < 200 || response.status >= 300) {
-          throw new Error(
-            `OAuth metadata discovery failed with status ${response.status}: ${responseText}`,
-          )
-        }
-        const metadata = parseJsonObject(
-          responseText,
-          'OAuth metadata discovery',
-        )
-        for (const field of [
-          'authorization_endpoint',
-          'introspection_endpoint',
-          'issuer',
-          'token_endpoint',
-        ] as const) {
-          if (typeof metadata[field] !== 'string' || !metadata[field]) {
-            throw new Error(`OAuth metadata missing required field: ${field}`)
-          }
-        }
-        return metadata as OAuthMetadata
-      })()
-      this.metadataPromise = promise.catch(error => {
-        // Failure invalidates the cache so the next call retries.
-        // Safe in single-threaded JS: no other code can replace
-        // `this.metadataPromise` between this catch and the next call.
-        this.metadataPromise = undefined
-        throw error
-      })
-    }
-    return await this.metadataPromise
-  }
-
-  async verifyAccessToken(token: string): Promise<AuthInfo | undefined> {
-    const metadata = await this.loadMetadata()
-    // The introspection endpoint arrives in the issuer's metadata response, so
-    // a hostile or MITM'd issuer chooses where this bearer token gets POSTed.
-    // SSRF-guard it before the token leaves the box.
-    const introspectionUrl = assertSafeHttpUrl(
-      metadata.introspection_endpoint,
-      {
-        allowLocalhost: this.allowLocalIssuer,
-        label: 'OAuth introspection_endpoint',
-      },
-    ).href
-    const basicAuth = Buffer.from(
-      `${this.clientId}:${this.clientSecret}`,
-    ).toString('base64')
-    const response: HttpResponse = await httpRequest(introspectionUrl, {
-      body: new URLSearchParams({ token }).toString(),
-      headers: {
-        authorization: `Basic ${basicAuth}`,
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      method: 'POST',
-    })
-    const responseText = response.text()
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(
-        `Token introspection failed with status ${response.status}: ${responseText}`,
-      )
-    }
-    const introspection = parseJsonObject(responseText, 'Token introspection')
-    if (!introspection['active']) {
-      return undefined
-    }
-    // An absent `exp` means a non-expiring token, so it is simply left off the
-    // AuthInfo. A PRESENT-but-unparseable `exp` must fail CLOSED: dropping it
-    // would silently promote the token to never-expiring, letting a buggy or
-    // compromised introspection endpoint hand out tokens that never age out.
-    const expRaw = introspection['exp']
-    let expiresAt: number | undefined
-    if (expRaw !== undefined && expRaw !== null) {
-      const parsed = typeof expRaw === 'number' ? expRaw : Number(expRaw)
-      if (!Number.isFinite(parsed)) {
-        return undefined
-      }
-      expiresAt = parsed
-    }
-    return {
-      clientId:
-        typeof introspection['client_id'] === 'string'
-          ? introspection['client_id']
-          : 'unknown',
-      extra: introspection,
-      scopes: splitScopes(introspection['scope']),
-      token,
-      ...(expiresAt === undefined ? {} : { expiresAt }),
-    }
-  }
-
-  async authenticateRequest(
-    req: AuthenticatedRequest,
-    res: ServerResponse,
-    resourceMetadataUrl: string,
-  ): Promise<{ authInfo: AuthInfo; ok: true } | { ok: false }> {
-    const authHeader = getRequestHeaderValue(req.headers.authorization).trim()
-    if (!authHeader) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_request',
-        'Missing Authorization header',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    // `authHeader` is non-empty, guarded above, so split always
-    // yields at least one element — `parts[0]` is always a string.
-    const parts = authHeader.split(/\s+/u)
-    const type = parts[0]!
-    const token = parts[1]
-    if (type.toLowerCase() !== 'bearer' || !token) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_request',
-        "Invalid Authorization header format, expected 'Bearer TOKEN'",
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    let authInfo: AuthInfo | undefined
-    try {
-      authInfo = await this.verifyAccessToken(token)
-    } catch (e) {
-      const message = errorMessage(e)
-      this.log.error(`Token verification failed: ${message}`)
-      writeJson(res, 500, {
-        error: 'server_error',
-        error_description: 'Token verification failed',
-      })
-      return { ok: false }
-    }
-    if (!authInfo) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_token',
-        'Invalid or expired token',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    if (
-      typeof authInfo.expiresAt === 'number' &&
-      authInfo.expiresAt < Date.now() / 1000
-    ) {
-      writeOAuthError(
-        res,
-        401,
-        'invalid_token',
-        'Token has expired',
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    const missing = this.requiredScopes.filter(
-      s => !authInfo.scopes.includes(s),
-    )
-    if (missing.length > 0) {
-      writeOAuthError(
-        res,
-        403,
-        'insufficient_scope',
-        `Missing required scopes: ${missing.join(', ')}`,
-        resourceMetadataUrl,
-      )
-      return { ok: false }
-    }
-    req.auth = authInfo
-    return { authInfo, ok: true }
-  }
+/**
+ * The `scope` parameter for a WWW-Authenticate challenge: the space-delimited
+ * list of scopes this resource requires. Empty when no scope is enforced, in
+ * which case the challenge omits the parameter.
+ */
+export function buildOAuthScopeParameter(
+  requiredScopes: readonly string[],
+): string {
+  return buildOAuthResourceScopes(requiredScopes).join(' ')
 }
 
+/**
+ * RFC 9728 protected-resource metadata. `authorization_servers` publishes the
+ * CONFIGURED issuer: discovery has already refused any document whose own
+ * `issuer` differs, so config and document agree and sourcing from config makes
+ * that invariant plain. `bearer_methods_supported` names only `header` because
+ * the Authorization header is the sole form this server reads.
+ */
 export function buildProtectedResourceMetadata(
   baseUrl: URL,
-  oauthMetadata: OAuthMetadata,
+  issuer: string,
   requiredScopes: readonly string[],
 ): Record<string, unknown> {
   return {
-    authorization_servers: [oauthMetadata.issuer],
-    resource: new URL('/', baseUrl).href,
+    authorization_servers: [issuer],
+    bearer_methods_supported: ['header'],
+    resource: getOAuthResourceIdentifier(baseUrl).href,
     resource_name: 'Socket MCP Server',
-    scopes_supported: requiredScopes,
+    scopes_supported: buildOAuthResourceScopes(requiredScopes),
   }
 }
 
@@ -262,6 +78,16 @@ export function getForwardedHeaderValue(
   header: string | string[] | undefined,
 ): string {
   return getRequestHeaderValue(header).split(',', 1)[0]?.trim() || ''
+}
+
+/**
+ * The RFC 8707 resource identifier this server answers for. Derived from the
+ * request's base URL so it matches the `resource` value
+ * `buildProtectedResourceMetadata` publishes — the audience check and the
+ * published identifier cannot drift because they call the same function.
+ */
+export function getOAuthResourceIdentifier(baseUrl: URL): URL {
+  return resourceUrlFromServerUrl(new URL('/', baseUrl))
 }
 
 export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
@@ -391,10 +217,16 @@ export function writeOAuthError(
   errorCode: string,
   message: string,
   resourceMetadataUrl?: string | undefined,
+  scope?: string | undefined,
 ): void {
-  const authenticateValue = resourceMetadataUrl
-    ? `Bearer error="${errorCode}", error_description="${message}", resource_metadata="${resourceMetadataUrl}"`
-    : `Bearer error="${errorCode}", error_description="${message}"`
+  const params = [
+    `error="${errorCode}"`,
+    `error_description="${message}"`,
+    ...(resourceMetadataUrl
+      ? [`resource_metadata="${resourceMetadataUrl}"`]
+      : []),
+    ...(scope ? [`scope="${scope}"`] : []),
+  ]
   writeJson(
     res,
     statusCode,
@@ -402,6 +234,6 @@ export function writeOAuthError(
       error: errorCode,
       error_description: message,
     },
-    { 'WWW-Authenticate': authenticateValue },
+    { 'WWW-Authenticate': `Bearer ${params.join(', ')}` },
   )
 }

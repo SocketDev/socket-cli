@@ -14,12 +14,14 @@
  *
  * Related Files:
  *
- * - Src/commands/mcp/transport-http-helpers.mts - Implementation
+ * - Src/commands/mcp/oauth-introspector.mts - Implementation
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OAuthIntrospector } from '../../../../src/commands/mcp/transport-http-helpers.mts'
+import { OAuthIntrospector } from '../../../../src/commands/mcp/oauth-introspector.mts'
+
+import type { OAuthIntrospectorOptions } from '../../../../src/commands/mcp/oauth-introspector.mts'
 
 import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request/request'
 
@@ -69,14 +71,29 @@ const validMetadata = {
   token_endpoint: 'https://auth.example.com/token',
 }
 
-const log = { error: vi.fn() }
+const log = { error: vi.fn(), warn: vi.fn() }
+
+// The resource identifier every verifyAccessToken call in this file is checked
+// against. Matches what getOAuthResourceIdentifier derives from a request whose
+// Host is api.example.com.
+const RESOURCE = new URL('https://api.example.com/')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-function newIntrospector(scopes: readonly string[] = SCOPES) {
-  return new OAuthIntrospector(ISSUER, CLIENT_ID, CLIENT_SECRET, scopes, log)
+function newIntrospector(
+  scopes: readonly string[] = SCOPES,
+  options?: OAuthIntrospectorOptions | undefined,
+) {
+  return new OAuthIntrospector(
+    ISSUER,
+    CLIENT_ID,
+    CLIENT_SECRET,
+    scopes,
+    log,
+    options,
+  )
 }
 
 describe('OAuthIntrospector — loadMetadata', () => {
@@ -105,29 +122,33 @@ describe('OAuthIntrospector — loadMetadata', () => {
   })
 
   it('throws on non-2xx status with the body in the message', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 500, text: 'boom' }),
     )
     const intro = newIntrospector()
-    await expect(intro.loadMetadata()).rejects.toThrow(
-      /OAuth metadata discovery failed with status 500: boom/,
-    )
+    await expect(intro.loadMetadata()).rejects.toThrow(/HTTP 500: boom/)
   })
 
   it('throws on 4xx status with the body in the message', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 404, text: 'not found' }),
     )
     const intro = newIntrospector()
+    await expect(intro.loadMetadata()).rejects.toThrow(/HTTP 404: not found/)
+  })
+
+  it('names every probed well-known URL when discovery finds nothing', async () => {
+    mockHttpRequest.mockResolvedValue(fakeResponse({ status: 404, text: '' }))
+    const intro = newIntrospector()
     await expect(intro.loadMetadata()).rejects.toThrow(
-      /OAuth metadata discovery failed with status 404/,
+      /Tried 2 well-known URLs/,
     )
   })
 
   it('throws when authorization_endpoint is missing', async () => {
     const partial = { ...validMetadata } as Record<string, unknown>
     delete partial['authorization_endpoint']
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 200, body: partial }),
     )
     const intro = newIntrospector()
@@ -137,7 +158,7 @@ describe('OAuthIntrospector — loadMetadata', () => {
   })
 
   it('throws when introspection_endpoint is empty string', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({
         status: 200,
         body: { ...validMetadata, introspection_endpoint: '' },
@@ -150,7 +171,7 @@ describe('OAuthIntrospector — loadMetadata', () => {
   })
 
   it('throws when token_endpoint is wrong type', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({
         status: 200,
         body: { ...validMetadata, token_endpoint: 42 },
@@ -162,24 +183,39 @@ describe('OAuthIntrospector — loadMetadata', () => {
     )
   })
 
+  it('refuses a metadata document whose issuer names another tenant', async () => {
+    // RFC 8414 §3.3. Without this comparison a host that answers the well-known
+    // path for one tenant hands this server another tenant's endpoints.
+    mockHttpRequest.mockResolvedValue(
+      fakeResponse({
+        status: 200,
+        body: { ...validMetadata, issuer: 'https://evil.example.com' },
+      }),
+    )
+    const intro = newIntrospector()
+    await expect(intro.loadMetadata()).rejects.toThrow(
+      /issuer mismatch: document declares "https:\/\/evil\.example\.com", the configured issuer is "https:\/\/auth\.example\.com"/,
+    )
+  })
+
   it('clears the cached promise after a failure so the next call retries', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 500, text: 'transient' }),
     )
     const intro = newIntrospector()
     await expect(intro.loadMetadata()).rejects.toThrow()
-    // Second attempt should re-issue the GET, not return the cached
-    // failure.
-    mockHttpRequest.mockResolvedValueOnce(
+    const callsAfterFailure = mockHttpRequest.mock.calls.length
+    // Second attempt should re-issue the GET, not return the cached failure.
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 200, body: validMetadata }),
     )
     const m = await intro.loadMetadata()
     expect(m).toMatchObject(validMetadata)
-    expect(mockHttpRequest).toHaveBeenCalledTimes(2)
+    expect(mockHttpRequest.mock.calls.length).toBeGreaterThan(callsAfterFailure)
   })
 
   it('throws when the response body is not valid JSON', async () => {
-    mockHttpRequest.mockResolvedValueOnce(
+    mockHttpRequest.mockResolvedValue(
       fakeResponse({ status: 200, text: 'not-json{' }),
     )
     const intro = newIntrospector()
@@ -210,7 +246,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    const info = await intro.verifyAccessToken('the-token')
+    const info = await intro.verifyAccessToken('the-token', RESOURCE)
     expect(info).toMatchObject({
       clientId: 'user-app',
       scopes: ['packages:list', 'extra:read'],
@@ -225,7 +261,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       fakeResponse({ status: 200, body: { active: false } }),
     )
     const intro = newIntrospector()
-    expect(await intro.verifyAccessToken('the-token')).toBe(undefined)
+    expect(await intro.verifyAccessToken('the-token', RESOURCE)).toBe(undefined)
   })
 
   it('throws on non-2xx introspection status', async () => {
@@ -234,9 +270,9 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       fakeResponse({ status: 500, text: 'broken' }),
     )
     const intro = newIntrospector()
-    await expect(intro.verifyAccessToken('the-token')).rejects.toThrow(
-      /Token introspection failed with status 500: broken/,
-    )
+    await expect(
+      intro.verifyAccessToken('the-token', RESOURCE),
+    ).rejects.toThrow(/Token introspection failed with status 500: broken/)
   })
 
   it('returns clientId="unknown" when client_id is missing or not a string', async () => {
@@ -248,7 +284,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    const info = await intro.verifyAccessToken('the-token')
+    const info = await intro.verifyAccessToken('the-token', RESOURCE)
     expect(info?.clientId).toBe('unknown')
   })
 
@@ -264,7 +300,9 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    await expect(intro.verifyAccessToken('the-token')).resolves.toBeUndefined()
+    await expect(
+      intro.verifyAccessToken('the-token', RESOURCE),
+    ).resolves.toBeUndefined()
   })
 
   it('rejects the token when exp is an object', async () => {
@@ -276,7 +314,9 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    await expect(intro.verifyAccessToken('the-token')).resolves.toBeUndefined()
+    await expect(
+      intro.verifyAccessToken('the-token', RESOURCE),
+    ).resolves.toBeUndefined()
   })
 
   it('omits expiresAt when exp is genuinely absent (non-expiring token)', async () => {
@@ -288,7 +328,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    const info = await intro.verifyAccessToken('the-token')
+    const info = await intro.verifyAccessToken('the-token', RESOURCE)
     expect(info?.expiresAt).toBeUndefined()
     expect(info?.token).toBe('the-token')
   })
@@ -301,9 +341,9 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       introspection_endpoint: 'http://169.254.169.254/introspect',
     })
     const intro = newIntrospector()
-    await expect(intro.verifyAccessToken('the-token')).rejects.toThrow(
-      /private\/loopback host/,
-    )
+    await expect(
+      intro.verifyAccessToken('the-token', RESOURCE),
+    ).rejects.toThrow(/private\/loopback host/)
   })
 
   it('parses exp from a string when convertible', async () => {
@@ -315,7 +355,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    const info = await intro.verifyAccessToken('the-token')
+    const info = await intro.verifyAccessToken('the-token', RESOURCE)
     expect(info?.expiresAt).toBe(9_999_999_999)
   })
 
@@ -328,7 +368,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    const info = await intro.verifyAccessToken('the-token')
+    const info = await intro.verifyAccessToken('the-token', RESOURCE)
     expect(info?.scopes).toEqual([])
   })
 
@@ -341,7 +381,7 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
-    await intro.verifyAccessToken('the-token')
+    await intro.verifyAccessToken('the-token', RESOURCE)
     const introCall = mockHttpRequest.mock.calls[1]
     expect(introCall[0]).toBe('https://auth.example.com/introspect')
     const expectedAuth =

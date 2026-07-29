@@ -9,16 +9,15 @@ import {
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { OAuthIntrospector } from './oauth-introspector.mts'
 import { createConfiguredServer } from './server.mts'
 import {
   buildProtectedResourceMetadata,
-  getProtectedResourceMetadataUrl,
   getRequestBaseUrl,
   getRequestHeaderValue,
   handleRequestSafely,
   isLocalhostOrigin,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
-  OAuthIntrospector,
   writeJson,
 } from './transport-http-helpers.mts'
 
@@ -60,6 +59,11 @@ export interface HttpTransportConfig extends ServerConfig {
   oauthClientId: string
   oauthClientSecret: string
   oauthIssuer: string
+  // Reject an active token whose introspection response carries no `aud` claim.
+  // Off by default: an authorization server that never emits the claim would
+  // otherwise fail every request. A PRESENT `aud` naming another resource is
+  // rejected either way.
+  oauthRequireAudience?: boolean | undefined
   oauthRequiredScopes: readonly string[]
   port: number
   trustProxy: boolean
@@ -178,7 +182,10 @@ export async function runHttpTransport(
         config.oauthClientSecret,
         config.oauthRequiredScopes,
         logger,
-        { allowLocalIssuer: config.oauthAllowLocalIssuer ?? false },
+        {
+          allowLocalIssuer: config.oauthAllowLocalIssuer ?? false,
+          requireAudience: config.oauthRequireAudience ?? false,
+        },
       )
     : undefined
 
@@ -301,15 +308,14 @@ export async function runHttpTransport(
       introspector &&
       url.pathname === OAUTH_PROTECTED_RESOURCE_METADATA_PATH
     ) {
-      // loadMetadata is memoized after the successful startup probe,
-      // so this resolves synchronously from cache.
-      const metadata = await introspector.loadMetadata()
+      // The configured issuer is what gets published: discovery already refused
+      // any document whose own `issuer` differed, so the two agree.
       writeJson(
         res,
         200,
         buildProtectedResourceMetadata(
           baseUrl,
-          metadata,
+          config.oauthIssuer,
           config.oauthRequiredScopes,
         ),
       )
@@ -340,13 +346,14 @@ export async function runHttpTransport(
     }
 
     // Auth runs on every request and fails closed: nothing past this point is
-    // reachable without a bearer the introspector accepted. There is no
-    // unauthenticated fall-through to the operator's own token.
+    // reachable without a bearer the introspector accepted, minted for THIS
+    // resource. There is no unauthenticated fall-through to the operator's own
+    // token.
     if (introspector) {
       const authResult = await introspector.authenticateRequest(
         authenticatedReq,
         res,
-        getProtectedResourceMetadataUrl(baseUrl),
+        baseUrl,
       )
       if (!authResult.ok) {
         return

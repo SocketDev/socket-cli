@@ -1,6 +1,7 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { SOCKET_CLI_DEBUG } from '../../env/socket-cli-debug.mts'
+import { getSocketOauthRequireAudience } from '../../env/socket-oauth-require-audience.mts'
 import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import { runHttpTransport } from './transport-http.mts'
 import { runStdioTransport } from './transport-stdio.mts'
@@ -67,6 +68,10 @@ export async function handleMcp(config: HandleMcpConfig): Promise<void> {
       oauthClientId: clientId,
       oauthClientSecret: clientSecret,
       oauthIssuer: issuer,
+      // Socket's introspection endpoint does not emit `aud` yet, so requiring
+      // it is opt-in. A token that DOES name another resource is refused
+      // regardless.
+      oauthRequireAudience: getSocketOauthRequireAudience(),
       oauthRequiredScopes:
         cfg.oauthRequiredScopes ?? DEFAULT_OAUTH_REQUIRED_SCOPES,
       port: cfg.port,
