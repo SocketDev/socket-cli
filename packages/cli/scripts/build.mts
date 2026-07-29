@@ -2,7 +2,7 @@
  * Build script for Socket CLI. Options: --quiet, --verbose, --force, --watch.
  */
 
-import { copyFileSync, promises as fs } from 'node:fs'
+import { copyFileSync, existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -39,6 +39,55 @@ const printError = msg => {
   logger.log('')
   logger.error(msg)
   logger.log('')
+}
+
+/**
+ * Copy the JVM build-tool resolution assets — the Gradle init scripts, the sbt
+ * plugin, and the Maven extension jar — into dist, where the manifest commands
+ * resolve them at runtime. The Maven jar is compiled by
+ * maven-extension/build-jar.sh and is absent from a fresh checkout: a local dev
+ * build tolerates that (run.mts surfaces a build hint at runtime) but a
+ * published build fails closed, because shipping without the jar would make
+ * `socket manifest maven` silently produce an empty SBOM.
+ */
+async function copyManifestScripts() {
+  const srcDir = path.join(packageRoot, 'src/commands/manifest/scripts')
+  const distDir = path.join(packageRoot, 'dist')
+  const destDir = path.join(distDir, 'manifest-scripts')
+  await fs.mkdir(path.join(destDir, 'maven-extension'), { recursive: true })
+  const copies = await Promise.allSettled([
+    fs.copyFile(
+      path.join(packageRoot, 'src/commands/manifest/init.gradle'),
+      path.join(distDir, 'init.gradle'),
+    ),
+    fs.copyFile(
+      path.join(srcDir, 'socket-facts.init.gradle'),
+      path.join(destDir, 'socket-facts.init.gradle'),
+    ),
+    fs.copyFile(
+      path.join(srcDir, 'socket-facts.plugin.scala'),
+      path.join(destDir, 'socket-facts.plugin.scala'),
+    ),
+  ])
+  const copyFailure = copies.find(r => r.status === 'rejected')
+  if (copyFailure) {
+    throw copyFailure.reason
+  }
+  const jarPath = path.join(
+    srcDir,
+    'maven-extension',
+    'coana-maven-extension.jar',
+  )
+  if (existsSync(jarPath)) {
+    await fs.copyFile(
+      jarPath,
+      path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
+    )
+  } else if (process.env['INLINED_PUBLISHED_BUILD'] === '1') {
+    throw new Error(
+      `Maven manifest extension jar not found at ${jarPath} for a published build. Build it first: pnpm run build:maven-extension`,
+    )
+  }
 }
 
 /**
@@ -272,6 +321,14 @@ async function main() {
         )
         if (!quiet && verbose) {
           logger.success('CHANGELOG.md copied from repo root')
+        }
+      })(),
+
+      // Copy the JVM manifest emitter assets into dist/manifest-scripts.
+      (async () => {
+        await copyManifestScripts()
+        if (!quiet && verbose) {
+          logger.success('Manifest scripts copied')
         }
       })(),
     ])

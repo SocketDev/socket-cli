@@ -23,6 +23,8 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { REPO_CACHE_DIR } from './constants/paths.mts'
+
 const logger = getDefaultLogger()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -178,7 +180,7 @@ async function hashFiles(globPattern, cwd) {
  * Download and extract cache from GitHub Actions.
  */
 async function restoreCache(repo, cacheKey) {
-  const tempDir = path.join(packageRoot, 'node_modules', '.cache', 'restore')
+  const tempDir = path.join(REPO_CACHE_DIR, 'restore')
   await fs.mkdir(tempDir, { recursive: true })
 
   try {

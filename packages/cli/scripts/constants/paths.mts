@@ -21,6 +21,13 @@ export const srcPath = path.join(rootPath, 'src')
 export const rootNodeModulesBinPath = path.join(rootPath, NODE_MODULES, '.bin')
 
 // Cache directory paths.
+// Repo-owned tool-cache segment at the repo root, NOT inside node_modules:
+// the store has to outlive `rm -rf node_modules` and package `clean` sweeps.
+export const REPO_CACHE_DIR = path.join(
+  path.resolve(rootPath, '../..'),
+  '.cache',
+  'repo',
+)
 const SOCKET_CACHE_DIR = path.join(os.homedir(), '.socket')
 export const SOCKET_CLI_SEA_BUILD_DIR = path.join(
   os.tmpdir(),
