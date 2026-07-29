@@ -2,19 +2,24 @@
  * Trust boundary between the CLI and a scanned repository's socket.json.
  *
  * A repository under scan ships its own socket.json, so every value read from
- * that file is untrusted input. Gradle and sbt invocations are the sharpest
- * edge: `defaults.manifest.<tool>.bin` picks the executable and
- * `gradleOpts`/`sbtOpts` become argv on the same spawn.
+ * that file is untrusted input. Three fields reach a dangerous sink:
+ * `defaults.manifest.<tool>.bin` picks an executable, `gradleOpts`/`sbtOpts`
+ * become argv on the same spawn, and `defaults.manifest.conda.infile`/`outfile`
+ * are a read and a write destination.
  *
- * The rule: only a command-line flag chooses a build binary or its extra
- * options. socket.json is honored when it names the exact binary the CLI would
- * have picked on its own (`<cwd>/gradlew`, `sbt` on PATH) and otherwise needs
- * an explicit `--trust-socket-json`.
+ * The rule: only a command-line flag chooses a build binary, its extra options,
+ * or a path outside the project. socket.json is honored when it names the exact
+ * binary the CLI would have picked on its own (`<cwd>/gradlew`, `sbt` on PATH)
+ * and when its paths stay inside cwd; anything else needs an explicit
+ * `--trust-socket-json`.
  */
 
 import path from 'node:path'
 
+import { FLAG_JSON } from '../../constants/cli.mjs'
+import { ENVIRONMENT_YML, REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { isPathWithinRoot } from '../../util/trusted-executable.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../util/socket/json.mts'
@@ -48,7 +53,7 @@ export function refuseSocketJsonBin({
   saw: string
   tool: string
   wanted: string
-}): CResult<BuildToolInvocation> {
+}): CResult<never> {
   return {
     ok: false,
     message: `Refused a ${tool} binary chosen by ${SOCKET_JSON}`,
@@ -78,7 +83,7 @@ export function refuseSocketJsonOpts({
   reason: string
   saw: string
   tool: string
-}): CResult<BuildToolInvocation> {
+}): CResult<never> {
   return {
     ok: false,
     message: `Refused ${tool} options chosen by ${SOCKET_JSON}`,
@@ -89,6 +94,128 @@ export function refuseSocketJsonOpts({
       `Fix: pass \`${flag}="${saw}"\` on the command line if you trust it, or re-run with \`${TRUST_SOCKET_JSON_FLAG}\` to honor ${SOCKET_JSON} in this checkout.`,
     ].join('\n'),
   }
+}
+
+/**
+ * Refusal for a socket.json path that resolves outside the project.
+ */
+export function refuseSocketJsonPath({
+  cwd,
+  field,
+  flag,
+  raw,
+  reason,
+  resolved,
+  role,
+}: {
+  cwd: string
+  field: string
+  flag: string
+  raw: string
+  reason: string
+  resolved: string
+  role: string
+}): CResult<never> {
+  return {
+    ok: false,
+    message: `Refused a conda ${role} path chosen by ${SOCKET_JSON}`,
+    cause: [
+      `${SOCKET_JSON} in ${cwd} sets ${field}.`,
+      `Saw \`${raw}\` (resolves to ${resolved}), wanted a path inside ${cwd}.`,
+      reason,
+      `Fix: pass \`${flag}=${raw}\` on the command line if you trust it, or re-run with \`${TRUST_SOCKET_JSON_FLAG}\` to honor ${SOCKET_JSON} in this checkout.`,
+    ].join('\n'),
+  }
+}
+
+/**
+ * Decide which conda input file a run may read. The `-` sentinel means stdin
+ * and passes through untouched.
+ */
+export function resolveCondaInfile({
+  cliFile,
+  cwd,
+  socketJson,
+  trustSocketJson,
+}: {
+  cliFile: unknown
+  cwd: string
+  socketJson: SocketJson | undefined
+  trustSocketJson: boolean
+}): CResult<string> {
+  const cliFilePath = readBuildToolBin(cliFile)
+  if (cliFilePath) {
+    return { ok: true, data: cliFilePath }
+  }
+
+  const socketJsonFile = readBuildToolBin(
+    socketJson?.defaults?.manifest?.conda?.infile,
+  )
+  if (!socketJsonFile) {
+    return { ok: true, data: ENVIRONMENT_YML }
+  }
+  if (socketJsonFile === '-') {
+    return { ok: true, data: socketJsonFile }
+  }
+
+  const resolved = path.resolve(cwd, socketJsonFile)
+  if (!trustSocketJson && !isPathWithinRoot(cwd, resolved)) {
+    return refuseSocketJsonPath({
+      cwd,
+      field: 'defaults.manifest.conda.infile',
+      flag: '--file',
+      raw: socketJsonFile,
+      reason: `The CLI reads that file and, with ${FLAG_JSON}, serializes its contents into output a scan uploads, so a scanned repository must not aim the read outside its own tree.`,
+      resolved,
+      role: 'input',
+    })
+  }
+  return { ok: true, data: resolved }
+}
+
+/**
+ * Decide which conda output file a run may write. The `-` sentinel means stdout
+ * and passes through untouched.
+ */
+export function resolveCondaOutfile({
+  cliOut,
+  cwd,
+  socketJson,
+  trustSocketJson,
+}: {
+  cliOut: unknown
+  cwd: string
+  socketJson: SocketJson | undefined
+  trustSocketJson: boolean
+}): CResult<string> {
+  const cliOutPath = readBuildToolBin(cliOut)
+  if (cliOutPath) {
+    return { ok: true, data: cliOutPath }
+  }
+
+  const socketJsonOut = readBuildToolBin(
+    socketJson?.defaults?.manifest?.conda?.outfile,
+  )
+  if (!socketJsonOut) {
+    return { ok: true, data: REQUIREMENTS_TXT }
+  }
+  if (socketJsonOut === '-') {
+    return { ok: true, data: socketJsonOut }
+  }
+
+  const resolved = path.resolve(cwd, socketJsonOut)
+  if (!trustSocketJson && !isPathWithinRoot(cwd, resolved)) {
+    return refuseSocketJsonPath({
+      cwd,
+      field: 'defaults.manifest.conda.outfile',
+      flag: '--out',
+      raw: socketJsonOut,
+      reason: `The CLI writes the converted requirements there and the content is the pip block harvested from the repository's own ${ENVIRONMENT_YML}, so a path outside the project would let a scanned repository write its own text anywhere the CLI can reach.`,
+      resolved,
+      role: 'output',
+    })
+  }
+  return { ok: true, data: resolved }
 }
 
 /**

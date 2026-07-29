@@ -4,11 +4,13 @@ import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { convertSbtToMaven } from './convert-sbt-to-maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import {
+  resolveCondaInfile,
+  resolveCondaOutfile,
   resolveGradleInvocation,
   resolveSbtInvocation,
 } from './manifest-build-trust.mts'
 import { outputManifest } from './output-manifest.mts'
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
+import { outputRequirements } from './output-requirements.mts'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
 
@@ -91,14 +93,34 @@ export async function generateAutoManifest({
   }
 
   if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
+    const infile = resolveCondaInfile({
+      cliFile: undefined,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson,
+    })
+    if (!infile.ok) {
+      await outputRequirements(infile, outputKind, '-')
+      return
+    }
+    const outfile = resolveCondaOutfile({
+      cliOut: undefined,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson,
+    })
+    if (!outfile.ok) {
+      await outputRequirements(outfile, outputKind, '-')
+      return
+    }
     logger.log(
       'Detected an environment.yml file, running default Conda generator…',
     )
     await handleManifestConda({
       cwd,
-      filename: sockJson.defaults?.manifest?.conda?.infile ?? 'environment.yml',
+      filename: infile.data,
       outputKind,
-      out: sockJson.defaults?.manifest?.conda?.outfile ?? REQUIREMENTS_TXT,
+      out: outfile.data,
       verbose: Boolean(sockJson.defaults?.manifest?.conda?.verbose),
     })
   }
