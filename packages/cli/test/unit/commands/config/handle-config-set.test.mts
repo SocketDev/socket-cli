@@ -74,7 +74,7 @@ describe('handleConfigSet', () => {
     const { outputConfigSet } =
       await import('../../../../src/commands/config/output-config-set.mts')
 
-    const mockResult = createSuccessResult('new-value')
+    const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
@@ -109,13 +109,39 @@ describe('handleConfigSet', () => {
     expect(outputConfigSet).toHaveBeenCalledWith(mockResult, 'text')
   })
 
+  it('reports a failure when the config is read-only', async () => {
+    // updateConfigValue only fills `data` for a read-only config; `config set`
+    // is one-shot, so an in-memory-only change is not a success.
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
+    mockUpdateConfigValue.mockReturnValue(
+      createSuccessResult('The active config is read-only'),
+    )
+
+    await handleConfigSet({
+      key: 'defaultOrg',
+      outputKind: 'json',
+      value: 'my-org',
+    })
+
+    expect(outputConfigSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        code: 1,
+        message: "Config key 'defaultOrg' was not saved",
+        cause: 'The active config is read-only',
+      }),
+      'json',
+    )
+  })
+
   it('handles markdown output', async () => {
     const { updateConfigValue } =
       await import('../../../../src/util/config.mts')
     const { outputConfigSet } =
       await import('../../../../src/commands/config/output-config-set.mts')
 
-    const mockResult = createSuccessResult('markdown-value')
+    const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
@@ -132,7 +158,7 @@ describe('handleConfigSet', () => {
     const { debug, debugDir } =
       await import('@socketsecurity/lib-stable/debug/output')
 
-    mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
+    mockUpdateConfigValue.mockReturnValue(createSuccessResult(undefined))
 
     await handleConfigSet({
       key: 'apiBaseUrl',

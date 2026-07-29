@@ -350,12 +350,18 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
 export function overrideConfigApiToken(apiToken: string | undefined) {
   debugNs('notice', 'override: Socket API token (not stored)')
-  // Set token to the local cached config and mark it read-only so it doesn't persist.
-  cachedConfig = {
-    ...cachedConfig,
-    ...(apiToken === undefined ? {} : { apiToken }),
+  if (apiToken === undefined) {
+    // SOCKET_CLI_NO_API_TOKEN: run with no token and lock the config read-only
+    // so nothing is persisted for this run.
+    cachedConfig = { ...cachedConfig }
+    configFromFlag = true
+    return
   }
-  configFromFlag = true
+  // A token from the environment overrides authentication only. It is resolved
+  // straight from the environment at read time, so it is deliberately NOT
+  // injected into the cached config and the config is NOT locked: unrelated
+  // keys (defaultOrg and friends) stay writable via `socket config set`, and
+  // the env token still never reaches disk because it never enters the cache.
 }
 
 /**
@@ -407,7 +413,10 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     return {
       ok: true,
       message: `Config key '${key}' was ${wasDeleted ? 'deleted' : 'updated'}`,
-      data: 'Change applied but not persisted; current config is overridden through env var or flag',
+      data:
+        'The active config is read-only because it was fully overridden by the ' +
+        '--config flag, SOCKET_CLI_CONFIG, or SOCKET_CLI_NO_API_TOKEN. Remove ' +
+        'the override to save changes to disk.',
     }
   }
 

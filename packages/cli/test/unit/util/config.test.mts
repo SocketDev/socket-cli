@@ -49,7 +49,7 @@ describe('util/config', () => {
       expect(updateConfigValue('defaultOrg', 'fake_test_org'))
         .toMatchInlineSnapshot(`
         {
-          "data": "Change applied but not persisted; current config is overridden through env var or flag",
+          "data": "The active config is read-only because it was fully overridden by the --config flag, SOCKET_CLI_CONFIG, or SOCKET_CLI_NO_API_TOKEN. Remove the override to save changes to disk.",
           "message": "Config key 'defaultOrg' was updated",
           "ok": true,
         }
@@ -110,14 +110,26 @@ describe('util/config', () => {
   })
 
   describe('overrideConfigApiToken', () => {
-    it('sets apiToken when provided (line 348-354)', () => {
+    it('does not inject an env token into the cached config', () => {
+      // The token is resolved from the environment at read time. Keeping it out
+      // of the cache is what lets `config set defaultOrg` still reach disk while
+      // the token itself never does.
       overrideCachedConfig({})
       overrideConfigApiToken('test-token-123')
       const result = getConfigValue('apiToken')
       expect(result.ok).toBe(true)
       if (result.ok) {
-        expect(result.data).toBe('test-token-123')
+        expect(result.data).toBeUndefined()
       }
+    })
+
+    it('leaves the config writable under an env token', () => {
+      // Read-only mode is what used to make `config set defaultOrg` a silent
+      // no-op whenever a token came from the environment.
+      resetConfigForTesting()
+      overrideConfigApiToken('test-token-123')
+      expect(isConfigFromFlag()).toBe(false)
+      resetConfigForTesting()
     })
 
     it('handles undefined token without setting key', () => {

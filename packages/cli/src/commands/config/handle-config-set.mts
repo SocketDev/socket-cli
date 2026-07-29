@@ -4,7 +4,7 @@ import { outputConfigSet } from './output-config-set.mts'
 import { updateConfigValue } from '../../util/config.mts'
 import { InputError } from '../../util/error/errors.mts'
 
-import type { OutputKind } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import type { LocalConfig } from '../../util/config.mts'
 
 export async function handleConfigSet({
@@ -27,8 +27,23 @@ export async function handleConfigSet({
 
   const result = updateConfigValue(key, value)
 
-  debug(`Config update ${result.ok ? 'succeeded' : 'failed'}`)
-  debugDir({ result })
+  // `config set` is one-shot: an in-memory-only change is a no-op because the
+  // process exits before anything reads it. updateConfigValue only fills `data`
+  // when the config is read-only (a full --config / SOCKET_CLI_CONFIG /
+  // SOCKET_CLI_NO_API_TOKEN override), so report a failure there rather than a
+  // misleading `OK`.
+  const outcome: CResult<string | undefined> =
+    result.ok && result.data
+      ? {
+          ok: false,
+          code: 1,
+          message: `Config key '${key}' was not saved`,
+          cause: result.data,
+        }
+      : result
 
-  await outputConfigSet(result, outputKind)
+  debug(`Config update ${outcome.ok ? 'succeeded' : 'failed'}`)
+  debugDir({ outcome, result })
+
+  await outputConfigSet(outcome, outputKind)
 }
