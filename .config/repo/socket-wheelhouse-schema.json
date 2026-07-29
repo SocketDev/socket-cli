@@ -4,12 +4,7 @@
   "title": "socket-wheelhouse per-repo config",
   "description": "Per-repo socket-wheelhouse config, at `.config/repo/socket-wheelhouse.json` (the segregated member surface).",
   "type": "object",
-  "required": [
-    "schemaVersion",
-    "repoName",
-    "repo",
-    "build"
-  ],
+  "required": ["schemaVersion", "repoName", "repo", "build"],
   "properties": {
     "$schema": {
       "description": "JSON Schema reference for editor autocompletion. Conventionally `./socket-wheelhouse-schema.json` — both the config and its schema live side-by-side in `.config/`.",
@@ -29,9 +24,7 @@
       "description": "Repo shape.",
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "type"
-      ],
+      "required": ["type"],
       "properties": {
         "type": {
           "description": "Package layout. `solo` = one `package.json` at root, no `packages/`. `mono` = pnpm workspaces under `packages/`.",
@@ -52,10 +45,7 @@
       "description": "How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package; `from: crates-registry` + `type: rust` is a native Rust crate (crates.io provides integrity, so no release-checksums cascade).",
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "from",
-        "type"
-      ],
+      "required": ["from", "type"],
       "properties": {
         "from": {
           "description": "Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).",
@@ -129,10 +119,7 @@
         "description": "An additional publish channel beyond the primary `build`, e.g. `{from:npm-registry, type:addon}` for a `.node` addon shipped alongside a Rust crate.",
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "from",
-          "type"
-        ],
+        "required": ["from", "type"],
         "properties": {
           "from": {
             "description": "Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).",
@@ -269,9 +256,7 @@
           "additionalProperties": false,
           "description": "WCAG color-contrast budget for the repo.",
           "type": "object",
-          "required": [
-            "files"
-          ],
+          "required": ["files"],
           "properties": {
             "files": {
               "description": "Files with contrast pairs to verify.",
@@ -280,10 +265,7 @@
                 "additionalProperties": false,
                 "description": "A file and the set of contrast pairs to verify within it.",
                 "type": "object",
-                "required": [
-                  "path",
-                  "checks"
-                ],
+                "required": ["path", "checks"],
                 "properties": {
                   "path": {
                     "description": "Repo-relative path to the file whose colors are checked.",
@@ -296,10 +278,7 @@
                       "additionalProperties": false,
                       "description": "One foreground/background contrast pair to verify.",
                       "type": "object",
-                      "required": [
-                        "selector",
-                        "bg"
-                      ],
+                      "required": ["selector", "bg"],
                       "properties": {
                         "selector": {
                           "description": "CSS selector (regex-escaped) whose foreground color is checked.",
@@ -336,10 +315,7 @@
           "additionalProperties": false,
           "description": "Layered prebaked base-image manifest.",
           "type": "object",
-          "required": [
-            "registry",
-            "prebakes"
-          ],
+          "required": ["registry", "prebakes"],
           "properties": {
             "description": {
               "type": "string"
@@ -378,10 +354,7 @@
                   "additionalProperties": false,
                   "description": "Go toolchain version + per-arch sha256.",
                   "type": "object",
-                  "required": [
-                    "version",
-                    "sha256"
-                  ],
+                  "required": ["version", "sha256"],
                   "properties": {
                     "version": {
                       "type": "string"
@@ -389,10 +362,7 @@
                     "sha256": {
                       "additionalProperties": false,
                       "type": "object",
-                      "required": [
-                        "amd64",
-                        "arm64"
-                      ],
+                      "required": ["amd64", "arm64"],
                       "properties": {
                         "amd64": {
                           "pattern": "^[0-9a-f]{64}$",
@@ -410,10 +380,7 @@
                   "additionalProperties": false,
                   "description": "rustup-init version + per-arch sha256 (mirrors the .sha256 rustup publishes beside each binary).",
                   "type": "object",
-                  "required": [
-                    "version",
-                    "sha256"
-                  ],
+                  "required": ["version", "sha256"],
                   "properties": {
                     "version": {
                       "type": "string"
@@ -421,10 +388,7 @@
                     "sha256": {
                       "additionalProperties": false,
                       "type": "object",
-                      "required": [
-                        "amd64",
-                        "arm64"
-                      ],
+                      "required": ["amd64", "arm64"],
                       "properties": {
                         "amd64": {
                           "pattern": "^[0-9a-f]{64}$",
@@ -450,13 +414,7 @@
                 "additionalProperties": false,
                 "description": "One prebaked base image.",
                 "type": "object",
-                "required": [
-                  "name",
-                  "status",
-                  "from",
-                  "installs",
-                  "purpose"
-                ],
+                "required": ["name", "status", "from", "installs", "purpose"],
                 "properties": {
                   "name": {
                     "pattern": "^[a-z0-9][a-z0-9._/-]*$",
@@ -670,9 +628,7 @@
       "items": {
         "description": "One exemption for the path-hygiene gate.",
         "type": "object",
-        "required": [
-          "reason"
-        ],
+        "required": ["reason"],
         "properties": {
           "rule": {
             "description": "Rule letter (A, B, C, D, F, G). Omit to match any rule.",
@@ -884,10 +840,7 @@
       "description": "npm dual-use content policy declaration per https://docs.npmjs.com/policies/dual-use. When class is dual-use, every listed package root must carry contentPolicy.class dual-use in its package.json, ship a DISCLOSURE file at the package root describing the dual-use functionality and its intended legitimate use, include DISCLOSURE in the npm files allowlist, keep the declaration across all future versions, and publish only interactively with 2FA or via staged publish with 2FA at promotion — never a direct token or OIDC final publish.",
       "additionalProperties": false,
       "type": "object",
-      "required": [
-        "class",
-        "packages"
-      ],
+      "required": ["class", "packages"],
       "properties": {
         "class": {
           "description": "npm content policy class.",
