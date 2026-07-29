@@ -38,12 +38,14 @@ export async function handleListRepos({
     if (!data.ok) {
       await outputListRepos(data, outputKind, 0, 0, '', 0, direction)
     } else {
-      // Note: nextPage defaults to 0, is null when there's no next page
+      // Note: nextPage defaults to 0, is null when there's no next page.
+      // The SDK's strict type marks it optional (absent === no next page), so
+      // coalesce undefined to null to match outputListRepos's number | null.
       await outputListRepos(
         data,
         outputKind,
         page,
-        data.data.nextPage,
+        data.data.nextPage ?? null,
         sort,
         perPage,
         direction,

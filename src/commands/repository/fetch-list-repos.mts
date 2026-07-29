@@ -3,7 +3,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoriesListResult } from '@socketsecurity/sdk'
 
 export type FetchListReposConfig = {
   direction: string
@@ -20,7 +20,7 @@ export type FetchListReposOptions = {
 export async function fetchListRepos(
   config: FetchListReposConfig,
   options?: FetchListReposOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
+): Promise<CResult<RepositoriesListResult['data']>> {
   const { direction, orgSlug, page, perPage, sort } = {
     __proto__: null,
     ...config,
@@ -38,11 +38,11 @@ export async function fetchListRepos(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.getOrgRepoList(orgSlug, {
-      sort,
-      direction,
-      per_page: String(perPage),
-      page: String(page),
+    sockSdk.listRepositories(orgSlug, {
+      ...(sort ? { sort: sort as 'name' | 'updated_at' | 'created_at' } : {}),
+      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+      per_page: perPage,
+      page,
     }),
     { description: 'list of repositories' },
   )

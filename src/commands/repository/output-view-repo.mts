@@ -8,10 +8,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoryResult } from '@socketsecurity/sdk'
 
 export async function outputViewRepo(
-  result: CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>,
+  result: CResult<RepositoryResult['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {

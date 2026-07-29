@@ -42,7 +42,6 @@ import { getTranslations } from './translations.mts'
 
 import type {
   ALERT_ACTION,
-  ALERT_TYPE,
   CompactSocketArtifact,
   CompactSocketArtifactAlert,
   CveProps,
@@ -190,10 +189,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     ...getOwn(options, 'filter'),
   }) as AlertFilter
 
+  // `issueRules` is a user-provided YAML map typed as
+  // `{ [issueName: string]: boolean }`, so key by `string` here. A string
+  // index signature also keeps the `enabledState[alert.type]` lookup below
+  // well-typed regardless of how `alert.type` resolves.
   const enabledState = {
     __proto__: null,
     ...socketYml?.issueRules,
-  } as Partial<Record<ALERT_TYPE, boolean>>
+  } as unknown as Partial<Record<string, boolean>>
 
   let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
@@ -544,7 +547,13 @@ export function logAlertsMap(
       const severity = alert.raw.severity ?? ''
       const attributes = [
         ...(severity
-          ? [colors[ALERT_SEVERITY_COLOR[severity]](getSeverityLabel(severity))]
+          ? [
+              colors[
+                ALERT_SEVERITY_COLOR[
+                  severity as keyof typeof ALERT_SEVERITY_COLOR
+                ]
+              ](getSeverityLabel(severity)),
+            ]
           : []),
         ...(alert.blocked ? [colors.bold(colors.red('blocked'))] : []),
         ...(alert.fixable ? ['fixable'] : []),

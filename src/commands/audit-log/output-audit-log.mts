@@ -120,25 +120,29 @@ export async function outputAsJson(
       org: orgSlug,
       page,
       perPage,
-      logs: auditLogs.data.results.map(log => {
-        // Note: The subset is pretty arbitrary
-        const {
-          created_at,
-          event_id,
-          ip_address,
-          type,
-          user_agent,
-          user_email,
-        } = log
-        return {
-          event_id,
-          created_at,
-          ip_address,
-          type,
-          user_agent,
-          user_email,
-        }
-      }),
+      logs: auditLogs.data.results.map(
+        (
+          log: SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number],
+        ) => {
+          // Note: The subset is pretty arbitrary
+          const {
+            created_at,
+            event_id,
+            ip_address,
+            type,
+            user_agent,
+            user_email,
+          } = log
+          return {
+            event_id,
+            created_at,
+            ip_address,
+            type,
+            user_agent,
+            user_email,
+          }
+        },
+      ),
     },
   })
 }
@@ -196,14 +200,18 @@ async function outputWithBlessed(
   orgSlug: string,
 ) {
   const filteredLogs = data.results
-  const formattedOutput = filteredLogs.map(logs => [
-    logs.event_id ?? '',
-    msAtHome(logs.created_at ?? ''),
-    logs.type ?? '',
-    logs.user_email ?? '',
-    logs.ip_address ?? '',
-    logs.user_agent ?? '',
-  ])
+  const formattedOutput: string[][] = filteredLogs.map(
+    (
+      logs: SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number],
+    ) => [
+      logs.event_id ?? '',
+      msAtHome(logs.created_at ?? ''),
+      logs.type ?? '',
+      logs.user_email ?? '',
+      logs.ip_address ?? '',
+      logs.user_agent ?? '',
+    ],
+  )
   const headers = [
     ' Event id',
     ' Created at',

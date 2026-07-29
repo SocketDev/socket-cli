@@ -241,20 +241,24 @@ export function preProcess(
         row.score.license = artifact.score?.license || 100
       }
 
-      artifact.alerts?.forEach(({ severity, type }) => {
-        row.alerts.set(`${type}:${severity}`, {
-          type: (type as string) ?? 'unknown',
-          severity: (severity as string) ?? 'none',
-        })
-      })
+      artifact.alerts?.forEach(
+        ({ severity, type }: NonNullable<typeof artifact.alerts>[number]) => {
+          row.alerts.set(`${type}:${severity}`, {
+            type: (type as string) ?? 'unknown',
+            severity: (severity as string) ?? 'none',
+          })
+        },
+      )
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
-      artifact.alerts?.forEach(({ severity, type }) => {
-        alerts.set(`${type}:${severity}`, {
-          type: (type as string) ?? 'unknown',
-          severity: (severity as string) ?? 'none',
-        })
-      })
+      artifact.alerts?.forEach(
+        ({ severity, type }: NonNullable<typeof artifact.alerts>[number]) => {
+          alerts.set(`${type}:${severity}`, {
+            type: (type as string) ?? 'unknown',
+            severity: (severity as string) ?? 'none',
+          })
+        },
+      )
 
       rows.set(purl, {
         ecosystem: artifact.type,

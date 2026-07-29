@@ -9,7 +9,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { FullScanResult } from '@socketsecurity/sdk'
 
 export type FetchCreateOrgFullScanConfigs = {
   branchName: string
@@ -35,7 +35,7 @@ export async function fetchCreateOrgFullScan(
   orgSlug: string,
   config: FetchCreateOrgFullScanConfigs,
   options?: FetchCreateOrgFullScanOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']>> {
+): Promise<CResult<FullScanResult['data']>> {
   const {
     branchName,
     commitHash,
@@ -75,18 +75,23 @@ export async function fetchCreateOrgFullScan(
   }
 
   return await handleApiCall(
-    sockSdk.createOrgFullScan(orgSlug, packagePaths, cwd, {
+    sockSdk.createFullScan(orgSlug, packagePaths, {
+      pathsRelativeTo: cwd,
       ...(branchName ? { branch: branchName } : {}),
       ...(commitHash ? { commit_hash: commitHash } : {}),
       ...(commitMessage ? { commit_message: commitMessage } : {}),
       ...(committers ? { committers } : {}),
-      make_default_branch: String(defaultBranch),
-      ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
-      scan_type: scanType,
+      ...(defaultBranch !== undefined
+        ? { make_default_branch: defaultBranch }
+        : {}),
+      ...(pullRequest ? { pull_request: pullRequest } : {}),
+      ...(scanType ? { scan_type: scanType } : {}),
       repo: repoName,
       ...(workspace ? { workspace } : {}),
-      set_as_pending_head: String(pendingHead),
-      tmp: String(tmp),
+      ...(pendingHead !== undefined
+        ? { set_as_pending_head: pendingHead }
+        : {}),
+      ...(tmp !== undefined ? { tmp } : {}),
     }),
     { description: 'to create a scan' },
   )

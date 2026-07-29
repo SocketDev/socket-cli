@@ -38,13 +38,15 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 const PREGENERATED_SBOM_KEYS = ['cdx', 'socket', 'spdx']
 
 function getPregeneratedSbomPatterns(
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
   for (const key of PREGENERATED_SBOM_KEYS) {
     const supported = supportedFiles[key]
     if (supported) {
-      for (const entry of Object.values(supported)) {
+      for (const entry of Object.values(
+        supported as Record<string, { pattern: string }>,
+      )) {
         patterns.push(`**/${entry.pattern}`)
       }
     }
@@ -54,7 +56,7 @@ function getPregeneratedSbomPatterns(
 
 function filterToPregeneratedSboms(
   filepaths: string[],
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns = getPregeneratedSbomPatterns(supportedFiles)
   // `dot: true` lets `*`-prefixed patterns match leading-dot filenames such as
@@ -162,7 +164,10 @@ export async function handleCreateNewScan({
 
   const { spinner } = constants
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    orgSlug,
+    spinner,
+  })
   if (!supportedFilesCResult.ok) {
     debugFn('warn', 'Failed to fetch supported scan file names')
     debugDir('inspect', { supportedFilesCResult })

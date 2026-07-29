@@ -4,10 +4,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { RepositoryResult } from '@socketsecurity/sdk'
 
 export async function outputUpdateRepo(
-  result: CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']>,
+  result: CResult<RepositoryResult['data']>,
   repoName: string,
   outputKind: OutputKind,
 ): Promise<void> {

@@ -182,7 +182,7 @@ function workspacePatternToGlobPattern(workspace: string): string {
 
 export function filterBySupportedScanFiles(
   filepaths: string[] | readonly string[],
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return filepaths.filter(p =>
@@ -191,7 +191,7 @@ export function filterBySupportedScanFiles(
 }
 
 export function createSupportedFilesFilter(
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): (filepath: string) => boolean {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return (filepath: string) =>
@@ -199,13 +199,17 @@ export function createSupportedFilesFilter(
 }
 
 export function getSupportedFilePatterns(
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ): string[] {
   const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
     if (supported) {
-      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
+      patterns.push(
+        ...Object.values(supported as Record<string, { pattern: string }>).map(
+          p => `**/${p.pattern}`,
+        ),
+      )
     }
   }
   return patterns
@@ -391,7 +395,7 @@ export async function globWorkspace(
 
 export function isReportSupportedFile(
   filepath: string,
-  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getSupportedFiles'>['data'],
 ) {
   const patterns = getSupportedFilePatterns(supportedFiles)
   return micromatch.some(filepath, patterns, { dot: true, nocase: true })

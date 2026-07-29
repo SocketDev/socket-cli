@@ -123,9 +123,11 @@ async function handleMarkdown(
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
 
   if (data.artifacts.added.length > 0) {
-    data.artifacts.added.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.added
+      .slice(0, 10)
+      .forEach((artifact: (typeof data.artifacts.added)[number]) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.added.length > 10) {
       logger.log(`  ... and ${data.artifacts.added.length - 10} more`)
     }
@@ -133,9 +135,11 @@ async function handleMarkdown(
 
   logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
-    data.artifacts.removed.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.removed
+      .slice(0, 10)
+      .forEach((artifact: (typeof data.artifacts.removed)[number]) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.removed.length > 10) {
       logger.log(`  ... and ${data.artifacts.removed.length - 10} more`)
     }
@@ -143,9 +147,11 @@ async function handleMarkdown(
 
   logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
-    data.artifacts.replaced.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.replaced
+      .slice(0, 10)
+      .forEach((artifact: (typeof data.artifacts.replaced)[number]) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.replaced.length > 10) {
       logger.log(`  ... and ${data.artifacts.replaced.length - 10} more`)
     }
@@ -153,9 +159,11 @@ async function handleMarkdown(
 
   logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
-    data.artifacts.updated.slice(0, 10).forEach(artifact => {
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
+    data.artifacts.updated
+      .slice(0, 10)
+      .forEach((artifact: (typeof data.artifacts.updated)[number]) => {
+        logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+      })
     if (data.artifacts.updated.length > 10) {
       logger.log(`  ... and ${data.artifacts.updated.length - 10} more`)
     }

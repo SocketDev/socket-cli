@@ -144,11 +144,9 @@ export async function performReachabilityAnalysis(
     // facts files are cleaned up downstream — see the post-success
     // deletion in handle-create-new-scan.mts.
     const uploadCResult = await handleApiCall(
-      sockSdk.uploadManifestFiles(
-        orgSlug,
-        packagePaths,
-        path.resolve(cwd, analysisTarget),
-      ),
+      sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
+        pathsRelativeTo: path.resolve(cwd, analysisTarget),
+      }),
       {
         description: 'upload manifests',
         spinner,

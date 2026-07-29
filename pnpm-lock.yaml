@@ -216,8 +216,8 @@ importers:
         specifier: 1.1.17
         version: 1.1.17
       '@socketsecurity/sdk':
-        specifier: 1.4.96
-        version: 1.4.96
+        specifier: 4.0.3
+        version: 4.0.3
       '@types/blessed':
         specifier: 0.1.25
         version: 0.1.25
@@ -1825,9 +1825,9 @@ packages:
     resolution: {integrity: sha512-5j0eH6JaBZlcvnbdu+58Sw8c99AK25PTp0Z/lwP7HknHdJ0TMMoTzNIBbp7WCTZKoGrPgBWchi0udN1ObZ53VQ==}
     engines: {node: '>=18'}
 
-  '@socketsecurity/sdk@1.4.96':
-    resolution: {integrity: sha512-yZn50KLeCerKQRYTUfMzB5m7mraH1Rhr01WDLgzgaw3Do3qEsHy7sdoHI5o1FvyIWd8ebBspK3PJ2xqyrdQejw==}
-    engines: {node: '>=18'}
+  '@socketsecurity/sdk@4.0.3':
+    resolution: {integrity: sha512-m/YswFjERxa9nkw4PTGw/8Q6HDRNuvYl5HLWHTtDTj7TLLsk2efbgjpzarqouql2+1VdukDzt5YRejJq7fptXg==}
+    engines: {node: '>=18.20.8', npm: '>=12.0.0', pnpm: '>=11.0.5'}
 
   '@socketsecurity/socket-patch-android-arm64@2.0.0':
     resolution: {integrity: sha512-R/xsoKr0pRpxHeqoIxMj7R4w77mBPQ5Asv4PpNg2UTIEhxUx9XyXW7MVq9XjjrnWIEMpV1TwOptjvBicFTZZAQ==}
@@ -6510,9 +6510,7 @@ snapshots:
 
   '@socketsecurity/registry@1.1.17': {}
 
-  '@socketsecurity/sdk@1.4.96':
-    dependencies:
-      '@socketsecurity/registry': 1.1.17
+  '@socketsecurity/sdk@4.0.3': {}
 
   '@socketsecurity/socket-patch-android-arm64@2.0.0':
     optional: true

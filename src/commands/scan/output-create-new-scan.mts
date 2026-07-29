@@ -10,7 +10,7 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { FullScanResult } from '@socketsecurity/sdk'
 
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined
@@ -19,7 +19,7 @@ export type CreateNewScanOptions = {
 }
 
 export async function outputCreateNewScan(
-  result: CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']>,
+  result: CResult<FullScanResult['data']>,
   options?: CreateNewScanOptions | undefined,
 ) {
   const {

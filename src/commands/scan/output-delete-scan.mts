@@ -4,10 +4,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { DeleteResult } from '@socketsecurity/sdk'
 
 export async function outputDeleteScan(
-  result: CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>,
+  result: CResult<DeleteResult['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
