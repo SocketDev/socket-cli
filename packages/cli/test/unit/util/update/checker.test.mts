@@ -7,11 +7,12 @@
  * NetworkUtils.fetch function - NetworkUtils.getLatestVersion function - Error
  * handling and retries.
  *
- * Related Files: - util/update/checker.mts (implementation)
+ * Related Files: - util/update/checker.mts (implementation) -
+ * checker-registry-url.test.mts (registry URL validation).
  */
 
 import { EventEmitter } from 'node:events'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock https module.
 const mockRequest = vi.hoisted(() => vi.fn())
@@ -77,6 +78,11 @@ describe('update/checker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   describe('isUpdateAvailable', () => {
@@ -263,20 +269,6 @@ describe('update/checker', () => {
       )
     })
 
-    it('throws error for invalid registry URL', async () => {
-      await expect(
-        NetworkUtils.getLatestVersion('test', { registryUrl: 'not-a-url' }),
-      ).rejects.toThrow(/options\.registryUrl "not-a-url" is not a valid URL/)
-    })
-
-    it('throws when registryUrl is explicit empty string (line 222-226)', async () => {
-      await expect(
-        NetworkUtils.getLatestVersion('test', { registryUrl: '' }),
-      ).rejects.toThrow(
-        /getLatestVersion options\.registryUrl must be a non-empty string/,
-      )
-    })
-
     it('returns latest version on success', async () => {
       const mockRes = createMockResponse(200)
       const mockReq = createMockRequest()
@@ -295,29 +287,6 @@ describe('update/checker', () => {
       const result = await NetworkUtils.getLatestVersion('test-package')
 
       expect(result).toBe('2.0.0')
-    })
-
-    it('uses custom registry URL', async () => {
-      const mockRes = createMockResponse(200)
-      const mockReq = createMockRequest()
-
-      mockRequest.mockImplementation((_options, callback) => {
-        process.nextTick(() => {
-          callback(mockRes)
-          process.nextTick(() => {
-            mockRes.emit('data', JSON.stringify({ version: '1.0.0' }))
-            mockRes.emit('end')
-          })
-        })
-        return mockReq
-      })
-
-      await NetworkUtils.getLatestVersion('test', {
-        registryUrl: 'https://custom.registry.com',
-      })
-
-      const callOptions = mockRequest.mock.calls[0]?.[0]
-      expect(callOptions.hostname).toBe('custom.registry.com')
     })
 
     it('throws error when version is missing from response', async () => {

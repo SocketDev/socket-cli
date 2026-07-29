@@ -27,6 +27,7 @@ import { onExit } from '@socketsecurity/lib-stable/events/exit/handler'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
+import { assertSafeEndpointUrl } from '../url/safe-endpoint.mts'
 
 const logger = getDefaultLogger()
 
@@ -201,15 +202,13 @@ const NetworkUtils = {
       )
     }
 
-    let normalizedRegistryUrl: string
-    try {
-      const url = new URL(registryUrl)
-      normalizedRegistryUrl = url.toString()
-    } catch {
-      throw new Error(
-        `options.registryUrl "${registryUrl}" is not a valid URL (new URL() threw); pass an absolute http(s) URL like ${NPM_REGISTRY_URL}`,
-      )
-    }
+    // The registry URL comes from .npmrc, which a checked-out repo can supply,
+    // and the auth token for that registry rides along in the Authorization
+    // header. SSRF-guard it before the request leaves the box.
+    const normalizedRegistryUrl = assertSafeEndpointUrl(registryUrl, {
+      label: 'npm registry URL',
+      source: 'the registry setting in .npmrc or options.registryUrl',
+    }).toString()
 
     const maybeSlash = normalizedRegistryUrl.endsWith('/') ? '' : '/'
     const latestUrl = `${normalizedRegistryUrl}${maybeSlash}${encodeURIComponent(name)}/latest`
