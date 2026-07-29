@@ -33,7 +33,7 @@ export async function streamScan(
   // Note: This will write to stdout or target file. It is not a noop.
   return await handleApiCall<'getOrgFullScan'>(
     sockSdk.streamFullScan(orgSlug, scanId, {
-      output: file === '-' ? undefined : file,
+      output: file === '-' ? true : file,
     }),
     {
       commandPath,

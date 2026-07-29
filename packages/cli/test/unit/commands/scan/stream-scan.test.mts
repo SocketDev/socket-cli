@@ -106,8 +106,10 @@ describe('stream-scan', () => {
 
       await streamScan('my-org', 'scan-123', { file: '-' })
 
+      // `true` is the sdk's write-to-stdout signal. `undefined` means write
+      // nowhere and leave the response stream unread.
       expect(mockStreamFullScan).toHaveBeenCalledWith('my-org', 'scan-123', {
-        output: undefined,
+        output: true,
       })
     })
 
