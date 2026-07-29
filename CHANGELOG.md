@@ -4,10 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.147](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.147) - 2026-07-29
+## [1.1.150](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.147) - 2026-07-29
 
 ### Fixed
 - `--reach-use-only-pregenerated-sboms` now only controls what reachability analysis uses as input. Previously it also narrowed the manifest files uploaded as part of the scan.
+
+## [1.1.149](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.149) - 2026-07-29
+
+### Changed
+- Updated the Coana CLI to v `15.9.6`.
+
+## [1.1.148](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.148) - 2026-07-28
+
+### Changed
+- Updated the Coana CLI to v `15.9.5`.
+
+## [1.1.147](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.147) - 2026-07-27
+
+### Changed
+- Updated the Coana CLI to v `15.9.4`.
 
 ## [1.1.146](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.146) - 2026-07-24
 
