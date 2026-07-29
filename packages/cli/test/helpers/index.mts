@@ -6,6 +6,7 @@
 export * from './cli-execution.mts'
 export * from './environment.mts'
 export * from './generate-report-test-helpers.mts'
+export * from './git-spawn-assertions.mts'
 export * from './handle-test-helpers.mts'
 export * from './mock-setup.mts'
 export * from './mocks.mts'
