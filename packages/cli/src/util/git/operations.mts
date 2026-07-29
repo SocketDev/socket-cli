@@ -24,12 +24,12 @@
 // Trusted git resolution + the hygiene chokepoint every git call goes
 // through. See spawn-git.mts.
 export {
-  type GitExecutableResolution,
   type ResolveGitExecutableOptions,
   type SpawnGitOptions,
   resolveGitExecutable,
   spawnGit,
 } from './spawn-git.mts'
+export { type SystemToolResolution } from '../spawn/system-tool.mts'
 
 // Branch operations extracted to keep this file under the 1000-line
 // File-size cap. See git-branch-ops.mts.

@@ -31,11 +31,12 @@ import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import {
-  defaultProtectedRoot,
-  findEnvPathValue,
-  resolveTrustedExecutable,
-} from '../trusted-executable.mts'
+  clearSystemToolCache,
+  describeSystemToolFailure,
+  findSystemTool,
+} from '../spawn/system-tool.mts'
 
+import type { SystemToolResolution } from '../spawn/system-tool.mts'
 import type {
   SpawnOptions,
   SpawnResult,
@@ -45,17 +46,6 @@ import type {
  * The stdio shape `spawn` accepts, named so call sites can annotate it.
  */
 export type GitStdio = NonNullable<SpawnOptions['stdio']>
-
-export type GitExecutableResolution = {
-  /**
-   * Canonical absolute path to a git that lives outside the protected root.
-   */
-  executable: string
-  /**
-   * PATH the child may search, with every poisoned entry already removed.
-   */
-  searchPath: string
-}
 
 export type ResolveGitExecutableOptions = {
   cwd?: string | undefined
@@ -121,7 +111,11 @@ const GIT_HYGIENE_CONFIG: readonly string[] = [
   'protocol.ssh.allow=always',
 ]
 
-const gitExecutableCache = new Map<string, GitExecutableResolution>()
+/**
+ * Install instruction appended to the resolution failure.
+ */
+const GIT_INSTALL_HINT =
+  'Install git outside the repository (`brew install git`, `apt install git`) and put its directory on PATH.'
 
 /**
  * Environment for a git child: every `GIT_*` variable dropped, PATH replaced
@@ -156,7 +150,7 @@ export function buildGitChildEnv(
  * resolution against a new fixture.
  */
 export function clearGitExecutableCache(): void {
-  gitExecutableCache.clear()
+  clearSystemToolCache()
 }
 
 /**
@@ -208,32 +202,21 @@ export function omitGitEnvVars(
  */
 export async function resolveGitExecutable(
   options?: ResolveGitExecutableOptions | undefined,
-): Promise<GitExecutableResolution> {
+): Promise<SystemToolResolution> {
   const opts = {
     __proto__: null,
     ...options,
   } as ResolveGitExecutableOptions
   const { cwd = process.cwd(), env = process.env } = opts
-  const protectedRoot = await defaultProtectedRoot(cwd)
-  const cacheKey = `${protectedRoot}\0${findEnvPathValue(env) ?? ''}`
-  const cached = gitExecutableCache.get(cacheKey)
-  if (cached) {
-    return cached
-  }
-  const trusted = await resolveTrustedExecutable('git', env, protectedRoot)
-  if (!trusted) {
+  const resolution = await findSystemTool('git', { cwd, env })
+  if (!resolution) {
     throw new Error(
-      `Cannot resolve a trusted git executable. ` +
-        `Searched PATH from ${cwd}, treating ${protectedRoot} as an untrusted checkout. ` +
-        `Every candidate was missing, not executable, or resolved inside that checkout; a git outside it is required. ` +
-        `Install git outside the repository (\`brew install git\`, \`apt install git\`) and put its directory on PATH.`,
+      await describeSystemToolFailure('git', {
+        cwd,
+        installHint: GIT_INSTALL_HINT,
+      }),
     )
   }
-  const resolution: GitExecutableResolution = {
-    executable: trusted.executable,
-    searchPath: findEnvPathValue(trusted.environment) ?? '',
-  }
-  gitExecutableCache.set(cacheKey, resolution)
   return resolution
 }
 
