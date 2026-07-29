@@ -1,5 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { SOCKET_CLI_DEBUG } from '../../env/socket-cli-debug.mts'
 import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import { runHttpTransport } from './transport-http.mts'
 import { runStdioTransport } from './transport-stdio.mts'
@@ -54,6 +55,9 @@ export async function handleMcp(config: HandleMcpOptions): Promise<void> {
     }
     await runHttpTransport({
       ...baseConfig,
+      // A local development stack runs its OAuth issuer on localhost, which
+      // the SSRF guard refuses by default. SOCKET_CLI_DEBUG opens that gate.
+      oauthAllowLocalIssuer: Boolean(SOCKET_CLI_DEBUG),
       oauthClientId: clientId,
       oauthClientSecret: clientSecret,
       oauthIssuer: issuer,

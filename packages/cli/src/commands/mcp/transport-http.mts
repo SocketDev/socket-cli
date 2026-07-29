@@ -59,6 +59,9 @@ export interface Session {
 }
 
 export interface HttpTransportConfig extends ServerConfig {
+  // Permit a loopback OAuth issuer. Off by default so the SSRF guard on the
+  // issuer + introspection endpoint stays closed outside a local dev stack.
+  oauthAllowLocalIssuer?: boolean | undefined
   oauthClientId: string
   oauthClientSecret: string
   oauthIssuer: string
@@ -80,6 +83,7 @@ export async function runHttpTransport(
         config.oauthClientSecret,
         config.oauthRequiredScopes,
         logger,
+        { allowLocalIssuer: config.oauthAllowLocalIssuer ?? false },
       )
     : undefined
 
@@ -255,22 +259,29 @@ export async function runHttpTransport(
 
     if (req.method === 'POST') {
       let body = ''
+      let bytes = 0
       let aborted = false
       req.on('data', (chunk: string | Buffer) => {
         if (aborted) {
           return
         }
-        body += chunk.toString()
         // Cap the buffered request body so an unbounded stream can't exhaust
         // memory (DoS). MCP JSON-RPC payloads are small; 4 MiB is generous.
-        if (body.length > MAX_MCP_REQUEST_BODY_BYTES) {
+        // Measure the raw BYTES, not the decoded string length — a multibyte
+        // payload carries up to 4 bytes per JS character, so a char-length
+        // check would let a body several times the cap through.
+        bytes +=
+          typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.length
+        if (bytes > MAX_MCP_REQUEST_BODY_BYTES) {
           aborted = true
           body = ''
           writeJson(res, 413, {
             error: `Request body exceeds ${MAX_MCP_REQUEST_BODY_BYTES}-byte limit.`,
           })
           req.destroy()
+          return
         }
+        body += chunk.toString()
       })
       req.on('end', () => {
         if (aborted) {

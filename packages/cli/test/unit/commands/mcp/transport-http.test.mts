@@ -99,6 +99,7 @@ const baseConfig = {
 
 async function startServer(
   overrides: Partial<{
+    oauthAllowLocalIssuer: boolean
     oauthClientId: string
     oauthClientSecret: string
     oauthIssuer: string
@@ -110,6 +111,11 @@ async function startServer(
   const port = overrides.port ?? freshPort()
   const config = {
     ...baseConfig,
+    // Every OAuth scenario here stands up its issuer on loopback, which the
+    // SSRF guard refuses unless a caller opts in. Default the opt-in on so the
+    // helper mirrors a local dev stack; the guard's closed default gets its own
+    // test below.
+    oauthAllowLocalIssuer: overrides.oauthAllowLocalIssuer ?? true,
     oauthClientId: overrides.oauthClientId ?? '',
     oauthClientSecret: overrides.oauthClientSecret ?? '',
     oauthIssuer: overrides.oauthIssuer ?? '',
@@ -464,6 +470,26 @@ describe('runHttpTransport — Accept header patching', () => {
     expect(response).toContain('200')
     expect(response.toLowerCase()).toContain('mcp-session-id')
   })
+
+  it('answers 413 for a multibyte body over the byte cap but under the char cap', async () => {
+    // The cap is 4 MiB. 1.5M copies of a 3-byte character is 4.5 MB on the
+    // wire but only 1.5M JS characters, so a string-length check would let it
+    // through. The cap must be measured in bytes.
+    const { port } = await startServer()
+    const oversized = `{"pad":"${'éé'.repeat(1_100_000)}"}`
+    expect(oversized.length).toBeLessThan(4 * 1024 * 1024)
+    expect(Buffer.byteLength(oversized)).toBeGreaterThan(4 * 1024 * 1024)
+    const res = await httpRequest(`http://127.0.0.1:${port}/`, {
+      body: oversized,
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        origin: `http://localhost:${port}`,
+      },
+      method: 'POST',
+    })
+    expect(res.status).toBe(413)
+  })
 })
 
 describe('runHttpTransport — session reuse', () => {
@@ -810,6 +836,45 @@ describe('runHttpTransport — OAuth startup failure', () => {
     expect(mockLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Failed to initialize OAuth metadata:'),
     )
+  })
+
+  it('refuses a loopback OAuth issuer when the local opt-in is off', async () => {
+    const port = freshPort()
+    await expect(
+      startServer({
+        oauthAllowLocalIssuer: false,
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: 'http://127.0.0.1:9',
+        port,
+      }),
+    ).rejects.toThrow(/private\/loopback host/)
+  })
+
+  it('refuses a link-local OAuth issuer even when the local opt-in is on', async () => {
+    const port = freshPort()
+    await expect(
+      startServer({
+        oauthAllowLocalIssuer: true,
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        // The cloud instance-metadata address — the canonical SSRF target.
+        oauthIssuer: 'http://169.254.169.254',
+        port,
+      }),
+    ).rejects.toThrow(/private\/loopback host/)
+  })
+
+  it('refuses a non-http(s) OAuth issuer scheme', async () => {
+    const port = freshPort()
+    await expect(
+      startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: 'file:///etc/passwd',
+        port,
+      }),
+    ).rejects.toThrow(/must use http\(s\)/)
   })
 })
 

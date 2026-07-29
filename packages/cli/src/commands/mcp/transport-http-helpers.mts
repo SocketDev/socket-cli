@@ -1,5 +1,6 @@
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
+import { assertSafeHttpUrl } from '@socketsecurity/lib-stable/url/assert-safe'
 
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js'
@@ -17,12 +18,25 @@ export const OAUTH_WELL_KNOWN_PATH = '/.well-known/oauth-authorization-server'
 export const OAUTH_PROTECTED_RESOURCE_METADATA_PATH =
   '/.well-known/oauth-protected-resource'
 
+// Even under trustProxy, X-Forwarded-Host must be a bare host[:port]. A value
+// carrying a scheme, userinfo, or a path would smuggle a different origin into
+// the OAuth metadata URLs this server advertises.
+const FORWARDED_HOST_RE = /^[a-z0-9.-]+(?::\d+)?$/iu
+
 export type AuthenticatedRequest = IncomingMessage & {
   auth?: AuthInfo | undefined
 }
 
+export interface OAuthIntrospectorOptions {
+  // Permit a loopback issuer / introspection endpoint. Off by default: both
+  // URLs are fetched server-side, so a loopback or private-range value is an
+  // SSRF pivot. Only a local development stack should turn this on.
+  allowLocalIssuer?: boolean | undefined
+}
+
 export class OAuthIntrospector {
   private metadataPromise: Promise<OAuthMetadata> | undefined
+  private readonly allowLocalIssuer: boolean
   private readonly clientId: string
   private readonly clientSecret: string
   private readonly issuer: string
@@ -34,7 +48,10 @@ export class OAuthIntrospector {
     clientSecret: string,
     requiredScopes: readonly string[],
     log: { error: (msg: string) => void },
+    options?: OAuthIntrospectorOptions | undefined,
   ) {
+    const opts = { __proto__: null, ...options } as OAuthIntrospectorOptions
+    this.allowLocalIssuer = opts.allowLocalIssuer ?? false
     this.clientId = clientId
     this.clientSecret = clientSecret
     this.issuer = issuer
@@ -45,7 +62,12 @@ export class OAuthIntrospector {
   async loadMetadata(): Promise<OAuthMetadata> {
     if (!this.metadataPromise) {
       const promise = (async () => {
-        const issuerUrl = new URL(this.issuer)
+        // The issuer is operator-supplied. SSRF-guard it so a misconfigured
+        // or hostile value can't point discovery at an internal host.
+        const issuerUrl = assertSafeHttpUrl(this.issuer, {
+          allowLocalhost: this.allowLocalIssuer,
+          label: 'OAuth issuer',
+        })
         const url = new URL(OAUTH_WELL_KNOWN_PATH, issuerUrl).href
         const response: HttpResponse = await httpRequest(url, { method: 'GET' })
         const responseText = response.text()
@@ -83,20 +105,27 @@ export class OAuthIntrospector {
 
   async verifyAccessToken(token: string): Promise<AuthInfo | undefined> {
     const metadata = await this.loadMetadata()
+    // The introspection endpoint arrives in the issuer's metadata response, so
+    // a hostile or MITM'd issuer chooses where this bearer token gets POSTed.
+    // SSRF-guard it before the token leaves the box.
+    const introspectionUrl = assertSafeHttpUrl(
+      metadata.introspection_endpoint,
+      {
+        allowLocalhost: this.allowLocalIssuer,
+        label: 'OAuth introspection_endpoint',
+      },
+    ).href
     const basicAuth = Buffer.from(
       `${this.clientId}:${this.clientSecret}`,
     ).toString('base64')
-    const response: HttpResponse = await httpRequest(
-      metadata.introspection_endpoint,
-      {
-        body: new URLSearchParams({ token }).toString(),
-        headers: {
-          authorization: `Basic ${basicAuth}`,
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        method: 'POST',
+    const response: HttpResponse = await httpRequest(introspectionUrl, {
+      body: new URLSearchParams({ token }).toString(),
+      headers: {
+        authorization: `Basic ${basicAuth}`,
+        'content-type': 'application/x-www-form-urlencoded',
       },
-    )
+      method: 'POST',
+    })
     const responseText = response.text()
     if (response.status < 200 || response.status >= 300) {
       throw new Error(
@@ -107,8 +136,19 @@ export class OAuthIntrospector {
     if (!introspection['active']) {
       return undefined
     }
+    // An absent `exp` means a non-expiring token, so it is simply left off the
+    // AuthInfo. A PRESENT-but-unparseable `exp` must fail CLOSED: dropping it
+    // would silently promote the token to never-expiring, letting a buggy or
+    // compromised introspection endpoint hand out tokens that never age out.
     const expRaw = introspection['exp']
-    const expiresAt = typeof expRaw === 'number' ? expRaw : Number(expRaw)
+    let expiresAt: number | undefined
+    if (expRaw !== undefined && expRaw !== null) {
+      const parsed = typeof expRaw === 'number' ? expRaw : Number(expRaw)
+      if (!Number.isFinite(parsed)) {
+        return undefined
+      }
+      expiresAt = parsed
+    }
     return {
       clientId:
         typeof introspection['client_id'] === 'string'
@@ -117,7 +157,7 @@ export class OAuthIntrospector {
       extra: introspection,
       scopes: splitScopes(introspection['scope']),
       token,
-      ...(Number.isFinite(expiresAt) ? { expiresAt } : {}),
+      ...(expiresAt === undefined ? {} : { expiresAt }),
     }
   }
 
@@ -272,8 +312,11 @@ export function getRequestBaseUrl(
   const forwardedProto = trustProxy
     ? getForwardedHeaderValue(req.headers['x-forwarded-proto']).toLowerCase()
     : ''
-  const forwardedHost = trustProxy
+  const forwardedHostRaw = trustProxy
     ? getForwardedHeaderValue(req.headers['x-forwarded-host'])
+    : ''
+  const forwardedHost = FORWARDED_HOST_RE.test(forwardedHostRaw)
+    ? forwardedHostRaw
     : ''
   const host =
     forwardedHost ||

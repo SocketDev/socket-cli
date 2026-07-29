@@ -190,9 +190,9 @@ describe('OAuthIntrospector — loadMetadata', () => {
 })
 
 describe('OAuthIntrospector — verifyAccessToken', () => {
-  function setupMetadata() {
+  function setupMetadata(metadata: Record<string, unknown> = validMetadata) {
     mockHttpRequest.mockResolvedValueOnce(
-      fakeResponse({ status: 200, body: validMetadata }),
+      fakeResponse({ status: 200, body: metadata }),
     )
   }
 
@@ -252,7 +252,10 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
     expect(info?.clientId).toBe('unknown')
   })
 
-  it('omits expiresAt when exp is non-numeric', async () => {
+  it('rejects the token when exp is present but unparseable', async () => {
+    // Fail closed. Dropping an unparseable exp would promote the token to
+    // never-expiring, so a buggy or compromised introspection endpoint could
+    // hand out tokens that never age out.
     setupMetadata()
     mockHttpRequest.mockResolvedValueOnce(
       fakeResponse({
@@ -261,8 +264,46 @@ describe('OAuthIntrospector — verifyAccessToken', () => {
       }),
     )
     const intro = newIntrospector()
+    await expect(intro.verifyAccessToken('the-token')).resolves.toBeUndefined()
+  })
+
+  it('rejects the token when exp is an object', async () => {
+    setupMetadata()
+    mockHttpRequest.mockResolvedValueOnce(
+      fakeResponse({
+        status: 200,
+        body: { active: true, exp: {}, scope: 'packages:list' },
+      }),
+    )
+    const intro = newIntrospector()
+    await expect(intro.verifyAccessToken('the-token')).resolves.toBeUndefined()
+  })
+
+  it('omits expiresAt when exp is genuinely absent (non-expiring token)', async () => {
+    setupMetadata()
+    mockHttpRequest.mockResolvedValueOnce(
+      fakeResponse({
+        status: 200,
+        body: { active: true, scope: 'packages:list' },
+      }),
+    )
+    const intro = newIntrospector()
     const info = await intro.verifyAccessToken('the-token')
     expect(info?.expiresAt).toBeUndefined()
+    expect(info?.token).toBe('the-token')
+  })
+
+  it('refuses an introspection_endpoint pointing at a private host', async () => {
+    // The endpoint arrives in the issuer's metadata, so a hostile or MITM'd
+    // issuer chooses where the bearer token gets POSTed.
+    setupMetadata({
+      ...validMetadata,
+      introspection_endpoint: 'http://169.254.169.254/introspect',
+    })
+    const intro = newIntrospector()
+    await expect(intro.verifyAccessToken('the-token')).rejects.toThrow(
+      /private\/loopback host/,
+    )
   })
 
   it('parses exp from a string when convertible', async () => {

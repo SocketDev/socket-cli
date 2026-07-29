@@ -162,6 +162,44 @@ describe('getRequestBaseUrl', () => {
     expect(url.hostname).toBe('public.example.com')
   })
 
+  it('accepts a host:port X-Forwarded-Host', () => {
+    const url = getRequestBaseUrl(
+      makeReq({
+        headers: {
+          host: 'internal.local',
+          'x-forwarded-host': 'public.example.com:8443',
+        },
+      }),
+      3000,
+      true,
+    )
+    expect(url.host).toBe('public.example.com:8443')
+  })
+
+  it.each([
+    ['a scheme', 'https://evil.example.com'],
+    ['userinfo', 'user@evil.example.com'],
+    ['a path', 'public.example.com/evil'],
+    ['an underscore', 'evil_host.example.com'],
+  ])(
+    'discards an X-Forwarded-Host carrying %s and falls back to Host',
+    (_label, forwarded) => {
+      // A poisoned forwarded host would otherwise smuggle a different origin
+      // into the OAuth metadata URLs this server advertises.
+      const url = getRequestBaseUrl(
+        makeReq({
+          headers: {
+            host: 'internal.local',
+            'x-forwarded-host': forwarded,
+          },
+        }),
+        3000,
+        true,
+      )
+      expect(url.hostname).toBe('internal.local')
+    },
+  )
+
   it('case-folds X-Forwarded-Proto and accepts http only', () => {
     const url = getRequestBaseUrl(
       makeReq({
