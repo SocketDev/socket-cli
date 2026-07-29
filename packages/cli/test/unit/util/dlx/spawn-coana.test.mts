@@ -199,6 +199,26 @@ describe('spawnCoanaDlx', () => {
     )
   })
 
+  it('strips npm_package_* from the dlx child env', async () => {
+    vi.stubEnv('npm_package_dependencies_lodash', '^4.0.0')
+    vi.stubEnv('npm_config_registry', 'https://registry.example/')
+    mockResolveCoana.mockReturnValue({
+      type: 'dlx',
+      details: { name: '@coana-tech/cli', version: '1.0.0' },
+    })
+    mockSpawnDlx.mockResolvedValue({
+      spawnPromise: Promise.resolve({ stdout: undefined }),
+    })
+
+    await spawnCoanaDlx([], 'org', undefined, undefined)
+
+    const env = mockSpawnDlx.mock.calls[0]![2].env
+    expect(env).not.toHaveProperty('npm_package_dependencies_lodash')
+    // npm_config_* carries registry/proxy/cache and must survive.
+    expect(env['npm_config_registry']).toBe('https://registry.example/')
+    vi.unstubAllEnvs()
+  })
+
   it('throws when resolveCoana returns an unexpected type', async () => {
     mockResolveCoana.mockReturnValue({
       type: 'github-release',

@@ -94,11 +94,11 @@ export async function spawnCoanaDlx(
     if (resolution.type === 'local') {
       const detection = detectExecutableType(resolution.path)
 
-      const baseEnv = {
+      const baseEnv = stripNpmPackageEnvVars({
         ...process.env,
         ...mixinsEnv,
         ...spawnEnv,
-      }
+      })
 
       // A local override that is a JS file needs an interpreter, and a SEA
       // build has to find one on PATH; resolve it trustedly and pass the child
@@ -141,11 +141,11 @@ export async function spawnCoanaDlx(
       {
         force: true,
         ...dlxOptions,
-        env: {
+        env: stripNpmPackageEnvVars({
           ...process.env,
           ...mixinsEnv,
           ...spawnEnv,
-        },
+        }),
       },
       spawnExtra,
     )
@@ -203,11 +203,11 @@ export async function spawnCoanaVfs(
       args,
       {
         ...dlxOptions,
-        env: {
+        env: stripNpmPackageEnvVars({
           ...process.env,
           ...mixinsEnv,
           ...spawnEnv,
-        },
+        }),
       },
       spawnExtra,
     )
@@ -227,4 +227,30 @@ export async function spawnCoanaVfs(
       message,
     }
   }
+}
+
+/**
+ * Drop npm-injected `npm_package_*` vars before spawning Coana. npm, pnpm, and
+ * yarn classic populate one env var per leaf of the cwd's package.json —
+ * `npm_package_dependencies_*`, `npm_package_scripts_*`, and so on. A monorepo
+ * with hundreds of dependencies can spend 50KB+ of environment on them, which
+ * pushes combined argv + env past Linux ARG_MAX (~128KB) and makes `spawn` fail
+ * with E2BIG before Coana starts.
+ *
+ * Coana does not read `npm_package_*`. Everything else is kept — `npm_config_*`
+ * in particular carries the registry, cache, and proxy settings a nested
+ * install needs.
+ */
+export function stripNpmPackageEnvVars(
+  env: NodeJS.ProcessEnv,
+): NodeJS.ProcessEnv {
+  const stripped: NodeJS.ProcessEnv = Object.create(null)
+  const keys = Object.keys(env)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
+    if (!key.startsWith('npm_package_')) {
+      stripped[key] = env[key]
+    }
+  }
+  return stripped
 }
