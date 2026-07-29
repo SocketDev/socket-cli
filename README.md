@@ -87,14 +87,14 @@ SOCKET_CLI_DEBUG=1 node packages/cli/dist/index.js <command>
 
 Key development environment variables:
 
-| Variable                            | Description                                                                        |
-| ----------------------------------- | ---------------------------------------------------------------------------------- |
-| `SOCKET_CLI_DEBUG`                  | Enable debug logging (`1`)                                                          |
-| `SOCKET_CLI_API_TOKEN`              | Socket API token                                                                    |
-| `SOCKET_CLI_ORG_SLUG`               | Socket organization slug                                                            |
-| `SOCKET_CLI_API_BASE_URL`           | Override API endpoint                                                               |
-| `SOCKET_CLI_NO_API_TOKEN`           | Disable default API token                                                           |
-| `SOCKET_CLI_ALLOWED_PRIVATE_HOSTS`  | Comma-separated hostnames allowed to be private (see below); unset by default       |
+| Variable                           | Description                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `SOCKET_CLI_DEBUG`                 | Enable debug logging (`1`)                                                    |
+| `SOCKET_CLI_API_TOKEN`             | Socket API token                                                              |
+| `SOCKET_CLI_ORG_SLUG`              | Socket organization slug                                                      |
+| `SOCKET_CLI_API_BASE_URL`          | Override API endpoint                                                         |
+| `SOCKET_CLI_NO_API_TOKEN`          | Disable default API token                                                     |
+| `SOCKET_CLI_ALLOWED_PRIVATE_HOSTS` | Comma-separated hostnames allowed to be private (see below); unset by default |
 
 The API base URL and the npm registry URL both receive an `Authorization`
 header, so the CLI refuses either one when it points at a loopback, private, or
