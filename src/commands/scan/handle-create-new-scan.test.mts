@@ -86,6 +86,7 @@ function createConfig(
     pendingHead: false,
     pullRequest: 0,
     reach: {
+      dynamicSbomInference: false,
       excludePaths: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -198,6 +199,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
+        dynamicSbomInference: false,
         excludePaths: ['tests', 'packages/*'],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',
@@ -261,6 +263,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
+        dynamicSbomInference: false,
         excludePaths: ['apps/api/tests', '**/dist'],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',
@@ -330,6 +333,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
+        dynamicSbomInference: false,
         excludePaths: ['tests'],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',
@@ -389,6 +393,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
+        dynamicSbomInference: false,
         excludePaths: ['apps/api'],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',
@@ -448,6 +453,7 @@ describe('handleCreateNewScan excludePaths', () => {
       pendingHead: false,
       pullRequest: 0,
       reach: {
+        dynamicSbomInference: false,
         excludePaths: ['tests'],
         reachAnalysisMemoryLimit: '8192',
         reachAnalysisTimeout: '',

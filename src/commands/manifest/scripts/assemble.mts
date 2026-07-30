@@ -379,8 +379,8 @@ function buildArtifactPaths(
     }
     coords.add(coordKey)
     const pi = projectsByGav.get(gav(c.group, c.name, c.version ?? ''))
-    const sources = (pi?.sources ?? []).filter(fileExists)
-    const targets = [...new Set([...fn.targets, ...(pi?.targets ?? [])])]
+    const sources = (pi?.sources ?? []).filter(fileExists).sort()
+    const targets = [...new Set(pi ? pi.targets : fn.targets)]
       .filter(fileExists)
       .sort()
     if (sources.length) {

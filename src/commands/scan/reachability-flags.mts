@@ -4,6 +4,13 @@ import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 export const reachabilityFlags: MeowFlags = {
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    hidden: true,
+    description:
+      'Internal: enables dynamic SBOM inference for full application reachability analysis. Passes --maven-use-only-root-socket-facts to Coana and implies --auto-manifest.',
+  },
   reachVersion: {
     type: 'string',
     description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,

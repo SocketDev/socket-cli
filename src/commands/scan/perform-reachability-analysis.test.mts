@@ -75,6 +75,7 @@ vi.mock('@socketsecurity/registry/lib/logger', () => ({
 
 function makeReachabilityOptions(): ReachabilityOptions {
   return {
+    dynamicSbomInference: false,
     excludePaths: [],
     reachAnalysisMemoryLimit: '',
     reachAnalysisTimeout: '',
