@@ -9,10 +9,16 @@ import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const MAX_FAILURE_OUTPUT_LINES = 40
+
+export type RunManifestFactsResult = {
+  factsPath: string
+  projects: SocketFactsSbomProject[]
+}
 
 // Last N non-empty lines of the captured build output, for diagnosing a crash
 // without forcing a --verbose rebuild.
@@ -57,7 +63,7 @@ export async function runManifestFacts({
   tmpDir?: string | undefined
   verbose: boolean
   withFiles?: boolean | undefined
-}): Promise<void> {
+}): Promise<RunManifestFactsResult | undefined> {
   const factsPath = path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)
 
   logger.log(
@@ -189,4 +195,5 @@ export async function runManifestFacts({
   }
 
   logger.success('Generated Socket facts')
+  return { factsPath, projects: facts.projects ?? [] }
 }
