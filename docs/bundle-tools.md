@@ -117,7 +117,9 @@ When installed via npm, tools are downloaded at runtime.
    └── PyPI packages: downloadPyPIWheel()
 
 4. Verify integrity
-   └── SHA-256 checksum validation (required in production)
+   ├── GitHub releases / PyPI: SHA-256 checksum validation (required in production)
+   └── npm packages: registry integrity only; the bundle-tools.json SRI is
+       enforced in the SEA build, not on this path (see "npm tool integrity")
 
 5. Extract and cache
    └── Save to ~/.socket/_dlx/
@@ -129,7 +131,8 @@ When installed via npm, tools are downloaded at runtime.
 
 ### Checksum Verification
 
-All downloads are verified with SHA-256 checksums defined in `bundle-tools.json`:
+GitHub-release and PyPI downloads are verified with SHA-256 checksums defined in
+`bundle-tools.json`:
 
 ```json
 {
@@ -143,6 +146,31 @@ All downloads are verified with SHA-256 checksums defined in `bundle-tools.json`
 ```
 
 Checksums are **required** in production builds. Dev mode allows downloads without checksums for testing.
+
+### npm tool integrity
+
+The three `packageManager: "npm"` tools — `@coana-tech/cli`, `@cyclonedx/cdxgen`,
+and `synp` — pin a `sha512-<base64>` SRI in `integrity` rather than a per-asset
+sha256. Two links have to hold for that pin to mean anything:
+
+1. **Tarball bytes against the registry's advertised hash.** npm's installer
+   (cacache/pacote, driven by Arborist) does this and records the result in
+   `node_modules/.package-lock.json`.
+2. **That recorded hash against our pin.** `scripts/sea-build-utils/npm-integrity.mts`
+   does this, and throws on a mismatch, a missing pin, or a missing record.
+
+Link 2 is what stops a registry-side substitution from passing as a pinned
+build; link 1 alone only proves the registry served what it said it would.
+
+> [!WARNING]
+> The **runtime dlx path does not enforce these pins.** `spawnDlx`
+> (`src/util/dlx/spawn.mts`) passes no `hash` to `dlxPackage`, the SRI values are
+> never inlined into the CLI bundle, and `@socketsecurity/lib` 6.4.0's
+> `ensurePackageInstalled` accepts a `hash` option and ignores it. A coana
+> download performed by the installed CLI is therefore checked by npm against the
+> registry, but not against `bundle-tools.json`. Closing this needs an upstream
+> lib change; do not describe the runtime coana pin as integrity-enforced until
+> it lands.
 
 ### Archive Extraction Safety
 

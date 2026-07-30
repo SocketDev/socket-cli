@@ -19,6 +19,10 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { getRootPath } from './downloads.mts'
+import {
+  assertInstalledMatchesPin,
+  collectNpmToolPins,
+} from './npm-integrity.mts'
 
 const logger = getDefaultLogger()
 
@@ -175,18 +179,24 @@ async function combineVfsArchives(
  * Downloads the complete package structure including node_modules/ with all
  * production dependencies, ready for VFS bundling.
  *
+ * The install is checked against the tool's `integrity` pin before it is used.
+ * A missing or mismatched pin throws — see npm-integrity.mts for why both the
+ * npm-recorded hash and our pin are needed.
+ *
  * @example
- *   await downloadNpmPackage('synp@1.9.14', '/tmp/synp', 'sha512-xxx')
+ *   await downloadNpmPackage(
+ *     { integrity: 'sha512-xxx', name: 'synp', version: '1.9.14' },
+ *     '/tmp/synp',
+ *   )
  *   // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
  *
- * @param {string} packageSpec - Npm package specifier (e.g., "synp@1.9.14").
+ * @param {object} pin - The npm tool as declared in bundle-tools.json.
  * @param {string} targetDir - Directory to install package into.
- * @param {string} [expectedIntegrity] - Expected SRI integrity hash
- *   (sha512-xxx).
  *
  * @returns Promise resolving to the target directory path.
  */
-async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
+async function downloadNpmPackage(pin, targetDir) {
+  const packageSpec = `${pin.name}@${pin.version}`
   logger.substep(`Downloading ${packageSpec} with dependencies`)
 
   // Ensure target directory exists.
@@ -213,34 +223,28 @@ async function downloadNpmPackage(packageSpec, targetDir, expectedIntegrity) {
     )
   }
 
-  // Verify integrity if provided.
-  if (expectedIntegrity) {
-    // Extract package name from spec (e.g., "@cyclonedx/cdxgen@12.0.0" -> "@cyclonedx/cdxgen").
-    const atIndex = packageSpec.lastIndexOf('@')
-    const packageName =
-      atIndex > 0 ? packageSpec.slice(0, atIndex) : packageSpec
-
-    // Find the installed package in node_modules.
-    const installedPackagePath = path.join(
-      targetDir,
-      'node_modules',
-      packageName,
-      'package.json',
-    )
-    if (!existsSync(installedPackagePath)) {
-      throw new Error(
-        `Integrity verification failed: package.json not found at ${installedPackagePath}`,
-      )
-    }
-
-    // Read the installed package.json to get the resolved integrity.
-    const installedPackage = JSON.parse(
-      readFileSync(installedPackagePath, 'utf8'),
-    )
-    logger.substep(
-      `Verified ${packageName}@${installedPackage.version} installed`,
+  // Compare what npm actually installed against the pin. npm writes the hidden
+  // lockfile during reify, recording the integrity it verified per package.
+  const lockfilePath = path.join(
+    targetDir,
+    'node_modules',
+    '.package-lock.json',
+  )
+  if (!existsSync(lockfilePath)) {
+    throw new Error(
+      `Cannot verify integrity for npm tool "${pin.name}": npm wrote no hidden lockfile.\n` +
+        `  Where: ${lockfilePath}\n` +
+        `  Saw: the file does not exist after Arborist reify.\n` +
+        `  Wanted: the lockfile npm writes recording each installed package's integrity.\n` +
+        `  Fix: clear ${targetDir} and rerun; an install that records no hash cannot be pinned.`,
     )
   }
+  assertInstalledMatchesPin(
+    pin,
+    JSON.parse(readFileSync(lockfilePath, 'utf8')),
+    lockfilePath,
+  )
+  logger.substep(`Verified ${packageSpec} against its integrity pin`)
 
   logger.success(`${packageSpec} installed with dependencies`)
   logger.error('')
@@ -303,17 +307,7 @@ async function downloadNpmPackages() {
   }
 
   // Collect npm packages from bundle-tools.json.
-  const npmPackages = []
-  for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.packageManager === 'npm') {
-      npmPackages.push({
-        integrity: toolConfig.integrity,
-        name: toolName,
-        package: toolName,
-        version: toolConfig.version,
-      })
-    }
-  }
+  const npmPackages = collectNpmToolPins(externalTools)
 
   if (npmPackages.length === 0) {
     logger.warn('No npm packages defined in bundle-tools.json')
@@ -332,9 +326,7 @@ async function downloadNpmPackages() {
   try {
     // Download all npm packages with dependencies using Arborist.
     for (let i = 0, { length } = npmPackages; i < length; i += 1) {
-      const pkg = npmPackages[i]
-      const packageSpec = `${pkg.package}@${pkg.version}`
-      await downloadNpmPackage(packageSpec, tempDir, pkg.integrity)
+      await downloadNpmPackage(npmPackages[i], tempDir)
     }
 
     // Verify node_modules directory exists and has content.
@@ -376,6 +368,7 @@ async function downloadNpmPackages() {
  * @returns Path to Socket's cacache directory.
  */
 export function getSocketCacacheDir() {
-  const homeDir = process.env['HOME'] || process.env['USERPROFILE'] || tmpdir()
+  const homeDir =
+    process.env['HOME'] || process.env['USERPROFILE'] || os.tmpdir()
   return normalizePath(path.join(homeDir, '.socket', '_cacache'))
 }
