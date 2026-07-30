@@ -10,6 +10,7 @@ import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { withTmpDir } from '../../utils/fs.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -348,16 +349,19 @@ async function run(
   assertValidExcludePaths(excludePaths)
 
   if (facts) {
-    await convertSbtToFacts({
-      bin: String(bin),
-      cwd,
-      excludeConfigs: String(excludeConfigs || ''),
-      excludePaths,
-      ignoreUnresolved: Boolean(ignoreUnresolved),
-      includeConfigs: String(includeConfigs || ''),
-      sbtOpts: parsedSbtOpts,
-      verbose: Boolean(verbose),
-    })
+    await withTmpDir('socket-manifest-scala-', tmpDir =>
+      convertSbtToFacts({
+        bin: String(bin),
+        cwd,
+        excludeConfigs: String(excludeConfigs || ''),
+        excludePaths,
+        ignoreUnresolved: Boolean(ignoreUnresolved),
+        includeConfigs: String(includeConfigs || ''),
+        sbtOpts: parsedSbtOpts,
+        tmpDir,
+        verbose: Boolean(verbose),
+      }),
+    )
     return
   }
 

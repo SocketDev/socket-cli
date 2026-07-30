@@ -63,10 +63,9 @@ export async function generateAutoManifest({
   // excluded source roots from the resolved-paths sidecar.
   excludePaths?: string[] | undefined
   outputKind: OutputKind
-  // sbt only, required when computeArtifactsSidecar is true; see
-  // ManifestScriptOptions.tmpDir. Caller creates it and deletes it once
-  // resolvedPathsSidecar's paths are no longer needed.
-  tmpDir?: string | undefined
+  // Caller-owned; see ManifestScriptOptions.tmpDir. Only sbt reads it, but
+  // required here so every caller allocates one via withTmpDir uniformly.
+  tmpDir: string
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)

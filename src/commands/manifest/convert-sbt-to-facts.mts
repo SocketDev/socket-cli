@@ -27,7 +27,7 @@ export async function convertSbtToFacts({
   sbtOpts: string[]
   sidecarAcc?: SidecarAccumulator | undefined
   // Caller-owned; see ManifestScriptOptions.tmpDir.
-  tmpDir?: string | undefined
+  tmpDir: string
   verbose: boolean
   withFiles?: boolean | undefined
 }): Promise<void> {
