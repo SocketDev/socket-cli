@@ -35,7 +35,7 @@
     "cover:all": "pnpm --filter @socketsecurity/cli run cover",
     "security": "node scripts/fleet/security.mts",
     "// Maintenance": "",
-    "clean": "node -e \"require('node:fs').rmSync('node_modules/.cache', { recursive: true, force: true })\"",
+    "clean": "node scripts/fleet/clean.mts",
     "clean:cache": "node scripts/repo/clean-cache.mts",
     "clean:cache:all": "node scripts/repo/clean-cache.mts --all",
     "update": "node scripts/fleet/update.mts",

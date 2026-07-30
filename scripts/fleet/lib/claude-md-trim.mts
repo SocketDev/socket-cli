@@ -96,16 +96,55 @@ function isTrimmableBulletLine(line: string): boolean {
 }
 
 /**
- * Drop the last `; `-separated clause from a bullet's description, preserving
- * the leading marker, the first clause(s), and the citation/doc-link tail.
- * Returns undefined when the description has no `; ` clause boundary to drop
- * (single-clause — trimming would gut the rule).
+ * Index of the last `; ` clause boundary that sits at the description's TOP
+ * level — outside every `()` / `[]` / `{}` group and outside every backtick
+ * code span. `-1` when there is none.
+ *
+ * A `; ` nested inside a parenthetical is an aside's internal punctuation, not
+ * a clause boundary: cutting there strips the closing `)` and emits markdown
+ * with an unbalanced delimiter. An unterminated code span leaves `inCode` set,
+ * which suppresses every later boundary — the conservative direction, since a
+ * skipped bullet only means the trimmer moves on to the next-fattest one.
+ */
+function lastTopLevelClauseIndex(desc: string): number {
+  let depth = 0
+  let inCode = false
+  let last = -1
+  for (let i = 0, { length } = desc; i < length; i += 1) {
+    const ch = desc[i]!
+    if (ch === '`') {
+      inCode = !inCode
+      continue
+    }
+    if (inCode) {
+      continue
+    }
+    if (ch === '(' || ch === '[' || ch === '{') {
+      depth += 1
+    } else if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth > 0) {
+        depth -= 1
+      }
+    } else if (depth === 0 && ch === ';' && desc[i + 1] === ' ') {
+      last = i
+    }
+  }
+  return last
+}
+
+/**
+ * Drop the last top-level `; `-separated clause from a bullet's description,
+ * preserving the leading marker, the first clause(s), and the citation/doc-link
+ * tail. Returns undefined when the description has no top-level `; ` clause
+ * boundary to drop: it carries a single clause, so trimming would gut the rule,
+ * or every boundary is nested inside an aside, where cutting would unbalance
+ * the delimiters.
  */
 export function dropLastClause(line: string): string | undefined {
   const tailMatch = TAIL_RE.exec(line)
   const tail = tailMatch ? tailMatch[0] : ''
   const desc = tail ? line.slice(0, line.length - tail.length) : line
-  const lastSemi = desc.lastIndexOf('; ')
+  const lastSemi = lastTopLevelClauseIndex(desc)
   if (lastSemi <= 0) {
     return undefined
   }

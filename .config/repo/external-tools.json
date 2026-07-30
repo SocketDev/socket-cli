@@ -102,35 +102,30 @@
       ],
       "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",
       "repository": "github:astral-sh/uv",
-      "version": "0.12.0",
+      "version": "0.11.28",
       "release": "asset",
       "binaryName": "uv",
       "platforms": {
         "darwin-arm64": {
           "asset": "uv-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-OBtSFCGW6XGMvzpC/yzfGVpXoy2URKo3OzkzChPH1gXZt2ifJ8zISYPtWbZpPJRNh/eYLbgWrVuSshjKOXshlQ=="
+          "integrity": "sha512-yxcruknz+sl/ZlsUW9N96qoXRsz3CHuCF2+PBDcLzbPupWa6OTyWZMWp72EM1mBsX5FY6FBUkCcGB7bzrasKeA=="
         },
         "darwin-x64": {
           "asset": "uv-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-hD39sHZHZWgQkgfykGxOr1y/R8S9IZdWLSh/pBmmxLyQF8PZSt4TiN6YIzjFwpSdj+veW+v3Dmb+bKV7DVrKEQ=="
+          "integrity": "sha512-tTEbWp5tCmJlP4ulZ2G493SLB5HF8jfo2YOPiUlmJtuE//oq6/Nb4mt8lSh0VItqMErUThJFJWpZ3ahfx+BtQg=="
         },
         "linux-arm64": {
           "asset": "uv-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-y1yq2ACYEVTgcgiBcRnPheqPOTBjrpWs0f9Sj/N+Ne3WaChFnucFv1VhRTqf+mufkzjTFAZS1nEG/yIxs1fd5Q=="
+          "integrity": "sha512-RmGCO1sekfkggd152Dg6FEgR7Cj6U9LNZylLCE3kgkRyLajBSxuBtNbLl1a8/RtS3mHokS8E0PFsW3S+3IlLJw=="
         },
         "linux-x64": {
           "asset": "uv-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-s/smS3vY8fEAWvv1gbB81sSyJGgOtSu2QgnHRjCoF2b2/CzU9zcdWkoU7gjB4HDoJoI3KxWLvp0/dKSc//X6LQ=="
+          "integrity": "sha512-NxPIaxb/4tDf9nuG/S5wOlDNmjNev5H8sfKHG+WjK9o1WjsVOEsQt9PhdO8Hp+RngSE+Ho39/eReurr0NyUq0Q=="
         },
         "win-x64": {
           "asset": "uv-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-NPPs07evZy5vWSerX279DDQ4blCYBcLjySsMfpcQH6IpgEeJ5d268WKSSZS710PAxCB8C/AAriBkXLkOvxiCjg=="
+          "integrity": "sha512-SbgI6DfsIDU0nMripR1fny6EzT5j52nbGx/MM8Vns2Twwo33Nqqr+OEjV781vAqC5fsE6VmxWy0uUpvTEGjfJA=="
         }
-      },
-      "soakBypass": {
-        "published": "2026-07-28",
-        "removable": "2026-08-04",
-        "version": "0.12.0"
       }
     },
     "zizmor": {

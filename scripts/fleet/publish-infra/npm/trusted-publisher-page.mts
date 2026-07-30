@@ -13,7 +13,6 @@
 
 import type { Page } from 'playwright-core'
 
-import { logger } from '../shared.mts'
 import {
   NPM_ORIGIN,
   optIntoChallengeCooldown,

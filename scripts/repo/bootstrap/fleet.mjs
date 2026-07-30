@@ -245,10 +245,6 @@ function resolveSettingsPath(dest) {
 }
 const APPLIED_MARKER = '.cache/fleet/socket-wheelhouse/bundle-applied'
 const APPLIED_FILES_MARKER = '.cache/fleet/socket-wheelhouse/applied-files'
-const SUPERSEDED_APPLIED_MARKERS = [
-  'node_modules/.cache/fleet/socket-wheelhouse/bundle-applied',
-  'node_modules/.cache/socket-wheelhouse/bundle-applied',
-]
 const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
 /**
  * Default bundle ref for a member — `bundle.ref` in its wheelhouse settings
@@ -322,10 +318,6 @@ function writeAppliedRef(dest, ref) {
   writeFileSync(p, `${ref}\n`)
   const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
   if (existsSync(legacy)) rm(legacy)
-  for (const rel of SUPERSEDED_APPLIED_MARKERS) {
-    const superseded = path.join(dest, rel)
-    if (existsSync(superseded)) rm(superseded)
-  }
 }
 
 //#endregion

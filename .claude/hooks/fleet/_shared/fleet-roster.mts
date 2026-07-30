@@ -22,6 +22,8 @@ import { fleetRosterPaths } from './paths.mts'
 export interface FleetRepo {
   readonly name: string
   readonly optIns?: readonly string[] | undefined
+  // GitHub org, when the member lives outside the home org (SocketDev).
+  readonly owner?: string | undefined
   // Release profile (selects the packager + which release workflow is enabled):
   // 'js' | 'node' | 'binary' | 'custom' | 'none'. Unset = 'none' (advisory).
   readonly publishes?: string | undefined

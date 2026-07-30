@@ -12,12 +12,12 @@
  *   because only a 404, first publish, may pass silently: a transient
  *   registry failure on a KNOWN-published package would otherwise fail open
  *   and re-open the exact wrong-account trap this gate closes. npm commands
- *   run from the OS home dir because the repo's devEngines pins pnpm and
- *   vetoes bare `npm` invocations in-repo. Also a CLI:
+ *   run from npmScratchCwd() — see its doc for why the temp dir is the only
+ *   cwd that dodges both the repo's devEngines veto and lib spawn's
+ *   untrusted-root PATH sanitization. Also a CLI:
  *   `node scripts/fleet/publish-infra/npm/auth-identity.mts <package>`.
  */
 
-import os from 'node:os'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
@@ -29,15 +29,17 @@ import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
 import { ensureNpmLogin } from './login.mts'
+import { npmScratchCwd } from './shared.mts'
 import { logger, runCapture, runInherit } from '../shared.mts'
 
 /**
  * The npm username the local machine is logged in as, or undefined when
- * logged out, or npm is unusable. Runs from the OS home dir — the repo's
- * devEngines veto in-repo `npm`.
+ * logged out, or npm is unusable. Runs from npmScratchCwd() — the repo's
+ * devEngines veto in-repo `npm`, and a home-dir cwd makes lib spawn drop
+ * every home-rooted PATH entry.
  */
 export async function npmWhoami(): Promise<string | undefined> {
-  const { code, stdout } = await runCapture('npm', ['whoami'], os.homedir())
+  const { code, stdout } = await runCapture('npm', ['whoami'], npmScratchCwd())
   const name = stdout.trim()
   return code === 0 && name ? name : undefined
 }
@@ -182,8 +184,7 @@ export async function ensureNpmIdentity(pkg: string): Promise<boolean> {
     return false
   }
   const previousUser = report.currentUser
-  const home = os.homedir()
-  const logout = await runInherit('npm', ['logout'], home)
+  const logout = await runInherit('npm', ['logout'], npmScratchCwd())
   if (logout !== 0) {
     logger.fail(`npm logout exited ${logout}.`)
     return false

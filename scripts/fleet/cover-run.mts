@@ -343,7 +343,30 @@ export interface ChurnRetryDecision {
   readonly attempt: number
   readonly churnedDuringRun: boolean
   readonly failed: boolean
+  readonly failureOutput: string
   readonly maxAttempts: number
+}
+
+// Symptoms of a failure the churn CAUSED, as against a real regression that
+// merely overlapped one. A parallel session's install swaps files under
+// node_modules mid-run, which breaks module resolution and file reads — it does
+// not turn a passing assertion into a failing one. Without this distinction a
+// genuine red that happens to coincide with an install costs three full runs
+// before it is reported (measured: a completed 429.9s unit suite discarded and
+// restarted, pushing the wall clock past 600s).
+const CHURN_FAILURE_PATTERNS: readonly RegExp[] = [
+  /\bENOENT\b[^\n]*node_modules/i,
+  /\bERR_MODULE_NOT_FOUND\b/,
+  /\bERR_PNPM_[A-Z_]+\b/,
+  /Cannot find (?:module|package)\b/i,
+  /Failed to (?:load url|resolve (?:entry|import))\b/i,
+]
+
+// True when the suite output carries a churn fingerprint. Empty output counts
+// as NOT attributable: a run that produced no diagnostic gives no evidence the
+// churn broke it, and guessing costs a full re-run.
+export function isChurnAttributableFailure(output: string): boolean {
+  return CHURN_FAILURE_PATTERNS.some(re => re.test(output))
 }
 
 // Pure retry decision for a cover suite run. Retry ONLY when the suite failed
@@ -354,8 +377,14 @@ export interface ChurnRetryDecision {
 // spin forever. `attempt` is 1-based; `maxAttempts` is the total run budget
 // (initial run + retries).
 export function shouldRetryForChurn(decision: ChurnRetryDecision): boolean {
-  const { attempt, churnedDuringRun, failed, maxAttempts } = decision
+  const { attempt, churnedDuringRun, failed, failureOutput, maxAttempts } =
+    decision
   if (!failed || !churnedDuringRun) {
+    return false
+  }
+  // Churn overlapping a run is not evidence the churn caused it. Require a
+  // resolution-level fingerprint before throwing the whole run away.
+  if (!isChurnAttributableFailure(failureOutput)) {
     return false
   }
   return attempt < maxAttempts

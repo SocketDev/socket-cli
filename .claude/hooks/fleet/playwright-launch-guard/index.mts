@@ -38,6 +38,8 @@
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import type { ToolCallPayload } from '../_shared/payload.mts'
+
 // Fast pre-dispatch substrings — the dispatcher skips this hook unless one
 // appears in the raw payload.
 export const triggers: readonly string[] = [
@@ -177,10 +179,10 @@ export function detectLaunchViolations(
  * the WRITTEN fragments are scanned — a violation already on disk is not
  * re-litigated by an unrelated edit to the same file.
  */
-function writtenFragments(payload: {
-  tool_input?: Record<string, unknown> | undefined
-}): string[] {
-  const input = payload.tool_input
+function writtenFragments(
+  payload: Pick<ToolCallPayload, 'tool_input'>,
+): string[] {
+  const input = payload.tool_input as Record<string, unknown> | undefined
   if (!input || typeof input !== 'object') {
     return []
   }

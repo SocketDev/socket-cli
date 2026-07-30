@@ -278,7 +278,7 @@ export function collectViolations(root: string = REPO_ROOT): {
   scanned: number
   violations: PlaywrightViolation[]
 } {
-  const files = globSync(SCAN_GLOBS, {
+  const files = globSync([...SCAN_GLOBS], {
     absolute: true,
     cwd: root,
     ignore: ['**/node_modules/**'],

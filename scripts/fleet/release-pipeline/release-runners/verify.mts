@@ -12,6 +12,7 @@ import path from 'node:path'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
+import { formatHumanGate, npmAuthGate } from '../../_shared/human-gate.mts'
 import { hashTarball } from '../../lib/verify-release-hashes.mts'
 import { describeNpmIdentity } from '../../publish-infra/npm/auth-identity.mts'
 import { StageListAuthError } from '../../publish-infra/npm/shared.mts'
@@ -96,7 +97,9 @@ export async function runVerifyStage(config: {
         `  Where: ${errorMessage(e)}\n` +
         `  Not recording a verify verdict: a missing local token is not an integrity failure ` +
         `(and ${pkg.name}@${cfg.targetVersion} is not live on the registry, so no public fallback exists).\n` +
-        `  Fix: authenticate npm (npm login / browser web-OTP), then re-run the verify stage.`,
+        formatHumanGate(
+          npmAuthGate('re-run the pipeline — receipts resume at verify.'),
+        ).join('\n'),
       status: 'blocked',
     }
   }

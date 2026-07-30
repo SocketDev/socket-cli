@@ -55,5 +55,8 @@ interface, `pnpm run check` is green, and no test asserts implementation detail.
 
 ## Handoffs
 
-Use [reviewing-code](../reviewing-code/SKILL.md) for an independent branch review,
-then [pushing](../pushing/SKILL.md) for the complete release gate.
+Use [writing-fast-tests](../writing-fast-tests/SKILL.md) to pick the cheapest seam
+for each test you add — the unit tier is budgeted under a minute, and a spawned
+child costs ~68,000× an in-process call. Then
+[reviewing-code](../reviewing-code/SKILL.md) for an independent branch review,
+and [pushing](../pushing/SKILL.md) for the complete release gate.

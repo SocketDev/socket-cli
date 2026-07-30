@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 // Claude Code PreToolUse hook — no-tail-install-out-guard.
 //
-// Blocks Bash commands that pipe install/check/fix/test output into
-// `tail` or `head`. The pattern's failure mode:
+// Blocks Bash commands that narrow a gate's output down to a window the
+// gate's refusal cannot appear in. Two shapes:
+//
+//   1. install/check/fix/test output piped into `tail` or `head`
+//   2. `git push` or a cascade script piped into a `grep` whose pattern
+//      matches only the success vocabulary
+//
+// The first shape's failure mode:
 //
 //   pnpm i 2>&1 | tail -5
 //
@@ -19,9 +25,19 @@
 // pnpm i output but above the `tail -5` window. Red CI on a published
 // tag. (See memory feedback_dont_tail_install_output.)
 //
+// The second shape has its own incident: 2026-07-28, a cascade was run as
+// `node scripts/repo/sync.mts … | grep -oE "[0-9]+ fixed"`. It reported
+// `0 fixed`, which read as "already in sync". The discarded output said
+// `refusing a stale template apply: incoming template 413f3cd5a is a strict
+// ancestor of the already-applied template 705da6ebb`. The cascade had not
+// run at all. Re-run unfiltered from a current checkout: 38/86 fixed. That
+// was the sixth time in one session a conclusion came from a filtered view,
+// which is what promoted this from a habit to a guard.
+//
 // No bypass. The rewrite is always available: replace `tail -N` with
-// `grep -iE "warning|error|ignored|fail"` to scan the full output,
-// or just drop the truncation. The hook's stderr names both.
+// `grep -iE "warning|error|ignored|fail"` to scan the full output, keep the
+// refusal vocabulary in a gate command's grep, or redirect the run to a file
+// and read the verdict. The hook's stderr names them.
 //
 // Reads a Claude Code PreToolUse JSON payload from stdin:
 //   { "tool_name": "Bash",
@@ -30,7 +46,8 @@
 //
 // Exit codes:
 //   0 — pass, not Bash, or the command shape isn't the bad one.
-//   2 — block (install/check command piped to tail/head).
+//   2 — block (install/gate output piped to tail/head, or a gate command
+//       piped to a grep that cannot match a refusal).
 //
 // Fails open on malformed payloads (exit 0 + stderr log).
 
@@ -104,9 +121,131 @@ export function describeInstallShape(tokens: string[]): string | undefined {
   return undefined
 }
 
+// Scripts whose REFUSALS read nothing like their successes. The cascade
+// reports work as `<n> fixed`, but declines with `skipping fleet dir — template
+// source has uncommitted changes` and `refusing a stale template apply:
+// incoming template <sha> is a strict ancestor of the already-applied template
+// <sha>`. An operator grepping for the success shape sees an empty match and
+// reads it as "nothing to do" rather than "it refused to run".
+const GATE_SCRIPTS: readonly string[] = ['cli.mts', 'doctor.mts', 'sync.mts']
+
+// The vocabulary a refusal actually uses. A filter that keeps none of these
+// terms cannot surface one, so the operator is left reading a success-only view
+// of a command that may not have succeeded.
+export const REFUSAL_TERMS: readonly string[] = [
+  'abort',
+  'block',
+  'denied',
+  'error',
+  'fail',
+  'refus',
+  'skip',
+  'stale',
+  'unfixed',
+  'warn',
+]
+
+// Label a gate-shaped command — one whose verdict line is the point of running
+// it — or undefined for anything else. `git push` runs the whole pre-push
+// validation stack and prints its verdict last; the cascade scripts print the
+// refusals above.
+export function describeGateShape(tokens: string[]): string | undefined {
+  let i = 0
+  while (i < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]!)) {
+    i += 1
+  }
+  const bin = tokens[i]
+  if (bin === 'git') {
+    let j = i + 1
+    while (j < tokens.length && tokens[j]!.startsWith('-')) {
+      j += 1
+    }
+    return tokens[j] === 'push' ? 'git push' : undefined
+  }
+  if (bin === 'node') {
+    const script = tokens
+      .slice(i + 1)
+      .find(t => GATE_SCRIPTS.some(s => t === s || t.endsWith(`/${s}`)))
+    if (script) {
+      return `node ${script}`
+    }
+  }
+  return undefined
+}
+
+// Whether a `grep` segment still lets refusal lines through. `grep` is this
+// guard's own sanctioned rewrite for `tail`, but only when the pattern keeps
+// the refusals: `grep -iE "warning|error|fail"` surfaces one, `grep -oE
+// "[0-9]+ fixed"` cannot. An inverting grep (`-v`) drops matching lines and
+// keeps the rest, so it is an exclusion rather than a narrowing and is left
+// alone.
+export function grepKeepsRefusals(tokens: readonly string[]): boolean {
+  const args = tokens.slice(1)
+  if (args.some(a => /^-[A-Za-z]*v/.test(a))) {
+    return true
+  }
+  const patterns: string[] = []
+  let positional: string | undefined
+  for (let i = 0, { length } = args; i < length; i += 1) {
+    const arg = args[i]!
+    if (arg === '--regexp' || arg === '-e') {
+      const next = args[i + 1]
+      if (next !== undefined) {
+        patterns.push(next)
+      }
+      i += 1
+      continue
+    }
+    if (!arg.startsWith('-') && positional === undefined) {
+      positional = arg
+    }
+  }
+  if (!patterns.length && positional !== undefined) {
+    patterns.push(positional)
+  }
+  const haystack = patterns.join('\n').toLowerCase()
+  return REFUSAL_TERMS.some(term => haystack.includes(term))
+}
+
+// Pure text filters a pipeline may chain ahead of the truncator. They rewrite
+// the stream without producing it, so the command that actually ran sits
+// further left: `git push | grep -v "^remote:" | tail -4` hides the push
+// verdict exactly as `git push | tail -4` does, and both must be caught.
+const PASSTHROUGH_FILTERS = new Set([
+  'awk',
+  'cat',
+  'cut',
+  'grep',
+  'sed',
+  'sort',
+  'tr',
+  'uniq',
+])
+
+// Walk left from the truncator at `index`, stepping over chained text filters,
+// to the segment that produced the output. Returns undefined when the chain
+// runs off the start or is broken by a non-pipe separator (`;`, `&&`), since
+// neither case has a producer feeding this pipeline.
+export function findPipeSource(
+  segments: ReadonlyArray<{ precededBy: string; tokens: string[] }>,
+  index: number,
+): { tokens: string[] } | undefined {
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const seg = segments[i]!
+    const first = seg.tokens.find(t => t !== '')
+    if (first === undefined || !PASSTHROUGH_FILTERS.has(first)) {
+      return seg
+    }
+    if (seg.precededBy !== '|') {
+      return undefined
+    }
+  }
+  return undefined
+}
+
 // Walk shell-quote tokens to find a pipe `|` whose LEFT side is an
-// install-shaped command and whose RIGHT side starts with `tail` or
-// `head`. Pipes are the only operator that matters — `&&`, `||`, `;`,
+// install-shaped or gate-shaped command and whose RIGHT side narrows the
+// output away. Pipes are the only operator that matters — `&&`, `||`, `;`,
 // `&` separate independent commands, so `pnpm i && echo done | tail -5`
 // is NOT the bad pattern (the tail consumes `echo`, not `pnpm`).
 export function findOffendingPipe(command: string):
@@ -174,23 +313,39 @@ export function findOffendingPipe(command: string):
   // Final segment.
   segments.push({ tokens: cur, precededBy: lastOp })
 
-  // Now scan: a segment whose `precededBy === '|'` AND whose first
-  // token is `tail` / `head` is the truncator. Its predecessor (the
-  // segment immediately before, regardless of separator) must be an
-  // install-shaped command for this to fire.
+  // Now scan: a segment whose `precededBy === '|'` AND whose first token
+  // narrows the output is the truncator. Its predecessor (the segment
+  // immediately before, regardless of separator) must be install- or
+  // gate-shaped for this to fire.
+  //
+  // `head`/`tail` always truncate. `grep` only counts against a GATE command,
+  // where the refusal vocabulary diverges from the success vocabulary — an
+  // install's warnings already say "warning"/"error", so the sanctioned
+  // `grep -iE "warning|error|…"` rewrite must keep working there.
   for (let i = 1; i < segments.length; i += 1) {
     const here = segments[i]!
     if (here.precededBy !== '|') {
       continue
     }
-    const firstTok = here.tokens.find(t => t !== '')
-    if (firstTok !== 'head' && firstTok !== 'tail') {
+    const tokens = here.tokens.filter(t => t !== '')
+    const firstTok = tokens[0]
+    if (firstTok !== 'grep' && firstTok !== 'head' && firstTok !== 'tail') {
       continue
     }
-    const prev = segments[i - 1]!
-    const installShape = describeInstallShape(prev.tokens)
-    if (installShape) {
-      return { install: installShape, truncator: firstTok }
+    const prev = findPipeSource(segments, i)
+    if (!prev) {
+      continue
+    }
+    const gateShape = describeGateShape(prev.tokens)
+    if (firstTok === 'grep') {
+      if (!gateShape || grepKeepsRefusals(tokens)) {
+        continue
+      }
+      return { install: gateShape, truncator: firstTok }
+    }
+    const source = describeInstallShape(prev.tokens) ?? gateShape
+    if (source) {
+      return { install: source, truncator: firstTok }
     }
   }
   return undefined
@@ -207,9 +362,37 @@ export const check = bashGuard(command => {
   if (!hit) {
     return undefined
   }
+  if (hit.truncator === 'grep') {
+    return block(
+      [
+        `[no-tail-install-out-guard] Blocked: \`${hit.install}\` output ` +
+          'filtered by a pattern that cannot match a refusal.',
+        '',
+        `  Offending shape: \`${hit.install} ... | grep <success-pattern>\``,
+        '',
+        '  Why this is blocked:',
+        '    A gate command declines in words that look nothing like the words',
+        '    it succeeds in. The cascade reports `<n> fixed` on success but',
+        '    `skipping fleet dir …` / `refusing a stale template apply …` when',
+        '    it declines; `git push` prints its validation verdict, not a',
+        '    summary. Grepping for the success shape returns an empty match on',
+        '    a refusal, which reads as "nothing to do" — so a command that',
+        '    never ran gets recorded as one that found nothing.',
+        '',
+        '  Fix: keep the refusal vocabulary in the pattern.',
+        '',
+        `    ${hit.install} 2>&1 | grep -iE "${REFUSAL_TERMS.join('|')}"`,
+        '',
+        '  Or capture the whole run and read the verdict:',
+        '',
+        `    ${hit.install} >/tmp/out.txt 2>&1; echo "exit=$?"; tail -40 /tmp/out.txt`,
+        '',
+      ].join('\n'),
+    )
+  }
   return block(
     [
-      '[no-tail-install-out-guard] Blocked: install/check output piped to ' +
+      '[no-tail-install-out-guard] Blocked: install/gate output piped to ' +
         `\`${hit.truncator}\`.`,
       '',
       `  Offending shape: \`${hit.install} ... | ${hit.truncator} -N\``,
@@ -220,6 +403,8 @@ export const check = bashGuard(command => {
       '    tripwires) print ABOVE the footer. A small `tail`/`head` window',
       '    captures the footer and hides every warning — a known local-passes-',
       '    CI-fails failure mode (v6.0.4 shipped with red CI this way).',
+      '    `git push` and the cascade scripts print their refusal the same way:',
+      '    above whatever line the window happens to catch.',
       '',
       '  Fix: scan the full output for warning markers instead.',
       '',

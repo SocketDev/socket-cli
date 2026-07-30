@@ -56,6 +56,7 @@ import {
 } from './cover-run.mts'
 export {
   countRawV8Profiles,
+  isChurnAttributableFailure,
   isConversionEmptyDespiteProfiles,
   pnpmDirChurned,
   shouldRetryForChurn,
@@ -462,6 +463,8 @@ export async function main(): Promise<void> {
           attempt,
           churnedDuringRun,
           failed,
+          failureOutput:
+            suiteResults.combined.stderr + suiteResults.combined.stdout,
           maxAttempts: COVER_MAX_ATTEMPTS,
         })
         const retryForEmptyConversion = shouldRetryForEmptyConversion({

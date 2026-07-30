@@ -1,4 +1,4 @@
-/**
+/*
  * @file THE sanctioned npm browser session for every fleet tool that drives
  *   npmjs.com — one durable profile, one launch shape, one sign-in contract.
  *   Ported from socket-registry's proven configurator

@@ -43,6 +43,19 @@ export function logNpmApproveHandoff(): void {
 }
 
 /**
+ * The working directory for bare `npm` invocations (whoami/login/logout). Two
+ * constraints pin it to the OS temp dir and nowhere else: it must sit outside
+ * the repo, whose devEngines pins pnpm and vetoes bare `npm`, and it must sit
+ * outside the OS home dir, because lib's spawn treats the child cwd as the
+ * UNTRUSTED ROOT and drops every PATH entry under it — with a home-dir cwd
+ * that is fnm/nvm/`~/Library/pnpm`/the sfw shims, i.e. every npm a
+ * version-manager user has, and the bare-name fallback then ENOENTs.
+ */
+export function npmScratchCwd(): string {
+  return os.tmpdir()
+}
+
+/**
  * Raised when the staged-entry listing could not be AUTHENTICATED. The stage
  * endpoints 401 without npm auth and `pnpm stage list`'s failure output
  * parses as an EMPTY list — the 6.2.1 run recorded that as verify=failed
@@ -202,9 +215,7 @@ export async function listStagedPackages(): Promise<StageListEntry[]> {
   if (code === 0 && entries.length > 0) {
     return entries
   }
-  // `npm whoami` runs from the OS home dir: the repo's devEngines pins pnpm
-  // as the package manager and vetoes bare `npm` invocations in-repo.
-  const whoami = await runCapture('npm', ['whoami'], os.homedir())
+  const whoami = await runCapture('npm', ['whoami'], npmScratchCwd())
   if (whoami.code !== 0) {
     throw new StageListAuthError(
       `\`npm whoami\` exited ${whoami.code} — no npm auth, so the staging ` +

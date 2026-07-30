@@ -8,13 +8,13 @@
  *   agent-driven runs — the runs `--yes` exists for).
  */
 
-import os from 'node:os'
 import process from 'node:process'
 
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 
 import { NPM_REGISTRY_URL } from '../../constants/npm-registry.mts'
+import { npmScratchCwd } from './shared.mts'
 import { logger, runCapture, runInherit } from '../shared.mts'
 
 // Best-effort: pop the default browser at `url`. Non-fatal when it can't
@@ -41,7 +41,7 @@ async function openBrowser(url: string, cwd: string): Promise<void> {
  * flow bails to the legacy `Username:` prompt, which EOFs and dies in
  * agent-driven runs — and those runs are the reason `--yes` exists.
  */
-async function webLogin(home: string): Promise<boolean> {
+async function webLogin(scratchCwd: string): Promise<boolean> {
   // `npm-auth-type: web` is load-bearing: without it the registry 401s the
   // session create, it gates the endpoint on the client declaring web auth.
   const created = await httpRequest(`${NPM_REGISTRY_URL}/-/v1/login`, {
@@ -66,7 +66,7 @@ async function webLogin(home: string): Promise<boolean> {
     return false
   }
   logger.log(`Authenticate in the browser: ${session.loginUrl}`)
-  await openBrowser(session.loginUrl, home)
+  await openBrowser(session.loginUrl, scratchCwd)
   // Poll until authenticated: 202 (+ retry-after) while pending, 200 + token
   // once the human completes the browser challenge. Cap at ~10 minutes.
   const deadline = Date.now() + 10 * 60 * 1000
@@ -81,6 +81,8 @@ async function webLogin(home: string): Promise<boolean> {
         logger.fail('Web-login done response carried no token.')
         return false
       }
+      // `--location=user` anchors the write to the user npmrc no matter the
+      // cwd, so the scratch cwd never redirects where the token lands.
       const { code } = await runCapture(
         'npm',
         [
@@ -89,7 +91,7 @@ async function webLogin(home: string): Promise<boolean> {
           `//registry.npmjs.org/:_authToken=${token}`,
           '--location=user',
         ],
-        home,
+        npmScratchCwd(),
       )
       if (code !== 0) {
         logger.fail(
@@ -123,23 +125,24 @@ async function webLogin(home: string): Promise<boolean> {
  * stage list, which would silently no-op the whole approve. When logged out:
  * on a real terminal, defer to `npm login` (its web-first flow is the nicest
  * UX there); without a TTY, run the web-login protocol directly. npm
- * commands run from the OS home dir because the repo's devEngines pins pnpm
- * as the package manager and vetoes bare `npm` invocations in-repo.
+ * commands run from npmScratchCwd() — see its doc for why the temp dir is
+ * the only cwd that dodges both the repo's devEngines veto and lib spawn's
+ * untrusted-root PATH sanitization.
  */
 export async function ensureNpmLogin(): Promise<boolean> {
-  const home = os.homedir()
-  const { code } = await runCapture('npm', ['whoami'], home)
+  const scratchCwd = npmScratchCwd()
+  const { code } = await runCapture('npm', ['whoami'], scratchCwd)
   if (code === 0) {
     return true
   }
   logger.log('Not logged in to npm — starting browser login…')
   if (process.stdin.isTTY) {
-    const login = await runInherit('npm', ['login'], home)
+    const login = await runInherit('npm', ['login'], scratchCwd)
     if (login !== 0) {
       logger.fail(`npm login exited ${login}.`)
       return false
     }
     return true
   }
-  return await webLogin(home)
+  return await webLogin(scratchCwd)
 }

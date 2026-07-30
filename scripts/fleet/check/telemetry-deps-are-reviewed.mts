@@ -24,12 +24,42 @@ import { REPO_ROOT } from '../paths.mts'
 import {
   REVIEWED_TELEMETRY,
   scanRepoForTelemetry,
+  telemetryScanSurface,
 } from '../lib/telemetry-scan.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
 function main(): number {
+  // A gate that opened no files is not a pass. The scan silently matched zero
+  // uv.lock files for months because its glob skipped dot directories, so it
+  // reported green in the very repo that OWNS the uv payload while the same
+  // lockfiles failed in a member. Report the surface, and fail when it is
+  // empty rather than let a mis-scoped glob read as clean.
+  const surface = telemetryScanSurface(REPO_ROOT)
+  const scanned =
+    surface.externalToolsFiles.length +
+    surface.pnpmLockFiles.length +
+    surface.uvLockFiles.length
+  if (scanned === 0) {
+    logger.fail(
+      '[telemetry-deps-are-reviewed] scanned 0 files — this is NOT a pass (vacuous scan).',
+    )
+    logger.error(
+      `  What:   the dep-surface scan found no pnpm-lock.yaml, no uv.lock, and no external-tools.json under ${REPO_ROOT}.`,
+    )
+    logger.error(
+      '  Where:  scripts/fleet/lib/telemetry-scan.mts telemetryScanSurface().',
+    )
+    logger.error(
+      '  Saw:    0 lockfile(s) / manifest(s) opened; wanted at least one, or an explicit reason this repo has no dep surface.',
+    )
+    logger.error(
+      '  Fix:    check the glob scoping (dot directories need `dot: true`) and that the repo really carries no lockfile.',
+    )
+    process.exitCode = 1
+    return 1
+  }
   const unreviewed = scanRepoForTelemetry(REPO_ROOT)
   if (unreviewed.length) {
     logger.fail(
@@ -59,7 +89,7 @@ function main(): number {
   if (!process.argv.includes('--quiet')) {
     const reviewed = Object.keys(REVIEWED_TELEMETRY).length
     logger.success(
-      `[telemetry-deps-are-reviewed] no unreviewed telemetry SDKs (${reviewed} reviewed + tolerated).`,
+      `[telemetry-deps-are-reviewed] no unreviewed telemetry SDKs across ${scanned} lockfile(s)/manifest(s) (${reviewed} reviewed + tolerated).`,
     )
   }
   return 0

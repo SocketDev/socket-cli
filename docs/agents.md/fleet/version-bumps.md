@@ -145,6 +145,43 @@ when the manifest is more than one valid bump ahead of the published latest, and
 fails open (no published version / registry unreachable) so offline lint lanes
 never trip it.
 
+## A placeholder version releases 0.1.0 first
+
+A package that has never shipped still carries the placeholder version its
+scaffolding wrote: `0.0.0`, or a `X.Y.Z-prerelease` such as the
+`0.1.0-prerelease` an envrypt-shaped workspace keeps in its root `Cargo.toml`
+`[workspace.package]`. Its first real release is **`0.1.0`** — not a
+commit-derived bump, and not `1.0.0`. `@socketsecurity/facts` sat at `0.0.0`
+and shipped `0.1.0`; `@socketsecurity/scan-patterns` follows the same path.
+
+The commit-type heuristic cannot answer in that state. With no released base,
+the whole history is in range, so a single `feat!` asks for a major, an
+all-`fix` stream asks for `0.0.1`, and an all-`chore` stream asks for nothing
+at all — three wrong answers for one first cut.
+
+`decidePlaceholderRelease` in `scripts/fleet/bump/placeholder-release.mts` owns
+the decision. It is pure over three facts `bump.mts` collects: whether the
+release anchor resolved a prior release, the CHANGELOG's existing version
+sections, and the version-source manifest version. All three must say "nothing
+shipped" before the default applies, so a repo with real history is never
+mistaken for a fresh one.
+
+What the operator sees:
+
+| State | Default | Output |
+| --- | --- | --- |
+| Placeholder, no `--release-as` | `0.1.0` | The detected state, why `0.1.0`, and that `--release-as` overrides |
+| Placeholder, `--release-as <level\|X.Y.Z>` | the named version | The named version is honored over the `0.1.0` default |
+| Placeholder, named version below `0.1.0` | the named version | A loud warning that a placeholder conventionally starts at `0.1.0`, then it proceeds |
+| Already released | unchanged | Nothing — the commit-derived path is untouched |
+
+The version stays the OWNER's decision: this moves the DEFAULT only. An
+explicit `--release-as` always wins, a sub-`0.1.0` choice warns but never
+blocks, and `--dry-run` prints the identical reasoning before anything is
+written. In placeholder state a level counts up from zero, so
+`--release-as minor` lands `0.1.0` rather than skipping past the `0.1.0` a
+`0.1.0-prerelease` manifest never shipped.
+
 ## The bump happens exactly once
 
 `bump.mts` owns the version write, and the whole pipeline + workflow chain
