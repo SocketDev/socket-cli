@@ -5,7 +5,15 @@ import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
 // Frozen contract with `coana run --compute-artifacts-sidecar`; change only in
 // sync with the coana consumer. Per coordinate: targets/sources present →
 // resolved, and coana uses the paths; both empty → a pom/BOM resolved with no
-// artifact, not a failure; absent → coana degrades that vuln to precomputed.
+// artifact, not a failure; absent → coana resolves that coordinate itself,
+// best-effort: local caches, then `mvn -Dtransitive=false dependency:get`,
+// then HTTP.
+//
+// So the sidecar is an accelerator, not an authority. A coordinate we omit is
+// not dropped from the scan — it is handed back to exactly the reach-time
+// resolution this sidecar exists to avoid, at that path's cost and
+// reliability. Treat a coverage gap as a correctness concern to surface, not
+// as a silent fallback.
 export type ResolvedComponent = {
   group: string
   name: string
