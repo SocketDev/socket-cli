@@ -44,8 +44,12 @@ of the same SHA.
   (`uses-sha-verify-guard` blocks it, because the archive hash can't be recomputed
   at edit time).
 - There is **no gitlink**: `git ls-files --stage upstream/` must show no `160000`
-  entry. On a fresh checkout the reference is materialized on demand (it is not a
-  `git submodule update` target, since nothing is tracked to update).
+  entry. On a fresh checkout the reference is materialized on demand. It is not a
+  `git submodule init` / `git submodule update` target — both take a PATHSPEC and
+  resolve it against the index, so with no gitlink they fail with
+  `pathspec 'upstream/<name>' did not match any file(s) known to git`. Use
+  `git-partial-submodule.mts clone`, which reads the `ref` pin from `.gitmodules`
+  and clones + detaches directly. See "Materializing one" below.
 
 ## Ported actions: the port map + the lock-step rule
 
@@ -92,6 +96,38 @@ git config -f .gitmodules submodule.upstream/<name>.verify none                 
 node scripts/fleet/gen/gitmodules-hash.mts --set upstream/<name> <ref> --label <name>-<version>
 node scripts/fleet/git-partial-submodule.mts clone upstream/<name>             # materialize (no gitlink)
 ```
+
+`git-partial-submodule.mts clone` is the only materializer that works here. It
+resolves the commit from the `.gitmodules` `ref` field, clones the url directly,
+applies the `sparse-checkout` slice, and detaches at the pin — no index entry is
+read or written. It runs `git submodule init` only for paths that DO carry a
+gitlink, so a mixed repo (a real tracked submodule plus gitlink-less upstream
+references) materializes both in one pass.
+
+`git-partial-submodule.mts add` refuses an `upstream/<name>` path outright: it
+ends in `git submodule add`, which stages the forbidden gitlink. Use the
+`git config -f .gitmodules` sequence above instead.
+
+## Materializing one
+
+On a fresh checkout, or after a pin bump:
+
+```sh
+node scripts/fleet/git-partial-submodule.mts clone upstream/<name>
+```
+
+If the tree already exists and only needs to move to a new pin, fetch and detach
+in the reference's own git dir:
+
+```sh
+git -C upstream/<name> fetch --depth 1 origin <ref>
+git -C upstream/<name> checkout --detach <ref>
+```
+
+Both commands are sanctioned. A submodule's git-dir resolves under the
+superproject's `.git/modules/`, and `primary-checkout-branch-guard` classifies
+that as neither the primary checkout nor a linked worktree, so the detach is not
+blocked.
 
 If a tool ever creates a gitlink (a stray `git submodule add`), drop it with
 `git update-index --force-remove upstream/<name>` — that removes the `160000`

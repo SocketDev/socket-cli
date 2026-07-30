@@ -9,7 +9,7 @@
  *   or heredoc is not a publish and must not fire the nudges.
  */
 
-import { gitSubcommand } from './commit-command.mts'
+import { gitSubcommand } from './git-subcommand.mts'
 import { commandsFor } from './shell-command.mts'
 
 import type { Command } from './shell-command.mts'
@@ -78,7 +78,7 @@ export function isPublicGhSurface(c: Command): boolean {
  */
 export function isPublicSurface(command: string): boolean {
   const gitPublishes = commandsFor(command, 'git').some(c => {
-    const sub = gitSubcommand(c)
+    const sub = gitSubcommand(c.args)
     return sub === 'commit' || sub === 'push'
   })
   if (gitPublishes) {

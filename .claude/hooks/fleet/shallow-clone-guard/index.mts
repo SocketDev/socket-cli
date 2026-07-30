@@ -10,15 +10,18 @@
 // nothing and are always allowed.
 //
 // Detection, shell-command tokenized, not a raw regex: the command invokes
-// `git` with `clone` as its first bare argument; `--help`/`-h` exempt it;
-// hasDepth1 is true when `--depth=1` appears OR `--depth` is followed by `1`
-// as a separate token; hasSingleBranch is true when `--single-branch` appears.
+// `git` with `clone` as its SUBCOMMAND (`_shared/git-subcommand.mts`, which
+// skips a global option's separate value token so `git -C /repo clone <url>`
+// resolves to `clone` and not to `/repo`); `--help`/`-h` exempt it; hasDepth1
+// is true when `--depth=1` appears OR `--depth` is followed by `1` as a
+// separate token; hasSingleBranch is true when `--single-branch` appears.
 // The guard fires when either flag is missing.
 //
 // Fails open on parse / payload errors — a guard bug must not wedge every Bash
 // call.
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
+import { gitSubcommandReadings } from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
@@ -33,43 +36,33 @@ export interface ShallowCloneDetection {
 export function detectShallowClone(command: string): ShallowCloneDetection {
   const gitCmds = commandsFor(command, 'git')
   for (const { args } of gitCmds) {
-    // Find the first bare token — it must be `clone`.
-    let foundClone = false
-    for (let i = 0, { length } = args; i < length; i += 1) {
-      const arg = args[i]!
-      if (arg.startsWith('-')) {
+    for (const { rest, sub } of gitSubcommandReadings(args)) {
+      if (sub !== 'clone') {
         continue
       }
-      if (arg === 'clone') {
-        foundClone = true
+
+      // Allow `git clone --help` / `git clone -h`, information only.
+      if (rest.includes('--help') || rest.includes('-h')) {
+        return { detected: false, hasDepth1: false, hasSingleBranch: false }
       }
-      break
-    }
-    if (!foundClone) {
-      continue
-    }
 
-    // Allow `git clone --help` / `git clone -h`, information only.
-    if (args.includes('--help') || args.includes('-h')) {
-      return { detected: false, hasDepth1: false, hasSingleBranch: false }
-    }
+      let hasDepth1 = false
+      let hasSingleBranch = false
 
-    let hasDepth1 = false
-    let hasSingleBranch = false
-
-    for (let i = 0, { length } = args; i < length; i += 1) {
-      const arg = args[i]!
-      if (arg === '--depth=1') {
-        hasDepth1 = true
-      } else if (arg === '--depth' && args[i + 1] === '1') {
-        hasDepth1 = true
-      } else if (arg === '--single-branch') {
-        hasSingleBranch = true
+      for (let i = 0, { length } = rest; i < length; i += 1) {
+        const arg = rest[i]!
+        if (arg === '--depth=1') {
+          hasDepth1 = true
+        } else if (arg === '--depth' && rest[i + 1] === '1') {
+          hasDepth1 = true
+        } else if (arg === '--single-branch') {
+          hasSingleBranch = true
+        }
       }
-    }
 
-    const detected = !hasDepth1 || !hasSingleBranch
-    return { detected, hasDepth1, hasSingleBranch }
+      const detected = !hasDepth1 || !hasSingleBranch
+      return { detected, hasDepth1, hasSingleBranch }
+    }
   }
   return { detected: false, hasDepth1: false, hasSingleBranch: false }
 }

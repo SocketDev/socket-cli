@@ -115,9 +115,10 @@ export const scanSoakAnnotations = (): number => {
 //   - the `lint` script isn't a `node <path>` invocation → skip (can't run it
 //     safely without pnpm; rely on CI).
 //   - lint script present but no oxlint config → the script self-skips.
-// Bypass: `git push --no-verify`, or whole-chain `HUSKY=0` (both phrase-gated
-// for Claude; no per-step env kill-switch per CLAUDE.md). Returns 1 on lint
-// failure, 0 on pass/skip.
+// Bypass: `git push --no-verify`, whole-chain `HUSKY=0`, or a redirected
+// `core.hooksPath` — all three phrase-gated for Claude by no-revert-guard, and
+// no per-step env kill-switch per CLAUDE.md. Returns 1 on lint failure, 0 on
+// pass/skip.
 export const scanFastChecks = (): number => {
   if (!existsSync('package.json')) {
     return 0

@@ -15,7 +15,8 @@ set -e
 # Heavier than --no-verify: it covers every hook type, including ones git
 # gives no flag for (post-commit). Loud and all-or-nothing by design;
 # per-step env kill-switches stay banned. For Claude sessions the same
-# `Allow no-verify bypass` phrase gates it (no-revert-guard).
+# `Allow no-verify bypass` phrase gates it, along with `--no-verify` and a
+# redirected `core.hooksPath` (no-revert-guard).
 if [ "${HUSKY-}" = "0" ]; then
   echo "[git-hooks] HUSKY=0 — skipping pre-commit."
   exit 0

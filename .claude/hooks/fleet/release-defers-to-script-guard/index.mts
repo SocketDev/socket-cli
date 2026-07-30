@@ -50,6 +50,10 @@ import process from 'node:process'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { extractGitCwd } from '../_shared/git-cwd.mts'
+import {
+  splitGitSubcommand,
+  splitSubcommandArgs,
+} from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 
@@ -68,18 +72,6 @@ export const triggers: readonly string[] = [
 // Stable identifier for CI scripts / ndjson reporters to branch on instead of
 // substring-matching the human message.
 export const ERR_RELEASE_DEFERS_TO_SCRIPT = 'ERR_FLEET_RELEASE_DEFERS_TO_SCRIPT'
-
-// `git` global options that consume the FOLLOWING token as their value, so the
-// subcommand scan skips both. Everything else before the subcommand is a boolean
-// global flag or a `--flag=value` form, each a single token.
-const GIT_VALUE_FLAGS: ReadonlySet<string> = new Set([
-  '--exec-path',
-  '--git-dir',
-  '--namespace',
-  '--work-tree',
-  '-C',
-  '-c',
-])
 
 // Package-manager global options that consume the following token as their
 // value, so the subcommand scan skips both.
@@ -146,30 +138,6 @@ export interface ReleaseGuardDecision {
 }
 
 const ALLOW: ReleaseGuardDecision = { blocked: false }
-
-interface Segment {
-  readonly rest: readonly string[]
-  readonly sub: string | undefined
-}
-
-// The subcommand of a parsed invocation plus the args after it, skipping leading
-// global options — and the value token of a value-taking global flag — so `git
-// -C /x tag` resolves to sub `tag` and `pnpm -C /x publish` to sub `publish`.
-function subcommandOf(
-  args: readonly string[],
-  valueFlags: ReadonlySet<string>,
-): Segment {
-  for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!
-    if (!arg.startsWith('-')) {
-      return { rest: args.slice(i + 1), sub: arg }
-    }
-    if (valueFlags.has(arg)) {
-      i += 1
-    }
-  }
-  return { rest: [], sub: undefined }
-}
 
 // True when `arg` names a release tag, with a `refs/tags/` prefix stripped so a
 // fully-qualified push refspec still resolves.
@@ -242,7 +210,7 @@ function packageManagerReason(command: string): string | undefined {
   for (let i = 0, { length } = PM_BINARIES; i < length; i += 1) {
     const binary = PM_BINARIES[i]!
     for (const cmd of commandsFor(command, binary)) {
-      const { rest, sub } = subcommandOf(cmd.args, PM_VALUE_FLAGS)
+      const { rest, sub } = splitSubcommandArgs(cmd.args, PM_VALUE_FLAGS)
       if (sub === 'version' && rest.length > 0) {
         return `${binary} version`
       }
@@ -268,7 +236,7 @@ function packageManagerReason(command: string): string | undefined {
 // refspec.
 function gitTagReason(command: string): string | undefined {
   for (const cmd of commandsFor(command, 'git')) {
-    const { rest, sub } = subcommandOf(cmd.args, GIT_VALUE_FLAGS)
+    const { rest, sub } = splitGitSubcommand(cmd.args)
     if (sub === 'tag') {
       if (rest.includes('-l') || rest.includes('--list')) {
         continue

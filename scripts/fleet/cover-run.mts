@@ -29,10 +29,17 @@ import {
 import { sleep } from './_shared/backoff.mts'
 import type { CoverConfig, ResolvedSuite } from './cover/discovery.mts'
 import {
+  coverConfigPath,
   readCoverConfig,
   resolveBuildEntry,
   resolveSuites,
 } from './cover/discovery.mts'
+import {
+  coverThresholdKeyErrors,
+  DEFAULT_COVER_RUNNER,
+  resolveCoverRunner,
+} from './cover/runner.mts'
+import type { CoverRunnerId } from './cover/runner.mts'
 import {
   COVERAGE_CHILDREN_RAW_DIR,
   COVERAGE_DIR,
@@ -693,9 +700,24 @@ export async function buildWithSourceMaps(repoRoot: string): Promise<boolean> {
 }
 
 export interface RunPlan {
+  // Where the cover config was read from, so an error can name the file the
+  // operator must edit. Undefined when the repo declares no config.
+  configPath: string | undefined
   coverConfig: CoverConfig
   isolatedVitestArgs: string[] | undefined
   mainVitestArgs: string[]
+  // The operator's own argv, forwarded to whichever runner runs.
+  passthroughArgs: string[]
+  // Fatal cover-config problems, both runners. An unrecognized `cover.runner`
+  // and an unrecognized threshold metric name both land here: each parses fine
+  // and is then ignored, which turns a configured gate into no gate while the
+  // run still reports success.
+  configErrors: string[]
+  // The declared test runner. `vitest` unless the repo says otherwise; an
+  // unrecognized declaration surfaces in `configErrors` instead of silently
+  // falling back, which would run a vitest gate over a bun repo and measure
+  // nothing.
+  runner: CoverRunnerId
   typeCoverageArgs: string[]
 }
 
@@ -710,6 +732,20 @@ export function resolveRunPlan(repoRoot: string): RunPlan {
     .filter(arg => !customFlags.includes(arg))
 
   const coverConfig = readCoverConfig(repoRoot)
+  const configPath = coverConfigPath(repoRoot)
+  const resolvedRunner = resolveCoverRunner(
+    coverConfig.runner,
+    configPath ?? '<no socket-wheelhouse.json>',
+  )
+  const runner =
+    'runner' in resolvedRunner ? resolvedRunner.runner : DEFAULT_COVER_RUNNER
+  const configErrors = [
+    ...('error' in resolvedRunner ? [resolvedRunner.error] : []),
+    ...coverThresholdKeyErrors(
+      coverConfig,
+      configPath ?? '<no socket-wheelhouse.json>',
+    ),
+  ]
   const suites = resolveSuites(repoRoot, coverConfig)
 
   const suiteVitestArgs = (suite: ResolvedSuite): string[] => [
@@ -732,9 +768,13 @@ export function resolveRunPlan(repoRoot: string): RunPlan {
     : undefined
 
   return {
+    configPath,
     coverConfig,
     isolatedVitestArgs,
     mainVitestArgs,
+    configErrors,
+    passthroughArgs,
+    runner,
     typeCoverageArgs: ['exec', 'type-coverage'],
   }
 }

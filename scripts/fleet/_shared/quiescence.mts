@@ -179,6 +179,10 @@ export interface AwaitQuiescenceOptions {
   intervalMs?: number | undefined
   timeoutMs?: number | undefined
   needStable?: number | undefined
+  // How one sample is taken. Defaults to the real git-probing reader; tests
+  // inject a synthetic reader so the settle/timeout arms never race real
+  // subprocess latency against the wall-clock deadline under machine load.
+  readSignal?: ((repoPath: string) => QuiescenceSignal) | undefined
 }
 
 function sleep(ms: number): Promise<void> {
@@ -202,11 +206,12 @@ export async function awaitQuiescence(
   const intervalMs = opts.intervalMs ?? QUIESCENCE_POLL_MS
   const timeoutMs = opts.timeoutMs ?? QUIESCENCE_TIMEOUT_MS
   const needStable = opts.needStable ?? DEFAULT_NEED_STABLE
+  const readSignal = opts.readSignal ?? readQuiescenceSignal
   const deadline = Date.now() + timeoutMs
   let prev: QuiescenceSignal | undefined
   let streak = 0
   for (;;) {
-    const curr = readQuiescenceSignal(repoPath)
+    const curr = readSignal(repoPath)
     if (isRepoQuiescent(curr) && signalsStable(prev, curr)) {
       streak += 1
       if (streak >= needStable) {

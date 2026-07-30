@@ -240,7 +240,7 @@ export function checkVersionPin(
   if (!existsSync(submoduleDir)) {
     base.severity = 'error'
     messages.push(
-      `submodule not checked out at ${upstream.submodule} — run \`git submodule update --init\``,
+      `submodule not checked out at ${upstream.submodule} — run \`node scripts/fleet/git-partial-submodule.mts clone ${upstream.submodule}\` (a fleet upstream reference has no gitlink, so \`git submodule update --init\` cannot resolve its pathspec)`,
     )
     return base
   }
@@ -262,7 +262,7 @@ export function checkVersionPin(
   if (head !== effectivePin) {
     base.severity = 'error'
     messages.push(
-      `submodule HEAD (${head.slice(0, 12)}) does not match .gitmodules ref (${effectivePin.slice(0, 12)}) — run \`git submodule update\``,
+      `submodule HEAD (${head.slice(0, 12)}) does not match .gitmodules ref (${effectivePin.slice(0, 12)}) — run \`git -C ${upstream.submodule} fetch origin ${effectivePin} && git -C ${upstream.submodule} checkout --detach ${effectivePin}\` (a fleet upstream reference has no gitlink, so \`git submodule update\` has nothing to drive)`,
     )
     return base
   }

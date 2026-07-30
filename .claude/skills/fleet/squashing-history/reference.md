@@ -212,7 +212,21 @@ git branch | grep backup-
 Common causes:
 
 1. **No remote access:** Check remote URL: `git remote -v`
-2. **Branch protection:** Check GitHub/GitLab branch protection rules
+2. **The `fleet-main-protection` ruleset:** every fleet repo blocks
+   `non_fast_forward` on the default branch with zero bypass actors, so GitHub
+   rejects the push after the local guards have already passed. Read the
+   current actors, take a temporary self-exemption, push, then hand it back:
+
+   ```bash
+   node scripts/fleet/grant-main-bypass.mts <repo>
+   node scripts/fleet/grant-main-bypass.mts <repo> --grant --yes
+   # re-run the push, then:
+   node scripts/fleet/grant-main-bypass.mts <repo> --revoke
+   ```
+
+   Never patch the ruleset by hand — a full-body `gh api` write drops the rules
+   it omits. The grant is self-expiring: the next
+   `main-branch-rules-are-enforced --fix` removes it.
 3. **No remote tracking:** Add with `SQUASH_HISTORY=1 git push --set-upstream --force-with-lease origin "$BASE"`
 
 Recovery:

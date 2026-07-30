@@ -14,43 +14,10 @@
  *   was blocked as a malformed commit).
  */
 
+import { gitSubcommand } from './git-subcommand.mts'
 import { commandsFor } from './shell-command.mts'
 
 import type { Command } from './shell-command.mts'
-
-// Git global options that take a SEPARATE value token (`git -C /path
-// commit`, `git -c k=v commit`, `git --git-dir /x commit`). Their values are
-// non-flag tokens that would otherwise shadow the real subcommand, so the
-// subcommand scan must skip the flag AND its value. `=`-joined forms
-// (`--git-dir=/x`) start with `-` and are skipped by the flag branch.
-const GIT_GLOBAL_VALUE_FLAGS = new Set([
-  '--git-dir',
-  '--namespace',
-  '--work-tree',
-  '-C',
-  '-c',
-])
-
-/**
- * The subcommand verb of a parsed `git` segment: the first non-flag arg
- * after skipping the values of value-taking global options. Undefined when
- * the segment has no subcommand (`git --version`).
- */
-export function gitSubcommand(segment: Command): string | undefined {
-  const { args } = segment
-  for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!
-    if (GIT_GLOBAL_VALUE_FLAGS.has(arg)) {
-      i += 1
-      continue
-    }
-    if (arg.startsWith('-')) {
-      continue
-    }
-    return arg
-  }
-  return undefined
-}
 
 /**
  * The parsed `git commit` segments of `command`. Exported so callers with
@@ -58,7 +25,9 @@ export function gitSubcommand(segment: Command): string | undefined {
  * share the ONE subcommand parse instead of growing a divergent copy.
  */
 export function gitCommitSegments(command: string): Command[] {
-  return commandsFor(command, 'git').filter(c => gitSubcommand(c) === 'commit')
+  return commandsFor(command, 'git').filter(
+    c => gitSubcommand(c.args) === 'commit',
+  )
 }
 
 /**

@@ -99,6 +99,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // `"private": true`. Uses `npm pack --dry-run --json` as the source of
     // truth — same logic npm itself uses for publish.
     releaseStep(['scripts/fleet/check/package-files-are-allowlisted.mts']),
+    // The SPDX id pinned for each copyleft upstream still matches Socket's
+    // license data. Network-bound, so it rides the release/CI tier and the
+    // interactive loop stays offline. Offline-safe by contract: no token, no
+    // network, or an unresolved purl SKIPS with a loud notice — never a false
+    // green, never a connectivity failure. An upstream relicensing is what
+    // poisons a derivation months later, so the pin gets a standing watchdog.
+    // See docs/agents.md/fleet/copyleft-boundaries.md.
+    releaseStep([
+      'scripts/fleet/check/copyleft-licenses-are-current.mts',
+      '--quiet',
+    ]),
     // Pre-publish source gate: every publishable package.json declares
     // publishConfig.access:"public" + provenance:true (and registry-if-set =
     // npmjs) — the source-config preconditions for a public, provenance-attested

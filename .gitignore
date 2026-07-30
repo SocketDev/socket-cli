@@ -178,22 +178,24 @@ packages/socket/*.png
 # mirror — the fleet keeps ignores in this root block, not nested per-dir
 # files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
 # sync-scaffolding/dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
-**/.claude/hooks/fleet/_dist/bundle.cjs
+**/.claude/hooks/fleet/_dist/fleet-pack.cjs
 # Legacy pre-v1.0.16 dispatch layout: socket-sdk-js still tracks the
-# _dispatch/index.cjs loader, which requires ./bundle.cjs — that generated
-# bundle must stay untracked there. Keep this entry until every member
-# has migrated to the fleet/index.cjs + _dist/bundle.cjs layout; it
+# _dispatch/index.cjs loader, which requires ./fleet-pack.cjs — that generated
+# bundle must stay untracked there. This path stays _dispatch/ on purpose: it
+# describes a layout that member still has on disk, so renaming it here would
+# un-ignore that repo's generated bundle. Keep the entry until every member
+# has migrated to the fleet/index.cjs + _dist/fleet-pack.cjs layout; it
 # matches nothing once the legacy bundle is gone.
-**/.claude/hooks/fleet/_dispatch/bundle.cjs
-**/.claude/hooks/fleet/_dispatch/dispatch-launcher
-**/.claude/hooks/fleet/_dispatch/dispatch-launcher.exe
-**/.claude/hooks/fleet/_dispatch/dispatch-table-excluded.mts
-**/.claude/hooks/fleet/_dispatch/dispatch-table-snapshot.mts
-**/.claude/hooks/fleet/_dispatch/dispatch-table.mts
-**/.claude/hooks/fleet/_dispatch/excluded-bundle.cjs
-**/.claude/hooks/fleet/_dispatch/node.path
-**/.claude/hooks/fleet/_dispatch/snapshot-blob.path
-**/.claude/hooks/fleet/_dispatch/snapshot-bundle.cjs
+**/.claude/hooks/fleet/_dispatch/fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/dispatch-launcher
+**/.claude/hooks/fleet/_shared/dispatch-launcher.exe
+**/.claude/hooks/fleet/_shared/dispatch-table-excluded.mts
+**/.claude/hooks/fleet/_shared/dispatch-table-snapshot.mts
+**/.claude/hooks/fleet/_shared/dispatch-table.mts
+**/.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/node.path
+**/.claude/hooks/fleet/_shared/snapshot-blob.path
+**/.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs
 **/.claude/hooks/fleet/_shared/dispatch-manifest.json
 # The rolldown-bundled fleet oxlint plugin (build-oxlint-bundle.mts): members
 # load this single artifact via jsPlugins instead of the ~100 rule source

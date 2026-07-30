@@ -387,6 +387,39 @@ export async function runDirect(
  * writes it into the subject directory when publishConfig.directory redirects
  * the publish. `root` is injectable for tests.
  */
+/**
+ * A tarball provider: resolves the scan-subject bytes for `name@version` to a
+ * path, or undefined when this source has nothing (a staged entry with no
+ * tarballUrl, a failed download).
+ */
+export type TarballProvider = (
+  name: string,
+  version: string,
+) => Promise<string | undefined>
+
+/**
+ * Compose an ordered list of tarball providers into one that tries each in
+ * turn and returns the first path a source yields, falling THROUGH a source
+ * that returns undefined instead of hard-failing. Returns undefined only when
+ * EVERY source came up empty. This is the artifact-source fallback chain
+ * (browser-read to registry-API to local pack), factored out of the approve
+ * loop so the fallthrough is unit-testable without a browser.
+ */
+export function composeTarballProviders(
+  sources: readonly TarballProvider[],
+): TarballProvider {
+  return async (name: string, version: string) => {
+    for (let i = 0, { length } = sources; i < length; i += 1) {
+      // eslint-disable-next-line no-await-in-loop -- serial fallback: try each source until one yields bytes.
+      const packed = await sources[i]!(name, version)
+      if (packed) {
+        return packed
+      }
+    }
+    return undefined
+  }
+}
+
 export async function defaultPackTarball(
   name: string,
   version: string,
@@ -620,7 +653,7 @@ export async function verifyStagedEntry(
       `Pre-approve verify: no server-side shasum for ${name}@${version}.\n` +
         `  Where: pnpm stage list --json (stageId ${stageId}) exposed no shasum field.\n` +
         `  Saw vs wanted: an entry with no digest; wanted npm's staged sha1 to compare against the local pack.\n` +
-        `  Fix: reject + re-stage (pnpm stage reject ${stageId}); if pnpm's stage-list shape changed, update readStagedShasum. Refusing to approve unverified bytes.`,
+        `  Fix: reject + re-stage (node scripts/fleet/npm-web-auth.mts stage reject ${stageId}); if pnpm's stage-list shape changed, update readStagedShasum. Refusing to approve unverified bytes.`,
     )
     return false
   }
@@ -667,7 +700,7 @@ export async function verifyStagedEntry(
           `  Saw vs wanted: ${contents.detail}\n` +
           `    local pack:  ${local.shasum}\n` +
           `    npm staging: ${stagedShasum}\n` +
-          `  Fix: reject the staged publish (pnpm stage reject ${stageId}) and re-stage — never approve a divergent artifact.`,
+          `  Fix: reject the staged publish (node scripts/fleet/npm-web-auth.mts stage reject ${stageId}) and re-stage — never approve a divergent artifact.`,
       )
       return false
     }

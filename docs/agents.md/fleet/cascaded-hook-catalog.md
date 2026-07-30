@@ -124,7 +124,7 @@ phrase (where one exists):
   (`process.std{err,out}.write`, `console.*`) in source; suggests `getDefaultLogger()`.
 - **no-revert-guard** — PreToolUse(Bash) refusing destructive git
   (checkout/restore/reset/stash/clean) + hook bypasses (--no-verify,
-  DISABLE_PRECOMMIT_*, --no-gpg-sign) unless the canonical
+  HUSKY=0, a redirected core.hooksPath, --no-gpg-sign) unless the canonical
   `Allow <X> bypass` phrase is in a recent user turn.
 - **no-force-push-guard** — PreToolUse(Bash) refusing a `git push` carrying
   any force flag (--force, -f, --force-with-lease, --force-if-includes)

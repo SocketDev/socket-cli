@@ -4,24 +4,8 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import path from 'node:path'
 
+import { gitSubcommand } from '../_shared/git-subcommand.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-
-// The git SUBCOMMAND: the first non-option token, skipping the global
-// value-taking options (`git -C <path> tag …`, `git -c <k=v> tag …`).
-function gitSubcommand(args: readonly string[]): string | undefined {
-  for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!
-    if (arg === '-C' || arg === '-c') {
-      i += 1
-      continue
-    }
-    if (arg.startsWith('-')) {
-      continue
-    }
-    return arg
-  }
-  return undefined
-}
 
 // `git tag <name>` (also `git tag -a`, `git tag -s`, etc.) creating a
 // version tag (`vX.Y.Z`). Parser-based: a real `git` command whose

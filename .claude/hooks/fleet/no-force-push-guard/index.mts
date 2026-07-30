@@ -35,6 +35,7 @@
 //
 // Fails open on hook bugs (exit 0 + stderr log).
 
+import { gitSubcommandReadings } from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { pushDestinations } from '../_shared/push-refspec.mts'
@@ -79,27 +80,35 @@ export interface ForcePushMatch {
  * guard cares about. Sees through chains / `$(…)` substitution / quoting via
  * the shared shell parser, so a quoted "git push --force" inside a commit
  * message is not a match.
+ *
+ * Reads the subcommand through `gitSubcommandReadings`, the FAIL-CLOSED
+ * split: a recognized global option's value is skipped (so `git -C push
+ * fetch --force` is a force FETCH, not a match), while a global option the
+ * table does not know widens the scan to every candidate subcommand rather
+ * than letting an unknown spelling walk a force-push past the guard.
  */
 export function matchForcePush(command: string): ForcePushMatch | undefined {
   for (const c of commandsFor(command, 'git')) {
-    if (!c.args.includes('push')) {
-      continue
-    }
-    const lease = c.args.find(a => a.startsWith('--force-with-lease'))
-    if (lease) {
-      return {
-        bare: lease === '--force-with-lease',
-        matchedSubstring: 'git push --force-with-lease',
+    for (const { rest, sub } of gitSubcommandReadings(c.args)) {
+      if (sub !== 'push') {
+        continue
       }
-    }
-    if (c.args.includes('--force')) {
-      return { bare: true, matchedSubstring: 'git push --force' }
-    }
-    if (c.args.includes('-f')) {
-      return { bare: true, matchedSubstring: 'git push -f' }
-    }
-    if (c.args.includes('--force-if-includes')) {
-      return { bare: true, matchedSubstring: 'git push --force-if-includes' }
+      const lease = rest.find(a => a.startsWith('--force-with-lease'))
+      if (lease) {
+        return {
+          bare: lease === '--force-with-lease',
+          matchedSubstring: 'git push --force-with-lease',
+        }
+      }
+      if (rest.includes('--force')) {
+        return { bare: true, matchedSubstring: 'git push --force' }
+      }
+      if (rest.includes('-f')) {
+        return { bare: true, matchedSubstring: 'git push -f' }
+      }
+      if (rest.includes('--force-if-includes')) {
+        return { bare: true, matchedSubstring: 'git push --force-if-includes' }
+      }
     }
   }
   return undefined

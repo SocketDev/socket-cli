@@ -161,6 +161,13 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // repo needs. Two copies meant the pin depended on which file you opened.
     () =>
       run('node', ['scripts/fleet/check/external-tools-are-declared-once.mts']),
+    // Every package the member config declares dual-use carries the persistent
+    // manifest class, a substantive DISCLOSURE, and ships it in the tarball —
+    // and every manifest claiming dual-use is declared in the member config.
+    () =>
+      run('node', [
+        'scripts/fleet/check/dual-use-declarations-are-complete.mts',
+      ]),
     // A lint config's `!` re-include must never re-expose vendored files to
     // lint/--fix, the acorn wasm-bindgen glue break. Fails when a vendored glob
     // is left before the last negation.

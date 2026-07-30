@@ -1,105 +1,28 @@
 /**
  * @file Owning formatter for a repo's first-party Rust: run `cargo fmt` for
  *   every cargo workspace in the tree, skipping vendored/generated code. The
- *   root rustfmt.toml (fleet 2-space style) governs every run. Modes:
+ *   root rustfmt.toml (fleet Rust style) governs every run. Modes:
  *   node scripts/fleet/fmt-rust.mts           # rewrite
  *   node scripts/fleet/fmt-rust.mts --check   # verify only (CI / pre-push)
  *   A Cargo.toml nested under another discovered manifest's directory is a
  *   workspace member — `cargo fmt --all` at the outer root already covers it,
- *   so only the outermost manifests run.
+ *   so only the outermost manifests run. Its lint twin is `lint-rust.mts`.
  */
 
 // prefer-async-spawn: sync-required — sequential CLI gates, exit-code
 // aggregation.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { findWorkspaceManifests } from './_shared/cargo-workspaces.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
 
 const check = process.argv.includes('--check')
-
-// Directories whose Rust is not ours to format: vendored/upstream drops,
-// package-manager output, build output, and per-checkout caches.
-const SKIP_DIRS = new Set([
-  '.git',
-  'coverage',
-  'deps',
-  'external',
-  'node_modules',
-  'target',
-  'third_party',
-  'upstream',
-  'vendor',
-])
-
-// Agent worktrees are full checkouts of this repo living inside it, so the
-// walk would find their manifests and rewrite source another session is
-// editing. Matched on the path rather than the directory name so a repo that
-// legitimately owns a `worktrees/` directory keeps its Rust formatted.
-const WORKTREE_ROOT = '.claude/worktrees'
-
-export function isAgentWorktreePath(dirPath: string): boolean {
-  const p = normalizePath(dirPath)
-  return p === WORKTREE_ROOT || p.endsWith(`/${WORKTREE_ROOT}`)
-}
-
-export function findWorkspaceManifests(root: string): string[] {
-  const manifests: string[] = []
-  const stack = [root]
-  while (stack.length) {
-    const dir = stack.pop()!
-    let entries: string[]
-    try {
-      entries = readdirSync(dir)
-    } catch {
-      continue
-    }
-    for (let i = 0, { length } = entries; i < length; i += 1) {
-      const name = entries[i]!
-      if (
-        SKIP_DIRS.has(name) ||
-        name.endsWith('-bundled') ||
-        name.endsWith('-vendored')
-      ) {
-        continue
-      }
-      const abs = path.join(dir, name)
-      let st
-      try {
-        st = statSync(abs)
-      } catch {
-        continue
-      }
-      if (st.isDirectory()) {
-        if (!isAgentWorktreePath(abs)) {
-          stack.push(abs)
-        }
-      } else if (name === 'Cargo.toml') {
-        manifests.push(abs)
-      }
-    }
-  }
-  // Outermost manifests only: drop any manifest nested under another
-  // manifest's directory (a workspace member `cargo fmt --all` covers).
-  const sorted = manifests
-    .map(m => normalizePath(m))
-    .toSorted((a, b) => a.length - b.length)
-  const roots: string[] = []
-  for (let i = 0, { length } = sorted; i < length; i += 1) {
-    const m = sorted[i]!
-    if (!roots.some(r => m.startsWith(`${path.posix.dirname(r)}/`))) {
-      roots.push(m)
-    }
-  }
-  return roots
-}
 
 // The `cargo fmt` argv for one workspace manifest. Pure + exported so a test
 // asserts the `--check` toggle without spawning cargo.

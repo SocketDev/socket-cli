@@ -56,6 +56,10 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import {
+  declaredRoots as dualUseDeclaredRoots,
+  findViolations as findDualUseViolations,
+} from './check/dual-use-declarations-are-complete.mts'
 import { REPO_ROOT } from './paths.mts'
 import {
   headSha,
@@ -142,6 +146,30 @@ export async function runPublishPipeline(
     )
     process.exitCode = 1
     return
+  }
+  // npm dual-use content policy: a declared dual-use package ships only when
+  // its declaration is complete, and only through this staged pipeline —
+  // staging may use OIDC or tokens, but the final promotion carries 2FA.
+  // Direct token/OIDC final publishes are prohibited for the class.
+  const dualUseViolations = findDualUseViolations(REPO_ROOT)
+  if (dualUseViolations.length) {
+    logger.fail(
+      `publish-pipeline: dual-use declaration incomplete — refusing every leg.\n` +
+        `  Where: ${dualUseViolations
+          .map(violation => violation.where)
+          .join('; ')}\n` +
+        `  Wanted: a complete npm dual-use declaration (https://docs.npmjs.com/policies/dual-use).\n` +
+        `  Fix: node scripts/fleet/check/dual-use-declarations-are-complete.mts, ` +
+        `apply each listed fix, then re-run publish.`,
+    )
+    process.exitCode = 1
+    return
+  }
+  if (dualUseDeclaredRoots(REPO_ROOT).length) {
+    logger.log(
+      'Dual-use package: staged pipeline only — promotion requires 2FA; ' +
+        'never publish this package with a direct token or OIDC final leg.',
+    )
   }
   let state_ = state
   const sha = await headSha()

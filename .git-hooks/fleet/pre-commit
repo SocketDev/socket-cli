@@ -11,10 +11,20 @@
 # - Emergency hotfixes
 # - When tests require binaries that haven't been built yet
 #
-# There is NO per-step env kill-switch — the disables are `--no-verify`
-# and the whole-chain `HUSKY=0` escape (handled by the root dispatcher,
-# same bypass phrase), so skipping checks is always explicit and
-# all-or-nothing.
+# There is NO per-step env kill-switch: every escape is all-or-nothing,
+# and every one is gated by the `Allow no-verify bypass` phrase in
+# no-revert-guard. Three reach this chain:
+#
+#   1. `--no-verify` on commit / push.
+#   2. `HUSKY=0`, handled by the root dispatcher — heavier, it covers
+#      every hook type including post-commit, which has no git flag.
+#   3. `core.hooksPath` pointed elsewhere for one invocation, whether by
+#      `-c core.hooksPath=<path>`, `--config-env=core.hooksPath=<VAR>`,
+#      or the `GIT_CONFIG_KEY_<i>` env form.
+#
+# Treat that list as the state of the enforcement, not a proof no fourth
+# route exists — route 3 went ungated until an agent found it unaided.
+# A new one belongs in no-revert-guard and in this list, same phrase.
 
 # Fail on the first unhandled non-zero status. Without it a fallible
 # command that drops its status turns a refusal into a printed notice the

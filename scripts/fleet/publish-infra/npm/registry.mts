@@ -383,7 +383,7 @@ export async function diagnoseStageConflict(
     `  Where: npm staging — staging is one-shot per version while an entry lives.`,
     `  Saw: the stage was refused, yet ${version} is not visible on the public registry.`,
     `  Fix: as a package maintainer, run \`pnpm stage list\`, then`,
-    `  \`pnpm stage reject <stageId>\` for the stale entry, and re-stage the`,
+    `  \`node scripts/fleet/npm-web-auth.mts stage reject <stageId>\` for the stale entry, and re-stage the`,
     `  SAME version. Do NOT bump past it: the number is only burned once`,
     `  published, and a surviving stale stage can be approved by mistake later.`,
   ]

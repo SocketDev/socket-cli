@@ -12,6 +12,8 @@ import path from 'node:path'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { findSocketWheelhouseConfig } from '../paths.mts'
+
 const logger = getDefaultLogger()
 
 // The repo-root-relative build entry candidates, in precedence order. Most
@@ -62,6 +64,17 @@ export interface CoverThresholds {
 }
 
 export interface CoverConfig {
+  // Per-file coverage floors, keyed by repo-relative path. For a file the
+  // aggregate gate cannot fairly cover — a module whose init branches on the
+  // host OS has lines no single machine reaches — so that the repo-wide
+  // minimum does not have to fall to that file's number. Applied by
+  // `perFileThresholdFailures` in ./runner.mts.
+  perFileThresholds?: Record<string, CoverThresholds> | undefined
+  // Which test runner produces the coverage. A fixed enum (`vitest` | `bun`),
+  // resolved by `resolveCoverRunner` in ./runner.mts; absent means `vitest`,
+  // so an un-configured repo is unchanged. Declared here rather than as a
+  // command string so nothing user-supplied reaches a command line.
+  runner?: string | undefined
   suites?: Record<string, CoverSuiteConfig> | undefined
   thresholds?: CoverThresholds | undefined
 }
@@ -72,20 +85,19 @@ export interface ResolvedSuite {
   runExclude: string[]
 }
 
-// Read the repo's cover config from the `cover` section of socket-wheelhouse.json
-// (`.config/repo/socket-wheelhouse.json`) — folded in from the former standalone
-// cover.json per config-segregation. Returns an empty config when the file or
-// section is absent so callers get fleet defaults. A malformed file is reported
-// and treated as empty rather than crashing the run. `repoDir` defaults to the
-// live repo root; tests pass a fixture dir.
+// Read the repo's cover config from the `cover` section of
+// socket-wheelhouse.json. The file's LOCATION comes from the canonical resolver
+// in scripts/fleet/paths.mts, which accepts all three sanctioned locations —
+// hardcoding `.config/repo/socket-wheelhouse.json` here meant a member that
+// keeps its marker at `.config/socket-wheelhouse.json` had its cover config
+// silently never read (an empty config reads as "fleet defaults", so nothing
+// ever said so). Returns an empty config when the file or section is absent so
+// callers get fleet defaults. A malformed file is reported and treated as empty
+// rather than crashing the run. `repoDir` defaults to the live repo root; tests
+// pass a fixture dir.
 export function readCoverConfig(repoDir: string): CoverConfig {
-  const configPath = path.join(
-    repoDir,
-    '.config',
-    'repo',
-    'socket-wheelhouse.json',
-  )
-  if (!existsSync(configPath)) {
+  const configPath = coverConfigPath(repoDir)
+  if (configPath === undefined) {
     return {}
   }
   try {
@@ -100,6 +112,7 @@ export function readCoverConfig(repoDir: string): CoverConfig {
     if (!cover || typeof cover !== 'object') {
       return {}
     }
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the parsed JSON is validated as an object above; CoverConfig pins the shape the runner consumes and every unknown key passes through untouched.
     return cover as CoverConfig
   } catch (e) {
     logger.warn(
@@ -107,6 +120,15 @@ export function readCoverConfig(repoDir: string): CoverConfig {
     )
     return {}
   }
+}
+
+/**
+ * The socket-wheelhouse.json path the cover config is read from, or undefined
+ * when the repo has none. Exported so an error message can name the file the
+ * operator must edit.
+ */
+export function coverConfigPath(repoDir: string): string | undefined {
+  return findSocketWheelhouseConfig(repoDir)?.path
 }
 
 // Resolve the repo's source-map build entry, or undefined when none exists.

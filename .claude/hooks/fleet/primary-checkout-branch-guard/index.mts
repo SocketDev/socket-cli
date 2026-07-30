@@ -20,6 +20,9 @@
 //     or a `.` arg)
 //   - any of the above inside a LINKED worktree (the sanctioned place for
 //     branch work)
+//   - any of the above inside a SUBMODULE (`.git/modules/<name>`) — a submodule
+//     is a separate repository, and detaching one at its pinned ref is what the
+//     upstream-references doctrine requires
 //   - `git checkout`/`switch` with no branch argument
 //
 // Effective directory: `git -C <path> checkout <branch>` runs the checkout in
@@ -105,10 +108,43 @@ export function branchOpKind(
   return target ? 'switch' : undefined
 }
 
+// The three checkout shapes a `git rev-parse --git-dir` result can name. A
+// linked worktree resolves under `.git/worktrees/<name>`, a submodule under
+// `.git/modules/<name>`, and everything else is the repo's own `.git`.
+export type CheckoutKind = 'primary' | 'submodule' | 'worktree'
+
+// True when the git-dir sits in `<repo>/.git/<sub>/…`. Both the absolute form
+// git reports from a worktree or submodule and the relative `.git` form it
+// reports from a repo root are accepted, so the classifier never depends on
+// which of the two git chose.
+function gitDirHasSubtree(gitDir: string, sub: string): boolean {
+  const p = normalizePath(gitDir)
+  return p.includes(`/.git/${sub}/`) || p.startsWith(`.git/${sub}/`)
+}
+
 /**
- * True when `cwd` is the PRIMARY checkout, not a linked worktree. In a linked
- * worktree `git rev-parse --git-dir` resolves under `.git/worktrees/<name>`; in
- * the primary it's the repo's own `.git`.
+ * Classify a `git rev-parse --git-dir` result. A SUBMODULE is its own case: its
+ * git-dir lives under the superproject's `.git/modules/`, which contains
+ * neither `/.git/worktrees/` nor a plain repo `.git`, so a two-case
+ * primary-vs-worktree test answers "primary" and blocks the detached checkout
+ * the upstream-references doctrine requires (`git -C upstream/<name> checkout
+ * --detach <ref>` is how a gitlink-less reference is pinned).
+ */
+export function checkoutKindForGitDir(gitDir: string): CheckoutKind {
+  if (gitDirHasSubtree(gitDir, 'worktrees')) {
+    return 'worktree'
+  }
+  if (gitDirHasSubtree(gitDir, 'modules')) {
+    return 'submodule'
+  }
+  return 'primary'
+}
+
+/**
+ * True when `cwd` is the PRIMARY checkout — neither a linked worktree nor a
+ * submodule. Branch work in a worktree is the sanctioned path, and a submodule
+ * checkout is a different repository entirely, so neither is this guard's
+ * business.
  */
 export function isPrimaryCheckout(cwd: string): boolean {
   const r = spawnSync('git', ['rev-parse', '--git-dir'], {
@@ -119,8 +155,7 @@ export function isPrimaryCheckout(cwd: string): boolean {
     // Not a git repo, or git unavailable — nothing to guard, fail open.
     return false
   }
-  const gitDir = normalizePath(String(r.stdout).trim())
-  return !gitDir.includes('/.git/worktrees/')
+  return checkoutKindForGitDir(String(r.stdout).trim()) === 'primary'
 }
 
 // `git -C <path> ...` runs the subcommand in <path>. Extract that path so a

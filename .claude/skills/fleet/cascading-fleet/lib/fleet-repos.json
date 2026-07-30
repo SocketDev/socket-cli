@@ -74,9 +74,19 @@
       "optIns": ["squash-history"]
     },
     {
+      "name": "facts",
+      "description": "Socket facts generation — build-tool emitters and the .socket.facts.json contract",
+      "publishes": "js"
+    },
+    {
       "name": "meander",
       "description": "Walkthrough generator — annotated code walkthroughs with comments, hosted on Val Town",
       "optIns": ["squash-history"],
+      "publishes": "js"
+    },
+    {
+      "name": "scan-patterns",
+      "description": "Canonical detector pattern tables for Socket's baseline security scanners.",
       "publishes": "js"
     },
     {

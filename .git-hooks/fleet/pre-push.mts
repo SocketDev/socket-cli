@@ -11,7 +11,11 @@
 // Range logic:
 //   New branch:  remote/<default_branch>..<local_sha>  only new commits
 //   Existing:    <remote_sha>..<local_sha>             only new commits
-//   We never use release tags — that would re-scan already-merged history.
+//   We never derive the range FROM release tags — that would re-scan
+//   already-merged history. Release tags do bound it in the other direction:
+//   the force-push fallback widens the base to remote/<default_branch>, which
+//   can sweep in commits a published tag already froze, so the AI-attribution
+//   gate subtracts tag-reachable commits (../_shared/push-release-tags.mts).
 //
 // Stdin format, provided by git: one push line per ref, each line:
 //   <local_ref> <local_sha> <remote_ref> <remote_sha>
@@ -91,7 +95,13 @@ const main = async (): Promise<number> => {
       return 1
     }
 
-    totalErrors += scanCommitMessages(range)
+    // Only the AI-attribution gate takes the release-tag exemption. Its sole
+    // remedy is a reword, which is a rewrite, which is impossible for a
+    // published-tag commit. The signature and file gates keep the full range:
+    // an unsigned commit or a leaked secret entering the protected branch is a
+    // fact the operator must see even when the remedy is not a reword — the
+    // response there is to rotate or to abandon the push, not to reword.
+    totalErrors += scanCommitMessages(range, remote)
     totalErrors += scanSignedCommits(range, remoteRef)
     totalErrors += scanFilesInRange(range)
   }

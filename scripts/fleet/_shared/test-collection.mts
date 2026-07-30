@@ -34,6 +34,17 @@ export type RunnerId = 'bun' | 'jest' | 'node' | 'vitest'
 export const RUNNER_IDS: readonly RunnerId[] = ['bun', 'jest', 'node', 'vitest']
 
 /**
+ * True when `value` names a runner this model knows. The narrowing guard for a
+ * runner id that came out of a config file rather than out of the code.
+ */
+export function isKnownRunnerId(value: unknown): value is RunnerId {
+  return (
+    typeof value === 'string' &&
+    (RUNNER_IDS as readonly string[]).includes(value)
+  )
+}
+
+/**
  * Human-readable runner name for error messages.
  */
 export const RUNNER_LABELS: Readonly<Record<RunnerId, string>> = {
@@ -306,14 +317,23 @@ export function detectTestFileRunner(text: string): RunnerId | undefined {
 
 /**
  * The runner a package.json command drives. Fleet scripts defer to
- * `scripts/fleet/{test,cover}.mts`, which drive vitest; a bare binary
- * invocation names its runner directly. `undefined` means the command drives
- * no test runner this model knows (a type-check pass, a fuzz harness) — it is
- * skipped rather than guessed at.
+ * `scripts/fleet/{test,cover}.mts`, which drive whatever runner the repo
+ * DECLARES — `cover.runner` in socket-wheelhouse.json — defaulting to vitest.
+ * A bare binary invocation names its runner directly. `undefined` means the
+ * command drives no test runner this model knows (a type-check pass, a fuzz
+ * harness) — it is skipped rather than guessed at.
+ *
+ * `declaredRunner` is what keeps a bun repo honest: it runs the canonical
+ * `node scripts/fleet/cover.mts` body like everyone else, so reading that
+ * command as vitest would make its suites look barren to
+ * `test-files-are-runner-collected` — a false red on a working repo.
  */
-export function detectTestCommandRunner(command: string): RunnerId | undefined {
+export function detectTestCommandRunner(
+  command: string,
+  declaredRunner?: string | undefined,
+): RunnerId | undefined {
   if (/\bscripts\/(?:fleet|repo)\/(?:cover|test)\.mts\b/.test(command)) {
-    return 'vitest'
+    return isKnownRunnerId(declaredRunner) ? declaredRunner : 'vitest'
   }
   // `(?:^|[\s&|;])` — start of string or a shell separator before the token
   // `bun` — the literal binary name
@@ -366,6 +386,29 @@ export function resolveVitestConfigPath(
 }
 
 /**
+ * The runner a repo DECLARES in socket-wheelhouse.json (`cover.runner`), or
+ * undefined when it declares none. Read here rather than imported from
+ * `cover/discovery.mts` so this module stays a leaf — the collection model is
+ * imported by hooks and check scripts that must not pull in the coverage
+ * runner's module graph.
+ */
+export function readDeclaredRunner(root: string): string | undefined {
+  const configPath = path.join(root, '.config/repo/socket-wheelhouse.json')
+  if (!existsSync(configPath)) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(configPath, 'utf8')) as {
+      cover?: { runner?: unknown | undefined } | undefined
+    }
+    const runner = parsed?.cover?.runner
+    return typeof runner === 'string' ? runner : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Every package.json script that drives a test runner, in declaration order.
  * Scripts whose runner is unknown are dropped — a `test:tsc` type pass is not
  * a collection surface.
@@ -374,6 +417,7 @@ export function readManifestTestCommands(
   root: string,
   packageDir: string,
 ): TestCommand[] {
+  const declaredRunner = readDeclaredRunner(root)
   const packageRoot = path.join(root, packageDir)
   const manifestPath = path.join(packageRoot, 'package.json')
   if (!existsSync(manifestPath)) {
@@ -399,7 +443,7 @@ export function readManifestTestCommands(
     if (!/^(?:test|cover|coverage)(?::|$)/.test(script)) {
       continue
     }
-    const runner = detectTestCommandRunner(raw)
+    const runner = detectTestCommandRunner(raw, declaredRunner)
     if (!runner) {
       continue
     }

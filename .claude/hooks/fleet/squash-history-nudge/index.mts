@@ -14,6 +14,13 @@
 // `template/base/.claude/skills/fleet/squashing-history/SKILL.md` skill that
 // does the actual squash.
 //
+// Siblings, distinct concerns: this hook is a Stop-time CADENCE reminder — the
+// log has grown, consider flattening it. `history-rewrite-guard` is a
+// PreToolUse BLOCK on the raw rewrite tools (`git filter-branch`,
+// `git filter-repo`, an unsigned `git commit-tree`) whenever one is invoked,
+// squash cadence or not. `attribution-rewrite-nudge` covers the third case, a
+// scripted-editor `git rebase` reword.
+//
 import process from 'node:process'
 
 import {

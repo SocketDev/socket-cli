@@ -108,7 +108,6 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/fleet/tsconfig.check.base.json linguist-generated=true
 .config/fleet/vitest.coverage.fleet.config.mts linguist-generated=true
 .config/repo/rolldown/define-guarded.mts linguist-generated=true
-.config/repo/rolldown/lib-stub.mts linguist-generated=true
 .config/repo/vitest.config.mts linguist-generated=true
 .editorconfig linguist-generated=true
 .git-hooks/_shared linguist-generated=true

@@ -44,6 +44,46 @@ message polish are throwaway: they exist only until the next squash.
   is the EXPECTED state, reconciled forward by the force-push, never a reset of
   local to origin.
 
+## The server-side force-push block, and its temporary exemption
+
+Clearing the local guards leaves a second wall. Every fleet repo carries a
+repo-level ruleset named `fleet-main-protection`, created and converged by
+`scripts/fleet/check/main-branch-rules-are-enforced.mts`: `deletion` +
+`non_fast_forward` on `~DEFAULT_BRANCH`, with **zero bypass actors**. GitHub
+therefore rejects a force-push to the default branch even after
+`no-force-push-guard` has stood aside. A squash-history flatten, a lease-force
+reconcile, and an amend-and-push all hit it.
+
+The exemption is a temporary self-grant, and it runs through a script:
+
+```bash
+# Who can force-push this repo right now? (read-only, the default)
+node scripts/fleet/grant-main-bypass.mts <repo>
+
+# Exempt yourself, push, then hand the exemption back.
+node scripts/fleet/grant-main-bypass.mts <repo> --grant --yes
+node scripts/fleet/grant-main-bypass.mts <repo> --revoke
+```
+
+- **Never hand-run `gh api` against the ruleset.** A hand-written full body
+  silently rewrites whatever it omits — that is how a PUT meant to add one
+  bypass actor drops `non_fast_forward` for everyone. The script reads the
+  ruleset, replaces only `bypass_actors`, writes it back, then re-reads and
+  fails loud if any rule type disappeared.
+- **The grant is self-expiring, by construction.** The canonical ruleset body
+  (`rulesetPayload()`) has no `bypass_actors` field at all, so the next
+  `main-branch-rules-are-enforced --fix` wipes every grant. GitHub also logs a
+  `Bypassed rule violations` entry on each use. Nothing here is durable, and
+  the script prints both facts on every grant.
+- **It is reflexive only.** There is no `--user` flag: the actor is always the
+  authenticated `gh` account, so the tool can exempt the person running it and
+  nobody else. `--grant` additionally requires `--yes`.
+- **It never creates the ruleset.** An absent `fleet-main-protection` is a hard
+  stop pointing at `main-branch-rules-are-enforced --fix`; one script owns that
+  ruleset's shape, and a second definition would drift from it.
+- **Revoke when done.** Waiting for the next `--fix` run works, but leaves a
+  live force-push exemption sitting on the repo until then.
+
 ## Strip attribution with the script, never a rebase dance
 
 When the pre-push gate reports "AI attribution found in commit messages", the
@@ -61,6 +101,42 @@ hand-scripted `git rebase -i` with `GIT_SEQUENCE_EDITOR`/`GIT_EDITOR` editors
 is banned by `attribution-rewrite-nudge`: it is quoting-fragile, silently
 no-ops when the todo regex misses, and verifies nothing — all three failure
 modes happened live (socket-mcp, 2026-07-10) before the script existed.
+
+## Never `filter-branch` — it drops signatures and keeps the committer
+
+`history-rewrite-guard` BLOCKS `git filter-branch`, `git filter-repo` (both the
+subcommand and the standalone `git-filter-repo` binary), and a `git commit-tree`
+with no `-S`/`--gpg-sign`. Bypass slug: `history-rewrite`.
+
+Two defects, both silent, both fatal on a branch whose ruleset requires verified
+signatures:
+
+- **Signatures are dropped.** `filter-branch` re-creates every commit, and a
+  re-created commit is unsigned unless you ask for a signature. Nothing warns
+  you; the next `commits-are-signed` check or the push itself is the first
+  signal.
+- **The committer is restored.** `filter-branch` puts the ORIGINAL
+  `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL` / `GIT_COMMITTER_DATE` back on
+  each rewritten commit. So even re-signing with
+  `--commit-filter 'git commit-tree -S "$@"'` fails GitHub verification: your
+  signature disagrees with the restored committer field.
+
+Two invariants hold for any rewrite:
+
+1. **Sign every re-minted commit** — pass `-S`.
+2. **Let the committer default** to whoever runs the rewrite. Set only
+   `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` / `GIT_AUTHOR_DATE`; never restore
+   `GIT_COMMITTER_*`.
+
+`git rebase` holds both naturally, and `scripts/fleet/strip-ai-attribution.mts`
+holds both explicitly (`commit-tree … -S`, author env only). BFG Repo-Cleaner
+has the same re-mint problem and is not a sanctioned path either.
+
+Both defects have landed for real: a hand-rolled `filter-branch --msg-filter`,
+reached for to strip one trailer instead of the script that already owned the
+operation, left a branch-worth of unsigned commits that only `commits-are-signed`
+caught, and the re-signed retry was still rejected — "Commits must have verified
+signatures."
 
 ## A rewrite base must sit on origin's lineage
 

@@ -78,6 +78,12 @@ export const computeRange = (
   if (!remoteShaExists(remoteSha) || !isAncestor(remoteSha, localSha)) {
     // Force-push, history rewrite, or dangling object that is not an
     // ancestor of the local tip — fall back to remote default branch.
+    //
+    // This base is wider than "new work": a history repair that reattaches an
+    // orphaned release tag puts already-published commits back in front of it.
+    // Gates whose only remedy is a rewrite subtract those via
+    // `resolveRewritableCommits` in ./push-release-tags.mts rather than
+    // demanding a rewrite that would re-orphan the tag.
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {

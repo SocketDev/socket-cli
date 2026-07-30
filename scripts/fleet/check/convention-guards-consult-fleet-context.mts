@@ -36,6 +36,7 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 // until both are true.
 export const CONVENTION_GUARDS: readonly string[] = [
   'golden-fixture-naming-guard',
+  'history-rewrite-guard',
   'latest-release-pin-guard',
   'markdown-filename-guard',
   'module-noun-name-guard',

@@ -55,6 +55,7 @@ import {
   vendoringEnrolled,
 } from './vendor-actions.mts'
 import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
+import { shedOutOfSurface } from './weekly-update/shed-out-of-surface.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -254,6 +255,14 @@ async function main(): Promise<void> {
       `[weekly-update] check-updates: ${actionable ? 'updates available' : 'nothing actionable'}.`,
     )
     process.exitCode = actionable ? 0 : 1
+    return
+  }
+
+  // --shed-out-of-surface: revert every change outside the gh-aw
+  // allowed-files surface into a shed commit so one out-of-surface path
+  // cannot kill the whole weekly PR. Runs before create_pull_request.
+  if (process.argv.includes('--shed-out-of-surface')) {
+    await shedOutOfSurface()
     return
   }
 

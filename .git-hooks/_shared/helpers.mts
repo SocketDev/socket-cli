@@ -76,7 +76,14 @@ export { commentTextOf, scanPrProcessComments } from './scan-comments.mts'
 export { scanLinearRefs, stripScanLabels } from './scan-commit-msg.mts'
 
 // File classification + content reading.
-export { readFileForScan, shouldSkipFile } from './file-scan.mts'
+export {
+  isSourceCodeFile,
+  isStructuredDataFile,
+  readFileForScan,
+  shouldSkipFile,
+  shouldSkipSourceScan,
+  SOURCE_FILE_RE,
+} from './file-scan.mts'
 
 // Git subprocess wrappers.
 export { git, gitLines, gitOrThrow } from './git.mts'

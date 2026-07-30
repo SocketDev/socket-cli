@@ -13,6 +13,10 @@
 //   - Hook bypass (--no-verify, --no-gpg-sign) →
 //       user must type "Allow <X> bypass" where <X> matches the flag
 //       (e.g. "Allow no-verify bypass", "Allow gpg bypass").
+//   - Hook-chain redirection (`-c core.hooksPath=…`, `--config-env`, the
+//       `GIT_CONFIG_KEY_<i>` env form) → same "Allow no-verify bypass"
+//       phrase, since it is the same decision with the HUSKY=0 blast
+//       radius. Detector + the foreign-repo carve-out: `hooks-path.mts`.
 //
 // Force-push (--force / -f / --force-with-lease / --force-if-includes) is
 // its own guard: `.claude/hooks/fleet/no-force-push-guard/`.
@@ -40,11 +44,17 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { actedOnPath, isFleetTarget } from '../_shared/fleet-context.mts'
 import { currentBranch, gitOut } from '../_shared/git-branch.mts'
+import {
+  gitSubcommandReadings,
+  splitGitSubcommand,
+} from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor, isFleetSyncCommand } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { operatorBypassPresent } from '../_shared/transcript.mts'
+import { matchHooksPathSkip } from './hooks-path.mts'
 
 type RevertCheck = {
   // Canonical phrase the user must type to bypass.
@@ -66,9 +76,13 @@ type RevertCheck = {
   //   - `matches`: a parser-based detector for command-STRUCTURE rules
   //     which git subcommand runs. Returns the offending substring for
   //     the log, or undefined when no match. Sees through chains / `$(…)`
-  //     / quotes, where a regex would over- or under-match.
+  //     / quotes, where a regex would over- or under-match. The payload is
+  //     passed so a detector can resolve WHICH repo the command targets.
   readonly pattern?: RegExp | undefined
-  readonly matches?: (command: string) => string | undefined
+  readonly matches?: (
+    command: string,
+    payload: ToolCallPayload,
+  ) => string | undefined
 }
 
 // Pre-flight triggers: the dispatcher imports + runs this guard only when the
@@ -78,6 +92,9 @@ type RevertCheck = {
 //     bare-stash) go through `commandsFor(command, 'git')`, which
 //     short-circuits unless the line contains `git`.
 //   - the --no-verify check is gated by a `--no-verify` regex.
+//   - the core.hooksPath check needs a real `git` segment running a
+//     hook-running subcommand, so the `git` trigger already covers every
+//     spelling of it (`-c`, `--config-env`, `GIT_CONFIG_KEY_<i>`).
 //   - the gpg check matches `--no-gpg-sign` or `commit.gpgsign`.
 //   - SKIP_ASSET_DOWNLOAD is its own literal.
 //   - bash-write alternates over python / sed / cat (heredoc) / tee / dd.
@@ -138,6 +155,17 @@ const CHECKS: readonly RevertCheck[] = [
     matches: command => matchHuskySkip(command),
   },
   {
+    // Pointing `core.hooksPath` away from `.git-hooks/` for one invocation
+    // skips the whole chain exactly like HUSKY=0, so it carries the same
+    // phrase. Detector, the three spellings it covers, the misses it does
+    // not, and the foreign-repo carve-out that keeps the fleet's own
+    // hostile-checkout hardening working: `hooks-path.mts`.
+    bypassPhrase: 'Allow no-verify bypass',
+    fleetOnly: true,
+    label: 'git -c core.hooksPath (redirects the .git-hooks/ chain)',
+    matches: (command, payload) => matchHooksPathSkip(command, payload),
+  },
+  {
     // SKIP_ASSET_DOWNLOAD is a documented degraded-mode flag in
     // socket-cli's download-assets.mts (use cached assets when
     // offline/rate-limited). It becomes a *bypass* when used to push
@@ -171,13 +199,15 @@ const CHECKS: readonly RevertCheck[] = [
     // `git stash pop/drop/clear`, which the destructive-git check above
     // already owns, it's a different destruction surface.
     matches: command =>
-      commandsFor(command, 'git').some(c => {
-        if (c.args[0] !== 'stash') {
-          return false
-        }
-        const sub = c.args[1]
-        return sub !== 'clear' && sub !== 'drop' && sub !== 'pop'
-      })
+      commandsFor(command, 'git').some(c =>
+        gitSubcommandReadings(c.args).some(({ rest, sub }) => {
+          if (sub !== 'stash') {
+            return false
+          }
+          const action = rest[0]
+          return action !== 'clear' && action !== 'drop' && action !== 'pop'
+        }),
+      )
         ? 'git stash'
         : undefined,
   },
@@ -368,12 +398,16 @@ export function matchNoVerify(command: string): string | undefined {
   // found at all", fall through to defensive block.
   let sawOwnedNoVerify = false
   for (const c of commandsFor(command, 'git')) {
-    const [sub, ...rest] = c.args
+    const { rest, sub } = splitGitSubcommand(c.args)
     const hasNoVerify = rest.some(a => a === '--no-verify')
     if (!hasNoVerify) {
       continue
     }
     sawOwnedNoVerify = true
+    // Deliberately the CONFIDENT read, not the fail-closed one: this branch
+    // decides which subcommand OWNS the flag so `git rebase --no-verify` and
+    // the lockfile-only reconcile stay allowed. An ambiguous read falls
+    // through to the block below, which is already the fail-closed answer.
     if (sub === 'rebase') {
       // Allowed shape — keep scanning. A chain like
       // `git rebase --no-verify && git commit --no-verify` still
@@ -406,43 +440,56 @@ export function matchNoVerify(command: string): string | undefined {
 
 export function matchDestructiveGit(command: string): string | undefined {
   for (const c of commandsFor(command, 'git')) {
-    const [sub, ...rest] = c.args
-    if (!sub) {
-      continue
+    for (const { rest, sub } of gitSubcommandReadings(c.args)) {
+      const hit = destructiveShape(sub, rest)
+      if (hit) {
+        return hit
+      }
     }
-    // Both discard the working tree: `git checkout -- <path>` (explicit
-    // pathspec) and `git checkout .`, bare-dot pathspec. A pathspec-less
-    // `git checkout <branch>` is a SWITCH, not a discard — left to
-    // primary-checkout-branch-guard — so we key on `--` or a `.` arg.
-    if (sub === 'checkout' && (rest.includes('--') || rest.includes('.'))) {
-      return rest.includes('.') ? 'git checkout .' : 'git checkout -- <path>'
-    }
-    if (sub === 'restore' && !rest.includes('--staged')) {
-      return 'git restore'
-    }
-    if (sub === 'reset' && rest.includes('--hard')) {
-      return 'git reset --hard'
-    }
-    if (
-      sub === 'stash' &&
-      (rest[0] === 'clear' || rest[0] === 'drop' || rest[0] === 'pop')
-    ) {
-      return `git stash ${rest[0]}`
-    }
-    // Force flag in any form: short `-f`/`-xf`/`-df` (the `/^-[a-z]*f/`
-    // bundle) OR long `--force`. The long form slips the short-flag regex
-    // (`--force` has no `f` in the `-[a-z]*` run), so test it explicitly —
-    // `git clean --force -d` wipes untracked files just like `git clean -fd`.
-    // Dry-run (`-n`/`--dry-run`) carries no force flag, so it stays allowed.
-    if (
-      sub === 'clean' &&
-      rest.some(a => /^-[a-z]*f/.test(a) || a.startsWith('--force'))
-    ) {
-      return 'git clean -f'
-    }
-    if (sub === 'rm' && rest.some(a => /^-r?f?$/.test(a) && a.includes('f'))) {
-      return 'git rm -f'
-    }
+  }
+  return undefined
+}
+
+// The destructive label for ONE reading of a git segment, or undefined.
+function destructiveShape(
+  sub: string | undefined,
+  rest: readonly string[],
+): string | undefined {
+  if (!sub) {
+    return undefined
+  }
+  // Both discard the working tree: `git checkout -- <path>` (explicit
+  // pathspec) and `git checkout .`, bare-dot pathspec. A pathspec-less
+  // `git checkout <branch>` is a SWITCH, not a discard — left to
+  // primary-checkout-branch-guard — so we key on `--` or a `.` arg.
+  if (sub === 'checkout' && (rest.includes('--') || rest.includes('.'))) {
+    return rest.includes('.') ? 'git checkout .' : 'git checkout -- <path>'
+  }
+  if (sub === 'restore' && !rest.includes('--staged')) {
+    return 'git restore'
+  }
+  if (sub === 'reset' && rest.includes('--hard')) {
+    return 'git reset --hard'
+  }
+  if (
+    sub === 'stash' &&
+    (rest[0] === 'clear' || rest[0] === 'drop' || rest[0] === 'pop')
+  ) {
+    return `git stash ${rest[0]}`
+  }
+  // Force flag in any form: short `-f`/`-xf`/`-df` (the `/^-[a-z]*f/`
+  // bundle) OR long `--force`. The long form slips the short-flag regex
+  // (`--force` has no `f` in the `-[a-z]*` run), so test it explicitly —
+  // `git clean --force -d` wipes untracked files just like `git clean -fd`.
+  // Dry-run (`-n`/`--dry-run`) carries no force flag, so it stays allowed.
+  if (
+    sub === 'clean' &&
+    rest.some(a => /^-[a-z]*f/.test(a) || a.startsWith('--force'))
+  ) {
+    return 'git clean -f'
+  }
+  if (sub === 'rm' && rest.some(a => /^-r?f?$/.test(a) && a.includes('f'))) {
+    return 'git rm -f'
   }
   return undefined
 }
@@ -504,15 +551,16 @@ export function blockMessage(
 // that isn't `--hard` and doesn't look like a flag.
 export function resetHardTarget(command: string): string | undefined {
   for (const c of commandsFor(command, 'git')) {
-    const [sub, ...rest] = c.args
-    if (sub !== 'reset' || !rest.includes('--hard')) {
-      continue
-    }
-    for (const a of rest) {
-      if (a === '--hard' || a.startsWith('-')) {
+    for (const { rest, sub } of gitSubcommandReadings(c.args)) {
+      if (sub !== 'reset' || !rest.includes('--hard')) {
         continue
       }
-      return a
+      for (const a of rest) {
+        if (a === '--hard' || a.startsWith('-')) {
+          continue
+        }
+        return a
+      }
     }
   }
   return undefined
@@ -739,7 +787,7 @@ export const check = bashGuard((command, payload): GuardResult => {
   for (let i = 0, { length } = CHECKS; i < length; i += 1) {
     const revertCheck = CHECKS[i]!
     if (revertCheck.matches) {
-      const hit = revertCheck.matches(command)
+      const hit = revertCheck.matches(command, payload)
       if (hit) {
         triggered = { check: revertCheck, matchedSubstring: hit }
         break

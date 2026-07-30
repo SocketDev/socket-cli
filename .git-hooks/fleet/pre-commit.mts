@@ -18,6 +18,7 @@ import {
   checkOxlintRuleWiringStaged,
   git,
   gitLines,
+  isStructuredDataFile,
   mergeInProgress,
   normalizePath,
   readFileForScan,
@@ -34,6 +35,7 @@ import {
   scanSoakExcludeDateAnnotations,
   scanSocketApiKeys,
   shouldSkipFile,
+  shouldSkipSourceScan,
   socketLintMarkerFor,
   stagedIndexIsEmpty,
   stripTemplateLayer,
@@ -208,11 +210,16 @@ const main = (): number => {
     errors++
   }
 
-  // Hardcoded personal paths.
+  // Hardcoded personal paths. SOURCE-ONLY, via the shared predicate the
+  // `private-paths-are-absent` check gate also imports — markdown, docs, JSON,
+  // and YAML reference these patterns legitimately, and a generated detector
+  // table whose regexes spell `/Users/` is data, not a leak. Scanning it here
+  // while the gate ignored it stranded operators between a red hook and a
+  // green check, with a suggested fix that would corrupt the payload.
   logger.info('Checking for hardcoded personal paths…')
   for (let k = 0, { length: klen } = stagedFiles; k < klen; k += 1) {
     const file = stagedFiles[k]!
-    if (shouldSkipFile(file)) {
+    if (shouldSkipSourceScan(file)) {
       continue
     }
     const text = readFileForScan(file)
@@ -367,6 +374,13 @@ const main = (): number => {
     // files frequently mention `npx` as part of fixture paths or
     // resolution-logic test cases (see socket-lib/test/unit/bin.test.mts).
     if (shouldSkipFile(file)) {
+      continue
+    }
+    // A generated rule table or detector corpus DESCRIBES npx risk in its own
+    // data; rewriting those strings would corrupt the payload. Markdown docs
+    // and package.json scripts stay in scope — an `npx` there is a real
+    // command, which is what this rule is for.
+    if (isStructuredDataFile(file)) {
       continue
     }
     if (

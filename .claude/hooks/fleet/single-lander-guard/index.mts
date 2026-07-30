@@ -51,8 +51,11 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { extractGitCwd } from '../_shared/git-cwd.mts'
+import { splitGitSubcommand } from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+
+import type { SubcommandSplit } from '../_shared/git-subcommand.mts'
 
 // Pre-flight skip hint: detection only fires when the `git` binary is invoked.
 export const triggers: readonly string[] = ['git']
@@ -60,19 +63,6 @@ export const triggers: readonly string[] = ['git']
 // Stable identifier for CI scripts / ndjson reporters to branch on instead of
 // substring-matching the human message.
 export const ERR_SINGLE_LANDER = 'ERR_FLEET_SINGLE_LANDER'
-
-// `git` global options that consume the FOLLOWING token as their value, so the
-// subcommand scan skips both. Everything else before the subcommand is either a
-// boolean global flag — `--no-pager`, `--bare` — or a `--flag=value` form, each
-// a single token.
-const GLOBAL_VALUE_FLAGS: ReadonlySet<string> = new Set([
-  '--exec-path',
-  '--git-dir',
-  '--namespace',
-  '--work-tree',
-  '-C',
-  '-c',
-])
 
 // The destructive-land subcommands whose bare form — any invocation — counts,
 // independent of flags. `reset` is handled separately: only `--hard` qualifies.
@@ -108,29 +98,6 @@ export interface LandGuardDecision {
 
 const ALLOW: LandGuardDecision = { blocked: false }
 
-interface GitSegment {
-  readonly rest: readonly string[]
-  readonly sub: string | undefined
-}
-
-// The subcommand of a parsed `git` invocation plus the args after it, skipping
-// leading global options — and the value token of a value-taking global flag —
-// so `git -C /x merge` resolves to sub `merge`.
-function gitSegment(args: readonly string[]): GitSegment {
-  for (let i = 0, { length } = args; i < length; i += 1) {
-    const arg = args[i]!
-    if (!arg.startsWith('-')) {
-      return { rest: args.slice(i + 1), sub: arg }
-    }
-    if (GLOBAL_VALUE_FLAGS.has(arg)) {
-      // Skip the flag AND its separate-word value.
-      i += 1
-    }
-    // A `--flag=value` or boolean global flag is a single token — fall through.
-  }
-  return { rest: [], sub: undefined }
-}
-
 interface StashAction {
   readonly action: 'apply' | 'pop' | undefined
   readonly hasExplicitRef: boolean
@@ -141,7 +108,7 @@ const NO_STASH: StashAction = { action: undefined, hasExplicitRef: false }
 // A `git stash pop|apply` classification: the action, and whether an explicit
 // `<stash>` ref — a `stash@{N}`, a numeric index, or any non-flag positional —
 // was supplied. Absent an explicit ref, pop/apply act on stash@{0}.
-function stashAction(seg: GitSegment): StashAction {
+function stashAction(seg: SubcommandSplit): StashAction {
   if (seg.sub !== 'stash') {
     return NO_STASH
   }
@@ -155,7 +122,10 @@ function stashAction(seg: GitSegment): StashAction {
 
 // The human label for a destructive-land op in this segment, or undefined when
 // the segment is not a land op. Shared by the concurrent-land rule.
-function landOpLabel(seg: GitSegment, stash: StashAction): string | undefined {
+function landOpLabel(
+  seg: SubcommandSplit,
+  stash: StashAction,
+): string | undefined {
   if (seg.sub !== undefined && LAND_SUBCOMMANDS.has(seg.sub)) {
     return `git ${seg.sub}`
   }
@@ -187,7 +157,7 @@ export function decideLandGuard(
   ctx: LandGuardCtx,
 ): LandGuardDecision {
   const segments = commandsFor(command, 'git').map(cmd => {
-    const seg = gitSegment(cmd.args)
+    const seg = splitGitSubcommand(cmd.args)
     return { seg, stash: stashAction(seg) }
   })
   // Rule A takes precedence — scan for a blind stash pop/apply first.

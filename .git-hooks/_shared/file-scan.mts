@@ -4,6 +4,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 // ── File classification ────────────────────────────────────────────
@@ -15,6 +16,47 @@ const SKIP_FILE_RE =
 
 export const shouldSkipFile = (filePath: string): boolean =>
   SKIP_FILE_RE.test(filePath)
+
+/**
+ * Source-code extensions. THE canonical definition for the fleet's
+ * source-only convention scanners — the commit-time hook and the
+ * `private-paths-are-absent` check gate import this one constant so they
+ * cannot disagree about what "source code" means.
+ *
+ * Markdown, docs, JSON, and YAML are deliberately out of scope: they reference
+ * these patterns legitimately. That divergence was real — the check script
+ * carried a private copy of this regex under a comment claiming it was
+ * "lock-step with the hook", while the hook had no such constant and scanned
+ * every non-skipped file. Generated JSON therefore passed the gate and failed
+ * the hook, and the hook's suggested fix would have corrupted the data.
+ */
+export const SOURCE_FILE_RE =
+  /\.(?:[ch]|[cm]?[jt]sx?|bash|cc|cpp|cxx|go|hh|hpp|java|kt|py|rb|rs|sh|swift|zsh)$/
+
+export const isSourceCodeFile = (filePath: string): boolean =>
+  SOURCE_FILE_RE.test(filePath)
+
+/**
+ * The composed predicate for a SOURCE-ONLY convention scan: skip the universal
+ * exclusions, then skip anything that is not source code.
+ */
+export const shouldSkipSourceScan = (filePath: string): boolean =>
+  shouldSkipFile(filePath) || !isSourceCodeFile(filePath)
+
+// Structured DATA payloads. A generated rule table, detector corpus, or
+// fixture blob legitimately CONTAINS the very strings a convention scanner
+// hunts for — a detection regex spelling `/Users/`, a rule description warning
+// about `npx` — and applying the scanner's suggested fix would corrupt the
+// data rather than repair a violation.
+const DATA_FILE_RE = /\.(?:jsonc?|ya?ml)$/
+// The one exception: a package manifest is data, but an `npx` in its `scripts`
+// really is the violation the rule exists to catch.
+const PACKAGE_MANIFEST_RE = /(?:^|\/)package\.json$/
+
+export const isStructuredDataFile = (filePath: string): boolean => {
+  const p = normalizePath(filePath)
+  return DATA_FILE_RE.test(p) && !PACKAGE_MANIFEST_RE.test(p)
+}
 
 // Returns file content as a string. Text files stay in-process; binaries run
 // through `strings` to catch paths embedded in WASM or compiled artifacts.

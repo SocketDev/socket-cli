@@ -12,8 +12,19 @@ PreToolUse Bash hook that blocks destructive git commands and hook bypasses unle
 | `git stash drop` / `git stash pop` / `git stash clear`      | `Allow revert bypass`     |
 | `git clean -f` (and variants)                               | `Allow revert bypass`     |
 | `git rm -r{f,}`                                             | `Allow revert bypass`     |
+| `git stash` (bare / `push` / `save` / `--keep-index`)       | `Allow stash bypass`      |
 | `--no-verify`                                               | `Allow no-verify bypass`  |
+| `HUSKY=0 git …` / `export HUSKY=0`                          | `Allow no-verify bypass`  |
+| `-c core.hooksPath=<path>` / `--config-env=core.hooksPath=<VAR>` / `GIT_CONFIG_KEY_<i>=core.hooksPath`, on a subcommand that runs hooks | `Allow no-verify bypass`  |
 | `--no-gpg-sign` / `commit.gpgsign=false`                    | `Allow gpg bypass`        |
+| `SKIP_ASSET_DOWNLOAD=1`                                     | `Allow asset-download bypass` |
+| Bash file-write (`python -c '…write…'`, heredoc `> file`, `tee <file>`, `dd of=…`) | `Allow bash-write bypass` |
+
+The three hook-chain rows share one phrase because they are one decision with
+one outcome: the `.git-hooks/` chain does not run. The `core.hooksPath` rule
+stands down when the command names another repository (`-C` / `--git-dir`
+outside the acting repo, or a `cd` out of the fleet), which is the hardening
+idiom `docs/agents.md/fleet/untrusted-cwd.md` mandates for a scanned checkout.
 
 ## Inline sentinels (scoped auto-bypass)
 
@@ -49,6 +60,7 @@ The hook fails open on its own bugs (exit 0 + stderr log) so a bad deploy of the
 ## Companion files
 
 - `index.mts` — the hook itself
+- `hooks-path.mts` — the `core.hooksPath` detector, the git subcommands that consult it, and the foreign-repository carve-out
 - `package.json` — declares the hook as a workspace package (taze sees it via `pnpm-workspace.yaml`'s `packages: ['.claude/hooks/*']`)
 - `tsconfig.json` — fleet-canonical TS config for hooks
 - `test/` — node:test runner specs (run via `pnpm exec --filter hook-no-revert-guard test` or `node --test test/*.test.mts`)

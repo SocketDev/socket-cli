@@ -11,6 +11,7 @@
 
 import path from 'node:path'
 
+import { gitSubcommand } from './git-subcommand.mts'
 import { commandsFor, normalizeShellDir } from './shell-command.mts'
 import { resolveProjectDir } from './project-dir.mts'
 
@@ -53,7 +54,11 @@ export function extractGitCwd(
   if (subcommand !== undefined) {
     const wanted = typeof subcommand === 'string' ? [subcommand] : subcommand
     for (const c of gitInvocations) {
-      if (wanted.some(s => c.args.includes(s))) {
+      // Match the segment's real SUBCOMMAND, not any arg that spells it — a
+      // `git -C commit status` targets a directory named `commit` and must
+      // not be read as a `git commit`.
+      const sub = gitSubcommand(c.args)
+      if (sub !== undefined && wanted.includes(sub)) {
         const dir = dashCValue(c.args)
         if (dir) {
           return normalizeShellDir(dir, cwd)

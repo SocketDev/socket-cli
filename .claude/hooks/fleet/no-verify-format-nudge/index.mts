@@ -25,8 +25,8 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { gitSubcommand } from '../_shared/commit-command.mts'
 import { actedOnPath } from '../_shared/fleet-context.mts'
+import { gitSubcommand } from '../_shared/git-subcommand.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import {
   commandsFor,
@@ -46,7 +46,7 @@ export function isGitCommitOrPush(command: string): boolean {
   // argument is not an invocation, and `git config commit.gpgsign` /
   // `git -c k=v commit` resolve to their real subcommands.
   return commandsFor(command, 'git').some(c => {
-    const sub = gitSubcommand(c)
+    const sub = gitSubcommand(c.args)
     return sub === 'commit' || sub === 'push'
   })
 }

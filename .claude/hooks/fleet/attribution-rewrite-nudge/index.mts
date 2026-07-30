@@ -14,8 +14,13 @@
  * Fires on the combination (scripted editor env var + a `git rebase`
  * invocation) in one Bash command. Stderr reminder; never blocks — a
  * scripted-editor rebase has legitimate uses beyond message rewrites (todo
- * reordering, autosquash), so the nudge routes rather than gates. Detail:
- * docs/agents.md/fleet/history-rewrites.md
+ * reordering, autosquash), so the nudge routes rather than gates.
+ *
+ * Sibling: `history-rewrite-guard` BLOCKS the raw rewrite tools —
+ * `git filter-branch`, `git filter-repo`, and an unsigned `git commit-tree` —
+ * which have no safe fleet use. The split is by severity of the trigger: a
+ * scripted-editor rebase is sometimes right (nudge, here), `filter-branch`
+ * never is (guard, there). Detail: docs/agents.md/fleet/history-rewrites.md
  */
 
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'

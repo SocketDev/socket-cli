@@ -40,6 +40,11 @@ export type Submodule = {
   branch?: string | undefined
   name: string
   path?: string | undefined
+  // The fleet's pinned commit of record. Under the no-gitlink doctrine an
+  // `upstream/<name>` reference is recorded ONLY in `.gitmodules`, so this
+  // field — not a `160000` index entry — is the commit a materialization
+  // checks out. See docs/agents.md/fleet/upstream-references.md.
+  ref?: string | undefined
   'sparse-checkout'?: string | undefined
   url?: string | undefined
 }

@@ -74,7 +74,10 @@ cannot drift between call sites.
 - **`GIT_TERMINAL_PROMPT=0`** so a network operation fails instead of hanging on
   a credential prompt the user cannot see under `stdio: 'ignore'`.
 - **`-c core.hooksPath=`** (empty) so the checkout's own hooks do not run as the
-  user during a commit or checkout the tool performs.
+  user during a commit or checkout the tool performs. The same flag against the
+  FLEET repo skips the fleet's own `.git-hooks/` chain, so `no-revert-guard`
+  phrase-gates it there; the carve-out that keeps this idiom working is a `-C` /
+  `--git-dir` naming a repository outside the one the command acts on.
 - **`-c credential.helper=`** (empty). A repo-local
   `credential.helper = !sh -c '…'` executes on any network operation.
 - **`-c protocol.allow=never` AND `-c protocol.ext.allow=never`.** Both. Verified

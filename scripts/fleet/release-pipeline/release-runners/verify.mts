@@ -125,7 +125,7 @@ export async function runVerifyStage(config: {
     return {
       detail:
         `pre-approve verify FAILED for ${pkg.name}@${cfg.targetVersion} (see the gate's log above).\n` +
-        `  Fix: reject the staged upload (pnpm stage reject ${entry.stageId}) and re-stage — never approve divergent bytes.`,
+        `  Fix: reject the staged upload (node scripts/fleet/npm-web-auth.mts stage reject ${entry.stageId}) and re-stage — never approve divergent bytes.`,
       status: 'failed',
     }
   }

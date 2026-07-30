@@ -15,14 +15,17 @@
  *   pasted key (masked — the token never echoes).
  */
 
-import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { SocketSdk } from '@socketsecurity/sdk-stable'
 
-import { logger, rootPath, runCapture } from '../shared.mts'
+import { logger } from '../shared.mts'
+import {
+  acquireSocketTokenViaOAuth,
+  socketOAuthConfigured,
+} from '../socket-oauth.mts'
 import { defaultPackTarball } from './staged.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
@@ -106,6 +109,16 @@ export async function preflightSocketScanAuth(
   } = { __proto__: null, ...options } as NonNullable<typeof options>
 
   let token = resolveSocketApiToken(env)
+  if (!token && socketOAuthConfigured(env)) {
+    // Browser OAuth (authorization-code + PKCE + loopback) — no key to copy.
+    // The browser opens on the operator's screen, so this path does not need
+    // a TTY; a thrown failure falls through to the paste/fail paths below.
+    try {
+      token = await acquireSocketTokenViaOAuth({ env, openUrl })
+    } catch (e) {
+      logger.warn(errorMessage(e))
+    }
+  }
   if (!token && interactive) {
     logger.log(
       `Scan gate: no Socket API token in the environment — opening ${SOCKET_TOKEN_MINT_URL} ` +
@@ -232,34 +245,77 @@ export function collectPolicyFailingAlerts(
 // Full-scan payload shapes vary by endpoint version (a bare artifact array vs
 // an `{ artifacts: [...] }` wrapper); normalize to the artifact array the
 // policy evaluation consumes.
-function normalizeFullScanArtifacts(data: unknown): Array<{
+export interface FullScanArtifact {
   alerts?: Array<{ severity?: string | undefined; type: string }> | undefined
   name?: string | undefined
   version?: string | undefined
-}> {
+}
+
+export type SecurityPolicyRules = Record<
+  string,
+  { action?: string | undefined }
+>
+
+// Return the artifact list for a RECOGNIZED full-scan response shape (a bare
+// array or `{ artifacts: [...] }`), or undefined when the shape is
+// unrecognized. The gate fails closed on undefined rather than conflating
+// "unknown response shape" with "clean" — the SDK maps an empty HTTP body to
+// `{}`, and a future enveloped/paginated shape would otherwise silently pass.
+// A recognized-but-empty `[]` is also a fail-closed signal at the call site: a
+// real full scan of a package always yields at least the package's own
+// artifact, so zero artifacts means nothing was evaluated.
+export function normalizeFullScanArtifacts(
+  data: unknown,
+): FullScanArtifact[] | undefined {
   if (Array.isArray(data)) {
-    return data as ReturnType<typeof normalizeFullScanArtifacts>
+    return data as FullScanArtifact[]
   }
   if (data && typeof data === 'object') {
     const maybe = (data as { artifacts?: unknown | undefined }).artifacts
     if (Array.isArray(maybe)) {
-      return maybe as ReturnType<typeof normalizeFullScanArtifacts>
+      return maybe as FullScanArtifact[]
     }
   }
-  return []
+  return undefined
+}
+
+// Return the org security-policy rule map for a RECOGNIZED shape, or undefined
+// when `securityPolicyRules` is absent or not an object. The gate fails closed
+// on undefined rather than defaulting to an empty map — an empty map matches
+// no alert, so a missing/renamed policy would silently approve a package that
+// carries genuine error-action alerts.
+export function extractSecurityPolicyRules(
+  data: unknown,
+): SecurityPolicyRules | undefined {
+  if (data && typeof data === 'object') {
+    const rules = (data as { securityPolicyRules?: unknown | undefined })
+      .securityPolicyRules
+    if (rules && typeof rules === 'object') {
+      return rules as SecurityPolicyRules
+    }
+  }
+  return undefined
 }
 
 /**
- * Scan one staged entry's artifact through the Socket API. Packs the local
- * tree (byte-identical to the staged upload once the shasum gate has passed),
- * extracts the tarball's `package/` root into a temp dir, submits its
- * manifests as a `tmp` full scan, and gates on the org security policy: any
- * `error`-action alert fails the entry. `options.packTarball` swaps the
- * artifact source: a generated platform package's payload is CI-built with no
- * local twin, so the approve flow passes a provider that downloads the STAGED
- * tarball, whose structure the platform verify gate has already checked,
- * instead of packing locally. `options.context` carries the preflighted
- * SDK+org; when absent the entry runs its own preflight (self-contained use).
+ * Scan one staged entry's artifact through the Socket API. Resolves the
+ * tarball (a local `pnpm pack`, byte-identical to the staged upload once the
+ * shasum gate has passed, or a provider-supplied download), then submits the
+ * WHOLE tarball as a `tmp` full scan via the archive endpoint. depscan
+ * extracts the archive server-side and ingests every bundled manifest and
+ * lockfile as shipped — the full pinned DEPENDENCY graph, not just a
+ * hand-picked package.json — and the gate fails on any `error`-action alert
+ * in the org security policy. Scope note: the archive endpoint scans the
+ * dependency graph, NOT the package's own source code; non-manifest files are
+ * matched out and ignored server-side (depscan ingest-tar-hash). Socket's
+ * code/malware analysis is keyed to PUBLISHED packages by purl, so a
+ * pre-publish staged tarball's own novel code is not analyzed here.
+ * `options.packTarball` swaps the artifact source: a generated platform
+ * package's payload is CI-built with no local twin, so the approve flow passes
+ * a provider that downloads the STAGED tarball, whose structure the platform
+ * verify gate has already checked, instead of packing locally.
+ * `options.context` carries the preflighted SDK+org; when absent the entry
+ * runs its own preflight (self-contained use).
  */
 export async function scanStagedEntry(
   entry: {
@@ -297,54 +353,48 @@ export async function scanStagedEntry(
     )
     return false
   }
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-scan-gate-'))
+  const tmpRoot = os.tmpdir()
   try {
-    const untar = await runCapture(
-      'tar',
-      ['-xzf', tarballPath, '-C', tmpDir],
-      rootPath,
-    )
-    if (untar.code !== 0) {
-      logger.fail(
-        `Scan gate: extracting ${tarballPath} failed (tar exited ${untar.code}).`,
-      )
-      return false
-    }
-    // npm tarballs root their contents at `package/`.
-    const packageDir = path.join(tmpDir, 'package')
+    // Upload the WHOLE tarball via the archive endpoint. depscan extracts it
+    // server-side and ingests every bundled manifest + lockfile AS SHIPPED, so
+    // the scan sees the full pinned dependency graph — not just the top-level
+    // package.json a manifest-only createFullScan would send. This scans
+    // DEPENDENCIES, not the package's own code (non-manifest files are matched
+    // out and ignored server-side). Mirrors socket-webext's staged-review
+    // full-scan, which uses the same archive endpoint.
     logger.log(
-      `Scan gate: Socket full scan (tmp) on ${name}@${version} via the API…`,
+      `Scan gate: Socket full scan (tmp, archive) on ${name}@${version} via the API…`,
     )
     let scanId: string | undefined
     try {
-      const created = await sdk.createFullScan(orgSlug, ['package.json'], {
-        pathsRelativeTo: packageDir,
-        repo: 'staged-publish-gate',
-        tmp: true,
-      })
+      const created = await sdk.createOrgFullScanFromArchive(
+        orgSlug,
+        tarballPath,
+        { repo: 'staged-publish-gate', tmp: true },
+      )
       if (created.success) {
         scanId = (created.data as { id?: string | undefined }).id
       } else {
         logger.fail(
-          `Scan gate: full-scan create failed for ${name}@${version} ` +
+          `Scan gate: archive full-scan create failed for ${name}@${version} ` +
             `(status ${created.status}${created.error ? `: ${String(created.error)}` : ''}).`,
         )
         return false
       }
     } catch (e) {
       logger.fail(
-        `Scan gate: full-scan create threw for ${name}@${version} (${errorMessage(e)}).`,
+        `Scan gate: archive full-scan create threw for ${name}@${version} (${errorMessage(e)}).`,
       )
       return false
     }
     if (!scanId) {
       logger.fail(
-        `Scan gate: full-scan create returned no scan id for ${name}@${version}; not approving.`,
+        `Scan gate: archive full-scan create returned no scan id for ${name}@${version}; not approving.`,
       )
       return false
     }
-    let artifacts: ReturnType<typeof normalizeFullScanArtifacts>
-    let policyRules: Record<string, { action?: string | undefined }>
+    let artifacts: FullScanArtifact[]
+    let policyRules: SecurityPolicyRules
     try {
       const [scan, policy] = await Promise.all([
         sdk.getFullScan(orgSlug, scanId),
@@ -356,10 +406,29 @@ export async function scanStagedEntry(
         )
         return false
       }
-      artifacts = normalizeFullScanArtifacts(scan.data)
-      policyRules =
-        ((policy.data as { securityPolicyRules?: unknown | undefined })
-          .securityPolicyRules as typeof policyRules | undefined) ?? {}
+      // Fail closed on an unrecognized or empty scan/policy: an unknown
+      // response shape (or the SDK's empty-body → `{}`) must never read as
+      // "clean". A real full scan yields at least the package's own artifact,
+      // and a real org carries a policy rule map; the absence of either means
+      // nothing was actually evaluated.
+      const rawArtifacts = normalizeFullScanArtifacts(scan.data)
+      if (!rawArtifacts || rawArtifacts.length === 0) {
+        logger.fail(
+          `Scan gate: full scan for ${name}@${version} returned no recognizable ` +
+            'artifacts; refusing to approve bytes the scan did not evaluate.',
+        )
+        return false
+      }
+      const rules = extractSecurityPolicyRules(policy.data)
+      if (!rules) {
+        logger.fail(
+          `Scan gate: org security policy for ${name}@${version} was empty or ` +
+            'unrecognized; refusing to approve without a policy to evaluate against.',
+        )
+        return false
+      }
+      artifacts = rawArtifacts
+      policyRules = rules
     } catch (e) {
       logger.fail(
         `Scan gate: reading scan results threw for ${name}@${version} (${errorMessage(e)}).`,
@@ -379,13 +448,11 @@ export async function scanStagedEntry(
     }
     return true
   } finally {
-    await safeDelete(tmpDir)
-    // Clean the tarball too when a packTarball provider downloaded it into a
-    // temp dir (the registry-API `stage download` and the browser-read
-    // passback both mkdtemp under os.tmpdir()). A repo-local `pnpm pack`
-    // output lands in the package dir, NOT under tmpdir, so it is never
-    // touched — pnpm/repo hygiene owns that one.
-    const tmpRoot = os.tmpdir()
+    // Clean the tarball when a packTarball provider downloaded it into a temp
+    // dir (the registry-API `stage download` and the browser-read passback
+    // both mkdtemp under os.tmpdir()). A repo-local `pnpm pack` output lands
+    // in the package dir, NOT under tmpdir, so it is never touched —
+    // pnpm/repo hygiene owns that one.
     if (tarballPath.startsWith(tmpRoot + path.sep)) {
       await safeDelete(path.dirname(tarballPath))
     }

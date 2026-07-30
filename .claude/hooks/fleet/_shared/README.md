@@ -6,6 +6,8 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 - **`shell-command.mts`** — Tokenizes a Bash command string with `shell-quote` into discrete `Command`s (`binary`, `args`, leading env `assignments`, plus `viaVariable` / `viaEval` indirection flags). Exposes `parseCommands`, `findInvocation`, `commandsFor`, `invocationHasFlag`, and `hasOpaqueInvocation`. Used by every structure-sensitive Bash guard (`codex-no-write-guard`, `release-workflow-guard`, `no-empty-commit-guard`, the git-detection guards, …) so a forbidden invocation is matched on the actual parsed command — `$(…)` / `$VAR` / `eval` indirection is seen rather than evaded, and a quoted mention inside an `echo` or `-m` body can't false-trigger.
 
+- **`git-subcommand.mts`** — git's global-option grammar, downstream of `shell-command.mts`'s tokenizer: `gitSubcommand` / `splitGitSubcommand` answer "which subcommand does this `git` segment run", skipping the value token of a value-taking global so `git -C /repo clone <url>` resolves to `clone` and not to `/repo`. An option neither flag table knows marks the split `ambiguous`; `gitSubcommandReadings` widens to every candidate subcommand there, which is the fail-closed reading a guard whose miss is unrecoverable (`no-force-push-guard`, `no-revert-guard`, `shallow-clone-guard`) should use.
+
 - **`markers.mts`** — Shared sentinel constants for bypass phrases the user can type to override a hook (`Allow <name> bypass`, etc.).
 
 - **`payload.mts`** — `ToolCallPayload` and `ToolInput` types for the PreToolUse JSON payload, plus `readCommand` / `readFilePath` / `readWriteContent` narrowing helpers. **Use this instead of re-declaring `tool_input` types per-hook** — the fleet had 7 hand-rolled variants before this module landed.
@@ -23,6 +25,8 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 - Writing a **Stop hook** that just emits a reminder when patterns match? → `import { runStopReminder } from '../_shared/stop-nudge.mts'`. See `excuse-detector` for the single-group shape, or `reply-prose-nudge` (uses `runStopReminders`) for merging several pattern tables into one process while keeping per-group disable env vars.
 
 - Writing a **PreToolUse hook** that inspects a tool call's input? → `import { ToolCallPayload, readCommand, readFilePath } from '../_shared/payload.mts'`. Saves you the `typeof === 'string'` guard.
+
+- Keying a rule on a git SUBCOMMAND (`push`, `reset`, `clone`)? → `import { gitSubcommand } from '../_shared/git-subcommand.mts'`. Never scan `args` for the verb yourself — a global option's value shadows it in both directions.
 
 - Detecting whether a Bash command really invokes some binary/subcommand (and want `$(…)` / `$VAR` / quoted-mention false positives handled)? → `import { commandsFor, findInvocation } from '../_shared/shell-command.mts'`.
 

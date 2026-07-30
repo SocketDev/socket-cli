@@ -223,7 +223,7 @@ function buildMismatchMessage(
     `Release hash verification failed for ${cfg.name}@${cfg.version}.\n` +
     `  Where: comparing local pack vs GitHub release ${cfg.tag} vs npm registry (${axis}).\n` +
     `  Saw vs wanted: ${comparison.reason ?? 'sources disagree'}; sources:\n${rows}\n` +
-    `  Fix: reject the staged publish (pnpm stage reject <stageId>) and re-run the release — never approve a divergent artifact.`
+    `  Fix: reject the staged publish (node scripts/fleet/npm-web-auth.mts stage reject <stageId>) and re-run the release — never approve a divergent artifact.`
   )
 }
 

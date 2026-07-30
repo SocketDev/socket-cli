@@ -80,7 +80,13 @@ import {
   resolveConfiguredUnitBudgetMs,
 } from './cover-report.mts'
 import { ensurePinnedNode } from './lib/ensure-node.mts'
-import { COVERAGE_DIR, COVERAGE_SCRATCH_DIR, REPO_ROOT } from './paths.mts'
+import {
+  COVERAGE_DIR,
+  COVERAGE_SCRATCH_DIR,
+  COVERAGE_SUMMARY_PATH,
+  REPO_ROOT,
+} from './paths.mts'
+import { runBunCoverageLane } from './cover/bun-lane.mts'
 import type { AggregateCoverage } from './util/coverage-merge.mts'
 import {
   mergeCoverageFinal,
@@ -268,8 +274,64 @@ export async function main(): Promise<void> {
 
   const buildFailed = await buildWithSourceMaps(rootPath)
 
+  const plan = resolveRunPlan(rootPath)
   const { coverConfig, isolatedVitestArgs, mainVitestArgs, typeCoverageArgs } =
-    resolveRunPlan(rootPath)
+    plan
+
+  // A cover-config problem is FATAL, for both runners. An unrecognized
+  // `cover.runner` would fall back to vitest and run the wrong gate; an
+  // unrecognized threshold metric would be ignored and turn a configured
+  // minimum into no minimum. Either way the run would report a number nobody
+  // asked for, which is the false-green this whole runner exists to prevent.
+  if (plan.configErrors.length > 0) {
+    for (let i = 0, { length } = plan.configErrors; i < length; i += 1) {
+      logger.error(plan.configErrors[i]!)
+    }
+    process.exitCode = 1
+    return
+  }
+
+  // The bun lane owns its whole run: bun writes lcov, the lane folds it into
+  // the same aggregate the vitest merge produces, persists the summary the
+  // badge reads, and applies the thresholds itself. It reuses the shared
+  // display + aggregate-threshold gate below so both runners are reported and
+  // gated identically.
+  if (plan.runner === 'bun') {
+    const lane = await runBunCoverageLane({
+      configPath: plan.configPath ?? '<no socket-wheelhouse.json>',
+      coverConfig,
+      coverageDir: COVERAGE_DIR,
+      passthroughArgs: plan.passthroughArgs,
+      repoRoot: rootPath,
+      runner: async args => ({
+        exitCode: (await runQuiet(args, { cwd: rootPath })).exitCode,
+      }),
+      summaryPath: COVERAGE_SUMMARY_PATH,
+    })
+    let exitCode = lane.exitCode
+    displayCodeCoverage('', '', lane.aggregate, {
+      showDetail: !values['summary'],
+      typeCoveragePercent: undefined,
+    })
+    const thresholdFailures = checkThresholds(
+      lane.aggregate,
+      coverConfig.thresholds,
+    )
+    if (thresholdFailures.length) {
+      logger.error(`Coverage below threshold: ${thresholdFailures.join(', ')}`)
+      exitCode = exitCode === 0 ? 1 : exitCode
+    }
+    if (buildFailed) {
+      exitCode = 1
+    }
+    if (exitCode === 0) {
+      logger.success('Coverage completed successfully')
+    } else {
+      logger.error('Coverage failed')
+    }
+    process.exitCode = exitCode
+    return
+  }
 
   try {
     let exitCode = 0

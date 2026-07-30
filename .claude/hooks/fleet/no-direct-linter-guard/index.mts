@@ -75,6 +75,35 @@ const BANNED_SUBCOMMANDS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
   ['cargo', new Set(['clippy', 'fmt'])],
 ])
 
+// The sanctioned fleet runner for a blocked tool. A generic "use pnpm run lint"
+// is useless for the Rust tools — `pnpm run lint` is the oxlint/oxfmt runner and
+// never touches Rust — so a blocked `cargo clippy` / `cargo fmt` / `rustfmt` is
+// told the exact script that owns it. Keyed by the string
+// `bannedLinterInvocation` reports.
+const SANCTIONED_RUNNER: ReadonlyMap<string, string> = new Map([
+  [
+    'cargo clippy',
+    'node scripts/fleet/lint-rust.mts        # --fix to autofix',
+  ],
+  ['cargo fmt', 'node scripts/fleet/fmt-rust.mts          # --check to verify'],
+  ['rustfmt', 'node scripts/fleet/fmt-rust.mts          # --check to verify'],
+])
+
+/**
+ * The wrapper lines a block message offers for `tool`. A tool with a dedicated
+ * fleet runner gets that runner; everything else gets the JS/TS script set.
+ */
+export function sanctionedWrapperLines(tool: string): string[] {
+  const runner = SANCTIONED_RUNNER.get(tool)
+  if (runner) {
+    return [`    ${runner}`]
+  }
+  return [
+    '    pnpm run lint        pnpm run fix --all',
+    '    pnpm run check       pnpm run format',
+  ]
+}
+
 // Package runners that execute a BIN by name. The forms `npx <bin>`, `bunx
 // <bin>`, classic `yarn <bin>`, and the exec / dlx / x subcommands of pnpm,
 // npm, bun, and yarn all run the bin directly — the same hazard as a bare call
@@ -166,9 +195,10 @@ export const check = bashGuard((command, payload) => {
       '',
       '  The fleet runs lint/format/type-check ONLY through the repo scripts,',
       '  which own the `-c .config/fleet/…` / `-p …/tsconfig.check.json` flag +',
-      '  ignore set (a bare `tsc` uses the wrong tsconfig). Use a wrapper:',
-      '    pnpm run lint        pnpm run fix --all',
-      '    pnpm run check       pnpm run format',
+      '  ignore set (a bare `tsc` uses the wrong tsconfig, and a bare `cargo',
+      '  clippy` skips the workspace walk that reaches every crate). Use a',
+      '  wrapper:',
+      ...sanctionedWrapperLines(tool),
       `    not  ${tool} …`,
     ].join('\n'),
   )

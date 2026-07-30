@@ -73,7 +73,7 @@ models:
 # per run for gh-aw's checkout, the GitHub MCP server, and the safe-output PR.
 # gh aw compile injects actions/create-github-app-token and revokes at run end;
 # it falls back to GH_AW_GITHUB_TOKEN || GITHUB_TOKEN only when the app secrets
-# are absent (ignore-if-missing). The custom check-updates job below mints its
+# are absent (ignore-if-missing). The custom check_updates job below mints its
 # own token pre-checkout (gh-aw does not inject minting into custom jobs).
 tools:
   github:
@@ -131,20 +131,39 @@ steps:
       mkdir -p "${RUNNER_TOOL_CACHE}/fleet-pnpm/bin"
       cp -a "${RUNNER_TEMP}/pnpm-bin/." "${RUNNER_TOOL_CACHE}/fleet-pnpm/bin/"
 
+# Agent-job guard: the agent starts only when the deterministic gate below found
+# actionable drift. gh-aw maps this top-level `if:` onto both the activation and
+# agent jobs and wires `needs: check_updates` for us. Control flow belongs in the
+# workflow, not the prompt — an agent that must read a flag to decide whether to
+# run at all is one bad interpolation away from doing nothing or doing the wrong
+# thing, and a skipped agent job also spends no AI credits on a no-op run.
+if: ${{ needs.check_updates.outputs.has_updates == 'true' }}
+
 # Deterministic gate — single source in weekly-update.mts (`--check-updates`
 # exits 0 on actionable drift: pnpm outdated / lockstep exit 2 / submodule-behind
 # / soaked-cleared exclude). Cadence-agnostic: a soaked-cleared exclude makes the
-# daily promotion actionable without a second gate mode. The agent job waits on
-# this and reads needs.check-updates.outputs.has-updates.
+# daily promotion actionable without a second gate mode.
+#
+# THE JOB ID AND OUTPUT NAMES ARE UNDERSCORED ON PURPOSE — never hyphenate them.
+# gh-aw hoists every `${{ }}` in the prompt body into an env var, but compiler and
+# runtime disagree on how to name it: the compiler hashes any expression that is
+# not a bare dotted identifier (`GH_AW_EXPR_3F2FDF35`), while runtime_import.cjs
+# derives a pretty name by upcasing and replacing only dots
+# (`GH_AW_NEEDS_CHECK_UPDATES_OUTPUTS_CADENCE`). A hyphen anywhere in the
+# expression makes the two disagree, the lookup misses, and the agent silently
+# receives the raw uninterpolated `${{ ... }}` text instead of the value — it
+# cannot tell the difference between "no value" and "not in CI". Underscores keep
+# both sides on the pretty name. The job-level `if:` above is plain Actions and is
+# hyphen-safe; the prompt body is not.
 jobs:
-  check-updates:
+  check_updates:
     runs-on: ubuntu-latest
     # 15, not 10: the job now also provisions pnpm + runs `pnpm install`
     # (setup-and-install below) before the gate script.
     timeout-minutes: 15
     outputs:
       cadence: ${{ steps.cadence.outputs.cadence }}
-      has-updates: ${{ steps.check.outputs.has-updates }}
+      has_updates: ${{ steps.check.outputs.has_updates }}
     steps:
       # Mint a Socket PR-App installation token pre-checkout so the private-repo
       # fetch authenticates — the default GITHUB_TOKEN is denied by org policy
@@ -228,9 +247,9 @@ jobs:
         shell: bash
         run: |
           if node scripts/fleet/weekly-update.mts --check-updates; then
-            echo "has-updates=true" >> "$GITHUB_OUTPUT"
+            echo "has_updates=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has-updates=false" >> "$GITHUB_OUTPUT"
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
           fi
 
 # The agent commits inside its run; gh-aw packages them as a git bundle and a
@@ -390,14 +409,14 @@ safe-outputs:
 
 # Dependency update
 
-You are an automated CI agent running the fleet's dependency update. Actionable
-updates were detected: `${{ needs.check-updates.outputs.has-updates }}`. If that
-is not `true`, do nothing and exit.
+You are an automated CI agent running the fleet's dependency update. The workflow
+reaches this step only when its deterministic gate already found actionable
+updates, so proceed without re-checking that.
 
 ## Cadence
 
 Two schedules share this workflow. The cadence for this run is
-`${{ needs.check-updates.outputs.cadence }}`:
+`${{ needs.check_updates.outputs.cadence }}`:
 
 - **`daily`:** run the `/updating-daily` skill only — promote soaked
   `minimumReleaseAgeExclude` entries whose 7-day soak has cleared, then reconcile
@@ -406,6 +425,12 @@ Two schedules share this workflow. The cadence for this run is
 - **`weekly`:** run the `/updating` umbrella — npm dependencies, lockstep
   manifest, submodules, and workflow pins. Title the PR `weekly dependency update
 (<YYYY-MM-DD>)`.
+
+If that cadence value is not exactly `daily` or `weekly` — for instance it still
+reads as an unresolved GitHub Actions template expression — stop and report it
+with the `missing_data` tool. Never guess the cadence or infer it from the clock
+or the repository state: the two cadences open different pull requests, so a
+guess ships the wrong change.
 
 ## Steps
 
@@ -421,11 +446,22 @@ Two schedules share this workflow. The cadence for this run is
    pnpm test
    ```
 
-3. **If tests pass:** open a pull request via the `create_pull_request` safe
+3. Constrain the branch to the PR surface — one out-of-surface path makes the
+   `create_pull_request` safe output refuse the WHOLE patch:
+
+   ```bash
+   node scripts/fleet/weekly-update.mts --shed-out-of-surface
+   ```
+
+   It reverts every change outside this workflow's `allowed-files` globs into
+   a shed commit and prints the shed list. Do not re-apply a shed change.
+
+4. **If tests pass:** open a pull request via the `create_pull_request` safe
    output, titled per the cadence above. Body: a short intro naming the skill that
    ran, then a `<details><summary>View commit history</summary>` block with the
-   commit list.
+   commit list — and, when step 3 shed anything, a `### Shed (needs its own PR)`
+   section listing the shed paths verbatim.
 
-4. **If tests fail:** do NOT open a PR. Call the `dispatch_get_green` tool with
+5. **If tests fail:** do NOT open a PR. Call the `dispatch_get_green` tool with
    the branch and the last 100 lines of the failing build and test logs, so the
    stronger model attempts the fix in the dispatched `get-green` workflow.

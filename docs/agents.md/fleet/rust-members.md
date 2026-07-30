@@ -11,7 +11,9 @@ developer can use the same commands in every member.
 - `rust-toolchain.toml` selects an exact compiler. A pure Rust repository uses
   the fleet root pin. A mixed-language repository may use a repo default plus a
   more specific pin inside a Rust workspace.
-- `rustfmt.toml` is fleet-owned and uses two-space indentation.
+- `rustfmt.toml` is fleet-owned and uses four-space indentation, the rustfmt
+  default and the Rust community standard. Indent width is a per-language
+  convention: TypeScript stays at two, Rust at four.
 - `.cargo/config.toml` is fleet-owned and contains the dependency-soak rules.
 - `.cargo/config.repo.toml` is optional. Put platform runners, target-specific
   rustflags, or other repository-only Cargo settings here. The fleet config
@@ -25,6 +27,7 @@ cascade replaces that file byte-for-byte.
 ```sh
 pnpm run setup:rust
 node scripts/fleet/fmt-rust.mts --check
+node scripts/fleet/lint-rust.mts
 pnpm run check --all
 ```
 
@@ -33,9 +36,21 @@ nearest `rust-toolchain.toml`, installs its profile, components, and targets,
 then runs `cargo fetch --locked`. It fails if a workspace has no pin; silently
 using a developer's global compiler would make local and CI results differ.
 
-`fmt-rust.mts` runs from each workspace directory. That detail matters because
-Cargo and rustup discover toolchain and Cargo config files from the current
-directory, not from `--manifest-path` alone.
+`fmt-rust.mts` (`pnpm run fmt:rust`) owns `cargo fmt`; `lint-rust.mts`
+(`pnpm run lint:rust`) owns `cargo clippy --workspace --all-targets --
+-D warnings`. They are the sanctioned entry points: `pnpm run lint` is the
+oxlint/oxfmt runner and never reads a `.rs` file, and `no-direct-linter-guard`
+blocks a bare `cargo clippy` / `cargo fmt` inside a fleet repo, naming these two
+in its block message.
+
+The mutating flag differs between them, deliberately. `fmt-rust.mts` rewrites by
+default and takes `--check` to verify, because a formatter's job IS the rewrite.
+`lint-rust.mts` verifies by default and takes `--fix` to apply clippy's
+autofixes, matching `pnpm run lint` / `pnpm run lint --fix`.
+
+Both run from each workspace directory. That detail matters because Cargo and
+rustup discover toolchain and Cargo config files from the current directory, not
+from `--manifest-path` alone.
 
 ## What “uniform” means
 

@@ -288,7 +288,7 @@ export async function verifyStagedPlatformEntry(
           `  Saw vs wanted: the staged tarball's manifest reads ` +
           `${String(staged.name)}@${String(staged.version)}; wanted ` +
           `${name}@${version}.\n` +
-          `  Fix: reject the staged publish (pnpm stage reject ${stageId}) ` +
+          `  Fix: reject the staged publish (node scripts/fleet/npm-web-auth.mts stage reject ${stageId}) ` +
           `and re-stage.`,
       )
       return false
@@ -316,7 +316,7 @@ export async function verifyStagedPlatformEntry(
           `  Saw vs wanted: missing/empty payload file(s) ` +
           `${hollow.join(', ')}; wanted every declared platform payload ` +
           `present and non-empty.\n` +
-          `  Fix: reject the staged publish (pnpm stage reject ${stageId}) ` +
+          `  Fix: reject the staged publish (node scripts/fleet/npm-web-auth.mts stage reject ${stageId}) ` +
           `and re-stage from a CI run whose build artifacts landed.`,
       )
       return false

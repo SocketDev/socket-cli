@@ -18,7 +18,11 @@
 // these paths legitimately. JS/TS comments are parsed via the shared acorn
 // walker (so a path in a STRING literal never trips); other languages use a
 // lexical line/block-comment scan. The matcher itself is the SAME
-// `_shared/private-paths.mts` the hook uses — one pattern set, no drift.
+// `_shared/private-paths.mts` the hook uses, and the file-scope predicate is
+// the SAME `SOURCE_FILE_RE` from `.git-hooks/_shared/file-scan.mts` the
+// commit-time hook uses — one pattern set and one scope, no drift. That scope
+// used to be a private copy here, which let generated JSON fail the hook while
+// passing this gate.
 //
 // Usage: node scripts/fleet/check/private-paths-are-absent.mts [--quiet]
 
@@ -39,17 +43,12 @@ import {
   scanCommentBodyLines,
 } from '../../../.claude/hooks/fleet/_shared/private-paths.mts'
 import type { PrivatePathFinding } from '../../../.claude/hooks/fleet/_shared/private-paths.mts'
+import { SOURCE_FILE_RE } from '../../../.git-hooks/_shared/file-scan.mts'
 import { isPurePlaceholder } from '../../../.git-hooks/_shared/personal-path.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
-
-// Source-code extensions to scan. Lock-step with the hook's SOURCE_FILE_RE
-// (markdown / docs / JSON / YAML / .claude excluded — they reference these
-// paths legitimately).
-const SOURCE_FILE_RE =
-  /\.(?:[ch]|[cm]?[jt]sx?|bash|cc|cpp|cxx|go|hh|hpp|java|kt|py|rb|rs|sh|swift|zsh)$/
 
 const JS_TS_FILE_RE = /\.(?:[cm]?[jt]sx?)$/
 

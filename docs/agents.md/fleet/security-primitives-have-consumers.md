@@ -81,7 +81,7 @@ Two term-matching details that cost real false positives:
 Repo-**owned** source: `src/`, `lib/`, `scripts/repo/`, `packages/*/{src,lib}/`.
 
 Cascaded trees (`scripts/fleet/`, `.config/fleet/`, `template/`) are excluded.
-They are authored in socket-wheelhouse and byte-copied into every member, so a
+They are authored in the fleet template and byte-copied into every member, so a
 member sees the file without its callers. Scanning them fails twenty repos for
 one wheelhouse-owned export.
 

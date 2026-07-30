@@ -10,6 +10,8 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
 import {
   applySparsePatterns,
   getRoots,
@@ -75,8 +77,55 @@ export function buildCheckoutArgs(
   return ['-C', submoduleWorktreeRoot, 'checkout', ...(branch ? [branch] : [])]
 }
 
+// Git's index mode for a gitlink — a submodule entry recording another repo's
+// commit inside the superproject's tree.
+const GITLINK_MODE = '160000'
+
+/**
+ * Parse `git ls-files --stage` output into a path → gitlink-sha map, keeping
+ * only `160000` entries. Each line is `<mode> <sha> <stage>\t<path>`; a regular
+ * file line carries a blob mode and is dropped.
+ *
+ * This is what tells a gitlink-BACKED submodule apart from a gitlink-LESS
+ * reference. The fleet forbids tracking an `upstream/` gitlink, so those paths
+ * are absent from the index entirely.
+ */
+export function parseStagedGitlinks(
+  lsFilesOutput: string,
+): Map<string, string> {
+  const out = new Map<string, string>()
+  const lines = lsFilesOutput.split(/\r?\n/)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const tab = line.indexOf('\t')
+    if (tab < 0) {
+      continue
+    }
+    const fields = line.slice(0, tab).split(/\s+/)
+    if (fields[0] !== GITLINK_MODE || !fields[1]) {
+      continue
+    }
+    out.set(line.slice(tab + 1), fields[1])
+  }
+  return out
+}
+
+/**
+ * The commit a materialization checks out. The `.gitmodules` `ref` field wins:
+ * under the no-gitlink doctrine it IS the pin of record, and a gitlink-less
+ * reference has nothing else. A submodule that predates the doctrine and still
+ * carries a tracked `160000` entry falls back to that sha. Returns undefined
+ * when neither exists, which the caller reports as an unresolvable pin.
+ */
+export function resolvePinnedCommit(
+  submodule: Pick<Submodule, 'ref'>,
+  gitlinkSha: string | undefined,
+): string | undefined {
+  return submodule.ref?.trim() || gitlinkSha
+}
+
 // The detach-vs-branch decision for `cmdClone`'s post-clone checkout: detach
-// at the recorded gitlink sha, unless the submodule's tracked branch already
+// at the pinned commit, unless the submodule's tracked branch already
 // resolves to that same commit — then check out the branch by name so the
 // worktree stays on a branch ref instead of detached HEAD.
 export function decideCloneCheckoutArgs(
@@ -101,6 +150,17 @@ export function buildCoreWorktreeConfigArgs(
     'core.worktree',
     submoduleWorktreeRoot.replaceAll(path.sep, '/'),
   ]
+}
+
+/**
+ * True when a worktree-relative path is a fleet `upstream/<name>` reference.
+ * `git submodule add` stages a `160000` gitlink, which the no-gitlink doctrine
+ * forbids for these paths, so `add` refuses them and points at the
+ * declare-then- materialize route instead.
+ */
+export function isUpstreamReferencePath(submoduleRelPath: string): boolean {
+  const p = normalizePath(submoduleRelPath)
+  return p === 'upstream' || p.startsWith('upstream/')
 }
 
 // `git -C <worktreeRoot> submodule add …` argv for cmdAdd's final step.
@@ -170,6 +230,21 @@ export async function cmdAdd(config: AddOpts): Promise<void> {
     logger.log(`repo root: ${repoRoot}`)
   }
   const submoduleRelPath = toWorktreeRelative(worktreeRoot, config.path)
+  if (isUpstreamReferencePath(submoduleRelPath)) {
+    logger.error(
+      `Refusing to \`submodule add\` an upstream reference at ${submoduleRelPath}.\n` +
+        `  Where: ${worktreeRoot}\n` +
+        `  Saw:   an \`upstream/<name>\` path; wanted: a path the fleet tracks a gitlink for.\n` +
+        `  Why:   \`git submodule add\` stages a 160000 gitlink, and the \`.gitmodules\`\n` +
+        `         \`ref\` + \`sha256:\` ARE the pin — the gitlink is a redundant second copy.\n` +
+        `  Fix:   declare the block, then materialize it —\n` +
+        `           git config -f .gitmodules submodule.${submoduleRelPath}.path ${submoduleRelPath}\n` +
+        `           git config -f .gitmodules submodule.${submoduleRelPath}.url ${config.repository}\n` +
+        `           node scripts/fleet/gen/gitmodules-hash.mts --set ${submoduleRelPath} <ref> --label <name>-<version>\n` +
+        `           node scripts/fleet/git-partial-submodule.mts clone ${submoduleRelPath}`,
+    )
+    process.exit(1)
+  }
   const submoduleName = config.name ?? submoduleRelPath
   const submoduleRepoRoot = path.join(repoRoot, 'modules', submoduleName)
   if (existsSync(submoduleRepoRoot)) {
@@ -224,10 +299,30 @@ export async function cmdClone(config: CloneOpts): Promise<void> {
     logger.log(`repo root: ${repoRoot}`)
   }
   const gitmodules = await readGitmodules(config, worktreeRoot)
-  await runGit(config, ['submodule', 'init', ...config.paths])
   const relPaths: string[] = config.paths.length
     ? config.paths.map(p => toWorktreeRelative(worktreeRoot, p))
     : [...gitmodules.byPath.keys()]
+  // `git submodule init` copies a submodule's url into `.git/config` so
+  // `git submodule update` can drive it — and it takes a PATHSPEC, so it errors
+  // "pathspec '<path>' did not match any file(s) known to git" on a path with no
+  // index entry. A fleet `upstream/<name>` reference has no gitlink by doctrine,
+  // so it is exactly that case, and an unconditional init aborted the whole
+  // clone. Init only the gitlink-BACKED subset; a gitlink-less reference needs
+  // no init because this command clones it directly from the `.gitmodules` url.
+  const gitlinks = parseStagedGitlinks(
+    await readGitOutput([
+      '-C',
+      worktreeRoot,
+      'ls-files',
+      '--stage',
+      '--',
+      ...relPaths,
+    ]),
+  )
+  const trackedPaths = relPaths.filter(p => gitlinks.has(p))
+  if (trackedPaths.length) {
+    await runGit(config, ['submodule', 'init', ...trackedPaths])
+  }
   let skipped = 0
   let processed = 0
   for (let i = 0, { length } = relPaths; i < length; i += 1) {
@@ -286,24 +381,22 @@ export async function cmdClone(config: CloneOpts): Promise<void> {
       await applySparsePatterns(config, submoduleWorktreeRoot, sparsePatterns)
       logger.log(`Applied sparse-checkout patterns: ${sparsePatterns}`)
     }
-    // Resolve the recorded gitlink sha to detach-checkout at.
-    const treeInfo = (
-      await readGitOutput([
-        '-C',
-        worktreeRoot,
-        'ls-tree',
-        'HEAD',
-        submoduleRelPath,
-      ])
+    // The commit to check out: the `.gitmodules` `ref` pin, else the tracked
+    // gitlink sha for a submodule that still carries one.
+    const submoduleCommit = resolvePinnedCommit(
+      submodule,
+      gitlinks.get(submoduleRelPath),
     )
-      .trim()
-      .split(/\s+/)
-    if (treeInfo.length !== 4) {
-      logger.error('git ls-tree produced unexpected output:')
-      logger.error(treeInfo.join(' '))
+    if (!submoduleCommit) {
+      logger.error(
+        `Cannot resolve a pinned commit for ${submodule.name}.\n` +
+          `  Where: ${path.join(worktreeRoot, '.gitmodules')}, section [submodule "${submodule.name}"]\n` +
+          `  Saw:   no \`ref =\` field and no tracked 160000 gitlink at ${submoduleRelPath}\n` +
+          `  Wanted: one of the two — the \`ref\` is the pin of record for a gitlink-less reference.\n` +
+          `  Fix:   node scripts/fleet/gen/gitmodules-hash.mts --set ${submoduleRelPath} <ref> --label <name>-<version>`,
+      )
       process.exit(1)
     }
-    const submoduleCommit = treeInfo[2]!
     if (config.verbose) {
       logger.log(`${submodule.name} submodule sha1 is ${submoduleCommit}`)
     }

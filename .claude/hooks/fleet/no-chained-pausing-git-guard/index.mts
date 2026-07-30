@@ -40,9 +40,11 @@
 // Bypass: `Allow chained git bypass`, typed by the human in a genuine
 // user turn.
 
+import { splitGitSubcommand } from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { GIT_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
+
+import type { SubcommandSplit } from '../_shared/git-subcommand.mts'
 
 const NAME = 'no-chained-pausing-git-guard'
 
@@ -81,14 +83,20 @@ export const MUTATING_OPS: ReadonlySet<string> = new Set([
   'tag',
 ])
 
-/**
- * The git subcommand of a parsed command, or '' when it is not git.
- */
-export function gitSubcommand(binary: string, args: readonly string[]): string {
-  if (binary !== 'git') {
-    return ''
-  }
-  return positionalArgs(args, GIT_VALUE_FLAGS, 1)[0] ?? ''
+// The subcommand split of a parsed segment, or an empty split when the
+// segment is not `git`. The shared parse skips a global option's separate
+// value token, so `git -C /repo rebase main` resolves to `rebase`.
+const NOT_GIT: SubcommandSplit = {
+  ambiguous: false,
+  rest: [],
+  sub: undefined,
+}
+
+function gitSegment(cmd: {
+  binary: string
+  args: readonly string[]
+}): SubcommandSplit {
+  return cmd.binary === 'git' ? splitGitSubcommand(cmd.args) : NOT_GIT
 }
 
 /**
@@ -104,7 +112,7 @@ export function findChainedPause(
     if (!cmd) {
       continue
     }
-    const sub = gitSubcommand(cmd.binary, cmd.args)
+    const { rest, sub } = gitSegment(cmd)
     // `--abort` / `--quit` TERMINATE an in-progress operation; they cannot
     // leave the repo half-done, and chaining them is how you recover
     // (`git rebase --abort && git checkout main`). Blocking recovery — the
@@ -114,11 +122,8 @@ export function findChainedPause(
     const terminates = cmd.args.some(a => a === '--abort' || a === '--quit')
     const pauses =
       !terminates &&
-      (PAUSING_OPS.has(sub) ||
-        (sub === 'stash' &&
-          ['pop', 'apply'].includes(
-            positionalArgs(cmd.args, GIT_VALUE_FLAGS, 2)[1] ?? '',
-          )))
+      ((sub !== undefined && PAUSING_OPS.has(sub)) ||
+        (sub === 'stash' && ['pop', 'apply'].includes(rest[0] ?? '')))
     if (!pauses) {
       continue
     }
@@ -127,8 +132,8 @@ export function findChainedPause(
       if (!later) {
         continue
       }
-      const laterSub = gitSubcommand(later.binary, later.args)
-      if (MUTATING_OPS.has(laterSub)) {
+      const laterSub = gitSegment(later).sub
+      if (laterSub !== undefined && MUTATING_OPS.has(laterSub)) {
         return { mutating: `git ${laterSub}`, pausing: `git ${sub}` }
       }
     }
