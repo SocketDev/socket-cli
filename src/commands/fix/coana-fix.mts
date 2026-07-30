@@ -64,6 +64,67 @@ type DiscoverGhsaIdsOptions = {
   spinner?: Spinner | undefined
 }
 
+type StructuredDiscoveryResult = {
+  ghsaIds?: unknown
+  artifactCount?: unknown
+  filteredArtifactCount?: unknown
+}
+
+async function readStructuredDiscoveryResult(
+  outputFile: string,
+  silence: boolean,
+): Promise<CResult<string[]>> {
+  let raw: string
+  try {
+    raw = await fs.readFile(outputFile, 'utf8')
+  } catch {
+    return {
+      ok: false,
+      message: 'Coana did not write a vulnerability discovery result file',
+      cause: `Expected \`find-vulnerabilities --output-file\` to create ${outputFile}.`,
+    }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return {
+      ok: false,
+      message:
+        'Could not parse the vulnerability discovery result written by Coana',
+      cause: `Expected JSON in ${outputFile}, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
+  if (parsed === null || typeof parsed !== 'object') {
+    return {
+      ok: false,
+      message: 'Coana wrote an unexpected vulnerability discovery result',
+      cause: `Expected a JSON object with a ghsaIds string array, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
+  const { artifactCount, ghsaIds } = parsed as StructuredDiscoveryResult
+  if (!Array.isArray(ghsaIds) || ghsaIds.some(id => typeof id !== 'string')) {
+    return {
+      ok: false,
+      message: 'Coana wrote an unexpected vulnerability discovery result',
+      cause: `Expected a JSON object with a ghsaIds string array, got:\n  ${raw.slice(0, 500)}`,
+    }
+  }
+
+  // Zero artifacts means the backend resolved nothing — suspicious when
+  // manifests were uploaded, so warn even though discovery itself succeeded.
+  if (artifactCount === 0 && !silence) {
+    logger.warn(
+      'The Socket backend resolved 0 artifacts, so vulnerability discovery may be incomplete.',
+    )
+  }
+
+  return { ok: true, data: ghsaIds }
+}
+
 /**
  * Discovers GHSA IDs by running coana without applying fixes.
  * Returns a list of GHSA IDs, optionally limited.
@@ -72,7 +133,7 @@ async function discoverGhsaIds(
   orgSlug: string,
   tarHash: string,
   options?: DiscoverGhsaIdsOptions | undefined,
-): Promise<string[]> {
+): Promise<CResult<string[]>> {
   const {
     cwd = process.cwd(),
     ecosystems,
@@ -84,12 +145,22 @@ async function discoverGhsaIds(
     ...options,
   } as DiscoverGhsaIdsOptions
 
+  // Coana writes a structured JSON result ({ ghsaIds, artifactCount,
+  // filteredArtifactCount }) via --output-file (available since coana 15.9.7,
+  // older than the pinned @coana-tech/cli version).
+  const outputFile = path.join(
+    os.tmpdir(),
+    `socket-fix-discovery-${Date.now()}.json`,
+  )
+
   const foundCResult = await spawnCoanaDlx(
     [
       'find-vulnerabilities',
       cwd,
       '--manifests-tar-hash',
       tarHash,
+      '--output-file',
+      outputFile,
       ...(ecosystems?.length ? ['--purl-types', ...ecosystems] : []),
       ...(packageManagers?.length
         ? ['--package-managers', ...packageManagers]
@@ -104,16 +175,16 @@ async function discoverGhsaIds(
     { stdio: 'pipe' },
   )
 
-  if (foundCResult.ok) {
-    try {
-      // Coana prints ghsaIds as json-formatted string on the final line of the output.
-      const ghsaIdsRaw = foundCResult.data.trim().split('\n').pop()
-      if (ghsaIdsRaw) {
-        return JSON.parse(ghsaIdsRaw)
-      }
-    } catch {}
+  if (!foundCResult.ok) {
+    await fs.rm(outputFile, { force: true }).catch(() => {})
+    return foundCResult
   }
-  return []
+
+  try {
+    return await readStructuredDiscoveryResult(outputFile, silence)
+  } finally {
+    await fs.rm(outputFile, { force: true }).catch(() => {})
+  }
 }
 
 export async function coanaFix(
@@ -270,16 +341,26 @@ export async function coanaFix(
     }
 
     // In local mode, process all discovered/provided IDs (no limit).
-    const ids: string[] = shouldDiscoverGhsaIds
-      ? await discoverGhsaIds(orgSlug, tarHash, {
-          coanaVersion,
-          cwd,
-          ecosystems,
-          packageManagers,
-          silence,
-          spinner,
-        })
-      : ghsas
+    let ids: string[]
+    if (shouldDiscoverGhsaIds) {
+      const discoverCResult = await discoverGhsaIds(orgSlug, tarHash, {
+        coanaVersion,
+        cwd,
+        ecosystems,
+        packageManagers,
+        silence,
+        spinner,
+      })
+      if (!discoverCResult.ok) {
+        if (!silence) {
+          spinner?.stop()
+        }
+        return discoverCResult
+      }
+      ids = discoverCResult.data
+    } else {
+      ids = ghsas
+    }
 
     if (ids.length === 0) {
       if (!silence) {
@@ -406,18 +487,25 @@ export async function coanaFix(
   let ids: string[] | undefined
 
   if (shouldSpawnCoana) {
-    ids = (
-      shouldDiscoverGhsaIds
-        ? await discoverGhsaIds(orgSlug, tarHash, {
-            coanaVersion,
-            cwd,
-            ecosystems,
-            packageManagers,
-            silence,
-            spinner,
-          })
-        : ghsas
-    ).slice(0, adjustedPrLimit)
+    if (shouldDiscoverGhsaIds) {
+      const discoverCResult = await discoverGhsaIds(orgSlug, tarHash, {
+        coanaVersion,
+        cwd,
+        ecosystems,
+        packageManagers,
+        silence,
+        spinner,
+      })
+      if (!discoverCResult.ok) {
+        if (!silence) {
+          spinner?.stop()
+        }
+        return discoverCResult
+      }
+      ids = discoverCResult.data.slice(0, adjustedPrLimit)
+    } else {
+      ids = ghsas.slice(0, adjustedPrLimit)
+    }
   }
 
   if (!ids?.length) {
