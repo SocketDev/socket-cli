@@ -112,14 +112,7 @@ export interface NpmWorkspaceLayout {
 
 const GENERATOR_REL_PATH = path.join('scripts', 'make-npm-dirs.mts')
 
-/**
- * One package.json read, tolerant by design: an absent or unparseable manifest
- * yields `undefined` so a caller can distinguish "no manifest here" from a
- * manifest that says something. Exported so the release-reconcile gap job reads
- * a root manifest through the SAME reader the layout resolver uses instead of
- * hand-rolling a second JSON read of the same file.
- */
-export function readManifest(
+function readManifest(
   manifestPath: string,
 ): WorkspaceManifestShape | undefined {
   let raw: string

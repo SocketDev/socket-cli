@@ -659,10 +659,7 @@ async function applyBypassChange(config: {
   const { actors, ghFn, snapshot, target } = config
   const base = `repos/${target.owner}/${target.name}/rulesets/${snapshot.id}`
   const written = await ghFn(
-    // PUT, not PATCH: GitHub's update-ruleset endpoint answers 404 to PATCH,
-    // which reads as a permissions failure while reads succeed. The body is a
-    // full read-modify-write of the snapshot, so replace semantics are correct.
-    ['api', '-X', 'PUT', base, '--input', '{body}'],
+    ['api', '-X', 'PATCH', base, '--input', '{body}'],
     JSON.stringify(mainBypassPatchBody(snapshot, actors)),
   )
   if (!written.ok) {

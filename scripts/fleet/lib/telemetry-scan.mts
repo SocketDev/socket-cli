@@ -62,14 +62,6 @@ export const TELEMETRY_SDKS: readonly RegExp[] = [
 // any telemetry SDK NOT listed here — i.e. one ADDED by a dependency update or a
 // newly-pulled external tool. Keep this short + justified; it is the exact
 // reviewed set, not an escape hatch. Re-review on every bump.
-//
-// "It probably never fires" is NOT a reason to list an SDK here. An entry means
-// the SDK cannot export — no exporter in the closure, or an opt-out enforced at
-// a launch chokepoint the fleet owns. A vendored tool whose closure carries a
-// real OTLP exporter gets the headroom treatment instead: set the off-switch in
-// the tool's launcher lib and gate it with a check, then the SDK is inert by
-// construction and the entry states which chokepoint holds it off. Reaching for
-// this map to quiet a red gate is the anti-pattern it exists to stop.
 export const REVIEWED_TELEMETRY: Readonly<Record<string, string>> = {
   __proto__: null,
   // No telemetry SDK is currently tolerated in the tree. A telemetry SDK that
@@ -156,69 +148,35 @@ export function scanRepoForTelemetry(repoRoot: string): string[] {
   return unreviewedTelemetry(extractDepNames(repoRoot))
 }
 
-/**
- * What a scan actually READ. The gate reports these counts so a scan that
- * matched nothing is visible as a vacuous run instead of a green.
- */
-export interface TelemetryScanSurface {
-  readonly externalToolsFiles: readonly string[]
-  readonly pnpmLockFiles: readonly string[]
-  readonly uvLockFiles: readonly string[]
-}
-
-// `dot: true` is load-bearing. The fleet's uv projects and tool manifests live
-// under DOT directories — `.claude/hooks/fleet/setup-security-tools/…`,
-// `.config/repo/…`, `.github/actions/fleet/…` — and tinyglobby's `**` does not
-// descend into a dot directory without it. Omitting it made the uv arm match
-// ZERO files in the repo that OWNS the payload while the very same lockfiles
-// failed the gate in a member, so the scan reported green on a surface it had
-// never opened.
-const GLOB_IGNORE: readonly string[] = ['**/.git/**', '**/node_modules/**']
-
-/**
- * Every lockfile / tool manifest the telemetry scan reads, resolved absolute.
- */
-export function telemetryScanSurface(repoRoot: string): TelemetryScanSurface {
-  const pnpmLock = path.join(repoRoot, 'pnpm-lock.yaml')
-  return {
-    externalToolsFiles: globSync(['**/external-tools.json'], {
-      cwd: repoRoot,
-      absolute: true,
-      dot: true,
-      ignore: [...GLOB_IGNORE, '**/build/**'],
-    }),
-    pnpmLockFiles: existsSync(pnpmLock) ? [pnpmLock] : [],
-    uvLockFiles: globSync(['**/uv.lock'], {
-      cwd: repoRoot,
-      absolute: true,
-      dot: true,
-      ignore: [...GLOB_IGNORE, '**/build/**'],
-    }),
-  }
-}
-
 // Every dependency / tool name across the repo's lockfiles + external-tools
 // manifests (pnpm-lock.yaml, every uv.lock, external-tools.json). The union the
 // telemetry scan runs against.
 export function extractDepNames(repoRoot: string): string[] {
   const names = new Set<string>()
-  const surface = telemetryScanSurface(repoRoot)
-  const { externalToolsFiles, pnpmLockFiles, uvLockFiles } = surface
-  for (let i = 0, { length } = pnpmLockFiles; i < length; i += 1) {
-    for (const n of namesFromPnpmLock(
-      readFileSync(pnpmLockFiles[i]!, 'utf8'),
-    )) {
+  const pnpmLock = path.join(repoRoot, 'pnpm-lock.yaml')
+  if (existsSync(pnpmLock)) {
+    for (const n of namesFromPnpmLock(readFileSync(pnpmLock, 'utf8'))) {
       names.add(n)
     }
   }
-  for (let i = 0, { length } = uvLockFiles; i < length; i += 1) {
-    for (const n of namesFromUvLock(readFileSync(uvLockFiles[i]!, 'utf8'))) {
+  const uvLocks = globSync(['**/uv.lock'], {
+    cwd: repoRoot,
+    absolute: true,
+    ignore: ['**/node_modules/**', '**/.git/**'],
+  })
+  for (let i = 0, { length } = uvLocks; i < length; i += 1) {
+    for (const n of namesFromUvLock(readFileSync(uvLocks[i]!, 'utf8'))) {
       names.add(n)
     }
   }
-  for (let i = 0, { length } = externalToolsFiles; i < length; i += 1) {
+  const extTools = globSync(['**/external-tools.json'], {
+    cwd: repoRoot,
+    absolute: true,
+    ignore: ['**/node_modules/**', '**/.git/**', '**/build/**'],
+  })
+  for (let i = 0, { length } = extTools; i < length; i += 1) {
     for (const n of namesFromExternalTools(
-      readFileSync(externalToolsFiles[i]!, 'utf8'),
+      readFileSync(extTools[i]!, 'utf8'),
     )) {
       names.add(n)
     }

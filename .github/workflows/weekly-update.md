@@ -8,6 +8,10 @@
 # umbrella; the daily cron runs /updating-daily (promote soaked exclusions only).
 # The stronger get-green workflow is dispatched on a test failure.
 #
+# `name` sets the Actions-UI label so it matches the filename; without it gh-aw
+# falls back to the body H1, which is written for the agent, not the sidebar.
+name: '🔁 Weekly Update'
+#
 # Wins over the legacy claude --print reusable: per-run + 24h AI-credit budget,
 # firewall egress allowlist, safe-output PR (GitHub web-flow-signed + atomic via
 # git-bundle — no BOT_GPG plumbing).

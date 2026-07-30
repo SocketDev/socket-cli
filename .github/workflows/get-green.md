@@ -6,6 +6,10 @@
 #
 # The two-model escalation (haiku update → sonnet fix) is expressed as two
 # workflows because gh-aw is one engine/model per workflow.
+#
+# `name` sets the Actions-UI label so it matches the filename; without it gh-aw
+# falls back to the body H1, which is written for the agent, not the sidebar.
+name: '🟢 Get Green'
 on:
   # Dispatched by weekly-update's `dispatch-workflow` safe output on test
   # failure (gh-aw's dispatch-workflow fires workflow_dispatch events).

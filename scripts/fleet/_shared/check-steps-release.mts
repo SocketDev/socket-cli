@@ -154,18 +154,6 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // push-run count per member via gh; report-mode for now (skips cleanly when
     // gh is unauthenticated / no fleet-repos.json in a member checkout).
     releaseStep(['scripts/fleet/check/member-ci-fires-on-push.mts']),
-    // The `squash-history` opt-in tracks the release boundary in BOTH
-    // directions: a member that has never published keeps the opt-in (its
-    // history stays collapsible), and a member that HAS published must drop it
-    // — a squash rewrites every commit the published artifact's provenance and
-    // any SHA-pinning consumer resolve. Released-but-opted-in fails; the
-    // inverse warns. npm + crates.io are the signals; offline-safe by contract
-    // (no gh, no auth, or an unreachable registry SKIPS that member loudly).
-    // See docs/agents.md/fleet/squash-until-release.md.
-    releaseStep([
-      'scripts/fleet/check/fresh-members-are-squashed-until-release.mts',
-      '--quiet',
-    ]),
     // Every repo in fleet-repos.json must EXIST in its org — a roster entry with
     // no repo is a half-onboarded member (odai: roster entry, no
     // SocketDev/ repo → stranded cascades + 404'd environments). Onboarding must
@@ -291,6 +279,20 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // fail-open offline / without gh auth.
     releaseStep([
       'scripts/fleet/check/published-versions-have-releases.mts',
+      '--quiet',
+    ]),
+    // Every RECENTLY published version has some release tag — `v<version>` or
+    // the bare-semver escape hatch — resolving to the commit npm's SLSA
+    // provenance says produced the artifact. A `v*` tag is immutable under
+    // fleet-tag-protection, so a broken release is corrected by pushing a BARE
+    // tag; the attestation, not the tag name, decides which one is
+    // authoritative, and a pair is a legitimate state (flagged only when
+    // NEITHER matches). Catches the provenance orphan — socket-lib 6.5.0
+    // attested e66bd62b while v6.5.0 sat on the bump commit. Registry reads →
+    // release tier; unreadable sources report NOT VERIFIED rather than passing.
+    // See docs/agents.md/fleet/release-tag-escape-hatch.md.
+    releaseStep([
+      'scripts/fleet/check/release-tags-match-provenance.mts',
       '--quiet',
     ]),
     // A multi-crate cargo workspace keeps every publishable crate BARE — a

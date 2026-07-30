@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/*
+/**
  * @file Npm Trusted Publisher settings driver — reads and mass-applies the
  *   fleet's canonical GitHub Actions trusted-publisher config across packages
  *   by driving `https://www.npmjs.com/package/<pkg>/access` in a signed-in

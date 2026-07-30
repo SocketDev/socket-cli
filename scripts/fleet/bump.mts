@@ -47,7 +47,6 @@ import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
-import { decidePlaceholderRelease } from './bump/placeholder-release.mts'
 import { findBackupBranchesWithUnreleasedCommits } from './lib/backup-branch.mts'
 import {
   bumpLevelFor,
@@ -672,11 +671,7 @@ export const BUMP_USAGE = `Usage: node scripts/fleet/bump.mts [options]
   --help                       print this and exit
 
   The VERSION is the user's decision. Prefer naming the target as a
-  \`X.Y.Z-prerelease\` hint in package.json — the release tooling consumes it.
-
-  A package that has never shipped and still carries its placeholder version
-  (\`0.0.0\`, or a \`X.Y.Z-prerelease\`) defaults to 0.1.0 — not a
-  commit-derived bump, not 1.0.0. \`--release-as\` overrides it.`
+  \`X.Y.Z-prerelease\` hint in package.json — the release tooling consumes it.`
 
 /**
  * The `--flag` tokens in `argv` that `known` does not contain, normalized off
@@ -833,33 +828,10 @@ async function main(): Promise<void> {
     ),
     describeAnchor(anchor),
   )
-  const changelogPath = path.join(rootPath, 'CHANGELOG.md')
-  let existingChangelog = readFileSync(changelogPath, 'utf8')
-
-  // PLACEHOLDER STATE, decided before the level heuristic runs: a package that
-  // has never shipped and still carries its scaffolded version — `0.0.0`, or a
-  // `X.Y.Z-prerelease` — releases 0.1.0 first. The heuristic cannot answer
-  // here: with no released base the whole history is in range, so one `feat!`
-  // asks for a major, an all-`fix` stream asks for 0.0.1, and an all-`chore`
-  // stream asks for nothing. The reasoning is announced before any write, so
-  // --dry-run shows it too, and an explicit --release-as always outranks it.
-  const placeholderRelease = decidePlaceholderRelease({
-    changelogVersions: changelogVersionSections(existingChangelog),
-    hasPriorRelease: anchor.kind !== 'first-release',
-    manifestVersion: pkg.version,
-    releaseAs: typeof releaseAs === 'string' ? releaseAs : undefined,
-  })
-  for (const line of placeholderRelease.announcement) {
-    logger.log(line)
-  }
-  if (placeholderRelease.warning) {
-    logger.warn(placeholderRelease.warning)
-  }
-
-  // Version resolution, most-explicit first: the placeholder decision above,
-  // then the --release-as flag, then a committed version HINT (package.json
-  // version carrying a prerelease suffix, e.g. `6.0.10-prerelease` → release
-  // 6.0.10), then the commit-type heuristic. MAJOR is never derived and a hint cannot smuggle one in: a
+  // Version resolution, most-explicit first: the --release-as flag, then a
+  // committed version HINT (package.json version carrying a prerelease
+  // suffix, e.g. `6.0.10-prerelease` → release 6.0.10), then the commit-type
+  // heuristic. MAJOR is never derived and a hint cannot smuggle one in: a
   // major jump always needs the explicit flag (agent runs are hook-gated on
   // the user's typed authorization; CI on the dispatch input).
   // Release version policy from the canonical config (the wheelhouse's own
@@ -874,17 +846,7 @@ async function main(): Promise<void> {
   const hinted = versionHintFrom(pkg.version)
   let level: BumpLevel | undefined
   let hintedVersion: string | undefined
-  // How the log line describes where the version came from. The placeholder
-  // path derives no SemVer level, so it names its own reason instead.
-  let levelLabel: string | undefined
-  if (placeholderRelease.version) {
-    // The base guards below — the `gt(x, base)` advance check and the
-    // major-jump refusal — all measure against a RELEASED base. A placeholder
-    // has released nothing, so `base` is just the manifest core and those
-    // guards have nothing to check. Skipped rather than satisfied.
-    hintedVersion = placeholderRelease.version
-    levelLabel = 'first release from the placeholder version'
-  } else if (typeof releaseAs === 'string') {
+  if (typeof releaseAs === 'string') {
     if (
       releaseAs === 'major' ||
       releaseAs === 'minor' ||
@@ -989,12 +951,7 @@ async function main(): Promise<void> {
       level = 'patch'
     }
   }
-  let nextVersion: string
-  if (hintedVersion) {
-    nextVersion = hintedVersion
-  } else if (level) {
-    nextVersion = computeNextVersion(base, level)
-  } else {
+  if (!level) {
     logger.fail(
       `No user-visible commits since ${describeAnchor(anchor)} — ` +
         `nothing to release (feat / fix / perf / breaking only). Land a ` +
@@ -1003,11 +960,15 @@ async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
+
+  const nextVersion = hintedVersion ?? computeNextVersion(base, level)
   const repositoryUrl =
     typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url
   // ISO date (YYYY-MM-DD). bump.mts is a normal node script (not a workflow
   // sandbox), so `new Date()` is available.
   const date = new Date().toISOString().slice(0, 10)
+  const changelogPath = path.join(rootPath, 'CHANGELOG.md')
+  let existingChangelog = readFileSync(changelogPath, 'utf8')
 
   // Reclaim stale draft sections before deciding anything. A section for a
   // version NEWER than the last release never shipped: it is a draft this bump
@@ -1179,7 +1140,7 @@ async function main(): Promise<void> {
 
   logger.log(
     `${pkg.name ?? 'package'}: ${pkg.version} → ${nextVersion} ` +
-      `(${levelLabel ?? `${level}${releaseAs ? ' — forced via --release-as' : ''}`}; ` +
+      `(${level}${releaseAs ? ' — forced via --release-as' : ''}; ` +
       `${commits.length} commit(s) since ${describeAnchor(anchor)}` +
       `${promotedUnreleased ? ' + promoted [Unreleased]' : ''})`,
   )

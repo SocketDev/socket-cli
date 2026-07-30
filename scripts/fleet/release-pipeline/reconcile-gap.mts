@@ -312,10 +312,8 @@ function fail(line: string): void {
 
 /**
  * A run that found no gap to heal. `skipped` is a GENUINE no-op — the repo has
- * nothing on an npm registry to reconcile against, because it declares it does
- * not publish there. `degraded` means the run learned nothing and a gap could
- * exist: a registry or git read failed, or the repo's only registry channel is
- * one the healer has no arm for.
+ * nothing on a registry to reconcile against. `degraded` means the run learned
+ * nothing: a registry or git read failed, so "no gap" was never established.
  *
  * A degraded run stays exit-0 on purpose. This is a 30-minute cron on every
  * fleet repo; going red on an npm blip would page the whole fleet and get the
@@ -341,7 +339,7 @@ function emitNoGap(status: 'clean' | 'degraded' | 'skipped', reason: string) {
 export async function runGapMode(repoRoot: string): Promise<void> {
   const subject = resolveGapSubject(repoRoot)
   if (subject.kind === 'none') {
-    emitNoGap(subject.status, subject.reason)
+    emitNoGap('skipped', subject.reason)
     return
   }
   const packument = await fetchPublishedVersions(subject.name)

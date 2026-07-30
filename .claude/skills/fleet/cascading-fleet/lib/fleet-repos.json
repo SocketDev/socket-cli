@@ -76,7 +76,6 @@
     {
       "name": "facts",
       "description": "Socket facts generation — build-tool emitters and the .socket.facts.json contract",
-      "optIns": ["squash-history"],
       "publishes": "js"
     },
     {
@@ -88,7 +87,6 @@
     {
       "name": "scan-patterns",
       "description": "Canonical detector pattern tables for Socket's baseline security scanners.",
-      "optIns": ["squash-history"],
       "publishes": "js"
     },
     {

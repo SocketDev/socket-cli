@@ -36,7 +36,6 @@ import {
   downloadStagedTarballInPage,
   openStagedBrowserSession,
 } from './staged-browser-read.mts'
-import { threatScanRequested } from './threat-scan.mts'
 import type { StagedBrowserSession } from './staged-browser-read.mts'
 import {
   composeTarballProviders,
@@ -117,7 +116,6 @@ export async function runApprove(config: {
   runInheritTty?: typeof runInheritTty | undefined
   scanAuth?: typeof preflightSocketScanAuth | undefined
   scanEntry?: typeof scanStagedEntry | undefined
-  threatRequested?: typeof threatScanRequested | undefined
   verifyEntry?: typeof verifyStagedEntry | undefined
 }): Promise<void> {
   const { dryRun, noScan, otpFromFlag, skipRelease, yes } = {
@@ -135,7 +133,6 @@ export async function runApprove(config: {
     config.fetchPriorProvenance ?? fetchPriorProvenanceMap
   const scanEntry = config.scanEntry ?? scanStagedEntry
   const browserRequested = config.browserRequested ?? browserStagedRequested
-  const threatRequested = config.threatRequested ?? threatScanRequested
   const openStagedSession = config.openStagedSession ?? openStagedBrowserSession
   const downloadStagedInPage =
     config.downloadStagedInPage ?? downloadStagedTarballInPage
@@ -327,11 +324,6 @@ export async function runApprove(config: {
     // staged tarball's bytes THROUGH it — the staged view + tarball are
     // session-only, invisible to the registry API. The gate then scans exactly
     // what npm has staged. Opened once for the whole batch; closed in finally.
-    // Opt-in local code-threat scan: with --threat-scan (or
-    // SOCKET_THREAT_SCAN=1) each entry additionally runs the keyless on-device
-    // triage over its extracted source, failing closed on a threat verdict or
-    // an unavailable model. Resolved once for the batch.
-    const threatScan = threatRequested()
     let browserSession: StagedBrowserSession | undefined
     if (browserRequested()) {
       try {
@@ -385,7 +377,6 @@ export async function runApprove(config: {
         const scanOk = await scanEntry(scanSubject, {
           context: scanContext,
           packTarball,
-          threatScan,
         })
         if (scanOk) {
           scanned.push(stageId)

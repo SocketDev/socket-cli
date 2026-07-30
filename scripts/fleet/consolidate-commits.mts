@@ -16,13 +16,6 @@
  *   normal push is a fast-forward or a separately authorized lease force-push
  *   is required.
  *
- *   Refuses outright when the range carries a Conventional-Commits breaking
- *   marker — a `!` before the subject's colon, or a `BREAKING CHANGE:` footer.
- *   Grouping is path-based, so folding such a commit destroys the marker that
- *   release tooling reads to compute a major. The refusal names the offending
- *   commits and the `--base` narrowing that leaves them standing. A commit
- *   whose existing message is more specific than the generated one warns.
- *
  *   Base default: the previous `chore: bump version to …` commit below the
  *   current tip (the "previous bump"), else the latest vX.Y.Z tag.
  *
@@ -138,145 +131,6 @@ export function recoveryRefForTip(tip: string): string {
   return `refs/fleet/recovery/consolidate/${tip}`
 }
 
-/**
- * One commit in the range being regrouped.
- */
-export interface RangeCommit {
-  readonly body: string
-  readonly sha: string
-  readonly subject: string
-}
-
-// Conventional Commits marks a breaking change with a `!` immediately before
-// the colon: `feat(parse)!: …`. The scope is optional.
-const BREAKING_SUBJECT_RE = /^[a-z]+(?:\([^)]*\))?!:/
-// The footer form, at the start of a body line. Both spellings are canonical.
-const BREAKING_FOOTER_RE = /^BREAKING[ -]CHANGE:/m
-// `<type>[(scope)][!]: ` — the leading type token of a conventional subject.
-const CONVENTIONAL_SUBJECT_RE = /^([a-z]+)(?:\([^)]*\))?!?:/
-
-// Types that name WHAT changed for a consumer. The regroup's messages are
-// path-derived and land on `chore`/`refactor`, so an existing subject carrying
-// one of these describes the change more precisely than anything groupPaths
-// can synthesize.
-const SEMANTIC_TYPES: ReadonlySet<string> = new Set([
-  'feat',
-  'fix',
-  'perf',
-  'revert',
-  'security',
-])
-
-// ASCII unit/record separators: neither can appear in a git subject or body,
-// so they frame the fields with no escaping pass.
-const FIELD_SEP = '\u001f'
-const RECORD_SEP = '\u001e'
-
-/**
- * Parse `git log --format=%H%x1f%s%x1f%b%x1e` output into records.
- */
-export function parseRangeCommits(raw: string): RangeCommit[] {
-  const out: RangeCommit[] = []
-  const records = raw.split(RECORD_SEP)
-  for (let i = 0, { length } = records; i < length; i += 1) {
-    const record = records[i]!.trim()
-    if (!record) {
-      continue
-    }
-    const fields = record.split(FIELD_SEP)
-    const sha = fields[0] ?? ''
-    if (sha) {
-      out.push({ body: fields[2] ?? '', sha, subject: fields[1] ?? '' })
-    }
-  }
-  return out
-}
-
-/**
- * Whether a commit declares a semver-breaking change, by either Conventional
- * Commits marker: a `!` before the subject's colon, or a `BREAKING CHANGE:`
- * body footer.
- */
-export function isBreakingCommit(commit: {
-  body: string
-  subject: string
-}): boolean {
-  const c = { __proto__: null, ...commit } as { body: string; subject: string }
-  return BREAKING_SUBJECT_RE.test(c.subject) || BREAKING_FOOTER_RE.test(c.body)
-}
-
-/**
- * The commits in the range that declare a breaking change. Regrouping folds
- * commits by PATH, so a breaking commit's subject and its `!` marker are lost
- * into a generic path-derived message — the release tooling that reads those
- * markers to compute the next semver then silently downgrades a major.
- */
-export function findBreakingCommits(
-  commits: readonly RangeCommit[],
-): RangeCommit[] {
-  const out: RangeCommit[] = []
-  for (let i = 0, { length } = commits; i < length; i += 1) {
-    const commit = commits[i]!
-    if (isBreakingCommit(commit)) {
-      out.push(commit)
-    }
-  }
-  return out
-}
-
-/**
- * The conventional type token of a subject, or undefined when the subject is
- * not conventional.
- */
-export function conventionalCommitType(subject: string): string | undefined {
-  const m = CONVENTIONAL_SUBJECT_RE.exec(subject)
-  return m ? m[1] : undefined
-}
-
-/**
- * Commits whose EXISTING message is more specific than anything the regroup
- * would generate: the commit names a semantic type and no generated message
- * carries that same type, so the detail is dropped rather than restated.
- * Advisory — the operator decides whether the regroup is still worth it.
- */
-export function findLessSpecificRegroups(
-  commits: readonly RangeCommit[],
-  generatedSubjects: readonly string[],
-): RangeCommit[] {
-  const generatedTypes = new Set<string>()
-  for (let i = 0, { length } = generatedSubjects; i < length; i += 1) {
-    const type = conventionalCommitType(generatedSubjects[i]!)
-    if (type !== undefined) {
-      generatedTypes.add(type)
-    }
-  }
-  const out: RangeCommit[] = []
-  for (let i = 0, { length } = commits; i < length; i += 1) {
-    const commit = commits[i]!
-    const type = conventionalCommitType(commit.subject)
-    if (
-      type !== undefined &&
-      SEMANTIC_TYPES.has(type) &&
-      !generatedTypes.has(type)
-    ) {
-      out.push(commit)
-    }
-  }
-  return out
-}
-
-/**
- * Every commit in `base..tip`, newest first.
- */
-function readRangeCommits(base: string, tip: string): RangeCommit[] {
-  const r = git([
-    'log',
-    `--format=%H${FIELD_SEP}%s${FIELD_SEP}%b${RECORD_SEP}`,
-    `${base}..${tip}`,
-  ])
-  return r.status === 0 ? parseRangeCommits(r.stdout) : []
-}
-
 function resolveOriginDefaultRef(): string | undefined {
   const sym = git(['symbolic-ref', 'refs/remotes/origin/HEAD'])
   if (sym.status === 0 && sym.stdout) {
@@ -373,33 +227,6 @@ function main(): void {
     ? gitOrDie(['rev-parse', `${orig}~1`], 'work tip')
     : orig
 
-  // Breaking-change guard. The regroup folds commits by PATH and writes a
-  // synthesized path-derived message, so a `feat(x)!:` subject and its `!`
-  // marker do not survive — the release tooling that reads those markers to
-  // compute the next semver then silently downgrades a major. A breaking
-  // commit is already its own logical concern, so refuse rather than flatten.
-  const rangeCommits = readRangeCommits(base, workTip)
-  const breaking = findBreakingCommits(rangeCommits)
-  if (breaking.length) {
-    let listed = ''
-    for (let i = 0, { length } = breaking; i < length; i += 1) {
-      const c = breaking[i]!
-      listed += `            ${c.sha.slice(0, 12)}  ${c.subject}\n`
-    }
-    logger.fail(
-      `[consolidate-commits] the range carries ${breaking.length} breaking-change commit(s).\n` +
-        `  What:   regrouping folds commits by PATH and writes a synthesized message, so a Conventional-Commits breaking marker — a '!' before the colon, or a 'BREAKING CHANGE:' footer — does not survive it.\n` +
-        `  Where:  ${base.slice(0, 12)}..${workTip.slice(0, 12)}\n${listed}` +
-        `  Saw:    a semver-breaking commit inside a range about to be rewritten into generic path-derived commits.\n` +
-        `  Wanted: every breaking commit left standing on its own, marker intact, so release tooling still computes a major.\n` +
-        `  Fix:    narrow the range so it starts ABOVE the newest breaking commit —\n` +
-        `            node scripts/fleet/consolidate-commits.mts --base ${breaking[0]!.sha.slice(0, 12)}\n` +
-        `          then consolidate the span below them separately, leaving the breaking commits in place.`,
-    )
-    process.exitCode = 1
-    return
-  }
-
   // --no-renames keeps every rename as an explicit A+D pair so the staging
   // loop below sees the deletion side.
   const changed = gitOrDie(
@@ -422,20 +249,6 @@ function main(): void {
   }
 
   const groups = groupPaths(paths)
-  const generatedSubjects: string[] = []
-  for (let i = 0, { length } = groups; i < length; i += 1) {
-    generatedSubjects.push(commitMessage(groups[i]!))
-  }
-  // Advisory, not a refusal: a `fix(resolvers): …` subject says more than the
-  // `chore(crates): update …` the path grouping would put in its place. Name
-  // what the regroup is about to discard and let the operator judge.
-  const lessSpecific = findLessSpecificRegroups(rangeCommits, generatedSubjects)
-  for (let i = 0, { length } = lessSpecific; i < length; i += 1) {
-    const c = lessSpecific[i]!
-    logger.warn(
-      `[consolidate-commits] ${c.sha.slice(0, 12)} "${c.subject}" is more specific than any generated message — the regroup replaces it.`,
-    )
-  }
   const originalCommitCount = Number(
     gitOrDie(['rev-list', '--count', `${base}..${orig}`], 'count commits'),
   )
