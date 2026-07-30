@@ -52,6 +52,7 @@ export async function generateAutoManifest({
   detected,
   excludePaths,
   outputKind,
+  tmpDir,
   verbose,
 }: {
   // Reachability path: run build tools with files to emit the sidecar.
@@ -62,6 +63,10 @@ export async function generateAutoManifest({
   // excluded source roots from the resolved-paths sidecar.
   excludePaths?: string[] | undefined
   outputKind: OutputKind
+  // sbt only, required when computeArtifactsSidecar is true; see
+  // ManifestScriptOptions.tmpDir. Caller creates it and deletes it once
+  // resolvedPathsSidecar's paths are no longer needed.
+  tmpDir?: string | undefined
   verbose: boolean
 }): Promise<GenerateAutoManifestResult> {
   const sockJson = readOrDefaultSocketJson(cwd)
@@ -101,6 +106,7 @@ export async function generateAutoManifest({
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
         sidecarAcc,
+        tmpDir,
         withFiles: computeArtifactsSidecar,
       })
       abortManifestRunIfFailed('sbt', beforeExitCode)

@@ -14,6 +14,7 @@ export async function convertSbtToFacts({
   includeConfigs,
   sbtOpts,
   sidecarAcc,
+  tmpDir,
   verbose,
   withFiles,
 }: {
@@ -25,6 +26,8 @@ export async function convertSbtToFacts({
   includeConfigs: string
   sbtOpts: string[]
   sidecarAcc?: SidecarAccumulator | undefined
+  // Caller-owned; see ManifestScriptOptions.tmpDir.
+  tmpDir?: string | undefined
   verbose: boolean
   withFiles?: boolean | undefined
 }): Promise<void> {
@@ -38,6 +41,7 @@ export async function convertSbtToFacts({
     ignoreUnresolved,
     includeConfigs,
     sidecarAcc,
+    tmpDir,
     verbose,
     withFiles,
   })
