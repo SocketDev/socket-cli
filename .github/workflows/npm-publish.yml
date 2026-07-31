@@ -1,5 +1,24 @@
 name: Publish to npm registry
 
+# Release process for the v1.x line — three packages from one source
+# (socket, @socketsecurity/cli, @socketsecurity/cli-with-sentry):
+#
+#   1. Between releases the tree carries the next-version hint
+#      (`X.Y.Z-prerelease` in package.json) and user-facing notes accrue
+#      under the CHANGELOG's `## [Unreleased]` section.
+#   2. The release bump strips the hint to X.Y.Z and promotes [Unreleased]
+#      to the `## [X.Y.Z]` heading — never a hand-coded version.
+#   3. Dispatch this workflow with dry-run=true (the default): builds all
+#      three variants, uploads nothing, marks nothing.
+#   4. Dispatch with dry-run=false + a NON-latest dist-tag (the guard below
+#      refuses `latest` off the default branch): cuts the v<X.Y.Z> tag + the
+#      immutable GitHub release — both belong to the `socket` package,
+#      exactly one of each per run — then STAGES all three packages.
+#   5. A human promotes each staged upload (`pnpm stage approve` with web
+#      2FA, or the npm web UI); nothing is public until then.
+#   6. A stage rejected after the markers BURNS the version: the next
+#      release is a patch bump, and the burned number is never re-published.
+
 on:
   workflow_dispatch:
     inputs:
@@ -280,7 +299,11 @@ jobs:
       #
       # ORDER RULE (markers first): the v<version> tag + immutable GitHub
       # release are cut BEFORE the staged uploads so the uploads' provenance
-      # binds markers that exist. The trade is deliberate and is the burn
+      # binds markers that exist. Exactly ONE tag + ONE release per run, and
+      # they belong to the `socket` package — the tag step reads the version
+      # from the socket-built manifest right after the socket build, and the
+      # two variants ride the same version without a tag or release of their
+      # own. The trade is deliberate and is the burn
       # rule: a stage rejected after the markers BURNS the version — the next
       # release is a patch bump, never a re-publish of the burned number (the
       # tag step's different-SHA hard-fail enforces exactly that; a same-SHA
