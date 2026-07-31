@@ -50,20 +50,11 @@ jobs:
 
     steps:
       # npm trusted publishing authorizes on repository + workflow filename +
-      # GitHub environment. It does NOT pin a branch, and the `npm-publish`
-      # environment has no deployment-branch policy (verified 2026-07-28:
-      # `deployment_branch_policy: null`, zero protection rules). So a
-      # `workflow_dispatch` from ANY ref that can reach this workflow mints a
-      # valid publish token, and `dist-tag` defaults to `latest` — a dispatch
-      # from an old release branch or an attacker-pushed branch could
-      # overwrite `socket@latest` with whatever that ref builds.
-      #
-      # This is the in-repo half of the mitigation: `latest` may only be
-      # published from the default branch. Any other ref must pick an explicit
-      # non-latest tag (next, beta, canary, backport, ...), which is how the
-      # v1.x line should publish anyway. Setting a deployment-branch policy on
-      # the environment is the other half and is worth doing too — this guard
-      # does not depend on it.
+      # GitHub environment. It does NOT pin a branch. The `npm-publish`
+      # environment's deployment-branch policy (main + v1.x) is the outer
+      # gate; this guard is the in-repo half: `latest` may only be published
+      # from the default branch, so a v1.x dispatch must pick an explicit
+      # non-latest dist-tag (next, beta, canary, backport, ...).
       - name: Guard the latest dist-tag to the default branch
         if: ${{ inputs.dist-tag == 'latest' }}
         env:
@@ -80,6 +71,24 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
         with:
           persist-credentials: false
+
+      # A version carrying a prerelease suffix is the committed NEXT-version
+      # hint (X.Y.Z-prerelease — the release tooling consumes it), not a
+      # releasable artifact: the bump that strips the hint and promotes the
+      # CHANGELOG's [Unreleased] section must land first. Fail closed so a
+      # dispatch on a hint-carrying tree can never reach the registry.
+      - name: Refuse a real publish on a prerelease-hint version
+        if: ${{ inputs.dry-run == false }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in
+            *-*)
+              echo "package.json version is '$VERSION' — a prerelease-hint version, not a releasable one." >&2
+              echo "Wanted: a bare X.Y.Z (run the release bump: strip the hint, promote [Unreleased])." >&2
+              exit 1
+              ;;
+          esac
+          echo "Version $VERSION is release-shaped."
 
       - name: Install pnpm
         shell: bash
@@ -271,7 +280,8 @@ jobs:
       # Each package (`socket`, `@socketsecurity/cli`,
       # `@socketsecurity/cli-with-sentry`) must have a matching trusted
       # publisher configured on npm for SocketDev/socket-cli + this workflow
-      # file + the v1.x branch, or the publish 404s on the token exchange.
+      # file (npm-publish.yml) + the npm-publish environment, or the publish
+      # 404s on the token exchange.
       #
       # The publish steps are skipped entirely on a dry run (inputs.dry-run
       # defaults to true), so an accidental dispatch builds but never reaches
@@ -314,12 +324,11 @@ jobs:
       # Gated on the first publish step (publish_socket — the `socket` npm
       # package) actually succeeding.
       #
-      # None of the three publishes carries `continue-on-error: true`. They
-      # used to, which made a 1-of-3 release look green: if `socket` landed
-      # and either of the other two failed, this step still ran and cut a
-      # v<version> tag plus an IMMUTABLE GitHub Release describing artifacts
-      # that were never published. Recovery from that is a version burn, so a
-      # failed publish now fails the job and no tag or release is created.
+      # All three publishes hard-fail the job: a partial release must never
+      # cut the v<version> tag or the IMMUTABLE GitHub Release below, because
+      # an immutable release describing artifacts the registry never received
+      # costs a version burn to recover. Every package publishes, or the run
+      # fails and no release marker exists.
       #
       # Uses gh api (not `git push`) so the token only lives in this step's
       # env, never written to `.git/config` by an earlier `actions/checkout`
@@ -380,8 +389,14 @@ jobs:
       # only exist AFTER the npm publish is confirmed live (this step is gated
       # on the same publish_socket success as the tag step, and runs after
       # it). Uses gh release (gh api under the hood) so GH_TOKEN only lives in
-      # this step's env, never written to `.git/config`. Skips cleanly if a
-      # release already exists for the tag so re-runs are safe.
+      # this step's env, never written to `.git/config`. Create-as-draft then
+      # publish: immutable releases attest the locked asset set at publish
+      # time, so the release goes live in a separate `--draft=false` flip
+      # (3-step pattern; no assets ride this release, notes only). The flip
+      # carries `--latest=false`: v1.x is the maintenance line, so its
+      # releases never take the repo's Latest badge from the 2.x line on
+      # main. Re-runs skip a published release and flip a stranded draft
+      # live.
       - name: Cut GitHub release (idempotent)
         if: steps.publish_socket.outcome == 'success'
         env:
@@ -389,17 +404,22 @@ jobs:
           REPO: ${{ github.repository }}
           TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+          IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft --jq '.isDraft' 2>/dev/null || echo "absent")
+          if [ "$IS_DRAFT" = "false" ]; then
             echo "Release $TAG already exists — no-op."
             exit 0
           fi
-          # --verify-tag: refuse to create if the tag ref is somehow missing
-          # (the tag step above creates it; this guards against a race).
-          # --generate-notes: auto-populate notes from commits since the last
-          # release.
-          gh release create "$TAG" \
-            --repo "$REPO" \
-            --title "$TAG" \
-            --verify-tag \
-            --generate-notes
-          echo "Created GitHub release $TAG"
+          if [ "$IS_DRAFT" = "absent" ]; then
+            # --verify-tag: refuse to create if the tag ref is somehow missing
+            # (the tag step above creates it; this guards against a race).
+            # --generate-notes: auto-populate notes from commits since the
+            # last release.
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "$TAG" \
+              --verify-tag \
+              --generate-notes \
+              --draft
+          fi
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest=false
+          echo "Published GitHub release $TAG"
