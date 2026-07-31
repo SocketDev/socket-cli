@@ -73,9 +73,11 @@ jobs:
       # environment's deployment-branch policy (main + v1.x) is the outer
       # gate; this guard is the in-repo half: `latest` may only be published
       # from the default branch, so a v1.x dispatch must pick an explicit
-      # non-latest dist-tag (next, beta, canary, backport, ...).
+      # non-latest dist-tag (next, beta, canary, backport, ...). Dry runs
+      # pass regardless of dist-tag — they upload nothing, and a
+      # default-input dry run (dist-tag defaults to latest) must stay green.
       - name: Guard the latest dist-tag to the default branch
-        if: ${{ inputs.dist-tag == 'latest' }}
+        if: ${{ inputs.dry-run == false && inputs.dist-tag == 'latest' }}
         env:
           REF: ${{ github.ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
