@@ -253,6 +253,7 @@ async function scanOneRepo(
     pendingHead: true,
     pullRequest: 0,
     reach: {
+      dynamicSbomInference: false,
       excludePaths: [],
       reachAnalysisMemoryLimit: '',
       reachAnalysisTimeout: '',

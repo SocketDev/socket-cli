@@ -14,6 +14,7 @@ function makeReachOptions(
   overrides: Partial<ReachabilityOptions> = {},
 ): ReachabilityOptions {
   return {
+    dynamicSbomInference: false,
     excludePaths: [],
     reachAnalysisMemoryLimit: '8192',
     reachAnalysisTimeout: '',

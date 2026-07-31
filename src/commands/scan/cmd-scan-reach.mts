@@ -267,6 +267,9 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
+      // Not exposed here: it relies on --auto-manifest generating per-workspace
+      // Socket facts first, which `socket scan reach` never runs.
+      dynamicSbomInference: false,
       excludePaths,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,

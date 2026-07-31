@@ -22,6 +22,7 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { StdioOptions } from 'node:child_process'
 
 export type ReachabilityOptions = {
+  dynamicSbomInference: boolean
   excludePaths: string[]
   reachAnalysisMemoryLimit: string
   reachAnalysisTimeout: string
@@ -250,6 +251,9 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
+      : []),
+    ...(reachabilityOptions.dynamicSbomInference
+      ? ['--maven-use-only-root-socket-facts']
       : []),
     ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),

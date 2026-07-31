@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
-- Updated the Coana CLI to v `15.9.7`.
+- Updated the Coana CLI to v `15.9.9`.
 - `socket scan view` now reads completed scans from Socket's cached immutable results, retrying briefly while a fresh scan finalizes; `--stream` keeps streaming live results.
 - `socket fix` vulnerability discovery now reads Coana's structured `--output-file` JSON result instead of parsing stdout, and warns when the Socket backend resolved 0 artifacts so an incomplete server-side resolve is surfaced instead of silently reporting "Finished!".
 

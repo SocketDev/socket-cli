@@ -241,6 +241,7 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
+    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -275,6 +276,7 @@ async function run(
     committers: string
     cwd: string
     defaultBranch: boolean
+    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -352,6 +354,11 @@ async function run(
     } else {
       autoManifest = false
     }
+  }
+  // --dynamic-sbom-inference requires auto-manifest to generate the
+  // per-workspace facts it feeds to Coana.
+  if (dynamicSbomInference) {
+    autoManifest = true
   }
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
@@ -505,6 +512,7 @@ async function run(
     reachVersion !== reachabilityFlags['reachVersion']?.default
 
   const isUsingAnyReachabilityFlags =
+    dynamicSbomInference ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
     isUsingNonDefaultAnalytics ||
@@ -625,6 +633,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     reach: {
+      dynamicSbomInference: Boolean(dynamicSbomInference),
       excludePaths,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,

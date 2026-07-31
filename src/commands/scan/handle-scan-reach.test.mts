@@ -104,6 +104,7 @@ describe('handleScanReach', () => {
 
   it('applies excludePaths to manifest discovery and reachability analysis', async () => {
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: ['tests', 'packages/*'],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -156,6 +157,7 @@ describe('handleScanReach', () => {
 
   it('translates excludePaths from the scan root for nested targets', async () => {
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: ['apps/api/tests', '**/dist'],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -218,6 +220,7 @@ describe('handleScanReach', () => {
         checks.every(check => check.test),
     )
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: ['apps/api'],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -266,6 +269,7 @@ describe('handleScanReach', () => {
     mockFindSocketYmlSync.mockReturnValueOnce({ ok: false })
 
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: ['tests'],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -318,6 +322,7 @@ describe('handleScanReach', () => {
       },
     })
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -355,6 +360,7 @@ describe('handleScanReach', () => {
 
   it('does not call finalize when Coana did not return a full application reachability scan id', async () => {
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
@@ -405,6 +411,7 @@ describe('handleScanReach', () => {
       cause: 'Socket API server error (503)',
     })
     const reachabilityOptions = {
+      dynamicSbomInference: false,
       excludePaths: [],
       reachAnalysisMemoryLimit: '8192',
       reachAnalysisTimeout: '',
