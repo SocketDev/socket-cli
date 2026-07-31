@@ -420,6 +420,12 @@ jobs:
       # the tree state is machine-built on a pinned SHA, not hand-edited.
       # --ignore-scripts: each variant's dist is built explicitly above, so no
       # lifecycle script may run (or mutate anything) at pack/upload time.
+      # npm_config_manage_package_manager_versions=false: package.json pins
+      # packageManager pnpm@10.33.0 and pnpm self-delegates to that pin by
+      # default — pnpm 10 has no `stage` command (the v1.1.148 burn), so the
+      # stage steps must run the workflow-pinned pnpm 11 itself, never the
+      # delegate. Install/build steps keep the delegate on purpose: they
+      # match v1.x CI exactly.
       # Both flags mirror the fleet staged-publish runner
       # (scripts/fleet/publish-infra/npm/staged.mts on main).
       - name: Stage socket
@@ -428,6 +434,7 @@ jobs:
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          npm_config_manage_package_manager_versions: 'false'
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -437,6 +444,7 @@ jobs:
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          npm_config_manage_package_manager_versions: 'false'
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -446,3 +454,4 @@ jobs:
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          npm_config_manage_package_manager_versions: 'false'
