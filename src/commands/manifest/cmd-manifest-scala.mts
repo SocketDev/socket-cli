@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
+import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -16,7 +17,6 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,

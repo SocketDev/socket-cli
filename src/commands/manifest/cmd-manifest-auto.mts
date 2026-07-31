@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
+import { excludePathsFlag } from './manifest-flags.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -14,7 +15,6 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,

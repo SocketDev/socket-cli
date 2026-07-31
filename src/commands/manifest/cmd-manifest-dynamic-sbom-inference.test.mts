@@ -29,7 +29,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
           covers. Unlike \`socket manifest auto\`, this looks beyond CWD itself.
 
           Options
-            --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
+            --exclude-paths     List of glob patterns to exclude from manifest/facts generation. Patterns are anchored micromatch globs matched relative to CWD (\`--cwd\` if set): \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --json              Output as JSON
             --markdown          Output as Markdown
             --verbose           Print debug messages
@@ -42,7 +42,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>-prerelease
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest dynamic-sbom-inference\`, cwd: <redacted>"
       `)
@@ -65,7 +65,7 @@ describe('socket manifest dynamic-sbom-inference', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | CLI: <redacted>
+          |   __|___ ___| |_ ___| |_      | CLI: <redacted>-prerelease
           |__   | * |  _| '_| -_|  _|     | token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest dynamic-sbom-inference\`, cwd: <redacted>"
       `)
