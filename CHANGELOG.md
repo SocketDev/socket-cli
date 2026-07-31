@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - `socket fix` no longer reports success when the Coana vulnerability-discovery step fails — Coana errors and unreadable discovery output now exit non-zero with the underlying reason instead of printing "Finished!" with nothing fixed.
+- Fixed `--auto-manifest --reach` reachability scans on sbt/Scala projects sometimes failing to resolve the Scala standard library.
 
 ## [1.1.147](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.147) - 2026-07-27
 
