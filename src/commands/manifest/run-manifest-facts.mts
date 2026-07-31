@@ -14,10 +14,27 @@ import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const MAX_FAILURE_OUTPUT_LINES = 40
+const ENV_VAR_REF = /\$\{(\w+)\}|\$(\w+)/g
 
 export type RunManifestFactsResult = {
   factsPath: string
   projects: SocketFactsSbomProject[]
+}
+
+// Expands `$VAR`/`${VAR}` references (e.g. a team-shared `javaHome:
+// "$JAVA11_HOME"`) against the CLI process's own environment, so a socket.json
+// value works across machines instead of hardcoding one developer's path.
+function expandEnvVarRefs(value: string): { missing?: string; value: string } {
+  let missing: string | undefined
+  const expanded = value.replace(ENV_VAR_REF, (_match, braced, bare) => {
+    const name = braced ?? bare
+    const resolved = process.env[name]
+    if (resolved === undefined) {
+      missing ??= name
+    }
+    return resolved ?? ''
+  })
+  return missing ? { missing, value: expanded } : { value: expanded }
 }
 
 // Last N non-empty lines of the captured build output, for diagnosing a crash
@@ -68,6 +85,19 @@ export async function runManifestFacts({
 }): Promise<RunManifestFactsResult | undefined> {
   const factsPath = path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)
 
+  let resolvedJavaHome: string | undefined
+  if (javaHome) {
+    const expanded = expandEnvVarRefs(javaHome)
+    if (expanded.missing) {
+      process.exitCode = 1
+      logger.fail(
+        `javaHome (\`${javaHome}\`) references \`${expanded.missing}\`, which is not set in this environment.`,
+      )
+      return
+    }
+    resolvedJavaHome = expanded.value
+  }
+
   logger.log(
     `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
   )
@@ -77,7 +107,9 @@ export async function runManifestFacts({
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
-    env: javaHome ? { ...process.env, JAVA_HOME: javaHome } : undefined,
+    env: resolvedJavaHome
+      ? { ...process.env, JAVA_HOME: resolvedJavaHome }
+      : undefined,
     includeConfigs: includeConfigs || undefined,
     projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and

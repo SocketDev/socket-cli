@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
+  // Default: no per-root override found, fall back to the root config - matches
+  // there being no nested socket.json anywhere in the fixture tree.
+  readOrDefaultSocketJsonUpTo: vi.fn(
+    (_dir, _boundaryDir, fallback) => fallback,
+  ),
 }))
 vi.mock('./run-manifest-facts.mts', () => ({
   runManifestFacts: vi.fn(),
@@ -12,6 +17,7 @@ vi.mock('./run-manifest-facts.mts', () => ({
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { testPath } from '../../../test/utils.mts'
+import { readOrDefaultSocketJsonUpTo } from '../../utils/socket-json.mts'
 
 const monorepo = path.join(
   testPath,
@@ -27,6 +33,9 @@ function relOf(dir: string): string {
 describe('generateRecursiveManifests', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
+    vi.mocked(readOrDefaultSocketJsonUpTo).mockImplementation(
+      (_dir, _boundaryDir, fallback) => fallback,
+    )
   })
   afterEach(() => {
     process.exitCode = undefined
@@ -169,5 +178,32 @@ describe('generateRecursiveManifests', () => {
       outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
     )
     expect(byKey.get('maven:dual-marker-dir')).toBe('empty')
+  })
+
+  it('resolves each build root its own nearest socket.json instead of only the root config', async () => {
+    vi.mocked(readOrDefaultSocketJsonUpTo).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === dualMarkerDir
+          ? { defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+
+    const javaHomeByCall = new Map(
+      vi
+        .mocked(runManifestFacts)
+        .mock.calls.map(([opts]) => [
+          `${opts.ecosystem}:${relOf(opts.cwd)}`,
+          opts.javaHome,
+        ]),
+    )
+    expect(javaHomeByCall.get('maven:dual-marker-dir')).toBe('/opt/jdk-11')
+    expect(javaHomeByCall.get('gradle:dual-marker-dir')).toBeUndefined()
+    expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
   })
 })

@@ -6,7 +6,10 @@ import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import {
+  readOrDefaultSocketJson,
+  readOrDefaultSocketJsonUpTo,
+} from '../../utils/socket-json.mts'
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
@@ -98,11 +101,11 @@ export async function generateRecursiveManifests({
   excludePaths?: string[] | undefined
   verbose: boolean
 }): Promise<RecursiveManifestOutcome[]> {
-  const sockJson = readOrDefaultSocketJson(cwd)
+  const rootSockJson = readOrDefaultSocketJson(cwd)
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
-    sockJson,
+    sockJson: rootSockJson,
   })
 
   const outcomes: RecursiveManifestOutcome[] = []
@@ -114,6 +117,7 @@ export async function generateRecursiveManifests({
         continue
       }
 
+      const sockJson = readOrDefaultSocketJsonUpTo(dir, cwd, rootSockJson)
       const {
         bin,
         buildOpts,

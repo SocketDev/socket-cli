@@ -67,7 +67,8 @@ export interface SocketJson {
         facts?: boolean | undefined
         gradleOpts?: string | undefined
         ignoreUnresolved?: boolean | undefined
-        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined
         verbose?: boolean | undefined
       }
@@ -77,7 +78,8 @@ export interface SocketJson {
         excludeConfigs?: string | undefined
         includeConfigs?: string | undefined
         ignoreUnresolved?: boolean | undefined
-        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined
         mavenOpts?: string | undefined
         verbose?: boolean | undefined
@@ -91,7 +93,8 @@ export interface SocketJson {
         includeConfigs?: string | undefined
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
-        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
         javaHome?: string | undefined
         outfile?: string | undefined
         sbtOpts?: string | undefined
@@ -141,6 +144,29 @@ export async function readOrDefaultSocketJsonUp(
     return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
   }
   return getDefaultSocketJson()
+}
+
+// Nearest socket.json walking up from `dir`, stopping at (and falling back to)
+// `fallback` once `boundaryDir` is reached rather than continuing past it.
+export function readOrDefaultSocketJsonUpTo(
+  dir: string,
+  boundaryDir: string,
+  fallback: SocketJson,
+): SocketJson {
+  const boundary = path.resolve(boundaryDir)
+  let current = path.resolve(dir)
+  while (current !== boundary) {
+    if (existsSync(path.join(current, SOCKET_JSON))) {
+      const jsonCResult = readSocketJsonSync(current, true)
+      return jsonCResult.ok ? jsonCResult.data : fallback
+    }
+    const parent = path.dirname(current)
+    if (parent === current) {
+      return fallback
+    }
+    current = parent
+  }
+  return fallback
 }
 
 export function getDefaultSocketJson(): SocketJson {

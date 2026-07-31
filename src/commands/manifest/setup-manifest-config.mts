@@ -581,7 +581,7 @@ async function askForBin(defaultName = ''): Promise<string | undefined> {
 async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
-      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME.' +
+      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR} (e.g. $JAVA11_HOME) so this works across machines.' +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
