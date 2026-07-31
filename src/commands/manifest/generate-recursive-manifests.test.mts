@@ -2,6 +2,8 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
   // Default: no per-root override found, fall back to the root config - matches
@@ -203,5 +205,36 @@ describe('generateRecursiveManifests', () => {
     expect(javaHomeByCall.get('maven:dual-marker-dir')).toBe('/opt/jdk-11')
     expect(javaHomeByCall.get('gradle:dual-marker-dir')).toBeUndefined()
     expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
+  })
+
+  it('warns but still generates facts when a resolved config sets facts: false', async () => {
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === dualMarkerDir
+          ? { defaults: { manifest: { gradle: { facts: false } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
+      expect(warned).toMatch(/facts: false/)
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('gradle:dual-marker-dir')).toBe('generated')
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 })

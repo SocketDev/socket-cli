@@ -37,12 +37,12 @@ type EcosystemBuildConfig = {
   javaHome: string | undefined
 }
 
-// Resolves the single, global per-ecosystem build-tool config (socket.json
-// `defaults.manifest.<ecosystem>`) applied uniformly to every discovered root
-// of that ecosystem. There is no per-build-root cascade yet (tracked
-// separately under REA-553); a wrapper-preferred `bin` default is still
-// resolved per-root (`dir`, not `cwd`) since a wrapper script only exists at
-// the actual build root, not necessarily at the overall recursion root.
+// Resolves this build root's effective per-ecosystem build-tool config from
+// its cascaded socket.json; a wrapper-preferred `bin` default is resolved
+// per-root (`dir`, not `cwd`) since a wrapper script only exists at the
+// actual build root. gradle/sbt's `facts: false` (pom mode) is ignored here -
+// this command always generates Socket facts - but warned about, since it's
+// an explicit setting the user made for other commands.
 function resolveEcosystemConfig(
   ecosystem: BuildTool,
   dir: string,
@@ -50,6 +50,7 @@ function resolveEcosystemConfig(
 ): EcosystemBuildConfig {
   if (ecosystem === 'sbt') {
     const config = sockJson.defaults?.manifest?.sbt
+    warnIfFactsDisabled(ecosystem, dir, config?.facts)
     return {
       bin: config?.bin ?? 'sbt',
       buildOpts: parseBuildToolOpts(config?.sbtOpts),
@@ -61,6 +62,7 @@ function resolveEcosystemConfig(
   }
   if (ecosystem === 'gradle') {
     const config = sockJson.defaults?.manifest?.gradle
+    warnIfFactsDisabled(ecosystem, dir, config?.facts)
     return {
       bin: config?.bin
         ? path.resolve(dir, config.bin)
@@ -80,6 +82,18 @@ function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome,
+  }
+}
+
+function warnIfFactsDisabled(
+  ecosystem: BuildTool,
+  dir: string,
+  facts: boolean | undefined,
+): void {
+  if (facts === false) {
+    logger.warn(
+      `${dir} sets defaults.manifest.${ecosystem}.facts: false (pom mode), but dynamic-sbom-inference always generates Socket facts; ignoring that setting.`,
+    )
   }
 }
 
