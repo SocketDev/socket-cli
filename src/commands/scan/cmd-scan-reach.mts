@@ -116,7 +116,6 @@ async function run(
 
   const {
     cwd: cwdOverride,
-    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -142,7 +141,6 @@ async function run(
     reachVersion,
   } = cli.flags as {
     cwd: string
-    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -269,7 +267,9 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
-      dynamicSbomInference: Boolean(dynamicSbomInference),
+      // Not exposed here: it relies on --auto-manifest generating per-workspace
+      // Socket facts first, which `socket scan reach` never runs.
+      dynamicSbomInference: false,
       excludePaths,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,
