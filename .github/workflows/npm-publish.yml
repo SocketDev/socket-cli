@@ -93,38 +93,33 @@ jobs:
       - name: Install pnpm
         shell: bash
         run: | # zizmor: ignore[github-env]
-          PNPM_VERSION="10.33.0"
+          # pnpm 11 is required for `pnpm stage publish` (the staged upload
+          # the per-package trusted-publisher grants allow) and ships tar.gz
+          # release assets (a `pnpm` binary + its dist/ tree). The job only
+          # runs ubuntu-latest, so only the Linux assets are pinned.
+          PNPM_VERSION="11.17.0"
           PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
           case "${KERNEL}-${ARCH}" in
-            Linux-x86_64)                      ASSET="pnpm-linux-x64"    ; EXPECTED_SHA256="8d4e8f7d778e8ac482022e2577011706a872542f6f6f233e795a4d9f978ea8b5" ;;
-            Linux-aarch64)                     ASSET="pnpm-linux-arm64"   ; EXPECTED_SHA256="06755ad2817548b84317d857d5c8003dc6e9e28416a3ea7467256c49ab400d48" ;;
-            Darwin-x86_64)                     ASSET="pnpm-macos-x64"    ; EXPECTED_SHA256="c31e29554b0e3f4e03f4617195c949595e4dca36085922003de4896c3ca4057d" ;;
-            Darwin-arm64)                      ASSET="pnpm-macos-arm64"  ; EXPECTED_SHA256="ed8a1f140f4de457b01ebe0be3ae28e9a7e28863315dcd53d22ff1e5a32d63ae" ;;
-            MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="pnpm-win-x64.exe" ; EXPECTED_SHA256="afc96009dc39fe23a835d65192049e6a995f342496b175585dc2beda7d42d33f" ;;
+            Linux-x86_64)  ASSET="pnpm-linux-x64.tar.gz"   ; EXPECTED_SHA256="bdb1db01bf0f757495405a59a09c5c287f315889dc98d3b14bc374b9fe43a0bf" ;;
+            Linux-aarch64) ASSET="pnpm-linux-arm64.tar.gz" ; EXPECTED_SHA256="730d17de742a3efbb020ba91d7acfc0456c6ba6ad1cd8eb49f4c229fe9f504d3" ;;
             *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
           esac
-          PNPM_BIN="$PNPM_DIR/$ASSET"
+          PNPM_BIN="$PNPM_DIR/pnpm"
           if [ ! -x "$PNPM_BIN" ]; then
             mkdir -p "$PNPM_DIR"
-            curl -fsSL -o "$PNPM_BIN" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            # shellcheck disable=SC1003 # `tr -d '\\'` strips the leading backslash GNU coreutils prepends to a checksum line when the path has a backslash (Windows RUNNER_TEMP).
-            ACTUAL_SHA256="$( (sha256sum "$PNPM_BIN" 2>/dev/null || shasum -a 256 "$PNPM_BIN") | cut -d' ' -f1 | tr -d '\\')"
+            curl -fsSL -o "$PNPM_DIR/$ASSET" "https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            ACTUAL_SHA256="$( (sha256sum "$PNPM_DIR/$ASSET" 2>/dev/null || shasum -a 256 "$PNPM_DIR/$ASSET") | cut -d' ' -f1)"
             if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
               echo "Checksum mismatch for ${ASSET}!" >&2
               echo "  Expected: ${EXPECTED_SHA256}" >&2
               echo "  Actual:   ${ACTUAL_SHA256}" >&2
-              rm -f "$PNPM_BIN"
+              rm -f "$PNPM_DIR/$ASSET"
               exit 1
             fi
+            tar -xzf "$PNPM_DIR/$ASSET" -C "$PNPM_DIR"
             chmod +x "$PNPM_BIN"
-            # Create pnpm alias. Windows needs a .exe copy; Unix uses a symlink.
-            if [[ "$ASSET" == *.exe ]]; then
-              cp "$PNPM_BIN" "$PNPM_DIR/pnpm.exe"
-            else
-              ln -sf "$PNPM_BIN" "$PNPM_DIR/pnpm"
-            fi
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
@@ -274,61 +269,35 @@ jobs:
           fi
           bash src/commands/manifest/scripts/maven-extension/build-jar.sh
 
-      # All three publishes use npm trusted publishing (OIDC): no long-lived
-      # NPM_TOKEN is set, so npm mints a short-lived registry token from the
-      # `id-token: write` OIDC token at publish time and attaches provenance.
-      # Each package (`socket`, `@socketsecurity/cli`,
-      # `@socketsecurity/cli-with-sentry`) must have a matching trusted
-      # publisher configured on npm for SocketDev/socket-cli + this workflow
-      # file (npm-publish.yml) + the npm-publish environment, or the publish
-      # 404s on the token exchange.
+      # All three uploads are STAGED (`pnpm stage publish`): the tarball +
+      # provenance land in npm's staging area and NOTHING goes public until a
+      # human promotes each stage (`pnpm stage approve` with web 2FA, or the
+      # npm web UI). The per-package trusted publishers for `socket`,
+      # `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry` allow
+      # "stage publish" ONLY — a direct `npm publish` dies at the OIDC token
+      # exchange. Each package pins SocketDev/socket-cli + this workflow file
+      # (npm-publish.yml) + the npm-publish environment.
       #
-      # The publish steps are skipped entirely on a dry run (inputs.dry-run
-      # defaults to true), so an accidental dispatch builds but never reaches
-      # the registry. When skipped, publish_socket.outcome is not 'success',
-      # so the tag + release steps below also skip.
+      # ORDER RULE (markers first): the v<version> tag + immutable GitHub
+      # release are cut BEFORE the staged uploads so the uploads' provenance
+      # binds markers that exist. The trade is deliberate and is the burn
+      # rule: a stage rejected after the markers BURNS the version — the next
+      # release is a patch bump, never a re-publish of the burned number (the
+      # tag step's different-SHA hard-fail enforces exactly that; a same-SHA
+      # re-run is a no-op tag + a fresh stage attempt).
+      #
+      # The tag / release / stage steps all skip on a dry run (inputs.dry-run
+      # defaults to true), so an accidental dispatch builds but never marks or
+      # uploads anything.
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
-      - name: Publish socket
-        id: publish_socket
-        if: ${{ inputs.dry-run == false }}
-        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        env:
-          NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
-        env:
-          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - name: Publish @socketsecurity/cli (legacy)
-        if: ${{ inputs.dry-run == false }}
-        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        env:
-          NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
-        env:
-          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - name: Publish @socketsecurity/cli-with-sentry
-        if: ${{ inputs.dry-run == false }}
-        run: npm publish --provenance --access public --tag "${NPM_DIST_TAG}"
-        env:
-          NPM_DIST_TAG: ${{ inputs.dist-tag }}
-          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
 
-      # Create v<version> git tag at the published commit SHA after a
-      # successful socket-package publish, idempotently. GitHub Release
-      # Immutability ("Disallow assets and tags from being modified once a
-      # release is published") freezes tags once bound to a Release, so:
+      # Create the v<version> git tag at this commit, idempotently, BEFORE any
+      # upload (ORDER RULE above). GitHub Release Immutability ("Disallow
+      # assets and tags from being modified once a release is published")
+      # freezes tags once bound to a Release, so:
       #   - existing tag at same SHA → no-op
-      #   - existing tag at different SHA → hard-fail (operator recovery
-      #     required)
-      # Gated on the first publish step (publish_socket — the `socket` npm
-      # package) actually succeeding.
-      #
-      # All three publishes hard-fail the job: a partial release must never
-      # cut the v<version> tag or the IMMUTABLE GitHub Release below, because
-      # an immutable release describing artifacts the registry never received
-      # costs a version burn to recover. Every package publishes, or the run
-      # fails and no release marker exists.
+      #   - existing tag at different SHA → hard-fail (the burn ratchet: a
+      #     burned version number can never be re-tagged from new content)
       #
       # Uses gh api (not `git push`) so the token only lives in this step's
       # env, never written to `.git/config` by an earlier `actions/checkout`
@@ -336,7 +305,7 @@ jobs:
       # step including `pnpm install` postinstall scripts).
       - name: Tag release (idempotent)
         id: tag
-        if: steps.publish_socket.outcome == 'success'
+        if: ${{ inputs.dry-run == false }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -384,21 +353,18 @@ jobs:
             -f "sha=$PUBLISHED_SHA"
           echo "Created tag $TAG at $PUBLISHED_SHA"
 
-      # Cut the immutable GitHub Release for the tag, idempotently. ORDER
-      # RULE: the tag + GH release are the FINAL markers of a release — they
-      # only exist AFTER the npm publish is confirmed live (this step is gated
-      # on the same publish_socket success as the tag step, and runs after
-      # it). Uses gh release (gh api under the hood) so GH_TOKEN only lives in
-      # this step's env, never written to `.git/config`. Create-as-draft then
-      # publish: immutable releases attest the locked asset set at publish
-      # time, so the release goes live in a separate `--draft=false` flip
-      # (3-step pattern; no assets ride this release, notes only). The flip
-      # carries `--latest=false`: v1.x is the maintenance line, so its
-      # releases never take the repo's Latest badge from the 2.x line on
-      # main. Re-runs skip a published release and flip a stranded draft
-      # live.
+      # Cut the immutable GitHub Release for the tag, idempotently, BEFORE
+      # the staged uploads (ORDER RULE above). Uses gh release (gh api under
+      # the hood) so GH_TOKEN only lives in this step's env, never written to
+      # `.git/config`. Create-as-draft then publish: immutable releases attest
+      # the locked asset set at publish time, so the release goes live in a
+      # separate `--draft=false` flip (3-step pattern; no assets ride this
+      # release, notes only). The flip carries `--latest=false`: v1.x is the
+      # maintenance line, so its releases never take the repo's Latest badge
+      # from the 2.x line on main. Re-runs skip a published release and flip
+      # a stranded draft live.
       - name: Cut GitHub release (idempotent)
-        if: steps.publish_socket.outcome == 'success'
+        if: ${{ inputs.dry-run == false }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -423,3 +389,35 @@ jobs:
           fi
           gh release edit "$TAG" --repo "$REPO" --draft=false --latest=false
           echo "Published GitHub release $TAG"
+
+      # --no-git-checks: the INLINED_* builds rewrite package.json + dist/ in
+      # the checkout, so pnpm's clean-tree publish check would always refuse;
+      # the tree state is machine-built on a pinned SHA, not hand-edited.
+      # --ignore-scripts: each variant's dist is built explicitly above, so no
+      # lifecycle script may run (or mutate anything) at pack/upload time.
+      # Both flags mirror the fleet staged-publish runner
+      # (scripts/fleet/publish-infra/npm/staged.mts on main).
+      - name: Stage socket
+        if: ${{ inputs.dry-run == false }}
+        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
+        env:
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - name: Stage @socketsecurity/cli (legacy)
+        if: ${{ inputs.dry-run == false }}
+        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
+        env:
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+      - name: Stage @socketsecurity/cli-with-sentry
+        if: ${{ inputs.dry-run == false }}
+        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        env:
+          NPM_DIST_TAG: ${{ inputs.dist-tag }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
