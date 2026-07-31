@@ -40,6 +40,7 @@ export async function runManifestFacts({
   ignoreUnresolved,
   includeConfigs,
   sidecarAcc,
+  tmpDir,
   verbose,
   withFiles,
 }: {
@@ -52,6 +53,8 @@ export async function runManifestFacts({
   ignoreUnresolved: boolean
   includeConfigs: string
   sidecarAcc?: SidecarAccumulator | undefined
+  // sbt only; see ManifestScriptOptions.tmpDir.
+  tmpDir?: string | undefined
   verbose: boolean
   withFiles?: boolean | undefined
 }): Promise<void> {
@@ -70,6 +73,7 @@ export async function runManifestFacts({
     // Stream the build tool's output only when asked; otherwise capture it and
     // show a spinner, surfacing the output only if the build crashes.
     stdio: verbose ? ('inherit' as const) : ('pipe' as const),
+    tmpDir,
     toolOpts: buildOpts,
     withFiles,
   }

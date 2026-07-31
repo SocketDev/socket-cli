@@ -1,5 +1,4 @@
 import { existsSync, promises as fs } from 'node:fs'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -8,6 +7,7 @@ import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin } from './build-tool.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
+import { withTmpDir } from '../../../utils/fs.mts'
 
 import type { BuildTool } from './build-tool.mts'
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
@@ -19,6 +19,14 @@ export type ManifestScriptOptions = {
   bin?: string | undefined
   // Reachability-only: also materialize resolved artifact paths (artifactPaths).
   withFiles?: boolean | undefined
+  // sbt only: caller-supplied directory to use as sbt's isolated global base.
+  // sbt provisions the project's Scala toolchain (compiler/library/reflect)
+  // under `<global base>/boot`, which withFiles' artifactPaths point into, so
+  // the directory must outlive this call; the caller owns creating it and
+  // deleting it once those paths are no longer needed. Unset ⇒ an ephemeral
+  // dir is created and cleaned up before this call returns (the withFiles-less
+  // default, and the case for a standalone `socket manifest sbt --facts`).
+  tmpDir?: string | undefined
   // Newline-delimited GAV file scoping withFiles materialization; absent ⇒ all.
   populateFilesFor?: string | undefined
   includeConfigs?: string | undefined
@@ -94,18 +102,6 @@ async function runNeverThrow(
       }
     }
     throw e
-  }
-}
-
-async function withTmpDir<T>(
-  prefix: string,
-  fn: (tmpDir: string) => Promise<T>,
-): Promise<T> {
-  const tmpDir = await fs.mkdtemp(path.join(tmpdir(), prefix))
-  try {
-    return await fn(tmpDir)
-  } finally {
-    await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
   }
 }
 
@@ -214,36 +210,50 @@ async function runGradle(
   })
 }
 
+async function runSbtIn(
+  globalBase: string,
+  opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  await writeSbtPlugin(globalBase)
+  const recordsFile = path.join(globalBase, 'records.tsv')
+  const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin)
+  // Fresh per-run global base (not ~/.sbt): sbt executes everything under
+  // plugins/, so a shared path is a code-injection surface. BSP off for this
+  // run. sbt also provisions the project's Scala toolchain under
+  // <global.base>/boot; when opts.tmpDir was supplied, the caller keeps this
+  // directory (and that toolchain) alive until it's done with withFiles'
+  // artifactPaths, so no special-casing is needed here.
+  const props = [
+    `-Dsbt.global.base=${globalBase}`,
+    '-Dsbt.server.autostart=false',
+    `-Dsocket.recordsFile=${recordsFile}`,
+    ...commonProps(opts, '-D'),
+  ]
+  // sbt's launcher doesn't always honor JAVA_HOME; never override a
+  // caller-supplied --java-home.
+  const javaHome = opts.env?.['JAVA_HOME'] ?? process.env['JAVA_HOME']
+  const javaHomeOpt =
+    javaHome && !(opts.toolOpts ?? []).includes('--java-home')
+      ? ['--java-home', javaHome]
+      : []
+  const args = [
+    ...javaHomeOpt,
+    ...props,
+    ...(opts.toolOpts ?? []),
+    '--batch',
+    FACTS_TASK,
+  ]
+  const out = await runNeverThrow(bin, args, opts)
+  return await assembleFromRecords(out, recordsFile)
+}
+
 async function runSbt(opts: ManifestScriptOptions): Promise<ManifestRunResult> {
-  return await withTmpDir('socket-sbt-facts-', async globalBase => {
-    await writeSbtPlugin(globalBase)
-    const recordsFile = path.join(globalBase, 'records.tsv')
-    const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin)
-    // Fresh per-run global base (not ~/.sbt): sbt executes everything under
-    // plugins/, so a shared path is a code-injection surface. BSP off for this run.
-    const props = [
-      `-Dsbt.global.base=${globalBase}`,
-      '-Dsbt.server.autostart=false',
-      `-Dsocket.recordsFile=${recordsFile}`,
-      ...commonProps(opts, '-D'),
-    ]
-    // sbt's launcher doesn't always honor JAVA_HOME; never override a
-    // caller-supplied --java-home.
-    const javaHome = opts.env?.['JAVA_HOME'] ?? process.env['JAVA_HOME']
-    const javaHomeOpt =
-      javaHome && !(opts.toolOpts ?? []).includes('--java-home')
-        ? ['--java-home', javaHome]
-        : []
-    const args = [
-      ...javaHomeOpt,
-      ...props,
-      ...(opts.toolOpts ?? []),
-      '--batch',
-      FACTS_TASK,
-    ]
-    const out = await runNeverThrow(bin, args, opts)
-    return await assembleFromRecords(out, recordsFile)
-  })
+  if (opts.tmpDir) {
+    return await runSbtIn(opts.tmpDir, opts)
+  }
+  return await withTmpDir('socket-sbt-facts-', globalBase =>
+    runSbtIn(globalBase, opts),
+  )
 }
 
 async function runMaven(

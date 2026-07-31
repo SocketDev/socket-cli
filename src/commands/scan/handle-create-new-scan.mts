@@ -18,6 +18,7 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { compressSocketFactsForUpload } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
+import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
@@ -139,276 +140,285 @@ export async function handleCreateNewScan({
 
   // Sidecar forwarded to reachability; populated only when reach runs.
   let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
-  if (autoManifest) {
-    logger.info('Auto-generating manifest files ...')
-    debugFn('notice', 'Auto-manifest mode enabled')
-    const sockJson = readOrDefaultSocketJson(cwd)
-    const detected = await detectManifestActions(sockJson, cwd)
-    debugDir('inspect', { detected })
-    const autoManifestResult = await generateAutoManifest({
-      computeArtifactsSidecar: reach.runReachabilityAnalysis,
-      cwd,
-      detected,
-      excludePaths: reach.excludePaths,
-      outputKind,
-      verbose: false,
-    })
-    resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
-    if (autoManifestResult.generatedFiles.length) {
-      scanTargets = Array.from(
-        new Set([...targets, ...autoManifestResult.generatedFiles]),
-      )
+
+  // sbt provisions its Scala toolchain under the directory passed as its
+  // isolated global base; withFiles' artifactPaths point into it, so it must
+  // stay on disk until the reachability analysis below has consumed those
+  // paths. Always allocated (even when unused) to keep this uniform rather
+  // than conditional on autoManifest/reach.
+  await withTmpDir('socket-auto-manifest-', async manifestTmpDir => {
+    if (autoManifest) {
+      logger.info('Auto-generating manifest files ...')
+      debugFn('notice', 'Auto-manifest mode enabled')
+      const sockJson = readOrDefaultSocketJson(cwd)
+      const detected = await detectManifestActions(sockJson, cwd)
+      debugDir('inspect', { detected })
+      const autoManifestResult = await generateAutoManifest({
+        computeArtifactsSidecar: reach.runReachabilityAnalysis,
+        cwd,
+        detected,
+        excludePaths: reach.excludePaths,
+        outputKind,
+        tmpDir: manifestTmpDir,
+        verbose: false,
+      })
+      resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
+      if (autoManifestResult.generatedFiles.length) {
+        scanTargets = Array.from(
+          new Set([...targets, ...autoManifestResult.generatedFiles]),
+        )
+      }
+      logger.info('Auto-generation finished. Proceeding with Scan creation.')
     }
-    logger.info('Auto-generation finished. Proceeding with Scan creation.')
-  }
 
-  const { spinner } = constants
+    const { spinner } = constants
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({
-    orgSlug,
-    spinner,
-  })
-  if (!supportedFilesCResult.ok) {
-    debugFn('warn', 'Failed to fetch supported scan file names')
-    debugDir('inspect', { supportedFilesCResult })
-    await outputCreateNewScan(supportedFilesCResult, {
-      interactive,
-      outputKind,
-    })
-    return
-  }
-  debugFn(
-    'notice',
-    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
-  )
-
-  spinner.start('Searching for local files to include in scan...')
-
-  const supportedFiles = supportedFilesCResult.data
-
-  // Load socket.yml to respect projectIgnorePaths when collecting files.
-  const socketYmlResult = findSocketYmlSync(cwd)
-  const socketConfig = socketYmlResult.ok
-    ? socketYmlResult.data?.parsed
-    : undefined
-
-  const { additionalScaIgnores, mergedReachabilityOptions } =
-    applyFullExcludePaths({
-      cwd,
-      reachabilityOptions: reach,
-      target: targets[0]!,
-    })
-
-  const packagePaths = await getPackageFilesForScan(
-    scanTargets,
-    supportedFiles,
-    {
-      additionalIgnores: additionalScaIgnores,
-      config: socketConfig,
-      cwd,
-    },
-  )
-
-  spinner.successAndStop(
-    `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
-  )
-
-  const wasValidInput = checkCommandInput(outputKind, {
-    nook: true,
-    test: packagePaths.length > 0,
-    fail: `found no eligible files to scan. See supported manifest files at ${socketDocsLink('/docs/manifest-file-detection-in-socket', 'docs.socket.dev')}`,
-    message:
-      'TARGET (file/dir) must contain matching / supported file types for a scan',
-  })
-  if (!wasValidInput) {
-    debugFn('warn', 'No eligible files found to scan')
-    return
-  }
-
-  logger.success(
-    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
-  )
-
-  debugDir('inspect', { packagePaths })
-
-  if (readOnly) {
-    logger.log('[ReadOnly] Bailing now')
-    debugFn('notice', 'Read-only mode, exiting early')
-    return
-  }
-
-  let scanPaths: string[] = packagePaths
-  let tier1ReachabilityScanId: string | undefined
-  let reachabilityReport: string | undefined
-
-  // If reachability is enabled, perform reachability analysis.
-  if (reach.runReachabilityAnalysis) {
-    logger.error('')
-    logger.info('Starting reachability analysis...')
-    debugFn('notice', 'Reachability analysis enabled')
-    debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
-
-    spinner.start()
-
-    const reachResult = await performReachabilityAnalysis({
-      branchName,
-      cwd,
+    const supportedFilesCResult = await fetchSupportedScanFileNames({
       orgSlug,
-      outputKind,
-      packagePaths,
-      reachabilityOptions: mergedReachabilityOptions,
-      repoName,
-      resolvedPathsSidecar,
       spinner,
-      target: targets[0]!,
     })
+    if (!supportedFilesCResult.ok) {
+      debugFn('warn', 'Failed to fetch supported scan file names')
+      debugDir('inspect', { supportedFilesCResult })
+      await outputCreateNewScan(supportedFilesCResult, {
+        interactive,
+        outputKind,
+      })
+      return
+    }
+    debugFn(
+      'notice',
+      `Fetched ${supportedFilesCResult.data['size']} supported file types`,
+    )
 
-    spinner.stop()
+    spinner.start('Searching for local files to include in scan...')
 
-    if (!reachResult.ok) {
-      await outputCreateNewScan(reachResult, { interactive, outputKind })
+    const supportedFiles = supportedFilesCResult.data
+
+    // Load socket.yml to respect projectIgnorePaths when collecting files.
+    const socketYmlResult = findSocketYmlSync(cwd)
+    const socketConfig = socketYmlResult.ok
+      ? socketYmlResult.data?.parsed
+      : undefined
+
+    const { additionalScaIgnores, mergedReachabilityOptions } =
+      applyFullExcludePaths({
+        cwd,
+        reachabilityOptions: reach,
+        target: targets[0]!,
+      })
+
+    const packagePaths = await getPackageFilesForScan(
+      scanTargets,
+      supportedFiles,
+      {
+        additionalIgnores: additionalScaIgnores,
+        config: socketConfig,
+        cwd,
+      },
+    )
+
+    spinner.successAndStop(
+      `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
+    )
+
+    const wasValidInput = checkCommandInput(outputKind, {
+      nook: true,
+      test: packagePaths.length > 0,
+      fail: `found no eligible files to scan. See supported manifest files at ${socketDocsLink('/docs/manifest-file-detection-in-socket', 'docs.socket.dev')}`,
+      message:
+        'TARGET (file/dir) must contain matching / supported file types for a scan',
+    })
+    if (!wasValidInput) {
+      debugFn('warn', 'No eligible files found to scan')
       return
     }
 
-    logger.success('Reachability analysis completed successfully')
-
-    reachabilityReport = reachResult.data?.reachabilityReport
-
-    // When using only pre-generated SBOMs, build the scan from those inputs —
-    // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
-    // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
-    // stray `.socket.facts.json`; coana's fresh reachability report (appended
-    // below) is the authoritative facts file for the scan.
-    const pathsForScan = reach.reachUseOnlyPregeneratedSboms
-      ? filterToPregeneratedSboms(packagePaths, supportedFiles)
-      : packagePaths.filter(
-          p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
-        )
-
-    // Append coana's reachability report, but not twice: a pre-generated facts
-    // input can resolve to the same path coana wrote its report to.
-    const reportPath = reachabilityReport
-      ? path.resolve(cwd, reachabilityReport)
-      : undefined
-    scanPaths = [
-      ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
-      ...(reachabilityReport ? [reachabilityReport] : []),
-    ]
-
-    tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
-  }
-
-  // Brotli-compress any .socket.facts.json paths in scanPaths just before
-  // upload. depscan's api-v0 multipart boundary streams brotli decode based
-  // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
-  // on disk, so the local read paths (extractTier1ReachabilityScanId,
-  // extractReachabilityErrors) stay correct. The cleanup() in the finally
-  // block removes the temp dirs whether the upload succeeded or threw.
-  const compressed = await compressSocketFactsForUpload(scanPaths)
-  let fullScanCResult: Awaited<ReturnType<typeof fetchCreateOrgFullScan>>
-  try {
-    fullScanCResult = await fetchCreateOrgFullScan(
-      compressed.paths,
-      orgSlug,
-      {
-        commitHash,
-        commitMessage,
-        committers,
-        pullRequest,
-        repoName,
-        branchName,
-        scanType: reach.runReachabilityAnalysis
-          ? constants.SCAN_TYPE_SOCKET_TIER1
-          : constants.SCAN_TYPE_SOCKET,
-        workspace,
-      },
-      {
-        cwd,
-        defaultBranch,
-        pendingHead,
-        tmp,
-      },
+    logger.success(
+      `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
     )
-  } finally {
-    await compressed.cleanup()
-  }
 
-  const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
+    debugDir('inspect', { packagePaths })
 
-  if (reach && scanId && tier1ReachabilityScanId) {
-    await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
-  } else if (
-    reach.runReachabilityAnalysis &&
-    scanId &&
-    !tier1ReachabilityScanId
-  ) {
-    // Reachability analysis ran and a scan was created, but no full
-    // application reachability scan id was extracted from the facts file.
-    // Surface this instead of silently skipping finalize — otherwise the
-    // reachability row stays stuck (e.g. at COANA_DONE) and the full scan is
-    // never linked to its reachability report.
-    logger.warn(
-      'Reachability analysis ran but no full application reachability scan ID was found; skipping reachability finalize. The scan was created but its reachability report was not linked.',
-    )
-  }
-
-  // On a successful scan, clean up the `.socket.facts.json` coana wrote at
-  // the path we instructed it to write to (via `--socket-mode`). Failed
-  // scans leave the file in place for debugging. Producer-written files
-  // (e.g. from `socket manifest gradle --facts`) are NOT touched here —
-  // those are user-owned input that the user can clean up themselves; in
-  // the --reach path coana overwrites that file with its enriched output
-  // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
-  // opts out of this cleanup so the report can be inspected; the user is then
-  // responsible for deleting it before the next full application reachability
-  // scan (a stale file is picked up as pre-generated input and would make those
-  // results unreliable).
-  if (
-    fullScanCResult.ok &&
-    scanId &&
-    reachabilityReport &&
-    !reach.reachRetainFactsFile
-  ) {
-    try {
-      await unlink(path.resolve(cwd, reachabilityReport))
-      debugFn(
-        'notice',
-        `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,
-      )
-    } catch {
-      // Best-effort — file may already be gone or unwritable.
+    if (readOnly) {
+      logger.log('[ReadOnly] Bailing now')
+      debugFn('notice', 'Read-only mode, exiting early')
+      return
     }
-  }
 
-  if (report && fullScanCResult.ok) {
-    if (scanId) {
-      await handleScanReport({
-        filepath: '-',
-        fold: constants.FOLD_SETTING_VERSION,
-        includeLicensePolicy: true,
+    let scanPaths: string[] = packagePaths
+    let tier1ReachabilityScanId: string | undefined
+    let reachabilityReport: string | undefined
+
+    // If reachability is enabled, perform reachability analysis.
+    if (reach.runReachabilityAnalysis) {
+      logger.error('')
+      logger.info('Starting reachability analysis...')
+      debugFn('notice', 'Reachability analysis enabled')
+      debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
+
+      spinner.start()
+
+      const reachResult = await performReachabilityAnalysis({
+        branchName,
+        cwd,
         orgSlug,
         outputKind,
-        reportLevel,
-        scanId,
-        short: false,
+        packagePaths,
+        reachabilityOptions: mergedReachabilityOptions,
+        repoName,
+        resolvedPathsSidecar,
+        spinner,
+        target: targets[0]!,
       })
-    } else {
-      await outputCreateNewScan(
+
+      spinner.stop()
+
+      if (!reachResult.ok) {
+        await outputCreateNewScan(reachResult, { interactive, outputKind })
+        return
+      }
+
+      logger.success('Reachability analysis completed successfully')
+
+      reachabilityReport = reachResult.data?.reachabilityReport
+
+      // When using only pre-generated SBOMs, build the scan from those inputs —
+      // CycloneDX, SPDX, and Socket facts (`.socket.facts.json`) — matching
+      // Coana's `--use-only-pregenerated-sboms` selection. Otherwise drop any
+      // stray `.socket.facts.json`; coana's fresh reachability report (appended
+      // below) is the authoritative facts file for the scan.
+      const pathsForScan = reach.reachUseOnlyPregeneratedSboms
+        ? filterToPregeneratedSboms(packagePaths, supportedFiles)
+        : packagePaths.filter(
+            p => path.basename(p) !== constants.DOT_SOCKET_DOT_FACTS_JSON,
+          )
+
+      // Append coana's reachability report, but not twice: a pre-generated facts
+      // input can resolve to the same path coana wrote its report to.
+      const reportPath = reachabilityReport
+        ? path.resolve(cwd, reachabilityReport)
+        : undefined
+      scanPaths = [
+        ...pathsForScan.filter(p => path.resolve(cwd, p) !== reportPath),
+        ...(reachabilityReport ? [reachabilityReport] : []),
+      ]
+
+      tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
+    }
+
+    // Brotli-compress any .socket.facts.json paths in scanPaths just before
+    // upload. depscan's api-v0 multipart boundary streams brotli decode based
+    // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
+    // on disk, so the local read paths (extractTier1ReachabilityScanId,
+    // extractReachabilityErrors) stay correct. The cleanup() in the finally
+    // block removes the temp dirs whether the upload succeeded or threw.
+    const compressed = await compressSocketFactsForUpload(scanPaths)
+    let fullScanCResult: Awaited<ReturnType<typeof fetchCreateOrgFullScan>>
+    try {
+      fullScanCResult = await fetchCreateOrgFullScan(
+        compressed.paths,
+        orgSlug,
         {
-          ok: false,
-          message: 'Missing Scan ID',
-          cause: 'Server did not respond with a scan ID',
-          data: fullScanCResult.data,
+          commitHash,
+          commitMessage,
+          committers,
+          pullRequest,
+          repoName,
+          branchName,
+          scanType: reach.runReachabilityAnalysis
+            ? constants.SCAN_TYPE_SOCKET_TIER1
+            : constants.SCAN_TYPE_SOCKET,
+          workspace,
         },
         {
-          interactive,
-          outputKind,
+          cwd,
+          defaultBranch,
+          pendingHead,
+          tmp,
         },
       )
+    } finally {
+      await compressed.cleanup()
     }
-  } else {
-    spinner.stop()
 
-    await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
-  }
+    const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
+
+    if (reach && scanId && tier1ReachabilityScanId) {
+      await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+    } else if (
+      reach.runReachabilityAnalysis &&
+      scanId &&
+      !tier1ReachabilityScanId
+    ) {
+      // Reachability analysis ran and a scan was created, but no full
+      // application reachability scan id was extracted from the facts file.
+      // Surface this instead of silently skipping finalize — otherwise the
+      // reachability row stays stuck (e.g. at COANA_DONE) and the full scan is
+      // never linked to its reachability report.
+      logger.warn(
+        'Reachability analysis ran but no full application reachability scan ID was found; skipping reachability finalize. The scan was created but its reachability report was not linked.',
+      )
+    }
+
+    // On a successful scan, clean up the `.socket.facts.json` coana wrote at
+    // the path we instructed it to write to (via `--socket-mode`). Failed
+    // scans leave the file in place for debugging. Producer-written files
+    // (e.g. from `socket manifest gradle --facts`) are NOT touched here —
+    // those are user-owned input that the user can clean up themselves; in
+    // the --reach path coana overwrites that file with its enriched output
+    // anyway, so it's the same path that gets removed. `--reach-retain-facts-file`
+    // opts out of this cleanup so the report can be inspected; the user is then
+    // responsible for deleting it before the next full application reachability
+    // scan (a stale file is picked up as pre-generated input and would make those
+    // results unreliable).
+    if (
+      fullScanCResult.ok &&
+      scanId &&
+      reachabilityReport &&
+      !reach.reachRetainFactsFile
+    ) {
+      try {
+        await unlink(path.resolve(cwd, reachabilityReport))
+        debugFn(
+          'notice',
+          `[socket-facts] removed coana output after successful scan: ${reachabilityReport}`,
+        )
+      } catch {
+        // Best-effort — file may already be gone or unwritable.
+      }
+    }
+
+    if (report && fullScanCResult.ok) {
+      if (scanId) {
+        await handleScanReport({
+          filepath: '-',
+          fold: constants.FOLD_SETTING_VERSION,
+          includeLicensePolicy: true,
+          orgSlug,
+          outputKind,
+          reportLevel,
+          scanId,
+          short: false,
+        })
+      } else {
+        await outputCreateNewScan(
+          {
+            ok: false,
+            message: 'Missing Scan ID',
+            cause: 'Server did not respond with a scan ID',
+            data: fullScanCResult.data,
+          },
+          {
+            interactive,
+            outputKind,
+          },
+        )
+      }
+    } else {
+      spinner.stop()
+
+      await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
+    }
+  })
 }
