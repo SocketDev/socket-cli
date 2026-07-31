@@ -21,15 +21,15 @@ function summarize(outcomes: readonly RecursiveManifestOutcome[]): string {
   const skippedCovered = outcomes.filter(
     o => o.status === 'skippedCovered',
   ).length
-  const skippedIgnored = outcomes.filter(
-    o => o.status === 'skippedIgnored',
+  const skippedDisabled = outcomes.filter(
+    o => o.status === 'skippedDisabled',
   ).length
   const empty = outcomes.filter(o => o.status === 'empty').length
   const roots = new Set(outcomes.map(o => o.dir)).size
   return (
     `Generated ${generated} Socket facts file(s) across ${roots} build root(s); ` +
     `${failed} failed, ${skippedCovered} skipped (already covered), ` +
-    `${skippedIgnored} skipped (ignored/pom), ${empty} empty.`
+    `${skippedDisabled} skipped (disabled/pom), ${empty} empty.`
   )
 }
 

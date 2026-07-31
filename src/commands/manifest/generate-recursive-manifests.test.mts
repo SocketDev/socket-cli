@@ -232,7 +232,7 @@ describe('generateRecursiveManifests', () => {
       const byKey = new Map(
         outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
       )
-      expect(byKey.get('gradle:dual-marker-dir')).toBe('skippedIgnored')
+      expect(byKey.get('gradle:dual-marker-dir')).toBe('skippedDisabled')
       expect(
         vi
           .mocked(runManifestFacts)
@@ -246,11 +246,11 @@ describe('generateRecursiveManifests', () => {
     }
   })
 
-  it('skips (with a warning) a resolved config that sets ignored: true', async () => {
+  it('skips (with a warning) a resolved config that sets a cascaded disabled: true', async () => {
     vi.mocked(readSocketJsonCascade).mockImplementation(
       (dir, _boundaryDir, fallback) =>
         dir === reactor
-          ? { defaults: { manifest: { maven: { ignored: true } } } }
+          ? { defaults: { manifest: { maven: { disabled: true } } } }
           : fallback,
     )
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
@@ -266,12 +266,12 @@ describe('generateRecursiveManifests', () => {
       })
 
       const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
-      expect(warned).toMatch(/ignored is true/)
+      expect(warned).toMatch(/disabled is true/)
 
       const byKey = new Map(
         outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
       )
-      expect(byKey.get('maven:reactor')).toBe('skippedIgnored')
+      expect(byKey.get('maven:reactor')).toBe('skippedDisabled')
     } finally {
       warnSpy.mockRestore()
     }

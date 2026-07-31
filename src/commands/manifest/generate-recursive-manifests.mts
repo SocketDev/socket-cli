@@ -20,7 +20,7 @@ export type RecursiveManifestOutcomeStatus =
   | 'failed'
   | 'generated'
   | 'skippedCovered'
-  | 'skippedIgnored'
+  | 'skippedDisabled'
 
 export type RecursiveManifestOutcome = {
   dir: string
@@ -40,13 +40,16 @@ type EcosystemBuildConfig = {
   skipReason: string | undefined
 }
 
-// facts:false has no pom-mode equivalent here (facts-only), so it skips too.
+// A cascaded (not just root-level) disabled additionally skips this one build
+// root here, on top of its existing root-only ecosystem-wide meaning for
+// auto/gradle/etc. facts:false has no pom-mode equivalent here (facts-only),
+// so it skips too.
 function getSkipReason(
-  ignored: boolean | undefined,
+  disabled: boolean | undefined,
   facts?: boolean | undefined,
 ): string | undefined {
-  if (ignored) {
-    return 'defaults.manifest.<ecosystem>.ignored is true'
+  if (disabled) {
+    return 'defaults.manifest.<ecosystem>.disabled is true'
   }
   if (facts === false) {
     return 'defaults.manifest.<ecosystem>.facts is false (pom mode)'
@@ -72,7 +75,7 @@ function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome,
-      skipReason: getSkipReason(config?.ignored, config?.facts),
+      skipReason: getSkipReason(config?.disabled, config?.facts),
     }
   }
   if (ecosystem === 'gradle') {
@@ -86,7 +89,7 @@ function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome,
-      skipReason: getSkipReason(config?.ignored, config?.facts),
+      skipReason: getSkipReason(config?.disabled, config?.facts),
     }
   }
   const config = sockJson.defaults?.manifest?.maven
@@ -97,7 +100,7 @@ function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome,
-    skipReason: getSkipReason(config?.ignored),
+    skipReason: getSkipReason(config?.disabled),
   }
 }
 
@@ -148,7 +151,7 @@ export async function generateRecursiveManifests({
 
       if (skipReason) {
         logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
-        outcomes.push({ dir, ecosystem, status: 'skippedIgnored' })
+        outcomes.push({ dir, ecosystem, status: 'skippedDisabled' })
         continue
       }
 

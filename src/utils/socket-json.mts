@@ -60,14 +60,15 @@ export interface SocketJson {
         verbose?: boolean | undefined
       }
       gradle?: {
+        // Root-only: gates auto-detection for socket manifest auto/gradle.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
         bin?: string | undefined
         excludeConfigs?: string | undefined
         includeConfigs?: string | undefined
         facts?: boolean | undefined
         gradleOpts?: string | undefined
-        // Skips this project in dynamic-sbom-inference only.
-        ignored?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
@@ -75,12 +76,13 @@ export interface SocketJson {
         verbose?: boolean | undefined
       }
       maven?: {
+        // Root-only: gates auto-detection for socket manifest auto/maven.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
         bin?: string | undefined
         excludeConfigs?: string | undefined
         includeConfigs?: string | undefined
-        // Skips this project in dynamic-sbom-inference only.
-        ignored?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
@@ -89,6 +91,9 @@ export interface SocketJson {
         verbose?: boolean | undefined
       }
       sbt?: {
+        // Root-only: gates auto-detection for socket manifest auto/scala.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
         infile?: string | undefined
         stdin?: boolean | undefined
@@ -96,8 +101,6 @@ export interface SocketJson {
         excludeConfigs?: string | undefined
         includeConfigs?: string | undefined
         facts?: boolean | undefined
-        // Skips this project in dynamic-sbom-inference only.
-        ignored?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
