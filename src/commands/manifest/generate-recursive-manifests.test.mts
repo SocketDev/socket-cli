@@ -6,9 +6,7 @@ vi.mock('../../utils/socket-json.mts', () => ({
   readOrDefaultSocketJson: vi.fn(() => ({})),
   // Default: no per-root override found, fall back to the root config - matches
   // there being no nested socket.json anywhere in the fixture tree.
-  readOrDefaultSocketJsonUpTo: vi.fn(
-    (_dir, _boundaryDir, fallback) => fallback,
-  ),
+  readSocketJsonCascade: vi.fn((_dir, _boundaryDir, fallback) => fallback),
 }))
 vi.mock('./run-manifest-facts.mts', () => ({
   runManifestFacts: vi.fn(),
@@ -17,7 +15,7 @@ vi.mock('./run-manifest-facts.mts', () => ({
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { testPath } from '../../../test/utils.mts'
-import { readOrDefaultSocketJsonUpTo } from '../../utils/socket-json.mts'
+import { readSocketJsonCascade } from '../../utils/socket-json.mts'
 
 const monorepo = path.join(
   testPath,
@@ -33,7 +31,7 @@ function relOf(dir: string): string {
 describe('generateRecursiveManifests', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
-    vi.mocked(readOrDefaultSocketJsonUpTo).mockImplementation(
+    vi.mocked(readSocketJsonCascade).mockImplementation(
       (_dir, _boundaryDir, fallback) => fallback,
     )
   })
@@ -181,7 +179,7 @@ describe('generateRecursiveManifests', () => {
   })
 
   it('resolves each build root its own nearest socket.json instead of only the root config', async () => {
-    vi.mocked(readOrDefaultSocketJsonUpTo).mockImplementation(
+    vi.mocked(readSocketJsonCascade).mockImplementation(
       (dir, _boundaryDir, fallback) =>
         dir === dualMarkerDir
           ? { defaults: { manifest: { maven: { javaHome: '/opt/jdk-11' } } } }

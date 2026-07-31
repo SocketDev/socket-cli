@@ -8,7 +8,7 @@ import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import {
   readOrDefaultSocketJson,
-  readOrDefaultSocketJsonUpTo,
+  readSocketJsonCascade,
 } from '../../utils/socket-json.mts'
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
@@ -117,7 +117,7 @@ export async function generateRecursiveManifests({
         continue
       }
 
-      const sockJson = readOrDefaultSocketJsonUpTo(dir, cwd, rootSockJson)
+      const sockJson = readSocketJsonCascade(dir, cwd, rootSockJson)
       const {
         bin,
         buildOpts,

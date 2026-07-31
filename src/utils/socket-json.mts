@@ -146,27 +146,71 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-// Nearest socket.json walking up from `dir`, stopping at (and falling back to)
-// `fallback` once `boundaryDir` is reached rather than continuing past it.
-export function readOrDefaultSocketJsonUpTo(
+const MANIFEST_ECOSYSTEMS = [
+  'bazel',
+  'conda',
+  'gradle',
+  'maven',
+  'sbt',
+] as const
+
+// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields present
+// in `override` win, fields it doesn't set fall through to `base`. Everything
+// outside `defaults.manifest` (scan-level defaults, etc.) comes from `base`
+// only - only the manifest/build-tool section cascades.
+function mergeManifestDefaults(
+  base: SocketJson,
+  override: SocketJson,
+): SocketJson {
+  const overrideManifest = override.defaults?.manifest
+  if (!overrideManifest) {
+    return base
+  }
+  const baseManifest = base.defaults?.manifest
+  const mergedManifest: NonNullable<
+    NonNullable<SocketJson['defaults']>['manifest']
+  > = { ...baseManifest }
+  for (const eco of MANIFEST_ECOSYSTEMS) {
+    if (overrideManifest[eco]) {
+      mergedManifest[eco] = { ...baseManifest?.[eco], ...overrideManifest[eco] }
+    }
+  }
+  return {
+    ...base,
+    defaults: { ...base.defaults, manifest: mergedManifest },
+  }
+}
+
+// Cascades socket.json's `defaults.manifest.*` section from `rootSockJson`
+// down to `dir`: every ancestor between `dir` and `boundaryDir` (inclusive of
+// `dir`, exclusive of `boundaryDir` - that's already `rootSockJson`) that has
+// its own socket.json is merged in, nearest-to-`dir` taking precedence field
+// by field. A build root with no socket.json of its own simply inherits
+// `rootSockJson` unchanged.
+export function readSocketJsonCascade(
   dir: string,
   boundaryDir: string,
-  fallback: SocketJson,
+  rootSockJson: SocketJson,
 ): SocketJson {
   const boundary = path.resolve(boundaryDir)
   let current = path.resolve(dir)
+  // Farthest-from-dir first, so the merge loop below applies overrides in
+  // increasing precedence and the nearest-to-dir file wins last.
+  const ancestorsFarToNear: SocketJson[] = []
   while (current !== boundary) {
     if (existsSync(path.join(current, SOCKET_JSON))) {
       const jsonCResult = readSocketJsonSync(current, true)
-      return jsonCResult.ok ? jsonCResult.data : fallback
+      if (jsonCResult.ok) {
+        ancestorsFarToNear.unshift(jsonCResult.data)
+      }
     }
     const parent = path.dirname(current)
     if (parent === current) {
-      return fallback
+      break
     }
     current = parent
   }
-  return fallback
+  return ancestorsFarToNear.reduce(mergeManifestDefaults, rootSockJson)
 }
 
 export function getDefaultSocketJson(): SocketJson {
