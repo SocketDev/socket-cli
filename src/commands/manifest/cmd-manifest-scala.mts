@@ -208,8 +208,8 @@ async function run(
     }
   }
   if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.sbt?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.sbt?.includeConfigs
+    if (sockJson.defaults?.manifest?.sbt?.includeConfigs) {
+      includeConfigs = sockJson.defaults.manifest.sbt.includeConfigs
       logger.info(
         `Using default --include-configs from ${SOCKET_JSON}:`,
         includeConfigs,
@@ -219,8 +219,8 @@ async function run(
     }
   }
   if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.sbt?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.sbt?.excludeConfigs
+    if (sockJson.defaults?.manifest?.sbt?.excludeConfigs) {
+      excludeConfigs = sockJson.defaults.manifest.sbt.excludeConfigs
       logger.info(
         `Using default --exclude-configs from ${SOCKET_JSON}:`,
         excludeConfigs,
@@ -330,7 +330,7 @@ async function run(
     return
   }
 
-  const javaHome = sockJson.defaults?.manifest?.sbt?.javaHome
+  const javaHome = sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined
 
   if (verbose) {
     logger.group()

@@ -3,6 +3,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { expandEnvVarRefs } from './expand-env-var-refs.mts'
 import { renderResolutionErrorReport } from './scripts/resolution-report-render.mts'
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
@@ -14,27 +15,10 @@ import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const MAX_FAILURE_OUTPUT_LINES = 40
-const ENV_VAR_REF = /\$\{(\w+)\}|\$(\w+)/g
 
 export type RunManifestFactsResult = {
   factsPath: string
   projects: SocketFactsSbomProject[]
-}
-
-// Expands `$VAR`/`${VAR}` references (e.g. a team-shared `javaHome:
-// "$JAVA11_HOME"`) against the CLI process's own environment, so a socket.json
-// value works across machines instead of hardcoding one developer's path.
-function expandEnvVarRefs(value: string): { missing?: string; value: string } {
-  let missing: string | undefined
-  const expanded = value.replace(ENV_VAR_REF, (_match, braced, bare) => {
-    const name = braced ?? bare
-    const resolved = process.env[name]
-    if (resolved === undefined) {
-      missing ??= name
-    }
-    return resolved ?? ''
-  })
-  return missing ? { missing, value: expanded } : { value: expanded }
 }
 
 // Last N non-empty lines of the captured build output, for diagnosing a crash

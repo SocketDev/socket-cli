@@ -206,8 +206,8 @@ async function run(
     }
   }
   if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.gradle?.includeConfigs
+    if (sockJson.defaults?.manifest?.gradle?.includeConfigs) {
+      includeConfigs = sockJson.defaults.manifest.gradle.includeConfigs
       logger.info(
         `Using default --include-configs from ${SOCKET_JSON}:`,
         includeConfigs,
@@ -217,8 +217,8 @@ async function run(
     }
   }
   if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.gradle?.excludeConfigs
+    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs) {
+      excludeConfigs = sockJson.defaults.manifest.gradle.excludeConfigs
       logger.info(
         `Using default --exclude-configs from ${SOCKET_JSON}:`,
         excludeConfigs,
@@ -276,7 +276,7 @@ async function run(
     return
   }
 
-  const javaHome = sockJson.defaults?.manifest?.gradle?.javaHome
+  const javaHome = sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined
 
   if (verbose) {
     logger.group()

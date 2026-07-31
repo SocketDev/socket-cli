@@ -207,6 +207,33 @@ describe('generateRecursiveManifests', () => {
     expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
   })
 
+  it('resolves an explicit null override back to the no-restriction default, not a literal null', async () => {
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === dualMarkerDir
+          ? {
+              defaults: {
+                manifest: { maven: { excludeConfigs: null, javaHome: null } },
+              },
+            }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    await generateRecursiveManifests({ cwd: monorepo, verbose: false })
+
+    const call = vi
+      .mocked(runManifestFacts)
+      .mock.calls.find(
+        ([opts]) => opts.cwd === dualMarkerDir && opts.ecosystem === 'maven',
+      )
+    expect(call?.[0].excludeConfigs).toBe('')
+    expect(call?.[0].javaHome).toBeUndefined()
+  })
+
   it('skips (with a warning) a resolved config that sets facts: false, never invoking the build tool', async () => {
     vi.mocked(readSocketJsonCascade).mockImplementation(
       (dir, _boundaryDir, fallback) =>
@@ -241,6 +268,117 @@ describe('generateRecursiveManifests', () => {
               opts.cwd === dualMarkerDir && opts.ecosystem === 'gradle',
           ),
       ).toBe(false)
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('shortens the cascade walk for a nested candidate under an already-disabled root, instead of re-walking from cwd', async () => {
+    const independentSubmodule = path.join(
+      reactor,
+      'moduleB',
+      'independent-submodule',
+    )
+    // Maven-only candidates nested under reactor; excludes the differently-
+    // tooled reactor/moduleA/nested-gradle, which is its own gradle-ecosystem
+    // candidate never marked disabled and correctly still walks from cwd.
+    const nestedMavenDirs = new Set([
+      path.join(reactor, 'moduleA'),
+      path.join(reactor, 'moduleB'),
+      independentSubmodule,
+    ])
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, boundaryDir, fallback) => {
+        if (dir === reactor && boundaryDir === monorepo) {
+          // The one full walk: reactor's own socket.json disables maven.
+          return { defaults: { manifest: { maven: { disabled: true } } } }
+        }
+        // Every other maven candidate nested under reactor must use a
+        // boundary nearer than the overall recursion root - never re-walk
+        // all the way back to monorepo/rootSockJson once an ancestor is
+        // already confirmed disabled.
+        if (nestedMavenDirs.has(dir)) {
+          expect(boundaryDir).not.toBe(monorepo)
+        }
+        return fallback
+      },
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('maven:reactor')).toBe('skippedDisabled')
+      expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
+        'skippedDisabled',
+      )
+      expect(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.some(
+            ([opts]) =>
+              opts.ecosystem === 'maven' &&
+              opts.cwd.startsWith(reactor) &&
+              opts.cwd !== independentSubmodule,
+          ),
+      ).toBe(false)
+      // Four maven candidates end up skippedDisabled (reactor + moduleA +
+      // moduleB + independent-submodule), but only the root cause should
+      // warn - otherwise a big disabled reactor spams one line per pom.
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      expect(String(warnSpy.mock.calls[0]?.[0])).toMatch(/disabled is true/)
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('still honors a nested override that re-enables a build root under an otherwise-disabled ancestor', async () => {
+    const independentSubmodule = path.join(
+      reactor,
+      'moduleB',
+      'independent-submodule',
+    )
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) => {
+        if (dir === reactor) {
+          return { defaults: { manifest: { maven: { disabled: true } } } }
+        }
+        if (dir === independentSubmodule) {
+          // Its own socket.json explicitly clears the inherited disable.
+          return { defaults: { manifest: { maven: { disabled: false } } } }
+        }
+        return fallback
+      },
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('maven:reactor')).toBe('skippedDisabled')
+      expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
+        'generated',
+      )
     } finally {
       warnSpy.mockRestore()
     }

@@ -10,7 +10,11 @@ import constants from '../../../constants.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
 
 import type { BuildTool } from './build-tool.mts'
-import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
+import type {
+  ResolvedArtifactPaths,
+  SocketFactsSbom,
+  SocketFactsSbomProject,
+} from './facts.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
 export type ManifestScriptOptions = {
@@ -54,7 +58,18 @@ export type ManifestRunResult = {
 type RunOutput = { code: number; stdout: string; stderr: string }
 
 const FACTS_TASK = 'socketFacts'
-const SBT_PLUGIN_FILENAME = 'SocketFactsPlugin.scala'
+const WORKSPACES_TASK = 'socketWorkspaces'
+// Destination filename inside sbt's isolated plugins/ dir; unrelated to the source filename, which
+// is whatever socket-facts.plugin.scala / socket-workspaces.plugin.scala are called on disk.
+const SBT_FACTS_PLUGIN_FILENAME = 'SocketFactsPlugin.scala'
+const SBT_WORKSPACES_PLUGIN_FILENAME = 'SocketWorkspacesPlugin.scala'
+
+export type WorkspaceEnumerationResult = {
+  code: number
+  projects: SocketFactsSbomProject[]
+  stderr: string
+  stdout: string
+}
 
 // Bundled emitter assets, copied into dist by the rollup build.
 function manifestScriptsPath(...parts: string[]): string {
@@ -105,14 +120,15 @@ async function runNeverThrow(
   }
 }
 
-async function writeSbtPlugin(globalBase: string): Promise<void> {
-  const src = await fs.readFile(
-    manifestScriptsPath('socket-facts.plugin.scala'),
-    'utf8',
-  )
+async function writeSbtPlugin(
+  globalBase: string,
+  sourceFilename: string,
+  destFilename: string,
+): Promise<void> {
+  const src = await fs.readFile(manifestScriptsPath(sourceFilename), 'utf8')
   const pluginsDir = path.join(globalBase, 'plugins')
   await fs.mkdir(pluginsDir, { recursive: true })
-  await fs.writeFile(path.join(pluginsDir, SBT_PLUGIN_FILENAME), src)
+  await fs.writeFile(path.join(pluginsDir, destFilename), src)
 }
 
 async function assembleFromRecords(
@@ -160,6 +176,28 @@ export async function runManifestScript(
   }
 }
 
+// Cheap subproject discovery: emits only `project` records, never resolving
+// dependencies. Distinct from a full `runManifestScript` run, which gets the
+// same subproject list for free as a side effect of the resolution it already
+// has to do; this path exists for discovery BEFORE committing to that cost
+// (e.g. `socket manifest setup --recursive`).
+export async function enumerateWorkspaces(
+  tool: BuildTool,
+  opts: ManifestScriptOptions,
+): Promise<WorkspaceEnumerationResult> {
+  const result = await (tool === 'gradle'
+    ? enumerateGradleWorkspaces(opts)
+    : tool === 'sbt'
+      ? enumerateSbtWorkspaces(opts)
+      : enumerateMavenWorkspaces(opts))
+  return {
+    code: result.code,
+    projects: result.facts.projects ?? [],
+    stderr: result.stderr,
+    stdout: result.stdout,
+  }
+}
+
 function commonProps(
   opts: ManifestScriptOptions,
   prefix: '-D' | '-P',
@@ -185,11 +223,14 @@ function commonProps(
   return props
 }
 
-async function runGradle(
+async function invokeGradle(
   opts: ManifestScriptOptions,
+  initScriptFilename: string,
+  task: string,
+  tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
-  const initScript = manifestScriptsPath('socket-facts.init.gradle')
-  return await withTmpDir('socket-gradle-facts-', async tmp => {
+  const initScript = manifestScriptsPath(initScriptFilename)
+  return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
     const bin = resolveBuildToolBin('gradle', opts.projectDir, opts.bin)
     // Disable the configuration cache: the init script's legacy
@@ -201,7 +242,7 @@ async function runGradle(
       `-Psocket.recordsFile=${recordsFile}`,
       ...commonProps(opts, '-P'),
       ...(opts.toolOpts ?? []),
-      FACTS_TASK,
+      task,
       '--no-daemon',
       '--console=plain',
     ]
@@ -210,11 +251,36 @@ async function runGradle(
   })
 }
 
-async function runSbtIn(
-  globalBase: string,
+async function runGradle(
   opts: ManifestScriptOptions,
 ): Promise<ManifestRunResult> {
-  await writeSbtPlugin(globalBase)
+  return await invokeGradle(
+    opts,
+    'socket-facts.init.gradle',
+    FACTS_TASK,
+    'socket-gradle-facts-',
+  )
+}
+
+async function enumerateGradleWorkspaces(
+  opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  return await invokeGradle(
+    opts,
+    'socket-workspaces.init.gradle',
+    WORKSPACES_TASK,
+    'socket-gradle-workspaces-',
+  )
+}
+
+async function invokeSbtIn(
+  globalBase: string,
+  opts: ManifestScriptOptions,
+  pluginSourceFilename: string,
+  pluginDestFilename: string,
+  task: string,
+): Promise<ManifestRunResult> {
+  await writeSbtPlugin(globalBase, pluginSourceFilename, pluginDestFilename)
   const recordsFile = path.join(globalBase, 'records.tsv')
   const bin = resolveBuildToolBin('sbt', opts.projectDir, opts.bin)
   // Fresh per-run global base (not ~/.sbt): sbt executes everything under
@@ -241,37 +307,62 @@ async function runSbtIn(
     ...props,
     ...(opts.toolOpts ?? []),
     '--batch',
-    FACTS_TASK,
+    task,
   ]
   const out = await runNeverThrow(bin, args, opts)
   return await assembleFromRecords(out, recordsFile)
 }
 
 async function runSbt(opts: ManifestScriptOptions): Promise<ManifestRunResult> {
+  const run = (globalBase: string) =>
+    invokeSbtIn(
+      globalBase,
+      opts,
+      'socket-facts.plugin.scala',
+      SBT_FACTS_PLUGIN_FILENAME,
+      FACTS_TASK,
+    )
   if (opts.tmpDir) {
-    return await runSbtIn(opts.tmpDir, opts)
+    return await run(opts.tmpDir)
   }
-  return await withTmpDir('socket-sbt-facts-', globalBase =>
-    runSbtIn(globalBase, opts),
-  )
+  return await withTmpDir('socket-sbt-facts-', run)
 }
 
-async function runMaven(
+async function enumerateSbtWorkspaces(
   opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  const run = (globalBase: string) =>
+    invokeSbtIn(
+      globalBase,
+      opts,
+      'socket-workspaces.plugin.scala',
+      SBT_WORKSPACES_PLUGIN_FILENAME,
+      WORKSPACES_TASK,
+    )
+  if (opts.tmpDir) {
+    return await run(opts.tmpDir)
+  }
+  return await withTmpDir('socket-sbt-workspaces-', run)
+}
+
+async function invokeMaven(
+  opts: ManifestScriptOptions,
+  coanaTask: string,
+  tmpDirPrefix: string,
 ): Promise<ManifestRunResult> {
   const jarPath = manifestScriptsPath(
     'maven-extension',
     'coana-maven-extension.jar',
   )
   assertMavenExtensionBuilt(jarPath)
-  return await withTmpDir('socket-maven-facts-', async tmp => {
+  return await withTmpDir(tmpDirPrefix, async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
     const bin = resolveBuildToolBin('maven', opts.projectDir, opts.bin)
-    // `validate` is the cheapest phase that triggers the afterSessionEnd
-    // extension; no compile needed (analysis uses configured paths, not classes).
+    // `validate` is the cheapest phase that triggers the extension; no compile
+    // needed (analysis uses configured paths, not classes).
     const props = [
       `-Dmaven.ext.class.path=${jarPath}`,
-      '-Dcoana.task=socket-facts',
+      `-Dcoana.task=${coanaTask}`,
       `-Dsocket.recordsFile=${recordsFile}`,
       ...commonProps(opts, '-D'),
     ]
@@ -284,4 +375,20 @@ async function runMaven(
     const out = await runNeverThrow(bin, args, opts)
     return await assembleFromRecords(out, recordsFile)
   })
+}
+
+async function runMaven(
+  opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  return await invokeMaven(opts, 'socket-facts', 'socket-maven-facts-')
+}
+
+async function enumerateMavenWorkspaces(
+  opts: ManifestScriptOptions,
+): Promise<ManifestRunResult> {
+  return await invokeMaven(
+    opts,
+    'socket-workspaces',
+    'socket-maven-workspaces-',
+  )
 }

@@ -57,6 +57,33 @@ function getSkipReason(
   return undefined
 }
 
+type DisabledRoot = { dir: string; sockJson: SocketJson }
+
+// Nearest already-confirmed-disabled ancestor of `dir` (if any): lets the
+// caller shorten `readSocketJsonCascade`'s walk to start there instead of
+// all the way back at `cwd`. A build root with hundreds of nested candidates
+// (a big disabled legacy reactor, say) would otherwise re-walk the same long
+// ancestor chain from `cwd` for every single one. Correctness is unaffected
+// - the shortened walk still checks every directory between `dir` and the
+// chosen boundary, so a nested override (re-enabling a specific subproject)
+// is still honored - it's just cheaper when nothing overrides it, which is
+// the common case. Picks the deepest (nearest) match if several qualify.
+function nearestDisabledRoot(
+  dir: string,
+  disabledRoots: readonly DisabledRoot[],
+): DisabledRoot | undefined {
+  let nearest: DisabledRoot | undefined
+  for (const root of disabledRoots) {
+    if (
+      dir.startsWith(`${root.dir}${path.sep}`) &&
+      (!nearest || root.dir.length > nearest.dir.length)
+    ) {
+      nearest = root
+    }
+  }
+  return nearest
+}
+
 // Resolves this build root's effective per-ecosystem build-tool config from
 // its cascaded socket.json; a wrapper-preferred `bin` default is resolved
 // per-root (`dir`, not `cwd`) since a wrapper script only exists at the
@@ -68,38 +95,39 @@ function resolveEcosystemConfig(
 ): EcosystemBuildConfig {
   if (ecosystem === 'sbt') {
     const config = sockJson.defaults?.manifest?.sbt
+    const bin = config?.bin ?? undefined
     return {
-      bin: config?.bin ?? 'sbt',
-      buildOpts: parseBuildToolOpts(config?.sbtOpts),
+      bin: bin ?? 'sbt',
+      buildOpts: parseBuildToolOpts(config?.sbtOpts ?? undefined),
       excludeConfigs: config?.excludeConfigs ?? '',
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
-      javaHome: config?.javaHome,
+      javaHome: config?.javaHome ?? undefined,
       skipReason: getSkipReason(config?.disabled, config?.facts),
     }
   }
   if (ecosystem === 'gradle') {
     const config = sockJson.defaults?.manifest?.gradle
+    const bin = config?.bin ?? undefined
     return {
-      bin: config?.bin
-        ? path.resolve(dir, config.bin)
-        : resolveBuildToolBin('gradle', dir),
-      buildOpts: parseBuildToolOpts(config?.gradleOpts),
+      bin: bin ? path.resolve(dir, bin) : resolveBuildToolBin('gradle', dir),
+      buildOpts: parseBuildToolOpts(config?.gradleOpts ?? undefined),
       excludeConfigs: config?.excludeConfigs ?? '',
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
-      javaHome: config?.javaHome,
+      javaHome: config?.javaHome ?? undefined,
       skipReason: getSkipReason(config?.disabled, config?.facts),
     }
   }
   const config = sockJson.defaults?.manifest?.maven
+  const bin = config?.bin ?? undefined
   return {
-    bin: config?.bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: parseBuildToolOpts(config?.mavenOpts),
+    bin: bin ?? resolveBuildToolBin('maven', dir),
+    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
-    javaHome: config?.javaHome,
+    javaHome: config?.javaHome ?? undefined,
     skipReason: getSkipReason(config?.disabled),
   }
 }
@@ -132,13 +160,17 @@ export async function generateRecursiveManifests({
   const outcomes: RecursiveManifestOutcome[] = []
   for (const [ecosystem, dirs] of candidatesByTool) {
     const covered = new Set<string>()
+    const disabledRoots: DisabledRoot[] = []
     for (const dir of dirs) {
       if (covered.has(dir)) {
         outcomes.push({ dir, ecosystem, status: 'skippedCovered' })
         continue
       }
 
-      const sockJson = readSocketJsonCascade(dir, cwd, rootSockJson)
+      const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
+      const sockJson = nearestRoot
+        ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
+        : readSocketJsonCascade(dir, cwd, rootSockJson)
       const {
         bin,
         buildOpts,
@@ -150,8 +182,16 @@ export async function generateRecursiveManifests({
       } = resolveEcosystemConfig(ecosystem, dir, sockJson)
 
       if (skipReason) {
-        logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
+        // Only warn for a genuinely new disabled root, not one already
+        // covered by an ancestor's warning above - otherwise a big disabled
+        // reactor with hundreds of nested poms would spam one warning line
+        // per pom for what's really a single root cause. The aggregate
+        // count still shows up in the final summary either way.
+        if (!nearestRoot) {
+          logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
+        }
         outcomes.push({ dir, ecosystem, status: 'skippedDisabled' })
+        disabledRoots.push({ dir, sockJson })
         continue
       }
 

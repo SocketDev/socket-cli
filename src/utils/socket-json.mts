@@ -64,15 +64,17 @@ export interface SocketJson {
         // Cascaded (any level): also skips that build root in
         // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        // A field set to null explicitly clears an inherited cascade value
+        // (widens back to the tool default) instead of restating it.
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         facts?: boolean | undefined
-        gradleOpts?: string | undefined
+        gradleOpts?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
-        javaHome?: string | undefined
+        javaHome?: string | undefined | null
         verbose?: boolean | undefined
       }
       maven?: {
@@ -80,14 +82,14 @@ export interface SocketJson {
         // Cascaded (any level): also skips that build root in
         // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
-        javaHome?: string | undefined
-        mavenOpts?: string | undefined
+        javaHome?: string | undefined | null
+        mavenOpts?: string | undefined | null
         verbose?: boolean | undefined
       }
       sbt?: {
@@ -95,18 +97,18 @@ export interface SocketJson {
         // Cascaded (any level): also skips that build root in
         // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        infile?: string | undefined
+        infile?: string | undefined | null
         stdin?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
         // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
         // $VAR/${VAR} expansion against the CLI's own environment.
-        javaHome?: string | undefined
-        outfile?: string | undefined
-        sbtOpts?: string | undefined
+        javaHome?: string | undefined | null
+        outfile?: string | undefined | null
+        sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
       }
@@ -155,14 +157,6 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-const MANIFEST_ECOSYSTEMS = [
-  'bazel',
-  'conda',
-  'gradle',
-  'maven',
-  'sbt',
-] as const
-
 // Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields present
 // in `override` win, fields it doesn't set fall through to `base`. Everything
 // outside `defaults.manifest` (scan-level defaults, etc.) comes from `base`
@@ -179,10 +173,23 @@ function mergeManifestDefaults(
   const mergedManifest: NonNullable<
     NonNullable<SocketJson['defaults']>['manifest']
   > = { ...baseManifest }
-  for (const eco of MANIFEST_ECOSYSTEMS) {
-    if (overrideManifest[eco]) {
-      mergedManifest[eco] = { ...baseManifest?.[eco], ...overrideManifest[eco] }
+  if (overrideManifest.bazel) {
+    mergedManifest.bazel = { ...baseManifest?.bazel, ...overrideManifest.bazel }
+  }
+  if (overrideManifest.conda) {
+    mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
+  }
+  if (overrideManifest.gradle) {
+    mergedManifest.gradle = {
+      ...baseManifest?.gradle,
+      ...overrideManifest.gradle,
     }
+  }
+  if (overrideManifest.maven) {
+    mergedManifest.maven = { ...baseManifest?.maven, ...overrideManifest.maven }
+  }
+  if (overrideManifest.sbt) {
+    mergedManifest.sbt = { ...baseManifest?.sbt, ...overrideManifest.sbt }
   }
   return {
     ...base,

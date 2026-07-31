@@ -121,6 +121,21 @@ describe('readSocketJsonCascade', () => {
     })
   })
 
+  it('treats an explicit null as clearing an inherited value, not restating it', async () => {
+    const buildRoot = path.join(root, 'project')
+    await fs.mkdir(buildRoot, { recursive: true })
+    await writeSocketJson(buildRoot, {
+      version: 1,
+      defaults: { manifest: { maven: { excludeConfigs: null } } },
+    })
+
+    const result = readSocketJsonCascade(buildRoot, root, rootSockJson)
+    expect(mavenConfig(result)).toEqual({
+      bin: 'mvn',
+      excludeConfigs: null,
+    })
+  })
+
   it('does not walk past the boundary even if an ancestor above it has one', async () => {
     await writeSocketJson(tmpdir(), {
       version: 1,

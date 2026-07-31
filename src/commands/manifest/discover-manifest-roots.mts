@@ -32,7 +32,7 @@ for (const tool of BUILD_TOOLS) {
   }
 }
 
-async function realpathOrResolved(dir: string): Promise<string> {
+export async function realpathOrResolved(dir: string): Promise<string> {
   try {
     return await fs.realpath(dir)
   } catch {

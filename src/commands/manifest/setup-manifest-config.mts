@@ -269,29 +269,36 @@ async function setupConda(
   return notCanceled()
 }
 
-async function setupGradle(
+export async function setupGradle(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
+  const priorBin = config.bin
   const bin = await askForBin(config.bin || './gradlew')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
+  } else if (priorBin) {
+    config.bin = null
   } else {
     delete config.bin
   }
 
+  const priorJavaHome = config.javaHome
   const javaHome = await askForJavaHome(config.javaHome || '')
   if (javaHome === undefined) {
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
+  } else if (priorJavaHome) {
+    config.javaHome = null
   } else {
     delete config.javaHome
   }
 
+  const priorGradleOpts = config.gradleOpts
   const opts = await input({
     message: '(--gradle-opts) Enter gradle options to pass through',
     default: config.gradleOpts || '',
@@ -302,6 +309,8 @@ async function setupGradle(
     return canceledByUser()
   } else if (opts) {
     config.gradleOpts = opts
+  } else if (priorGradleOpts) {
+    config.gradleOpts = null
   } else {
     delete config.gradleOpts
   }
@@ -336,29 +345,36 @@ async function setupGradle(
   return notCanceled()
 }
 
-async function setupMaven(
+export async function setupMaven(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['maven']
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
+  const priorBin = config.bin
   const bin = await askForBin(config.bin || 'mvn')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
+  } else if (priorBin) {
+    config.bin = null
   } else {
     delete config.bin
   }
 
+  const priorJavaHome = config.javaHome
   const javaHome = await askForJavaHome(config.javaHome || '')
   if (javaHome === undefined) {
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
+  } else if (priorJavaHome) {
+    config.javaHome = null
   } else {
     delete config.javaHome
   }
 
+  const priorMavenOpts = config.mavenOpts
   const opts = await input({
     message: '(--maven-opts) Enter maven options to pass through',
     default: config.mavenOpts || '',
@@ -368,6 +384,8 @@ async function setupMaven(
     return canceledByUser()
   } else if (opts) {
     config.mavenOpts = opts
+  } else if (priorMavenOpts) {
+    config.mavenOpts = null
   } else {
     delete config.mavenOpts
   }
@@ -391,29 +409,36 @@ async function setupMaven(
   return notCanceled()
 }
 
-async function setupSbt(
+export async function setupSbt(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
+  const priorBin = config.bin
   const bin = await askForBin(config.bin || 'sbt')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
+  } else if (priorBin) {
+    config.bin = null
   } else {
     delete config.bin
   }
 
+  const priorJavaHome = config.javaHome
   const javaHome = await askForJavaHome(config.javaHome || '')
   if (javaHome === undefined) {
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
+  } else if (priorJavaHome) {
+    config.javaHome = null
   } else {
     delete config.javaHome
   }
 
+  const priorSbtOpts = config.sbtOpts
   const opts = await input({
     message: '(--sbt-opts) Enter sbt options to pass through',
     default: config.sbtOpts || '',
@@ -424,6 +449,8 @@ async function setupSbt(
     return canceledByUser()
   } else if (opts) {
     config.sbtOpts = opts
+  } else if (priorSbtOpts) {
+    config.sbtOpts = null
   } else {
     delete config.sbtOpts
   }
@@ -672,10 +699,11 @@ async function askForIgnoreUnresolvedFlag(
 // Prompts for the facts-only options shared by gradle and sbt: the config
 // include/exclude filters and --ignore-unresolved. Mutates `config` in place.
 async function setupFactsOptions(config: {
-  excludeConfigs?: string | undefined
+  excludeConfigs?: string | undefined | null
   ignoreUnresolved?: boolean | undefined
-  includeConfigs?: string | undefined
+  includeConfigs?: string | undefined | null
 }): Promise<CResult<{ canceled: boolean }>> {
+  const priorIncludeConfigs = config.includeConfigs
   const includeConfigs = await input({
     message:
       '(--include-configs) Comma-separated config-name globs to resolve (blank = all configurations)',
@@ -686,10 +714,15 @@ async function setupFactsOptions(config: {
     return canceledByUser()
   } else if (includeConfigs) {
     config.includeConfigs = includeConfigs
+  } else if (priorIncludeConfigs) {
+    // Was previously set; clear it explicitly instead of just deleting the
+    // key, so it doesn't silently start inheriting an ancestor's value again.
+    config.includeConfigs = null
   } else {
     delete config.includeConfigs
   }
 
+  const priorExcludeConfigs = config.excludeConfigs
   const excludeConfigs = await input({
     message:
       '(--exclude-configs) Comma-separated config-name globs to skip (blank = none)',
@@ -700,6 +733,8 @@ async function setupFactsOptions(config: {
     return canceledByUser()
   } else if (excludeConfigs) {
     config.excludeConfigs = excludeConfigs
+  } else if (priorExcludeConfigs) {
+    config.excludeConfigs = null
   } else {
     delete config.excludeConfigs
   }
