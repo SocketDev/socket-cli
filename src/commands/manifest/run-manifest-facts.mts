@@ -45,6 +45,7 @@ export async function runManifestFacts({
   excludePaths,
   ignoreUnresolved,
   includeConfigs,
+  javaHome,
   sidecarAcc,
   tmpDir,
   verbose,
@@ -58,6 +59,7 @@ export async function runManifestFacts({
   excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome?: string | undefined
   sidecarAcc?: SidecarAccumulator | undefined
   // sbt only; see ManifestScriptOptions.tmpDir.
   tmpDir?: string | undefined
@@ -74,6 +76,8 @@ export async function runManifestFacts({
     bin: bin || undefined,
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
+    // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
+    env: javaHome ? { ...process.env, JAVA_HOME: javaHome } : undefined,
     includeConfigs: includeConfigs || undefined,
     projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and

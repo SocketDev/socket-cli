@@ -279,10 +279,13 @@ async function run(
     return
   }
 
+  const javaHome = sockJson.defaults?.manifest?.gradle?.javaHome
+
   if (verbose) {
     logger.group()
     logger.info('- cwd:', cwd)
     logger.info('- gradle bin:', bin)
+    logger.info('- java home:', javaHome || '(inherited)')
     logger.groupEnd()
   }
 
@@ -305,6 +308,7 @@ async function run(
       gradleOpts: parsedGradleOpts,
       ignoreUnresolved: Boolean(ignoreUnresolved),
       includeConfigs: String(includeConfigs || ''),
+      javaHome,
       verbose: Boolean(verbose),
     })
     return

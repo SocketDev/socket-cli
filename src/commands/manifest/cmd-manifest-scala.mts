@@ -330,11 +330,14 @@ async function run(
     return
   }
 
+  const javaHome = sockJson.defaults?.manifest?.sbt?.javaHome
+
   if (verbose) {
     logger.group()
     logger.log('- target:', cwd)
     logger.log('- sbt bin:', bin)
     logger.log('- out:', out)
+    logger.log('- java home:', javaHome || '(inherited)')
     logger.groupEnd()
   }
 
@@ -357,6 +360,7 @@ async function run(
         excludePaths,
         ignoreUnresolved: Boolean(ignoreUnresolved),
         includeConfigs: String(includeConfigs || ''),
+        javaHome,
         sbtOpts: parsedSbtOpts,
         tmpDir,
         verbose: Boolean(verbose),

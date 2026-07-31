@@ -283,6 +283,15 @@ async function setupGradle(
     delete config.bin
   }
 
+  const javaHome = await askForJavaHome(config.javaHome || '')
+  if (javaHome === undefined) {
+    return canceledByUser()
+  } else if (javaHome) {
+    config.javaHome = javaHome
+  } else {
+    delete config.javaHome
+  }
+
   const opts = await input({
     message: '(--gradle-opts) Enter gradle options to pass through',
     default: config.gradleOpts || '',
@@ -341,6 +350,15 @@ async function setupMaven(
     delete config.bin
   }
 
+  const javaHome = await askForJavaHome(config.javaHome || '')
+  if (javaHome === undefined) {
+    return canceledByUser()
+  } else if (javaHome) {
+    config.javaHome = javaHome
+  } else {
+    delete config.javaHome
+  }
+
   const opts = await input({
     message: '(--maven-opts) Enter maven options to pass through',
     default: config.mavenOpts || '',
@@ -385,6 +403,15 @@ async function setupSbt(
     config.bin = bin
   } else {
     delete config.bin
+  }
+
+  const javaHome = await askForJavaHome(config.javaHome || '')
+  if (javaHome === undefined) {
+    return canceledByUser()
+  } else if (javaHome) {
+    config.javaHome = javaHome
+  } else {
+    delete config.javaHome
   }
 
   const opts = await input({
@@ -548,6 +575,16 @@ async function askForBin(defaultName = ''): Promise<string | undefined> {
     default: defaultName,
     required: false,
     // validate: async string => bool
+  })
+}
+
+async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
+  return await input({
+    message:
+      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME.' +
+      (defaultName ? ' (Backspace to leave default)' : ''),
+    default: defaultName,
+    required: false,
   })
 }
 

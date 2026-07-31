@@ -214,10 +214,13 @@ async function run(
     return
   }
 
+  const javaHome = sockJson.defaults?.manifest?.maven?.javaHome
+
   if (verbose) {
     logger.group()
     logger.info('- cwd:', cwd)
     logger.info('- maven bin:', bin)
+    logger.info('- java home:', javaHome || '(inherited)')
     logger.groupEnd()
   }
 
@@ -238,6 +241,7 @@ async function run(
     excludePaths,
     ignoreUnresolved: Boolean(ignoreUnresolved),
     includeConfigs: String(includeConfigs || ''),
+    javaHome,
     mavenOpts: parsedMavenOpts,
     verbose: Boolean(verbose),
   })

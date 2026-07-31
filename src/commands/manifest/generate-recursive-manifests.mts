@@ -31,6 +31,7 @@ type EcosystemBuildConfig = {
   excludeConfigs: string
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome: string | undefined
 }
 
 // Resolves the single, global per-ecosystem build-tool config (socket.json
@@ -52,6 +53,7 @@ function resolveEcosystemConfig(
       excludeConfigs: config?.excludeConfigs ?? '',
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
+      javaHome: config?.javaHome,
     }
   }
   if (ecosystem === 'gradle') {
@@ -64,6 +66,7 @@ function resolveEcosystemConfig(
       excludeConfigs: config?.excludeConfigs ?? '',
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
+      javaHome: config?.javaHome,
     }
   }
   const config = sockJson.defaults?.manifest?.maven
@@ -73,6 +76,7 @@ function resolveEcosystemConfig(
     excludeConfigs: config?.excludeConfigs ?? '',
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
+    javaHome: config?.javaHome,
   }
 }
 
@@ -116,6 +120,7 @@ export async function generateRecursiveManifests({
         excludeConfigs,
         ignoreUnresolved,
         includeConfigs,
+        javaHome,
       } = resolveEcosystemConfig(ecosystem, dir, sockJson)
       const excludePathsForRoot = projectIgnorePathsToReachExcludePaths(
         excludePaths,
@@ -133,6 +138,7 @@ export async function generateRecursiveManifests({
         excludePaths: excludePathsForRoot,
         ignoreUnresolved,
         includeConfigs,
+        javaHome,
         verbose,
       })
 

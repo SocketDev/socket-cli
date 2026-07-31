@@ -104,6 +104,7 @@ export async function generateAutoManifest({
           sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
+        javaHome: sockJson.defaults?.manifest?.sbt?.javaHome,
         sidecarAcc,
         tmpDir,
         withFiles: computeArtifactsSidecar,
@@ -149,6 +150,7 @@ export async function generateAutoManifest({
         ),
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
+        javaHome: sockJson.defaults?.manifest?.gradle?.javaHome,
         sidecarAcc,
         withFiles: computeArtifactsSidecar,
       })
@@ -178,6 +180,7 @@ export async function generateAutoManifest({
         sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
+      javaHome: sockJson.defaults?.manifest?.maven?.javaHome,
       mavenOpts: parseBuildToolOpts(
         sockJson.defaults?.manifest?.maven?.mavenOpts,
       ),

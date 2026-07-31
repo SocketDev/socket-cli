@@ -67,6 +67,8 @@ export interface SocketJson {
         facts?: boolean | undefined
         gradleOpts?: string | undefined
         ignoreUnresolved?: boolean | undefined
+        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        javaHome?: string | undefined
         verbose?: boolean | undefined
       }
       maven?: {
@@ -75,6 +77,8 @@ export interface SocketJson {
         excludeConfigs?: string | undefined
         includeConfigs?: string | undefined
         ignoreUnresolved?: boolean | undefined
+        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        javaHome?: string | undefined
         mavenOpts?: string | undefined
         verbose?: boolean | undefined
       }
@@ -87,6 +91,8 @@ export interface SocketJson {
         includeConfigs?: string | undefined
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
+        // Absolute JDK path; sets JAVA_HOME for this ecosystem's build tool.
+        javaHome?: string | undefined
         outfile?: string | undefined
         sbtOpts?: string | undefined
         stdout?: boolean | undefined
