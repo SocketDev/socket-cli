@@ -207,7 +207,7 @@ describe('generateRecursiveManifests', () => {
     expect(javaHomeByCall.get('maven:reactor')).toBeUndefined()
   })
 
-  it('warns but still generates facts when a resolved config sets facts: false', async () => {
+  it('skips (with a warning) a resolved config that sets facts: false, never invoking the build tool', async () => {
     vi.mocked(readSocketJsonCascade).mockImplementation(
       (dir, _boundaryDir, fallback) =>
         dir === dualMarkerDir
@@ -227,12 +227,51 @@ describe('generateRecursiveManifests', () => {
       })
 
       const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
-      expect(warned).toMatch(/facts: false/)
+      expect(warned).toMatch(/facts is false/)
 
       const byKey = new Map(
         outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
       )
-      expect(byKey.get('gradle:dual-marker-dir')).toBe('generated')
+      expect(byKey.get('gradle:dual-marker-dir')).toBe('skippedIgnored')
+      expect(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.some(
+            ([opts]) =>
+              opts.cwd === dualMarkerDir && opts.ecosystem === 'gradle',
+          ),
+      ).toBe(false)
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('skips (with a warning) a resolved config that sets ignored: true', async () => {
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === reactor
+          ? { defaults: { manifest: { maven: { ignored: true } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
+      expect(warned).toMatch(/ignored is true/)
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('maven:reactor')).toBe('skippedIgnored')
     } finally {
       warnSpy.mockRestore()
     }

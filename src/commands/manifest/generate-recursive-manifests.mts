@@ -20,6 +20,7 @@ export type RecursiveManifestOutcomeStatus =
   | 'failed'
   | 'generated'
   | 'skippedCovered'
+  | 'skippedIgnored'
 
 export type RecursiveManifestOutcome = {
   dir: string
@@ -35,14 +36,28 @@ type EcosystemBuildConfig = {
   ignoreUnresolved: boolean
   includeConfigs: string
   javaHome: string | undefined
+  // Set when this build root should be skipped entirely (never invoked).
+  skipReason: string | undefined
+}
+
+// facts:false has no pom-mode equivalent here (facts-only), so it skips too.
+function getSkipReason(
+  ignored: boolean | undefined,
+  facts?: boolean | undefined,
+): string | undefined {
+  if (ignored) {
+    return 'defaults.manifest.<ecosystem>.ignored is true'
+  }
+  if (facts === false) {
+    return 'defaults.manifest.<ecosystem>.facts is false (pom mode)'
+  }
+  return undefined
 }
 
 // Resolves this build root's effective per-ecosystem build-tool config from
 // its cascaded socket.json; a wrapper-preferred `bin` default is resolved
 // per-root (`dir`, not `cwd`) since a wrapper script only exists at the
-// actual build root. gradle/sbt's `facts: false` (pom mode) is ignored here -
-// this command always generates Socket facts - but warned about, since it's
-// an explicit setting the user made for other commands.
+// actual build root.
 function resolveEcosystemConfig(
   ecosystem: BuildTool,
   dir: string,
@@ -50,7 +65,6 @@ function resolveEcosystemConfig(
 ): EcosystemBuildConfig {
   if (ecosystem === 'sbt') {
     const config = sockJson.defaults?.manifest?.sbt
-    warnIfFactsDisabled(ecosystem, dir, config?.facts)
     return {
       bin: config?.bin ?? 'sbt',
       buildOpts: parseBuildToolOpts(config?.sbtOpts),
@@ -58,11 +72,11 @@ function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome,
+      skipReason: getSkipReason(config?.ignored, config?.facts),
     }
   }
   if (ecosystem === 'gradle') {
     const config = sockJson.defaults?.manifest?.gradle
-    warnIfFactsDisabled(ecosystem, dir, config?.facts)
     return {
       bin: config?.bin
         ? path.resolve(dir, config.bin)
@@ -72,6 +86,7 @@ function resolveEcosystemConfig(
       ignoreUnresolved: Boolean(config?.ignoreUnresolved),
       includeConfigs: config?.includeConfigs ?? '',
       javaHome: config?.javaHome,
+      skipReason: getSkipReason(config?.ignored, config?.facts),
     }
   }
   const config = sockJson.defaults?.manifest?.maven
@@ -82,18 +97,7 @@ function resolveEcosystemConfig(
     ignoreUnresolved: Boolean(config?.ignoreUnresolved),
     includeConfigs: config?.includeConfigs ?? '',
     javaHome: config?.javaHome,
-  }
-}
-
-function warnIfFactsDisabled(
-  ecosystem: BuildTool,
-  dir: string,
-  facts: boolean | undefined,
-): void {
-  if (facts === false) {
-    logger.warn(
-      `${dir} sets defaults.manifest.${ecosystem}.facts: false (pom mode), but dynamic-sbom-inference always generates Socket facts; ignoring that setting.`,
-    )
+    skipReason: getSkipReason(config?.ignored),
   }
 }
 
@@ -139,7 +143,15 @@ export async function generateRecursiveManifests({
         ignoreUnresolved,
         includeConfigs,
         javaHome,
+        skipReason,
       } = resolveEcosystemConfig(ecosystem, dir, sockJson)
+
+      if (skipReason) {
+        logger.warn(`Skipping ${dir} (${ecosystem}): ${skipReason}.`)
+        outcomes.push({ dir, ecosystem, status: 'skippedIgnored' })
+        continue
+      }
+
       const excludePathsForRoot = projectIgnorePathsToReachExcludePaths(
         excludePaths,
         { cwd, target: dir },

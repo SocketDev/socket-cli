@@ -18,12 +18,18 @@ function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
 function summarize(outcomes: readonly RecursiveManifestOutcome[]): string {
   const generated = outcomes.filter(o => o.status === 'generated').length
   const failed = outcomes.filter(o => o.status === 'failed').length
-  const skipped = outcomes.filter(o => o.status === 'skippedCovered').length
+  const skippedCovered = outcomes.filter(
+    o => o.status === 'skippedCovered',
+  ).length
+  const skippedIgnored = outcomes.filter(
+    o => o.status === 'skippedIgnored',
+  ).length
   const empty = outcomes.filter(o => o.status === 'empty').length
   const roots = new Set(outcomes.map(o => o.dir)).size
   return (
     `Generated ${generated} Socket facts file(s) across ${roots} build root(s); ` +
-    `${failed} failed, ${skipped} skipped (already covered), ${empty} empty.`
+    `${failed} failed, ${skippedCovered} skipped (already covered), ` +
+    `${skippedIgnored} skipped (ignored/pom), ${empty} empty.`
   )
 }
 
