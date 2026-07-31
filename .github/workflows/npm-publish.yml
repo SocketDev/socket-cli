@@ -144,6 +144,17 @@ jobs:
           fi
           echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
+      # Prove the pinned pnpm owns `stage` BEFORE anything else runs — from a
+      # neutral cwd so the packageManager delegation cannot swap it out. Runs
+      # on dry runs too, so the weekly validation catches a broken stage
+      # toolchain without burning a version.
+      - name: Verify the stage command resolves
+        working-directory: ${{ runner.temp }}
+        run: |
+          pnpm --version
+          pnpm stage --help > /dev/null
+          echo "pnpm stage resolves."
+
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 25.9.0
@@ -420,38 +431,39 @@ jobs:
       # the tree state is machine-built on a pinned SHA, not hand-edited.
       # --ignore-scripts: each variant's dist is built explicitly above, so no
       # lifecycle script may run (or mutate anything) at pack/upload time.
-      # npm_config_manage_package_manager_versions=false: package.json pins
-      # packageManager pnpm@10.33.0 and pnpm self-delegates to that pin by
-      # default — pnpm 10 has no `stage` command (the v1.1.148 burn), so the
-      # stage steps must run the workflow-pinned pnpm 11 itself, never the
-      # delegate. Install/build steps keep the delegate on purpose: they
-      # match v1.x CI exactly.
+      # The stage steps run from runner.temp with the checkout passed as the
+      # directory argument: pnpm self-delegates to the packageManager pin
+      # (pnpm@10.33.0, which has no `stage` command) whenever its cwd sits
+      # under a package.json, and no env or npmrc knob disables that in
+      # pnpm 11 — a neutral cwd keeps the workflow-pinned pnpm 11 in charge
+      # (the v1.1.148 and v1.1.149 burns). Install/build steps keep the
+      # delegate on purpose: they match v1.x CI exactly.
       # Both flags mirror the fleet staged-publish runner
       # (scripts/fleet/publish-infra/npm/staged.mts on main).
       - name: Stage socket
         if: ${{ inputs.dry-run == false }}
-        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        working-directory: ${{ runner.temp }}
+        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-          npm_config_manage_package_manager_versions: 'false'
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Stage @socketsecurity/cli (legacy)
         if: ${{ inputs.dry-run == false }}
-        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        working-directory: ${{ runner.temp }}
+        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-          npm_config_manage_package_manager_versions: 'false'
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Stage @socketsecurity/cli-with-sentry
         if: ${{ inputs.dry-run == false }}
-        run: pnpm stage publish --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        working-directory: ${{ runner.temp }}
+        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-          npm_config_manage_package_manager_versions: 'false'
