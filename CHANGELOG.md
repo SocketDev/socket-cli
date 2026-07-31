@@ -4,29 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.151](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.151) - 2026-07-30
-
-### Fixed
-- Fixed `--auto-manifest --reach` reachability scans on sbt/Scala projects sometimes failing to resolve the Scala standard library.
-
-## [1.1.150](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.150) - 2026-07-29
+## [Unreleased]
 
 ### Changed
 - Updated the Coana CLI to v `15.9.7`.
+- `socket scan view` now reads completed scans from Socket's cached immutable results, retrying briefly while a fresh scan finalizes; `--stream` keeps streaming live results.
 - `socket fix` vulnerability discovery now reads Coana's structured `--output-file` JSON result instead of parsing stdout, and warns when the Socket backend resolved 0 artifacts so an incomplete server-side resolve is surfaced instead of silently reporting "Finished!".
 
 ### Fixed
 - `socket fix` no longer reports success when the Coana vulnerability-discovery step fails — Coana errors and unreadable discovery output now exit non-zero with the underlying reason instead of printing "Finished!" with nothing fixed.
-
-## [1.1.149](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.149) - 2026-07-29
-
-### Changed
-- Updated the Coana CLI to v `15.9.6`.
-
-## [1.1.148](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.148) - 2026-07-28
-
-### Changed
-- Updated the Coana CLI to v `15.9.5`.
+- Fixed `--auto-manifest --reach` reachability scans on sbt/Scala projects sometimes failing to resolve the Scala standard library.
 
 ## [1.1.147](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.147) - 2026-07-27
 
