@@ -402,7 +402,7 @@ export async function run(
         cwd,
         out: out as string,
         perRepoTimeoutMs: perRepoTimeout,
-        verbose: Boolean(verbose),
+        verbose: verbose,
       })
       outcomes.push({
         complete: mavenResult.complete,
@@ -418,7 +418,7 @@ export async function run(
         bin: bazel as string | undefined,
         cwd,
         out: out as string,
-        verbose: Boolean(verbose),
+        verbose: verbose,
       })
       outcomes.push({
         ecosystem: 'pypi',

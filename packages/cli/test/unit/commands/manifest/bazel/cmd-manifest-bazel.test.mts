@@ -274,7 +274,7 @@ describe('cmd-manifest-bazel', () => {
     it('defaults the output dir to <cwd>/.socket/bazel-manifests', async () => {
       await cmdManifestBazel.run(['.'], importMeta, context)
       const call = vi.mocked(extractBazelToMaven).mock.calls[0]![0]
-      expect(call.out.endsWith(`.socket${'/'}bazel-manifests`)).toBe(true)
+      expect(call.out.endsWith(`.socket/bazel-manifests`)).toBe(true)
     })
 
     it('rejects an unsupported --ecosystem value', async () => {

@@ -259,11 +259,11 @@ export async function run(
   await convertMavenToFacts({
     bin,
     cwd,
-    excludeConfigs: String(excludeConfigs || ''),
+    excludeConfigs: excludeConfigs || '',
     excludePaths,
-    ignoreUnresolved: Boolean(ignoreUnresolved),
-    includeConfigs: String(includeConfigs || ''),
+    ignoreUnresolved: ignoreUnresolved,
+    includeConfigs: includeConfigs || '',
     mavenOpts,
-    verbose: Boolean(verbose),
+    verbose: verbose,
   })
 }
