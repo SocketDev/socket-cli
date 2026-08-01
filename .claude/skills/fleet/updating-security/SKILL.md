@@ -1,6 +1,6 @@
 ---
 name: updating-security
-description: Resolve open Dependabot security alerts by bumping, overriding, patching, or dismissing with evidence.
+description: Resolve Dependabot alerts by bumping, overriding, patching, or dismissing with evidence.
 user-invocable: true
 allowed-tools: Workflow, AskUserQuestion, Read, Edit, Grep, Glob, Bash(gh api:*), Bash(gh auth:*), Bash(pnpm:*), Bash(git:*), Bash(node:*), Bash(jq:*)
 model: claude-sonnet-4-6

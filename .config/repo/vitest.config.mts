@@ -46,6 +46,7 @@ const isCoverageEnabled =
 // vitest-extra-exclude.json sidecars.
 export interface VitestRepoConfig {
   alias?: Record<string, string> | undefined
+  conformanceExclude?: string[] | undefined
   maxWorkers?: number | undefined
   nonIsolated?: string[] | undefined
   nodeTestExclude?: string[] | undefined
@@ -97,6 +98,40 @@ export function readVitestLanes(): VitestLanes {
 }
 export function readNonIsolatedGlobs(): string[] {
   return resolveVitestKey('nonIsolated')
+}
+/**
+ * The CONFORMANCE tier — heavy external-suite wrappers (a full Test262 corpus
+ * per implementation, upstream conformance harnesses) named by
+ * `vitest.conformanceExclude` in the settings file.
+ *
+ * `scripts/repo/test-conformance.mts` runs this tier explicitly with
+ * FLEET_TEST_CONFORMANCE=1; every other run must EXCLUDE it. Both halves live
+ * here because both were previously unwired: the runner set the env var and
+ * nothing read it, and the setting named the tier while no lane excluded it —
+ * so `pnpm run cover` spawned a ~92k-scenario corpus per BUILT implementation,
+ * three at once. Against the 60s unit budget that reads as a hung run rather
+ * than the multi-hour sweep it actually is.
+ */
+export function readConformanceExcludeGlobs(): string[] {
+  // Reads the canonical settings file, NOT `.config/repo/vitest.json` —
+  // `vitest.conformanceExclude` is a settings-file key, and most repos ship no
+  // vitest.json at all, so resolveVitestKey silently returns [] and the heavy
+  // tier keeps leaking into every lane.
+  const file = '.config/repo/socket-wheelhouse.json'
+  if (!existsSync(file)) {
+    return []
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+      vitest?: { conformanceExclude?: string[] | undefined } | undefined
+    }
+    const globs = parsed?.vitest?.conformanceExclude
+    return Array.isArray(globs)
+      ? globs.filter((g): g is string => typeof g === 'string')
+      : []
+  } catch {
+    return []
+  }
 }
 export function readVitestConfigTier(file: string): VitestRepoConfig {
   if (!existsSync(file)) {
@@ -299,6 +334,10 @@ const laneFilterActive =
 // that lane; a trailing `/**` becomes `/**/*.test.{…}`).
 const laneToTestGlobs = (globs: string[]): string[] =>
   globs.map(g => `${g.replace(/\/\*+$/, '')}/**/*.test.{js,ts,mjs,mts,cjs}`)
+// The conformance tier's dir globs, and whether THIS run is the explicit
+// conformance run. Set by scripts/repo/test-conformance.mts, never by hand.
+const conformanceGlobs = readConformanceExcludeGlobs()
+const conformanceTier = process.env['FLEET_TEST_CONFORMANCE'] === '1'
 
 export default defineConfig({
   // Repo-owned resolve aliases from the `alias` key of
@@ -342,8 +381,9 @@ export default defineConfig({
     // root, silently missing every sub-package's tests (each scoped `vitest run`
     // returns "No test files found" and a full run "passes" having executed
     // zero of them).
-    include:
-      laneFilterActive && activeLane === 'mid'
+    include: conformanceTier
+      ? laneToTestGlobs(conformanceGlobs)
+      : laneFilterActive && activeLane === 'mid'
         ? laneToTestGlobs(midLaneGlobs)
         : laneFilterActive && activeLane === 'slow'
           ? laneToTestGlobs(slowLaneGlobs)
@@ -359,6 +399,12 @@ export default defineConfig({
     // (their own `node --test` runners pick them up separately).
     exclude: [
       '**/node_modules/**',
+      // The conformance tier is opt-in via `pnpm run test:conformance`. Every
+      // other lane drops it: these wrappers each spawn a FULL external corpus
+      // (Test262 is ~92k scenarios per implementation), which is minutes to
+      // hours, not a unit suite. Lifted only for the explicit conformance run,
+      // where the include above targets exactly these globs.
+      ...(conformanceTier ? [] : conformanceGlobs),
       // Generated/vendored trees (dist, build, upstream, test/fixtures, …) —
       // shared with lint + format from one source (constants/generated-globs.mts)
       // so the ignore surfaces can't drift. vite's default loader can't
@@ -408,7 +454,11 @@ export default defineConfig({
     // default behavior would fail "no tests found" there. Repos that
     // do have tests still error on actual test failures; this flag
     // only affects the empty-suite case.
-    passWithNoTests: true,
+    // Zero discovered files is normal for a scoped run, but it is a FAILURE
+    // for the conformance tier: that run exists to execute those globs, so
+    // discovering none means the tier is misconfigured and a silent pass would
+    // report the heavy suites green without running one of them.
+    passWithNoTests: !conformanceTier,
     // Reporters left unset so vitest applies its own default:
     // `[isAgent ? 'minimal' : 'default', ...(GITHUB_ACTIONS ? ['github-actions'] : [])]`
     // (vitest/src/defaults.ts). That yields the token-lean `minimal` reporter

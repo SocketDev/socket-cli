@@ -445,6 +445,59 @@ export async function cherryPickSeries(
 }
 
 /**
+ * Borrow each workspace package's OWN `node_modules` into the gate worktree,
+ * returning the links created.
+ *
+ * Pnpm's isolated layout puts a workspace package's declared dependencies in
+ * `<pkg>/node_modules`, not the root one. A gate that borrows only the root
+ * therefore cannot resolve them, and the mandatory tsc gate reports a phantom
+ * error for code that is fine: `judgment-nudge` importing `compromise` failed
+ * `TS2307: Cannot find module` inside the gate while the identical tree
+ * type-checked clean (exit 0) in a normal checkout. A gate whose verdict is
+ * wrong in the pessimistic direction is worse than no gate, because tsc here
+ * has no skip flag.
+ *
+ * Packages come from git's tracked `package.json` set rather than from parsing
+ * the pnpm-workspace globs: git already knows the tracked tree, so there is no
+ * second glob dialect to drift. A package with no `node_modules` of its own is
+ * skipped.
+ */
+async function linkPackageModules(
+  repoDir: string,
+  gateDir: string,
+): Promise<string[]> {
+  const tracked = await git(repoDir, ['ls-files', '-z', '*package.json'])
+  const entries = tracked.split('\0')
+  const created: string[] = []
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    // git reports forward slashes, so the segment test needs no normalizing.
+    if (!entry || entry.includes('node_modules/')) {
+      continue
+    }
+    const dir = path.posix.dirname(entry)
+    if (dir === '.') {
+      continue
+    }
+    const from = path.join(repoDir, dir, 'node_modules')
+    const to = path.join(gateDir, dir, 'node_modules')
+    // lstat-free guards: the source must exist, the destination must not, and
+    // the package dir must exist at THIS commit (a package added later is not
+    // in the gate's tree).
+    if (!existsSync(from) || existsSync(to) || !existsSync(path.dirname(to))) {
+      continue
+    }
+    try {
+      symlinkSync(from, to, 'dir')
+      created.push(to)
+    } catch {
+      // Raced or unsupported — the gate degrades to the root link alone.
+    }
+  }
+  return created
+}
+
+/**
  * Run `fn` against a throwaway GATE worktree checked out at `tipSha` —
  * the landing set's tip commit — with the primary checkout's
  * node_modules symlinked in for the toolchain. The edit-time gates then
@@ -467,13 +520,23 @@ export async function withGateWorktree<T>(
   }
   await git(repoDir, ['worktree', 'add', '--detach', gateDir, tipSha])
   const linkedModules = path.join(gateDir, 'node_modules')
+  let linkedPackages: string[] = []
   try {
     const primaryModules = path.join(repoDir, 'node_modules')
     if (existsSync(primaryModules) && !existsSync(linkedModules)) {
       symlinkSync(primaryModules, linkedModules, 'dir')
     }
+    linkedPackages = await linkPackageModules(repoDir, gateDir)
     return await fn(gateDir)
   } finally {
+    for (let i = 0, { length } = linkedPackages; i < length; i += 1) {
+      const link = linkedPackages[i]!
+      try {
+        safeDeleteSync(link)
+      } catch {
+        // Already gone.
+      }
+    }
     try {
       safeDeleteSync(linkedModules)
     } catch {

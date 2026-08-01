@@ -31,11 +31,34 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 
-async function main(): Promise<void> {
-  const summaryPath = process.env['FLEET_TEST_SUMMARY_PATH']
-  const { filter, options } = parseCLI(['vitest', ...process.argv.slice(2)])
-  const ctx = await startVitest('test', filter, options)
-  const testModules = ctx.state.getTestModules()
+/**
+ * The counted shape of a finished run. `total` counts every case, so
+ * `total - passed - failed` is the skipped/pending remainder rather than an
+ * error — folding those into `failed` would report a red run for a suite that
+ * merely skipped.
+ */
+export interface TestTally {
+  failed: number
+  passed: number
+  total: number
+}
+
+// Structural stand-ins for vitest's TestModule / TestCase, so the tally can be
+// counted without booting vitest.
+export interface TestCaseLike {
+  result: () => { state: string }
+}
+export interface TestModuleLike {
+  children: { allTests: () => Iterable<TestCaseLike> }
+}
+
+/**
+ * Tally a finished run's cases. Pure over the module list — the only decision
+ * logic in this script, with the vitest boot either side of it.
+ */
+export function tallyTestModules(
+  testModules: readonly TestModuleLike[],
+): TestTally {
   let total = 0
   let passed = 0
   let failed = 0
@@ -51,6 +74,14 @@ async function main(): Promise<void> {
       }
     }
   }
+  return { failed, passed, total }
+}
+
+async function main(): Promise<void> {
+  const summaryPath = process.env['FLEET_TEST_SUMMARY_PATH']
+  const { filter, options } = parseCLI(['vitest', ...process.argv.slice(2)])
+  const ctx = await startVitest('test', filter, options)
+  const { failed, passed, total } = tallyTestModules(ctx.state.getTestModules())
   if (summaryPath) {
     writeFileSync(summaryPath, JSON.stringify({ failed, passed, total }))
   }

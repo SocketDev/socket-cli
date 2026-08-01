@@ -1,6 +1,6 @@
 ---
 name: scanning-security
-description: Run AgentShield, zizmor, and optional Socket dependency scans, then produce a graded security report.
+description: Run AgentShield, zizmor, and Socket dependency scans into a graded security report.
 user-invocable: true
 allowed-tools: Task, Read, Write, Bash(node scripts/fleet/security.mts:*), Bash(node scripts/fleet/lib/security-report.mts:*), Bash(node .claude/skills/fleet/_shared/scripts/checkpoint.mts:*)
 model: claude-opus-4-8

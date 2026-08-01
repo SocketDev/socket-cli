@@ -94,6 +94,34 @@ export {
   verifyStagedEntry,
 }
 
+/**
+ * The nudge printed when a HUMAN runs a real upload from a laptop instead of
+ * dispatching the release workflow. The workflow is the auditable path: it
+ * runs on a clean checkout, mints a short-lived OIDC token inside the
+ * `npm-publish` environment, attaches provenance, and leaves a run record.
+ * A local run does none of that and depends on whatever the machine happens
+ * to have installed. Returns undefined when no nudge is warranted — in CI
+ * (the workflow IS the sanctioned caller), on a dry run, and on `--approve`
+ * (promoting a staged upload is deliberately local: it needs the human's
+ * 2FA and has no CI equivalent).
+ */
+export function releaseWorkflowNudge(config: {
+  ci: boolean
+  dryRun: boolean
+  mode: string
+}): string | undefined {
+  const { ci, dryRun, mode } = config
+  if (ci || dryRun || mode === 'approve') {
+    return undefined
+  }
+  return (
+    `Running a real ${mode} upload locally. Prefer the release workflow — ` +
+    `\`gh workflow run npm-publish.yml\` — which publishes from a clean ` +
+    `checkout with OIDC provenance and leaves an audit trail; a laptop run ` +
+    `has none of that. Continuing.`
+  )
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -223,6 +251,10 @@ async function main(): Promise<void> {
   // `--staged` runs on a clean OIDC checkout and must never touch git.
   // `--no-reconcile` is the deliberate local opt-out.
   const reconcile = !getCI() && !values['no-reconcile']
+  const workflowNudge = releaseWorkflowNudge({ ci: getCI(), dryRun, mode })
+  if (workflowNudge) {
+    logger.warn(workflowNudge)
+  }
   const backfillVersion =
     typeof values['backfill'] === 'string' && values['backfill']
       ? values['backfill']

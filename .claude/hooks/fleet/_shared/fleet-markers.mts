@@ -1,20 +1,30 @@
 /**
- * @file Single home for fleet + repo canonical block detection / extraction.
- *   The `<fleet>` tag markers (parsed by `named-blocks.mts`) delimit the
+ * @file Single home for fleet + repo canonical region detection / extraction.
+ *   The `<fleet>` tag markers (parsed by `named-blocks.mts`) delimit a
  *   cascade-owned region of a hybrid file (CLAUDE.md, .gitignore,
- *   .gitattributes, workflows, …); the symmetric `<repo>` tag marks the
- *   host-owned region of a freshly SEEDED hybrid file (currently just
- *   CLAUDE.md, via `template/presets/CLAUDE.md`) so a reader can tell "repo
- *   section not written yet" from "file truncated." Emitters produce the
- *   short bare-tag form (`<fleet>` / `<repo>`); the parser ALSO recognizes the
- *   long-form tag names (`fleet-canonical` / `repo-canonical`) every existing
- *   fleet member still carries, plus the legacy `BEGIN`/`END` keyword form, so
- *   members migrate incrementally as their own cascade re-splices the block.
- *   Drop the long-form recognition (LEGACY_FLEET_TAG / LEGACY_REPO_TAG below)
- *   once every roster member's cascade has run at least once post-rename —
- *   audit with a fleet-wide grep for `<fleet-canonical>` / `<repo-canonical>`;
- *   zero hits clears it. Every fleet-block matcher / fixer reads its marker
- *   knowledge from here, so the grammar stays single-sourced.
+ *   .gitattributes, a JSON array, …); the symmetric `<repo>` tag marks a
+ *   host-owned region so a reader can tell "repo content not written yet"
+ *   from "file truncated." A file may carry MULTIPLE regions of either kind —
+ *   a JSON config with several arrays (`ignorePatterns`, `plugins`, …) gives
+ *   each array its own `<fleet>`/`<repo>` pair — so every accessor here is
+ *   plural: `findFleetRegions` / `findRepoRegions` return every region found,
+ *   in document order. `repoRegionBounds` stays as a singular convenience for
+ *   the one caller (CLAUDE.md's repo-section auditor) that only ever expects
+ *   one repo region in a file.
+ *   Per-syntax delimiter, one tag vocabulary:
+ *   markdown / hash-comment   <!-- <fleet> -->   # <fleet>
+ *   JSON array element        <fleet>            (bare string, no comment
+ *   wrapper — JSON has none)
+ *   Emitters produce the short bare-tag form (`<fleet>` / `<repo>`); the
+ *   parser ALSO recognizes the long-form tag names (`fleet-canonical` /
+ *   `repo-canonical`) every existing fleet member still carries, plus the
+ *   legacy `BEGIN`/`END` keyword form, so members migrate incrementally as
+ *   their own cascade re-splices the region. Drop the long-form recognition
+ *   (LEGACY_FLEET_CANONICAL_TAG / LEGACY_REPO_CANONICAL_TAG below) once every
+ *   roster member's cascade has run at least once post-rename — audit with a
+ *   fleet-wide grep for `<fleet-canonical>` / `<repo-canonical>`; zero hits
+ *   clears it. Every fleet-region matcher / fixer reads its marker knowledge
+ *   from here, so the grammar stays single-sourced.
  */
 
 import { findBlocksByTag, scanMarkers } from './named-blocks.mts'
@@ -35,8 +45,11 @@ export const REPO_CANONICAL_TAG = 'repo'
 // LEGACY_FLEET_CANONICAL_TAG.
 const LEGACY_REPO_CANONICAL_TAG = 'repo-canonical'
 
-// Comment style of the host file, selecting which marker form generators emit.
-export type FleetCommentStyle = 'hash' | 'html' | 'slash'
+// Comment style of the host file, selecting which marker form generators
+// emit. `json` is bare — a JSON array element IS the marker text; the
+// surrounding quotes are JSON's own string syntax, not part of the grammar
+// here.
+export type FleetCommentStyle = 'hash' | 'html' | 'json' | 'slash'
 
 // Well-formed fleet blocks (named-blocks returns none when the content is
 // malformed — overlap / unclosed / orphan-end). Tries the short tag first —
@@ -64,7 +77,8 @@ function tagBlocks(content: string): ReturnType<typeof findBlocksByTag> {
 
 /**
  * The open marker for a tag + comment style — bare-tag form, e.g.
- * `<!-- <fleet> -->` / `# <fleet>`.
+ * `<!-- <fleet> -->` / `# <fleet>` / `<fleet>` (json — a bare JSON array
+ * element, no comment wrapper).
  */
 function beginMarkerForTag(tag: string, style: FleetCommentStyle): string {
   if (style === 'html') {
@@ -73,12 +87,15 @@ function beginMarkerForTag(tag: string, style: FleetCommentStyle): string {
   if (style === 'slash') {
     return `// <${tag}>`
   }
+  if (style === 'json') {
+    return `<${tag}>`
+  }
   return `# <${tag}>`
 }
 
 /**
  * The close marker for a tag + comment style — bare close tag, e.g.
- * `<!-- </fleet> -->` / `# </fleet>`.
+ * `<!-- </fleet> -->` / `# </fleet>` / `</fleet>` (json).
  */
 function endMarkerForTag(tag: string, style: FleetCommentStyle): string {
   if (style === 'html') {
@@ -87,36 +104,69 @@ function endMarkerForTag(tag: string, style: FleetCommentStyle): string {
   if (style === 'slash') {
     return `// </${tag}>`
   }
+  if (style === 'json') {
+    return `</${tag}>`
+  }
   return `# </${tag}>`
 }
 
 /**
- * True when a single line is a BEGIN marker for `tag` OR its transitional
- * `legacyTag` alias. `scanMarkers` anchors the match to the whole line, so a
- * prose mention of the marker name elsewhere on a line is never mistaken for
- * a marker.
+ * True when `value` is EXACTLY a bare `<tag>` (or its legacy alias), no
+ * comment wrapper — the JSON-array-element form, where the marker IS the
+ * whole element and there is no comment syntax to strip. Whitespace-trimmed
+ * so a pretty-printer's leading indent never defeats the match.
+ */
+function isBareBeginTag(
+  value: string,
+  tag: string,
+  legacyTag: string,
+): boolean {
+  const trimmed = value.trim()
+  return trimmed === `<${tag}>` || trimmed === `<${legacyTag}>`
+}
+
+/**
+ * The bare `</tag>` (or legacy alias) twin of `isBareBeginTag`.
+ */
+function isBareEndTag(value: string, tag: string, legacyTag: string): boolean {
+  const trimmed = value.trim()
+  return trimmed === `</${tag}>` || trimmed === `</${legacyTag}>`
+}
+
+/**
+ * True when a single line (or JSON array element) is a BEGIN marker for `tag`
+ * OR its transitional `legacyTag` alias — either the comment-wrapped form
+ * (`scanMarkers` anchors the match to the whole line, so a prose mention of
+ * the marker name elsewhere on a line is never mistaken for a marker) or the
+ * bare JSON-element form.
  */
 function isMarkerBeginLineForTag(
   tag: string,
   legacyTag: string,
   line: string,
 ): boolean {
-  return scanMarkers(line).some(
-    m => m.kind === 'begin' && (m.tag === tag || m.tag === legacyTag),
+  return (
+    isBareBeginTag(line, tag, legacyTag) ||
+    scanMarkers(line).some(
+      m => m.kind === 'begin' && (m.tag === tag || m.tag === legacyTag),
+    )
   )
 }
 
 /**
- * True when a single line is an END marker for `tag` OR its transitional
- * `legacyTag` alias.
+ * True when a single line (or JSON array element) is an END marker for `tag`
+ * OR its transitional `legacyTag` alias — comment-wrapped or bare.
  */
 function isMarkerEndLineForTag(
   tag: string,
   legacyTag: string,
   line: string,
 ): boolean {
-  return scanMarkers(line).some(
-    m => m.kind === 'end' && (m.tag === tag || m.tag === legacyTag),
+  return (
+    isBareEndTag(line, tag, legacyTag) ||
+    scanMarkers(line).some(
+      m => m.kind === 'end' && (m.tag === tag || m.tag === legacyTag),
+    )
   )
 }
 
@@ -255,31 +305,108 @@ export function extractPerRepo(content: string): string | undefined {
   return containsFleetBeginMarker(content) ? undefined : content
 }
 
-export interface RepoRegionBounds {
-  // 0-based line index of the `<repo>` BEGIN marker.
+// A region's kind — which tag it was found under.
+export type MarkerKind = 'fleet' | 'repo'
+
+export interface MarkerRegion {
+  readonly kind: MarkerKind
+  // 0-based index (into the scanned `items`) of the BEGIN marker.
   readonly start: number
-  // 0-based line index of the `</repo>` END marker, or the last line index +
-  // 1 (i.e. end of file) when the file has no close marker.
+  // 0-based index of the END marker, or `items.length` (i.e. end of the
+  // scanned sequence) when the region has no close marker.
   readonly end: number
 }
 
+// Kept for the shape existing callers destructure — `{ start, end }`, no
+// `kind` — so a caller that only ever wants "the one repo region" (CLAUDE.md's
+// bullet-index auditor) doesn't have to know about MarkerRegion's extra field.
+export type RepoRegionBounds = Pick<MarkerRegion, 'end' | 'start'>
+
 /**
- * Locate an explicit `<repo>` marker region in `lines` (any hybrid file:
- * CLAUDE.md, .gitignore, .gitattributes — a repo-owned region wrapped so a
- * splice can target it without inferring its bounds from what the fleet block
- * leaves over, and so a fresh EMPTY region reads as "written, empty" rather
- * than "missing"). Returns undefined when no `<repo>` BEGIN marker is present
- * — the caller's positional fallback applies (e.g. CLAUDE.md's `## 🏗️`
- * heading, or "everything outside the fleet block" for .gitignore /
- * .gitattributes).
+ * Find every region for `tag` (or its legacy alias) in `items` — a file's
+ * lines, or a JSON array's elements; both are just a sequence of strings to
+ * scan. Regions pair sequentially: each BEGIN is matched with the next END
+ * found after it, tolerating an unclosed final BEGIN (its region runs to the
+ * end of `items`, rather than being reported as an error — a fresh, empty,
+ * or mid-edit region is a normal state, not a malformed one). A BEGIN nested
+ * inside an already-open region of the SAME tag before its END is swallowed
+ * into the outer region's span rather than starting a second one — a
+ * deliberately tolerant, non-crashing default for a hand-edited file.
+ */
+function findRegionsForTag(
+  items: readonly string[],
+  kind: MarkerKind,
+  tag: string,
+  legacyTag: string,
+): MarkerRegion[] {
+  const regions: MarkerRegion[] = []
+  const { length } = items
+  let i = 0
+  while (i < length) {
+    if (!isMarkerBeginLineForTag(tag, legacyTag, items[i]!)) {
+      i += 1
+      continue
+    }
+    const start = i
+    let end = length
+    for (let j = i + 1; j < length; j += 1) {
+      if (isMarkerEndLineForTag(tag, legacyTag, items[j]!)) {
+        end = j
+        break
+      }
+    }
+    regions.push({ end, kind, start })
+    i = end + 1
+  }
+  return regions
+}
+
+/**
+ * Every `<fleet>` region in `items`, in document order. A JSON config with
+ * several arrays gives each its own region — a file with N canonical arrays
+ * returns N regions here, not one.
+ */
+export function findFleetRegions(items: readonly string[]): MarkerRegion[] {
+  return findRegionsForTag(
+    items,
+    'fleet',
+    FLEET_CANONICAL_TAG,
+    LEGACY_FLEET_CANONICAL_TAG,
+  )
+}
+
+/**
+ * Every `<repo>` region in `items`, in document order. See `findFleetRegions`
+ * for the pairing/tolerance rules — identical, just the repo tag.
+ */
+export function findRepoRegions(items: readonly string[]): MarkerRegion[] {
+  return findRegionsForTag(
+    items,
+    'repo',
+    REPO_CANONICAL_TAG,
+    LEGACY_REPO_CANONICAL_TAG,
+  )
+}
+
+/**
+ * Locate the FIRST explicit `<repo>` marker region in `lines` (any hybrid
+ * file: CLAUDE.md, .gitignore, .gitattributes — a repo-owned region wrapped
+ * so a splice can target it without inferring its bounds from what the fleet
+ * region leaves over, and so a fresh EMPTY region reads as "written, empty"
+ * rather than "missing"). Returns undefined when no `<repo>` BEGIN marker is
+ * present — the caller's positional fallback applies (e.g. CLAUDE.md's
+ * `## 🏗️` heading, or "everything outside the fleet region" for .gitignore /
+ * .gitattributes). A singular convenience over `findRepoRegions` for the one
+ * caller (claude-md-repo-section-is-a-bullet-index.mts) that only ever
+ * expects ONE repo region in a file — a file with more than one (the JSON
+ * multi-array case) should call `findRepoRegions` directly.
  */
 export function repoRegionBounds(
   lines: readonly string[],
 ): RepoRegionBounds | undefined {
-  const start = lines.findIndex(l => isRepoMarkerBeginLine(l))
-  if (start === -1) {
+  const region = findRepoRegions(lines)[0]
+  if (region === undefined) {
     return undefined
   }
-  const end = lines.findIndex((l, i) => i > start && isRepoMarkerEndLine(l))
-  return { end: end === -1 ? lines.length : end, start }
+  return { end: region.end, start: region.start }
 }

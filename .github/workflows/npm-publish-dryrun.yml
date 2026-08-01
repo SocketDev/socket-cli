@@ -1,21 +1,25 @@
 name: 🧪 npm publish dry-run
 
-# Repo-owned release-path validation — NOT cascade-owned. GitHub schedule
-# events only fire from the default branch, and the v1.x line's publisher
-# lives on the v1.x ref, so this cron dispatches that ref's own copy of
-# npm-publish.yml with its default inputs (dry-run: true — nothing is
-# tagged, released, or uploaded; the run builds all three package variants
-# and stops). A red run here means the v1.x release path is broken; fix it
-# BEFORE the next release needs it, not during one.
+# Cascade-owned — every npm-publishing repo carries the byte-identical copy.
+# Continuous validation of the RELEASE PATH between releases: a weekly cron
+# walks the same chain npm-publish.yml runs (checkout → setup-and-install →
+# build → scripts/fleet/npm-publish.mts --staged --dry-run), which packs the
+# tarball and validates the manifest without touching the registry.
 #
-# The incident this exists to catch early: a publish leg can fail silently
-# between releases for months when nothing exercises the path — the v1.x
-# line shipped 45 releases of two packages while the third never left the
-# runner.
+# WHY: a publish leg can rot silently for months when nothing exercises it —
+# a package-manager pin that drops a subcommand, a stale firewall build that
+# can't parse the registry endpoint, a manifest that stopped packing. Those
+# only surface at release time, after the release markers are already cut,
+# where the recovery is a burned version. A weekly red run here is a bug
+# report; the same failure during a release is a burn.
+#
+# LEAST PRIVILEGE: no `npm-publish` environment and no `id-token: write`. A
+# dry run uploads nothing, so it must not be able to mint a publish token.
 
 on:
   schedule:
-    # Weekly, Monday 09:17 UTC — offset from the top of the hour.
+    # Weekly, Monday 09:17 UTC — offset from the top of the hour so the fleet
+    # does not stampede the runner pool.
     - cron: '17 9 * * 1'
   workflow_dispatch: {}
 
@@ -28,39 +32,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  dispatch-v1x-dryrun:
+  dry-run:
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    permissions:
-      # Creates the workflow_dispatch event for npm-publish.yml on v1.x.
-      actions: write
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
+      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
-      - name: Dispatch the v1.x publish workflow in dry-run mode
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          gh workflow run npm-publish.yml --repo "$REPO" --ref v1.x
-          echo "Dispatched npm-publish.yml on v1.x with default inputs (dry-run: true)."
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          # The bump derivation anchors on registry-latest + the last v-tag;
+          # a tagless shallow checkout derives from zero on a repo whose
+          # registry history is empty.
+          fetch-tags: true
+          persist-credentials: false
 
-      - name: Watch the dispatched run to completion
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-        run: |
-          # The dispatch API returns no run id, so poll for the newest
-          # npm-publish.yml run on v1.x. A concurrent hand-dispatch could
-          # race this pick; for a weekly validation the wrong-run cost is a
-          # duplicate watch, not a wrong verdict — both runs' verdicts
-          # matter.
-          sleep 20
-          RUN_ID=$(gh run list --repo "$REPO" --workflow=npm-publish.yml --branch=v1.x --limit 1 --json databaseId --jq '.[0].databaseId')
-          if [ -z "$RUN_ID" ]; then
-            echo "What: no npm-publish.yml run appeared on v1.x after the dispatch." >&2
-            echo "Where: $REPO Actions, workflow npm-publish.yml, branch v1.x." >&2
-            echo "Saw: an empty run list; wanted: the just-dispatched dry run." >&2
-            echo "Fix: confirm the workflow file exists on v1.x and GITHUB_TOKEN kept actions: write." >&2
-            exit 1
-          fi
-          echo "Watching run $RUN_ID."
-          gh run watch "$RUN_ID" --repo "$REPO" --exit-status
+      - name: Setup + install
+        uses: ./.github/actions/fleet/setup-and-install
+
+      - name: Build
+        run: pnpm run build
+
+      # The same staged-publish leg the real workflow runs, with --dry-run:
+      # packs every publishable package and validates its manifest, then
+      # stops before the upload. No --bump: the dry run must never derive a
+      # version or write a CHANGELOG.
+      - name: Dry-run staged publish
+        run: node scripts/fleet/npm-publish.mts --staged --dry-run

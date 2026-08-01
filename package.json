@@ -70,7 +70,8 @@
     "prepublishOnly": "echo 'ERROR: Use GitHub Actions workflow for publishing' && exit 1",
     "socket-wheelhouse:emit-schema": "node scripts/fleet/socket-wheelhouse-emit-schema.mts",
     "mcp:reset": "node scripts/fleet/mcp-reset.mts",
-    "setup:sfw-ca": "node scripts/fleet/setup/sfw-ca.mts"
+    "setup:sfw-ca": "node scripts/fleet/setup/sfw-ca.mts",
+    "get-green": "node scripts/fleet/get-green.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

@@ -57,6 +57,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
+import { extractRunLines } from './publish-workflows-are-staged-fail-closed.mts'
 
 const logger = getDefaultLogger()
 
@@ -164,6 +165,24 @@ export function classifyPublishWorkflow(
     return null
   }
   const { target } = matched[0]!
+  // A workflow whose EVERY publish invocation carries `--dry-run` validates
+  // the release path without ever uploading — it is not a publisher, and
+  // requiring it to bind the publish environment / mint an OIDC token would
+  // hand a token to a job that must never have one. Least privilege wins over
+  // pattern-matching the command name. Scanned over `run:` content only: the
+  // workflow's own `name:` can say "npm publish" without running one.
+  const invocationLines = extractRunLines(trimmed)
+    .map(runLine => runLine.text)
+    .filter(text =>
+      TARGET_SIGNATURES.some(sig => sig.patterns.some(re => re.test(text))),
+    )
+  if (
+    invocationLines.length > 0 &&
+    invocationLines.every(line => /--dry-run\b/.test(line))
+  ) {
+    // oxlint-disable-next-line socket/prefer-undefined-over-null -- external API contract: the unit test suite asserts strict equality against this exact `null` return value
+    return null
+  }
   const expectedEnvironment = `${target}-publish`
   const base = path.basename(fileName)
   // `<target>-publish.yml` or `<target>-publish-<variant>.yml`.

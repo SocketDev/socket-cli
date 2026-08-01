@@ -168,6 +168,17 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
       run('node', [
         'scripts/fleet/check/dual-use-declarations-are-complete.mts',
       ]),
+    // Every DISCLOSURE states only what its manifest can prove: all bin keys
+    // named, the package name and repository URL present, Sentry-class
+    // dependencies disclosed as telemetry, and both policy-mandated topics
+    // covered. npm Trust & Safety reads the file — an inaccurate disclosure
+    // is legal exposure. Prose quality lives in the writing-disclosures
+    // skill; this is the mechanical floor. Strict.
+    () =>
+      run('node', [
+        'scripts/fleet/check/disclosure-content-is-grounded.mts',
+        '--quiet',
+      ]),
     // A lint config's `!` re-include must never re-expose vendored files to
     // lint/--fix, the acorn wasm-bindgen glue break. Fails when a vendored glob
     // is left before the last negation.

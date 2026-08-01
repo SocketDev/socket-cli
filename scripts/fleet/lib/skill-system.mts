@@ -105,6 +105,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   'updating-lockstep': { family: 'maintain', mode: 'mutating' },
   'updating-pricing': { family: 'maintain', mode: 'mutating' },
   'updating-security': { family: 'security', mode: 'mutating' },
+  'writing-disclosures': { family: 'ship', mode: 'mutating' },
   'writing-fast-tests': { family: 'build', mode: 'mutating' },
 }
 

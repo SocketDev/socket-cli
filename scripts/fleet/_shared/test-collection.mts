@@ -518,8 +518,37 @@ export function readDeclaredTestCommands(root: string): TestCommand[] {
 export function listRepoTestFiles(root: string): string[] {
   return globSync([...TEST_FILE_GLOBS], {
     cwd: root,
-    ignore: [...NON_RUNNABLE_GLOBS],
+    ignore: [...NON_RUNNABLE_GLOBS, ...conformanceTierGlobs(root)],
   }).toSorted()
+}
+
+/**
+ * The conformance tier's globs (`vitest.conformanceExclude`), which the default
+ * and cover lanes deliberately exclude.
+ *
+ * These files are NOT orphans: `pnpm run test:conformance` owns them. The
+ * collection check cannot see that, because that script is a node entrypoint
+ * rather than a vitest invocation it can introspect — so without this they
+ * report as "no declared command collects this file" the moment the lanes stop
+ * running them. Empty when the repo declares no tier, which leaves every
+ * existing repo's behavior unchanged.
+ */
+function conformanceTierGlobs(root: string): string[] {
+  const file = path.join(root, '.config', 'repo', 'socket-wheelhouse.json')
+  if (!existsSync(file)) {
+    return []
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+      vitest?: { conformanceExclude?: string[] | undefined } | undefined
+    }
+    const globs = parsed?.vitest?.conformanceExclude
+    return Array.isArray(globs)
+      ? globs.filter((g): g is string => typeof g === 'string')
+      : []
+  } catch {
+    return []
+  }
 }
 
 /**

@@ -279,7 +279,7 @@
     "**/*.d.ts",
     "**/*.d.ts.map",
     "**/*.tsbuildinfo",
-    "#fleet-canonical-begin (managed by socket-wheelhouse sync)",
+    "<fleet>",
     "**/.claude/agents/fleet/**",
     "**/.claude/commands/fleet/**",
     "**/.claude/hooks/fleet/**",
@@ -300,6 +300,7 @@
     "**/.mcp.json",
     "**/test/fleet/nock-loopback-passthrough.test.mts",
     "**/test/fleet/publish-infra-placeholder.test.mts",
+    "</fleet>",
     "#fleet-canonical-end"
   ]
 }

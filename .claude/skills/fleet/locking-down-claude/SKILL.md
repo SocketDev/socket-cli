@@ -1,6 +1,6 @@
 ---
 name: locking-down-claude
-description: Reference for secure non-interactive Claude or SDK calls with pinned tools, prompts, and permissions.
+description: Secure non-interactive Claude/SDK calls: pinned tools, prompts, permissions.
 user-invocable: false
 allowed-tools: Read, Grep, Glob
 metadata:

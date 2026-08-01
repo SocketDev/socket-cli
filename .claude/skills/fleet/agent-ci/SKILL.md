@@ -1,6 +1,6 @@
 ---
 name: agent-ci
-description: Run this repo's GitHub Actions locally with Agent-CI before pushing workflow or CI-sensitive changes.
+description: Run this repo's GitHub Actions locally with Agent-CI before pushing CI-sensitive changes.
 user-invocable: true
 allowed-tools: Bash, Read, Edit
 model: claude-haiku-4-5
