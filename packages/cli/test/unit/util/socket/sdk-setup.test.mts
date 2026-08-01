@@ -254,10 +254,29 @@ describe('SDK Utilities', () => {
       )
     })
 
-    it('uses HttpProxyAgent for http base URL', async () => {
+    it('refuses a plaintext http base URL on a public host', async () => {
       const result = await setupSdk({
         apiToken: 'mock-sdk-value-12345',
         apiBaseUrl: 'http://api.socket.dev',
+        apiProxy: 'http://proxy.example.com:8080',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.cause).toContain('https:')
+      }
+      expect(mockSocketSdkConstructor).not.toHaveBeenCalled()
+    })
+
+    it('uses HttpProxyAgent for an allowlisted private http base URL', async () => {
+      // http stays reachable only where it is safe: a private enterprise
+      // host the operator allowlisted. A public host over plaintext would
+      // put the bearer token on the wire, so the endpoint guard refuses it.
+      vi.stubEnv('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS', '10.0.0.5')
+
+      const result = await setupSdk({
+        apiToken: 'mock-sdk-value-12345',
+        apiBaseUrl: 'http://10.0.0.5/v0/',
         apiProxy: 'http://proxy.example.com:8080',
       })
 
@@ -267,7 +286,7 @@ describe('SDK Utilities', () => {
         'mock-sdk-value-12345',
         expect.objectContaining({
           agent: expect.any(Object),
-          baseUrl: 'http://api.socket.dev',
+          baseUrl: 'http://10.0.0.5/v0/',
         }),
       )
     })
