@@ -9,7 +9,8 @@ name: Publish to npm registry
 #   2. The release bump strips the hint to X.Y.Z and promotes [Unreleased]
 #      to the `## [X.Y.Z]` heading — never a hand-coded version.
 #   3. Dispatch this workflow with dry-run=true (the default): builds all
-#      three variants, uploads nothing, marks nothing.
+#      three variants and dry-run-stages each one (pack + manifest
+#      validation) — uploads nothing, marks nothing.
 #   4. Dispatch with dry-run=false + a NON-latest dist-tag (the guard below
 #      refuses `latest` off the default branch): cuts the v<X.Y.Z> tag + the
 #      immutable GitHub release — both belong to the `socket` package,
@@ -322,9 +323,10 @@ jobs:
       # tag step's different-SHA hard-fail enforces exactly that; a same-SHA
       # re-run is a no-op tag + a fresh stage attempt).
       #
-      # The tag / release / stage steps all skip on a dry run (inputs.dry-run
-      # defaults to true), so an accidental dispatch builds but never marks or
-      # uploads anything.
+      # On a dry run (inputs.dry-run defaults to true) the tag + release
+      # steps skip and the stage steps run with `--dry-run` — packs and
+      # manifest validation happen, nothing is marked or uploaded, so an
+      # accidental dispatch never touches the registry.
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
 
       # Create the v<version> git tag at this commit, idempotently, BEFORE any
@@ -444,30 +446,35 @@ jobs:
       # delegated pnpm on purpose: they match v1.x CI exactly.
       # Both flags mirror the fleet staged-publish runner
       # (scripts/fleet/publish-infra/npm/staged.mts on main).
+      #
+      # On a dry run the stage steps still RUN, with `--dry-run` appended:
+      # pnpm packs the tarball and validates the manifest for every variant
+      # without touching the registry, so a broken pack surfaces in the free
+      # dry run instead of burning a version after the markers.
       - name: Stage socket
-        if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts $STAGE_DRY_RUN"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          STAGE_DRY_RUN: ${{ inputs.dry-run != false && '--dry-run' || '' }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Stage @socketsecurity/cli (legacy)
-        if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts $STAGE_DRY_RUN"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          STAGE_DRY_RUN: ${{ inputs.dry-run != false && '--dry-run' || '' }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - name: Stage @socketsecurity/cli-with-sentry
-        if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts $STAGE_DRY_RUN"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+          STAGE_DRY_RUN: ${{ inputs.dry-run != false && '--dry-run' || '' }}
