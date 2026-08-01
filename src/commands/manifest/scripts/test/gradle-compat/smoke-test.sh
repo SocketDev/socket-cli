@@ -16,10 +16,12 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 GRADLE="${1:?usage: smoke-test.sh <path-to-gradle-binary>}"
 INIT="$HERE/../../socket-facts.init.gradle"
 PROJECT="$HERE/project"
-GUH="$HERE/.gradle-home"   # isolated Gradle user home -> hermetic, no global init scripts
 RECORDS="$PROJECT/records.tsv"
+# shellcheck source=SCRIPTDIR/../compat-cache.sh
+. "$HERE/../compat-cache.sh"
+GUH="$SOCKET_COMPAT_CACHE/gradle-home"   # isolated Gradle user home -> hermetic, no global init scripts
 
-bash "$HERE/make-localrepo.sh"
+bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" 'demo.lib:foo:1.0' 'demo.test:bar:1.0'
 rm -rf "$GUH" "$RECORDS" "$PROJECT/.gradle" "$PROJECT/build"
 
 echo "+ $("$GRADLE" --version 2>/dev/null | sed -n 's/^Gradle //p' | head -1)"

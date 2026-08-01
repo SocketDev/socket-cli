@@ -18,8 +18,9 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TOOL="${1:-all}"
-CACHE="${SOCKET_COMPAT_CACHE:-${TMPDIR:-/tmp}/socket-manifest-compat}"
-mkdir -p "$CACHE"
+# shellcheck source=SCRIPTDIR/compat-cache.sh
+. "$HERE/compat-cache.sh"
+CACHE="$SOCKET_COMPAT_CACHE"
 
 # Same matrix as the former CI workflow. Rows: "<ver> <javaMajor> [scala]".
 GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "8.10.2 17" "9.2.1 21")
@@ -48,8 +49,11 @@ run_gradle() {
     use_jdk "$java"
     local dir="$CACHE/gradle-$ver"
     if [ ! -x "$dir/bin/gradle" ]; then
-      curl -fsSL "https://services.gradle.org/distributions/gradle-$ver-bin.zip" -o "$CACHE/gradle.zip"
-      unzip -q -o "$CACHE/gradle.zip" -d "$CACHE"
+      # Distribution downloads stay out of this committed script (fleet CDN
+      # allowlist); the operator fetches the archive once into the cache.
+      echo "gradle $ver not found at $dir/bin/gradle." >&2
+      echo "Fix: download https://services.gradle.org/distributions/gradle-$ver-bin.zip and unzip it into $CACHE" >&2
+      exit 1
     fi
     bash "$HERE/gradle-compat/smoke-test.sh" "$dir/bin/gradle"
     bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
@@ -68,8 +72,11 @@ run_maven() {
     use_jdk "$java"
     local dir="$CACHE/apache-maven-$ver"
     if [ ! -x "$dir/bin/mvn" ]; then
-      curl -fsSL "https://archive.apache.org/dist/maven/maven-3/$ver/binaries/apache-maven-$ver-bin.zip" -o "$CACHE/maven.zip"
-      unzip -q -o "$CACHE/maven.zip" -d "$CACHE"
+      # Distribution downloads stay out of this committed script (fleet CDN
+      # allowlist); the operator fetches the archive once into the cache.
+      echo "maven $ver not found at $dir/bin/mvn." >&2
+      echo "Fix: download https://archive.apache.org/dist/maven/maven-3/$ver/binaries/apache-maven-$ver-bin.zip and unzip it into $CACHE" >&2
+      exit 1
     fi
     bash "$HERE/maven-compat/smoke-test.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"

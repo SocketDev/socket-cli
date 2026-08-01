@@ -1,6 +1,6 @@
 // Hermetic smoke-test project for ../../socket-facts.init.gradle.
 //
-// Resolves two artifacts from a generated local Maven repo (see ../make-localrepo.sh)
+// Resolves two artifacts from a generated local Maven repo (see ../../make-stub-repo.sh)
 // so it runs fully OFFLINE on every Gradle version — including pre-3.3, which the
 // script must still support (old Gradle can't negotiate modern Maven Central's TLS,
 // so a network repo would make the old-version matrix entries impossible to test).
