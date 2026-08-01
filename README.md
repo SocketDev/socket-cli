@@ -8,8 +8,6 @@
 
 CLI for [Socket.dev](https://socket.dev) — bring Socket's supply-chain security analysis to your terminal and CI.
 
-## Why this repo exists
-
 Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This repository is the source for the published `socket` package on npm; end-user documentation lives on [socket.dev](https://docs.socket.dev) and the [`socket` npm page](https://socket.dev/npm/package/socket).
 
 ## Install
