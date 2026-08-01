@@ -144,7 +144,7 @@ packages/socket/*.png
 !src/types/**/*.d.ts
 !packages/*/src/types/**/*.d.ts
 
-# <fleet-canonical>
+# <fleet>
 # Managed by socket-wheelhouse. Don't edit locally — edit upstream
 # in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
 # re-cascade via `pnpm run sync`. Project-specific ignores stay
@@ -270,7 +270,7 @@ node_modules/
 npm-debug.log
 pnpm-debug.log
 *.tgz
-# </fleet-canonical>
+# </fleet>
 
 # ─── repo-local (socket-wheelhouse): keep hand-authored files that the
 # fleet-canonical globs would otherwise ignore (untrack-ignored-files fix) ───
