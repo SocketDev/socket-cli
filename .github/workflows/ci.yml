@@ -123,8 +123,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.7.2"
-          SFW_ENTERPRISE_VERSION="1.7.2"
+          SFW_FREE_VERSION="1.15.0"
+          SFW_ENTERPRISE_VERSION="1.15.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -134,22 +134,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4482b52e6367bd4610519bfd57a104d5907ec87d5399142ed3bb3d222de1f33d" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c24a79c27e1a01a59b7a160c165930ae029816c72b141fcfcdb2f73e0774898a" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="da252d2a9a5d0edb271bb771e0d01b9cd6fa1635b6d765f61efd61edb6739f12" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b1cdc3bdbd2a3161247bd5cc215eb3c44a90b87fe0b800a33889a14f61bb0d6d" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e52ad806a1c41b440f04098eb1c7e407845f03f5740a6a79006ba6fd172056ec" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
@@ -299,8 +299,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.7.2"
-          SFW_ENTERPRISE_VERSION="1.7.2"
+          SFW_FREE_VERSION="1.15.0"
+          SFW_ENTERPRISE_VERSION="1.15.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -310,22 +310,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4482b52e6367bd4610519bfd57a104d5907ec87d5399142ed3bb3d222de1f33d" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c24a79c27e1a01a59b7a160c165930ae029816c72b141fcfcdb2f73e0774898a" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="da252d2a9a5d0edb271bb771e0d01b9cd6fa1635b6d765f61efd61edb6739f12" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b1cdc3bdbd2a3161247bd5cc215eb3c44a90b87fe0b800a33889a14f61bb0d6d" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e52ad806a1c41b440f04098eb1c7e407845f03f5740a6a79006ba6fd172056ec" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
@@ -480,8 +480,8 @@ jobs:
           # requires updating the matching version AND every platform's
           # SHA256 in the same commit, otherwise the download / verify
           # steps will diverge.
-          SFW_FREE_VERSION="1.7.2"
-          SFW_ENTERPRISE_VERSION="1.7.2"
+          SFW_FREE_VERSION="1.15.0"
+          SFW_ENTERPRISE_VERSION="1.15.0"
           SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
           KERNEL="$(uname -s | cut -d- -f1)"
           ARCH="$(uname -m)"
@@ -491,22 +491,22 @@ jobs:
             REPO="SocketDev/firewall-release"
             SFW_VERSION="$SFW_ENTERPRISE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4482b52e6367bd4610519bfd57a104d5907ec87d5399142ed3bb3d222de1f33d" ;;
-              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c24a79c27e1a01a59b7a160c165930ae029816c72b141fcfcdb2f73e0774898a" ;;
-              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="da252d2a9a5d0edb271bb771e0d01b9cd6fa1635b6d765f61efd61edb6739f12" ;;
-              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="b1cdc3bdbd2a3161247bd5cc215eb3c44a90b87fe0b800a33889a14f61bb0d6d" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="e52ad806a1c41b440f04098eb1c7e407845f03f5740a6a79006ba6fd172056ec" ;;
+              Linux-x86_64)                      ASSET="sfw-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="5d33de4859e5138633592fb49a62fb9ac520a6a16211100d21bcb871a9b2d77f" ;;
+              Linux-aarch64)                     ASSET="sfw-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="4cc5c51eb224cfa1c9819c218cc39753bce5273e89a50dfd226d8d71449bfd95" ;;
+              Darwin-x86_64)                     ASSET="sfw-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fc39d500171dfa53eba26e4f59dfd187f3ae47094b8d3a54b7ac53df1c770245" ;;
+              Darwin-arm64)                      ASSET="sfw-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="98c87f9316a3caf67f33bb065f6b08123ae90325164535cf5b692cb1024cb64e" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="7869366709d7ca25c096ec0bcd98f5b69d9f2f13c4c0964dd5b8f656d0fb4359" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           else
             REPO="SocketDev/sfw-free"
             SFW_VERSION="$SFW_FREE_VERSION"
             case "${KERNEL}-${ARCH}" in
-              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="93e2d9dfa244b82a74e014dc26b1c6af18b4adec20f35254378943db5fe91411" ;;
-              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="84a045e4e1bb320cc5c0d3929f02e53f199398b5be0637e8846d02d9ef0027b1" ;;
-              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="a5427d479d440f08e3789fa191ba57599be64997196daf42e67d964fec0382b4" ;;
-              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="248fb588e1e1a27e7192f7b079f739fc29a9de61f0bad7e90928363022dc5643" ;;
-              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="6d333b4cac9d7c5712e2e99677ca634ac8a3020d550c6308312c60bea97f0a28" ;;
+              Linux-x86_64)                      ASSET="sfw-free-linux-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="c80371910a808ea5c68916c48e5451716a91ca411cf5e422fdbd8119729b742c" ;;
+              Linux-aarch64)                     ASSET="sfw-free-linux-arm64"         ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="55671fa409ef3d40fcee66acbba4d7acfff8a5332d349ad47cca809ebf473cd0" ;;
+              Darwin-x86_64)                     ASSET="sfw-free-macos-x86_64"       ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="07cfcc9805812130ebca07f73c51c2cd9c0181b394f25be4c969c0d31c9dc26f" ;;
+              Darwin-arm64)                      ASSET="sfw-free-macos-arm64"        ; SFW_BIN="$SFW_DIR/sfw"     ; EXPECTED_SHA256="fa473291b8b76220f4b636cf655e8a4dc03332145bdea3acfd9bc96887b2da20" ;;
+              MINGW64_NT-x86_64|MSYS_NT-x86_64) ASSET="sfw-free-windows-x86_64.exe" ; SFW_BIN="$SFW_DIR/sfw.exe" ; EXPECTED_SHA256="029882f10e1020c96353b184ec0dba7da853e0f6d35131ca930515a7e61e89e6" ;;
               *) echo "Unsupported platform: ${KERNEL}-${ARCH}" >&2; exit 1 ;;
             esac
           fi
