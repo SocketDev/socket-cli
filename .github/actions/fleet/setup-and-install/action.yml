@@ -64,11 +64,11 @@ inputs:
   store-dir:
     description: >-
       Pin the pnpm store to this path for the whole job (exported as
-      npm_config_store_dir before restore + install). Pass a
-      workspace-relative path when a later step runs pnpm inside a
-      container/sandbox that mounts the workspace but not the runner home —
-      node_modules linked against the default home store are unreadable
-      there and pnpm fails with a store mismatch.
+      pnpm_config_store_dir before restore + install, then asserted against
+      `pnpm store path`). Pass a workspace-relative path when a later step
+      runs pnpm inside a container/sandbox that mounts the workspace but not
+      the runner home — node_modules linked against the default home store
+      are unreadable there and pnpm fails with a store mismatch.
     required: false
     default: ''
   payload-token-client-id:
@@ -110,18 +110,80 @@ runs:
         working-directory: ${{ inputs.working-directory }}
 
     - name: Pin the pnpm store location
-      # Before restore + install so the cache action's `pnpm store path`,
-      # the install, and every later pnpm in the job (including one inside
-      # a workspace-mounted sandbox) resolve the SAME store.
+      # Before restore + install so the cache action's `pnpm store path`, the
+      # install, and every later pnpm in the job resolve the SAME store.
+      #
+      # The variable is `pnpm_config_store_dir`, NOT `npm_config_store_dir`.
+      # pnpm 10 honored the npm_ prefix; pnpm 11.0.0 narrowed its env reader to
+      # pnpm_config_ only and discards every other prefix with no warning
+      # (upstream pnpm issue 13543). This step was correct when written and went
+      # silently dead on the pnpm 11 upgrade — and an unpinned store only ever
+      # looks like a slow install, so the cache degraded invisibly.
+      #
+      # The assertion below is the durable part: `pnpm store path` is the
+      # authoritative resolver pnpm itself uses (and the one cache-pnpm-store
+      # reads), so the NEXT rename fails this step loudly instead of quietly
+      # reverting to the default store. Paths are normalized (case, separators,
+      # trailing slash) so the compare holds on Windows runners, and a prefix
+      # match absorbs the store-version suffix pnpm appends (`…/<dir>/v11`).
+      #
+      # The local `export` is load-bearing: $GITHUB_ENV only affects LATER
+      # steps, so without it the assertion would check an unpinned pnpm.
+      #
       # Env-var indirection, never `${{ }}` inside the run block — an inline
       # expansion of a caller-controlled input into shell source is the
       # zizmor template-injection shape (its gate fails the job on it).
       if: inputs.store-dir != ''
       shell: bash
+      working-directory: ${{ inputs.working-directory }}
       env:
         PNPM_STORE_DIR_INPUT: ${{ inputs.store-dir }}
       run: | # zizmor: ignore[github-env] - pnpm store path from the caller's own input, not runtime-attacker data.
-        echo "npm_config_store_dir=${PNPM_STORE_DIR_INPUT}" >> "$GITHUB_ENV"
+        set -euo pipefail
+
+        normalize() {
+          printf '%s' "$1" | tr '\\' '/' | tr '[:upper:]' '[:lower:]' | sed -e 's:/*$::'
+        }
+
+        mkdir -p "$PNPM_STORE_DIR_INPUT"
+        export pnpm_config_store_dir="$PNPM_STORE_DIR_INPUT"
+        echo "pnpm_config_store_dir=${PNPM_STORE_DIR_INPUT}" >> "$GITHUB_ENV"
+
+        RESOLVED="$(pnpm store path 2>/dev/null || true)"
+        WANT="$(normalize "$PNPM_STORE_DIR_INPUT")"
+        GOT="$(normalize "$RESOLVED")"
+
+        case "$GOT" in
+          "$WANT" | "$WANT"/*)
+            echo "pnpm store pinned to ${RESOLVED}"
+            ;;
+          *)
+            echo "::error title=pnpm store pin did not take effect::pnpm store path resolves outside the requested store-dir, so the store cache would be a silent no-op"
+            {
+              echo 'The store-dir input pins pnpm by exporting pnpm_config_store_dir, then'
+              echo 'verifies the pin with `pnpm store path` — the authoritative resolver pnpm'
+              echo 'itself uses, and the one the cache action reads.'
+              echo 'They disagree, which means the pin did NOT take effect:'
+              echo
+              echo "  requested store-dir : ${PNPM_STORE_DIR_INPUT}"
+              echo "  pnpm store path     : ${RESOLVED:-<empty>}"
+              echo "  pnpm config get     : $(pnpm config get store-dir 2>/dev/null || true)"
+              echo "  pnpm version        : $(pnpm --version 2>/dev/null || true)"
+              echo
+              echo 'Every later pnpm in this job would use a different store than the one the'
+              echo 'cache restores and saves, so installs stay cold and node_modules links point'
+              echo 'somewhere a workspace-mounted sandbox cannot read.'
+              echo
+              echo 'The usual cause is pnpm renaming the knob. It has happened once already:'
+              echo 'pnpm 10 read npm_config_store_dir, pnpm 11.0.0 narrowed its env reader to'
+              echo 'the pnpm_config_ prefix and dropped the rest silently (pnpm issue 13543).'
+              echo 'Re-check what this pnpm honors — the pnpm_config_store_dir env var, the'
+              echo '--store-dir flag, camelCase storeDir: in pnpm-workspace.yaml, or'
+              echo '`pnpm config set store-dir` — and update this action to match.'
+            } >&2
+            exit 1
+            ;;
+        esac
 
     - name: Cache pnpm store
       # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /

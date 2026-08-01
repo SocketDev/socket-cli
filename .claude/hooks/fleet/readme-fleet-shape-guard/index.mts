@@ -507,7 +507,9 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push(
     `Open with why the repo exists: a lead paragraph directly under the`,
   )
-  lines.push(`title and badges (no "## ${LEAD_SECTION}" heading). Then, in order:`)
+  lines.push(
+    `title and badges (no "## ${LEAD_SECTION}" heading). Then, in order:`,
+  )
   for (let i = 0, { length } = REQUIRED_SECTIONS; i < length; i += 1) {
     lines.push(`  ${i + 1}. ## ${REQUIRED_SECTIONS[i]}`)
   }

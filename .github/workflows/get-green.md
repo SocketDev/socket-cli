@@ -63,7 +63,7 @@ on:
         description: 'Pipe-separated case-glob patterns of paths allowed to change'
         required: false
         type: string
-        default: 'package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml|.gitmodules|.config/repo/lockstep.json|.config/lockstep.json'
+        default: 'package.json|*/package.json|pnpm-lock.yaml|*/pnpm-lock.yaml|.npmrc|pnpm-workspace.yaml|.gitmodules|.config/repo/lockstep.json'
 
 engine:
   id: claude
@@ -137,16 +137,28 @@ ${{ inputs.test-log }}
    dependency updates themselves — fix the code/config that broke against the new
    versions. Do NOT push or open a PR yourself.
 
-2. Re-run the test setup + tests to confirm green:
+2. Confirm green through the deterministic executor — never by reading the test
+   output yourself:
 
    ```bash
-   ${{ inputs.test-setup-script }}
-   ${{ inputs.test-script }}
+   pnpm run get-green -- \
+     --setup "${{ inputs.test-setup-script }}" \
+     --test "${{ inputs.test-script }}" \
+     --base "${{ inputs.pr-base }}" \
+     --patterns "${{ inputs.validate-file-patterns }}"
    ```
 
-3. If tests now pass, open the pull request via the `create_pull_request` safe
-   output (title `${{ inputs.pr-title-prefix }} (<YYYY-MM-DD>)`, a body noting the
-   update + the fixes applied). Keep changes within
-   `${{ inputs.validate-file-patterns }}` plus whatever source files the fix
-   required; call out any out-of-allowlist files in the PR body. If tests still
-   fail after your best effort, do NOT open a PR — leave the branch for human review.
+   `get-green.mts` runs the setup + test commands, prints the log tails, and
+   classifies every changed path against the allowlist. Its EXIT CODE is the
+   verdict: 0 means the branch may open a pull request, non-zero means it may
+   not. That decision is not yours to make — a red branch has to reach a human,
+   and an agent that talked itself into "close enough" is exactly what the exit
+   code exists to prevent.
+
+3. Open the pull request ONLY if step 2 exited 0. Use the `create_pull_request`
+   safe output, title `${{ inputs.pr-title-prefix }} (<YYYY-MM-DD>)`, with a body
+   noting the update and the fixes applied. The script prints any paths outside
+   `${{ inputs.validate-file-patterns }}`; copy that list into the PR body so a
+   reviewer sees what the fix touched beyond the manifests. If step 2 exited
+   non-zero after your best effort, do NOT open a PR — leave the branch for human
+   review and say what you tried.

@@ -1,5 +1,5 @@
 //#region scripts/repo/gen/bootstrap/src/helpers.d.mts
-type FleetCommentStyle = 'hash' | 'html' | 'slash';
+type FleetCommentStyle = 'hash' | 'html' | 'json' | 'slash';
 interface BundleManifest {
   readonly files: Record<string, string>;
   readonly generatedPaths?: readonly string[] | undefined;
