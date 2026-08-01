@@ -9,6 +9,9 @@
 #  - materializes resolved external jars under -Dsocket.withFiles;
 #  - scopes that materialization to -Dsocket.populateFilesFor (a newline-delimited GAV file).
 #
+# Assertions match on groupId:artifactId and ignore the version, so bumping a fixture pom (a CVE, say)
+# needs no edit here. The poms are the only place a version is written.
+#
 # Usage: smoke-test.sh <path-to-mvn> <path-to-extension-jar>
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -41,26 +44,34 @@ for r in rows:
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])     # coordId -> {path}
 
 errors = []
-commons = 'commons-io:commons-io:jar:2.11.0'
-junit = 'junit:junit:jar:4.13.2'
-hamcrest = 'org.hamcrest:hamcrest-core:jar:1.3'
-lib = 'demo:lib:1.0'  # internal module: bare id, no ext
+
+def coord(prefix):
+    """The one emitted coordId starting with prefix, or None. Keeps assertions version-agnostic."""
+    hits = sorted(c for c in set(nodes) | set(files) if c.startswith(prefix))
+    if len(hits) > 1:
+        errors.append(f"expected one coordinate for {prefix!r}, got {hits}")
+    return hits[0] if hits else None
+
+commons = coord('commons-io:commons-io:jar:')
+junit = coord('junit:junit:jar:')
+hamcrest = coord('org.hamcrest:hamcrest-core:jar:')
+lib = coord('demo:lib:')  # internal module: bare id, no ext
 
 if tool != 'maven': errors.append(f"meta tool {tool!r} != 'maven'")
 
 def in_prod(cid): return any(roots.get(rid) for rid in nodes.get(cid, ()))
 def has_jar(cid): return any(p.endswith('.jar') for p in files.get(cid, ()))
 
-if commons not in nodes: errors.append("missing external prod dep commons-io")
+if not commons: errors.append("missing external prod dep commons-io")
 elif not in_prod(commons): errors.append("commons-io not in a prod root")
-if not has_jar(commons): errors.append(f"commons-io jar not materialized: {files.get(commons)}")
+elif not has_jar(commons): errors.append(f"commons-io jar not materialized: {files.get(commons)}")
 
-if junit not in nodes: errors.append("missing test dep junit")
+if not junit: errors.append("missing test dep junit")
 elif in_prod(junit): errors.append("test dep junit wrongly in a prod root")
-if not has_jar(junit): errors.append(f"junit jar not materialized: {files.get(junit)}")
-if hamcrest in nodes and in_prod(hamcrest): errors.append("transitive test dep hamcrest wrongly in a prod root")
+elif not has_jar(junit): errors.append(f"junit jar not materialized: {files.get(junit)}")
+if hamcrest and in_prod(hamcrest): errors.append("transitive test dep hamcrest wrongly in a prod root")
 
-if lib not in nodes: errors.append("internal module demo:lib not emitted by its bare id")
+if not lib: errors.append("internal module demo:lib not emitted by its bare id")
 elif not in_prod(lib): errors.append("internal module demo:lib not in app's prod root")
 elif not direct.get(lib): errors.append("internal module demo:lib not marked direct")
 
@@ -68,12 +79,22 @@ if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: tool=maven; commons-io prod+jar; junit/hamcrest dev; internal demo:lib (bare id, direct)")
+print(f"PASS: tool=maven; {commons} prod+jar; junit/hamcrest dev; internal demo:lib (bare id, direct)")
 PY
 
 # Second run: scope --with-files to a single GAV and assert ONLY that artifact is materialized.
+# The GAV comes from the records the first run just emitted, so it always matches the fixture pom.
 SCOPE="$PROJECT/.populate-for.txt"
-printf 'commons-io:commons-io:2.11.0\n' > "$SCOPE"
+python3 - "$RECORDS" > "$SCOPE" <<'PY'
+import sys
+for l in open(sys.argv[1]):
+    r = l.rstrip('\n').split('\t')
+    if r[0] == 'node' and r[2].startswith('commons-io:commons-io:jar:'):
+        print(f'{r[3]}:{r[4]}:{r[5]}')       # groupId:artifactId:version
+        break
+else:
+    sys.exit('no commons-io node record to scope on')
+PY
 rm -rf "$RECORDS" "$PROJECT"/*/target "$PROJECT"/target
 ( cd "$PROJECT" && "$MVN" --batch-mode -q \
     "-Dmaven.ext.class.path=$JAR" \
@@ -91,10 +112,14 @@ files = {}
 for r in rows:
     if r[0] == 'file': files.setdefault(r[2], set()).add(r[3])
 errors = []
-if not any(p.endswith('.jar') for p in files.get('commons-io:commons-io:jar:2.11.0', ())):
-    errors.append(f"scoped run: commons-io (in scope) not materialized: {files.get('commons-io:commons-io:jar:2.11.0')}")
-if files.get('junit:junit:jar:4.13.2'):
-    errors.append(f"scoped run: junit (out of scope) was materialized: {files.get('junit:junit:jar:4.13.2')}")
+
+def jars(prefix):
+    return [p for c, ps in files.items() if c.startswith(prefix) for p in ps if p.endswith('.jar')]
+
+if not jars('commons-io:commons-io:jar:'):
+    errors.append(f"scoped run: commons-io (in scope) not materialized: {files}")
+if jars('junit:junit:jar:'):
+    errors.append(f"scoped run: junit (out of scope) was materialized: {jars('junit:junit:jar:')}")
 if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
