@@ -2,6 +2,9 @@
   "name": "socket",
   "version": "1.1.151",
   "description": "CLI for Socket.dev",
+  "contentPolicy": {
+    "class": "dual-use"
+  },
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
   "repository": {
@@ -201,6 +204,7 @@
     "external/**",
     "shadow-bin/**",
     "CHANGELOG.md",
+    "DISCLOSURE",
     "logo-dark.png",
     "logo-light.png",
     "requirements.json",
