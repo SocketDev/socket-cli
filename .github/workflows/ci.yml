@@ -34,6 +34,7 @@ env:
   DISABLE_TELEMETRY: '1'
   DO_NOT_TRACK: '1'
   NO_UPDATE_NOTIFIER: '1'
+  OTEL_SDK_DISABLED: 'true'
 
 jobs:
   # First step of every job is the third-party actions/checkout (GitHub fetches
