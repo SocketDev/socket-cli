@@ -151,9 +151,9 @@ jobs:
       - name: Verify the stage command resolves
         working-directory: ${{ runner.temp }}
         run: |
-          pnpm --version
-          pnpm stage --help > /dev/null
-          echo "pnpm stage resolves."
+          "${RUNNER_TEMP}/pnpm-bin/pnpm" --version
+          "${RUNNER_TEMP}/pnpm-bin/pnpm" stage --help > /dev/null
+          echo "pnpm stage resolves via the pinned binary."
 
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
@@ -436,14 +436,19 @@ jobs:
       # (pnpm@10.33.0, which has no `stage` command) whenever its cwd sits
       # under a package.json, and no env or npmrc knob disables that in
       # pnpm 11 — a neutral cwd keeps the workflow-pinned pnpm 11 in charge
-      # (the v1.1.148 and v1.1.149 burns). Install/build steps keep the
-      # delegate on purpose: they match v1.x CI exactly.
+      # (the v1.1.148 and v1.1.149 burns). They also invoke the pinned pnpm
+      # binary by ABSOLUTE PATH, not via PATH: the sfw shim wraps `pnpm` and
+      # cannot parse npm's staged-publish endpoint
+      # (POST /-/stage/package/<name> — the v1.1.150 burn); the firewall
+      # guards inbound package fetches, and a stage upload is outbound.
+      # Install/build steps keep the shimmed, delegated pnpm on purpose:
+      # they match v1.x CI exactly.
       # Both flags mirror the fleet staged-publish runner
       # (scripts/fleet/publish-infra/npm/staged.mts on main).
       - name: Stage socket
         if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -453,7 +458,7 @@ jobs:
       - name: Stage @socketsecurity/cli (legacy)
         if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -463,7 +468,7 @@ jobs:
       - name: Stage @socketsecurity/cli-with-sentry
         if: ${{ inputs.dry-run == false }}
         working-directory: ${{ runner.temp }}
-        run: pnpm stage publish "$GITHUB_WORKSPACE" --provenance --access public --tag "${NPM_DIST_TAG}" --no-git-checks --ignore-scripts
+        run: "\"${RUNNER_TEMP}/pnpm-bin/pnpm\" stage publish \"$GITHUB_WORKSPACE\" --provenance --access public --tag \"${NPM_DIST_TAG}\" --no-git-checks --ignore-scripts"
         env:
           NPM_DIST_TAG: ${{ inputs.dist-tag }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
