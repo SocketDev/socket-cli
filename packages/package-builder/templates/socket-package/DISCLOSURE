@@ -1,0 +1,29 @@
+# Dual-use disclosure
+
+Package: socket
+Content policy class: dual-use (https://docs.npmjs.com/policies/dual-use)
+
+This package is a small launcher for the Socket CLI, a security research
+tool. Installing it adds one command, socket. The launcher does not contain
+the tool itself: it picks the platform-specific optional dependency that
+matches the user's operating system and CPU (the @socketbin/cli-* and
+@socketsecurity/cli.exe.* packages listed in this manifest) and runs the
+compiled Socket CLI binary that package ships.
+
+## What the tool does that can look like malware
+
+The Socket CLI wraps package-manager commands, reads dependency trees and
+project files such as manifests and lockfiles, sends package names,
+versions, and user-requested scan files to the socket.dev security API, and
+can warn about or refuse to continue an install when a dependency looks
+risky. The user's API token is sent to authenticate those requests. A
+launcher that selects and executes a compiled binary from an optional
+dependency is also a pattern automated scanning treats with suspicion.
+
+## Intended legitimate use
+
+The tool exists for defensive supply-chain security: developers and CI
+systems use it to find known-malicious, hijacked, typosquatted, or
+policy-violating dependencies before those dependencies run. The tool runs
+only when a user or a CI job invokes it. Its source code is public at
+https://github.com/SocketDev/socket-cli and issues are tracked there.

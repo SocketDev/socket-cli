@@ -15,7 +15,8 @@
   "contentPolicy": {
     "class": "dual-use",
     "packages": [
-      "packages/cli"
+      "packages/cli",
+      "packages/package-builder/templates/socket-package"
     ]
   }
 }
