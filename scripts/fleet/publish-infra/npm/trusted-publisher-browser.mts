@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file Npm Trusted Publisher settings driver — reads and mass-applies the
  *   fleet's canonical GitHub Actions trusted-publisher config across packages
  *   by driving `https://www.npmjs.com/package/<pkg>/access` in a signed-in
@@ -7,7 +7,7 @@
  *   shape as `staged-browser-read.mts`, so the operator's staged-publish
  *   sign-in is reused. Modes: `read <pkg…>` prints each package's
  *   CURRENT form values as a table (read-only); `apply <pkg…>` prints the
- *   current-to-desired diff per package and is DRY-RUN BY DEFAULT — `--live`
+ *   current-to-desired diff per package and is DRY-RUN BY DEFAULT — `--drive` (the agent takes the wheel of your signed-in session)
  *   fills the form (workflow filename, environment name, allowed-action
  *   checkboxes) and clicks Save, then RE-READS the form and only counts the
  *   package done when the saved state matches desired: success is the page's
@@ -28,15 +28,18 @@
  *   - The ONLY auth signal is npm's own `/-/whoami`, and the only auth failure
  *     reported is "signed out".
  *   - The launch shape is exactly that module's:
- *     `launchPersistentContext(profileDir, { channel, headless: false })` — no
- *     args array, no sandbox toggle. Playwright adds `--no-sandbox` by default;
- *     that flag banner is cosmetic and is NOT a sign-in blocker.
+ *     `launchPersistentContext(profileDir, { channel, chromiumSandbox: true,
+ *     headless, ignoreDefaultArgs: ['--enable-automation',
+ *     '--use-mock-keychain'] })` — no args array, sandbox ON (playwright
+ *     defaults it off and injects --no-sandbox, which current Chrome refuses
+ *     outright), and exactly those two ignored defaults (navigator.webdriver
+ *     bot signal off; a cookie store bare Chrome can share).
  *   - A human-verification challenge PAUSES the run for the operator with a
  *     visible elapsed/remaining countdown and is NEVER retried blindly: a retry
  *     ladder against a bot challenge earns a rate limit, which then masquerades
  *     as a broken session. Nothing is written while a challenge is outstanding.
  *     Usage: node scripts/fleet/publish-infra/npm/trusted-publisher-browser.mts
- *     read|apply [<pkg>…] [--socket-registry] [--live] [--repo <owner/name>]
+ *     read|apply [<pkg>…] [--socket-registry] [--drive] [--repo <owner/name>]
  *     [--profile-dir <dir>]
  */
 
@@ -88,14 +91,14 @@ export async function openTrustedPublisherSession(
 }
 
 /**
- * Plan (and with `live`, perform + verify) one package's trusted-publisher
+ * Plan (and with `drive`, perform + verify) one package's trusted-publisher
  * update. Never throws — every outcome is an ApplyResult so the batch keeps
  * moving.
  */
 export async function applyOne(
   page: Page,
   pkg: string,
-  config: { live: boolean; repoOverride?: string | undefined },
+  config: { drive: boolean; repoOverride?: string | undefined },
 ): Promise<ApplyResult> {
   const cfg = { __proto__: null, ...config } as typeof config
   try {
@@ -119,7 +122,7 @@ export async function applyOne(
       logger.substep(`${pkg}: conforms — no edits`)
       return { pkg, status: 'conforms' }
     }
-    if (!cfg.live) {
+    if (!cfg.drive) {
       logger.log(`[dry-run] ${renderPlannedEdits(pkg, edits)}`)
       return { pkg, status: 'planned' }
     }
@@ -208,7 +211,7 @@ export async function expandSocketRegistryWorklist(): Promise<string[]> {
 }
 
 interface CliArgs {
-  live: boolean
+  drive: boolean
   mode: 'apply' | 'read'
   packages: string[]
   profileDir?: string | undefined
@@ -218,7 +221,7 @@ interface CliArgs {
 
 const USAGE =
   'Usage: trusted-publisher-browser.mts read|apply [<pkg>…] ' +
-  '[--socket-registry] [--live] [--repo <owner/name>] [--profile-dir <dir>]'
+  '[--socket-registry] [--drive] [--repo <owner/name>] [--profile-dir <dir>]'
 
 /**
  * Parse the CLI: a `read`/`apply` mode word, positional package names, and
@@ -231,15 +234,15 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     logger.fail(USAGE)
     process.exit(1)
   }
-  let live = false
+  let drive = false
   let profileDir: string | undefined
   let repo: string | undefined
   let socketRegistry = false
   const packages: string[] = []
   for (let i = 1, { length } = argv; i < length; i += 1) {
     const arg = argv[i]!
-    if (arg === '--live') {
-      live = true
+    if (arg === '--drive') {
+      drive = true
       continue
     }
     if (arg === '--socket-registry') {
@@ -267,7 +270,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
     }
     packages.push(arg)
   }
-  return { live, mode, packages, profileDir, repo, socketRegistry }
+  return { drive, mode, packages, profileDir, repo, socketRegistry }
 }
 
 export async function main(): Promise<void> {
@@ -307,13 +310,13 @@ export async function main(): Promise<void> {
     }
     logger.log(
       `npm trusted publishing — ${packages.length} package(s)` +
-        `${args.live ? ' [live]' : ' [dry-run]'}`,
+        `${args.drive ? ' [drive]' : ' [dry-run]'}`,
     )
     const results: ApplyResult[] = []
     for (let i = 0, { length } = packages; i < length; i += 1) {
       // eslint-disable-next-line no-await-in-loop -- serial per-package applies share one page session.
       const result = await applyOne(session.page, packages[i]!, {
-        live: args.live,
+        drive: args.drive,
         repoOverride: args.repo,
       })
       if (result.status === 'failed' || result.status === 'skipped') {
@@ -322,7 +325,7 @@ export async function main(): Promise<void> {
       results.push(result)
     }
     logger.log('')
-    logger.log(formatApplySummary(results, { live: args.live }))
+    logger.log(formatApplySummary(results, { drive: args.drive }))
     if (results.some(r => r.status === 'failed')) {
       process.exitCode = 1
     }

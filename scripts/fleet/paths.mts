@@ -122,6 +122,26 @@ export function lockstepManifestCandidates(repoRoot: string): string[] {
 export const NODE_MODULES_DIR = path.join(REPO_ROOT, 'node_modules')
 
 /**
+ * Absolute path to an installed CLI in the repo's `node_modules/.bin/`.
+ *
+ * Spawn this instead of `pnpm exec <tool>`: the exec wrapper adds the package
+ * manager's startup and, in this fleet, a Socket Firewall interception on every
+ * call — seconds per spawn for a binary already sitting on disk. The fleet's
+ * `no-pm-exec-guard` blocks the wrapper form at Bash time; this is the same
+ * rule for source. On Windows the shim carries a `.cmd` extension, which
+ * `spawnSync` cannot exec directly, so callers pass `shell: true` there.
+ *
+ * @param name Bare tool name, `oxlint`, `oxfmt`, `vitest`.
+ */
+export function nodeModulesBinPath(name: string): string {
+  return path.join(
+    NODE_MODULES_DIR,
+    '.bin',
+    process.platform === 'win32' ? `${name}.cmd` : name,
+  )
+}
+
+/**
  * Absolute path to the repo's tool-cache root — a repo-root `.cache/`. Fleet
  * convention: every per-repo tool cache and every piece of per-repo runtime
  * state lives under here (coverage, the hook bundle cache, the active-edits

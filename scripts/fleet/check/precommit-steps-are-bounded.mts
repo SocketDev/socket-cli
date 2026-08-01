@@ -2,13 +2,17 @@
 /**
  * @file Enforce the pre-commit time gate. The pre-commit hook must stay fast
  *   (≤ PRECOMMIT_STEP_BUDGET_CAP_S) so a commit never hangs: every heavy
- *   optional step (`pnpm lint`, `pnpm test`) has to run through the bounded
- *   runner (`run_step_bounded`, which kills the process group on timeout and
- *   fails open), and the declared budget must stay at or under the cap. A bare
- *   or `run_step` (unbounded) heavy step, or a budget above the cap, re-opens
- *   the "commit hangs forever" hole this gate closes.
- *   Pure core (findUnboundedHeavySteps / readBudgetSeconds) is unit-tested;
- *   main() reads the repo's own .git-hooks/fleet/pre-commit and fails loud.
+ *   optional step (the `lint` and `test` package scripts) has to run through a
+ *   bounded runner (`run_pkg_step_bounded` / `run_step_bounded`, which kill the
+ *   process group on timeout and fail open), the declared budget must stay at
+ *   or under the cap, and the hook must render the ungated-step summary so a
+ *   killed step can't read as a pass. A heavy step run bare or via the
+ *   unbounded `run_step`, a heavy step missing entirely, a budget above the
+ *   cap, or a missing summary each re-opens a hole this gate closes.
+ *   Pure core (findMissingHeavySteps / findUnboundedHeavySteps /
+ *   heavyScriptsOnLine / readBudgetSeconds / rendersGateSummary) is
+ *   unit-tested; main() reads the repo's own .git-hooks/fleet/pre-commit and
+ *   fails loud.
  *   Usage: node scripts/fleet/check/precommit-steps-are-bounded.mts [--quiet]
  */
 
@@ -17,6 +21,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -25,26 +30,84 @@ const logger = getDefaultLogger()
 // it must not drift above this (a bigger budget = a slower worst-case commit).
 export const PRECOMMIT_STEP_BUDGET_CAP_S = 10
 
-// Heavy optional steps that MUST be bounded. Sorted (socket/sort).
-export const HEAVY_STEP_COMMANDS: readonly string[] = ['pnpm lint', 'pnpm test']
+// Heavy optional steps that MUST be bounded, named by the package.json script
+// each one runs. Sorted (socket/sort).
+export const HEAVY_STEP_SCRIPTS: readonly string[] = ['lint', 'test']
 
-// The bounded-runner shell function every heavy step must be invoked through.
-const BOUNDED_RUNNER = 'run_step_bounded'
+// The bounded-runner shell functions a heavy step may be invoked through.
+// `run_pkg_step_bounded` resolves the package.json script body and runs it
+// directly (skipping pnpm's startup); `run_step_bounded` takes a literal argv.
+// Both background the command in its own process group and kill it at the
+// budget. Sorted (socket/sort).
+export const BOUNDED_RUNNERS: readonly string[] = [
+  'run_pkg_step_bounded',
+  'run_step_bounded',
+]
+
+// The shell function that names every step which did not gate the commit. A
+// hook that skips a step without calling this reports the skip as a pass.
+export const GATE_SUMMARY_FN = 'precommit_gate_summary'
 
 const HOOK_PATH = path.join('.git-hooks', 'fleet', 'pre-commit')
 
 // The shared step-runner the hook sources; the budget declaration lives here
-// (one home for run_step / run_step_bounded and their budget).
+// (one home for the run_step* family and their budget).
 const RUN_STEP_PATH = path.join('.git-hooks', '_shared', 'run-step.sh')
 
 function isCommentLine(line: string): boolean {
   return line.trimStart().startsWith('#')
 }
 
+function isBoundedLine(line: string): boolean {
+  for (let i = 0, { length } = BOUNDED_RUNNERS; i < length; i += 1) {
+    if (line.startsWith(`${BOUNDED_RUNNERS[i]!} `)) {
+      return true
+    }
+  }
+  return false
+}
+
 /**
- * Heavy steps invoked WITHOUT the bounded runner. A line that runs a heavy
- * command must start with `run_step_bounded ` — a bare invocation or the
- * unbounded `run_step ` form is a finding. Comment lines are ignored (the
+ * The heavy package scripts a single hook line invokes, in any of the three
+ * forms a hook can take: the resolving runner (`run_pkg_step_bounded lint`),
+ * the pnpm wrapper (`pnpm --config.x=y lint`, flags may sit between the binary
+ * and the script name), and a hard-coded direct call (`node
+ * scripts/fleet/lint.mts`). Recognizing all three is what keeps this check from
+ * passing vacuously when the hook switches invocation style.
+ */
+export function heavyScriptsOnLine(line: string): string[] {
+  const tokens = line.trim().split(/\s+/)
+  const pnpmAt = tokens.indexOf('pnpm')
+  const nodeAt = tokens.indexOf('node')
+  const found: string[] = []
+  for (let i = 0, { length } = HEAVY_STEP_SCRIPTS; i < length; i += 1) {
+    const script = HEAVY_STEP_SCRIPTS[i]!
+    if (tokens[0] === 'run_pkg_step_bounded' && tokens[1] === script) {
+      found.push(script)
+      continue
+    }
+    if (pnpmAt !== -1) {
+      let k = pnpmAt + 1
+      while (k < tokens.length && tokens[k]!.startsWith('-')) {
+        k += 1
+      }
+      if (tokens[k] === script) {
+        found.push(script)
+        continue
+      }
+    }
+    if (nodeAt !== -1 && tokens[nodeAt + 1] !== undefined) {
+      const target = normalizePath(tokens[nodeAt + 1]!)
+      if (target === `${script}.mts` || target.endsWith(`/${script}.mts`)) {
+        found.push(script)
+      }
+    }
+  }
+  return found
+}
+
+/**
+ * Heavy steps invoked WITHOUT a bounded runner. Comment lines are ignored (the
  * runner's own doc mentions the commands in prose).
  */
 export function findUnboundedHeavySteps(hookText: string): string[] {
@@ -52,31 +115,51 @@ export function findUnboundedHeavySteps(hookText: string): string[] {
   const lines = hookText.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!.trim()
-    if (!line || isCommentLine(line)) {
+    if (!line || isCommentLine(line) || isBoundedLine(line)) {
       continue
     }
-    for (let j = 0, jlen = HEAVY_STEP_COMMANDS.length; j < jlen; j += 1) {
-      const cmd = HEAVY_STEP_COMMANDS[j]!
-      // Flags may sit between the binary and the script name
-      // (`pnpm --config.x=y lint`), so walk tokens: find the binary, skip
-      // dash-led tokens, and require the script name next.
-      const [binary, script] = cmd.split(' ')
-      const tokens = line.split(/\s+/)
-      const binaryAt = tokens.indexOf(binary ?? '')
-      let invoked = false
-      if (binaryAt !== -1) {
-        let k = binaryAt + 1
-        while (k < tokens.length && tokens[k]!.startsWith('-')) {
-          k += 1
-        }
-        invoked = tokens[k] === script
-      }
-      if (invoked && !line.startsWith(`${BOUNDED_RUNNER} `)) {
-        findings.push(`${cmd} (line ${i + 1})`)
-      }
+    const scripts = heavyScriptsOnLine(line)
+    for (let j = 0, jlen = scripts.length; j < jlen; j += 1) {
+      findings.push(`${scripts[j]!} (line ${i + 1})`)
     }
   }
   return findings
+}
+
+/**
+ * Heavy steps the hook never invokes at all. A gate that dropped its lint or
+ * test step is silently ungated — the worst false green of the three, because
+ * nothing in the commit output hints the step is gone.
+ */
+export function findMissingHeavySteps(hookText: string): string[] {
+  const invoked = new Set<string>()
+  const lines = hookText.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!.trim()
+    if (!line || isCommentLine(line)) {
+      continue
+    }
+    const scripts = heavyScriptsOnLine(line)
+    for (let j = 0, jlen = scripts.length; j < jlen; j += 1) {
+      invoked.add(scripts[j]!)
+    }
+  }
+  return HEAVY_STEP_SCRIPTS.filter(script => !invoked.has(script))
+}
+
+/**
+ * True when the hook calls the ungated-step summary. Without it a step the
+ * budget killed prints its notice mid-log and the commit still ends clean.
+ */
+export function rendersGateSummary(hookText: string): boolean {
+  const lines = hookText.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!.trim()
+    if (!isCommentLine(line) && line.split(/\s+/)[0] === GATE_SUMMARY_FN) {
+      return true
+    }
+  }
+  return false
 }
 
 /**
@@ -99,6 +182,7 @@ function main(): void {
   }
   const hookText = readFileSync(HOOK_PATH, 'utf8')
   const unbounded = findUnboundedHeavySteps(hookText)
+  const missing = findMissingHeavySteps(hookText)
   // The budget lives in the shared runner the hook sources; older hooks
   // declared it inline, so both homes are read.
   const runStepText = existsSync(RUN_STEP_PATH)
@@ -111,9 +195,30 @@ function main(): void {
     errors.push(
       `Unbounded heavy step(s): ${unbounded.join(', ')}.\n` +
         `  Where: ${HOOK_PATH}.\n` +
-        `  Saw: a heavy command run bare or via unbounded run_step; ` +
-        `wanted: every heavy step invoked through ${BOUNDED_RUNNER}.\n` +
-        `  Fix: prefix the invocation with ${BOUNDED_RUNNER} <name>.`,
+        `  Saw: a heavy step run bare or via unbounded run_step; ` +
+        `wanted: every heavy step invoked through one of ` +
+        `${BOUNDED_RUNNERS.join(' / ')}.\n` +
+        `  Fix: prefix the invocation with run_pkg_step_bounded <script>.`,
+    )
+  }
+  if (missing.length > 0) {
+    errors.push(
+      `Missing heavy step(s): ${missing.join(', ')}.\n` +
+        `  Where: ${HOOK_PATH}.\n` +
+        `  Saw: no invocation of the ${missing.join(' / ')} script; ` +
+        `wanted: every heavy step in ${HEAVY_STEP_SCRIPTS.join(' / ')} run ` +
+        `on every commit.\n` +
+        `  Fix: add \`run_pkg_step_bounded ${missing[0]!} --staged\` to the hook.`,
+    )
+  }
+  if (!rendersGateSummary(hookText)) {
+    errors.push(
+      `No ${GATE_SUMMARY_FN} call.\n` +
+        `  Where: ${HOOK_PATH}.\n` +
+        `  Saw: no summary; wanted: a call to ${GATE_SUMMARY_FN} after the ` +
+        `last step, so a step the budget killed (or one that checked zero ` +
+        `files) is named instead of reading as a pass.\n` +
+        `  Fix: add \`${GATE_SUMMARY_FN}\` as the hook's last line.`,
     )
   }
   if (budget === undefined) {

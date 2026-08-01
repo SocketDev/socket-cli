@@ -25,6 +25,7 @@ import {
   cascadeMirrorOxlintIgnoreArgs,
 } from './cascade-mirror-scope.mts'
 import { buildOxfmtArgs, NEVER_GATED_SEGMENTS } from './format-scope.mts'
+import { nodeModulesBinPath } from '../paths.mts'
 import {
   isTemplatePayloadPath,
   templatePayloadIgnoreArgs,
@@ -33,6 +34,14 @@ import {
 } from './template-payload-scope.mts'
 
 const logger = getDefaultLogger()
+
+// oxlint runs several times per lint (a fix→verify loop, the template-payload
+// leg, the dogfood leg), so the binary is resolved once. Every spawn in this
+// file targets a `node_modules/.bin` shim rather than `pnpm exec <tool>`: the
+// exec wrapper costs the package manager's startup plus a Socket Firewall
+// interception on each call, which is most of the pre-commit budget for a
+// staged scope whose real work is milliseconds.
+const OXLINT_BIN = nodeModulesBinPath('oxlint')
 
 // Max oxfmt format→check passes before declaring oscillation. oxfmt is
 // non-idempotent on some content (comment / backtick / arrow reflow), so a
@@ -94,8 +103,8 @@ export interface LintRunnerContext {
    */
   stdio: SpawnSyncOptions['stdio']
   /**
-   * True on Windows, where `pnpm` is a `.cmd` shim spawnSync can't exec
-   * directly, so the child runs through a shell wrapper.
+   * True on Windows, where a `node_modules/.bin` entry is a `.cmd` shim
+   * spawnSync can't exec directly, so the child runs through a shell wrapper.
    */
   useShell: boolean
   /**
@@ -262,16 +271,11 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
       return 0
     }
     log('Running markdownlint-cli2…')
-    const mdArgs = [
-      'exec',
-      'markdownlint-cli2',
-      '--config',
-      '.config/fleet/.markdownlint-cli2.jsonc',
-    ]
+    const mdArgs = ['--config', '.config/fleet/.markdownlint-cli2.jsonc']
     if (fix) {
       mdArgs.push('--fix')
     }
-    const mdRes = spawnSync('pnpm', mdArgs, {
+    const mdRes = spawnSync(nodeModulesBinPath('markdownlint-cli2'), mdArgs, {
       shell: useShell,
       stdio,
       timeout: MARKDOWN_TIMEOUT_MS,
@@ -301,7 +305,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     const fileArgs = files === undefined ? {} : { files: [...files] }
     if (!fix) {
       const res = spawnSync(
-        'pnpm',
+        nodeModulesBinPath('oxfmt'),
         buildOxfmtArgs({ check: true, ...fileArgs }),
         {
           shell: useShell,
@@ -316,7 +320,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     // read-only gate above keeps its full scope.
     for (let pass = 1; pass <= FORMAT_MAX_PASSES; pass += 1) {
       const fmtRes = spawnSync(
-        'pnpm',
+        nodeModulesBinPath('oxfmt'),
         [
           ...buildOxfmtArgs({ check: false, ...fileArgs }),
           ...mirrorOxfmtGuardArgs,
@@ -327,7 +331,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         return 1
       }
       const checkRes = spawnSync(
-        'pnpm',
+        nodeModulesBinPath('oxfmt'),
         [
           ...buildOxfmtArgs({ check: true, ...fileArgs }),
           ...mirrorOxfmtGuardArgs,
@@ -357,11 +361,15 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
       for (let pass = 1; pass <= OXLINT_MAX_PASSES; pass += 1) {
         // Mirror guard on the MUTATING spawn only — the verify probe and the
         // final gate pass below keep the configured (report-capable) scope.
-        spawnSync('pnpm', [...baseArgs, ...mirrorOxlintGuardArgs, '--fix'], {
-          shell: useShell,
-          stdio,
-        })
-        const verify = spawnSync('pnpm', [...baseArgs], {
+        spawnSync(
+          OXLINT_BIN,
+          [...baseArgs, ...mirrorOxlintGuardArgs, '--fix'],
+          {
+            shell: useShell,
+            stdio,
+          },
+        )
+        const verify = spawnSync(OXLINT_BIN, [...baseArgs], {
           shell: useShell,
           stdio: 'ignore',
         })
@@ -370,7 +378,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         }
       }
     }
-    const res = spawnSync('pnpm', [...baseArgs], { shell: useShell, stdio })
+    const res = spawnSync(OXLINT_BIN, [...baseArgs], { shell: useShell, stdio })
     return res.status === 0 ? 0 : 1
   }
 
@@ -391,8 +399,6 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     log(`Running oxlint on ${targets.length} template payload path(s)...`)
     const config = pickOxlintConfig()
     return runOxlint([
-      'exec',
-      'oxlint',
       '-c',
       config,
       ...templatePayloadIgnoreArgs(),
@@ -438,8 +444,6 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         continue
       }
       const args = [
-        'exec',
-        'oxlint',
         '-c',
         DOGFOOD_CONFIG,
         ...oxlintIgnoreArgs(DOGFOOD_CONFIG),
@@ -449,7 +453,7 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         args.push('--fix')
       }
       args.push(dogfoodPath)
-      const r = spawnSync('pnpm', args, { shell: useShell, stdio })
+      const r = spawnSync(OXLINT_BIN, args, { shell: useShell, stdio })
       if (r.status !== 0) {
         // Without --fix the gate only needs the first failure, so fail fast.
         // WITH --fix, oxlint exits non-zero whenever ANY unfixable violation
@@ -472,8 +476,6 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     const allConfig = pickOxlintConfig()
     if (
       runOxlint([
-        'exec',
-        'oxlint',
         '-c',
         allConfig,
         ...oxlintIgnoreArgs(allConfig),
@@ -519,8 +521,6 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     // be linted.
     const filesConfig = pickOxlintConfig()
     const baseArgs = [
-      'exec',
-      'oxlint',
       '-c',
       filesConfig,
       ...oxlintIgnoreArgs(filesConfig),

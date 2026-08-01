@@ -121,3 +121,16 @@ exit-code change to stay honest.
 repo is clean" is how a real backlog stays invisible: a clean-tree run reported
 success while 15 lint errors and a type error sat in the tree. Before a push,
 run `node scripts/fleet/lint.mts --all`.
+
+## Enforcement
+
+- `.claude/hooks/fleet/no-direct-linter-guard/` — blocks a direct
+  `prettier` / `eslint` / `cargo fmt` invocation in a fleet repo.
+- `.claude/hooks/fleet/no-file-oxlint-disable-guard/` — blocks a file-scope
+  `oxlint-disable`, forcing the per-call-site form.
+- `.claude/hooks/fleet/no-other-linters-guard/` — blocks adding a foreign
+  linter/formatter package or config.
+- `.claude/hooks/fleet/oxlint-plugin-load-nudge/` — re-verifies the `socket/`
+  plugin still loads after an edit under `.config/fleet/oxlint-plugin/**`.
+- `scripts/fleet/lint.mts` — the scoped/`--all` lint runner; owns the
+  zero-scope verdict described above.

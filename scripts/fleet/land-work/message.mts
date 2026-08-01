@@ -44,11 +44,18 @@ function shortArea(dir: string): string {
  *
  * `aiSummary` (optional, from land-work/ai-summary.mts) is a floor-tier "what &
  * why" line inserted below the subject, above the digest, for multi-file groups
- * only; a single-file group already names its file. Deterministic and pure.
+ * only; a single-file group already names its file.
+ *
+ * `aiSubject` (optional, keyless, from land-work/ai-summary.mts) replaces the
+ * deterministic `update <areas>` description of a multi-file subject with an
+ * on-device suggestion. The caller pre-validates it, and the structural
+ * `<type>(<scope>): ` prefix is always kept — so the Conventional-Commits
+ * format the commit hook enforces cannot break. Deterministic and pure.
  */
 export function commitMessage(
   group: CommitGroup,
   aiSummary?: string | undefined,
+  aiSubject?: string | undefined,
 ): string {
   const { paths, scope, type } = group
   const n = paths.length
@@ -77,7 +84,8 @@ export function commitMessage(
     extraAreas > 0
       ? `${shownAreas.join(', ')} +${extraAreas} more`
       : shownAreas.join(', ')
-  const subject = `${type}(${scope}): update ${areas} (${n} files)`
+  const description = aiSubject?.trim() || `update ${areas} (${n} files)`
+  const subject = `${type}(${scope}): ${description}`
   // Body: one bullet per directory (bounded), listing its file basenames.
   const bulletDirs = dirs.slice(0, MAX_BODY_DIRS)
   const lines: string[] = []

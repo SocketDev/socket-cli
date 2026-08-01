@@ -31,7 +31,7 @@
  * @see ./pack-app-triplets.mts for the canonical triplet set.
  */
 
-import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -57,6 +57,7 @@ import type {
   SourceAllowlistEntry,
 } from './source-allowlist.mts'
 import { tarExecutable } from '../_shared/tar-executable.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -418,7 +419,7 @@ export async function stageMultiPackagePublish(
         2,
       )
       try {
-        writeFileSync(stagedManifest, `${stampedManifest}\n`, 'utf8')
+        writeThroughMirrorLock(stagedManifest, `${stampedManifest}\n`)
       } catch (e) {
         throw new MultiPackageStageError(
           `Failed to write stamped manifest at ${stagedManifest}: ${errorMessage(e)}`,
@@ -441,10 +442,10 @@ export async function stageMultiPackagePublish(
             triplet,
           )
         }
-        writeFileSync(stagedBinary, readFileSync(extractedBinary))
+        writeThroughMirrorLock(stagedBinary, readFileSync(extractedBinary))
       } else {
         // Raw binary release asset — it IS the binary, no extraction.
-        writeFileSync(stagedBinary, readFileSync(assetPath))
+        writeThroughMirrorLock(stagedBinary, readFileSync(assetPath))
         chmodSync(stagedBinary, 0o755)
       }
     }

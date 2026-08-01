@@ -2,17 +2,19 @@
  * @file Registry-agnostic release-branch orchestration for the CI publish path.
  *   The version bump commits land on a throwaway `<channel>-publish-v<version>`
  *   branch instead of directly on `main`; only a SUCCESSFUL publish lands that
- *   branch on `main` — through a PULL REQUEST with squash auto-merge, so a
- *   branch-protected `main` (which rejects a direct ref push from the release
- *   App with 422 "changes must be made through a pull request") is advanced
- *   without a push-bypass. A FAILED publish deletes the branch so `main` is
- *   never touched — no version creep, and safe when `main` is branch-protected.
- *   Shared by the npm + cargo bump tiers (both accumulate their commit(s) on
- *   the branch this opens).
+ *   branch on `main` — by fast-forwarding `main`'s ref to the branch tip with
+ *   the release App's contents:write token, then deleting the branch. A version
+ *   bump NEVER travels through a pull request: the PR route parks the release
+ *   behind branch-protection requirements the fresh branch cannot satisfy, and
+ *   there is nothing to review in a machine-generated bump. A FAILED publish
+ *   deletes the branch so `main` is never touched — no version creep. Shared by
+ *   the npm + cargo bump tiers (both accumulate their commit(s) on the branch
+ *   this opens).
  */
 
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { HttpResponseError } from '@socketsecurity/lib-stable/http-request'
 
 import {
@@ -20,23 +22,15 @@ import {
   deleteBranchRef,
   updateBranchRef,
 } from '../lib/github-git-refs.mts'
-import {
-  createPullRequest,
-  enablePullRequestAutoMerge,
-  mergePullRequest,
-} from '../lib/github-pull-requests.mts'
 import { logger } from './shared.mts'
 
 export interface ReleaseEnv {
   // Branch the successful publish fast-forwards (the dispatch branch, e.g. 'main').
   readonly mainBranch: string
-  // PR App token with pull_requests:write — the promote PR's create /
-  // auto-merge / merge calls, which the release App's contents:write cannot
-  // make. Two apps, two least-privilege grants.
-  readonly prToken: string
   // Repo in "owner/name" form.
   readonly repo: string
-  // Release App token with contents:write — branch refs and the bump commit.
+  // Release App token with contents:write — branch refs, the bump commit, and
+  // the fast-forward that lands it on the dispatch branch.
   readonly token: string
 }
 
@@ -45,8 +39,8 @@ export interface ReleaseBranch {
   readonly branch: string
   // The resolved CI release environment.
   readonly env: ReleaseEnv
-  // The version this branch bumps to — pins the promote PR's squash subject to
-  // `chore: bump version to <version>`, the reconcile anchor, and titles the PR.
+  // The version this branch bumps to — names the `chore: bump version to
+  // <version>` commit the reconcile lookups anchor on.
   readonly version: string
 }
 
@@ -58,16 +52,14 @@ export interface BumpResult {
 }
 
 /**
- * Resolve the CI release environment (repo, dispatch branch, and BOTH app
- * tokens). Throws loud — What / Where / Saw vs. wanted / Fix — when any piece
- * is missing.
+ * Resolve the CI release environment (repo, dispatch branch, release App
+ * token). Throws loud — What / Where / Saw vs. wanted / Fix — when any piece is
+ * missing.
  *
  * This is the PROMOTE PREFLIGHT. It runs at bump time, before anything is
- * staged or published, and the PR App token is required here rather than at the
- * moment the promote PR is opened — that moment is AFTER the irreversible
- * registry publish, where a missing token strands a live version on a throwaway
- * branch. Demanding both tokens up front turns that into a refusal nothing has
- * paid for yet.
+ * staged or published, so a missing token refuses while nothing has been paid
+ * for — checking at promote time would be AFTER the irreversible registry
+ * publish, where the failure strands a live version on a throwaway branch.
  */
 export function resolveReleaseEnv(): ReleaseEnv {
   const repo = process.env['GITHUB_REPOSITORY']
@@ -76,30 +68,23 @@ export function resolveReleaseEnv(): ReleaseEnv {
   // NOT the default github.token — least-privilege + verified/app-attributed.
   const token =
     process.env['RELEASE_APP_TOKEN'] || process.env['GH_TOKEN'] || ''
-  // The PR App token. A separate app because the promote PR needs
-  // pull_requests:write, which the release App's installation does not grant
-  // (and must not: it stays a contents:write app).
-  const prToken = process.env['PR_APP_TOKEN'] || ''
   const missing = [
     ...(repo ? [] : ['GITHUB_REPOSITORY']),
     ...(mainBranch ? [] : ['GITHUB_REF_NAME']),
     ...(token ? [] : ['RELEASE_APP_TOKEN (or GH_TOKEN)']),
-    ...(prToken ? [] : ['PR_APP_TOKEN']),
   ]
-  if (!repo || !mainBranch || !token || !prToken) {
+  if (!repo || !mainBranch || !token) {
     throw new Error(
       `[release-branch] the CI bump is missing ${missing.join(', ')}.\n` +
         `  Where: the publish workflow's step env, read before anything is staged.\n` +
-        `  Wanted: GITHUB_REPOSITORY + GITHUB_REF_NAME, a release App token\n` +
-        `  (contents:write, for the branch + bump commit) AND a PR App token\n` +
-        `  (pull_requests:write, for the promote PR that lands the bump on the\n` +
-        `  default branch).\n` +
-        `  Fix: mint both in the workflow — ./.github/actions/fleet/github-release-app-token\n` +
-        `  and ./.github/actions/fleet/github-pr-app-token — and pass them as\n` +
-        `  RELEASE_APP_TOKEN and PR_APP_TOKEN on the publish step.`,
+        `  Wanted: GITHUB_REPOSITORY + GITHUB_REF_NAME and a release App token\n` +
+        `  (contents:write — the branch, the bump commit, and the fast-forward\n` +
+        `  that lands it on the default branch).\n` +
+        `  Fix: mint it in the workflow — ./.github/actions/fleet/github-release-app-token\n` +
+        `  — and pass it as RELEASE_APP_TOKEN on the publish step.`,
     )
   }
-  return { mainBranch, prToken, repo, token }
+  return { mainBranch, repo, token }
 }
 
 /**
@@ -159,73 +144,52 @@ export async function openReleaseBranch(config: {
 
 /**
  * Publish succeeded: land the release branch's bump commit on the dispatch
- * branch through a PULL REQUEST, not a direct ref push. A branch-protected
- * `main` that requires "changes must be made through a pull request" rejects a
- * direct fast-forward PATCH with 422 (the release App is NOT on main's
- * push-bypass allowlist), which used to force a maintainer to hand-land every
- * bump. Opening a PR from the release branch and enabling squash auto-merge
- * works WITHIN branch protection — no bypass needed.
+ * branch by fast-forwarding that branch's ref to the release branch tip, then
+ * delete the release branch. NO pull request — a version bump never travels
+ * through one. A PR routes the bump through branch protection, where the fresh
+ * bump branch has no protected-branch rules to satisfy, so auto-merge fails
+ * ("Pull request Branch does not have required protected branch rules"), the
+ * run dies, and the published version is stranded on a throwaway branch. The
+ * release App carries contents:write and sits on the dispatch branch's
+ * push-bypass allowlist, so the ref PATCH lands without a PR.
  *
- * The squash commit subject is pinned to `chore: bump version to <version>`
- * the same subject the bump commit carries, so the reconcile anchor survives
- * the squash — `findPublishedBaseSha` / the version-flip anchor lookups keep
- * resolving the landed bump. Branch protection typically permits only a squash
- * merge, linear history, so the release App's exact app-signed commit SHA is
- * not preserved verbatim; the squashed commit is created under the release App
- * and GitHub-signed (Verified), carrying byte-identical bump content.
+ * The direct fast-forward also preserves the release App's exact app-signed
+ * commit SHA — the dispatch branch inherits the very commit that was built and
+ * published, and the `chore: bump version to <version>` subject the reconcile
+ * lookups anchor on (`findPublishedBaseSha`, the version-flip lookups) survives
+ * verbatim rather than being rewritten by a squash.
  *
- * `tipSha` is the built + published commit (informational — used for the log
- * line; the PR head branch already points at it). When auto-merge cannot be
- * enabled because the PR is already mergeable with nothing to wait on, the
- * merge is performed immediately. The release branch is auto-deleted on merge
- * (repos set `delete_branch_on_merge`); it is deliberately NOT deleted here,
- * since deleting it before the merge would close the PR.
+ * `tipSha` is the built + published commit. `force` stays false, so GitHub
+ * rejects the advance with 422 if the dispatch branch moved to a commit this
+ * one does not descend from — a loud refusal beats silently rewriting work that
+ * landed during the publish.
  */
 export async function promoteReleaseBranch(
   releaseBranch: ReleaseBranch,
   tipSha: string,
 ): Promise<void> {
   const { branch, env, version } = releaseBranch
-  const commitSubject = `chore: bump version to ${version}`
-  const pr = await createPullRequest({
-    base: env.mainBranch,
-    body:
-      `Automated version bump to \`${version}\` from the publish pipeline, ` +
-      `landed via PR because \`${env.mainBranch}\` requires changes go through ` +
-      `a pull request. The version is already live on the registry; this ` +
-      `advances \`${env.mainBranch}\` to the bump commit (${tipSha.slice(0, 7)}).`,
-    head: branch,
+  await updateBranchRef({
+    branch: env.mainBranch,
     repo: env.repo,
-    title: commitSubject,
-    // PR App token: the create + auto-merge + merge calls all need
-    // pull_requests:write, which the release App does not carry.
-    token: env.prToken,
-  })
-  const queued = await enablePullRequestAutoMerge({
-    commitHeadline: commitSubject,
-    pullRequestId: pr.nodeId,
-    repo: env.repo,
-    token: env.prToken,
-  })
-  if (queued) {
-    logger.success(
-      `[release-branch] opened PR #${pr.number} (${branch} → ${env.mainBranch}) ` +
-        `and enabled squash auto-merge; ${env.mainBranch} advances when its ` +
-        `branch-protection requirements clear.`,
-    )
-    return
-  }
-  // Nothing to wait on — merge now.
-  await mergePullRequest({
-    commitTitle: commitSubject,
-    number: pr.number,
-    repo: env.repo,
-    token: env.prToken,
+    sha: tipSha,
+    token: env.token,
   })
   logger.success(
-    `[release-branch] opened PR #${pr.number} (${branch} → ${env.mainBranch}) ` +
-      `and squash-merged it into ${env.mainBranch}.`,
+    `[release-branch] fast-forwarded ${env.mainBranch} to ${tipSha.slice(0, 7)} ` +
+      `("chore: bump version to ${version}") via the release App.`,
   )
+  // The bump is landed; a leftover throwaway branch is untidy, never wrong. Warn
+  // rather than throw, so a cleanup permission problem can't fail a run whose
+  // version is already published AND on the dispatch branch.
+  try {
+    await deleteBranchRef({ branch, repo: env.repo, token: env.token })
+  } catch (e) {
+    logger.warn(
+      `[release-branch] ${env.mainBranch} is landed, but removing ${branch} ` +
+        `failed: ${errorMessage(e)}. Delete it by hand.`,
+    )
+  }
 }
 
 /**

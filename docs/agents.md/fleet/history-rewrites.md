@@ -26,7 +26,10 @@ message polish are throwaway: they exist only until the next squash.
   the cascade roster (`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`), which is the signal
   the guards key off via `isSquashOptIn()` in `.claude/hooks/fleet/_shared/fleet-roster.mts`.
   Non-squash repos keep their real log, where commit hygiene is permanent and
-  worth the care.
+  worth the care. `.claude/hooks/fleet/squash-history-nudge/` reminds a session
+  working in a squash-opted repo of this relaxed cadence; `parallel-agent-on-stop-nudge`
+  reads the same roster to reinforce the path-coordination rule below in those
+  repos specifically.
 - **The staging/commit guards relax here.** Because commit order and granularity
   are meaningless before a flatten, the NON-destructive staging guards stand down
   in a squash-opt-in repo. `overeager-staging-guard` allows a broad `git add -A`

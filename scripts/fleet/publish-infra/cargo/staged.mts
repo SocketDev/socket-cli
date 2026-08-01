@@ -10,13 +10,14 @@
  */
 
 import crypto from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { withPinnedReadme } from '../pin-readme.mts'
 import { releaseBehindLiveGate } from '../release.mts'
 import { logger, rootPath, runCapture, runInherit } from '../shared.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 import { isAlreadyPublished } from './registry.mts'
 import {
   cratePath,
@@ -79,7 +80,7 @@ export async function packCrateAssets(
   const sha512 = crypto.createHash('sha512').update(bytes).digest('base64')
   const crateName = path.basename(crate)
   const checksumsPath = path.join(path.dirname(crate), 'checksums.txt')
-  writeFileSync(
+  writeThroughMirrorLock(
     checksumsPath,
     `sha1: ${sha1}  ${crateName}\nsha512-base64: ${sha512}  ${crateName}\n`,
   )
@@ -168,7 +169,7 @@ export async function runStaged(config: {
       }
       const sha256 = crateSha256(crate)
       const sidecar = `${crate}.sha256`
-      writeFileSync(sidecar, `${sha256}  ${path.basename(crate)}\n`)
+      writeThroughMirrorLock(sidecar, `${sha256}  ${path.basename(crate)}\n`)
       logger.log(`Staged crate sha256 ${sha256} (recorded at ${sidecar}).`)
       if (process.env['GITHUB_ACTIONS'] === 'true') {
         logger.log(

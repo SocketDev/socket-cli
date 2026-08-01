@@ -12,10 +12,11 @@
  *   manifests have no lifecycle scripts.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { findDanglingLifecycleScripts } from '../../_shared/lifecycle-scripts.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 import { isCoveredByFiles } from '../../_shared/pack-files.mts'
 import { logger } from '../shared.mts'
 
@@ -76,10 +77,10 @@ export async function withPrunedPackManifest<T>(
         `(${d.command}) — not in the pack file set: ${d.missing.join(', ')}`,
     )
   }
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+  writeThroughMirrorLock(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   try {
     return await fn()
   } finally {
-    writeFileSync(manifestPath, original)
+    writeThroughMirrorLock(manifestPath, original)
   }
 }

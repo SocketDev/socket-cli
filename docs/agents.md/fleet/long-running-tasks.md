@@ -48,3 +48,8 @@ Three clauses govern waiting on anything long-running:
 3. Status updates name concrete progress, a result count or a last-activity age, never a bare "still running".
 
 The mechanical slice is enforced by `waiting-discipline-nudge` (PreToolUse Bash): a foreground command whose longest single `sleep` invocation totals 120 seconds or more, bare or chained with a poll, draws the rule before the silence starts. The rule text is `WAITING_DISCIPLINE_GUIDANCE` in `.claude/hooks/fleet/_shared/waiting-discipline.mts`, shared with this hook's own nudge so an orchestrator told to check a grinding task also sees how to wait on it. The judgment slice, choosing to end the turn instead of camping on the result, lives with the speech rules in [judgment-and-self-evaluation](judgment-and-self-evaluation.md).
+
+## Enforcement
+
+- `.claude/hooks/fleet/long-running-task-nudge/` (PostToolUse) — the mechanism documented above; warns once per tier when a background Workflow or Agent crosses the 5- or 10-minute threshold with no visible progress.
+- `.claude/hooks/fleet/waiting-discipline-nudge/` (PreToolUse Bash) — blocks a blocking-sleep wait pattern on a job that already notifies on completion.

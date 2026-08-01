@@ -98,7 +98,10 @@ export async function runVerifyStage(config: {
         `  Not recording a verify verdict: a missing local token is not an integrity failure ` +
         `(and ${pkg.name}@${cfg.targetVersion} is not live on the registry, so no public fallback exists).\n` +
         formatHumanGate(
-          npmAuthGate('re-run the pipeline — receipts resume at verify.'),
+          npmAuthGate(
+            cfg.cwd,
+            're-run the pipeline — receipts resume at verify.',
+          ),
         ).join('\n'),
       status: 'blocked',
     }

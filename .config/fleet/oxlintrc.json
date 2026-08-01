@@ -240,6 +240,25 @@
       "rules": {
         "eslint/no-unused-vars": "off"
       }
+    },
+    {
+      "files": [
+        "**/scripts/fleet/build-hook-bundle.mts",
+        "**/scripts/fleet/build-hook-snapshot.mts",
+        "**/scripts/fleet/build-snapshot-launcher.mts",
+        "**/scripts/fleet/fetch-fleet-pack.mts",
+        "**/scripts/fleet/gen/hook-dispatch.mts",
+        "**/scripts/fleet/lib/stable-alias.mts",
+        "**/scripts/fleet/lockstep/emit-mirror-globs.mts",
+        "**/scripts/fleet/sync-oxlint-rules.mts",
+        "**/scripts/fleet/update.mts",
+        "**/scripts/fleet/update/fleet-pins.mts",
+        "**/scripts/repo/dogfood.mts",
+        "**/scripts/repo/sync-scaffolding/fixers/mirror-mode.mts"
+      ],
+      "rules": {
+        "socket/prefer-mirror-lock-write": "error"
+      }
     }
   ],
   "ignorePatterns": [

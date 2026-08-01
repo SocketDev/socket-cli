@@ -24,7 +24,17 @@
  * higher-level dep-refresh wrapper) can reuse the same engine without copying
  * the reset/amend/count/integrity dance.
  *
- * Usage: node .claude/skills/fleet/squashing-history/run.mts /path/to/<repo>
+ * `--branch <name>` reuses that SAME engine to collapse an author-agreed
+ * FEATURE branch to a single commit on its PR base's merge-base (`--base <ref>`,
+ * default: the resolved default branch) with an optional `--message <subject>`.
+ * It is the sanctioned path for a feature-branch total-squash — the engine does
+ * the byte-verified backup + tree-identity check and then rides the same
+ * SQUASH_HISTORY=1 sentinel, so no `Allow total squash bypass` phrase is needed.
+ *
+ * Usage:
+ *   node .claude/skills/fleet/squashing-history/run.mts /path/to/<repo>
+ *   node .claude/skills/fleet/squashing-history/run.mts /path/to/<repo> \
+ *     --branch <name> [--base <ref>] [--message <subject>]
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -50,6 +60,7 @@ import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
 import { checkNotShallowClone, checkSquashAllowed } from './run-guards.mts'
 import {
+  squashFeatureBranchMode,
   squashLocalCanonicalMode,
   squashWorktreeMode,
 } from './run-squash-modes.mts'
@@ -170,6 +181,14 @@ export async function accrueUnreleased(
 
 export interface SquashConfig {
   /**
+   * Amend the reset target into the single commit (`true` — the default-branch
+   * ROOT amend, which collapses the whole history to one commit), or create a
+   * FRESH commit on top of it (`false` — the feature-branch case, where the
+   * reset target is the shared merge-base with the PR base and must NEVER be
+   * rewritten). Defaults to true.
+   */
+  readonly amend?: boolean | undefined
+  /**
    * Commit subject for the collapsed commit. Defaults to
    * 'chore: initial commit'.
    */
@@ -179,6 +198,13 @@ export interface SquashConfig {
    * HARD failure — the function calls process.exit(1) rather than returning.
    */
   readonly origHead: string
+  /**
+   * Commit to soft-reset onto before collapsing. Defaults to the branch's ROOT
+   * commit (`--max-parents=0`) — the default-branch total squash. A feature
+   * branch passes its MERGE-BASE with the PR base, so the collapse produces one
+   * commit on top of the shared base rather than rewriting the root.
+   */
+  readonly resetTo?: string | undefined
   /**
    * Sign the collapsed commit and assert the signature verifies (`%G?` == 'G').
    * Needed where branch protection mandates `required_signatures`
@@ -196,42 +222,65 @@ export interface SquashResult {
 }
 
 /**
- * Collapse the worktree's branch to a single commit via soft-reset onto the
- * root commit followed by an amend, then assert exactly one commit remains and
- * the tree is byte-identical to `origHead`. A tree mismatch is unrecoverable
- * corruption of intent, so it triggers a HARD `process.exit(1)`.
+ * Collapse the worktree's branch to a single commit via soft-reset onto a base
+ * commit followed by a collapse commit, then assert exactly one commit remains
+ * past that base and the tree is byte-identical to `origHead`. A tree mismatch
+ * is unrecoverable corruption of intent, so it triggers a HARD
+ * `process.exit(1)`.
  *
- * The SQUASH_HISTORY=1 sentinel on the amend scopes the no-revert-guard
- * `--no-verify` bypass to exactly this one command.
+ * Two shapes, selected by `resetTo`/`amend`:
+ *
+ * - Default-branch total squash (`amend` defaults true, `resetTo` defaults to the
+ *   root): soft-reset onto the ROOT commit and AMEND it, so the whole history
+ *   collapses to a single commit (rev-list count == 1).
+ * - Feature-branch squash (`amend: false`, `resetTo: <merge-base>`): soft-reset
+ *   onto the shared merge-base with the PR base and make a FRESH commit on top
+ *   (the merge-base is shared with the base branch and must not be rewritten),
+ *   so `resetTo..HEAD` is exactly one commit.
+ *
+ * The SQUASH_HISTORY=1 sentinel on the collapse commit scopes the
+ * no-revert-guard `--no-verify` bypass to exactly this one command.
  */
 export async function squashSingleCommit(
   config: SquashConfig,
 ): Promise<SquashResult> {
   const cfg = { __proto__: null, ...config } as {
+    amend?: boolean | undefined
     message?: string | undefined
     origHead: string
+    resetTo?: string | undefined
     sign?: boolean | undefined
     worktree: string
   }
   const message = cfg.message ?? 'chore: initial commit'
   const sign = cfg.sign ?? false
+  const amend = cfg.amend ?? true
   const { origHead, worktree } = cfg
 
-  // Soft-reset onto the root commit, keeps every change staged, then amend the
-  // root so the result is a single commit — not root + 1.
-  const firstCommit = (
-    await run('git', ['rev-list', '--max-parents=0', 'HEAD'], worktree)
-  ).stdout
-  await run('git', ['reset', '--soft', firstCommit], worktree)
+  // Soft-reset onto the base (root by default, or a feature branch's merge-base)
+  // — keeps every change staged. Amending the ROOT collapses to a single commit
+  // (not root + 1); a fresh commit on a merge-base yields base + 1 without
+  // rewriting the shared base.
+  const resetTo =
+    cfg.resetTo ??
+    (await run('git', ['rev-list', '--max-parents=0', 'HEAD'], worktree)).stdout
+  await run('git', ['reset', '--soft', resetTo], worktree)
   // -S signs via the user's configured key; the bare commit.gpgsign config is
-  // unreliable for amend in a fresh worktree, so pass the flag explicitly.
-  const amendArgs = sign
-    ? ['commit', '--amend', '--no-verify', '-S', '-m', message]
-    : ['commit', '--amend', '--no-verify', '-m', message]
-  await run('git', amendArgs, worktree, { env: { SQUASH_HISTORY: '1' } })
+  // unreliable for a commit in a fresh worktree, so pass the flag explicitly.
+  const baseCommitArgs = amend
+    ? ['commit', '--amend', '--no-verify']
+    : ['commit', '--no-verify']
+  const commitArgs = sign
+    ? [...baseCommitArgs, '-S', '-m', message]
+    : [...baseCommitArgs, '-m', message]
+  await run('git', commitArgs, worktree, { env: { SQUASH_HISTORY: '1' } })
 
-  const newCount = (await run('git', ['rev-list', '--count', 'HEAD'], worktree))
-    .stdout
+  // Count gate: an amend leaves the root as the sole commit (count == 1); a
+  // fresh feature-branch commit must be the ONLY commit past its merge-base.
+  const countArgs = amend
+    ? ['rev-list', '--count', 'HEAD']
+    : ['rev-list', '--count', `${resetTo}..HEAD`]
+  const newCount = (await run('git', countArgs, worktree)).stdout
   if (newCount !== '1') {
     throw new Error(`post-squash commit count is ${newCount}, expected 1`)
   }
@@ -350,10 +399,70 @@ export function classifySquashMode(
   return cfg.originIsAncestor ? 'local-canonical' : 'diverged'
 }
 
+export interface RunArgs {
+  /**
+   * PR base for the feature-branch merge-base (default: resolved default
+   * branch).
+   */
+  readonly base: string | undefined
+  /**
+   * Feature branch to squash; when set, switches to feature-branch mode.
+   */
+  readonly branch: string | undefined
+  /**
+   * Subject for the collapsed commit (feature-branch mode override).
+   */
+  readonly message: string | undefined
+  /**
+   * Repo path (first non-flag positional).
+   */
+  readonly src: string | undefined
+}
+
+/**
+ * Parse the runner's argv (everything after `node run.mts`). The first non-flag
+ * token is the repo path. `--branch <name>` switches from the default-branch
+ * total squash to an author-agreed FEATURE-branch squash, joined by `--base
+ * <ref>` (the PR base for the merge-base) and `--message <subject>` (the
+ * collapsed commit's subject). Each flag also accepts the `--flag=value` form.
+ */
+export function parseRunArgs(argv: readonly string[]): RunArgs {
+  let base: string | undefined
+  let branch: string | undefined
+  let message: string | undefined
+  let src: string | undefined
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--branch') {
+      branch = argv[i + 1]
+      i += 1
+    } else if (arg === '--base') {
+      base = argv[i + 1]
+      i += 1
+    } else if (arg === '--message') {
+      message = argv[i + 1]
+      i += 1
+    } else if (arg.startsWith('--branch=')) {
+      branch = arg.slice('--branch='.length)
+    } else if (arg.startsWith('--base=')) {
+      base = arg.slice('--base='.length)
+    } else if (arg.startsWith('--message=')) {
+      message = arg.slice('--message='.length)
+    } else if (src === undefined && !arg.startsWith('-')) {
+      src = arg
+    }
+  }
+  return { __proto__: null, base, branch, message, src } as RunArgs
+}
+
 async function main(): Promise<number> {
-  const src = process.argv[2]
+  const args = parseRunArgs(process.argv.slice(2))
+  const { src } = args
   if (!src) {
-    logger.error('usage: node run.mts <repo-path>')
+    logger.error(
+      'usage: node run.mts <repo-path> ' +
+        '[--branch <name> [--base <ref>] [--message <subject>]]',
+    )
     return 2
   }
 
@@ -363,6 +472,26 @@ async function main(): Promise<number> {
   } catch {
     logger.error(`error: ${src} is not a git checkout`)
     return 2
+  }
+
+  // Feature-branch mode: an author-agreed squash of ONE feature branch down to
+  // a single commit on its PR base's merge-base — the sanctioned path that
+  // needs no typed bypass phrase. It rewrites only the named feature branch
+  // (never the repo's published default-branch history), so it skips the
+  // roster opt-in / published-release gates the default-branch squash enforces
+  // below, keeping the byte-verified backup + tree-identity + lease-push
+  // safety intact.
+  if (args.branch !== undefined) {
+    if (args.branch === '') {
+      logger.error('error: --branch requires a non-empty branch name')
+      return 2
+    }
+    return await squashFeatureBranchMode({
+      base: args.base,
+      branch: args.branch,
+      message: args.message,
+      src,
+    })
   }
 
   // Resolve the checkout to its canonical fleet name (origin slug, EXACT — no

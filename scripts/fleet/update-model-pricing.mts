@@ -37,7 +37,7 @@
  *   2026-06-14.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -47,6 +47,7 @@ import { REPO_ROOT } from './paths.mts'
 
 import type { ModelPrice, PricingData } from './estimate-ai-cost.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -224,7 +225,7 @@ function main(): void {
     source,
   })
   const outPath = pricingPath()
-  writeFileSync(outPath, `${JSON.stringify(next, undefined, 2)}\n`)
+  writeThroughMirrorLock(outPath, `${JSON.stringify(next, undefined, 2)}\n`)
   logger.success(
     `[update-model-pricing] wrote ${path.relative(REPO_ROOT, outPath)} (service ${service}, snapshot ${date}, ${Object.keys(prices).length} model(s) ${replace ? 'set (replace)' : 're-priced'}).`,
   )
@@ -234,7 +235,7 @@ function main(): void {
     const docText = readFileSync(docPath, 'utf8')
     const restamped = restampDocMarker(docText, date)
     if (restamped !== docText) {
-      writeFileSync(docPath, restamped)
+      writeThroughMirrorLock(docPath, restamped)
       logger.success(
         `[update-model-pricing] restamped MODEL-PRICING-SNAPSHOT in ${path.relative(REPO_ROOT, docPath)} → ${date}.`,
       )

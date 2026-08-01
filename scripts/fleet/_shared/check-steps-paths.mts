@@ -6,7 +6,7 @@
  */
 
 import { TSCONFIG_CHECK_PATH } from '../paths.mts'
-import { run } from './check-steps.mts'
+import { releaseStep, run } from './check-steps.mts'
 import type { CheckStep } from './check-steps.mts'
 
 export function buildPathsAndSupplyChainSteps(): CheckStep[] {
@@ -124,6 +124,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // telemetry + update-notifier opt-outs across npm/pnpm/Claude Code. Deployed
     // by setup-security-tools, dev shell-rc + the reusable CI workflow env.
     () => run('node', ['scripts/fleet/check/telemetry-env-is-disabled.mts']),
+    // Any workflow that opts into the no-phone-home env (its top-level `env:`
+    // sets ANY FLEET_ENV knob) MUST carry the COMPLETE list — so a new knob
+    // added to ci.yml can't silently miss a sibling workflow (github-release.yml).
+    () =>
+      run('node', [
+        'scripts/fleet/check/workflow-envs-have-full-fleet-env.mts',
+      ]),
     // Internal GitHub Action / reusable-workflow SHA pins are current w.r.t. their
     // CLOSURE — the pinned unit's own files PLUS its declared `# cascade-data-deps:`
     // (e.g. external-tools.json read via ${GITHUB_ACTION_PATH}/../…). A data-edge
@@ -361,6 +368,18 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // hand-bump of one without the others reddens here; the cascade --fixes it.
     () =>
       run('node', ['scripts/fleet/check/rust-toolchain-pins-are-synced.mts']),
+    // The Rust pair's sanctioned entry points, gated: `cargo fmt --check`
+    // against the committed rustfmt.toml, then `cargo clippy -D warnings`.
+    // Neither carried an automated check before this — a cargo-capability
+    // repo could drift from its own style config or accrue clippy findings
+    // with nothing to catch it. Past incident: ultrathink's tree sat 177
+    // files out of rustfmt compliance, unnoticed. Release-tier: a
+    // full-workspace `cargo fmt` / `cargo clippy` compiles the crate, the
+    // same wall-clock long pole as the other cargo-driven gates here, so it
+    // rides pre-push/CI rather than the interactive inner loop. Both
+    // no-op cleanly (exit 0) in a repo with no Cargo.toml.
+    releaseStep(['scripts/fleet/fmt-rust.mts', '--check']),
+    releaseStep(['scripts/fleet/lint-rust.mts']),
     // The language-agnostic socket/* doctrine (no-status-emoji,
     // personal-path-placeholders, max-file-lines) enforced across Rust/Go/C++
     // source by one shared scanner — the hybrid half no native linter can express.
@@ -498,6 +517,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // hook + setup-security-tools via _shared/brew-supply-chain.mts.
     () =>
       run('node', ['scripts/fleet/check/brew-supply-chain-is-hardened.mts']),
+    // The persistent Socket Firewall CA env pair (SFW_CA_CERT_PATH /
+    // SFW_CA_KEY_PATH) is still emitted by the wrapper generator and the
+    // shell-rc bridge. Without it sfw remints a throwaway CA per invocation,
+    // which no OS trust store can hold, so pnpm's Rust tarball fetcher (and
+    // cargo/uv/go) fails UnknownIssuer on any uncached download. The machine
+    // leg loudly SKIPS where the wrappers/CA are absent — CI has neither.
+    () => run('node', ['scripts/fleet/check/sfw-ca-env-is-wired.mts']),
     // Sparkle GUI-app auto-update OFF (macOS). Asserts apps that self-update via
     // Sparkle (e.g. OrbStack, bundle dev.kdrag0n.MacVirt) have SUEnableAutomatic-
     // Checks + SUAutomaticallyUpdate set false; `absent` (not installed / not

@@ -16,8 +16,8 @@
  *   mutate nothing.
  *   Keyless fallback: when no claude CLI resolves, a repo that opted into
  *   `ai.localAssist` in `.config/repo/socket-wheelhouse.json` gets the same
- *   below-the-fold summaries from the locai CLI — on-device, summary-class,
- *   no ANTHROPIC_API_KEY (_shared/locai.mts). Same fail-open contract: any
+ *   below-the-fold summaries from the odai CLI — on-device, summary-class,
+ *   no ANTHROPIC_API_KEY (_shared/odai.mts). Same fail-open contract: any
  *   skip or failure keeps the deterministic body, and the whole leg is
  *   bounded by a total budget so a cold local model never stalls a land.
  */
@@ -33,9 +33,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { FLOOR_EFFORT, FLOOR_MODEL } from '../lib/known-models.mts'
 import {
   localAssistEnabled,
-  resolveLocaiBin,
-  runLocai,
-} from '../_shared/locai.mts'
+  resolveOdaiBin,
+  runOdai,
+} from '../_shared/odai.mts'
 
 import type { CommitGroup } from '../land-work.mts'
 
@@ -44,14 +44,17 @@ import type { CommitGroup } from '../land-work.mts'
 const MAX_DIFF_CHARS_PER_GROUP = 6000
 const MAX_PROMPT_CHARS = 40_000
 const MAX_SUMMARY_CHARS = 400
+// A commit subject stays scannable in `git log --oneline`; keep the on-device
+// description well under the ~72-char convention.
+const MAX_SUBJECT_DESC_CHARS = 72
 // Bounded so a slow/cold AI never stalls turn-end for long — fail-open on timeout.
 const SUMMARY_TIMEOUT_MS = 30_000
-// Keyless-fallback bounds. locai is one call PER GROUP — small local models
+// Keyless-fallback bounds. odai is one call PER GROUP — small local models
 // can't hold a multi-group prompt — so each call gets a per-prompt budget
 // wide enough for a cold headless-Chrome bridge launch, and the loop stops at
 // a total budget so a long land never queues minutes of local inference.
-const LOCAI_PROMPT_TIMEOUT_MS = 45_000
-const LOCAI_TOTAL_BUDGET_MS = 90_000
+const ODAI_PROMPT_TIMEOUT_MS = 45_000
+const ODAI_TOTAL_BUDGET_MS = 90_000
 
 async function claudeAvailable(cwd: string): Promise<boolean> {
   const discovered = await discoverAiAgents({ repoRoot: cwd })
@@ -159,7 +162,7 @@ export async function summarizeGroups(
     return new Map()
   }
   if (!(await claudeAvailable(cwd))) {
-    return await locaiSummaries(cwd, multi)
+    return await odaiSummaries(cwd, multi)
   }
   let result: Awaited<ReturnType<typeof spawnAiAgent>>
   try {
@@ -188,15 +191,15 @@ export async function summarizeGroups(
 }
 
 /**
- * Keyless fallback: summarize each multi-file group's diff through the locai
- * CLI. Runs ONLY when the repo opted into `ai.localAssist` and a locai binary
+ * Keyless fallback: summarize each multi-file group's diff through the odai
+ * CLI. Runs ONLY when the repo opted into `ai.localAssist` and a odai binary
  * resolves — otherwise an empty map, same as every other unavailable path.
- * One `locai summarize` call per group because small on-device models can't
+ * One `odai summarize` call per group because small on-device models can't
  * hold the multi-group prompt the claude path sends; the loop stops on the
  * first failure and at the total budget, and any partial result is fine —
  * groups without a summary keep their deterministic body.
  */
-export async function locaiSummaries(
+export async function odaiSummaries(
   cwd: string,
   groups: readonly CommitGroup[],
 ): Promise<Map<string, string>> {
@@ -204,11 +207,11 @@ export async function locaiSummaries(
   if (!localAssistEnabled(cwd)) {
     return out
   }
-  const bin = resolveLocaiBin()
+  const bin = resolveOdaiBin()
   if (!bin) {
     return out
   }
-  const deadline = Date.now() + LOCAI_TOTAL_BUDGET_MS
+  const deadline = Date.now() + ODAI_TOTAL_BUDGET_MS
   for (const g of groups) {
     if (Date.now() >= deadline) {
       break
@@ -217,10 +220,10 @@ export async function locaiSummaries(
     if (!diff) {
       continue
     }
-    const run = await runLocai('summarize', diff, {
+    const run = await runOdai('summarize', diff, {
       bin,
       cwd,
-      timeoutMs: LOCAI_PROMPT_TIMEOUT_MS,
+      timeoutMs: ODAI_PROMPT_TIMEOUT_MS,
     })
     if (run.outcome !== 'ok') {
       // A skip means no backend at all and a failure would repeat per group —
@@ -235,6 +238,73 @@ export async function locaiSummaries(
         .slice(0, MAX_SUMMARY_CHARS)
       if (clean) {
         out.set(g.scope, clean)
+      }
+    }
+  }
+  return out
+}
+
+/**
+ * Strip a leading Conventional-Commit prefix (`type`, optional `(scope)`,
+ * optional `!`, colon) from an on-device commit-msg suggestion, returning just
+ * the description on one line, whitespace-collapsed and capped. land-work
+ * re-attaches the structural `type(scope):` it already derived, so only the
+ * description is borrowed from the model. Pure.
+ */
+export function subjectDescription(raw: string): string {
+  const firstLine = raw.split('\n')[0] ?? ''
+  const stripped = firstLine.trim().replace(/^\w+(\([^)]+\))?!?:\s*/, '')
+  return stripped.replace(/\s+/g, ' ').trim().slice(0, MAX_SUBJECT_DESC_CHARS)
+}
+
+/**
+ * Keyless commit subjects: for each multi-file group, ask the on-device
+ * `commit-msg` task for a Conventional-Commit subject and keep only its
+ * description. Same opt-in, budget-bounded, fail-open contract as
+ * odaiSummaries — any opt-out / unavailable / skip / failure yields no entry
+ * and the group keeps its deterministic `update <areas>` subject.
+ */
+export async function odaiSubjects(
+  cwd: string,
+  groups: readonly CommitGroup[],
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>()
+  if (!localAssistEnabled(cwd)) {
+    return out
+  }
+  // Single-file groups already name their file in the subject, so only
+  // multi-file groups have a `update <areas>` description worth replacing.
+  const multi = groups.filter(g => g.paths.length > 1)
+  if (multi.length === 0) {
+    return out
+  }
+  const bin = resolveOdaiBin()
+  if (!bin) {
+    return out
+  }
+  const deadline = Date.now() + ODAI_TOTAL_BUDGET_MS
+  for (let i = 0, { length } = multi; i < length; i += 1) {
+    const g = multi[i]!
+    if (Date.now() >= deadline) {
+      break
+    }
+    const diff = groupDiff(cwd, g.paths)
+    if (!diff) {
+      continue
+    }
+    const run = await runOdai('commit-msg', diff, {
+      bin,
+      cwd,
+      timeoutMs: ODAI_PROMPT_TIMEOUT_MS,
+    })
+    if (run.outcome !== 'ok') {
+      break
+    }
+    const value = run.value as { subject?: unknown | undefined }
+    if (typeof value?.subject === 'string') {
+      const desc = subjectDescription(value.subject)
+      if (desc) {
+        out.set(g.scope, desc)
       }
     }
   }

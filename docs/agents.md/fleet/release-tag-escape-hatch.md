@@ -91,7 +91,7 @@ side gate that keeps `publishConfig.provenance:true` in place.
 
 **Not readable** — the registry could not be reached, or the bundle would not
 decode. This is a fact about the environment, not the release. The check exits
-0 (an offline CI lane is not a violation) but prints `NOT VERIFIED` and never
+0 — an offline CI lane is not a violation — but prints `NOT VERIFIED` and never
 the success line. An unread source that reports green is the failure mode this
 whole check exists to avoid.
 

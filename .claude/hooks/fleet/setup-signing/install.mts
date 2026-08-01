@@ -31,34 +31,36 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { isMainModule } from '../../../../scripts/fleet/_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-interface CliArgs {
+export interface CliArgs {
   check: boolean
   force: boolean
 }
 
-function parseArgs(argv: readonly string[]): CliArgs {
+export function parseArgs(argv: readonly string[]): CliArgs {
   return {
     check: argv.includes('--check'),
     force: argv.includes('--force'),
   }
 }
 
-type SigningFormat = 'ssh' | 'openpgp'
+export type SigningFormat = 'ssh' | 'openpgp'
 
-interface CurrentConfig {
+export interface CurrentConfig {
   gpgsign: string
   signingkey: string
   format: string
 }
 
-function readCurrentConfig(): CurrentConfig {
+export function readCurrentConfig(): CurrentConfig {
   const get = (key: string): string => {
     const r = spawnSync('git', ['config', '--global', '--get', key], {
       stdio: 'pipe',
@@ -73,7 +75,7 @@ function readCurrentConfig(): CurrentConfig {
   }
 }
 
-interface DetectedSigner {
+export interface DetectedSigner {
   format: SigningFormat
   // The literal `user.signingkey` value to set.
   key: string
@@ -81,7 +83,7 @@ interface DetectedSigner {
   source: string
 }
 
-function detect1PasswordSshAgent(): DetectedSigner | undefined {
+export function detect1PasswordSshAgent(): DetectedSigner | undefined {
   // macOS: ~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock
   // Linux: ~/.1password/agent.sock
   // Windows: \\\\.\\pipe\\openssh-ssh-agent, different mechanism, skip detection
@@ -123,7 +125,7 @@ function detect1PasswordSshAgent(): DetectedSigner | undefined {
   }
 }
 
-function detectSshKeyOnDisk(): DetectedSigner | undefined {
+export function detectSshKeyOnDisk(): DetectedSigner | undefined {
   // Prefer ed25519 over rsa.
   const candidates = ['id_ed25519.pub', 'id_ecdsa.pub', 'id_rsa.pub']
   for (let i = 0, { length } = candidates; i < length; i += 1) {
@@ -143,7 +145,7 @@ function detectSshKeyOnDisk(): DetectedSigner | undefined {
   return undefined
 }
 
-function detectGpgKey(): DetectedSigner | undefined {
+export function detectGpgKey(): DetectedSigner | undefined {
   const r = spawnSync(
     'gpg',
     ['--list-secret-keys', '--keyid-format=long', '--with-colons'],
@@ -172,11 +174,11 @@ function detectGpgKey(): DetectedSigner | undefined {
   return undefined
 }
 
-function detectSigner(): DetectedSigner | undefined {
+export function detectSigner(): DetectedSigner | undefined {
   return detect1PasswordSshAgent() ?? detectSshKeyOnDisk() ?? detectGpgKey()
 }
 
-function configure(signer: DetectedSigner): void {
+export function configure(signer: DetectedSigner): void {
   const set = (key: string, value: string): void => {
     spawnSync('git', ['config', '--global', key, value], { stdio: 'inherit' })
   }
@@ -196,96 +198,146 @@ function configure(signer: DetectedSigner): void {
   }
 }
 
-function reportConfig(c: CurrentConfig): void {
-  logger.log(`  commit.gpgsign:   ${c.gpgsign || '(unset)'}`)
-  logger.log(`  user.signingkey:  ${c.signingkey || '(unset)'}`)
-  logger.log(`  gpg.format:       ${c.format}`)
+export function reportConfigTo(
+  sink: { log: (...args: unknown[]) => void },
+  c: CurrentConfig,
+): void {
+  sink.log(`  commit.gpgsign:   ${c.gpgsign || '(unset)'}`)
+  sink.log(`  user.signingkey:  ${c.signingkey || '(unset)'}`)
+  sink.log(`  gpg.format:       ${c.format}`)
 }
 
-function reportManualSteps(): void {
-  logger.log('No usable signing key detected. Choose one:')
-  logger.log('')
-  logger.log('Option A — 1Password SSH signing (recommended)')
-  logger.log('  1. Open 1Password → Settings → Developer → enable SSH agent')
-  logger.log(
+export function reportManualStepsTo(sink: {
+  log: (...args: unknown[]) => void
+}): void {
+  sink.log('No usable signing key detected. Choose one:')
+  sink.log('')
+  sink.log('Option A — 1Password SSH signing (recommended)')
+  sink.log('  1. Open 1Password → Settings → Developer → enable SSH agent')
+  sink.log(
     '  2. Add SOCK to your shell: export SSH_AUTH_SOCK=~/Library/Group\\ Containers/2BUA8C4S2C.com.1password/t/agent.sock',
   )
-  logger.log(
+  sink.log(
     '  3. Create or import an SSH key in 1Password → run this helper again',
   )
-  logger.log('')
-  logger.log('Option B — Existing SSH key on disk')
-  logger.log('  1. Confirm ~/.ssh/id_ed25519.pub exists')
-  logger.log('  2. Run this helper again')
-  logger.log('')
-  logger.log('Option C — GPG')
-  logger.log(
+  sink.log('')
+  sink.log('Option B — Existing SSH key on disk')
+  sink.log('  1. Confirm ~/.ssh/id_ed25519.pub exists')
+  sink.log('  2. Run this helper again')
+  sink.log('')
+  sink.log('Option C — GPG')
+  sink.log(
     '  1. Generate: gpg --full-generate-key (RSA 4096 or Ed25519, no expiry preferred for personal use)',
   )
-  logger.log('  2. Upload public key to GitHub → Settings → SSH and GPG keys')
-  logger.log('  3. Run this helper again')
-  logger.log('')
-  logger.log('GitHub-side note: upload the corresponding PUBLIC key as a')
-  logger.log(
+  sink.log('  2. Upload public key to GitHub → Settings → SSH and GPG keys')
+  sink.log('  3. Run this helper again')
+  sink.log('')
+  sink.log('GitHub-side note: upload the corresponding PUBLIC key as a')
+  sink.log(
     'Signing Key at https://github.com/settings/keys for "Verified" badges',
   )
-  logger.log('on web-rendered commits.')
+  sink.log('on web-rendered commits.')
 }
 
-async function main(): Promise<void> {
-  const args = parseArgs(process.argv.slice(2))
-  logger.log('Commit signing — install / verify')
-  logger.log('')
+/**
+ * Every process boundary this step touches, in one injectable bag: reading and
+ * writing the global git config, probing the machine for a signer, and the log
+ * sink. A test drives the whole flow in-process by faking these; before the
+ * seam existed the only way to exercise any branch was spawning the entire
+ * script per case, which cost 17-51s a test and timed out under load.
+ */
+export interface SigningInstallIo {
+  configure: (signer: DetectedSigner) => void
+  detectSigner: () => DetectedSigner | undefined
+  logger: { log: (...args: unknown[]) => void }
+  readCurrentConfig: () => CurrentConfig
+}
 
-  const before = readCurrentConfig()
-  logger.log('Current git config:')
-  reportConfig(before)
-  logger.log('')
+/**
+ * The real I/O bag: git config through spawnSync, detection through the
+ * filesystem and ssh-add/gpg probes, output through the fleet logger.
+ */
+export function resolveSigningInstallIo(): SigningInstallIo {
+  return {
+    configure,
+    detectSigner,
+    logger,
+    readCurrentConfig,
+  }
+}
+
+/**
+ * The whole step as a pure-ish flow returning its exit code: `0` configured or
+ * already configured, `1` nothing detected or `--check` on an unconfigured
+ * repo. Returning the code rather than calling `process.exit` is what makes the
+ * branches assertable without a child process.
+ */
+export function runSigningInstall(config: {
+  argv: readonly string[]
+  io: SigningInstallIo
+}): number {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const { io } = cfg
+  const args = parseArgs(cfg.argv)
+  io.logger.log('Commit signing — install / verify')
+  io.logger.log('')
+
+  const before = io.readCurrentConfig()
+  io.logger.log('Current git config:')
+  reportConfigTo(io.logger, before)
+  io.logger.log('')
 
   const alreadyConfigured =
     before.gpgsign.toLowerCase() === 'true' && Boolean(before.signingkey)
   if (alreadyConfigured && !args.force) {
-    logger.log(
+    io.logger.log(
       'Signing is already configured. Pass --force to re-detect and overwrite.',
     )
-    if (args.check) {
-      process.exit(0)
-    }
-    process.exit(0)
+    return 0
   }
 
   if (args.check) {
-    logger.log('Signing is NOT configured (or partial).')
-    process.exit(1)
+    io.logger.log('Signing is NOT configured (or partial).')
+    return 1
   }
 
-  const signer = detectSigner()
+  const signer = io.detectSigner()
   if (!signer) {
-    reportManualSteps()
-    process.exit(1)
+    reportManualStepsTo(io.logger)
+    return 1
   }
 
-  logger.log(`Detected signer: ${signer.source} (${signer.format})`)
-  logger.log(`Setting user.signingkey to:`)
-  logger.log(`  ${signer.key}`)
-  logger.log('')
-  configure(signer)
+  io.logger.log(`Detected signer: ${signer.source} (${signer.format})`)
+  io.logger.log(`Setting user.signingkey to:`)
+  io.logger.log(`  ${signer.key}`)
+  io.logger.log('')
+  io.configure(signer)
 
-  const after = readCurrentConfig()
-  logger.log('Updated git config:')
-  reportConfig(after)
-  logger.log('')
-  logger.log(
+  const after = io.readCurrentConfig()
+  io.logger.log('Updated git config:')
+  reportConfigTo(io.logger, after)
+  io.logger.log('')
+  io.logger.log(
     'Done. The next commit will be signed automatically. Pre-commit and',
   )
-  logger.log('pre-push gates will accept it.')
-  logger.log('')
-  logger.log('GitHub-side: upload the public key as a Signing Key at')
-  logger.log('  https://github.com/settings/keys')
-  logger.log('so commits show as "Verified" in the GitHub UI.')
+  io.logger.log('pre-push gates will accept it.')
+  io.logger.log('')
+  io.logger.log('GitHub-side: upload the public key as a Signing Key at')
+  io.logger.log('  https://github.com/settings/keys')
+  io.logger.log('so commits show as "Verified" in the GitHub UI.')
+  return 0
 }
 
-main().catch(err => {
-  logger.error(String(err?.message ?? err))
-  process.exit(1)
-})
+/* c8 ignore start - process entrypoint: argv read + exit-code plumbing. */
+if (isMainModule(import.meta.url)) {
+  try {
+    process.exitCode = runSigningInstall({
+      argv: process.argv.slice(2),
+      io: resolveSigningInstallIo(),
+    })
+  } catch (e) {
+    logger.error(errorMessage(e))
+    process.exitCode = 1
+  }
+}
+/* c8 ignore stop */

@@ -12,7 +12,9 @@
  *   consumes the pure `findStableAliasDesyncs` to fail loud on desync.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 /**
  * A `-stable` alias whose pinned version disagrees with its base catalog entry.
@@ -174,7 +176,7 @@ export function applyStableAliasReconcile(
     const original = readFileSync(file, 'utf8')
     const { changed, text } = reconcileStableAliases(original)
     if (changed.length > 0 && text !== original) {
-      writeFileSync(file, text)
+      writeThroughMirrorLock(file, text)
       results.push({ changed, file })
     }
   }

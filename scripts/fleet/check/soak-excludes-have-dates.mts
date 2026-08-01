@@ -32,12 +32,13 @@
  *     waiver
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 // The two soak/waiver list blocks this gate scans. Both carry `name@version`
 // exact-pin bullets with `# published: … | removable: …` annotations; they
@@ -253,7 +254,7 @@ function main(): void {
   if (soakStale.length > 0 && fix) {
     // Promote: the soak cleared, so the bypass is no longer needed.
     const promoted = removeStaleEntries(content, soakStale)
-    writeFileSync(PNPM_WORKSPACE_YAML, promoted)
+    writeThroughMirrorLock(PNPM_WORKSPACE_YAML, promoted)
     process.stdout.write(
       `[check-soak-excludes-have-dates] promoted ${soakStale.length} soaked ` +
         `entr${soakStale.length === 1 ? 'y' : 'ies'} out of minimumReleaseAgeExclude:\n`,

@@ -35,6 +35,19 @@ on:
 permissions:
   contents: read
 
+# Fleet no-phone-home posture, lockstep with the FLEET_ENV list in
+# .claude/hooks/fleet/_shared/fleet-env.mts (mirror of ci.yml's env block) —
+# the release job runs the same telemetry + update-notifier opt-outs, so a
+# release build never phones home. OTEL_SDK_DISABLED holds the OpenTelemetry
+# exporter that ships in the skillspector security tool's closure inert.
+env:
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+  COREPACK_ENABLE_PROJECT_SPEC: '0'
+  DISABLE_TELEMETRY: '1'
+  DO_NOT_TRACK: '1'
+  NO_UPDATE_NOTIFIER: '1'
+  OTEL_SDK_DISABLED: 'true'
+
 jobs:
   release:
     runs-on: ubuntu-latest

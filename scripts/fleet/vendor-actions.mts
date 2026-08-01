@@ -26,7 +26,7 @@
  *   latest soaked release.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -36,6 +36,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOAK_DAYS } from './constants/soak.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 import {
   portedUpstreams,
   upstreamSubmoduleName,
@@ -335,7 +336,7 @@ export function runWrite(): number {
     pins.push(pin)
     logger.log(`  ${pin.slug} → ${pin.tag} (${pin.sha.slice(0, 9)})`)
   }
-  writeFileSync(GITMODULES, upsertAll(gitmodules, pins))
+  writeThroughMirrorLock(GITMODULES, upsertAll(gitmodules, pins))
   stampHashes()
   logger.success(
     `[vendor-actions] vendored ${pins.length} action(s); hashes stamped.`,

@@ -19,7 +19,7 @@
  *      scripts/fleet/check/rust-toolchain-pins-are-synced.mts [--fix]
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -28,6 +28,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -186,7 +187,7 @@ export function runCheck(
   }
   if (fix) {
     for (let i = 0, { length } = drifts; i < length; i += 1) {
-      writeFileSync(drifts[i]!.path, drifts[i]!.next)
+      writeThroughMirrorLock(drifts[i]!.path, drifts[i]!.next)
     }
     logger.success(
       `[rust-toolchain-pins-are-synced] Synced ${drifts.length} Rust pin(s) to "${canonical}".`,

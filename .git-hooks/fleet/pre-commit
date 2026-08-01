@@ -65,15 +65,19 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 1
 fi
 
-# Error-visibility + budget-bounded step runners (run_step / run_step_bounded),
-# extracted so the logic lives in one place. See _shared/run-step.sh.
+# Error-visibility + budget-bounded step runners (run_step / run_step_bounded /
+# run_pkg_step_bounded), extracted so the logic lives in one place, plus the
+# ungated-step ledger the summary at the bottom renders. See
+# _shared/run-step.sh.
 . "$(dirname "$0")/../_shared/run-step.sh"
 
-# verify-deps stays off for the commit gate: its job is the STAGED files;
-# dependency freshness belongs to the install/CI gates. Without this, a
-# lockfile that cannot reconcile yet (a soak-window pin mid-wait) blocks
-# every commit in the repo, including doc-only ones.
-run_step_bounded lint pnpm --config.verify-deps-before-run=false lint --staged || exit $?
+# `run_pkg_step_bounded <script> [args…]` runs the repo's package.json script
+# for <script>, invoking its `node <path>` body directly rather than through
+# `pnpm run` — pnpm's startup (the sfw shim boots the Socket Firewall proxy,
+# then pnpm re-resolves the workspace) costs seconds per step against a 10s
+# budget, for a staged-scope run whose real work is milliseconds. A script
+# whose body isn't a plain `node <path>` keeps the wrapper.
+run_pkg_step_bounded lint --staged || exit $?
 
 # Each repo's `pnpm test` script wraps a runner that understands
 # `--staged` (e.g. scripts/test.mts forwards staged-filtering to
@@ -81,4 +85,8 @@ run_step_bounded lint pnpm --config.verify-deps-before-run=false lint --staged |
 # `pnpm test` is bare vitest without a wrapper need a local override
 # that pre-filters with `git diff --cached --name-only` then runs
 # `pnpm test`. Bounded so an sfw-proxy deadlock can't hang the commit.
-run_step_bounded test pnpm --config.verify-deps-before-run=false test --staged || exit $?
+run_pkg_step_bounded test --staged || exit $?
+
+# Name every step that did not actually gate this commit — a killed hang or a
+# run over zero files. Silent when both gates ran for real.
+precommit_gate_summary

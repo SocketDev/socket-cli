@@ -27,6 +27,67 @@ run_step() {
   return "$status"
 }
 
+# Steps that did NOT gate this commit — one that hung past the budget and was
+# killed, and one that ran clean but checked zero files. Both exit 0, so
+# without this ledger they read exactly like a pass in the commit output.
+# Rendered by precommit_gate_summary.
+PRECOMMIT_UNGATED_STEPS=''
+
+# lint.mts prints this when the chosen scope resolved to no lintable files: the
+# run exits 0 having checked nothing, which is not a verdict.
+PRECOMMIT_NOTHING_CHECKED_MARKER='NOT a pass'
+
+# Record a step as ungated, with the reason shown in the summary.
+precommit_note_ungated() {
+  PRECOMMIT_UNGATED_STEPS="${PRECOMMIT_UNGATED_STEPS}${PRECOMMIT_UNGATED_STEPS:+, }$1 ($2)"
+}
+
+# Final verdict. Prints nothing when every gate actually ran, so a clean commit
+# stays quiet; prints a loud banner naming each step that did not, so a skipped
+# gate can never be mistaken for a passed one. Call once, after the last step.
+precommit_gate_summary() {
+  if [ -z "$PRECOMMIT_UNGATED_STEPS" ]; then
+    return 0
+  fi
+  printf '\n========== pre-commit: GATE INCOMPLETE ==========\n'
+  printf 'These steps did NOT verify this commit: %s.\n' "$PRECOMMIT_UNGATED_STEPS"
+  printf 'The commit proceeds ungated for them. Before pushing, run\n'
+  printf '`pnpm run lint --all` and `pnpm test` for the real verdict.\n'
+  printf '=================================================\n'
+}
+
+# Resolves a package.json script to the node script it delegates to; see the
+# helper's own header for what it accepts and why. Git runs a hook from the top
+# of the working tree, and the rest of this function chain already reads
+# `package.json` and runs `<script-target>` from there, so the path is
+# cwd-relative like they are. A repo without the helper prints nothing and keeps
+# the wrapper.
+PKG_SCRIPT_TARGET_HELPER=.git-hooks/_shared/pkg-script-target.mts
+pkg_script_node_target() {
+  [ -f "$PKG_SCRIPT_TARGET_HELPER" ] || return 0
+  node "$PKG_SCRIPT_TARGET_HELPER" "$1" 2>/dev/null || return 0
+}
+
+# Run a package.json script as a bounded step, skipping `pnpm run` when the
+# script body allows it (see pkg_script_node_target). The step name is the
+# script name. Extra arguments are forwarded to the script either way.
+run_pkg_step_bounded() {
+  script_name=$1
+  shift
+  step_target=$(pkg_script_node_target "$script_name")
+  if [ -n "$step_target" ]; then
+    run_step_bounded "$script_name" node "$step_target" "$@" || return $?
+  else
+    # verify-deps stays off for the commit gate: its job is the STAGED files;
+    # dependency freshness belongs to the install/CI gates. Without this, a
+    # lockfile that cannot reconcile yet (a soak-window pin mid-wait) blocks
+    # every commit in the repo, including doc-only ones. The flag is a pnpm CLI
+    # option, so it only applies on this wrapper path.
+    run_step_bounded "$script_name" \
+      pnpm --config.verify-deps-before-run=false "$script_name" "$@" || return $?
+  fi
+}
+
 # Like run_step, but bounds the command to PRECOMMIT_STEP_BUDGET_S and, on
 # timeout, KILLS THE WHOLE PROCESS GROUP (the `sfw` pnpm-shim wrapper + every
 # oxlint/vitest worker it spawned) — then fails OPEN (returns 0). EVERY heavy
@@ -69,9 +130,11 @@ run_step_bounded() {
       wait "$job" 2>/dev/null
       cat "$step_log" 2>/dev/null
       rm -f "$step_log"
-      printf '\n[pre-commit] %s exceeded %ss budget — process group killed; ' \
+      printf '\n========== pre-commit: %s SKIPPED (budget %ss exceeded) ==========\n' \
         "$step_name" "$PRECOMMIT_STEP_BUDGET_S"
-      printf 'skipped (non-blocking). The merge gate runs the full suite.\n'
+      printf 'The process group was killed. This step did NOT gate the commit.\n'
+      printf '=================================================================\n'
+      precommit_note_ungated "$step_name" "hung past ${PRECOMMIT_STEP_BUDGET_S}s"
       return 0
     fi
     sleep 0.2
@@ -85,6 +148,9 @@ run_step_bounded() {
     printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
     printf '\n========== full log: %s ==========\n' "$step_log"
   else
+    if grep -q "$PRECOMMIT_NOTHING_CHECKED_MARKER" "$step_log" 2>/dev/null; then
+      precommit_note_ungated "$step_name" 'checked zero files'
+    fi
     rm -f "$step_log"
   fi
   return "$status"

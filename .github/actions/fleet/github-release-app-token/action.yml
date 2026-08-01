@@ -41,11 +41,11 @@ runs:
     # PERMISSIONS is present + non-blank.
     # This app is contents:write ONLY — tags, releases, branch refs, and the
     # signed bump commit. Its installation grants nothing more, so a wider
-    # request 422s the mint outright. The publish promote leg (release-branch.mts
-    # opens a PR from `<channel>-publish-v<version>` and squash auto-merges it)
-    # needs pull_requests:write, which the sibling `github-pr-app-token` action
-    # already carries; workflows mint both and pass RELEASE_APP_TOKEN +
-    # PR_APP_TOKEN side by side.
+    # request 422s the mint outright. contents:write is the whole grant the
+    # publish promote leg needs: release-branch.mts fast-forwards the default
+    # branch's ref to the `<channel>-publish-v<version>` tip, never opening a
+    # pull request, so no pull_requests:write is involved. A workflow that
+    # genuinely opens PRs mints the sibling `github-pr-app-token` instead.
     # Requesting a scope is not the same as HOLDING it: the minter preflights
     # the installation's own grant against PERMISSIONS before it mints, and
     # refuses with the App settings URL when the grant falls short, so a scope

@@ -7,13 +7,14 @@
  *   (`soakGateCompile`'s restore-to-pre-compile + delete-fresh loop) unit
  *   testable without a `gh aw` subprocess.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
 import { SOAK_DAYS } from '../constants/soak.mts'
 import { isSocketSourcedRepository } from '../constants/socket-scopes.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const DAY_MS = 86_400_000
 
@@ -265,7 +266,7 @@ export function soakGateCompile(config: {
     // like a cascade-generated workflow yml makes the blanket write throw
     // EACCES mid-restore, stranding the rollback half-applied.
     if (readFileSafe(file) !== content) {
-      writeFileSync(file, content, 'utf8')
+      writeThroughMirrorLock(file, content)
     }
   }
   for (let i = 0, { length } = outputPaths; i < length; i += 1) {

@@ -66,3 +66,7 @@ untracked, dirty file.)
   the whole `.cache` dir) and the next `prepare` re-fetches. The fetcher migrates
   away the legacy in-tree `.config/fleet/.bundle-applied` on write, plus the <!-- docs-refs-ignore: retired legacy marker path -->
   superseded `node_modules/.cache` marker paths a pre-relocation member carries.
+
+## Enforcement
+
+No automated hook or lint rule catches a stray write into the tracked tree today — that would need filesystem-write instrumentation this fleet doesn't have, meaning a VFS shim or an `fs` wrapper. The `socket/prefer-repo-root-dot-cache` oxlint rule catches the narrower "store lives under `node_modules/`" mistake at edit time. The rest of this rule is a design-review discipline: when adding a new state store, name it in "Known state stores" above and pick one of the two homes.

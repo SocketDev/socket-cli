@@ -50,6 +50,17 @@ Every skill under `.claude/skills/` falls into one of three tiers. Surface this 
 
 Audit the current classification with `node scripts/run-skill-fleet.mts --list-skills`.
 
+## Skills and commands are thin wrappers
+
+A `SKILL.md` or `.claude/commands/**/*.md` file is a thin wrapper over a
+backing script, not a place to inline substantial logic. Inline logic in a
+markdown file is untested, unlinted, and not reusable outside that one
+invocation; move it to a `scripts/**/*.mts` file and have the skill/command
+invoke that script. `.claude/hooks/fleet/defer-to-script-nudge/`
+(PreToolUse, non-blocking) fires when an edit to a skill or command file
+leaves a fenced code block over 12 lines with no reference to a backing
+`scripts/**.mts` file.
+
 ## `updating` umbrella + `updating-*` siblings
 
 `updating` is the canonical fleet umbrella that runs `pnpm run update` then discovers and runs every `updating-*` sibling skill the host repo registers. The umbrella is fleet-shared; the siblings are per-repo (or partial: `updating-lockstep` lives in every repo with `lockstep.json`). To add a new repo-specific update step, drop a new `.claude/skills/updating-<domain>/SKILL.md` and the umbrella picks it up automatically. No edits to `updating` itself.

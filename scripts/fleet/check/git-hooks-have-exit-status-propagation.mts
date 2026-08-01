@@ -51,6 +51,7 @@ export const FALLIBLE_COMMANDS: readonly string[] = [
   'npm',
   'npx',
   'pnpm',
+  'run_pkg_step_bounded',
   'run_step',
   'run_step_bounded',
   'sh',

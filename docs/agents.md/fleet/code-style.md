@@ -6,6 +6,8 @@ The CLAUDE.md `### Code style` section is the short list of heaviest invariants.
 
 Default to none. Write one only when the WHY is non-obvious to a senior engineer. **When you do write a comment, the audience is a junior dev**: explain the constraint, the hidden invariant, the "why this and not the obvious thing." Don't label it ("for junior devs:", "intuition:", etc.). Write in that voice. No teacher-tone, no condescension, no flattering the reader.
 
+A task/plan/removed-code comment (`// Plan:`, `// As requested`, `// removed X`) never belongs in the file — it narrates process, not behavior. Enforced by `.claude/hooks/fleet/no-meta-comments-guard/`.
+
 ## Completion
 
 Never leave `TODO` / `FIXME` / `XXX` / shims / stubs / placeholders. Finish 100%. If too large for one pass, ask before cutting scope.
@@ -28,13 +30,17 @@ No dynamic `await import()`. `node:fs` is the canonical fs source. One import pe
 
 Named imports only; no `import * as ns from '…'`. A namespace import pulls a module's whole surface under one binding. That hides the used names from grep and "find references", defeats per-name dead-code analysis and tree-shaking — an `import * as lib` reads as "uses everything", so the fleet API-usage audit can't tell which exports are live — and composes poorly with the named-export convention. Replace it with `import { a, b } from '…'`. The `socket/no-namespace-import` oxlint rule enforces this report-only: rewriting a namespace import to named imports needs the set of members the file reads, which the rule does not infer for you. Exempt: test files (mocking a whole module with `import * as mod` plus `vi.spyOn(mod, …)` is the canonical spy pattern and has no named equivalent), and bare or `node:` builtins (idiomatic, not a fleet-surface concern).
 
+## Type-only imports
+
+A specifier imported only for its type, never a value, uses `import type { X } from '…'` (or the inline `import { type X, y } from '…'` form when the same statement also imports a value). A type-only binding erases at compile time; importing it as a value import keeps a load-bearing runtime dependency on a module the emitted code never touches. Enforced edit-time by `.claude/hooks/fleet/prefer-type-import-guard/`.
+
 ## HTTP
 
 Never `fetch()`. Use `httpJson` / `httpText` / `httpRequest` from `@socketsecurity/lib/http-request`.
 
 ## Subprocesses
 
-Prefer async `spawn` from `@socketsecurity/lib/spawn` over `spawnSync` from `node:child_process`. Async unblocks parallel tests / event-loop work; the sync version freezes the runner for the duration of the child. Use `spawnSync` only when you need synchronous semantics (script bootstrapping, a hot loop where awaiting would invert control flow). When you do need stdin input: `const child = spawn(cmd, args, opts); child.stdin?.end(payload); const r = await child;`. The lib's `spawn` returns a thenable child handle, not a `{ input }` option. Throws `SpawnError` on non-zero exit; catch with `isSpawnError(e)` to read `e.code` / `e.stderr`.
+Prefer async `spawn` from `@socketsecurity/lib/spawn` over `spawnSync` from `node:child_process`. Async unblocks parallel tests / event-loop work; the sync version freezes the runner for the duration of the child. Use `spawnSync` only when you need synchronous semantics (script bootstrapping, a hot loop where awaiting would invert control flow). When you do need stdin input: `const child = spawn(cmd, args, opts); child.stdin?.end(payload); const r = await child;`. The lib's `spawn` returns a thenable child handle, not a `{ input }` option. Throws `SpawnError` on non-zero exit; catch with `isSpawnError(e)` to read `e.code` / `e.stderr`. Enforced edit-time by `.claude/hooks/fleet/prefer-async-spawn-guard/`.
 
 ## File existence
 
@@ -74,7 +80,9 @@ Sort alphanumerically (literal byte order, ASCII before letters). Applies to: ob
 
 ## Doc filenames
 
-`lowercase-with-hyphens.md` under `docs/` or `.claude/` (enforced by `.claude/hooks/fleet/markdown-filename-guard/`). One canonical form; no spaces, no PascalCase, no underscores.
+`lowercase-with-hyphens.md` under any `docs/` or `.claude/` directory, at any depth (enforced by `.claude/hooks/fleet/markdown-filename-guard/`). One canonical form; no spaces, no PascalCase, no underscores.
+
+The SCREAMING_CASE names (`README`, `CLAUDE`, `CHANGELOG`, and similar) are the exception, and only at the repo root, the root `docs/`, or the root `.claude/`. A SCREAMING_CASE name anywhere deeper is not allowed; rename it lowercase-hyphenated.
 
 ## Inline `<script>` defer/async
 

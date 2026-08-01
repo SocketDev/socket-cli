@@ -1,6 +1,6 @@
 ---
 name: property-and-fuzz-testing
-description: Pick a property/fuzz tier + per-language harness (fast-check/vitiate, cargo-fuzz, go test -fuzz, libFuzzer) for parsers, decoders, and native addons — JS/TS, Rust, Go, C++.
+description: Pick a property/fuzz tier and per-language harness for parsers, decoders, and native addons in JS/TS, Rust, Go, and C++.
 metadata:
   internal: true
 ---

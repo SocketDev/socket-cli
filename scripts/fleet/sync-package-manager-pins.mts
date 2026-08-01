@@ -25,7 +25,7 @@
  *     --check     warn on a behind pin, exit non-zero only on real drift
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -34,8 +34,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { buildOxfmtArgs } from './_shared/format-scope.mts'
-import { REPO_ROOT } from './paths.mts'
+import { nodeModulesBinPath, REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -337,16 +338,20 @@ function main(): number {
     process.exitCode = 1
     return 1
   }
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8')
+  writeThroughMirrorLock(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`)
   // Re-run the fleet formatter over the freshly-written file: inserting a new
   // top-level key (devEngines) via plain object assignment appends it at the
   // end of enumeration order, which oxfmt's alphabetical package.json sort
   // then flags as a format violation on the very next `pnpm run format:check`.
   // Reformat here so the write already matches what the format gate expects.
-  const formatResult = spawnSync('pnpm', buildOxfmtArgs({ files: [pkgPath] }), {
-    shell: process.platform === 'win32',
-    stdio: 'inherit',
-  })
+  const formatResult = spawnSync(
+    nodeModulesBinPath('oxfmt'),
+    buildOxfmtArgs({ files: [pkgPath] }),
+    {
+      shell: process.platform === 'win32',
+      stdio: 'inherit',
+    },
+  )
   if (formatResult.status !== 0) {
     logger.warn(
       `[sync-package-manager-pins] oxfmt reformat of package.json exited ${String(formatResult.status)} — run \`pnpm run format\` manually.`,

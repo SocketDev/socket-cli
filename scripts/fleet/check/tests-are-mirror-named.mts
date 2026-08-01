@@ -27,7 +27,7 @@
  *   Usage: node scripts/fleet/check/tests-are-mirror-named.mts [--strict] [--quiet]
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -37,6 +37,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from '../paths.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -261,10 +262,9 @@ function main(): number {
   const update = process.argv.includes('--update')
   let violations = scanRepo(REPO_ROOT)
   if (update) {
-    writeFileSync(
+    writeThroughMirrorLock(
       BASELINE_PATH,
       `${JSON.stringify(violations.map(v => v.testPath).toSorted(), null, 2)}\n`,
-      'utf8',
     )
     logger.success(
       `[tests-are-mirror-named] baseline updated — ${violations.length} legacy test(s) grandfathered.`,

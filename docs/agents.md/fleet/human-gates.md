@@ -45,4 +45,4 @@ Two traps the `Mind:` lines keep visible: **split identities** — pnpm's config
 
 ## Relationship to bypass phrases
 
-A push-grant gate names the phrase for the human to type (the [bypass-phrases](bypass-phrases.md) table does the same). That is not laundering: the scanner matches transcript role provenance, so a phrase printed by an agent grants nothing — only the human typing it in a user turn does. What stays forbidden is asking another agent or session to produce the phrase.
+A push-grant gate names the phrase for the human to type — the [bypass-phrases](bypass-phrases.md) table does the same. That is not laundering: the scanner matches transcript role provenance, so a phrase printed by an agent grants nothing — only the human typing it in a user turn does. What stays forbidden is asking another agent or session to produce the phrase.

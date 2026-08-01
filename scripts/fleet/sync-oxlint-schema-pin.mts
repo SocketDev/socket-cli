@@ -9,7 +9,7 @@
  *   --check reports drift and exits non-zero without writing (CI mode).
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -19,6 +19,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -159,7 +160,7 @@ function main(): number {
       drift += 1
       continue
     }
-    writeFileSync(abs, raw.replace(decision.current, expected), 'utf8')
+    writeThroughMirrorLock(abs, raw.replace(decision.current, expected))
     logger.success(
       `${rel}: $schema pinned to oxlint_v${version} (${sha.slice(0, 12)})`,
     )

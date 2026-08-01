@@ -25,6 +25,7 @@ import { setupMcp } from './mcp.mts'
 import { setupPython } from './python.mts'
 import { setupRefero } from './refero.mts'
 import { setupRust } from './rust.mts'
+import { setupSfwCa } from './sfw-ca.mts'
 
 import type { EcosystemStepResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
@@ -45,6 +46,7 @@ const ECOSYSTEM_STEPS: ReadonlyArray<
   ['setup:python', setupPython],
   ['setup:refero', setupRefero],
   ['setup:rust', setupRust],
+  ['setup:sfw-ca', setupSfwCa],
 ]
 
 export function run(script: string, extraArgs: string[] = []): boolean {

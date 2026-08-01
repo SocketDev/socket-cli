@@ -106,6 +106,10 @@ same session force-pushed a different repo on that inherited grant.)
 
 Without the gate, the assistant has historically reverted whole batches of autofix changes mid-cleanup or used `--no-verify` to push past a failing hook, both of which destroy work and erode trust. The phrase is short enough to type when truly intended and specific enough that no other utterance accidentally triggers it.
 
+## Enforcement
+
+`.claude/hooks/fleet/no-force-push-guard/`, `.claude/hooks/fleet/no-revert-guard/`, `.claude/hooks/fleet/overeager-staging-guard/`, and `.claude/hooks/fleet/no-env-kill-switch-guard/` implement the strict-vs-optional phrase grammar above: each parses the proposed command against its own `CHECKS` table, decides whether the matched entry opts into `bypassOptional`, and blocks with a message naming the exact phrase (with or without the trailing `bypass`) the user must type.
+
 ## Defense in depth
 
 The bypass policy is enforced at three layers:

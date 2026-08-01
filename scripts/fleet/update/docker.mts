@@ -21,7 +21,7 @@
  *   scripts/fleet/update/docker.mts --soak-days 7 --fix.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -32,6 +32,7 @@ import { REPO_ROOT } from '../paths.mts'
 import { findOwnFiles, requireSoakDays } from './_shared.mts'
 import { isUnquotedPosition } from './brew-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -657,7 +658,7 @@ async function main(): Promise<void> {
       )
     }
     if (fix && next !== text) {
-      writeFileSync(file, next)
+      writeThroughMirrorLock(file, next)
     }
   }
   if (planned === 0) {

@@ -28,6 +28,14 @@ script — that is a feature for true groups and a hazard for curated ones;
 curate with an anchored alternation like `/^(install:a|install:b)$/` when
 membership must be closed).
 
+## Enforcement
+
+`scripts/repo/sync-scaffolding/checks/package-scripts.mts` fails any
+`package.json` script body that reintroduces `run-s` / `run-p` /
+`npm-run-all`. It runs as part of the wheelhouse sync-scaffolding checks,
+off-machine (a cascade/CI surface), rather than in the interactive
+`check --all` gate.
+
 ## Why npm-run-all2 left
 
 Its `run-s name:*` globs resolved in package.json source order (ECMA-262

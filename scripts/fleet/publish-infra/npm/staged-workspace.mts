@@ -16,13 +16,7 @@
  */
 
 import crypto from 'node:crypto'
-import {
-  existsSync,
-  promises as fs,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, promises as fs, readFileSync, statSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -53,6 +47,7 @@ import {
   requiredPayloadFiles,
 } from './workspace-plan.mts'
 import { tarExecutable } from '../../_shared/tar-executable.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 
 import type { StageListEntry } from './shared.mts'
 import type { NpmWorkspaceLayout, WorkspacePackage } from './workspace.mts'
@@ -369,7 +364,7 @@ export async function packWorkspaceReleaseAssets(
   }
   if (assets.length > 0) {
     const checksumsPath = path.join(layout.rootPath, 'checksums.txt')
-    writeFileSync(checksumsPath, `${checksumLines.join('\n')}\n`)
+    writeThroughMirrorLock(checksumsPath, `${checksumLines.join('\n')}\n`)
     assets.push(checksumsPath)
   }
   return assets

@@ -13,11 +13,12 @@
  *   `format:check`, not by this gate.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 import { loadSocketWheelhouseConfig, REPO_ROOT } from '../../paths.mts'
 import { buildApiExportRows, groupApiExportRows } from './export-rows.mts'
 
@@ -216,7 +217,7 @@ export async function runDocsArtifact(
   }
 
   mkdirSync(path.dirname(absPath), { recursive: true })
-  writeFileSync(absPath, rendered, 'utf8')
+  writeThroughMirrorLock(absPath, rendered)
   await (opts.onWrite ?? (p => formatGeneratedDoc(p, repoRoot)))(absPath)
   return {
     kind: 'written',

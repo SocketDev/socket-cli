@@ -7,13 +7,7 @@
  *   under the fleet's file-size cap.
  */
 
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -21,6 +15,7 @@ import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 import type { CoverThresholds } from './cover/discovery.mts'
 import { COVERAGE_FINAL_PATH, REPO_ROOT } from './paths.mts'
 import { coveredCounts } from './util/coverage-merge.mts'
@@ -217,7 +212,7 @@ function persistSuiteFailureOutput(
     const dir = path.join(rootPath, '.cache', 'fleet', 'fleet-cover')
     mkdirSync(dir, { recursive: true })
     const file = path.join(dir, `last-failure-${name}.log`)
-    writeFileSync(
+    writeThroughMirrorLock(
       file,
       `exit ${result.exitCode}\n--- stdout ---\n${result.stdout}\n--- stderr ---\n${result.stderr}\n`,
     )

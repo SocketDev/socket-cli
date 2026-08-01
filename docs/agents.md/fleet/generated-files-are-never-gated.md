@@ -63,3 +63,11 @@ are the twins `scripts/fleet/check/generated-globs-are-consistent.mts` enforces;
 `acorn`/`fixtures` trees the mirror-`**/.claude/**` glob otherwise hides). When you
 add a new generated tree, update the constant + the ignore, then extend
 `isNeverGated()` so explicit/staged runs drop it too.
+
+## Enforcement
+
+- `scripts/fleet/_shared/format-scope.mts` — the single `isNeverGated()`
+  predicate every lint/format entry point (scoped, staged, `--all`, dogfood)
+  filters through before a file reaches oxlint/oxfmt.
+- `scripts/fleet/check/generated-globs-are-consistent.mts` — keeps the
+  `.prettierignore` / `generated-globs.mts` twins from drifting apart.

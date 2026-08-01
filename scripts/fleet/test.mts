@@ -39,7 +39,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -65,6 +64,7 @@ import {
   findMirrorTests,
   TEST_EXTENSIONS,
 } from './test-runner/mirror-resolver.mts'
+import { createVitestRunner } from './test-runner/run-and-report.mts'
 import {
   shouldDelegateWorkspace,
   shouldEscalate,
@@ -83,14 +83,14 @@ const repoRoot = path.resolve(
   '..',
 )
 
-// Resolve the vitest binary from the repo-root node_modules/.bin instead of
-// `pnpm exec vitest` (fleet `no-pm-exec-guard`: `pnpm exec` is banned for its
-// wrapper overhead — call the bin directly).
-const VITEST_BIN = path.join(
+// Runs vitest via test-runner/run-vitest.mts's Node API bridge rather than
+// the `node_modules/.bin/vitest` binary — see that file's header for why.
+const RUN_VITEST_SCRIPT = path.join(
   repoRoot,
-  'node_modules',
-  '.bin',
-  WIN32 ? 'vitest.cmd' : 'vitest',
+  'scripts',
+  'fleet',
+  'test-runner',
+  'run-vitest.mts',
 )
 
 // Root package.json marks a monorepo workspace. When the full suite runs in a
@@ -117,62 +117,27 @@ const stdio: SpawnSyncOptions['stdio'] = quiet ? 'pipe' : 'inherit'
 // only; POSIX keeps direct invocation.
 const useShell = process.platform === 'win32'
 
+// The literal invocation, for the all-skipped notice's rerun hint.
+const rerunArgvTail = process.argv.slice(2).join(' ')
+const rerunHint = rerunArgvTail ? `pnpm test ${rerunArgvTail}` : 'pnpm test'
+
 function log(msg: string): void {
   if (!quiet) {
     logger.log(msg)
   }
 }
 
-// Resolve the child env for a vitest spawn, always dropping COVERAGE. Coverage
-// is owned by cover.mts, which spawns the outer vitest DIRECTLY (never via
-// test.mts), so any COVERAGE reaching test.mts belongs to a NESTED run — a
-// subprocess-spawning test re-entered test.mts (via `pnpm test` / a git hook)
-// while the outer coverage run is live. A nested vitest with coverage on would
-// clean the shared coverage/.tmp and ENOENT the outer forks' reports (the reason
-// coverage used to force `maxWorkers: 1`). test.mts never collects coverage
-// itself, so strip it and let the suite run parallel without the clobber.
-function resolveVitestEnv(
-  optsEnv: Record<string, string> | undefined,
-): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, ...optsEnv }
-  delete env['COVERAGE']
-  return env
-}
-
-function runVitest(
-  vitestArgs: string[],
-  label: string,
-  options?: { env?: Record<string, string> | undefined } | undefined,
-): number {
-  const opts = { __proto__: null, ...options } as {
-    env?: Record<string, string> | undefined
-  }
-  // Announce the effective budget tier so a CI log answers "which timeout did
-  // the config compute?" without a probe commit — a 30s timeout under a
-  // config that should compute 60s on CI is diagnosable from the run log.
-  log(
-    `Test scope: ${label} (CI=${process.env['CI'] ? 'yes' : 'no'}, budget tier: ${process.env['CI'] ? '60s' : '10s local'})`,
-  )
-  const configArgs = existsSync(ROOT_VITEST_CONFIG)
-    ? ['--config', ROOT_VITEST_CONFIG]
-    : []
-  const r = spawnSync(
-    VITEST_BIN,
-    [...vitestArgs, ...configArgs],
-    // Windows shell-shim rationale: see useShell at file top.
-    {
-      shell: useShell,
-      stdio,
-      env: resolveVitestEnv(opts.env),
-    },
-  )
-  if (r.status !== 0) {
-    log('Tests failed')
-    return 1
-  }
-  log('All tests passed')
-  return 0
-}
+// Spawns vitest + interprets pass/fail/skipped-all/matched-nothing — see
+// test-runner/run-and-report.mts for why that logic lives there, not here.
+const runVitest = createVitestRunner({
+  log,
+  rerunHint,
+  rootVitestConfig: ROOT_VITEST_CONFIG,
+  runVitestScript: RUN_VITEST_SCRIPT,
+  stdio,
+  useShell,
+  warn: msg => logger.warn(msg),
+})
 
 function runWorkspaceTests(): number {
   // `pnpm -r run` (recursive run, not the banned `pnpm exec`) invokes each

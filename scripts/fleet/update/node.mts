@@ -20,7 +20,7 @@
  *   with canned release data and no network.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -35,6 +35,7 @@ import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import { requireSoakDays } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
@@ -222,7 +223,7 @@ export function readNodeVersion(root: string): string {
  * trailing-newline shape the fleet pin file uses.
  */
 export function writeNodeVersion(root: string, version: string): void {
-  writeFileSync(path.join(root, NODE_VERSION_FILE), `${version}\n`, 'utf8')
+  writeThroughMirrorLock(path.join(root, NODE_VERSION_FILE), `${version}\n`)
 }
 
 /**

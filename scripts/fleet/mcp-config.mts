@@ -5,13 +5,14 @@
  *   client owns OAuth state in its user data directory.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 import { REPO_ROOT } from './paths.mts'
 
 export type PortableMcpServer =
@@ -388,7 +389,7 @@ export function writeCodexAdapters(
     const adapter = CODEX_ADAPTERS[i]!
     const dest = path.join(repoRoot, adapter.path)
     mkdirSync(path.dirname(dest), { recursive: true })
-    writeFileSync(dest, adapter.render(servers))
+    writeThroughMirrorLock(dest, adapter.render(servers))
   }
 }
 
@@ -408,11 +409,11 @@ export function writeMcpClientConfigs(repoRoot: string): void {
   )
   writeCodexAdapters(repoRoot, servers)
   mkdirSync(path.join(configRoot, '.kimi-code'), { recursive: true })
-  writeFileSync(
+  writeThroughMirrorLock(
     path.join(configRoot, 'opencode.json'),
     renderOpenCodeMcpConfig(servers),
   )
-  writeFileSync(
+  writeThroughMirrorLock(
     path.join(configRoot, '.kimi-code', 'mcp.json'),
     renderKimiProjectMcpConfig(servers),
   )

@@ -18,11 +18,12 @@
  *   3. A threshold breach exits 1, aggregate or per-file.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import {
   aggregateFromLcov,
   buildBunCoverageArgs,
@@ -138,10 +139,9 @@ export async function runBunCoverageLane(config: {
   // Persist the summary the badge pipeline reads, in the same istanbul shape
   // the vitest lane's merge writes, so the badge is runner-agnostic.
   mkdirSync(path.dirname(cfg.summaryPath), { recursive: true })
-  writeFileSync(
+  writeThroughMirrorLock(
     cfg.summaryPath,
     `${JSON.stringify(lcovToIstanbulSummary(files), undefined, 2)}\n`,
-    'utf8',
   )
 
   const perFileFailures = perFileThresholdFailures(

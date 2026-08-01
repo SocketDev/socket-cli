@@ -30,6 +30,33 @@ The runner walks 8 phases end-to-end in a sibling worktree; the primary checkout
 [`run.mts`](run.mts) for the implementation (the shared `squashSingleCommit()` engine lives there and
 is reused by `refreshing-history`).
 
+### Feature-branch mode (`--branch`)
+
+```bash
+node .claude/skills/fleet/squashing-history/run.mts /path/to/<repo> \
+  --branch <name> [--base <ref>] [--message <subject>]
+```
+
+This is the **sanctioned path for an author-agreed feature-branch total-squash** — it removes the need
+to type `Allow total squash bypass` every time. Instead of the default branch, it collapses the named
+feature branch to a single commit **on top of its PR base's merge-base**:
+
+- `--branch <name>` — the feature branch to squash (required for this mode).
+- `--base <ref>` — the PR base used for the merge-base (default: the resolved default branch, usually
+  `main`). Only commits the branch added past this base are collapsed; the shared base is never
+  rewritten.
+- `--message <subject>` — the collapsed commit's subject (usually the PR title). When omitted it
+  defaults to the branch tip's own subject, falling back to `chore: initial commit`.
+
+It reuses the **same engine and safety contract** as the default-branch flow — resolve the canonical
+tip (local-canonical / origin, refusing a two-way divergence), push a byte-verified backup ref of the
+pre-squash tip **before** any rewrite, HARD-verify the post-squash tree is byte-identical to that tip,
+then `--force-with-lease`-push under the `SQUASH_HISTORY=1` sentinel. Because that backup + tree-identity
+check is what the guards trust (not the branch name), the same sentinel clears
+`no-total-squash-guard`/`no-force-push-guard` for the feature-branch push **with no bypass phrase** —
+the safety is unchanged. Unlike the default-branch flow it skips the roster opt-in / published-release
+gates: it rewrites only the named branch, never the repo's published default-branch history.
+
 The runner picks a mode from the local-vs-origin relationship (local main is canonical in the
 fleet):
 

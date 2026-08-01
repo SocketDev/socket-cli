@@ -38,13 +38,7 @@
  *   `--allow-non-member --reason "<why>"`. `--check` reads only — exempt.
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -58,6 +52,7 @@ import {
   parseNonMemberOverride,
 } from '../_shared/fleet-membership.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -256,7 +251,7 @@ export function writeMirror(
     for (const [rel, bytes] of files) {
       const dest = path.join(destDir, rel)
       mkdirSync(path.dirname(dest), { recursive: true })
-      writeFileSync(dest, bytes)
+      writeThroughMirrorLock(dest, bytes)
     }
   }
 }

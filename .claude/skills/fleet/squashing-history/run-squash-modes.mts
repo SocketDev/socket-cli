@@ -9,7 +9,9 @@
  */
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
+import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run } from '../_shared/scripts/run-helpers.mts'
+import { checkNotShallowClone } from './run-guards.mts'
 import {
   accrueUnreleased,
   backupBranchForCommit,
@@ -251,6 +253,250 @@ export async function squashWorktreeMode(config: {
   logger.substep(`backup ref: refs/heads/${backup} -> ${origHead}`)
   logger.substep(
     `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
+  )
+  return 0
+}
+
+/**
+ * Squash an author-agreed FEATURE branch down to a single commit on its PR
+ * base's merge-base, reusing the same worktree engine as the default-branch
+ * flow. Resolve the canonical tip (local is canonical in the fleet: local ==
+ * origin or no local branch → origin tip; local ahead of origin → local tip;
+ * two-way divergence → REFUSE, same contract as the default-branch flow), push
+ * a remote backup ref of that tip BEFORE any rewrite, soft-reset a worktree
+ * onto the merge-base, make ONE signed collapse commit, HARD-verify its tree is
+ * byte-identical to the pre-squash tip (`squashSingleCommit` exits non-zero on
+ * a mismatch), then lease-push it to the branch under the SQUASH_HISTORY=1
+ * sentinel.
+ *
+ * No roster opt-in / published-release gate: it rewrites only the named branch,
+ * never the repo's published default-branch history. The safety that matters
+ * for a feature squash — backup ref + byte-identical tree + lease push +
+ * divergence refusal — is preserved exactly.
+ *
+ * `sign` defaults to true (fleet branch protection enforces
+ * required_signatures); tests pass `false` to run without a configured key.
+ */
+export async function squashFeatureBranchMode(config: {
+  readonly base?: string | undefined
+  readonly branch: string
+  readonly message?: string | undefined
+  readonly sign?: boolean | undefined
+  readonly src: string
+}): Promise<number> {
+  const cfg = { __proto__: null, ...config } as {
+    base?: string | undefined
+    branch: string
+    message?: string | undefined
+    sign?: boolean | undefined
+    src: string
+  }
+  const { branch, src } = cfg
+  const sign = cfg.sign ?? true
+
+  // Filesystem-safe suffix so `feat/x` doesn't create nested worktree dirs.
+  const safe = branch.replace(/[^A-Za-z0-9._-]/g, '-')
+  const worktree = `${src}-squash-${safe}`
+  const squashBranch = `chore/squash-${safe}`
+
+  // PR base for the merge-base: an explicit --base, else the default branch.
+  const base = cfg.base ?? (await resolveDefaultBranch({ cwd: src }))
+  header('feature branch', branch)
+  header('base', base)
+
+  // Fetch the base (needed for the merge-base) and the feature branch
+  // (best-effort — a not-yet-pushed local branch has no origin ref).
+  await run('git', ['fetch', 'origin', base], src, { allowFailure: true })
+  await run('git', ['fetch', 'origin', branch], src, { allowFailure: true })
+
+  const shallowExit = await checkNotShallowClone({ base, src })
+  if (shallowExit !== undefined) {
+    return shallowExit
+  }
+
+  // Base commit for the merge-base: prefer origin/<base>, fall back to a local
+  // ref so a base branch that only exists locally still resolves.
+  const revParseQuiet = async (ref: string): Promise<string> =>
+    (
+      await run('git', ['rev-parse', '--verify', '--quiet', ref], src, {
+        allowFailure: true,
+      })
+    ).stdout.trim()
+  const baseSha =
+    (await revParseQuiet(`refs/remotes/origin/${base}`)) ||
+    (await revParseQuiet(`refs/heads/${base}`))
+  if (!baseSha) {
+    logger.error(
+      `error: base ref ${base} not found (origin/${base} or refs/heads/` +
+        `${base}) — pass --base <ref>.`,
+    )
+    return 2
+  }
+
+  // Resolve the branch tip. Local is canonical; refuse a two-way divergence.
+  const localHead = await revParseQuiet(`refs/heads/${branch}`)
+  const originHead = await revParseQuiet(`refs/remotes/origin/${branch}`)
+  if (localHead === '' && originHead === '') {
+    logger.error(`error: branch ${branch} not found locally or on origin.`)
+    return 2
+  }
+
+  let tip: string
+  // Origin sha to pin the lease against; undefined when the branch is not on
+  // origin yet (first push of a local-only branch).
+  let leaseAgainst: string | undefined
+  if (localHead === '') {
+    tip = originHead
+    leaseAgainst = originHead
+  } else if (originHead === '' || localHead === originHead) {
+    tip = localHead
+    leaseAgainst = originHead === '' ? undefined : originHead
+  } else {
+    const originIsAncestor =
+      (
+        await run(
+          'git',
+          ['merge-base', '--is-ancestor', originHead, localHead],
+          src,
+          { allowFailure: true },
+        )
+      ).code === 0
+    if (
+      classifySquashMode({
+        localHead,
+        origHead: originHead,
+        originIsAncestor,
+      }) === 'diverged'
+    ) {
+      logger.error(
+        `error: origin/${branch} (${originHead.slice(0, 8)}) has commits your ` +
+          `local ${branch} lacks — they have DIVERGED. Squashing now would ` +
+          `drop origin's commits. Fix: reconcile forward first — ` +
+          `git -C ${src} merge --no-edit origin/${branch} (resolve conflicts), ` +
+          `then re-run.`,
+      )
+      return 2
+    }
+    tip = localHead
+    leaseAgainst = originHead
+  }
+
+  const mergeBase = (
+    await run('git', ['merge-base', tip, baseSha], src, { allowFailure: true })
+  ).stdout.trim()
+  if (!mergeBase) {
+    logger.error(
+      `error: no merge-base between ${branch} and ${base} — unrelated ` +
+        `histories.`,
+    )
+    return 2
+  }
+  if (mergeBase === tip) {
+    logger.error(
+      `error: ${branch} has no commits past ${base} — nothing to squash.`,
+    )
+    return 2
+  }
+
+  const aheadCount = (
+    await run('git', ['rev-list', '--count', `${mergeBase}..${tip}`], src)
+  ).stdout
+  header(branch, `${tip} (${aheadCount} commits past ${base})`)
+  if (aheadCount === '1') {
+    logger.info(
+      `${branch} is already a single commit past ${base} — nothing to squash`,
+    )
+    return 0
+  }
+
+  // Default the collapsed subject to the branch tip's own subject (usually the
+  // PR title after iteration); fall back to the canonical squash message.
+  let message = cfg.message
+  if (message === undefined || message === '') {
+    message =
+      (
+        await run('git', ['log', '-1', '--format=%s', tip], src)
+      ).stdout.trim() || 'chore: initial commit'
+  }
+
+  const backup = await backupBranchForCommit(src, tip)
+
+  // Remote backup ref BEFORE any rewrite — the pre-squash tip stays
+  // recoverable. --no-verify: pushing an existing, already-validated tip.
+  logger.substep(`pushing remote backup ref: refs/heads/${backup} -> ${tip}`)
+  await run(
+    'git',
+    ['push', '--no-verify', 'origin', `${tip}:refs/heads/${backup}`],
+    src,
+  )
+
+  // Worktree off the tip; clear any stale state from a prior run first.
+  await run('git', ['worktree', 'remove', '--force', worktree], src, {
+    allowFailure: true,
+  })
+  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
+  await run('git', ['worktree', 'add', '-b', squashBranch, worktree, tip], src)
+
+  // Squash + integrity (shared engine; HARD exit on tree mismatch). amend:false
+  // makes a FRESH commit on the merge-base — never rewrite the shared base.
+  const { newHead } = await squashSingleCommit({
+    amend: false,
+    message,
+    origHead: tip,
+    resetTo: mergeBase,
+    sign,
+    worktree,
+  })
+  logger.success(`squashed ${aheadCount} commits → 1 commit (${newHead})`)
+  logger.success('integrity: post-squash tree == pre-squash tree')
+
+  // Lease-push. Pin the lease to origin's current tip when the branch exists
+  // there; a first push of a local-only branch has nothing to pin.
+  const leaseFlag = leaseAgainst
+    ? `--force-with-lease=${branch}:${leaseAgainst}`
+    : '--force-with-lease'
+  logger.substep(`force-pushing to ${branch}...`)
+  await run(
+    'git',
+    ['push', '--no-verify', leaseFlag, 'origin', `HEAD:${branch}`],
+    worktree,
+    { env: { SQUASH_HISTORY: '1' } },
+  )
+
+  // Move the local branch to the squashed commit when it is safe to do so, so
+  // local doesn't read as diverged from origin right after the squash.
+  if (localHead !== '') {
+    const srcBranch = (
+      await run('git', ['symbolic-ref', '--quiet', '--short', 'HEAD'], src, {
+        allowFailure: true,
+      })
+    ).stdout.trim()
+    if (srcBranch === branch) {
+      logger.substep(
+        `local ${branch} is checked out in ${src}; sync it with: ` +
+          `git -C ${src} reset --hard ${newHead}`,
+      )
+    } else {
+      await run(
+        'git',
+        ['update-ref', `refs/heads/${branch}`, newHead, localHead],
+        src,
+      )
+      logger.substep(`local ${branch} moved to ${newHead}`)
+    }
+  }
+
+  // Cleanup.
+  await run('git', ['worktree', 'remove', '--force', worktree], src)
+  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
+
+  // Report.
+  logger.log('')
+  logger.success(`${branch} squashed (feature-branch mode)`)
+  logger.substep(`new ${branch}: ${newHead}`)
+  logger.substep(`backup ref: refs/heads/${backup} -> ${tip}`)
+  logger.substep(
+    `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${branch}`,
   )
   return 0
 }

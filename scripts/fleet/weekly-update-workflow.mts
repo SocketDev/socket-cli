@@ -28,6 +28,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { withMirrorLockLiftedSync } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -65,7 +66,9 @@ export function enableWorkflow(): boolean {
     )
     return false
   }
-  copyFileSync(DISABLED_PATH, ENABLED_PATH)
+  withMirrorLockLiftedSync(ENABLED_PATH, () =>
+    copyFileSync(DISABLED_PATH, ENABLED_PATH),
+  )
   logger.success(
     `[weekly-update-workflow] enabled → ${WORKFLOW_NAME} (live + listed). ` +
       'Run `disable` (or `run`, which auto-disables) when done.',

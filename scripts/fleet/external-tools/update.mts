@@ -30,7 +30,7 @@
  */
 
 import crypto from 'node:crypto'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 // Fleet convention (socket/prefer-async-spawn): use the lib's
@@ -41,6 +41,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { fetchPackageManifest } from '@socketsecurity/lib/packages/manifest'
 
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { planGithubUpdate } from './github.mts'
 
@@ -565,7 +566,10 @@ async function main(): Promise<number> {
     // planAllUpdates. A failed tool threw before mutating, so its entry keeps
     // its current valid pins and is written back unchanged.
     applyNpmRestamp(json, updates, soakMinutes, soakExclude)
-    writeFileSync(opts.externalToolsPath, JSON.stringify(json, null, 2) + '\n')
+    writeThroughMirrorLock(
+      opts.externalToolsPath,
+      JSON.stringify(json, null, 2) + '\n',
+    )
     process.stdout.write(`\nWrote ${opts.externalToolsPath}\n`)
     // external-tools.json is the single source for the pnpm/npm version pins —
     // propagate the new versions to the target repo's package.json

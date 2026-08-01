@@ -116,3 +116,10 @@ The cascade's `extractFleetBlock` + `spliceFleetBlock` only touches the content 
 | Postamble (after `</fleet-canonical>`) | Passes through untouched |
 
 So if the cascade pushes a downstream CLAUDE.md back over 40 KB, the fix is to trim the downstream's preamble or postamble — never the canonical block. The cascade preserves what you've trimmed there.
+
+## Enforcement
+
+- `.claude/hooks/fleet/cascade-first-triage-nudge/` — nudges toward re-cascading a member instead of hand-patching a "missing" canonical artifact.
+- `.claude/hooks/fleet/no-fleet-fork-guard/` — blocks a local edit to a fleet-canonical file outside `template/...`.
+- `.claude/hooks/fleet/no-repo-scope-in-fleet-config-guard/` — blocks a one-repo path-scope glob added into a fleet-canonical config.
+- `scripts/repo/sync-scaffolding/fixers/mirror-mode.mts` — the fixer that re-applies the canonical byte-copy on cascade.

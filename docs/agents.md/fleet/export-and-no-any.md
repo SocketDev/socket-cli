@@ -7,7 +7,7 @@ Two paired fleet rules captured under one doc because they're symbiotic — expo
 **Every top-level function, interface, type alias, class, and helper in `src/` is `export`ed.** No private symbols.
 
 - Privacy is handled by NOT importing in consumers, or by `_internal/` directory layout for module-private files.
-- Underscore-prefixed identifiers are separately banned (see _No underscore-prefixed identifiers_).
+- Underscore-prefixed identifiers are separately banned (see [`no-underscore-identifiers.md`](no-underscore-identifiers.md)).
 - Tests need to reach helpers directly — coverage holes appear whenever a test has to go through the public API to exercise an internal helper.
 - The `socket/export-top-level-functions` oxlint rule enforces this for all four top-level declaration kinds — function, interface, type alias, and class (one `Program > …Declaration` visitor each, shared autofix that prepends `export`).
 

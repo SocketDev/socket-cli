@@ -20,6 +20,10 @@ Keep a PR small — a rule of thumb is under ~200 changed lines overall. Large r
 
 The fleet direct-pushes to main, so it realizes this doctrine primarily as small commits landed fast — the `commit-cadence-nudge` + land-fast cadence above. A PR happens only on push-rejection or for external / cross-repo work. On that rare PR path, `small-pr-nudge` enforces the size ceiling. It fires on `gh pr create`, computes the three-dot diff (`git diff --shortstat <base>...HEAD`), and reminds you to decompose or stack when the change exceeds ~200 lines. Reminder-only, never a block; it fails open when the diff can't be computed.
 
+## Never open a PR from the default branch
+
+A PR needs a branch to diff against the base; opening one with the PR head or the cwd checkout on `main`/`master`/the resolved default produces a no-op or a self-referential PR. `gh pr create` hard-blocks in that case, enforced by `.claude/hooks/fleet/no-pr-from-default-checkout-guard/`. Cut a branch (or work in a `git worktree` off the default) before running `gh pr create`.
+
 ## Conventional Commits 1.0
 
 Every commit message follows the spec at
@@ -71,8 +75,10 @@ Where:
 ## No AI attribution
 
 The fleet forbids AI-attribution markers in commit messages, PR
-descriptions, and inline review replies. The patterns blocked by
-`commit-message-format-guard` and reminded by `commit-pr-nudge`:
+descriptions, external MCP surfaces (Linear, Slack), and inline review
+replies. The patterns blocked by `no-github-ai-attribution-guard` (the
+GitHub-prose surface), `commit-message-format-guard` (the commit-message
+surface), and reminded by `commit-pr-nudge`:
 
 - `Generated with Claude` / `Generated with Anthropic` (any case)
 - `Co-Authored-By: Claude` / `Co-Authored-By:Claude`
@@ -80,6 +86,12 @@ descriptions, and inline review replies. The patterns blocked by
 - `<noreply@anthropic.com>` footer references
 
 The rule applies at draft time too. Rewrite the message to omit the strings before you run `git commit`.
+
+A commit subject also can't be a content-free placeholder: `no-placeholder-commit-subject-guard` blocks subjects like `wip`, `test`, `initial`, or `fixup` with no descriptive text.
+
+## Non-fleet repos: push and PR/issue/release creation need explicit confirmation
+
+Pushing to, or opening a PR/issue/release against, a repo outside the fleet roster is a different risk than doing the same inside a fleet member: there's no fleet git-side pre-push hook installed there, and a posted PR/issue/release goes out under the user's own `gh` identity where closing it doesn't fully un-publish it. `no-non-fleet-push-guard` blocks `git push` (resolved via `-C`/leading `cd`/cwd, same priority order both hooks share) when the target repo isn't in the fleet roster. `non-fleet-pr-issue-ask-guard` blocks `gh pr create` / `gh issue create` / `gh release create` against a non-fleet repo. Neither is lifted by a batched "do all N tasks" directive or captured plan text — each needs its own per-action confirmation.
 
 ## Bypass phrases
 
@@ -114,3 +126,5 @@ Defense in depth:
   carries the bad message.
 
 Two surfaces by design. A draft can sneak past the Stop hook because it only sees the most recent assistant turn. The PreToolUse gate sees every command at commit time.
+
+Adjacent hooks: `no-github-ai-attribution-guard` (AI attribution on GitHub prose surfaces), `no-placeholder-commit-subject-guard` (content-free commit subjects), `no-non-fleet-push-guard` (push to a non-fleet repo), `non-fleet-pr-issue-ask-guard` (PR/issue/release creation on a non-fleet repo).

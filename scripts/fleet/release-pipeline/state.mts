@@ -8,10 +8,12 @@
  *   (`loadState`, `saveState`) so tests round-trip against a temp dir.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
+
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 import type { StageId } from './stages.mts'
 
@@ -236,7 +238,7 @@ export function loadState(filePath: string): PipelineState | undefined {
  */
 export function saveState(filePath: string, state: PipelineState): void {
   mkdirSync(path.dirname(filePath), { recursive: true })
-  writeFileSync(filePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+  writeThroughMirrorLock(filePath, `${JSON.stringify(state, null, 2)}\n`)
 }
 
 /**

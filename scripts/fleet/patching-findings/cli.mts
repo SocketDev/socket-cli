@@ -13,7 +13,7 @@
  */
 
 import process from 'node:process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -26,6 +26,7 @@ import {
 } from './lib/patch-parse.mts'
 import type { PatchOutcome } from './lib/patch-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -65,7 +66,7 @@ export function main(argv: readonly string[]): number {
         outcomes,
         repo: optValue(rest, '--repo') ?? '.',
       })
-      writeFileSync(optValue(rest, '--out') ?? './PATCHES.md', md)
+      writeThroughMirrorLock(optValue(rest, '--out') ?? './PATCHES.md', md)
       const s = summarizeOutcomes(outcomes)
       process.stdout.write(
         `${s.total} findings → ${s.applied} applied, ${s.rejected} rejected, ${s.skipped} skipped. Run fix --all / check --all / test before opening the PR.\n`,

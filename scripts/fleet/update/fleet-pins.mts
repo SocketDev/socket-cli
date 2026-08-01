@@ -23,6 +23,7 @@ import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 import { isValidVersion } from '@socketsecurity/lib-stable/versions/parse'
 
+import { getCatalogHold } from '../constants/catalog-holds.mts'
 import { parseCatalogBlock } from '../lib/workspace-yaml.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
@@ -45,16 +46,19 @@ export interface FleetPinMirror {
 
 /**
  * One fleet-owned pin whose live value differs from canonical but must NOT be
- * mirrored: `not-newer` (the canonical side is already at or past the live
- * version — the cascade owns that direction) or `unversioned` (a value with no
- * extractable version, e.g. `catalog:`; never guess).
+ * mirrored: `held` (a declared hold in `constants/catalog-holds.mts` forbids
+ * advancing past a known-bad release), `not-newer` (the canonical side is
+ * already at or past the live version — the cascade owns that direction), or
+ * `unversioned` (a value with no extractable version, e.g. `catalog:`; never
+ * guess). `detail` carries the operator-readable why for a `held` skip.
  */
 export interface FleetPinSkip {
   readonly blockKey: FleetPinBlockKey
   readonly canonicalValue: string
+  readonly detail?: string | undefined
   readonly liveValue: string
   readonly name: string
-  readonly reason: 'not-newer' | 'unversioned'
+  readonly reason: 'held' | 'not-newer' | 'unversioned'
 }
 
 /**
@@ -187,6 +191,23 @@ export function isNewerPin(
   return gt(live, canonical)
 }
 
+/**
+ * True when mirroring `liveValue` upward would carry the pin past a declared
+ * hold. A hold is a deliberate stop, so a live value at or above it is drift
+ * to be reported — never truth to be adopted. Pure.
+ */
+export function isHeldBackPin(name: string, liveValue: string): boolean {
+  const hold = getCatalogHold(name)
+  if (!hold) {
+    return false
+  }
+  const live = pinnedVersionOf(liveValue)
+  if (live === undefined) {
+    return false
+  }
+  return gt(live, hold.heldAt)
+}
+
 function classifyDrift(
   plan: FleetPinPlan,
   blockKey: FleetPinBlockKey,
@@ -194,6 +215,22 @@ function classifyDrift(
   liveValue: string,
   canonicalValue: string,
 ): void {
+  // A declared hold outranks "newer wins". Without this the lockstep is a
+  // one-way ratchet: it mirrors an unwanted release upward into the canonical
+  // catalog on every run, silently undoing the hold a human just applied.
+  if (isHeldBackPin(name, liveValue)) {
+    const hold = getCatalogHold(name)!
+    plan.skips.push({
+      blockKey,
+      canonicalValue,
+      detail: `held at ${hold.heldAt} — ${hold.reason} Release when: ${hold.releaseWhen}`,
+      liveValue,
+      name,
+      reason: 'held',
+    })
+    return
+  }
+
   const newer = isNewerPin(liveValue, canonicalValue)
   if (newer === true) {
     plan.mirrors.push({ blockKey, canonicalValue, liveValue, name })

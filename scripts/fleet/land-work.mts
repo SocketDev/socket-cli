@@ -33,7 +33,7 @@ import {
 } from '../../.claude/hooks/fleet/_shared/landable.mts'
 import { acquireGitMutex, retryGit } from './_shared/git-mutex.mts'
 import { parsePorcelain } from './_shared/git-porcelain.mts'
-import { summarizeGroups } from './land-work/ai-summary.mts'
+import { odaiSubjects, summarizeGroups } from './land-work/ai-summary.mts'
 import { commitMessage } from './land-work/message.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { REPO_ROOT } from './paths.mts'
@@ -302,8 +302,9 @@ async function landGroup(
   cwd: string,
   group: CommitGroup,
   aiSummary?: string | undefined,
+  aiSubject?: string | undefined,
 ): Promise<boolean> {
-  const message = commitMessage(group, aiSummary)
+  const message = commitMessage(group, aiSummary, aiSubject)
   // `-A -- <paths>` so a DELETED path stages as a deletion — plain `git add`
   // errors "pathspec did not match" on removed files (cascade tombstones,
   // pruned hooks), stranding the whole group. Scoped to the pathspec, so it
@@ -422,6 +423,10 @@ export async function main(cwd: string = REPO_ROOT): Promise<number> {
   // Deterministic subject + file digest always stand; the floor-tier AI summary
   // is pure enrichment the land never waits on (empty map = digest-only body).
   const summaries = await summarizeGroups(cwd, groups)
+  // Keyless-only subject enrichment: an opt-in localAssist repo gets an
+  // on-device description for its multi-file subjects; every other repo (and any
+  // skip/failure) keeps the deterministic `update <areas>` subject.
+  const subjects = await odaiSubjects(cwd, groups)
   // Serialize concurrent landers (two sessions' Stop hooks firing together
   // race the shared .git/index). Failing to acquire is LOUD and non-fatal:
   // the other lander is committing the same repo; this session's work lands
@@ -437,7 +442,14 @@ export async function main(cwd: string = REPO_ROOT): Promise<number> {
   let failed = 0
   try {
     for (const g of groups) {
-      if (!(await landGroup(cwd, g, summaries.get(g.scope)))) {
+      if (
+        !(await landGroup(
+          cwd,
+          g,
+          summaries.get(g.scope),
+          subjects.get(g.scope),
+        ))
+      ) {
         failed += 1
       }
     }

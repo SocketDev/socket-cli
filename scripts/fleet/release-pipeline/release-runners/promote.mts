@@ -7,12 +7,13 @@
  *   release is created WITH them in one shot.
  */
 
-import { existsSync, writeFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { hashTarball } from '../../lib/verify-release-hashes.mts'
 import { formatReleaseGapFailure } from '../../_shared/release-gap-recovery.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 import {
   buildPtyInvocation,
   logger,
@@ -202,7 +203,7 @@ async function prepareStashedAssets(config: {
     }
   }
   const checksumsPath = path.join(cfg.cwd, 'checksums.txt')
-  writeFileSync(
+  writeThroughMirrorLock(
     checksumsPath,
     `sha1: ${checksums.sha1}  ${checksums.tarballName}\n` +
       `sha512-base64: ${checksums.sha512}  ${checksums.tarballName}\n`,

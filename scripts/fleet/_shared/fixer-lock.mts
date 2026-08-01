@@ -24,6 +24,8 @@ import process from 'node:process'
 
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
+import { withMirrorLockLiftedSync } from './mirror-lock.mts'
+
 /**
  * Env var the lock holder exports so its spawned children (fix.mts →
  * `pnpm run lint --fix`) skip re-acquisition instead of deadlocking.
@@ -134,7 +136,9 @@ export function acquireFixerLock(
   // Two attempts: the second runs only after a stale holder was swept.
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      writeFileSync(lockFile, payload, { flag: 'wx' })
+      withMirrorLockLiftedSync(lockFile, () =>
+        writeFileSync(lockFile, payload, { flag: 'wx' }),
+      )
       env[FIXER_LOCK_ENV] = String(pid)
       return {
         acquired: true,

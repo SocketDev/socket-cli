@@ -18,7 +18,7 @@
  *   --check) the badge is stale.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -33,6 +33,7 @@ import {
 } from '../lib/coverage-badge.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -92,9 +93,9 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
     return 1
   }
   mkdirSync(path.dirname(svgPath), { recursive: true })
-  writeFileSync(svgPath, nextSvg)
+  writeThroughMirrorLock(svgPath, nextSvg)
   if (nextReadme !== readme) {
-    writeFileSync(readmePath, nextReadme)
+    writeThroughMirrorLock(readmePath, nextReadme)
     logger.success(
       'gen/coverage-badge: migrated the README badge line to the local asset reference.',
     )

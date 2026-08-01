@@ -1,4 +1,4 @@
-/**
+/*
  * @file THE sanctioned npm browser session for every fleet tool that drives
  *   npmjs.com — one durable profile, one launch shape, one sign-in contract.
  *   Ported from socket-registry's proven configurator
@@ -16,16 +16,33 @@
  *   - ONE durable profile ({@link DEFAULT_PROFILE_DIR}) shared by every npm
  *     browser tool, so an operator signed in for the publish gate is signed in
  *     everywhere. A second per-tool profile means a second sign-in.
- *   - ONE launch shape: `launchPersistentContext(profileDir, { channel, headless:
- *     false })` and NOTHING else. No `args` array, no `chromiumSandbox` toggle,
- *     no automation flags. Playwright adds `--no-sandbox` by default; that
- *     banner is cosmetic and is NOT a sign-in blocker, so forcing the sandbox
- *     only diverges from the shape known to work.
+ *   - ONE launch shape: `launchPersistentContext(profileDir, { channel,
+ *     chromiumSandbox: true, headless, ignoreDefaultArgs:
+ *     ['--enable-automation', '--use-mock-keychain'] })` and NOTHING else. No
+ *     `args` array, and exactly those two ignored Playwright defaults:
+ *     `--enable-automation` sets `navigator.webdriver = true` — the standard
+ *     bot signal — and with it a fresh-profile npmjs.com login + OTP was
+ *     observed (2026-07-30) bouncing straight back to the signed-out landing
+ *     page, the session dropped live by the site (keychain corruption ruled
+ *     out by profile wipes). `--use-mock-keychain` writes a cookie store a
+ *     bare Chrome launch of the same profile can neither read nor add to, so
+ *     one stray manual launch would poison the session for every tool run.
+ *     `chromiumSandbox: true` is REQUIRED, not optional: Playwright defaults
+ *     the sandbox OFF and injects `--no-sandbox` itself, and current Chrome
+ *     refuses that flag outright (observed 2026-07-30 — the window opens and
+ *     the session is unusable). Sandbox ON is the only launch real Chrome
+ *     accepts.
  *   - SINGLE instance. A second Chrome on the same profile forces an ephemeral
  *     session, so a held profile is refused by name rather than silently
  *     producing a session that cannot persist.
- *   - The only auth signal is npm's own `/-/whoami`; the only auth failure
- *     reported is "signed out".
+ *   - The only auth signal is npm's own `/-/whoami` on the WEBSITE origin,
+ *     and the BODY decides — never the HTTP status. www.npmjs.com removed
+ *     the route (observed 2026-07-30): it answers 404 whose spiferack
+ *     envelope still carries the session — `user.name` a string when signed
+ *     in, `user: null` when signed out. Requiring a 200 reads every live
+ *     session as signed out until the sign-in timeout, which presents as
+ *     "login does not persist". The only auth failure reported is "signed
+ *     out".
  *   - A human-verification challenge is PAUSED for the operator with a visible
  *     elapsed/remaining countdown, NEVER retried on a backoff ladder: a blind
  *     retry against a bot challenge earns a rate limit, which then masquerades
@@ -34,6 +51,7 @@
  *     launch rules across the tree, so a new tool cannot re-derive its own.
  */
 
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { existsSync } from 'node:fs'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
@@ -118,20 +136,31 @@ export async function fetchInPage(
 }
 
 /**
- * The signed-in npm username via `/-/whoami`, or '' when the session is
- * signed out. The ONLY auth signal any consumer reads.
+ * The signed-in npm username via the website origin's `/-/whoami`, or ''
+ * when the session is signed out. The ONLY auth signal any consumer reads.
+ * The BODY decides, never the status: www.npmjs.com removed the route
+ * (observed 2026-07-30) and answers HTTP 404 whose spiferack envelope still
+ * carries the session — `{"message":"Route not found!","user":{"name":…}}`
+ * signed in, `"user":null` signed out. The registry-style
+ * `{"username":…}` shape is still accepted in case the route ever serves
+ * again, with no status requirement either. A destroyed execution context
+ * (status 0) has an empty body and reads as signed out, which callers
+ * already treat as retryable.
  */
 export async function resolveNpmUser(page: Page): Promise<string> {
-  const { body, status } = await fetchInPage(
+  const { body } = await fetchInPage(
     page,
     `${NPM_ORIGIN}/-/whoami`,
     'application/json',
   )
-  if (status !== 200) {
-    return ''
-  }
   try {
-    const parsed = JSON.parse(body) as { username?: unknown | undefined }
+    const parsed = JSON.parse(body) as {
+      user?: { name?: unknown | undefined } | null | undefined
+      username?: unknown | undefined
+    }
+    if (typeof parsed.user?.name === 'string') {
+      return parsed.user.name
+    }
     return typeof parsed.username === 'string' ? parsed.username : ''
   } catch {
     return ''
@@ -277,6 +306,63 @@ export async function waitForNpmSignIn(
 }
 
 /**
+ * The pid a Chrome SingletonLock symlink encodes, or undefined when the
+ * target has no readable `<host>-<pid>` shape. Pure; exported for tests.
+ */
+export function parseSingletonLockPid(target: string): number | undefined {
+  const match = /-(\d+)$/.exec(target)
+  if (!match) {
+    return undefined
+  }
+  const pid = Number(match[1])
+  return Number.isSafeInteger(pid) && pid > 0 ? pid : undefined
+}
+
+// Chrome's three per-profile singleton artifacts. A SIGTERM'd or crashed
+// Chrome leaves them behind, and the next launch then prints "Opening in
+// existing browser session" and exits — a phantom holder that burned ~30
+// minutes of launch bounces (2026-07-31). When the lock's pid is dead, the
+// files are trash, not a tenant.
+const SINGLETON_ARTIFACTS = [
+  'SingletonLock',
+  'SingletonSocket',
+  'SingletonCookie',
+]
+
+/**
+ * Remove stale singleton artifacts when NO live process holds the lock:
+ * reads the SingletonLock symlink's `<host>-<pid>` target, probes the pid,
+ * and clears all three artifacts if it is dead or unparseable. A live pid
+ * leaves everything in place for {@link profileInUseRefusal} to refuse
+ * honestly. Returns true when a stale set was cleared.
+ */
+export async function clearStaleSingletons(
+  profileDir: string,
+): Promise<boolean> {
+  const lockPath = path.join(profileDir, SINGLETON_LOCK)
+  let target: string
+  try {
+    target = await fs.readlink(lockPath)
+  } catch {
+    return false
+  }
+  const pid = parseSingletonLockPid(target)
+  if (pid !== undefined) {
+    try {
+      process.kill(pid, 0)
+      return false
+    } catch {
+      // Dead pid — the lock is stale; fall through to the cleanup.
+    }
+  }
+  for (let i = 0, { length } = SINGLETON_ARTIFACTS; i < length; i += 1) {
+    // eslint-disable-next-line no-await-in-loop -- three tiny unlinks, sequential by choice.
+    await safeDelete(path.join(profileDir, SINGLETON_ARTIFACTS[i]!))
+  }
+  return true
+}
+
+/**
  * The refusal for a profile another Chrome already holds, or undefined when
  * the profile is free to use. A second instance on one profile forces an
  * EPHEMERAL session — the sign-in appears to succeed and then evaporates — so
@@ -347,6 +433,15 @@ export async function openNpmBrowserSession(
   // never touches a real profile, and the operator's own Chrome must not make
   // the suite fail.
   if (!launch) {
+    // Heal a crashed holder first: a SIGTERM'd Chrome leaves its Singleton
+    // artifacts behind, and launching against them prints "Opening in
+    // existing browser session" and exits. Only a DEAD lock pid is cleaned;
+    // a live one falls through to the refusal below.
+    if (await clearStaleSingletons(profileDir)) {
+      logger.log(
+        'cleared stale Chrome singleton artifacts (their holder is dead) — proceeding.',
+      )
+    }
     const refusal = profileInUseRefusal({
       lockHeld: existsSync(path.join(profileDir, SINGLETON_LOCK)),
       profileDir,
@@ -362,12 +457,28 @@ export async function openNpmBrowserSession(
   const channel = process.env['SOCKET_BROWSER_CHANNEL'] || 'chrome'
   const doLaunch =
     launch ??
-    // The sanctioned shape: channel + headedness, nothing else. No args
-    // array, no sandbox toggle. See the file header.
+    // The sanctioned shape: channel + sandbox ON + headedness + the two
+    // ignored defaults below, nothing else. No args array. See the file
+    // header.
     (cfg =>
       chromium.launchPersistentContext(cfg.profileDir, {
         channel,
+        // REQUIRED. Playwright defaults the sandbox OFF and injects
+        // --no-sandbox itself; current Chrome refuses that flag outright
+        // (observed 2026-07-30), leaving the window open but the session
+        // unusable. Sandbox ON is the only launch real Chrome accepts.
+        chromiumSandbox: true,
         headless: cfg.headless,
+        // Drop two Playwright defaults that break a REAL npm session.
+        // --enable-automation sets navigator.webdriver = true, the standard
+        // bot signal; with it, a fresh-profile npmjs.com login + OTP bounced
+        // straight back to the signed-out landing page — the session dropped
+        // live by the site (observed 2026-07-30; keychain corruption ruled
+        // out by profile wipes). --use-mock-keychain writes a cookie store a
+        // bare Chrome launch of the same profile can neither read nor add
+        // to, so one stray manual launch would poison the session for every
+        // tool run.
+        ignoreDefaultArgs: ['--enable-automation', '--use-mock-keychain'],
       }))
   const context = await doLaunch({ headless, profileDir })
   try {

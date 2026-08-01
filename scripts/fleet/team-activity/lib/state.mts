@@ -5,10 +5,11 @@
  *   worst case is one tick that re-reports recent activity, never a crash.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { statePathFor } from './paths.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 
 import type { ScanState } from './types.mts'
 
@@ -35,5 +36,5 @@ export function loadState(configPath: string, nowIso: string): ScanState {
 export function writeState(configPath: string, state: ScanState): void {
   const statePath = statePathFor(configPath)
   mkdirSync(path.dirname(statePath), { recursive: true })
-  writeFileSync(statePath, JSON.stringify(state, undefined, 1))
+  writeThroughMirrorLock(statePath, JSON.stringify(state, undefined, 1))
 }

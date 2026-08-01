@@ -50,6 +50,10 @@ The guard checks three rules:
 Exit 1 on any violation. Registered in `scripts/fleet/check.mts` adjacent to
 `ai-spawns-have-paired-effort`.
 
+## Enforcement
+
+`scripts/fleet/check/fable-spawns-have-opus-fallback.mts`, run by `check --all`, gates all three static rules above. Exit 1 on any violation.
+
 ## Instrumentation (pending socket-lib Step 1)
 
 When `spawnAiAgent` gains `--output-format json` on the Fable branch:

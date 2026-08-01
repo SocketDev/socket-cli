@@ -2,7 +2,7 @@
 
 The CLAUDE.md `### Public-surface hygiene` section gives the headline invariants. This file is the full ruleset with rationale, hook references, and bypass surface.
 
-The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-nudge,public-surface-nudge,release-workflow-guard}/` and the rules below.
+The rules apply even when hooks are not installed. They're invariants, not enforcement-dependent. Enforced by `.claude/hooks/fleet/{private-name-nudge,public-surface-nudge,no-private-path-in-source-guard,no-private-ref-in-tests-docs-guard,release-workflow-guard}/` and the rules below.
 
 ## Customer / company / internal names
 
@@ -24,6 +24,10 @@ Scope is SOURCE-code files only (`.rs`/`.ts`/`.mts`/`.js`/`.go`/`.py`/`.c`/`.h`/
 
 Three surfaces enforce one rule (code is law): the edit-time `.claude/hooks/fleet/no-private-path-in-source-guard/` (bypass: `Allow private-path-in-source bypass`), the `socket/no-private-path-in-source` lint rule, and the commit-time `scripts/fleet/check/private-paths-are-absent.mts` full scan. The fix is always to remove the path from the comment and describe the constraint instead — not where a plan doc lives.
 
+## Private refs in tests and docs
+
+A separate surface covers a different leak shape: a unit-test or documentation file whose new content names a `SocketDev/<repo>` slug outside the fleet roster, a `linear.app` issue URL, or a Slack thread link. Tests and docs ship in public repos and survive history squashes, so a private repo name, ticket reference, or thread link in one of them is a durable leak even though it's not a source-code comment. Use fictional slugs (`acme/widgets`) in tests; omit internal references from docs. The fleet roster (`fleet-repos.json`) is the sole sanctioned place a private repo name appears, so roster membership is the public/private line this surface draws for org slugs — company and customer names stay with the `private-name-nudge` reminder above. Enforced by `.claude/hooks/fleet/no-private-ref-in-tests-docs-guard/` (bypass: `Allow private-ref-in-tests-docs bypass`, e.g. a doc legitimately citing a public non-fleet SocketDev repo).
+
 ## Neutral placeholders for test fixtures
 
 Pattern-matching tests, sample documentation, and example configs are tempting places to reach for a "real" package name (e.g. `eslint-plugin-react`, `react`, `lodash`). When the test exercises the _shape_ of a name rather than its identity, use the `acme-*` placeholder family — same convention as `Acme Inc` for company-name placeholders. This avoids tripping lint rules that flag references to specific package families (e.g. `socket/no-eslint-biome-config-ref` fires on `eslint-` prefixes even when the literal is a fixture, not a config ref). Recommended placeholder shapes:
@@ -41,7 +45,7 @@ Never put `SOC-123` / `ENG-456` / Linear URLs in code, comments, or PR text. Lin
 
 ## Publish / release / build-release workflows
 
-Never `gh workflow run|dispatch` against publish/release workflows. The user runs them manually. Bypass paths:
+Never `gh workflow run|dispatch` against publish/release workflows. The user runs them manually. Enforced by `.claude/hooks/fleet/release-workflow-guard/`. Bypass paths:
 
 - `gh workflow run -f dry-run=true`: the workflow must declare a `dry-run:` input AND have no force-prod override set.
 - `Allow workflow-dispatch bypass: <workflow>` typed verbatim: one phrase authorizes one dispatch.

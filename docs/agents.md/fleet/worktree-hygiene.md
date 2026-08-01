@@ -96,3 +96,31 @@ dangled `node_modules` symlinks.
 
 For background care, drive it on a loop: `/loop 6h /fleet:tidying-worktrees
 --fix`. Default invocation is dry-run; `--fix` acts.
+
+## Land fast: smallest chunks, push, never hand-dance a divergence
+
+"Smallest chunks, land ASAP" governs the whole loop, from the commit through the push:
+
+- **Never `git checkout` / `git switch` mid-queue.** Covered above under
+  branch discipline; repeated here because it is the top cause of a lost
+  in-flight commit.
+- **A local fast-forward is not landed.** Landing means the commit reaches
+  `origin`. A fast-forwarded local `main` that never gets pushed sits
+  unlanded on one machine.
+- **A diverged `main` gets `managing-worktrees land`, not a hand-rolled
+  cherry-pick.** When local and origin `main` have both moved, resolve it
+  through the `managing-worktrees` engine (see
+  [parallel-claude-sessions](parallel-claude-sessions.md#origin-main-is-never-authoritative-over-local-main)),
+  not by picking commits across branches by hand.
+
+## Enforcement
+
+- `.claude/hooks/fleet/commit-cadence-nudge/` — reminds to commit each logical step inside a worktree and pass the pre-merge gate before landing.
+- `.claude/hooks/fleet/dirty-worktree-stop-guard/` — blocks ending a turn with an uncommitted, untracked, or staged-but-uncommitted primary checkout.
+- `.claude/hooks/fleet/land-fast-nudge/` — fires when the default branch has diverged from origin and points at the `managing-worktrees land` engine.
+- `.claude/hooks/fleet/no-branch-reuse-nudge/` — reminds against committing onto a non-default branch that already has a remote upstream.
+- `.claude/hooks/fleet/no-orphaned-staging/` — blocks ending a turn with staged-but-uncommitted hunks.
+- `.claude/hooks/fleet/node-modules-staging-guard/` — blocks `git add -f` on `node_modules` / `package-lock.json` paths under `.claude/hooks/*/` or `.claude/skills/*/`.
+- `.claude/hooks/fleet/stale-node-modules-nudge/` — nudges a headless-safe `pnpm install` when `node_modules` looks stale after a worktree operation.
+- `.claude/hooks/fleet/unpushed-main-nudge/` — nags to push when local `main` is ahead of origin.
+- `.claude/hooks/fleet/worktree-remove-relink-nudge/` — nudges `pnpm i` after `git worktree remove` / `git worktree prune` to fix dangled `node_modules` links.

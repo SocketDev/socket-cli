@@ -33,7 +33,7 @@
 //
 // Usage: node scripts/fleet/check/action-pins-are-current.mts [--fix] [--quiet]
 
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -45,6 +45,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -446,7 +447,7 @@ export function applyFix(
     for (let i = 0, { length } = list; i < length; i += 1) {
       text = rewritePin(text, list[i]!.sha, head, comment)
     }
-    writeFileSync(abs, text)
+    writeThroughMirrorLock(abs, text)
     touched.add(file)
   }
   return [...touched].toSorted()

@@ -9,7 +9,6 @@
  *   the identical source rather than receiving a byte-mirrored one.
  */
 
-import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -18,6 +17,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from './paths.mts'
 import { SocketWheelhouseConfigSchema } from './socket-wheelhouse-schema.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -41,10 +41,9 @@ export function buildSocketWheelhouseSchemaDocument(): Record<string, unknown> {
 }
 
 export async function main(): Promise<void> {
-  writeFileSync(
+  writeThroughMirrorLock(
     outPath,
     JSON.stringify(buildSocketWheelhouseSchemaDocument(), null, 2) + '\n',
-    'utf8',
   )
 
   // Format the output through the package.json wrapper (it owns the config +

@@ -169,11 +169,16 @@ release than the remote's newest tag; the lockstep harness fetches tags before
 counting drift and reports drift UNKNOWN rather than a falsely-low count off a
 shallow clone. Full harness detail: [`lockstep.md`](lockstep.md).
 
+## Enforcement
+
+- `.claude/hooks/fleet/drift-check-nudge/` — nags after edits to known-drift surfaces.
+- `.claude/hooks/fleet/prefer-evergreen-target-nudge/` — flags a conservative `target`/`lib`.
+- `.claude/hooks/fleet/gitmodules-comment-guard/` — enforces `.gitmodules` `# name-version` annotations.
+- `.claude/hooks/fleet/uses-sha-verify-guard/` — enforces the `# <tag> (YYYY-MM-DD)` comment on a bumped third-party `uses:@sha`.
+- `.claude/hooks/fleet/workflow-uses-comment-guard/` — enforces the same comment shape at write time in workflow/composite files.
+- `.claude/hooks/fleet/latest-release-pin-guard/` — blocks a pin set to an older release than the remote's newest tag.
+
 ## See also
 
-- `.claude/hooks/fleet/drift-check-nudge/`
-- `.claude/hooks/fleet/prefer-evergreen-target-nudge/`
-- `.claude/hooks/fleet/gitmodules-comment-guard/`
-- `.claude/hooks/fleet/latest-release-pin-guard/`
 - `scripts/repo/sync-scaffolding/`: drift detection + auto-fix tooling (canonical in the fleet source repo).
 - [`lockstep.md`](lockstep.md): the upstream-drift harness for submodule pins + file forks.

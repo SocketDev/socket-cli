@@ -46,9 +46,27 @@ Now every consumer derives from the JSON:
   alphabetical) is the one thing not stored in the JSON, because it is cascade
   execution order, not roster data. It is re-applied, not re-listed.
 
+## Membership resolution: origin remote, not location
+
+Fleet tooling writes ONLY into roster members. Membership is not "lives under
+`~/projects`" — it is the destination repo's `origin` remote resolved against the
+roster JSON. A repo cloned to an unusual path is still a member if its `origin`
+matches an entry; a repo sitting under `~/projects` that isn't in the roster is
+not a member no matter where it's checked out. Resolving by remote instead of
+path keeps the roster the single source of truth for "is this a fleet repo,"
+instead of a second, path-shaped notion of membership drifting alongside it.
+
 ## Why
 
 A copy you keep in sync is a copy that falls out of sync. The cost lands later
 and somewhere else: a guard that stops matching, a cascade that skips a member, a
 release that ships the wrong list. One source removes the sync step. Nothing is
 left to keep in agreement.
+
+## Enforcement
+
+- `.claude/hooks/fleet/no-fleet-scope-in-non-member-guard/` — blocks fleet
+  tooling from writing into a repo whose `origin` remote doesn't resolve
+  against the roster.
+- `scripts/fleet/_shared/fleet-membership.mts` — the shared membership resolver
+  every fleet script and hook imports, so membership is decided in one place.

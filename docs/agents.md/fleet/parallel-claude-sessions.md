@@ -31,9 +31,11 @@ cd ../<repo>-<task>
 git worktree remove ../<repo>-<task>
 ```
 
-The `BASE` lookup resolves the remote's default branch. Usually `main`, but legacy repos still use `master`. Never hard-code one; see [Default branch fallback](../../../CLAUDE.md#default-branch-fallback).
+The `BASE` lookup resolves the remote's default branch. Usually `main`, but legacy repos still use `master`. Never hard-code one; see [Default branch resolution](default-branch-resolution.md).
 
 After `git worktree remove`, the branch lives in the primary repo's `.git/refs/heads/`. Push it from there if you still need it.
+
+Two hooks make the worktree requirement structural rather than advisory. `primary-checkout-branch-guard` (PreToolUse) blocks `git checkout -b|-B`/`git switch -c|-C`/`git switch <branch>`/`git checkout <branch>` run in the primary checkout. `primary-checkout-on-default-stop-guard` (Stop) catches the same drift after the fact by reading the actual on-disk branch at turn-end and blocking if the primary isn't on its default. Reading the branch at turn-end catches a checkout run inside a script or Makefile target, which slips past the PreToolUse hook. Both are primary-checkout-only: a linked worktree is the sanctioned home for feature branches and neither hook touches it. Bypass: `Allow off-default bypass`.
 
 ## Required for staging AND commits: surgical, smallest explicit set
 
@@ -76,7 +78,7 @@ Whatever the source, `git checkout -- <file>` / `git reset --hard` against work 
 
 ## Auto-landed commits are expected
 
-Every session runs the same hooks, and the fleet biases toward landing to local main often. So a commit can appear that you did not personally issue: an auto-lander (or an aligned session) grouped the dirty tree into a logical commit and landed it. That is the system working. Do not spend cycles reverse-engineering why a commit exists that you don't remember making. Run `whose-work` if you need to confirm it is local plus your identity, then keep going. Landing is recoverable: a local commit can be amended or reset to `HEAD~`; a phantom-collision stall is wasted work.
+Every session runs the same hooks, and the fleet biases toward landing to local main often. So a commit can appear that you did not personally issue: `auto-land-on-stop` (Stop) groups THIS session's own-work source into signed logical commits on local main at turn-end, skipping foreign, generated, and both-touched paths. That is the system working. Do not spend cycles reverse-engineering why a commit exists that you don't remember making. Run `whose-work` if you need to confirm it is local plus your identity, then keep going. Landing is recoverable: a local commit can be amended or reset to `HEAD~`; a phantom-collision stall is wasted work.
 
 ## Never reach into a sibling fleet repo's path
 
@@ -210,3 +212,14 @@ tool call stamps a start marker under
 budget is spent every further tool call blocks with a hand-off message. Sustained
 work belongs in a full Claude session. The user lifts it for one session by
 typing `Allow codex-long-session bypass`.
+
+## Enforcement
+
+- `.claude/hooks/fleet/no-revert-guard/` — blocks the forbidden-in-the-primary-checkout commands and the origin-ahead rewind.
+- `.claude/hooks/fleet/unpushed-main-nudge/` — nudges when local main sits unpushed ahead of origin.
+- `.claude/hooks/fleet/active-edits-ledger/` — records every actor's writes into a per-actor ledger.
+- `.claude/hooks/fleet/live-edit-collision-guard/` — blocks an edit whose target appears in a different live actor's ledger within the 5-minute window.
+- `.claude/hooks/fleet/primary-checkout-branch-guard/` — blocks a branch checkout/switch in the primary checkout.
+- `.claude/hooks/fleet/primary-checkout-on-default-stop-guard/` — blocks turn-end when the primary checkout drifted off its default branch.
+- `.claude/hooks/fleet/codex-session-budget-guard/` — blocks a Codex companion session past its 1-minute budget.
+- `.claude/hooks/fleet/auto-land-on-stop/` — lands this session's own-work source into signed logical commits at turn-end.

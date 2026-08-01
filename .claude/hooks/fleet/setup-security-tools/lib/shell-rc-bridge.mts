@@ -34,6 +34,7 @@ import process from 'node:process'
 import { MACOS_BREW_SECURITY_ENV } from '../../_shared/brew-supply-chain.mts'
 import { fleetEnvShellExports } from '../../_shared/fleet-env.mts'
 import { MACOS_PKG_AUTO_UPDATE_ENV } from '../../_shared/package-manager-auto-update.mts'
+import { sfwCaPosixExportLines } from '../../_shared/sfw-ca.mts'
 
 // Sentinels are intentionally simple — no env-var names in the
 // BEGIN/END lines so user search-replace on a token name can't
@@ -58,6 +59,7 @@ export function buildBlockBody(token: string): string {
   const brewSecurityExports = MACOS_BREW_SECURITY_ENV.map(
     knob => `export ${knob.name}=${shellSingleQuote(knob.value)}`,
   ).join('\n')
+  const sfwCaExports = sfwCaPosixExportLines().join('\n')
   return `# Token persisted by setup-security-tools install.mts.
 # Rotate via: node .claude/hooks/fleet/setup-security-tools/install.mts --rotate
 # Keychain copy still lives at: security find-generic-password -s socketsecurity -a SOCKET_API_KEY
@@ -75,7 +77,8 @@ ${autoUpdateExports}
 # Enforce Homebrew 6.0.0 supply-chain controls: require explicit tap trust and
 # refuse unchecksummed cask downloads. Knobs sourced from
 # _shared/brew-supply-chain.mts.
-${brewSecurityExports}`
+${brewSecurityExports}
+${sfwCaExports}`
 }
 
 /**

@@ -9,6 +9,7 @@ instruction the moment the phrase appears — no clarifying question needed.
 - **"land it"** — commit to the **LOCAL** default branch (`main`, falling back to `master`). Land = a local commit on main; it does NOT push to origin. Pushing to a shared trunk is a separate, explicitly-authorized step (gated by `push-protected-branch-guard`), never implied by "land". Not a side branch.
 - **"consolidate commits"** — regroup the commits since the previous bump (or a named base) into **logical commits**, one per concern, with a `chore: bump version to X.Y.Z` tip kept LAST. Run `node scripts/fleet/consolidate-commits.mts` (the `consolidating-commits` skill). It never means squash-to-one; that is `squashing-history`.
 - **"update `<socket-pkg>`" / "use `<socket-pkg>`"** — for any socket package (`socket-lib`, `socket-registry`, `socket-sdk-js`, …), this **includes the `-stable` alias form** (`@socketsecurity/lib-stable`, `@socketsecurity/registry-stable`, …). The bare name is shorthand for the package in all its consumed forms.
+- **"cascade `<target>`"**: sync one named slice to the fleet, either a leaf like `claude-md` or a composite like `foundationals`. **"dogfood `<target>`"**: sync that same slice into the wheelhouse's own live tree, as a self-sync. **"cascade `<target>` to `<repo>`"**: sync one named member only. All three run through `node scripts/repo/sync.mts <target…> [--dogfood|--fleet|--target <repo>] [--check]`; the registry of valid targets lives in `scripts/repo/constants/sync-targets.mts`. The `syncing-fleet` skill covers the workflow.
 
 ## Writing
 
@@ -38,3 +39,10 @@ unique, two-word about 88%, three-word about 96%, so an exported name should
 carry a domain word (`createStripeClient`, not `create`). The exported-name half
 is enforced by `socket/exported-name-has-domain-word`; the one-term-per-concept
 half is a review call.
+
+## Enforcement
+
+`.claude/hooks/fleet/reply-prose-nudge/` reminds an agent reply to identify
+the user by their git credentials and address them as "you"/"your" — no
+third-person references to "the user" or "the operator" in a reply the user
+is reading directly.

@@ -294,6 +294,17 @@ Work handed to a subagent, or done in a delegated session, meets the same bar as
 
 5. **No AI attribution in commits or PRs.** Commits and every GitHub prose surface carry no `Co-Authored-By`, `Assisted-by`, or "Generated with" attribution line. Enforcers: `no-commit-ai-attribution-guard` and `no-github-ai-attribution-guard` (`.claude/hooks/fleet/{no-commit-ai-attribution-guard,no-github-ai-attribution-guard}/`).
 
+## Variant analysis: don't close a High/Critical finding alone
+
+A High- or Critical-severity finding reaches you as a security scan result, a review comment, or a bug report. Closing it out covers the one instance in front of you. The same bug shape often repeats elsewhere in the repo: the same unsafe pattern copy-pasted into a sibling function, the same missing check in a parallel code path. Before marking the finding closed, search the repo for the same shape and fix every instance you find, not only the reported one.
+
+Four hooks reinforce different slices of this discipline:
+
+- `.claude/hooks/fleet/variant-analysis-nudge/` reminds to search for repeats when a High/Critical finding is about to be closed.
+- `.claude/hooks/fleet/excuse-detector/` catches labeling a repeat instance "out of scope" instead of fixing it.
+- `.claude/hooks/fleet/parallel-agent-spawn-nudge/` steers a repo-wide variant search toward a fan-out (see [Fanning out EDITING subagents](#fanning-out-editing-subagents-isolate-scope-to-one-unit-collect-deliberately) above) instead of one slow serial pass.
+- `.claude/hooks/fleet/clone-reviewed-repo-nudge/` (documented in [tooling](tooling.md#external-repo-clones)) nudges a local clone when the variant search reaches into an external repo.
+
 ## Compatibility note
 
 Codex is fleet-wide — the `codex` CLI is a fleet plugin. OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.

@@ -126,8 +126,11 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 
 | Layer | What |
 | --- | --- |
-| `anti-prose-guard` | Blocks doc/CHANGELOG/README writes with AI tells |
+| `anti-prose-guard` | Blocks doc/CHANGELOG/README writes with AI tells, including the framing-word ban from Anti-patterns above |
 | `convo-prose-nudge` | Nudges `gh pr/issue` body commands with AI scaffolding |
+| `changelog-entry-shape-nudge` | Nudges a `CHANGELOG.md` entry bullet that links no detail into a `docs/agents.md/` topic doc |
+| `no-description-aside-guard` | Blocks a package manifest `description` field ending in a listy parenthetical aside |
+| `prose-code-format-nudge` | Nudges a bare software identifier in prose (e.g. `rustls`) that should be a code span |
 | `prose` skill | Applies both modes when drafting/editing any human-facing text |
 | `.claude/rules/fleet/prose-style-and-doctrine.md` | Compact reference for the skill + rule docs |
 

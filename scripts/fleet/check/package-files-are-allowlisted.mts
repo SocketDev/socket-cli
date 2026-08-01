@@ -20,13 +20,7 @@
  *      Exit 0 = clean. Exit 1 = drift, with per-package finding lists.
  */
 
-import {
-  existsSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync stdin/stdout + typed string return matches the read-stdout-then-parse-JSON shape; v5 lib spawnSync omits 'encoding' from SpawnSyncOptions and returns string-or-Buffer.
@@ -35,6 +29,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -434,7 +429,7 @@ export function runCheck(repoRoot: string, fix = false): number {
           unknown
         >
         raw['files'] = canonical
-        writeFileSync(pkgPath, `${JSON.stringify(raw, null, 2)}\n`, 'utf8')
+        writeThroughMirrorLock(pkgPath, `${JSON.stringify(raw, null, 2)}\n`)
         fixed.push(`${pkg.name}: files = ${JSON.stringify(canonical)}`)
       }
       continue

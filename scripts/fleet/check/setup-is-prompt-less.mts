@@ -35,11 +35,12 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = console
 
@@ -721,7 +722,7 @@ function runFix(paths: FixPaths): void {
   for (let i = 0, { length } = plan.writes; i < length; i += 1) {
     const w = plan.writes[i]!
     mkdirSync(path.dirname(w.path), { recursive: true, mode: 0o700 })
-    writeFileSync(w.path, w.content, 'utf8')
+    writeThroughMirrorLock(w.path, w.content)
     for (let j = 0, l = w.changes.length; j < l; j += 1) {
       logger.error(`  changed ${w.path}: ${w.changes[j]!}`)
     }

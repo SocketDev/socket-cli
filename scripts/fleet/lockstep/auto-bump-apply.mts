@@ -11,11 +11,12 @@
  * mechanics live here so they are tested, not re-typed per run.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { readManifest } from './manifest.mts'
 
 import type { Manifest } from './types.mts'
@@ -219,7 +220,10 @@ export function writePinnedFields(
     }
   }
   const serialized = JSON.stringify(manifest, undefined, 2)
-  writeFileSync(manifestPath, trailingNewline ? `${serialized}\n` : serialized)
+  writeThroughMirrorLock(
+    manifestPath,
+    trailingNewline ? `${serialized}\n` : serialized,
+  )
 }
 
 // Land one resolved bump. Checkout the target tag in the submodule, resolve its

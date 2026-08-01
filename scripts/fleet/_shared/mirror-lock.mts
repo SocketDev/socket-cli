@@ -91,12 +91,20 @@ export function liftMirrorLockSync(filePath: string): void {
 }
 
 /**
- * Write `data` to a cascade-locked mirror file in one call: lift the read-only
- * lock, write, restore the prior mode (0444 stays 0444). A writable or missing
- * target writes untouched. This is the single sanctioned way for a
- * writeFileSync generator to (re)write a mirror file — a plain writeFileSync
- * EACCESes on a locked target, and every dispatch-dir writer routes through
- * here so the lift-around-write cannot be forgotten again.
+ * Write `data` to a file in one call: lift any read-only cascade lock, write,
+ * restore the prior mode (0444 stays 0444). A writable or missing target writes
+ * untouched.
+ *
+ * This is the STANDARD writer for `scripts/fleet/**`, not a mirror-only
+ * special case. A caller does not have to know whether its destination is a
+ * cascade mirror, which is the knowledge that keeps going missing: a plain
+ * writeFileSync EACCESes on a locked target, and the failure only surfaces on
+ * the run where that particular file happens to be locked. Routing every write
+ * through here removes the question.
+ *
+ * The cost on an unlocked target is one `statSync`; `chmod` runs only when the
+ * file is actually locked. That is noise against the I/O these generators
+ * already do, so there is no reason to reach for the raw `writeFileSync`.
  */
 export function writeThroughMirrorLock(
   filePath: string,

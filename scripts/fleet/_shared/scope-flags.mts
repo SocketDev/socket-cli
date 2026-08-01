@@ -46,3 +46,21 @@ export function resolveScopeMode(argv: readonly string[]): ScopeMode {
   }
   return 'modified'
 }
+
+// Explicit positional file paths → win over every scope mode (including
+// --all), tracked or brand-new. `getModifiedFiles`/`getStagedFiles` resolve
+// through `git diff`, which never surfaces an untracked (never-`git add`ed)
+// file, so a brand-new file passed explicitly on argv (`pnpm run fix
+// <new-file>`) was silently dropped from the git-diff-derived scope while the
+// scope-count log still reported success. Positional args (anything not
+// starting with `-`) win over the git-diff scope entirely, matching
+// `scripts/fleet/test.mts`'s `fileArgs()` convention: flags (scope flags,
+// `--fix`, `--quiet`/`--silent`) are filtered out, and what remains is treated
+// as file paths. Shared by lint.mts (re-exported for its existing consumers)
+// and fix.mts, which needs the same convention to decide whether a run is
+// scoped to named files without importing lint.mts's own CLI module —
+// importing it would also re-run its top-level argv/runner-construction side
+// effects.
+export function resolveExplicitFiles(argv: readonly string[]): string[] {
+  return argv.filter(a => !a.startsWith('-'))
+}

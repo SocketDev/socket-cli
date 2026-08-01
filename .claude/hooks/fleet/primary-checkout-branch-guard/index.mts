@@ -7,6 +7,11 @@
 // forbidden in the primary checkout — they yank HEAD out from under any other
 // session working in that same directory. Branch work goes in a `git worktree`.
 //
+// Detection, classification, effective-directory resolution, the sanctioned
+// restore-to-default carve-out, and the unified bypass all live in the shared
+// `_shared/branch-switch.mts` module — the SAME core its user-global sibling
+// `no-primary-branch-switch` consumes, so the two can never drift.
+//
 // What it catches (a `git` command in the primary checkout):
 //   - `git checkout -b <name>` / `git checkout -B <name>`  (create + switch)
 //   - `git switch -c <name>` / `git switch -C <name>`      (create + switch)
@@ -16,225 +21,43 @@
 //     the `-` shorthand still moves HEAD)
 //
 // What it ALLOWS, not branch ops:
-//   - `git checkout -- <file>` / `git checkout .` (file restore — has `--`
-//     or a `.` arg)
-//   - any of the above inside a LINKED worktree (the sanctioned place for
-//     branch work)
-//   - any of the above inside a SUBMODULE (`.git/modules/<name>`) — a submodule
-//     is a separate repository, and detaching one at its pinned ref is what the
-//     upstream-references doctrine requires
+//   - a file restore: `git checkout -- <file>` / `git checkout .`
+//   - switching TO the default branch, which is the sanctioned restore state
+//   - any of the above inside a LINKED worktree, the sanctioned place for
+//     branch work, or inside a SUBMODULE, which is a separate repository
 //   - `git checkout`/`switch` with no branch argument
 //
-// Effective directory: `git -C <path> checkout <branch>` runs the checkout in
-// <path>, so the guard resolves the `-C` target, against the session cwd, and
-// tests THAT for primary-ness — a worktree cwd can't launder a switch aimed at
-// the primary via `-C`.
-//
-// Why a guard, not just the doc rule: the CLAUDE.md clause listed the
-// prohibition but shipped no enforcer, so an agent created a `fix/...` branch
-// directly in the primary checkout while two sibling worktree sessions were
-// live. The fix landed via cherry-pick; this guard stops the branch from being
-// cut in the primary checkout at all.
+// Bypass (unified with no-primary-branch-switch — both guards fire on a primary
+// switch, so both honor the SAME phrases): `Allow primary-branch bypass` OR
+// `Allow branch switch`, typed by the human in a genuine user turn.
 //
 // Fails OPEN on its own errors (exit 0 + stderr log).
 
-import path from 'node:path'
-
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-
-import { actedOnPath } from '../_shared/fleet-context.mts'
-import { resolveDefaultBranch } from '../_shared/git-branch.mts'
+import {
+  branchSwitchBypassAllowed,
+  primaryBranchOp,
+} from '../_shared/branch-switch.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
-import { commandsFor } from '../_shared/shell-command.mts'
-import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
-// Pre-flight: the dispatcher imports + runs this guard only when the raw
-// command contains one of these substrings. `check` can return a block only
-// when `firstBranchOp` finds a `git checkout` / `git switch` segment whose args
-// include the literal `checkout` or `switch` token — so every blocking command
-// necessarily contains one of these. Complete set, no narrower trigger exists.
+// Pre-flight literal read textually by the build-time dispatch scanner. Mirrors
+// the canonical BRANCH_SWITCH_TRIGGERS in _shared/branch-switch.mts.
 export const triggers: readonly string[] = ['checkout', 'switch']
 
-// A `git checkout` arg list that's a working-tree / file restore rather than a
-// branch switch: `git checkout -- <file>` or `git checkout .`. Conservative —
-// anything ambiguous is treated as a branch (the guard is about NOT moving
-// HEAD in the primary checkout).
-function looksLikePathRestore(args: readonly string[]): boolean {
-  return args.includes('--') || args.includes('.')
-}
-
-// A ref that moves HEAD: a normal branch/commit name, no leading dash, or the
-// `-` shorthand for the previous branch (`git checkout -` / `git switch -`).
-// Without the `-` case, the previous-branch switch slips past the flag filter.
-function isSwitchTarget(arg: string): boolean {
-  return arg === '-' || !arg.startsWith('-')
-}
-
-/**
- * Inspect a single `git` command's args; return the branch operation it
- * performs, or undefined if it's not a branch create/switch.
- */
-export function branchOpKind(
-  args: readonly string[],
-): 'create' | 'switch' | undefined {
-  const sub = args.find(a => a === 'checkout' || a === 'switch')
-  if (!sub) {
-    return undefined
-  }
-  const rest = args.slice(args.indexOf(sub) + 1)
-  // Create-and-switch flags on either subcommand.
-  if (
-    rest.includes('-b') ||
-    rest.includes('-B') ||
-    rest.includes('-c') ||
-    rest.includes('-C')
-  ) {
-    return 'create'
-  }
-  if (sub === 'switch') {
-    // `git switch <name>` (or `git switch -`) — moving to another branch. A
-    // bare `git switch` with only flags has no target → ignore.
-    const target = rest.find(isSwitchTarget)
-    return target ? 'switch' : undefined
-  }
-  // sub === 'checkout': a branch switch only when there's a target arg that
-  // isn't a file-restore form. `--`/`.` guards the file-restore case, so a lone
-  // `-` here is the previous-branch shorthand, not a filename.
-  if (looksLikePathRestore(rest)) {
-    return undefined
-  }
-  const target = rest.find(isSwitchTarget)
-  return target ? 'switch' : undefined
-}
-
-// The three checkout shapes a `git rev-parse --git-dir` result can name. A
-// linked worktree resolves under `.git/worktrees/<name>`, a submodule under
-// `.git/modules/<name>`, and everything else is the repo's own `.git`.
-export type CheckoutKind = 'primary' | 'submodule' | 'worktree'
-
-// True when the git-dir sits in `<repo>/.git/<sub>/…`. Both the absolute form
-// git reports from a worktree or submodule and the relative `.git` form it
-// reports from a repo root are accepted, so the classifier never depends on
-// which of the two git chose.
-function gitDirHasSubtree(gitDir: string, sub: string): boolean {
-  const p = normalizePath(gitDir)
-  return p.includes(`/.git/${sub}/`) || p.startsWith(`.git/${sub}/`)
-}
-
-/**
- * Classify a `git rev-parse --git-dir` result. A SUBMODULE is its own case: its
- * git-dir lives under the superproject's `.git/modules/`, which contains
- * neither `/.git/worktrees/` nor a plain repo `.git`, so a two-case
- * primary-vs-worktree test answers "primary" and blocks the detached checkout
- * the upstream-references doctrine requires (`git -C upstream/<name> checkout
- * --detach <ref>` is how a gitlink-less reference is pinned).
- */
-export function checkoutKindForGitDir(gitDir: string): CheckoutKind {
-  if (gitDirHasSubtree(gitDir, 'worktrees')) {
-    return 'worktree'
-  }
-  if (gitDirHasSubtree(gitDir, 'modules')) {
-    return 'submodule'
-  }
-  return 'primary'
-}
-
-/**
- * True when `cwd` is the PRIMARY checkout — neither a linked worktree nor a
- * submodule. Branch work in a worktree is the sanctioned path, and a submodule
- * checkout is a different repository entirely, so neither is this guard's
- * business.
- */
-export function isPrimaryCheckout(cwd: string): boolean {
-  const r = spawnSync('git', ['rev-parse', '--git-dir'], {
-    cwd,
-    timeout: spawnTimeoutMs(5000),
-  })
-  if (r.status !== 0) {
-    // Not a git repo, or git unavailable — nothing to guard, fail open.
-    return false
-  }
-  return checkoutKindForGitDir(String(r.stdout).trim()) === 'primary'
-}
-
-// `git -C <path> ...` runs the subcommand in <path>. Extract that path so a
-// branch op aimed at the primary via `-C` is judged by the target, not the
-// possibly worktree, session cwd.
-function dashCDir(args: readonly string[]): string | undefined {
-  const i = args.indexOf('-C')
-  return i >= 0 && i + 1 < args.length ? args[i + 1] : undefined
-}
-
-// The ref a branch op moves HEAD to: the name after `-b/-B/-c/-C` for a create,
-// else the pathspec-less positional target of a switch/checkout. Used to carve
-// out switching TO the default branch (always safe — it's the sanctioned state).
-export function branchTarget(args: readonly string[]): string | undefined {
-  const sub = args.find(a => a === 'checkout' || a === 'switch')
-  if (!sub) {
-    return undefined
-  }
-  const rest = args.slice(args.indexOf(sub) + 1)
-  for (const flag of ['-b', '-B', '-c', '-C']) {
-    const i = rest.indexOf(flag)
-    if (i >= 0 && i + 1 < rest.length) {
-      return rest[i + 1]
-    }
-  }
-  if (looksLikePathRestore(rest)) {
-    return undefined
-  }
-  return rest.find(isSwitchTarget)
-}
-
-export function firstBranchOp(command: string):
-  | {
-      kind: 'create' | 'switch'
-      dashC?: string | undefined
-      target?: string | undefined
-    }
-  | undefined {
-  for (const c of commandsFor(command, 'git')) {
-    const kind = branchOpKind(c.args)
-    if (kind) {
-      const dashC = dashCDir(c.args)
-      const target = branchTarget(c.args)
-      return {
-        kind,
-        ...(dashC === undefined ? {} : { dashC }),
-        ...(target === undefined ? {} : { target }),
-      }
-    }
-  }
-  return undefined
-}
-
 export const check = bashGuard((command, payload) => {
-  const op = firstBranchOp(command)
+  const op = primaryBranchOp(command, payload)
   if (!op) {
+    // No branch op, a worktree/submodule/non-repo target, or the sanctioned
+    // restore-to-default — nothing to block.
     return undefined
   }
-  // Effective dir: honor a subshell `cd` in the command (actedOnPath), THEN a
-  // `-C <path>` on the git op relative to that. Previously only `-C` was
-  // honored, so a `(cd <other-repo> && git switch x)` was judged against the
-  // session cwd, not the repo the switch actually targets.
-  const baseCwd = actedOnPath(payload)
-  const cwd = op.dashC ? path.resolve(baseCwd, op.dashC) : baseCwd
-  if (!isPrimaryCheckout(cwd)) {
-    // Branch work in a linked worktree is exactly what the rule wants.
-    return undefined
-  }
-  // Switching TO the default branch in the primary is always safe — it's the
-  // sanctioned state, and primary-checkout-on-default-stop-guard REQUIRES it, so
-  // the restore path must not be blocked, else the two guards deadlock.
-  if (op.kind === 'switch' && op.target === resolveDefaultBranch(cwd)) {
+  if (branchSwitchBypassAllowed(payload)) {
     return undefined
   }
   const verb = op.kind === 'create' ? 'Creating' : 'Switching'
   return block(
     [
       `[primary-checkout-branch-guard] Blocked: ${verb} a branch in the PRIMARY checkout.`,
-      `  Where:  ${cwd}`,
+      `  Where:  ${op.dir}`,
       `  Mantra: branch work goes in a git worktree — NEVER move HEAD in the primary.`,
       `  Why:    parallel Claude sessions share this .git/; switching HEAD here yanks`,
       `          the tree out from under sibling sessions and lands the next commit`,
@@ -245,13 +68,14 @@ export const check = bashGuard((command, payload) => {
       `  then work inside that dir (its branch is isolated from the primary).`,
       ``,
       `  To proceed here anyway, the user must type the EXACT phrase in a new`,
-      `  message:  Allow primary-branch bypass`,
+      `  message:  Allow primary-branch bypass   (or: Allow branch switch)`,
     ].join('\n'),
   )
 })
 
 export const hook = defineHook({
-  bypass: ['primary-branch'],
+  bypass: ['primary-branch', 'branch-switch'],
+  bypassMode: 'manual',
   check,
   event: 'PreToolUse',
   matcher: ['Bash'],

@@ -73,3 +73,13 @@ run cannot skip, on any machine. The `enforcement:` disposition makes "is this
 lesson actually enforced?" a mechanically answerable question. The recurrence
 ledger closes the other half: it makes "has this lesson earned codification yet?"
 answerable from evidence instead of memory.
+
+## Enforcement
+
+- `.claude/hooks/fleet/compound-lessons-nudge/` — flags a lesson that has recurred across sessions per the recurrence ledger, escalating the nudge to "codify it this turn."
+- `.claude/hooks/fleet/dated-citation-guard/` — blocks a memory or doc citation that names a hook/script path without a matching enforcement disposition.
+- `.claude/hooks/fleet/memory-codify-nudge/` — save-moment nudge (see "The three surfaces" above).
+- `.claude/hooks/fleet/memory-enforcement-stamp-guard/` — blocks writing a codifiable memory entry (`feedback` / `project`) whose frontmatter has no `enforcement:` line, or whose value isn't one of `<ref>`, `deferred #<task>`, or the `n/a` form with a stated reason.
+- `.claude/hooks/fleet/new-hook-claude-md-guard/` — blocks landing a new hook with no matching CLAUDE.md bullet; the other direction of this rule, since a hook with no rule pointing at it is as orphaned as a rule with no hook.
+- `.claude/hooks/fleet/uncodified-lesson-nudge/` — turn-end nudge (see "The three surfaces" above).
+- `scripts/fleet/check/memories-are-codified.mts` — the audit described above, run by `check --all`.

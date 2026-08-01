@@ -132,6 +132,8 @@ const DORMANT_RULES: Readonly<Record<string, string>> = Object.assign(
   {
     'no-lib-barrel-import':
       'gated until the fleet-wide @socketsecurity/lib[-stable]/errors → /errors/message migration completes; activating at error now red-walls the unmigrated fleet repos (~967 sites). Flip active per-repo after each migrates.',
+    'prefer-mirror-lock-write':
+      'scoped via oxlintrc overrides to the modules that import _shared/mirror-lock.mts, not activated fleet-wide — a top-level "error" would flag the ~87 legitimate non-mirror writeFileSync/copyFileSync call sites across scripts/fleet that have nothing to do with the cascade lock.',
   },
 ) as Record<string, string>
 

@@ -23,3 +23,14 @@ Every such call must name BOTH `model` and `effort`. A spread profile like `...A
 The default is the floor: the cheapest model (`claude-haiku-4-5`, per `scripts/fleet/constants/model-pricing.json`) and the lowest effort (`low`). Spending above the floor is a real cost decision. A pricier model literal, or an effort literal above `low`, must be justified by a comment adjacent to the call. The comment can sit inside the options object or on the line above the call. When the model or effort comes from a constant or an options field rather than a literal, the value cannot be floor-checked statically, so only the pin-both rule applies there.
 
 Enforced by `scripts/fleet/check/ai-spawns-have-paired-effort.mts` (run by `check --all`).
+
+## Every `template/` edit needs a same-turn dogfood cascade
+
+An edit under `template/` is a fleet-canonical source. It has no effect on this repo's own live `.claude/` tree until it's cascaded into the wheelhouse's own checkout: `node scripts/repo/sync-scaffolding/cli.mts --target . --fix`. Doing that in the same turn as the edit is the point: a `template/` change left un-cascaded for a later turn is a change nobody has actually run yet, including the author.
+
+This is a token-spend concern, not only a correctness one, because the cheap way to satisfy it is a small deterministic sync command, not a fresh AI pass re-deriving what changed. Two nudges plus one guard cover it:
+
+- `.claude/hooks/fleet/agents-skills-mirror-nudge/` — reminds when an agent/skill definition under `template/` has no matching cascade.
+- `.claude/hooks/fleet/dogfood-cascade-nudge/` — reminds after a `template/` edit with no same-turn `sync-scaffolding` run.
+- `.claude/hooks/fleet/token-spend-guard/` — the model/effort dial covered above, so the cascade itself runs at floor cost.
+- `scripts/fleet/check/ai-spawns-have-paired-effort.mts` — the audit gate, run by `check --all`.

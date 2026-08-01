@@ -2,6 +2,19 @@
 
 Companion to the `### Version bumps` rule in `template/base/CLAUDE.md`. The inline section gives the headline. This file is the ordered sequence, the CHANGELOG filter, and the rationale.
 
+## The version number is the user's call, never the agent's
+
+The USER names the target version (`vX.Y.Z`) or the release level
+(patch/minor/major). An agent never invents or derives that decision on its
+own — `bump.mts --dry-run` is always open (it only prints the evidence), but
+a WRITE run needs the user's naming first. `bump-defers-to-release-guard`
+(PreToolUse) blocks a non-dry-run `bump.mts` invocation and a bare
+`npm|pnpm|yarn version <arg>` write, and requires `Allow release-bump bypass`
+after the version has been named; a major bump additionally requires
+`Allow major-bump bypass`. In CI, major happens only when a human manually
+selects it on the release workflow's dispatch form — `bump.mts` itself never
+derives major from commit types.
+
 ## The sequence (order matters)
 
 When the user asks for a version bump (`bump to vX.Y.Z`, `tag X.Y.Z`,
@@ -129,6 +142,35 @@ Agents must not publish locally (`npm publish`, `pnpm stage publish`,
 step remains `publish-pipeline.mts --approve`: the 2FA promote, then the
 tag + immutable GH release cut LAST behind registry liveness.
 
+## A version bump NEVER travels through a pull request
+
+The bump commit lands **directly on the default branch**. Locally that is what
+the release pipeline's bump stage already does; in CI the release App commits
+the bumped `package.json` + `CHANGELOG.md` through the GitHub git-objects API
+and then fast-forwards the default branch to that exact commit
+(`promoteReleaseBranch` in `scripts/fleet/publish-infra/release-branch.mts`).
+
+Opening a PR for the bump is a defect, not a workflow. A PR needs branch
+protection to be satisfied before anything merges, so the bump sits behind
+review requirements, status checks, and an auto-merge queue that a
+freshly-created branch cannot satisfy — `enablePullRequestAutoMerge` fails with
+`Pull request Branch does not have required protected branch rules`, the run
+dies, and the publish never happens. The version is already decided by the
+committed hint and the content is machine-generated, so there is nothing for a
+reviewer to approve.
+
+`no-version-bump-pr-guard` blocks the shape at the source. It refuses any
+command that opens a PR whose head branch is bump-shaped
+(`npm-publish-v1.2.3`, `release-v1.2.3`, `bump-1.2.3`, anything carrying
+`version-bump`) or whose title is bump-shaped (`chore: bump version to 1.2.3`,
+`chore(release): 1.2.3`, any `bump version` phrasing) — `gh pr create` in every
+flag spelling, `gh api …/pulls`, and a raw REST `POST /repos/*/pulls`. A normal
+feature PR (`feat/foo`, `fix: thing`) is untouched. Bypass with
+`Allow version-bump-pr bypass`.
+
+The release App holds `contents: write` and is on the default branch's
+push-bypass allowlist, so the fast-forward needs no PR and no human hand-land.
+
 ## The bump base is the last PUBLISHED version, never the manifest
 
 `bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`
@@ -144,6 +186,43 @@ The `version-is-not-ahead-of-published` check is the release-tier gate: it fails
 when the manifest is more than one valid bump ahead of the published latest, and
 fails open (no published version / registry unreachable) so offline lint lanes
 never trip it.
+
+## A placeholder version releases 0.1.0 first
+
+A package that has never shipped still carries the placeholder version its
+scaffolding wrote: `0.0.0`, or a `X.Y.Z-prerelease` such as the
+`0.1.0-prerelease` an envrypt-shaped workspace keeps in its root `Cargo.toml`
+`[workspace.package]`. Its first real release is **`0.1.0`** — not a
+commit-derived bump, and not `1.0.0`. `@socketsecurity/facts` sat at `0.0.0`
+and shipped `0.1.0`; `@socketsecurity/scan-patterns` follows the same path.
+
+The commit-type heuristic cannot answer in that state. With no released base,
+the whole history is in range, so a single `feat!` asks for a major, an
+all-`fix` stream asks for `0.0.1`, and an all-`chore` stream asks for nothing
+at all — three wrong answers for one first cut.
+
+`decidePlaceholderRelease` in `scripts/fleet/bump/placeholder-release.mts` owns
+the decision. It is pure over three facts `bump.mts` collects: whether the
+release anchor resolved a prior release, the CHANGELOG's existing version
+sections, and the version-source manifest version. All three must say "nothing
+shipped" before the default applies, so a repo with real history is never
+mistaken for a fresh one.
+
+What the operator sees:
+
+| State | Default | Output |
+| --- | --- | --- |
+| Placeholder, no `--release-as` | `0.1.0` | The detected state, why `0.1.0`, and that `--release-as` overrides |
+| Placeholder, `--release-as <level\|X.Y.Z>` | the named version | The named version is honored over the `0.1.0` default |
+| Placeholder, named version below `0.1.0` | the named version | A loud warning that a placeholder conventionally starts at `0.1.0`, then it proceeds |
+| Already released | unchanged | Nothing — the commit-derived path is untouched |
+
+The version stays the OWNER's decision: this moves the DEFAULT only. An
+explicit `--release-as` always wins, a sub-`0.1.0` choice warns but never
+blocks, and `--dry-run` prints the identical reasoning before anything is
+written. In placeholder state a level counts up from zero, so
+`--release-as minor` lands `0.1.0` rather than skipping past the `0.1.0` a
+`0.1.0-prerelease` manifest never shipped.
 
 ## The bump happens exactly once
 
@@ -274,6 +353,9 @@ tip-of-main release, which a backfill is not.
 ## See also
 
 - `.claude/hooks/fleet/version-bump-order-guard/`: enforces the bump-at-tip + tag-after-bump ordering.
+- `.claude/hooks/fleet/bump-defers-to-release-guard/`: blocks an agent-driven version bump ahead of the user naming it.
 - `.claude/hooks/fleet/release-workflow-guard/`: blocks `gh workflow run` dispatches that aren't dry-run.
+- `.claude/hooks/fleet/immutable-release-guard/`: blocks the single-call `gh release create <tag> <files>` shape in a workflow file.
+- `.claude/hooks/fleet/release-tag-tied-guard/`: allows `gh release create <ref>` only when `<ref>` is an existing pushed/local tag with no `--target`, so a release can never mint an arbitrary, unreviewed tag on the fly.
 - `scripts/fleet/check/version-is-not-ahead-of-published.mts`: release-tier gate that fails when package.json is bumped more than one release past the published latest (the skip-risk state).
 - [`immutable-releases.md`](immutable-releases.md): every GitHub Release that lands as a result of this sequence ships immutable (Sigstore release attestation, asset lock, tag protection). The release workflow MUST use the 3-step draft → upload → publish pattern; single-call `gh release create <tag> <files>` is forbidden.

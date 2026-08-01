@@ -71,6 +71,31 @@ test. Never dial a real host from a `Test*` function.
 Mock the HTTP client interface, or stand up a loopback fixture server the test
 controls. Never reach a real host from a unit test.
 
+## Never background a test/build/commit run
+
+A test or build run, and the `git commit`/`rebase`/`merge`/`cherry-pick` that
+triggers the pre-commit test reminder, must run in the FOREGROUND. Backgrounding
+one via `Bash(run_in_background: true)` hides the run's completion, so the
+operator checks too early, sees it "still going", and reaches for a `pkill`/
+`kill` that tears down a mid-hook process — leaving a stale `.git/index.lock`
+and orphaned worker processes behind. `.claude/hooks/fleet/no-premature-commit-kill-guard/`
+blocks both halves: backgrounding a `git commit`/`rebase`/`merge`/`cherry-pick`,
+and a `pkill`/`kill`/`killall` targeting a `git commit`/`git push`, a
+pre-commit/pre-push hook process, or a `vitest` run (the worker-scoped
+`vitest/dist/workers` reap is exempt).
+
+Two Stop-hooks clean up what still accumulates: `stale-process-sweeper` reaps
+orphaned Node test/build workers that lost their parent, and `sweep-ds-store`
+removes stray `.DS_Store` files created mid-session. `no-hook-cmd-regex-guard`
+blocks a new regex literal parsing a shell command inside `.claude/hooks/**`,
+forcing the shared AST-based `shell-command.mts` parser instead of a fragile
+pattern match.
+
+`no-unmocked-ai-guard` is the AI-surface sibling of `no-unmocked-net-guard`: it
+blocks a test file that calls the fleet's AI-spawn helper (`spawnAiAgent`) with
+no `vi.mock(` in the same content, since a real model call from a test is slow,
+costly, and non-deterministic in the same way a live HTTP call is.
+
 ## Defense in depth
 
 Three layers enforce this. Each catches what the others miss.

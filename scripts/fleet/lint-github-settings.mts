@@ -29,7 +29,7 @@
  *   500-line soft cap.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -51,6 +51,7 @@ import type {
   RepoApiPayload,
 } from './lint-github-settings/types.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 // Inline path equivalent of the wheelhouse template's paths.mts helper.
 // `lint-github-settings.mts` cascades into fleet repos whose per-package
@@ -141,7 +142,7 @@ export function writeCache(
   if (!existsSync(cacheDir)) {
     mkdirSync(cacheDir, { recursive: true })
   }
-  writeFileSync(cacheFile, JSON.stringify(entry, null, 2) + '\n')
+  writeThroughMirrorLock(cacheFile, JSON.stringify(entry, null, 2) + '\n')
 }
 
 export function applyFixes(repo: string, findings: readonly Finding[]): number {

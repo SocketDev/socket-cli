@@ -87,6 +87,7 @@ import preferFindRepoRoot from './fleet/prefer-find-repo-root/index.mts'
 import preferFindUpPackageJson from './fleet/prefer-find-up-package-json/index.mts'
 import preferFunctionDeclaration from './fleet/prefer-function-declaration/index.mts'
 import preferLibVersionsOverSemver from './fleet/prefer-lib-versions-over-semver/index.mts'
+import preferMirrorLockWrite from './fleet/prefer-mirror-lock-write/index.mts'
 import preferMockImport from './fleet/prefer-mock-import/index.mts'
 import preferNodeBuiltinImports from './fleet/prefer-node-builtin-imports/index.mts'
 import preferNonCapturingGroup from './fleet/prefer-non-capturing-group/index.mts'
@@ -202,6 +203,7 @@ const plugin = {
     'prefer-find-up-package-json': preferFindUpPackageJson,
     'prefer-function-declaration': preferFunctionDeclaration,
     'prefer-lib-versions-over-semver': preferLibVersionsOverSemver,
+    'prefer-mirror-lock-write': preferMirrorLockWrite,
     'prefer-mock-import': preferMockImport,
     'prefer-node-builtin-imports': preferNodeBuiltinImports,
     'prefer-non-capturing-group': preferNonCapturingGroup,

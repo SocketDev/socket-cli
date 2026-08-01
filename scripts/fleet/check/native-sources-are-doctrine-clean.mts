@@ -262,12 +262,31 @@ export function lockstepPortRoots(repoRoot: string): string[] {
   return [...roots].toSorted()
 }
 
+/**
+ * Whether `dir` is the fleet's nested-worktree root (`.claude/worktrees`).
+ * Matched as a path SEGMENT PAIR, not a bare basename: `worktrees` alone is a
+ * plausible name for a real source directory, so skipping it everywhere would
+ * silently shrink the scanned set.
+ */
+function isNestedWorktreeRoot(dir: string): boolean {
+  const unix = normalizePath(dir)
+  return unix.endsWith('/.claude/worktrees') || unix === '.claude/worktrees'
+}
+
 function walk(dir: string, out: string[]): void {
   for (const name of readdirSync(dir)) {
     if (SKIP_DIRS.has(name)) {
       continue
     }
     const full = path.join(dir, name)
+    // A nested git worktree is a DIFFERENT branch's checkout. Its files are not
+    // this checkout's source, so a finding there blames the wrong tree — and its
+    // own node_modules holds a pnpm parent-link cycle
+    // (`<pkg>/test/node_modules/@scope/<pkg> -> ../../..`) that recurses until
+    // scandir throws ENAMETOOLONG.
+    if (isNestedWorktreeRoot(full)) {
+      continue
+    }
     // lstat first: a dangling symlink (sparse submodule checkout, reaped
     // build output) must be SKIPPED, not crash the whole gate on statSync.
     const lst = lstatSync(full)

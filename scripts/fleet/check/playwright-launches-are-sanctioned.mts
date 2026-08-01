@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file `check --all` gate: every playwright launch in the tree goes through the
  *   sanctioned session module, with no automation flags and no bare
  *   `chromium.launch`. Local and offline — a text scan, lint-style.
@@ -11,11 +11,21 @@
  *   demonstrably works (ported from socket-registry's proven configurator).
  *   The rules:
  *
- *   - **No sandbox or automation flags.** An `args:` array carrying
+ *   - **No sandbox-disabling or automation flags.** An `args:` array carrying
  *     `--no-sandbox` (or `--disable-*` automation flags) and any
- *     `chromiumSandbox:` setting are both refused. Playwright's own default
- *     already passes `--no-sandbox`; restating or inverting it only diverges
- *     from the proven shape, and the flag banner it produces is cosmetic.
+ *     `chromiumSandbox:` value other than `true` are refused. Playwright
+ *     defaults the sandbox OFF and injects `--no-sandbox` itself — a flag
+ *     current Chrome refuses outright (observed 2026-07-30: the window opens
+ *     and the session is unusable) — so `chromiumSandbox: true` is required
+ *     in the sanctioned launch, not merely permitted.
+ *   - **Ignored default args are pinned.** The sanctioned launch drops exactly
+ *     two Playwright defaults: `--enable-automation` (sets
+ *     navigator.webdriver = true, the bot signal a fresh npmjs.com sign-in was
+ *     observed being dropped on, 2026-07-30) and `--use-mock-keychain` (writes
+ *     a cookie store no bare Chrome launch of the same profile can share).
+ *     Any other `ignoreDefaultArgs` value — a different list, extra entries,
+ *     or `true`, which drops every default — is refused everywhere, allowlist
+ *     included.
  *   - **Persistent context only.** A bare `chromium.launch(` gets a fresh
  *     throwaway profile, so an operator's npm session cannot persist. Use
  *     `launchPersistentContext` on the durable profile.
@@ -47,6 +57,21 @@ const logger = getDefaultLogger()
  */
 export const SANCTIONED_SESSION_MODULE =
   'scripts/fleet/publish-infra/npm/browser-session.mts'
+
+/**
+ * The ONLY Playwright defaults the sanctioned launch may drop, and the only
+ * legal `ignoreDefaultArgs` value anywhere in the tree. `--enable-automation`
+ * sets `navigator.webdriver = true` — the bot signal a fresh npmjs.com
+ * sign-in was observed being dropped on (2026-07-30, login + OTP bounced to
+ * signed-out in a fresh profile; keychain corruption ruled out by profile
+ * wipes). `--use-mock-keychain` writes a cookie store no bare Chrome launch
+ * of the same profile can read or add to, so one stray manual launch would
+ * poison the session for every tool run.
+ */
+export const SANCTIONED_IGNORED_DEFAULT_ARGS: readonly string[] = [
+  '--enable-automation',
+  '--use-mock-keychain',
+]
 
 /**
  * Files allowed to call a playwright launch directly, each with the reason it
@@ -82,7 +107,11 @@ export const SCAN_GLOBS: readonly string[] = [
 export interface PlaywrightViolation {
   detail: string
   relPath: string
-  rule: 'bare-launch' | 'sandbox-flag' | 'unsanctioned-persistent-context'
+  rule:
+    | 'bare-launch'
+    | 'ignore-default-args'
+    | 'sandbox-flag'
+    | 'unsanctioned-persistent-context'
 }
 
 /**
@@ -190,14 +219,19 @@ export function scanPlaywrightUsage(config: {
   const text = stripComments(cfg.text)
   const allowed = allowlistEntryFor(relPath, cfg.allowlist ?? LAUNCH_ALLOWLIST)
   const violations: PlaywrightViolation[] = []
-  // Sandbox and automation flags are refused EVERYWHERE, allowlist included:
-  // the allowlist covers where a launch may live, never what flags it may
-  // pass.
-  if (/\bchromiumSandbox\s*:/.test(text)) {
+  // Sandbox-DISABLING flags are refused EVERYWHERE, allowlist included: the
+  // allowlist covers where a launch may live, never what flags it may pass.
+  // `chromiumSandbox: true` is the one sanctioned setting — REQUIRED in the
+  // canonical launch, because Playwright defaults the sandbox OFF and injects
+  // `--no-sandbox` itself, a flag current Chrome refuses outright (observed
+  // 2026-07-30: window opens, session unusable). Only the disabling form
+  // (`false`) diverges from the shape real Chrome accepts.
+  if (/\bchromiumSandbox\s*:(?!\s*true\b)/.test(text)) {
     violations.push({
       detail:
-        'sets `chromiumSandbox` — playwright already defaults the sandbox off, ' +
-        'and forcing it diverges from the proven launch shape',
+        'sets `chromiumSandbox` to something other than `true` — playwright ' +
+        'defaults the sandbox off and injects --no-sandbox, which current ' +
+        'Chrome refuses; `chromiumSandbox: true` is the only accepted form',
       relPath,
       rule: 'sandbox-flag',
     })
@@ -214,6 +248,31 @@ export function scanPlaywrightUsage(config: {
       relPath,
       rule: 'sandbox-flag',
     })
+  }
+  // `ignoreDefaultArgs` is pinned EVERYWHERE, allowlist included: the
+  // sanctioned launch drops exactly SANCTIONED_IGNORED_DEFAULT_ARGS, and any
+  // other value — a different list, extra entries, or `true`, which drops
+  // every default — is a new launch shape, not the sanctioned one.
+  const ignoreArgs = /\bignoreDefaultArgs\s*:\s*(true\b|\[[^\]]*\])/.exec(text)
+  if (ignoreArgs) {
+    const value = ignoreArgs[1]!
+    const entries =
+      value === 'true'
+        ? undefined
+        : [...value.matchAll(/['"`]([^'"`]+)['"`]/g)].map(m => m[1]!)
+    const sanctioned =
+      entries !== undefined &&
+      entries.length === SANCTIONED_IGNORED_DEFAULT_ARGS.length &&
+      SANCTIONED_IGNORED_DEFAULT_ARGS.every(flag => entries.includes(flag))
+    if (!sanctioned) {
+      violations.push({
+        detail:
+          `sets \`ignoreDefaultArgs: ${value.replaceAll(/\s+/g, ' ')}\` — the only ` +
+          `sanctioned value is [${SANCTIONED_IGNORED_DEFAULT_ARGS.map(f => `'${f}'`).join(', ')}]`,
+        relPath,
+        rule: 'ignore-default-args',
+      })
+    }
   }
   if (/\bchromium\s*\.\s*launch\s*\(/.test(text) && !allowed) {
     violations.push({
@@ -238,10 +297,15 @@ const RULE_FIX: Record<PlaywrightViolation['rule'], string> = {
   'bare-launch':
     'Replace with the shared session: `import { openNpmBrowserSession } from ' +
     "'…/publish-infra/npm/browser-session.mts'`.",
+  'ignore-default-args':
+    'Pass exactly ignoreDefaultArgs: ' +
+    "['--enable-automation', '--use-mock-keychain'] — the sanctioned pair — " +
+    'or drop the option.',
   'sandbox-flag':
     'Delete the flag / option. The sanctioned shape is ' +
-    '`launchPersistentContext(profileDir, { channel, headless: false })` and ' +
-    'nothing else.',
+    '`launchPersistentContext(profileDir, { channel, headless, ' +
+    "ignoreDefaultArgs: ['--enable-automation', '--use-mock-keychain'] })` " +
+    'and nothing else.',
   'unsanctioned-persistent-context':
     `Import the session from ${SANCTIONED_SESSION_MODULE} instead of ` +
     'launching here, or add a dated allowlist entry with the reason this ' +

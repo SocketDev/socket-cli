@@ -70,7 +70,7 @@ catalog:
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
   '@socketregistry/packageurl-js': 1.5.0
-  '@socketsecurity/lib': 6.5.1
+  '@socketsecurity/lib': 6.5.2
   '@types/shell-quote': 1.7.5
   '@ultrathink/acorn.rs.wasm': 0.1.1
   '@ultrathink/acorn.wasm': npm:@ultrathink/acorn-wasm@0.0.1
@@ -83,7 +83,7 @@ catalog:
   # full rationale.
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.8'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.5.1'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.5.2'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.5'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
   '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.1.2'
@@ -148,7 +148,7 @@ catalog:
   js-yaml: npm:@zkochan/js-yaml@0.0.10
   lint-staged: 16.4.0
   lodash: 4.18.1
-  magic-string: 1.0.0
+  magic-string: 1.1.0
   'markdownlint-cli2': 0.23.1
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
@@ -157,6 +157,7 @@ catalog:
   nanotar: 0.2.1
   'neosanitize': 0.3.0
   nock: 14.0.16
+  'npm-high-impact': 1.13.0
   npm-package-arg: 13.0.2
   npm-run-all2: 9.0.2
   octokit: 5.0.5
@@ -167,7 +168,7 @@ catalog:
   'oxlint-tsgolint': 7.0.2001
   packageurl-js: npm:@socketregistry/packageurl-js@^1.4.8
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  'playwright-core': 1.61.1
+  'playwright-core': 1.62.0
   'portless': 0.15.4
   postject: 1.0.0-alpha.6
   react: 19.2.7
@@ -227,47 +228,9 @@ minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   # @pnpm/lockfile.detect-dep-types@latest (1100.0.16) + its 1100.x/1101.x
   # transitive tree; all published 2026-07-23, soak naturally by 2026-07-30.
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/lockfile.detect-dep-types@1100.0.16'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/lockfile.types@1100.0.16'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/crypto.hash@1100.0.2'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/deps.path@1100.0.11'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/fs.graceful-fs@1100.1.1'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/patching.types@1100.0.1'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/resolving.resolver-base@1100.5.4'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/types@1101.6.0'
   # @pnpm/lockfile.fs@1100.1.14 + its 1100.x transitive tree (off the
   # provenance-less 1001.1.35 trust-downgrade); all published 2026-07-23,
   # soak naturally by 2026-07-30.
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/lockfile.fs@1100.1.14'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/lockfile.merger@1100.0.16'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/lockfile.utils@1100.1.5'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/constants@1100.0.1'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/error@1100.1.0'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/fetching.fetcher-base@1100.2.4'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/hooks.types@1100.2.3'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/network.git-utils@1100.0.3'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/object.key-sorting@1100.0.2'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/resolving.tarball-url@1100.0.1'
-  # published: 2026-07-23 | removable: 2026-07-30
-  - '@pnpm/store.cafs-types@1100.0.2'
   - '@socketregistry/*'
   - '@socketsecurity/*'
   - 'sfw'
@@ -280,10 +243,6 @@ minimumReleaseAgeExclude:
   - 'stuie'
   # The fleet-cascaded .npmrc already excludes verkit; mirrored here because
   # pnpm v11 reads excludes from this file.
-  # published: 2026-07-23 | removable: 2026-07-30
-  - 'js-yaml@5.2.2'
-  # published: 2026-07-24 | removable: 2026-07-31
-  - '@shadscan/cli@0.2.0'
   # published: 2026-07-27 | removable: 2026-08-03
   - '@modelcontextprotocol/client@2.0.0'
   # published: 2026-07-27 | removable: 2026-08-03

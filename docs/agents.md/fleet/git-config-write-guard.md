@@ -75,4 +75,10 @@ A related fleet-breaker: a `node_modules` symlink whose target is the repo's own
 - [`docs/agents.md/fleet/commit-signing.md`](commit-signing.md) — the signing topology this guards
 - [`docs/agents.md/fleet/parallel-claude-sessions.md`](parallel-claude-sessions.md) — broader parallel-agent hygiene
 - `.claude/hooks/fleet/no-revert-guard/` — bypass-phrase pattern this hook reuses
+- `.claude/hooks/fleet/git-identity-drift-nudge/` — Stop-time companion: catches a
+  placeholder `user.email` (`*@example.com`, `agent-ci@…`, an RFC-2606 reserved
+  domain) set OUTSIDE the tool channel this guard watches, such as an
+  agent-CI container entrypoint writing it directly to `.git/config`. This
+  guard's SessionStart probe only auto-unsets at session start; the nudge
+  catches identity drift mid-session, before the push round-trip surfaces it.
   </content>

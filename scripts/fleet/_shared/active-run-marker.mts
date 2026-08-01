@@ -19,12 +19,14 @@
  * liveness   the file counts only while `kill -0 <pid>` succeeds.
  */
 
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
+
+import { writeThroughMirrorLock } from './mirror-lock.mts'
 
 export function activeRunsDir(homeDir?: string | undefined): string {
   return path.join(
@@ -64,7 +66,7 @@ export function registerActiveRun(options?: MarkerOptions | undefined): void {
       safeDeleteSync(path.join(dir, entry))
     }
   }
-  writeFileSync(path.join(dir, String(opts.pid ?? process.pid)), '')
+  writeThroughMirrorLock(path.join(dir, String(opts.pid ?? process.pid)), '')
 }
 
 export function unregisterActiveRun(options?: MarkerOptions | undefined): void {

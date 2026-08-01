@@ -10,13 +10,14 @@
  *   CLI:      node scripts/fleet/compress.mts <input> [output.zst]
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import os from 'node:os'
 import process from 'node:process'
 import { constants, zstdCompressSync } from 'node:zlib'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -67,7 +68,7 @@ export function compressFile(
   const data = readFileSync(input)
   const compressed = compressBytes(data, opts)
   const output = opts.output ?? `${input}.zst`
-  writeFileSync(output, compressed)
+  writeThroughMirrorLock(output, compressed)
   return {
     __proto__: null,
     inputBytes: data.length,

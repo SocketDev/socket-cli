@@ -64,6 +64,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // article, CLAUDE.md variance is a direct quality driver.
     () =>
       run('node', ['scripts/fleet/check/claude-md-rules-are-informative.mts']),
+    // The repo-specific (🏗️) half of CLAUDE.md held to the same bullet-index
+    // shape as the cascaded fleet block above it. A prose paragraph buries the
+    // rule inside sentences, and an over-long bullet is an explanation that
+    // belongs in docs/agents.md/repo/<topic>.md — the fleet block measured a
+    // 286-char median before it was flattened, which is what pushed the file
+    // toward its 40 KB cap and started the size-guard trimmer cutting clause
+    // tails out of live rules.
+    () =>
+      run('node', [
+        'scripts/fleet/check/claude-md-repo-section-is-a-bullet-index.mts',
+      ]),
     // .claude/ segmentation gate. Every entry under
     // .claude/{agents,commands,hooks,skills}/ must live under fleet/<name>/
     // when wheelhouse-canonical, or repo/<name>/ everything else.
@@ -110,6 +121,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
       'scripts/fleet/check/copyleft-licenses-are-current.mts',
       '--quiet',
     ]),
+    // No `catalog:` pin resolves to a version npm marks DEPRECATED. The belt to
+    // the update tooling's braces: the catalog-drift fixer refuses a deprecated
+    // candidate (scripts/fleet/lib/npm-version-policy.mts), and this stops one
+    // landing by any other route — a hand edit, a cascade splice, a version the
+    // upstream deprecates after the fleet pinned it. Network-bound, so it rides
+    // the release/CI tier; offline-safe by contract — no registry answer is an
+    // UNVERIFIED notice, never a false green and never a connectivity failure.
+    releaseStep([
+      'scripts/fleet/check/catalog-pins-are-not-deprecated.mts',
+      '--quiet',
+    ]),
     // Pre-publish source gate: every publishable package.json declares
     // publishConfig.access:"public" + provenance:true (and registry-if-set =
     // npmjs) — the source-config preconditions for a public, provenance-attested
@@ -154,6 +176,18 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // push-run count per member via gh; report-mode for now (skips cleanly when
     // gh is unauthenticated / no fleet-repos.json in a member checkout).
     releaseStep(['scripts/fleet/check/member-ci-fires-on-push.mts']),
+    // The `squash-history` opt-in tracks the release boundary in BOTH
+    // directions: a member that has never published keeps the opt-in (its
+    // history stays collapsible), and a member that HAS published must drop it
+    // — a squash rewrites every commit the published artifact's provenance and
+    // any SHA-pinning consumer resolve. Released-but-opted-in fails; the
+    // inverse warns. npm + crates.io are the signals; offline-safe by contract
+    // (no gh, no auth, or an unreachable registry SKIPS that member loudly).
+    // See docs/agents.md/fleet/squash-until-release.md.
+    releaseStep([
+      'scripts/fleet/check/fresh-members-are-squashed-until-release.mts',
+      '--quiet',
+    ]),
     // Every repo in fleet-repos.json must EXIST in its org — a roster entry with
     // no repo is a half-onboarded member (odai: roster entry, no
     // SocketDev/ repo → stranded cascades + 404'd environments). Onboarding must
@@ -444,6 +478,18 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     () =>
       run('node', [
         'scripts/fleet/check/publish-workflows-are-conventionally-named.mts',
+        '--quiet',
+      ]),
+    // Publish workflows are STAGED, FAIL-CLOSED, and MARKERS-FIRST: literal
+    // npm-family publish lines must be `pnpm stage publish` (the per-package
+    // trusted-publisher grants allow stage-only), continue-on-error is
+    // forbidden in a publishing workflow, and an in-file v<version> tag /
+    // GitHub release is cut BEFORE the first upload so provenance binds real
+    // markers. A stage rejected after the markers BURNS the version — the
+    // next release is a patch bump, never a reuse. Strict.
+    () =>
+      run('node', [
+        'scripts/fleet/check/publish-workflows-are-staged-fail-closed.mts',
         '--quiet',
       ]),
     // Every workflow job that runs a version-derivation leg (bump.mts,

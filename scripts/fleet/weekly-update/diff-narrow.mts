@@ -1,6 +1,6 @@
 /*
  * @file Deterministic dependency-diff narrower — the load-bearing pre-step for
- *   the keyless weekly-update supply-chain classifier. The locai `classify-deps`
+ *   the keyless weekly-update supply-chain classifier. The odai `classify-deps`
  *   task only fits a small on-device model window when it is fed narrowed
  *   manifest facts, not a raw 10K-token lockfile diff. This module parses a
  *   working-tree dependency diff — git diff of package.json, member
@@ -13,9 +13,9 @@
  *      helpers. No I/O, no clock, no git; unit-tested against fixtures.
  *   2. THIN CLI — reads a diff from stdin or builds one from --from/--to refs,
  *      narrows it, and prints one JSON line on stdout. Both a wheelhouse
- *      weekly-update step and locai call it the same way.
+ *      weekly-update step and odai call it the same way.
  *
- *   The narrowed shape is a strict superset of what locai `classify-deps`
+ *   The narrowed shape is a strict superset of what odai `classify-deps`
  *   few-shots on: top-level addedDeps, newTransitiveCount, droppedLockfileBody,
  *   plus per-dependency kind/isNew/removed and a counts block. The classifier
  *   reads only the facts it needs; the extra fields serve humans and other

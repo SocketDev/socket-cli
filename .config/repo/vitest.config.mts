@@ -10,6 +10,7 @@
  *   excludes them. No file → everything isolated.
  */
 import { existsSync, readFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -111,6 +112,84 @@ export function readVitestConfigTier(file: string): VitestRepoConfig {
 export function repoNodeTestExcludeGlobs(): string[] {
   return resolveVitestKey('nodeTestExclude')
 }
+// Ceiling on the contention multiplier. A starved spawn is queued, not hung, so
+// it deserves more time — but a genuinely WEDGED test must still fail in
+// bounded time instead of hanging the run behind a growing budget.
+const BUDGET_LOAD_CAP = 4
+
+// Below this fraction of the core count the box counts as quiet and the base
+// budget stands unchanged. Half the cores busy is normal for a test run.
+const BUDGET_QUIET_LOAD_RATIO = 0.5
+
+/**
+ * How much to stretch a test budget for the machine's current contention.
+ * `1` on a quiet box, rising toward {@link BUDGET_LOAD_CAP} as load climbs.
+ *
+ * A background build — a parallel `cargo build` saturating every core — starves
+ * a spawn-per-case suite: the child is queued behind the compiler, so a fixed
+ * ceiling turns machine load into a red suite with no code change. Observed:
+ * one hook spec went from 1 failure to 5, 6, then 7 across three consecutive
+ * runs as an unrelated `rustc` ramped to 779% CPU.
+ *
+ * Both readings are injectable so the arithmetic is testable without depending
+ * on the load of whatever machine runs the suite.
+ */
+export function resolveBudgetLoadFactor(
+  options?:
+    | {
+        cores?: number | undefined
+        loadAvg?: number | undefined
+        workers?: number | undefined
+      }
+    | undefined,
+): number {
+  const opts = { __proto__: null, ...options } as {
+    cores?: number | undefined
+    loadAvg?: number | undefined
+    workers?: number | undefined
+  }
+  const cores = Math.max(1, opts.cores ?? os.availableParallelism())
+  // loadavg() is [0, 0, 0] on win32, which yields the base budget — correct,
+  // since there is no signal to scale by.
+  const observed = Math.max(0, opts.loadAvg ?? os.loadavg()[0] ?? 0)
+  // The reading is taken as the config loads, BEFORE the run creates its own
+  // contention, so a quiet box reads quiet and the whole suite then runs at
+  // maxWorkers. Treat the run's own parallelism as a floor on load: a spawn in
+  // worker 7 competes with six siblings whatever the box looked like a second
+  // ago. Without this floor a full-suite run measured 74s against a 60s budget
+  // on a box that read 5.26 at startup.
+  const workers = Math.max(0, opts.workers ?? resolveMaxWorkers())
+  const effective = Math.max(observed, workers)
+  const ratio = effective / (cores * BUDGET_QUIET_LOAD_RATIO)
+  return Math.min(BUDGET_LOAD_CAP, Math.max(1, ratio))
+}
+
+/**
+ * The per-test budget: the CI/coverage base ladder, stretched by current
+ * machine contention. Used for both `testTimeout` and `hookTimeout` so a
+ * starved `beforeAll` fixture gets the same headroom as the tests it feeds.
+ */
+export function resolveTestBudgetMs(
+  options?:
+    | {
+        cores?: number | undefined
+        loadAvg?: number | undefined
+        workers?: number | undefined
+      }
+    | undefined,
+): number {
+  const ci = Boolean(getCI())
+  const base =
+    ci && isCoverageEnabled
+      ? 120_000
+      : ci
+        ? 60_000
+        : isCoverageEnabled
+          ? 30_000
+          : 10_000
+  return Math.round(base * resolveBudgetLoadFactor(options))
+}
+
 export function resolveFallbackMaxWorkers(): number {
   if (getCI()) {
     return 4
@@ -395,22 +474,8 @@ export default defineConfig({
     // single-lander-guard) under peak release-cover contention, losing their
     // coverage and failing the gate while all four metrics were above
     // threshold. Complete the ladder rather than shave the threshold.
-    testTimeout:
-      getCI() && isCoverageEnabled
-        ? 120_000
-        : getCI()
-          ? 60_000
-          : isCoverageEnabled
-            ? 30_000
-            : 10_000,
-    hookTimeout:
-      getCI() && isCoverageEnabled
-        ? 120_000
-        : getCI()
-          ? 60_000
-          : isCoverageEnabled
-            ? 30_000
-            : 10_000,
+    testTimeout: resolveTestBudgetMs(),
+    hookTimeout: resolveTestBudgetMs(),
     bail: resolveBail(isCoverageEnabled, Boolean(getCI())),
     // Coverage shape comes from the fleet base merged with the repo-owned
     // `.config/repo/coverage.json` overlay (include replace, exclude

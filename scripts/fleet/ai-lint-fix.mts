@@ -41,6 +41,11 @@
  *     + runner), ./ai-lint-fix/prompt.mts, per-file prompt corpus,
  *     ./ai-lint-fix/claude.mts, headless spawn, ./ai-lint-fix/rule-guidance.mts
  *     (which rules the AI handles + per-rule guidance + model tiers).
+ *
+ *   Teardown: `installChildTeardown()` (_shared/process-lifecycle.mts) wires
+ *   SIGINT/SIGTERM/exit so this process can never end while its own `claude`
+ *   child is still running — a killed or abandoned run takes the spawn with
+ *   it instead of leaving it orphaned.
  */
 
 import { existsSync } from 'node:fs'
@@ -53,6 +58,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { runClaudeFix } from './ai-lint-fix/claude.mts'
 import { classifyAiFailure, probeAiCli } from './ai-lint-fix/health.mts'
+import { bucketRulesFor, runOdaiLintFix } from './ai-lint-fix/odai-fix.mts'
 import { runLintJson } from './ai-lint-fix/oxlint-json.mts'
 import { bucketFindings, buildPrompt } from './ai-lint-fix/prompt.mts'
 import {
@@ -61,6 +67,7 @@ import {
   TIER_MODEL,
 } from './ai-lint-fix/rule-guidance.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { installChildTeardown } from './_shared/process-lifecycle.mts'
 
 import type { AiCliProbe } from './ai-lint-fix/health.mts'
 
@@ -148,6 +155,50 @@ export async function main(): Promise<void> {
   const probe = await probeAiCli(cwd)
   if (!probe.ok) {
     const total = [...byFile.values()].reduce((n, m) => n + m.length, 0)
+    // No keyed client — but the haiku-bucket rules (mechanical rewrites) can
+    // still be fixed keyless by routing odai's patch task to a local reasoning
+    // backend. Every richer rule waits for a keyed run. Fail-open: the first
+    // skip (no bin / no local backend) means every remaining file skips the
+    // same way, so stop the loop there.
+    let keylessFixed = 0
+    for (const [filePath, findings] of byFile) {
+      const ruleIds = findings
+        .map(f => f.ruleId)
+        .filter((r): r is string => typeof r === 'string')
+      if (bucketRulesFor(ruleIds).length === 0) {
+        continue
+      }
+      const result = await runOdaiLintFix(filePath, ruleIds, cwd)
+      if (result.outcome === 'fixed') {
+        keylessFixed += 1
+        continue
+      }
+      if (result.outcome === 'skipped') {
+        break
+      }
+      logger.warn(
+        `ai-lint-fix: keyless fix failed for ${path.relative(cwd, filePath)}: ${result.reason}`,
+      )
+    }
+    if (keylessFixed > 0) {
+      // Same verify-then-reject contract as the keyed path: a keyless diff that
+      // made lint worse fails the run for a human to inspect.
+      const afterFiles = await runLintJson(args.passthrough)
+      const after = [...bucketFindings(afterFiles).values()].reduce(
+        (n, m) => n + m.length,
+        0,
+      )
+      if (after > total) {
+        logger.warn(
+          `ai-lint-fix: keyless fixes regressed lint (${total} → ${after}); inspect the changes.`,
+        )
+        process.exitCode = 1
+        return
+      }
+      logger.log(
+        `ai-lint-fix: keyless on-device fixed findings in ${keylessFixed} file(s) (${total} → ${after} remaining).`,
+      )
+    }
     logger.info(buildAiSkipMessage(probe, total, byFile.size))
     return
   }
@@ -244,6 +295,10 @@ export async function main(): Promise<void> {
 }
 
 if (isMainModule(import.meta.url)) {
+  // Wired here (not only in the parent fix.mts) so this process — spawned as
+  // its own `node ai-lint-fix.mts` child — kills its OWN in-flight `claude`
+  // grandchild if IT is killed or exits early. See _shared/process-lifecycle.mts.
+  installChildTeardown()
   main().catch((e: unknown) => {
     const msg = errorMessage(e)
     logger.error(`ai-lint-fix: ${msg}`)

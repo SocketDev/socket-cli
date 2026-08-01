@@ -19,7 +19,9 @@
  */
 
 import process from 'node:process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -27,10 +29,22 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { ingest } from './lib/ingest.mts'
 import type { RawRecord } from './lib/ingest.mts'
 import { buildTriageEnvelope, terminalSummary } from './lib/report.mts'
-import type { TriagedFinding } from './lib/report.mts'
+import type { TriagedFinding, TriageEnvelope } from './lib/report.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { resolveRepoRoot } from '../_shared/git-mutex.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import {
+  localAssistEnabled,
+  resolveOdaiBin,
+  runOdai,
+} from '../_shared/odai.mts'
 
 const logger = getDefaultLogger()
+
+// The keyless triage explanation is a value-add, never a gate: bounded so a
+// cold on-device model can't stall the report, and any skip/failure just drops
+// it — the deterministic terminal summary always stands on its own.
+const ODAI_TRIAGE_TIMEOUT_MS = 45_000
 
 function optValue(argv: readonly string[], flag: string): string | undefined {
   const i = argv.indexOf(flag)
@@ -70,7 +84,7 @@ export function cmdIngest(argv: readonly string[]): number {
   const out = `${JSON.stringify({ findings }, undefined, 2)}\n`
   const outPath = optValue(argv, '--out')
   if (outPath) {
-    writeFileSync(outPath, out)
+    writeThroughMirrorLock(outPath, out)
     logger.info(`ingested ${findings.length} finding(s) → ${outPath}`)
   } else {
     process.stdout.write(out)
@@ -78,7 +92,63 @@ export function cmdIngest(argv: readonly string[]): number {
   return 0
 }
 
-export function cmdReport(argv: readonly string[]): number {
+// A compact, model-facing digest of the confirmed findings — the terminal
+// summary plus one line per true positive. Titles and severities only; the
+// on-device triage task turns this into a plain-language paragraph. Pure.
+export function findingsDigest(env: TriageEnvelope): string {
+  const lines = [terminalSummary(env), '', 'Confirmed findings:']
+  let confirmed = 0
+  for (const f of env.findings) {
+    if (f.verdict === 'true_positive') {
+      lines.push(`- [${f.severity}] ${String(f['title'] ?? f.id)}`)
+      confirmed += 1
+    }
+  }
+  return confirmed ? lines.join('\n') : ''
+}
+
+/**
+ * Keyless plain-language triage: when the repo opted into `ai.localAssist` and
+ * an odai binary resolves, explain the confirmed findings through the on-device
+ * `triage` task. Returns '' on every opt-out / unavailable / skip / failure
+ * path — the deterministic terminal summary is the source of truth and this is
+ * a value-add that never gates the report. Never throws.
+ */
+export async function odaiTriageExplanation(
+  cwd: string,
+  env: TriageEnvelope,
+): Promise<string> {
+  if (!localAssistEnabled(cwd)) {
+    return ''
+  }
+  const bin = resolveOdaiBin()
+  if (!bin) {
+    return ''
+  }
+  const digest = findingsDigest(env)
+  if (!digest) {
+    return ''
+  }
+  const run = await runOdai('triage', digest, {
+    bin,
+    cwd,
+    timeoutMs: ODAI_TRIAGE_TIMEOUT_MS,
+  })
+  if (run.outcome !== 'ok') {
+    return ''
+  }
+  const value = run.value as { sentences?: unknown | undefined }
+  if (!Array.isArray(value?.sentences)) {
+    return ''
+  }
+  return value.sentences
+    .filter((s): s is string => typeof s === 'string')
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export async function cmdReport(argv: readonly string[]): Promise<number> {
   const from = optValue(argv, '--from')
   if (!from) {
     logger.fail('report: --from <triaged.json> is required')
@@ -99,15 +169,25 @@ export function cmdReport(argv: readonly string[]): number {
   const out = `${JSON.stringify(env, undefined, 2)}\n`
   const outPath = optValue(argv, '--out-json')
   if (outPath) {
-    writeFileSync(outPath, out)
+    writeThroughMirrorLock(outPath, out)
   } else {
-    writeFileSync('./TRIAGE.json', out)
+    writeThroughMirrorLock('./TRIAGE.json', out)
   }
   process.stdout.write(`${terminalSummary(env)}\n`)
+  // Anchor on the script's own location, not the caller's cwd: for a cascaded
+  // fleet script that resolves to the target repo whose localAssist config
+  // gates the on-device call.
+  const repoRoot = resolveRepoRoot(path.dirname(fileURLToPath(import.meta.url)))
+  const explanation = await odaiTriageExplanation(repoRoot, env)
+  if (explanation) {
+    process.stdout.write(
+      `\nPlain-language triage (on-device):\n${explanation}\n`,
+    )
+  }
   return 0
 }
 
-export function main(argv: readonly string[]): number {
+export async function main(argv: readonly string[]): Promise<number> {
   const sub = argv[0]
   const rest = argv.slice(1)
   try {
@@ -115,7 +195,7 @@ export function main(argv: readonly string[]): number {
       return cmdIngest(rest)
     }
     if (sub === 'report') {
-      return cmdReport(rest)
+      return await cmdReport(rest)
     }
     logger.fail(
       `unknown subcommand ${sub ?? '(none)'}. Use \`ingest\` or \`report\`.`,
@@ -128,5 +208,12 @@ export function main(argv: readonly string[]): number {
 }
 
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2))
+  main(process.argv.slice(2)).then(
+    code => {
+      process.exitCode = code
+    },
+    () => {
+      process.exitCode = 1
+    },
+  )
 }

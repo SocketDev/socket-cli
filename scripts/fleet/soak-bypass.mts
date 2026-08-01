@@ -22,7 +22,7 @@
  *     `--allow-non-member --reason "<why>"` is the audited escape hatch).
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -33,6 +33,7 @@ import {
   parseNonMemberOverride,
 } from './_shared/fleet-membership.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const SOAK_DAYS = 7
 
@@ -54,7 +55,7 @@ export function appendNpmrcExcludeLine(repoRoot: string, name: string): void {
     return
   }
   const sep = content.endsWith('\n') ? '' : '\n'
-  writeFileSync(
+  writeThroughMirrorLock(
     npmrcPath,
     `${content}${sep}# local soak-bypass (ephemeral — the cascade regenerates this file)\n${line}\n`,
   )
@@ -207,7 +208,7 @@ async function main(): Promise<void> {
     )
     process.exit(0)
   }
-  writeFileSync(PNPM_WORKSPACE_YAML, next)
+  writeThroughMirrorLock(PNPM_WORKSPACE_YAML, next)
   // Mirror the pin's bare NAME into `.npmrc` for npm (>= v12, npm/cli#9532),
   // which matches by name/glob only. `.npmrc` is cascade-GENERATED
   // (scripts/repo/gen/npmrc.mts in the source repo), so this append is the

@@ -25,14 +25,25 @@
  *   before spawning any fixer — the release-pipeline preflight re-runs fix on
  *   a tree that is usually already clean at the receipt sha, and the full
  *   spawn chain (lint --fix, zizmor, agentshield, ai-lint-fix, verify lint)
- *   costs seconds-to-minutes for nothing. `--all`, and explicit file args
- *   always run the full pipeline. The per-runner fixpoint caps
- *   (FORMAT_MAX_PASSES / OXLINT_MAX_PASSES in _shared/lint-runners.mts) are
- *   untouched — this exit sits entirely above them.
+ *   costs seconds-to-minutes for nothing. `--all` and the no-argument default
+ *   run steps 2-5 above the lint fix/verify; EXPLICIT FILE ARGS do not — a
+ *   caller naming files (`node scripts/fleet/fix.mts <file>…`) gets exactly
+ *   steps 1 and the matching verify, scoped to those files, and nothing else
+ *   (`shouldRunHeavyFixLegs`). Naming files means "fix exactly these," not
+ *   "run the whole security/doctor/AI sweep" — the heavy legs scan or mutate
+ *   files nobody named. The per-runner fixpoint caps (FORMAT_MAX_PASSES /
+ *   OXLINT_MAX_PASSES in _shared/lint-runners.mts) are untouched — this exit
+ *   sits entirely above them.
  *
  *   Concurrency: mutating runs hold the repo-scoped fixer lock
  *   (_shared/fixer-lock.mts) so concurrent/zombie fixers never race the same
  *   tree. On contention the run names the holder and exits non-zero fast.
+ *
+ *   Teardown: `installChildTeardown()` (_shared/process-lifecycle.mts) wires
+ *   SIGINT/SIGTERM/exit so this process can never end — by signal or normal
+ *   exit — while a spawned child (zizmor, agentshield, doctor, the
+ *   ai-lint-fix child process) is still running. A killed or abandoned parent
+ *   takes its children with it instead of leaving them orphaned.
  */
 
 import { existsSync } from 'node:fs'
@@ -52,7 +63,11 @@ import {
   describeHolder,
   fixerLockPath,
 } from './_shared/fixer-lock.mts'
-import { resolveScopeMode } from './_shared/scope-flags.mts'
+import { installChildTeardown } from './_shared/process-lifecycle.mts'
+import {
+  resolveExplicitFiles,
+  resolveScopeMode,
+} from './_shared/scope-flags.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const WIN32 = process.platform === 'win32'
@@ -114,12 +129,26 @@ export function shouldSkipCleanScope(
   if (argv.includes('--all')) {
     return false
   }
-  // Explicit positional file paths (lint.mts's resolveExplicitFiles
-  // convention) always run — they name exactly what to fix.
-  if (argv.some(a => !a.startsWith('-'))) {
+  // Explicit positional file paths always run — they name exactly what to fix.
+  if (resolveExplicitFiles(argv).length > 0) {
     return false
   }
   return scopedFiles.length === 0
+}
+
+/**
+ * True when a fix run should execute the heavy, tree-wide legs — the security
+ * tools (zizmor, agentshield) and the AI-assisted residue pass (ai-lint-fix).
+ * False when the caller named explicit positional file paths on argv
+ * (`resolveExplicitFiles`, shared with lint.mts's own convention): naming
+ * files means "fix exactly these" — a lint/format autofix scoped to them, not
+ * a whole-tree security scan or an AI pass whose per-file spawn can run
+ * minutes past what the caller asked for. `--all` and the no-argument
+ * (modified/staged) default both run the heavy legs; only an explicit file
+ * list narrows to lint/format alone. Pure — exported for tests.
+ */
+export function shouldRunHeavyFixLegs(argv: readonly string[]): boolean {
+  return resolveExplicitFiles(argv).length === 0
 }
 
 export async function main(
@@ -164,6 +193,11 @@ export async function main(
 }
 
 async function runFixers(argv: string[]): Promise<void> {
+  // Explicit file args mean "fix exactly these" — lint/format autofix only.
+  // The heavy tree-wide legs below (zizmor, agentshield, ai-lint-fix) are
+  // skipped so a scoped run can never scan or edit files nobody named.
+  const runHeavyLegs = shouldRunHeavyFixLegs(argv)
+
   // Lint fix (oxfmt + oxlint via scripts/fleet/lint.mts). Forward extra argv so
   // `--all` / `--staged` / explicit file paths reach the runner unchanged.
   // NON-required: oxlint can't autofix custom socket/* JS-plugin rules, so a
@@ -176,8 +210,10 @@ async function runFixers(argv: string[]): Promise<void> {
   })
 
   // zizmor — fixes GitHub Actions workflow security issues. Only runs when
-  // .github/ exists, some repos don't have workflows.
-  if (existsSync('.github')) {
+  // .github/ exists, some repos don't have workflows, and the run is not
+  // scoped to explicit file paths (zizmor always scans the whole .github/
+  // tree — there is no way to point it at just the named files).
+  if (runHeavyLegs && existsSync('.github')) {
     await run('zizmor', ['--fix', '.github/'], {
       label: 'zizmor --fix',
       required: false,
@@ -185,8 +221,14 @@ async function runFixers(argv: string[]): Promise<void> {
   }
 
   // AgentShield — fixes Claude config security findings. Only runs when
-  // .claude/ exists and agentshield binary is installed.
-  if (existsSync('.claude') && existsSync('node_modules/.bin/agentshield')) {
+  // .claude/ exists, agentshield binary is installed, and the run is not
+  // scoped to explicit file paths. This mirrors the zizmor leg's scope guard
+  // above.
+  if (
+    runHeavyLegs &&
+    existsSync('.claude') &&
+    existsSync('node_modules/.bin/agentshield')
+  ) {
     await run('pnpm', ['exec', 'agentshield', 'scan', '--fix'], {
       label: 'agentshield --fix',
       required: false,
@@ -265,11 +307,16 @@ async function runFixers(argv: string[]): Promise<void> {
   //
   // Skipped silently when the claude CLI isn't on PATH, when
   // SKIP_AI_FIX=1, or when --no-ai is passed. CI sets SKIP_AI_FIX=1
-  // because the fleet rule is "no AI in CI for code changes."
-  await run('node', ['scripts/fleet/ai-lint-fix.mts', ...argv], {
-    label: 'ai-lint-fix',
-    required: false,
-  })
+  // because the fleet rule is "no AI in CI for code changes." Also skipped
+  // — for a run scoped to explicit file args — because the per-file headless
+  // spawn (up to 5 minutes each, ai-lint-fix/claude.mts's timeoutMs) is exactly
+  // the "heavy leg" a caller naming files did not ask to wait out.
+  if (runHeavyLegs) {
+    await run('node', ['scripts/fleet/ai-lint-fix.mts', ...argv], {
+      label: 'ai-lint-fix',
+      required: false,
+    })
+  }
 
   // Verify: re-run lint (no --fix) to set the real exit code. `fix` succeeds
   // only when nothing remains after the deterministic + AI passes; a lingering
@@ -282,8 +329,10 @@ async function runFixers(argv: string[]): Promise<void> {
 }
 
 // Entrypoint-guarded: importing this module (unit tests of its exported
-// helpers) must not execute the script.
+// helpers) must not execute the script, and must not register real process
+// signal handlers.
 if (isMainModule(import.meta.url)) {
+  installChildTeardown()
   main().catch((e: unknown) => {
     logger.error(errorMessage(e))
     process.exitCode = 1

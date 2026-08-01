@@ -67,6 +67,12 @@ snippet) is a deliberate, visible action and is allowed. The
 these at edit/run time; bypass with `Allow clipboard-access bypass` /
 `Allow screenshot bypass` for a genuine operator-driven need.
 
+Writing a user-run snippet to the clipboard is the sanctioned path, not a
+violation: `clipboard-snippet-nudge` (PostToolUse, macOS-only, non-blocking)
+suggests `pbcopy < <file>` when a run/paste script lands in the session
+scratchpad, so the user pulls it off the clipboard instead of copying it out of
+the scrolling terminal.
+
 **The Claude Code client (separate from our code).** The TUI auto-copies on
 mouse-selection and emits an OSC-52 clipboard escape on each copy (verified in
 the client's `setClipboard` path). iTerm2 denies OSC-52 by default and shows a

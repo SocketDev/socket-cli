@@ -13,7 +13,7 @@
  *   rebuild step, unlike npm — cargo builds from source at publish time.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -40,6 +40,7 @@ import {
   resolveReleaseEnv,
 } from '../release-branch.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
+import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 import { fetchPublishedAt, fetchPublishedVersionChecked } from './registry.mts'
 import { readCargoPackage } from './shared.mts'
 
@@ -437,8 +438,11 @@ export async function runBump(config: {
     return
   }
 
-  writeFileSync(tomlWrite.path, tomlWrite.content)
-  writeFileSync(changelogPath, insertChangelogSection(baseChangelog, section))
+  writeThroughMirrorLock(tomlWrite.path, tomlWrite.content)
+  writeThroughMirrorLock(
+    changelogPath,
+    insertChangelogSection(baseChangelog, section),
+  )
   // Refresh Cargo.lock to the new workspace-member version, not registry deps,
   // so the later `cargo publish --locked` doesn't fail on a stale lock.
   if (existsSync(path.join(rootPath, 'Cargo.lock'))) {

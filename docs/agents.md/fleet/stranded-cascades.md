@@ -8,7 +8,7 @@ A real incident drove this rule: a fleet repo ended up with 4 stranded local cas
 
 The wheelhouse cascade runs `scripts/repo/cleanup-stranded.mts --target <repo>` against each fleet repo **before** creating that wave's `chore/wheelhouse-<sha>` worktree. Default mode is **fix**:
 
-- Stranded commits are removed via `git reset --hard origin/<base>`.
+- Stranded commits are removed. The **preferred** remedy is a surgical `git rebase -i origin/<base>` that drops exactly the superseded commit(s) and replays every other local-ahead commit unchanged — see "Surgical drop" below. The whole-branch `git reset --hard origin/<base>` is the **fallback**, used only for a non-squash-history repo, where resetting to origin can't discard anything canonical.
 - Stranded worktrees are removed via `git worktree remove --force` followed by `git branch -D chore/wheelhouse-<sha>`.
 
 Pass `--dry-run` to report without acting. Pass `--all` instead of `--target <path>` to sweep every fleet repo from `fleet-repos.json`.
@@ -42,11 +42,18 @@ The script will refuse to auto-clean if:
 - A cascade commit modifies a file outside the cascade-allowlist (e.g. source code under `src/`, vendored deps, test fixtures).
 - Origin has no cascade commits at all. There's nothing to prove supersession against.
 
-## Squash-history repos are exempt from the commit reset
+## Squash-history repos: a per-commit surgical rebase
 
-🚨 A repo carrying the `squash-history` roster opt-in (`fleet-repos.json`) has a **canonical local `<base>`**: origin holds the pre-squash history and is reconciled FORWARD via `SQUASH_HISTORY=1 git push --force-with-lease`, never reset backward. So origin advancing to a newer template SHA does **not** strand a local-ahead cascade commit whose SHA is a strict ancestor of it — that commit is canonical work awaiting the next squash+push, and the supersession rail above would otherwise pass and drive a `git reset --hard origin/<base>` that discards the local lineage.
+🚨 **A superseded cascade commit is rot regardless of the repo's history cadence.** The cadence only decides HOW the repo clears it, never whether.
 
-`cleanup-stranded.mts` detects the opt-in via `isSquashOptIn` and, for such a repo, **holds** the local-ahead cascade commits — they are surfaced (`squashHeldCommits`, logged "held — squash-history cadence") but never reset — and still prunes scratch worktrees, which are disposable in any cadence. This mirrors the "local main is canonical, reconcile forward" rule the divergence hooks enforce.
+A repo carrying the `squash-history` roster opt-in (`fleet-repos.json`) has a **canonical local `<base>`**: origin holds the pre-squash history and is reconciled FORWARD via `SQUASH_HISTORY=1 git push --force-with-lease`, never reset backward. A whole-branch `git reset --hard origin/<base>` can't run here; it would discard that canonical local lineage along with the superseded commit. That constraint rules out ONE mechanism. It does not grant the superseded commit an exemption.
+
+`cleanup-stranded.mts` detects the opt-in via `isSquashOptIn` and, for such a repo, runs every local-ahead cascade commit through the same four safety rails and splits the result:
+
+- **`supersededDrops`**: a commit that passes all four rails is provably disposable. It is cleared via a surgical, non-interactive `git rebase -i origin/<base>`. A generated `GIT_SEQUENCE_EDITOR` script deletes exactly the `pick` lines for the target set from the rebase todo, so every OTHER local-ahead commit (including held ones) replays unchanged. On conflict the rebase is aborted and the repo is left exactly as found; a conflict means the target set was wrong and needs a human, never an auto-resolution attempt. The same TOCTOU guard as the reset path re-reads HEAD immediately before the rewrite and bails if it moved since the plan snapshot.
+- **`squashHeldCommits`**: a commit that fails a rail may be canonical work. It is surfaced (logged "held — squash-history cadence") and never touched.
+
+Worktree cleanup falls through either way; worktrees are disposable scratch in any cadence. This mirrors the "local main is canonical, reconcile forward" rule the divergence hooks enforce: reconciling forward past a superseded commit, not carrying it forever.
 
 ## Stranded worktree detection
 

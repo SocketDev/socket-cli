@@ -27,7 +27,7 @@ import type {
 // the wait budget — so BEFORE the first live sweep, run:
 //   node scripts/fleet/publish-infra/npm/trusted-publisher-browser.mts \
 //     read @socketsecurity/odai @socketsecurity/lib
-// and reconcile any delta here (dated) before trusting `apply --live`.
+// and reconcile any delta here (dated) before trusting `apply --drive`.
 
 export const CANONICAL_WORKFLOW_FILENAME = 'npm-publish.yml'
 export const CANONICAL_ENVIRONMENT_NAME = 'npm-publish'
@@ -378,9 +378,9 @@ export interface ApplyResult {
  */
 export function formatApplySummary(
   results: readonly ApplyResult[],
-  config: { live: boolean },
+  config: { drive: boolean },
 ): string {
-  const cfg = { __proto__: null, ...config } as { live: boolean }
+  const cfg = { __proto__: null, ...config } as { drive: boolean }
   const count = (status: ApplyStatus): number => {
     let n = 0
     for (let i = 0, { length } = results; i < length; i += 1) {
@@ -391,7 +391,7 @@ export function formatApplySummary(
     return n
   }
   return (
-    `Trusted-publisher ${cfg.live ? 'live' : 'dry-run'} summary: ` +
+    `Trusted-publisher ${cfg.drive ? 'drive' : 'dry-run'} summary: ` +
     `${count('applied')} applied, ${count('planned')} planned, ` +
     `${count('conforms')} conforming, ${count('skipped')} skipped, ` +
     `${count('failed')} failed.`

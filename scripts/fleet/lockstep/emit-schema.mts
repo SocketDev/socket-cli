@@ -8,7 +8,6 @@
  *   via `pnpm run lockstep:emit-schema` when the schema changes.
  */
 
-import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -17,6 +16,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { LOCKSTEP_SCHEMA, REPO_ROOT } from '../paths.mts'
 import { LockstepManifestSchema } from './schema.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -37,10 +37,9 @@ export function buildLockstepSchemaDocument(): Record<string, unknown> {
 }
 
 export async function main(): Promise<void> {
-  writeFileSync(
+  writeThroughMirrorLock(
     outPath,
     JSON.stringify(buildLockstepSchemaDocument(), null, 2) + '\n',
-    'utf8',
   )
 
   // Format the output through the package.json wrapper (it owns the config +

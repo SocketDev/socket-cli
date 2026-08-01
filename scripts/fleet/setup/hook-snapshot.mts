@@ -53,7 +53,7 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -68,6 +68,7 @@ import {
 import type { DispatchSettings } from '../_shared/hook-wiring.mts'
 import { DISPATCH_DIR, REPO_ROOT } from '../paths.mts'
 import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -110,7 +111,10 @@ function wireSettings(make: (event: string) => string, label: string): boolean {
     logger.success(`Hook dispatch already wired to the ${label}.`)
     return true
   }
-  writeFileSync(SETTINGS_PATH, `${JSON.stringify(settings, null, 2)}\n`)
+  writeThroughMirrorLock(
+    SETTINGS_PATH,
+    `${JSON.stringify(settings, null, 2)}\n`,
+  )
   logger.success(
     `Wired ${changed} dispatch command(s) to the ${label}. ` +
       `Restart Claude Code for it to take effect.`,

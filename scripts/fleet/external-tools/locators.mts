@@ -20,8 +20,10 @@
  *   parse-and-reserialize would reformat unrelated lines.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 export interface ParsedPinRef {
   // Repo-relative path to the file holding the pin.
@@ -210,6 +212,6 @@ export function writePin(
   if (next === undefined || next === content) {
     return false
   }
-  writeFileSync(absolute, next)
+  writeThroughMirrorLock(absolute, next)
   return true
 }

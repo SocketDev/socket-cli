@@ -1,9 +1,20 @@
 // Shared squash-sentinel authorization. The `squashing-history` skill collapses
-// the default branch to one commit and force-pushes it; the collapse commit
-// whole-tree index, files deleted since root, and the force-push legitimately
-// trip several guards. They all honor the inline `SQUASH_HISTORY=1` sentinel via
-// this ONE hardened check (1 path, 1 reference) instead of re-implementing it.
+// history to one commit and force-pushes it — either the whole DEFAULT branch,
+// or (via `run.mts --branch <name>`) an author-agreed FEATURE branch down to a
+// single commit on its PR base's merge-base. The collapse commit whole-tree
+// index, files deleted since the base, and the force-push legitimately trip
+// several guards. They all honor the inline `SQUASH_HISTORY=1` sentinel via this
+// ONE hardened check (1 path, 1 reference) instead of re-implementing it.
+//
+// The sentinel authorizes a COMMAND SHAPE, not a branch: the byte-verified
+// backup + tree-identity check that makes the collapse safe is performed by the
+// engine (`run.mts`) BEFORE it ever emits the sentinel, and the engine is the
+// only thing that emits it. So widening the recognized shape to cover the
+// feature-branch flow (a fresh collapse commit + a lease-push to a non-default
+// branch) does not weaken the guard: the protection is the engine's
+// backup+verify, and the push shape below stays lease-only, single-ref.
 
+import { validateHeader } from '../../../../.git-hooks/_shared/commit-format.mts'
 import { parseCommands } from './shell-command.mts'
 
 // The exact, full message the squash collapse commit must carry. Anchored
@@ -58,14 +69,16 @@ export function readCommitMessageArg(
  * substitution, which both parse to extra segments); that segment must be a
  * statically-resolved `git` binary (not `$VAR`/eval); the `SQUASH_HISTORY=1`
  * sentinel must be its ONLY inline env assignment (no smuggled
- * `GIT_SSH_COMMAND=…`); and the git subcommand must be one of the two squash
- * shapes — a `commit --amend` whose `-m` message is EXACTLY `chore: initial
- * commit`, or a `push` carrying `--force` / `--force-with-lease` / `-f` to a
- * bare remote with at most one ref — a plain branch name or the canonical
- * squash refspec `HEAD:<branch>` (run.mts pushes the squashed detached HEAD
- * onto the base branch that way) — and none of the multi-ref / delete flags
- * in FORBIDDEN_PUSH_FLAGS. Arbitrary `src:dst` refspecs, `:branch` deletes,
- * and globs stay rejected.
+ * `GIT_SSH_COMMAND=…`); and the git subcommand must be one of the squash
+ * shapes — a collapse `commit` (the default-branch root `--amend` whose `-m`
+ * message is EXACTLY `chore: initial commit`, OR a feature-branch FRESH commit
+ * whose `-m` message is a valid Conventional-Commit header), or a `push`
+ * carrying `--force` / `--force-with-lease` / `-f` to a bare remote with at
+ * most one ref — a plain branch name (any branch, default or feature) or the
+ * canonical squash refspec `HEAD:<branch>` (run.mts pushes the squashed
+ * detached HEAD onto the target branch that way) — and none of the multi-ref /
+ * delete flags in FORBIDDEN_PUSH_FLAGS. Arbitrary `src:dst` refspecs, `:branch`
+ * deletes, and globs stay rejected.
  *
  * Any deviation returns false → the command falls through to the normal
  * blocking checks, where it still needs a typed bypass phrase.
@@ -96,13 +109,26 @@ export function squashSentinelAllows(command: string): boolean {
     return false
   }
   const [sub, ...rest] = c.args
-  // (5a) Squash collapse commit.
+  // (5a) Squash collapse commit — LOCAL-only (mutates no remote; the remote is
+  // reached solely by the (5b) push), in one of two shapes:
+  //   - the default-branch total squash's root AMEND, `-m` message EXACTLY
+  //     `chore: initial commit`; or
+  //   - a feature-branch squash's FRESH collapse commit (NEVER `--amend` — its
+  //     soft-reset target is the shared merge-base with the PR base, which must
+  //     not be rewritten), `-m` message a valid Conventional-Commit header (the
+  //     branch's PR title). Anchoring the feature message to the
+  //     Conventional-Commit shape (the same validator the commit-msg guard
+  //     uses) keeps the sentinel from degrading into a blanket `--no-verify`
+  //     commit bypass.
   if (sub === 'commit') {
-    if (!rest.includes('--amend')) {
+    const msg = readCommitMessageArg(rest)
+    if (msg === undefined) {
       return false
     }
-    const msg = readCommitMessageArg(rest)
-    return msg === SQUASH_COMMIT_MESSAGE
+    if (rest.includes('--amend')) {
+      return msg === SQUASH_COMMIT_MESSAGE
+    }
+    return msg === SQUASH_COMMIT_MESSAGE || validateHeader(msg).kind === 'ok'
   }
   // (5b) Squash force-push.
   if (sub === 'push') {

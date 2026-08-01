@@ -97,9 +97,25 @@ The mechanism for actually rendering and seeing the output is the `/fleet:render
 
 ## Fix warnings when you see them
 
-Lint warning, type warning, build warning, runtime warning in your reading window — fix it. Don't leave it for "later" or label it "pre-existing" / "unrelated" / "out of scope" — those labels are rationalizations. Enforced by `.claude/hooks/fleet/excuse-detector/`.
+Lint warning, type warning, build warning, runtime warning, or a broken comment in your reading window: fix it in a sibling commit. Don't leave it for "later" or label it "pre-existing" / "unrelated" / "out of scope"; those labels are rationalizations. Never offer "fix it vs. accept it as a gap" as a choice back to the user. Pick the fix. Enforced by `.claude/hooks/fleet/excuse-detector/`.
 
 Exception: genuinely large refactor on a small bug; state the trade-off and ask.
+
+## Edits reverted between turns: investigate before attributing
+
+When a file you edited reads differently on a later turn than you left it, the reflex to blame "the linter" or a phantom parallel session is usually wrong. Check first whether the change came from your own scripts (autofix, cascade, format-on-save) or a genuinely parallel Claude session working the same checkout. See the own-work-first check in [parallel-claude-sessions](parallel-claude-sessions.md). State the evidenced cause, not a guess. Enforced by `.claude/hooks/fleet/dont-blame-nudge/` (blocking, once per stop chain): it catches the assistant blaming the user or a tool for state its own scripts produced.
+
+## Verify before you claim
+
+Never assert "tests pass", "the build succeeds", "X is fixed", or "verified" without a tool call this session that ran or read the thing being claimed. A claim with no backing command is a guess wearing a verdict's clothes. Enforced by `.claude/hooks/fleet/stop-claim-verify-nudge/`, which scans the last turn for a self-claim of success and checks whether a matching tool call (`vitest`/`pnpm test`, `pnpm build`, `tsgo`/`tsc`, `oxlint`/`pnpm run lint`) ran this session; a claim inside a code fence is ignored, because a fence holds an example or a quoted plan rather than a real assertion. This is the mirror of `verify-state-before-acting` — that rule covers not starting blind, this one covers not finishing on a guess.
+
+## Hand off with a literal command
+
+When a reply tells the user to run something ("go ahead and run it", "you can dispatch the publish"), include the exact copy-pasteable command in a fenced code block. A handoff with no command forces the user to reconstruct what you meant. Enforced by `.claude/hooks/fleet/handoff-command-nudge/`, which fires when a reply carries a handoff phrase with no fenced command, inline `code` span, or `$ ` / tool-invocation line nearby.
+
+## Don't offload session management to the user
+
+Session and context budget are the assistant's own plumbing, not a decision to hand the user. Don't ask "should I continue or stop here?" because you're deep in context or running low on budget. Write a handoff doc to `<repo>/.claude/plans/<name>.md` capturing done/pending/next-step state, save decisions to memory, and continue, or let compaction / a fresh session resume from the doc. Enforced by `.claude/hooks/fleet/session-handoff-nudge/`, which flags phrasing like "I'm deep in this session's context" or "your call to continue or stop here" unless a recent user turn already said stop/pause.
 
 ## Validate absence & provenance claims
 

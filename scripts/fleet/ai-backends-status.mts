@@ -7,10 +7,10 @@
  *   (`detectAvailableBackends` = which CLIs are on PATH) and reads each backend's
  *   own auth home WITHOUT triggering a keychain/login prompt: codex's
  *   `~/.codex/auth.json`, opencode's `auth list`, and the `ANTHROPIC_API_KEY`
- *   env slot. Also reports the keyless local tier: the `locai` CLI from
+ *   env slot. Also reports the keyless local tier: the `odai` CLI from
  *   SocketDev/odai, which runs single-shot summary-class tasks
- *   against on-device backends with no key at all (_shared/locai.mts). The
- *   locai row probes bin presence only — `locai backends` prints the
+ *   against on-device backends with no key at all (_shared/odai.mts). The
+ *   odai row probes bin presence only — `odai backends` prints the
  *   per-backend detail without this script guessing at Chrome state.
  *   INFORMATIONAL by design — these backends are dev-only (CI carries
  *   the Claude key only; see _shared/multi-agent-backends.md), so absence is not
@@ -30,7 +30,7 @@ import { detectAvailableBackends } from '@socketsecurity/lib/ai/backends'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
-import { resolveLocaiBin } from './_shared/locai.mts'
+import { resolveOdaiBin } from './_shared/odai.mts'
 
 const logger = getDefaultLogger()
 
@@ -43,7 +43,7 @@ export interface BackendProbe {
   readonly anthropicKeyed: boolean
   readonly codexAuthed: boolean
   readonly installed: ReadonlySet<string>
-  readonly locaiBin: string | undefined
+  readonly odaiBin: string | undefined
   readonly opencodeProviders: ReadonlySet<string>
 }
 
@@ -108,12 +108,12 @@ export function summarizeAiBackends(probe: BackendProbe): BackendStatus[] {
     {
       key: 'local',
       label:
-        'Local keyless via locai (summary-class — Gemini Nano / llama-server / simulator)',
-      ready: probe.locaiBin !== undefined,
+        'Local keyless via odai (summary-class — Gemini Nano / llama-server / simulator)',
+      ready: probe.odaiBin !== undefined,
       fix:
-        probe.locaiBin !== undefined
+        probe.odaiBin !== undefined
           ? undefined
-          : 'link the locai CLI from SocketDev/odai or set LOCAI_BIN; `locai backends` then shows per-backend readiness',
+          : 'link the odai CLI from SocketDev/odai or set ODAI_BIN; `odai backends` then shows per-backend readiness',
     },
   ]
 }
@@ -156,8 +156,8 @@ export async function probeAiBackends(): Promise<BackendProbe> {
   const opencodeProviders = installed.has('opencode')
     ? await readOpencodeProviders()
     : new Set<string>()
-  const locaiBin = resolveLocaiBin()
-  return { anthropicKeyed, codexAuthed, installed, locaiBin, opencodeProviders }
+  const odaiBin = resolveOdaiBin()
+  return { anthropicKeyed, codexAuthed, installed, odaiBin, opencodeProviders }
 }
 
 /**

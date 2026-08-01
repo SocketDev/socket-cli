@@ -27,10 +27,17 @@ import {
   pickConfig,
 } from './_shared/format-scope.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { nodeModulesBinPath } from './paths.mts'
 
-// On Windows, `pnpm` is a .cmd shim Node refuses to exec directly via spawnSync
-// (CVE-2024-27980 hardening); the shell wrapper resolves it. On POSIX we keep
-// direct invocation so no shell-quoting surface is introduced.
+// oxfmt is spawned from `node_modules/.bin` rather than through `pnpm exec`,
+// which would add the package manager's startup and a Socket Firewall
+// interception to a run whose work is milliseconds.
+const OXFMT_BIN = nodeModulesBinPath('oxfmt')
+
+// On Windows, a `node_modules/.bin` entry is a .cmd shim Node refuses to exec
+// directly via spawnSync (CVE-2024-27980 hardening); the shell wrapper resolves
+// it. On POSIX we keep direct invocation so no shell-quoting surface is
+// introduced.
 const useShell = process.platform === 'win32'
 
 // The decision `main` reduces argv down to before it ever spawns oxfmt —
@@ -76,7 +83,7 @@ export function resolveFormatPlan(
   if (stdinArg) {
     return {
       kind: 'stdin',
-      args: ['exec', 'oxfmt', '-c', pickConfig('oxfmtrc.json'), stdinArg],
+      args: ['-c', pickConfig('oxfmtrc.json'), stdinArg],
     }
   }
 
@@ -105,9 +112,9 @@ function main(): void {
   }
 
   if (plan.kind === 'stdin') {
-    const res = spawnSync('pnpm', plan.args, {
-      // Pipe consumers parse this stdout as source text — SFW_SILENT stops
-      // the firewall shim from writing banner lines into the same stream.
+    const res = spawnSync(OXFMT_BIN, plan.args, {
+      // Pipe consumers parse this stdout as source text — SFW_SILENT keeps any
+      // firewall shim in the environment from writing banner lines into it.
       env: { ...process.env, SFW_SILENT: 'true' },
       shell: useShell,
       stdio: 'inherit',
@@ -116,7 +123,7 @@ function main(): void {
     return
   }
 
-  const res = spawnSync('pnpm', plan.args, {
+  const res = spawnSync(OXFMT_BIN, plan.args, {
     shell: useShell,
     stdio: 'inherit',
   })

@@ -24,7 +24,6 @@ import {
   readFileSync,
   readlinkSync,
   symlinkSync,
-  writeFileSync,
 } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -34,6 +33,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -99,7 +99,7 @@ export function writeAdapter(repoRoot: string, adapter: Adapter): void {
   // idempotent across a symlink <-> pointer-file flip.
   safeDeleteSync(destAbs)
   if (adapter.kind === 'file') {
-    writeFileSync(destAbs, adapter.content)
+    writeThroughMirrorLock(destAbs, adapter.content)
     return
   }
   const target = symlinkTarget(adapter.dest)
@@ -110,7 +110,7 @@ export function writeAdapter(repoRoot: string, adapter: Adapter): void {
     // filesystems); fall back to a regular pointer file so the adapter works.
     const code = (e as { code?: unknown | undefined } | null)?.code
     if (code === 'ENOSYS' || code === 'EPERM') {
-      writeFileSync(destAbs, POINTER_BODY)
+      writeThroughMirrorLock(destAbs, POINTER_BODY)
       return
     }
     throw e

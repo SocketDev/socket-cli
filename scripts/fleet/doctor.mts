@@ -49,7 +49,7 @@
  *   Exit 0 = healthy or all gaps fixed. Exit 1 = any unfixed finding.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -94,6 +94,7 @@ import {
 import { parseListBlock } from './lib/workspace-yaml.mts'
 import { brewfilePath, findManifestBrewSites } from './update/brew-parse.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
@@ -328,7 +329,7 @@ async function main(): Promise<void> {
 
   if (fixes.length > 0 && doFix) {
     const updated = applyCatalogFixes({ fixes, workspaceYaml })
-    writeFileSync(workspaceYamlPath, updated, 'utf8')
+    writeThroughMirrorLock(workspaceYamlPath, updated)
     logger.info(
       `doctor --fix: applied ${fixes.length} catalog fix(es) to pnpm-workspace.yaml`,
     )
@@ -350,13 +351,12 @@ async function main(): Promise<void> {
   if (shadowFixes.length > 0 && doFix) {
     for (const shadowFix of shadowFixes) {
       const absPath = path.join(cwd, shadowFix.path)
-      writeFileSync(
+      writeThroughMirrorLock(
         absPath,
         applyPinShadowFixes({
           content: readFileSync(absPath, 'utf8'),
           deps: shadowFix.deps,
         }),
-        'utf8',
       )
     }
     const depCount = shadowFixes.reduce((n, f) => n + f.deps.length, 0)
@@ -400,7 +400,7 @@ async function main(): Promise<void> {
   })
   if (brewfileDrift.enrolled && brewfileDrift.drifted) {
     if (doFix) {
-      writeFileSync(rootBrewfilePath, brewfileDrift.expected, 'utf8')
+      writeThroughMirrorLock(rootBrewfilePath, brewfileDrift.expected)
       logger.info(
         'doctor --fix: regenerated Brewfile (was out of sync with .github brew install sites)',
       )

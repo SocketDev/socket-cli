@@ -60,8 +60,11 @@ const GUARDED_EXT_RE = /\.(?:mjs|mts|ts)$/
 // the string-literal-in-args-context shape; a bare prose mention in a
 // comment stays out of scope.
 const NO_SANDBOX_LITERAL_RE = /['"`]--no-sandbox['"`]/
-// require-regex-comment: the chromiumSandbox launch option as a whole word.
-const CHROMIUM_SANDBOX_RE = /\bchromiumSandbox\b/
+// require-regex-comment: the chromiumSandbox option set to anything but
+// `true`. Sandbox ON is the sanctioned form — Playwright defaults it OFF and
+// injects --no-sandbox, a flag current Chrome refuses outright — so only the
+// disabling/dynamic forms are blocked.
+const CHROMIUM_SANDBOX_RE = /\bchromiumSandbox\s*(?:(?!\s*:)|:(?!\s*true\b))/
 // require-regex-comment: `chromium.launch` followed by an open paren —
 // `chromium.launchPersistentContext(` does NOT match (the next char is `P`).
 const BARE_LAUNCH_RE = /\bchromium\.launch\s*\(/
@@ -142,9 +145,10 @@ export function detectLaunchViolations(
     violations.push({
       __proto__: null,
       detail:
-        'the chromiumSandbox option is the same sandbox-disabling knob by ' +
-        'another name.',
-      violation: 'the chromiumSandbox launch option',
+        'chromiumSandbox set to anything but `true` disables the sandbox — ' +
+        'playwright then injects --no-sandbox, which current Chrome refuses ' +
+        'outright. `chromiumSandbox: true` is the sanctioned form.',
+      violation: 'a sandbox-disabling chromiumSandbox setting',
     } as LaunchViolation)
   }
   if (BARE_LAUNCH_RE.test(content)) {

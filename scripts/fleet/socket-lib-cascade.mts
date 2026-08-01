@@ -54,7 +54,7 @@
  *     [--status] [--reset] [--dry-run]
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -75,6 +75,7 @@ import { REPO_ROOT } from './paths.mts'
 import { fetchLatestPublishedVersionChecked } from './publish-infra/npm/registry.mts'
 import { runInherit } from './publish-infra/shared.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 import type { ObligationReading } from './lib/release-cascade.mts'
 
@@ -389,7 +390,7 @@ export function loadState(filePath: string): CascadeState | undefined {
  */
 export function saveState(filePath: string, state: CascadeState): void {
   mkdirSync(path.dirname(filePath), { recursive: true })
-  writeFileSync(filePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+  writeThroughMirrorLock(filePath, `${JSON.stringify(state, null, 2)}\n`)
 }
 
 /**

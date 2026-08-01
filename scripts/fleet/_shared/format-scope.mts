@@ -100,12 +100,13 @@ export function pickIgnorePath(
   return combined
 }
 
-// Build the `pnpm exec oxfmt …` argv. The `--ignore-path` is non-negotiable —
-// it is the whole reason this helper exists, so it is threaded unconditionally.
-// `check: true` verifies without writing (the `format:check` script); otherwise
-// oxfmt writes. `files` defaults to `['.']`, the whole scoped tree; explicit
-// paths format just those. Pure + exported so the `--ignore-path` invariant is
-// unit-testable without spawning a subprocess.
+// Build oxfmt's argv, for a spawn of `nodeModulesBinPath('oxfmt')`. The
+// `--ignore-path` is non-negotiable — it is the whole reason this helper
+// exists, so it is threaded unconditionally. `check: true` verifies without
+// writing (the `format:check` script); otherwise oxfmt writes. `files` defaults
+// to `['.']`, the whole scoped tree; explicit paths format just those. Pure +
+// exported so the `--ignore-path` invariant is unit-testable without spawning a
+// subprocess.
 export function buildOxfmtArgs(
   options?:
     | {
@@ -122,8 +123,6 @@ export function buildOxfmtArgs(
   }
   const files = opts.files?.length ? [...opts.files] : ['.']
   return [
-    'exec',
-    'oxfmt',
     '-c',
     pickConfig('oxfmtrc.json', { cwd: opts.cwd }),
     '--ignore-path',

@@ -14,11 +14,27 @@ for `--no-verify`, which is worse than a slightly-looser gate.
   `--all` only. This matches the ≤200-line small-commit norm: a small commit
   lints/tests a handful of files in a few seconds.
 - **Bound every heavy step.** Each heavy optional step runs through
-  `run_step_bounded` in `.git-hooks/fleet/pre-commit`, which backgrounds the
+  `run_pkg_step_bounded` in `.git-hooks/fleet/pre-commit`, which backgrounds the
   command in its own process group, polls in 1s ticks, and on exceeding
   `PRECOMMIT_STEP_BUDGET_S` (≤ 10s) kills the whole group (TERM then KILL) and
   fails OPEN. A real lint/test FAILURE (clean non-zero before the budget) still
   BLOCKS the commit; only a budget-exceeding HANG is skipped.
+- **Skip the package-manager wrapper.** `run_pkg_step_bounded <script>` reads the
+  repo's `package.json` script body and, when it is exactly `node <path>`, runs
+  that path directly under the repo-pinned node `_shared/resolve-node.sh` put on
+  PATH. `pnpm` on PATH is the Socket Firewall shim — it boots the sfw proxy,
+  which boots pnpm, which re-resolves the workspace — so `pnpm run <script>`
+  spends seconds of a 10s budget before the script's first line. Any other body
+  (`bun test`, a body with extra flags, a shell pipeline) keeps the wrapper: the
+  hook must run what `pnpm run <script>` runs, never a guess. The
+  `--config.verify-deps-before-run=false` flag rides only on that wrapper path;
+  with pnpm out of the invocation there is no dependency pre-verification to
+  disable.
+- **A skipped gate must not read as a pass.** `run_step_bounded` records every
+  step that failed to gate the commit — one the budget killed, and one that
+  exited 0 having checked zero files (lint's `NOT a pass` verdict) — and
+  `precommit_gate_summary`, the hook's last line, prints a `GATE INCOMPLETE`
+  banner naming them. A commit whose gates all ran for real prints nothing extra.
 - **The whole-tree net is elsewhere.** Correctness across the full workspace is
   the pre-push `--all` gate + CI, not the commit hook. Skipping a hung step at
   commit time is safe because the merge path re-runs everything.
@@ -31,9 +47,14 @@ for `--no-verify`, which is worse than a slightly-looser gate.
   fleet, its tests stay here).
 - `scripts/fleet/check/precommit-steps-are-bounded.mts` (auto-discovered by
   `check --all`) reads `.git-hooks/fleet/pre-commit` and fails loud if a heavy
-  step (`pnpm lint` / `pnpm test`) is invoked bare or via the unbounded
-  `run_step`, or if `PRECOMMIT_STEP_BUDGET_S` is missing or above the
-  `PRECOMMIT_STEP_BUDGET_CAP_S` (10s) cap. Pure core unit-tested in
+  step (the `lint` / `test` package script, in any of its three invocation forms
+  — `run_pkg_step_bounded lint`, `pnpm … lint`, `node …/lint.mts`) is invoked
+  bare or via the unbounded `run_step`, if either heavy step is missing
+  entirely, if the hook never calls `precommit_gate_summary`, or if
+  `PRECOMMIT_STEP_BUDGET_S` is missing or above the
+  `PRECOMMIT_STEP_BUDGET_CAP_S` (10s) cap. Reading all three forms is what keeps
+  the check from passing vacuously when the hook changes invocation style. Pure
+  core unit-tested in
   `test/repo/unit/check-precommit-steps-are-bounded.test.mts` (wheelhouse-only).
 
 ## Why

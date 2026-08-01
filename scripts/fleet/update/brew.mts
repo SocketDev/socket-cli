@@ -18,7 +18,6 @@
  *   scripts/fleet/update/brew.mts --soak-days 7 [--write-manifest | --apply].
  */
 
-import { writeFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -48,6 +47,7 @@ import {
 
 import type { BrewTool, BrewToolStatus } from './brew-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 const logger = getDefaultLogger()
@@ -109,7 +109,7 @@ async function writeManifestMode(
   soakDays: number,
 ): Promise<number> {
   const tools = findManifestBrewSites(root)
-  writeFileSync(brewfilePath(root), renderBrewfile(tools, soakDays))
+  writeThroughMirrorLock(brewfilePath(root), renderBrewfile(tools, soakDays))
   logger.success(
     `update/brew: wrote Brewfile from ${dedupeBrewTools(tools).length} discovered CI tool(s).`,
   )
@@ -123,7 +123,7 @@ async function applyMode(soakDays: number): Promise<number> {
     new Date(),
     fetchTapCommitsViaGh,
   )
-  writeFileSync(brewTapPinsPath(), renderBrewTapPinsFile(advanced))
+  writeThroughMirrorLock(brewTapPinsPath(), renderBrewTapPinsFile(advanced))
   logger.success(
     `update/brew: advanced ${advanced.length} tap pin(s) to the newest commit >= ${soakDays}d old.`,
   )

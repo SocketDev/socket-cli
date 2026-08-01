@@ -111,3 +111,20 @@ don't change the fleet rule.
 - **No fleet fork**: this doc is fleet-canonical (lives under `template/base/docs/agents.md/fleet/`). Downstream copies are read-only. Edit here and cascade.
 - **Drift watch**: if you find a downstream repo carrying its own diverged
   copy of this doc, reconcile back to fleet-canonical.
+
+## The plan is a deliverable, not a paragraph
+
+For non-trivial work, write the plan down before executing it. A plan that's genuinely a deliverable:
+
+- **Lists steps numerically.** A reader should be able to point at "step 4" and know exactly what that means.
+- **Names the actual files and rules involved.** "Update the config" is not a plan step; "edit `.config/fleet/oxlintrc.json`, add the `no-x` rule per `no-disable-lint-rule.md`" is.
+- **Invites a second-opinion pass when the plan touches fleet-shared resources.** A plan that edits a cascaded config, a shared hook, or anything more than one repo depends on gets a review round before execution starts, not after.
+
+A plan that reads as one flowing paragraph with no numbered structure has skipped the step that makes it checkable. The reports convention (`.claude/reports/`, documented in [code-style](code-style.md#generated-reports)) follows the same untracked-by-default shape as plans, one level over: scan output, not planning state.
+
+## Enforcement
+
+- `.claude/hooks/fleet/plan-location-guard/` — blocks writing a plan doc outside `<repo-root>/.claude/plans/<name>.md`.
+- `.claude/hooks/fleet/report-location-guard/` — blocks writing a report doc outside `<repo-root>/.claude/reports/<name>.md`.
+- `.claude/hooks/fleet/no-registry-mutation-in-repo-script-nudge/` — steers a one-off registry mutation script into `/tmp`, never a committed path, since that class of script is neither a plan nor a report.
+- `.claude/hooks/fleet/plan-review-nudge/` — flags a prose-only "here's the plan" announcement with no numbered-step structure within roughly 20 lines.

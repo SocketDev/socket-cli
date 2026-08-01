@@ -92,3 +92,7 @@ The per-line comment with a reason is the audit trail. Global disables don't hav
 - `oxlint-disable-next-line` is allowed only with a `-- <reason>` suffix (enforced by the `no-file-scope-oxlint-disable` rule).
 - Bypass phrases follow the canonical `Allow <X> bypass` format; see [`bypass-phrases.md`](./bypass-phrases.md).
 - `Fix it, don't defer` (in CLAUDE.md): see a lint error? Fix the code, not the rule.
+
+## Enforcement
+
+`.claude/hooks/fleet/no-disable-lint-rule-guard/` blocks an edit that sets `"off"` or `"warn"` on any rule inside a fleet oxlint config (`.config/fleet/oxlintrc.json`, `.config/repo/oxlintrc.dogfood.json`, `template/base/.config/fleet/oxlintrc.json`, any `.eslintrc*` / `eslint.config.*`). Bypass: `Allow disable-lint-rule bypass`.

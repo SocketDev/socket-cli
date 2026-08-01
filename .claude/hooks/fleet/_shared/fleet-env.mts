@@ -18,7 +18,8 @@
 export interface FleetEnvKnob {
   // The env-var name.
   readonly name: string
-  // The value that enforces the fail-closed posture (always '1' today).
+  // The value that enforces the fail-closed posture (usually '1'; OpenTelemetry's
+  // OTEL_SDK_DISABLED is spec'd to accept the string 'true', not '1').
   readonly value: string
   // Why it's set + which tool honors it.
   readonly note: string
@@ -64,6 +65,17 @@ export const FLEET_ENV: readonly FleetEnvKnob[] = [
       '(all platforms) — previously mis-scoped under the macOS-only list, ' +
       'which is why CI runners never received it.',
   },
+  {
+    name: 'OTEL_SDK_DISABLED',
+    value: 'true',
+    note:
+      'Master OpenTelemetry SDK no-op (spec-defined: the SDK reads this and ' +
+      'exports nothing). The skillspector security tool bundles langgraph-api, ' +
+      'whose closure ships opentelemetry-sdk + an OTLP exporter; this knob holds ' +
+      'that exporter inert on every fleet surface, so an OTEL-instrumented tool ' +
+      'run inside the fleet env cannot phone home. Value is the string "true" — ' +
+      'the SDK does NOT treat "1" as disabled.',
+  },
 ]
 
 /**
@@ -73,4 +85,17 @@ export const FLEET_ENV: readonly FleetEnvKnob[] = [
  */
 export function fleetEnvShellExports(): readonly string[] {
   return FLEET_ENV.map(knob => `export ${knob.name}='${knob.value}'`)
+}
+
+/**
+ * The `NAME=value` lines for GitHub Actions `$GITHUB_ENV`, one per knob — the
+ * CI counterpart of `fleetEnvShellExports`. The fleet setup action appends
+ * these to `$GITHUB_ENV` so EVERY workflow that runs the shared setup inherits
+ * the full no-phone-home posture from THIS one list — no per-workflow `env:`
+ * block to hand-maintain or drift (that duplication is why a new knob like
+ * OTEL_SDK_DISABLED otherwise had to be copied into ci.yml, github-release.yml,
+ * and every other workflow by hand).
+ */
+export function fleetEnvGithubEnv(): readonly string[] {
+  return FLEET_ENV.map(knob => `${knob.name}=${knob.value}`)
 }

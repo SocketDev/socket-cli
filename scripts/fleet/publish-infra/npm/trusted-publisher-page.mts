@@ -178,16 +178,43 @@ async function fillField(
   await page.getByLabel(cfg.label).first().fill(cfg.value, { timeout: 10_000 })
 }
 
-// Set one allowed-action checkbox the same way: name first, label fallback.
+// Set one allowed-action checkbox: the real checkbox by name first, label
+// fallback. The name-only locator is NOT enough — npm renders some packages'
+// state as a HIDDEN input (`type="hidden" value="on"`) with the same name,
+// and setChecked on that throws "Not a checkbox or radio button" (failed
+// @socketregistry/array.prototype.flatmap mid-sweep, 2026-07-31). A hidden
+// input that already encodes the desired state is a no-op, not an error.
 async function setCheckbox(
   page: Page,
   config: { checked: boolean; label: RegExp; name: string },
 ): Promise<void> {
   const cfg = { __proto__: null, ...config } as typeof config
-  const byName = page.locator(`input[name="${cfg.name}"]`).first()
-  const box =
-    (await byName.count()) > 0 ? byName : page.getByLabel(cfg.label).first()
-  await box.setChecked(cfg.checked, { timeout: 10_000 })
+  const realBox = page
+    .locator(`input[type="checkbox"][name="${cfg.name}"]`)
+    .first()
+  if ((await realBox.count()) > 0) {
+    await realBox.setChecked(cfg.checked, { timeout: 10_000 })
+    return
+  }
+  const hidden = page
+    .locator(`input[type="hidden"][name="${cfg.name}"]`)
+    .first()
+  if ((await hidden.count()) > 0) {
+    const value = (await hidden.getAttribute('value')) ?? ''
+    const encodesChecked = value === 'on' || value === 'true'
+    if (encodesChecked === cfg.checked) {
+      return
+    }
+    throw new Error(
+      `the ${cfg.name} control is a hidden input encoding ${JSON.stringify(value)} ` +
+        `and no checkbox is rendered to flip it to ${cfg.checked} — the page ` +
+        'shape changed; re-derive the form contract before writing.',
+    )
+  }
+  await page
+    .getByLabel(cfg.label)
+    .first()
+    .setChecked(cfg.checked, { timeout: 10_000 })
 }
 
 // Bring the GitHub Actions trusted-publisher form on screen: already-open

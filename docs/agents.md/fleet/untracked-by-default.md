@@ -59,3 +59,7 @@ For 100+ file or multi-MB untracked drops, ask the user before committing even u
 ## Why this rule exists
 
 A misread of an `additions/source-patched/deps/` directory led to a 13MB / 406-file commit of upstream LiteSpeed QUIC source (ls-qpack + lsquic) that was meant to be gitignored and re-copied at build time. The missed clue: a tracked sibling (libdeflate) had only ONE file actually tracked (the custom `.gyp`), not the whole tree. The single-file allowlist is the architecture, not a wholesale tracked-vendoring pattern.
+
+## Enforcement
+
+`.claude/hooks/fleet/consumer-grep-nudge/` nudges before staging a path under `additions/source-patched/`, `upstream/`, `pkg-node/`, or a `*-bundled`/`*-vendored` directory: read the `.gitignore` allowlist for that path first, and ask the user before committing a 100+-file or multi-MB drop.

@@ -37,6 +37,17 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
   alphabetically. Private functions (lowercase / un-exported) sort first,
   exported functions second; the `export` keyword is the divider. `main`, if
   present, stays last. Enforced by `socket/sort-source-methods`.
+  - **Module-scope functions are `function foo() {}` declarations, not
+    `const foo = () => {}`.** A declaration hoists, so its position in the
+    file doesn't gate its callability — the alphabetical sort above can move
+    it freely with no TDZ risk. An arrow-const binding would reintroduce the
+    TDZ hazard the "load-bearing order" section below warns about. Enforced
+    by `.claude/hooks/fleet/prefer-fn-decl-guard/`.
+  - A function's boolean and options-bag parameters follow their own naming
+    and shape rules (no boolean-trap params, `options` param name, no
+    param mutation) — those are separate conventions, not sorting, but they
+    share the same edit-time enforcement pass as the declaration-shape rule
+    above.
 - **Array literals**: when the array is a config list, allowlist, or set-like
   collection. Position-bearing arrays (`argv`, anything where index matters
   semantically) keep their meaningful order.
@@ -153,6 +164,21 @@ one unsorted that did costs a merge conflict later.
 | Module-scope const arrays                                            | `socket/sort-array-literals` — skip position-bearing arrays.                   |
 | Independent switch-case branches                                     | future rule; skip fall-through / early-return chains.                          |
 | `.claude/settings.json` permission lists, `external-tools.json` keys | sync-scaffolding sort check.                                                   |
+
+## Enforcement
+
+- `.claude/hooks/fleet/alpha-sort-nudge/` — edit-time reminder for the
+  non-code surfaces above.
+- `.claude/hooks/fleet/prefer-fn-decl-guard/` — blocks a module-scope arrow-const
+  in place of a `function` declaration.
+- `.claude/hooks/fleet/no-boolean-trap-guard/` — blocks a new boolean parameter
+  that isn't part of a named options bag.
+- `.claude/hooks/fleet/options-param-naming-guard/` — blocks an options-bag
+  parameter named anything other than `options`.
+- `socket/options-param-naming`, `socket/bag-param-optionality-naming`,
+  `socket/no-required-in-options-bag`, `socket/options-null-proto`,
+  `socket/optional-explicit-undefined`, `socket/no-options-param-mutation` —
+  the lint-time twins of the options-bag shape rules.
 
 ## Provenance
 

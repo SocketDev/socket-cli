@@ -124,6 +124,25 @@ export async function runCoverGate(config: {
       status: 'failed',
     }
   }
+  // Rebuild PLAIN before anything else can exit the stage. The coverage run
+  // rebuilds dist with COVERAGE=true, and those instrumented bytes are what a
+  // later local pack ships to the pre-approve verify — which then reports
+  // divergence from the CI-staged tarball. That false mismatch fired three
+  // times (socket-lib, socket-sdk-js twice) with the same manual fix each
+  // time: `pnpm run build`, re-run verify. The stage now leaves the tree the
+  // way every later pack expects it, on every passed path.
+  if (hasBuildScript(cfg.cwd)) {
+    const rebuild = await seams.runInherit('pnpm', ['run', 'build'], cfg.cwd)
+    if (rebuild !== 0) {
+      return {
+        detail:
+          `plain rebuild after coverage exited ${rebuild}.\n` +
+          `  Why: the coverage run leaves instrumented dist bytes; a later pack of them fails the pre-approve verify.\n` +
+          `  Fix: get \`pnpm run build\` green, then re-run the pipeline (it resumes here).`,
+        status: 'failed',
+      }
+    }
+  }
   const readmePath = path.join(cfg.cwd, 'README.md')
   const badgeForm = existsSync(readmePath)
     ? readmeBadgeForm(readFileSync(readmePath, 'utf8'))
@@ -148,8 +167,27 @@ export async function runCoverGate(config: {
     }
   }
   return {
-    detail: `\`pnpm run ${script}\` green + coverage badge refreshed (assets/repo/badges/coverage.svg; the ci stage commits any change before bump)`,
+    detail: `\`pnpm run ${script}\` green + coverage badge refreshed (assets/repo/badges/coverage.svg; the ci stage commits any change before bump) + dist rebuilt plain (coverage taint cleared)`,
     status: 'passed',
+  }
+}
+
+/**
+ * Whether the repo declares a `build` script — the opt-in for the cover
+ * gate's plain rebuild. Repos without one have no dist to de-taint.
+ */
+function hasBuildScript(repoRoot: string): boolean {
+  const pkgPath = path.join(repoRoot, 'package.json')
+  if (!existsSync(pkgPath)) {
+    return false
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      scripts?: Record<string, unknown> | undefined
+    }
+    return typeof parsed.scripts?.['build'] === 'string'
+  } catch {
+    return false
   }
 }
 

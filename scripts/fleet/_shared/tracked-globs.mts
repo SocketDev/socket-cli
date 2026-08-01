@@ -31,6 +31,21 @@ import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+/**
+ * Nested git worktrees, the fleet convention path for agent branch checkouts.
+ * These must be pruned UP FRONT, before the glob walks them, for two reasons a
+ * post-hoc tracked-set intersection cannot cover:
+ *
+ * 1. They are a different branch's checkout. Their files are not this checkout's
+ *    source, so reporting a finding against them blames the wrong tree.
+ * 2. Each carries its own `node_modules`, and a pnpm workspace package that
+ *    depends on its own parent links back to the package root — e.g.
+ *    `<pkg>/test/node_modules/@scope/<pkg> -> ../../..`. A walker that follows
+ *    symlinks recurses through that cycle until the path exceeds the OS limit
+ *    and `scandir` throws ENAMETOOLONG, killing the whole check.
+ */
+const NESTED_WORKTREE_IGNORE = ['**/.claude/worktrees/**']
+
 export interface CollectTrackedFilesConfig {
   /**
    * The repo, or subtree, root the patterns and the git query resolve against.
@@ -99,6 +114,7 @@ export async function collectTrackedFiles(
   const submodulePaths = await getSubmodulePaths({ cwd })
   const ignore = [
     ...defaultIgnore,
+    ...NESTED_WORKTREE_IGNORE,
     ...submodulePaths.map(mount => `${mount}/**`),
     ...(cfg.ignore ?? []),
   ]

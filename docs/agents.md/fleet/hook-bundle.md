@@ -57,3 +57,7 @@ The bypass phrase is registered in `docs/agents.md/fleet/bypass-phrases.md` unde
 ## Proving the compile cache
 
 `test/repo/integration/hook-bundle-compile-cache.test.mts` (vitest) builds the bundle, spawns the `.cjs` loader for an event, then asserts the compile-cache dir is populated under `<cache>/<v8-version>/` (cache files greater than 0). Without that file count the cache claim is unproven, so the test is the gate on the whole feature.
+
+## Enforcement
+
+`.claude/hooks/fleet/bundle-stale-reminder/` (PostToolUse, Edit|Write) fires after an edit to the dispatcher, the dispatch table, a bundled hook source, or `_shared/`, and reminds you to rebuild with `node scripts/fleet/build-hook-bundle.mts`. Non-blocking.

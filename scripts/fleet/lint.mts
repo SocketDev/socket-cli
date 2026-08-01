@@ -44,9 +44,18 @@ import {
 } from './_shared/format-scope.mts'
 import { createLintRunners } from './_shared/lint-runners.mts'
 import { REPO_ROOT } from './paths.mts'
-import { resolveScopeMode } from './_shared/scope-flags.mts'
+import {
+  resolveExplicitFiles,
+  resolveScopeMode,
+} from './_shared/scope-flags.mts'
 import type { ScopeMode } from './_shared/scope-flags.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+
+// Re-exported for existing consumers (test/repo/unit/lint.test.mts) — the
+// canonical definition lives in _shared/scope-flags.mts so fix.mts can reuse
+// it without importing this CLI module and its top-level argv/runner side
+// effects.
+export { resolveExplicitFiles }
 
 const logger = getDefaultLogger()
 
@@ -111,20 +120,6 @@ export function escalatesForScope(mode: ScopeMode, files: string[]): boolean {
 
 function filterLintable(files: string[]): string[] {
   return files.filter(f => LINTABLE_EXTS.has(path.extname(f)) && existsSync(f))
-}
-
-// Explicit positional file paths → linted unconditionally, tracked or not.
-// `getModifiedFiles`/`getStagedFiles` resolve through `git diff`, which never
-// surfaces an untracked (never-`git add`ed) file, so a brand-new file passed
-// explicitly on the argv (`pnpm run fix <new-file>`) was silently dropped from
-// the git-diff-derived scope while the scope-count log still reported success.
-// Positional args (anything not starting with `-`) win over the git-diff scope
-// entirely, matching `scripts/fleet/test.mts`'s `fileArgs()` convention: flags
-// (scope flags, `--fix`, `--quiet`/`--silent`) are filtered out, and what
-// remains is treated as file paths (existence + lintable-extension filtered
-// downstream by `filterLintable`, same as the git-diff-derived scope).
-export function resolveExplicitFiles(argv: readonly string[]): string[] {
-  return argv.filter(a => !a.startsWith('-'))
 }
 
 /**

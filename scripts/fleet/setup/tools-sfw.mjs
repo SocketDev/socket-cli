@@ -75,6 +75,46 @@ export function shimCommands(enterprise) {
   return [...base, ...extra]
 }
 
+// The persistent Socket Firewall CA env pair, as shell fragments. sfw mints a
+// throwaway CA per invocation unless SFW_CA_CERT_PATH + SFW_CA_KEY_PATH both
+// point at existing files — and a throwaway CA can never live in an OS trust
+// store, so every client with its own TLS stack (pnpm's Rust tarball fetcher,
+// cargo, uv, go, git) fails UnknownIssuer on a fresh download. The guard is
+// evaluated by the SHELL at run time, so one generated wrapper is correct both
+// before and after `pnpm run setup:sfw-ca` creates the pair.
+//
+// LOCKSTEP: byte-identical to `sfwCaPosixExportLines()` /
+// `sfwCaWindowsExportLines()` in `.claude/hooks/fleet/_shared/sfw-ca.mts`,
+// enforced by `scripts/fleet/check/sfw-ca-env-is-wired.mts`. Inlined rather
+// than imported because this file is dep-0 bootstrap: it runs on the system
+// Node before node_modules exists, so it cannot import a `.mts`.
+const SFW_CA_HOME_RELATIVE_DIR = '.socket/_wheelhouse/ca'
+const SFW_CA_POSIX_CERT = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/socketFirewallCa.crt`
+const SFW_CA_POSIX_KEY = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/socketFirewallCa.key`
+const SFW_CA_WINDOWS_CERT = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\socketFirewallCa.crt`
+const SFW_CA_WINDOWS_KEY = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\socketFirewallCa.key`
+
+const SFW_CA_POSIX_LINES = [
+  '# Socket Firewall persistent CA — point sfw at a STABLE pair so the cert',
+  '# can live in the OS trust store. Without it sfw mints a throwaway CA per',
+  "# invocation and every non-Node client (pnpm's Rust tarball fetcher,",
+  '# cargo, uv, go, git) fails TLS with UnknownIssuer. Guarded: a machine',
+  '# that has not run `pnpm run setup:sfw-ca` is left exactly as it was.',
+  `if [ -r "${SFW_CA_POSIX_CERT}" ] && [ -r "${SFW_CA_POSIX_KEY}" ]; then`,
+  `  export SFW_CA_CERT_PATH="${SFW_CA_POSIX_CERT}"`,
+  `  export SFW_CA_KEY_PATH="${SFW_CA_POSIX_KEY}"`,
+  'fi',
+]
+
+const SFW_CA_WINDOWS_LINES = [
+  'rem Socket Firewall persistent CA — see sfwCaPosixExportLines for why.',
+  `if not exist "${SFW_CA_WINDOWS_CERT}" goto :sfwcadone`,
+  `if not exist "${SFW_CA_WINDOWS_KEY}" goto :sfwcadone`,
+  `set "SFW_CA_CERT_PATH=${SFW_CA_WINDOWS_CERT}"`,
+  `set "SFW_CA_KEY_PATH=${SFW_CA_WINDOWS_KEY}"`,
+  ':sfwcadone',
+]
+
 // Env-var sentinel name for a shimmed command's own-recursion guard. The shim
 // exports it before handing off to sfw, so a re-entrant invocation — a child
 // process the wrapped tool spawns, or the tool re-invoking its OWN name via a
@@ -110,6 +150,13 @@ export function posixRealShimLines(cmd, sfwBin, real) {
     // 'ignore' keeps both working; registry scanning is unaffected either
     // way, since it is decided before the unknown-host policy runs.
     'export SFW_UNKNOWN_HOST_ACTION=ignore',
+    // Persistent-CA env pair. INLINED, not imported: this file is the dep-0
+    // bootstrap tier (system Node, no node_modules, no type stripping assumed),
+    // so it cannot import the canonical
+    // `.claude/hooks/fleet/_shared/sfw-ca.mts`. The
+    // `sfw-ca-env-is-wired` check compares these lines against that module's
+    // `sfwCaPosixExportLines()` byte for byte, so the copy cannot drift.
+    ...SFW_CA_POSIX_LINES,
     // uv-only: opt the Socket Firewall into malware scanning of the packages a
     // `uv` install resolves, parallel to the pnpm supply-chain gate. Harmless
     // where unrecognized; enables the check where sfw honors it.
@@ -138,6 +185,7 @@ export function windowsRealShimLines(cmd, sfwBin, real) {
     `if defined ${sentinel} goto :real`,
     `set "${sentinel}=1"`,
     'set "SFW_UNKNOWN_HOST_ACTION=ignore"',
+    ...SFW_CA_WINDOWS_LINES,
     ...(cmd === 'uv' ? ['set "UV_MALWARE_CHECK=1"'] : []),
     `"${sfwBin}" "${real}" %*`,
     'exit /b %errorlevel%',

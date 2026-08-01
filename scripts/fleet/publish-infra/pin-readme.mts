@@ -26,10 +26,11 @@
  *   helpers here; the pin/restore bracket wraps each registry's pack.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { runCapture } from './shared.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 // The GitHub owner/repo from a package.json `repository` field (string or
 // `{ url }`), tolerating the common `git+https://…`, `git@github.com:…`, and
@@ -168,10 +169,10 @@ export async function withPinnedReadme<T>(
     // No relative asset refs to pin — skip the write/restore churn.
     return await fn(false)
   }
-  writeFileSync(readmePath, pinnedReadme)
+  writeThroughMirrorLock(readmePath, pinnedReadme)
   try {
     return await fn(true)
   } finally {
-    writeFileSync(readmePath, original)
+    writeThroughMirrorLock(readmePath, original)
   }
 }

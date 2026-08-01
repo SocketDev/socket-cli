@@ -19,7 +19,9 @@
  *   (`applyClaudeMdTrim`) shared by the `trim-claude-md` CLI and the fix path.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const BEGIN_MARKER = '<!-- <fleet-canonical> -->'
 const END_MARKER = '<!-- </fleet-canonical> -->'
@@ -276,7 +278,7 @@ export function applyClaudeMdTrim(
       capBytes,
     )
     if (content !== original) {
-      writeFileSync(file, content)
+      writeThroughMirrorLock(file, content)
       results.push({ file, normalized, trims })
     }
   }

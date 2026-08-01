@@ -1,5 +1,39 @@
 # squashing-history Reference Documentation
 
+## Feature-branch mode (`--branch`)
+
+`node run.mts <repo> --branch <name> [--base <ref>] [--message <subject>]` is the sanctioned path for
+an **author-agreed feature-branch total-squash**. It collapses the named branch to one commit on its PR
+base's merge-base instead of squashing the default branch, so an agreed squash no longer needs the
+`Allow total squash bypass` phrase.
+
+- **`--base <ref>`** — the PR base for the merge-base. Defaults to the resolved default branch
+  (`main` → `master` fallback); pass it when the branch targets a non-default base. Only
+  `merge-base..tip` is collapsed — the shared base is never rewritten.
+- **`--message <subject>`** — the collapsed commit's subject (usually the PR title). Omit it to default
+  to the branch tip's own subject, falling back to `chore: initial commit`.
+
+Safety is identical to the default-branch flow and is enforced by the engine, not the guard:
+
+1. **Divergence refusal** — if local `<name>` and `origin/<name>` each hold commits the other lacks, the
+   run refuses (reconcile forward first). Local-ahead is squashed from the local tip; local == origin (or
+   no local branch) is squashed from origin's tip.
+2. **Backup ref first** — the pre-squash tip is pushed to `refs/heads/backup-YYYYMMDD-HHMMSS` on origin
+   before any rewrite.
+3. **HARD tree-identity gate** — `squashSingleCommit` `process.exit(1)`s if the collapsed tree differs
+   from the pre-squash tip by a single byte.
+4. **Lease push under the sentinel** — `SQUASH_HISTORY=1 git push --force-with-lease=<name>:<origin-sha>
+   origin HEAD:<name>`. That exact shape (single ref, lease, no multi-ref/delete flags) is what
+   `squash-sentinel.mts` authorizes for **any** branch — the guard trusts the byte-verified backup the
+   engine already performed, so no bypass phrase is needed.
+
+Recover a feature-branch squash the same way as the default-branch one:
+
+```bash
+git fetch origin backup-YYYYMMDD-HHMMSS
+git push --force origin FETCH_HEAD:<name>
+```
+
 ## Retry Loops
 
 ### Phase 2: Backup Branch Creation with Retry

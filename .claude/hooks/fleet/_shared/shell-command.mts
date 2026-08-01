@@ -101,6 +101,151 @@ function isComment(e: ParseEntry): e is { comment: string } {
 const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
 
 /**
+ * Rewrite every command-separating newline as `;` so the tokenizer sees the
+ * boundary.
+ *
+ * Shell-quote treats a raw newline as plain whitespace and emits no operator
+ * for it, so `echo hi\ngit push` tokenizes as one command whose binary is
+ * `echo` — and every command after the first line becomes invisible to a
+ * binary-matching guard. Multi-line Bash is the common shape, so without this
+ * a guard silently passes the thing it exists to block.
+ *
+ * A newline is content, not a separator, in three places, and each is left
+ * exactly as it was: inside single or double quotes, directly after a
+ * line-continuation backslash, and inside a heredoc body.
+ */
+export function normalizeNewlineSeparators(command: string): string {
+  const out: string[] = []
+  let quote: string | undefined
+  let escaped = false
+  let pendingHeredoc: string | undefined
+  for (let i = 0, { length } = command; i < length; i += 1) {
+    const ch = command[i]!
+    if (escaped) {
+      escaped = false
+      if (ch === '\n') {
+        // Line continuation — the shell joins the two lines, so drop the
+        // backslash already emitted along with the newline.
+        out.pop()
+        continue
+      }
+      out.push(ch)
+      continue
+    }
+    if (quote !== undefined) {
+      if (ch === '\\' && quote !== "'") {
+        escaped = true
+      } else if (ch === quote) {
+        quote = undefined
+      }
+      out.push(ch)
+      continue
+    }
+    if (ch === '\\') {
+      escaped = true
+      out.push(ch)
+      continue
+    }
+    if (ch === "'" || ch === '"') {
+      quote = ch
+      out.push(ch)
+      continue
+    }
+    if (ch === '\n') {
+      if (pendingHeredoc !== undefined) {
+        // The body is data, never commands. Drop it whole — keeping it would
+        // parse a `git push` inside a heredoc as a real invocation.
+        const bodyEnd = skipHeredocBody(command, i + 1, pendingHeredoc)
+        pendingHeredoc = undefined
+        out.push(';')
+        i = bodyEnd - 1
+        continue
+      }
+      out.push(';')
+      continue
+    }
+    if (ch === '<' && command[i + 1] === '<') {
+      if (command[i + 2] === '<') {
+        // `<<<` is a here-string: one line, no body. Consume it whole so the
+        // trailing `<` pair is not re-read as a heredoc introducer.
+        out.push('<<<')
+        i += 2
+        continue
+      }
+      const heredoc = readHeredocDelimiter(command, i)
+      if (heredoc !== undefined) {
+        pendingHeredoc = heredoc.delimiter
+        out.push(command.slice(i, heredoc.end))
+        i = heredoc.end - 1
+        continue
+      }
+    }
+    out.push(ch)
+  }
+  return out.join('')
+}
+
+/**
+ * The index just past the heredoc terminator line that closes the body
+ * starting at `lineStart`, or the end of the string when the body is
+ * unterminated.
+ */
+function skipHeredocBody(
+  command: string,
+  lineStart: number,
+  delimiter: string,
+): number {
+  let start = lineStart
+  while (start < command.length) {
+    let end = command.indexOf('\n', start)
+    if (end === -1) {
+      end = command.length
+    }
+    if (command.slice(start, end).trim() === delimiter) {
+      return end === command.length ? command.length : end + 1
+    }
+    start = end + 1
+  }
+  return command.length
+}
+
+/**
+ * The heredoc delimiter introduced at `start` (`<<EOF`, `<<-'EOF'`, `<< "EOF"`)
+ * and the index just past it, or undefined when this is `<<<` (a here-string,
+ * which has no body) or no delimiter follows.
+ */
+function readHeredocDelimiter(
+  command: string,
+  start: number,
+): { delimiter: string; end: number } | undefined {
+  let i = start + 2
+  if (command[i] === '<') {
+    // `<<<` is a here-string — one line, no body to protect.
+    return undefined
+  }
+  if (command[i] === '-') {
+    i += 1
+  }
+  while (command[i] === '\t' || command[i] === ' ') {
+    i += 1
+  }
+  const quoteChar =
+    command[i] === "'" || command[i] === '"' ? command[i]! : undefined
+  if (quoteChar !== undefined) {
+    const close = command.indexOf(quoteChar, i + 1)
+    if (close === -1) {
+      return undefined
+    }
+    return { delimiter: command.slice(i + 1, close), end: close + 1 }
+  }
+  let end = i
+  while (end < command.length && /[A-Za-z0-9_]/.test(command[end]!)) {
+    end += 1
+  }
+  return end === i ? undefined : { delimiter: command.slice(i, end), end }
+}
+
+/**
  * Parse a shell command line into its constituent Command segments.
  *
  * Token handling:
@@ -117,7 +262,7 @@ const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
 export function parseCommands(command: string): Command[] {
   let entries: ParseEntry[]
   try {
-    entries = parseShell(command)
+    entries = parseShell(normalizeNewlineSeparators(command))
   } catch {
     return []
   }

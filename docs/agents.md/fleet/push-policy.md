@@ -4,6 +4,12 @@
 
 Default to `git push origin <branch>` on the current branch (typically `main`). If the push is rejected (branch protection requires a PR, conflicts, signature/identity rejection), open a PR via `gh pr create` against the default base. Don't pre-open PRs "to be safe"; the direct-push happy path is faster for the operator. Don't force-push to recover; resolve the cause (rebase to fix conflicts, fix the commit identity, etc.).
 
+## Pre-push gate on `main`
+
+A push to `origin main` runs behind the full gate first, not the fast staged-only pre-commit check: `pnpm run update`, `pnpm i`, `pnpm run fix --all`, `pnpm run check --all`, `pnpm run cover`, and every test suite green. Skipping straight to `git push` on the strength of a clean pre-commit hook ships whole-tree breakage the staged-only gate never saw.
+
+After the push lands, monitor the triggered CI run to green. A red post-push CI is fleet-wide breakage, since every other checkout pulls from the same `origin main`. Enforced by `.claude/hooks/fleet/post-push-ci-monitor-nudge/`, which reminds to watch the run rather than declaring the push done.
+
 A reminder fires when `gh pr create` is invoked without an explicit user directive ("PR this", "open a PR"). Enforced by `.claude/hooks/fleet/pr-vs-push-default-nudge/`.
 
 ## Enterprise-ruleset escape hatch

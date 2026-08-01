@@ -18,6 +18,7 @@ import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 import { createTagRef } from '../lib/github-git-refs.mts'
 import { formatReleaseGapFailure } from '../_shared/release-gap-recovery.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { withPrunedPackManifest } from './npm/pack-manifest.mts'
 import { logger, rootPath, runCapture } from './shared.mts'
 
@@ -222,7 +223,7 @@ async function defaultPackAssets(pkg: {
   const sha1 = crypto.createHash('sha1').update(bytes).digest('hex')
   const sha512 = crypto.createHash('sha512').update(bytes).digest('base64')
   const checksumsPath = path.join(rootPath, 'checksums.txt')
-  writeFileSync(
+  writeThroughMirrorLock(
     checksumsPath,
     `sha1: ${sha1}  ${tarballName}\nsha512-base64: ${sha512}  ${tarballName}\n`,
   )

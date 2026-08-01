@@ -1,14 +1,17 @@
 /*
- * @file The fleet-fork decision engine — "is this Edit/Write a local fork of a
- *   fleet-canonical file?" Shared by the Claude `no-fleet-fork-guard` hook and
- *   the cross-CLI adapters (`scripts/fleet/cross-cli/fleet-fork-detect.mts`
- *   turns Codex/Kimi tool calls into paths and runs each through this same
- *   `check`), so every CLI enforces the identical rule from a single source of
- *   truth. Lives under `_shared/` (ships to members, survives the bundle-only
- *   cutover) because the cascaded cross-CLI adapters run in members.
- *   The check detects a fleet-canonical edit by:
+ * @file The fleet-fork decision engine — "is this Edit/Write/Bash-write a
+ *   local fork of a fleet-canonical file?" Shared by the Claude
+ *   `no-fleet-fork-guard` hook and the cross-CLI adapters
+ *   (`scripts/fleet/cross-cli/fleet-fork-detect.mts` turns Codex/Kimi tool
+ *   calls into paths and runs each through this same `check`), so every CLI
+ *   enforces the identical rule from a single source of truth. Lives under
+ *   `_shared/` (ships to members, survives the bundle-only cutover) because
+ *   the cascaded cross-CLI adapters run in members.
+ *   `fleetForkVerdict` detects a fleet-canonical edit by:
  *
- *   1. Resolving the absolute file path of the Edit/Write target.
+ *   1. Resolving the absolute file path of the Edit/Write target (or, for a
+ *      Bash write, the destination `extractBashWriteDestinations` pulled out
+ *      of the shell command).
  *   2. Checking if the path is INSIDE socket-wheelhouse/template/ → allow (this IS
  *      the canonical home).
  *   3. Otherwise, resolving the repo's canonical set from its `.gitattributes`
@@ -16,23 +19,35 @@
  *      the template is the single source of truth, with allowances for
  *      per-repo markers, operator-local overrides, fleet-block hybrid files,
  *      and the bypass phrase.
+ *
+ *   `check` (the Edit/Write/MultiEdit entry point) and `bashCheck` (the Bash
+ *   entry point) both funnel into `fleetForkVerdict` so an `Edit` and a `cp`
+ *   into the same fleet-canonical path get the identical verdict.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { parseShell } from '@socketsecurity/lib-stable/shell/parse'
 
 import {
   containsFleetBeginMarker,
   textHasFleetBlockMarkers,
 } from './fleet-markers.mts'
-import { block, editGuard } from './guard.mts'
+import { bashGuard, block, editGuard } from './guard.mts'
+import {
+  commandWorkingDir,
+  normalizeNewlineSeparators,
+} from './shell-command.mts'
 import {
   BYPASS_LOOKBACK_USER_TURNS,
   bypassPhrasePresent,
 } from './transcript.mts'
 import { isWheelhouseRoot } from './wheelhouse-root.mts'
+import type { ParseEntry } from '@socketsecurity/lib-stable/shell/parse'
+import type { GuardResult } from './guard.mts'
+import type { ToolCallPayload } from './payload.mts'
 
 const BYPASS_PHRASE = 'Allow fleet-fork bypass'
 
@@ -182,7 +197,11 @@ export function isInsideTemplate(filePath: string): boolean {
   return TEMPLATE_PATH_TOKENS.some(token => normalized.includes(token))
 }
 
-export const check = editGuard((filePath, content, payload) => {
+export function fleetForkVerdict(
+  filePath: string,
+  content: string | undefined,
+  payload: ToolCallPayload,
+): GuardResult {
   const absPath = path.resolve(filePath)
 
   // The canonical home is allowed.
@@ -276,4 +295,178 @@ export const check = editGuard((filePath, content, payload) => {
       ``,
     ].join('\n'),
   )
+}
+
+export const check = editGuard(fleetForkVerdict)
+
+// Commands whose LAST bare (non-flag) argument is the write destination —
+// every argument before it is a source. Mirrors the same shape
+// no-upstream-edit-guard tracks for its own upstream/-write detection.
+const WRITE_DEST_ARG = new Set(['cp', 'install', 'mv'])
+
+// Commands where EVERY bare (non-flag) argument is itself a write
+// destination — `tee` streams stdin to each named file (plus stdout), so
+// there's no separate "source" argument to exclude.
+const WRITE_ALL_ARGS = new Set(['tee'])
+
+// Redirect ops shell-quote can emit. Mirrors shell-command.mts's
+// `REDIRECT_OPS` — duplicated (not imported) because only `>`/`>>`/`&>`/`&>>`
+// are WRITE destinations here; the rest (`<`, `<<`, `2>&1`, …) still need
+// their operand skipped so it doesn't leak into the segment's bare-arg list.
+const REDIRECT_OPS = new Set([
+  '&>',
+  '&>>',
+  '<',
+  '<&',
+  '<<',
+  '<<<',
+  '<>',
+  '>',
+  '>&',
+  '>>',
+])
+
+// The subset of REDIRECT_OPS that write a file (stdout/stderr → file).
+const WRITE_REDIRECT_OPS = new Set(['&>', '&>>', '>', '>>'])
+
+const COMMAND_SEPARATOR_OPS = new Set(['\n', ';', '&', '&&', '|', '||'])
+
+const FD_DIGIT_RE = /^\d+$/
+
+function isParseOp(e: ParseEntry): e is { op: string } {
+  return typeof e === 'object' && e !== null && 'op' in e
+}
+
+function isParseComment(e: ParseEntry): e is { comment: string } {
+  return typeof e === 'object' && e !== null && 'comment' in e
+}
+
+// The write-destination arg(s) of one already-tokenized command segment
+// (binary + args; leading `NAME=value` assignments are skipped inline).
+function destinationsInSegment(tokens: readonly string[]): string[] {
+  let i = 0
+  while (i < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[i]!)) {
+    i += 1
+  }
+  const binary = tokens[i]
+  if (!binary) {
+    return []
+  }
+  const bare = tokens.slice(i + 1).filter(t => t !== '' && !t.startsWith('-'))
+  if (WRITE_ALL_ARGS.has(binary)) {
+    return bare
+  }
+  if (WRITE_DEST_ARG.has(binary) && bare.length > 0) {
+    return [bare[bare.length - 1]!]
+  }
+  return []
+}
+
+/**
+ * Every path a shell command would WRITE to: a `cp`/`mv`/`install`
+ * destination, every `tee` target, and every `>`/`>>`/`&>`/`&>>` redirect
+ * target. Returns the raw path strings exactly as they appear in the
+ * command — not resolved to absolute — the caller resolves each against the
+ * command's effective working directory. A trailing-directory destination
+ * (`cp src dst/`) is returned as-is; `normalizePath` strips the trailing
+ * slash before the canonical-path prefix check, so a directory destination
+ * that sits inside (or IS) a canonical dir is still caught without needing
+ * the source's basename appended.
+ *
+ * Built directly on `parseShell`, not the `parseCommands` wrapper in
+ * `shell-command.mts`: that wrapper deliberately DISCARDS a redirect's target
+ * token (the right call for guards that only care about a segment's binary +
+ * args), which is exactly the token this function needs.
+ */
+export function extractBashWriteDestinations(command: string): string[] {
+  let entries: ParseEntry[]
+  try {
+    entries = parseShell(normalizeNewlineSeparators(command))
+  } catch {
+    /* c8 ignore start - shell-quote does not throw on string inputs; bashGuard guarantees a string */
+    return []
+    /* c8 ignore stop */
+  }
+
+  const destinations: string[] = []
+  let tokens: string[] = []
+
+  const flush = (): void => {
+    destinations.push(...destinationsInSegment(tokens))
+    tokens = []
+  }
+
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const e = entries[i]!
+    if (isParseComment(e)) {
+      continue
+    }
+    if (isParseOp(e)) {
+      if (COMMAND_SEPARATOR_OPS.has(e.op) || e.op === '(' || e.op === ')') {
+        flush()
+        continue
+      }
+      if (REDIRECT_OPS.has(e.op)) {
+        // Drop a preceding bare fd digit (`2>&1` → `'2'` sits in tokens right
+        // before the op) — it's a file descriptor, not a command argument.
+        if (tokens.length > 0 && FD_DIGIT_RE.test(tokens[tokens.length - 1]!)) {
+          tokens.pop()
+        }
+        const next = entries[i + 1]
+        const hasOperand =
+          next !== undefined && !isParseOp(next) && !isParseComment(next)
+        if (
+          WRITE_REDIRECT_OPS.has(e.op) &&
+          hasOperand &&
+          typeof next === 'string' &&
+          next !== ''
+        ) {
+          destinations.push(next)
+        }
+        if (hasOperand) {
+          i += 1
+        }
+        continue
+      }
+      // The `$` substitution sigil and similar — plain indirection, ignore.
+      continue
+    }
+    if (typeof e !== 'string' || e === '') {
+      // A bare '' is a `$VAR`/`${VAR}` placeholder collapsed by shell-quote —
+      // its value can't be resolved statically, so it can't be judged a write
+      // destination either. Drop it rather than mis-position a later arg.
+      continue
+    }
+    tokens.push(e)
+  }
+  flush()
+  return destinations
+}
+
+/**
+ * The Bash counterpart of `fleetForkVerdict`: extract every write destination
+ * from the command, resolve each against the command's effective working
+ * directory (`cd <dir> &&` / `git -C <dir>`, else the session cwd), and run it
+ * through the same decision engine an Edit/Write hits. Content is passed as
+ * `''` — a Bash write has no known post-write text, so the on-disk
+ * `hasFleetBlockMarkers` allowance still applies by reading the real file,
+ * while the incoming-content `textHasFleetBlockMarkers` allowance never fires.
+ * That is the conservative direction: a Bash write can't claim "I'm
+ * bootstrapping the fleet-block markers" the way an Edit/Write legitimately
+ * can.
+ */
+export const bashCheck = bashGuard((command, payload) => {
+  const destinations = extractBashWriteDestinations(command)
+  if (destinations.length === 0) {
+    return undefined
+  }
+  const cwd = commandWorkingDir(command)
+  for (let i = 0, { length } = destinations; i < length; i += 1) {
+    const abs = path.resolve(cwd, destinations[i]!)
+    const verdict = fleetForkVerdict(abs, '', payload)
+    if (verdict) {
+      return verdict
+    }
+  }
+  return undefined
 })

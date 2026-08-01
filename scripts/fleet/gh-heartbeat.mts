@@ -12,7 +12,7 @@
 //
 // Usage: node scripts/fleet/gh-heartbeat.mts [--quiet]
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -21,6 +21,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- single bounded probe in a tiny CLI; sync keeps the exit-code contract trivial.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -68,7 +69,7 @@ export function refreshGhHeartbeat(
     ? Number(readFileSync(stampFile, 'utf8'))
     : undefined
   mkdirSync(path.dirname(stampFile), { recursive: true })
-  writeFileSync(stampFile, String(Date.now()))
+  writeThroughMirrorLock(stampFile, String(Date.now()))
   const age =
     previous !== undefined && Number.isFinite(previous)
       ? `${Math.round((Date.now() - previous) / 60_000)}min old`

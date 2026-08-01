@@ -139,3 +139,11 @@ something valuable reaches the process it captured.
   headers, URL userinfo, and query parameters including percent-encoded
   variants. Test it with paired arrays of synthetic credential shapes and their
   exact expected redactions.
+
+## Enforcement
+
+The `socket/no-which-for-local-bin` oxlint rule holds the PATH-trust-inversion
+discipline at edit time: it flags a bare-name resolution (`which`/`command -v`/
+`where`, or an unfiltered PATH walk) for a project-local binary instead of the
+hardened resolver described above. Bypass for a genuine global lookup:
+`// socket-lint: allow which-lookup`.

@@ -27,6 +27,7 @@ import {
 } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { sleep } from './_shared/backoff.mts'
+import { withMirrorLockLiftedSync } from './_shared/mirror-lock.mts'
 import type { CoverConfig, ResolvedSuite } from './cover/discovery.mts'
 import {
   coverConfigPath,
@@ -113,7 +114,7 @@ function persistScratchFinal(destPath: string): boolean {
     return false
   }
   mkdirSync(path.dirname(destPath), { recursive: true })
-  copyFileSync(scratchFinal, destPath)
+  withMirrorLockLiftedSync(destPath, () => copyFileSync(scratchFinal, destPath))
   return true
 }
 
@@ -689,7 +690,9 @@ export async function buildChildrenCoverageReport(): Promise<boolean> {
     // merge reads. Raw V8 profiles are a large intermediate (multiple GB in the
     // wheelhouse suite), so do not retain them until the next coverage run.
     mkdirSync(path.dirname(COVERAGE_FINAL_CHILDREN_PATH), { recursive: true })
-    copyFileSync(scratchFinal, COVERAGE_FINAL_CHILDREN_PATH)
+    withMirrorLockLiftedSync(COVERAGE_FINAL_CHILDREN_PATH, () =>
+      copyFileSync(scratchFinal, COVERAGE_FINAL_CHILDREN_PATH),
+    )
     safeDeleteSync(rawDir, { force: true, recursive: true })
     logger.info(
       `Merged subprocess coverage from ${rawFiles.length} spawned child process(es).`,

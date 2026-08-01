@@ -34,6 +34,7 @@ import {
 import { DesignSchema } from './socket-wheelhouse-schema/design.mts'
 import { DockerSchema } from './socket-wheelhouse-schema/docker.mts'
 import { DocsSchema } from './socket-wheelhouse-schema/docs.mts'
+import { NapiSchema } from './socket-wheelhouse-schema/napi.mts'
 import {
   PathsAllowlistEntrySchema,
   ReleaseSchema,
@@ -92,6 +93,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     hooks: Type.Optional(HooksSchema),
     lint: Type.Optional(LintSchema),
     lockstep: Type.Optional(LockstepSchema),
+    napi: Type.Optional(NapiSchema),
     pathsAllowlist: Type.Optional(
       Type.Array(PathsAllowlistEntrySchema, {
         description:

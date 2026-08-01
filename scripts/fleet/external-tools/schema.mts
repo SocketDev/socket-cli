@@ -11,17 +11,18 @@
 //   node scripts/fleet/external-tools/schema.mts          (re)write the file
 //   node scripts/fleet/external-tools/schema.mts --check  exit 1 on drift
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-// oxlint-disable-next-line socket/prefer-async-spawn -- generator main() is sync (writeFileSync); the in-place oxfmt pass below must run before main returns
+// oxlint-disable-next-line socket/prefer-async-spawn -- generator main() is sync (writeThroughMirrorLock); the in-place oxfmt pass below must run before main returns
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { ToolsConfig } from '../lib/external-tools-schema.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = getDefaultLogger()
 
@@ -102,7 +103,7 @@ function main(): void {
     )
     return
   }
-  writeFileSync(SCHEMA_PATH, serializeSchema(generated))
+  writeThroughMirrorLock(SCHEMA_PATH, serializeSchema(generated))
   // JSON.stringify always multi-lines arrays; oxfmt inlines the short ones.
   // Format in place so a regenerate yields gate-clean output (the --check above
   // compares parsed content, so formatting is never read as drift).

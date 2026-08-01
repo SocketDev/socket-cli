@@ -30,5 +30,12 @@ A Rust/Go/C++ repo activates its native baseline by declaring the capability in
 only then does the cascade install that repo's `.golangci.yml` / `.clang-tidy` /
 `clippy.toml`. Roll out per-repo via the cascade wave — never blanket-enable.
 
+## Enforcement
+
+- `scripts/fleet/check/native-sources-are-doctrine-clean.mts` — the shared
+  cross-language scanner for the doctrine no native linter expresses
+  (`no-status-emoji`, `personal-path-placeholders`, `max-file-lines`) across
+  `.rs`/`.go`/`.c*`/`.h*` source.
+
 Full doctrine + the canonical Rust `[lints]` snippet:
 `.claude/rules/fleet/lint-parity-across-languages.md`.
