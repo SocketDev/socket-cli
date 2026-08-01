@@ -3,9 +3,6 @@
   "version": "2.1.0",
   "private": true,
   "description": "Socket CLI for Socket.dev",
-  "contentPolicy": {
-    "class": "dual-use"
-  },
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
   "author": {
@@ -52,5 +49,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "contentPolicy": {
+    "class": "dual-use"
   }
 }

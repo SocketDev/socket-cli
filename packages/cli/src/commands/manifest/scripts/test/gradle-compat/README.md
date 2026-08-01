@@ -8,10 +8,11 @@ reflective shims so it degrades gracefully on Gradle older than its modern targe
 - a `try`/`catch` fallback to the `Spec`-taking `getFirstLevelModuleDependencies(Spec)` when the
   no-arg overload is absent (Gradle 3.3+)
 
-Those fallback branches never execute on modern Gradle, so without a test on *old* Gradle they
+Those fallback branches never execute on modern Gradle, so without a test on _old_ Gradle they
 could silently rot. This smoke test exercises them.
 
 ## What it does
+
 `smoke-test.sh <path-to-gradle>` generates a tiny **local** Maven repo (`make-localrepo.sh` — two
 transitive-free artifacts, a prod `demo.lib:foo` and a test `demo.test:bar`), runs the init script's
 `socketFacts` task against `project/` **fully offline**, and asserts the emitted RECORDS (the script's
@@ -23,9 +24,11 @@ A local repo (not Maven Central) is essential: Gradle 1.x/2.x can't negotiate mo
 TLS, so only an offline local repo makes the old-version matrix entries testable at all.
 
 ## Running locally
+
 ```bash
 curl -fsSL https://services.gradle.org/distributions/gradle-2.14.1-bin.zip -o g.zip && unzip -q g.zip
 JAVA_HOME=<jdk8> ./smoke-test.sh "$PWD/gradle-2.14.1/bin/gradle"
 ```
+
 CI runs it (and the SBT equivalent) across a label-gated matrix in
 `.github/workflows/manifest-scripts-compat.yml` — add the `manifest-scripts` label to a PR to run it.
