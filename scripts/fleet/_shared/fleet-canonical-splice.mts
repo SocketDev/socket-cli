@@ -84,6 +84,46 @@ export function hasFleetCanonicalEndSentinel(content: string): boolean {
   return content.includes(FLEET_CANONICAL_END_SENTINEL)
 }
 
+// The repo-canonical wrapper's close tag, bare — matches every comment style
+// the vocabulary defines (`<repo>`, `# <repo>`, `<!-- <repo> -->`) because all
+// of them contain this literal substring. Deliberately NOT imported from
+// fleet-markers.mts: this module stays a content-agnostic sentinel splicer, and
+// a substring check is all a seed decision needs — no region parsing.
+const REPO_REGION_BEGIN_TOKEN = '<repo>'
+const REPO_REGION_END_TOKEN = '</repo>'
+
+/**
+ * True when `tail` (the bytes after a file's end-sentinel boundary) already
+ * carries a `<repo>` wrapper — the seeded, host-owned carve-out
+ * `.claude/hooks/fleet/_shared/fleet-markers.mts` defines. A tail with no
+ * wrapper at all is either a not-yet-seeded target or a segment file that
+ * never uses the wrapper at all, e.g. `.prettierignore`, in which case there
+ * is nothing to seed.
+ */
+function tailHasRepoRegion(tail: string): boolean {
+  return tail.includes(REPO_REGION_BEGIN_TOKEN)
+}
+
+/**
+ * The seed fragment a source tail carries for a not-yet-migrated target:
+ * everything from the start of `sourceTail`, right after the sentinel,
+ * through the end of its `</repo>` marker, closing quote included when
+ * present. Returns `''` when `sourceTail` has no `</repo>` to anchor on —
+ * defensive; callers only reach here after confirming `sourceTail` has a
+ * `<repo>` begin marker.
+ */
+function repoSeedFragment(sourceTail: string): string {
+  const idx = sourceTail.indexOf(REPO_REGION_END_TOKEN)
+  if (idx === -1) {
+    return ''
+  }
+  let end = idx + REPO_REGION_END_TOKEN.length
+  if (sourceTail.charAt(end) === '"') {
+    end += 1
+  }
+  return sourceTail.slice(0, end)
+}
+
 /**
  * Compute the placement result for a designated segment file: the canonical
  * source's bytes through its end sentinel, followed by the target's bytes
@@ -91,6 +131,13 @@ export function hasFleetCanonicalEndSentinel(content: string): boolean {
  * A target with no tail round-trips to exactly the source bytes. When either
  * side lacks the end sentinel the source wins whole — the plain mirror-copy
  * behavior, which also seeds a first placement.
+ *
+ * When the source seeds a `<repo>` wrapper right after the sentinel but the
+ * target's own tail has none at all, graft the source's seed onto the FRONT
+ * of the target's tail — the empty, "written but not yet populated" carve-out
+ * a target that predates the seed, or was cascaded before this seeding
+ * existed, never got. A target whose tail already carries a `<repo>` marker
+ * anywhere keeps that tail completely untouched, whatever else it holds.
  */
 export function spliceFleetCanonicalContent(
   source: string,
@@ -104,5 +151,11 @@ export function spliceFleetCanonicalContent(
   if (targetBoundary === -1) {
     return source
   }
-  return source.slice(0, sourceBoundary) + target.slice(targetBoundary)
+  const sourceTail = source.slice(sourceBoundary)
+  const targetTail = target.slice(targetBoundary)
+  const seed =
+    tailHasRepoRegion(sourceTail) && !tailHasRepoRegion(targetTail)
+      ? repoSeedFragment(sourceTail)
+      : ''
+  return source.slice(0, sourceBoundary) + seed + targetTail
 }

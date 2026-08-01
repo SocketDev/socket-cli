@@ -228,4 +228,3 @@ export function composeReleaseSection(config: {
 // other internal types are deliberately narrower than "everything unmapped":
 // the warning below targets the types that have historically smuggled
 // user-facing src/ work past derivation.
-

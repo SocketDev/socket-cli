@@ -129,9 +129,7 @@ async function main(): Promise<void> {
     )
     if (existsSync(rosterPath)) {
       const roster = JSON.parse(readFileSync(rosterPath, 'utf8')) as {
-        repos?:
-          | Array<{ name?: string | undefined } | string>
-          | undefined
+        repos?: Array<{ name?: string | undefined } | string> | undefined
       }
       for (const r of roster.repos ?? []) {
         const name = typeof r === 'string' ? r : (r.name ?? '')

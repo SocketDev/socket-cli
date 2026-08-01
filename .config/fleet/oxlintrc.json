@@ -301,6 +301,8 @@
     "**/test/fleet/nock-loopback-passthrough.test.mts",
     "**/test/fleet/publish-infra-placeholder.test.mts",
     "</fleet>",
-    "#fleet-canonical-end"
+    "#fleet-canonical-end",
+    "<repo>",
+    "</repo>"
   ]
 }

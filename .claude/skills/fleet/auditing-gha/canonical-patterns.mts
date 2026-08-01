@@ -48,7 +48,16 @@ export const CANONICAL_PATTERNS: readonly string[] = [
   'actions/upload-artifact@*',
   'actions/upload-pages-artifact@*',
   'depot/setup-action@*',
+  // Consumer: the napi build matrix in the canonical
+  // .github/workflows/npm-publish.yml, which compiles native addons on every
+  // runner in the matrix. Re-added 2026-08-01 because that job made them live
+  // again in the cascaded surface, and an unmatched `uses:` plan-fails every
+  // strict-allowlist repo. Both remain candidates for the composite port the
+  // header prescribes — a hand-rolled rustup step plus `actions/cache@*`
+  // would retire them again.
+  'dtolnay/rust-toolchain@*',
   'github/gh-aw-actions/*',
+  'Swatinem/rust-cache@*',
 ]
 
 // Canonical patterns whose only consumers are fleet members' OWN workflows —

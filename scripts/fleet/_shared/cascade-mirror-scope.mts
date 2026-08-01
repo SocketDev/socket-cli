@@ -21,7 +21,7 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-// Keep in lock-step with the `#fleet-canonical-begin` ignore block in
+// Keep in lock-step with the `<fleet>` ignore block in
 // `.config/fleet/oxlintrc.json` — these are that block's mirror entries with
 // the `**/` anchor stripped, minus the non-mirror artifacts the generated/
 // vendored floors already own. Enforced by
