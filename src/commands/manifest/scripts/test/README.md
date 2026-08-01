@@ -26,3 +26,35 @@ sbt rows also need the `sbt` launcher on `PATH`.
 The runner downloads the build-tool distributions and invokes the per-ecosystem
 `smoke-test.sh`. The unit-level assembler/sidecar behavior is covered separately
 by the `*.test.mts` unit tests.
+
+## Stub dependencies
+
+All three fixtures declare their dependencies as stub artifacts — empty jars plus
+generated poms — that `make-stub-repo.sh` writes into a file-based Maven repo at
+test time. The fixtures only need the *shape* of a dependency graph (a prod dep, a
+test dep, a transitive), never the code, so a stub is behaviourally identical here
+and can never age into a CVE alert or a version bump. The generated repos are
+gitignored; nothing binary is committed.
+
+Each build tool still fetches its own closure — Maven's plugins, sbt's
+scala-library, the Gradle distribution — from the network, so these fixtures are
+not "fully offline"; they simply declare no third-party dependencies of their own.
+Gradle is the exception: it also passes `--offline` and resolves everything it
+needs for the smoke test from the stub repo.
+
+## Caches
+
+No suite reads or writes the developer's own caches. Maven gets its local
+repository from `-Dmaven.repo.local`, Gradle its user home from `-g`, and sbt its
+Ivy home from `-Dsbt.ivy.home` plus `COURSIER_CACHE`, all under one root that
+`compat-cache.sh` resolves:
+
+```
+${SOCKET_COMPAT_CACHE:-${TMPDIR:-/tmp}/socket-manifest-compat}
+```
+
+That root is stable, so each tool's own closure is downloaded once and reused; the
+first run after clearing it pays for the download. The *stub* artifacts are evicted
+from it before every run, so a run can never pass on a stale copy of the thing
+under test. Set `SOCKET_COMPAT_CACHE` to a fresh `mktemp -d` for a completely cold
+run.

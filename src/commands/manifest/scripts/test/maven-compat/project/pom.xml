@@ -13,5 +13,22 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- smoke-test.sh overrides this with -Dstub.repo.url; the default lets a bare
+         `mvn compile` from this directory find the generated repo too. -->
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
   </properties>
+  <repositories>
+    <repository>
+      <id>socket-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <!-- the generator writes no .sha1 sidecars; nothing crosses a network to corrupt -->
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

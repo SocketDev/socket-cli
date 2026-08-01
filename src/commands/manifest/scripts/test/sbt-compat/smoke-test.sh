@@ -4,9 +4,12 @@
 # .socket.facts.json and is tested separately in `nx test utils`). Guards, across the supported sbt
 # range (0.13.x .. 1.x), that the reflective version shims (ResolveException / ExclusionRule /
 # ConfigRef, updateFull-vs-update) keep producing correct facts:
-#  - the two expected dependency nodes are present (commons-io prod, junit test);
-#  - commons-io appears in a prod root, junit only in non-prod roots -> the assembler's dev flag;
+#  - the two expected dependency nodes are present (demo.ext:tool prod, demo.ext:harness test);
+#  - tool appears in a prod root, harness only in non-prod roots -> the assembler's dev flag;
 #  - both get an on-disk jar `file` record under -Dsocket.withFiles.
+#
+# Both deps are stubs generated into project/localrepo at test time (../make-stub-repo.sh, shared with
+# the Gradle and Maven fixtures), so neither can age into a CVE alert or a version bump.
 #
 # The plugin is activated exactly as run.ts does it: dropped into a fresh sbt global base's plugins/.
 # Usage: smoke-test.sh <sbt-version> <scala-version>
@@ -17,6 +20,16 @@ SCALA_VERSION="${2:?usage: smoke-test.sh <sbt-version> <scala-version>}"
 PLUGIN="$HERE/../../socket-facts.plugin.scala"
 PROJECT="$HERE/project"
 RECORDS="$PROJECT/records.tsv"
+# shellcheck source=SCRIPTDIR/../compat-cache.sh
+. "$HERE/../compat-cache.sh"
+IVY="$SOCKET_COMPAT_CACHE/ivy2"
+export COURSIER_CACHE="$SOCKET_COMPAT_CACHE/coursier"
+
+bash "$HERE/../make-stub-repo.sh" "$PROJECT/localrepo" 'demo.ext:tool:1.0' 'demo.ext:harness:1.0'
+# scala-library and friends stay cached between runs; the stubs never do, so every run has to
+# resolve them from the repo just generated. Only Ivy caches them — coursier reads a `file:`
+# repository in place.
+rm -rf "$IVY/cache/demo.ext"
 
 GB="$(mktemp -d)/global-base"
 mkdir -p "$GB/plugins"
@@ -31,6 +44,7 @@ rm -rf "$RECORDS" "$PROJECT/target" "$PROJECT/project/target"
 
 echo "+ sbt $SBT_VERSION (scala $SCALA_VERSION)"
 ( cd "$PROJECT" && sbt -Dsbt.global.base="$GB" -Dsbt.server.autostart=false \
+    -Dsbt.ivy.home="$IVY" \
     -Dsocket.withFiles=true -Dsocket.recordsFile="$RECORDS" --batch socketFacts )
 
 python3 - "$RECORDS" <<'PY'
@@ -43,21 +57,21 @@ for r in rows:
     elif r[0] == 'file': files.setdefault(r[2], set()).add(r[3])
 errors = []
 
-commons = 'commons-io:commons-io:jar:2.11.0'
-junit   = 'junit:junit:jar:4.13.2'
-for cid in (commons, junit):
+tool    = 'demo.ext:tool:jar:1.0'
+harness = 'demo.ext:harness:jar:1.0'
+for cid in (tool, harness):
     if cid not in nodes: errors.append(f"expected node missing: {cid}")
-if commons in nodes and not any(roots.get(rid) for rid in nodes[commons]):
-    errors.append("commons-io not present in any prod root")
-if junit in nodes and any(roots.get(rid) for rid in nodes[junit]):
-    errors.append("test dep junit wrongly present in a prod root")
+if tool in nodes and not any(roots.get(rid) for rid in nodes[tool]):
+    errors.append("demo.ext:tool not present in any prod root")
+if harness in nodes and any(roots.get(rid) for rid in nodes[harness]):
+    errors.append("test dep demo.ext:harness wrongly present in a prod root")
 def has_jar(cid): return any(p.endswith('.jar') for p in files.get(cid, ()))
-for cid in (commons, junit):
+for cid in (tool, harness):
     if not has_jar(cid): errors.append(f"{cid} missing materialized jar under --with-files: {files.get(cid)}")
 
 if errors:
     print("FAIL:")
     for e in errors: print("  -", e)
     sys.exit(1)
-print(f"PASS: commons-io prod+jar; junit dev+jar ({len(nodes)} nodes)")
+print(f"PASS: demo.ext:tool prod+jar; demo.ext:harness dev+jar ({len(nodes)} nodes)")
 PY
