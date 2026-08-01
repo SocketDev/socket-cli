@@ -330,12 +330,12 @@ export async function run(
     await convertGradleToFacts({
       bin,
       cwd,
-      excludeConfigs: String(excludeConfigs || ''),
+      excludeConfigs: excludeConfigs || '',
       excludePaths,
       gradleOpts,
-      ignoreUnresolved: Boolean(ignoreUnresolved),
-      includeConfigs: String(includeConfigs || ''),
-      verbose: Boolean(verbose),
+      ignoreUnresolved: ignoreUnresolved,
+      includeConfigs: includeConfigs || '',
+      verbose: verbose,
     })
     return
   }
@@ -345,7 +345,7 @@ export async function run(
     cwd,
     gradleOpts,
     outputKind,
-    verbose: Boolean(verbose),
+    verbose: verbose,
   })
 
   // In text mode, output is already handled by convertGradleToMaven.

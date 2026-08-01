@@ -388,12 +388,12 @@ export async function run(
     await convertSbtToFacts({
       bin,
       cwd,
-      excludeConfigs: String(excludeConfigs || ''),
+      excludeConfigs: excludeConfigs || '',
       excludePaths,
-      ignoreUnresolved: Boolean(ignoreUnresolved),
-      includeConfigs: String(includeConfigs || ''),
+      ignoreUnresolved: ignoreUnresolved,
+      includeConfigs: includeConfigs || '',
       sbtOpts,
-      verbose: Boolean(verbose),
+      verbose: verbose,
     })
     return
   }
@@ -401,15 +401,15 @@ export async function run(
   const result = await convertSbtToMaven({
     bin,
     cwd,
-    out: String(out),
+    out: out,
     outputKind,
     sbtOpts,
-    verbose: Boolean(verbose),
+    verbose: verbose,
   })
 
   // In text mode, output is already handled by convertSbtToMaven.
   // For json/markdown modes, we need to call the output helper.
   if (outputKind !== 'text') {
-    await outputManifest(result, outputKind, String(out))
+    await outputManifest(result, outputKind, out)
   }
 }
