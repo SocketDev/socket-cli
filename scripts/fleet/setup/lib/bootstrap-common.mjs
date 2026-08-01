@@ -63,9 +63,32 @@ export const BIN_DIR = path.join(WHEELHOUSE_DIR, 'bin')
 // PNPM_HOME is the standard pnpm-standalone location; honor it if set so the
 // installed pnpm lands where the user's PATH already expects it.
 export const PNPM_DIR = process.env.PNPM_HOME || path.join(RACK_DIR, 'pnpm')
-// sfw racks version-dir'd as rack/sfw/<version>/sfw — the SAME readable path
-// install-sfw.mts exposes, so both installers agree.
+// sfw racks flavor+version-dir'd as rack/sfw/<version>-<flavor>/sfw — the SAME
+// readable path install-sfw.mts exposes, so both installers agree.
 export const SFW_RACK_DIR = path.join(RACK_DIR, 'sfw')
+
+// The sfw flavor a Socket API token selects. Named rather than inlined so the
+// rack path, the tool key, and every printed verdict spell it once.
+export function sfwFlavorFor(enterprise) {
+  return enterprise ? 'enterprise' : 'free'
+}
+
+// The rack subdirectory a given sfw build occupies.
+//
+// The flavor is IN THE PATH, not recorded beside it. sfw-free and
+// sfw-enterprise ship the same version and the same `sfw` binary name, so a
+// flavor-blind `rack/sfw/<version>` made the two indistinguishable on disk:
+// once the free build was racked, an `existsSync` short-circuit kept it forever
+// while the installer printed "flavor: enterprise". A path that carries the
+// flavor cannot go stale the way a marker file can, and it makes a flavor
+// change a cache MISS, which is what re-installs the right build.
+//
+// Both installers derive their rack path from here — install-sfw.mts extracts
+// into it as a symlink to the _dlx store, this bootstrap extracts a real dir —
+// so the two can never disagree about where a flavor lives.
+export function sfwRackDirName(version, flavor) {
+  return `${version}-${flavor}`
+}
 export const REPO_ROOT = findRepoRoot(__dirname)
 
 export function log(msg) {

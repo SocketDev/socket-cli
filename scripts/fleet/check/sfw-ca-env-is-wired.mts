@@ -13,7 +13,7 @@
  *   a wrapper-generator refactor, and the failure only shows up on a cache
  *   miss, so it gets a gate.
  *
- *   Two legs:
+ *   Three legs:
  *
  *   1. SOURCE (always runs, hard gate — this is what CI enforces). The dep-0
  *      wrapper generator `scripts/fleet/setup/tools-sfw.mjs` inlines the CA
@@ -28,11 +28,20 @@
  *   2. MACHINE (this box only). The generated wrappers in
  *      `~/.socket/_wheelhouse/bin` must carry the exports — a wrapper generated
  *      before this wiring landed is stale and silently unprotected. Absent
- *      wrappers, or an absent CA pair, are reported as a LOUD SKIP: CI has
- *      neither, and a skip must never read as a pass.
+ *      wrappers are reported as a LOUD SKIP: CI has none, and a skip must never
+ *      read as a pass. (The wrappers live under the wheelhouse umbrella; the CA
+ *      pair itself lives at `~/.socket/sfw`, where the firewall reads it.)
+ *
+ *   3. DELIVERY (this box only). Correct wiring is not the same as a working
+ *      mechanism: sfw can read the env pair, ignore it, and overwrite it in the
+ *      child. This leg asks what CA a wrapped child ACTUALLY receives
+ *      (`probeSfwCaDelivery`). A persistent pair on disk while the child still
+ *      gets a temp-dir CA is a hard FAILURE, not a pass — a gate that goes
+ *      green while the mechanism does nothing is exactly the false green the
+ *      fleet forbids. A missing pair or a missing sfw binary is a LOUD SKIP.
  *
  *   Exit codes: 0 — every leg that could run passed; 1 — a drifted source
- *   fragment or a stale generated wrapper.
+ *   fragment, a stale generated wrapper, or an inert CA.
  *
  *   Usage: node scripts/fleet/check/sfw-ca-env-is-wired.mts [--quiet]
  */
@@ -48,14 +57,18 @@ import { getSocketWheelhouseBinDir } from '@socketsecurity/lib-stable/paths/sock
 
 import { buildBlockBody } from '../../../.claude/hooks/fleet/setup-security-tools/lib/shell-rc-bridge.mts'
 import {
+  getSfwBinaryPath,
   getSfwCaCertPath,
   getSfwCaDir,
   getSfwCaKeyPath,
+  judgeSfwCaDelivery,
+  probeSfwCaDelivery,
   SFW_CA_ENV_NAMES,
   SFW_CA_HOME_RELATIVE_DIR,
   sfwCaPosixExportLines,
   sfwCaWindowsExportLines,
 } from '../../../.claude/hooks/fleet/_shared/sfw-ca.mts'
+import { defaultRunCommand } from '../setup/ecosystems.mts'
 import {
   posixRealShimLines,
   windowsRealShimLines,
@@ -203,10 +216,28 @@ async function main(): Promise<void> {
     )
   }
 
-  if (!existsSync(getSfwCaCertPath()) || !existsSync(getSfwCaKeyPath())) {
-    skips.push(
-      `no CA pair at ${getSfwCaDir()} — run \`pnpm run setup:sfw-ca\` on a dev box (expected in CI)`,
-    )
+  // The delivery leg. Wiring the env pair correctly and sfw HONORING it are two
+  // different facts; only the second one makes the CA do anything, so only the
+  // second one may turn this check green.
+  const certPath = getSfwCaCertPath()
+  const sfwBin = getSfwBinaryPath()
+  const pairPresent = existsSync(certPath) && existsSync(getSfwCaKeyPath())
+  const sfwBinPresent = existsSync(sfwBin)
+  const delivery =
+    pairPresent && sfwBinPresent
+      ? await probeSfwCaDelivery(certPath, defaultRunCommand, { sfwBin })
+      : undefined
+  const deliveryLeg = judgeSfwCaDelivery({
+    certPath,
+    delivery,
+    pairPresent,
+    sfwBin,
+    sfwBinPresent,
+  })
+  if (deliveryLeg.kind === 'fail') {
+    failures.push(deliveryLeg.message)
+  } else if (deliveryLeg.kind === 'skip') {
+    skips.push(deliveryLeg.message)
   }
 
   for (let i = 0, { length } = skips; i < length; i += 1) {
@@ -215,14 +246,15 @@ async function main(): Promise<void> {
 
   if (failures.length === 0) {
     if (!quiet) {
-      const legs = skips.length > 0 ? 'source leg' : 'source + machine legs'
+      const legs =
+        skips.length > 0 ? 'source leg' : 'source + machine + delivery legs'
       logger.success(`Socket Firewall CA env pair is wired (${legs}).`)
     }
     return
   }
 
   logger.fail(
-    `[sfw-ca-env-is-wired] ${failures.length} surface(s) lost the CA env pair:`,
+    `[sfw-ca-env-is-wired] ${failures.length} problem(s) with the persistent CA:`,
   )
   logger.log('')
   for (let i = 0, { length } = failures; i < length; i += 1) {
@@ -230,12 +262,12 @@ async function main(): Promise<void> {
   }
   logger.log('')
   logger.log(
-    '  Why it matters: without SFW_CA_CERT_PATH + SFW_CA_KEY_PATH, sfw mints a',
+    '  Why it matters: unless sfw hands a wrapped child the PERSISTENT pair, it',
   )
   logger.log(
-    '  throwaway CA per run, so pnpm/cargo/uv/go fail TLS with UnknownIssuer on',
+    '  mints a throwaway CA per run, and pnpm/cargo/uv/go fail TLS with',
   )
-  logger.log('  any package they have not already cached.')
+  logger.log('  UnknownIssuer on any package they have not already cached.')
   logger.log(
     '  Fix (source):  re-emit sfwCaPosixExportLines() / sfwCaWindowsExportLines()',
   )

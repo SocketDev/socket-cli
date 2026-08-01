@@ -74,11 +74,12 @@ const BYPASS_PHRASE = 'Allow readme-fleet-shape bypass'
 const OPT_IN_PHRASE = 'Opt-in readme-fleet-shape'
 const OPT_IN_MARKER = '.config/readme-fleet-shape.json'
 
-// The opening "why" may be a `## Why this repo exists` heading OR the lead
-// paragraph that sits between the title/badges and the first `##`. A reader
-// arriving at the title wants the answer immediately, and a heading between
-// them adds a step without adding information, so both shapes are accepted and
-// exactly one of them is required.
+// The opening "why" is LEAD PROSE between the title/badges and the first
+// `##` — never a heading (owner directive, 2026-07-31): a reader arriving at
+// the title wants the answer immediately, and a `## Why this repo exists`
+// heading between them adds a step without adding information. The legacy
+// heading still SATISFIES the lead check during the fleet-wide migration so
+// unswept READMEs stay editable, but new full writes should use lead prose.
 const LEAD_SECTION = 'Why this repo exists'
 
 const REQUIRED_SECTIONS = [
@@ -114,8 +115,8 @@ export function hasLeadAnswer(body: string): boolean {
       continue
     }
     if (trimmed.startsWith('## ')) {
-      // Reached the first section without lead prose; the heading form is the
-      // remaining way to satisfy this.
+      // Reached the first section without lead prose; the LEGACY heading form
+      // still satisfies during the migration (see LEAD_SECTION note).
       return trimmed.slice(3).trim() === LEAD_SECTION
     }
     if (
@@ -338,8 +339,8 @@ export function findShapeViolations(
         kind: 'missing-section',
         detail:
           `README does not say why the repo exists before its first "##". ` +
-          `Add a lead paragraph under the title and badges, or a ` +
-          `"## ${LEAD_SECTION}" section.`,
+          `Add a lead paragraph directly under the title and badges (the ` +
+          `legacy "## ${LEAD_SECTION}" heading is deprecated — jump into it).`,
       })
     }
     let cursor = 0
@@ -504,9 +505,9 @@ export const check = editGuard((filePath, content, payload) => {
   lines.push(`  socket-wheelhouse/template/README.md`)
   lines.push(``)
   lines.push(
-    `Open with why the repo exists: a lead paragraph under the title and`,
+    `Open with why the repo exists: a lead paragraph directly under the`,
   )
-  lines.push(`badges, or a "## ${LEAD_SECTION}" section. Then, in order:`)
+  lines.push(`title and badges (no "## ${LEAD_SECTION}" heading). Then, in order:`)
   for (let i = 0, { length } = REQUIRED_SECTIONS; i < length; i += 1) {
     lines.push(`  ${i + 1}. ## ${REQUIRED_SECTIONS[i]}`)
   }

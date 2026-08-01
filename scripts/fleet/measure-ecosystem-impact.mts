@@ -453,7 +453,15 @@ export function formatImpactReport(
       `${result.target} (${rankText}): ${result.before} → ${result.after} reaching roots, cut ${pct}`,
     )
     if (result.survivingGateways.length === 0) {
-      lines.push('  surviving gateways: none — the target left the tree.')
+      // An empty gateway list is not by itself proof the target is gone: a
+      // target that is ALSO a root still reaches itself. Read `after` before
+      // making the stronger claim, or the report asserts a removal that did
+      // not happen.
+      lines.push(
+        result.after === 0
+          ? '  surviving gateways: none — the target left the tree.'
+          : `  surviving gateways: none — nothing live depends on it, yet ${result.after} root(s) still reach it, so it is itself in the root set.`,
+      )
     } else {
       lines.push('  surviving gateways:')
       for (const gw of result.survivingGateways) {

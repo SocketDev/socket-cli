@@ -43,21 +43,31 @@ import { appendFileSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
 import { decidePlaceholderRelease } from './bump/placeholder-release.mts'
+import { applyLockstepBump } from './bump/lockstep-write.mts'
+import {
+  BUMP_USAGE,
+  resolveBumpInvocation,
+  unrecognizedFlagsMessage,
+} from './bump/invocation.mts'
+import {
+  changelogHasVersionSection,
+  changelogVersionSections,
+  composeReleaseSection,
+  dropUnreleasedChangelogSections,
+  insertChangelogSection,
+  replaceVersion,
+} from './bump/changelog-sections.mts'
 import { findBackupBranchesWithUnreleasedCommits } from './lib/backup-branch.mts'
 import {
   bumpLevelFor,
   changelogHeading,
   computeNextVersion,
-  generateChangelogSection,
-  promoteUnreleased,
   repoBaseUrl,
   sectionHasEntries,
-  unionSections,
   UNRELEASED_HEADING,
   versionHintFrom,
   withChangelogEntry,
@@ -72,14 +82,8 @@ import {
   fetchLatestPublishedVersionChecked,
   fetchRegistryReleaseState,
 } from './publish-infra/npm/registry.mts'
-import {
-  checkVersionLockstep,
-  planLockstepManifestWrites,
-} from './publish-infra/npm/workspace-plan.mts'
 import { resolveNpmWorkspaceLayout } from './publish-infra/npm/workspace.mts'
-import { runCapture, runInherit } from './publish-infra/shared.mts'
-
-import type { NpmWorkspaceLayout } from './publish-infra/npm/workspace.mts'
+import { runCapture } from './publish-infra/shared.mts'
 
 import type {
   BackupBranchGitExec,
@@ -201,218 +205,8 @@ function readPackageJson(): { raw: string; parsed: PackageJsonShape } {
   return { parsed: JSON.parse(raw) as PackageJsonShape, raw }
 }
 
-/**
- * Replace the root `"version"` field in package.json text, preserving the
- * file's existing formatting (a JSON.parse → stringify round-trip would reorder
- * keys and reflow the file). Matches the first `"version"` — the root field.
- */
-export function replaceVersion(raw: string, nextVersion: string): string {
-  return raw.replace(
-    /("version":\s*")[^"]+(")/,
-    (_m, pre: string, post: string) => `${pre}${nextVersion}${post}`,
-  )
-}
-
-/**
- * True when the CHANGELOG already carries a section heading for `version`.
- * Matches the heading shapes seen across the fleet — `## 1.2.3`,
- * `## [1.2.3](url)`, `## v1.2.3`, each optionally followed by a date — and
- * requires the version to end there (a 6.2.1 probe must not match a 6.2.10
- * heading).
- */
-export function changelogHasVersionSection(
-  changelog: string,
-  version: string,
-): boolean {
-  return changelog.split('\n').some(line => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return (
-      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
-    )
-  })
-}
-
-/**
- * Every `## <version>` heading in `changelog`, newest first. `[Unreleased]` and
- * any non-version heading are skipped — only real version sections are listed.
- */
-export function changelogVersionSections(changelog: string): string[] {
-  const found: string[] = []
-  const lines = changelog.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]!
-    if (!line.startsWith('## ')) {
-      continue
-    }
-    // `## ` then an optional `[`, link-style heading, and optional `v`, then
-    // the captured version: three dot-separated numbers plus an optional
-    // `-prerelease` tail. Anchored, so only a heading's own version matches.
-    const version = /^##\s+\[?v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/.exec(
-      line,
-    )?.[1]
-    if (version) {
-      found.push(version)
-    }
-  }
-  return found
-}
-
-/**
- * `changelog` with the section for `version` removed (heading through the line
- * before the next `## ` heading, or EOF). Returns the input unchanged when no
- * such section exists.
- */
-export function removeChangelogVersionSection(
-  changelog: string,
-  version: string,
-): string {
-  const lines = changelog.split('\n')
-  const start = lines.findIndex(line => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return (
-      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
-    )
-  })
-  if (start === -1) {
-    return changelog
-  }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
-  return [...lines.slice(0, start), ...lines.slice(end)].join('\n')
-}
-
-/**
- * Drop every version section the release never actually shipped.
- *
- * A section is a DRAFT when its version is newer than the last release: it was
- * written, then superseded before it ever published (a re-cut at a different
- * number, a rejected staging entry, a release that stopped at approve).
- *
- * `isDraft` is injected so the pruning stays pure. Callers pass a
- * base-relative predicate (`v => gt(v, base)`) rather than a tag lookup:
- * plenty of real history predates the tagging convention, so treating every
- * untagged section as a draft would delete shipped entries.
- */
-export function dropUnreleasedChangelogSections(
-  changelog: string,
-  isDraft: (version: string) => boolean,
-): { dropped: string[]; text: string } {
-  const dropped: string[] = []
-  let text = changelog
-  for (const version of changelogVersionSections(changelog)) {
-    if (isDraft(version)) {
-      dropped.push(version)
-      text = removeChangelogVersionSection(text, version)
-    }
-  }
-  return { dropped, text }
-}
-
-/**
- * Insert a new CHANGELOG section above the first existing `## ` version heading
- * after the file's intro. When the file has no version sections yet, append
- * after a trailing blank line. IDEMPOTENT per version: when the changelog
- * already carries a section for the version the new section names, the input
- * is returned unchanged — a re-entrant bump (the release pipeline bumps
- * locally, then the dispatched npm-publish.yml --bump ran again in CI) once
- * inserted a duplicate 6.2.1 section and committed it via the release App.
- */
-export function insertChangelogSection(
-  existing: string,
-  section: string,
-): string {
-  const sectionHeading = section
-    .split('\n')
-    .find(line => line.startsWith('## '))
-  const sectionVersion = sectionHeading
-    ? /^##\s+\[?v?(\d+\.\d+\.\d+)/.exec(sectionHeading)?.[1]
-    : undefined
-  if (
-    sectionVersion !== undefined &&
-    changelogHasVersionSection(existing, sectionVersion)
-  ) {
-    return existing
-  }
-  const lines = existing.split('\n')
-  const firstHeading = lines.findIndex(l => l.startsWith('## '))
-  if (firstHeading === -1) {
-    return `${existing.replace(/\s*$/, '')}\n\n${section}\n`
-  }
-  const before = lines.slice(0, firstHeading).join('\n').replace(/\s*$/, '')
-  const after = lines.slice(firstHeading).join('\n')
-  return `${before}\n\n${section}\n\n${after}`
-}
-
-/**
- * Compose the release section for `version` from BOTH bullet sources: the
- * commit-derived bullets, the shared anchor-chain derivation, UNIONED with the
- * hand-written bullets accrued under `## [Unreleased]`, merged under their
- * matching Added/Changed/Fixed headings with exact-duplicate lines collapsed.
- * Promotion empties the `[Unreleased]` block from the returned
- * `baseChangelog` — the fleet style creates the heading on demand, so
- * `mergeUnreleased` recreates it at the next squash-time accrual. Preferring
- * one source over the other is the incident shape this replaces: sdk 4.0.2's
- * cached-scan/pollIntervalMs feature shipped UNDOCUMENTED because its bullets
- * were hand-written, its commits chore-typed, and the strict commit-derived
- * regeneration dropped the hand-written side. Pure over its inputs.
- */
-export function composeReleaseSection(config: {
-  changelog: string
-  commits: readonly ConventionalCommit[]
-  date: string
-  repoUrl: string | undefined
-  version: string
-  versionHeading: string
-}): { baseChangelog: string; promotedUnreleased: boolean; section: string } {
-  const { changelog, commits, date, repoUrl, version, versionHeading } = {
-    __proto__: null,
-    ...config,
-  } as {
-    changelog: string
-    commits: readonly ConventionalCommit[]
-    date: string
-    repoUrl: string | undefined
-    version: string
-    versionHeading: string
-  }
-  const derived = generateChangelogSection({
-    commits,
-    date,
-    heading: versionHeading,
-    repoUrl,
-    version,
-  })
-  const promoted = promoteUnreleased(changelog, versionHeading)
-  if (!promoted) {
-    return {
-      baseChangelog: changelog,
-      promotedUnreleased: false,
-      section: derived,
-    }
-  }
-  return {
-    baseChangelog: promoted.changelog,
-    promotedUnreleased: true,
-    section: unionSections(versionHeading, derived, promoted.section),
-  }
-}
-
-// Commit types the changelog derivation never maps to a section — work
-// committed under them is invisible to the derived CHANGELOG. `docs` and the
-// other internal types are deliberately narrower than "everything unmapped":
-// the warning below targets the types that have historically smuggled
-// user-facing src/ work past derivation.
+// Commit types a release treats as invisible: they carry no user-facing
+// change, so a release made only of these needs an operator-named entry.
 const DERIVATION_INVISIBLE_TYPES = new Set(['chore', 'style', 'test'])
 
 /**
@@ -563,201 +357,21 @@ async function warnBackupBranchesWithUnreleased(
   }
 }
 
-/**
- * Apply the multi-package LOCKSTEP bump: rewrite every publishable member
- * manifest (+ the versioned root) to `nextVersion` — root `version` field and
- * exact sibling pins (the loader's optionalDependencies rows) together — then
- * invoke each member's own platform-package generator so the generated
- * `npm/<platformId>/` manifests re-derive from the bumped main manifest, and
- * re-verify lockstep afterwards. Returns the written manifest rel-paths, or
- * undefined after failing loud (a non-zero generator or post-generator drift
- * never ships a half-applied bump).
- */
-export async function applyLockstepBump(
-  layout: NpmWorkspaceLayout,
-  nextVersion: string,
-): Promise<string[] | undefined> {
-  const siblingNames = layout.packages.map(pkg => pkg.name)
-  const inputs = layout.packages.map(pkg => ({
-    name: pkg.name,
-    raw: readFileSync(pkg.manifestPath, 'utf8'),
-    relManifestPath: pkg.relManifestPath,
-    siblingNames,
-  }))
-  if (layout.versionSource.relManifestPath === 'package.json') {
-    // The root manifest carries the version, the stuie shape — it moves in
-    // lockstep too.
-    inputs.push({
-      name: '',
-      raw: readFileSync(path.join(layout.rootPath, 'package.json'), 'utf8'),
-      relManifestPath: 'package.json',
-      siblingNames,
-    })
-  }
-  const writes = planLockstepManifestWrites(inputs, nextVersion)
-  for (const write of writes) {
-    writeThroughMirrorLock(
-      path.join(layout.rootPath, write.relManifestPath),
-      write.updated,
-    )
-  }
-  // Generated platform dirs re-derive from the bumped main manifest via the
-  // repo's OWN generator (make-npm-dirs) — the engine invokes it, never
-  // reimplements it.
-  const generators = [
-    ...new Set(
-      layout.packages
-        .map(pkg => pkg.generatorPath)
-        .filter(generatorPath => generatorPath !== undefined),
-    ),
-  ]
-  for (let i = 0, { length } = generators; i < length; i += 1) {
-    const generatorPath = generators[i]!
-    logger.log(
-      `[bump] regenerating platform packages: node ` +
-        `${path.relative(layout.rootPath, generatorPath)}`,
-    )
-    // eslint-disable-next-line no-await-in-loop -- serial by design: generators rewrite the tree
-    const code = await runInherit(
-      process.execPath,
-      [generatorPath],
-      layout.rootPath,
-    )
-    if (code !== 0) {
-      logger.fail(
-        `[bump] the platform-package generator exited ${code}.\n` +
-          `  Where: ${generatorPath}\n` +
-          `  Saw vs wanted: a non-zero generator exit; wanted regenerated ` +
-          `npm/<platformId>/ manifests at ${nextVersion}.\n` +
-          `  Fix: run it directly and repair the generator — the bump never ` +
-          `ships half-regenerated platform dirs.`,
-      )
-      return undefined
-    }
-  }
-  // The generator derives platform manifests from the bumped main manifest;
-  // verify it actually converged — a generator that pins its own version
-  // would silently break lockstep here.
-  const drift = checkVersionLockstep(resolveNpmWorkspaceLayout(layout.rootPath))
-  if (drift.length > 0) {
-    logger.fail(
-      `[bump] version lockstep is broken AFTER the platform-package ` +
-        `generator ran:\n${drift.map(line => `    ${line}`).join('\n')}\n` +
-        `  Fix: make the generator derive name/version from its package's ` +
-        `own manifest (never a hard-coded version), then re-run.`,
-    )
-    return undefined
-  }
-  return writes.map(write => write.relManifestPath)
-}
-
-// Every flag `main` accepts. Kept beside the parseArgs options it mirrors so a
-// new flag is added in both places, and `unrecognizedFlags` can refuse the rest.
-export const BUMP_FLAGS: ReadonlySet<string> = new Set([
-  'dry-run',
-  'empty-changelog-entry',
-  'help',
-  'release-as',
-  'write-only',
-])
-
-export const BUMP_USAGE = `Usage: node scripts/fleet/bump.mts [options]
-
-  Derives the next version from the Conventional Commits since the last
-  release, writes package.json + CHANGELOG.md, and commits the bump.
-
-  --dry-run                    preview; writes nothing
-  --release-as <level|X.Y.Z>   major | minor | patch, or an exact version
-  --write-only                 write the files but do NOT git-commit (CI)
-  --empty-changelog-entry <s>  entry to use when no user-visible changes derive
-  --help                       print this and exit
-
-  The VERSION is the user's decision. Prefer naming the target as a
-  \`X.Y.Z-prerelease\` hint in package.json — the release tooling consumes it.
-
-  A package that has never shipped and still carries its placeholder version
-  (\`0.0.0\`, or a \`X.Y.Z-prerelease\`) defaults to 0.1.0 — not a
-  commit-derived bump, not 1.0.0. \`--release-as\` overrides it.`
-
-/**
- * The `--flag` tokens in `argv` that `known` does not contain, normalized off
- * their leading dashes and any `=value` tail. A bare `-` or `--` is ignored,
- * and everything after a `--` separator is treated as positional.
- */
-export function unrecognizedFlags(
-  argv: readonly string[],
-  known: ReadonlySet<string>,
-): string[] {
-  const unknown: string[] = []
-  for (let i = 0, { length } = argv; i < length; i += 1) {
-    const token = argv[i]!
-    if (token === '--') {
-      break
-    }
-    if (!token.startsWith('--') || token.length <= 2) {
-      continue
-    }
-    const name = token.slice(2).split('=')[0]!
-    if (name && !known.has(name)) {
-      unknown.push(`--${name}`)
-    }
-  }
-  return unknown
-}
-
 async function main(): Promise<void> {
-  const { values } = parseArgs({
-    options: {
-      'dry-run': { default: false, type: 'boolean' },
-      // Operator/UI override for the SemVer level. Default (omitted) derives the
-      // level from the Conventional Commits. Use it when the commit types don't
-      // capture intent — a breaking change committed without `!`, or a milestone
-      // major. A publish-workflow dropdown passes this through. NOT AI: the bump
-      // stays deterministic; this is an explicit human decision.
-      'release-as': { type: 'string' },
-      // CI uses --write-only: write package.json + CHANGELOG but DON'T
-      // git-commit. The provenance workflow then commits the changed files via
-      // the GitHub git-objects API (web-flow-verified, no GPG key) — main
-      // requires signed commits and CI has no signing key, so a plain
-      // `git commit` from CI can't land.
-      'write-only': { default: false, type: 'boolean' },
-      // The entry to record when a release derives no user-visible changes, in
-      // place of the loud stop that asks for real entries. Deliberate + named
-      // by the operator (e.g. --empty-changelog-entry "Internal maintenance"),
-      // never a silent canned default.
-      'empty-changelog-entry': { type: 'string' },
-      help: { default: false, type: 'boolean' },
-    },
-    strict: false,
-  })
-  // `--help` must never mutate. It printed nothing here and, because parsing is
-  // non-strict, fell through to a REAL bump — writing package.json, rewriting
-  // the CHANGELOG, and committing a version nobody named.
-  if (values['help']) {
+  // The CLI preamble — usage, unknown-flag refusal, flag resolution — is
+  // resolveBumpInvocation, so those branches are assertable without running
+  // a bump. main() only plumbs the decision to output and an exit code.
+  const invocation = resolveBumpInvocation(process.argv.slice(2))
+  if (invocation.kind === 'usage') {
     logger.log(BUMP_USAGE)
     return
   }
-  // Non-strict parsing keeps unknown flags from throwing, which also means a
-  // typo silently loses its meaning: `--dryrun` parses as an unknown flag and
-  // the run bumps FOR REAL. A mutating script must not guess — refuse instead.
-  const unknownFlags = unrecognizedFlags(process.argv.slice(2), BUMP_FLAGS)
-  if (unknownFlags.length) {
-    logger.fail(
-      `bump: unrecognized flag(s) ${unknownFlags.join(', ')}.\n` +
-        `  What:  this script WRITES (version + CHANGELOG + commit), so an\n` +
-        `         unrecognized flag is refused rather than ignored — a typo'd\n` +
-        `         --dry-run would otherwise perform a real bump.\n` +
-        `  Where: the bump CLI.\n` +
-        `  Saw:   ${unknownFlags.join(', ')}; wanted one of: ${[...BUMP_FLAGS].toSorted().join(', ')}.\n` +
-        `  Fix:   correct the flag, or run --help for the full list.`,
-    )
+  if (invocation.kind === 'refuse') {
+    logger.fail(unrecognizedFlagsMessage(invocation.unknownFlags))
     process.exitCode = 1
     return
   }
-  const dryRun = !!values['dry-run']
-  const releaseAs = values['release-as']
-  const writeOnly = !!values['write-only']
-  const emptyChangelogEntry = values['empty-changelog-entry']
+  const { dryRun, emptyChangelogEntry, releaseAs, writeOnly } = invocation
 
   const { parsed: rootPkg, raw: pkgRaw } = readPackageJson()
   // The publish layout decides the bump subject: a single-package repo bumps

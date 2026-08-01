@@ -2,16 +2,18 @@
  * @file Enforce the canonical fleet README section list. Fires only on the
  *   repo-root `README.md` (skipped for nested READMEs under `packages/`,
  *   `docs/`, `.claude/`, etc. — those are scoped docs with their own shape).
- *   Every fleet root README must contain five level-2 sections in this order:
+ *   Every fleet root README must contain four level-2 sections in this order:
  *
- *   1. Why this repo exists
- *   2. Install
- *   3. Usage
- *   4. Development
- *   5. License The canonical skeleton lives at
- *      socket-wheelhouse/template/README.md. Additional sections between/after
- *      these are allowed; reordering / missing / typo'd sections are findings.
- *      No autofix: a missing section needs content, not just a heading.
+ *   1. Install
+ *   2. Usage
+ *   3. Development
+ *   4. License The canonical skeleton lives at
+ *      socket-wheelhouse/template/README.md. The "why" is LEAD PROSE directly
+ *      under the title and badges, never a heading (owner directive,
+ *      2026-07-31) — the readme-fleet-shape-guard owns that requirement.
+ *      Additional sections between/after these are allowed; reordering /
+ *      missing / typo'd sections are findings. No autofix: a missing section
+ *      needs content, not just a heading.
  */
 
 import type { MarkdownlintRule } from './_shared/rule-types.mts'
@@ -23,13 +25,12 @@ import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mts'
 export { isRootReadme } from './_shared/root-readme.mts'
 
 const RULE_NAME = 'socket-readme-required-sections'
-const REQUIRED_SECTIONS = [
-  'Why this repo exists',
-  'Install',
-  'Usage',
-  'Development',
-  'License',
-]
+// 'Why this repo exists' is deliberately NOT here (owner directive,
+// 2026-07-31): the answer belongs as lead prose directly under the title and
+// badges — a heading between a reader and the answer adds a step without
+// adding information. The readme-fleet-shape-guard owns the lead-prose
+// requirement.
+const REQUIRED_SECTIONS = ['Install', 'Usage', 'Development', 'License']
 
 const rule: MarkdownlintRule = {
   description:

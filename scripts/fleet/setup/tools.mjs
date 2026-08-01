@@ -50,6 +50,7 @@ import {
   rackedBinFor,
   REPO_ROOT,
   resolveReal,
+  warn,
 } from './lib/bootstrap-common.mjs'
 import { installFff } from './lib/install-fff.mjs'
 import { installJanus } from './lib/install-janus.mjs'
@@ -228,9 +229,23 @@ function main() {
   // Token present (env OR keychain) ⇒ enterprise flavor + its fuller shim set.
   const enterprise = hasSocketToken()
   log(
-    `sfw flavor: ${enterprise ? 'enterprise (Socket token found)' : 'free (no token)'}`,
+    `sfw flavor requested: ${enterprise ? 'enterprise (Socket token found)' : 'free (no token)'}`,
   )
-  const sfwBin = installSfw(platform, enterprise)
+  // Report the flavor from what LANDED, never from what was asked for. The
+  // requested line above is intent; this one is disk. They used to be the same
+  // claim, so a machine that had once racked the free build kept it forever
+  // while the installer announced "enterprise".
+  const sfw = installSfw(platform, enterprise)
+  const sfwBin = sfw?.bin
+  if (sfw) {
+    log(`sfw flavor on disk: ${sfw.flavor}@${sfw.version} → ${sfw.bin}`)
+  } else {
+    warn('sfw flavor on disk: none — shims become helpful-error stubs')
+  }
+  // The shim command set follows the build that is actually racked: an
+  // enterprise-only shim (gem/bundler/nuget) wrapping a free binary is a
+  // wrapper that cannot do what its presence implies.
+  const enterpriseOnDisk = sfw ? sfw.flavor === 'enterprise' : enterprise
   // Self-heal any racked/shimmed package manager whose rack is missing or below
   // its external-tools.json floor (e.g. a Homebrew uv shadowing the racked pin)
   // BEFORE the shims are written — so regenerateShims → resolveReal wraps the
@@ -243,7 +258,7 @@ function main() {
   // guarantees a hash-locked install for the uv-project tools (SkillSpector's
   // uv.lock) that run after the bootstrap.
   installUv(platform)
-  regenerateShims(sfwBin, enterprise)
+  regenerateShims(sfwBin, enterpriseOnDisk)
   installFff(platform)
   installJanus(platform)
   installSmithers()

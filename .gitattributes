@@ -71,7 +71,7 @@ test/unit/fleet linguist-generated=true
 template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 # ─── END fleet-canonical ────────────────────────────────────────
 
-# <fleet-canonical>
+# <fleet>
 # Cascaded from socket-wheelhouse/template/base/. Don't edit locally —
 # edit upstream and re-cascade via sync-scaffolding. Marked
 # linguist-generated so GitHub PR diffs collapse them by default.
@@ -161,4 +161,4 @@ test/fleet/_shared/lib linguist-generated=true
 test/fleet/nock-loopback-passthrough.test.mts linguist-generated=true
 test/fleet/publish-infra-placeholder.test.mts linguist-generated=true
 test/fleet/scripts/setup.mts linguist-generated=true
-# </fleet-canonical>
+# </fleet>

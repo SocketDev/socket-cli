@@ -1,6 +1,6 @@
 ---
 name: measuring-ecosystem-impact
-description: Rank npm packages by ecosystem reach and model what overriding them actually removes from the install tree.
+description: Rank npm packages by ecosystem reach; model what overriding them removes from the install tree.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(pnpm run:*), Read, Grep, Glob
 model: claude-sonnet-4-6

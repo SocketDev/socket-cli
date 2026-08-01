@@ -1,4 +1,4 @@
-/**
+/*
  * @file Runs vitest via its documented Node API (`parseCLI` + `startVitest`
  *   from `vitest/node`) instead of spawning the `vitest` binary, so
  *   scripts/fleet/test.mts can read back the finished run's test counts.

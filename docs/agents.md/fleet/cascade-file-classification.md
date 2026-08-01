@@ -17,8 +17,7 @@ Source of truth: `IDENTICAL_FILES` + `OPTIONAL_IDENTICAL_FILES` in
 every `fleet/` tree (hooks, agents, commands, skills, workflows),
 `.git-hooks`, `scripts/fleet`, the oxlint plugin, `.config/fleet/*` configs,
 `.editorconfig`, `.npmrc`, `.github/dependabot.yml`, byte-identical workflows
-(`prune-workflow-runs.yml`, `weekly-update-non-gh-aw.yml.disabled`), schema
-files, and branding assets.
+(`prune-workflow-runs.yml`), schema files, and branding assets.
 
 ## 2. Hybrid (fleet block/fields merged into a repo-owned file)
 

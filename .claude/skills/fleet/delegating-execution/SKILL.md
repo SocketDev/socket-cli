@@ -1,6 +1,6 @@
 ---
 name: delegating-execution
-description: Route substantial work through plan, execution, review, and follow-up agents at the right effort tier.
+description: Route substantial work through plan, execute, review, follow-up agents at the right effort tier.
 user-invocable: true
 argument-hint: '<task summary> [benign|security]'
 allowed-tools: Bash(node:*), Read, Workflow, Write

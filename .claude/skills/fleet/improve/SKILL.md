@@ -1,6 +1,6 @@
 ---
 name: improve
-description: Read-only senior codebase survey that returns prioritized implementation plans for other agents to execute.
+description: Read-only codebase survey returning prioritized implementation plans for other agents.
 license: MIT
 metadata:
   internal: true

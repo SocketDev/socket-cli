@@ -1,6 +1,6 @@
 ---
 name: auditing-gha
-description: Audit GitHub Actions permissions and allowlists against the fleet baseline; report drift, and conform additively with --conform.
+description: Audit GitHub Actions permissions/allowlists against the fleet baseline; report drift, --conform to fix.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash(gh:*), Bash(node:*), Bash(jq:*)
 model: claude-haiku-4-5

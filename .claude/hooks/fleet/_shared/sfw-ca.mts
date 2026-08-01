@@ -19,10 +19,14 @@
  *   Listed alphabetically by name (fleet `socket/sort-*` convention).
  */
 
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { getSocketWheelhouseDir } from '@socketsecurity/lib-stable/paths/socket'
+import {
+  getSocketWheelhouseDir,
+  getUserHomeDir,
+} from '@socketsecurity/lib-stable/paths/socket'
 
 /**
  * The certificate's Common Name. Matches the firewall's own generator
@@ -46,10 +50,16 @@ export const SFW_CA_ENV_NAMES = ['SFW_CA_CERT_PATH', 'SFW_CA_KEY_PATH'] as const
 export const SFW_CA_ORGANIZATION = 'Socket Security'
 
 /**
- * The basename both CA files share. Matches the firewall generator's
- * `baseFilename` default, so the paths read the same in its docs and ours.
+ * The basename both CA files share.
+ *
+ * LOCKSTEP with the firewall's `PERSISTENT_CA_BASENAME`
+ * (`src/lib/cli/caPaths.ts`). This is the pair `resolveExistingCaKeyPair` falls
+ * back to when the `SFW_CA_*` env vars are unset — the load-bearing mechanism,
+ * since free mode never reads those env vars. Change this only to follow
+ * upstream, and change it HERE: every path, shell fragment, and check message
+ * derives from it.
  */
-export const SFW_CA_BASENAME = 'socketFirewallCa'
+export const SFW_CA_BASENAME = 'ca'
 
 /**
  * The openssl `-subj` string for the CA certificate.
@@ -57,13 +67,22 @@ export const SFW_CA_BASENAME = 'socketFirewallCa'
 export const SFW_CA_SUBJECT = `/CN=${SFW_CA_COMMON_NAME}/O=${SFW_CA_ORGANIZATION}`
 
 /**
- * The CA directory relative to the user's home, POSIX separators. The shell
- * fragments below need a HOME-relative form (one generated wrapper has to be
- * correct for whoever runs it), while the Node side resolves an absolute path
- * through `getSocketWheelhouseDir()`. `sfw-ca-env-is-wired` asserts the two
- * agree, so the layout can only move in one place.
+ * The CA directory relative to the user's home, POSIX separators.
+ *
+ * LOCKSTEP with the firewall's `getPersistentCaDir()`
+ * (`src/lib/cli/caPaths.ts` — `path.join(os.homedir(), '.socket', 'sfw')`).
+ * The pair only does anything if it sits where the build looks for it, so this
+ * value follows upstream and nothing else derives its own copy: `getSfwCaDir()`
+ * and every shell fragment below are built from this one string, and
+ * `sfw-ca-env-is-wired` asserts the absolute and HOME-relative forms still
+ * agree.
+ *
+ * This directory is SHARED with the pre-rename wheelhouse install that
+ * `ensureWheelhouseLayout()` migrates (`scripts/fleet/install-sfw.mts`). That
+ * migration moves the legacy payload entry by entry and steps over
+ * `SFW_CA_FILENAMES`, so the CA stays put across it.
  */
-export const SFW_CA_HOME_RELATIVE_DIR = '.socket/_wheelhouse/ca'
+export const SFW_CA_HOME_RELATIVE_DIR = '.socket/sfw'
 
 /**
  * The CA cert path as a POSIX shell expression — `$HOME` expands at run time,
@@ -87,15 +106,22 @@ export const SFW_CA_WINDOWS_CERT = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.re
 export const SFW_CA_WINDOWS_KEY = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\${SFW_CA_BASENAME}.key`
 
 /**
- * The directory holding the persistent CA pair. Lives under the wheelhouse
- * umbrella (`~/.socket/_wheelhouse/ca`), NOT `~/.socket/sfw` — that path is
- * `LEGACY_SFW_DIR` in `scripts/fleet/install-sfw.mts`, which
- * `ensureWheelhouseLayout()` renames to the umbrella on any machine that has
- * not migrated yet. A CA parked there would move out from under the trust
- * store the operator just populated.
+ * The two filenames the persistent pair occupies inside `getSfwCaDir()`.
+ * `ensureWheelhouseLayout()` reads this to leave them behind when it drains the
+ * legacy wheelhouse payload out of the same directory.
+ */
+export const SFW_CA_FILENAMES = [
+  `${SFW_CA_BASENAME}.crt`,
+  `${SFW_CA_BASENAME}.key`,
+] as const
+
+/**
+ * The directory holding the persistent CA pair — `~/.socket/sfw`, the location
+ * the firewall build reads by default. Derived from
+ * `SFW_CA_HOME_RELATIVE_DIR`, never spelled out a second time.
  */
 export function getSfwCaDir(): string {
-  return path.join(getSocketWheelhouseDir(), 'ca')
+  return path.join(getUserHomeDir(), ...SFW_CA_HOME_RELATIVE_DIR.split('/'))
 }
 
 /**
@@ -282,6 +308,135 @@ export function classifySfwCaDelivery(
     return 'unknown'
   }
   return childCertPath === persistentCertPath ? 'persistent' : 'ephemeral'
+}
+
+/**
+ * The spawn seam the delivery probe runs through. Structurally identical to
+ * `RunCommand` in `scripts/fleet/setup/ecosystems.mts`, declared here rather
+ * than imported so `.claude/hooks/**` never takes a dependency on `scripts/**`
+ * — the setup step and the check both satisfy it with the same
+ * `defaultRunCommand`.
+ */
+export type SfwCaRunCommand = (
+  command: string,
+  args: readonly string[],
+  options?:
+    | {
+        readonly env?: NodeJS.ProcessEnv | undefined
+        readonly silent?: boolean | undefined
+      }
+    | undefined,
+) => Promise<{
+  readonly exitCode: number
+  readonly stderr: string
+  readonly stdout: string
+}>
+
+/**
+ * Ask sfw what CA it actually hands a wrapped child. This is the only honest
+ * test of the wiring: the env pair can be exported perfectly and still be
+ * ignored by the binary, in which case every downstream step (OS trust,
+ * non-Node TLS) is pointless. Returns `unknown` when there is no sfw to ask.
+ *
+ * Shared so `setup:sfw-ca` and `sfw-ca-env-is-wired` reach the same verdict — a
+ * probe that lives only in the setup step lets the CHECK go green on a machine
+ * where the mechanism does nothing.
+ */
+export async function probeSfwCaDelivery(
+  certPath: string,
+  runCommand: SfwCaRunCommand,
+  options?:
+    | { nodeBin?: string | undefined; sfwBin?: string | undefined }
+    | undefined,
+): Promise<SfwCaDelivery> {
+  const { nodeBin, sfwBin } = { __proto__: null, ...options } as {
+    nodeBin?: string | undefined
+    sfwBin?: string | undefined
+  }
+  const bin = sfwBin ?? getSfwBinaryPath()
+  if (!existsSync(bin)) {
+    return 'unknown'
+  }
+  const result = await runCommand(
+    bin,
+    sfwCaChildProbeArgs(nodeBin ?? process.execPath),
+    {
+      env: {
+        ...process.env,
+        SFW_CA_CERT_PATH: certPath,
+        SFW_CA_KEY_PATH: certPath.replace(/\.crt$/, '.key'),
+      },
+      silent: true,
+    },
+  )
+  if (result.exitCode !== 0) {
+    return 'unknown'
+  }
+  return classifySfwCaDelivery(parseSfwCaProbeOutput(result.stdout), certPath)
+}
+
+/**
+ * The delivery leg's verdict. `fail` is the false-green this gate exists to
+ * stop: a persistent pair on disk while the wrapped child still gets a
+ * temp-dir CA. `skip` is every state the probe could not decide — never a pass.
+ */
+export type SfwCaDeliveryLeg =
+  | { kind: 'fail'; message: string }
+  | { kind: 'pass' }
+  | { kind: 'skip'; message: string }
+
+/**
+ * What the delivery probe's result means for the gate. Pure, so the check's
+ * verdict is testable without an sfw binary on the box.
+ *
+ * `delivery` is `undefined` when the probe never ran (no pair, or no binary).
+ */
+export function judgeSfwCaDelivery(input: {
+  certPath: string
+  delivery: SfwCaDelivery | undefined
+  pairPresent: boolean
+  sfwBin: string
+  sfwBinPresent: boolean
+}): SfwCaDeliveryLeg {
+  const { certPath, delivery, pairPresent, sfwBin, sfwBinPresent } = {
+    __proto__: null,
+    ...input,
+  } as typeof input
+  if (!pairPresent) {
+    return {
+      kind: 'skip',
+      message:
+        `no CA pair at ${path.dirname(certPath)} — delivery not probed (expected in CI).\n` +
+        '  Fix: run `pnpm run setup:sfw-ca` on a dev box.',
+    }
+  }
+  if (!sfwBinPresent) {
+    return {
+      kind: 'skip',
+      message:
+        `no sfw binary at ${sfwBin} — delivery not probed (expected in CI).\n` +
+        '  Fix: run `pnpm run install:sfw` on a dev box.',
+    }
+  }
+  if (delivery === 'persistent') {
+    return { kind: 'pass' }
+  }
+  if (delivery === 'ephemeral') {
+    return {
+      kind: 'fail',
+      message:
+        'the persistent CA is INERT — a wrapped child still receives a temp-dir CA.\n' +
+        `  Where: ${sfwBin} in wrapper mode, run with SFW_CA_CERT_PATH=${certPath}.\n` +
+        `  Saw: the child's SSL_CERT_FILE pointed at a throwaway temp-dir CA; wanted ${certPath}.\n` +
+        `  Fix: rack a firewall build that reads the persistent pair — \`pnpm run install:sfw -- --enterprise\` with a Socket API token in the keychain. Today ${SFW_CA_INERT_REASON}.`,
+    }
+  }
+  return {
+    kind: 'skip',
+    message:
+      `could not read what CA ${sfwBin} hands a wrapped child — delivery unverified.\n` +
+      '  Fix: run `pnpm run setup:sfw-ca` and read its delivery verdict, then re-run this check.',
+  }
 }
 
 /**

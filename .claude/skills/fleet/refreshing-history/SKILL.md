@@ -1,6 +1,6 @@
 ---
 name: refreshing-history
-description: Refresh a default branch to one signed initial commit, update deps, verify, and force-push with backup.
+description: Refresh a default branch to one signed initial commit: update deps, verify, force-push with backup.
 user-invocable: true
 allowed-tools: AskUserQuestion, Bash(git:*), Bash(pnpm:*), Bash(diff:*), Bash(ls:*)
 model: claude-haiku-4-5

@@ -6,15 +6,18 @@
  *   path: same version source, same binary integrity check (SRI-verified inline,
  *   same on-disk layout (~/.socket/_dlx/<hash>/sfw — the content-addressed
  *   binary store). Two dev-only handles layer readable paths over that hash:
- *   a rack alias `~/.socket/_wheelhouse/rack/sfw/<version>` → the _dlx dir, and
- *   the PATH handle `~/.socket/_wheelhouse/bin/sfw` → the rack alias. So PATH
- *   never sees the hash; consumers reference the stable readable rack path.
+ *   a rack alias `~/.socket/_wheelhouse/rack/sfw/<version>-<flavor>` → the _dlx
+ *   dir, and the PATH handle `~/.socket/_wheelhouse/bin/sfw` → the rack alias.
+ *   So PATH never sees the hash; consumers reference the stable readable rack
+ *   path. The flavor is part of that path because sfw-free and sfw-enterprise
+ *   ship the same version and the same binary name.
  *
- *   Detects + migrates a pre-existing ~/.socket/sfw/ install in place on first
- *   run (rename to ~/.socket/_wheelhouse/). The `_` prefix matches the npm /
- *   lib-stable convention for "managed internal cache" (compare to _dlx,
- *   _cacache, etc.) — `sfw/` was the lone non-prefixed sibling, now
- *   regularized.
+ *   Detects + migrates a pre-existing ~/.socket/sfw/ install on first run (into
+ *   ~/.socket/_wheelhouse/). The `_` prefix matches the npm / lib-stable
+ *   convention for "managed internal cache" (compare to _dlx, _cacache, etc.) —
+ *   `sfw/` was the lone non-prefixed sibling, now regularized. The persistent
+ *   CA pair stays behind: ~/.socket/sfw is also where the firewall build reads
+ *   it, so the migration drains the legacy payload around it.
  *
  *   Reads version + per-platform integrity (SRI) from the repo's root
  *   `external-tools.json` under `tools.sfw-free` / `tools.sfw-enterprise`.
@@ -28,6 +31,7 @@
 import {
   existsSync,
   promises as fsPromises,
+  readdirSync,
   readFileSync,
   renameSync,
 } from 'node:fs'
@@ -45,7 +49,9 @@ import {
   getUserHomeDir,
 } from '@socketsecurity/lib-stable/paths/socket'
 
+import { SFW_CA_FILENAMES } from '../../.claude/hooks/fleet/_shared/sfw-ca.mts'
 import { REPO_ROOT } from './paths.mts'
+import { sfwFlavorFor, sfwRackDirName } from './setup/lib/bootstrap-common.mjs'
 import { isMainModule } from './_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
@@ -61,30 +67,80 @@ const EXTERNAL_TOOLS_PATH = path.join(
 const WHEELHOUSE_DIR = getSocketAppDir('wheelhouse')
 const WHEELHOUSE_BIN_DIR = path.join(WHEELHOUSE_DIR, 'bin')
 // rack/ is the readable alias layer over the hash-named _dlx store: a real
-// binary lives at _dlx/<hash>/sfw, rack/sfw/<version> symlinks to that dir, and
-// bin/sfw → rack/sfw/<version>/sfw. Lock-step with @socketsecurity/lib
-// src/paths/socket.ts getSocketRackToolDir({tool,version}) (constructed here
-// rather than imported until the lib-stable bump ships the helper).
+// binary lives at _dlx/<hash>/sfw, rack/sfw/<version>-<flavor> symlinks to that
+// dir, and bin/sfw → rack/sfw/<version>-<flavor>/sfw. Lock-step with
+// @socketsecurity/lib src/paths/socket.ts getSocketRackToolDir({tool,version})
+// (constructed here rather than imported until the lib-stable bump ships the
+// helper); the flavor tail comes from sfwRackDirName().
 const WHEELHOUSE_RACK_DIR = path.join(WHEELHOUSE_DIR, 'rack')
-// One-time migration: if a pre-rename ~/.socket/sfw/ install exists AND the
-// new ~/.socket/_wheelhouse/ doesn't, rename the directory in place. Keeps
-// existing shims valid (each will be regenerated on next setup pass to point
-// at the new path). Idempotent: skips when either condition fails. Older
-// fleet machines won't break across the rename.
+// One-time migration source: a pre-rename ~/.socket/sfw/ wheelhouse install.
+//
+// This directory has TWO owners. It is the pre-rename wheelhouse root here, and
+// it is also where the firewall build reads its persistent CA pair
+// (`getPersistentCaDir()` in the firewall's src/lib/cli/caPaths.ts, mirrored by
+// SFW_CA_HOME_RELATIVE_DIR). So the migration moves only what IT owns — see
+// ensureWheelhouseLayout.
 const LEGACY_SFW_DIR = path.join(getUserHomeDir(), '.socket', 'sfw')
 
 const SFW_BIN_DIR = WHEELHOUSE_BIN_DIR
 
-// Migrate a pre-rename legacy install in place, then ensure the expected
-// subdir layout exists. Called from main() never at import time, so
-// importing this module for its pure helpers never touches the filesystem.
-// safeMkdirSync is recursive + EEXIST-safe by default.
-export function ensureWheelhouseLayout(): void {
-  if (existsSync(LEGACY_SFW_DIR) && !existsSync(WHEELHOUSE_DIR)) {
-    logger.log(`Migrating legacy ${LEGACY_SFW_DIR} → ${WHEELHOUSE_DIR}…`)
-    renameSync(LEGACY_SFW_DIR, WHEELHOUSE_DIR)
+/**
+ * The entries of a legacy ~/.socket/sfw that belong to the pre-rename
+ * wheelhouse install. The persistent CA pair lives in the same directory and
+ * belongs to the firewall, so it is never part of the payload.
+ */
+export function legacySfwPayloadEntries(entries: readonly string[]): string[] {
+  return entries
+    .filter(entry => !(SFW_CA_FILENAMES as readonly string[]).includes(entry))
+    .toSorted()
+}
+
+/**
+ * Dir overrides for `ensureWheelhouseLayout`. Both default to the real
+ * per-user locations; the specs pass temp dirs so every machine state is
+ * exercised without touching `~/.socket`.
+ */
+export interface WheelhouseLayoutOptions {
+  readonly legacyDir?: string | undefined
+  readonly wheelhouseDir?: string | undefined
+}
+
+// Migrate a pre-rename legacy install, then ensure the expected subdir layout
+// exists. Called from main() never at import time, so importing this module for
+// its pure helpers never touches the filesystem. safeMkdirSync is recursive +
+// EEXIST-safe by default.
+//
+// The migration moves the legacy payload ENTRY BY ENTRY rather than renaming
+// the whole directory, because ~/.socket/sfw is also the firewall's persistent
+// CA dir. A whole-dir rename would carry ca.{crt,key} into ~/.socket/_wheelhouse
+// — out from under both the build that reads them and the OS trust entry the
+// operator installed — and, on a machine that never had a legacy install, the
+// mere existence of a CA dir would fake a migration into being.
+//
+// Already-migrated machine (~/.socket/_wheelhouse present): untouched, exactly
+// as before. Unmigrated machine: the payload lands in the umbrella and the CA
+// stays where sfw reads it.
+export function ensureWheelhouseLayout(
+  options?: WheelhouseLayoutOptions | undefined,
+): void {
+  const opts = { __proto__: null, ...options } as WheelhouseLayoutOptions
+  const legacyDir = opts.legacyDir ?? LEGACY_SFW_DIR
+  const wheelhouseDir = opts.wheelhouseDir ?? WHEELHOUSE_DIR
+  if (existsSync(legacyDir) && !existsSync(wheelhouseDir)) {
+    const payload = legacySfwPayloadEntries(readdirSync(legacyDir))
+    if (payload.length > 0) {
+      logger.log(`Migrating legacy ${legacyDir} → ${wheelhouseDir}…`)
+      logger.log(
+        `  Leaving the persistent CA behind — ${legacyDir} is where sfw reads it.`,
+      )
+      safeMkdirSync(wheelhouseDir)
+      for (let i = 0, { length } = payload; i < length; i += 1) {
+        const entry = payload[i]!
+        renameSync(path.join(legacyDir, entry), path.join(wheelhouseDir, entry))
+      }
+    }
   }
-  safeMkdirSync(WHEELHOUSE_BIN_DIR)
+  safeMkdirSync(path.join(wheelhouseDir, 'bin'))
 }
 
 interface ToolEntry {
@@ -253,7 +309,8 @@ async function main(): Promise<void> {
   const tools = JSON.parse(
     readFileSync(EXTERNAL_TOOLS_PATH, 'utf8'),
   ) as ExternalToolsFile
-  const toolKey = values['enterprise'] ? 'sfw-enterprise' : 'sfw-free'
+  const flavor = sfwFlavorFor(Boolean(values['enterprise']))
+  const toolKey = `sfw-${flavor}`
   const platform = detectPlatform()
   const resolved = resolveSfwTool({ platform, tools, toolKey, win32: WIN32 })
   if (!resolved.ok) {
@@ -299,11 +356,19 @@ async function main(): Promise<void> {
   }
 
   // Layer two readable handles over the hash-named _dlx binary:
-  //   1. rack alias: rack/sfw/<ver> → the _dlx/<hash> dir, the readable store.
-  //   2. PATH handle: bin/sfw → rack/sfw/<ver>/sfw (so PATH never sees the
-  //      hash; consumers reference the stable rack path). Both refresh on every
-  //      install so a version bump repoints them.
-  const rackToolDir = path.join(WHEELHOUSE_RACK_DIR, 'sfw', ver)
+  //   1. rack alias: rack/sfw/<ver>-<flavor> → the _dlx/<hash> dir, the
+  //      readable store.
+  //   2. PATH handle: bin/sfw → rack/sfw/<ver>-<flavor>/sfw (so PATH never sees
+  //      the hash; consumers reference the stable rack path). Both refresh on
+  //      every install so a version OR flavor change repoints them.
+  // The flavor is in the path via the same sfwRackDirName() the dep-0
+  // bootstrap uses: the two flavors share a version and a binary name, so a
+  // flavor-blind path left them indistinguishable on disk.
+  const rackToolDir = path.join(
+    WHEELHOUSE_RACK_DIR,
+    'sfw',
+    sfwRackDirName(ver, flavor),
+  )
   await fsPromises.mkdir(path.dirname(rackToolDir), { recursive: true })
   await refreshSymlink(path.dirname(binaryPath), rackToolDir, 'dir')
 
@@ -313,7 +378,9 @@ async function main(): Promise<void> {
   await refreshSymlink(rackBinaryPath, linkPath, 'file')
 
   if (!values['quiet']) {
-    logger.success(`sfw v${ver} ready at ${linkPath}`)
+    // The flavor here is the one whose asset was just verified and linked, not
+    // the one the caller asked for — those diverge whenever a resolve fails.
+    logger.success(`sfw ${flavor} v${ver} ready at ${linkPath}`)
     logger.log(`  → ${rackBinaryPath} → ${binaryPath}`)
   }
 }

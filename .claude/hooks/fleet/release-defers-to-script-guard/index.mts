@@ -192,12 +192,17 @@ function hasPackageJsonRedirect(command: string): boolean {
 // — a different surface with its own flow — passes untouched.
 function directBumpReason(command: string): string | undefined {
   for (const cmd of commandsFor(command, 'node')) {
-    const script = cmd.args.find(arg => {
-      const normalized = normalizePath(arg)
-      return normalized === 'bump.mts' || normalized.endsWith('/bump.mts')
-    })
-    if (script) {
-      return `node ${script}`
+    // Only the ENTRY script counts. Scanning every arg matched the filename
+    // wherever it appeared, so `node scripts/fleet/lint.mts …/bump.mts` and a
+    // coverage run scoped to the file were both refused as if they were
+    // releases — the guard blocked reading the file, not bumping with it.
+    const entry = cmd.args.find(arg => !arg.startsWith('-'))
+    if (entry === undefined) {
+      continue
+    }
+    const normalized = normalizePath(entry)
+    if (normalized === 'bump.mts' || normalized.endsWith('/bump.mts')) {
+      return `node ${entry}`
     }
   }
   return undefined

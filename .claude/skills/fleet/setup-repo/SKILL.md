@@ -1,6 +1,6 @@
 ---
 name: setup-repo
-description: Run the full repo onboarding wizard for tokens, keychain, shell bridge, tools, hooks, and initialization.
+description: Repo onboarding wizard: tokens, keychain, shell bridge, tools, hooks, initialization.
 user-invocable: true
 allowed-tools: Read, Bash, Edit, Write
 model: claude-sonnet-4-6

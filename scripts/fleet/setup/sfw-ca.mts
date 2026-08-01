@@ -30,17 +30,15 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
-  classifySfwCaDelivery,
   getSfwBinaryPath,
   getSfwCaCertPath,
   getSfwCaDir,
   getSfwCaKeyPath,
-  parseSfwCaProbeOutput,
+  probeSfwCaDelivery,
   SFW_CA_BASENAME,
   SFW_CA_COMMON_NAME,
   SFW_CA_INERT_REASON,
   SFW_CA_SUBJECT,
-  sfwCaChildProbeArgs,
   sfwCaTrustCommandLines,
   sfwCaTrustProbe,
 } from '../../../.claude/hooks/fleet/_shared/sfw-ca.mts'
@@ -272,45 +270,6 @@ export function reportSfwCaTrust(
     logger.log(line === '' ? '' : `    ${line}`)
   }
   logger.log('')
-}
-
-/**
- * Ask sfw what CA it actually hands a wrapped child. This is the only honest
- * test of the wiring: the env pair can be exported perfectly and still be
- * ignored by the binary, in which case every downstream step (OS trust,
- * non-Node TLS) is pointless. Returns `unknown` when there is no sfw to ask.
- */
-export async function probeSfwCaDelivery(
-  certPath: string,
-  runCommand: RunCommand,
-  options?:
-    | { nodeBin?: string | undefined; sfwBin?: string | undefined }
-    | undefined,
-): Promise<SfwCaDelivery> {
-  const { nodeBin, sfwBin } = { __proto__: null, ...options } as {
-    nodeBin?: string | undefined
-    sfwBin?: string | undefined
-  }
-  const bin = sfwBin ?? getSfwBinaryPath()
-  if (!existsSync(bin)) {
-    return 'unknown'
-  }
-  const result = await runCommand(
-    bin,
-    sfwCaChildProbeArgs(nodeBin ?? process.execPath),
-    {
-      env: {
-        ...process.env,
-        SFW_CA_CERT_PATH: certPath,
-        SFW_CA_KEY_PATH: certPath.replace(/\.crt$/, '.key'),
-      },
-      silent: true,
-    },
-  )
-  if (result.exitCode !== 0) {
-    return 'unknown'
-  }
-  return classifySfwCaDelivery(parseSfwCaProbeOutput(result.stdout), certPath)
 }
 
 /**

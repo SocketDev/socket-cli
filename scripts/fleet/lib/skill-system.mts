@@ -57,6 +57,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   'managing-pnpm-workspaces': { family: 'maintain', mode: 'mutating' },
   'managing-worktrees': { family: 'fleet', mode: 'mutating' },
   map: { family: 'orient', mode: 'read-only' },
+  'measuring-ecosystem-impact': { family: 'maintain', mode: 'read-only' },
   'migrating-rule-packs': { family: 'build', mode: 'mutating' },
   'onboarding-fleet-member': { family: 'fleet', mode: 'mutating' },
   'opening-pr': { family: 'ship', mode: 'mutating' },

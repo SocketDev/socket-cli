@@ -1,4 +1,4 @@
-/**
+/*
  * @file The reachability math behind `measure-ecosystem-impact` — pure, no I/O,
  *   no network, so every rule below is unit-testable against a synthetic graph.
  *   The question the fleet actually asks is not "how popular is this package"

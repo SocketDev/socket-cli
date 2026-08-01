@@ -72,7 +72,7 @@ proxy never signs with accomplishes nothing.
 
 One stable pair, generated once, trusted once:
 
-1. `pnpm run setup:sfw-ca` generates `~/.socket/_wheelhouse/ca/socketFirewallCa.{crt,key}`
+1. `pnpm run setup:sfw-ca` generates `~/.socket/sfw/ca.{crt,key}`
    through openssl, with the same subject and extensions the firewall's own
    generator uses (`CN=Socket Security CA, O=Socket Security`,
    `basicConstraints critical CA:TRUE`, `keyUsage critical keyCertSign`). Key
@@ -105,13 +105,37 @@ Adding it there would force a knob into CI that can never be satisfied. It ships
 as its own list in `.claude/hooks/fleet/_shared/sfw-ca.mts`, which keeps the CA
 wiring and the CI telemetry gates independently correct.
 
-## Why not `~/.socket/sfw`
+## Why `~/.socket/sfw`, and how it coexists with the layout migration
 
-`~/.socket/sfw` is `LEGACY_SFW_DIR` in `scripts/fleet/install-sfw.mts`;
-`ensureWheelhouseLayout()` renames it to `~/.socket/_wheelhouse` on any machine
-that has not migrated. A CA parked there would move out from under the trust
-store entry the operator created. The CA lives under the wheelhouse umbrella,
-resolved through `getSocketWheelhouseDir()`.
+The pair only does anything if it sits where the build looks for it. The
+firewall's `getPersistentCaDir()` (`src/lib/cli/caPaths.ts`) resolves
+`~/.socket/sfw`, and `getPersistentCaPaths()` names the halves `ca.crt` /
+`ca.key`. Both values live in this repo as `SFW_CA_HOME_RELATIVE_DIR` and
+`SFW_CA_BASENAME` in `.claude/hooks/fleet/_shared/sfw-ca.mts` — one string each,
+which every absolute path, shell fragment, and check message derives from, so
+an upstream rename is a one-line follow.
+
+That directory has two owners. It is also `LEGACY_SFW_DIR` in
+`scripts/fleet/install-sfw.mts`: on a machine that predates the `_wheelhouse`
+rename, `ensureWheelhouseLayout()` used to `renameSync` the whole thing to
+`~/.socket/_wheelhouse`. Left alone that collides two ways — a migration would
+carry `ca.{crt,key}` out from under both the build and the OS trust entry, and
+on a machine that never had a legacy install the mere act of creating the CA dir
+would fake a migration into being.
+
+They coexist, with the layout function made CA-aware rather than the CA moved:
+
+- `legacySfwPayloadEntries()` is the payload the migration owns — everything in
+  `~/.socket/sfw` except `SFW_CA_FILENAMES`.
+- `ensureWheelhouseLayout()` moves that payload **entry by entry** into
+  `~/.socket/_wheelhouse` instead of renaming the directory, and skips the
+  migration entirely when the only thing there is the CA.
+
+So `~/.socket/sfw` survives the migration holding exactly the pair, which is
+what sfw reads. Picking the other side — keeping the CA under the wheelhouse
+umbrella and teaching sfw to find it — is not available: free mode never reads
+`SFW_CA_CERT_PATH` at all, so a pair anywhere but the default location is inert
+by construction.
 
 ## Enforcement
 

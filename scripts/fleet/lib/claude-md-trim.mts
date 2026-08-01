@@ -13,18 +13,23 @@
  *   bullet), reported, every drop is returned, and git-reversible. Pairs with
  *   the `claude-md-section-size-guard`, the cap gate, and runs in `pnpm run
  *   fix`. Mirrors the guard's measurement exactly: the block is the lines from
- *   the `<!-- <fleet-canonical> -->` BEGIN marker (inclusive) up to the `<!--
- *   </fleet-canonical> -->` END marker (exclusive), and its size is that
- *   substring's UTF-8 byte length. Pure transforms, plus one thin fs applier
- *   (`applyClaudeMdTrim`) shared by the `trim-claude-md` CLI and the fix path.
+ *   the `<fleet>` BEGIN marker (inclusive) up to the `<fleet>` END marker
+ *   (exclusive) — via the shared
+ *   `isFleetMarkerBeginLine`/`isFleetMarkerEndLine` predicates, so this trimmer
+ *   and the splicer (checks/claude-md-fleet- block.mts) can never disagree on
+ *   the boundary, short tag or the transitional long-form alias alike — and its
+ *   size is that substring's UTF-8 byte length. Pure transforms, plus one thin
+ *   fs applier (`applyClaudeMdTrim`) shared by the `trim-claude-md` CLI and the
+ *   fix path.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 
+import {
+  isFleetMarkerBeginLine,
+  isFleetMarkerEndLine,
+} from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
-
-const BEGIN_MARKER = '<!-- <fleet-canonical> -->'
-const END_MARKER = '<!-- </fleet-canonical> -->'
 
 // The default fleet-block byte cap — 75% of the 40 KB whole-file budget, the
 // same value claude-md-section-size-guard enforces.
@@ -46,9 +51,10 @@ interface BlockBounds {
 }
 
 /**
- * Locate the fleet block by its HTML markers. Returns the BEGIN line index
- * (inclusive) and END line index (exclusive), matching `extractFleetBlock`.
- * Undefined when the block is absent.
+ * Locate the fleet block by its markers (short tag or transitional long-form
+ * alias, see fleet-markers.mts). Returns the BEGIN line index (inclusive) and
+ * END line index (exclusive), matching `extractFleetBlock`. Undefined when
+ * the block is absent.
  */
 export function fleetBlockBounds(
   lines: readonly string[],
@@ -56,10 +62,10 @@ export function fleetBlockBounds(
   let beginIdx = -1
   let endIdx = -1
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    const trimmed = lines[i]!.trim()
-    if (beginIdx === -1 && trimmed === BEGIN_MARKER) {
+    const line = lines[i]!
+    if (beginIdx === -1 && isFleetMarkerBeginLine(line)) {
       beginIdx = i
-    } else if (beginIdx !== -1 && trimmed === END_MARKER) {
+    } else if (beginIdx !== -1 && isFleetMarkerEndLine(line)) {
       endIdx = i
       break
     }

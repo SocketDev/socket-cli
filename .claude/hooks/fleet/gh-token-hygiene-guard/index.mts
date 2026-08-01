@@ -74,11 +74,15 @@ import { bypassPhrasePresent } from '../_shared/transcript.mts'
 export const triggers: readonly string[] = ['gh']
 
 const BYPASS_PHRASE = 'Allow workflow-scope bypass'
-const TOKEN_ISSUED_AT_FILE = path.join(
-  os.homedir(),
-  '.claude',
-  'gh-token-issued-at',
-)
+/**
+ * The idle-clock stamp, resolved PER CALL rather than at module load. A module
+ * constant freezes whatever HOME the process started with, which forces every
+ * test to spawn a fresh child just to point at a different fixture home.
+ * Resolving here lets a suite drive many homes in one process.
+ */
+export function tokenIssuedAtFile(): string {
+  return path.join(os.homedir(), '.claude', 'gh-token-issued-at')
+}
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours IDLE, reset on each gh use
 
 interface GhAuthStatus {
@@ -398,7 +402,7 @@ function isAuthMaintenanceCommand(command: string): boolean {
 const MIN_PLAUSIBLE_STAMP_MS = 1_577_836_800_000
 
 function isTokenFresh(): boolean {
-  if (!existsSync(TOKEN_ISSUED_AT_FILE)) {
+  if (!existsSync(tokenIssuedAtFile())) {
     // First run: stamp now and treat as fresh. This makes the hook
     // ship-able without forcing every developer to re-auth on first
     // upgrade — the 8h clock starts from the moment the hook first
@@ -407,7 +411,7 @@ function isTokenFresh(): boolean {
     return true
   }
   try {
-    const recorded = Number(readFileSync(TOKEN_ISSUED_AT_FILE, 'utf8'))
+    const recorded = Number(readFileSync(tokenIssuedAtFile(), 'utf8'))
     if (!Number.isFinite(recorded)) {
       return false
     }
@@ -460,8 +464,8 @@ function probeTokenValid(): boolean {
 
 function recordTokenIssuedAt(): void {
   try {
-    mkdirSync(path.dirname(TOKEN_ISSUED_AT_FILE), { recursive: true })
-    writeFileSync(TOKEN_ISSUED_AT_FILE, String(Date.now()), 'utf8')
+    mkdirSync(path.dirname(tokenIssuedAtFile()), { recursive: true })
+    writeFileSync(tokenIssuedAtFile(), String(Date.now()), 'utf8')
   } catch {
     // best-effort
   }

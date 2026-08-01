@@ -26,9 +26,10 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
 
 ## Enforcement
 
-- `no-nested-gitignore-guard` (PreToolUse Write/Edit/MultiEdit) blocks CREATING
-  a nested `.gitignore` in a fleet repo; bypass `Allow nested-gitignore bypass`.
-- `gitignore-is-single-file` (`scripts/fleet/check/`) is the commit-/CI-time
+- `.claude/hooks/fleet/no-nested-gitignore-guard/` (PreToolUse
+  Write/Edit/MultiEdit) blocks CREATING a nested `.gitignore` in a fleet repo;
+  bypass `Allow nested-gitignore bypass`.
+- `scripts/fleet/check/gitignore-is-single-file.mts` is the commit-/CI-time
   belt: it scans `git ls-files '*.gitignore'` and fails on any tracked
   `.gitignore` that is not the repo root or a `template/<archetype>/` root.
   Both share the `isNestedGitignore` predicate so they never diverge.

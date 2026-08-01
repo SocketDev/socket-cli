@@ -1,6 +1,6 @@
 ---
 name: deduping-dependencies
-description: Reduce duplicate dependency installs with safe overrides, hardened drop-ins, patches, and consumer checks.
+description: Reduce duplicate installs with overrides, hardened drop-ins, patches, consumer checks.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(git:*), Bash(grep:*), Bash(rg:*), Bash(ls:*), Bash(pnpm install:*), Bash(pnpm patch:*), Bash(pnpm patch-commit:*), Read, Edit, Write
 model: claude-sonnet-4-6

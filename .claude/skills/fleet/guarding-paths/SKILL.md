@@ -1,6 +1,6 @@
 ---
 name: guarding-paths
-description: Enforce one constructed path per concern; audit and fix duplicated build, test, runtime, or config paths.
+description: Enforce one constructed path per concern; fix duplicated build, test, runtime, config paths.
 user-invocable: true
 allowed-tools: Task, Read, Edit, Write, Grep, Glob, AskUserQuestion, Bash(pnpm run check:*), Bash(node scripts/fleet/check/paths-are-canonical.mts:*), Bash(rg:*), Bash(grep:*), Bash(find:*), Bash(git:*)
 model: claude-haiku-4-5

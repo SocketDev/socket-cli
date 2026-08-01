@@ -1,11 +1,12 @@
 /**
  * @file Zero-dep bootstrap installer for Socket Firewall (sfw). Lock-step with
  *   scripts/fleet/install-sfw.mts: both read the same tools.sfw-free /
- *   tools.sfw-enterprise entries and pick the SKU off the same
- *   SOCKET_API_KEY/SOCKET_API_TOKEN env keys. Part of the from-scratch
+ *   tools.sfw-enterprise entries, pick the SKU off the same
+ *   SOCKET_API_KEY/SOCKET_API_TOKEN env keys, and rack into the same
+ *   flavor-tagged directory (sfwRackDirName). Part of the from-scratch
  *   bootstrap (runs before node_modules); imports only bootstrap-common.mjs +
- *   `node:`. Returns the installed sfw binary path (or undefined → shims become
- *   helpful-error stubs).
+ *   `node:`. Returns what actually landed on disk, or undefined → shims become
+ *   helpful-error stubs.
  */
 
 import { existsSync } from 'node:fs'
@@ -16,6 +17,8 @@ import {
   jq,
   log,
   SFW_RACK_DIR,
+  sfwFlavorFor,
+  sfwRackDirName,
   warn,
 } from './bootstrap-common.mjs'
 
@@ -25,7 +28,8 @@ export function installSfw(platform, enterprise) {
   // GITHUB_TOKEN, which install-tool forwards. Everything — repository, assets,
   // binary name — is read from the chosen tool entry, so the URL isn't
   // hardcoded twice.
-  const tool = enterprise ? 'sfw-enterprise' : 'sfw-free'
+  const flavor = sfwFlavorFor(enterprise)
+  const tool = `sfw-${flavor}`
   const version = jq(tool, 'version')
   const asset = jq(tool, 'platforms', platform, 'asset')
   if (!version || !asset) {
@@ -41,11 +45,15 @@ export function installSfw(platform, enterprise) {
   }
   // repository is `github:<owner>/<repo>` — derive the release-asset URL.
   const repo = String(jq(tool, 'repository') || '').replace(/^github:/, '')
-  const sfwVerDir = path.join(SFW_RACK_DIR, version)
+  // The flavor is part of the rack path, so this cache hit can only ever be the
+  // SAME flavor that was asked for. A flavor switch lands on a fresh path and
+  // therefore actually re-installs, instead of silently keeping the old build
+  // while the caller announces the new one.
+  const sfwVerDir = path.join(SFW_RACK_DIR, sfwRackDirName(version, flavor))
   const sfwBin = path.join(sfwVerDir, binName)
   if (existsSync(sfwBin)) {
-    log(`✓ sfw already installed at ${sfwBin}`)
-    return sfwBin
+    log(`✓ sfw ${flavor}@${version} already installed at ${sfwBin}`)
+    return { bin: sfwBin, flavor, version }
   }
   log(`Installing ${tool}@${version} (${asset}) → ${sfwVerDir}`)
   if (
@@ -60,5 +68,5 @@ export function installSfw(platform, enterprise) {
     return undefined
   }
   log(`✓ ${tool}@${version} → ${sfwBin}`)
-  return sfwBin
+  return { bin: sfwBin, flavor, version }
 }

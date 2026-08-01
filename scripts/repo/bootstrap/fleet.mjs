@@ -94,28 +94,46 @@ function computeSha256(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex')
 }
 /**
- * The open marker line for a given comment style — canonical bare-tag form,
- * matching the grammar used by fleet-markers.mts on the producer side. Inlined
- * here so this file stays dep-0 — it cannot import the wheelhouse's
- * fleet-markers module.
+ * The open marker line for a given comment style — canonical short-tag
+ * bare-tag form, matching the grammar used by fleet-markers.mts on the
+ * producer side. Inlined here so this file stays dep-0 — it cannot import
+ * the wheelhouse's fleet-markers module.
  */
 function beginMarker(style) {
+  if (style === 'html') return '<!-- <fleet> -->'
+  if (style === 'slash') return '// <fleet>'
+  return '# <fleet>'
+}
+/**
+ * The close marker line for a given comment style — canonical short-tag
+ * bare-tag form.
+ */
+function endMarker(style) {
+  if (style === 'html') return '<!-- </fleet> -->'
+  if (style === 'slash') return '// </fleet>'
+  return '# </fleet>'
+}
+/**
+ * The transitional long-form tag, bare form — every existing fleet member's
+ * CLAUDE.md / .gitignore / .gitattributes still carries this pre-rename.
+ * spliceFleetBlock matches it alongside the short-tag form, so a
+ * not-yet-recascaded member is still found and re-spliced in one pass.
+ */
+function legacyTagBeginMarker(style) {
   if (style === 'html') return '<!-- <fleet-canonical> -->'
   if (style === 'slash') return '// <fleet-canonical>'
   return '# <fleet-canonical>'
 }
-/**
- * The close marker line for a given comment style — canonical bare-tag form.
- */
-function endMarker(style) {
+function legacyTagEndMarker(style) {
   if (style === 'html') return '<!-- </fleet-canonical> -->'
   if (style === 'slash') return '// </fleet-canonical>'
   return '# </fleet-canonical>'
 }
 /**
- * Returns the BEGIN/END marker form for a style. spliceFleetBlock matches it
- * alongside the bare-tag form, so a file carrying either form is re-spliced in
- * one pass.
+ * Returns the BEGIN/END keyword marker form (long-form tag) for a style — an
+ * older transition, predating the short-tag rename. spliceFleetBlock matches
+ * it alongside the bare-tag forms, so a file carrying any of the three forms
+ * is re-spliced in one pass.
  */
 function legacyBeginMarker(style) {
   if (style === 'html') return '<!-- BEGIN <fleet-canonical> -->'
@@ -129,8 +147,9 @@ function legacyEndMarker(style) {
 }
 /**
  * Splice the canonical fleet block into `target`. If `target` already contains
- * the open/close markers (bare-tag or legacy BEGIN/END form), the content
- * between them (markers inclusive) is replaced. If markers are absent:
+ * the open/close markers (short-tag bare, long-form tag bare, or legacy
+ * BEGIN/END form), the content between them (markers inclusive) is replaced.
+ * If markers are absent:
  * - `html` style (CLAUDE.md, README): insert before the first level-2 heading
  * (`## `) with i > 0, or append at end.
  * - other styles: append with a leading blank line separator.
@@ -142,11 +161,17 @@ function spliceFleetBlock(config) {
   }
   const begin = beginMarker(commentStyle)
   const end = endMarker(commentStyle)
+  const legacyTag0 = legacyTagBeginMarker(commentStyle)
+  const legacyTag1 = legacyTagEndMarker(commentStyle)
   const legacy0 = legacyBeginMarker(commentStyle)
   const legacy1 = legacyEndMarker(commentStyle)
   const lines = target.split('\n')
-  const startIdx = lines.findIndex(l => l === begin || l === legacy0)
-  const endIdx = lines.findIndex(l => l === end || l === legacy1)
+  const startIdx = lines.findIndex(
+    l => l === begin || l === legacyTag0 || l === legacy0,
+  )
+  const endIdx = lines.findIndex(
+    l => l === end || l === legacyTag1 || l === legacy1,
+  )
   if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
     const before = lines.slice(0, startIdx)
     const after = lines.slice(endIdx + 1)
@@ -2278,6 +2303,8 @@ export {
   isMainModule,
   legacyBeginMarker,
   legacyEndMarker,
+  legacyTagBeginMarker,
+  legacyTagEndMarker,
   lockStepExitCode,
   maybeShowUpdateNotice,
   mergeWorkspaceYaml,

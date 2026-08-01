@@ -88,11 +88,11 @@ export function shimCommands(enterprise) {
 // enforced by `scripts/fleet/check/sfw-ca-env-is-wired.mts`. Inlined rather
 // than imported because this file is dep-0 bootstrap: it runs on the system
 // Node before node_modules exists, so it cannot import a `.mts`.
-const SFW_CA_HOME_RELATIVE_DIR = '.socket/_wheelhouse/ca'
-const SFW_CA_POSIX_CERT = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/socketFirewallCa.crt`
-const SFW_CA_POSIX_KEY = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/socketFirewallCa.key`
-const SFW_CA_WINDOWS_CERT = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\socketFirewallCa.crt`
-const SFW_CA_WINDOWS_KEY = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\socketFirewallCa.key`
+const SFW_CA_HOME_RELATIVE_DIR = '.socket/sfw'
+const SFW_CA_POSIX_CERT = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/ca.crt`
+const SFW_CA_POSIX_KEY = `$HOME/${SFW_CA_HOME_RELATIVE_DIR}/ca.key`
+const SFW_CA_WINDOWS_CERT = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\ca.crt`
+const SFW_CA_WINDOWS_KEY = `%USERPROFILE%\\${SFW_CA_HOME_RELATIVE_DIR.replace(/\//g, '\\')}\\ca.key`
 
 const SFW_CA_POSIX_LINES = [
   '# Socket Firewall persistent CA — point sfw at a STABLE pair so the cert',

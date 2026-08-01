@@ -7,3 +7,10 @@
 export declare function resolveReal(cmd: string): string | undefined
 export declare function isFirewallShim(filePath: string): boolean
 export declare function rustupProxyFor(cmd: string): string
+export declare function sfwFlavorFor(
+  enterprise: boolean,
+): 'enterprise' | 'free'
+export declare function sfwRackDirName(
+  version: string,
+  flavor: string,
+): string

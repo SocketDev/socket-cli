@@ -1,6 +1,6 @@
 ---
 name: tidying-worktrees
-description: Sweep spent clean worktrees whose branches merged or disappeared, while preserving dirty or unpushed work.
+description: Sweep spent clean worktrees whose branches merged or vanished; preserve dirty or unpushed work.
 user-invocable: true
 allowed-tools: Bash(node:*), Bash(git worktree:*), Bash(git branch:*), Bash(git fetch:*), Bash(pnpm i:*), Read
 model: claude-haiku-4-5

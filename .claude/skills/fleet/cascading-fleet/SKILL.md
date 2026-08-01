@@ -1,6 +1,6 @@
 ---
 name: cascading-fleet
-description: Propagate a wheelhouse template change across fleet repos with worktrees, push/PR fallback, and cleanup.
+description: Propagate a wheelhouse template change across fleet repos: worktrees, push/PR fallback, cleanup.
 user-invocable: true
 allowed-tools: Bash(git fetch:*), Bash(git worktree:*), Bash(git branch:*), Bash(git status:*), Bash(git rev-list:*), Bash(git symbolic-ref:*), Bash(git show-ref:*), Bash(git push:*), Bash(git commit:*), Bash(git add:*), Bash(git log:*), Bash(node:*), Bash(gh pr create:*), Bash(gh repo view:*), Read, Bash(bash:*), Bash(chmod:*), Bash(cd:*), Bash(printf:*), Bash(echo:*), Bash(tee:*), Bash(tail:*), Bash(ls:*)
 model: claude-haiku-4-5

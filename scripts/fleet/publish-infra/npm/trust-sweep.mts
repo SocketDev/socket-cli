@@ -69,7 +69,10 @@ interface SweepResult {
  * Whether an existing config already IS the law — the conforming no-op that
  * makes the sweep idempotent and re-runnable after partial failures.
  */
-export function conformsToLaw(config: TrustConfig, repository: string): boolean {
+export function conformsToLaw(
+  config: TrustConfig,
+  repository: string,
+): boolean {
   const perms = [...(config.permissions ?? [])].toSorted()
   const wanted = [...LAW.permissions].toSorted()
   return (
@@ -141,9 +144,7 @@ async function trustList(pkg: string): Promise<TrustConfig | undefined> {
     const authUrl = parsed?.error?.authUrl
     throw new TrustAuthDiedError(
       `npm trust list ${pkg} refused (exit ${code}) — auth or 2FA window is stale.\n` +
-        (authUrl
-          ? `  Approve here (expires in minutes): ${authUrl}\n`
-          : '') +
+        (authUrl ? `  Approve here (expires in minutes): ${authUrl}\n` : '') +
         '  Fix: re-approve auth, then re-run — the sweep is idempotent.',
     )
   }
@@ -291,8 +292,7 @@ async function main(): Promise<void> {
   const drive = argv.includes('--drive')
   const socketRegistry = argv.includes('--socket-registry')
   const repoFlagAt = argv.indexOf('--repo')
-  const repoOverride =
-    repoFlagAt !== -1 ? argv[repoFlagAt + 1] : undefined
+  const repoOverride = repoFlagAt !== -1 ? argv[repoFlagAt + 1] : undefined
   const packages = argv.filter(
     (a, i) => !a.startsWith('--') && i !== repoFlagAt + 1,
   )
@@ -336,7 +336,10 @@ async function main(): Promise<void> {
           return
         }
         // eslint-disable-next-line no-await-in-loop -- the reopen must complete before the walk resumes.
-        const reopened = await reopenAuthWindow(pkg, repoOverride ?? LAW.repository)
+        const reopened = await reopenAuthWindow(
+          pkg,
+          repoOverride ?? LAW.repository,
+        )
         if (!reopened) {
           logger.fail(e.message)
           logger.log(

@@ -76,10 +76,12 @@ Bypass: `Allow external-issue-ref bypass` (enforced by `.claude/hooks/fleet/no-e
 
 ## Root README skeleton + `freeform-readme` opt-in
 
-Every fleet member's root `README.md` carries the canonical five level-2 sections
-in order — `Why this repo exists` / `Install` / `Usage` / `Development` /
+Every fleet member's root `README.md` opens with lead prose saying why the repo
+exists — directly under the title and badges, never a `## Why this repo exists`
+heading — and carries the canonical four level-2 sections
+in order — `Install` / `Usage` / `Development` /
 `License` — plus the universal social-follow badges (X / Twitter + Bluesky) under
-the title, no the fleet source repo leak, no sibling-relative script commands.
+the title, no fleet source repo leak, no sibling-relative script commands.
 Canonical skeleton: `template/base/README.md`.
 
 Some repos are not infra repos. The VS Code + browser extensions and the skills

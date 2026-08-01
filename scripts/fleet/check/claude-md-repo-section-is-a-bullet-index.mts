@@ -30,12 +30,37 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { repoRegionBounds } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
+import type { RepoRegionBounds } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 // The repo-specific section opens with this heading. Everything below it is
-// per-repo content the cascade never overwrites.
+// per-repo content the cascade never overwrites. Only a fallback for a
+// not-yet-migrated member — a freshly seeded CLAUDE.md (template/presets/
+// CLAUDE.md) wraps the section in `<repo>` markers instead, which
+// findRepoSectionBounds prefers when present.
 export const REPO_SECTION_HEADING = '## 🏗️'
+
+/**
+ * Locate the repo-specific section: the shared `<repo>` marker pair when
+ * present (a seeded member — repoRegionBounds), else the `## 🏗️` heading (a
+ * not-yet-migrated member) through the end of the file. Returns undefined
+ * when neither is found — nothing to audit.
+ */
+export function findRepoSectionBounds(
+  lines: readonly string[],
+): RepoRegionBounds | undefined {
+  const marker = repoRegionBounds(lines)
+  if (marker !== undefined) {
+    return marker
+  }
+  const headingStart = lines.findIndex(l => l.startsWith(REPO_SECTION_HEADING))
+  if (headingStart === -1) {
+    return undefined
+  }
+  return { end: lines.length, start: headingStart }
+}
 
 // A bullet longer than this is carrying its explanation inline. The fleet block
 // measured a 286-char median before it was flattened, which is what pushed
@@ -68,15 +93,16 @@ function isStructuralLine(line: string): boolean {
  */
 export function auditRepoSection(body: string): RepoSectionFinding[] {
   const lines = body.split('\n')
-  const start = lines.findIndex(l => l.startsWith(REPO_SECTION_HEADING))
-  if (start === -1) {
+  const bounds = findRepoSectionBounds(lines)
+  if (bounds === undefined) {
     return []
   }
+  const { end, start } = bounds
   const findings: RepoSectionFinding[] = []
   let inFence = false
   // Resets at every heading: one orienting sentence per section is allowed.
   let proseAllowance = 1
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
+  for (let i = start + 1; i < end; i += 1) {
     const line = lines[i]!
     if (line.trim().startsWith('```')) {
       inFence = !inFence

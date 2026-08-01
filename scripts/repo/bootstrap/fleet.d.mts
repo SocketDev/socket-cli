@@ -74,27 +74,38 @@ declare function errorMessage(e: unknown): string;
  */
 declare function computeSha256(buf: Buffer): string;
 /**
- * The open marker line for a given comment style — canonical bare-tag form,
- * matching the grammar used by fleet-markers.mts on the producer side. Inlined
- * here so this file stays dep-0 — it cannot import the wheelhouse's
- * fleet-markers module.
+ * The open marker line for a given comment style — canonical short-tag
+ * bare-tag form, matching the grammar used by fleet-markers.mts on the
+ * producer side. Inlined here so this file stays dep-0 — it cannot import
+ * the wheelhouse's fleet-markers module.
  */
 declare function beginMarker(style: FleetCommentStyle): string;
 /**
- * The close marker line for a given comment style — canonical bare-tag form.
+ * The close marker line for a given comment style — canonical short-tag
+ * bare-tag form.
  */
 declare function endMarker(style: FleetCommentStyle): string;
 /**
- * Returns the BEGIN/END marker form for a style. spliceFleetBlock matches it
- * alongside the bare-tag form, so a file carrying either form is re-spliced in
- * one pass.
+ * The transitional long-form tag, bare form — every existing fleet member's
+ * CLAUDE.md / .gitignore / .gitattributes still carries this pre-rename.
+ * spliceFleetBlock matches it alongside the short-tag form, so a
+ * not-yet-recascaded member is still found and re-spliced in one pass.
+ */
+declare function legacyTagBeginMarker(style: FleetCommentStyle): string;
+declare function legacyTagEndMarker(style: FleetCommentStyle): string;
+/**
+ * Returns the BEGIN/END keyword marker form (long-form tag) for a style — an
+ * older transition, predating the short-tag rename. spliceFleetBlock matches
+ * it alongside the bare-tag forms, so a file carrying any of the three forms
+ * is re-spliced in one pass.
  */
 declare function legacyBeginMarker(style: FleetCommentStyle): string;
 declare function legacyEndMarker(style: FleetCommentStyle): string;
 /**
  * Splice the canonical fleet block into `target`. If `target` already contains
- * the open/close markers (bare-tag or legacy BEGIN/END form), the content
- * between them (markers inclusive) is replaced. If markers are absent:
+ * the open/close markers (short-tag bare, long-form tag bare, or legacy
+ * BEGIN/END form), the content between them (markers inclusive) is replaced.
+ * If markers are absent:
  * - `html` style (CLAUDE.md, README): insert before the first level-2 heading
  * (`## `) with i > 0, or append at end.
  * - other styles: append with a leading blank line separator.
@@ -693,4 +704,4 @@ declare function runStatus(config: InstallConfig): number;
 declare function installFleet(config: InstallConfig): Promise<number>;
 declare function isMainModule(): boolean;
 //#endregion
-export { AuthChallenge, BundleConfig, BundleFetchFn, BundleManifest, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FetchedBundle, FetchedFiles, FleetCommentStyle, FleetFileManifest, GHCR_HOST, GhcrHttpGetFn, GhcrHttpOptions, GhcrHttpResponse, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MANIFEST_ACCEPT, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, OciLayer, OciManifest, PREPARE_FETCH, PullBundleConfig, RefValidation, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, extractManifestFromTarball, fetchBlob, fetchBundleSource, fetchOciManifest, firstHeader, formatLockStepError, formatUpdateNotice, getGhcrToken, ghReleaseFetchBundle, ghcrBundleRepo, ghcrFetchBundle, ghcrTokenUrl, httpGet, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isMainModule, legacyBeginMarker, legacyEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseWwwAuthenticate, parseYamlEntryChunks, parseYamlKeyBlocks, pickBundleLayer, printStatusReport, pruneStaleFleetFiles, pullFleetBundleTarball, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, sha256Hex, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, tokenFromBody, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };
+export { AuthChallenge, BundleConfig, BundleFetchFn, BundleManifest, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FetchedBundle, FetchedFiles, FleetCommentStyle, FleetFileManifest, GHCR_HOST, GhcrHttpGetFn, GhcrHttpOptions, GhcrHttpResponse, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MANIFEST_ACCEPT, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, OciLayer, OciManifest, PREPARE_FETCH, PullBundleConfig, RefValidation, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, extractManifestFromTarball, fetchBlob, fetchBundleSource, fetchOciManifest, firstHeader, formatLockStepError, formatUpdateNotice, getGhcrToken, ghReleaseFetchBundle, ghcrBundleRepo, ghcrFetchBundle, ghcrTokenUrl, httpGet, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isMainModule, legacyBeginMarker, legacyEndMarker, legacyTagBeginMarker, legacyTagEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseWwwAuthenticate, parseYamlEntryChunks, parseYamlKeyBlocks, pickBundleLayer, printStatusReport, pruneStaleFleetFiles, pullFleetBundleTarball, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, sha256Hex, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, tokenFromBody, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };

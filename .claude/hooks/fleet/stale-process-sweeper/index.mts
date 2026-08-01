@@ -79,12 +79,16 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
   },
   // Socket Firewall command wrappers. Deployment layouts seen in the wild:
-  //   - ~/.socket/_wheelhouse/rack/sfw/<version>/sfw   (current: the readable
+  //   - ~/.socket/_wheelhouse/rack/sfw/<version>-<flavor>/sfw
+  //                                                    (current: the readable
   //                                                     rack path both installers
   //                                                     expose — real binary for
   //                                                     setup-tools, a symlink to
   //                                                     the _dlx store for
-  //                                                     install-sfw)
+  //                                                     install-sfw. The
+  //                                                     `-free`/`-enterprise`
+  //                                                     tail is why the version
+  //                                                     class below allows `-`.)
   //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary store — the
   //                                                     real binary behind the
   //                                                     rack symlink)
@@ -112,7 +116,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     //       | sfw\/bin                "sfw/bin"          — legacy dev install
     //       | _wheelhouse\/           "_wheelhouse/" then one of…
     //         (?: bin                   "bin", legacy dev install
-    //           | rack\/sfw\/[\w.]+     "rack/sfw/<ver>", current readable path
+    //           | rack\/sfw\/[\w.-]+    "rack/sfw/<ver>-<flavor>", current path
     //           | sfw-stable )          "sfw-stable", legacy shim target
     //     )
     //     | sfw-bin                   OR bare "sfw-bin"  — CI ${RUNNER_TEMP}/sfw-bin
@@ -127,7 +131,7 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     // `.exe` branch) matches a future Windows process source too. Negative
     // cases: a plain "/Library/pnpm/pnpm", no sfw wrapper, and editors/IDEs
     // never match.
-    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|_wheelhouse\/(?:bin|rack\/sfw\/[\w.]+|sfw-stable)|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
+    rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|_wheelhouse\/(?:bin|rack\/sfw\/[\w.-]+|sfw-stable)|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]
 

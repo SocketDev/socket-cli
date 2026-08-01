@@ -120,6 +120,6 @@ The four-flag lockdown is enforced at edit time by `.claude/hooks/fleet/claude-l
 
 ## Existing fleet callsites
 
-- `scripts/fleet/weekly-update.mts`: the plain (non-gh-aw) weekly runner — drives the deterministic chain, then the optional advisory pass via `spawnAiAgent({ ...AI_PROFILE.full })`, the locked-down four-flag wrapper. The escape-hatch + local-dev entry; gh-aw stays the primary scheduled path.
-- `socket-registry/.github/workflows/weekly-update.md`: the gh-aw reusable workflow (`engine: claude`, `max-ai-credits`, network allowlist, safe-output PR). Replaced the legacy `claude --print` reusable; its deterministic check-updates gate calls `weekly-update.mts --check-updates`.
+- `scripts/fleet/ai-lint-fix/claude.mts`: `runClaudeFix()` spawns the edit-only agent per file via `spawnAiAgent({ ...AI_PROFILE.edit })`, the locked-down four-flag wrapper — model and effort picked per-file by the caller's `escalateTier()`.
+- `socket-registry/.github/workflows/weekly-update.md`: the gh-aw reusable workflow (`engine: claude`, `max-ai-credits`, network allowlist, safe-output PR). Replaced the legacy `claude --print` reusable.
 - `socket-lib/tools/prim/src/disambiguate.mts`: read-only recipe above (`query()` SDK form).

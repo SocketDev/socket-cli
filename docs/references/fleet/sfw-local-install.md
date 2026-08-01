@@ -52,15 +52,19 @@ PLATFORM=darwin-arm64   # or: darwin-x64, linux-x64, linux-arm64, linux-x64-musl
 ASSET=$(node -e "console.log(require('$TOOLS').sfw.enterprise.checksums['$PLATFORM'].asset)")
 SHA=$(node -e "console.log(require('$TOOLS').sfw.enterprise.checksums['$PLATFORM'].sha256)")
 
-# Real binary racks at rack/sfw/<version>/sfw; bin/ holds the flat handle.
-mkdir -p ~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION ~/.socket/_wheelhouse/bin
+# Real binary racks at rack/sfw/<version>-<flavor>/sfw; bin/ holds the flat
+# handle. The flavor tail is load-bearing: the free and enterprise builds ship
+# the same version and the same binary name, so a flavor-blind dir makes the
+# two indistinguishable and a flavor switch a silent no-op.
+RACK=~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION-enterprise
+mkdir -p "$RACK" ~/.socket/_wheelhouse/bin
 gh release download "v$SFW_VERSION" --repo SocketDev/firewall-release \
-  --pattern "$ASSET" --output ~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION/sfw --clobber
+  --pattern "$ASSET" --output "$RACK/sfw" --clobber
 
-ACTUAL=$(shasum -a 256 ~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION/sfw | cut -d' ' -f1)
+ACTUAL=$(shasum -a 256 "$RACK/sfw" | cut -d' ' -f1)
 [ "$ACTUAL" = "$SHA" ] || { echo "sha mismatch"; exit 1; }
-chmod +x ~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION/sfw
-ln -sfn ~/.socket/_wheelhouse/rack/sfw/$SFW_VERSION/sfw ~/.socket/_wheelhouse/bin/sfw
+chmod +x "$RACK/sfw"
+ln -sfn "$RACK/sfw" ~/.socket/_wheelhouse/bin/sfw
 ```
 
 ### 3. Generate the shims
