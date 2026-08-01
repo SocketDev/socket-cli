@@ -81,7 +81,7 @@ catalog:
   # code resolves to the published catalog version regardless of where
   # the importing file lives. See socket-wheelhouse@92cd3e3 for the
   # full rationale.
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.4.8'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.0'
   '@socketregistry/yocto-spinner': 1.0.25
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.5.2'
   '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.5'
@@ -325,7 +325,7 @@ overrides:
   # swapping their top-level require for a dynamic import inside the async
   # function that already wraps the call.
   '@sindresorhus/df': '5.0.0'
-  '@socketregistry/packageurl-js-stable': 'catalog:'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.0'
   '@socketsecurity/lib-stable': 'catalog:'
   '@socketsecurity/registry-stable': 'catalog:'
   '@socketsecurity/sdk-stable': 'catalog:'
