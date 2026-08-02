@@ -62,6 +62,23 @@ import {
 
 const logger = getDefaultLogger()
 
+/**
+ * A git runner, injected so every function below is testable without a fixture
+ * repo or a network remote. Same shape as `BackupBranchGitExec` in
+ * `lib/backup-branch.mts`, which the release scan already uses — one seam
+ * convention for git-touching fleet code, not two.
+ */
+export type GitExec = (
+  args: string[],
+) => Promise<{ code: number; stdout: string }>
+
+/**
+ * The production exec: `runCapture` bound to one repo.
+ */
+export function gitExecFor(repoDir: string): GitExec {
+  return (args: string[]) => runCapture('git', args, repoDir)
+}
+
 // Remote refs are deleted one at a time. A batched
 // `git push --delete a b c` fails the whole batch on one bad ref, so serial
 // keeps a single failure from stranding the rest.
@@ -99,12 +116,15 @@ export interface PruneOutcome {
  * be on `master`, and a wrong base would compare the backup against nothing and
  * veto every ref.
  */
-export async function resolveDefaultBranch(repoDir: string): Promise<string> {
-  const symbolic = await runCapture(
-    'git',
-    ['symbolic-ref', '--short', `refs/remotes/${REMOTE}/HEAD`],
-    repoDir,
-  )
+export async function resolveDefaultBranch(
+  repoDir: string,
+  exec: GitExec = gitExecFor(repoDir),
+): Promise<string> {
+  const symbolic = await exec([
+    'symbolic-ref',
+    '--short',
+    `refs/remotes/${REMOTE}/HEAD`,
+  ])
   if (symbolic.code === 0) {
     const short = symbolic.stdout.trim().replace(`${REMOTE}/`, '')
     if (short !== '') {
@@ -113,11 +133,11 @@ export async function resolveDefaultBranch(repoDir: string): Promise<string> {
   }
   for (const candidate of ['main', 'master']) {
     // oxlint-disable-next-line no-await-in-loop -- probing two candidates in order; the second only matters when the first is absent
-    const verify = await runCapture(
-      'git',
-      ['rev-parse', '--verify', `refs/remotes/${REMOTE}/${candidate}`],
-      repoDir,
-    )
+    const verify = await exec([
+      'rev-parse',
+      '--verify',
+      `refs/remotes/${REMOTE}/${candidate}`,
+    ])
     if (verify.code === 0) {
       return candidate
     }
@@ -145,8 +165,11 @@ export async function resolveDefaultBranch(repoDir: string): Promise<string> {
  * run would do, so it needs the same view. The fetch mutates only local
  * tracking refs and never the remote or the working tree.
  */
-export async function syncRemoteRefs(repoDir: string): Promise<void> {
-  await runCapture('git', ['fetch', '--prune', '--quiet', REMOTE], repoDir)
+export async function syncRemoteRefs(
+  repoDir: string,
+  exec: GitExec = gitExecFor(repoDir),
+): Promise<void> {
+  await exec(['fetch', '--prune', '--quiet', REMOTE])
 }
 
 export interface DiscoverOptions {
@@ -161,6 +184,7 @@ export interface DiscoverOptions {
 export async function discoverBackupRefs(
   repoDir: string,
   options?: DiscoverOptions | undefined,
+  exec: GitExec = gitExecFor(repoDir),
 ): Promise<BackupRef[]> {
   const opts = { __proto__: null, ...options } as DiscoverOptions
   // Two globs per tier: `backup*` alone does not match a slashed
@@ -172,11 +196,11 @@ export async function discoverBackupRefs(
   if (opts.local === true) {
     globs.push('refs/heads/backup*', 'refs/heads/backup/*')
   }
-  const listed = await runCapture(
-    'git',
-    ['for-each-ref', '--format=%(refname)%09%(committerdate:unix)', ...globs],
-    repoDir,
-  )
+  const listed = await exec([
+    'for-each-ref',
+    '--format=%(refname)%09%(committerdate:unix)',
+    ...globs,
+  ])
   if (listed.code !== 0) {
     throw new Error(`git for-each-ref failed in ${repoDir}`)
   }
@@ -210,11 +234,10 @@ export async function findUniqueContent(
   repoDir: string,
   branch: string,
   defaultBranch: string,
+  exec: GitExec = gitExecFor(repoDir),
 ): Promise<string[]> {
-  const diff = await runCapture(
-    'git',
+  const diff = await exec(
     uniqueContentDiffArgs(`${REMOTE}/${branch}`, `${REMOTE}/${defaultBranch}`),
-    repoDir,
   )
   if (diff.code !== 0) {
     // The gate fails CLOSED: a ref whose safety cannot be established is
@@ -235,12 +258,14 @@ export async function findUniqueContent(
 export async function resolveHistoryRootMs(
   repoDir: string,
   defaultBranch: string,
+  exec: GitExec = gitExecFor(repoDir),
 ): Promise<number> {
-  const root = await runCapture(
-    'git',
-    ['log', '--max-parents=0', '--format=%ct', `${REMOTE}/${defaultBranch}`],
-    repoDir,
-  )
+  const root = await exec([
+    'log',
+    '--max-parents=0',
+    '--format=%ct',
+    `${REMOTE}/${defaultBranch}`,
+  ])
   if (root.code !== 0) {
     return 0
   }
@@ -264,13 +289,14 @@ export async function pruneRepo(
   repoDir: string,
   nowMs: number,
   options?: PruneOptions | undefined,
+  exec: GitExec = gitExecFor(repoDir),
 ): Promise<PruneOutcome> {
   const opts = { __proto__: null, ...options } as PruneOptions
   // Before ANY read of refs/remotes/*, make that cache match the remote.
-  await syncRemoteRefs(repoDir)
-  const defaultBranch = await resolveDefaultBranch(repoDir)
-  const historyRootMs = await resolveHistoryRootMs(repoDir, defaultBranch)
-  const refs = await discoverBackupRefs(repoDir, { local: opts.local })
+  await syncRemoteRefs(repoDir, exec)
+  const defaultBranch = await resolveDefaultBranch(repoDir, exec)
+  const historyRootMs = await resolveHistoryRootMs(repoDir, defaultBranch, exec)
+  const refs = await discoverBackupRefs(repoDir, { local: opts.local }, exec)
   const verdicts = applyRetention(refs, {
     days: opts.days,
     keep: opts.keep,
@@ -286,7 +312,12 @@ export async function pruneRepo(
     }
     const { name } = verdict.ref
     // oxlint-disable-next-line no-await-in-loop -- serial by design: each delete is a remote mutation whose failure must not strand the rest
-    const onlyOnBackup = await findUniqueContent(repoDir, name, defaultBranch)
+    const onlyOnBackup = await findUniqueContent(
+      repoDir,
+      name,
+      defaultBranch,
+      exec,
+    )
     if (onlyOnBackup.length > 0) {
       const preRoot = precedesHistoryRoot(
         verdict.ref.committedAtMs,
@@ -308,11 +339,7 @@ export async function pruneRepo(
       continue
     }
     // oxlint-disable-next-line no-await-in-loop -- see above
-    const push = await runCapture(
-      'git',
-      ['push', REMOTE, '--delete', name],
-      repoDir,
-    )
+    const push = await exec(['push', REMOTE, '--delete', name])
     if (push.code !== 0) {
       logger.warn(`  failed to delete ${name} (exit ${String(push.code)})`)
       continue
@@ -326,38 +353,62 @@ export interface ReportOptions {
   readonly dryRun?: boolean | undefined
 }
 
-export function reportOutcome(
+/**
+ * One report line plus the stream it belongs on. A vetoed ref is a FINDING, so
+ * it goes to warn; everything else is informational.
+ */
+export interface ReportLine {
+  readonly level: 'info' | 'warn'
+  readonly text: string
+}
+
+/**
+ * Build the report for one repo's outcome.
+ *
+ * Split from the logging so the wording is testable directly — the veto text in
+ * particular has to say different things for a pre-root ref than for one inside
+ * current history, and getting that backwards is how an operator learns to
+ * ignore a real finding.
+ */
+export function formatOutcomeLines(
   outcome: PruneOutcome,
   options?: ReportOptions | undefined,
-): void {
+): ReportLine[] {
   const opts = { __proto__: null, ...options } as ReportOptions
   const verb = opts.dryRun === true ? 'would delete' : 'deleted'
-  logger.info(outcome.repoDir)
+  const lines: ReportLine[] = [{ level: 'info', text: outcome.repoDir }]
   if (outcome.deleted.length > 0) {
-    logger.info(`  ${verb} ${String(outcome.deleted.length)}:`)
+    lines.push({
+      level: 'info',
+      text: `  ${verb} ${String(outcome.deleted.length)}:`,
+    })
     for (const name of outcome.deleted) {
-      logger.info(`    - ${name}`)
+      lines.push({ level: 'info', text: `    - ${name}` })
     }
   }
   for (const verdict of outcome.kept) {
-    logger.info(`  kept ${verdict.ref.name} — ${verdict.keptBecause ?? ''}`)
+    lines.push({
+      level: 'info',
+      text: `  kept ${verdict.ref.name} — ${verdict.keptBecause ?? ''}`,
+    })
   }
   // Loud, never a silent skip: a vetoed ref means a rewrite may have lost work,
   // which is a finding in its own right, not merely a ref that stayed.
   for (const veto of outcome.vetoed) {
-    logger.warn(
-      veto.preRoot
+    lines.push({
+      level: 'warn',
+      text: veto.preRoot
         ? `  HELD ${veto.name} — predates the default branch's root commit, ` +
-            `so its ${String(veto.onlyOnBackup.length)} extra file(s) cannot ` +
-            `be told apart from ordinary removals the squash erased. Review ` +
-            `by hand before deleting:`
+          `so its ${String(veto.onlyOnBackup.length)} extra file(s) cannot ` +
+          `be told apart from ordinary removals the squash erased. Review ` +
+          `by hand before deleting:`
         : `  HELD ${veto.name} — carries ` +
-            `${String(veto.onlyOnBackup.length)} file(s) the default branch ` +
-            `lacks; a rewrite may have lost work:`,
-    )
+          `${String(veto.onlyOnBackup.length)} file(s) the default branch ` +
+          `lacks; a rewrite may have lost work:`,
+    })
     const shown = veto.onlyOnBackup.slice(0, MAX_VETO_PATHS_SHOWN)
     for (let i = 0, { length } = shown; i < length; i += 1) {
-      logger.warn(`      ${shown[i]!}`)
+      lines.push({ level: 'warn', text: `      ${shown[i]!}` })
     }
   }
   if (
@@ -365,7 +416,23 @@ export function reportOutcome(
     outcome.kept.length === 0 &&
     outcome.vetoed.length === 0
   ) {
-    logger.info('  no backup branches')
+    lines.push({ level: 'info', text: '  no backup branches' })
+  }
+  return lines
+}
+
+export function reportOutcome(
+  outcome: PruneOutcome,
+  options?: ReportOptions | undefined,
+): void {
+  const lines = formatOutcomeLines(outcome, options)
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    if (line.level === 'warn') {
+      logger.warn(line.text)
+    } else {
+      logger.info(line.text)
+    }
   }
 }
 

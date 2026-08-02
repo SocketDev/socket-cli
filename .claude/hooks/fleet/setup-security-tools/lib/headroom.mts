@@ -191,10 +191,14 @@ async function refreshSymlink(
 // headroom-ai — installed from a LOCKED uv project into the content-addressed
 // `_dlx` hash store. `uv sync --locked` installs the lock's exact closure (98
 // packages, hashed) and hard-fails on lock drift. UV_PROJECT_ENVIRONMENT
-// relocates the venv out of the project dir into the dlx hash dir, and
-// UV_CACHE_DIR keeps the wheel cache `_dlx`-contained; the pyproject's
-// `python-preference = "only-managed"` reuses the uv-managed CPython under
-// `_dlx`, never a system Python.
+// relocates the venv out of the project dir into the dlx hash dir,
+// UV_CACHE_DIR keeps the wheel cache `_dlx`-contained, and
+// UV_PYTHON_INSTALL_DIR keeps the managed CPython `_dlx`-contained too: the
+// pyproject's `python-preference = "only-managed"` means uv DOWNLOADS an
+// interpreter when none is present, and unpinned that download lands in the
+// operator's `~/.local/share/uv` (~65 MB). Machines that already have a
+// managed CPython hide this — uv reuses theirs read-only — so the leak only
+// shows up on a fresh machine or in CI.
 //
 // Requirements: uv on PATH, the bootstrap installs it. Fail-open OPTIONAL when
 // uv is absent — matching setupSkillSpector.
@@ -227,6 +231,7 @@ export async function setupHeadroom(version: string): Promise<boolean> {
   safeMkdirSync(dlxDir)
   const venvDir = path.join(dlxDir, '.venv')
   const cacheDir = path.join(getSocketDlxDir(), '_uv-cache')
+  const pythonInstallDir = path.join(getSocketDlxDir(), '_uv-python')
 
   logger.log(`Syncing locked uv project (headroom-ai@${version}) → ${dlxDir}`)
   try {
@@ -238,8 +243,9 @@ export async function setupHeadroom(version: string): Promise<boolean> {
           __proto__: null,
           ...process.env,
           ...HEADROOM_LOCKDOWN_ENV,
-          UV_PROJECT_ENVIRONMENT: venvDir,
           UV_CACHE_DIR: cacheDir,
+          UV_PROJECT_ENVIRONMENT: venvDir,
+          UV_PYTHON_INSTALL_DIR: pythonInstallDir,
         } as unknown as Record<string, string>,
         stdio: 'pipe',
       },

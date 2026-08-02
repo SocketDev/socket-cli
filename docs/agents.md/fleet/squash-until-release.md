@@ -55,7 +55,7 @@ Two things deliberately do **not** count:
 - **A `0.0.0` reservation.** `publish-infra/{npm,cargo}/placeholder.mts`
   publishes `0.0.0` to claim a name so OIDC trusted publishing can be configured
   against it. Nothing resolves a reservation, so it leaves the window open.
-- **A GitHub release.** `socket-wheelhouse` carries 20+ release bundles and
+- **A GitHub release.** The wheelhouse carries 20+ release bundles and
   squashes its own default branch by design. A release asset is a build output,
   not a resolved dependency, so it is not the hinge.
 

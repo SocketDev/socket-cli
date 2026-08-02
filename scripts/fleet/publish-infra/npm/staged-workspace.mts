@@ -24,20 +24,13 @@ import process from 'node:process'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { releaseBehindLiveGate } from '../release.mts'
-import {
-  logger,
-  provenanceAllowed,
-  runCapture,
-  runInherit,
-} from '../shared.mts'
+import { logger, runCapture } from '../shared.mts'
 import { withPinnedReadme } from '../pin-readme.mts'
 import { withPrunedPackManifest } from './pack-manifest.mts'
+import { uploadNpmPackage } from './publish-command.mts'
 import { verifyPackedPayload } from './pack-preflight.mts'
-import {
-  diagnoseStageConflict,
-  diagnoseStagedAuthFailure,
-  isAlreadyPublished,
-} from './registry.mts'
+import { diagnosePublishFailure } from './publish-failure.mts'
+import { isAlreadyPublished } from './registry.mts'
 import { isStagingExpected, logNpmApproveHandoff } from './shared.mts'
 import {
   checkVersionLockstep,
@@ -49,8 +42,19 @@ import {
 import { tarExecutable } from '../../_shared/tar-executable.mts'
 import { writeThroughMirrorLock } from '../../_shared/mirror-lock.mts'
 
+import type { NpmUploadResult } from './publish-command.mts'
 import type { StageListEntry } from './shared.mts'
 import type { NpmWorkspaceLayout, WorkspacePackage } from './workspace.mts'
+
+// The upload result a member's pack-preflight failure leaves behind: the
+// command never ran, so there is nothing to report and no credential to
+// question. See staged.mts's DID_NOT_UPLOAD for the same reasoning.
+const MEMBER_DID_NOT_UPLOAD: NpmUploadResult = {
+  code: 0,
+  output: '',
+  postureOk: true,
+  ran: false,
+}
 
 function pinTargetForPackage(
   layout: NpmWorkspaceLayout,
@@ -424,35 +428,12 @@ export async function runWorkspacePublish(
         return
       }
     }
-    const args = mode === 'staged' ? ['stage', 'publish'] : ['publish']
-    args.push(
-      '--access',
-      'public',
-      '--tag',
-      tag,
-      '--no-git-checks',
-      '--ignore-scripts',
-    )
-    if (process.env['GITHUB_ACTIONS'] === 'true') {
-      if (provenanceAllowed()) {
-        args.push('--provenance')
-      } else {
-        logger.warn(
-          'Provenance skipped: npm only verifies sigstore bundles from ' +
-            'PUBLIC source repositories, and this run is not one. The ' +
-            'upload proceeds unattested; provenance turns back on ' +
-            'automatically when the repo is public.',
-        )
-      }
-    }
-    if (dryRun) {
-      args.push('--dry-run')
-    }
     // Same README-pin + manifest-prune brackets as the single-subject modes,
     // per member, so the approve-time verify pack sees identical bytes. The
     // pack preflight runs inside them, before the command, so a member whose
     // tarball is missing declared payload never stages or publishes.
     let preflightOk = true
+    let member: NpmUploadResult = MEMBER_DID_NOT_UPLOAD
     // eslint-disable-next-line no-await-in-loop -- serial by design
     const code = await withPinnedReadme(pinTargetForPackage(layout, pkg), () =>
       withPrunedPackManifest(pkg.dir, async () => {
@@ -465,7 +446,8 @@ export async function runWorkspacePublish(
         if (!preflightOk) {
           return 1
         }
-        return await runInherit('pnpm', args, pkg.dir)
+        member = await uploadNpmPackage({ cwd: pkg.dir, dryRun, mode, tag })
+        return member.code
       }),
     )
     if (!preflightOk) {
@@ -486,14 +468,26 @@ export async function runWorkspacePublish(
           `failed dependency.`,
       )
       // eslint-disable-next-line no-await-in-loop -- failure path, loop exits here
-      for (const line of await diagnoseStageConflict(pkg.name, version)) {
-        logger.fail(line)
-      }
-      // eslint-disable-next-line no-await-in-loop -- failure path, loop exits here
-      for (const line of await diagnoseStagedAuthFailure(pkg.name)) {
+      for (const line of await diagnosePublishFailure({
+        mode,
+        name: pkg.name,
+        output: member.output,
+        version,
+      })) {
         logger.fail(line)
       }
       process.exitCode = code
+      return
+    }
+    // A zero exit does not mean the OIDC exchange worked. Stop the wave on the
+    // first member that uploaded under a masked credential — the members after
+    // it would inherit the same wrong identity.
+    if (!member.postureOk) {
+      logger.fail(
+        `Aborting the remaining members after ${pkg.name}@${version} — the ` +
+          `rest of the wave would publish under the same credential.`,
+      )
+      process.exitCode = 1
       return
     }
     published += 1

@@ -9,11 +9,11 @@
  *   CODE and its DATA drift independently. 2026-07-08: five repos failed CI on
  *   stale copies (sfw entries missing `binaryName`, sha256-era integrity where
  *   the installer expects sha512 SRI, years-old pnpm pins), and three more
- *   were missing the file entirely. The composite actions no longer read this
- *   file at runtime — they read the bundled `_shared/external-tools.json`
- *   beside them — but the local install/check surface still does, so the fleet
- *   setup action's presence remains the "this is a fleet member" signal that
- *   makes a missing file fail loud.
+ *   were missing the file entirely. The composite actions read the ONE fleet
+ *   registry at `scripts/fleet/setup/external-tools.json`, not this per-repo
+ *   file, but the local install/check surface still reads this one, so the
+ *   fleet setup action's presence remains the "this is a fleet member" signal
+ *   that makes a missing file fail loud.
  *
  *   The gate compares each SHARED tool entry (a tool name that also exists in
  *   the wheelhouse copy) deep-equal against the wheelhouse value. Repo-specific

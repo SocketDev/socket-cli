@@ -107,9 +107,9 @@ runs:
         set -euo pipefail
         # The checkout action runs while the workspace may still contain only
         # the initial .github/ sparse checkout. Keep its pins beside the action.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
+        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
-          echo "× the fleet checkout action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
+          echo "× fleet pin file not found at ${TOOLS_FILE} — this member is missing scripts/fleet/setup/external-tools.json; re-run the cascade." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
           echo "" >&2
           echo "  Diagnostics — what's actually present at runtime:" >&2

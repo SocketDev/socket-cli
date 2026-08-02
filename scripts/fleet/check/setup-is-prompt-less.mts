@@ -474,7 +474,10 @@ export function resolveFixPaths(home: string): FixPaths {
 
 const GPG_AGENT_TTL_DIRECTIVES = ['default-cache-ttl', 'max-cache-ttl']
 
-function lastEffectiveIndex(lines: readonly string[], re: RegExp): number {
+export function lastEffectiveIndex(
+  lines: readonly string[],
+  re: RegExp,
+): number {
   let idx = -1
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const ln = lines[i]!.trim()
@@ -492,7 +495,7 @@ function lastEffectiveIndex(lines: readonly string[], re: RegExp): number {
  * Rewrite the LAST effective occurrence of a directive (gpg-agent semantics:
  * later wins on duplicates), or append it when absent. Never duplicates.
  */
-function upsertDirectiveLine(
+export function upsertDirectiveLine(
   lines: string[],
   re: RegExp,
   desired: string,
@@ -666,7 +669,7 @@ function readIfExists(p: string): string | undefined {
 /**
  * Same satisfaction rule as checkPinentryProgram, against injected content.
  */
-function pinentrySatisfied(confContent: string | undefined): boolean {
+export function pinentrySatisfied(confContent: string | undefined): boolean {
   const m = /^\s*pinentry-program\s+(\S+)/m.exec(confContent ?? '')
   return m !== null && m[1]!.includes('pinentry-mac') && existsSync(m[1]!)
 }

@@ -94,6 +94,12 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // cargo test / go test / ctest must gate the run through the run-offline
     // action, loopback-only netns — the compiled-language nock equivalent.
     () => run('node', ['scripts/fleet/check/native-tests-are-network-off.mts']),
+    // Test isolation: a test that spawns a process must point the child at an
+    // isolation sandbox — probes included, since a `pnpm --version` against a
+    // corepack shim downloads the whole package manager — and must not wipe
+    // the cache variables it just set. Report-only; the ordering half is
+    // blocked at edit time by test-env-scrub-order-guard.
+    () => run('node', ['scripts/fleet/check/test-spawns-are-isolated.mts']),
     // Single-source for the co-located app-token minter: every action dir's
     // mint-app-installation-token.mjs copy must be byte-identical (the inlined
     // form of single-source-of-truth — a drifted copy mints with stale logic).

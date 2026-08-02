@@ -88,6 +88,60 @@ export function runInherit(
 }
 
 /**
+ * What a teed spawn returns: the exit code plus everything the child wrote,
+ * stdout and stderr interleaved in arrival order.
+ */
+export interface TeedRun {
+  code: number
+  output: string
+}
+
+/**
+ * Spawn a command, forward its output live, AND keep a copy.
+ *
+ * `runInherit` hands the child the parent's stdio, so the caller sees the
+ * output but can never read it; `runCapture` reads stdout but silences it and
+ * drops stderr entirely. A publish failure needs both halves — the operator
+ * watches the stream in real time, and the failure handler has to inspect what
+ * the registry actually said before it offers a diagnosis. Both streams are
+ * accumulated into one buffer because the definitive error and its context
+ * straddle them (pnpm logs `Skipped OIDC` and `[E401]` two lines apart).
+ */
+export function runInheritTee(
+  cmd: string,
+  args: string[],
+  cwd: string,
+  env?: NodeJS.ProcessEnv | undefined,
+): Promise<TeedRun> {
+  return new Promise((resolve, reject) => {
+    const childPromise = spawn(cmd, args, {
+      cwd,
+      ...(env ? { env: { ...process.env, ...env } } : {}),
+      shell: WIN32,
+      // stdin stays inherited so an interactive prompt still reaches the user;
+      // both output streams are piped so they can be teed.
+      stdio: ['inherit', 'pipe', 'pipe'],
+    })
+    // Same rejection swallow as runInherit — the exit code is the result here.
+    void childPromise.catch(() => undefined)
+    const child = childPromise.process
+    let output = ''
+    child.stdout?.on('data', (chunk: Buffer) => {
+      output += chunk.toString('utf8')
+      process.stdout.write(chunk)
+    })
+    child.stderr?.on('data', (chunk: Buffer) => {
+      output += chunk.toString('utf8')
+      process.stderr.write(chunk)
+    })
+    child.on('error', reject)
+    child.on('exit', code => {
+      resolve({ code: code ?? 0, output })
+    })
+  })
+}
+
+/**
  * Like runInherit, but guarantees the child sees a TTY. pnpm's registry
  * web-OTP challenge refuses non-interactive stdio
  * (ERR_PNPM_OTP_NON_INTERACTIVE) instead of opening the browser, so

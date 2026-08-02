@@ -68,6 +68,11 @@ const SOURCE_EXT = new Set([
 
 // Directories that never hold hand-written fleet source.
 const SKIP_DIRS = new Set([
+  // Downloaded third-party SDKs land here (e.g. the binaryen release the wasm
+  // toolchain setup fetches, whose binaryen-c.h is 3849 lines). Gating a
+  // vendored header on fleet doctrine reports a violation nobody can fix
+  // without editing someone else's release artifact.
+  '.cache',
   '.git',
   'build',
   'dist',

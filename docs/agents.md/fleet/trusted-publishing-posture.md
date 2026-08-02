@@ -1,0 +1,84 @@
+# Trusted-publishing posture
+
+Every fleet member uploads npm bytes through **one** function, and that upload
+either authenticates with an OIDC trusted-publisher token or says out loud that
+it did not. There is no third state.
+
+## The incident
+
+Five members shipped a byte-identical `.github/workflows/npm-publish.yml` and a
+byte-identical `scripts/fleet/npm-publish.mts`. They published under two
+different credentials.
+
+pnpm's OIDC token exchange with npm returns 404 in every member:
+
+```
+[WARN] Skipped OIDC: ERR_PNPM_AUTH_TOKEN_EXCHANGE … 404
+```
+
+pnpm does not stop there. It falls through to whatever other credential the
+environment carries. `actions/setup-node` — which the fleet `setup` action runs
+with `registry-url: https://registry.npmjs.org` — writes
+`//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into the runner's
+`.npmrc`. So:
+
+- A member whose `npm-publish` GitHub environment supplies `NODE_AUTH_TOKEN`
+  published **successfully**, under a long-lived token, with every log line
+  still saying trusted publishing.
+- A member with no such secret died on `[E401] Unable to authenticate`.
+
+Same intended mechanism, one green run and one red run, and the difference lived
+in a GitHub environment secret that no file in the repo can show you. It stayed
+invisible until a release failed.
+
+## The rule
+
+- **The upload invocation exists once.** `uploadNpmPackage` in
+  `scripts/fleet/publish-infra/npm/publish-command.mts` builds the
+  `pnpm stage publish` / `pnpm publish` argv, decides `--provenance`, and
+  asserts the auth posture. Nothing outside `scripts/fleet/` builds that argv.
+  It had drifted into four copies; two gated `--provenance` on `GITHUB_ACTIONS`
+  alone, which npm answers with `E422 … repository visibility: "private"`.
+
+- **Orchestration stays repo-local.** Publish order, which commits get
+  republished, how an approve batch refreshes its OTP across hundreds of
+  packages — that is a member's own business, and socket-registry's ~131
+  override packages are the legitimate custom case. Only the upload is shared.
+
+- **A long-lived npm token in a CI publish is refused.** The preflight in
+  `auth-posture.mts` reads `NODE_AUTH_TOKEN` / `NPM_AUTH_TOKEN` / `NPM_TOKEN`
+  and stops before the spawn. The token is precisely what masks a failed
+  exchange; removing the mask is what makes the failure visible.
+
+- **Exit 0 is not proof.** The postflight scans the command's captured output
+  for the exchange failure whether it exited 0 or not. A publish that
+  "succeeded" after `Skipped OIDC` is a failure with a green exit code. Callers
+  branch on `postureOk`, not on the exit code alone.
+
+- **One declared opt-out, and it silences nothing.**
+  `SOCKET_PUBLISH_ALLOW_TOKEN_FALLBACK=1` converts both refusals into a loud log
+  line that NAMES the token variable in use. There is no configuration under
+  which a token publish looks like a trusted-publisher publish.
+
+- **Token values never leave the module.** The posture reports variable NAMES
+  only; a spec asserts no value reaches the emitted lines.
+
+## Enforcement
+
+`scripts/fleet/check/publish-entrypoints-are-fleet-composed.mts` (strict, in the
+release check tier) runs two passes:
+
+1. Every publish-shaped `package.json` script that runs a local `.mts` resolves
+   to `scripts/fleet/`, or to a repo-local orchestrator whose import graph
+   reaches `scripts/fleet/publish-infra/`.
+2. No file outside `scripts/fleet/` builds an npm upload invocation. Comments
+   are stripped before the scan, and only argv shapes count — a script that
+   *describes* the publish flow is not one running it.
+
+## Open question
+
+The 404 itself is still unfixed, and the posture gate deliberately does not hide
+it. Whether each package's trusted publisher is registered against the right
+repository, workflow filename, and environment is a registry-side question;
+`scripts/fleet/publish-infra/npm/trust-sweep.mts` prints the expected binding and
+re-registers it with `--drive`.

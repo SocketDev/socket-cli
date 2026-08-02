@@ -22,22 +22,13 @@ import {
   hashTarball,
 } from '../../lib/verify-release-hashes.mts'
 import { releaseBehindLiveGate } from '../release.mts'
-import {
-  logger,
-  provenanceAllowed,
-  rootPath,
-  runCapture,
-  runInherit,
-} from '../shared.mts'
+import { logger, rootPath, runCapture } from '../shared.mts'
 import { withPinnedReadme } from '../pin-readme.mts'
 import { withPrunedPackManifest } from './pack-manifest.mts'
 import { verifyPackedPayload } from './pack-preflight.mts'
-import {
-  diagnoseStageConflict,
-  diagnoseStagedAuthFailure,
-  fetchPublishedState,
-  isAlreadyPublished,
-} from './registry.mts'
+import { uploadNpmPackage } from './publish-command.mts'
+import { diagnosePublishFailure } from './publish-failure.mts'
+import { fetchPublishedState, isAlreadyPublished } from './registry.mts'
 import type { StageListEntry } from './shared.mts'
 import { isStagingExpected, logNpmApproveHandoff } from './shared.mts'
 import {
@@ -50,8 +41,21 @@ import { resolveNpmWorkspaceLayout } from './workspace.mts'
 import { resolveReleaseSubject } from '../../_shared/release-subject.mts'
 import { tarExecutable } from '../../_shared/tar-executable.mts'
 
+import type { NpmUploadResult } from './publish-command.mts'
 import type { WorkspaceManifestShape } from './workspace.mts'
 import type { ReleaseSubject } from '../../_shared/release-subject.mts'
+
+// The upload result a pack-preflight failure leaves behind: the command never
+// ran, so there is no exit code to report and no output to read. `postureOk`
+// is true because nothing was uploaded — the preflight failure is its own
+// loud stop, and a false here would report a credential problem that does not
+// exist.
+const DID_NOT_UPLOAD: NpmUploadResult = {
+  code: 0,
+  output: '',
+  postureOk: true,
+  ran: false,
+}
 
 // The README-pin bracket target for a publish subject: the pinned README is
 // the one that PACKS — the subject's, not the repo root's when
@@ -154,34 +158,6 @@ export async function runStaged(
     return
   }
 
-  const args = [
-    'stage',
-    'publish',
-    '--access',
-    'public',
-    '--tag',
-    tag,
-    '--no-git-checks',
-    '--ignore-scripts',
-  ]
-  if (process.env['GITHUB_ACTIONS'] === 'true') {
-    if (provenanceAllowed()) {
-      args.push('--provenance')
-    } else {
-      logger.warn(
-        'Provenance skipped: npm only verifies sigstore bundles from PUBLIC ' +
-          'source repositories, and this run is not one. The upload proceeds ' +
-          'unattested; provenance turns back on automatically when the repo ' +
-          'is public.',
-      )
-    }
-  }
-  if (dryRun) {
-    // pnpm stage publish --dry-run does everything except the actual
-    // upload; surfaces packing errors + manifest validation without
-    // touching the registry.
-    args.push('--dry-run')
-  }
   // Pin the SUBJECT README's relative asset URLs to the release tag for the
   // packed tarball only, restored right after, so the npm page's badge is
   // immutable + matches this version instead of a moving HEAD ref, and prune
@@ -195,6 +171,7 @@ export async function runStaged(
     readFileSync(pkg.manifestPath, 'utf8'),
   ) as WorkspaceManifestShape
   let preflightOk = true
+  let staged: NpmUploadResult = DID_NOT_UPLOAD
   const code = await withPinnedReadme(pinTargetFor(pkg), () =>
     withPrunedPackManifest(pkg.dir, async () => {
       preflightOk = await verifyPackedPayload({
@@ -206,7 +183,13 @@ export async function runStaged(
       if (!preflightOk) {
         return 1
       }
-      return await runInherit('pnpm', args, rootPath)
+      staged = await uploadNpmPackage({
+        cwd: rootPath,
+        dryRun,
+        mode: 'staged',
+        tag,
+      })
+      return staged.code
     }),
   )
   if (!preflightOk) {
@@ -215,13 +198,21 @@ export async function runStaged(
   }
   if (code !== 0) {
     logger.fail(`pnpm stage publish exited ${code}`)
-    for (const line of await diagnoseStageConflict(pkg.name, pkg.version)) {
-      logger.fail(line)
-    }
-    for (const line of await diagnoseStagedAuthFailure(pkg.name)) {
+    for (const line of await diagnosePublishFailure({
+      name: pkg.name,
+      output: staged.output,
+      version: pkg.version,
+    })) {
       logger.fail(line)
     }
     process.exitCode = code
+    return
+  }
+  // Exit 0 is not proof the intended mechanism worked — pnpm logs a failed
+  // OIDC exchange and carries on with whatever other credential exists.
+  // uploadNpmPackage already reported it; this is where the run stops.
+  if (!staged.postureOk) {
+    process.exitCode = 1
     return
   }
   if (dryRun) {
@@ -306,30 +297,6 @@ export async function runDirect(
     return
   }
 
-  const args = [
-    'publish',
-    '--access',
-    'public',
-    '--tag',
-    tag,
-    '--no-git-checks',
-    '--ignore-scripts',
-  ]
-  if (process.env['GITHUB_ACTIONS'] === 'true') {
-    if (provenanceAllowed()) {
-      args.push('--provenance')
-    } else {
-      logger.warn(
-        'Provenance skipped: npm only verifies sigstore bundles from PUBLIC ' +
-          'source repositories, and this run is not one. The upload proceeds ' +
-          'unattested; provenance turns back on automatically when the repo ' +
-          'is public.',
-      )
-    }
-  }
-  if (dryRun) {
-    args.push('--dry-run')
-  }
   // Pin the SUBJECT README to the release tag + prune repo-only lifecycle
   // scripts for the published tarball only, and run the pack preflight inside
   // the same brackets so a hollow tarball never publishes (see runStaged).
@@ -337,6 +304,7 @@ export async function runDirect(
     readFileSync(pkg.manifestPath, 'utf8'),
   ) as WorkspaceManifestShape
   let preflightOk = true
+  let publishRun: NpmUploadResult = DID_NOT_UPLOAD
   const code = await withPinnedReadme(pinTargetFor(pkg), () =>
     withPrunedPackManifest(pkg.dir, async () => {
       preflightOk = await verifyPackedPayload({
@@ -348,7 +316,13 @@ export async function runDirect(
       if (!preflightOk) {
         return 1
       }
-      return await runInherit('pnpm', args, rootPath)
+      publishRun = await uploadNpmPackage({
+        cwd: rootPath,
+        dryRun,
+        mode: 'direct',
+        tag,
+      })
+      return publishRun.code
     }),
   )
   if (!preflightOk) {
@@ -357,7 +331,22 @@ export async function runDirect(
   }
   if (code !== 0) {
     logger.fail(`pnpm publish exited ${code}`)
+    for (const line of await diagnosePublishFailure({
+      mode: 'direct',
+      name: pkg.name,
+      output: publishRun.output,
+      version: pkg.version,
+    })) {
+      logger.fail(line)
+    }
     process.exitCode = code
+    return
+  }
+  // A direct publish is public the instant it lands, so a masked credential
+  // here cannot be rejected — but it must still fail the run rather than cut a
+  // tag and a release over it.
+  if (!publishRun.postureOk) {
+    process.exitCode = 1
     return
   }
   if (dryRun) {

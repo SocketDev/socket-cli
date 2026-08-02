@@ -67,7 +67,7 @@ runs:
         set -euo pipefail
         # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
         # A repo's own .config/repo/external-tools.json is optional and may contain repo-only tools.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
+        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
@@ -235,7 +235,7 @@ runs:
         # platform's integrity (SRI string) there in the same commit.
         # The lib/ scripts below resolve platform → asset → URL →
         # install at the currently-detected runner.
-        TOOLS_FILE="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
+        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"

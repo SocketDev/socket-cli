@@ -20,6 +20,11 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import {
+  makeBypassChecker,
+  socketLintAllowRe,
+} from '../../lib/comment-markers.mts'
+
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 function isRegexLike(node: AstNode): boolean {
@@ -49,6 +54,12 @@ function isSourceOperand(node: AstNode): boolean {
   )
 }
 
+// The rule's scope note already exempts "a general text/source processor".
+// A module that lives under scripts/ but IS such a processor — a scanner
+// whose whole job is reading other files' text for smells — has no typed
+// export to import instead, so it says so on the line.
+const SCANNER_BYPASS_RE = socketLintAllowRe('source-scanner')
+
 const rule = {
   meta: {
     type: 'problem',
@@ -67,6 +78,7 @@ const rule = {
   },
 
   create(context: RuleContext) {
+    const isScannerLine = makeBypassChecker(context, SCANNER_BYPASS_RE)
     const filename = normalizePath(
       context.filename ?? context.getFilename?.() ?? '',
     )
@@ -91,7 +103,9 @@ const rule = {
           isRegexLike(callee.object) &&
           isSourceOperand(node.arguments?.[0])
         ) {
-          context.report({ node, messageId: 'sourceSniff' })
+          if (!isScannerLine(node)) {
+            context.report({ node, messageId: 'sourceSniff' })
+          }
           return
         }
         if (
@@ -100,7 +114,9 @@ const rule = {
             method === 'search') &&
           isSourceOperand(callee.object)
         ) {
-          context.report({ node, messageId: 'sourceSniff' })
+          if (!isScannerLine(node)) {
+            context.report({ node, messageId: 'sourceSniff' })
+          }
         }
       },
     }

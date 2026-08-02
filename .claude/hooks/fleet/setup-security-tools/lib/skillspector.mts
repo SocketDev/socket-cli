@@ -104,13 +104,15 @@ export async function runSetupSkillSpector(): Promise<boolean> {
   //
   // The env is PINNED, matching setupHeadroom: UV_CACHE_DIR keeps the wheel
   // cache `~/.socket/_dlx` contained instead of seeding the developer's real
-  // `~/.cache/uv` (this closure is ~179 MB), and UV_PROJECT_ENVIRONMENT names
+  // `~/.cache/uv` (this closure is ~179 MB), UV_PROJECT_ENVIRONMENT names
   // the venv explicitly so an operator's inherited UV_PROJECT_ENVIRONMENT
   // cannot redirect the install somewhere the entry-point check below would
-  // then fail to find. Both are derived from `venvDir` above, so the pin and
-  // the check can never drift apart.
+  // then fail to find, and UV_PYTHON_INSTALL_DIR keeps the managed CPython
+  // uv downloads when the required version is absent (~65 MB) out of the
+  // operator's `~/.local/share/uv`.
   ensureDlxDirSync()
   const cacheDir = path.join(getSocketDlxDir(), '_uv-cache')
+  const pythonInstallDir = path.join(getSocketDlxDir(), '_uv-python')
   logger.log(`Syncing locked uv project (skillspector@${sha})`)
   try {
     const result = await spawn(
@@ -122,6 +124,7 @@ export async function runSetupSkillSpector(): Promise<boolean> {
           ...process.env,
           UV_CACHE_DIR: cacheDir,
           UV_PROJECT_ENVIRONMENT: venvDir,
+          UV_PYTHON_INSTALL_DIR: pythonInstallDir,
         } as unknown as Record<string, string>,
         stdio: 'pipe',
       },

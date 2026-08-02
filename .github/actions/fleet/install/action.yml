@@ -97,7 +97,7 @@ runs:
         # absent or unparseable.
         FALLBACK_VERSION="1.4.0"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
-        EXTERNAL_TOOLS="${GITHUB_ACTION_PATH}/../_shared/external-tools.json"
+        EXTERNAL_TOOLS="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
         resolve_version() {
           if [ -f "$EXTERNAL_TOOLS" ]; then
             local purl

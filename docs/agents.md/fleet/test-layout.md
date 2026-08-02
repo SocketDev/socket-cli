@@ -70,6 +70,52 @@ relies on Node's string default, and another demanded a block where a newly
 landed feature-branch squash mode deliberately allows a fresh commit. Both were
 correct source, stale test.
 
+## Isolation
+
+`no-live-network-in-tests.md` says run the suite as if the network is off. This
+says run it as if the home directory is not yours. A test that spawns a package
+manager writes into the home directory of whoever ran it, and then depends on
+what happened to be lying around there: a fixture install succeeds against
+something an unrelated run cached, and the same test fails on a clean CI runner.
+One run of the socket-patch CLI integration suites left **3,601 files** in the
+developer's home before this was closed.
+
+The three rules, and the measured cost of each. They are code —
+`scripts/fleet/_shared/test-isolation-law.mts` carries the clauses, the variable
+lists, and `TEST_ISOLATION_LAW_PROMPT` for agent briefs — so cite the module
+rather than restating it.
+
+- **Availability probes leak too — isolate them, not just the installs.**
+  `has_command("pnpm")` looks inert. Where `pnpm` is a corepack shim, `pnpm
+--version` makes corepack download the entire package manager: **907 files from
+  one probe**, more than most of the actual installs leaked. This is not only
+  hygiene — an unisolated probe answers for a different environment than the
+  install will run in, so it is also _wrong_. Any command a test spawns gets the
+  isolation, version checks and `--help` included.
+- **Scrub order is load-bearing.** `Command`'s env operations are keyed by
+  variable name and the LAST call for a name wins, so: scrub the ambient
+  environment, then isolate, then apply what the individual test needs. A helper
+  that removes variables must never run after the code that sets them. The
+  incident: a suite seeded a private `YARN_CACHE_FOLDER` and then called a scrub
+  helper whose last act is `env_remove("YARN_CACHE_FOLDER")`, so every fixture
+  install silently used the developer's global cache (165 files). Its sibling
+  file documents having fixed exactly this; the newer file reintroduced it.
+- **Isolation must not disable the toolchain it protects.** rbenv, pyenv, nvm,
+  fnm, volta, asdf, mise, sdkman and rustup all root under `$HOME`. Redirect
+  `HOME` naively and the shim cannot find its root and fails to launch — which a
+  suite that treats a missing tool as SKIP will swallow, **silently dropping
+  coverage while looking green**. Seed each version-manager root from the real
+  home when it is not already exported and its directory exists, and assert the
+  tools still resolve. Isolation that quietly disables tests is worse than the
+  leak it fixed.
+
+Pin every variable that outranks `HOME`, not `HOME` alone — the tool reads its
+own variable first, and a CI action may already export one (`pnpm/action-setup`
+sets `PNPM_HOME`). Two that catch people out: `GOCACHE` is a **separate** cache
+from `GOPATH`/`GOMODCACHE`, and `COREPACK_HOME` holds the package managers
+corepack downloads. `ISOLATED_ENV_VARS` in the law module is the list, exported
+so an isolation helper's own self-tests can assert against it.
+
 ## Enforcement (code-is-law)
 
 - **Runner**: `prefer-vitest-guard` — tests are vitest, not `node:test`. Blocks
@@ -92,3 +138,12 @@ correct source, stale test.
 - **No test in the cascade manifest**: `scripts/repo/sync-scaffolding/manifest/files.mts` lists no `*.test.*`
   file. Its `test/fleet/**` entries are helpers + setup only, so the cascade
   never carries a wheelhouse test to a member.
+- **Scrub order**: `test-env-scrub-order-guard` blocks a test edit that wipes a
+  cache-isolation variable after setting the environment for the command it
+  spawns. Narrow on purpose — only the two provable shapes, and only for the
+  variables the law pins, so a deliberate hostile-decoy seed-then-scrub of
+  unrelated variables passes.
+- **Everything spawned is isolated**: `test-spawns-are-isolated` (in
+  `check --all`) sweeps a repo's test tree for all three clauses and reports.
+  Report-only while the native members catch up; `--fix` hoists a scrub call
+  whose move is mechanical and refuses the rest.

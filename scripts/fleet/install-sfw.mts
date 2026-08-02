@@ -24,8 +24,14 @@
  *   That file is the single fleet source of truth — every consumer of
  *   external tooling reads the same entries. Usage: pnpm run install:sfw #
  *   free flavor pnpm run install:sfw -- --enterprise # requires
- *   SOCKET_API_KEY (or SOCKET_API_TOKEN) pnpm run install:sfw -- --force #
- *   ignore cache, redownload pnpm run install:sfw -- --quiet.
+ *   SOCKET_API_KEY (or SOCKET_API_TOKEN) plus GITHUB_TOKEN / GH_TOKEN
+ *   pnpm run install:sfw -- --force # ignore cache, redownload pnpm run
+ *   install:sfw -- --quiet.
+ *
+ *   The enterprise asset lives in a private repo, so its download carries a
+ *   GitHub bearer token exactly as the dep-0 setup/lib/install-tool.mjs does —
+ *   see downloadSfwAsset, which supplies the header seam lib-stable's
+ *   downloadBinary lacks.
  */
 
 import {
@@ -40,10 +46,20 @@ import process from 'node:process'
 import { parseArgs } from 'node:util'
 
 import { getArch, WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { DLX_BINARY_CACHE_TTL } from '@socketsecurity/lib-stable/constants/time'
 import { downloadBinary } from '@socketsecurity/lib-stable/dlx/binary'
+import {
+  getDlxCachePath,
+  isBinaryCacheValid,
+  writeBinaryCacheMetadata,
+} from '@socketsecurity/lib-stable/dlx/binary-cache'
+import { generateCacheKey } from '@socketsecurity/lib-stable/dlx/cache'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
+import { getGitHubToken } from '@socketsecurity/lib-stable/github/token'
+import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import {
   getSocketAppDir,
   getUserHomeDir,
@@ -181,6 +197,9 @@ export interface ResolvedSfwTool {
   entry: ToolEntry
   platform: string
   integrity: string
+  // `<owner>/<repo>` with the `github:` prefix stripped. The enterprise repo is
+  // private, so the token gate below names it in its failure message.
+  repoSlug: string
   toolKey: string
   url: string
   version: string
@@ -240,7 +259,16 @@ export function resolveSfwTool(config: {
 
   return {
     ok: true,
-    value: { binaryName, entry, platform, integrity, toolKey, url, version },
+    value: {
+      binaryName,
+      entry,
+      platform,
+      integrity,
+      repoSlug,
+      toolKey,
+      url,
+      version,
+    },
   }
 }
 
@@ -261,6 +289,114 @@ export function detectPlatform(): string {
     return `linux-${arch}${isMusl ? '-musl' : ''}`
   }
   throw new Error(`Unsupported platform: ${process.platform}`)
+}
+
+/**
+ * The header set a GitHub release-asset download carries. Lock-step with the
+ * dep-0 `setup/lib/install-tool.mjs`, which sets exactly this bearer header
+ * when a token is in env: a private repo's release assets 404 for an
+ * unauthenticated fetch, and the same call site has to keep working for the
+ * public sfw-free assets, so an absent token means no header rather than an
+ * empty one.
+ */
+export function sfwAssetAuthHeaders(
+  token: string | undefined,
+): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+/**
+ * The refusal an `--enterprise` install gets when no GitHub token is reachable.
+ * Fails BEFORE the fetch: unauthenticated, the private asset answers a bare
+ * HTTP 404, which reads as "this version was never published" and sends the
+ * operator hunting the version table instead of their credentials.
+ */
+export function missingEnterpriseTokenError(config: {
+  repoSlug: string
+  url: string
+}): string {
+  const { repoSlug, url } = { __proto__: null, ...config } as typeof config
+  return (
+    'sfw-enterprise cannot download without a GitHub token.\n' +
+    `  Where:  ${url}\n` +
+    `          (${repoSlug} is private — its release assets are not public)\n` +
+    '  Saw:    neither GITHUB_TOKEN nor GH_TOKEN is set in this environment.\n' +
+    `  Wanted: a token with \`contents: read\` on ${repoSlug}, forwarded as an\n` +
+    '          Authorization bearer header the way the dep-0\n' +
+    '          scripts/fleet/setup/lib/install-tool.mjs forwards it.\n' +
+    '  Fix:    export GITHUB_TOKEN="$(gh auth token)" locally, or in CI supply a\n' +
+    `          token that can read ${repoSlug} (a workflow's own\n` +
+    '          secrets.GITHUB_TOKEN only reaches its own repo), then re-run\n' +
+    '          `pnpm run install:sfw -- --enterprise`. Dropping --enterprise\n' +
+    '          installs the free flavor from a public repo and needs no token.'
+  )
+}
+
+export interface SfwAssetDownload {
+  binaryPath: string
+  downloaded: boolean
+}
+
+/**
+ * Download an sfw release asset into the `_dlx` content-addressed store,
+ * forwarding a GitHub token when one is available.
+ *
+ * Lib-stable's `downloadBinary` has no header seam — `DlxBinaryOptions` carries
+ * none, and it hands `httpDownload` only the integrity fields — so a private
+ * release asset can never authenticate through it. Without a token this
+ * delegates to `downloadBinary` unchanged. With one, it reassembles the SAME
+ * layout from the same public helpers: cache key `<url>:<name>`, entry dir
+ * under `getDlxCachePath()`, SRI verified from the response stream, cache
+ * metadata written the same way. Both paths therefore land the binary at the
+ * identical `_dlx/<hash>/<name>` path and share cache hits.
+ */
+export async function downloadSfwAsset(config: {
+  force: boolean
+  integrity: string
+  name: string
+  token: string | undefined
+  url: string
+}): Promise<SfwAssetDownload> {
+  const { force, integrity, name, token, url } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  const headers = sfwAssetAuthHeaders(token)
+  if (!Object.keys(headers).length) {
+    const { binaryPath, downloaded } = await downloadBinary({
+      force,
+      integrity,
+      name,
+      url,
+    })
+    return { binaryPath, downloaded }
+  }
+  const cacheKey = generateCacheKey(`${url}:${name}`)
+  const cacheEntryDir = path.join(getDlxCachePath(), cacheKey)
+  const binaryPath = normalizePath(path.join(cacheEntryDir, name))
+  if (
+    !force &&
+    existsSync(binaryPath) &&
+    (await isBinaryCacheValid(cacheEntryDir, DLX_BINARY_CACHE_TTL))
+  ) {
+    return { binaryPath, downloaded: false }
+  }
+  await fsPromises.mkdir(cacheEntryDir, { recursive: true })
+  const result = await httpDownload(url, binaryPath, { headers, integrity })
+  if (!WIN32) {
+    await fsPromises.chmod(binaryPath, 0o755)
+  }
+  // Size and integrity both come off the response the downloader streamed,
+  // so the metadata describes the bytes that were verified rather than
+  // whatever a later re-stat of the path would find.
+  await writeBinaryCacheMetadata(
+    cacheEntryDir,
+    cacheKey,
+    url,
+    result.integrity,
+    result.size,
+  )
+  return { binaryPath, downloaded: true }
 }
 
 async function main(): Promise<void> {
@@ -318,17 +454,31 @@ async function main(): Promise<void> {
     process.exit(1)
     return
   }
-  const { binaryName, integrity, url, version: ver } = resolved.value
+  const { binaryName, integrity, repoSlug, url, version: ver } = resolved.value
+
+  // The SOCKET_API_KEY gate above picks the enterprise SKU; this one supplies
+  // the credential that actually fetches it. Two different secrets, and only
+  // this one reaches the private release repo.
+  const githubToken = getGitHubToken()
+  if (flavor === 'enterprise' && !githubToken) {
+    logger.fail(missingEnterpriseTokenError({ repoSlug, url }))
+    process.exit(1)
+    return
+  }
 
   if (!values['quiet']) {
     logger.info(`Installing ${toolKey} v${ver} (${platform})`)
     logger.log(`  from: ${url}`)
+    if (githubToken) {
+      logger.log('  auth: GitHub bearer token (from env)')
+    }
   }
 
-  const { binaryPath, downloaded } = await downloadBinary({
+  const { binaryPath, downloaded } = await downloadSfwAsset({
     force: Boolean(values['force']),
     integrity,
     name: binaryName,
+    token: githubToken,
     url,
   })
 

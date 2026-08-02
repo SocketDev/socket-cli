@@ -505,6 +505,19 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
         'scripts/fleet/check/publish-workflows-are-staged-fail-closed.mts',
         '--quiet',
       ]),
+    // Every publish entry point resolves to the fleet script or to a
+    // repo-local orchestrator that imports the fleet primitives, and the npm
+    // UPLOAD invocation itself exists once, in
+    // publish-infra/npm/publish-command.mts. Five members shipped identical
+    // publish bytes and still published under two different credentials — a
+    // second copy of the upload command is a second place provenance and the
+    // trusted-publishing auth posture get decided, and it will be the stale
+    // one. Orchestration stays repo-local; the upload does not. Strict.
+    () =>
+      run('node', [
+        'scripts/fleet/check/publish-entrypoints-are-fleet-composed.mts',
+        '--quiet',
+      ]),
     // Every workflow job that runs a version-derivation leg (bump.mts,
     // npm-publish.mts --bump, cargo-publish.mts --bump, publish-pipeline.mts)
     // must check out with the v* tags reachable — `fetch-tags: true`, or a

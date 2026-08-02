@@ -2,6 +2,31 @@
   "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/scripts/fleet/build-infra/lib/external-tools-schema.json",
   "description": "Build/release tools the from-scratch bootstrap (tools.mjs) installs before pnpm: pnpm itself and Socket Firewall (free + enterprise SKUs). Shape is the shared { tools: { <name>: ToolEntry } } container validated by scripts/fleet/lib/external-tools-schema.mts.",
   "tools": {
+    "cargo-fuzz": {
+      "description": "cargo-fuzz — the libFuzzer driver the rust-fuzz workflow runs (pinned, SRI-verified per platform)",
+      "version": "0.13.2",
+      "repository": "github:rust-fuzz/cargo-fuzz",
+      "release": "asset",
+      "notes": [
+        "Required: the conditional rust-fuzz workflow (marker: fuzz/Cargo.toml). Installed from the GitHub release rather than built with `cargo install`, which is minutes of compile on a cold cache and verifies nothing.",
+        "Upstream publishes x86_64 assets ONLY — no arm64 for any platform — so an arm64 runner or dev machine still needs `cargo install cargo-fuzz`. The workflow runs on ubuntu-latest (x64), which this covers.",
+        "Each integrity was computed download-first (openssl dgst -sha512) against the 0.13.2 release assets."
+      ],
+      "platforms": {
+        "darwin-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha512-hBxTelLnr1W2OWmzilWfb9xxA+w8vt7oMpa6P4f4gIP01dTk/dgsPeVgrNb+hdrcAwOGT4lcJA09HU9Ge0Bz3w=="
+        },
+        "linux-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha512-siEh6v6EIpguXandB5HcFryQ+7wKEA8exGthPqtonutJ4Kq4nYZq4ReIvSdWckpQHpoKDOl4Uj9zl2Zmmgd6ew=="
+        },
+        "win-x64": {
+          "asset": "cargo-fuzz-0.13.2-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha512-enXWAROIcPCEpxYxhK5ghiiI8eB9ZGc5HF8Puhdm/FyPgHbCRoXJ5enVBVNC2pgejcTSUtti0B1v2srzmBdSjQ=="
+        }
+      }
+    },
     "pnpm": {
       "notes": [
         "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.8.0 (2026-06-18).",
