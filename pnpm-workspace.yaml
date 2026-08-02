@@ -239,7 +239,6 @@ minimumReleaseAgeExclude:
   - 'socket'
   - '@sdxgen/*'
   - 'sdxgen'
-  - 'stuie'
   # The fleet-cascaded .npmrc already excludes verkit; mirrored here because
   # pnpm v11 reads excludes from this file.
   # published: 2026-07-27 | removable: 2026-08-03
