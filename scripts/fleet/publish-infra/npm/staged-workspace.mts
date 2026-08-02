@@ -446,7 +446,13 @@ export async function runWorkspacePublish(
         if (!preflightOk) {
           return 1
         }
-        member = await uploadNpmPackage({ cwd: pkg.dir, dryRun, mode, tag })
+        member = await uploadNpmPackage({
+          cwd: pkg.dir,
+          dryRun,
+          manifestPath: pkg.manifestPath,
+          mode,
+          tag,
+        })
         return member.code
       }),
     )

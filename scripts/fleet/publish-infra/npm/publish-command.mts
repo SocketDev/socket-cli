@@ -17,6 +17,8 @@
  *   everywhere.
  */
 
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 
 import { logger, provenanceAllowed, runInheritTee } from '../shared.mts'
@@ -120,8 +122,35 @@ export function resolveUploadProvenance(): boolean {
 }
 
 /**
+ * The `version` of the manifest at `manifestPath`, or undefined when it cannot
+ * be read or parsed.
+ *
+ * The auth posture's placeholder carve-out keys on this value, so it is read
+ * from DISK rather than accepted from the caller — a caller-asserted "this is a
+ * `0.0.0` reservation" flag would let any publish claim the one exemption. An
+ * unreadable manifest yields undefined, which matches no carve-out and so fails
+ * closed.
+ */
+export function readPublishVersion(manifestPath: string): string | undefined {
+  try {
+    const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+      // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+      version?: unknown | undefined
+    }
+    return typeof parsed.version === 'string' ? parsed.version : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Upload one package's bytes from `cwd`, with the auth posture asserted before
  * and after.
+ *
+ * `manifestPath` names the manifest that is actually being published — the
+ * SUBJECT's, which is not `<cwd>/package.json` when `publishConfig.directory`
+ * redirects the publish. It defaults to `<cwd>/package.json` for the plain
+ * case.
  *
  * Preflight refusal returns `{ code: 0, ran: false, postureOk: false }` — the
  * zero code is honest (no command ran), and `postureOk` is the field the caller
@@ -132,16 +161,22 @@ export function resolveUploadProvenance(): boolean {
 export async function uploadNpmPackage(config: {
   cwd: string
   dryRun?: boolean | undefined
+  manifestPath?: string | undefined
   mode?: NpmUploadMode | undefined
   tag?: string | undefined
 }): Promise<NpmUploadResult> {
   const {
     cwd,
     dryRun = false,
+    manifestPath,
     mode = 'staged',
     tag = 'latest',
   } = { __proto__: null, ...config } as typeof config
-  if (!logPublishAuthPosture(publishAuthPreflight(process.env))) {
+  const version = readPublishVersion(
+    manifestPath ?? path.join(cwd, 'package.json'),
+  )
+  const shape = { env: process.env, mode, version }
+  if (!logPublishAuthPosture(publishAuthPreflight(shape))) {
     return { code: 0, output: '', postureOk: false, ran: false }
   }
   const args = npmUploadArgs({
@@ -157,8 +192,8 @@ export async function uploadNpmPackage(config: {
   const run = await runInheritTee('pnpm', args, cwd)
   const postureOk = logPublishAuthPosture(
     publishAuthPostflight({
+      ...shape,
       commandSucceeded: run.code === 0,
-      env: process.env,
       output: run.output,
     }),
   )

@@ -46,8 +46,8 @@ import {
 } from '@socketsecurity/lib-stable/http-request'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import { parseGitHubSlug } from '../../_shared/github-raw-url.mts'
 import { isMainModule } from '../../_shared/is-main-module.mts'
-import { parseGitHubSlug } from '../pin-readme.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
 import { cargoTokenProblem, resolveCratesToken } from './placeholder.mts'
 import { readPublishableCargoPackages } from './shared.mts'

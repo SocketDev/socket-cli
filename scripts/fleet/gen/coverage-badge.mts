@@ -4,9 +4,12 @@
  *   Reads the line-coverage total from
  *   `.cache/fleet/coverage/coverage-summary.json` (the vitest
  *   `json-summary` reporter), renders the optimized badge SVG to
- *   `assets/repo/badges/coverage.svg`, and migrates a README still carrying the
- *   retired shields.io badge line — or the legacy pre-badges/ asset path — to
- *   `![Coverage](assets/repo/badges/coverage.svg)`. Part of the pre-bump wave:
+ *   `assets/repo/badges/coverage.svg`, and migrates a README still carrying an
+ *   older badge line — the retired shields.io badge, the legacy pre-badges/
+ *   asset path, the `![]` markdown form, or a relative-src `<img>` — to the
+ *   current dimensioned `<img>` at the asset's absolute raw-GitHub url (the
+ *   only src that also renders on the npm package page). Part of the pre-bump
+ *   wave:
  *   after `pnpm run cover` passes, run this to refresh the badge, then commit
  *   it. `coverage-badge-is-current` (in `check --all`) fails the gate if the
  *   badge drifts from the coverage data, so this is the canonical way to fix
@@ -32,6 +35,10 @@ import {
   readmeBadgeForm,
 } from '../lib/coverage-badge.mts'
 import { REPO_ROOT } from '../paths.mts'
+import {
+  missingGitHubSlugMessage,
+  repoGitHubSlug,
+} from '../_shared/github-raw-url.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
@@ -61,7 +68,7 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
   const readme = readFileSync(readmePath, 'utf8')
   if (!readmeBadgeForm(readme)) {
     logger.error(
-      'gen/coverage-badge: README.md has no `![Coverage](assets/repo/badges/coverage.svg)` badge (nor a migratable retired form) to update. Add the canonical badge line (see template/README.md) or remove this from the bump wave.',
+      'gen/coverage-badge: README.md has no coverage badge (nor a migratable retired form) to update. Add the canonical badge line (see template/README.md) or remove this from the bump wave.',
     )
     return 1
   }
@@ -72,12 +79,23 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
     )
     return 1
   }
+  // The README ref is an absolute raw-GitHub url, so the badge renders on the
+  // npm package page too — which means the repo slug is a hard requirement, not
+  // a nice-to-have. No relative fallback: it would silently reship the broken
+  // npm image this url exists to fix.
+  const slug = repoGitHubSlug(cfg.repoRoot)
+  if (slug === undefined) {
+    logger.error(
+      `gen/coverage-badge: ${missingGitHubSlugMessage(cfg.repoRoot)}`,
+    )
+    return 1
+  }
   const svgPath = badgeAssetPath(cfg.repoRoot)
   const nextSvg = coverageBadgeSvg(pct)
   const currentSvg = existsSync(svgPath)
     ? readFileSync(svgPath, 'utf8')
     : undefined
-  const nextReadme = migrateReadmeBadge(readme, nextSvg)
+  const nextReadme = migrateReadmeBadge(readme, slug, nextSvg)
   if (nextSvg === currentSvg && nextReadme === readme) {
     if (!cfg.check) {
       logger.success(

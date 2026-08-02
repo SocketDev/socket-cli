@@ -186,6 +186,10 @@ export async function runStaged(
       staged = await uploadNpmPackage({
         cwd: rootPath,
         dryRun,
+        // The SUBJECT's manifest, not the root's — the auth posture reads the
+        // version from it, and a publishConfig.directory redirect puts the
+        // published version somewhere other than <rootPath>/package.json.
+        manifestPath: pkg.manifestPath,
         mode: 'staged',
         tag,
       })
@@ -227,17 +231,19 @@ export async function runStaged(
 
 /**
  * `--direct` mode: classic single-step `pnpm publish` — upload + make public in
- * one call, no stage/approve. Escape hatch for environments where the stage
- * endpoint is unreachable. Adds `--provenance` automatically when
- * GITHUB_ACTIONS is set and the source repository is public
- * (provenanceAllowed) so the OIDC token still embeds into the provenance
- * attestation.
+ * one call, no stage/approve.
  *
- * Refuses to run when the package's prior versions used staging (per the
- * packument's `_npmUser.approver` signal). Downgrading erases the trust signal
- * from the package's history. Operators who hit the refusal should either use
- * `--staged` (preferred) or accept the trust regression by removing the prior
- * staged-published versions from the registry first.
+ * By policy this is legal for exactly ONE publish: the local `0.0.0` name
+ * reservation, which exists because npm can only configure a trusted publisher
+ * for a name that already exists. Every other direct publish is refused by the
+ * auth posture inside `uploadNpmPackage` — in CI or on a laptop, token or not —
+ * because a real release must be STAGED so a bad upload stays rejectable, and
+ * because stage-publish is what the per-package trusted-publisher grants
+ * actually allow.
+ *
+ * Also refuses, earlier and with a different message, when the package's prior
+ * versions used staging (per the packument's `_npmUser.approver` signal).
+ * Downgrading erases the trust signal from the package's history.
  */
 export async function runDirect(
   tag: string,
@@ -319,6 +325,7 @@ export async function runDirect(
       publishRun = await uploadNpmPackage({
         cwd: rootPath,
         dryRun,
+        manifestPath: pkg.manifestPath,
         mode: 'direct',
         tag,
       })

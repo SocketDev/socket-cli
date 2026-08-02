@@ -16,7 +16,7 @@
  *   behavior — the guarantee has to be that ONE piece of code does the upload,
  *   so a fix to it reaches everyone.
  *
- *   Two passes:
+ *   Three passes:
  *
  *   - ENTRY POINTS RESOLVE. Every publish-shaped `package.json` script that runs
  *     a local `.mts` must resolve to a script under `scripts/fleet/`, or to a
@@ -33,11 +33,20 @@
  *     which commits to republish, how an approve batch refreshes its OTP. That
  *     is orchestration, and orchestration is a member's own business.
  *
+ *   - NO WORKFLOW RESERVES A NAME. The `0.0.0` placeholder reservation is the
+ *     one publish allowed to authenticate with a long-lived token, and it is
+ *     LOCAL-ONLY: a name that does not exist yet cannot have a trusted
+ *     publisher, so a reservation can never be a CI publish. No workflow may
+ *     invoke `placeholder.mts`. The script refuses at runtime under a runner
+ *     too, but a workflow that calls it is a policy violation checked in, and
+ *     this catches it at commit time instead of at release time.
+ *
  *   Scope: the repo's own `scripts/` tree, plus `template/base/scripts/` and
  *   `template/overrides/<member>/scripts/` in the wheelhouse so a
  *   reimplementation authored in the template is caught before it cascades.
- *   Generated, vendored, and dependency trees are skipped, as are this check's
- *   own fixtures.
+ *   Workflows are scanned in the same live-plus-template shape. Generated,
+ *   vendored, and dependency trees are skipped, as are this check's own
+ *   fixtures.
  *
  *   STRICT: any finding exits 1. Pure classification (`auditPublishComposition`)
  *   is exported for unit tests; the scan is the thin CLI shell.
@@ -106,6 +115,10 @@ const COMMENT_RE = /\/\*[\s\S]*?\*\/|(?<![:\w])\/\/[^\n]*/g
 const ARGV_UPLOAD_RE =
   /['"]stage['"]\s*,\s*['"]publish['"]|['"]publish['"]\s*,\s*['"]--(?:access|dry-run|provenance|tag)['"]|['"](?:npm|pnpm|yarn)['"]\s*,\s*\[\s*['"](?:publish|stage)['"]/
 
+// The name-reservation script. A workflow naming it is the finding — the
+// reservation is local-only by policy, so there is no valid CI caller.
+const PLACEHOLDER_SCRIPT_NAME = 'placeholder.mts'
+
 // Directories never worth walking.
 const SKIP_DIRS: ReadonlySet<string> = new Set([
   '.git',
@@ -122,8 +135,10 @@ export interface PublishCompositionFinding {
   /**
    * `entry-point` — a publish entry point that reaches no fleet publish code.
    * `duplicate-upload` — an npm upload invocation built outside the fleet tree.
+   * `workflow-reservation` — a workflow that invokes the local-only `0.0.0`
+   * name reservation.
    */
-  kind: 'duplicate-upload' | 'entry-point'
+  kind: 'duplicate-upload' | 'entry-point' | 'workflow-reservation'
   /**
    * Repo-relative path of the offending file.
    */
@@ -232,17 +247,41 @@ export function importGraphReachesFleetPublish(
 }
 
 /**
+ * The `placeholder.mts` invocation a workflow body contains, or undefined when
+ * it contains none. Comments are stripped first — a workflow that explains in a
+ * `#` comment why there is no reservation job is not one running a reservation.
+ */
+export function reservationInvocationIn(body: string): string | undefined {
+  const lines = body.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!.replace(/#.*$/, '')
+    if (line.includes(PLACEHOLDER_SCRIPT_NAME)) {
+      return line.trim()
+    }
+  }
+  return undefined
+}
+
+/**
  * Classify one repo tree. Pure over its inputs: `manifestScripts` is the
  * package.json `scripts` map, `scriptFiles` is every repo-relative script path
- * to audit, and `readSource` resolves a path to its text.
+ * to audit, `workflowFiles` is every repo-relative workflow path, and
+ * `readSource` resolves a path to its text.
  */
 export function auditPublishComposition(config: {
   manifestScripts: Readonly<Record<string, string>>
   readSource: (filePath: string) => string | undefined
   repoRoot: string
   scriptFiles: readonly string[]
+  workflowFiles?: readonly string[] | undefined
 }): PublishCompositionFinding[] {
-  const { manifestScripts, readSource, repoRoot, scriptFiles } = {
+  const {
+    manifestScripts,
+    readSource,
+    repoRoot,
+    scriptFiles,
+    workflowFiles = [],
+  } = {
     __proto__: null,
     ...config,
   } as typeof config
@@ -282,6 +321,22 @@ export function auditPublishComposition(config: {
       findings.push({
         detail: invocation,
         kind: 'duplicate-upload',
+        relPath,
+      })
+    }
+  }
+
+  for (let i = 0, { length } = workflowFiles; i < length; i += 1) {
+    const relPath = workflowFiles[i]!
+    const body = readSource(path.resolve(repoRoot, relPath))
+    if (body === undefined) {
+      continue
+    }
+    const invocation = reservationInvocationIn(body)
+    if (invocation) {
+      findings.push({
+        detail: invocation,
+        kind: 'workflow-reservation',
         relPath,
       })
     }
@@ -330,6 +385,35 @@ function scriptRoots(repoRoot: string): string[] {
   return roots
 }
 
+// Every workflow file, repo-relative: the live `.github/workflows` plus the
+// template sources in the wheelhouse, same live-plus-template shape as the
+// script roots.
+function collectWorkflowFiles(repoRoot: string): string[] {
+  const roots = [
+    path.join(repoRoot, '.github', 'workflows'),
+    path.join(repoRoot, 'template', 'base', '.github', 'workflows'),
+  ]
+  const conditional = path.join(repoRoot, 'template', 'conditional')
+  if (existsSync(conditional)) {
+    for (const name of readdirSync(conditional)) {
+      roots.push(path.join(conditional, name, '.github', 'workflows'))
+    }
+  }
+  const out: string[] = []
+  for (let i = 0, { length } = roots; i < length; i += 1) {
+    const root = roots[i]!
+    if (!existsSync(root)) {
+      continue
+    }
+    for (const name of readdirSync(root)) {
+      if (/\.ya?ml$/.test(name)) {
+        out.push(normalizePath(path.relative(repoRoot, path.join(root, name))))
+      }
+    }
+  }
+  return out
+}
+
 function readManifestScripts(repoRoot: string): Record<string, string> {
   const manifestPath = path.join(repoRoot, 'package.json')
   if (!existsSync(manifestPath)) {
@@ -361,12 +445,14 @@ export function runCheck(repoRoot: string): number {
     },
     repoRoot,
     scriptFiles,
+    workflowFiles: collectWorkflowFiles(repoRoot),
   })
   if (findings.length === 0) {
     return 0
   }
   const entryPoints = findings.filter(f => f.kind === 'entry-point')
   const duplicates = findings.filter(f => f.kind === 'duplicate-upload')
+  const reservations = findings.filter(f => f.kind === 'workflow-reservation')
   const report: string[] = [
     '[publish-entrypoints-are-fleet-composed] A publish path does not compose the fleet primitives.',
     '',
@@ -398,6 +484,23 @@ export function runCheck(repoRoot: string): number {
       '    tag, dryRun }) instead. Keep your orchestration — publish order, which',
       '    commits ship, how an approve batch refreshes its OTP — that part is',
       '    yours. Only the upload itself is shared.',
+      '',
+    )
+  }
+  if (reservations.length) {
+    report.push(
+      '  What: a workflow invokes the 0.0.0 placeholder name reservation.',
+      '  Where:',
+      ...reservations.map(f => `    ${f.relPath} — ${f.detail}`),
+      '  Saw vs wanted: a reservation wired into CI; wanted it run only by a',
+      '    human or an agent, locally. Everything that publishes from CI',
+      '    publishes by trusted publishing, and a reservation cannot — the name',
+      '    it claims does not exist yet, so no trusted publisher can be',
+      '    configured for it. Reserving from CI would mean holding a publish',
+      '    token there, which the policy forbids outright.',
+      '  Fix: delete the job. Run `node scripts/fleet/publish-infra/npm/',
+      '    placeholder.mts <name> --apply` locally instead, then configure the',
+      '    OIDC trusted publisher and release through npm-publish.yml.',
       '',
     )
   }

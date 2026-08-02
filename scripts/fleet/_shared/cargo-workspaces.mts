@@ -8,7 +8,7 @@
  *   double-report every finding.
  */
 
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -36,6 +36,58 @@ const WORKTREE_ROOT = '.claude/worktrees'
 export function isAgentWorktreePath(dirPath: string): boolean {
   const p = normalizePath(dirPath)
   return p === WORKTREE_ROOT || p.endsWith(`/${WORKTREE_ROOT}`)
+}
+
+// A virtual manifest carries no source of its own — its members do.
+const CARGO_WORKSPACE_SECTION = /^\s*\[workspace\]/m
+
+function hasRustSourceUnder(dir: string): boolean {
+  const stack = [dir]
+  while (stack.length) {
+    const current = stack.pop()!
+    let entries: string[]
+    try {
+      entries = readdirSync(current)
+    } catch {
+      continue
+    }
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const name = entries[i]!
+      if (name.endsWith('.rs')) {
+        return true
+      }
+      if (SKIP_DIRS.has(name)) {
+        continue
+      }
+      const abs = path.join(current, name)
+      try {
+        if (statSync(abs).isDirectory()) {
+          stack.push(abs)
+        }
+      } catch {}
+    }
+  }
+  return false
+}
+
+/**
+ * Whether a `Cargo.toml` is something cargo can actually operate on. A manifest
+ * that declares a package but ships no `.rs` file — a parser fixture, say —
+ * makes `cargo metadata` exit non-zero ("no targets specified in the
+ * manifest"), which fails the whole Rust run over a directory that holds no
+ * first-party Rust at all.
+ */
+export function cargoManifestIsBuildable(manifestPath: string): boolean {
+  let text: string
+  try {
+    text = readFileSync(manifestPath, 'utf8')
+  } catch {
+    return false
+  }
+  if (CARGO_WORKSPACE_SECTION.test(text)) {
+    return true
+  }
+  return hasRustSourceUnder(path.dirname(manifestPath))
 }
 
 export function findWorkspaceManifests(root: string): string[] {
@@ -69,7 +121,7 @@ export function findWorkspaceManifests(root: string): string[] {
         if (!isAgentWorktreePath(abs)) {
           stack.push(abs)
         }
-      } else if (name === 'Cargo.toml') {
+      } else if (name === 'Cargo.toml' && cargoManifestIsBuildable(abs)) {
         manifests.push(abs)
       }
     }

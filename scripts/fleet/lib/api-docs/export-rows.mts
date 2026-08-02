@@ -1,6 +1,6 @@
 /**
  * @file Export-map walk shared by the two fleet doc generators,
- *   `scripts/fleet/make-api-md.mts` and `scripts/fleet/make-llms-txt.mts`.
+ *   `scripts/fleet/gen/api-md.mts` and `scripts/fleet/gen/llms-txt.mts`.
  *   Turns a package.json `exports` map into one row per documented subpath,
  *   carrying the three things both renderers need: the source module under
  *   `src/` (what a human-facing table links), the shipped declaration file

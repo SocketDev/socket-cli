@@ -5,17 +5,20 @@
  *   coverage). The badge is a repo-local optimized SVG asset — no third-party
  *   badge host — generated at `assets/repo/badges/coverage.svg` and referenced
  *   by the README as a dimensioned `<img>` (standardized `height="20"` + the
- *   SVG's exact width, so the badge row aligns with no layout shift). One place
- *   owns the SVG renderer, the color buckets, the README regexes, and the
- *   coverage-total read, so the writer and the checker can never disagree on
- *   what "current" means. READMEs carrying a retired form (shields.io or the
- *   legacy pre-badges/ path) OR the legacy `![]` markdown form are migrated by
- *   `migrateReadmeBadge` to the current `<img>` reference.
+ *   SVG's exact width, so the badge row aligns with no layout shift) whose src
+ *   is the asset's ABSOLUTE raw-GitHub URL at HEAD. One place owns the SVG
+ *   renderer, the color buckets, the README regexes, and the coverage-total
+ *   read, so the writer and the checker can never disagree on what "current"
+ *   means. `migrateReadmeBadge` rewrites every older spelling to that current
+ *   reference: a retired shields.io badge, the legacy pre-badges/ asset path,
+ *   the `![]` markdown form, and the relative-src `<img>` that shipped before
+ *   the URL went absolute.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { rawAssetUrl } from '../_shared/github-raw-url.mts'
 import { COVERAGE_SUMMARY_PATH, REPO_ROOT } from '../paths.mts'
 
 // Where the generated badge lives, relative to the repo root. `assets/repo/`
@@ -46,10 +49,16 @@ export function svgWidth(svg: string): string | undefined {
 }
 
 /**
- * A README `<img>` for a local badge SVG: standardized `height="20"` + the
- * SVG's exact `width`, so badges align on one row, precise, no reflow. Inline
- * <img> (not markdown `![]`) is what lets us pin the height — and it renders on
- * GitHub + npm, unlike an inlined `<svg>`.
+ * A README `<img>` for a badge SVG: standardized `height="20"` + the SVG's
+ * exact `width`, so badges align on one row, precise, no reflow. Inline <img>
+ * (not markdown `![]`) is what lets us pin the height, and the TAG itself
+ * renders on GitHub + npm alike, unlike an inlined `<svg>`.
+ *
+ * `src` must be an ABSOLUTE url. The tag rendering everywhere does not mean a
+ * relative src resolves everywhere: GitHub resolves `assets/…` against the repo
+ * it is rendering, npm has no repo to resolve it against, so a relative src
+ * ships a broken-image icon on the package page. Build the url with
+ * [`rawAssetUrl`].
  */
 export function badgeImgTag(src: string, alt: string, svg: string): string {
   const w = svgWidth(svg)
@@ -57,10 +66,17 @@ export function badgeImgTag(src: string, alt: string, svg: string): string {
   return `<img src="${src}"${width} height="${BADGE_HEIGHT}" alt="${alt}" />`
 }
 
-// The current README reference to the coverage badge — a dimensioned <img>.
-// The `![Coverage](…)` markdown form is legacy, recognized only to migrate it.
-export function coverageBadgeRef(svg: string): string {
-  return badgeImgTag(BADGE_ASSET_PATH, 'Coverage', svg)
+// The absolute URL of a repo's coverage badge asset, the src the README <img>
+// carries.
+export function coverageBadgeUrl(slug: string): string {
+  return rawAssetUrl(slug, BADGE_ASSET_PATH)
+}
+
+// The current README reference to the coverage badge — a dimensioned <img> at
+// the badge's absolute raw-GitHub URL for `slug` (e.g. `SocketDev/socket-lib`).
+// Every other spelling is legacy, recognized only to migrate it.
+export function coverageBadgeRef(slug: string, svg: string): string {
+  return badgeImgTag(coverageBadgeUrl(slug), 'Coverage', svg)
 }
 
 // The legacy markdown reference, kept for migration matching.
@@ -70,8 +86,18 @@ export const BADGE_MARKDOWN = `![Coverage](${BADGE_ASSET_PATH})`
 // an "n/a" badge as "not yet measured" (fail-open), never a mismatch.
 export const BADGE_PLACEHOLDER = 'n/a'
 
-// The current README reference: a dimensioned <img> at the badges/ asset path.
-const IMG_BADGE_RE = /<img src="assets\/repo\/badges\/coverage\.svg"[^>]*\/>/ // socket-lint: allow uncommented-regex
+// The current README reference: a dimensioned <img> whose src is the badge's
+// absolute raw-GitHub URL. Slug- and ref-agnostic on purpose — a README
+// carrying another repo's slug (a scaffolded copy) or an older ref still
+// matches, so the migrator rewrites it to this repo's HEAD url.
+const ABSOLUTE_IMG_BADGE_RE =
+  /<img src="https:\/\/raw\.githubusercontent\.com\/[^"]+\/assets\/repo\/badges\/coverage\.svg"[^>]*\/>/ // socket-lint: allow uncommented-regex
+
+// The legacy relative-src <img>: the form that shipped before the url went
+// absolute. It renders on GitHub and breaks on npm, so it is recognized only to
+// migrate it.
+const RELATIVE_IMG_BADGE_RE =
+  /<img src="assets\/repo\/badges\/coverage\.svg"[^>]*\/>/ // socket-lint: allow uncommented-regex
 
 // The legacy markdown reference at the current path, matched only to migrate it
 // to the <img> form.
@@ -105,15 +131,24 @@ const SHIELDS_IMG_BADGE_RE = new RegExp(
 // machine-readable percent the check reads back.
 const SVG_LABEL_RE = /aria-label="coverage: (\d+%|n\/a)"/ // socket-lint: allow uncommented-regex
 
-export type BadgeForm = 'img' | 'markdown' | 'legacy-asset' | 'shields'
+export type BadgeForm =
+  | 'img'
+  | 'relative-img'
+  | 'markdown'
+  | 'legacy-asset'
+  | 'shields'
 
-// Which badge form the README carries: 'img' (current — dimensioned <img>),
-// 'markdown' (the `![Coverage](badges/…)` form, needs migration to <img>),
-// 'legacy-asset' (pre-badges/ path), 'shields' (retired), or undefined (a repo
-// that opted out of the badge).
+// Which badge form the README carries: 'img' (current — a dimensioned <img> at
+// the absolute url), 'relative-img' (the same <img> with a repo-relative src,
+// broken on npm), 'markdown' (the `![Coverage](badges/…)` form), 'legacy-asset'
+// (pre-badges/ path), 'shields' (retired), or undefined (a repo that opted out
+// of the badge). Everything but 'img' migrates on the next generator run.
 export function readmeBadgeForm(readme: string): BadgeForm | undefined {
-  if (IMG_BADGE_RE.test(readme)) {
+  if (ABSOLUTE_IMG_BADGE_RE.test(readme)) {
     return 'img'
+  }
+  if (RELATIVE_IMG_BADGE_RE.test(readme)) {
+    return 'relative-img'
   }
   if (MARKDOWN_BADGE_RE.test(readme)) {
     return 'markdown'
@@ -149,19 +184,25 @@ export function hasUnrecognizedCoverageBadge(readme: string): boolean {
 
 /**
  * Rewrite whatever coverage-badge line the README carries to the current
- * dimensioned `<img>` reference for `svg` (retired shields.io, the legacy
- * pre-badges/ path, the `![]` markdown form, AND an existing <img> whose width
- * is stale after a coverage change). Already-current READMEs come back
- * unchanged. `svg` supplies the exact width the <img> pins.
+ * dimensioned `<img>` reference for `slug` + `svg` — retired shields.io, the
+ * legacy pre-badges/ path, the `![]` markdown form, the relative-src `<img>`,
+ * AND an absolute `<img>` whose width went stale after a coverage change.
+ * Already-current READMEs come back unchanged. `slug` is the repo's
+ * `owner/repo`; `svg` supplies the exact width the <img> pins.
  */
-export function migrateReadmeBadge(readme: string, svg: string): string {
-  const ref = coverageBadgeRef(svg)
+export function migrateReadmeBadge(
+  readme: string,
+  slug: string,
+  svg: string,
+): string {
+  const ref = coverageBadgeRef(slug, svg)
   return readme
     .replace(SHIELDS_BADGE_RE, ref)
     .replace(SHIELDS_IMG_BADGE_RE, ref)
     .replace(LEGACY_ASSET_BADGE_RE, ref)
     .replace(MARKDOWN_BADGE_RE, ref)
-    .replace(IMG_BADGE_RE, ref)
+    .replace(RELATIVE_IMG_BADGE_RE, ref)
+    .replace(ABSOLUTE_IMG_BADGE_RE, ref)
 }
 
 // Fill color for a coverage percent — the conventional coverage gradient so

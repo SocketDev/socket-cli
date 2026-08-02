@@ -11,9 +11,10 @@
  *   (`…/v<version>/assets/…`) when the tag doesn't exist locally yet (a
  *   dry-run pack, or `--direct` mode where ensureTagAndRelease runs after the
  *   publish) so the badge is immutable + matches exactly what shipped. The
- *   committed README
- *   keeps relative paths (GitHub renders those live at HEAD, and the badge
- *   generators/checks key on the relative form) — so this is applied around the
+ *   badge generators already commit their refs absolute at HEAD (see
+ *   `_shared/github-raw-url.mts`), leaving no `assets/` prefix for this pass to
+ *   match, so it is a no-op on them and catches only the relative refs a README
+ *   still hand-carries. Applied around the
  *   pack/publish and restored after (try/finally). Why pack-time +
  *   orchestrator-driven, not a prepack hook: the fleet npm publish runs `pnpm
  *   stage publish --ignore-scripts`, so lifecycle hooks never fire; and npm
@@ -30,39 +31,8 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { runCapture } from './shared.mts'
+import { parseGitHubSlug, rawBaseUrl } from '../_shared/github-raw-url.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
-
-// The GitHub owner/repo from a package.json `repository` field (string or
-// `{ url }`), tolerating the common `git+https://…`, `git@github.com:…`, and
-// bare `owner/repo` shapes. Returns `undefined` when it isn't a GitHub repo we
-// can pin against (caller then skips pinning — fail-open, never a bad URL).
-export function parseGitHubSlug(
-  repository: string | { url?: string | undefined } | undefined,
-): string | undefined {
-  const raw =
-    typeof repository === 'string' ? repository : (repository?.url ?? '')
-  if (!raw) {
-    return undefined
-  }
-  // git@github.com:owner/repo(.git) | https://github.com/owner/repo(.git) |
-  // git+https://github.com/owner/repo(.git)
-  const m =
-    /github\.com[:/]([^/]+)\/([^/#?]+?)(?:\.git)?(?:[#?].*)?$/.exec(raw) ??
-    /^([^/\s]+)\/([^/\s]+?)(?:\.git)?$/.exec(raw)
-  if (!m) {
-    return undefined
-  }
-  return `${m[1]}/${m[2]}`
-}
-
-/**
- * The `raw.githubusercontent.com` base, trailing slash, for a repo slug + git
- * ref, e.g. `SocketDev/socket-lib` + `v1.2.3` →
- * `https://raw.githubusercontent.com/SocketDev/socket-lib/v1.2.3/`.
- */
-export function rawBaseUrl(slug: string, ref: string): string {
-  return `https://raw.githubusercontent.com/${slug}/${ref}/`
-}
 
 /**
  * Rewrite the README's RELATIVE `assets/…` refs (both `<img src="assets/…">`

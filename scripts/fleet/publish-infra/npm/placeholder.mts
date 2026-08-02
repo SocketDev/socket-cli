@@ -12,6 +12,13 @@
  *   Each name assembles a fresh temp dir containing ONLY those two files (an
  *   empty `files: []` guarantees nothing else ships) and runs
  *   `npm publish --access <access>` from it.
+ *   LOCAL ONLY, and enforced here rather than downstream. There is no workflow
+ *   for a reservation and there must never be one: everything that publishes
+ *   from CI publishes by trusted publishing, and a reservation cannot, because
+ *   the name it is claiming does not exist yet. Running under a CI runner is a
+ *   policy violation, refused at this entry point so the operator reads the
+ *   reason where they typed the command — `auth-posture.mts` refuses the same
+ *   shape again at the upload, but that is the backstop, not the message.
  *   CLI: placeholder <name...> [--access public|restricted] [--apply]
  *   Dry-run by default, prints the plan, publishes nothing; `--apply` performs
  *   the publish. Per-name isolation: one name failing never aborts the rest, and
@@ -32,11 +39,17 @@ import { isMainModule } from '../../_shared/is-main-module.mts'
 import { runNpmWebAuth } from '../../npm-web-auth.mts'
 import { NAPI_TARGETS_DEFAULT } from '../../util/napi-targets.mts'
 import { logger } from '../shared.mts'
+import {
+  isRunnerContext,
+  PLACEHOLDER_RESERVATION_VERSION,
+  RUNNER_CONTEXT_ENV_VARS,
+} from './auth-posture.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
-// The reservation version. Deliberately the lowest possible semver so the real
-// first release (any 0.0.1+ / 1.0.0) always supersedes it as `latest`.
-export const PLACEHOLDER_VERSION = '0.0.0'
+// The reservation version lives with the POLICY that carves it out
+// (auth-posture.mts's PLACEHOLDER_RESERVATION_VERSION), not here — the
+// carve-out and the publish that uses it cannot be allowed to disagree about
+// which version is a reservation.
 
 export type Access = 'public' | 'restricted'
 
@@ -90,7 +103,7 @@ export function buildPlaceholderPackageJson(
 ): PlaceholderPackageJson {
   return {
     name,
-    version: PLACEHOLDER_VERSION,
+    version: PLACEHOLDER_RESERVATION_VERSION,
     private: false,
     publishConfig: { access },
     files: [],
@@ -154,6 +167,29 @@ export async function assemblePlaceholderDir(
   return dir
 }
 
+/**
+ * The refusal text when a reservation is attempted from a CI runner, or
+ * undefined when the run is local and may proceed.
+ *
+ * Pure over `env` so the whole refusal is unit-tested without a runner. The
+ * message is written for the operator who typed the command: it names the
+ * policy, the variables that gave the run away, and what to do instead.
+ */
+export function placeholderRunnerRefusal(
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  if (!isRunnerContext(env)) {
+    return undefined
+  }
+  const runners = RUNNER_CONTEXT_ENV_VARS.filter(name => env[name])
+  return (
+    `Refusing to reserve a name: the ${PLACEHOLDER_RESERVATION_VERSION} placeholder publish is LOCAL-ONLY.\n` +
+    `  Where: this process, which has ${runners.join(', ')} set — a CI runner.\n` +
+    `  Saw vs wanted: a reservation running inside CI; wanted it run on a machine a human or an agent controls. Everything that publishes from CI publishes by trusted publishing, and a reservation cannot — the name it claims does not exist yet, so no trusted publisher can be configured for it. There is no workflow for this and there must never be one.\n` +
+    `  Fix: run it locally — \`node scripts/fleet/publish-infra/npm/placeholder.mts <name> --apply\`. Then configure the OIDC trusted publisher for the claimed name and release every real version through npm-publish.yml.`
+  )
+}
+
 // Default publish executor: the sanctioned one-time LOCAL publish. Routes
 // `npm publish --access <access>`, run from the assembled temp dir, through
 // the npm-web-auth PTY wrapper: on a real TTY, or with --otp supplied, the
@@ -164,6 +200,14 @@ async function defaultPublishExec(
   dir: string,
   access: Access,
 ): Promise<number> {
+  // Last line before the registry. main() already refused a runner run with
+  // the same text; this catches an importer that reached runPlaceholder
+  // directly.
+  const refusal = placeholderRunnerRefusal(process.env)
+  if (refusal) {
+    logger.fail(refusal)
+    return 1
+  }
   return await runNpmWebAuth({
     argv: ['publish', '--access', access],
     cwd: dir,
@@ -231,7 +275,7 @@ export async function runPlaceholder(
       try {
         if (!apply) {
           logger.log(
-            `[dry-run] ${name}@${PLACEHOLDER_VERSION} — would run ` +
+            `[dry-run] ${name}@${PLACEHOLDER_RESERVATION_VERSION} — would run ` +
               `\`npm publish --access ${access}\` from ${dir} ` +
               `(package.json + README.md only). Re-run with --apply to publish.`,
           )
@@ -239,14 +283,14 @@ export async function runPlaceholder(
           continue
         }
         logger.log(
-          `Publishing reservation ${name}@${PLACEHOLDER_VERSION} ` +
+          `Publishing reservation ${name}@${PLACEHOLDER_RESERVATION_VERSION} ` +
             `(--access ${access})…`,
         )
         // eslint-disable-next-line no-await-in-loop
         const code = await publishExec(dir, access)
         if (code === 0) {
           logger.success(
-            `Reserved ${name}@${PLACEHOLDER_VERSION}. Configure the OIDC ` +
+            `Reserved ${name}@${PLACEHOLDER_RESERVATION_VERSION}. Configure the OIDC ` +
               `trusted publisher in the npm UI, then release via CI. ` +
               `A 404 from \`npm view\` right after this is the account's ` +
               `STAGED publishing, not a failed publish — promote the staged ` +
@@ -365,6 +409,15 @@ export function parseArgs(argv: readonly string[]): PlaceholderArgs {
 }
 
 export async function main(): Promise<void> {
+  // Refuse before anything else — before arg parsing, before a temp dir, before
+  // the registry is touched. An operator who ran this in CI reads the reason
+  // here, not three layers down in the auth posture.
+  const refusal = placeholderRunnerRefusal(process.env)
+  if (refusal) {
+    logger.fail(refusal)
+    process.exitCode = 1
+    return
+  }
   const args = parseArgs(process.argv.slice(2))
   logger.log(
     `npm placeholder reservation — ${args.names.length} name(s), ` +

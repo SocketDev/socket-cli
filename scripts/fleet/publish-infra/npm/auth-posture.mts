@@ -1,50 +1,76 @@
-/**
+/*
  * @file The trusted-publishing auth posture gate, shared by every npm publish
  *   path so no member can drift.
- *   The fleet's npm-publish workflow declares `id-token: write` inside the
- *   `npm-publish` environment and lets pnpm trade that OIDC token for a
- *   short-lived registry token. When the exchange fails, pnpm does NOT stop —
- *   it logs `Skipped OIDC: ERR_PNPM_AUTH_TOKEN_EXCHANGE … 404` and continues
- *   with whatever other credential the environment happens to carry.
- *   That is where two members diverged with identical workflow bytes. A repo
- *   whose `npm-publish` environment holds a long-lived `NODE_AUTH_TOKEN`
- *   published SUCCESSFULLY — `actions/setup-node` writes
- *   `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into the runner's
- *   `.npmrc`, so the token silently covered the failed exchange. A repo with no
- *   such secret died on `[E401] Unable to authenticate`. Same intended
- *   mechanism, one green run and one red run, and the green one was publishing
- *   with a long-lived credential while every log line said trusted publishing.
- *   So the posture is asserted in code, in both directions:
  *
- *   - PREFLIGHT (`publishAuthPreflight`) — inside GitHub Actions, a long-lived
- *     npm token in the environment is refused BEFORE the upload. The token is
- *     the thing that masks a failed exchange; removing the mask is what makes
- *     the failure visible.
- *   - POSTFLIGHT (`publishAuthPostflight`) — the command's own output is scanned
- *     for the exchange failure whether it exited 0 or not. A publish that
- *     "succeeded" after `Skipped OIDC` is a failure with a green exit code, and
- *     it is reported as one. Both phases honor ONE explicitly-declared opt-out,
- *     `SOCKET_PUBLISH_ALLOW_TOKEN_FALLBACK=1`, which does not silence anything:
- *     it converts the refusal into a loud log line that names the token being
- *     used. There is no configuration under which a token publish looks like a
- *     trusted-publisher publish. This module does NOT try to fix the 404
- *     itself. Whether a given package's trusted publisher is registered against
- *     the right repository / workflow / environment is a registry-side
- *     question; the job here is to stop a token-backed publish from wearing a
- *     trusted-publishing costume. Pure by design — every decision function
- *     takes its environment and its captured output as arguments, so the whole
- *     matrix is unit-tested with no CI, no registry, and no spawn. Only
- *     `logPublishAuthPosture` touches the logger.
+ *   THE POLICY, in three lines:
+ *
+ *   - From CI: trusted publishing (OIDC) only. A publish carrying
+ *     `NODE_AUTH_TOKEN` / `NPM_AUTH_TOKEN` / `NPM_TOKEN` is REFUSED — no
+ *     exceptions, no env opt-in, regardless of version or mode. No npm token
+ *     ever reaches CI.
+ *   - Locally: a `direct` publish is permitted only at exactly `0.0.0`, the name
+ *     reservation. Any other direct publish is refused, anywhere.
+ *   - Staged real releases are OIDC everywhere.
+ *
+ *   Why it is enforced in code. The fleet's npm-publish workflow declares
+ *   `id-token: write` inside the `npm-publish` environment and lets pnpm trade
+ *   that OIDC token for a short-lived registry token. When the exchange fails,
+ *   pnpm does NOT stop — it logs `Skipped OIDC: ERR_PNPM_AUTH_TOKEN_EXCHANGE …
+ *   404` and continues with whatever other credential the environment carries.
+ *   `actions/setup-node` writes `//registry.npmjs.org/:_authToken=
+ *   ${NODE_AUTH_TOKEN}` into the runner `.npmrc`, so a member holding that
+ *   secret published SUCCESSFULLY under a long-lived token while every log line
+ *   said trusted publishing; a member without it died on `[E401]`. Identical
+ *   workflow bytes, opposite outcomes, and the difference invisible until a
+ *   release failed.
+ *
+ *   THE CARVE-OUT is gated on the publish SHAPE, never on an environment
+ *   variable. npm can only configure a trusted publisher for a name that
+ *   ALREADY EXISTS, so a brand-new package has a chicken-and-egg that only a
+ *   token can break: `placeholder.mts` publishes a minimal `0.0.0` reservation
+ *   to claim the name. That publish is `direct`, at exactly `0.0.0`, and runs
+ *   OUTSIDE any CI runner — there is no workflow for it and there must never be
+ *   one. The reservation carries no attestation either: its artifact is a
+ *   `package.json` plus a one-line README behind `files: []`, so attesting it
+ *   would protect nothing, and buying that attestation would mean holding a
+ *   publish token in CI — the one thing this policy forbids.
+ *
+ *   Two phases:
+ *
+ *   - PREFLIGHT (`publishAuthPreflight`) — refuses before the upload. The token
+ *     is what masks a failed exchange; removing the mask is what makes the
+ *     failure visible. Also refuses a `0.0.0` reservation attempted from CI,
+ *     token or not: that is a policy violation, not a valid path.
+ *   - POSTFLIGHT (`publishAuthPostflight`) — scans the command's own output for
+ *     the exchange failure whether it exited 0 or not. A publish that
+ *     "succeeded" after `Skipped OIDC` is a failure with a green exit code.
+ *
+ *   There is NO environment opt-out. An env var that converts a refusal into a
+ *   warning is exactly the per-member inconsistency this module exists to
+ *   remove.
+ *
+ *   This module does not try to fix the 404. pnpm and the npm CLI request the
+ *   SAME exchange path, so a 404 is npm refusing the exchange for the package —
+ *   a trusted-publisher registration that does not match the presented claims.
+ *   The job here is to stop a token-backed publish from wearing a
+ *   trusted-publishing costume, and to point the reader at the registration.
+ *
+ *   Pure by design — every decision function takes its environment, its publish
+ *   shape, and its captured output as arguments, so the whole matrix is
+ *   unit-tested with no CI, no registry, and no spawn. Only
+ *   `logPublishAuthPosture` touches the logger.
  */
 
 import { logger } from '../shared.mts'
 
+import type { NpmUploadMode } from './publish-command.mts'
+
 /**
- * The one sanctioned opt-out. Set it to a non-empty value to allow a
- * long-lived-token publish; the run then SAYS it is one, loudly, in both
- * phases. This is a break-glass declaration, not a mute switch.
+ * The reservation version. Deliberately the lowest possible semver so the real
+ * first release always supersedes it as `latest`. This is the POLICY constant —
+ * the carve-out is defined by it, and `placeholder.mts` publishes it.
  */
-export const PUBLISH_TOKEN_FALLBACK_ENV = 'SOCKET_PUBLISH_ALLOW_TOKEN_FALLBACK'
+export const PLACEHOLDER_RESERVATION_VERSION = '0.0.0'
 
 /**
  * Environment variables that carry a long-lived npm credential into a publish.
@@ -57,6 +83,17 @@ export const LONG_LIVED_NPM_TOKEN_ENV_VARS: readonly string[] = [
   'NPM_TOKEN',
 ]
 
+/**
+ * Environment variables that mark a CI runner. `GITHUB_ACTIONS` is the fleet's
+ * runner; bare `CI` catches every other one, because the reservation carve-out
+ * is about "a human or agent ran this on a machine they control", not about
+ * which CI provider is hosting it.
+ */
+export const RUNNER_CONTEXT_ENV_VARS: readonly string[] = [
+  'CI',
+  'GITHUB_ACTIONS',
+]
+
 // pnpm reports a failed OIDC token exchange two ways depending on version: the
 // error code, and the human line it prints when it gives up and falls through
 // to whatever other credential exists. Either one means the exchange did not
@@ -64,25 +101,35 @@ export const LONG_LIVED_NPM_TOKEN_ENV_VARS: readonly string[] = [
 // oxlint-disable-next-line socket/require-regex-comment -- documented above
 const OIDC_EXCHANGE_FAILURE_RE = /ERR_PNPM_AUTH_TOKEN_EXCHANGE|Skipped OIDC/
 
+// Named once so the refusals and the docs cannot drift from the command an
+// operator is told to run.
+const PLACEHOLDER_SCRIPT = 'scripts/fleet/publish-infra/npm/placeholder.mts'
+const TRUST_SWEEP_SCRIPT = 'scripts/fleet/publish-infra/npm/trust-sweep.mts'
+
 /**
  * The publish auth posture a phase resolved to.
  *
- * - `no-trusted-publishing` — not a GitHub Actions run; OIDC was never on the
- *   table, so there is nothing to mask. Local publishes land here.
- * - `trusted-publishing` — OIDC is the mechanism and nothing contradicts it.
- * - `declared-token-fallback` — a long-lived token is in play AND the operator
- *   declared it via the opt-out. Allowed, and announced.
- * - `masked-token-fallback` — a long-lived token is in play and nobody declared
- *   it. Refused.
+ * - `no-long-lived-token` — a staged publish with no long-lived credential in the
+ *   environment, so the OIDC exchange is the only way it can authenticate. The
+ *   normal case for every real release.
+ * - `placeholder-reservation` — the one sanctioned direct publish: a LOCAL
+ *   `direct` upload at exactly `0.0.0`. Allowed, and announced.
+ * - `placeholder-in-ci` — a `0.0.0` reservation attempted from a runner. Refused,
+ *   token or not.
+ * - `direct-publish-is-not-a-reservation` — a `direct` upload at any other
+ *   version. Refused, in CI or locally, token or not.
+ * - `token-masks-trusted-publishing` — a long-lived token on a staged publish.
+ *   Refused.
  * - `oidc-exchange-failed` — the command itself reported the exchange failing.
  *   Refused.
  */
 export type PublishAuthVerdict =
-  | 'declared-token-fallback'
-  | 'masked-token-fallback'
-  | 'no-trusted-publishing'
+  | 'direct-publish-is-not-a-reservation'
+  | 'no-long-lived-token'
   | 'oidc-exchange-failed'
-  | 'trusted-publishing'
+  | 'placeholder-in-ci'
+  | 'placeholder-reservation'
+  | 'token-masks-trusted-publishing'
 
 export interface PublishAuthPosture {
   /**
@@ -97,18 +144,35 @@ export interface PublishAuthPosture {
 }
 
 /**
- * True when this process is running inside GitHub Actions, where the fleet's
- * intended npm credential is the OIDC trusted-publisher exchange.
+ * The publish being judged. `version` comes from the manifest that is actually
+ * being published, read from disk by the caller — never a caller-asserted
+ * "this is a placeholder" flag, which would make the carve-out claimable by
+ * anything.
  */
-export function isGithubActionsRun(env: NodeJS.ProcessEnv): boolean {
-  return env['GITHUB_ACTIONS'] === 'true'
+export interface PublishShape {
+  env: NodeJS.ProcessEnv
+  mode: NpmUploadMode
+  version: string | undefined
 }
 
 /**
- * True when the operator declared the long-lived-token fallback.
+ * True when this process is running on a CI runner. The reservation carve-out
+ * requires this to be FALSE.
  */
-export function isTokenFallbackDeclared(env: NodeJS.ProcessEnv): boolean {
-  return !!env[PUBLISH_TOKEN_FALLBACK_ENV]
+export function isRunnerContext(env: NodeJS.ProcessEnv): boolean {
+  for (let i = 0, { length } = RUNNER_CONTEXT_ENV_VARS; i < length; i += 1) {
+    if (env[RUNNER_CONTEXT_ENV_VARS[i]!]) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * The runner variables actually set, for quoting in a refusal.
+ */
+function runnerVarsIn(env: NodeJS.ProcessEnv): string[] {
+  return RUNNER_CONTEXT_ENV_VARS.filter(name => env[name])
 }
 
 /**
@@ -133,6 +197,21 @@ export function longLivedNpmTokensIn(env: NodeJS.ProcessEnv): string[] {
 }
 
 /**
+ * True when this publish has the SHAPE of the sanctioned name reservation: a
+ * `direct` upload, at exactly `0.0.0`, from outside any CI runner. All three
+ * are required — a staged `0.0.0`, a `direct` at any other version, and a
+ * reservation attempted in CI are each outside the carve-out.
+ */
+export function isPlaceholderReservation(shape: PublishShape): boolean {
+  const { env, mode, version } = { __proto__: null, ...shape } as PublishShape
+  return (
+    mode === 'direct' &&
+    version === PLACEHOLDER_RESERVATION_VERSION &&
+    !isRunnerContext(env)
+  )
+}
+
+/**
  * The verbatim line on which pnpm reported the OIDC token exchange failing, or
  * undefined when the output carries no such report. Returns the line rather
  * than a boolean so the caller can quote what the tool actually said instead of
@@ -152,44 +231,80 @@ export function oidcExchangeFailureIn(output: string): string | undefined {
   return undefined
 }
 
+// How a publish describes itself in a message: `staged 6.0.9`, `direct 0.0.0`.
+function describeShape(
+  mode: NpmUploadMode,
+  version: string | undefined,
+): string {
+  return `${mode} publish at version ${version ?? '<unreadable>'}`
+}
+
 /**
  * The preflight posture, resolved BEFORE the upload command runs.
  *
- * Refuses a GitHub Actions publish that carries a long-lived npm token, because
- * that token is exactly what turns a failed OIDC exchange into a green run. Off
- * GitHub Actions this is a no-op: a laptop publish has no OIDC to impersonate.
+ * `direct` is judged entirely on shape — it is legal only as the local `0.0.0`
+ * reservation, so a token never enters the decision. `staged` is judged on the
+ * credential: OIDC is the only path, and a long-lived token is what would let a
+ * failed exchange pass for a success.
  */
-export function publishAuthPreflight(
-  env: NodeJS.ProcessEnv,
-): PublishAuthPosture {
-  if (!isGithubActionsRun(env)) {
-    return { lines: [], ok: true, verdict: 'no-trusted-publishing' }
+export function publishAuthPreflight(shape: PublishShape): PublishAuthPosture {
+  const resolved = { __proto__: null, ...shape } as PublishShape
+  const { env, mode, version } = resolved
+  if (mode === 'direct') {
+    // Not a reservation at all — refused wherever it runs, credential
+    // irrelevant. A real release is staged so a bad upload stays rejectable,
+    // and staged is what the per-package trusted-publisher grants allow.
+    if (version !== PLACEHOLDER_RESERVATION_VERSION) {
+      return {
+        lines: [
+          `Refusing to publish: a direct publish is only ever a ${PLACEHOLDER_RESERVATION_VERSION} name reservation.`,
+          `  Where: this run — ${describeShape(mode, version)}.`,
+          `  Saw vs wanted: a direct upload of a real version; wanted a STAGED publish authenticated by the OIDC trusted-publisher exchange. Staged keeps a bad upload rejectable before anything is public, and stage-publish is what the per-package trusted-publisher grants actually allow.`,
+          `  Fix: publish staged — dispatch npm-publish.yml, or run \`pnpm run npm:publish\`. The only sanctioned direct publish is the one-time ${PLACEHOLDER_RESERVATION_VERSION} placeholder name reservation, run LOCALLY via ${PLACEHOLDER_SCRIPT}.`,
+        ],
+        ok: false,
+        verdict: 'direct-publish-is-not-a-reservation',
+      }
+    }
+    // A reservation, but from a runner: refused whether or not a token is
+    // present, because the objection is the workflow, not the credential.
+    if (isRunnerContext(env)) {
+      return {
+        lines: [
+          `Refusing to publish: a ${PLACEHOLDER_RESERVATION_VERSION} placeholder reservation must never run in CI.`,
+          `  Where: this run has ${runnerVarsIn(env).join(', ')} set, with a ${describeShape(mode, version)}.`,
+          `  Saw vs wanted: a name reservation attempted from a workflow; wanted it run locally by a human or an agent. Everything that publishes from CI publishes by trusted publishing, and a reservation cannot — the name does not exist on the registry yet, so no trusted publisher can be configured for it. No npm token ever reaches CI.`,
+          `  Fix: run the reservation locally — \`node ${PLACEHOLDER_SCRIPT} <name> --apply\`. Do not add a workflow for it. Then configure the OIDC trusted publisher for the claimed name and release every real version through npm-publish.yml.`,
+        ],
+        ok: false,
+        verdict: 'placeholder-in-ci',
+      }
+    }
+    const reservationTokens = longLivedNpmTokensIn(env)
+    return {
+      lines: [
+        `Placeholder name reservation: publishing ${PLACEHOLDER_RESERVATION_VERSION} with ${reservationTokens.length ? `the long-lived ${reservationTokens.join(', ')} credential` : 'the local npm session'}.`,
+        `  Where: a local run — no CI runner context — with a ${describeShape(mode, version)}.`,
+        `  Saw vs wanted: this is the ONE sanctioned direct publish. npm can only configure a trusted publisher for a name that already exists, so the name has to be claimed before OIDC can take over.`,
+        `  Fix: nothing to fix. Once this lands, configure the OIDC trusted publisher for the name and release every real version through the npm-publish workflow; no later publish may carry a token.`,
+      ],
+      ok: true,
+      verdict: 'placeholder-reservation',
+    }
   }
   const tokens = longLivedNpmTokensIn(env)
   if (!tokens.length) {
-    return { lines: [], ok: true, verdict: 'trusted-publishing' }
-  }
-  if (isTokenFallbackDeclared(env)) {
-    return {
-      lines: [
-        `Publishing with a LONG-LIVED npm token, not trusted publishing.`,
-        `  Where: this GitHub Actions job, with ${PUBLISH_TOKEN_FALLBACK_ENV} set.`,
-        `  Saw vs wanted: ${tokens.join(', ')} present in the environment; the fleet default is an OIDC trusted-publisher exchange with no long-lived credential.`,
-        `  Fix: nothing is blocked — the fallback was declared. To return to trusted publishing, unset ${PUBLISH_TOKEN_FALLBACK_ENV} and remove ${tokens.join(', ')} from the publish environment.`,
-      ],
-      ok: true,
-      verdict: 'declared-token-fallback',
-    }
+    return { lines: [], ok: true, verdict: 'no-long-lived-token' }
   }
   return {
     lines: [
-      `Refusing to publish: a long-lived npm token would mask trusted publishing.`,
-      `  Where: this GitHub Actions job's environment, before the upload command runs.`,
-      `  Saw vs wanted: ${tokens.join(', ')} set; wanted no long-lived npm credential, so the OIDC trusted-publisher exchange is the only way this run can authenticate. With the token present, a failed exchange still publishes and the run goes green under the wrong identity.`,
-      `  Fix: remove ${tokens.join(', ')} from the publish job / environment secrets and let the OIDC exchange authenticate. If a token publish is genuinely intended, declare it with ${PUBLISH_TOKEN_FALLBACK_ENV}=1 — the run then says so in the log instead of impersonating trusted publishing.`,
+      `Refusing to publish: trusted publishing is the only path for a real release.`,
+      `  Where: the publish environment, before the upload command runs — ${describeShape(mode, version)}${isRunnerContext(env) ? `, on a CI runner (${runnerVarsIn(env).join(', ')})` : ''}.`,
+      `  Saw vs wanted: ${tokens.join(', ')} set; wanted no long-lived npm credential. With a token present pnpm falls through to it when the OIDC exchange fails, so this publish would silently NOT be using trusted publishing and the run would still go green.`,
+      `  Fix: remove ${tokens.join(', ')} from the publish job and its environment secrets, and let the OIDC trusted-publisher exchange authenticate. No npm token ever reaches CI. The only publish allowed to carry one is the one-time ${PLACEHOLDER_RESERVATION_VERSION} placeholder name reservation, run LOCALLY via ${PLACEHOLDER_SCRIPT} — there is no workflow for it and there must never be one.`,
     ],
     ok: false,
-    verdict: 'masked-token-fallback',
+    verdict: 'token-masks-trusted-publishing',
   }
 }
 
@@ -199,55 +314,51 @@ export function publishAuthPreflight(
  *
  * A zero exit code is not proof the intended mechanism worked: pnpm logs the
  * exchange failure and carries on. When the captured output reports the
- * exchange failing, the run is a failure regardless of exit code, unless the
- * fallback was declared, in which case it is a loud, named token publish.
+ * exchange failing, the run is a failure regardless of exit code — unless this
+ * is the placeholder reservation, where no OIDC was ever possible.
  *
  * `commandSucceeded` only shapes the wording — the verdict is the same either
  * way, because the whole point is that the exit code cannot be trusted here.
  */
-export function publishAuthPostflight(config: {
-  commandSucceeded: boolean
-  env: NodeJS.ProcessEnv
-  output: string
-}): PublishAuthPosture {
-  const { commandSucceeded, env, output } = {
-    __proto__: null,
-    ...config,
-  } as typeof config
+export function publishAuthPostflight(
+  config: PublishShape & { commandSucceeded: boolean; output: string },
+): PublishAuthPosture {
+  const resolved = { __proto__: null, ...config } as typeof config
+  const { commandSucceeded, env, mode, output, version } = resolved
+  const shape: PublishShape = { env, mode, version }
+  const reservation = isPlaceholderReservation(shape)
   const failureLine = oidcExchangeFailureIn(output)
   if (!failureLine) {
     return {
       lines: [],
       ok: true,
-      verdict: isGithubActionsRun(env)
-        ? 'trusted-publishing'
-        : 'no-trusted-publishing',
+      verdict: reservation ? 'placeholder-reservation' : 'no-long-lived-token',
+    }
+  }
+  if (reservation) {
+    return {
+      lines: [
+        `The OIDC exchange was skipped for this ${PLACEHOLDER_RESERVATION_VERSION} placeholder reservation, as expected.`,
+        `  Where: pnpm's own output from the upload command just above.`,
+        `  Saw vs wanted: ${failureLine} — a name that does not exist yet cannot have a trusted publisher, so the reservation is the one publish that authenticates with a token.`,
+        `  Fix: nothing to fix. Configure the OIDC trusted publisher for the claimed name next; every real release after this one goes through the npm-publish workflow.`,
+      ],
+      ok: true,
+      verdict: 'placeholder-reservation',
     }
   }
   const tokens = longLivedNpmTokensIn(env)
   const credential = tokens.length
     ? `the long-lived ${tokens.join(', ')} credential`
     : 'no credential at all'
-  if (isTokenFallbackDeclared(env)) {
-    return {
-      lines: [
-        `The OIDC trusted-publisher exchange FAILED; this upload used ${credential}.`,
-        `  Where: pnpm's own output from the upload command just above.`,
-        `  Saw vs wanted: ${failureLine} — wanted a successful token exchange.`,
-        `  Fix: allowed only because ${PUBLISH_TOKEN_FALLBACK_ENV} is set. Register / repair the package's trusted publisher (its repository, workflow filename, and environment must all match this run), then unset ${PUBLISH_TOKEN_FALLBACK_ENV}.`,
-      ],
-      ok: true,
-      verdict: 'declared-token-fallback',
-    }
-  }
   return {
     lines: [
       commandSucceeded
         ? `The upload exited 0 but the OIDC trusted-publisher exchange FAILED — this run did NOT publish via trusted publishing.`
         : `The OIDC trusted-publisher exchange FAILED.`,
-      `  Where: pnpm's own output from the upload command just above.`,
-      `  Saw vs wanted: ${failureLine} — wanted a successful exchange producing a short-lived registry token; the upload fell through to ${credential}.`,
-      `  Fix: check that a trusted publisher is registered for this package AND that its repository, workflow filename, and environment match this run — \`node scripts/fleet/publish-infra/npm/trust-sweep.mts\` prints the expected binding and re-registers it with --drive. A staged upload is still rejectable — reject it rather than approving bytes published under the wrong identity.`,
+      `  Where: pnpm's own output from the upload command just above (${describeShape(mode, version)}).`,
+      `  Saw vs wanted: ${failureLine} — wanted a successful exchange producing a short-lived registry token; the upload fell through to ${credential}. Trusted publishing is the only path for a real release, so this run does not count as one.`,
+      `  Fix: this is not a pnpm problem — pnpm and the npm CLI request the SAME exchange path (\`-/npm/v1/oidc/token/exchange/package/<escapedName>\`), so a 404 means npm is refusing the exchange for this package. The trusted-publisher registration does not match the claims this run presents: repository, workflow filename, environment. Inspect and repair it with \`node ${TRUST_SWEEP_SCRIPT}\` (\`--drive\` re-registers; it needs a human with an OTP). A staged upload is still rejectable — reject it rather than approving bytes published under the wrong identity.`,
     ],
     ok: false,
     verdict: 'oidc-exchange-failed',
@@ -258,9 +369,9 @@ export function publishAuthPostflight(config: {
  * Print a posture through the publish logger and hand back its `ok`, so a
  * caller reads as `if (!logPublishAuthPosture(posture)) { … stop … }`.
  *
- * A blocking posture prints at `fail`; a declared fallback prints at `warn` —
- * it is allowed, but it is never quiet. A clean posture carries no lines and
- * prints nothing.
+ * A blocking posture prints at `fail`; the allowed reservation prints at `warn`
+ * — it is permitted, but it is never quiet. A clean posture carries no lines
+ * and prints nothing.
  */
 export function logPublishAuthPosture(posture: PublishAuthPosture): boolean {
   const { lines, ok } = posture

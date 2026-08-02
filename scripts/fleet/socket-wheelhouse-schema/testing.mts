@@ -5,9 +5,23 @@
 
 import { Type } from '@sinclair/typebox'
 
+import { COVER_RUNNERS } from '../cover/runner.mts'
+
 // ---------------------------------------------------------------------------
 // Cover block — the `cover` suite's per-repo overrides (was cover.json).
 // ---------------------------------------------------------------------------
+
+// Shared by `thresholds` and each entry of `perFileThresholds`, so the two can
+// never drift into disagreeing about what a metric is.
+const CoverThresholdsSchema = Type.Object(
+  {
+    statements: Type.Optional(Type.Number()),
+    branches: Type.Optional(Type.Number()),
+    functions: Type.Optional(Type.Number()),
+    lines: Type.Optional(Type.Number()),
+  },
+  { additionalProperties: false },
+)
 
 export const CoverSchema = Type.Object(
   {
@@ -49,6 +63,21 @@ export const CoverSchema = Type.Object(
           additionalProperties: false,
           description:
             'Per-metric coverage thresholds (percent) the cover suite enforces; an absent metric inherits the fleet default.',
+        },
+      ),
+    ),
+    perFileThresholds: Type.Optional(
+      Type.Record(Type.String(), CoverThresholdsSchema, {
+        description:
+          'Per-file coverage thresholds (percent), keyed by repo-root-relative file path; a file listed here is held to these numbers instead of the repo-wide `thresholds`.',
+      }),
+    ),
+    runner: Type.Optional(
+      Type.Union(
+        COVER_RUNNERS.map(id => Type.Literal(id)),
+        {
+          description:
+            'Which test runner the cover suite drives. Set this to match the repo’s own `test` script — a repo whose tests run under bun but is left on the vitest default collects no coverage and reports a false green.',
         },
       ),
     ),

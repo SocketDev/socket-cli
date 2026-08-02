@@ -2,7 +2,8 @@
 /*
  * @file Commit-time gate: the repo-local coverage badge matches the latest
  *   coverage run. The README references `assets/repo/badges/coverage.svg` (a
- *   generated, optimized SVG — no third-party badge host) and the SVG's
+ *   generated, optimized SVG — no third-party badge host, referenced by its
+ *   absolute raw-GitHub url so it renders on the npm page too) and the SVG's
  *   stamped percent must equal the rounded line-coverage total from
  *   `.cache/fleet/coverage/coverage-summary.json` (the vitest
  *   json-summary reporter). The
@@ -77,7 +78,7 @@ export function checkCoverageBadgeIsCurrent(
       // stale hand-written percent ship on a public README while this gate
       // stayed green — fail loud instead.
       logger.fail(
-        '[check-coverage-badge-is-current] README carries a coverage badge in an unrecognized form — the freshness gate cannot verify it. Rewrite it as `![Coverage](assets/repo/badges/coverage.svg)` and run gen/coverage-badge (which migrates it to the dimensioned <img> form).',
+        "[check-coverage-badge-is-current] README carries a coverage badge in an unrecognized form — the freshness gate cannot verify it. Rewrite it as `![Coverage](assets/repo/badges/coverage.svg)` and run gen/coverage-badge, which migrates it to the current form: a dimensioned <img> at the asset's absolute raw-GitHub url.",
       )
       logger.error(FIX_HINT)
       return 1
@@ -86,11 +87,11 @@ export function checkCoverageBadgeIsCurrent(
     return 0
   }
   const pct = readCoveragePct(cfg.repoRoot)
-  // 'img' (current) and 'markdown' (legacy-but-valid; gen/coverage-badge
-  // migrates it to <img> opportunistically on the next cover run) both point at
-  // the same asset — verify them below. Only the truly-retired external/legacy
-  // forms fail the gate, so flipping the current form to <img> never breaks a
-  // member that still carries the markdown line.
+  // 'img' (current), 'relative-img', and 'markdown' all point at the same
+  // asset, so verify them below — gen/coverage-badge migrates the latter two to
+  // the absolute <img> opportunistically on the next cover run. Only the
+  // truly-retired external/legacy forms fail the gate, so advancing the current
+  // form never breaks a member that has not re-run its generator yet.
   if (form === 'legacy-asset' || form === 'shields') {
     if (pct === undefined) {
       // Retired form, but no coverage run on this tree to regenerate from —

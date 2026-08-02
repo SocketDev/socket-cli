@@ -36,6 +36,11 @@ const logger = getDefaultLogger()
 // Dirs that never hold first-party source (someone else's tree, build output,
 // or dependency installs) — skipped when walking for source + fuzz files.
 const SKIP_DIRS = new Set([
+  // Per-checkout runtime state. Reaped fleet files land here, and counting
+  // them as source makes a repo with no first-party TypeScript look like it
+  // has some — the check then demands a JS/TS fuzz target that fresh CI,
+  // which has no .cache, never asks for.
+  '.cache',
   '.git',
   '.swc',
   '.vitiate',

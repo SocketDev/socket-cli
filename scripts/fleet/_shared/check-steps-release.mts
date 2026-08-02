@@ -430,9 +430,8 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // `--check`: fail-open where the member did not set the `docs` opt-in or has
     // no export surface, and staleness compared on whitespace-normalized text so
     // a formatter's table alignment is not drift.
-    () => run('node', ['scripts/fleet/make-api-md.mts', '--check', '--quiet']),
-    () =>
-      run('node', ['scripts/fleet/make-llms-txt.mts', '--check', '--quiet']),
+    () => run('node', ['scripts/fleet/gen/api-md.mts', '--check', '--quiet']),
+    () => run('node', ['scripts/fleet/gen/llms-txt.mts', '--check', '--quiet']),
     // Test mirror-naming convention: every unit test basename matches the basename
     // of its one first-party static import. Run with --strict so violations exit
     // non-zero; mirror-exempt markers on skip files suppress known exceptions.
