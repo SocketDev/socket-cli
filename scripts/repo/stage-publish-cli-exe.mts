@@ -23,8 +23,7 @@ import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
+import { uploadNpmPackage } from '../fleet/publish-infra/npm/publish-command.mts'
 import {
   CLI_EXE_TRIPLETS,
   cliExeBinaryName,
@@ -162,39 +161,22 @@ async function stageTarget(
   target: StageTarget,
   config: { dryRun: boolean; tag: string },
 ): Promise<boolean> {
-  const args = [
-    'stage',
-    'publish',
-    '--access',
-    'public',
-    '--tag',
-    config.tag,
-    '--no-git-checks',
-    '--ignore-scripts',
-  ]
-  if (process.env['GITHUB_ACTIONS'] === 'true') {
-    args.push('--provenance')
+  // The upload itself belongs to the fleet primitive: it decides provenance,
+  // asserts the trusted-publishing auth posture, and catches an OIDC exchange
+  // that fails while still exiting 0. Only the orchestration around it — which
+  // targets ship, in what order — is this script's business.
+  const result = await uploadNpmPackage({
+    cwd: target.dir,
+    dryRun: config.dryRun,
+    mode: 'staged',
+    tag: config.tag,
+  })
+  if (!result.postureOk) {
+    logger.fail(`${target.name}: publish auth posture refused the upload`)
+    return false
   }
-  if (config.dryRun) {
-    args.push('--dry-run')
-  }
-  logger.log(`pnpm ${args.join(' ')}  (cwd: ${target.dir})`)
-  let code: number
-  try {
-    const result = await spawn('pnpm', args, {
-      cwd: target.dir,
-      stdio: 'inherit',
-    })
-    // The spawn helper reports null on signal termination.
-    code = result.code ?? 1
-  } catch (e) {
-    // Non-zero exits reject; the error carries the exit code.
-    const errCode =
-      e && typeof e === 'object' && 'code' in e ? e.code : undefined
-    code = typeof errCode === 'number' ? errCode : 1
-  }
-  if (code !== 0) {
-    logger.fail(`${target.name}: pnpm stage publish exited ${code}`)
+  if (result.code !== 0) {
+    logger.fail(`${target.name}: staged upload exited ${result.code}`)
     return false
   }
   return true
