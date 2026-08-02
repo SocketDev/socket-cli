@@ -25,7 +25,7 @@ import { select } from '@socketsecurity/registry/lib/prompts'
 import { findBuildToolCandidates } from './discover-manifest-roots.mts'
 import { setupGradle, setupMaven, setupSbt } from './setup-manifest-config.mts'
 import {
-  disableCandidate,
+  disableExclusionRoot,
   discoverExcludedCandidates,
   setupRecursiveManifestConfig,
   sortCandidatesForDisplay,
@@ -101,14 +101,14 @@ describe('sortCandidatesForDisplay', () => {
   it('sorts shallower dirs before deeper ones, parent before child', () => {
     const sorted = sortCandidatesForDisplay(
       [
-        { dir: '/repo/module-b/standalone-gradle-lib', ecosystem: 'gradle' },
-        { dir: '/repo/independent-service', ecosystem: 'maven' },
+        { dir: '/repo/module-b/standalone-gradle-lib', ecosystems: ['gradle'] },
+        { dir: '/repo/independent-service', ecosystems: ['maven'] },
       ],
       cwd,
     )
     expect(sorted).toEqual([
-      { dir: '/repo/independent-service', ecosystem: 'maven' },
-      { dir: '/repo/module-b/standalone-gradle-lib', ecosystem: 'gradle' },
+      { dir: '/repo/independent-service', ecosystems: ['maven'] },
+      { dir: '/repo/module-b/standalone-gradle-lib', ecosystems: ['gradle'] },
     ])
   })
 })
@@ -149,11 +149,42 @@ describe('discoverExcludedCandidates', () => {
       rootSockJson: emptySockJson(),
     })
 
-    expect(result).toEqual([{ dir: legacy, ecosystem: 'gradle' }])
+    expect(result).toEqual([{ dir: legacy, ecosystems: ['gradle'] }])
+  })
+
+  it('groups sibling projects under a non-project excluded ancestor into a single exclusion root', async () => {
+    // legacy/ itself has no build file of its own - only its two children do -
+    // so it never appears as a candidate, but --exclude-paths=legacy should
+    // still collapse both into one write at legacy, not two writes at
+    // legacy/a and legacy/b.
+    const a = '/repo/legacy/a'
+    const b = '/repo/legacy/b'
+    vi.mocked(findBuildToolCandidates).mockImplementation(
+      async ({ excludePaths }) =>
+        excludePaths?.length
+          ? new Map([
+              ['maven', []],
+              ['gradle', []],
+            ])
+          : new Map([
+              ['maven', [a]],
+              ['gradle', [b]],
+            ]),
+    )
+
+    const result = await discoverExcludedCandidates({
+      cwd,
+      excludePaths: ['legacy'],
+      rootSockJson: emptySockJson(),
+    })
+
+    expect(result).toEqual([
+      { dir: '/repo/legacy', ecosystems: ['gradle', 'maven'] },
+    ])
   })
 })
 
-describe('disableCandidate', () => {
+describe('disableExclusionRoot', () => {
   const cwd = '/repo'
   const dir = '/repo/legacy'
 
@@ -164,16 +195,16 @@ describe('disableCandidate', () => {
     vi.mocked(writeSocketJson).mockResolvedValue({ ok: true, data: undefined })
   })
 
-  it('no-ops when the cascade already shows disabled', async () => {
+  it('no-ops when the cascade already shows every ecosystem disabled', async () => {
     vi.mocked(readSocketJsonCascade).mockReturnValue({
       version: 1,
       defaults: { manifest: { gradle: { disabled: true } } },
     } as SocketJson)
 
-    await disableCandidate({
+    await disableExclusionRoot({
       cwd,
       dir,
-      ecosystem: 'gradle',
+      ecosystems: ['gradle'],
       rootSockJson: emptySockJson(),
     })
 
@@ -190,10 +221,10 @@ describe('disableCandidate', () => {
         }) as SocketJson,
     )
 
-    await disableCandidate({
+    await disableExclusionRoot({
       cwd,
       dir,
-      ecosystem: 'gradle',
+      ecosystems: ['gradle'],
       rootSockJson: emptySockJson(),
     })
 
@@ -203,6 +234,28 @@ describe('disableCandidate', () => {
         defaults: {
           manifest: { gradle: { bin: './gradlew', disabled: true } },
         },
+      }),
+    )
+  })
+
+  it('writes only the ecosystems not already covered by cascade', async () => {
+    vi.mocked(readSocketJsonCascade).mockReturnValue({
+      version: 1,
+      defaults: { manifest: { gradle: { disabled: true } } },
+    } as SocketJson)
+    vi.mocked(readOrDefaultSocketJson).mockImplementation(() => emptySockJson())
+
+    await disableExclusionRoot({
+      cwd,
+      dir,
+      ecosystems: ['gradle', 'maven'],
+      rootSockJson: emptySockJson(),
+    })
+
+    expect(writeSocketJson).toHaveBeenCalledWith(
+      dir,
+      expect.objectContaining({
+        defaults: { manifest: { maven: { disabled: true } } },
       }),
     )
   })

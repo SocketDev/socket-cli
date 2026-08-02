@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import micromatch from 'micromatch'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
@@ -16,12 +18,19 @@ import {
   readSocketJsonSync,
   writeSocketJson,
 } from '../../utils/socket-json.mts'
+import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { CResult } from '../../types.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
-type Candidate = { dir: string; ecosystem: BuildTool }
+// One directory to mark `disabled: true` in, covering every ecosystem found
+// excluded beneath it. `dir` is the shallowest directory that itself matches
+// `--exclude-paths` - not necessarily a project dir of its own - so a single
+// write covers every sibling/nested project underneath, instead of one write
+// per matched project (which would miss sibling projects that don't happen to
+// be descendants of whichever matched project was written first).
+type ExclusionRoot = { dir: string; ecosystems: BuildTool[] }
 
 function canceledByUser(): CResult<{ canceled: boolean }> {
   logger.log('')
@@ -45,13 +54,13 @@ function getEcosystemSection(
   )
 }
 
-// Depth-then-path sort so a disabled ancestor is always written before its
-// descendants - required for the cascade no-op check in disableCandidate to
-// see an ancestor's just-written `disabled: true`.
+// Depth-then-path sort, purely for stable/predictable log ordering - separate
+// exclusion roots never nest inside one another (see findExclusionRoot), so
+// there's no cascade-correctness dependency between the writes.
 export function sortCandidatesForDisplay(
-  candidates: readonly Candidate[],
+  candidates: readonly ExclusionRoot[],
   cwd: string,
-): Candidate[] {
+): ExclusionRoot[] {
   return [...candidates].sort((a, b) => {
     const relA = path.relative(cwd, a.dir)
     const relB = path.relative(cwd, b.dir)
@@ -60,25 +69,48 @@ export function sortCandidatesForDisplay(
     if (depthA !== depthB) {
       return depthA - depthB
     }
-    if (relA !== relB) {
-      return relA < relB ? -1 : 1
-    }
-    return a.ecosystem < b.ecosystem ? -1 : a.ecosystem > b.ecosystem ? 1 : 0
+    return relA < relB ? -1 : relA > relB ? 1 : 0
   })
+}
+
+function toPosixRelative(cwd: string, dir: string): string {
+  return path.relative(cwd, dir).split(path.sep).join('/')
+}
+
+// Walks a matched candidate's path from shallowest to deepest and returns the
+// first (shallowest) prefix that itself matches one of the --exclude-paths
+// ignore patterns - i.e. the directory the exclusion should actually be
+// written to. Writing there instead of at the matched candidate itself means
+// one write covers every sibling/nested project beneath it, even when that
+// directory isn't a build root of its own.
+function findExclusionRoot(
+  relDir: string,
+  ignorePatterns: readonly string[],
+): string {
+  const segments = relDir.split('/')
+  for (let depth = 1; depth <= segments.length; depth += 1) {
+    const prefix = segments.slice(0, depth).join('/')
+    if (micromatch.isMatch(prefix, ignorePatterns, { dot: true })) {
+      return prefix
+    }
+  }
+  return relDir
 }
 
 // Discovers every gradle/sbt/maven build root beneath `cwd` (a plain
 // filesystem walk, no dependency resolution and no build-tool invocation -
-// so no bin/javaHome is ever needed) and returns the ones that should end up
-// disabled: anything matching `--exclude-paths`. `cwd` itself is excluded -
-// it already got its own wizard pass. Comparing an unfiltered walk against an
+// so no bin/javaHome is ever needed), diffs an unfiltered walk against an
 // excludePaths-filtered walk (both via the same findBuildToolCandidates
 // fast-glob machinery, which already treats --exclude-paths as anchored
-// ignores that prevent descending into a matched subtree at all) avoids
-// re-implementing that matching logic. `cwd` is realpath-resolved before
-// comparing: the discovered dirs findBuildToolCandidates returns already are
-// (it resolves symlinks so results are stable), and on macOS /tmp ->
-// /private/tmp alone is enough to otherwise break the comparison.
+// ignores that prevent descending into a matched subtree at all) to find
+// every excluded project, then groups them by the shallowest directory that
+// actually matched --exclude-paths (see findExclusionRoot) so a whole
+// excluded subtree gets exactly one write, regardless of how many build roots
+// or ecosystems it contains. `cwd` itself is excluded - it already got its
+// own wizard pass. `cwd` is realpath-resolved before comparing: the
+// discovered dirs findBuildToolCandidates returns already are (it resolves
+// symlinks so results are stable), and on macOS /tmp -> /private/tmp alone is
+// enough to otherwise break the comparison.
 export async function discoverExcludedCandidates({
   cwd,
   excludePaths,
@@ -87,45 +119,57 @@ export async function discoverExcludedCandidates({
   cwd: string
   excludePaths?: string[] | undefined
   rootSockJson: SocketJson
-}): Promise<Candidate[]> {
+}): Promise<ExclusionRoot[]> {
   const realCwd = await realpathOrResolved(cwd)
   const [fullByTool, includedByTool] = await Promise.all([
     findBuildToolCandidates({ cwd, sockJson: rootSockJson }),
     findBuildToolCandidates({ cwd, excludePaths, sockJson: rootSockJson }),
   ])
 
-  const result: Candidate[] = []
+  const ignorePatterns = (excludePaths ?? []).flatMap(excludePathToScanIgnores)
+  const ecosystemsByRoot = new Map<string, Set<BuildTool>>()
   for (const [ecosystem, fullDirs] of fullByTool) {
     const includedDirs = new Set(includedByTool.get(ecosystem) ?? [])
     for (const dir of fullDirs) {
       if (dir === realCwd || includedDirs.has(dir)) {
         continue
       }
-      result.push({ dir, ecosystem })
+      const relDir = toPosixRelative(realCwd, dir)
+      const rootRelDir = findExclusionRoot(relDir, ignorePatterns)
+      const rootDir = path.join(realCwd, rootRelDir)
+      const ecosystems = ecosystemsByRoot.get(rootDir) ?? new Set<BuildTool>()
+      ecosystems.add(ecosystem)
+      ecosystemsByRoot.set(rootDir, ecosystems)
     }
   }
-  return result
+
+  return [...ecosystemsByRoot].map(([dir, ecosystems]) => ({
+    dir,
+    ecosystems: [...ecosystems].sort(),
+  }))
 }
 
-// Marks one excluded build root's own socket.json `disabled: true` - a no-op
-// if its cascade (an already-disabled ancestor, processed earlier in the same
-// depth-ordered pass) already covers it, so only the topmost excluded
-// directory in a subtree gets an explicit write.
-export async function disableCandidate({
+// Marks one exclusion root's own socket.json `disabled: true` for whichever
+// of its ecosystems aren't already disabled via cascade (an already-disabled
+// ancestor from a prior run) - a no-op write is skipped entirely so re-running
+// the wizard doesn't keep rewriting already-disabled roots.
+export async function disableExclusionRoot({
   cwd,
   dir,
-  ecosystem,
+  ecosystems,
   rootSockJson,
 }: {
   cwd: string
   dir: string
-  ecosystem: BuildTool
+  ecosystems: readonly BuildTool[]
   rootSockJson: SocketJson
 }): Promise<CResult<{ canceled: boolean }>> {
   const relDir = path.relative(cwd, dir) || '.'
   const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
-  const cascadeSection = getEcosystemSection(cascade, ecosystem)
-  if (cascadeSection['disabled'] === true) {
+  const needsWrite = ecosystems.filter(
+    ecosystem => getEcosystemSection(cascade, ecosystem)['disabled'] !== true,
+  )
+  if (!needsWrite.length) {
     return notCanceled()
   }
 
@@ -136,17 +180,19 @@ export async function disableCandidate({
   if (!ownSockJson.defaults.manifest) {
     ownSockJson.defaults.manifest = {}
   }
-  const ownSection = getEcosystemSection(ownSockJson, ecosystem)
-  ;(ownSockJson.defaults.manifest as Record<string, unknown>)[ecosystem] = {
-    ...ownSection,
-    disabled: true,
+  const manifest = ownSockJson.defaults.manifest as Record<string, unknown>
+  for (const ecosystem of needsWrite) {
+    manifest[ecosystem] = {
+      ...getEcosystemSection(ownSockJson, ecosystem),
+      disabled: true,
+    }
   }
 
   const writeResult = await writeSocketJson(dir, ownSockJson)
   if (!writeResult.ok) {
     return writeResult
   }
-  logger.success(`Disabled ${relDir} (${ecosystem})`)
+  logger.success(`Disabled ${relDir} (${needsWrite.join(', ')})`)
   return notCanceled()
 }
 
@@ -325,7 +371,7 @@ export async function setupRecursiveManifestConfig(
 
   // Re-read: the root wizard may have just written a new socket.json.
   const rootSockJson = readOrDefaultSocketJson(cwd)
-  // Resolved once here for sortCandidatesForDisplay/disableCandidate's
+  // Resolved once here for sortCandidatesForDisplay/disableExclusionRoot's
   // relative-path math, consistent with discoverExcludedCandidates' own
   // internal resolution (see its comment for why this matters).
   const realCwd = await realpathOrResolved(cwd)
@@ -345,10 +391,10 @@ export async function setupRecursiveManifestConfig(
   const ordered = sortCandidatesForDisplay(toDisable, realCwd)
   for (const candidate of ordered) {
     // eslint-disable-next-line no-await-in-loop
-    const result = await disableCandidate({
+    const result = await disableExclusionRoot({
       cwd: realCwd,
       dir: candidate.dir,
-      ecosystem: candidate.ecosystem,
+      ecosystems: candidate.ecosystems,
       rootSockJson,
     })
     if (!result.ok) {
