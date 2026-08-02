@@ -44,6 +44,7 @@ export const FLEET_SKILL_CATALOG: Readonly<Record<string, SkillDefinition>> = {
   'diagnosing-bugs': { family: 'build', mode: 'read-only' },
   'driving-cursor-bugbot': { family: 'review', mode: 'mutating' },
   'extracting-design-systems': { family: 'design', mode: 'mutating' },
+  'gh-stack': { family: 'ship', mode: 'mutating' },
   'greening-ci': { family: 'ship', mode: 'mutating' },
   'greening-ci-local': { family: 'ship', mode: 'mutating' },
   'grilling-plan': { family: 'plan', mode: 'read-only' },

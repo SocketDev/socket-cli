@@ -91,6 +91,56 @@ export async function fetchLatestPublishedVersion(
 }
 
 /**
+ * The source commit npm recorded for a package's newest published version —
+ * `versions[<latest>].gitHead` — a squash-freeze-boundary anchor: the exact
+ * commit a published tarball was built from. Requires the FULL packument;
+ * `gitHead` is dropped from the abbreviated `install-v1+json` format the other
+ * reads in this file use for their smaller payload. Fail-open, matching every
+ * other registry read here: `reachable: false` on any network failure (never
+ * treated as "unpublished"); `reachable: true, sha: undefined` when the
+ * registry answers but the published version carries no recorded `gitHead`
+ * (an old npm CLI, or a publish that never had a git checkout) — the caller
+ * (`resolveFreezeBoundary`) treats an unresolvable anchor on a confirmed
+ * release as a fail-loud condition, never a silent full-root squash.
+ */
+export interface NpmGitHeadRead {
+  readonly reachable: boolean
+  readonly sha?: string | undefined
+  readonly version?: string | undefined
+}
+
+export async function fetchLatestGitHead(
+  name: string,
+): Promise<NpmGitHeadRead> {
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const read = cacheBustedRead(url, 'application/json')
+  try {
+    const json = await httpJson<{
+      'dist-tags'?: { latest?: string | undefined } | undefined
+      versions?:
+        | Record<string, { gitHead?: string | undefined } | undefined>
+        | undefined
+    }>(read.url, {
+      headers: read.headers,
+      timeout: 15_000,
+    })
+    const version = json['dist-tags']?.latest
+    if (!version) {
+      // The registry answered: never published.
+      return { reachable: true }
+    }
+    const gitHead = json.versions?.[version]?.gitHead
+    return {
+      reachable: true,
+      sha: typeof gitHead === 'string' && gitHead ? gitHead : undefined,
+      version,
+    }
+  } catch {
+    return { reachable: false }
+  }
+}
+
+/**
  * The registry state the backfill gate reads in one packument fetch: the
  * `dist-tags.latest` pointer plus the `time` map. The time map is the
  * registry's PERMANENT publish ledger — it keeps an entry for every version

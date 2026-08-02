@@ -74,7 +74,7 @@ export const ReleaseSchema = Type.Object(
     provenanceOrphanBaseline: Type.Optional(
       Type.Array(ProvenanceOrphanBaselineEntrySchema, {
         description:
-          'Published versions whose attested commit no release tag reaches, grandfathered so check/release-tags-match-provenance.mts reports them informationally instead of failing. A RATCHET: history is frozen and its only remedy is a human decision about immutable published tags, so it may not block main — but any orphan NOT listed here fails the gate, and an entry whose version has since been reconciled fails as STALE so the list can only shrink.',
+          'Published versions frozen in a state no commit can repair, grandfathered so check/release-tags-match-provenance.mts reports them informationally instead of failing. Covers both kinds: a version whose attested commit no release tag reaches, and a version published with NO attestation at all (npm mints attestations at publish time and they are immutable, so provenance can never be added retroactively). A RATCHET: history is frozen and its only remedy is a human decision, so it may not block main — but any version NOT listed here fails the gate, which is what forces every new release through the pipeline with publishConfig.provenance:true, and an entry whose version has since been reconciled fails as STALE so the list can only shrink.',
       }),
     ),
     versionPolicy: Type.Optional(

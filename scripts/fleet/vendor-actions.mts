@@ -48,11 +48,20 @@ const logger = getDefaultLogger()
 // The `<owner>/<repo>` actions the fleet `uses:` across its workflows (kept
 // sorted). Add a slug here to vendor a directly-consumed action; ported
 // upstreams come from the port map and never need a second entry.
+//
+// 🚨 This list must stay COMPLETE. Anything the fleet `uses:` that is missing
+// here falls outside the vendored union, and `pruneOrphanUpstreams` reads that
+// as a retired action and DELETES its pin. `actions/setup-go` was exactly that
+// case — consumed by template/presets/.github/workflows/go-publish.yml and
+// pinned in .gitmodules, but absent here until the prune surfaced it. When
+// adding a `uses:` to a workflow, add its slug here too; the allowlist in
+// auditing-gha/canonical-patterns.mts is the cross-check for what is consumed.
 const USES_ACTIONS: readonly string[] = [
   'actions/cache',
   'actions/checkout',
   'actions/download-artifact',
   'actions/github-script',
+  'actions/setup-go',
   'actions/setup-node',
   'actions/upload-artifact',
 ]
@@ -63,11 +72,24 @@ export const VENDORED_ACTIONS: readonly string[] = [
   ...new Set([...USES_ACTIONS, ...portedUpstreams()]),
 ].toSorted()
 
+// `upstream/*` submodule names this script does NOT own, and must never prune.
+// Everything else under `upstream/` is an action pin it generates, so anything
+// outside the vendored union is a retired action whose block should go.
+// Empty today: every block in the fleet's `.gitmodules` is an action pin. The
+// anticipated first entries are the copyleft tests-only slices from
+// `_shared/copyleft-upstreams.mts`, which a different provisioning path writes
+// and whose slugs will never appear in the union.
+export const UNMANAGED_UPSTREAMS: readonly string[] = []
+
 const GITMODULES = path.join(REPO_ROOT, '.gitmodules')
 
 export interface ActionPin {
+  // The `# no-release-tag: <why>` reason, set only for a branch-pinned
+  // upstream. Absent means the pin is a real release tag.
+  noReleaseTag?: string | undefined
   slug: string
   sha: string
+  // The release tag, or the BRANCH name for a no-release-tag upstream.
   tag: string
 }
 
@@ -116,6 +138,41 @@ export function isSoaked(
   return published <= nowMs - soakDays * 24 * 60 * 60 * 1000
 }
 
+// Upstreams that publish no usable release tag, mapped to WHY. These are
+// pinned to a timestamped default-branch SHA instead, and the reason is
+// emitted as the block's `# no-release-tag:` annotation.
+export const NO_RELEASE_TAG_UPSTREAMS: Readonly<Record<string, string>> = {
+  'dtolnay/rust-toolchain':
+    'ships from branch refs; its one tag (v1) moves, so pinning it by hash would record a commit the tag stops reaching',
+}
+
+/**
+ * Pin a no-release-tag upstream to its default branch's current head.
+ *
+ * Only ever called when the block is ABSENT. A branch head moves, so
+ * re-resolving it on every run would advance the pin underneath the port and
+ * red the lock-step check continuously; an existing branch pin stands until a
+ * human re-reviews the port and bumps `portedSha`/`portedOn` with it — the
+ * same "current pin stands" rule the unsoaked-release path follows. Network
+ * via ghApi.
+ */
+export function resolveBranchPin(slug: string): ActionPin | undefined {
+  const branch = ghApi(`repos/${slug}`, '.default_branch')
+  if (!branch) {
+    return undefined
+  }
+  const sha = ghApi(`repos/${slug}/commits/${branch}`, '.sha')
+  if (!sha) {
+    return undefined
+  }
+  return {
+    noReleaseTag: NO_RELEASE_TAG_UPSTREAMS[slug],
+    slug,
+    sha,
+    tag: branch,
+  }
+}
+
 /**
  * The latest release tag for `<owner>/<repo>` — GitHub's own latest semantics,
  * newest stable release — and that tag's COMMIT sha (dereferencing an
@@ -151,6 +208,9 @@ export function blockFor(pin: ActionPin): string {
   const sub = upstreamSubmoduleName(pin.slug)
   const label = sub.slice('upstream/'.length)
   return [
+    // A branch pin declares WHY it has no tag; the release-tagged check reads
+    // this annotation as the escape from its tag rule.
+    ...(pin.noReleaseTag ? [`# no-release-tag: ${pin.noReleaseTag}`] : []),
     // The `# <owner>-<repo>-<version>` header gen/gitmodules-hash --write
     // attaches the sha256 to, gitmodules-comment-guard shape. Version tracks
     // the branch.
@@ -254,6 +314,67 @@ export function upsertAll(
 }
 
 /**
+ * Drop the `upstream/*` blocks whose action left the vendored union — a
+ * composite that stopped declaring a port, or an action the last workflow
+ * stopped using. Without this the retired pin lingers and reds
+ * `upstream-submodules-are-release-tagged` against a reference nothing wants.
+ *
+ * `keepSlugs` is the WANTED universe (`VENDORED_ACTIONS`), never the resolved
+ * pins: an action whose latest release has not soaked yet resolves to no pin,
+ * and pruning on that would delete a live reference mid-soak.
+ *
+ * Blocks named in `UNMANAGED_UPSTREAMS`, and every block outside `upstream/`,
+ * are left alone. Returns the new text plus the names dropped so the caller
+ * reports them rather than deleting silently. Pure.
+ */
+export function pruneOrphanUpstreams(
+  gitmodules: string,
+  keepSlugs: readonly string[],
+): { pruned: string[]; text: string } {
+  const keep = new Set(keepSlugs.map(slug => upstreamSubmoduleName(slug)))
+  const pruned: string[] = []
+  const lines = gitmodules.split('\n')
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = /^\[submodule "(upstream\/[^"]+)"\]$/.exec(lines[i]!.trim())
+    if (!match) {
+      continue
+    }
+    const name = match[1]!
+    if (keep.has(name) || UNMANAGED_UPSTREAMS.includes(name)) {
+      continue
+    }
+    // Same range walk as upsertAll: back over the `# <name>-<tag>` header
+    // comment, forward to the next comment/submodule, minus trailing blanks.
+    let start = i
+    if (start > 0 && lines[start - 1]!.startsWith('#')) {
+      start -= 1
+    }
+    let end = lines.length
+    for (let j = i + 1, { length } = lines; j < length; j += 1) {
+      const line = lines[j]!
+      if (line.startsWith('[submodule ') || line.startsWith('#')) {
+        end = j
+        break
+      }
+    }
+    while (end > i + 1 && lines[end - 1]!.trim() === '') {
+      end -= 1
+    }
+    lines.splice(start, end - start)
+    pruned.push(name)
+    // The splice pulled later lines back over the cursor; re-scan from here.
+    i = start - 1
+  }
+  return {
+    pruned,
+    text: `${lines
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\n+$/, '')}\n`,
+  }
+}
+
+/**
  * Run `gen/gitmodules-hash.mts --write` to (re)stamp the content-hash comments
  * after refs change. Throws on failure, fail loud.
  */
@@ -326,6 +447,25 @@ export function runWrite(): number {
   const pins: ActionPin[] = []
   for (let i = 0, { length } = VENDORED_ACTIONS; i < length; i += 1) {
     const slug = VENDORED_ACTIONS[i]!
+    if (slug in NO_RELEASE_TAG_UPSTREAMS) {
+      // No usable release tag, so the pin is a branch SHA. Take one only when
+      // the block is absent — a branch head moves, and re-resolving it here
+      // would advance the pin underneath the port on every run.
+      if (currentPin(gitmodules, slug)) {
+        logger.log(`  ${slug} → branch pin stands (no release tag)`)
+        continue
+      }
+      const branchPin = resolveBranchPin(slug)
+      if (!branchPin) {
+        logger.warn(`  ${slug}: could not resolve a default-branch head.`)
+        continue
+      }
+      pins.push(branchPin)
+      logger.log(
+        `  ${branchPin.slug} → ${branchPin.tag} @ ${branchPin.sha.slice(0, 9)} (no release tag)`,
+      )
+      continue
+    }
     const pin = resolveLatest(slug)
     if (!pin) {
       logger.warn(
@@ -336,10 +476,15 @@ export function runWrite(): number {
     pins.push(pin)
     logger.log(`  ${pin.slug} → ${pin.tag} (${pin.sha.slice(0, 9)})`)
   }
-  writeThroughMirrorLock(GITMODULES, upsertAll(gitmodules, pins))
+  const { pruned, text } = pruneOrphanUpstreams(gitmodules, VENDORED_ACTIONS)
+  for (let i = 0, { length } = pruned; i < length; i += 1) {
+    logger.log(`  ${pruned[i]!} → pruned, no longer vendored`)
+  }
+  writeThroughMirrorLock(GITMODULES, upsertAll(text, pins))
   stampHashes()
   logger.success(
-    `[vendor-actions] vendored ${pins.length} action(s); hashes stamped.`,
+    `[vendor-actions] vendored ${pins.length} action(s)` +
+      `${pruned.length ? `, pruned ${pruned.length}` : ''}; hashes stamped.`,
   )
   return 0
 }

@@ -58,10 +58,16 @@ import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
 import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
-import { checkNotShallowClone, checkSquashAllowed } from './run-guards.mts'
+import {
+  checkNotShallowClone,
+  checkSquashAllowed,
+  checkTreeIsClean,
+  resolveFreezeBoundaryForRepo,
+} from './run-guards.mts'
 import {
   squashFeatureBranchMode,
   squashLocalCanonicalMode,
+  squashTailMode,
   squashWorktreeMode,
 } from './run-squash-modes.mts'
 
@@ -102,18 +108,24 @@ export async function backupBranchForCommit(
 /**
  * Accrue user-visible CHANGELOG entries into the `## [Unreleased]` section
  * before a squash collapses the commit history those entries derive from.
- * Derives the Conventional-Commit entries since the current root, merges them
- * into CHANGELOG.md at `cwd`, and commits that file on the checked-out branch
- * (--no-verify, unsigned — the commit is squashed away moments later so only
- * its TREE survives, re-signed by the mint/squash root). Returns the
- * post-accrual HEAD sha (the current HEAD when nothing was accrued). Fail-open:
- * any problem logs and returns the current HEAD, so a changelog hiccup never
- * blocks a squash. The caller must have `cwd` checked out on the branch being
- * squashed.
+ * Derives the Conventional-Commit entries since `since` (or, when omitted, the
+ * oldest root reachable from HEAD — the last full-root squash's root, or the
+ * true start), merges them into CHANGELOG.md at `cwd`, and commits that file
+ * on the checked-out branch (--no-verify, unsigned — the commit is squashed
+ * away moments later so only its TREE survives, re-signed by the mint/squash
+ * root). Returns the post-accrual HEAD sha (the current HEAD when nothing was
+ * accrued). Fail-open: any problem logs and returns the current HEAD, so a
+ * changelog hiccup never blocks a squash. The caller must have `cwd` checked
+ * out on the branch being squashed.
+ *
+ * `since` is the frozen release boundary in TAIL mode — accruing from the
+ * true root would re-derive entries for commits already released and already
+ * present in CHANGELOG.md under their own version heading, every cadence.
  */
 export async function accrueUnreleased(
   cwd: string,
   repoUrl: string | undefined,
+  since?: string | undefined,
 ): Promise<string> {
   const headSha = async (): Promise<string> =>
     (await run('git', ['rev-parse', 'HEAD'], cwd)).stdout.trim()
@@ -121,15 +133,19 @@ export async function accrueUnreleased(
     if (!existsSync(path.join(cwd, 'CHANGELOG.md'))) {
       return await headSha()
     }
-    // The oldest root reachable from HEAD — the last squash's root (or the true
-    // start). Commits after it are the window this squash would otherwise erase.
-    const roots = (
-      await run('git', ['rev-list', '--max-parents=0', 'HEAD'], cwd)
-    ).stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-    const root = roots[roots.length - 1]
+    let root: string | undefined = since
+    if (root === undefined) {
+      // The oldest root reachable from HEAD — the last squash's root (or the
+      // true start). Commits after it are the window this squash would
+      // otherwise erase.
+      const roots = (
+        await run('git', ['rev-list', '--max-parents=0', 'HEAD'], cwd)
+      ).stdout
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+      root = roots[roots.length - 1]
+    }
     if (!root) {
       return await headSha()
     }
@@ -311,6 +327,53 @@ export async function squashSingleCommit(
 }
 
 /**
+ * Runtime (not test-only) proof that a tail squash left the frozen release
+ * boundary untouched: `boundary` must still resolve to ITSELF (a rewrite that
+ * somehow touched it would move the ref/sha it names) AND must still be an
+ * ancestor of the squashed tip. `squashSingleCommit`'s tree-identity gate only
+ * proves the TIP tree is unchanged; it says nothing about whether the
+ * boundary commit survived, so this is a second, independent check. A failure
+ * here is unrecoverable corruption of the one invariant this whole feature
+ * exists to hold — provenance/SHA-pin safety — so it HARD `process.exit(1)`s,
+ * matching the tree-identity gate's own severity.
+ */
+export async function assertBoundaryIntact(
+  worktree: string,
+  boundary: string,
+): Promise<void> {
+  const resolved = (
+    await run('git', ['rev-parse', boundary], worktree, { allowFailure: true })
+  ).stdout.trim()
+  if (resolved !== boundary) {
+    logger.error(
+      `error: frozen release boundary ${boundary} no longer resolves to ` +
+        `itself (got ${resolved || '(nothing)'}) — aborting. The squash must ` +
+        `never touch a published-release commit.`,
+    )
+    process.exit(1)
+  }
+  const isAncestor =
+    (
+      await run(
+        'git',
+        ['merge-base', '--is-ancestor', boundary, 'HEAD'],
+        worktree,
+        {
+          allowFailure: true,
+        },
+      )
+    ).code === 0
+  if (!isAncestor) {
+    logger.error(
+      `error: frozen release boundary ${boundary} is no longer an ancestor ` +
+        `of the squashed tip — aborting. The squash must never orphan a ` +
+        `published-release commit.`,
+    )
+    process.exit(1)
+  }
+}
+
+/**
  * Mint a single root commit whose tree is byte-identical to `tipSha`'s tree,
  * via `git commit-tree` — pure object creation, so neither the index nor the
  * working tree of `cwd` is touched and no worktree is needed. Signs with the
@@ -399,6 +462,61 @@ export function classifySquashMode(
   return cfg.originIsAncestor ? 'local-canonical' : 'diverged'
 }
 
+/**
+ * Refuse (log + return 2) when local and origin have DIVERGED. Shared by
+ * every default-branch dispatch that can land on a two-way divergence:
+ * `squashLocalCanonicalMode`'s own full-root path, AND main()'s tail-mode
+ * dispatch when a freeze boundary is resolved. The boundary path never
+ * reaches `squashLocalCanonicalMode` (a repo with a frozen release routes
+ * straight to `squashTailMode`), so main() must run this check itself before
+ * that dispatch — `squashTailMode`'s `--force-with-lease` only guards against
+ * a RACING push, not against a lease that happens to match origin's current
+ * (diverged) tip while collapsing a local tail that never merged origin's
+ * unique commits.
+ *
+ * Returns `undefined` when it is safe to proceed (no local branch, local ==
+ * origin, or local ahead with origin as an ancestor).
+ */
+export async function refuseIfDiverged(config: {
+  readonly base: string
+  readonly localHead: string
+  readonly origHead: string
+  readonly src: string
+}): Promise<number | undefined> {
+  const cfg = { __proto__: null, ...config } as {
+    base: string
+    localHead: string
+    origHead: string
+    src: string
+  }
+  const { base, localHead, origHead, src } = cfg
+
+  const originIsAncestor =
+    (
+      await run(
+        'git',
+        ['merge-base', '--is-ancestor', origHead, localHead],
+        src,
+        {
+          allowFailure: true,
+        },
+      )
+    ).code === 0
+  if (
+    classifySquashMode({ localHead, origHead, originIsAncestor }) !== 'diverged'
+  ) {
+    return undefined
+  }
+  logger.error(
+    `error: origin/${base} (${origHead.slice(0, 8)}) has commits your ` +
+      `local ${base} lacks — local and origin have DIVERGED. Squashing ` +
+      `now would drop origin's commits. Fix: reconcile forward first — ` +
+      `git -C ${src} merge --no-edit origin/${base} (resolve any ` +
+      `conflicts), then re-run.`,
+  )
+  return 2
+}
+
 export interface RunArgs {
   /**
    * PR base for the feature-branch merge-base (default: resolved default
@@ -455,8 +573,35 @@ export function parseRunArgs(argv: readonly string[]): RunArgs {
   return { __proto__: null, base, branch, message, src } as RunArgs
 }
 
-async function main(): Promise<number> {
-  const args = parseRunArgs(process.argv.slice(2))
+export interface MainConfig {
+  /**
+   * Argv, defaulting to `process.argv.slice(2)`. Injectable so a test can
+   * call `main()` directly in-process instead of only via the CLI/subprocess.
+   */
+  readonly argv?: readonly string[] | undefined
+  /**
+   * Override for `resolveFreezeBoundaryForRepo` — the sole network-touching
+   * step in the dispatch path. A test injects a stub that returns a boundary
+   * derived from a real git fixture, with no network call and no need for a
+   * genuine registry-recognized release, so the divergence-refusal branch
+   * below can be exercised deterministically.
+   */
+  readonly resolveFreeze?: typeof resolveFreezeBoundaryForRepo | undefined
+  /**
+   * Sign the tail-mode collapse commit. Defaults to `squashTailMode`'s own
+   * default (`true`, fleet branch protection); tests pass `false` to run
+   * without a configured signing key, matching every other mode's test seam.
+   */
+  readonly sign?: boolean | undefined
+}
+
+export async function main(options: MainConfig = {}): Promise<number> {
+  const {
+    argv = process.argv.slice(2),
+    resolveFreeze = resolveFreezeBoundaryForRepo,
+    sign,
+  } = options
+  const args = parseRunArgs(argv)
   const { src } = args
   if (!src) {
     logger.error(
@@ -472,6 +617,14 @@ async function main(): Promise<number> {
   } catch {
     logger.error(`error: ${src} is not a git checkout`)
     return 2
+  }
+
+  // Uncommitted work is excluded from EVERY mode's collapse (each mints from a
+  // committed tip), so it must be landed before the rewrite, never after. Runs
+  // ahead of the feature-branch dispatch below so all four modes are covered.
+  const dirtyExit = checkTreeIsClean({ src })
+  if (dirtyExit !== undefined) {
+    return dirtyExit
   }
 
   // Feature-branch mode: an author-agreed squash of ONE feature branch down to
@@ -550,6 +703,54 @@ async function main(): Promise<number> {
     ).stdout.trim()
   } catch {}
   const localMode = localHead !== '' && localHead !== origHead
+  const tip = localMode ? localHead : origHead
+
+  // Freeze-boundary resolution — a published release no longer refuses the
+  // squash outright; it sets the boundary the squash collapses ABOVE. Runs
+  // against `tip` (the canonical branch commit about to be squashed, whether
+  // that's origin's tip or local's), never a stale HEAD.
+  const freeze = await resolveFreeze({ src, tip })
+  if (freeze.refuseMessage !== undefined) {
+    logger.error(`error: ${freeze.refuseMessage}`)
+    return 2
+  }
+  if (freeze.boundary !== undefined) {
+    // Re-architects BOTH the local-canonical and origin-worktree dispatch: a
+    // repo with a frozen release NEVER reaches squashLocalCanonicalMode's
+    // mintSquashRoot (no-parent root mint) or squashWorktreeMode's full-root
+    // reset — both would rewrite the released commits below the boundary.
+    // squashTailMode's own worktree + `-p <boundary>` parent covers the
+    // "local ahead" case too (its `tip` param is local's sha here), so no
+    // separate local-canonical tail path is needed.
+    //
+    // squashLocalCanonicalMode's own divergence refusal is bypassed entirely
+    // by this dispatch — this is the ONLY place a local-ahead repo with a
+    // frozen release passes through, so the check must run HERE, not rely on
+    // a mode this dispatch never reaches.
+    if (localMode) {
+      const diverged = await refuseIfDiverged({
+        base,
+        localHead,
+        origHead,
+        src,
+      })
+      if (diverged !== undefined) {
+        return diverged
+      }
+    }
+    return await squashTailMode({
+      base,
+      boundary: freeze.boundary,
+      leaseAgainst: origHead,
+      remoteUrl,
+      repoName,
+      sign,
+      src,
+      tip,
+      worktree,
+    })
+  }
+
   if (localMode) {
     return await squashLocalCanonicalMode({
       base,

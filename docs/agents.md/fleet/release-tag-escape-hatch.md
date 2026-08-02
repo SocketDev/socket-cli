@@ -45,7 +45,7 @@ the tag object; the commit is behind `^{commit}` (or `%(*objectname)`).
 This is not a nitpick — it is the single easiest way to misread the escape
 hatch. socket-mcp `0.0.19` reads as
 
-```
+```text
 0.0.19  -> 3911625cf   # the ANNOTATED TAG OBJECT
 v0.0.19 -> 145df6e59   # a lightweight tag, already a commit
 ```
@@ -60,7 +60,7 @@ pairs). Read unpeeled, they all look like divergence.
 
 ## Resolving which tag is authoritative
 
-```
+```text
 https://registry.npmjs.org/-/npm/v1/attestations/<scope>%2f<name>@<version>
 ```
 

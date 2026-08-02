@@ -72,6 +72,13 @@ export function classifyMarkdownPath(absPath: string): Verdict {
     return { ok: true }
   }
 
+  // A markdown file under a test `fixtures/` dir is INPUT to a test, not a doc
+  // — its name describes the case it exercises, and forcing it under docs/ or
+  // .claude/ would separate it from the test that reads it.
+  if (/\/(?:__fixtures__|fixtures)\//.test(payloadNorm)) {
+    return { ok: true }
+  }
+
   // Anything under a `.claude/` segment is off-limits to doc-filename
   // rules: that tree is owned by Claude Code (auto-memory, skills,
   // hooks, settings) and each tool inside picks its own filename

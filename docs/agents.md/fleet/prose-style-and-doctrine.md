@@ -114,6 +114,22 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 - **Use `<details>` only when GitHub prose has supporting evidence, alternatives,
   migration notes, or a multi-item plan.** Keep the decision outside the fold and
   use a specific summary. A one-line or 1-3 sentence reply stays flat.
+- **Four rules govern the inside of a fold** — `scripts/fleet/_shared/pr-body-law.mts`
+  states them as data (`PR_BODY_LAW`, `PR_BODY_LAW_PROMPT`) and `prBodySmells()`
+  reports the shapes advisorily:
+  - **The summary carries the claim.** Short bold noun phrase, em dash, specific
+    finding, so the reader decides whether to expand without expanding.
+    `What changed` fails; `The change — one home per case, plus the vars that
+    outrank it` passes.
+  - **Open with the takeaway, then support it.** Lead-with-the-point, one level
+    down. A fold opening on a list or a code fence leaves the reader to assemble
+    the point.
+  - **Enumerable facts are a table.** Three or more parallel items with a shared
+    shape get two columns (`variable | what leaks without it`); each row then has
+    room for its own caveat. Seven of them in a paragraph is unreadable.
+  - **Status sections use labeled lines.** **Ran** / **Did not run** /
+    **Trade-off** / **CI is unaffected**, so a reviewer asking only "did they
+    actually test this" finds it instantly.
 - **Verify before claiming.** Subagent output counts and file lists are leads, not
   facts — grep/read before relaying.
 - **Finish the task; capture side-quests.** Don't chase tangents — note them and
@@ -131,6 +147,7 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 | `changelog-entry-shape-nudge` | Nudges a `CHANGELOG.md` entry bullet that links no detail into a `docs/agents.md/` topic doc |
 | `no-description-aside-guard` | Blocks a package manifest `description` field ending in a listy parenthetical aside |
 | `prose-code-format-nudge` | Nudges a bare software identifier in prose (e.g. `rustls`) that should be a code span |
+| `scripts/fleet/_shared/pr-body-law.mts` | The four in-fold rules as importable data, plus `prBodySmells()` — advisory, deliberately unwired from any gate until it is proven false-positive-free on real bodies |
 | `prose` skill | Applies both modes when drafting/editing any human-facing text |
 | `.claude/rules/fleet/prose-style-and-doctrine.md` | Compact reference for the skill + rule docs |
 

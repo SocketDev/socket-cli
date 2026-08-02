@@ -48,12 +48,14 @@ export const SOCKET_PACKAGE_PATTERNS: readonly string[] = [
   '@ultrathink/*',
   // Unscoped Socket packages — named exactly, never a prefix glob (`socket-*`
   // would bypass the soak for any attacker-published `socket-…` name). `socket`
-  // is the live CLI; `sfw` is Socket Firewall; `sdxgen` + `stuie` are the
-  // unscoped Socket-owned names. (`socket-cli` is renamed to @socketsecurity/*.)
+  // is the live CLI; `sfw` is Socket Firewall; `sdxgen` is the unscoped
+  // Socket-owned name. The `stuie` project ships ONLY under the `@stuie/*`
+  // scope above — npm refuses the bare `stuie` name as too similar to existing
+  // packages, so it is never published or checked unscoped.
+  // (`socket-cli` is renamed to @socketsecurity/*.)
   'sdxgen',
   'sfw',
   'socket',
-  'stuie',
 ]
 
 /**

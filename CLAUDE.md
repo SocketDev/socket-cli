@@ -19,7 +19,7 @@
 - 🚨 Run human-facing prose through the `prose` skill before it lands. (`.claude/hooks/fleet/anti-prose-guard/`) [`prose-style-and-doctrine`](docs/agents.md/fleet/prose-style-and-doctrine.md)
 - PR review comments use the fleet comment format — severity-sorted `<details>` `<abbr>` circles, `Fix idea 💡:` labels, junior-dev sentences, dup-PR scan. [`pr-review-comments`](docs/agents.md/fleet/pr-review-comments.md)
 - Some fleet repos squash the default branch on a cadence — commits are ephemeral, so land fast and don't fuss. [`history-rewrites`](docs/agents.md/fleet/history-rewrites.md)
-- 🚨 The `squash-history` opt-in tracks the release boundary — a member MUST drop it at its first npm/crates release, because a squash orphans every commit its provenance and SHA-pinning consumers resolve. [`squash-until-release`](docs/agents.md/fleet/squash-until-release.md)
+- 🚨 The `squash-history` opt-in tracks the release boundary — a member's first npm/crates release FREEZES history through that commit and the opt-in stays, squashing only the unreleased tail above it. [`squash-until-release`](docs/agents.md/fleet/squash-until-release.md)
 - 🚨 `fleet-main-protection` blocks force-push on every default branch — take the temporary self-exemption via `scripts/fleet/grant-main-bypass.mts`, never a hand-run `gh api`. [`history-rewrites`](docs/agents.md/fleet/history-rewrites.md)
 - 🚨 Bump order: (0) the USER names X.Y.Z, NEVER the agent (`--dry-run` fine); (1) pre-bump wave. [`version-bumps`](docs/agents.md/fleet/version-bumps.md)
 - 🚨 NEVER open a pull request to land a version bump — the bump commit goes DIRECTLY on the default branch via the release App. (`.claude/hooks/fleet/no-version-bump-pr-guard/`) [`version-bumps`](docs/agents.md/fleet/version-bumps.md)
@@ -112,6 +112,7 @@
 - Fleet/repo segmentation on every surface: hooks `{fleet,repo}/<name>/`, actions `.github/actions/{fleet,repo}/<name>/`; a `-guard` BLOCKS, a `-nudge` NUDGES. [`hook-registry`](docs/agents.md/fleet/hook-registry.md)
 - 🚨 npm-run-all2 is REMOVED; order-independent script groups use pnpm's regexp form (`pnpm run "/^lint:/"`). [`script-aggregation`](docs/agents.md/fleet/script-aggregation.md) <!-- enforcement: off-machine — wheelhouse sync-scaffolding package-scripts check -->
 - Stale GitHub Actions run history is pruned weekly by `scripts/fleet/prune-workflow-runs.mts`; never mass-delete by hand. [`workflow-run-retention`](docs/agents.md/fleet/workflow-run-retention.md)
+- 🚨 Actions cache over 10 GB silently LRU-evicts itself (green CI, cold rebuilds) — `scripts/fleet/prune-actions-caches.mts` holds it under 8 GB weekly. [`workflow-run-retention`](docs/agents.md/fleet/workflow-run-retention.md)
 - A written mermaid fence gets rewritten GitHub-safe at edit time (right-edge control-cluster clearance, margin floors); the fixer is `scripts/repo/gen/mermaid-github-safe.mts`. [`hook-registry`](docs/agents.md/fleet/hook-registry.md)
 
 <!-- </fleet> -->

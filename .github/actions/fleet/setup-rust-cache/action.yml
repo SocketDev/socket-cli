@@ -1,0 +1,143 @@
+# Fleet-canonical composite: edit HERE in template/base and cascade. Promoted
+# from socket-registry's repo-owned copy so the fleet has one home for it.
+#
+# Socket-original, and it must stay that way. The third-party action it spares
+# consumers from allowlisting, Swatinem/rust-cache, is LGPL-3.0 and is listed
+# in COPYLEFT_UPSTREAMS as run-and-observe-only: reading its implementation
+# would make this a derivative work and pull that license onto every repo the
+# composite cascades into. Evolve the key strategy below against
+# actions/cache's own docs and against what this action does in CI — never by
+# reading that source.
+#
+# Take care when changing the key: a wrong key is a silent cache MISS, which
+# reads as "CI got slower" rather than as a failure.
+
+name: 'Setup Rust Cache'
+description: |
+  Cache the cargo registry, git index, and one or more target/ directories
+  via actions/cache@v5. Replaces the third-party `Swatinem/rust-cache`
+  action so the consumer's GH Actions allowlist doesn't need
+  `Swatinem/rust-cache@*` — the cache layer goes through `actions/cache`
+  which is already on the canonical allowlist.
+
+  The cache key is computed from:
+    - prefix-key (caller-supplied, distinguishes matrix slots)
+    - the runner OS
+    - the rustc version (so toolchain upgrades invalidate the cache)
+    - the hash of each workspace's Cargo.lock
+
+  Caches are saved at job-end via actions/cache@v5's post-step (always
+  runs on success, gated by `save-if`).
+
+inputs:
+  workspaces:
+    description: |
+      Newline-or-space-separated list of cargo workspace paths.
+      Each entry can be:
+        "path"                       — caches path/target
+        "path -> target-dir"         — explicit target dir relative to workspace
+      Examples:
+        "packages/iocraft-builder"                     (caches packages/iocraft-builder/target)
+        "packages/foo -> target/release/build-cache"   (explicit target dir)
+    required: true
+  prefix-key:
+    description: |
+      Caller-supplied cache key prefix. Combined with OS + rustc version
+      to form the final key. Typically includes matrix axes
+      (e.g. "iocraft-${{ matrix.os }}-${{ matrix.arch }}").
+    required: false
+    default: 'rust'
+  save-if:
+    description: |
+      Conditional expression: when "true" (the default) save the cache
+      at job-end; when "false" only restore, don't save. Useful for
+      matrix slots that only consume.
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve rustc version for cache key
+      id: rustc-version
+      shell: bash
+      run: |
+        set -euo pipefail
+        # rustc -V => "rustc 1.89.0 (29483883e 2025-08-04)" — strip to
+        # the version + commit hash so toolchain bumps invalidate the
+        # cache.
+        if ! command -v rustc >/dev/null 2>&1; then
+          echo "× rustc not on PATH — call setup-rust-toolchain before setup-rust-cache." >&2
+          exit 1
+        fi
+        VERSION="$(rustc -V | awk '{print $2"-"$3}' | tr -d '()')"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "rustc version: $VERSION"
+
+    - name: Compose target-dir list + cache key
+      id: paths
+      shell: bash
+      env:
+        WORKSPACES: ${{ inputs.workspaces }}
+        PREFIX_KEY: ${{ inputs.prefix-key }}
+        RUSTC_VERSION: ${{ steps.rustc-version.outputs.version }}
+      run: |
+        set -euo pipefail
+
+        # Compose the list of paths to cache. Always include the
+        # global cargo registry + git index — those are workspace-
+        # independent. Then add each workspace's target dir.
+        CACHE_PATHS=()
+        CACHE_PATHS+=("$HOME/.cargo/registry")
+        CACHE_PATHS+=("$HOME/.cargo/git")
+
+        LOCKFILE_HASHES=""
+        while IFS= read -r line; do
+          # Tolerate space- or newline-separated entries.
+          line="$(echo "$line" | tr -s ' ' '\n')"
+          while IFS= read -r entry; do
+            [ -z "$entry" ] && continue
+            # Entry shape: "path" or "path -> target-dir".
+            if echo "$entry" | grep -q '\->'; then
+              WORKSPACE_PATH="$(echo "$entry" | awk -F '->' '{print $1}' | xargs)"
+              TARGET_DIR="$(echo "$entry" | awk -F '->' '{print $2}' | xargs)"
+              CACHE_PATHS+=("$WORKSPACE_PATH/$TARGET_DIR")
+            else
+              WORKSPACE_PATH="$(echo "$entry" | xargs)"
+              CACHE_PATHS+=("$WORKSPACE_PATH/target")
+            fi
+            # Mix the workspace's Cargo.lock into the key when present.
+            if [ -f "$WORKSPACE_PATH/Cargo.lock" ]; then
+              LOCK_HASH="$(sha256sum "$WORKSPACE_PATH/Cargo.lock" | awk '{print $1}')"
+              LOCKFILE_HASHES="${LOCKFILE_HASHES}${LOCK_HASH:0:12}-"
+            fi
+          done <<<"$line"
+        done <<<"$WORKSPACES"
+
+        # Emit one path per line — actions/cache@v5 accepts that shape.
+        {
+          echo "paths<<EOF"
+          for p in "${CACHE_PATHS[@]}"; do
+            echo "$p"
+          done
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        # Final cache key combines prefix + os + rustc + lockfile hashes.
+        # Trim trailing dash from LOCKFILE_HASHES for cleanliness.
+        LOCKFILE_HASHES="${LOCKFILE_HASHES%-}"
+        KEY="${PREFIX_KEY}-${RUNNER_OS}-rust-${RUSTC_VERSION}-${LOCKFILE_HASHES:-no-lock}"
+        echo "key=$KEY" >> "$GITHUB_OUTPUT"
+        # Restore key drops the lockfile-hash trailing chunk so a
+        # rebuild on a fresh Cargo.lock can still warm from the
+        # most-recent same-toolchain cache.
+        echo "restore-key=${PREFIX_KEY}-${RUNNER_OS}-rust-${RUSTC_VERSION}-" >> "$GITHUB_OUTPUT"
+        echo "Cache key: $KEY"
+
+    - name: Restore / save cargo + target cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+      with:
+        path: ${{ steps.paths.outputs.paths }}
+        key: ${{ steps.paths.outputs.key }}
+        restore-keys: ${{ steps.paths.outputs.restore-key }}
+        save-always: ${{ inputs.save-if }}

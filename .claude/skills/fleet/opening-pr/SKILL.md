@@ -47,6 +47,16 @@ narration, evidence, the test/command that proves it. Public-surface hygiene: no
 real customer/company name, no private repo, no Linear ref, no bare `#N` (use
 `org/repo#N` or the full URL); link the issue with a closing keyword.
 
+Every `<details>` fold obeys the PR-body law
+([`pr-body-law.mts`](../../../../scripts/fleet/_shared/pr-body-law.mts), whose
+`PR_BODY_LAW_PROMPT` carries the four rules verbatim for a subagent prompt):
+the `<summary>` carries the claim (bold noun phrase, em dash, specific finding —
+never `What changed`), the fold opens with its takeaway and supports it after,
+three or more parallel items become a table rather than a bullet run or a
+paragraph, and a status section uses labeled lines (**Ran** / **Did not run** /
+**Trade-off** / **CI is unaffected**). `prBodySmells(body)` reads a draft body
+and names the folds that miss — advisory, not a gate.
+
 ## 5. Open it
 
 Commit on a branch — a worktree if the primary checkout has other sessions — push,

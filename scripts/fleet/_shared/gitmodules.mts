@@ -19,6 +19,9 @@ export interface GitmodulesEntry {
   url: string | undefined
   // `branch =` value, single-branch tracking ref, else undefined.
   branch: string | undefined
+  // `ref =` value, the pinned commit SHA, else undefined. For an upstream with
+  // no usable release tag this SHA — not `branch` — is the real pin.
+  ref: string | undefined
   // True when the block declares `shallow = true`.
   shallow: boolean
   // Non-empty `sparse-checkout =` value, else undefined.
@@ -70,6 +73,7 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
     }
     // Scan the block body (up to the next `[` section) for the config fields.
     let branch: string | undefined
+    let ref: string | undefined
     let entryPath: string | undefined
     let shallow = false
     let sparse: string | undefined
@@ -88,6 +92,9 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
       }
       const key = kv[1]!
       const value = kv[2]!
+      if (key === 'ref' && value) {
+        ref = value
+      }
       if (key === 'branch' && value) {
         branch = value
       } else if (key === 'path') {
@@ -108,6 +115,7 @@ export function parseGitmodules(text: string): GitmodulesEntry[] {
       path: entryPath,
       url,
       branch,
+      ref,
       shallow,
       sparse,
       hasSparse: sparse !== undefined,

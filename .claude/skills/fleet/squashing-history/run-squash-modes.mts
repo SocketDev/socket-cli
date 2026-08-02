@@ -1,11 +1,15 @@
 /*
- * Squashing-history runner — the two top-level squash-mode implementations.
+ * Squashing-history runner — the top-level squash-mode implementations.
  *
  * `squashLocalCanonicalMode` collapses local main's own tree when local is
- * ahead of origin; `squashWorktreeMode` runs the standard worktree-based
- * squash (Phases 2-8 in run.mts's header table) when local and origin already
- * agree. Split out of run.mts to keep main()'s body to a thin dispatch —
- * resolve which mode applies, hand off, return the exit code.
+ * ahead of origin AND there is no published-release freeze boundary;
+ * `squashWorktreeMode` runs the standard worktree-based full-root squash
+ * (Phases 2-8 in run.mts's header table) when local and origin already agree
+ * and there is no boundary; `squashTailMode` runs whenever a boundary EXISTS
+ * (either dispatch shape — local-ahead or origin-agrees), collapsing only the
+ * unreleased tail above the frozen release. Split out of run.mts to keep
+ * main()'s body to a thin dispatch — resolve which mode applies, hand off,
+ * return the exit code.
  */
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
@@ -14,9 +18,11 @@ import { header, run } from '../_shared/scripts/run-helpers.mts'
 import { checkNotShallowClone } from './run-guards.mts'
 import {
   accrueUnreleased,
+  assertBoundaryIntact,
   backupBranchForCommit,
   classifySquashMode,
   mintSquashRoot,
+  refuseIfDiverged,
   squashSingleCommit,
 } from './run.mts'
 
@@ -47,33 +53,14 @@ export async function squashLocalCanonicalMode(config: {
   const { base, origHead, remoteUrl, repoName, src } = cfg
   let { localHead } = cfg
 
-  const originIsAncestor =
-    (
-      await run(
-        'git',
-        ['merge-base', '--is-ancestor', origHead, localHead],
-        src,
-        {
-          allowFailure: true,
-        },
-      )
-    ).code === 0
-  if (
-    classifySquashMode({ localHead, origHead, originIsAncestor }) === 'diverged'
-  ) {
-    // Diverged: origin holds commits the local branch lacks. Local is
-    // canonical, but a blind squash mints the root from the local tree and
-    // force-pushes — dropping origin's commits (they would survive only in a
-    // backup ref, never on the branch). Refuse loudly; the caller must
-    // reconcile FORWARD, fold origin's commits into local, then re-run.
-    logger.error(
-      `error: origin/${base} (${origHead.slice(0, 8)}) has commits your ` +
-        `local ${base} lacks — local and origin have DIVERGED. Squashing ` +
-        `now would drop origin's commits. Fix: reconcile forward first — ` +
-        `git -C ${src} merge --no-edit origin/${base} (resolve any ` +
-        `conflicts), then re-run.`,
-    )
-    return 2
+  // Diverged: origin holds commits the local branch lacks. Local is
+  // canonical, but a blind squash mints the root from the local tree and
+  // force-pushes — dropping origin's commits (they would survive only in a
+  // backup ref, never on the branch). Refuse loudly; the caller must
+  // reconcile FORWARD, fold origin's commits into local, then re-run.
+  const diverged = await refuseIfDiverged({ base, localHead, origHead, src })
+  if (diverged !== undefined) {
+    return diverged
   }
   const localCount = (await run('git', ['rev-list', '--count', localHead], src))
     .stdout
@@ -251,6 +238,153 @@ export async function squashWorktreeMode(config: {
   logger.success(`${repoName} squashed`)
   logger.substep(`new ${base}:   ${newHead}`)
   logger.substep(`backup ref: refs/heads/${backup} -> ${origHead}`)
+  logger.substep(
+    `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
+  )
+  return 0
+}
+
+/**
+ * Collapse ONLY the unreleased tail above a frozen published-release boundary
+ * — every commit from the repo root through `boundary` stays byte-identical
+ * (the published release's SHA, so its provenance / SHA pins / tags keep
+ * resolving); `boundary..tip` collapses to one FRESH signed commit
+ * (`amend: false` — the boundary itself is a published release commit and
+ * must never be rewritten).
+ *
+ * Runs in its OWN worktree checked out at `tip` (never a reset in `src`), so
+ * this covers BOTH default-branch dispatch shapes: `tip` is origin's tip when
+ * local matches origin, or local's tip when local is ahead — a `-p <boundary>`
+ * parent plus a `reset --soft` that mutates an index needs a worktree either
+ * way, unlike the local-canonical full-root path's parent-less `commit-tree`
+ * mint. This is why a repo with a resolved boundary never reaches
+ * `squashLocalCanonicalMode` or `squashWorktreeMode` — both rewrite the ROOT,
+ * which would orphan the released commits below the boundary.
+ */
+export async function squashTailMode(config: {
+  readonly base: string
+  readonly boundary: string
+  readonly leaseAgainst: string
+  readonly remoteUrl: string | undefined
+  readonly repoName: string
+  /**
+   * Sign the collapsed commit and assert the signature verifies. Defaults to
+   * `true` (fleet branch protection mandates `required_signatures`); tests
+   * pass `false` to run without a configured signing key.
+   */
+  readonly sign?: boolean | undefined
+  readonly src: string
+  readonly tip: string
+  readonly worktree: string
+}): Promise<number> {
+  const cfg = { __proto__: null, ...config } as {
+    base: string
+    boundary: string
+    leaseAgainst: string
+    remoteUrl: string | undefined
+    repoName: string
+    sign?: boolean | undefined
+    src: string
+    tip: string
+    worktree: string
+  }
+  const {
+    base,
+    boundary,
+    leaseAgainst,
+    remoteUrl,
+    repoName,
+    src,
+    tip,
+    worktree,
+  } = cfg
+  const sign = cfg.sign ?? true
+  const squashBranch = 'chore/squash-tail'
+
+  // No-op early return: count boundary..tip (like the feature-branch mode's
+  // aheadCount), never the total commit count — a frozen repo's total count is
+  // never 1, so that check would never no-op.
+  const aheadCount = (
+    await run('git', ['rev-list', '--count', `${boundary}..${tip}`], src)
+  ).stdout
+  header(
+    `${base} tail`,
+    `${tip} (${aheadCount} commits past frozen release ${boundary.slice(0, 8)})`,
+  )
+  if (aheadCount === '0' || aheadCount === '1') {
+    logger.info(
+      `${base} is already squashed past the frozen release — nothing to collapse`,
+    )
+    return 0
+  }
+
+  // Worktree off the TIP being collapsed — never a reset in src.
+  await run('git', ['worktree', 'remove', '--force', worktree], src, {
+    allowFailure: true,
+  })
+  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
+  await run('git', ['worktree', 'add', '-b', squashBranch, worktree, tip], src)
+
+  // Remote backup ref of the pre-squash tip, BEFORE any rewrite.
+  const backup = await backupBranchForCommit(src, tip)
+  logger.substep(`pushing remote backup ref: refs/heads/${backup} -> ${tip}`)
+  await run(
+    'git',
+    ['push', '--no-verify', 'origin', `${tip}:refs/heads/${backup}`],
+    worktree,
+  )
+
+  // Accrue [Unreleased] since the FROZEN BOUNDARY, never the repo root — the
+  // released commits below it are already under their own version heading in
+  // CHANGELOG.md and must never re-accrue into [Unreleased] every cadence.
+  const accruedTip = await accrueUnreleased(worktree, remoteUrl, boundary)
+
+  // Squash + integrity (shared engine; HARD exit on a tree mismatch). A FRESH
+  // commit on the boundary (amend:false) — the boundary is the published
+  // release commit and must never be rewritten.
+  const { newHead } = await squashSingleCommit({
+    amend: false,
+    message: 'chore: squash unreleased history',
+    origHead: accruedTip,
+    resetTo: boundary,
+    sign,
+    worktree,
+  })
+  logger.success(
+    `squashed ${aheadCount} unreleased commits → 1 commit (${newHead})`,
+  )
+  logger.success('integrity: post-squash tail tree == pre-squash tail tree')
+
+  // Runtime boundary assertion — the released commit below the tail must
+  // stay byte-identical and reachable; this is the whole point of tail mode.
+  await assertBoundaryIntact(worktree, boundary)
+
+  // Force-push, lease guards against a racing push.
+  logger.substep(`force-pushing to ${base}...`)
+  await run(
+    'git',
+    [
+      'push',
+      '--no-verify',
+      `--force-with-lease=${base}:${leaseAgainst}`,
+      'origin',
+      `HEAD:${base}`,
+    ],
+    worktree,
+    { env: { SQUASH_HISTORY: '1' } },
+  )
+
+  // Cleanup — remove the worktree and its branch from src.
+  await run('git', ['worktree', 'remove', '--force', worktree], src)
+  await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
+
+  logger.log('')
+  logger.success(
+    `${repoName} squashed (tail mode — frozen release ${boundary.slice(0, 8)} kept intact)`,
+  )
+  logger.substep(`new ${base}:      ${newHead}`)
+  logger.substep(`frozen boundary: ${boundary}`)
+  logger.substep(`backup ref: refs/heads/${backup} -> ${tip}`)
   logger.substep(
     `recover:    git fetch origin ${backup} && git push --force origin FETCH_HEAD:${base}`,
   )

@@ -29,21 +29,26 @@ on:
 
 engine:
   id: claude
-  # Dated snapshot id ON PURPOSE — do not "simplify" back to the bare alias.
-  # Anthropic's live /v1/models lists Haiku 4.5 only in dated form, so the bare
-  # `claude-haiku-4-5` never direct-matches in the AWF api-proxy model resolver
-  # and every request falls through to token steering's middle-power MEDIAN of
-  # the live model list. That median silently served claude-opus-4-8 for weeks,
-  # then broke fleet-wide on 2026-07-25 when Anthropic added claude-opus-5 to
-  # the live list: the median shifted onto an id absent from AWF's frozen
-  # ai-credits pricing table and, with max-ai-credits set and no default
-  # pricing, every first model request 400'd (unknown_model_ai_credits). The
-  # dated id direct-matches, prices at haiku rates ($1/$5 per Mtok) in the AWF
-  # table, and keeps this workflow on the tier the routing doctrine assigns
-  # (haiku = mechanical). It is also registered in
-  # scripts/fleet/constants/model-pricing.json via update-model-pricing.mts so
-  # the gh-aw-workflow-models-are-canonical gate recognizes it.
-  model: claude-haiku-4-5-20251001
+
+# Top-level, not `engine.model` — gh-aw deprecated the nested key in v0.83.x and
+# the compiler warns on every build until it moves. The pin itself is unchanged;
+# only the key location moved.
+#
+# Dated snapshot id ON PURPOSE — do not "simplify" back to the bare alias.
+# Anthropic's live /v1/models lists Haiku 4.5 only in dated form, so the bare
+# `claude-haiku-4-5` never direct-matches in the AWF api-proxy model resolver
+# and every request falls through to token steering's middle-power MEDIAN of
+# the live model list. That median silently served claude-opus-4-8 for weeks,
+# then broke fleet-wide on 2026-07-25 when Anthropic added claude-opus-5 to
+# the live list: the median shifted onto an id absent from AWF's frozen
+# ai-credits pricing table and, with max-ai-credits set and no default
+# pricing, every first model request 400'd (unknown_model_ai_credits). The
+# dated id direct-matches, prices at haiku rates ($1/$5 per Mtok) in the AWF
+# table, and keeps this workflow on the tier the routing doctrine assigns
+# (haiku = mechanical). It is also registered in
+# scripts/fleet/constants/model-pricing.json via update-model-pricing.mts so
+# the gh-aw-workflow-models-are-canonical gate recognizes it.
+model: claude-haiku-4-5-20251001
 
 permissions:
   contents: read

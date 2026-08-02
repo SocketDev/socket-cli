@@ -19,6 +19,7 @@
 // prefer-async-spawn: sync-required — sequential CLI gates, exit-code
 // aggregation.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -62,6 +63,76 @@ export function buildCargoClippyArgs(
   ]
 }
 
+/**
+ * The channel pinned for a workspace, or undefined when nothing pins it.
+ *
+ * Walks UP from the workspace to `stopDir` (the repo root), because that is
+ * exactly how cargo and rustup resolve `rust-toolchain.toml` — nearest wins,
+ * and a repo-root pin covers every workspace that does not ship its own. A
+ * lookup that only checked the workspace directory would report a repo whose
+ * root pin IS being honored as unpinned, which is a scarier message than the
+ * truth and would push someone to copy the pin file into every workspace.
+ */
+export function readPinnedChannel(
+  manifestDir: string,
+  stopDir?: string | undefined,
+): string | undefined {
+  const root = path.resolve(stopDir ?? REPO_ROOT)
+  let dir = path.resolve(manifestDir)
+  // Bound the walk: stop after the repo root, and never loop at the fs root.
+  for (;;) {
+    const file = path.join(dir, 'rust-toolchain.toml')
+    if (existsSync(file)) {
+      const match = /^\s*channel\s*=\s*["']([^"']+)["']/m.exec(
+        readFileSync(file, 'utf8'),
+      )
+      if (match) {
+        return match[1]
+      }
+    }
+    if (dir === root) {
+      return undefined
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) {
+      return undefined
+    }
+    dir = parent
+  }
+}
+
+/**
+ * Spawn args that pin clippy to the toolchain the repo declares.
+ *
+ * A bare `cargo clippy` is NOT pinned. `cargo` resolves the `clippy`
+ * subcommand by searching PATH for `cargo-clippy`, so whichever one comes
+ * first wins — a Homebrew install shadows rustup's, and the pin is silently
+ * ignored. That produced a gate that passed locally on a stable clippy while
+ * CI failed on the pinned nightly's newer lints, TWICE in one session
+ * (`useless_borrows_in_formatting`, `question_mark`), because the local run
+ * was not linting with the compiler the repo declares.
+ *
+ * `rustup run <channel>` resolves cargo AND its cargo-clippy from that
+ * toolchain's own bin dir, so PATH order cannot decide which linter runs.
+ * Falls back to bare `cargo` when rustup or the pin is missing, and says so —
+ * an unpinned lint is a weaker gate and must never look like the pinned one.
+ */
+export function buildPinnedSpawn(
+  manifestDir: string,
+  cargoArgs: readonly string[],
+  stopDir?: string | undefined,
+): { args: string[]; command: string; pinned: boolean } {
+  const channel = readPinnedChannel(manifestDir, stopDir)
+  if (!channel) {
+    return { args: [...cargoArgs], command: 'cargo', pinned: false }
+  }
+  return {
+    args: ['run', channel, 'cargo', ...cargoArgs],
+    command: 'rustup',
+    pinned: true,
+  }
+}
+
 function main(): void {
   const repoRoot = REPO_ROOT
   const manifests = findWorkspaceManifests(repoRoot)
@@ -72,10 +143,17 @@ function main(): void {
   let failed = false
   for (let i = 0, { length } = manifests; i < length; i += 1) {
     const manifest = manifests[i]!
-    logger.info(
-      `lint-rust: cargo clippy --workspace (${path.relative(repoRoot, manifest)})`,
+    const manifestDir = path.dirname(manifest)
+    const spawnPlan = buildPinnedSpawn(
+      manifestDir,
+      buildCargoClippyArgs(manifest, { fix }),
     )
-    const result = spawnSync('cargo', buildCargoClippyArgs(manifest, { fix }), {
+    logger.info(
+      `lint-rust: cargo clippy --workspace (${path.relative(repoRoot, manifest)})${
+        spawnPlan.pinned ? '' : ' [UNPINNED — no rust-toolchain.toml channel]'
+      }`,
+    )
+    const result = spawnSync(spawnPlan.command, spawnPlan.args, {
       // Cargo/rustup discover rust-toolchain.toml and .cargo/config.toml from
       // cwd, not from --manifest-path. Run at the workspace so a nested pin or
       // target config is honored consistently.

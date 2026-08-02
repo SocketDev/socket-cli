@@ -44,7 +44,7 @@ export function pickConfig(
 // Resolve the oxfmt `--ignore-path`. The fleet canonical
 // `.config/fleet/.prettierignore` excludes `.claude/`, the `.agents/` mirror,
 // `**/fleet/**` — the patterns every repo shares.
-// A repo with its OWN verbatim trees (e.g. socket-btm's
+// A repo with its OWN verbatim trees (e.g. node-smol's
 // `additions/source-patched/` synced into the Node build, or `test/fixtures/`
 // corpora) declares them in a repo overlay at `.config/repo/.prettierignore`.
 // oxfmt takes a single `--ignore-path` and does NOT honor the flag twice, so

@@ -239,7 +239,9 @@ function parseCli(args: string[]): CliConfig {
   return { crate, json, version }
 }
 
-async function crateReleaseInfo(config: CliConfig): Promise<CrateReleaseInfo> {
+export async function crateReleaseInfo(
+  config: CliConfig,
+): Promise<CrateReleaseInfo> {
   const cfg = { __proto__: null, ...config } as CliConfig
   const name = encodeURIComponent(cfg.crate)
   let version = cfg.version
@@ -262,6 +264,24 @@ async function crateReleaseInfo(config: CliConfig): Promise<CrateReleaseInfo> {
     crate: cfg.crate,
     version,
     ...cargoVcsInfoFromTar(gunzipSync(archive)),
+  }
+}
+
+/**
+ * Fail-open twin of `crateReleaseInfo` for the squash-freeze-boundary anchor
+ * lookup: `undefined` on ANY failure (unpublished crate, network error, a
+ * malformed archive) rather than throwing. A crates.io read error must never
+ * block a legit squash — the caller (`resolveFreezeBoundary`) only fails loud
+ * when the registry has ALREADY confirmed a real release exists and no anchor
+ * resolved for it, never when the lookup itself could not run.
+ */
+export async function resolveCrateReleaseSha(
+  crate: string,
+): Promise<CrateReleaseInfo | undefined> {
+  try {
+    return await crateReleaseInfo({ crate, json: true })
+  } catch {
+    return undefined
   }
 }
 

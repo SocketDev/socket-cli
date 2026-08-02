@@ -67,7 +67,10 @@ on:
 
 engine:
   id: claude
-  model: claude-sonnet-4-6
+
+# Top-level, not `engine.model` — gh-aw deprecated the nested key in v0.83.x and
+# the compiler warns on every build until it moves.
+model: claude-sonnet-4-6
 
 permissions:
   contents: read

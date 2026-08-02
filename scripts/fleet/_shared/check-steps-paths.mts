@@ -293,7 +293,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Lock-step reference hygiene. Opt-in gate that exits clean when the
     // repo-owned .config/repo/lock-step-refs.json (legacy top-level
     // .config/lock-step-refs.json) is absent; for repos that ship
-    // cross-language ports (acorn quadruplet, socket-btm mcp/*.cpp),
+    // cross-language ports (the acorn quadruplet, a repo's mcp/*.cpp),
     // it validates every `Lock-step with <Lang>: <path>` comment resolves
     // to an existing file. Forms documented in
     // docs/agents.md/fleet/parser-comments.md §5–6.

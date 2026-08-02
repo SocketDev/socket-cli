@@ -1,20 +1,24 @@
 #!/usr/bin/env node
 /*
- * @file Release/CI gate: the `squash-history` opt-in tracks the release
- *   boundary in BOTH directions. A fleet member that has never shipped a
- *   published artifact keeps a collapsible single-commit history, so it carries
- *   `optIns: ["squash-history"]` in the cascade roster; the moment it has a
- *   published release that opt-in must come OFF, because a squash rewrites
- *   every SHA a published artifact's provenance — and anyone who pinned a
- *   commit — points at.
+ * @file Release/CI gate: the `squash-history` opt-in FREEZES at a member's
+ *   first published release rather than coming off. A fleet member that has
+ *   never shipped a published artifact keeps a fully collapsible
+ *   single-commit history, so it carries `optIns: ["squash-history"]` in the
+ *   cascade roster; the first published release does NOT drop the opt-in —
+ *   `squashing-history` now collapses only the TAIL above the newest
+ *   published-release commit (the freeze boundary), so the opt-in stays
+ *   meaningful for a released member too.
  *
- *   ASYMMETRIC SEVERITY, deliberately. Released-but-still-opted-in FAILS: it is
- *   a live hazard, the next `squashing-history` run rewrites commits consumers
- *   already resolved, and that damage is not reversible. Unreleased-but-not-
- *   opted-in only WARNS: nothing is broken by it, the cost is a missed
- *   opportunity to keep history tidy, and a hard fail would red-light the
- *   window between "roster entry lands" and "the repo has any manifest at all"
- *   — exactly the onboarding minute this rule is meant to help.
+ *   ASYMMETRIC SEVERITY, deliberately. A released, opted-in member whose
+ *   frozen-zone anchor is NOT reachable from its default branch FAILS: that
+ *   shape means the release commit got orphaned anyway (a full-root squash
+ *   ran despite the freeze boundary, or the boundary itself was later
+ *   rewritten) — a live hazard, not reversible by re-pushing. An unreleased
+ *   member that never opted in only WARNS: nothing is broken by it, the cost
+ *   is a missed opportunity to keep history tidy, and a hard fail would
+ *   red-light the window between "roster entry lands" and "the repo has any
+ *   manifest at all" — exactly the onboarding minute this rule is meant to
+ *   help.
  *
  *   RELEASE SIGNALS are npm and crates.io, via
  *   `_shared/member-release-probe.mts`, which the roster writer
@@ -23,13 +27,17 @@
  *   wheelhouse itself ships release bundles and squashes by design.
  *
  *   NETWORK DISCIPLINE. Offline-safe, never fails closed on connectivity. No
- *   `gh`, no auth, an API error, an unreadable manifest, or an unreachable
- *   registry all yield UNVERIFIED for that member — reported as a notice, never
- *   a failure and never a silent pass. Registered as a `releaseStep`, so the
- *   interactive `check --all` loop stays offline while CI and the pre-push gate
- *   carry it.
+ *   `gh`, no auth, an API error, an unreadable manifest, an unreachable
+ *   registry, or an unresolved release anchor all yield UNVERIFIED for that
+ *   member — reported as a notice, never a failure and never a silent pass.
+ *   The frozen-zone reachability check needs a registry read (for the anchor)
+ *   AND a GitHub compare-API read (for ancestry); either failing alone still
+ *   yields UNVERIFIED, never a false hazard. Registered as a `releaseStep`, so
+ *   the interactive `check --all` loop stays offline while CI and the
+ *   pre-push gate carry it.
  *
- *   Exit: 0 — no released member is still opted in; 1 — at least one is.
+ *   Exit: 0 — no released+opted-in member's frozen zone is orphaned; 1 — at
+ *   least one is.
  *   Usage: node scripts/fleet/check/fresh-members-are-squashed-until-release.mts [--quiet]
  */
 
@@ -44,7 +52,10 @@ import {
   loadRosterFromRepo,
 } from '../../../.claude/hooks/fleet/_shared/fleet-roster.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { probeMemberRelease } from '../_shared/member-release-probe.mts'
+import {
+  probeMemberRelease,
+  verifyFrozenZoneReachable,
+} from '../_shared/member-release-probe.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 
 import type {
@@ -61,13 +72,16 @@ const SQUASH_OPT_IN = 'squash-history'
 const DOC_PATH = 'docs/agents.md/fleet/squash-until-release.md'
 
 export type SquashWindowFindingKind =
-  | 'released-but-opted-in'
+  | 'frozen-zone-orphaned'
   | 'unreleased-and-not-opted-in'
 
 /**
- * One member's disagreement between its roster opt-in and its release state.
+ * One member's squash-window hazard or opportunity. `frozen-zone-orphaned`
+ * carries the anchor sha whose reachability failed; `unreleased-and-not-
+ * opted-in` carries neither. An unreleased member has no anchor at all.
  */
 export interface SquashWindowFinding {
+  readonly anchorSha?: string | undefined
   readonly artifact?: string | undefined
   readonly kind: SquashWindowFindingKind
   readonly member: string
@@ -76,32 +90,46 @@ export interface SquashWindowFinding {
 }
 
 /**
- * The whole bidirectional rule in one pure function: an opt-in belongs to an
- * unreleased member and to no other. An `unverified` release state produces no
- * finding at all — the probe could not read the member, so neither direction
- * can be asserted about it.
+ * The unreleased-member half of the rule: an opt-in belongs to an unreleased
+ * member. A `released` or `unverified` state produces no finding here — the
+ * released direction is judged separately by `judgeFrozenZoneReachability`,
+ * which needs an async network probe this pure function does not make.
  */
 export function judgeSquashWindow(
   roster: FleetRoster,
   member: string,
   state: MemberReleaseState,
 ): SquashWindowFinding | undefined {
-  if (state.verdict === 'unverified') {
+  if (state.verdict !== 'unreleased') {
     return undefined
   }
   const optedIn = isOptedIn(roster, member, SQUASH_OPT_IN)
-  if (state.verdict === 'released') {
-    return optedIn
-      ? {
-          artifact: state.artifact,
-          kind: 'released-but-opted-in',
-          member,
-          registry: state.registry,
-          version: state.version,
-        }
-      : undefined
-  }
   return optedIn ? undefined : { kind: 'unreleased-and-not-opted-in', member }
+}
+
+/**
+ * The released-member half of the rule: a released, opted-in member's frozen
+ * zone must stay reachable. `reachability` is the async
+ * `verifyFrozenZoneReachable` result — `unverified` (the network read
+ * couldn't confirm either way) produces no finding, matching the offline-safe
+ * contract; only a confirmed `orphaned` anchor is a finding.
+ */
+export function judgeFrozenZoneReachability(
+  member: string,
+  state: MemberReleaseState,
+  reachability: 'orphaned' | 'reachable' | 'unverified',
+): SquashWindowFinding | undefined {
+  if (reachability !== 'orphaned') {
+    return undefined
+  }
+  return {
+    anchorSha: state.anchorSha,
+    artifact: state.artifact,
+    kind: 'frozen-zone-orphaned',
+    member,
+    registry: state.registry,
+    version: state.version,
+  }
 }
 
 /**
@@ -118,7 +146,7 @@ export function partitionSquashFindings(
   const opportunities: SquashWindowFinding[] = []
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const finding = findings[i]!
-    if (finding.kind === 'released-but-opted-in') {
+    if (finding.kind === 'frozen-zone-orphaned') {
       hazards.push(finding)
     } else {
       opportunities.push(finding)
@@ -138,13 +166,19 @@ async function ghAuthed(): Promise<boolean> {
   }
 }
 
-// The one-line evidence for a hazard, naming the package, the registry, and the
-// published version.
+// The one-line evidence for a hazard, naming the package, the registry, the
+// published version, and the anchor sha that no longer resolves onto the
+// member's default branch.
 function hazardEvidence(finding: SquashWindowFinding): string {
   const artifact = finding.artifact ?? finding.member
   const registry = finding.registry ?? 'a registry'
   const version = finding.version ?? 'an unknown version'
-  return `  ${finding.member}: \`${artifact}\` is published on ${registry} at ${version}.`
+  const anchor = finding.anchorSha ?? '(unknown anchor)'
+  return (
+    `  ${finding.member}: \`${artifact}\` published on ${registry} at ` +
+    `${version} — release anchor ${anchor} is NOT reachable from the ` +
+    'default branch.'
+  )
 }
 
 async function main(): Promise<void> {
@@ -189,6 +223,46 @@ async function main(): Promise<void> {
       })
       continue
     }
+    if (state.verdict === 'released') {
+      // Only a released, OPTED-IN member has a frozen zone that matters here
+      // — an opted-out released member carries ordinary history and has
+      // nothing this gate can orphan.
+      if (!isOptedIn(roster, repo.name, SQUASH_OPT_IN)) {
+        continue
+      }
+      if (state.anchorSha === undefined) {
+        unverified.push({
+          member: repo.name,
+          reason:
+            'no release anchor could be resolved (missing npm gitHead / ' +
+            'crates.io .cargo_vcs_info.json), so its frozen zone could not ' +
+            'be checked',
+        })
+        continue
+      }
+      const reachability = await verifyFrozenZoneReachable(
+        repo,
+        state.anchorSha,
+      )
+      if (reachability === 'unverified') {
+        unverified.push({
+          member: repo.name,
+          reason:
+            'the frozen-zone reachability read (default branch / compare ' +
+            'API) could not be completed',
+        })
+        continue
+      }
+      const finding = judgeFrozenZoneReachability(
+        repo.name,
+        state,
+        reachability,
+      )
+      if (finding) {
+        findings.push(finding)
+      }
+      continue
+    }
     const finding = judgeSquashWindow(roster, repo.name, state)
     if (finding) {
       findings.push(finding)
@@ -219,23 +293,25 @@ async function main(): Promise<void> {
     return
   }
   logger.fail(
-    `fresh-members-are-squashed-until-release: ${hazards.length} released member(s) still opted into \`${SQUASH_OPT_IN}\`:`,
+    `fresh-members-are-squashed-until-release: ${hazards.length} released member(s) have an ORPHANED frozen release:`,
   )
   for (let i = 0, { length } = hazards; i < length; i += 1) {
     logger.fail(hazardEvidence(hazards[i]!))
   }
   logger.fail(
-    `  What:  a member with a published release still carries the \`${SQUASH_OPT_IN}\` opt-in.\n` +
-      '  Where: the member(s) above, in the cascade roster\n' +
-      '         .claude/skills/fleet/cascading-fleet/lib/fleet-repos.json.\n' +
-      '  Wanted: the opt-in belongs to members that have NEVER released. A squash\n' +
-      "          rewrites every commit the published artifact's provenance and any\n" +
-      '          SHA-pinning consumer resolve, and those commits must keep existing.\n' +
-      `  Fix:   remove "${SQUASH_OPT_IN}" from that member's \`optIns\` in\n` +
-      '         template/base/.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json,\n' +
-      '         then cascade it to the live mirror:\n' +
-      '           node scripts/repo/sync-scaffolding/cli.mts --target . --fix\n' +
-      `         See ${DOC_PATH}.`,
+    "  What:  a released, squash-opted member's frozen release anchor is " +
+      'not reachable from its default branch.\n' +
+      '  Where: the member(s) above.\n' +
+      '  Wanted: squashing-history freezes every commit through the newest ' +
+      'published release — its SHA (and anything pinning it) must keep ' +
+      'resolving.\n' +
+      "  Saw: the anchor above is off the default branch's lineage — a " +
+      'full-root squash ran anyway, or the boundary itself was later ' +
+      'rewritten (the socket-mcp shape, history-rewrites.md).\n' +
+      "  Fix:   re-anchor the branch onto the release commit's lineage " +
+      '(recovery steps: history-rewrites.md "A rewrite base must sit on ' +
+      'origin\'s lineage"), or if the release itself is truly gone, treat ' +
+      `it as an incident, not a routine fix. See ${DOC_PATH}.`,
   )
   process.exitCode = 1
 }

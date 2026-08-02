@@ -32,11 +32,18 @@ import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 //   - `[./]`  — path globs (`a/...`, `.../b`, `....x`).
 //   - `[)\]}>]` — CLI usage / placeholder notation (`[path...]`, `(args...)`,
 //     `<rest...>`), where the dots mean "one or more" and must stay literal.
+//   - `[A-Za-z0-9$_{]` — a RANGE or identifier, never prose. Prose ellipsis is
+//     followed by end-of-text, whitespace, or sentence punctuation; it is never
+//     butted straight against the next word. Git's two- and three-dot range
+//     syntax is the case that forced this (`main...branch`,
+//     `main...${wt.branch}`, `origin/main...HEAD`) — swapping those dots for
+//     `…` produces a ref git cannot resolve, so the rule must not ask for it.
+//     `$` and `{` cover a template-literal interpolation as the right operand.
 // The leading `[A-Za-z0-9]` rejects CLI rest-args (`foo ...args` — dots after a
 // space) and standalone `...`. `....` (word + 4 dots) is still caught — `\.{3,}`
 // soaks up the run, collapsed to one `…`. The G form, used by the fixer
 // captures the leading char to preserve it.
-const ELLIPSIS_TAIL = String.raw`(?![./)\]}>])`
+const ELLIPSIS_TAIL = String.raw`(?![./)\]}>A-Za-z0-9$_{])`
 const WORD_FINAL_ELLIPSIS_RE = new RegExp(
   String.raw`[A-Za-z0-9]\.{3,}${ELLIPSIS_TAIL}`,
 )
@@ -114,9 +121,17 @@ const rule = {
         const cooked = (
           node as { value?: { cooked?: string | undefined } | undefined }
         ).value?.cooked
-        if (typeof cooked === 'string') {
-          checkTextNode(node, cooked)
+        if (typeof cooked !== 'string') {
+          return
         }
+        // A NON-tail quasi is followed by a `${…}` interpolation, but the
+        // cooked text stops at the dots, so `main...${branch}` reaches the
+        // matcher as `main...` — end-of-text, which reads as prose. Model the
+        // interpolation as a trailing `$` so the shared lookahead classifies it
+        // for what it is: a range operand butted against its right side. Only
+        // detection sees the sentinel; the fixer rewrites the node's raw text.
+        const isTail = (node as { tail?: boolean | undefined }).tail !== false
+        checkTextNode(node, isTail ? cooked : `${cooked}$`)
       },
     }
   },

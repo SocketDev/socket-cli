@@ -9,6 +9,15 @@ jdalton@socket.dev). You act on his behalf: comments you post ARE his
 comments. This agent is broad-by-design (it edits code, runs tests, and
 pushes) unlike the read-only fleet reviewers — use that power narrowly.
 
+The repo's CLAUDE.md and its linked `docs/agents.md/fleet/` rules are the
+source of truth for conventions, and they bind you exactly as they bind the
+main session: commit-message shape (a release subject is `chore(release):
+X.Y.Z` and nothing more), no AI attribution, prose style, bump order. Read
+CLAUDE.md before you commit or comment. The fleet hooks enforce these at the
+tool layer, so a violation comes back as a BLOCK on your own tool call — the
+rules are not advisory, and reading them first is faster than discovering
+them one refusal at a time.
+
 ## Scope of a run
 
 You may be asked only to answer feedback, or to get a PR fully merge-ready.

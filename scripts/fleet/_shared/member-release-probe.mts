@@ -23,9 +23,13 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOCKET_GITHUB_ORGS } from '../constants/socket-scopes.mts'
+import { resolveCrateReleaseSha } from '../crate-release-sha.mts'
 import { PLACEHOLDER_VERSION } from '../publish-infra/cargo/placeholder.mts'
 import { fetchPublishedVersionChecked } from '../publish-infra/cargo/registry.mts'
-import { fetchLatestPublishedVersionChecked } from '../publish-infra/npm/registry.mts'
+import {
+  fetchLatestGitHead,
+  fetchLatestPublishedVersionChecked,
+} from '../publish-infra/npm/registry.mts'
 
 // The org a roster entry belongs to when it declares no `owner`.
 const HOME_ORG = SOCKET_GITHUB_ORGS[0]!
@@ -70,9 +74,15 @@ export type ArtifactRegistry = 'crates.io' | 'npm'
 /**
  * One member's release state. `unverified` carries the reason so a skip is
  * never silent — an operator can tell "npm says never published" from "there
- * was no GitHub token".
+ * was no GitHub token". `anchorSha` — the source commit the registry recorded
+ * for the released version (npm `gitHead`, crates.io `.cargo_vcs_info.json`
+ * `git.sha1`) — is set only on a `released` verdict, and only when the
+ * registry actually recorded one; the frozen-zone-reachability check treats a
+ * missing anchor the same as an unreachable one: unverified, never a false
+ * hazard.
  */
 export interface MemberReleaseState {
+  readonly anchorSha?: string | undefined
   readonly artifact?: string | undefined
   readonly reason?: string | undefined
   readonly registry?: ArtifactRegistry | undefined
@@ -155,6 +165,45 @@ async function ghApi(args: readonly string[]): Promise<{
     }
     return { notFound: false, ok: false, reason: firstLine(text), stdout: '' }
   }
+}
+
+export type FrozenZoneReachability = 'orphaned' | 'reachable' | 'unverified'
+
+/**
+ * Whether a member's frozen release anchor (`anchorSha`) is still reachable
+ * from its default branch — the remote (GH-API-only, no clone) equivalent of
+ * `git merge-base --is-ancestor <anchorSha> HEAD`. Uses GitHub's compare API:
+ * comparing `<defaultBranch>...<anchorSha>` reports `identical`/`behind` when
+ * the anchor IS an ancestor of the default branch (the frozen zone is
+ * intact), and `ahead`/`diverged` when it is NOT (the socket-mcp orphan
+ * shape — the anchor sits off the branch's lineage, e.g. after a full-root
+ * squash that should have frozen it). Any read failure — no default branch,
+ * an unreadable compare, a 404 on the anchor itself — is `unverified`, never
+ * `orphaned`: this check runs on the CI/release tier, not interactively, but
+ * it still must never turn a network hiccup into a false hazard.
+ */
+export async function verifyFrozenZoneReachable(
+  member: MemberRepoRef,
+  anchorSha: string,
+): Promise<FrozenZoneReachability> {
+  const slug = memberRepoSlug(member)
+  const repoRead = await ghApi([`repos/${slug}`, '--jq', '.default_branch'])
+  const defaultBranch = repoRead.stdout.trim()
+  if (!repoRead.ok || !defaultBranch) {
+    return 'unverified'
+  }
+  const compareRead = await ghApi([
+    `repos/${slug}/compare/${defaultBranch}...${anchorSha}`,
+    '--jq',
+    '.status',
+  ])
+  const status = compareRead.stdout.trim()
+  if (!compareRead.ok || !status) {
+    return 'unverified'
+  }
+  return status === 'behind' || status === 'identical'
+    ? 'reachable'
+    : 'orphaned'
 }
 
 /**
@@ -285,7 +334,11 @@ export function isReleasedVersion(version: string | undefined): boolean {
 }
 
 /**
- * Probe one npm package name.
+ * Probe one npm package name. On a `released` verdict, also resolves the
+ * registry-recorded `gitHead` as `anchorSha` (fail-open: a `gitHead` read
+ * failure leaves `anchorSha` unset rather than downgrading the verdict —
+ * the caller treats a missing anchor as unverifiable reachability, never a
+ * false hazard).
  */
 export async function probeNpmArtifactRelease(
   name: string,
@@ -300,16 +353,34 @@ export async function probeNpmArtifactRelease(
     }
   }
   const { latest } = read
+  if (!isReleasedVersion(latest)) {
+    return {
+      artifact: name,
+      registry: 'npm',
+      verdict: 'unreleased',
+      version: latest,
+    }
+  }
+  let anchorSha: string | undefined
+  try {
+    const gitHead = await fetchLatestGitHead(name)
+    anchorSha = gitHead.reachable ? gitHead.sha : undefined
+  } catch {
+    anchorSha = undefined
+  }
   return {
+    anchorSha,
     artifact: name,
     registry: 'npm',
-    verdict: isReleasedVersion(latest) ? 'released' : 'unreleased',
+    verdict: 'released',
     version: latest,
   }
 }
 
 /**
- * Probe one crates.io crate name.
+ * Probe one crates.io crate name. On a `released` verdict, also resolves the
+ * `.cargo_vcs_info.json` `git.sha1` as `anchorSha` (same fail-open contract as
+ * the npm probe above).
  */
 export async function probeCrateArtifactRelease(
   name: string,
@@ -324,10 +395,26 @@ export async function probeCrateArtifactRelease(
     }
   }
   const { latest } = read
+  if (!isReleasedVersion(latest)) {
+    return {
+      artifact: name,
+      registry: 'crates.io',
+      verdict: 'unreleased',
+      version: latest,
+    }
+  }
+  let anchorSha: string | undefined
+  try {
+    const info = await resolveCrateReleaseSha(name)
+    anchorSha = info?.sha
+  } catch {
+    anchorSha = undefined
+  }
   return {
+    anchorSha,
     artifact: name,
     registry: 'crates.io',
-    verdict: isReleasedVersion(latest) ? 'released' : 'unreleased',
+    verdict: 'released',
     version: latest,
   }
 }

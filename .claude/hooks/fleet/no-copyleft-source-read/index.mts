@@ -91,7 +91,18 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 // load-bearing: gen/hook-dispatch.mts parses these tokens STATICALLY out of the
 // source, so a computed list would read as no triggers at all. A test asserts
 // every roster entry's repo name appears here.
-export const triggers: readonly string[] = ['trufflehog', 'upstream/']
+// `upstream/` is deliberately the broadest entry here, and it is the safety
+// net rather than sloppiness: it routes ANY read under the vendored submodule
+// tree to this hook, including an upstream nobody has added a keyword for yet.
+// Narrowing it to per-upstream paths would recreate the gap the roster test
+// exists to catch — a new copyleft submodule would sit unguarded until someone
+// remembered to list it. Over-matching costs one cheap module import;
+// under-matching costs a silent bypass of a license boundary.
+export const triggers: readonly string[] = [
+  'rust-cache',
+  'trufflehog',
+  'upstream/',
+]
 
 // git subcommands that stream a blob or a tree out of a repository.
 const GIT_READ_SUBCOMMANDS = new Set(['archive', 'cat-file', 'show'])

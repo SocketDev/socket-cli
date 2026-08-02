@@ -1,14 +1,23 @@
-name: 🧹 Prune Workflow Runs
+name: 🧹 Prune Actions Storage
 
-# Deletes stale GitHub Actions run history on a weekly cadence:
+# Reclaims GitHub Actions storage on a weekly cadence, in two steps.
+#
+# Run history (scripts/fleet/prune-workflow-runs.mts):
 #   - keeps only the newest 20 runs per workflow still present on the default
 #     branch (an optional `days` input adds a time window),
 #   - purges dependabot / gh-audit run groups wholesale, and
 #   - purges every run of workflows whose source is gone from the default
 #     branch.
-# See scripts/fleet/prune-workflow-runs.mts. Byte-identical across the fleet
-# (cascaded); edit template/base/.github/workflows/prune-workflow-runs.yml and
-# re-cascade via `pnpm run sync`.
+#
+# Cache (scripts/fleet/prune-actions-caches.mts): keeps the newest generations
+# per cache-key group and holds the total under an 8 GB budget. This one is not
+# cosmetic — GitHub caps a repo at 10 GB and silently LRU-evicts past it, so an
+# over-budget repo quietly loses the entries it restores most and every job
+# rebuilds cold.
+#
+# Byte-identical across the fleet (cascaded); edit
+# template/base/.github/workflows/prune-workflow-runs.yml and re-cascade via
+# `pnpm run sync`.
 
 on:
   schedule:
@@ -82,3 +91,22 @@ jobs:
             ARGS+=(--dry-run)
           fi
           node scripts/fleet/prune-workflow-runs.mts "${ARGS[@]}"
+      # Same job, not a second one: every job starts on a bare runner and would
+      # need its own copy of the inline bootstrap above, and that bootstrap is
+      # deliberately tri-plicated and lock-step checked. `always()` keeps the
+      # cache sweep independent of the run sweep's result, which is the only
+      # thing a separate job would have bought.
+      - name: Prune Actions caches
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          # No flags by default: the script's own policy applies (keep the
+          # newest 2 generations per key group, hold the total under 8 GB, and
+          # never evict an entry accessed in the last 7 days).
+          ARGS=()
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/fleet/prune-actions-caches.mts "${ARGS[@]}"

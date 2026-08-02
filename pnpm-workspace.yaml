@@ -64,7 +64,7 @@ catalog:
   '@pnpm/logger': 1100.0.0
   '@redwoodjs/agent-ci': 0.17.1
   '@sentry/node': 8.55.2
-  '@shadscan/cli': 0.2.0
+  '@shadscan/cli': 0.5.0
   '@sinclair/typebox': 0.34.52
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14

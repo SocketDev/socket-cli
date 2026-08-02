@@ -62,11 +62,37 @@ export interface CopyleftUpstream {
 }
 
 /**
- * The copyleft upstreams the fleet treats as run-and-observe-only. Seeded with
- * ONE verified entry; every addition follows the SPDX-verification rule in this
- * file's header. Sorted by `owner/repo`.
+ * The copyleft upstreams the fleet treats as run-and-observe-only. Every
+ * addition follows the SPDX-verification rule in this file's header. Sorted by
+ * `owner/repo`.
  */
 export const COPYLEFT_UPSTREAMS: readonly CopyleftUpstream[] = [
+  {
+    owner: 'Swatinem',
+    // The `.github/actions/fleet/setup-rust-cache` composite covers the same
+    // ground over `actions/cache`, written independently — never derived from
+    // the LGPL implementation, which is exactly what this entry blocks.
+    permissiveAlternative: 'actions/cache (MIT)',
+    // A GitHub Action, published only as a tagged repo — no registry release —
+    // so the repo itself is the artifact identity.
+    purl: 'pkg:github/swatinem/rust-cache',
+    repo: 'rust-cache',
+    // Verified 2026-08-01 two ways: the repo's own LICENSE file, whose header
+    // reads "GNU LESSER GENERAL PUBLIC LICENSE Version 3", and the `license`
+    // field of its package.json at the version below.
+    spdx: 'LGPL-3.0',
+    // The implementation is TypeScript under `src/` plus the compiled `dist/`
+    // bundle. `tests/` holds only cargo fixture workspaces — Cargo manifests,
+    // a trybuild suite, and a wasm workspace — that the action is pointed at
+    // to observe its caching behavior.
+    //
+    // VERIFIED against the real tree at the version below by enumerating it
+    // through the GitHub trees API, which is structure, not content: of 47
+    // blobs this glob admits 16, every one of them under `tests/`, and none
+    // is TypeScript. No fixture corpus lives under a different directory name.
+    testPathPatterns: ['**/tests/**'],
+    verifiedVersion: 'v2.9.1',
+  },
   {
     owner: 'trufflesecurity',
     permissiveAlternative: 'gitleaks/gitleaks (MIT)',

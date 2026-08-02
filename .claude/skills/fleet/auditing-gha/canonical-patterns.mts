@@ -48,16 +48,7 @@ export const CANONICAL_PATTERNS: readonly string[] = [
   'actions/upload-artifact@*',
   'actions/upload-pages-artifact@*',
   'depot/setup-action@*',
-  // Consumer: the napi build matrix in the canonical
-  // .github/workflows/npm-publish.yml, which compiles native addons on every
-  // runner in the matrix. Re-added 2026-08-01 because that job made them live
-  // again in the cascaded surface, and an unmatched `uses:` plan-fails every
-  // strict-allowlist repo. Both remain candidates for the composite port the
-  // header prescribes — a hand-rolled rustup step plus `actions/cache@*`
-  // would retire them again.
-  'dtolnay/rust-toolchain@*',
   'github/gh-aw-actions/*',
-  'Swatinem/rust-cache@*',
 ]
 
 // Canonical patterns whose only consumers are fleet members' OWN workflows —
@@ -68,8 +59,6 @@ export const CANONICAL_PATTERNS: readonly string[] = [
 // check fails a declaration that goes stale — a pattern listed here that the
 // template tree now references, or one that is no longer canonical.
 export const EXTERNALLY_CONSUMED_PATTERNS: Readonly<Record<string, string>> = {
-  'actions/cache@*':
-    'SocketDev/ultrathink .github/workflows/build-ts.yml, plus its sibling build workflows and SocketDev/envrypt .github/workflows/rust-fuzz.yml',
   'actions/deploy-pages@*': 'SocketDev/meander .github/workflows/pages.yml',
   'actions/upload-pages-artifact@*':
     'SocketDev/meander .github/workflows/pages.yml',

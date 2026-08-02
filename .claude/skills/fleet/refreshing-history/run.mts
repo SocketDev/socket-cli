@@ -9,15 +9,22 @@
  * Phases match the table in SKILL.md:
  *
  * 1. Pre-flight — resolve default branch, fetch, capture orig HEAD/count
- * 2. Worktree — git worktree add -b chore/squash-and-refresh ../<repo>-squash
- * 3. Backup — push <orig-head>:refs/heads/backup-<ts> before any destruction
- * 4. Squash — git commit-tree -S → reset; verify count == 1, sig == G
- * 5. Integrity — diff vs orig must be empty
- * 6. Refresh — pnpm run update / install / fix --all / check --all
- * 7. Amend — fold any post-refresh changes into the squash commit
- * 8. Force-push — git push --force --no-verify origin HEAD:$BASE
- * 9. Cleanup — git worktree remove + branch -D
- * 10. Report — new SHA, backup ref, recovery one-liner
+ * 2. Freeze boundary — resolve the newest published-release anchor (if any);
+ *    a repo with no boundary squashes full-root as below, a repo WITH one
+ *    collapses only the tail above it (never rewriting the release commit)
+ * 3. Worktree — git worktree add -b chore/squash-and-refresh ../<repo>-squash
+ * 4. Backup — push <orig-head>:refs/heads/backup-<ts> before any destruction
+ * 5. Squash — full-root: git commit-tree -S → reset; verify count == 1, sig
+ *    == G. Tail (boundary present): fresh commit on the boundary, never an
+ *    amend of it
+ * 6. Integrity — diff vs orig must be empty; tail mode also re-asserts the
+ *    boundary itself is untouched and still reachable
+ * 7. Refresh — pnpm run update / install / fix --all / check --all
+ * 8. Amend — fold any post-refresh changes into the squash commit (a fresh
+ *    commit instead, in the no-op tail case, so the boundary is never amended)
+ * 9. Force-push — git push --force --no-verify origin HEAD:$BASE
+ * 10. Cleanup — git worktree remove + branch -D
+ * 11. Report — new SHA, backup ref, recovery one-liner
  *
  * Usage: node .claude/skills/refreshing-history/run.mts /path/to/<repo>
  */
@@ -34,9 +41,16 @@ import { isError } from '@socketsecurity/lib/errors/predicates'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 // Shared run/timestamp/header helpers — one owner, not a per-runner copy.
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
+import {
+  checkNotShallowClone,
+  resolveFreezeBoundaryForRepo,
+} from '../squashing-history/run-guards.mts'
 // Shared squash engine — the reset/amend/count/integrity dance lives in
 // squashing-history; refreshing-history layers dep-refresh + sign on top.
-import { squashSingleCommit } from '../squashing-history/run.mts'
+import {
+  assertBoundaryIntact,
+  squashSingleCommit,
+} from '../squashing-history/run.mts'
 
 export { header, run, timestamp }
 
@@ -69,6 +83,12 @@ async function main(): Promise<number> {
   const base = await resolveDefaultBranch({ cwd: src })
   header('default branch', base)
   await run('git', ['fetch', 'origin', base], src)
+
+  const shallowExit = await checkNotShallowClone({ base, src })
+  if (shallowExit !== undefined) {
+    return shallowExit
+  }
+
   const origHead = (await run('git', ['rev-parse', `origin/${base}`], src))
     .stdout
   const origCount = (
@@ -76,7 +96,36 @@ async function main(): Promise<number> {
   ).stdout
   header(`original ${base}`, `${origHead} (${origCount} commits)`)
 
-  // Phase 2 — worktree, clean any stale state from prior runs.
+  // Freeze boundary — this runner is a SECOND full-root squash path with its
+  // own force-push, so it carries the same published-release safeguard as
+  // squashing-history: a repo with a resolved boundary never gets its root
+  // rewritten here either. `refuseMessage` means the registry confirms a real
+  // release with no safe anchor to freeze at — refuse loudly rather than
+  // silently full-flattening it.
+  const freeze = await resolveFreezeBoundaryForRepo({ src, tip: origHead })
+  if (freeze.refuseMessage !== undefined) {
+    logger.error(`error: ${freeze.refuseMessage}`)
+    return 2
+  }
+  const { boundary } = freeze
+  const boundaryCount =
+    boundary !== undefined
+      ? (
+          await run(
+            'git',
+            ['rev-list', '--count', `${boundary}..${origHead}`],
+            src,
+          )
+        ).stdout
+      : undefined
+  if (boundary !== undefined) {
+    header(
+      'frozen release boundary',
+      `${boundary} (${boundaryCount} commits past it)`,
+    )
+  }
+
+  // Worktree, clean any stale state from prior runs.
   await run('git', ['worktree', 'remove', '--force', worktree], src, {
     allowFailure: true,
   })
@@ -87,7 +136,7 @@ async function main(): Promise<number> {
     src,
   )
 
-  // Phase 3 — remote backup ref.
+  // Remote backup ref, before any destructive rewrite.
   logger.info(
     `  pushing remote backup ref: refs/heads/${backup} -> ${origHead}`,
   )
@@ -102,17 +151,42 @@ async function main(): Promise<number> {
 
   // Squash + integrity run through the shared squashing-history engine.
   // sign: true asserts the %G? == 'G' that required_signatures branch
-  // protection demands; a tree mismatch is a HARD process.exit(1) in the engine.
-  const { newHead: newSha } = await squashSingleCommit({
-    message: 'Initial commit',
-    origHead,
-    sign: true,
-    worktree,
-  })
-  logger.success(`squashed ${origCount} commits → 1 signed commit (${newSha})`)
-  logger.success(`integrity: post-squash tree == origin/${base} tree`)
+  // protection demands; a tree mismatch is a HARD process.exit(1) in the
+  // engine. No boundary: full-root amend, matching the historical behavior.
+  // A boundary present: a FRESH commit on it (never amend — that would
+  // rewrite the published-release commit), UNLESS there are zero commits
+  // past the boundary already (origHead == boundary), in which case there is
+  // nothing to squash — skip straight to the refresh phase on origHead.
+  const boundaryIsTip = boundary !== undefined && boundaryCount === '0'
+  let newSha: string
+  if (boundaryIsTip) {
+    newSha = origHead
+    logger.info(
+      '  already squashed past the frozen release — nothing to collapse before refresh',
+    )
+  } else {
+    const result = await squashSingleCommit({
+      amend: boundary === undefined,
+      message:
+        boundary === undefined
+          ? 'Initial commit'
+          : 'chore: squash unreleased history',
+      origHead,
+      resetTo: boundary,
+      sign: true,
+      worktree,
+    })
+    newSha = result.newHead
+    logger.success(
+      `squashed ${origCount} commits → 1 signed commit (${newSha})`,
+    )
+    logger.success(`integrity: post-squash tree == origin/${base} tree`)
+    if (boundary !== undefined) {
+      await assertBoundaryIntact(worktree, boundary)
+    }
+  }
 
-  // Phase 6 — refresh deps + format + check.
+  // Refresh deps + format + check.
   const refreshSteps: ReadonlyArray<
     readonly [label: string, args: readonly string[]]
   > = [
@@ -131,40 +205,61 @@ async function main(): Promise<number> {
     }
   }
 
-  // Phase 7 — amend.
-  // The umbrella "no -A" rule applies to the primary checkout; this is a
-  // transient skill-owned worktree on a branch the skill just created,
-  // and refresh outputs aren't enumerable in advance, so a scoped -A is
-  // the right call here.
+  // Fold the refresh output into the squash commit — the umbrella "no -A"
+  // rule applies to the primary checkout; this is a transient skill-owned
+  // worktree on a branch the skill just created, and refresh outputs aren't
+  // enumerable in advance, so a scoped -A is the right call here.
   await run('git', ['add', '-A'], worktree)
   const stagedFiles = (
     await run('git', ['diff', '--cached', '--name-only'], worktree)
   ).stdout
   if (stagedFiles.length > 0) {
-    logger.info('  amending refresh changes into the squash commit')
-    await run(
-      'git',
-      ['commit', '--amend', '--no-edit', '--no-verify'],
-      worktree,
-    )
+    if (boundaryIsTip) {
+      // No squash commit was made above (HEAD is still the frozen boundary
+      // itself) — a FRESH commit, never an amend of the boundary.
+      logger.info('  committing refresh changes on top of the frozen release')
+      await run(
+        'git',
+        ['commit', '--no-verify', '-m', 'chore: refresh dependencies'],
+        worktree,
+      )
+    } else {
+      logger.info('  amending refresh changes into the squash commit')
+      await run(
+        'git',
+        ['commit', '--amend', '--no-edit', '--no-verify'],
+        worktree,
+      )
+    }
   } else {
     logger.info('  no post-squash changes to amend')
   }
+  if (boundary !== undefined) {
+    await assertBoundaryIntact(worktree, boundary)
+  }
 
-  // Phase 8 — force-push.
+  // Force-push. Leased against origHead — this runner now runs on RELEASED
+  // repos too (the freeze-boundary gate above), so a bare --force carries the
+  // same racing-push risk squashTailMode's lease already guards against.
   logger.info(`  force-pushing to ${base}...`)
   await run(
     'git',
-    ['push', '--force', '--no-verify', 'origin', `HEAD:${base}`],
+    [
+      'push',
+      '--no-verify',
+      `--force-with-lease=${base}:${origHead}`,
+      'origin',
+      `HEAD:${base}`,
+    ],
     worktree,
   )
   const newHead = (await run('git', ['rev-parse', 'HEAD'], worktree)).stdout
 
-  // Phase 9 — cleanup.
+  // Cleanup.
   await run('git', ['worktree', 'remove', '--force', worktree], src)
   await run('git', ['branch', '-D', squashBranch], src, { allowFailure: true })
 
-  // Phase 10 — report.
+  // Report.
   logger.log('')
   logger.success(`${repoName} refreshed`)
   logger.info(`    new ${base}:   ${newHead}`)

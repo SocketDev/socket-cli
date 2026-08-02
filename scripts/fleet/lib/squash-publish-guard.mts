@@ -1,15 +1,17 @@
 /**
  * @file Squash-history published-release safeguard. The squash-history runner
  *   collapses a fleet repo's default branch to a single git root — safe for a
- *   repo whose crates.io / npm names are still 0.0.0 PLACEHOLDERS, but it
- *   ERASES published-release history for a repo that has cut a REAL release.
- *   A published repo must instead KEEP its history and consolidate only the
- *   range since its last publish (`git reset --soft <publish-sha>`), so the
- *   runner refuses a full-root squash the moment this predicate reports a
- *   block. Pure over, publishes-profile, latest-registry-version: the runner
- *   does the registry read (fail-open, so a read error never blocks a legit
- *   squash) and hands the result here for the yes/no verdict, so the decision
- *   is deterministic and unit-testable without a network.
+ *   repo whose crates.io / npm names are still 0.0.0 PLACEHOLDERS, but a
+ *   full-root squash on a repo that has cut a REAL release orphans that
+ *   published history. A published repo instead FREEZES: every commit up to
+ *   and including its newest published-release commit stays byte-identical,
+ *   and only the range above that boundary (`newestRelease..HEAD`) collapses —
+ *   `resolveFreezeBoundary` is the pure decision of WHERE that boundary sits.
+ *   `publishedReleaseBlocksSquash` stays the thin per-package/per-crate
+ *   predicate: real version or not. The runner does every impure lookup
+ *   (registry reads, `git merge-base --is-ancestor`) and hands the results
+ *   here — anchors plus their pre-computed ancestry — so the boundary
+ *   decision itself is deterministic and unit-testable without a network.
  */
 
 /**
@@ -62,4 +64,121 @@ export function publishedReleaseBlocksSquash(
     return { __proto__: null, registry: 'npm', version } as PublishBlock
   }
   return undefined
+}
+
+/**
+ * One candidate freeze boundary: the source commit a published npm/crates.io
+ * release resolves to (npm packument `gitHead`, crates.io
+ * `.cargo_vcs_info.json` `git.sha1` via `crate-release-sha.mts`), or `sha:
+ * undefined` when the registry confirms a REAL release exists but no source
+ * commit could be read for it (missing `gitHead`, an unreadable crate
+ * archive). `source` is a human label (`npm:<name>@<version>`,
+ * `crate:<name>@<version>`) used only for error messages.
+ */
+export interface FreezeAnchorCandidate {
+  readonly sha: string | undefined
+  readonly source: string
+}
+
+/**
+ * Pre-computed ancestry for one candidate SHA against the branch tip being
+ * squashed: whether it is an ancestor at all (an off-lineage tag/gitHead —
+ * resolved but NOT reachable from the tip — is the socket-mcp trap this
+ * rejects), and its `distance` (`git rev-list --count <sha>..<tip>`) used to
+ * rank multiple verified anchors — smaller distance is NEWER (closer to the
+ * tip).
+ */
+export interface FreezeAncestryInfo {
+  readonly distance: number
+  readonly isAncestor: boolean
+}
+
+export interface ResolveFreezeBoundaryConfig {
+  /**
+   * Every anchor candidate this repo's manifests declare (one npm package or
+   * crate = one candidate), from the root manifest AND every `packages/*` /
+   * `crates/*` workspace member.
+   */
+  readonly candidates: readonly FreezeAnchorCandidate[]
+  /**
+   * Ancestry info for every candidate's `sha`, keyed by that sha. A candidate
+   * whose `sha` has no entry is treated as unverified (same as `isAncestor:
+   * false`).
+   */
+  readonly headAncestry: ReadonlyMap<string, FreezeAncestryInfo>
+  /**
+   * Whether ANY candidate is a REAL published release (not the `0.0.0`
+   * placeholder). Drives the fail-loud branch below — a repo that has never
+   * published has no freeze boundary to fail loud about.
+   */
+  readonly published: boolean
+}
+
+/**
+ * Resolve the newest ancestor-verified published-release commit — the freeze
+ * boundary above which `squashing-history` collapses the tail, or `undefined`
+ * when a full-root squash is safe (nothing published).
+ *
+ * - `published: false` — nothing to freeze; returns `undefined` regardless of
+ *   `candidates` (an unreleased repo's candidates, if any, are placeholders).
+ * - `published: true` with at least one candidate whose `sha` resolves AND is
+ *   ancestor-verified — returns the NEWEST one (smallest `distance`). A
+ *   multi-package/multi-crate repo can carry several; the newest across ALL of
+ *   them is the boundary, matching the sibling release-probe's "stop at the
+ *   first published artifact, but here every one counts" shape.
+ * - `published: true` with NO verified candidate (every `sha` is `undefined`, or
+ *   every resolved `sha` fails the ancestor check — an off-lineage tag/
+ *   gitHead) — THROWS. A repo the registry confirms is published, with no safe
+ *   boundary to freeze at, must refuse loudly rather than silently full-
+ *   flatten the released history it was meant to protect.
+ */
+export function resolveFreezeBoundary(
+  config: ResolveFreezeBoundaryConfig,
+): string | undefined {
+  const cfg = { __proto__: null, ...config } as ResolveFreezeBoundaryConfig
+  const { candidates, headAncestry, published } = cfg
+  if (!published) {
+    return undefined
+  }
+  // Ranks candidates by `distance` alone, which assumes a LINEAR history —
+  // the fleet's squash discipline keeps every default branch linear (no merge
+  // commits), so "smaller distance" and "newer" always agree. On a non-linear
+  // (merged) history, two parallel package anchors can sit at incomparable
+  // positions, and the smaller `rev-list --count` distance is not necessarily
+  // the more recent one — a repo that ever merges branches into its default
+  // branch would need a topological (not distance) comparison here.
+  let newestSha: string | undefined
+  let newestDistance = Number.POSITIVE_INFINITY
+  for (let i = 0, { length } = candidates; i < length; i += 1) {
+    const { sha } = candidates[i]!
+    if (sha === undefined) {
+      continue
+    }
+    const ancestry = headAncestry.get(sha)
+    if (!ancestry || !ancestry.isAncestor) {
+      continue
+    }
+    if (ancestry.distance < newestDistance) {
+      newestSha = sha
+      newestDistance = ancestry.distance
+    }
+  }
+  if (newestSha === undefined) {
+    const sources = candidates.map(c => c.source).join(', ') || '(none)'
+    throw new Error(
+      'resolveFreezeBoundary: this repo has a published release but no ' +
+        'safe freeze boundary could be resolved.\n' +
+        `  Where: candidate release anchors: ${sources}.\n` +
+        '  Saw: every candidate either has no recorded source commit (a ' +
+        'missing npm gitHead / crates.io .cargo_vcs_info.json), or its ' +
+        'commit is not an ancestor of the branch being squashed (an ' +
+        'off-lineage tag/gitHead — the same trap that resolved v0.0.20 into ' +
+        'replaced history on socket-mcp, 2026-07-10).\n' +
+        '  Wanted: at least one ancestor-verified release anchor to freeze at.\n' +
+        '  Fix: refusing rather than silently full-flattening a published ' +
+        'release — investigate the registry/gitHead mismatch before ' +
+        'squashing.',
+    )
+  }
+  return newestSha
 }

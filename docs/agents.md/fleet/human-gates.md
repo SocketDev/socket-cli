@@ -6,7 +6,7 @@ A **human gate** is a step in an otherwise scripted flow that only the operator 
 
 Every gate renders identically, composed from `scripts/fleet/_shared/human-gate.mts`:
 
-```
+```text
 🖐  HUMAN GATE — npm auth [1/3]
   Need: the local npm token is missing or expired (`npm whoami` → 401).
   Mind: raw `npm login` dies without a TTY (legacy Username prompt EOFs) and bare `npm` fails in-repo (devEngines pins pnpm); the router carries both limitations so neither lane can hit them.
@@ -23,6 +23,15 @@ The rules, each load-bearing:
 4. **`Then:` closes every block.** It names what resumes once the gate clears, which is also the cost of ignoring it.
 5. **Multiple gates render as one numbered queue** (`[i/N]`), ordered by what must clear first, so the whole path to unblocked is visible at once — never one ask at a time across several messages.
 6. **Compose from the catalog, never hand-write the prose.** `npmAuthGate`, `pushGrantGate`, `approveGate`, and `browserSessionGate` carry the canonical wording; a script that invents its own phrasing drifts and defeats the point. A mirror test (`test/repo/unit/human-gate.test.mts`) asserts the shape.
+7. **Lane A is copy-pasteable, or the gate is broken.** It carries the VERBATIM authorization phrase, or the exact `! <command>` — never a pointer like "type the guard's phrase" or "the phrase its refusal names". A gate exists to unblock in one read; withholding the one string that clears it adds a round trip and sends the operator hunting for wording. This is why `pushGrantGate` takes the phrase as a parameter and renders `type exactly: <phrase>`.
+
+## Quoting an authorization phrase is safe
+
+A guard's refusal text says *do not request, relay, or emit this phrase*. That bars permission **laundering** — an agent producing the phrase, or soliciting it from another agent, session, or file, and then treating it as granted. It does **not** bar telling the operator what to type.
+
+The mechanism settles it: these scanners match on transcript **role provenance**, so only a genuine user turn counts. A phrase written in an assistant turn authorizes nothing, however it is quoted. Printing it in lane A carries no risk, and withholding it buys no safety — it costs the operator a round trip and nothing else.
+
+So print the phrase and let the operator decide whether to type it. The decision stays theirs either way, which is the part the provenance check protects.
 
 ## npm vs pnpm: know the limitations, encode the choice
 

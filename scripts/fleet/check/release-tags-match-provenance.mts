@@ -28,15 +28,24 @@
  *   every-version sweep too slow for a gate. Prereleases are out of scope — the
  *   publish tail never tags them.
  *
- *   THE BASELINE IS A RATCHET. A pre-existing orphan's only remedy is a HUMAN
- *   DECISION about an immutable published tag, so a blocking gate over frozen
+ *   THE BASELINE IS A RATCHET. A pre-existing defect's only remedy is a HUMAN
+ *   DECISION about immutable published history, so a blocking gate over frozen
  *   history means main stays red indefinitely — the failure mode, not the
  *   finding. `release.provenanceOrphanBaseline` in
  *   `.config/repo/socket-wheelhouse.json` grandfathers those versions: each is
- *   still reported (loudly, every run, quiet included) but does not fail. An
- *   orphan NOT in the baseline still fails — a new one is a regression. And a
+ *   still reported (loudly, every run, quiet included) but does not fail. A
+ *   version NOT in the baseline still fails — a new one is a regression. And a
  *   baseline entry whose version has since been reconciled fails as STALE, so
  *   the list can only shrink. See docs/agents.md/fleet/release-tag-escape-hatch.md.
+ *
+ *   It covers BOTH frozen-history kinds: an `orphaned` version, whose
+ *   attestation no release tag reaches, and an `unprovenanced` one, published
+ *   with no attestation at all. npm mints an attestation at publish time and it
+ *   is immutable, so neither is repairable after the fact — the same argument
+ *   that justifies grandfathering the first applies verbatim to the second.
+ *   Baselining `unprovenanced` does NOT weaken the gate on new releases: a
+ *   version absent from the list still fails, which is what forces every future
+ *   publish through the pipeline with `publishConfig.provenance:true`.
  *
  *   NEVER FALSE-GREEN. Three outcomes are tracked separately and only the first
  *   prints a success line: a version whose tag matches, a version the registry
@@ -360,7 +369,12 @@ export function applyProvenanceBaseline(config: {
     reasons.set(entry.id, entry.reason)
   }
   return cfg.verdicts.map(verdict => {
-    if (verdict.kind !== 'orphaned') {
+    // Both frozen-history kinds are grandfatherable. An `orphaned` version has
+    // an attestation no release tag reaches; an `unprovenanced` one has no
+    // attestation at all. Neither can be repaired after publish — npm mints the
+    // attestation at publish time and it is immutable — so both are the "human
+    // decision about immutable history" case the baseline exists for.
+    if (verdict.kind !== 'orphaned' && verdict.kind !== 'unprovenanced') {
       return verdict
     }
     const reason = reasons.get(provenanceArtifactId(cfg.name, verdict.version))
@@ -414,6 +428,12 @@ export interface ProvenanceAuditSummary {
   // Orphans covered by the committed baseline. Counted INSIDE `orphaned` too,
   // so the two are never confused for one another.
   baselinedOrphans: number
+  // Unprovenanced versions covered by the committed baseline. Counted INSIDE
+  // `unprovenanced` too, same as the orphan pair above. An attestation is
+  // produced at publish time and is immutable, so a version released before
+  // the provenance pipeline can NEVER gain one — it is frozen history in
+  // exactly the sense the baseline exists for.
+  baselinedUnprovenanced: number
   branchRefs: number
   escapeHatchPairs: number
   matched: number
@@ -436,6 +456,7 @@ export function summarizeProvenanceVerdicts(
   const opts = { __proto__: null, ...options } as NonNullable<typeof options>
   const summary: ProvenanceAuditSummary = {
     baselinedOrphans: 0,
+    baselinedUnprovenanced: 0,
     branchRefs: 0,
     escapeHatchPairs: 0,
     matched: 0,
@@ -449,6 +470,12 @@ export function summarizeProvenanceVerdicts(
     summary[verdict.kind] += 1
     if (verdict.kind === 'orphaned' && verdict.baselineReason !== undefined) {
       summary.baselinedOrphans += 1
+    }
+    if (
+      verdict.kind === 'unprovenanced' &&
+      verdict.baselineReason !== undefined
+    ) {
+      summary.baselinedUnprovenanced += 1
     }
     if (isBranchRefName(verdict.attestedRef)) {
       summary.branchRefs += 1
@@ -474,7 +501,7 @@ export function provenanceAuditPassed(
     summary.matched > 0 &&
     summary.orphaned - summary.baselinedOrphans === 0 &&
     summary.staleBaseline === 0 &&
-    summary.unprovenanced === 0 &&
+    summary.unprovenanced - summary.baselinedUnprovenanced === 0 &&
     summary.unreadable === 0 &&
     (mode === 'report' || summary.branchRefs === 0)
   )
@@ -495,7 +522,7 @@ export function provenanceAuditFailed(
   return (
     summary.orphaned - summary.baselinedOrphans > 0 ||
     summary.staleBaseline > 0 ||
-    summary.unprovenanced > 0 ||
+    summary.unprovenanced - summary.baselinedUnprovenanced > 0 ||
     (mode === 'strict' && summary.branchRefs > 0)
   )
 }
@@ -622,6 +649,11 @@ export function reportProvenanceVerdicts(config: {
       // Grandfathered: still an orphan, still visible, just not blocking.
       logger.warn(
         `  ${verdict.version}: BASELINED ORPHAN — attested ${verdict.attestedCommit?.slice(0, 9)} has no release tag; grandfathered (${verdict.baselineReason}).`,
+      )
+    } else if (verdict.kind === 'unprovenanced' && verdict.baselineReason) {
+      // Grandfathered: still unattested, still visible, just not blocking.
+      logger.warn(
+        `  ${verdict.version}: BASELINED UNPROVENANCED — published with no SLSA attestation, which cannot be added after publish; grandfathered (${verdict.baselineReason}).`,
       )
     } else {
       logger.error(formatProvenanceFinding({ name: cfg.name, verdict }))
@@ -791,9 +823,14 @@ export async function runProvenanceAudit(config: {
       `${CHECK_NAME}: ${summary.baselinedOrphans} baselined provenance orphan(s) for ${name} — grandfathered history, not a pass. Shrink release.provenanceOrphanBaseline as they are reconciled.`,
     )
   }
+  if (summary.baselinedUnprovenanced > 0) {
+    logger.warn(
+      `${CHECK_NAME}: ${summary.baselinedUnprovenanced} baselined unprovenanced version(s) for ${name} — published with no attestation, which publish froze permanently. Not a pass. Every NEW version must publish through the pipeline with publishConfig.provenance:true.`,
+    )
+  }
   if (provenanceAuditFailed(summary)) {
     logger.error(
-      `[${CHECK_NAME}] ${summary.orphaned - summary.baselinedOrphans} unbaselined provenance orphan(s), ${summary.staleBaseline} stale baseline entry(s), ${summary.unprovenanced} unprovenanced version(s).`,
+      `[${CHECK_NAME}] ${summary.orphaned - summary.baselinedOrphans} unbaselined provenance orphan(s), ${summary.staleBaseline} stale baseline entry(s), ${summary.unprovenanced - summary.baselinedUnprovenanced} unbaselined unprovenanced version(s).`,
     )
     return 1
   }

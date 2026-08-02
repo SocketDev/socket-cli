@@ -58,6 +58,11 @@
     // in files the repo must not rewrite.
     "**/test/fixtures/**",
     "**/tests/fixtures/**",
+    // The fleet's tiered layout nests fixtures deeper — test/<tier>/<kind>/
+    // fixtures/ — which the two globs above do not reach. A captured PR body
+    // or CHANGELOG sample stored there is data to assert against, not prose
+    // to lint.
+    "**/test/*/*/fixtures/**",
     // Template sources (e.g. Eta `<%~ it.readme %>` package-README
     // scaffolds) are generators, not prose — their output is what gets
     // linted, in the repo it lands in.

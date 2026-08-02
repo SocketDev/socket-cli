@@ -17,7 +17,7 @@
 catalog:
   '@redwoodjs/agent-ci': 0.17.1
   'dtu-github-actions': 0.17.1
-  '@shadscan/cli': 0.2.0
+  '@shadscan/cli': 0.5.0
   '@sinclair/typebox': 0.34.52
   '@socketregistry/packageurl-js': 1.5.0
   '@socketsecurity/lib': 6.5.2

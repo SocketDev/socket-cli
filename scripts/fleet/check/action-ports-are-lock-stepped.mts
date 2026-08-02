@@ -143,9 +143,29 @@ export function findLockstepViolations(
         )
         continue
       }
-      if (!entry.branch || !RELEASE_TAG_RE.test(entry.branch)) {
+      // An upstream that publishes no usable release tag is pinned to a
+      // timestamped branch SHA instead. The port then declares `portedSha` +
+      // `portedOn`, and the SHA is the lock-step anchor in the tag's place —
+      // demanding a tag here would either strand such a port or push it onto a
+      // moving alias, whose recorded hash stops being reachable the moment the
+      // alias moves.
+      const branchPinned = !!port.portedSha
+      if (
+        !entry.branch ||
+        (!branchPinned && !RELEASE_TAG_RE.test(entry.branch))
+      ) {
         violations.push(
-          `${composite}: ${sub} pins branch "${entry.branch ?? '(unset)'}" — not a release tag`,
+          `${composite}: ${sub} pins branch "${entry.branch ?? '(unset)'}" — not a release tag, and the port declares no portedSha for a branch pin`,
+        )
+      }
+      if (branchPinned && port.portedSha !== entry.ref) {
+        violations.push(
+          `${composite}: ported at ${String(port.portedSha).slice(0, 12)} but ${port.upstream} is pinned at ${String(entry.ref).slice(0, 12)} — re-review the port against the upstream diff, then bump portedSha and portedOn`,
+        )
+      }
+      if (branchPinned && !/^\d{4}-\d{2}-\d{2}$/.test(port.portedOn ?? '')) {
+        violations.push(
+          `${composite}: ${sub} is branch-pinned but portedOn is "${port.portedOn ?? '(unset)'}" — a branch pin has no version, so the YYYY-MM-DD stamp is its only staleness signal`,
         )
       }
       if (!entry.headerSha) {

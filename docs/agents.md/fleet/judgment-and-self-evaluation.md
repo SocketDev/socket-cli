@@ -111,7 +111,7 @@ Never assert "tests pass", "the build succeeds", "X is fixed", or "verified" wit
 
 ## Hand off with a literal command
 
-When a reply tells the user to run something ("go ahead and run it", "you can dispatch the publish"), include the exact copy-pasteable command in a fenced code block. A handoff with no command forces the user to reconstruct what you meant. Enforced by `.claude/hooks/fleet/handoff-command-nudge/`, which fires when a reply carries a handoff phrase with no fenced command, inline `code` span, or `$ ` / tool-invocation line nearby.
+When a reply tells the user to run something ("go ahead and run it", "you can dispatch the publish"), include the exact copy-pasteable command in a fenced code block. A handoff with no command forces the user to reconstruct what you meant. Enforced by `.claude/hooks/fleet/handoff-command-nudge/`, which fires when a reply carries a handoff phrase with no fenced command, inline `code` span, or a `$` shell-prompt / tool-invocation line nearby.
 
 ## Don't offload session management to the user
 

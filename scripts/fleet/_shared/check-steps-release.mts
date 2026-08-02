@@ -74,6 +74,15 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // ~200 dangling entries across 10 repos. Auto-fixable with
     // `node scripts/fleet/check/claude-dirs-are-segmented.mts --fix`.
     () => run('node', ['scripts/fleet/check/claude-dirs-are-segmented.mts']),
+    // Every fleet subagent definition points at the repo's rules. A subagent
+    // runs in its OWN context and inherits none of the main session's memory
+    // of CLAUDE.md, so an uncited definition produces an actor who learns the
+    // conventions one tool-refusal at a time. pr-feedback.md was the real
+    // miss on 2026-08-01, and it is the broadest-privileged agent in the
+    // fleet: it commits, pushes, and comments as the operator. The hooks bind
+    // subagents regardless, because they fire at the tool layer for every
+    // caller. This is about knowing the rule before spending a turn on it.
+    () => run('node', ['scripts/fleet/check/agents-have-rule-citations.mts']),
     // Every file under template/base is classified into exactly one distribution
     // channel (mirror / optional / preset / conditional / expected / carveOut /
     // overrides / native handler) — Assertion A (blocking) fails when a file

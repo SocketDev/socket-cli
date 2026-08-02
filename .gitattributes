@@ -132,6 +132,8 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/actions/fleet/setup linguist-generated=true
 .github/actions/fleet/setup-and-install linguist-generated=true
 .github/actions/fleet/setup-git-signing linguist-generated=true
+.github/actions/fleet/setup-rust-cache linguist-generated=true
+.github/actions/fleet/setup-rust-toolchain linguist-generated=true
 .github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true
 .github/workflows/*.lock.yml linguist-generated=true merge=ours

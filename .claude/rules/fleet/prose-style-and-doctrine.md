@@ -79,7 +79,12 @@ structure is earned"):
 - **Collapsed sections:** supporting material folds under
   `<details><summary>specific label</summary>` (blank line after
   `</summary>` or the markdown inside will not render); the verdict stays
-  outside the fold. Written at junior-dev comprehension level.
+  outside the fold. Written at junior-dev comprehension level. Inside the fold,
+  four rules (`scripts/fleet/_shared/pr-body-law.mts`): the summary carries the
+  claim (bold noun phrase, em dash, specific finding), the fold opens with its
+  takeaway, three or more parallel items become a table, and a status section
+  uses labeled lines (**Ran** / **Did not run** / **Trade-off** /
+  **CI is unaffected**).
 - **Alerts:** at most one `> [!NOTE]/[!TIP]/[!IMPORTANT]/[!WARNING]/[!CAUTION]`
   per body, reserved for the thing a skimmer must act on.
 - **Task lists:** `- [ ]` checkboxes for genuinely actionable follow-ups;

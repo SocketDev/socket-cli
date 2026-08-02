@@ -58,6 +58,36 @@ between your reads or when starting the final repo-wide squash/push. The
 `parallel-agent-on-stop-nudge` reads the fleet roster and reinforces this rule
 in squash-opted repos.
 
+**Land the dirty files BEFORE squashing.** A squash that runs over an
+uncommitted working tree either sweeps that work under another session's
+subject or strands it outside the collapse. Since history flattens anyway and
+individual commits carry no meaning here, there is never a reason to squash
+dirty: commit what is there first (under whatever subject fits), then squash.
+Never the reverse.
+
+**Land fast, and do not hold a working tree across another session's
+landings.** The corollary of the above is that a long-held tree is the hazard,
+not the remedy. A session that keeps a tree open while other sessions land goes
+stale for files it never touched, and then commits its own older copy of them
+on top — silently reverting work it never meant to look at. This happened three
+times on 2026-07-30 (`688e1408f`, `e987c0a95`, `6e6c296f0`), twice to the same
+one-line pnpm-store fix. Retreating into a private worktree makes it worse, not
+better: an isolated tree is a tree that diverges longer. Land immediately,
+clear worktrees when done, and re-sync before committing.
+
+When it does happen, the remedy is **land forward, never revert**: take HEAD's
+newer version for the paths you did not mean to change and land everything else
+in the same breath.
+
+```bash
+git restore --source=HEAD --staged --worktree -- <paths-you-did-not-mean-to-change>
+# then re-run your commit
+```
+
+Nothing is held back and nothing is reverted. Do not stash, do not branch, do
+not wait for a quiet window. `stale-tree-clobber-guard` blocks the commit and
+prints exactly this fix (bypass: `Allow stale-tree bypass`).
+
 ## Whose work is this? Own-work-first check
 
 `git status` or `git log` shows unfamiliar changes? Before treating them as another session's, run the own-work check:
@@ -223,3 +253,4 @@ typing `Allow codex-long-session bypass`.
 - `.claude/hooks/fleet/primary-checkout-on-default-stop-guard/` — blocks turn-end when the primary checkout drifted off its default branch.
 - `.claude/hooks/fleet/codex-session-budget-guard/` — blocks a Codex companion session past its 1-minute budget.
 - `.claude/hooks/fleet/auto-land-on-stop/` — lands this session's own-work source into signed logical commits at turn-end.
+- `.claude/hooks/fleet/stale-tree-clobber-guard/` — blocks a commit whose staged content for a path is older than HEAD, and teaches the land-forward restore.

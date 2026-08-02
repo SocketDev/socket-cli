@@ -57,8 +57,16 @@ check is what the guards trust (not the branch name), the same sentinel clears
 the safety is unchanged. Unlike the default-branch flow it skips the roster opt-in / published-release
 gates: it rewrites only the named branch, never the repo's published default-branch history.
 
-The runner picks a mode from the local-vs-origin relationship (local main is canonical in the
-fleet):
+The runner first resolves the **freeze boundary**: the newest published-release commit (npm
+`gitHead` / crates.io `.cargo_vcs_info.json`, ancestor-verified against the tip being squashed). A
+repo that has never published (still `0.0.0` on every registry) has no boundary and squashes full-root
+as below. A repo with a resolved boundary **always** runs **tail mode**, regardless of the
+local-vs-origin relationship — every commit through the boundary stays byte-identical, and only
+`boundary..tip` collapses to one fresh commit. See
+[`squash-until-release`](../../../../docs/agents.md/fleet/squash-until-release.md).
+
+With no boundary, the runner picks a mode from the local-vs-origin relationship (local main is
+canonical in the fleet):
 
 - **Local-canonical mode** (local `$BASE` is AHEAD of origin): backup-push the LOCAL tip, mint a
   signed root from its tree via `git commit-tree` (`mintSquashRoot()` — pure object creation, no
@@ -78,6 +86,14 @@ fleet):
 | 6   | Push            | Lease-push the single commit to `$BASE` under the sentinel.                                       |
 | 7   | Cleanup         | Remove worktree + delete the temp branch.                                                         |
 | 8   | Report          | Print new SHA + backup ref name + recovery one-liner.                                             |
+
+**Tail mode** runs whenever a boundary is resolved. It uses the same
+worktree/backup/integrity/lease-push shape, with two differences: the reset target is the frozen
+boundary rather than the root, so `resetTo: boundary, amend: false` writes a FRESH commit and never
+rewrites the release commit, and a runtime `assertBoundaryIntact()`
+check after the squash re-verifies the boundary still resolves to itself and is still an ancestor of
+the new tip before the push. `[Unreleased]` accrues only `boundary..tip`, never the whole root — the
+released commits below the boundary already carry their own version heading in CHANGELOG.md.
 
 ## Why the runner is shaped the way it is
 

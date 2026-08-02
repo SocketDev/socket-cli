@@ -3,32 +3,41 @@
 A fleet member that has **never shipped a published artifact** keeps a squashed,
 single-commit history. It declares `optIns: ["squash-history"]` in the cascade
 roster, and `squashing-history` flattens its default branch on a cadence. The
-first published release ends that: the opt-in comes **off**, and the member
-keeps ordinary history from then on.
+first published release does **not** end that — the opt-in **stays**.
+`squashing-history` FREEZES: every commit through the newest published-release
+commit stays byte-identical forever, and each cadence run collapses only the
+unreleased TAIL above that boundary. See
+[`squashing-history`'s `SKILL.md`](../../../.claude/skills/fleet/squashing-history/SKILL.md)
+for the mechanism.
 
 The gate is
 `scripts/fleet/check/fresh-members-are-squashed-until-release.mts`.
 
 ## Why the release boundary is the hinge
 
-A squash rewrites every commit SHA on the default branch. Before the first
-release nobody outside the repo has ever seen one of those SHAs, so rewriting
-them costs nothing. After the first release, three things point at them and
-break:
+A full-root squash rewrites every commit SHA on the default branch. Before the
+first release nobody outside the repo has ever seen one of those SHAs, so
+rewriting them costs nothing. After the first release, orphaning the release
+commit breaks two things a consumer's lockfile or workflow can depend on:
 
-- **npm / crates.io provenance.** A provenance-attested version binds the
-  published tarball to the exact source commit it was built from. Orphan that
-  commit and the attestation resolves to nothing.
 - **SHA pins.** A `git+https://…#<sha>` dependency, a `.gitmodules` pin, a
   workflow `uses: owner/repo@<sha>` — each resolves a commit that must keep
   existing.
-- **Release tags.** A tag points at a commit. Squashing leaves the tag dangling
-  off the rewritten branch, so `gh release view` links a tree nobody can reach
-  from `main`.
+- **Release tags and the packument source link.** A tag points at a commit;
+  npm's packument `gitHead` and the `.cargo_vcs_info.json` `git.sha1` do too.
+  Orphaning it leaves `gh release view` and the packument's source link
+  pointing at a tree nobody can reach from the default branch.
 
-None of this is recoverable by re-pushing. That asymmetry is why the check fails
-hard on a released member that still carries the opt-in, and only warns on an
-unreleased member that does not.
+The Sigstore/Rekor provenance attestation itself stays cryptographically valid
+either way — `npm audit signatures` verifies the attestation's signature, not
+whether the commit it names is still reachable — so "provenance breaks" is
+narrower than it first sounds. The pins and the source link are what actually
+dangle, and freezing the release commit costs nothing to avoid, so the freeze
+happens regardless.
+
+None of this is recoverable by re-pushing. That asymmetry is why the check
+fails hard when a released, opted-in member's frozen zone gets orphaned anyway,
+and only warns when an unreleased member has not opted in at all.
 
 ## What counts as released
 
@@ -81,21 +90,24 @@ So in practice: history is malleable while a member is **private and
 unreleased**. Anyone reaching for a squash after either transition is fighting
 rulesets that exist for good reason.
 
-## Opting out at first release
+## The freeze boundary, resolved deterministically
 
-The roster's two copies are kept paired by `fleetRosterPaths`, so edit the seed
-and cascade:
+"Newest published-release commit" is resolved registry-first and
+ancestor-verified — never a loose local tag or bump-commit-subject match,
+which can resolve into REPLACED history after a rewrite (the socket-mcp trap,
+`history-rewrites.md`):
 
-1. Remove `"squash-history"` from the member's `optIns` in
-   `template/base/.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`.
-   Drop the `optIns` key entirely when it becomes empty.
-2. Cascade to the live mirror:
-   `node scripts/repo/sync-scaffolding/cli.mts --target . --fix`.
-3. Commit both copies together. A split leaves the readers disagreeing about
-   whether a diverged default branch is expected.
-
-Do it as part of the first release, not after. Between the publish and the
-opt-out removal, a `squashing-history` run is legal-looking and destructive.
+- **npm:** the packument's `versions[<latest>].gitHead` for the newest release.
+- **crates.io:** `.cargo_vcs_info.json`'s `git.sha1`, via
+  `scripts/fleet/crate-release-sha.mts` — do not re-derive it.
+- Every candidate is accepted only when `git merge-base --is-ancestor <sha>
+  <tip>` holds. A resolved anchor that fails that check is off-lineage and
+  REJECTED.
+- A multi-package or multi-crate member can carry several release anchors —
+  the boundary is the NEWEST one across all of them that passes the ancestor
+  check.
+- A repo the registry confirms is published, with no ancestor-verified anchor
+  at all, REFUSES the squash outright rather than silently full-flattening it.
 
 ## Precedents
 
@@ -103,7 +115,7 @@ opt-out removal, a `squashing-history` run is legal-looking and destructive.
 | --- | --- | --- |
 | `facts` | private, unreleased | `squash-history` — squashed to one commit |
 | `scan-patterns` | private, unreleased | `squash-history` — squashed to one commit |
-| `bun-security-scanner` | published on npm | none — history is load-bearing |
+| `bun-security-scanner` | published on npm | none today — a candidate to opt back in now that release freezes the tail instead of dropping the opt-in |
 
 ## Onboarding default
 
@@ -119,9 +131,20 @@ so, because a brand-new member is overwhelmingly the unreleased case.
 
 - `scripts/fleet/check/fresh-members-are-squashed-until-release.mts` — the
   bidirectional gate, registered as a `releaseStep` so the interactive
-  `check --all` loop stays offline.
+  `check --all` loop stays offline. A released, opted-in member's frozen zone
+  must stay reachable from its default branch (`verifyFrozenZoneReachable` —
+  GitHub's compare API, the remote no-clone equivalent of `git merge-base
+  --is-ancestor`); an unreleased member without the opt-in is a notice, not a
+  failure. Either check reads UNVERIFIED (never a false hazard) when `gh` is
+  unavailable, the anchor cannot be resolved, or the compare read fails.
 - `scripts/fleet/_shared/member-release-probe.mts` — the release probe both the
   gate and the roster writer share, so the two can never disagree.
+- `scripts/fleet/lib/squash-publish-guard.mts`'s `resolveFreezeBoundary` — the
+  pure boundary decision `squashing-history`'s runner uses at RUNTIME, given
+  the anchors and their ancestry.
+- `.claude/hooks/fleet/squash-freeze-boundary-guard/` — blocks a manual
+  full-root flatten (`reset --soft <root>`, `rebase --root`, a parentless
+  `commit-tree`) in a repo with a likely frozen zone, pointing at the runner.
 - `.claude/hooks/fleet/squash-history-nudge/` and the divergence hooks read the
   same opt-in through `.claude/hooks/fleet/_shared/fleet-roster.mts`.
 

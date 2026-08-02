@@ -184,39 +184,31 @@ git branch | grep backup-
 
 ### Uncommitted Changes
 
+`run.mts` refuses to squash a dirty tree up front (`checkTreeIsClean`,
+exit 2). A squash collapses COMMITTED history, so anything living only in
+the working tree is excluded from the collapse and left stranded on top of
+rewritten history — where this flow's own recovery step
+(`git reset --hard <newHead>`) destroys it.
+
+Land the dirty files FIRST, then squash — never the reverse. Commit with an
+explicit pathspec; do NOT use `git add -A` (sweeps files belonging to
+parallel Claude sessions) or `git stash` (a shared store other sessions can
+clobber on pop).
+
 ```bash
 git status
+git add -- <your-paths>
+git commit -m "chore: land before squash"
 ```
 
-If dirty, handle the changes safely. Do NOT use `git add -A` (sweeps
-files belonging to parallel Claude sessions) or `git stash` (uses a
-shared stash store that other sessions can clobber on pop).
+Do not stash, do not branch, do not retreat into a private worktree, and do
+not wait for a quiet window. History flattens at the collapse anyway, so any
+subject will do, and a long-held tree is the hazard rather than the remedy.
+See `docs/agents.md/fleet/parallel-claude-sessions.md` ("Land the dirty files
+BEFORE squashing").
 
-Pick one:
-
-- Commit on a WIP branch with surgical adds:
-
-  ```bash
-  git checkout -b wip/before-squash
-  git add <specific-files>
-  git commit -m "wip: before squash"
-  git checkout main
-  ```
-
-- OR run the squash in an isolated worktree, leaving this checkout
-  alone:
-
-  ```bash
-  git worktree add ../<repo>-squash main
-  cd ../<repo>-squash
-  # ... run the squash from Phase 1 …
-  # When the squash is fully pushed, retire the worktree:
-  cd <primary-checkout>
-  git worktree remove ../<repo>-squash
-  ```
-
-  Worktrees that don't get retired pile up under `~/projects/`.
-  Always close the loop.
+Ignored files never block: the guard reads `git status --porcelain` without
+`--ignored`, so a dirty `dist/` or `node_modules/` is invisible to it.
 
 Then retry from Phase 1.
 

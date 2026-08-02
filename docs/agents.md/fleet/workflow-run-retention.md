@@ -1,9 +1,15 @@
-# Workflow-run retention
+# Actions storage retention
+
+Two kinds of Actions storage grow without bound and are swept by one weekly
+workflow: **run history** and **cache**.
 
 GitHub keeps every Actions run forever by default. Across the fleet that grows
 into thousands of stale runs per repo — slow run lists, noisy API pagination,
 and run groups for workflows that no longer exist. A scheduled prune keeps the
 history bounded.
+
+Cache is the sharper problem, because going over budget produces no error at
+all. See [Cache retention](#cache-retention) below.
 
 ## Policy
 
@@ -72,11 +78,59 @@ Prune through this script, never a hand-rolled API loop or a manual sweep over
 individual runs. A hand loop skips the classification rules above and has no
 rate-limit backoff. Preview with `--dry-run` first.
 
+## Cache retention
+
+GitHub caps Actions cache at **10 GB per repo** and, past the cap, silently
+evicts least-recently-used entries. Nothing fails. The only symptom is that jobs
+get slow again, because the entries the repo restores most often are exactly the
+ones large enough to be evicted first, so the repo pays a cold rebuild on every
+run while reporting green. This is not hypothetical: ultrathink sat at 10.67 GB
+across 43 entries and was continuously evicting itself.
+
+`scripts/fleet/prune-actions-caches.mts` keeps a repo clear of that cap in two
+passes:
+
+- **Per-group retention** — entries are grouped by key prefix (the cache key
+  minus its trailing `hashFiles()` digest, so `Linux-cargo-a1b2c3d4` and
+  `Linux-cargo-f6e5d4c3` are two generations of one logical cache). Keep the
+  newest `--keep N` per group (default 2); the generations behind them can never
+  be restored again and are pure dead weight. A key whose final segment is a
+  version or a platform rather than a digest keeps that segment and stays its
+  own group, so `pnpm-store-v1-macOS-node26` never evicts
+  `pnpm-store-v1-Linux-node26`.
+- **Budget enforcement** — if the survivors still exceed `--max-bytes` (default
+  8 GB, deliberate headroom under the 10 GB ceiling because caches are written
+  continuously while the sweep runs weekly), evict the least-recently-accessed
+  of them until they fit.
+
+**Freshness is the floor.** The budget pass never touches an entry accessed
+within `--fresh-days` (default 7), measured back from the newest access in the
+inventory rather than wall-clock now. That keeps the decision reproducible and
+still identifies a live set on a dormant repo. When the fresh set alone is over
+budget, the script exits non-zero saying so instead of evicting a hot cache: at
+that point pruning cannot help and the workflows need to cache less.
+
+```bash
+# Report only — never deletes:
+node scripts/fleet/prune-actions-caches.mts --dry-run
+
+# Default policy (keep 2 per group, 8 GB budget, 7-day freshness floor):
+node scripts/fleet/prune-actions-caches.mts
+
+# Sweep the fleet, or target one repo with a tighter budget:
+node scripts/fleet/prune-actions-caches.mts --all
+node scripts/fleet/prune-actions-caches.mts --repo owner/name --max-bytes 4gb
+```
+
 ## Scheduled caller
 
-`.github/workflows/prune-workflow-runs.yml` runs it weekly (Sundays 04:00 UTC)
-and on `workflow_dispatch` (with `days` / `dry-run` inputs). The job grants
-`actions: write` + `contents: read` and runs the script via the fleet
-`setup-and-install` action. Both the script and the workflow are cascaded
+`.github/workflows/prune-workflow-runs.yml` runs both sweeps weekly (Sundays
+04:00 UTC) and on `workflow_dispatch` (with `days` / `dry-run` inputs). They are
+two steps of one job rather than two jobs: a second job would start on a bare
+runner and need its own copy of the inline git-fetch bootstrap, which is
+deliberately tri-plicated and lock-step checked. The cache step carries
+`if: always()`, so a failed run sweep still lets the cache sweep reclaim. The job
+grants `actions: write` + `contents: read` and runs via the fleet
+`setup-and-install` action. Both scripts and the workflow are cascaded
 byte-identical across the fleet — edit the `template/base/` copies and
 re-cascade.

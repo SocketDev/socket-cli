@@ -48,6 +48,11 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
+import {
+  parseRepoFilter,
+  selectRepos,
+  unmatchedSelectorMessage,
+} from '../_shared/repo-filter.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
 
@@ -72,8 +77,8 @@ export const PUBLISH_ENV_NAMES: readonly string[] = [
 /**
  * Pre-rename environment names that must not exist at all — each survived a
  * rename once as an unrestricted second door (`publish` on four members,
- * `release` on socket-btm), and a registry-side trusted-publisher config can
- * still reference them by name.
+ * `release` on a since-retired member), and a registry-side trusted-publisher
+ * config can still reference them by name.
  */
 export const LEGACY_ENV_NAMES: readonly string[] = ['publish', 'release']
 
@@ -393,6 +398,18 @@ export function main(): void {
     )
     return
   }
+  const selection = selectRepos(repos, parseRepoFilter(process.argv))
+  if (selection.unmatched.length > 0) {
+    logger.fail(
+      unmatchedSelectorMessage(
+        'publish-environments-are-branch-restricted',
+        selection.unmatched,
+      ),
+    )
+    process.exitCode = 1
+    return
+  }
+  repos = selection.selected
   let findings = sweep(repos)
   if (fixMode && findings.length > 0) {
     logger.log(

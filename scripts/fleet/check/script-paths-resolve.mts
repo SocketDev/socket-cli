@@ -12,7 +12,7 @@
 // `scripts/fleet/check/prompt-less-setup.mts` — the regenerated script was dead
 // and no gate caught it.
 //
-// Past incident (2026-07-20, socket-btm aa138c6e): the root-scripts segregation
+// Past incident (2026-07-20, in a since-retired member): the root-scripts segregation
 // wave blanket-rewrote `scripts/<name>.mts` references to
 // `scripts/repo/<name>.mts` across the whole tree, including WORKSPACE MEMBER
 // package.json scripts whose paths are package-relative (e.g.

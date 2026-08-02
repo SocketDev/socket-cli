@@ -48,6 +48,11 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
+import {
+  parseRepoFilter,
+  selectRepos,
+  unmatchedSelectorMessage,
+} from '../_shared/repo-filter.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
 
@@ -515,6 +520,18 @@ export function main(): void {
     )
     return
   }
+  const selection = selectRepos(repos, parseRepoFilter(process.argv))
+  if (selection.unmatched.length > 0) {
+    logger.fail(
+      unmatchedSelectorMessage(
+        'release-tags-are-immutable',
+        selection.unmatched,
+      ),
+    )
+    process.exitCode = 1
+    return
+  }
+  repos = selection.selected
   let findings = sweep(repos)
   if (fixMode && findings.length > 0) {
     logger.log(

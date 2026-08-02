@@ -4,7 +4,7 @@
 // scripts/fleet/lib/external-tools-schema.mts is the single source of truth (it
 // drives the runtime validator check/external-tools-are-valid.mts); this emits
 // the JSON-Schema artifact every external-tools.json references via `$schema`,
-// hosted canonically in WHEELHOUSE, not socket-btm, so editors/IDEs resolve one
+// hosted canonically in WHEELHOUSE, not a member repo, so editors/IDEs resolve one
 // schema. Regenerate on a schema change; --check fails on drift.
 //
 // Usage:

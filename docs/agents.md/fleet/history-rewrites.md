@@ -10,6 +10,13 @@ to a single `chore: initial commit` on a cadence — the squash preserves the
 **tree**, not the **log**. So on such a repo, individual commit granularity and
 message polish are throwaway: they exist only until the next squash.
 
+Once the member has cut a real published release, that "collapses to one
+commit" claim narrows: every commit through the newest published-release
+commit FREEZES (byte-identical forever — see
+[`squash-until-release`](squash-until-release.md)), and only the tail above it
+is still throwaway in the sense below. The opt-in stays; a released repo does
+not drop back to ordinary permanent-history rules.
+
 - **Don't over-invest in commit hygiene.** Skip the surgical one-commit-per-fix
   splitting, the carefully-worded Conventional-Commits bodies, and the
   logical-grouping agonizing. Land fast with a plain, reasonable message and
@@ -45,7 +52,10 @@ message polish are throwaway: they exist only until the next squash.
   skill or `SQUASH_HISTORY=1`), then `git push --force-with-lease`. Local main is
   canonical; origin carries the pre-squash history, and a diverged or orphan origin
   is the EXPECTED state, reconciled forward by the force-push, never a reset of
-  local to origin.
+  local to origin. A released member's tail squash is still a non-fast-forward
+  rewrite of the SAME shape — the force-push cost below is unchanged; freezing
+  the release commit changes WHAT gets rewritten, not whether a rewrite needs
+  the ruleset exemption dance.
 
 ## The server-side force-push block, and its temporary exemption
 
@@ -176,6 +186,35 @@ byte stays the same. It intentionally replaces commit identities. The final
 message reports the original tip, recovery ref, old and new commit counts, and
 the push mode computed from ancestry: a normal push when `origin/<default>` is
 an ancestor of the new tip, otherwise a separately authorized lease force-push.
+
+## Subagents: a worktree is not durable storage
+
+`tidying-worktrees` and `managing-worktrees` prune worktrees automatically —
+`git worktree prune` plus a `--force` removal of anything the removability
+predicate calls spent — and a squash-opt-in repo force-pushes its default
+branch on a cadence. A subagent that treats its worktree as the durable copy
+of its own work, or a commit SHA as a stable handle, loses both without
+warning.
+
+- **Land to your own branch continuously.** Never let work live only in the
+  worktree. Commit and push (or land to local main) as you go — a worktree
+  that gets swept mid-task takes any unlanded commit with it.
+- **Identify your work by subject, not SHA.** A squash or a lease-force
+  reconcile mints new commit objects for the same tree; the SHA you saw
+  earlier will not resolve. Match on the commit subject / your own diff
+  instead of pinning to a specific hash.
+- **A live rewrite in progress is a pause signal.** If a squash or history
+  rewrite is running, or `main`'s history changes under you mid-task, stop
+  mutating git state, report what you saw, and wait — don't try to reconcile
+  a moving target yourself.
+- **Never reset or rewind local main to origin.** Origin moving ahead by a
+  squash/rewrite is not newer truth; reconcile forward (see "Local main is
+  canonical" above), the same rule as every other actor.
+
+A hook that watched for an in-progress rewrite (a lockfile, a running
+`squashing-history` process, a `SQUASH_HISTORY` env sentinel) and warned a
+subagent before it mutated git state would catch this earlier than a lost-work
+postmortem; nothing currently does.
 
 ## Incident this codifies
 
