@@ -693,7 +693,9 @@ type HelperResolveCtx = {
     | ((
         source: string,
         importer?: string | undefined,
-      ) => Promise<{ external?: unknown; id: string } | null | undefined>)
+      ) => Promise<
+        { external?: unknown | undefined; id: string } | null | undefined
+      >)
     | undefined
 }
 

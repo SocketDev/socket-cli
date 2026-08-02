@@ -101,6 +101,60 @@ function isComment(e: ParseEntry): e is { comment: string } {
 const ASSIGNMENT_RE = /^[A-Za-z_][A-Za-z0-9_]*=/
 
 /**
+ * Options each runner wrapper takes for ITSELF that consume a following value.
+ * A `--flag=value` spelling carries its own value and is skipped as one token.
+ */
+const WRAPPER_VALUE_FLAGS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['command', new Set()],
+  ['env', new Set(['--chdir', '--unset', '-C', '-u'])],
+  ['ionice', new Set(['-c', '-n', '-p'])],
+  ['nice', new Set(['--adjustment', '-n'])],
+  ['nohup', new Set()],
+  ['stdbuf', new Set(['--error', '--input', '--output', '-e', '-i', '-o'])],
+  ['timeout', new Set(['--kill-after', '--signal', '-k', '-s'])],
+])
+
+/**
+ * Index of the first arg past `binary`'s own options, or undefined when
+ * `binary` is not a runner wrapper.
+ */
+function skipWrapperOwnArgs(
+  binary: string,
+  args: readonly string[],
+): number | undefined {
+  const valueFlags = WRAPPER_VALUE_FLAGS.get(binary)
+  if (!valueFlags) {
+    return undefined
+  }
+  let i = 0
+  while (i < args.length) {
+    const arg = args[i]!
+    if (arg === '--') {
+      i += 1
+      break
+    }
+    if (!arg.startsWith('-') || arg === '-') {
+      break
+    }
+    i += 1
+    if (valueFlags.has(arg)) {
+      i += 1
+    }
+  }
+  // `env` also takes NAME=VALUE pairs before the command it runs.
+  if (binary === 'env') {
+    while (i < args.length && ASSIGNMENT_RE.test(args[i]!)) {
+      i += 1
+    }
+  }
+  // `timeout` takes a mandatory DURATION before the command it runs.
+  if (binary === 'timeout' && i < args.length) {
+    i += 1
+  }
+  return i
+}
+
+/**
  * Rewrite every command-separating newline as `;` so the tokenizer sees the
  * boundary.
  *
@@ -304,6 +358,29 @@ export function parseCommands(command: string): Command[] {
       viaVariable: binary === '' && sawVarPlaceholder,
       viaEval: binary === 'eval',
     })
+    // A runner wrapper (`timeout 5 git add -A`, `env FOO=1 pnpm build`) puts
+    // the real command in its args. Record that command too, or every
+    // binary-matching consumer sees only the wrapper and misses what it ran.
+    // The wrapper entry stays, so a consumer looking for it still finds it.
+    let outerBinary = binary
+    let outerArgs: readonly string[] = args
+    for (;;) {
+      const start = skipWrapperOwnArgs(outerBinary, outerArgs)
+      if (start === undefined || start >= outerArgs.length) {
+        break
+      }
+      const innerBinary = outerArgs[start]!
+      const innerArgs = outerArgs.slice(start + 1)
+      commands.push({
+        binary: innerBinary,
+        args: innerArgs,
+        assignments: [],
+        viaVariable: false,
+        viaEval: innerBinary === 'eval',
+      })
+      outerBinary = innerBinary
+      outerArgs = innerArgs
+    }
     tokens = []
     sawVarPlaceholder = false
   }

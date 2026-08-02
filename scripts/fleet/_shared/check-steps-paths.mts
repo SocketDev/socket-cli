@@ -417,6 +417,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // imports of the `-stable` surface resolve an older build than the catalog
     // ships. Scans both the live workspace + the fleet catalog source.
     () => run('node', ['scripts/fleet/check/stable-aliases-match-base.mts']),
+    // The other direction of the same rule: a Socket-published pin must never
+    // move DOWN from its committed value. Socket packages are soak-exempt and
+    // always take the latest, so a rollback is someone routing around a broken
+    // release by hand — and it desyncs every member's `-stable` alias from its
+    // base, which is what reds the fleet. A FLEET_CATALOG_HOLDS entry is the
+    // sanctioned exception and this gate honors it.
+    () => run('node', ['scripts/fleet/check/socket-pins-never-downgrade.mts']),
     // Baseline catalog coverage. Wheelhouse-only (no-ops where the
     // sync-scaffolding manifest is absent). Every `catalog:` dep the fleet
     // package.json baseline (CANONICAL_CATALOG_DEPS) writes onto a member must be

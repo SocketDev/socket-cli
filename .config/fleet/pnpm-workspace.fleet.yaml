@@ -22,11 +22,11 @@ catalog:
   '@socketregistry/packageurl-js': 1.5.0
   '@socketsecurity/lib': 6.5.2
   '@socketsecurity/registry': 2.0.5
-  '@socketsecurity/sdk': 4.1.2
+  '@socketsecurity/sdk': 4.1.3
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.0'
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.5.2'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
-  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.2'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.3'
   '@types/mdast': 4.0.4
   '@types/node': 26.1.1
   '@types/semver': 7.7.1

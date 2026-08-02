@@ -63,6 +63,7 @@
 - Named on-demand sync: "cascade `<target>`" = one slice, "dogfood `<target>`" = self-sync, "cascade `<target>` to `<repo>`" = one member. [`vocabulary`](docs/agents.md/fleet/vocabulary.md)
 - 🚨 A member can go THIN — untrack the wholly-fleet payload; keep hybrid files + the dep-0 fetcher tracked, never bundled. [`thin-distribution`](docs/agents.md/fleet/thin-distribution.md) <!-- enforcement: off-machine — wheelhouse-central thin-wiring check -->
 - 🚨 Drift across fleet repos is a defect — when two repos pin different versions of a resource, opt for the latest. [`drift-watch`](docs/agents.md/fleet/drift-watch.md)
+- 🚨 A Socket-published pin NEVER moves down — fix the regressed package upstream; the only sanctioned lower pin is a `FLEET_CATALOG_HOLDS` entry, which must cascade in the same wave. (`scripts/fleet/check/socket-pins-never-downgrade.mts`) [`drift-watch`](docs/agents.md/fleet/drift-watch.md)
 - 🚨 Port an upstream at its LATEST release — `git fetch --tags`, pin NEWEST before a `.gitmodules`/`lockstep.json` version-pin change. [`lockstep`](docs/agents.md/fleet/lockstep.md) [`drift-watch`](docs/agents.md/fleet/drift-watch.md)
 - 🚨 Local-only cascade commits + superseded worktrees silently block future pushes — cleanup runs automatically at the start of every cascade wave. [`stranded-cascades`](docs/agents.md/fleet/stranded-cascades.md)
 - 🚨 Edit fleet-canonical files ONLY in `template/...`. [`no-local-fork`](docs/agents.md/fleet/no-local-fork.md)

@@ -169,6 +169,30 @@ release than the remote's newest tag; the lockstep harness fetches tags before
 counting drift and reports drift UNKNOWN rather than a falsely-low count off a
 shallow clone. Full harness detail: [`lockstep.md`](lockstep.md).
 
+## A Socket pin never moves down
+
+Socket-published packages (`SOCKET_PACKAGE_PATTERNS` in
+`scripts/fleet/constants/socket-scopes.mts`) ship through our own provenance
+pipeline and are soak-exempt, so the fleet always takes the newest one. That
+makes a *lowered* Socket pin a different animal from ordinary version churn: it
+is almost always someone routing around a broken release by hand.
+
+It also does more damage than it looks like it will. Lowering the base entry
+leaves every member's `-stable` alias pinned at the version that *was* latest,
+and `stable-aliases-match-base` reds that pair in every repo that inherits it.
+Repairing one browser-side consumer this way took the fleet from green to red
+across roughly seven repos before the aliases were reconciled back.
+
+The rule: fix the package that regressed, upstream, and let the fleet stay on
+the latest. If the newer release is genuinely unusable, the sanctioned move is a
+`FLEET_CATALOG_HOLDS` entry in `scripts/fleet/constants/catalog-holds.mts` —
+naming `heldAt`, the `reason`, and the `releaseWhen` condition that lifts it.
+`scripts/fleet/update/fleet-pins.mts` already refuses to ratchet past a hold,
+and the gate below honors one. A hold also only takes effect once
+`scripts/fleet` has cascaded, because the updater reads the synced live copy,
+not `template/` — apply the hold and cascade in the same wave or the next
+update run will ratchet straight past it.
+
 ## Enforcement
 
 - `.claude/hooks/fleet/drift-check-nudge/` — nags after edits to known-drift surfaces.
@@ -177,6 +201,7 @@ shallow clone. Full harness detail: [`lockstep.md`](lockstep.md).
 - `.claude/hooks/fleet/uses-sha-verify-guard/` — enforces the `# <tag> (YYYY-MM-DD)` comment on a bumped third-party `uses:@sha`.
 - `.claude/hooks/fleet/workflow-uses-comment-guard/` — enforces the same comment shape at write time in workflow/composite files.
 - `.claude/hooks/fleet/latest-release-pin-guard/` — blocks a pin set to an older release than the remote's newest tag.
+- `scripts/fleet/check/socket-pins-never-downgrade.mts` — fails when a Socket-published catalog pin is below its committed value with no `FLEET_CATALOG_HOLDS` entry behind it.
 
 ## See also
 

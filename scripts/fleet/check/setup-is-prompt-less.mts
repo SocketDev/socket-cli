@@ -294,59 +294,103 @@ function checkCommitGpgsign(): CheckResult {
   }
 }
 
-function checkSocketTokenInEnv(): CheckResult {
-  // This audit reports whether the raw env slots are wired up; the
-  // keychain-fallback getter would defeat the check.
-  const env =
-    // socket-api-token-getter: allow direct-env
-    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited, whether the install hook's primary export is wired up.
-    process.env['SOCKET_API_KEY'] || process.env['SOCKET_API_TOKEN']
-  if (env) {
-    // socket-api-token-getter: allow direct-env -- audit reports which raw env name is set.
-    const source = process.env['SOCKET_API_TOKEN']
-      ? // oxlint-disable-next-line socket/socket-api-token-env -- audit script: reports which name was found, including the primary slot.
-        'SOCKET_API_KEY'
-      : 'SOCKET_API_TOKEN'
+/**
+ * What the token audit needs to reach a verdict, with the reads already done.
+ *
+ * Split out so the decision is testable without a real HOME, a real shell rc,
+ * or a real environment: `checkSocketTokenInEnv` does the I/O and this decides.
+ */
+export interface SocketTokenEnvInputs {
+  // `SOCKET_API_KEY`, the primary slot.
+  readonly apiKey: string | undefined
+  // `SOCKET_API_TOKEN`, the fallback slot.
+  readonly apiToken: string | undefined
+  // Display path of the first shell rc carrying the bridge block, if any.
+  readonly bridgeRcDisplayPath: string | undefined
+}
+
+/**
+ * Decide the "Socket API token in env" verdict.
+ *
+ * Reports the env name that is ACTUALLY set. The earlier form inverted the two
+ * labels — with `SOCKET_API_TOKEN` set it announced `SOCKET_API_KEY` and vice
+ * versa — so an operator following the audit would go looking at the wrong
+ * variable. `apiKey` wins when both are set, matching the `||` precedence the
+ * hooks themselves use.
+ */
+export function evaluateSocketTokenInEnv(
+  inputs: SocketTokenEnvInputs,
+): CheckResult {
+  const name = 'Socket API token in env'
+  const value = inputs.apiKey || inputs.apiToken
+  if (value) {
+    // oxlint-disable-next-line socket/socket-api-token-env -- audit output: names the raw slot the operator actually populated, so the legacy alias has to appear verbatim.
+    const source = inputs.apiKey ? 'SOCKET_API_KEY' : 'SOCKET_API_TOKEN'
     return {
-      name: 'Socket API token in env',
+      detail: `${source} set (length ${value.length}). Hooks read env first; no keychain prompts.`,
+      name,
       ok: true,
-      detail: `${source} set (length ${env.length}). Hooks read env first; no keychain prompts.`,
     }
   }
-  // Token not in env — check if the shell-rc-bridge block is wired up.
-  const rcFiles = [
-    path.join(os.homedir(), '.zshenv'),
-    path.join(os.homedir(), '.zshrc'),
-    path.join(os.homedir(), '.bashrc'),
-    path.join(os.homedir(), '.bash_profile'),
-  ]
-  for (let i = 0, { length } = rcFiles; i < length; i += 1) {
-    const f = rcFiles[i]!
-    if (!existsSync(f)) {
-      continue
-    }
-    try {
-      const content = readFileSync(f, 'utf8')
-      if (content.includes('# BEGIN socket-cli env')) {
-        return {
-          name: 'Socket API token in env',
-          ok: true,
-          detail: `not set in current shell, but shell-rc-bridge block exists in ${path.relative(os.homedir(), f).replace(/^/, '~/')} — fresh shells will export it.`,
-        }
-      }
-    } catch {
-      // Skip unreadable files.
+  if (inputs.bridgeRcDisplayPath !== undefined) {
+    return {
+      detail: `not set in current shell, but shell-rc-bridge block exists in ${inputs.bridgeRcDisplayPath} — fresh shells will export it.`,
+      name,
+      ok: true,
     }
   }
   return {
-    name: 'Socket API token in env',
-    ok: false,
     detail:
       'SOCKET_API_KEY is not in the current env AND no shell-rc-bridge block is wired up. Hooks fall through to the keychain, which prompts on first access.',
     fix:
       'node .claude/hooks/fleet/setup-security-tools/install.mts\n' +
       '  # installs the shell-rc-bridge block; exports the token in every fresh shell',
+    name,
+    ok: false,
   }
+}
+
+// The shell rc files a fresh login shell sources, in the order the bridge block
+// would be found.
+const SHELL_RC_BASENAMES: readonly string[] = [
+  '.zshenv',
+  '.zshrc',
+  '.bashrc',
+  '.bash_profile',
+]
+
+/**
+ * Display path of the first shell rc carrying the bridge block, or undefined.
+ */
+export function findBridgeRcDisplayPath(home: string): string | undefined {
+  for (let i = 0, { length } = SHELL_RC_BASENAMES; i < length; i += 1) {
+    const filePath = path.join(home, SHELL_RC_BASENAMES[i]!)
+    if (!existsSync(filePath)) {
+      continue
+    }
+    try {
+      if (readFileSync(filePath, 'utf8').includes('# BEGIN socket-cli env')) {
+        return `~/${path.relative(home, filePath)}`
+      }
+    } catch {
+      // Skip unreadable files.
+    }
+  }
+  return undefined
+}
+
+function checkSocketTokenInEnv(): CheckResult {
+  // This audit reports whether the raw env slots are wired up; the
+  // keychain-fallback getter would defeat the check.
+  const home = os.homedir()
+  return evaluateSocketTokenInEnv({
+    // socket-api-token-getter: allow direct-env
+    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited, whether the install hook's primary export is wired up.
+    apiKey: process.env['SOCKET_API_KEY'],
+    // socket-api-token-getter: allow direct-env -- audit reports which raw env name is set.
+    apiToken: process.env['SOCKET_API_TOKEN'],
+    bridgeRcDisplayPath: findBridgeRcDisplayPath(home),
+  })
 }
 
 function checkKeychainTokenAcl(): CheckResult {

@@ -41,13 +41,6 @@ export interface CatalogHold {
  * upward, and verified by `check/catalog-pins-are-not-deprecated.mts`.
  */
 export const FLEET_CATALOG_HOLDS: Readonly<Record<string, CatalogHold>> = {
-  '@socketsecurity/sdk': {
-    heldAt: '4.1.2',
-    reason:
-      'sdk 4.1.3 depends on @socketsecurity/lib 6.5.1, whose http-request/browser and http-request/fetch/browser leaves are build-stubs that throw "is compiled out of this @socketsecurity/lib build" instead of performing the request. The stub header reads "no fleet consumer imports this leaf", which is not true — a browser-side consumer does, and every purl lookup it makes fails. 4.1.2 carries the real fetch transport.',
-    releaseWhen:
-      'a released sdk depends on a @socketsecurity/lib build that exposes the http-request browser leaves for real',
-  },
   nock: {
     heldAt: '14.0.16',
     reason:
