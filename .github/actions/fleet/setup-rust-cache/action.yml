@@ -1,5 +1,4 @@
-# Fleet-canonical composite: edit HERE in template/base and cascade. Promoted
-# from socket-registry's repo-owned copy so the fleet has one home for it.
+# Fleet-canonical composite: edit HERE in template/base and cascade.
 #
 # Socket-original, and it must stay that way. The third-party action it spares
 # consumers from allowlisting, Swatinem/rust-cache, is LGPL-3.0 and is listed
@@ -37,14 +36,19 @@ inputs:
         "path"                       — caches path/target
         "path -> target-dir"         — explicit target dir relative to workspace
       Examples:
-        "packages/iocraft-builder"                     (caches packages/iocraft-builder/target)
+        "packages/foo"                                 (caches packages/foo/target)
         "packages/foo -> target/release/build-cache"   (explicit target dir)
     required: true
   prefix-key:
     description: |
       Caller-supplied cache key prefix. Combined with OS + rustc version
-      to form the final key. Typically includes matrix axes
-      (e.g. "iocraft-${{ matrix.os }}-${{ matrix.arch }}").
+      to form the final key. Callers typically build it from their matrix
+      axes, so each matrix slot gets its own cache entry.
+
+      Write the value at the call site, not here: GitHub evaluates every
+      expression in this file when it loads the action, and `matrix` is not
+      in scope at load time — an expression written here fails the action
+      for every caller, even one that never passes this input.
     required: false
     default: 'rust'
   save-if:
