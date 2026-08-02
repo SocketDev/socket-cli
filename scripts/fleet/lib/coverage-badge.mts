@@ -74,9 +74,16 @@ export function coverageBadgeUrl(slug: string): string {
 
 // The current README reference to the coverage badge — a dimensioned <img> at
 // the badge's absolute raw-GitHub URL for `slug` (e.g. `SocketDev/socket-lib`).
-// Every other spelling is legacy, recognized only to migrate it.
-export function coverageBadgeRef(slug: string, svg: string): string {
-  return badgeImgTag(coverageBadgeUrl(slug), 'Coverage', svg)
+// Every other spelling is legacy, recognized only to migrate it. An `undefined`
+// slug means the package is never published, so it keeps the repo-relative path
+// (see `isPublishedPackage`): there is no registry page to break, and a private
+// repo's raw URL would not resolve.
+export function coverageBadgeRef(
+  slug: string | undefined,
+  svg: string,
+): string {
+  const src = slug === undefined ? BADGE_ASSET_PATH : coverageBadgeUrl(slug)
+  return badgeImgTag(src, 'Coverage', svg)
 }
 
 // The legacy markdown reference, kept for migration matching.
@@ -188,11 +195,12 @@ export function hasUnrecognizedCoverageBadge(readme: string): boolean {
  * legacy pre-badges/ path, the `![]` markdown form, the relative-src `<img>`,
  * AND an absolute `<img>` whose width went stale after a coverage change.
  * Already-current READMEs come back unchanged. `slug` is the repo's
- * `owner/repo`; `svg` supplies the exact width the <img> pins.
+ * `owner/repo`, or `undefined` for a never-published package that keeps the
+ * relative path; `svg` supplies the exact width the <img> pins.
  */
 export function migrateReadmeBadge(
   readme: string,
-  slug: string,
+  slug: string | undefined,
   svg: string,
 ): string {
   const ref = coverageBadgeRef(slug, svg)

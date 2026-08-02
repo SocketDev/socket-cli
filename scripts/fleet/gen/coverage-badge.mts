@@ -36,6 +36,7 @@ import {
 } from '../lib/coverage-badge.mts'
 import { REPO_ROOT } from '../paths.mts'
 import {
+  isPublishedPackage,
   missingGitHubSlugMessage,
   repoGitHubSlug,
 } from '../_shared/github-raw-url.mts'
@@ -79,16 +80,22 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
     )
     return 1
   }
-  // The README ref is an absolute raw-GitHub url, so the badge renders on the
-  // npm package page too — which means the repo slug is a hard requirement, not
-  // a nice-to-have. No relative fallback: it would silently reship the broken
-  // npm image this url exists to fix.
-  const slug = repoGitHubSlug(cfg.repoRoot)
-  if (slug === undefined) {
-    logger.error(
-      `gen/coverage-badge: ${missingGitHubSlugMessage(cfg.repoRoot)}`,
-    )
-    return 1
+  // A published package's README ref is an absolute raw-GitHub url so the badge
+  // renders on the npm package page too, which makes the repo slug a hard
+  // requirement there, not a nice-to-have. No relative fallback: it would
+  // silently reship the broken npm image this url exists to fix. A private
+  // package has no registry page, so it keeps the relative path — the absolute
+  // form would break it, since a private repo's raw url is not served
+  // anonymously.
+  let slug: string | undefined
+  if (isPublishedPackage(cfg.repoRoot)) {
+    slug = repoGitHubSlug(cfg.repoRoot)
+    if (slug === undefined) {
+      logger.error(
+        `gen/coverage-badge: ${missingGitHubSlugMessage(cfg.repoRoot)}`,
+      )
+      return 1
+    }
   }
   const svgPath = badgeAssetPath(cfg.repoRoot)
   const nextSvg = coverageBadgeSvg(pct)

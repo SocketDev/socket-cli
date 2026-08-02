@@ -107,6 +107,37 @@ export function repoGitHubSlug(repoRoot: string): string | undefined {
 }
 
 /**
+ * Whether this package's README ever reaches a registry page. Only a published
+ * package needs the absolute URL: a `private: true` package is never uploaded,
+ * so its README is read on GitHub alone, where a relative path resolves for
+ * anyone who can see the repo. The absolute form is actively WORSE there — a
+ * private repo's `raw.githubusercontent.com` URL is not served anonymously, so
+ * GitHub's image proxy gets a 404 and renders the badge broken for everyone.
+ * Read from the manifest rather than the repo's GitHub visibility so the answer
+ * needs no network call and is the same locally and in CI.
+ */
+export function isPublishedPackage(repoRoot: string): boolean {
+  const pkgPath = path.join(repoRoot, 'package.json')
+  if (!existsSync(pkgPath)) {
+    // An absent or unreadable manifest is not evidence of a private package.
+    // Answering "published" keeps the caller on the absolute-url path, where an
+    // unresolvable slug is a hard stop; answering "private" would hand back a
+    // relative path and quietly reship the broken registry image.
+    return true
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  } catch {
+    return true
+  }
+  if (typeof parsed !== 'object' || parsed === null) {
+    return true
+  }
+  return (parsed as Record<string, unknown>)['private'] !== true
+}
+
+/**
  * The four-ingredient error a generator prints when [`repoGitHubSlug`] comes
  * back undefined. Falling back to a relative path here would reintroduce the
  * broken-on-npm badge invisibly, so an unresolvable slug is a hard stop.
