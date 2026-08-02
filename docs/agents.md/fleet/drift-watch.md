@@ -201,7 +201,7 @@ update run will ratchet straight past it.
 - `.claude/hooks/fleet/uses-sha-verify-guard/` — enforces the `# <tag> (YYYY-MM-DD)` comment on a bumped third-party `uses:@sha`.
 - `.claude/hooks/fleet/workflow-uses-comment-guard/` — enforces the same comment shape at write time in workflow/composite files.
 - `.claude/hooks/fleet/latest-release-pin-guard/` — blocks a pin set to an older release than the remote's newest tag.
-- `scripts/fleet/check/socket-pins-never-downgrade.mts` — fails when a Socket-published catalog pin is below its committed value with no `FLEET_CATALOG_HOLDS` entry behind it.
+- `scripts/fleet/check/socket-pins-are-never-lowered.mts` — fails when a Socket-published catalog pin is below its committed value with no `FLEET_CATALOG_HOLDS` entry behind it.
 
 ## See also
 

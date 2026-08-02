@@ -423,7 +423,8 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // release by hand — and it desyncs every member's `-stable` alias from its
     // base, which is what reds the fleet. A FLEET_CATALOG_HOLDS entry is the
     // sanctioned exception and this gate honors it.
-    () => run('node', ['scripts/fleet/check/socket-pins-never-downgrade.mts']),
+    () =>
+      run('node', ['scripts/fleet/check/socket-pins-are-never-lowered.mts']),
     // Baseline catalog coverage. Wheelhouse-only (no-ops where the
     // sync-scaffolding manifest is absent). Every `catalog:` dep the fleet
     // package.json baseline (CANONICAL_CATALOG_DEPS) writes onto a member must be
