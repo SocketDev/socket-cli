@@ -117,45 +117,50 @@ describe('generateRecursiveManifests', () => {
     expect(atDualMarkerDir.every(o => o.status === 'generated')).toBe(true)
   })
 
-  it('continues to sibling roots in the same ecosystem after one root fails', async () => {
+  it('aborts the entire walk (fail-closed) once a build root fails, instead of continuing to further candidates', async () => {
     vi.mocked(runManifestFacts).mockImplementation(
       async ({ cwd, ecosystem }) => {
         if (ecosystem === 'maven' && cwd === dualMarkerDir) {
           process.exitCode = 1
           return undefined
         }
-        if (cwd === reactor && ecosystem === 'maven') {
-          return {
-            factsPath: path.join(cwd, '.socket.facts.json'),
-            projects: [
-              {
-                type: 'maven',
-                name: 'moduleA',
-                subprojectDir: 'moduleA',
-                dependencies: [],
-                resolvedAs: [],
-              },
-            ],
-          }
-        }
         return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
       },
     )
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
 
-    const outcomes = await generateRecursiveManifests({
-      cwd: monorepo,
-      verbose: false,
-    })
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
 
-    const byKey = new Map(
-      outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
-    )
-    expect(byKey.get('maven:dual-marker-dir')).toBe('failed')
-    // A failure at one maven root must not stop later maven roots from being attempted.
-    expect(byKey.get('maven:reactor')).toBe('generated')
-    expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
-      'generated',
-    )
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('maven:dual-marker-dir')).toBe('failed')
+      // Without dual-marker-dir's own projects[], reactor's still-undiscovered
+      // members can't be safely told apart from independent projects - so
+      // nothing else in the maven ecosystem gets attempted, or reported at all.
+      expect(byKey.has('maven:reactor')).toBe(false)
+      expect(byKey.has('maven:reactor/moduleB/independent-submodule')).toBe(
+        false,
+      )
+      expect(
+        vi
+          .mocked(runManifestFacts)
+          .mock.calls.some(
+            ([opts]) => opts.ecosystem === 'maven' && opts.cwd === reactor,
+          ),
+      ).toBe(false)
+      expect(
+        warnSpy.mock.calls.some(c =>
+          /Aborting recursive discovery/.test(String(c[0])),
+        ),
+      ).toBe(true)
+    } finally {
+      warnSpy.mockRestore()
+    }
   })
 
   it('reports a non-fatal empty result distinctly from a failure', async () => {

@@ -139,8 +139,15 @@ function resolveEcosystemConfig(
 // subtree — so a reactor/multi-project member is skipped on re-encounter
 // while an unrelated nested project the reactor doesn't declare (e.g. a
 // stray git-submodule pom, or a different-ecosystem project nested inside a
-// covered directory tree) still gets its own invocation. A failure at one
-// root does not stop discovery/generation at sibling roots.
+// covered directory tree) still gets its own invocation. Fail-closed: a build
+// root whose workspace layout couldn't be determined (the build tool crashed
+// or a blocking resolution failure prevented `projects[]` from being read)
+// aborts the entire walk instead of continuing to its still-undiscovered
+// descendants - without that root's `projects[]`, there's no way to tell
+// whether a later candidate is one of its own already-covered members or a
+// genuinely independent project, and guessing risks silently mis-scanning a
+// subproject as standalone (or vice versa) plus a cascade of doomed attempts
+// against a build that's already known to be broken.
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,
@@ -158,7 +165,7 @@ export async function generateRecursiveManifests({
   })
 
   const outcomes: RecursiveManifestOutcome[] = []
-  for (const [ecosystem, dirs] of candidatesByTool) {
+  ecosystems: for (const [ecosystem, dirs] of candidatesByTool) {
     const covered = new Set<string>()
     const disabledRoots: DisabledRoot[] = []
     for (const dir of dirs) {
@@ -224,6 +231,12 @@ export async function generateRecursiveManifests({
           ecosystem,
           status: failed ? 'failed' : 'empty',
         })
+        if (failed) {
+          logger.warn(
+            `Aborting recursive discovery: ${dir}'s (${ecosystem}) workspace layout could not be determined, so remaining build roots cannot be safely classified as covered or independent.`,
+          )
+          break ecosystems
+        }
         continue
       }
 
