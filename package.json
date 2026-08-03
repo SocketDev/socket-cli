@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "1.1.152",
+  "version": "1.1.153",
   "description": "CLI for Socket.dev",
   "contentPolicy": {
     "class": "dual-use"
@@ -100,7 +100,7 @@
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.28.4",
     "@biomejs/biome": "2.2.4",
-    "@coana-tech/cli": "15.10.0",
+    "@coana-tech/cli": "15.10.1",
     "@cyclonedx/cdxgen": "12.1.2",
     "@dotenvx/dotenvx": "1.49.0",
     "@eslint/compat": "1.3.2",
