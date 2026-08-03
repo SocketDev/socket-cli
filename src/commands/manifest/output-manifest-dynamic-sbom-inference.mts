@@ -19,21 +19,14 @@ function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
     .join('\n')
 }
 
+// Only the generated count is reported: a failure aborts the whole walk
+// immediately (already reported via its own fail message) rather than
+// accumulating alongside successes, and the disabled/covered/empty buckets
+// count candidate directories, not independent build roots, so a total
+// there would be just as misleading as the removed "N build root(s)" one.
 function summarize(outcomes: readonly RecursiveManifestOutcome[]): string {
   const generated = outcomes.filter(o => o.status === 'generated').length
-  const failed = outcomes.filter(o => o.status === 'failed').length
-  const skippedCovered = outcomes.filter(
-    o => o.status === 'skippedCovered',
-  ).length
-  const skippedDisabled = outcomes.filter(
-    o => o.status === 'skippedDisabled',
-  ).length
-  const empty = outcomes.filter(o => o.status === 'empty').length
-  return (
-    `Generated ${generated} Socket facts file(s); ` +
-    `${failed} failed, ${skippedCovered} skipped (already covered), ` +
-    `${skippedDisabled} skipped (disabled/pom), ${empty} empty.`
-  )
+  return `Generated ${generated} Socket facts file(s).`
 }
 
 export async function outputManifestDynamicSbomInference(
