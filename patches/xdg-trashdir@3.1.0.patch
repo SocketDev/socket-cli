@@ -1,0 +1,38 @@
+diff --git a/index.js b/index.js
+index f7bb38e81401f619eccf93cbebd339a6d0aa6f50..c5c12f264689baacf390bc9c824acaf0d3133b10 100644
+--- a/index.js
++++ b/index.js
+@@ -1,7 +1,6 @@
+ 'use strict';
+ const fs = require('fs').promises;
+ const path = require('path');
+-const df = require('@sindresorhus/df');
+ const mountPoint = require('mount-point');
+ const userHome = require('user-home');
+ const xdgBasedir = require('xdg-basedir');
+@@ -54,7 +53,11 @@ module.exports.all = async () => {
+ 		return Promise.reject(new Error('Only Linux systems are supported'));
+ 	}
+ 
+-	return Promise.all((await df()).map(fileSystem => {
++	// @sindresorhus/df 5 is ESM-only and drops the callable default export for
++	// named ones; import it here, where the enclosing function is already async.
++	const {diskSpace} = await import('@sindresorhus/df');
++
++	return Promise.all((await diskSpace()).map(fileSystem => {
+ 		if (fileSystem.mountpoint === '/') {
+ 			return path.join(xdgBasedir.data, 'Trash');
+ 		}
+diff --git a/package.json b/package.json
+index 96aa5b0554b48822f91a3700605900ccc0c3b3ec..a89248b5859ffa32944f133e4cc48a0f9f892fe1 100644
+--- a/package.json
++++ b/package.json
+@@ -28,7 +28,7 @@
+ 		"xdg"
+ 	],
+ 	"dependencies": {
+-		"@sindresorhus/df": "^3.1.1",
++		"@sindresorhus/df": "^5.0.0",
+ 		"mount-point": "^3.0.0",
+ 		"user-home": "^2.0.0",
+ 		"xdg-basedir": "^4.0.0"

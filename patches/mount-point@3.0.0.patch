@@ -1,0 +1,38 @@
+diff --git a/index.js b/index.js
+index 07095fcb00fbf200a0307b86568b64662d4582ba..83218662c7beb3a572e4d74f197632d734f43591 100644
+--- a/index.js
++++ b/index.js
+@@ -1,10 +1,11 @@
+ 'use strict';
+-var df = require('@sindresorhus/df');
+-var pify = require('pify');
+-var Promise = require('pinkie-promise');
+ 
+-module.exports = function (file) {
+-	return pify(df.file, Promise)(file).then(function (data) {
+-		return data.mountpoint;
+-	});
++// @sindresorhus/df 5 is ESM-only and replaced the callback-style `df.file`
++// with the promise-returning `diskSpaceForFilesystemOwningPath`, so the
++// import moves inside the call and pify/pinkie-promise are no longer needed.
++// Same contract: resolves to the mountpoint of the filesystem owning `file`.
++module.exports = async function (file) {
++	const {diskSpaceForFilesystemOwningPath} = await import('@sindresorhus/df');
++	const data = await diskSpaceForFilesystemOwningPath(file);
++	return data.mountpoint;
+ };
+diff --git a/package.json b/package.json
+index 0b2b5365f6c5a73e709c70b1747c5f31ff4b1982..4171b5a83596dadf58615d4bb9c5e89266486dcb 100644
+--- a/package.json
++++ b/package.json
+@@ -24,9 +24,7 @@
+     "mount"
+   ],
+   "dependencies": {
+-    "@sindresorhus/df": "^1.0.1",
+-    "pify": "^2.3.0",
+-    "pinkie-promise": "^2.0.1"
++    "@sindresorhus/df": "^5.0.0"
+   },
+   "devDependencies": {
+     "ava": "*",
