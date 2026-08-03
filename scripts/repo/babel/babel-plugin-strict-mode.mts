@@ -1,4 +1,4 @@
-/**
+/*
  * @file Babel plugin to transform loose-mode code into strict-mode compatible
  *   code This plugin ensures code runs correctly in strict mode by transforming
  *   problematic patterns:

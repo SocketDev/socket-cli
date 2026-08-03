@@ -1,4 +1,4 @@
-/**
+/*
  * @file Babel plugin for --with-intl=none compatibility This plugin transforms
  *   ICU-dependent JavaScript features into ICU-free alternatives, enabling
  *   Node.js builds with --with-intl=none to save ~6-8MB. Note: --without-intl
