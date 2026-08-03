@@ -1,0 +1,220 @@
+# External Tools
+
+Socket CLI integrates with external security tools for scanning, analysis, and vulnerability detection. This document explains how tools are bundled and executed in different deployment modes.
+
+## Deployment Modes
+
+| Mode        | Description                            | Tool Source                     |
+| ----------- | -------------------------------------- | ------------------------------- |
+| **SEA**     | Standalone executable with bundled VFS | Tools pre-bundled at build time |
+| **npm CLI** | Installed via npm/pnpm/yarn            | Tools downloaded at runtime     |
+
+## Tool Matrix
+
+| Tool              | Type           | SEA Mode                    | npm CLI Mode      |
+| ----------------- | -------------- | --------------------------- | ----------------- |
+| @coana-tech/cli   | npm            | VFS (node_modules)          | dlx download      |
+| @cyclonedx/cdxgen | npm            | VFS (node_modules)          | dlx download      |
+| opengrep          | github-release | VFS (/snapshot/)            | GitHub download   |
+| python            | github-release | VFS (/snapshot/)            | GitHub download   |
+| socket-basics     | github-source  | VFS (pre-installed)         | N/A (SEA only)    |
+| socket-patch      | github-release | VFS (/snapshot/)            | GitHub download   |
+| socketsecurity    | pypi           | VFS (pre-installed via pip) | pip install       |
+| sfw               | hybrid         | VFS (GitHub binary)         | dlx (npm package) |
+| synp              | npm            | VFS (node_modules)          | dlx download      |
+| trivy             | github-release | VFS (/snapshot/)            | GitHub download   |
+| trufflehog        | github-release | VFS (/snapshot/)            | GitHub download   |
+
+## Configuration
+
+All tools are defined in `packages/cli/bundle-tools.json`:
+
+```json
+{
+  "tool-name": {
+    "description": "Tool description",
+    "type": "npm | github-release | pypi | github-source",
+    "version": "1.0.0",
+    "checksums": { ... }
+  }
+}
+```
+
+---
+
+## SEA Mode (Standalone Executable)
+
+SEA binaries contain all tools pre-bundled in a Virtual File System (VFS). Tools are extracted to a temp directory on first use.
+
+### VFS Structure
+
+```text
+/snapshot/
+├── node_modules/           # npm packages with full dependency trees
+│   ├── @coana-tech/cli/
+│   ├── @cyclonedx/cdxgen/
+│   ├── @socketsecurity/sfw-bin/sfw
+│   └── synp/
+├── opengrep/               # Standalone binaries
+├── python/                 # Python runtime + pre-installed packages
+│   └── lib/python3.11/site-packages/
+│       ├── socketsecurity/
+│       └── socket_basics/
+├── socket-patch/
+├── trivy/
+└── trufflehog/
+```
+
+### Python Package Pre-bundling
+
+Python packages (`socketsecurity`, `socket_basics`) are installed at **build time** into the bundled Python:
+
+1. Build downloads `python-build-standalone` runtime
+2. Build runs `pip install socketsecurity==X.X.X` into bundled Python
+3. Build copies `socket-basics` source into site-packages
+4. VFS contains complete Python with packages pre-installed
+5. Runtime skips pip install (checks `import socketsecurity` first)
+
+### VFS Extraction
+
+Tools are extracted on first use to `~/.socket/_vfs/`:
+
+```typescript
+// Detection
+if (isSeaBinary() && areExternalToolsAvailable()) {
+  // Use VFS-extracted tool
+  return spawnToolVfs(args, options)
+}
+```
+
+---
+
+## npm CLI Mode
+
+When installed via npm, tools are downloaded at runtime.
+
+### Download Locations
+
+| Source          | Cache Location                                             |
+| --------------- | ---------------------------------------------------------- |
+| npm dlx         | `~/.socket/_dlx/{package}@{version}/`                      |
+| GitHub releases | `~/.socket/_dlx/github/{owner}/{repo}/{version}/`          |
+| PyPI            | `~/.socket/_dlx/pypi/{package}/{version}/`                 |
+| Python runtime  | `~/.socket/_dlx/python/{version}-{tag}-{platform}-{arch}/` |
+
+### Download Flow
+
+```text
+1. Check local path override (SOCKET_CLI_*_LOCAL_PATH env var)
+   └── If set, use local binary directly
+
+2. Check cache
+   └── If cached and valid, use cached binary
+
+3. Download
+   ├── npm packages: dlxPackage() from npm registry
+   ├── GitHub releases: downloadGitHubReleaseBinary()
+   └── PyPI packages: downloadPyPIWheel()
+
+4. Verify integrity
+   ├── GitHub releases / PyPI: SHA-256 checksum validation (required in production)
+   └── npm packages: registry integrity only; the bundle-tools.json SRI is
+       enforced in the SEA build, not on this path (see "npm tool integrity")
+
+5. Extract and cache
+   └── Save to ~/.socket/_dlx/
+```
+
+---
+
+## Security
+
+### Checksum Verification
+
+GitHub-release and PyPI downloads are verified with SHA-256 checksums defined in
+`bundle-tools.json`:
+
+```json
+{
+  "trivy": {
+    "checksums": {
+      "trivy_0.69.2_macOS-ARM64.tar.gz": "320c0e6af90b5733...",
+      "trivy_0.69.2_Linux-64bit.tar.gz": "affa59a1e37d86e4..."
+    }
+  }
+}
+```
+
+Checksums are **required** in production builds. Dev mode allows downloads without checksums for testing.
+
+### npm tool integrity
+
+The three `packageManager: "npm"` tools — `@coana-tech/cli`, `@cyclonedx/cdxgen`,
+and `synp` — pin a `sha512-<base64>` SRI in `integrity` rather than a per-asset
+sha256. Two links have to hold for that pin to mean anything:
+
+1. **Tarball bytes against the registry's advertised hash.** npm's installer
+   (cacache/pacote, driven by Arborist) does this and records the result in
+   `node_modules/.package-lock.json`.
+2. **That recorded hash against our pin.** `scripts/sea-build-utils/npm-integrity.mts`
+   does this, and throws on a mismatch, a missing pin, or a missing record.
+
+Link 2 is what stops a registry-side substitution from passing as a pinned
+build; link 1 alone only proves the registry served what it said it would.
+
+> [!WARNING]
+> The **runtime dlx path does not enforce these pins.** `spawnDlx`
+> (`src/util/dlx/spawn.mts`) passes no `hash` to `dlxPackage`, the SRI values are
+> never inlined into the CLI bundle, and `@socketsecurity/lib` 6.4.0's
+> `ensurePackageInstalled` accepts a `hash` option and ignores it. A coana
+> download performed by the installed CLI is therefore checked by npm against the
+> registry, but not against `bundle-tools.json`. Closing this needs an upstream
+> lib change; do not describe the runtime coana pin as integrity-enforced until
+> it lands.
+
+### Archive Extraction Safety
+
+- Path traversal validation (no `../` escapes)
+- Symlink target validation (no escapes via symlinks)
+- Lock file protection against concurrent downloads
+
+### Local Path Overrides
+
+Environment variables for development/testing:
+
+| Variable                             | Tool           |
+| ------------------------------------ | -------------- |
+| `SOCKET_CLI_CDXGEN_LOCAL_PATH`       | cdxgen         |
+| `SOCKET_CLI_COANA_LOCAL_PATH`        | coana          |
+| `SOCKET_CLI_PYCLI_LOCAL_PATH`        | socketsecurity |
+| `SOCKET_CLI_SFW_LOCAL_PATH`          | sfw            |
+| `SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH` | socket-patch   |
+
+---
+
+## Implementation Files
+
+| File                              | Purpose                               |
+| --------------------------------- | ------------------------------------- |
+| `bundle-tools.json`               | Tool definitions, versions, checksums |
+| `src/util/dlx/resolve-binary.mts` | Binary resolution logic               |
+| `src/util/dlx/spawn.mts`          | Tool spawning (VFS + dlx)             |
+| `src/util/dlx/vfs-extract.mts`    | VFS extraction utilities              |
+| `src/util/basics/spawn.mts`       | Python-based tools (basics)           |
+| `src/util/basics/vfs-extract.mts` | Basics tools VFS extraction           |
+| `src/env/*-version.mts`           | Version getters (esbuild inlined)     |
+| `src/env/*-checksums.mts`         | Checksum getters (esbuild inlined)    |
+
+---
+
+## Adding a New Tool
+
+1. Add entry to `bundle-tools.json` with version and checksums
+2. Create `src/env/{tool}-version.mts` version getter
+3. Create `src/env/{tool}-checksums.mts` checksum getter (if applicable)
+4. Add resolve function in `src/util/dlx/resolve-binary.mts`
+5. Add spawn functions in `src/util/dlx/spawn.mts`:
+   - `spawn{Tool}Vfs()` - VFS extraction path
+   - `spawn{Tool}Dlx()` - Download path
+   - `spawn{Tool}()` - Auto-detect wrapper
+6. Update build scripts to bundle tool in VFS (for SEA)
