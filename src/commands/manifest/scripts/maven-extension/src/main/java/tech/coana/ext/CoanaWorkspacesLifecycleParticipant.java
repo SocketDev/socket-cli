@@ -14,11 +14,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Lightweight sibling of {@link CoanaFactsLifecycleParticipant}: loaded from the same extension
- * jar, gated by {@code -Dcoana.task=socket-workspaces}. Hooks {@code afterProjectsRead} instead of
- * {@code afterSessionEnd} - it fires as soon as Maven determines the reactor project list, before
- * any lifecycle phase runs - and needs no {@code RepositorySystem}/{@code DependencyGraphBuilder}
- * since it never builds a dependency graph.
+ * Sibling of {@link CoanaFactsLifecycleParticipant}, gated by {@code -Dcoana.task=socket-workspaces}.
+ * Hooks {@code afterProjectsRead} (fires once the reactor project list is known, before any
+ * lifecycle phase runs) since it only needs that list, never a dependency graph.
  */
 @Named("coana-workspaces")
 @Singleton

@@ -157,10 +157,9 @@ export async function readOrDefaultSocketJsonUp(
   return getDefaultSocketJson()
 }
 
-// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields present
-// in `override` win, fields it doesn't set fall through to `base`. Everything
-// outside `defaults.manifest` (scan-level defaults, etc.) comes from `base`
-// only - only the manifest/build-tool section cascades.
+// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
+// `override` win, others fall through to `base`. Only this section cascades;
+// everything else in `defaults` comes from `base` only.
 function mergeManifestDefaults(
   base: SocketJson,
   override: SocketJson,
@@ -197,12 +196,9 @@ function mergeManifestDefaults(
   }
 }
 
-// Cascades socket.json's `defaults.manifest.*` section from `rootSockJson`
-// down to `dir`: every ancestor between `dir` and `boundaryDir` (inclusive of
-// `dir`, exclusive of `boundaryDir` - that's already `rootSockJson`) that has
-// its own socket.json is merged in, nearest-to-`dir` taking precedence field
-// by field. A build root with no socket.json of its own simply inherits
-// `rootSockJson` unchanged.
+// Cascades `defaults.manifest.*` from `rootSockJson` down to `dir`: each
+// ancestor's own socket.json, between `dir` and `boundaryDir` (exclusive),
+// merges in, nearest-to-`dir` winning field by field.
 export function readSocketJsonCascade(
   dir: string,
   boundaryDir: string,

@@ -10,11 +10,9 @@ export type EnumerateWorkspacesResult = {
   projects: SocketFactsSbomProject[]
 }
 
-// Cheaply discovers a build root's subprojects (no dependency resolution): used
-// for `socket manifest setup --recursive` discovery. Distinct from
-// dynamic-sbom-inference's own coverage tracking, which gets the same
-// subproject list for free as a side effect of the full facts run it already
-// has to do.
+// Cheap subproject discovery (no dependency resolution) for
+// `socket manifest setup --recursive`; dynamic-sbom-inference instead gets
+// this list for free as a side effect of its own full facts run.
 export async function enumerateWorkspaces({
   bin,
   buildOpts,

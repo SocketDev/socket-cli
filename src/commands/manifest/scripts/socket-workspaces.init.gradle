@@ -1,12 +1,9 @@
 // Invoke via:
 //   ./gradlew --init-script socket-workspaces.init.gradle socketWorkspaces
 
-// Lightweight sibling of socket-facts.init.gradle: emits only `meta`/`project` records (a build's
-// subproject list) with NO dependency resolution at all - no socketFactsCollect-equivalent task, no
-// configurations ever touched. Kept as a wholly separate script (not an added task in the facts init
-// script) so it can never affect that file's already-verified wide Gradle-version compatibility
-// (1.0+). Used for cheap workspace discovery, e.g. `socket manifest setup --dynamic-sbom-inference`,
-// without paying for a full facts-generation build.
+// Sibling of socket-facts.init.gradle: emits only `meta`/`project` records, no dependency
+// resolution. Kept as a separate script so it can't affect that file's already-verified,
+// wide Gradle-version compatibility (1.0+).
 
 // `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
 gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }

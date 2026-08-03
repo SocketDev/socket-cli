@@ -1,9 +1,8 @@
 import type { MeowFlags } from '../../flags.mts'
 
-// A manifest-scoped variant of `../scan/reachability-flags.mts`'s
-// `excludePathsFlag`: these commands only ever generate a manifest/facts
-// file, so the description must not reference "the scan" or reachability
-// analysis, which don't apply when a manifest command is run standalone.
+// Manifest-scoped variant of `../scan/reachability-flags.mts`'s
+// `excludePathsFlag`: description avoids "scan"/reachability wording since
+// these commands only ever generate a manifest/facts file.
 export const excludePathsFlag: MeowFlags = {
   excludePaths: {
     type: 'string',

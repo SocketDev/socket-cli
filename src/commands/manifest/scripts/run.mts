@@ -176,11 +176,8 @@ export async function runManifestScript(
   }
 }
 
-// Cheap subproject discovery: emits only `project` records, never resolving
-// dependencies. Distinct from a full `runManifestScript` run, which gets the
-// same subproject list for free as a side effect of the resolution it already
-// has to do; this path exists for discovery BEFORE committing to that cost
-// (e.g. `socket manifest setup --recursive`).
+// Emits only `project` records, never resolving dependencies, for discovery
+// before committing to a full `runManifestScript` resolution cost.
 export async function enumerateWorkspaces(
   tool: BuildTool,
   opts: ManifestScriptOptions,

@@ -12,11 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lightweight sibling of {@link SocketFactsRecordsEngine}: emits only `meta`/`project` records
- * from {@code session.getProjects()} (Maven's own reactor list, already populated before any
- * lifecycle phase runs) - no dependency graph is ever built, so no {@code RepositorySystem} or
- * {@code DependencyGraphBuilder} is needed. Used for cheap workspace discovery (e.g.
- * `socket manifest setup --recursive`) without paying for a full facts-generation build.
+ * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`project` records from the
+ * already-populated reactor list, building no dependency graph - cheap workspace discovery for
+ * `socket manifest setup --recursive` without a full facts-generation build.
  */
 public final class SocketWorkspacesRecordsEngine {
 

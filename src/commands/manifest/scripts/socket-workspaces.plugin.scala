@@ -6,12 +6,9 @@ import sbt.Keys._
 import scala.collection.mutable
 
 /**
- * Lightweight sibling of SocketFactsPlugin (socket-facts.plugin.scala): emits only
- * `meta`/`project` records (a build's subproject list) with NO dependency resolution at all - no
- * `update`/`updateFull` is ever run. Kept as a wholly separate plugin (not a flag on the facts
- * task) so it can never affect that file's already-verified wide sbt-version compatibility
- * (0.13.x+). Used for cheap workspace discovery, e.g.
- * `socket manifest setup --dynamic-sbom-inference`, without paying for a full facts-generation build.
+ * Sibling of SocketFactsPlugin (socket-facts.plugin.scala): emits only `meta`/`project`
+ * records, no dependency resolution. Kept as a separate plugin so it can't affect that
+ * file's already-verified wide sbt-version compatibility (0.13.x+).
  *
  * Must compile on Scala 2.10/sbt 0.13 and Scala 2.12/sbt 1.x, same constraint as the facts plugin.
  */

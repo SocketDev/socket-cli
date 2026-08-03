@@ -53,13 +53,9 @@ function sortByDepthThenPath(dirs: readonly string[], cwd: string): string[] {
   })
 }
 
-// Recursively discovers gradle/sbt/maven build-tool roots under `cwd`, one
-// filesystem pass for all three ecosystems' marker files (fast-glob unions the
-// patterns internally). Each ecosystem's candidate list is depth-sorted
-// (root-most first) so a reactor/multi-project root is always visited before
-// its own members; the caller uses that ordering plus the resulting facts
-// SBOM's `projects[].subprojectDir` to avoid re-invoking the manifest script on
-// directories a parent build root already covers.
+// Depth-sorted (root-most first) so the caller, using each build root's
+// `subprojectDir` facts, visits a reactor root before its own members and can
+// skip subprojects a parent root already covers.
 export async function findBuildToolCandidates({
   cwd,
   excludePaths,
