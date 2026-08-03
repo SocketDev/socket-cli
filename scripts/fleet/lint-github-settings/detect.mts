@@ -119,12 +119,21 @@ export function ghSpawn(args: string[]): ReturnType<GhSpawn> {
   }
 }
 
+export interface GhApiOptions {
+  body?: Record<string, unknown> | undefined
+  method?: 'GET' | 'PATCH' | undefined
+  runGh?: GhSpawn | undefined
+}
+
 export function ghApi<T>(
   endpoint: string,
-  method: 'GET' | 'PATCH' = 'GET',
-  body?: Record<string, unknown> | undefined,
-  runGh: GhSpawn = ghSpawn,
+  options?: GhApiOptions | undefined,
 ): T | undefined {
+  const {
+    body,
+    method = 'GET',
+    runGh = ghSpawn,
+  } = { __proto__: null, ...options } as GhApiOptions
   const args = ['api', endpoint]
   if (method !== 'GET') {
     args.push('-X', method)
@@ -170,9 +179,7 @@ export function loadCustomProperties(
 ): Record<string, string | null> {
   const props = ghApi<CustomPropertyValue[]>(
     `repos/${repo}/properties/values`,
-    'GET',
-    undefined,
-    runGh,
+    { runGh },
   )
   if (!Array.isArray(props)) {
     return {}
@@ -251,9 +258,7 @@ export function detectInstalledApps(
   // endpoint returns ONE commit, which is the bug shape this fixes.
   const commits = ghApi<Array<{ sha?: string | undefined }>>(
     `repos/${repo}/commits?sha=${encodeURIComponent(defaultBranch)}&per_page=10`,
-    'GET',
-    undefined,
-    runGh,
+    { runGh },
   )
   for (const c of commits ?? []) {
     if (!c.sha) {
@@ -261,9 +266,7 @@ export function detectInstalledApps(
     }
     const suites = ghApi<CheckSuitesPayload>(
       `repos/${repo}/commits/${c.sha}/check-suites?per_page=100`,
-      'GET',
-      undefined,
-      runGh,
+      { runGh },
     )
     for (const s of suites?.check_suites ?? []) {
       if (s.app?.slug) {
@@ -284,9 +287,7 @@ export function detectLocalShadows(
   const out: Array<{ basename: string; localPath: string }> = []
   const wf = ghApi<WorkflowsPayload>(
     `repos/${repo}/actions/workflows?per_page=100`,
-    'GET',
-    undefined,
-    runGh,
+    { runGh },
   )
   if (!wf?.workflows) {
     return out

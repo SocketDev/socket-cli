@@ -102,42 +102,25 @@ import {
 // gate: narrowing this set would silently disable the guard.
 export const triggers: readonly string[] = ['dispatches', 'workflow']
 
-// Bypass phrase: `Allow workflow-dispatch bypass: <workflow>`.
-// Typed once, it authorizes dispatches of the NAMED workflow for the
-// rest of the session — a durable per-workflow grant. Dispatching a
-// DIFFERENT workflow needs its own phrase.
+// Bypass: `Allow workflow-dispatch bypass: <workflow>`. Authorizes
+// dispatches of the NAMED workflow for the rest of the session; a
+// DIFFERENT workflow needs its own phrase. Per-workflow because a bare
+// `Allow workflow-dispatch bypass` (no colon target) used to authorize
+// every dispatch for 8 turns — one grant covering an unrelated workflow.
 //
-// Why per-workflow: an earlier shape just matched the bare string
-// `Allow workflow-dispatch bypass`, which authorized every dispatch
-// in the next 8 user turns. That was too permissive — one phrase
-// shouldn't open the door for an unrelated workflow later in the
-// session. The colon-suffix form names exactly what is authorized.
+// Session-durable, not one-phrase-one-dispatch: a retry that burns no
+// prod side effect (startup-fail, missing asset, cancellation) would
+// otherwise force re-typing the same phrase every retry of the SAME
+// workflow (happened 2026-07-24, helped nobody). The guard blocks
+// UNAUTHORIZED workflows, not retries of an already-authorized one.
 //
-// Why session-durable, not one-phrase-one-dispatch: release
-// engineering retries. A dispatch that startup-fails on an Actions
-// allowlist gap, dies on a missing asset, or gets cancelled consumes
-// no prod side effect — forcing a fresh phrase for every retry of
-// the SAME workflow makes the operator re-type the same
-// authorization a dozen times in one debugging loop (which happened,
-// 2026-07-24, and helped nobody). The user's intent for that
-// workflow is established by the first phrase; the guard's job is
-// blocking UNAUTHORIZED workflows, not rationing retries of an
-// authorized one.
+// `<workflow>` is the literal `gh workflow run` token — filename
+// (`publish.yml`), basename (`publish`), or numeric ID; any of the three
+// matches the same workflow.
 //
-// `<workflow>` is the literal token passed to `gh workflow run` —
-// either the workflow filename (`publish.yml`), the basename
-// (`publish`), or the workflow ID (`12345`). The matcher accepts
-// any of those three shapes for the same workflow because the user
-// might write whichever feels natural.
-//
-// Use cases that need the bypass, the dry-run path doesn't cover:
-//   - Workflows that don't accept a `dry-run` input by design
-//     (e.g. node-smol's main build, which has 30-minute side effects
-//     but no inverse).
-//   - One-off recovery dispatches after a stuck job.
-//   - Re-dispatches after a transient infra failure (cache miss,
-//     runner timeout) where the user has already verified the
-//     previous run's intent.
+// Needed when the dry-run path doesn't cover it: no dry-run input by
+// design, a stuck-job recovery, or a verified retry after transient
+// infra failure.
 const BYPASS_PHRASE_PREFIX = 'Allow workflow-dispatch bypass:'
 
 /**
@@ -563,22 +546,6 @@ type DispatchResult = {
   workflow?: string | undefined
 }
 
-// Resolve the workflow file path and verify it actually declares a
-// `dry-run` input. The path is resolved relative to
-// `$CLAUDE_PROJECT_DIR/.github/workflows/<workflow>` since the hook
-// runs from arbitrary cwds; falls back to ".github/workflows/<wf>"
-// when the env var is unset (e.g. the hook invoked outside Claude
-// Code). The check is intentionally permissive: any unparseable
-// workflow file is treated as "no dry-run input" (block-the-default).
-//
-// `searchRoots` is the list of project directories to probe. The
-// caller picks exactly one based on the dispatch shape:
-//   - same-repo (no --repo, or --repo names the current project):
-//     just the current project dir.
-//   - cross-repo (--repo names a different project): just the
-//     sibling clone at <parent-of-project-dir>/<name>. The current
-//     project is intentionally excluded so a same-named workflow in
-//     the current checkout can't false-positive a cross-repo dispatch.
 // Classify a workflow file by its release shape:
 //   - 'npm'    — runs `npm/pnpm/yarn publish` somewhere; irreversible
 //   - 'gh'     — only creates GitHub releases (reversible via
@@ -621,6 +588,18 @@ export function classifyWorkflow(
   return 'unknown'
 }
 
+// Resolve the workflow file path and verify it actually declares a
+// `dry-run` input. The path is resolved relative to
+// `$CLAUDE_PROJECT_DIR/.github/workflows/<workflow>` since the hook runs
+// from arbitrary cwds; falls back to ".github/workflows/<wf>" when the env
+// var is unset. Any unparseable workflow file is treated as "no dry-run
+// input" (block-the-default).
+//
+// `searchRoots` is the list of project directories to probe: same-repo
+// dispatch probes just the current project dir; cross-repo (`--repo` names
+// a different project) probes only the sibling clone at
+// `<parent-of-project-dir>/<name>` — the current project is excluded so a
+// same-named workflow there can't false-positive a cross-repo dispatch.
 export function workflowDeclaresDryRunInput(
   workflow: string,
   searchRoots: readonly string[],
@@ -656,30 +635,15 @@ export function workflowDeclaresDryRunInput(
   return false
 }
 
-// Decide whether a dispatch on `workflow` should be allowed because
-// it's a verifiable dry-run. All four conditions must hold:
-//   1. `-f dry-run=true|1|yes` is explicitly present in the command
-//   2. `-f dry-run=false|0|no` is NOT present, user didn't override
-//   3. No force-prod input is present (release/publish/prod=true)
-//   4. The target workflow YAML declares a `dry-run:` input under
-//      its `workflow_dispatch.inputs` block — without that, the gh
-//      CLI silently accepts the flag but the workflow ignores it.
-//
-// The workflow lookup probes the current project first, then any
-// sibling clone implied by `--repo owner/<name>`. Sibling clones
-// follow the fleet convention: `<projects-dir>/<repo-name>` next to
-// the current project. If the file isn't readable from any local
-// checkout, the bypass denies — same posture as a missing file.
-// Resolve the workflow file's search roots based on the command's
-// --repo flag. Used by both bypasses (dry-run + GH-release-only).
-//   - same-repo (no --repo, or --repo names the current project):
-//     the current project dir, plus `process.cwd()` when it differs.
-//     The cwd fallback covers the cross-session case where one Claude
-//     session has CLAUDE_PROJECT_DIR pointing at repo A, but the user
-//     `cd`-ed into sibling repo B before invoking `gh workflow run`
-//     against a workflow that lives in B. Without the cwd fallback
-//     the hook would block the bypass because A's YAML doesn't
-//     declare the dry-run input that B's does.
+// Resolve the workflow file's search roots based on the command's --repo
+// flag. Used by both bypasses (dry-run + GH-release-only).
+//   - same-repo (no --repo, or --repo names the current project): the
+//     current project dir, plus `process.cwd()` when it differs. The cwd
+//     fallback covers the cross-session case where one Claude Code session
+//     has CLAUDE_PROJECT_DIR pointing at repo A, but the user `cd`-ed into
+//     sibling repo B before invoking `gh workflow run` against a workflow
+//     that lives in B — without it the hook blocks the bypass because A's
+//     YAML doesn't declare the dry-run input that B's does.
 //   - cross-repo (--repo names a different project): just the sibling
 //     clone at <parent-of-project-dir>/<name>. The current project is
 //     intentionally excluded so a same-named workflow in the current
@@ -766,6 +730,20 @@ export function resolveSearchRoots(command: string): string[] {
   return roots
 }
 
+// Decide whether a dispatch on `workflow` should be allowed because it's a
+// verifiable dry-run. All four conditions must hold:
+//   1. `-f dry-run=true|1|yes` is explicitly present in the command
+//   2. `-f dry-run=false|0|no` is NOT present, user didn't override
+//   3. No force-prod input is present (release/publish/prod=true)
+//   4. The target workflow YAML declares a `dry-run:` input under its
+//      `workflow_dispatch.inputs` block — without that, the gh CLI
+//      silently accepts the flag but the workflow ignores it.
+//
+// The workflow lookup probes the current project first, then any sibling
+// clone implied by `--repo owner/<name>` (fleet convention:
+// `<projects-dir>/<repo-name>` next to the current project). If the file
+// isn't readable from any local checkout, the bypass denies — same
+// posture as a missing file.
 export function isVerifiableDryRun(
   command: string,
   workflow: string | undefined,

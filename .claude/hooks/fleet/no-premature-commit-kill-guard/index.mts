@@ -105,27 +105,19 @@ export function invokesPausingCi(command: string): string | undefined {
 
 // True when the command is a process-kill (`pkill`/`kill`/`killall`) whose
 // args target an in-flight git op or its test run — the premature-teardown
-// shape. Matches:
-//   - `vitest` (the test run a pre-commit/pre-push spawned)
-//   - `git commit` / `git push` (the op whose hook chain is mid-run; killing a
-//     push mid-flight also disrupts a PARALLEL session's push)
-//   - the hook process names `pre-commit` / `pre-push` (a `pkill -f
-//     "…/pre-push"` targets the gate directly)
-// `kill <pid>` of an unrelated process is NOT matched (no git/test token).
+// shape. Matches `vitest`, `git commit`/`git push`, and the hook process
+// names `pre-commit`/`pre-push`; a bare `kill <pid>` with no git/test token
+// is NOT matched.
 //
-// One exemption: `vitest/dist/workers` is the blessed orphan-reap (the
-// stale-process-sweeper's own target, documented in CLAUDE.md). A kill pattern
-// scoped to the worker path is a deliberate reap of a CONFIRMED-dead worker,
-// not a teardown of a live run — let it through so the documented recovery
-// (`pkill -f "vitest/dist/workers"`) is not itself blocked.
+// Exempt: `vitest/dist/workers` is the blessed orphan-reap (the
+// stale-process-sweeper's own target, per CLAUDE.md) — a kill pattern scoped
+// to that worker path reaps a CONFIRMED-dead worker, not a live run.
 //
-// Why also catch the bare/unscoped shapes: a pattern like `pkill -f "git push"`
-// or `pkill -f pre-push` matches the SAME op in every sibling checkout, so it
-// reaps a parallel/Codex session's in-flight op in another repo. The teardown
-// is the danger whether the target is yours or a neighbor's — block it and
-// point the operator at a repo-path-qualified, cwd-verified kill instead.
-// The blessed reap (`pkill -f "vitest/dist/workers"`) is the one correct kill
-// shape — match it as a plain substring so it is exempted first.
+// Bare/unscoped patterns (`pkill -f "git push"`, `pkill -f pre-push`) are
+// still caught: they match the SAME op in every sibling checkout, so an
+// unqualified kill reaps a parallel/Codex session's in-flight op in another
+// repo. Point the operator at a repo-path-qualified, cwd-verified kill
+// instead.
 const BLESSED_REAP = 'vitest/dist/workers'
 export function killsGitOpOrTestRun(command: string): string | undefined {
   for (const bin of ['pkill', 'killall', 'kill']) {

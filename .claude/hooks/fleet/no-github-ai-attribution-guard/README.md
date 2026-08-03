@@ -17,7 +17,7 @@ On an `mcp__*` tool call the guard extracts every string field of the tool input
 
 Either way it then:
 
-3. Runs the shared `containsAiAttribution` (from `.git-hooks/_shared/ai-attribution.mts` — the SAME detector the commit-msg / pre-push hooks use, so they never diverge) over the extracted text.
+3. Runs the shared `containsAiAttribution` (from `.claude/hooks/fleet/_shared/ai-attribution.mts` — the SAME detector the commit-msg / pre-push hooks use, so they never diverge) over the extracted text.
 4. If attribution is found AND the user hasn't typed the bypass phrase, exits 2 with the offending-surface explanation + the fix (remove the attribution line).
 
 `--body-file` / `--notes-file` (file paths) are out of scope — only args-as-text are inspected. Commit messages are out of scope — the git hooks own them.
@@ -28,6 +28,6 @@ User types **`Allow ai-attribution bypass`** verbatim in a recent message (withi
 
 ## Related
 
-- `.git-hooks/_shared/ai-attribution.mts` — the shared detector (`containsAiAttribution`, `stripAiAttribution`, `AI_ATTRIBUTION_RE`).
+- `.claude/hooks/fleet/_shared/ai-attribution.mts` — the fleet-canonical detector (`containsAiAttribution`, `hasAiAttribution`, `stripAiAttribution`, `AI_ATTRIBUTION_PATTERNS`, `AI_ATTRIBUTION_RE`).
 - `.git-hooks/fleet/commit-msg` + `pre-push` — the commit-message side of the same rule.
 - `.claude/hooks/fleet/no-ext-issue-ref-guard/` — sibling Bash guard over the same gh prose surfaces (structural template).

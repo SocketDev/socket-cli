@@ -301,26 +301,19 @@ export interface FreezeBoundaryResolution {
 }
 
 /**
- * Resolve this checkout's squash-freeze boundary against `tip` (the branch
- * commit about to be squashed): discover every npm package / crate this repo
- * (root + one workspace level) declares, probe each on its registry for a
- * REAL published release and that release's recorded source commit, verify
- * ancestry, and hand the whole set to the pure `resolveFreezeBoundary`.
+ * Resolve this checkout's squash-freeze boundary against `tip`: discover
+ * every npm package/crate this repo (root + one workspace level) declares,
+ * probe each registry for a REAL published release + its source commit,
+ * verify ancestry, and hand the set to the pure `resolveFreezeBoundary`.
  *
- * `resolveFreezeBoundary`'s thrown "unresolvable anchor" case is caught here
- * and turned into a `refuseMessage` — main() logs it and returns exit 2,
- * never silently treating it as `boundary: undefined` (full-root safe).
- *
- * A SECOND fail-loud case lives here, ahead of that pure function entirely: a
- * registry read FAILURE (network/timeout, `reachable: false`) is not the same
- * as the registry confirming "never published", but `resolveFreezeBoundary`
- * has no way to tell them apart from `published: false` alone — both leave it
- * with no candidates and it returns `boundary: undefined` (full-root safe).
- * When every read failed for a repo whose LOCAL manifest reports a real
- * (non-placeholder) version — the same network-independent floor the manual-
- * flatten guard uses — treating that as full-root-safe would silently orphan
- * a genuinely published release the instant the registry hiccups. Refuse
- * instead of guessing.
+ * Two fail-loud cases turn into a `refuseMessage` (main() logs it, exits 2)
+ * instead of `boundary: undefined` (full-root safe):
+ * - `resolveFreezeBoundary`'s own "unresolvable anchor" throw.
+ * - A registry read FAILURE (network/timeout) for every candidate, when the
+ * LOCAL manifest reports a real (non-placeholder) version. A read failure
+ * isn't the same as "never published", but the pure function can't tell
+ * them apart from here — treating it as full-root-safe would silently
+ * orphan a genuinely published release the instant the registry hiccups.
  */
 export async function resolveFreezeBoundaryForRepo(config: {
   readonly src: string
@@ -407,24 +400,22 @@ const MAX_LISTED_DIRTY = 10
 /**
  * Refuse to squash over an uncommitted working tree.
  *
- * Every squash mode collapses COMMITTED history — the root is minted from the
- * branch tip (`mintSquashRoot`) or a worktree checked out at it, so anything
- * living only in the working tree is excluded from the collapse and left
- * stranded on top of rewritten history, where the flow's own recovery advice
- * (`git reset --hard <newHead>`) destroys it. That is strictly worse than the
- * stale-tree clobber `stale-tree-clobber-guard` catches at commit time: this
- * one loses work rather than reverting it.
+ * Every squash mode collapses COMMITTED history — the root is minted from
+ * the branch tip, so anything living only in the working tree is stranded on
+ * top of rewritten history, where the flow's own recovery advice (`git reset
+ * --hard <newHead>`) destroys it. That's strictly worse than the stale-tree
+ * clobber `stale-tree-clobber-guard` catches at commit time: this one loses
+ * work rather than reverting it.
  *
- * The remedy is the fleet's standing doctrine, not a new rule invented here —
- * `docs/agents.md/fleet/parallel-claude-sessions.md` ("Land the dirty files
- * BEFORE squashing", restated in `stale-tree-clobber-guard`'s header): commit
- * first, then squash, never the reverse. So the message teaches landing
- * forward, never stash / branch / wait.
+ * The remedy is standing fleet doctrine
+ * (`docs/agents.md/fleet/parallel-claude-sessions.md`): commit first, then
+ * squash, never the reverse — the message teaches landing forward, never
+ * stash/branch/wait.
  *
- * IGNORED files are exempt BY CONSTRUCTION, not by a special case: this reads
- * `git status --porcelain` WITHOUT `--ignored`, so a dirty `dist/` or
- * `node_modules/` is invisible here. Untracked-but-NOT-ignored files DO block
- * — an uncommitted new source file is exactly the work a collapse strands.
+ * IGNORED files are exempt BY CONSTRUCTION: this reads `git status
+ * --porcelain` WITHOUT `--ignored`, so a dirty `dist/`/`node_modules/` is
+ * invisible here. Untracked-but-NOT-ignored files DO block — an uncommitted
+ * new source file is exactly the work a collapse strands.
  */
 export function checkTreeIsClean(config: {
   readonly src: string

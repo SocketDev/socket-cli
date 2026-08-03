@@ -163,7 +163,7 @@ export function applyFixes(repo: string, findings: readonly Finding[]): number {
   for (const [k, v] of Object.entries(patch)) {
     process.stdout.write(`    ${k} = ${JSON.stringify(v)}\n`)
   }
-  const result = ghApi(`repos/${repo}`, 'PATCH', patch)
+  const result = ghApi(`repos/${repo}`, { body: patch, method: 'PATCH' })
   if (!result) {
     process.stderr.write(
       '::error::PATCH failed. Token may lack `repo:admin` permission.\n',

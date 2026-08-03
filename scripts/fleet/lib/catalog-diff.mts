@@ -1,5 +1,5 @@
 /*
- * @file Read the repo's catalog block twice — as committed at `HEAD`, and as it
+ * @file Read a repo's catalog block twice — as committed at `HEAD`, and as it
  *   stands in the working tree — so a gate can compare the two and see which
  *   direction a pin moved. Split out from the check that uses it so the pure
  *   comparison stays unit-testable without a git fixture.
@@ -10,8 +10,14 @@ import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { PNPM_WORKSPACE_YAML, REPO_ROOT } from '../paths.mts'
+import { REPO_ROOT } from '../paths.mts'
 import { parseCatalogBlock } from './workspace-yaml.mts'
+
+// Repo-relative, so both sides of the comparison — the git read and the
+// working-tree read — are anchored on the SAME root. Anchoring one on a shared
+// absolute constant and the other on the caller's root silently compares one
+// repo's HEAD against another repo's tree.
+const WORKSPACE_REL = 'pnpm-workspace.yaml'
 
 export interface CatalogPair {
   readonly committed: ReadonlyMap<string, string>
@@ -30,9 +36,8 @@ function toMap(record: Record<string, string>): Map<string, string> {
 export async function committedWorkspaceYaml(
   repoRoot: string,
 ): Promise<string | undefined> {
-  const rel = path.relative(repoRoot, PNPM_WORKSPACE_YAML)
   try {
-    const result = await spawn('git', ['show', `HEAD:${rel}`], {
+    const result = await spawn('git', ['show', `HEAD:${WORKSPACE_REL}`], {
       cwd: repoRoot,
     })
     if (result.code !== 0 || typeof result.stdout !== 'string') {
@@ -45,13 +50,14 @@ export async function committedWorkspaceYaml(
 }
 
 /**
- * The committed and working-tree catalogs, or undefined when either side is
- * unavailable.
+ * The committed and working-tree catalogs for `repoRoot`, or undefined when
+ * either side is unavailable.
  */
 export async function catalogsForDowngradeCheck(
   repoRoot: string = REPO_ROOT,
 ): Promise<CatalogPair | undefined> {
-  if (!existsSync(PNPM_WORKSPACE_YAML)) {
+  const workspacePath = path.join(repoRoot, WORKSPACE_REL)
+  if (!existsSync(workspacePath)) {
     return undefined
   }
   const committedYaml = await committedWorkspaceYaml(repoRoot)
@@ -60,8 +66,6 @@ export async function catalogsForDowngradeCheck(
   }
   return {
     committed: toMap(parseCatalogBlock(committedYaml)),
-    proposed: toMap(
-      parseCatalogBlock(readFileSync(PNPM_WORKSPACE_YAML, 'utf8')),
-    ),
+    proposed: toMap(parseCatalogBlock(readFileSync(workspacePath, 'utf8'))),
   }
 }

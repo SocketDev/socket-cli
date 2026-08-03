@@ -35,26 +35,18 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
+import {
+  hasProseWord,
+  meetsAsideWordFloor,
+  PARENTHETICAL_LEADIN_RE,
+} from '../../../.config/fleet/oxlint-plugin/lib/prose-parenthetical.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const logger = getDefaultLogger()
 
-// A clause needs at least this many whitespace-separated words to read as an
-// aside rather than a short marker or reference.
-const MIN_ASIDE_WORDS = 4
-
-// Lead-ins that make a parenthetical a legitimate reference or gloss, never an
-// aside to rewrite: e.g./i.e./cf./viz./resp./aka, "see ...", and bare URLs.
-const ALLOW_LEADIN =
-  /^(?:a\.k\.a\.|aka\b|cf\.|e\.g\.|eg\b|https?:\/\/|i\.e\.|ie\b|resp\.|see\b|viz\.)/i
-
 // Punctuation that marks the content as code, not prose: backticks, braces,
 // assignment/semicolons, and the `::` `=>` `->` operator sequences.
 const CODE_CHAR = /[`{}=;]|::|=>|->/
-
-// At least one lowercase alphabetic word — prose has these; identifiers,
-// SCREAMING_CASE tokens, and pure symbol soup do not.
-const LOWERCASE_WORD = /\b[a-z]{2,}\b/
 
 // The aside shape the owner flagged: an APPOSITIVE that restates the preceding
 // noun, so it opens with a determiner — "the layout engine (the yoga-open-tui
@@ -72,16 +64,16 @@ const ALLOW_FILE = '<!-- prose-parens: allow-file -->'
  */
 export function isAsideParenthetical(inner: string): boolean {
   const text = inner.trim()
-  if (!text || ALLOW_LEADIN.test(text) || CODE_CHAR.test(text)) {
+  if (!text || PARENTHETICAL_LEADIN_RE.test(text) || CODE_CHAR.test(text)) {
     return false
   }
   if (!APPOSITIVE_START.test(text)) {
     return false
   }
-  if (text.split(/\s+/).length < MIN_ASIDE_WORDS) {
+  if (!meetsAsideWordFloor(text)) {
     return false
   }
-  return LOWERCASE_WORD.test(text)
+  return hasProseWord(text)
 }
 
 /**

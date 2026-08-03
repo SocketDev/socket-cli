@@ -59,7 +59,7 @@
     {
       "name": "sauce",
       "description": "Shared Claude Code skills + agent content for the fleet",
-      "optIns": ["freeform-readme", "squash-history", "thin"],
+      "optIns": ["squash-history", "thin"],
       "publishes": "none"
     },
     {
@@ -111,13 +111,13 @@
     {
       "name": "socket-vscode",
       "description": "VS Code extension for socket.dev",
-      "optIns": ["freeform-readme"],
+      "optIns": ["thin"],
       "publishes": "custom"
     },
     {
       "name": "socket-webext",
       "description": "Browser extension for socket.dev",
-      "optIns": ["freeform-readme"],
+      "optIns": ["thin"],
       "publishes": "custom"
     },
     {

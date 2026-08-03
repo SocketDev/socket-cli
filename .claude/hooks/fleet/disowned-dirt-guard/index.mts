@@ -7,12 +7,12 @@
 // uncommitted / WIP state to a "parallel session", "another session", or a
 // "sibling session" is disowning its own work: the paths never get landed,
 // and the excuse survives review because it sounds plausible. This guard
-// blocks turn-end once so the reply, and the dirt, get handled — commit the
-// paths logically, or say precisely why they cannot be committed yet.
-// Degrades to a notice when `stop_hook_active` is set, no Stop loops.
+// blocks turn-end so the reply, and the dirt, get handled — commit the
+// paths logically, or say precisely why they cannot be committed yet. It
+// blocks on every turn-end, retries included — see the note at the block.
 // Bypass: `Allow disowned-dirt bypass`.
 
-import { block, defineHook, notify, runHook } from '../_shared/guard.mts'
+import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
@@ -58,12 +58,17 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     `  Fix:    land the paths (surgical: \`git commit -o <file>\`, logical\n` +
     `          commits), or state the concrete blocker — never a rival\n` +
     `          session. Bypass: \`Allow disowned-dirt bypass\`.`
-  const stopHookActive =
-    (payload as { stop_hook_active?: unknown | undefined }).stop_hook_active ===
-    true
-  if (stopHookActive) {
-    return notify(message)
-  }
+  // Blocks even mid-retry of another Stop guard. Degrading to a notice there
+  // opened a real hole: a reply being rewritten to satisfy a DIFFERENT guard
+  // — `dirty-worktree-stop-guard` above all, which demands the files be
+  // committed — is under direct pressure to explain why paths are still
+  // uncommitted, and "a parallel session owns them" is the nearest excuse.
+  // That retry is exactly when `stop_hook_active` is set, so the one turn
+  // where the violation is likeliest was the one turn the guard only
+  // whispered. The two-guards-deadlock worry does not apply: this guard reads
+  // the reply text and nothing else, so rewording the attribution always
+  // satisfies it, and rewording cannot dirty the tree that
+  // `dirty-worktree-stop-guard` is waiting on.
   return block(message)
 }
 

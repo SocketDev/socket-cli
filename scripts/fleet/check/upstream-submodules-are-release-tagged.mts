@@ -29,11 +29,14 @@ export interface UpstreamPin {
   noReleaseTag: boolean
 }
 
-// A release tag carries a `<major>.<minor>` version token: v0.4.5, 1.2.3,
-// v6.0.2, a monorepo `@scope/pkg@1.2.3`, `pkg-v1.2.3`. A moving branch (main,
-// master, develop, releases/v6, release/next) has no such `\d+\.\d+` token.
-// Major-only floats (`v6`) intentionally fail — pin the full `v6.0.2`.
-const RELEASE_TAG_RE = /\d+\.\d+/
+// A release tag carries a `<major><sep><minor>` version token: v0.4.5, 1.2.3,
+// v6.0.2, a monorepo `@scope/pkg@1.2.3`, `pkg-v1.2.3` — and upstreams that
+// spell the separator differently, curl's `curl-8_19_0` and postgres's
+// `REL_17_9` among them. A moving branch (main, master, develop, releases/v6,
+// release/next) has no multi-part version token in ANY separator. Major-only
+// floats (`v6`) intentionally fail — pin the full `v6.0.2`.
+// require-regex-comment: two digit groups joined by `.` or `_`.
+const RELEASE_TAG_RE = /\d+[._]\d+/
 
 /**
  * True when `branch` looks like an immutable release tag (has a

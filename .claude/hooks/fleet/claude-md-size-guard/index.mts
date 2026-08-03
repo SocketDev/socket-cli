@@ -46,13 +46,21 @@ const DEFAULT_CAP_BYTES = 40 * 1024
  * on-disk file isn't readable or `old_string` doesn't match exactly, return
  * undefined, caller fails open.
  */
+export interface PostEditTextOptions {
+  content?: string | undefined
+  newString?: string | undefined
+  oldString?: string | undefined
+}
+
 export function computePostEditText(
   toolName: string,
   filePath: string,
-  newString: string | undefined,
-  oldString: string | undefined,
-  content: string | undefined,
+  options?: PostEditTextOptions | undefined,
 ): string | undefined {
+  const { content, newString, oldString } = {
+    __proto__: null,
+    ...options,
+  } as PostEditTextOptions
   if (toolName === 'Write') {
     return content
   }
@@ -134,13 +142,11 @@ export const check = editGuard((filePath, content, payload) => {
   // Edit branch and content only on the Write branch, so passing the same
   // resolved value to both slots is correct for each tool.
   const oldString = payload.tool_input?.old_string
-  const postEdit = computePostEditText(
-    toolName,
-    filePath,
+  const postEdit = computePostEditText(toolName, filePath, {
     content,
-    typeof oldString === 'string' ? oldString : undefined,
-    content,
-  )
+    newString: content,
+    oldString: typeof oldString === 'string' ? oldString : undefined,
+  })
   if (postEdit === undefined) {
     // Fail open — couldn't compute post-edit text reliably.
     return undefined

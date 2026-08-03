@@ -186,23 +186,18 @@ export function installShellRcBridge(
 }
 
 /**
- * Pick the shell rc file to edit. Honors $SHELL when set; defaults to the most
- * common file for the active user's shell.
+ * Pick the shell rc file to edit. Honors $SHELL when set; defaults to the
+ * most common file for the active user's shell.
  *
- * Why .zshenv (not .zshrc) for zsh: ~/.zshrc is only sourced for interactive
- * shells. Tools that spawn zsh non-interactively (Claude Code's Bash tool, IDE
- * integrations, CI runners) skip .zshrc and therefore miss the bridge.
- * ~/.zshenv runs for every zsh invocation regardless of interactive / login
- * state, which is what an env-var export actually wants. The only downside is
- * the file runs on more shells than strictly needed — but a keychain lookup of
- * a single string is cheap (~5ms) and any consumer that doesn't care just
- * ignores the var.
+ * Zsh uses `.zshenv`, not `.zshrc`: `.zshrc` only sources for interactive
+ * shells, so tools that spawn zsh non-interactively (Claude Code's Bash
+ * tool, IDE integrations, CI runners) skip it and miss the bridge. `.zshenv`
+ * runs for every zsh invocation; the cost is a cheap (~5ms) keychain lookup
+ * on shells that don't need the var.
  *
- * For bash: ~/.bashrc is interactive, ~/.bash_profile is login. Bash's BASH_ENV
- * is the closest analog to .zshenv but it requires the env var to be set ahead
- * of time, which doesn't help us. Settle for ~/.bashrc when present, fall back
- * to ~/.bash_profile. Non-interactive bash callers still need a wrapper script
- * for now.
+ * Bash has no equivalent — `BASH_ENV` needs the var set ahead of time, so it
+ * doesn't help here. Use `.bashrc` when present, else `.bash_profile`;
+ * non-interactive bash callers still need a wrapper script.
  *
  * Returns `undefined` when no rc file is sensible — caller falls through to
  * "tell the user what to add manually."

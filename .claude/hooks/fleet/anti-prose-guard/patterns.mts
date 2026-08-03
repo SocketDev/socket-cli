@@ -6,7 +6,11 @@
 // PROSE_PATTERNS from here.
 
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
-import { HONESTY_FRAMING_RE } from '../_shared/honesty-framing.mts'
+import {
+  HONESTY_FRAMING_RE,
+  HONESTY_LABEL,
+  HONESTY_WHY,
+} from '../_shared/honesty-framing.mts'
 import { HEADING_LISTY_ASIDE_RE } from '../_shared/trailing-aside.mts'
 
 export interface ProsePattern {
@@ -15,7 +19,34 @@ export interface ProsePattern {
   readonly why: string
 }
 
+/**
+ * The CATEGORICAL tier: patterns that are a VERDICT on any surface, never a
+ * heuristic. Every other entry in `PROSE_PATTERNS` can over-fire on a
+ * legitimate sentence, which is why they only gate a doc write the author can
+ * reword and retry. These cannot: the word itself is the defect. That is what
+ * makes them safe to enforce on the REPLY too, where there is no retry loop
+ * and no file to inspect.
+ *
+ * The honesty family is the founding member. Claiming honesty implies the rest
+ * is not — see `_shared/honesty-framing.mts`, the single source this and
+ * `convo-prose-nudge` both consume.
+ */
+export const CATEGORICAL_PROSE_BANS: readonly ProsePattern[] = [
+  {
+    label: HONESTY_LABEL,
+    // The honesty matcher is the shared _shared/honesty-framing.mts source —
+    // meta-commentary on one's own candor ("to be honest", "honestly", the
+    // framing phrases) plus the "papered over" self-defense. State the fact;
+    // the honesty is assumed, not announced.
+    regex: HONESTY_FRAMING_RE,
+    why: HONESTY_WHY,
+  },
+]
+
 export const PROSE_PATTERNS: readonly ProsePattern[] = [
+  // The categorical bans gate doc writes alongside the heuristics; the Stop
+  // surface scans this tier ALONE, because only these are verdict-grade.
+  ...CATEGORICAL_PROSE_BANS,
   {
     label: 'em-dash chain',
     // Two or more ` — ` spaced-em-dash spans in the same paragraph. A single
@@ -40,15 +71,6 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     why: 'Vague hedging adverb doing no work. Cut it or replace with the concrete fact.',
   },
   {
-    label: 'self-congratulatory honesty framing',
-    // The honesty matcher is the shared _shared/honesty-framing.mts source —
-    // meta-commentary on one's own candor ("to be honest", "honestly", the
-    // framing phrases) plus the "papered over" self-defense. State the fact;
-    // the honesty is assumed, not announced.
-    regex: HONESTY_FRAMING_RE,
-    why: 'Announcing your own honesty is throat-clearing. Drop "honest"/"papered over" framing and state the fact plainly.',
-  },
-  {
     label: 'heading trailing parenthetical aside',
     // Shares the value-level "extra bits" detector's source
     // (_shared/trailing-aside.mts) so a heading and a manifest description are
@@ -63,18 +85,38 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
 ]
 
 /**
- * Scan `content` for prose antipatterns. Returns the matched patterns (empty
- * when clean).
+ * Every pattern in `patterns` whose regex matches `content`, in table order.
+ * The one scan loop all three finders share.
  */
-export function findProseAntipatterns(content: string): ProsePattern[] {
+export function matchProsePatterns(
+  content: string,
+  patterns: readonly ProsePattern[],
+): ProsePattern[] {
   const hits: ProsePattern[] = []
-  for (let i = 0, { length } = PROSE_PATTERNS; i < length; i += 1) {
-    const pattern = PROSE_PATTERNS[i]!
+  for (let i = 0, { length } = patterns; i < length; i += 1) {
+    const pattern = patterns[i]!
     if (pattern.regex.test(content)) {
       hits.push(pattern)
     }
   }
   return hits
+}
+
+/**
+ * Scan `content` for prose antipatterns. Returns the matched patterns (empty
+ * when clean).
+ */
+export function findProseAntipatterns(content: string): ProsePattern[] {
+  return matchProsePatterns(content, PROSE_PATTERNS)
+}
+
+/**
+ * Scan `content` for the CATEGORICAL bans only — the verdict-grade tier, with
+ * every over-firing heuristic left out. What the Stop surface runs against a
+ * chat reply.
+ */
+export function findCategoricalProseBans(content: string): ProsePattern[] {
+  return matchProsePatterns(content, CATEGORICAL_PROSE_BANS)
 }
 
 // CHANGELOG-only antipatterns: a changelog states user-visible behavior
@@ -121,12 +163,5 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
  * CHANGELOG.md writes.
  */
 export function findChangelogImplDetail(content: string): ProsePattern[] {
-  const hits: ProsePattern[] = []
-  for (let i = 0, { length } = CHANGELOG_IMPL_PATTERNS; i < length; i += 1) {
-    const pattern = CHANGELOG_IMPL_PATTERNS[i]!
-    if (pattern.regex.test(content)) {
-      hits.push(pattern)
-    }
-  }
-  return hits
+  return matchProsePatterns(content, CHANGELOG_IMPL_PATTERNS)
 }

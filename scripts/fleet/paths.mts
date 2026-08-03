@@ -468,31 +468,19 @@ export const OWNS_RELOCATED_TESTS = existsSync(
 )
 
 // ---------------------------------------------------------------------------
-// socket-wheelhouse.json resolver.
+// socket-wheelhouse.json resolver. ONE canonical location — the segregated
+// `.config/repo/socket-wheelhouse.json` path from `segregatedConfigPath`
+// (matches the rest of the fleet's resolution shape — see
+// `scripts/socket-wheelhouse-schema.mts` for the TypeBox schema, and
+// `scripts/sync-scaffolding/socket-wheelhouse-config.mts` for the
+// wheelhouse-side validator).
 //
-// Two locations are accepted (matches the rest of the fleet's
-// resolution shape — see `scripts/socket-wheelhouse-schema.mts` for
-// the TypeBox schema, and `scripts/sync-scaffolding/socket-wheelhouse-
-// config.mts` for the wheelhouse-side validator):
-//
-//   1. `.config/socket-wheelhouse.json` (primary; lives next to other
-//      tooling configs)
-//   2. `.socket-wheelhouse.json` at repo root (legacy; useful for
-//      repos that prefer root-level dotfile discovery)
-//
-// The primary path wins when both exist; the loader emits a stderr
-// note so a stray duplicate is visible. Neither is deprecated.
-//
-// This module deliberately does NOT validate the schema beyond
-// "valid JSON object" — schema validation lives in the wheelhouse-
-// side helper. Downstream consumers typically just need to read a
-// single field (e.g. `github.apps`) and don't want the cost of a
-// full TypeBox validate-pass on every audit.
+// This module deliberately does NOT validate the schema beyond "valid JSON
+// object" — schema validation lives in the wheelhouse-side helper.
+// Downstream consumers typically read a single field (e.g. `github.apps`)
+// and don't want the cost of a full TypeBox validate-pass on every audit.
 // ---------------------------------------------------------------------------
 
-// Accepted locations, in priority order. `.config/repo/` (repo tier — sits with
-// the other per-repo configs) is preferred; `.config/` and the repo-root dotfile
-// remain valid so existing repos resolve unchanged. First existing wins.
 export interface SocketWheelhouseConfigLocation {
   /**
    * Absolute path to the config that was read

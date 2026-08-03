@@ -12,6 +12,7 @@
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -156,7 +157,7 @@ export function ignoreGlobToRegExp(glob: string): RegExp {
         out += '[^/]*'
       }
     } else {
-      out += c.replace(/[$()+.?[\]\\^{|}]/, m => `\\${m}`)
+      out += escapeRegExp(c)
     }
   }
   return new RegExp(`${out}$`)

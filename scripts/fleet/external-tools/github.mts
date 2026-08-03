@@ -233,38 +233,26 @@ export async function planGithubUpdate(
   }
   const current = tool.version
 
-  // npm-registry preflight optimization — pnpm only.
+  // npm-registry preflight optimization — pnpm only. pnpm@x.y.z on npm tracks
+  // pnpm/pnpm@x.y.z on GitHub 1:1, so checking npm `latest` is a cheap way to
+  // skip the GitHub releases API call + 7+ per-platform downloads when no bump
+  // is available. Safe-by-construction: npm `latest` <= our current pin means
+  // no newer GitHub tag can exist either.
   //
-  // pnpm@x.y.z on npm tracks pnpm/pnpm@x.y.z on GitHub 1:1, so checking
-  // the npm `latest` tag is a cheap way to skip the GitHub releases
-  // API call + 7+ per-platform asset downloads when no bump is
-  // available. The check is safe-by-construction: if npm `latest` is
-  // <= our current pin, no newer GitHub tag can exist either.
+  // Hardcoded to `name === 'pnpm'`, not opt-in via config: sfw's npm line
+  // (`sfw@2.x`) does NOT track its GitHub line (`SocketDev/sfw-free@1.7.x`);
+  // zizmor isn't on npm at all; generalizing needs per-tool release-line parity
+  // knowledge the operator already has here, so a config field would just push
+  // the same decision into JSON.
   //
-  // Hardcoded to `name === 'pnpm'`, not opt-in via a config field:
-  //   - sfw publishes to npm too but the npm version line (`sfw@2.x`)
-  //     does NOT track the GitHub release line (`SocketDev/sfw-free@
-  //     1.7.x`) — applying the preflight would silently mis-report.
-  //   - zizmor isn't on npm at all.
-  //   - Generalizing requires per-tool knowledge of release-line
-  //     parity, which is information the operator already has via
-  //     this file. Adding it as a config field would just push the
-  //     same decision to JSON; keeping the gate keyed on the well-
-  //     known tool name keeps the JSON simpler.
-  //
-  // --verify-assets bypasses the preflight: that flag exists to
-  // recheck the live asset bytes even when versions are unchanged
-  // release-bytes drift, and the preflight would short-circuit
-  // that intent.
-  //
-  // Soak-bypass carve-out: the safe-by-construction claim above ("npm latest
-  // <= current → no newer GitHub tag") holds only once npm `latest` has caught
-  // up to the GitHub release. For a FRESH release that lag can be hours — and a
-  // soak-bypass (`bump-tool --soak-bypass`, which adds the tool to soakExclude)
-  // exists precisely to grab a release inside its soak window, where the lag is
-  // live. Letting the preflight short-circuit there silently reports "already
-  // current" and defeats the bypass — the pnpm-11.9 gap. So skip the preflight
-  // when the tool is soak-excluded; the GitHub releases list is authoritative.
+  // `--verify-assets` bypasses the preflight (it exists to recheck live asset
+  // bytes even when versions are unchanged) and soak-excluded tools skip it
+  // too: the safe-by-construction claim holds only once npm `latest` has
+  // caught up to the GitHub release, which can lag hours for a FRESH release —
+  // exactly when `bump-tool --soak-bypass` needs to grab it. Letting the
+  // preflight short-circuit there silently reports "already current" and
+  // defeats the bypass (the pnpm-11.9 gap incident); the GitHub releases list
+  // is authoritative for a soak-excluded tool.
   if (
     name === 'pnpm' &&
     !verifyAssets &&

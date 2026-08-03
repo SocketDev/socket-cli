@@ -41,6 +41,13 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
+// `workflows` and `output-styles` are absent by design, not an oversight:
+// Claude Code discovers both by reading files directly inside
+// `.claude/<tier>/`, walking up the directory tree — it never recurses into
+// subdirectories, so a segmented `fleet/`/`repo/` entry there would silently
+// stop being discovered. Docs:
+// https://code.claude.com/docs/en/output-styles
+// https://code.claude.com/docs/en/workflows
 const KINDS: readonly string[] = ['agents', 'commands', 'hooks', 'skills']
 
 // Match `.claude/<kind>/<entry>` at the root of the captured path. The

@@ -85,7 +85,7 @@ export function fetchPackagePublishDate(
 ): Promise<string | undefined> {
   const key = `${name}@${version}`
   return cache.getOrFetch(key, async (): Promise<string | undefined> => {
-    const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+    const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replaceAll('%40', '@')}`
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       try {
         const data = await httpJson<{

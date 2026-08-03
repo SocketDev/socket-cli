@@ -35,7 +35,7 @@
 // Bypass: `Allow ai-attribution bypass` (same phrase as the gh/MCP prose
 // guard — one surface for the operator).
 
-import { containsAiAttribution } from '../../../../.git-hooks/_shared/ai-attribution.mts'
+import { containsAiAttribution } from '../_shared/ai-attribution.mts'
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 

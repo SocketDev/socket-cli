@@ -91,6 +91,9 @@ const ALLOWLIST = new Set<string>([
   // Verb-assertion: "prebakes INSTALL from lock" — declarative, verb-tailed
   // (install) with a prepositional phrase.
   'prebakes-install-from-lock',
+  // Verb-assertion: "tests READ canonical sources" — declarative, verb-tailed
+  // (read) with a direct object, same family as consult/protect above.
+  'tests-read-canonical-sources',
 ])
 
 export function isAssertionName(basename: string): boolean {

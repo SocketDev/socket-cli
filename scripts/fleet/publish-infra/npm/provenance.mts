@@ -63,7 +63,7 @@ export type AttestationRead =
  * the scope separator stays encoded, matching `registry.mts`'s packument URLs.
  */
 export function npmAttestationUrl(name: string, version: string): string {
-  const encoded = encodeURIComponent(name).replace('%40', '@')
+  const encoded = encodeURIComponent(name).replaceAll('%40', '@')
   return `${NPM_REGISTRY_URL}/-/npm/v1/attestations/${encoded}@${version}`
 }
 

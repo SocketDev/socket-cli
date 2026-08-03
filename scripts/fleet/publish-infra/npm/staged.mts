@@ -561,21 +561,6 @@ export async function compareExtractedTarballs(
 }
 
 /**
- * Pre-approve integrity gate. Packs the tarball locally and asserts its sha1
- * equals the shasum npm recorded when the tarball was staged — run BEFORE
- * `pnpm stage approve` (the 2FA / OAuth promote) so a divergent artifact never
- * goes public. Two-source comparison (local pack + npm staging); the
- * GitHub-asset compare + `gh attestation verify` are out of scope here (no
- * release exists pre-approve — ensureTagAndRelease runs post-approve). Fails
- * LOUD and returns false on any mismatch OR when the staged shasum can't be
- * resolved — the caller drops the entry. Never returns true on missing
- * evidence. Tarball sha1s embed the gzip envelope (platform metadata that
- * differs between CI linux packs and local macOS packs), so a sha1 mismatch
- * falls back to downloading the staged tarball and comparing EXTRACTED
- * CONTENTS per-file — equality there is the honest integrity axis. `pack`,
- * `hashLocalTarball`, and `downloadStagedTarball` are injectable for tests.
- */
-/**
  * Route a staged entry to the verification axis its payload supports. A
  * generated platform package or a machine-built payload (.wasm / .node) has
  * no local byte-twin, so it verifies STRUCTURALLY on the staged bytes
@@ -608,6 +593,21 @@ export async function verifyStagedEntryRouted(
   return verifyStagedEntry(entry)
 }
 
+/**
+ * Pre-approve integrity gate. Packs the tarball locally and asserts its sha1
+ * equals the shasum npm recorded when the tarball was staged — run BEFORE
+ * `pnpm stage approve` (the 2FA / OAuth promote) so a divergent artifact never
+ * goes public. Two-source comparison (local pack + npm staging); the
+ * GitHub-asset compare + `gh attestation verify` are out of scope here (no
+ * release exists pre-approve — ensureTagAndRelease runs post-approve). Fails
+ * LOUD and returns false on any mismatch OR when the staged shasum can't be
+ * resolved — the caller drops the entry. Never returns true on missing
+ * evidence. Tarball sha1s embed the gzip envelope (platform metadata that
+ * differs between CI linux packs and local macOS packs), so a sha1 mismatch
+ * falls back to downloading the staged tarball and comparing EXTRACTED
+ * CONTENTS per-file — equality there is the honest integrity axis. `pack`,
+ * `hashLocalTarball`, and `downloadStagedTarball` are injectable for tests.
+ */
 export async function verifyStagedEntry(
   entry: StageListEntry,
   options?:

@@ -98,13 +98,21 @@ export function findEmptySections(
  * on-disk file isn't readable or `old_string` doesn't match exactly, return
  * undefined, caller fails open.
  */
+export interface PostEditTextOptions {
+  content?: string | undefined
+  newString?: string | undefined
+  oldString?: string | undefined
+}
+
 export function computePostEditText(
   toolName: string,
   filePath: string,
-  newString: string | undefined,
-  oldString: string | undefined,
-  content: string | undefined,
+  options?: PostEditTextOptions | undefined,
 ): string | undefined {
+  const { content, newString, oldString } = {
+    __proto__: null,
+    ...options,
+  } as PostEditTextOptions
   if (toolName === 'Write') {
     return content
   }
@@ -181,13 +189,11 @@ export const check = editGuard((filePath, content, payload) => {
     typeof input?.new_string === 'string' ? input.new_string : undefined
   const oldString =
     typeof input?.old_string === 'string' ? input.old_string : undefined
-  const postEdit = computePostEditText(
-    toolName,
-    filePath,
+  const postEdit = computePostEditText(toolName, filePath, {
+    content,
     newString,
     oldString,
-    content,
-  )
+  })
   if (postEdit === undefined) {
     return undefined
   }

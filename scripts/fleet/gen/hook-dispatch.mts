@@ -78,23 +78,25 @@ const VARIANT_BANNER: Record<TableVariant, string> = {
 export function renderExcludedHints(excluded: readonly EligibleHook[]): string {
   const byEvent = new Map<string, Set<string> | null>()
   for (const hook of excluded) {
-    const prior = byEvent.get(hook.event)
-    if (prior === null) {
-      continue
+    for (const event of hook.events) {
+      const prior = byEvent.get(event)
+      if (prior === null) {
+        continue
+      }
+      if (hook.tools.length === 0) {
+        // null is a tri-state sentinel distinct from Map#get's own
+        // undefined-for-absent-key, and mirrors the emitted
+        // `readonly string[] | null` EXCLUDED_HOOK_HINTS contract.
+        // oxlint-disable-next-line socket/prefer-undefined-over-null -- see above
+        byEvent.set(event, null)
+        continue
+      }
+      const set = prior ?? new Set<string>()
+      for (const tool of hook.tools) {
+        set.add(tool)
+      }
+      byEvent.set(event, set)
     }
-    if (hook.tools.length === 0) {
-      // null is a tri-state sentinel distinct from Map#get's own
-      // undefined-for-absent-key, and mirrors the emitted
-      // `readonly string[] | null` EXCLUDED_HOOK_HINTS contract.
-      // oxlint-disable-next-line socket/prefer-undefined-over-null -- see above
-      byEvent.set(hook.event, null)
-      continue
-    }
-    const set = prior ?? new Set<string>()
-    for (const tool of hook.tools) {
-      set.add(tool)
-    }
-    byEvent.set(hook.event, set)
   }
   const events = [...byEvent.keys()].toSorted()
   const rows = events.map(event => {
@@ -130,9 +132,13 @@ export function renderDispatchTable(
   const byEvent = new Map<string, Array<{ idx: number; hook: EligibleHook }>>()
   for (let idx = 0, { length } = hooks; idx < length; idx += 1) {
     const hook = hooks[idx]!
-    const list = byEvent.get(hook.event) ?? []
-    list.push({ hook, idx })
-    byEvent.set(hook.event, list)
+    // A multi-event hook gets one row per event, all pointing at the SAME
+    // imported `check` — one module, several surfaces.
+    for (const event of hook.events) {
+      const list = byEvent.get(event) ?? []
+      list.push({ hook, idx })
+      byEvent.set(event, list)
+    }
   }
   const events = [...byEvent.keys()].toSorted()
   const tableBody = events
@@ -213,16 +219,18 @@ export function renderDispatchManifest(hooks: readonly EligibleHook[]): string {
   for (let i = 0, { length } = hooks; i < length; i += 1) {
     const hook = hooks[i]!
     const matcher = hook.tools.join('|')
-    let byMatcher = byEvent.get(hook.event)
-    if (!byMatcher) {
-      byMatcher = new Map<string, EligibleHook[]>()
-      byEvent.set(hook.event, byMatcher)
-    }
-    const list = byMatcher.get(matcher)
-    if (list) {
-      list.push(hook)
-    } else {
-      byMatcher.set(matcher, [hook])
+    for (const event of hook.events) {
+      let byMatcher = byEvent.get(event)
+      if (!byMatcher) {
+        byMatcher = new Map<string, EligibleHook[]>()
+        byEvent.set(event, byMatcher)
+      }
+      const list = byMatcher.get(matcher)
+      if (list) {
+        list.push(hook)
+      } else {
+        byMatcher.set(matcher, [hook])
+      }
     }
   }
   const events = [...byEvent.keys()].toSorted()

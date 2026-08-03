@@ -8,7 +8,7 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { containsAiAttribution } from './ai-attribution.mts'
+import { containsAiAttribution } from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
 import { git } from './git.mts'
 import {
   reportReleaseTagExemption,

@@ -212,39 +212,25 @@ const CHECKS: readonly RevertCheck[] = [
         : undefined,
   },
   {
-    // Bash file-write surfaces agents reach for when an Edit/Write
-    // hook blocks them. Catches the "go around" pattern: agent tries
-    // Edit, gets blocked by markdown-filename-guard / path-guard /
-    // no-fleet-fork-guard / etc., then switches to `python3 -c`
-    // (or heredoc / printf >) to write the same content via Bash
-    // where the Edit-layer hooks don't fire.
+    // Bash file-write surfaces agents reach for when an Edit/Write hook
+    // blocks them — the "go around" pattern: blocked on Edit by
+    // markdown-filename-guard / path-guard / no-fleet-fork-guard / etc.,
+    // then switch to `python3 -c` (or heredoc / printf >) to write the same
+    // content via Bash, where Edit-layer hooks don't fire. Observed
+    // 2026-05-12: agent used `python3 -c '...write(...)'` to rename a
+    // markdown file after markdown-filename-guard blocked Edit on it.
     //
-    // The contract: when an Edit/Write hook blocks, the path forward
-    // is (a) move the file to a canonical location, (b) refactor the
-    // change so the rule no longer triggers, or (c) get the canonical
-    // bypass phrase for the original hook. Switching tools to dodge
-    // the hook is not a path.
+    // The contract: when an Edit/Write hook blocks, the path forward is (a)
+    // move the file to a canonical location, (b) refactor so the rule no
+    // longer triggers, or (c) get the bypass phrase for the original hook —
+    // not switching tools to dodge it.
     //
-    // Observed 2026-05-12: agent used `python3 -c '...write(...)'`
-    // to rename a markdown file after markdown-filename-guard blocked
-    // Edit on it.
-    //
-    // Patterns matched:
-    //   - python -c '...' with open(...,'w') or .write_text(
-    //   - heredoc redirected to file (cat << EOF > file)
-    //   - tee writing to a non-tmp file
-    //   - dd of=<file>
-    //
-    // In-place STREAM editors (sed/gsed -i, --in-place, perl/ruby -pi,
-    // gawk -i inplace) are owned by `sed-in-place-guard` — one detector,
-    // richer flag coverage (incl. find -exec / xargs), and the
-    // silent-drift rationale in its block message. Not duplicated here.
-    //
-    // Carve-outs intentionally NOT matched: plain `>` / `>>` (too
-    // broad — every build/log/test invocation uses these), `mv` / `cp`
-    // file moves, not content writes, tools that write their own
-    // output (`tsc`, `pnpm build`, etc. — they don't use Bash write
-    // primitives directly).
+    // Matches: python -c with open(...,'w')/.write_text(, a heredoc
+    // redirected to a file, tee to a non-tmp file, dd of=<file>. In-place
+    // stream editors (sed -i, perl/ruby -pi, etc.) are owned by
+    // sed-in-place-guard, not duplicated here. NOT matched: plain `>`/`>>`
+    // (too broad), mv/cp (moves, not writes), tools writing their own
+    // output (tsc, pnpm build).
     bypassPhrase: 'Allow bash-write bypass',
     fleetOnly: true,
     label: 'Bash file-write (likely dodging an Edit/Write hook)',
@@ -273,6 +259,7 @@ const CHECKS: readonly RevertCheck[] = [
 // Blocked: `git commit --no-verify`, `git push --no-verify`, env-var
 // inline (`--no-verify` as a value), any other subcommand. The bypass
 // phrase is still the way through for those.
+
 // A `git commit` whose `-o`/`--only` pathspec is exactly a pnpm-lock.yaml (any
 // dir) — the sanctioned lockfile-reconcile commit, see dirty-lockfile-nudge.
 // `-o` restricts the commit to the named path, so nothing but the regenerated

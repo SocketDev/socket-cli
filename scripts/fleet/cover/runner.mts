@@ -363,9 +363,11 @@ export function aggregateFromLcov(
   }
   return {
     branches: '0.00',
+    coveredLines: linesHit,
     functions: percent(functionsHit, functionsTotal),
     lines: percent(linesHit, linesTotal),
     statements: percent(linesHit, linesTotal),
+    totalLines: linesTotal,
     totalStatements: linesTotal,
   }
 }

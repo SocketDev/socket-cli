@@ -60,28 +60,23 @@ export function readCommitMessageArg(
 
 /**
  * Decide whether an inline `SQUASH_HISTORY=1` sentinel authorizes this exact
- * command. Hardened against malicious bypass: a poisoned prompt must not be
- * able to ride the sentinel to clobber an arbitrary remote, delete refs, or
- * chain extra destructive work.
+ * command. Hardened so a poisoned prompt can't ride the sentinel to clobber
+ * an arbitrary remote, delete refs, or chain extra destructive work.
  *
- * The sentinel is honored ONLY when ALL of these hold. The line must parse to
- * EXACTLY ONE command segment (no `&&` / `;` / `|` chaining and no `$(…)`
- * substitution, which both parse to extra segments); that segment must be a
- * statically-resolved `git` binary (not `$VAR`/eval); the `SQUASH_HISTORY=1`
- * sentinel must be its ONLY inline env assignment (no smuggled
- * `GIT_SSH_COMMAND=…`); and the git subcommand must be one of the squash
- * shapes — a collapse `commit` (the default-branch root `--amend` whose `-m`
- * message is EXACTLY `chore: initial commit`, OR a feature-branch FRESH commit
- * whose `-m` message is a valid Conventional-Commit header), or a `push`
- * carrying `--force` / `--force-with-lease` / `-f` to a bare remote with at
- * most one ref — a plain branch name (any branch, default or feature) or the
- * canonical squash refspec `HEAD:<branch>` (run.mts pushes the squashed
- * detached HEAD onto the target branch that way) — and none of the multi-ref /
- * delete flags in FORBIDDEN_PUSH_FLAGS. Arbitrary `src:dst` refspecs, `:branch`
- * deletes, and globs stay rejected.
+ * ALL of these must hold, or the sentinel is refused and the command falls
+ * through to the normal blocking checks, which still need a typed phrase:
  *
- * Any deviation returns false → the command falls through to the normal
- * blocking checks, where it still needs a typed bypass phrase.
+ * - Exactly ONE command segment — no `&&` / `;` / `|` chaining, no `$(…)`.
+ * - A statically-resolved `git` binary (not `$VAR`/eval).
+ * - `SQUASH_HISTORY=1` is the ONLY inline env assignment (blocks a smuggled
+ *   `GIT_SSH_COMMAND=…`).
+ * - The git subcommand is a squash shape: a collapse `commit` (default-branch
+ *   root `--amend` with `-m` EXACTLY `chore: initial commit`, or a
+ *   feature-branch fresh commit with a valid Conventional-Commit `-m`), or a
+ *   `push` carrying `--force` / `--force-with-lease` / `-f` to a bare remote
+ *   with at most one ref (a plain branch name, or the `HEAD:<branch>` refspec
+ *   run.mts uses) — never a flag from FORBIDDEN_PUSH_FLAGS, an arbitrary
+ *   `src:dst` refspec, a `:branch` delete, or a glob.
  */
 export function squashSentinelAllows(command: string): boolean {
   // (1) Sentinel must be present as a structural assignment, confirmed below

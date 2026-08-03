@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
@@ -128,6 +129,28 @@ export function resolvePinnedCommit(
 // at the pinned commit, unless the submodule's tracked branch already
 // resolves to that same commit — then check out the branch by name so the
 // worktree stays on a branch ref instead of detached HEAD.
+/**
+ * Decide what `clone` does for one submodule given the on-disk state of its
+ * module repo and its worktree.
+ *
+ * - Both nonempty: already materialized, skip quietly.
+ * - Module repo only: a worktree deleted by hand or an interrupted clone.
+ *   Skipping here reports success with no tree on disk — a vacuous green — so
+ *   the stale module repo is discarded and the clone reruns.
+ * - Worktree only: unmanaged content the tool must not clobber; skip loudly.
+ * - Neither: normal clone.
+ */
+export function decideCloneAction(config: {
+  repoNonempty: boolean
+  worktreeNonempty: boolean
+}): 'clone' | 'reclone' | 'skip-cloned' | 'skip-worktree-conflict' {
+  const { repoNonempty, worktreeNonempty } = config
+  if (repoNonempty) {
+    return worktreeNonempty ? 'skip-cloned' : 'reclone'
+  }
+  return worktreeNonempty ? 'skip-worktree-conflict' : 'clone'
+}
+
 export function decideCloneCheckoutArgs(
   branch: string | undefined,
   submoduleCommit: string,
@@ -336,26 +359,34 @@ export async function cmdClone(config: CloneOpts): Promise<void> {
       continue
     }
     const submoduleRepoRoot = path.join(repoRoot, 'modules', submodule.name)
-    if (
-      existsSync(submoduleRepoRoot) &&
-      readdirSync(submoduleRepoRoot).length > 0
-    ) {
+    const submoduleWorktreeRoot = path.join(worktreeRoot, submoduleRelPath)
+    const repoNonempty =
+      existsSync(submoduleRepoRoot) && readdirSync(submoduleRepoRoot).length > 0
+    const worktreeNonempty =
+      existsSync(submoduleWorktreeRoot) &&
+      readdirSync(submoduleWorktreeRoot).length > 0
+    const action = decideCloneAction({ repoNonempty, worktreeNonempty })
+    if (action === 'skip-cloned') {
       if (config.verbose) {
         logger.log(`submodule ${submodule.name} repo already exists; skipping`)
       }
       skipped += 1
       continue
     }
-    const submoduleWorktreeRoot = path.join(worktreeRoot, submoduleRelPath)
-    if (
-      existsSync(submoduleWorktreeRoot) &&
-      readdirSync(submoduleWorktreeRoot).length > 0
-    ) {
+    if (action === 'skip-worktree-conflict') {
       logger.error(
         `${submoduleRelPath} submodule worktree is nonempty! Skipping.`,
       )
       skipped += 1
       continue
+    }
+    if (action === 'reclone') {
+      logger.warn(
+        `${submodule.name} module repo exists but its worktree at ${submoduleRelPath} is empty; discarding the stale module repo and re-cloning`,
+      )
+      if (!config.dryRun) {
+        safeDeleteSync(submoduleRepoRoot, { force: true, recursive: true })
+      }
     }
     if (!config.dryRun) {
       mkdirSync(path.dirname(submoduleRepoRoot), { recursive: true })

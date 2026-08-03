@@ -227,6 +227,20 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // (fleet-main-protection) and never touches any other. Strict; skips
     // cleanly off the release tier / member checkouts / no gh.
     releaseStep(['scripts/fleet/check/main-branch-rules-are-enforced.mts']),
+    // Every member's GitHub security posture matches the posture law
+    // (_shared/security-posture-law.mts): CodeQL default setup configured with
+    // a SANITISED language set on public repos — at most one of the
+    // javascript/javascript-typescript/typescript trio, which are three names
+    // for ONE extractor, and only languages actually present in the tree —
+    // plus secret scanning + push protection on public repos, vulnerability
+    // alerts on everywhere, automated-security-fixes OFF everywhere (alerts
+    // without PRs), and the canonical no-op dependabot.yml. socket-vscode read
+    // `configured` for months while permanently erroring on the trio, and
+    // GitHub SUGGESTS that same trio on every unconfigured public fleet repo.
+    // --fix converges settings only, never dependabot.yml (cascade-owned) and
+    // never a private repo's paid-GHAS scanning. REPORT-ONLY until the fleet
+    // burns down; skips cleanly off the release tier / member checkouts / no gh.
+    releaseStep(['scripts/fleet/check/security-posture-matches-law.mts']),
     // Every member's default GITHUB_TOKEN must be read-only and Actions must
     // not be able to approve pull requests — a compromised workflow step
     // otherwise gets a write token and can satisfy review gates. --fix is a

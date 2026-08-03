@@ -118,6 +118,49 @@ jobs:
           # historical CHANGELOG sections that describe shipped versions.
           fetch-tags: true
           persist-credentials: false
+
+      # `latest` is what an untagged install of the package resolves to, so it belongs
+      # to whichever branch carries the line customers actually consume. For
+      # almost every member that IS the default branch, which is the default
+      # here — those repos see no behavior change.
+      #
+      # A member whose consumable line is NOT the default branch declares it as
+      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
+      # socket-cli is the case that forced this: its default branch carries the
+      # 2.x PRERELEASE line while customers install from v1.x. With `latest`
+      # unguarded, `socket@latest` sat on 1.1.147 for a week while five newer
+      # v1.x releases — including a CVE bump — published under a side tag no
+      # bare install ever resolves.
+      #
+      # Read from the manifest rather than hard-coded so one file states the
+      # law for the whole fleet and each member parameterizes it.
+      - name: Guard the latest dist-tag to the consumable release line
+        if: ${{ inputs.publish == true && inputs.dist-tag == 'latest' }}
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF: ${{ github.ref }}
+        run: |
+          LATEST_BRANCH="$(node -e '
+            const fs = require("node:fs")
+            const p = ".config/repo/socket-wheelhouse.json"
+            let branch = ""
+            try {
+              branch = JSON.parse(fs.readFileSync(p, "utf8"))?.release?.latestDistTagBranch ?? ""
+            } catch {}
+            process.stdout.write(String(branch))
+          ')"
+          if [ -z "$LATEST_BRANCH" ]; then
+            LATEST_BRANCH="$DEFAULT_BRANCH"
+          fi
+          if [ "$REF" != "refs/heads/$LATEST_BRANCH" ]; then
+            echo "::error::Refusing to publish dist-tag 'latest' from $REF." >&2
+            echo "::error::Where: this dispatch, against the '$LATEST_BRANCH' consumable release line." >&2
+            echo "::error::Saw vs wanted: 'latest' requested off refs/heads/$LATEST_BRANCH; 'latest' is what an untagged install resolves to, so only the consumable line may move it." >&2
+            echo "::error::Fix: re-dispatch from $LATEST_BRANCH, or pick a prerelease dist-tag (next, beta, canary, rc). To change which branch owns 'latest', set release.latestDistTagBranch in .config/repo/socket-wheelhouse.json." >&2
+            exit 1
+          fi
+          echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
+
       - name: Setup + install
         uses: ./.github/actions/fleet/setup-and-install
         with:
@@ -165,6 +208,12 @@ jobs:
           BACKFILL_VERSION: ${{ inputs.backfill-version }}
           CHECKOUT_REF: ${{ inputs.checkout-ref }}
           DIST_TAG: ${{ inputs.dist-tag }}
+          # actions/setup-node (registry-url) exports a placeholder
+          # NODE_AUTH_TOKEN into every later step's env. The publish step runs
+          # tokenless: the trusted-publishing preflight refuses ANY set token,
+          # and with the variable empty a failed OIDC exchange interpolates an
+          # empty .npmrc credential and dies loud (E401) instead of masking.
+          NODE_AUTH_TOKEN: ''
           RELEASE_AS: ${{ inputs.release-as }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
         # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT

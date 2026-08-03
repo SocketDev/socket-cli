@@ -310,26 +310,21 @@ const rule = {
 
       // Fix strategy (both forms cast `as typeof options` on TS files only —
       // see `isTypeScriptFile` above — so a closed options type rejects the
-      // `__proto__` excess property — TS2353 — on the bare spread; the param's
-      // own type erases the cast; plain JS gets the identical spread with no
-      // cast, since there's no type checker to satisfy and `as` is a
-      // SyntaxError outside TypeScript):
+      // `__proto__` excess property (TS2353) on the bare spread; plain JS
+      // gets the identical spread with no cast):
       //   - a `const { … } = options` destructure → rewrite its init to the
       //     normalized spread in place, no new binding, no shadow.
       //   - member-access readers → introduce a NORMALIZED LOCAL
-      //     `const opts = { __proto__: null, ...options }` (plus the cast on
-      //     TS files) as the first body statement and repoint each
-      //     `options.x` read at it. We never reassign the param
-      //     (`options = …`): the fleet bans variable shadowing, and an
-      //     in-place reassign conflates the raw input with its normalized
-      //     form, the anti-pattern options-param-naming kills. The
-      //     `options` → `opts` rename is only safe when the param is literally
-      //     `options`; a param already named `opts` would collide with the new
-      //     local, so that case is reported WITHOUT a fix — options-param-naming
-      //     renames the param `opts`→`options` first, then this fix applies.
-      //     It's ALSO withheld when `isReassignedInBody` finds `options`
-      //     written to anywhere in the function — see the file-level doc for
-      //     the stale-snapshot corruption a hoisted-then-reassigned `options`
+      //     `const opts = { __proto__: null, ...options }` as the first
+      //     body statement and repoint each `options.x` read at it. Never
+      //     reassign the param — the fleet bans shadowing, and an in-place
+      //     reassign conflates the raw input with its normalized form.
+      //     The `options`→`opts` rename only applies when the param is
+      //     literally named `options`; a param already named `opts` is
+      //     reported WITHOUT a fix (options-param-naming renames it first).
+      //     Also withheld when `isReassignedInBody` finds `options` written
+      //     to anywhere in the function — see the file-level doc for the
+      //     stale-snapshot corruption a hoisted-then-reassigned `options`
       //     produces.
       const body = node.body
       const canInsert =

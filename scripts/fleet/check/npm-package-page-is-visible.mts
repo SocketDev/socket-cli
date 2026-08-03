@@ -74,7 +74,7 @@ async function main(): Promise<void> {
     }
     return
   }
-  const encoded = pkg.name.replace('/', '%2f')
+  const encoded = pkg.name.replaceAll('/', '%2f')
   let registryHasPackage = false
   try {
     const reg = await httpRequest(`https://registry.npmjs.org/${encoded}`, {

@@ -293,7 +293,7 @@ declare function tokenFromBody(body: Buffer): string | undefined;
 declare function getGhcrToken(repo: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<string>;
 /**
  * GET one manifest by tag or digest. Resolves a multi-arch index to its first
- * sub-manifest so a concrete image manifest (carrying the artifact layer) is
+ * sub-manifest so a concrete image manifest that carries the artifact layer is
  * always returned. Fails loud on a non-2xx.
  */
 declare function fetchOciManifest(repo: string, ref: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<OciManifest>;
@@ -304,8 +304,8 @@ declare function fetchOciManifest(repo: string, ref: string, token: string, regi
  */
 declare function pickBundleLayer(manifest: OciManifest): OciLayer;
 /**
- * GET a blob by digest (following the storage redirect). Fails loud on a
- * non-2xx.
+ * GET a blob by digest, following the storage redirect that GHCR issues for
+ * blobs. Fails loud on a non-2xx.
  */
 declare function fetchBlob(repo: string, digest: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<Buffer>;
 /**
@@ -511,9 +511,9 @@ declare function validateBundleBlock(bundle: unknown): RefValidation;
  * - UPDATE-AVAILABLE: inLockStep but a newer release exists.
  * - OUT-OF-SYNC: cascadeSha !== pinnedTemplateSha (broken invariant).
  *
- * When `pinnedTemplateSha` is undefined (the ref's release can't be found) the
- * invariant cannot be confirmed, so the state is OUT-OF-SYNC — fail loud rather
- * than assume current.
+ * When `pinnedTemplateSha` is undefined the ref's release could not be found,
+ * so the invariant cannot be confirmed and the state is OUT-OF-SYNC — fail loud
+ * rather than assume current.
  */
 declare function resolveLockStepState(inputs: LockStepInputs): LockStepState;
 /**
@@ -558,7 +558,7 @@ interface NoticeDecisionInputs {
  * CI-suppress + opt-out unit-test offline. The notice fires only when: a newer
  * release exists, we are NOT in CI, NOT opted out, and either the store is
  * empty, ≥24h have passed since the last check, OR the newest ref changed since
- * last seen (a fresh release jumps the throttle).
+ * last seen. A fresh release bypasses the 24h throttle immediately.
  */
 declare function shouldShowNotice(inputs: NoticeDecisionInputs): boolean;
 /**
@@ -652,9 +652,10 @@ interface YamlEntryChunk {
 /**
  * Split a top-level key block's BODY lines into entry chunks. A chunk starts
  * at a map-entry or list-item line at the block's entry indent; comment and
- * blank lines BEFORE an entry attach to it (they document what follows);
- * deeper-indented lines are continuations. Returns `undefined` when the body
- * has no recognizable entries (scalar block — nothing nested to merge).
+ * blank lines BEFORE an entry attach to it as documentation for the entry
+ * that immediately follows; deeper-indented lines are continuations. Returns
+ * `undefined` when the body has no recognizable entries (scalar block —
+ * nothing nested to merge).
  */
 declare function parseYamlEntryChunks(bodyLines: readonly string[]): YamlEntryChunk[] | undefined;
 /**
@@ -662,7 +663,7 @@ declare function parseYamlEntryChunks(bodyLines: readonly string[]): YamlEntryCh
  * analog of the Claude-settings splice that keeps repo hook registrations
  * inside the fleet-owned `hooks` key. Fleet-shipped entries (present in the
  * bundle block) take the bundle's text, comments included; member-local
- * entries (present only in the consumer block) survive in their original
+ * entries that appear only in the consumer block survive in their original
  * order after the fleet set. Scalar-shaped blocks (`saveExact: true`) have no
  * nested entries, so the bundle block replaces wholesale. Trailing blank lines
  * follow the consumer block so inter-block spacing is preserved.

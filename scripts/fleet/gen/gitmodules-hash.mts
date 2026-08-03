@@ -95,10 +95,20 @@ export function parseBlocks(lines: string[]): Block[] {
       if (prev.trim() === '' || /^\s*\[submodule\s+"/.test(prev)) {
         break
       }
+      // Documented block annotations — `# no-release-tag: <why>` and
+      // `# full-checkout: <why>` — are comments whose kebab-case keywords
+      // also satisfy the name-version grammar below, so without this skip
+      // an annotation sitting between the hash header and its block shadows
+      // the header and the block reads as "comment <none>". Skip them and
+      // keep scanning upward.
+      // require-regex-comment: a known block-annotation keyword at comment start.
+      if (/^#\s*(?:full-checkout|no-release-tag):/.test(prev)) {
+        continue
+      }
       // A `# <name>-<version>` comment line: captures (1) the `# name-…` prefix,
       // (2) an optional `sha256:<hex>` stamp, (3) any trailing text.
       const header =
-        /* socket-lint: allow uncommented-regex */ /^(#\s+[a-z0-9][a-z0-9.-]*-\S+?)(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
+        /* socket-lint: allow uncommented-regex */ /^(#\s+[A-Za-z0-9][A-Za-z0-9.-]*-\S+?)(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
           prev,
         )
       if (header) {

@@ -18,21 +18,18 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 
-import { resolveOdaiBin } from '../_shared/odai.mts'
+import { resolveOdaiBin, spawnOdai } from '../_shared/odai.mts'
 import { RULE_GUIDANCE, RULE_MODEL_TIER } from './rule-guidance.mts'
 
 // The reasoning-heavy LOCAL backend the keyless code-repair routes to. A
 // summary-class on-device model is never used for a patch — that is the
 // bench-gate the odai bridge encodes. No llama-server listening means odai
-// exits 69 (no backend), which reads here as a clean skip.
+// exits 69 (no backend), which the seam maps to a clean skip.
 const ODAI_LINT_BACKEND = 'llama-server'
-// odai's clean-skip exit — sysexits EX_UNAVAILABLE, mirroring _shared/odai.mts.
-const ODAI_SKIP_EXIT = 69
 // A local patch on a 7B backend is slower than a summary; give it room but keep
 // it bounded so a wedged engine never stalls the fix run.
 const ODAI_PATCH_TIMEOUT_MS = 120_000
@@ -131,11 +128,11 @@ export async function applyPatch(patch: string, cwd: string): Promise<boolean> {
 
 /**
  * Keyless-fix a single file's haiku-bucket findings via odai's `patch` task on
- * the local reasoning backend. Spawns `odai patch` with the combined rule
- * guidance, parses the diff, and applies it only if `git apply --check` passes.
- * Returns `skipped` on every environment gap (no bin, exit 69, no bucket rule),
- * `failed` on a real model/parse/apply failure, `fixed` when the diff landed.
- * Never throws.
+ * the local reasoning backend. Runs `odai patch` through the seam's
+ * `spawnOdai` with the combined rule guidance, parses the diff, and applies
+ * it only if `git apply --check` passes. Returns `skipped` on every
+ * environment gap (no bin, exit 69, no bucket rule), `failed` on a real
+ * model/parse/apply failure, `fixed` when the diff landed. Never throws.
  */
 export async function runOdaiLintFix(
   filePath: string,
@@ -150,48 +147,22 @@ export async function runOdaiLintFix(
   if (bucketRules.length === 0) {
     return { outcome: 'skipped', reason: 'no haiku-bucket rule in this file' }
   }
-  const instruction = buildOdaiInstruction(bucketRules)
-  let code: number
-  let stdout: string
-  try {
-    const r = await spawn(
-      bin,
-      [
-        'patch',
-        '--input',
-        filePath,
-        '--instruction',
-        instruction,
-        '--backend',
-        ODAI_LINT_BACKEND,
-        '--timeout',
-        String(ODAI_PATCH_TIMEOUT_MS),
-      ],
-      { cwd, stdioString: true, timeout: ODAI_PATCH_TIMEOUT_MS + 30_000 },
-    )
-    code = r.code
-    stdout = typeof r.stdout === 'string' ? r.stdout : ''
-  } catch (e) {
-    if (isSpawnError(e) && typeof e.code === 'string') {
-      return { outcome: 'skipped', reason: `odai bin not runnable: ${e.code}` }
-    }
-    return { outcome: 'failed', reason: errorMessage(e) }
+  const run = await spawnOdai(
+    [
+      'patch',
+      '--input',
+      filePath,
+      '--instruction',
+      buildOdaiInstruction(bucketRules),
+      '--backend',
+      ODAI_LINT_BACKEND,
+    ],
+    { bin, cwd, timeoutMs: ODAI_PATCH_TIMEOUT_MS },
+  )
+  if (run.outcome !== 'ok') {
+    return run
   }
-  if (code === ODAI_SKIP_EXIT) {
-    return {
-      outcome: 'skipped',
-      reason: `no local ${ODAI_LINT_BACKEND} backend available`,
-    }
-  }
-  if (code !== 0) {
-    return { outcome: 'failed', reason: `odai patch exited ${code}` }
-  }
-  let patch: unknown
-  try {
-    patch = (JSON.parse(stdout) as { patch?: unknown | undefined }).patch
-  } catch {
-    return { outcome: 'failed', reason: 'odai patch printed unparseable JSON' }
-  }
+  const patch = (run.value as { patch?: unknown | undefined }).patch
   if (typeof patch !== 'string') {
     return { outcome: 'failed', reason: 'odai patch reply has no diff' }
   }

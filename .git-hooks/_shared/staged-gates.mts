@@ -159,28 +159,23 @@ export function runStagedTestsReminder(
 }
 
 // ── Catastrophic mass-deletion, pre-commit tier ────────────────────
-//
-// The PreToolUse `mass-delete-guard` inspects the staged index when the `git
-// commit` Bash command is FIRST seen — but a pre-commit step (lint/test) can
-// stage deletions DURING the commit, after that check passed. A wedged
-// `pnpm test` once left the entire `.claude/` tree staged-for-deletion mid
-// commit, and the index snapshotted ~2400 deletions. This re-runs the same
-// catastrophic-deletion check at pre-commit time — the index here IS the
-// about-to-commit tree, post-churn — so no commit path can land a wipe.
+// The PreToolUse `mass-delete-guard` inspects the staged index when `git
+// commit` is FIRST seen — but a pre-commit step (lint/test) can stage
+// deletions DURING the commit, after that check passed. A wedged `pnpm test`
+// once left the entire `.claude/` tree staged-for-deletion mid commit
+// (~2400 deletions). This re-runs the same check at pre-commit time — the
+// index here IS the about-to-commit tree, post-churn — so no commit path
+// can land a wipe.
 //
 // Correctly scoped for a surgical `git commit --only <paths>` / `-o <paths>`
-// commit — VERIFIED, not assumed (see
-// test/repo/integration/git-hooks/pre-commit.test.mts): git builds a
-// TEMPORARY index containing only the named paths layered onto HEAD and
-// points `GIT_INDEX_FILE` at it before invoking this hook. `gitLines` (and
-// every other `git`/`gitOrThrow`/`spawnSync` call in this file) spawns with no
-// `env` override, so it inherits `process.env` — including `GIT_INDEX_FILE` —
-// unmodified. `git diff --cached` therefore reads foreign deletions staged
-// elsewhere in the working index as OUT OF SCOPE; they never reach this
-// count. Do not "fix" a reported over-block here without first reproducing it
-// with a real `git commit --only` — the temp-index scoping is git's own
-// mechanism, not something this hook implements or could break by itself.
-//
+// commit — VERIFIED, not assumed, see
+// test/repo/integration/git-hooks/pre-commit.test.mts: git points
+// `GIT_INDEX_FILE` at a TEMPORARY index of only the named paths layered onto
+// HEAD. Every `git`/`gitOrThrow`/`spawnSync` call here inherits that env
+// unmodified, so `git diff --cached` reads foreign deletions staged
+// elsewhere as OUT OF SCOPE. Do not "fix" a reported over-block here without
+// reproducing it with a real `git commit --only` — the temp-index scoping is
+// git's own mechanism, not something this hook implements.
 // Thresholds kept in sync with .claude/hooks/fleet/mass-delete-guard/index.mts.
 const DELETE_FLOOR = 50
 const DELETE_RATIO = 0.75

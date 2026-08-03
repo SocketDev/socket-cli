@@ -107,7 +107,7 @@ node scripts/fleet/strip-ai-attribution.mts --base <ref> [--dry-run]
 ```
 
 It walks `base..HEAD` with plumbing, rewords ONLY flagged messages (shared
-detector: `scripts/fleet/lib/attribution.mts`), preserves trees, author
+detector: `.claude/hooks/fleet/_shared/ai-attribution.mts`), preserves trees, author
 identity, and author dates, re-signs through the normal signing config,
 verifies the final tree byte-identical, and re-scans the result. A
 hand-scripted `git rebase -i` with `GIT_SEQUENCE_EDITOR`/`GIT_EDITOR` editors

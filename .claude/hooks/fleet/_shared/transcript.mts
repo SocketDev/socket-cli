@@ -39,21 +39,6 @@ import {
 export const BYPASS_LOOKBACK_USER_TURNS = 8
 
 /**
- * Is any canonical bypass phrase present in a recent user turn? Substring
- * match on the separator-folded, case-folded form (see normalizeBypassText) —
- * `allow x bypass`, `Allow X bypass`, and `ALLOW X-BYPASS` all count.
- *
- * Accepts a string or string[] so callers with a single canonical spelling and
- * callers with distinct wordings share the same helper. The transcript is read
- * once; each phrase substring-checks against the same text.
- *
- * Use this when the bypass is **broad** — one phrase authorizes any matching
- * action for the rest of the conversation window. For **per-trigger**
- * authorization (one phrase = one action), use `bypassPhraseRemaining` instead
- * so a single phrase doesn't open the door for a follow-up action of the same
- * shape later.
- */
-/**
  * Normalize a bypass phrase / haystack so hyphens and whitespace are removed
  * entirely. `Allow workflow-scope bypass`, `Allow workflow scope bypass`, and
  * `Allow workflowscope bypass` all collapse to the same canonical form for
@@ -126,6 +111,21 @@ export function phrasePattern(
   return new RegExp(src, 'g')
 }
 
+/**
+ * Is any canonical bypass phrase present in a recent user turn? Substring
+ * match on the separator-folded, case-folded form (see normalizeBypassText) —
+ * `allow x bypass`, `Allow X bypass`, and `ALLOW X-BYPASS` all count.
+ *
+ * Accepts a string or string[] so callers with a single canonical spelling and
+ * callers with distinct wordings share the same helper. The transcript is read
+ * once; each phrase substring-checks against the same text.
+ *
+ * Use this when the bypass is **broad** — one phrase authorizes any matching
+ * action for the rest of the conversation window. For **per-trigger**
+ * authorization (one phrase = one action), use `bypassPhraseRemaining` instead
+ * so a single phrase doesn't open the door for a follow-up action of the same
+ * shape later.
+ */
 export function bypassPhrasePresent(
   transcriptPath: string | undefined,
   phrases: string | readonly string[],
@@ -319,26 +319,21 @@ export function countBypassPhrases(
 }
 
 /**
- * Laundering detector — is a grant phrase present in AGENT-DELIVERED content
- * near the current action? The inverse question to `bypassPhrasePresent`:
- * that scanner asks "did the human authorize?", this one asks "is someone
- * trying to smuggle the authorization in through a non-human channel?" —
- * a cross-session SendMessage relay (peer-origin turn / agent-message
- * wrapper), or an orchestrator/sdk prompt. A guard that finds no human grant
- * but DOES find its phrase here should refuse with a laundering-specific
- * message demanding a fresh human grant, so the pattern is taught at the
- * moment it is attempted.
+ * Laundering detector: is a grant phrase present in AGENT-DELIVERED content
+ * near the current action? The inverse of `bypassPhrasePresent` — that asks
+ * "did the human authorize?"; this asks "is someone smuggling authorization
+ * in through a non-human channel?" (a cross-session SendMessage relay, or an
+ * orchestrator/sdk prompt). A guard that finds no human grant but DOES find
+ * this should refuse with a laundering-specific message demanding a fresh
+ * human grant.
  *
- * Deliberately does NOT strip quotes/code spans: a quoted or code-fenced
- * relay is still a laundering attempt worth naming. Reminder spans ARE
- * stripped (harness background like CLAUDE.md legitimately mentions
- * phrases), and only user-role events are scanned — assistant prose and
- * tool_result content never count (a guard's own refusal text echoes the
- * phrase and must not self-trigger).
+ * Deliberately does NOT strip quotes/code spans — a quoted or fenced relay
+ * is still a laundering attempt worth naming. Reminder spans ARE stripped,
+ * and only user-role events are scanned; assistant/tool_result content never
+ * counts, so a guard's own refusal text can't self-trigger.
  *
- * Window: stops after `lookbackUserTurns` (default
- * BYPASS_LOOKBACK_USER_TURNS) HUMAN turns, mirroring the grant scanner's
- * window.
+ * Window: `lookbackUserTurns` (default BYPASS_LOOKBACK_USER_TURNS) HUMAN
+ * turns, same as the grant scanner.
  */
 export function bypassPhraseInAgentContent(
   transcriptPath: string | undefined,
@@ -696,18 +691,6 @@ export function readLastAssistantTurnText(
 }
 
 /**
- * Like readLastAssistantText, but SCOPED to the sidechain status of the
- * most-recent assistant turn: returns the newest NON-EMPTY assistant turn whose
- * `isSidechain` matches the most-recent assistant turn, stopping at the first
- * turn of the OTHER scope. A subagent (Task) turn carries `isSidechain:true`,
- * the parent orchestrator's turns carry false. So a subagent's commit is gated
- * by the SUBAGENT's own recent claim and NEVER by the parent orchestrator's
- * prose, a different scope — fixing the cross-actor false positive where an
- * orchestrator's unverified success claim blocked a subagent's commit. When the
- * most-recent assistant turn is the parent's, this reads the parent's turn and
- * the gate is unchanged.
- */
-/**
  * True when the most-recent assistant turn is a subagent (Task/sidechain) turn.
  * Claude Code marks a subagent turn with `isSidechain:true` and the parent
  * orchestrator's turns with false. A hook gating on "did a subagent do this"
@@ -739,6 +722,18 @@ export function mostRecentAssistantIsSidechain(
   return false
 }
 
+/**
+ * Like readLastAssistantText, but SCOPED to the sidechain status of the
+ * most-recent assistant turn: returns the newest NON-EMPTY assistant turn whose
+ * `isSidechain` matches the most-recent assistant turn, stopping at the first
+ * turn of the OTHER scope. A subagent (Task) turn carries `isSidechain:true`,
+ * the parent orchestrator's turns carry false. So a subagent's commit is gated
+ * by the SUBAGENT's own recent claim and NEVER by the parent orchestrator's
+ * prose, a different scope — fixing the cross-actor false positive where an
+ * orchestrator's unverified success claim blocked a subagent's commit. When the
+ * most-recent assistant turn is the parent's, this reads the parent's turn and
+ * the gate is unchanged.
+ */
 export function readLastAssistantTextSameActor(
   transcriptPath: string | undefined,
 ): string {

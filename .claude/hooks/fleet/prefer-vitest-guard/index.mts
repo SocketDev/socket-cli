@@ -62,36 +62,48 @@ export const triggers: readonly string[] = [
   'vitest',
 ]
 
-// Repo-tunable node:test homes from the `nodeTestExclude` key of
-// .config/{fleet,repo}/vitest.json — the SAME key the vitest config merges into
-// its `exclude`. A repo declaring e.g. `tools/**/test/**` there both keeps
-// vitest off those suites and lets this guard allow their `node --test` runner;
-// the two never drift because they read one key. Fleet + repo arrays concat.
-export function readNodeTestExcludeTier(file: string): string[] {
+// Repo-tunable node:test homes from `vitest.nodeTestExclude` in the per-repo
+// settings file — the SAME key the vitest config merges into its `exclude`. A
+// repo declaring e.g. `tools/**/test/**` there both keeps vitest off those
+// suites and lets this guard allow their `node --test` runner; the two never
+// drift because they read one key.
+export function readNodeTestExcludeGlobs(file: string): string[] {
   if (!existsSync(file)) {
     return []
   }
   try {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-      nodeTestExclude?: unknown | undefined
+      vitest?: { nodeTestExclude?: unknown | undefined } | undefined
     }
-    return Array.isArray(parsed?.nodeTestExclude)
-      ? parsed.nodeTestExclude.filter(g => typeof g === 'string')
-      : []
+    const globs = parsed?.vitest?.nodeTestExclude
+    return Array.isArray(globs) ? globs.filter(g => typeof g === 'string') : []
   } catch {
     return []
   }
 }
 
+// The settings file, canonical location first and the repo-root dotfile as the
+// one fallback a member may ship.
+const SETTINGS_FILES = [
+  '.config/repo/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+] as const
+
 // Cached read of the resolved node:test-exclude globs (cwd-relative). Returns
-// [] when neither tier declares any (fail-open: no extra tiers granted).
+// [] when the repo declares none (fail-open: no extra tiers granted).
 let nodeTestExcludeCache: string[] | undefined
 function repoExtraExcludeGlobs(): string[] {
   if (nodeTestExcludeCache === undefined) {
-    nodeTestExcludeCache = [
-      ...readNodeTestExcludeTier('.config/fleet/vitest.json'),
-      ...readNodeTestExcludeTier('.config/repo/vitest.json'),
-    ]
+    let globs: string[] = []
+    for (let i = 0, { length } = SETTINGS_FILES; i < length; i += 1) {
+      const file = SETTINGS_FILES[i]!
+      if (!existsSync(file)) {
+        continue
+      }
+      globs = readNodeTestExcludeGlobs(file)
+      break
+    }
+    nodeTestExcludeCache = globs
   }
   return nodeTestExcludeCache
 }
@@ -126,10 +138,10 @@ function looksLikeTestFile(arg: string): boolean {
 //     invocation may spell the full `.claude/hooks/.../test/...` path).
 //   - `.config/fleet/oxlint-plugin/<tier>/<rule>/test/` — the socket/* lint-rule
 //     tests (e.g. `.config/fleet/oxlint-plugin/fleet/options-null-proto/test/`).
-//   - repo-tunable node:test homes from the `nodeTestExclude` key of
-//     .config/{fleet,repo}/vitest.json (e.g. socket-lib's `tools/prim/test/**`
-//     codemod corpus) — the SAME key vitest merges into its `exclude`, so the
-//     allowlist and the skip-list never drift.
+//   - repo-tunable node:test homes from `vitest.nodeTestExclude` in the
+//     settings file (e.g. socket-lib's `tools/prim/test/**` codemod corpus) —
+//     the SAME key vitest merges into its `exclude`, so the allowlist and the
+//     skip-list never drift.
 // A `node --test` whose targets are all in these tiers is allowed; blocking it
 // would break the sanctioned runners. Paths normalized to forward slashes so a
 // Windows-style target matches too.

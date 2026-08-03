@@ -95,6 +95,18 @@ export const CoverSchema = Type.Object(
 
 export const VitestSchema = Type.Object(
   {
+    alias: Type.Optional(
+      Type.Record(Type.String(), Type.String(), {
+        description:
+          'Module resolve aliases for the test transform, merged into the canonical vitest config. A KEY is a literal module specifier, never a glob — a monorepo maps one entry per package (`"@stuie/core": "./packages/core/src/index.ts"`). A dot-relative value resolves against the REPO ROOT, not the config file, so `./packages/...` reads the same from any tier config.',
+      }),
+    ),
+    conditions: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Extra `resolve.conditions` for the test transform. This is the source-condition route for a monorepo whose package `exports` map carries a `"source"` condition: without it vitest resolves a workspace package to its built `dist`, so the instrumented `src` never runs and the repo reports 0% coverage. Vite REPLACES the default condition list rather than appending, so list `source` FIRST and rely on vite\'s built-in client/server condition fallback for the rest.',
+      }),
+    ),
     conformanceExclude: Type.Optional(
       Type.Array(Type.String(), {
         description:
@@ -129,6 +141,31 @@ export const VitestSchema = Type.Object(
           'Repo-relative paths of legacy script-style test files (self-executing scripts, not vitest suites) excluded from every vitest tier. Each file keeps running through its own runner; listing it here keeps the tier configs from picking it up.',
       }),
     ),
+    maxWorkers: Type.Optional(
+      Type.Number({
+        minimum: 1,
+        description:
+          "Worker cap for the vitest pool. Unset lets vitest size the pool from the machine; set it when a repo's suites are memory-heavy enough that a full-width pool thrashes.",
+      }),
+    ),
+    nodeTestExclude: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Globs of test files allowed to run on `node:test` instead of vitest. The prefer-vitest-guard hook reads THIS key as its allowlist, so the guard and the vitest exclude can never drift into disagreeing about which files are exempt.',
+      }),
+    ),
+    nonIsolated: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Globs of suites that run WITHOUT per-file isolation. Faster, and safe only for suites that mutate no shared global state; a suite that mocks globals, chdirs, or writes process.env belongs in the `mid` lane instead.',
+      }),
+    ),
+    pool: Type.Optional(
+      Type.Union([Type.Literal('forks'), Type.Literal('threads')], {
+        description:
+          'Vitest pool implementation. `threads` (the fleet default) is faster; `forks` gives each file a real process, which a suite needing true process isolation — its own cwd, its own native addon state — requires.',
+      }),
+    ),
     unitBudgetMs: Type.Optional(
       Type.Number({
         minimum: 1000,
@@ -138,6 +175,7 @@ export const VitestSchema = Type.Object(
     ),
   },
   {
+    additionalProperties: false,
     description:
       'Tuning for the canonical vitest config (.config/repo/vitest.config.mts).',
   },

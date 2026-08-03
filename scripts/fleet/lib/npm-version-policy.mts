@@ -344,7 +344,7 @@ export function parseNpmPackument(
 export async function fetchNpmPackageVersionMetadata(
   packageName: string,
 ): Promise<NpmPackageVersionMetadata | undefined> {
-  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(packageName).replace('%40', '@')}`
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(packageName).replaceAll('%40', '@')}`
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
       const raw = await httpJson<RawNpmPackument>(url, {

@@ -101,26 +101,23 @@ import type { LineHit } from './scan-core.mts'
 
 // Extract the comment text of a single line, or '' when the line has no
 // comment. `block` carries whether the previous line left an unterminated
-// `/* … */` (so a NO-leading-`*` block body — `/*\n  Step 4 …\n*/` — is still
-// scanned; the leak is just as real inside a C-style block as in a `//!` doc).
-// Returns the comment text plus the block state to thread into the next line.
+// `/* … */` open, so a no-leading-`*` block body is still scanned — the leak
+// is just as real inside a C-style block as in a `//!` doc. Returns the
+// comment text plus the block state to thread into the next line.
 //
-// Conservative + cheap, no full tokenizer: we only need the prose a human
-// wrote, and we must not mistake a `//` / `<!--` that sits inside a string for
-// a comment opener. The rules:
-//   • Inside an open block (`block === true`) the WHOLE line is comment text up
-//     to a closing `*/`; a `*/` on the line clears the block state.
-//   • A WHOLE-LINE comment — `//…`, `//!…`, `///…`, Rust doc, `*…` (JSDoc
-//     continuation), `/*…`, `#…` (but NOT `#!` shebang), `<!--…` — returns its
-//     text after the opener. A `/*` with no `*/` on the same line OPENS a block.
-//   • A TRAILING `//` or `<!--` comment on a code line returns the text after
-//     the opener, but ONLY when the opener is not inside a quote span on that
-//     line (so `const u = 'http://x'` and `a = "#tag"` are NOT comments). A
-//     trailing `#` is deliberately NOT treated as a comment on a code line: `#`
-//     is too overloaded (CSS colors, fragment URLs, shell `$#`) to split safely
-//     mid-line, and the motivating leaks are all whole-line or `//`. A
-//     WHOLE-LINE `#` comment IS scanned, so a `# step 2 of the quest` heading is
-//     still caught.
+// Conservative + cheap, no full tokenizer — we only need the prose a human
+// wrote, and must not mistake a `//` / `<!--` inside a string for a comment
+// opener:
+//   • Inside an open block the WHOLE line is comment text up to `*/`, which
+//     clears the block state.
+//   • A WHOLE-LINE comment — `//…`, `///…`, Rust doc, `*…` (JSDoc
+//     continuation), `/*…`, `#…` (not `#!` shebang), `<!--…` — returns its
+//     text after the opener; a `/*` with no `*/` OPENS a block.
+//   • A TRAILING `//` or `<!--` on a code line returns the text after the
+//     opener only when the opener sits outside a quote span (`'http://x'`,
+//     `"#tag"` are not comments). A trailing `#` is NEVER a comment on a
+//     code line — too overloaded (CSS colors, fragment URLs, shell `$#`) to
+//     split mid-line safely; a WHOLE-LINE `#` heading is still caught.
 const COMMENT_OPENER_WHOLE_RE = /^\s*(?:#(?!!)|<!--|\*|\/\*\*?|\/\/+!?)\s?/
 export function commentTextOf(
   line: string,
@@ -225,31 +222,24 @@ const EFFORT_NOUN = '(?:quest|crusade|odyssey)'
 const EFFORT_NOUN_QUALIFIED =
   '(?:quest|crusade|odyssey|rework|refactor|effort|cleanup|sprint|overhaul)'
 
-// `step <N>` is the headline shape (the motivating `//! Step 4 of the net perf
-// quest` / `# … given step 2 already reuses …` defects). Two genuine signals,
-// BOTH absent from the legit procedural steps real source proves benign:
-//   (A) `step N <CHANGE-VERB>` — a past-tense change-verb (or the explicit
-//       `replaces`/`reuses` present) DIRECTLY after the ordinal (`step 2
-//       replaced`, `step 2 switched`), tolerating an interposed bracket-ref (the
-//       motivating `Step 2 ([#5638]) replaced …`). The verb list is bounded to
-//       real inflections — NOT open `\w*` stems (so `address`/`movie`/`folder`/
-//       `changeset` never match) — and excludes the bare imperative (`add`/
-//       `move`/`drop`), which is ordinary algorithm-step prose, not history.
+// `step <N>` is the headline shape (`//! Step 4 of the net perf quest`, `# …
+// given step 2 already reuses …`). Matches ONLY on two signals, both absent
+// from the legit procedural steps real source proves benign:
+//   (A) `step N <CHANGE-VERB>` — a past-tense change-verb (or `replaces`/
+//       `reuses`) DIRECTLY after the ordinal, tolerating an interposed
+//       bracket-ref (`Step 2 ([#5638]) replaced …`). The verb list is bounded
+//       to real inflections, not open `\w*` stems, and excludes the bare
+//       imperative (`add`/`move`/`drop`), which is ordinary algorithm prose.
 //   (B) `step N of [the] <STRICT effort noun>` — a step OF a named internal
-//       quest (`step 4 of the quest`). A legit `step 1 of the migration` /
-//       `step N of every publish attempt` uses a construct/stable noun, not the
-//       strict jargon set, so it passes.
+//       quest (`step 4 of the quest`). `step 1 of the migration` uses a
+//       construct/stable noun, not the strict jargon set, so it passes.
 //
-// DELIBERATELY NOT Tier-1 (would false-positive fleet-wide; calibrated against
-// the full committed source of two real repos): a bare comment-LEADING `^Step
-// N`, a `Step N —` dash heading, `step N of <STABLE procedure>`, a bare
-// imperative `step N <verb>`, and a pronoun-displaced `step N we <verb>`. Real
-// source + ordinary algorithm narration use all of those for TIMELESS prose
-// (`## Step 1 — Build`, `// Step 1: ask the remote …`, `step 2 then move to the
-// next node`). A bare mid-sentence `step N` (`increment by step 2`) likewise
-// falls through to the Tier-2 co-occurrence path. The cost is a tolerated false
-// NEGATIVE on a pronoun-rephrased defect (`In step 4 we added …`) — accepted, by
-// the bias above; QUEST_RE still catches the `… perf <effort>` framing.
+// Deliberately NOT matched (calibrated against two real repos' full history,
+// to avoid a fleet-wide false positive): a bare `^Step N` heading, `step N of
+// <STABLE procedure>`, a bare imperative `step N <verb>`, and a
+// pronoun-displaced `step N we <verb>` (falls through to Tier-2). The
+// accepted cost is a tolerated false NEGATIVE on a pronoun-rephrased defect —
+// QUEST_RE still catches the `… perf <effort>` framing.
 const STEP_VERB =
   '(?:replaced|replaces|reused|reuses|added|introduced|removed|changed|landed|switched|rewrote|refactored|moved|dropped|converted|eliminated|reworked|became|already)'
 const STEP_SEQ_RE = new RegExp(

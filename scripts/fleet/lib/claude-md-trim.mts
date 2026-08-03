@@ -93,7 +93,13 @@ export function fleetBlockBytes(content: string): number | undefined {
 // Trailing run of citation groups + doc links (+ HTML comments), e.g.
 // ` (`hook/path`) [`topic`](docs/agents.md/fleet/x.md) <!--advisory-->`. This
 // is the bullet's INDEX tail — never trimmed; only the description before it is.
-const TAIL_RE = /(?:\s*(?:\([^()]*\)|\[[^\]]*\]\([^)]*\)|<!--[^]*?-->))+\s*$/
+// The comment arm spells out "any char that is not a dash, or a dash that does
+// not open the terminator" rather than a lazy `[^]*?`. The lazy form sits inside
+// a `+` group, so an unterminated `<!--` made the engine retry every split of
+// the rest of the line — exponential backtracking on a line the trimmer reads
+// from a file. This form has one way to match each character, so it is linear.
+const TAIL_RE =
+  /(?:\s*(?:\([^()]*\)|\[[^\]]*\]\([^)]*\)|<!--(?:[^-]|-(?!->))*-->))+\s*$/
 
 /**
  * Whether a line is a top-level fleet bullet carrying a doc link (its detail

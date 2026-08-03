@@ -83,6 +83,12 @@ export const ReleaseSchema = Type.Object(
           'Version-bump policy enforced by bump.mts. `standard` (default): derive major/minor/patch from Conventional Commits. `patch-only`: reject any major/minor bump — only the patch may increment (e.g. socket-wheelhouse stays 1.0.x).',
       }),
     ),
+    latestDistTagBranch: Type.Optional(
+      Type.String({
+        description:
+          "The branch that owns the `latest` npm dist-tag — the line customers get from a bare `npm install <pkg>`. Defaults to the repo's default branch, which is right for almost every member; set it only when the consumable line lives elsewhere. npm-publish.yml refuses a `latest` publish dispatched from any other branch. socket-cli sets `v1.x`: its default branch carries the 2.x PRERELEASE line, and leaving `latest` unguarded there stranded `socket@latest` on an old 1.1.147 while five newer v1.x releases published under a side tag no bare install resolves.",
+      }),
+    ),
   },
   {
     additionalProperties: false,

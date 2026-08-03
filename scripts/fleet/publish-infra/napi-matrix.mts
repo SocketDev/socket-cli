@@ -62,10 +62,9 @@ export interface NapiMatrix {
  * per-platform require path (`darwin-arm64`, `linux-x64`, `win-x64`).
  */
 export function napiPlatformId(target: NapiNativeTarget): string {
-  return target
-    .replace(/-(?:gnu|msvc)$/, '')
-    .replace(/-musl$/, '-musl')
-    .replace(/^win32-/, 'win-')
+  // `-musl` is deliberately NOT stripped: it distinguishes the musl build from
+  // the glibc one, which the loader has to tell apart. Only `-gnu`/`-msvc` go.
+  return target.replace(/-(?:gnu|msvc)$/, '').replace(/^win32-/, 'win-')
 }
 
 /**

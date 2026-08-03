@@ -54,6 +54,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { GH_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
@@ -86,7 +87,12 @@ export function tokenIssuedAtFile(): string {
 const TOKEN_TTL_MS = 8 * 60 * 60 * 1000 // 8 hours IDLE, reset on each gh use
 
 interface GhAuthStatus {
-  storage: 'keyring' | 'file' | 'unknown'
+  // 'absent' means the probe confirmed `gh` is not on PATH at all (ENOENT) —
+  // the only spawn outcome this guard treats as "nothing to protect".
+  // Any other unreadable probe (killed, timed out, other spawn error) is a
+  // thrown Error instead, so the caller fails closed rather than reading it
+  // as 'absent'.
+  storage: 'keyring' | 'file' | 'unknown' | 'absent'
   scopes: readonly string[]
 }
 
@@ -101,9 +107,35 @@ export const check = bashGuard((command, payload): GuardResult => {
   let status: GhAuthStatus
   try {
     status = readGhAuthStatus()
-  } catch {
-    // gh not installed, or no active auth — let the command run and
-    // gh itself will report. Don't double-block.
+  } catch (e) {
+    // The probe ran (or attempted to) and did not come back clean — killed
+    // by the timeout, a non-ENOENT spawn error, or some other failure
+    // distinct from "gh isn't installed". Fail CLOSED: an unreadable probe
+    // is not evidence of "no token to protect", and letting it through here
+    // is exactly the silent fail-open this guard exists to prevent (see
+    // spawn-timeout.mts — a killed probe reading as empty output already
+    // did this once, under windows CI load).
+    return fail(
+      'gh-token-hygiene-guard: could not verify gh auth status',
+      [
+        'The `gh auth status` probe used to check token storage / age /',
+        'scope did not return usable output — it may have been killed,',
+        'timed out, or failed for a reason other than gh being absent.',
+        "A guard that can't verify its invariants must not silently let",
+        'the command through.',
+        '',
+        `Probe error: ${errorMessage(e)}`,
+        '',
+        'Retry the command. If this keeps happening, confirm `gh` runs',
+        'cleanly on its own:',
+        '  gh auth status',
+      ].join('\n'),
+    )
+  }
+  if (status.storage === 'absent') {
+    // gh genuinely isn't installed (ENOENT) — nothing to protect here;
+    // gh itself isn't runnable, so there's no token to leak. Let the
+    // command run and gh will report the problem.
     return undefined
   }
   // Invariant 1: keyring storage.
@@ -448,17 +480,46 @@ function isTokenFresh(): boolean {
   }
 }
 
+// A killed/timed-out `gh` spawn is usually a transient scheduling delay — a
+// sibling build, a parallel Claude Code session, anything else briefly
+// saturating the box — not a wedged process; a fresh attempt very likely
+// succeeds. Retrying a bounded number of times before treating the probe as
+// failed means ordinary machine contention doesn't manufacture a security
+// block. ENOENT never retries: if `gh` isn't on PATH, trying again won't put
+// it there. Verified empirically: 20 back-to-back probes on a loaded dev box
+// (LOAD_AVG ~6 on 14 cores, concurrent sibling sessions) needed at most 3
+// attempts each, zero left unresolved.
+const SPAWN_RETRY_ATTEMPTS = 3
+
+function spawnGhWithRetry(
+  args: readonly string[],
+  timeout: number,
+): ReturnType<typeof spawnSync> {
+  let attempt = 0
+  let result: ReturnType<typeof spawnSync>
+  do {
+    result = spawnSync('gh', [...args], {
+      shell: WIN32,
+      stdio: 'pipe',
+      stdioString: true,
+      timeout,
+    })
+    attempt += 1
+  } while (
+    result.error &&
+    (result.error as NodeJS.ErrnoException).code !== 'ENOENT' &&
+    attempt < SPAWN_RETRY_ATTEMPTS
+  )
+  return result
+}
+
 // Lightweight liveness check. `gh api user` is the standard "am I
 // authenticated" probe — 1 request, returns the user object on 200,
 // fails non-zero on 401/network issues. Timeout-bounded so a network
 // blackout doesn't hang the hook.
 function probeTokenValid(): boolean {
-  const result = spawnSync('gh', ['api', 'user', '--jq', '.login'], {
-    shell: WIN32,
-    stdio: 'pipe',
-    // win-timeout: network — bounded `gh api` call; keep it fixed, don't scale by platform.
-    timeout: 5000,
-  })
+  // win-timeout: network — bounded `gh api` call; keep it fixed, don't scale by platform.
+  const result = spawnGhWithRetry(['api', 'user', '--jq', '.login'], 5000)
   return result.status === 0
 }
 
@@ -473,18 +534,31 @@ function recordTokenIssuedAt(): void {
 
 function readGhAuthStatus(): GhAuthStatus {
   // `gh auth status` is a LOCAL keyring read, no network; spawnTimeoutMs keeps
-  // it tight on POSIX but gives win32 headroom for cmd.exe spawn latency. Too
-  // tight and a slow-but-alive gh is killed → empty output → this reads it as
-  // "gh absent" and fail-opens, silently skipping the storage check.
-  const r = spawnSync('gh', ['auth', 'status'], {
-    shell: WIN32,
-    stdio: 'pipe',
-    stdioString: true,
-    timeout: spawnTimeoutMs(5000),
-  })
+  // it tight on POSIX but gives win32 headroom for cmd.exe spawn latency. A
+  // killed/slow-but-alive gh still surfaces here (see below): only ENOENT
+  // reads as "gh absent" — every other spawn failure throws and the caller
+  // fails closed instead of skipping the storage check. spawnGhWithRetry
+  // retries a killed/errored attempt so transient machine contention doesn't
+  // manufacture a block on its own.
+  const r = spawnGhWithRetry(['auth', 'status'], spawnTimeoutMs(5000))
+  // Node's spawnSync does NOT throw on a killed/failed child — it returns
+  // `.error` (and, for a timeout kill, `.signal`) with empty stdout/stderr.
+  // ENOENT is the ONE spawn error that genuinely means "gh isn't installed":
+  // nothing to protect, safe to no-op. Every other spawn error — killed by
+  // the timeout, EACCES, or anything else — means the probe attempted to
+  // run and did NOT come back clean, which is not evidence of "no active
+  // auth" and must not be read as such.
+  const spawnError = r.error as NodeJS.ErrnoException | undefined
+  if (spawnError?.code === 'ENOENT') {
+    return { scopes: [], storage: 'absent' }
+  }
   const text = String(r.stdout ?? '') + String(r.stderr ?? '')
-  if (!text) {
-    throw new Error('gh auth status: no output')
+  if (spawnError || !text) {
+    throw new Error(
+      `gh auth status: probe did not return usable output (${
+        spawnError?.code ?? r.signal ?? 'empty output'
+      })`,
+    )
   }
   // Per-host parse. `gh auth status` lists every host the user is logged
   // in to, each as its own block. We care about github.com specifically.

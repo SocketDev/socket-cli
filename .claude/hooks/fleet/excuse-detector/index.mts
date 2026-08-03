@@ -8,11 +8,8 @@
 // Runs in BLOCKING mode: when a match is found, the hook returns a
 // `block()` verdict so the agent must continue the turn and address the
 // matched phrase (e.g. fix the "pre-existing" TS errors) rather than
-// ending the turn on the excuse. The block is suppressed when
-// `stop_hook_active` is set, so this can fire at most once per stop
-// chain — the agent is given one forced chance to fix or to state the
-// trade-off explicitly; after that it degrades to a non-blocking
-// `notify()`.
+// ending the turn on the excuse. It blocks on every turn-end, retries
+// included — see the note at the block.
 
 import {
   computeActorId,
@@ -22,7 +19,7 @@ import {
   readActorLedger,
   resolveStoreRoot,
 } from '../_shared/active-edits-ledger.mts'
-import { block, defineHook, notify, runHook } from '../_shared/guard.mts'
+import { block, defineHook, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import {
@@ -40,7 +37,7 @@ import { resolveProjectDir } from '../_shared/project-dir.mts'
 const NAME = 'excuse-detector'
 
 const CLOSING_HINT =
-  "These phrases usually precede a deferral. The Stop hook will block once so the agent must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint."
+  "These phrases usually precede a deferral. The Stop hook blocks so the agent must act on the matched item — either fix it now, or state the trade-off explicitly with the user's constraint."
 
 // Deferral-verb fragment shared by every bare-phrase pattern that
 // the assistant might quote descriptively in a summary. Phrases
@@ -65,7 +62,54 @@ export function withDeferralVerb(phraseRe: string): RegExp {
   )
 }
 
+// Soft-deferral fragment: deferral by FUTURING rather than by a skip-verb —
+// "the natural next step", "as follow-up", "triage later", "a future pass".
+// These are how a deferral reads when it is dressed as a plan. Kept separate
+// from DEFER so the existing patterns' false-positive balance is untouched.
+const SOFT_DEFER = String.raw`(another (pass|session)|follow-?up|future (pass|session)|later pass|natural next step|next step after|triage (comes|happens|is))`
+
+/**
+ * Build a regex that fires when `phraseRe` appears within ~80 chars of a
+ * soft-deferral phrase — the futuring shape of an excuse.
+ */
+export function withSoftDeferral(phraseRe: string): RegExp {
+  return new RegExp(
+    `${phraseRe}[^.?!\\n]{0,80}\\b${SOFT_DEFER}\\b|\\b${SOFT_DEFER}\\b[^.?!\\n]{0,80}${phraseRe}`,
+    'i',
+  )
+}
+
 const PATTERNS: readonly RuleViolation[] = [
+  {
+    label: 'predates my work (futuring shape)',
+    // "several predate today", "this predates my change" — provenance offered
+    // as a reason the finding is someone else's. Fires with either a hard
+    // deferral verb or a soft futuring phrase in range.
+    regex: withSoftDeferral(
+      String.raw`\bpredates? (?:my (?:change|commits?|session|work)|the (?:session|task)|this (?:change|session|task|work)|today)\b`,
+    ),
+    why: "CLAUDE.md 'No pre-existing excuse': who introduced a finding does not change who fixes it — you found it, so it is yours. Fix it now or state the explicit trade-off.",
+  },
+  {
+    label: 'natural next step (futuring shape)',
+    // Ending a turn by declaring the found work "the natural next step" is a
+    // deferral dressed as a plan — the next step is now.
+    regex: /\b(?:a |the )?natural next step\b/i,
+    why: "CLAUDE.md 'Fix > defer': naming the follow-up is not doing it. Do the step, or ask only if it genuinely needs the user's call.",
+  },
+  {
+    label: 'triage after landing (futuring shape)',
+    // "that triage is ... after the push/land/merge" — sequencing found work
+    // behind a landing event instead of into it. A bare noun+after pairing
+    // also matches descriptive past tense ("the sweep completed after the
+    // merge"), so both branches demand a forward-looking marker: branch one
+    // puts the intent verb before the fix-noun, branch two puts a future
+    // linking verb right after it.
+    regex:
+      // require-regex-comment: (intent verb … fix-noun … after <landing event>) OR (fix-noun <future linking verb> … after <landing event>).
+      /\b(?:'ll|going to|plan(?:ned|ning|s)? to|will|worth)\b[^.?!\n]{0,50}\b(?:clean-?up|sweep|triage)\b[^.?!\n]{0,60}\bafter (?:the |this )?(?:commit|land(?:ing)?|merge|push)\b|\b(?:clean-?up|sweep|triage)\b[^.?!\n]{0,10}\b(?:can wait|comes?|goes|happens|is|waits?)\b[^.?!\n]{0,50}\bafter (?:the |this )?(?:commit|land(?:ing)?|merge|push)\b/i,
+    why: "CLAUDE.md 'Fix > defer': found findings ride in the same effort, not behind the landing event. Fix them before or alongside the push.",
+  },
   {
     label: 'pre-existing (deferral shape)',
     // Bare "pre-existing" matches both "this is pre-existing, skipping it"
@@ -361,17 +405,17 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
   const message = formatReminderBlock(NAME, allHits, CLOSING_HINT)
 
   // Blocking mode: return a block() verdict so the agent must continue the
-  // turn and address the matched phrase. Suppressed when
-  // `stop_hook_active` is already set, to avoid loops — that case degrades
-  // to a non-blocking notice. `stop_hook_active` is a Stop-payload field
-  // absent from ToolCallPayload's declared shape; narrow it defensively off
-  // the raw payload.
-  const stopHookActive =
-    (payload as { stop_hook_active?: unknown | undefined }).stop_hook_active ===
-    true
-  if (stopHookActive) {
-    return notify(message)
-  }
+  // turn and address the matched phrase, on every turn-end including a retry
+  // another Stop guard triggered. Claude Code sets `stop_hook_active` when ANY
+  // previous Stop hook blocked, so degrading there did not buy this guard one
+  // forced chance — it bought zero whenever a sibling blocked first, and a
+  // sibling blocking first is exactly the dangerous case: a reply being
+  // rewritten to satisfy `disowned-dirt-guard` is under pressure to disclose
+  // what it did not do, which is the prose neighborhood where "that error is
+  // pre-existing, so I left it" gets written. The two-guards-deadlock worry
+  // does not apply, because the demand is pure text — delete the phrase, or
+  // state the trade-off the message already offers — so satisfying this guard
+  // can never violate another.
   return block(
     message +
       '\nFix the underlying issue now (or, if it truly cannot be fixed in this session, ' +

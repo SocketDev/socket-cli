@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import {
+  chmodSync,
   copyFileSync,
   existsSync,
   mkdirSync,
@@ -9,6 +10,7 @@ import {
   realpathSync,
   renameSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs'
 import os from 'node:os'
@@ -43,12 +45,36 @@ function getDep0Logger() {
  * Fail-open recursive delete. The dep-0 fetcher cannot import the lib
  * `safeDeleteSync`, so it wraps node's `rmSync` with the same force + recursive
  * fail-open semantics: a missing path is a no-op, never a throw.
+ *
+ * A read-only target gets ONE retry after a chmod +w. The installer locks the
+ * files it places (0444/0555), and Windows refuses to unlink a read-only file —
+ * POSIX does not, it checks the parent directory, which the lock never touches.
  */
 function rm(targetPath) {
-  rmSync(targetPath, {
-    force: true,
-    recursive: true,
-  })
+  try {
+    rmSync(targetPath, {
+      force: true,
+      recursive: true,
+    })
+  } catch (e) {
+    const code = errorCode(e)
+    if (code !== 'EACCES' && code !== 'EPERM') throw e
+    chmodSync(targetPath, (statSync(targetPath).mode & 511) | 128)
+    rmSync(targetPath, {
+      force: true,
+      recursive: true,
+    })
+  }
+}
+/**
+ * The `errno` string of a thrown filesystem error (`EACCES`, `EPERM`, …), or
+ * undefined for anything that is not one. Dep-0: no lib `isErrnoException`.
+ */
+function errorCode(e) {
+  if (e instanceof Error) {
+    const { code } = e
+    return code
+  }
 }
 const dep0Logger = {
   error(...args) {
@@ -464,6 +490,40 @@ function isAlwaysTrackedGitHubSurface(relPath) {
 }
 
 //#endregion
+//#region template/base/scripts/fleet/_shared/mirror-lock.mts
+/**
+ * @file Mirror-lock lift primitives. The cascade chmods live fleet mirrors
+ *   read-only (0444/0555) so stray edits fail at the filesystem level; every
+ *   sanctioned writer that rewrites a mirror (a re-cascade, a block splice, a
+ *   dispatch-table regen) lifts the lock for the write and restores it after.
+ *   fs.cp/copyFile/writeFile all open the DESTINATION for write, so a locked
+ *   mirror EACCESes without the lift. One implementation here — the cascade's
+ *   mirror-mode fixer and the member-side generators (build-hook-bundle,
+ *   gen/hook-dispatch) all import it, so the lift semantics cannot drift.
+ *   `lockFileReadonlySync` is the other half: the release-bundle installer
+ *   places files with a plain `copyFileSync`, so it applies the lock itself
+ *   rather than inheriting it from a cascade that never runs on that path.
+ */
+/**
+ * Lock ONE file read-only, preserving its executable bit: 0o555 when the file
+ * already carries an exec bit so a git-hook shim stays runnable while
+ * unwritable, 0o444 otherwise. Same mode choice the cascade's own
+ * `mirrorFileMode` makes, expressed sync and with `node:fs` alone so rolldown
+ * can inline it into the dep-0 release-bundle installer.
+ *
+ * Best-effort on purpose: a missing file or a chmod the filesystem refuses
+ * leaves the target as it is instead of throwing. The installer locks each
+ * file right after placing it, and a tree where a few files stayed writable
+ * is recoverable — a half-finished install that threw is not.
+ */
+function lockFileReadonlySync(filePath) {
+  try {
+    const { mode } = statSync(filePath)
+    chmodSync(filePath, (mode & 73) === 0 ? 292 : 365)
+  } catch {}
+}
+
+//#endregion
 //#region scripts/repo/gen/bootstrap/src/install-thin-prune.mts
 /**
  * The hybrid (segment + settingsSegment) path set thinIgnoreEntries excludes
@@ -476,6 +536,65 @@ function computeHybridPaths(manifest) {
   if (manifest.settingsSegment !== void 0)
     hybridPaths.add(normalizeBundlePath(manifest.settingsSegment.path))
   return hybridPaths
+}
+
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/placement-lock.mts
+/**
+ * True when the release-bundle installer should lock what it places. Reads the
+ * SAME `CASCADE_READONLY_MIRRORS` switch the cascade's mirror-mode fixer reads,
+ * so one knob covers both delivery paths — a file is protected the same way
+ * whether a cascade copied it or a bundle install placed it. ON by default;
+ * only the exact value "0" opts out.
+ */
+function readonlyBundleMirrorsEnabled() {
+  return process.env['CASCADE_READONLY_MIRRORS'] !== '0'
+}
+/**
+ * Lift a read-only lock off a placement target before the installer overwrites
+ * it. `copyFileSync`/`writeFileSync` open the DESTINATION for write, so without
+ * this a second install over a locked tree EACCESes on its first file. A
+ * missing target is the seed path, a no-op. When the chmod itself is refused
+ * the target is deleted instead — on POSIX unlink needs only a writable PARENT,
+ * which is why the lock is files-only and directories stay 0755.
+ */
+function ensureWritableTarget(target) {
+  let mode
+  try {
+    mode = statSync(target).mode & 511
+  } catch {
+    return
+  }
+  if ((mode & 128) !== 0) return
+  try {
+    chmodSync(target, mode | 128)
+  } catch {
+    rm(target)
+  }
+}
+/**
+ * True when a just-placed file may carry the read-only lock. Three classes
+ * never may:
+ *
+ * - `manifest.generatedPaths` — rolldown and the dispatch generators REWRITE
+ *   these in the member and cannot lift a lock for themselves (the rule
+ *   liftMirrorLockSync documents), so locking one breaks the next build.
+ * - The DESIGNATED sentinel-splice files — hybrids whose member tail below the
+ *   sentinel survives every refresh.
+ * - Hybrid segment paths (CLAUDE.md, pnpm-workspace.yaml, settings.json) — merged
+ *   per repo by installSegments, which writes them straight.
+ */
+function isLockablePlacement(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  const rel = normalizeBundlePath(cfg.relPath)
+  return (
+    !cfg.generatedPaths.has(rel) &&
+    !cfg.hybridPaths.has(rel) &&
+    !isFleetCanonicalSpliceFile(rel)
+  )
 }
 
 //#endregion
@@ -509,9 +628,10 @@ const LIST_ITEM_RE = /^(\s+)-\s+(.*)$/
 /**
  * Split a top-level key block's BODY lines into entry chunks. A chunk starts
  * at a map-entry or list-item line at the block's entry indent; comment and
- * blank lines BEFORE an entry attach to it (they document what follows);
- * deeper-indented lines are continuations. Returns `undefined` when the body
- * has no recognizable entries (scalar block — nothing nested to merge).
+ * blank lines BEFORE an entry attach to it as documentation for the entry
+ * that immediately follows; deeper-indented lines are continuations. Returns
+ * `undefined` when the body has no recognizable entries (scalar block —
+ * nothing nested to merge).
  */
 function parseYamlEntryChunks(bodyLines) {
   const chunks = []
@@ -556,7 +676,7 @@ function parseYamlEntryChunks(bodyLines) {
  * analog of the Claude-settings splice that keeps repo hook registrations
  * inside the fleet-owned `hooks` key. Fleet-shipped entries (present in the
  * bundle block) take the bundle's text, comments included; member-local
- * entries (present only in the consumer block) survive in their original
+ * entries that appear only in the consumer block survive in their original
  * order after the fleet set. Scalar-shaped blocks (`saveExact: true`) have no
  * nested entries, so the bundle block replaces wholesale. Trailing blank lines
  * follow the consumer block so inter-block spacing is preserved.
@@ -974,26 +1094,41 @@ const logger$4 = getDep0Logger()
  * incident). A designated file landing for the first time also byte-copies.
  */
 function installFiles(filesDir, dest, manifest) {
+  const locking = readonlyBundleMirrorsEnabled()
+  const generatedPaths = new Set(
+    (manifest.generatedPaths ?? []).map(normalizeBundlePath),
+  )
+  const hybridPaths = computeHybridPaths(manifest)
   const rels = Object.keys(manifest.files)
   for (let i = 0, { length } = rels; i < length; i += 1) {
     const rel = rels[i]
     const source = path.join(filesDir, rel)
     const target = path.join(dest, rel)
     mkdirSync(path.dirname(target), { recursive: true })
+    let spliced
     if (isFleetCanonicalSpliceFile(rel) && existsSync(target)) {
       const sourceContent = readFileSync(source, 'utf8')
-      if (hasFleetCanonicalEndSentinel(sourceContent)) {
-        writeFileSync(
-          target,
-          spliceFleetCanonicalContent(
-            sourceContent,
-            readFileSync(target, 'utf8'),
-          ),
+      if (hasFleetCanonicalEndSentinel(sourceContent))
+        spliced = spliceFleetCanonicalContent(
+          sourceContent,
+          readFileSync(target, 'utf8'),
         )
-        continue
-      }
+    }
+    ensureWritableTarget(target)
+    if (spliced !== void 0) {
+      writeFileSync(target, spliced)
+      continue
     }
     copyFileSync(source, target)
+    if (
+      locking &&
+      isLockablePlacement({
+        generatedPaths,
+        hybridPaths,
+        relPath: rel,
+      })
+    )
+      lockFileReadonlySync(target)
   }
 }
 /**
@@ -1337,9 +1472,9 @@ function validateBundleBlock(bundle) {
  * - UPDATE-AVAILABLE: inLockStep but a newer release exists.
  * - OUT-OF-SYNC: cascadeSha !== pinnedTemplateSha (broken invariant).
  *
- * When `pinnedTemplateSha` is undefined (the ref's release can't be found) the
- * invariant cannot be confirmed, so the state is OUT-OF-SYNC — fail loud rather
- * than assume current.
+ * When `pinnedTemplateSha` is undefined the ref's release could not be found,
+ * so the invariant cannot be confirmed and the state is OUT-OF-SYNC — fail loud
+ * rather than assume current.
  */
 function resolveLockStepState(inputs) {
   const { config, newestRef, newestTemplateSha, pinnedTemplateSha } = inputs
@@ -1437,7 +1572,7 @@ function writeNoticeStore(dest, store) {
  * CI-suppress + opt-out unit-test offline. The notice fires only when: a newer
  * release exists, we are NOT in CI, NOT opted out, and either the store is
  * empty, ≥24h have passed since the last check, OR the newest ref changed since
- * last seen (a fresh release jumps the throttle).
+ * last seen. A fresh release bypasses the 24h throttle immediately.
  */
 function shouldShowNotice(inputs) {
   const { ci, newestRef, nowMs, optedOut, store, updateAvailable } = inputs
@@ -1708,7 +1843,7 @@ async function getGhcrToken(repo, registry, httpFn = httpGet) {
 }
 /**
  * GET one manifest by tag or digest. Resolves a multi-arch index to its first
- * sub-manifest so a concrete image manifest (carrying the artifact layer) is
+ * sub-manifest so a concrete image manifest that carries the artifact layer is
  * always returned. Fails loud on a non-2xx.
  */
 async function fetchOciManifest(repo, ref, token, registry, httpFn = httpGet) {
@@ -1764,8 +1899,8 @@ function pickBundleLayer(manifest) {
   return chosen
 }
 /**
- * GET a blob by digest (following the storage redirect). Fails loud on a
- * non-2xx.
+ * GET a blob by digest, following the storage redirect that GHCR issues for
+ * blobs. Fails loud on a non-2xx.
  */
 async function fetchBlob(repo, digest, token, registry, httpFn = httpGet) {
   const res = await httpFn(`https://${registry}/v2/${repo}/blobs/${digest}`, {

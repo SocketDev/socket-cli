@@ -7,6 +7,9 @@
  *   mirror EACCESes without the lift. One implementation here — the cascade's
  *   mirror-mode fixer and the member-side generators (build-hook-bundle,
  *   gen/hook-dispatch) all import it, so the lift semantics cannot drift.
+ *   `lockFileReadonlySync` is the other half: the release-bundle installer
+ *   places files with a plain `copyFileSync`, so it applies the lock itself
+ *   rather than inheriting it from a cascade that never runs on that path.
  */
 
 import { chmodSync, promises as fs, statSync, writeFileSync } from 'node:fs'
@@ -87,6 +90,29 @@ export function liftMirrorLockSync(filePath: string): void {
   const mode = stat.mode & 0o777
   if ((mode & 0o200) === 0) {
     chmodSync(filePath, mode | 0o200)
+  }
+}
+
+/**
+ * Lock ONE file read-only, preserving its executable bit: 0o555 when the file
+ * already carries an exec bit so a git-hook shim stays runnable while
+ * unwritable, 0o444 otherwise. Same mode choice the cascade's own
+ * `mirrorFileMode` makes, expressed sync and with `node:fs` alone so rolldown
+ * can inline it into the dep-0 release-bundle installer.
+ *
+ * Best-effort on purpose: a missing file or a chmod the filesystem refuses
+ * leaves the target as it is instead of throwing. The installer locks each
+ * file right after placing it, and a tree where a few files stayed writable
+ * is recoverable — a half-finished install that threw is not.
+ */
+export function lockFileReadonlySync(filePath: string): void {
+  try {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- need the mode bits, not existence
+    const { mode } = statSync(filePath)
+    chmodSync(filePath, (mode & 0o111) === 0 ? 0o444 : 0o555)
+  } catch {
+    // Fail OPEN: an unlockable target stays writable rather than aborting the
+    // caller mid-install.
   }
 }
 

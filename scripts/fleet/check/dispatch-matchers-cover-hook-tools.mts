@@ -140,18 +140,22 @@ export function diagnoseDispatcherCoverage(
   >()
   for (let i = 0, { length } = hooks; i < length; i += 1) {
     const h = hooks[i]!
-    const bucket = byEvent.get(h.event) ?? {
-      hasMatchAll: false,
-      tools: new Set<string>(),
-    }
-    if (!h.tools || h.tools.length === 0) {
-      bucket.hasMatchAll = true
-    } else {
-      for (let j = 0, tl = h.tools.length; j < tl; j += 1) {
-        bucket.tools.add(h.tools[j]!)
+    // A hook bound to several events contributes its tool surface to EACH of
+    // them — the dispatcher entry is per-event, so the coverage is too.
+    for (const event of h.events) {
+      const bucket = byEvent.get(event) ?? {
+        hasMatchAll: false,
+        tools: new Set<string>(),
       }
+      if (!h.tools || h.tools.length === 0) {
+        bucket.hasMatchAll = true
+      } else {
+        for (let j = 0, tl = h.tools.length; j < tl; j += 1) {
+          bucket.tools.add(h.tools[j]!)
+        }
+      }
+      byEvent.set(event, bucket)
     }
-    byEvent.set(h.event, bucket)
   }
   const findings: CoverageFinding[] = []
   const events = [...byEvent.keys()].toSorted()

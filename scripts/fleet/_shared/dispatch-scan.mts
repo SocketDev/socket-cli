@@ -21,17 +21,47 @@ const EXPORT_HOOK_RE = /export\s+const\s+hook\s*=\s*defineHook\s*\(/
 // (index.cjs path) but is split out of the snapshot bundle into
 // `excluded-fleet-pack.cjs`, which deserialize-main splices in at runtime.
 const SNAPSHOT_EXCLUDE_RE = /@dispatch-snapshot-exclude\b/
+// A hook binds to ONE event (`event: 'Stop'`) or, when the same law covers two
+// surfaces, several (`event: ['PreToolUse', 'Stop']` — the shape `matcher`
+// already uses). Both forms are read off the SOURCE, never by importing the
+// hook, so the scan stays side-effect free.
 const DISPATCH_EVENT_RE = /\bevent\s*:\s*['"]([^'"]+)['"]/
+const DISPATCH_EVENT_ARRAY_RE = /\bevent\s*:\s*\[([^\]]*)\]/
 const DISPATCH_TOOLS_RE = /\bmatcher\s*:\s*\[([^\]]*)\]/
 const EXPORT_TRIGGERS_RE = /\bexport\s+const\s+triggers\b/
 const INLINE_TRIGGERS_RE = /\btriggers\s*:\s*\[/
 
 export interface EligibleHook {
-  readonly event: string
+  // Every event the hook is registered for, in declared order. Almost always
+  // one; a hook whose rule covers two surfaces (anti-prose-guard's doc writes
+  // AND the reply at Stop) lists both and gets one table row per event.
+  readonly events: readonly string[]
   readonly name: string
   readonly snapshotExcluded: boolean
   readonly tools: readonly string[]
   readonly triggers: readonly string[]
+}
+
+/**
+ * The events a hook source declares, in declared order. Reads the array form
+ * (`event: ['PreToolUse', 'Stop']`) first — the single-string regex would match
+ * the array's FIRST quoted token and silently drop the rest, so the broader
+ * shape has to win. Defaults to `['PreToolUse']` when the hook declares none.
+ */
+export function parseEvents(source: string): string[] {
+  const arrayMatch = DISPATCH_EVENT_ARRAY_RE.exec(source)
+  if (arrayMatch?.[1]) {
+    const events = arrayMatch[1]
+      .split(',')
+      // Strip a leading or trailing single/double quote from each token.
+      .map(s => s.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean)
+    if (events.length) {
+      return events
+    }
+  }
+  const singleMatch = DISPATCH_EVENT_RE.exec(source)
+  return [singleMatch?.[1] ?? 'PreToolUse']
 }
 
 /**
@@ -113,8 +143,7 @@ export function parseHookSource(
   if (!ENTRYPOINT_GUARD_RE.test(source) || !EXPORT_HOOK_RE.test(source)) {
     return undefined
   }
-  const eventMatch = DISPATCH_EVENT_RE.exec(source)
-  const event = eventMatch?.[1] ?? 'PreToolUse'
+  const events = parseEvents(source)
   const toolsMatch = DISPATCH_TOOLS_RE.exec(source)
   const tools = toolsMatch?.[1]
     ? toolsMatch[1]
@@ -125,7 +154,7 @@ export function parseHookSource(
     : []
   return {
     __proto__: null,
-    event,
+    events,
     name,
     snapshotExcluded: SNAPSHOT_EXCLUDE_RE.test(source),
     tools,

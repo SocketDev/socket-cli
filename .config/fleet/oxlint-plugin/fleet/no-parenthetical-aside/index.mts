@@ -30,6 +30,10 @@
  *   of the sentence.
  */
 
+import {
+  MIN_ASIDE_WORDS,
+  PARENTHETICAL_LEADIN_RE,
+} from '../../lib/prose-parenthetical.mts'
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // A parenthesized group and its inner text. Matches innermost groups only — the
@@ -82,16 +86,6 @@ const CAP_RE = /^[A-Z]/
 // below the floor the group is a short qualifier such as `(all OSes)`,
 // `(cargo test)`, or `(env var only)`. Mirrors MIN_ASIDE_WORDS in
 // scripts/fleet/check/prose-parenthetical-asides-are-absent.mts.
-const MIN_ASIDE_WORDS = 4
-
-// Lead-ins that make a group a reference, gloss, or annotation rather than an
-// aside: abbreviation glosses such as `(aka the seed path)` or `(see the
-// sibling tests)`, and `(default <value>)` / `(defaults to <value>)`
-// annotations. Dotted forms such as `e.g.` also trip MEMBER_DOT_RE; they are
-// listed here so the intent survives either path.
-const LEADIN_RE =
-  /^(?:a\.k\.a\.|aka\b|cf\.|default(?:\b|s\b)|e\.g\.|eg\b|i\.e\.|ie\b|resp\.|see\b|viz\.)/i
-
 // A first token ending in `ed` (not `eed`, which is a plain verb or noun such
 // as `need` or `seed`) is a past participle: the group is a reduced qualifier
 // of the preceding noun — `(exercised only by its unit tests)`, `(unneeded for
@@ -358,7 +352,7 @@ export function isParentheticalAside(
   }
   // A reference, gloss, or annotation lead-in: `(see …)`, `(aka …)`,
   // `(default true)`.
-  if (LEADIN_RE.test(trimmed)) {
+  if (PARENTHETICAL_LEADIN_RE.test(trimmed)) {
     return false
   }
   if (isCodeReference(text, open) || innerLooksLikeCode(trimmed)) {

@@ -153,7 +153,13 @@ export interface HookSpec {
   readonly bypassOptional?: boolean | undefined
   readonly bypassMode?: 'auto' | 'manual' | undefined
   readonly check: GuardCheck
-  readonly event: HookEvent
+  // One event, or several when a single rule owns more than one surface (a
+  // prose law that gates doc writes at PreToolUse AND the reply at Stop). Same
+  // one-or-many shape as `matcher`. The generator emits one dispatch-table row
+  // per event, all sharing this spec's `check`, so the check must recognize
+  // each payload shape it can now receive — a Stop payload carries no
+  // `tool_name`.
+  readonly event: HookEvent | readonly HookEvent[]
   readonly matcher?: HookMatcher | readonly HookMatcher[] | undefined
   // 'convention' marks a hook that encodes a FLEET convention (code style,
   // layout, tooling, prose shape) rather than a universal safety rule.

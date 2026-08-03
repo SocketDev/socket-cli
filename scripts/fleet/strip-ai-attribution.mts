@@ -23,7 +23,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sequential git plumbing; each step gates the next on exit status.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { hasAiAttribution, stripAiAttribution } from './lib/attribution.mts'
+import {
+  hasAiAttribution,
+  stripAiAttribution,
+} from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
@@ -83,7 +86,7 @@ function gitOrDie(
 // rewrite loop applies per commit.
 export function rewriteMessage(message: string): string {
   return hasAiAttribution(message)
-    ? stripAiAttribution(message)
+    ? stripAiAttribution(message).cleaned
     : `${message}\n`
 }
 

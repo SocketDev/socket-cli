@@ -63,39 +63,21 @@ const LOGGER_METHODS = new Set([
 ])
 
 /* oxlint-disable socket/no-status-emoji -- this rule defines the emoji→method table it scans for. */
-// Mirrors @socketsecurity/lib-stable/logger/default's LOG_SYMBOLS (the table built
-// by `symbols-builder.ts`). Each logger method has TWO render
-// shapes — the Unicode form, used on terminals with unicode support
-// and the ASCII fallback, used otherwise. Authors hand-rolling a
-// prefix may type either, plus closely-related variants:
+// Mirrors @socketsecurity/lib-stable/logger/default's LOG_SYMBOLS (built by
+// `symbols-builder.ts`). Each method has a Unicode form + an ASCII
+// fallback, plus variants authors commonly hand-type:
+//   fail ✖/× (✗✘❌❎✖️)   info ℹ/i (ℹ️)   progress ∴/:.   skip ↻/@   step →/>
+//   success ✔/√ (✓✅☑☑️✔️)   warn ⚠/‼ (⚠️❗❕🚨⛔)
 //
-//   method    Unicode  ASCII   common author variants
-//   ───────   ───────  ─────   ──────────────────────
-//   fail      ✖        ×       ✗ ✘ ❌ ❎ ✖️
-//   info      ℹ        i       ℹ️
-//   progress  ∴        :.      rarely typed
-//   reason    ∴(dim)   :.(dim) (rarely typed; same shape as progress)
-//   skip      ↻        @       rarely typed
-//   step      →        >       rarely typed
-//   success   ✔        √       ✓ ✅ ☑ ☑️ ✔️
-//   warn      ⚠        ‼       ⚠️ ❗ ❕ 🚨 ⛔
+// Two scan passes: ANYWHERE (`UNAMBIGUOUS_EMOJI`) matches symbols that never
+// appear in normal prose (Unicode forms + visually distinct ASCII
+// fallbacks like √ × ‼ :.) anywhere in the string. ANCHORED
+// (`AMBIGUOUS_FALLBACK`) covers fallbacks that DO appear in prose (`i`,
+// `>`, `@`, `:`) — only matched at the START of the string followed by
+// whitespace, the prefix shape the logger emits.
 //
-// Two scan passes:
-//
-// 1. ANYWHERE — `UNAMBIGUOUS_EMOJI` covers symbols that don't appear
-//    in normal log prose. The Unicode forms + the visually distinct
-//    ASCII fallbacks (√ × ‼ :.) — none would naturally show up in
-//    `logger.log('config loaded\n')`. Match anywhere in the string.
-//
-// 2. ANCHORED — `AMBIGUOUS_FALLBACK` covers fallbacks that DO appear
-//    in normal prose: `i`, in any English word, `>` (math/chaining),
-//    `@`, npm package refs, dirs, `:` (host:port, urls). Only match
-//    when at the START of the string followed by whitespace — that's
-//    the prefix shape the logger emits.
-//
-// Keep this in lockstep with `socket-lib/src/logger/symbols-
-// builder.ts` and `socket-wheelhouse/template/.config/fleet/oxlint-plugin/
-// fleet/no-status-emoji/index.mts`.
+// Keep in lockstep with `socket-lib/src/logger/symbols-builder.ts` and this
+// repo's `no-status-emoji/index.mts`.
 // UNAMBIGUOUS — match anywhere in the string. These shapes don't
 // appear in normal log prose. Includes both the Unicode forms +
 // distinct emoji variants authors hand-write (✅ ❌ ❗ 🚨 etc.) +

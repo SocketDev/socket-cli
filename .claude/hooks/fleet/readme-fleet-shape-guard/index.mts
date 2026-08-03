@@ -263,13 +263,21 @@ export function isRootReadme(filePath: string): boolean {
  * the post-edit text can't be reliably computed (Edit against a file that
  * doesn't exist, or old_string not found).
  */
+export interface PostEditTextOptions {
+  content?: string | undefined
+  newString?: string | undefined
+  oldString?: string | undefined
+}
+
 export function computePostEditText(
   toolName: string,
   filePath: string,
-  newString: string | undefined,
-  oldString: string | undefined,
-  content: string | undefined,
+  options?: PostEditTextOptions | undefined,
 ): string | undefined {
+  const { content, newString, oldString } = {
+    __proto__: null,
+    ...options,
+  } as PostEditTextOptions
   if (toolName === 'Write') {
     return content
   }
@@ -456,13 +464,11 @@ export const check = editGuard((filePath, content, payload) => {
   const oldString =
     typeof input?.old_string === 'string' ? input.old_string : undefined
 
-  const postEdit = computePostEditText(
-    tool,
-    filePath,
+  const postEdit = computePostEditText(tool, filePath, {
+    content,
     newString,
     oldString,
-    content,
-  )
+  })
   if (postEdit === undefined) {
     return undefined
   }

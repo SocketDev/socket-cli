@@ -15,8 +15,8 @@
 const path = require('node:path')
 const fs = require('node:fs')
 
-// Resolve the REAL repo root by walking up to the nearest pnpm-workspace.yaml
-// (a fleet invariant in every repo). A fixed `__dirname/../../../..` is correct
+// Resolve the REAL repo root by walking up to the nearest pnpm-workspace.yaml,
+// which every fleet repo contains. A fixed `__dirname/../../../..` is correct
 // for the live .claude/hooks/fleet/ copy, but the identical
 // template/base/ SEED copy resolves 3-up to `template/base/` — so when a test or
 // tool executes the seed, enableCompileCache writes a stray

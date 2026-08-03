@@ -36,6 +36,13 @@ export interface AggregateCoverage {
   functions: string
   lines: string
   statements: string
+  // Line COUNTS behind the `lines` percentage. The percentage alone cannot be
+  // folded with another language's number — 90% of 100 lines and 50% of 10_000
+  // lines do not average — so the native coverage lanes
+  // (../cover/native-lanes.mts) combine the raw counts and re-derive one
+  // percentage from the sum.
+  coveredLines: number
+  totalLines: number
   // Total instrumented statements across the merged report. Zero means the
   // report has no measurable code — the signal the runner pairs with a positive
   // raw-v8-profile count to catch an empty v8→istanbul conversion (a false-green
@@ -446,9 +453,11 @@ export async function mergeCoverageFinal(config: {
 
   const aggregate: AggregateCoverage = {
     branches: pct(coveredBranches, totalBranches),
+    coveredLines,
     functions: pct(coveredFunctions, totalFunctions),
     lines: pct(coveredLines, totalLines),
     statements: pct(coveredStatements, totalStatements),
+    totalLines,
     totalStatements,
   }
 

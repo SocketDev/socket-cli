@@ -1,8 +1,7 @@
 /**
  * @file Fleet-canonical coverage defaults — the shape every socket-* repo
  *   shares. Repos layer their own include/exclude/threshold deltas on top via
- *   a repo-owned `.config/repo/coverage.json` overlay (same fleet-default +
- *   repo-override tiering as `.config/{fleet,repo}/vitest.json`), resolved by
+ *   a repo-owned `.config/repo/coverage.json` overlay, resolved by
  *   `resolveCoverageConfig()`. Do NOT add repo-specific paths here; anything
  *   in this file cascades to every fleet repo.
  */

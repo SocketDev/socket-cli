@@ -203,7 +203,7 @@ export type PackumentRead =
  * right now; unpublished versions drop out, so the healer can never tag one.
  */
 async function fetchPublishedVersions(name: string): Promise<PackumentRead> {
-  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replaceAll('%40', '@')}`
   let res: Response
   try {
     // socket-lint: allow global-fetch -- this CLI is dependency-free by

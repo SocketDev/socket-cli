@@ -25,6 +25,7 @@ import {
   RepoSchema,
   SecondarySchema,
 } from './socket-wheelhouse-schema/build.mts'
+import { CapabilitiesSchema } from './socket-wheelhouse-schema/capabilities.mts'
 import {
   ClaudeSchema,
   GithubSchema,
@@ -84,6 +85,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
       }),
     ),
     ai: Type.Optional(AiSchema),
+    capabilities: Type.Optional(CapabilitiesSchema),
     claude: Type.Optional(ClaudeSchema),
     cover: Type.Optional(CoverSchema),
     design: Type.Optional(DesignSchema),
@@ -114,6 +116,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
 )
 
 export type SocketWheelhouseConfig = Static<typeof SocketWheelhouseConfigSchema>
+export type Capabilities = Static<typeof CapabilitiesSchema>
 export type Repo = Static<typeof RepoSchema>
 export type BuildConfig = Static<typeof BuildSchema>
 export type Secondary = Static<typeof SecondarySchema>

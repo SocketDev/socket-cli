@@ -65,6 +65,11 @@ export const TEST_GLOBS: readonly string[] = Object.freeze([
 // input that is deliberately broken so a detector has something to catch.
 const IGNORED = Object.freeze([
   '**/.cache/**',
+  // Nested agent worktrees carry a pnpm parent-link symlink cycle
+  // (`<pkg>/test/node_modules/@scope/<pkg> -> ../../..`) that recurses until
+  // ENAMETOOLONG kills the whole walk. Same pruning the shared tracked-globs
+  // and the doctrine scanner already do.
+  '**/.claude/worktrees/**',
   '**/build/**',
   '**/coverage/**',
   '**/dist/**',

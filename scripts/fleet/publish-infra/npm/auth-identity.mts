@@ -63,7 +63,7 @@ export type MaintainerRead =
 export async function readPackageMaintainers(
   name: string,
 ): Promise<MaintainerRead> {
-  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replace('%40', '@')}`
+  const url = `${NPM_REGISTRY_URL}/${encodeURIComponent(name).replaceAll('%40', '@')}`
   try {
     const json = await httpJson<{
       maintainers?: Array<{ name?: string | undefined }> | undefined

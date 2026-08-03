@@ -79,58 +79,33 @@ const STALE_PATTERNS: Array<{ name: string; rx: RegExp }> = [
     rx: /esbuild\/(bin|lib)\/.*\bservice\b/,
   },
   // Socket Firewall command wrappers. Deployment layouts seen in the wild:
-  //   - ~/.socket/_wheelhouse/rack/sfw/<version>-<flavor>/sfw
-  //                                                    (current: the readable
-  //                                                     rack path both installers
-  //                                                     expose — real binary for
-  //                                                     setup-tools, a symlink to
-  //                                                     the _dlx store for
-  //                                                     install-sfw. The
-  //                                                     `-free`/`-enterprise`
-  //                                                     tail is why the version
-  //                                                     class below allows `-`.)
-  //   - ~/.socket/_dlx/<hash>/sfw                      (dlxBinary store — the
-  //                                                     real binary behind the
-  //                                                     rack symlink)
-  //   - ~/.socket/sfw/bin/sfw[-<version>], legacy versioned install
-  //   - ~/.socket/_wheelhouse/sfw-stable/sfw, legacy shim exec target
-  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>], legacy dev install
-  //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe]               (CI runner install)
-  // Path component is invariant across home prefixes (/Users/<user>/ vs
-  // /home/<user>/). The CI path uses RUNNER_TEMP which varies per OS but
-  // the trailing `/sfw-bin/sfw` is stable.
+  //   - ~/.socket/_wheelhouse/rack/sfw/<version>-<flavor>/sfw — current: the
+  //     readable rack path both installers expose (real binary for
+  //     setup-tools, a symlink to the _dlx store for install-sfw); the
+  //     `-free`/`-enterprise` flavor tail is why the version class allows `-`.
+  //   - ~/.socket/_dlx/<hash>/sfw — dlxBinary store, the real binary behind
+  //     the rack symlink.
+  //   - ~/.socket/sfw/bin/sfw[-<version>], legacy versioned install.
+  //   - ~/.socket/_wheelhouse/sfw-stable/sfw, legacy shim exec target.
+  //   - ~/.socket/_wheelhouse/bin/sfw[-<version>], legacy dev install.
+  //   - ${RUNNER_TEMP}/sfw-bin/sfw[.exe], CI runner install.
+  // The `.socket/…` path segment is the invariant; the OS home-directory
+  // prefix (macOS vs Linux) is not.
   //
-  // Orphan-only (the parent-alive branch in sweep()) — a live-parent
-  // sfw is likely a mid-flight pnpm/yarn install. **Why:** 2026-06-02 the
-  // regex only matched `sfw/bin`, so the shims' real exec target
-  // (`_wheelhouse/sfw-stable/sfw`) leaked 44 orphaned probe processes
-  // over ~7h before a manual reap. Keep this in sync with the shim
-  // exec paths under ~/.socket/sfw/shims/.
+  // Orphan-only (the parent-alive branch in sweep() skips these) — a
+  // live-parent sfw is likely a mid-flight pnpm/yarn install. Incident
+  // 2026-06-02: the regex only matched `sfw/bin`, so the shims' real exec
+  // target (`_wheelhouse/sfw-stable/sfw`) leaked 44 orphaned probes over
+  // ~7h before a manual reap. Keep in sync with ~/.socket/sfw/shims/.
   {
     name: 'sfw-wrapper',
-    // Breakdown of the pattern below:
-    //   (?:                          ── start: alternation of parent dirs
-    //     \.socket\/                  literal ".socket/", the install root
-    //     (?:                         ── one of these subtrees under .socket/
-    //       _dlx\/[0-9a-f]+           "_dlx/<hex-hash>"  — dlxBinary store
-    //       | sfw\/bin                "sfw/bin"          — legacy dev install
-    //       | _wheelhouse\/           "_wheelhouse/" then one of…
-    //         (?: bin                   "bin", legacy dev install
-    //           | rack\/sfw\/[\w.-]+    "rack/sfw/<ver>-<flavor>", current path
-    //           | sfw-stable )          "sfw-stable", legacy shim target
-    //     )
-    //     | sfw-bin                   OR bare "sfw-bin"  — CI ${RUNNER_TEMP}/sfw-bin
-    //   )
-    //   \/sfw                         literal "/sfw", the binary name
-    //   (?:-[\w.]+)?                  optional "-<version>" suffix (e.g. -1.12.0)
-    //   (?:\.exe)?                    optional ".exe" (Windows)
-    //   \b                            word boundary — don't match "sfwfoo"
-    // Home prefix (/Users/<user>/ vs /home/<user>/) is intentionally NOT anchored;
-    // the .socket/… path segment is the invariant. listProcesses() swaps
-    // `\` → `/` in the command first, so this `/`-only pattern (incl. the
-    // `.exe` branch) matches a future Windows process source too. Negative
-    // cases: a plain "/Library/pnpm/pnpm", no sfw wrapper, and editors/IDEs
-    // never match.
+    // Matches any of the deployment paths above, with an optional
+    // `-<version>` suffix and optional `.exe` (Windows), stopping at a word
+    // boundary so `sfwfoo` doesn't match. The OS home-directory prefix is
+    // intentionally not anchored — only the `.socket/…` segment is.
+    // listProcesses() swaps `\` → `/` first, so this `/`-only pattern also
+    // matches a future Windows process source. Negative cases: a plain
+    // `/Library/pnpm/pnpm` (no sfw wrapper) and editors/IDEs never match.
     rx: /(?:\.socket\/(?:_dlx\/[0-9a-f]+|_wheelhouse\/(?:bin|rack\/sfw\/[\w.-]+|sfw-stable)|sfw\/bin)|sfw-bin)\/sfw(?:-[\w.]+)?(?:\.exe)?\b/,
   },
 ]

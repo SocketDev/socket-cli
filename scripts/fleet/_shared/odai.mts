@@ -92,6 +92,9 @@ export function localAssistEnabled(repoRoot: string): boolean {
   return (ai as Record<string, unknown>)['localAssist'] === true
 }
 
+/**
+ * One odai invocation's runtime knobs, shared by `spawnOdai` and `runOdai`.
+ */
 export interface RunOdaiConfig {
   readonly bin: string
   readonly cwd: string
@@ -99,78 +102,91 @@ export interface RunOdaiConfig {
 }
 
 /**
- * Run one single-shot odai task with `input` as its text payload and a hard
- * timeout. The payload travels via a temp file and `--input` — never argv,
- * which would leak diff content into the process table. Exit 0 parses the
- * stdout JSON; exit 69 maps to `skipped`; anything else, including a timeout
- * or an unparseable reply, maps to `failed`. Never throws.
+ * Spawn one odai invocation (`args[0]` is the subcommand) and map the CLI's
+ * exit-code contract to an OdaiRun: an errno-style spawn failure or exit 69
+ * reads as `skipped`, any other non-zero exit as `failed`, and exit 0 parses
+ * the stdout JSON. Appends `--timeout` from `timeoutMs` — the CLI's own
+ * per-prompt budget — while the spawn timeout is a hard backstop set 30s
+ * wider so backend launch overhead never eats the prompt budget and the
+ * CLI's own timeout message wins the race. Never throws.
  */
-export async function runOdai(
-  task: OdaiTask,
-  input: string,
+export async function spawnOdai(
+  args: readonly string[],
   config: RunOdaiConfig,
 ): Promise<OdaiRun> {
   const { bin, cwd, timeoutMs } = {
     __proto__: null,
     ...config,
   } as RunOdaiConfig
+  const task = args[0] ?? 'run'
+  let code: number
+  let stdout: string
+  let stderr: string
+  try {
+    const r = await spawn(bin, [...args, '--timeout', String(timeoutMs)], {
+      cwd,
+      stdioString: true,
+      timeout: timeoutMs + 30_000,
+    })
+    code = r.code
+    stdout = typeof r.stdout === 'string' ? r.stdout : ''
+    stderr = typeof r.stderr === 'string' ? r.stderr : ''
+  } catch (e) {
+    if (!isSpawnError(e)) {
+      return { outcome: 'failed', reason: errorMessage(e) }
+    }
+    // An errno-style string code — EACCES, ENOENT — means the bin itself is
+    // not runnable: an environment gap on par with a missing backend, so it
+    // reads as a clean skip, never a model/task failure.
+    if (typeof e.code === 'string') {
+      return {
+        outcome: 'skipped',
+        reason: `odai bin not runnable: ${e.code}`,
+      }
+    }
+    code = e.code
+    stdout = typeof e.stdout === 'string' ? e.stdout : ''
+    stderr = typeof e.stderr === 'string' ? e.stderr : ''
+  }
+  if (code === ODAI_SKIP_EXIT) {
+    return {
+      outcome: 'skipped',
+      reason: firstLine(stderr) || 'no odai backend available',
+    }
+  }
+  if (code !== 0) {
+    return {
+      outcome: 'failed',
+      reason: `odai ${task} exited ${code}: ${firstLine(stderr)}`,
+    }
+  }
+  try {
+    return { outcome: 'ok', value: JSON.parse(stdout) }
+  } catch {
+    return {
+      outcome: 'failed',
+      reason: `odai ${task} printed unparseable JSON`,
+    }
+  }
+}
+
+/**
+ * Run one single-shot odai task with `input` as its text payload and a hard
+ * timeout. The payload travels via a temp file and `--input` — never argv,
+ * which would leak diff content into the process table. Exit-code mapping is
+ * `spawnOdai`'s. Never throws.
+ */
+export async function runOdai(
+  task: OdaiTask,
+  input: string,
+  config: RunOdaiConfig,
+): Promise<OdaiRun> {
   let tmpDir: string | undefined
   try {
     tmpDir = await mkdtemp(path.join(os.tmpdir(), 'fleet-odai-'))
     const inputPath = path.join(tmpDir, 'input.txt')
     await writeFile(inputPath, input, 'utf8')
-    let code: number
-    let stdout: string
-    let stderr: string
-    try {
-      // `--timeout` is the CLI's own per-prompt budget; the spawn timeout is
-      // a hard backstop set 30s wider so backend launch overhead never eats
-      // the prompt budget and the CLI's own timeout message wins the race.
-      const r = await spawn(
-        bin,
-        [task, '--input', inputPath, '--timeout', String(timeoutMs)],
-        { cwd, stdioString: true, timeout: timeoutMs + 30_000 },
-      )
-      code = r.code
-      stdout = typeof r.stdout === 'string' ? r.stdout : ''
-      stderr = typeof r.stderr === 'string' ? r.stderr : ''
-    } catch (e) {
-      if (!isSpawnError(e)) {
-        return { outcome: 'failed', reason: errorMessage(e) }
-      }
-      // An errno-style string code — EACCES, ENOENT — means the bin itself is
-      // not runnable: an environment gap on par with a missing backend, so it
-      // reads as a clean skip, never a model/task failure.
-      if (typeof e.code === 'string') {
-        return {
-          outcome: 'skipped',
-          reason: `odai bin not runnable: ${e.code}`,
-        }
-      }
-      code = e.code
-      stdout = typeof e.stdout === 'string' ? e.stdout : ''
-      stderr = typeof e.stderr === 'string' ? e.stderr : ''
-    }
-    if (code === ODAI_SKIP_EXIT) {
-      return {
-        outcome: 'skipped',
-        reason: firstLine(stderr) || 'no odai backend available',
-      }
-    }
-    if (code !== 0) {
-      return {
-        outcome: 'failed',
-        reason: `odai ${task} exited ${code}: ${firstLine(stderr)}`,
-      }
-    }
-    try {
-      return { outcome: 'ok', value: JSON.parse(stdout) }
-    } catch {
-      return {
-        outcome: 'failed',
-        reason: `odai ${task} printed unparseable JSON`,
-      }
-    }
+    return await spawnOdai([task, '--input', inputPath], config)
   } catch (e) {
     return { outcome: 'failed', reason: errorMessage(e) }
   } finally {

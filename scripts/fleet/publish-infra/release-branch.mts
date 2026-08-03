@@ -143,26 +143,23 @@ export async function openReleaseBranch(config: {
 }
 
 /**
- * Publish succeeded: land the release branch's bump commit on the dispatch
- * branch by fast-forwarding that branch's ref to the release branch tip, then
- * delete the release branch. NO pull request — a version bump never travels
- * through one. A PR routes the bump through branch protection, where the fresh
- * bump branch has no protected-branch rules to satisfy, so auto-merge fails
- * ("Pull request Branch does not have required protected branch rules"), the
- * run dies, and the published version is stranded on a throwaway branch. The
- * release App carries contents:write and sits on the dispatch branch's
- * push-bypass allowlist, so the ref PATCH lands without a PR.
+ * Publish succeeded: fast-forward the dispatch branch's ref to the release
+ * branch tip, then delete the release branch.
  *
- * The direct fast-forward also preserves the release App's exact app-signed
- * commit SHA — the dispatch branch inherits the very commit that was built and
- * published, and the `chore: bump version to <version>` subject the reconcile
- * lookups anchor on (`findPublishedBaseSha`, the version-flip lookups) survives
- * verbatim rather than being rewritten by a squash.
+ * NO pull request — a version bump never travels through one. A fresh bump
+ * branch has no protected-branch rules to satisfy, so auto-merge fails
+ * ("Branch does not have required protected branch rules"), the run dies, and
+ * the published version strands on a throwaway branch. The release App carries
+ * contents:write and sits on the dispatch branch's push-bypass allowlist, so
+ * the ref PATCH lands without one.
+ *
+ * The fast-forward also preserves the App's exact signed SHA and the
+ * `chore: bump version to <version>` subject the reconcile lookups anchor on
+ * (`findPublishedBaseSha`), which a squash would rewrite.
  *
  * `tipSha` is the built + published commit. `force` stays false, so GitHub
- * rejects the advance with 422 if the dispatch branch moved to a commit this
- * one does not descend from — a loud refusal beats silently rewriting work that
- * landed during the publish.
+ * rejects the advance with 422 when the dispatch branch moved to a commit this
+ * one does not descend from — a loud refusal beats silently rewriting work.
  */
 export async function promoteReleaseBranch(
   releaseBranch: ReleaseBranch,

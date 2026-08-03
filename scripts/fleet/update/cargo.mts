@@ -31,15 +31,16 @@ const logger = getDefaultLogger()
 /**
  * The nightly toolchain the updater tooling runs on — pinned because
  * `-Zmin-publish-age` is a nightly-only unstable flag. Kept in LOCKSTEP with
- * the canonical build pin in `template/conditional/rust/rust-toolchain.toml`
- * (currently nightly-2026-07-20): the fleet unified build + updater on one
- * nightly so there is no separate updater-only pin. Update both together.
+ * the canonical build pin in `template/conditional/rust/rust-toolchain.toml`:
+ * the fleet unified build + updater on one nightly so there is no separate
+ * updater-only pin. Update both together — the sync check rewrites this
+ * constant FROM that file, so a bump made only here gets resynced away.
  *
  * TEMPORARY: once Cargo stabilizes the min-publish-age soak (targeting 1.98 —
  * https://github.com/rust-lang/cargo/issues/17009), drop back to the stable pin
  * and retire this nightly constant.
  */
-export const RUST_UPDATER_TOOLCHAIN = 'nightly-2026-07-28'
+export const RUST_UPDATER_TOOLCHAIN = 'nightly-2026-08-01'
 
 /**
  * The registry config key that carries the soak threshold. The

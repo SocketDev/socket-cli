@@ -20,27 +20,21 @@ import { findLoggerLeaks } from './logger-leaks.mts'
 import type { LineHit } from './scan-core.mts'
 
 // ── Logger leak scanner ────────────────────────────────────────────
-//
-// The fleet rule: source code uses `getDefaultLogger()` from
-// `@socketsecurity/lib-stable/logger/default`. Two distinct leak shapes,
-// each with its OWN per-line opt-out marker so a reviewer can tell which
-// exemption was granted:
-//
-//   - `console.{log,error,warn,info,debug}` → rule `console`, marker
-//     `// socket-lint: allow console`. Legacy `allow logger` is accepted
-//     as an alias for one deprecation cycle.
-//   - `process.std{out,err}.write` → rule `process-stdio`, marker
-//     `// socket-lint: allow process-stdio`. Reserved for the rare CLI
-//     whose stdio IS a protocol (a runner whose stdout a caller parses
-//     back), where a logger prefix would corrupt the bytes.
-//
-// Doc-context lines are exempt from both. `scanLoggerLeaks` merges the
-// two passes so callers (pre-commit / pre-push) keep one entry point.
-//
-// AST-based, via the shared findLoggerLeaks (acorn) — the SAME detector the
-// edit-time logger-guard uses, so the two surfaces can't disagree (the old
-// regex flagged `console.log` inside string literals / comments; the AST walk
-// does not). The acorn parser is already loaded for other commit-time checks.
+// Source code must call `getDefaultLogger()` from
+// `@socketsecurity/lib-stable/logger/default`, not console/process.stdio
+// directly. Two leak shapes, each with its own opt-out marker so a reviewer
+// can tell which exemption was granted:
+//   - `console.{log,error,warn,info,debug}` → marker
+//     `// socket-lint: allow console` (`allow logger` accepted as a legacy
+//     alias for one deprecation cycle).
+//   - `process.std{out,err}.write` → marker `// socket-lint: allow
+//     process-stdio`, reserved for a CLI whose stdio IS a protocol a caller
+//     parses back, where a logger prefix would corrupt the bytes.
+// Doc-context lines are exempt from both. AST-based via the shared
+// findLoggerLeaks (acorn) — the SAME detector the edit-time logger-guard
+// uses, so the two surfaces can't disagree (a regex would flag console.log
+// inside a string/comment; the AST walk does not). scanLoggerLeaks merges
+// both passes into one entry point for pre-commit/pre-push callers.
 
 // Map each direct call to its lib-logger equivalent (used for the `suggested`
 // rewrite a hit carries). process.stdout / console.log / console.info →

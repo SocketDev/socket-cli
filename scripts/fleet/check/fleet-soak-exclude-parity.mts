@@ -181,25 +181,20 @@ export function diffSoakExclude(
 
 /**
  * EXPECTED `name@version` soak-pins whose annotated `removable` date is
- * STRICTLY before `today` (ISO `YYYY-MM-DD`). These have cleared their 7-day
- * soak: the gate admits the version without a bypass, so the pin is dead weight
- * that the cascade re-pins, insert loop, and drops, prune loop, on every wave —
- * a tug-of-war. Globs and bare names have no version to soak and are skipped.
- * An entry with no annotation is skipped (can't date it offline; the parity
- * diff already requires versioned entries to be annotated for the synth
- * comment).
+ * STRICTLY before `today` (ISO `YYYY-MM-DD`) — pins that have cleared their
+ * 7-day soak and are now dead weight the cascade re-pins/drops every wave.
+ * Globs, bare names (no version to soak), and unannotated entries (can't
+ * date them offline) are skipped.
  *
- * Why STRICTLY before (`<`), not on-or-before (`<=`): pnpm's minimumReleaseAge
- * gate (config/version-policy createPublishConfig + npm-resolver
- * checkResolutionPolicy) compares the version's full publish TIMESTAMP against
- * a `now - minimumReleaseAge` cutoff — it rejects while `publishTs > now - 7d`.
- * `removable` is the publish DATE + 7d, but a package published at 14:39 on the
- * publish date does not clear the 7×24h window until 14:39 on the `removable`
- * date. So on `today === removable` pnpm may still reject the unpinned install
- * the window clears later that same day. Retiring the pin then leaves a
- * lockfile pnpm refuses to install. `removable < today` is the first calendar
- * date by which the full 7×24h has elapsed regardless of publish time-of-day,
- * so it can never disagree with pnpm's timestamp comparison.
+ * Why STRICTLY before (`<`), not `<=`: pnpm's minimumReleaseAge gate
+ * (config/version-policy createPublishConfig + npm-resolver
+ * checkResolutionPolicy) compares the version's full publish TIMESTAMP
+ * against a `now - minimumReleaseAge` cutoff, rejecting while `publishTs >
+ * now - 7d`. `removable` is publish DATE + 7d, but a package published at
+ * 14:39 doesn't clear the 7×24h window until 14:39 on the `removable` date —
+ * so on `today === removable` pnpm may still reject the unpinned install.
+ * `removable < today` is the first calendar date the full 7×24h has always
+ * elapsed by, so it can never disagree with pnpm's timestamp comparison.
  */
 export function expiredExpectedPins(
   expected: readonly string[],

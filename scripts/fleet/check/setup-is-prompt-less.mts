@@ -34,24 +34,30 @@
  *      signing/keychain prompt surprises you.
  */
 
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
+import { readSocketApiTokenSync } from '@socketsecurity/lib-stable/secrets/socket-api-token'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  CACHE_TTL_THRESHOLD_SECONDS,
+  evaluateCommitGpgsign,
+  evaluateGpgAgentCacheTtl,
+  evaluateGpgTtyExported,
+  evaluateKeychainTokenAcl,
+  evaluatePinentryProgram,
+  KEYCHAIN_ACCOUNT,
+  KEYCHAIN_SERVICE,
+  pinentryProgramIn,
+} from './setup-is-prompt-less/evaluate.mts'
+import type { CheckResult } from './setup-is-prompt-less/evaluate.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 const logger = console
-
-interface CheckResult {
-  readonly name: string
-  readonly ok: boolean
-  readonly detail: string
-  readonly fix?: string | undefined
-}
-
-const CACHE_TTL_THRESHOLD_SECONDS = 28_800
 
 // Shared between the audit and the --fix planner so they can never disagree
 // about what "GPG_TTY is exported" means.
@@ -99,199 +105,82 @@ export function parseTtl(
 
 function checkGpgAgentCacheTtl(): CheckResult {
   const content = readGpgAgentConf()
-  if (!content) {
-    return {
-      name: 'gpg-agent cache TTL',
-      ok: false,
-      detail:
-        '~/.gnupg/gpg-agent.conf missing — defaults are 600s (10 min) which forces a fresh pinentry every ~10 minutes of work.',
-      fix:
-        'mkdir -p ~/.gnupg && cat >> ~/.gnupg/gpg-agent.conf <<EOF\n' +
-        'default-cache-ttl 28800\n' +
-        'max-cache-ttl 28800\n' +
-        'default-cache-ttl-ssh 28800\n' +
-        'max-cache-ttl-ssh 28800\n' +
-        'EOF\n' +
-        'gpg-connect-agent reloadagent /bye',
-    }
-  }
-  const defaultTtl = parseTtl(content, 'default-cache-ttl')
-  const maxTtl = parseTtl(content, 'max-cache-ttl')
-  if (defaultTtl === undefined || maxTtl === undefined) {
-    return {
-      name: 'gpg-agent cache TTL',
-      ok: false,
-      detail: `gpg-agent.conf exists but is missing ${[
-        defaultTtl === undefined ? 'default-cache-ttl' : '',
-        maxTtl === undefined ? 'max-cache-ttl' : '',
-      ]
-        .filter(Boolean)
-        .join(' + ')}; gpg-agent falls back to 600s defaults.`,
-      fix:
-        'Add the missing directives to ~/.gnupg/gpg-agent.conf:\n' +
-        'default-cache-ttl 28800\nmax-cache-ttl 28800\n' +
-        'Then: gpg-connect-agent reloadagent /bye',
-    }
-  }
-  if (
-    defaultTtl < CACHE_TTL_THRESHOLD_SECONDS ||
-    maxTtl < CACHE_TTL_THRESHOLD_SECONDS
-  ) {
-    return {
-      name: 'gpg-agent cache TTL',
-      ok: false,
-      detail: `default-cache-ttl=${defaultTtl}s, max-cache-ttl=${maxTtl}s. Threshold is ${CACHE_TTL_THRESHOLD_SECONDS}s (8h). Lower TTLs make pinentry re-prompt mid-session.`,
-      fix: `Edit ~/.gnupg/gpg-agent.conf to set both default-cache-ttl and max-cache-ttl to ${CACHE_TTL_THRESHOLD_SECONDS} (8h). Then: gpg-connect-agent reloadagent /bye`,
-    }
-  }
-  return {
-    name: 'gpg-agent cache TTL',
-    ok: true,
-    detail: `default=${defaultTtl}s, max=${maxTtl}s (both ≥ ${CACHE_TTL_THRESHOLD_SECONDS}s threshold).`,
-  }
+  return evaluateGpgAgentCacheTtl({
+    confExists: content !== undefined,
+    defaultTtl:
+      content === undefined
+        ? undefined
+        : parseTtl(content, 'default-cache-ttl'),
+    maxTtl:
+      content === undefined ? undefined : parseTtl(content, 'max-cache-ttl'),
+  })
 }
 
-function checkGpgTtyExported(): CheckResult {
-  // Two places to look: ~/.zshenv (preferred — runs for every zsh) and
-  // ~/.bashrc / ~/.bash_profile (bash). The check just needs to see
-  // `GPG_TTY` exported somewhere reachable.
-  const candidates = [
-    path.join(os.homedir(), '.zshenv'),
-    path.join(os.homedir(), '.zshrc'),
-    path.join(os.homedir(), '.bashrc'),
-    path.join(os.homedir(), '.bash_profile'),
-    path.join(os.homedir(), '.profile'),
-  ]
-  for (let i = 0, { length } = candidates; i < length; i += 1) {
-    const f = candidates[i]!
-    if (!existsSync(f)) {
+// Shell rc files a login shell sources, in the order the audit reports them.
+const GPG_TTY_RC_BASENAMES: readonly string[] = [
+  '.zshenv',
+  '.zshrc',
+  '.bashrc',
+  '.bash_profile',
+  '.profile',
+]
+
+/**
+ * Display path of the first rc file exporting GPG_TTY, or undefined.
+ */
+export function findGpgTtyRcDisplayPath(home: string): string | undefined {
+  for (let i = 0, { length } = GPG_TTY_RC_BASENAMES; i < length; i += 1) {
+    const filePath = path.join(home, GPG_TTY_RC_BASENAMES[i]!)
+    if (!existsSync(filePath)) {
       continue
     }
     try {
-      const content = readFileSync(f, 'utf8')
-      if (GPG_TTY_EXPORT_RE.test(content)) {
-        return {
-          name: 'GPG_TTY exported in shell rc',
-          ok: true,
-          detail: `found 'export GPG_TTY=...' in ${path.relative(os.homedir(), f).replace(/^/, '~/')}.`,
-        }
+      if (GPG_TTY_EXPORT_RE.test(readFileSync(filePath, 'utf8'))) {
+        return `~/${path.relative(home, filePath)}`
       }
     } catch {
       // Skip unreadable files.
     }
   }
-  return {
-    name: 'GPG_TTY exported in shell rc',
-    ok: false,
-    detail:
-      'No `export GPG_TTY=$(tty)` found in ~/.zshenv / ~/.zshrc / ~/.bashrc / ~/.bash_profile / ~/.profile. pinentry needs GPG_TTY to find the controlling terminal in non-interactive shells (Claude Code, IDE integrations).',
-    fix: "echo 'export GPG_TTY=$(tty)' >> ~/.zshenv  (or ~/.bashrc for bash)",
-  }
+  return undefined
+}
+
+function checkGpgTtyExported(): CheckResult {
+  return evaluateGpgTtyExported(findGpgTtyRcDisplayPath(os.homedir()))
 }
 
 function checkPinentryProgram(): CheckResult {
-  if (!isMac()) {
-    return {
-      name: 'pinentry-program',
-      ok: true,
-      detail: 'skipped (non-macOS).',
-    }
+  const program = pinentryProgramIn(readGpgAgentConf())
+  return evaluatePinentryProgram({
+    isMacOs: isMac(),
+    program,
+    programExists: program !== undefined && existsSync(program),
+  })
+}
+
+function gitConfigGlobal(key: string): string | undefined {
+  const r = spawnSync('git', ['config', '--global', '--get', key], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  if (r.status !== 0) {
+    return undefined
   }
-  const content = readGpgAgentConf() ?? ''
-  const m = /^\s*pinentry-program\s+(\S+)/m.exec(content)
-  if (!m) {
-    return {
-      name: 'pinentry-program',
-      ok: false,
-      detail:
-        'No `pinentry-program` set in ~/.gnupg/gpg-agent.conf. pinentry-mac integrates with macOS Keychain ("Save in Keychain" checkbox); without it, gpg may use a less-friendly fallback.',
-      fix: 'brew install pinentry-mac && echo "pinentry-program $(brew --prefix)/bin/pinentry-mac" >> ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
-    }
-  }
-  const program = m[1]!
-  if (!program.includes('pinentry-mac')) {
-    return {
-      name: 'pinentry-program',
-      ok: false,
-      detail: `pinentry-program is ${program} — not pinentry-mac. pinentry-mac is the recommended choice on macOS (Keychain integration).`,
-      fix: 'brew install pinentry-mac && sed -i "" "s|^pinentry-program .*|pinentry-program $(brew --prefix)/bin/pinentry-mac|" ~/.gnupg/gpg-agent.conf && gpg-connect-agent reloadagent /bye',
-    }
-  }
-  if (!existsSync(program)) {
-    return {
-      name: 'pinentry-program',
-      ok: false,
-      detail: `pinentry-program points at ${program} but that file doesn't exist.`,
-      fix: 'brew install pinentry-mac  # restores the binary at the expected path',
-    }
-  }
-  return {
-    name: 'pinentry-program',
-    ok: true,
-    detail: `${program} (pinentry-mac, Keychain-integrated).`,
-  }
+  return typeof r.stdout === 'string' ? r.stdout : undefined
 }
 
 function checkCommitGpgsign(): CheckResult {
-  const r = spawnSync(
-    'git',
-    ['config', '--global', '--get', 'commit.gpgsign'],
-    {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  )
-  const value = typeof r.stdout === 'string' ? r.stdout.trim() : ''
-  if (r.status !== 0 || !value) {
-    return {
-      name: 'commit.gpgsign',
-      ok: true,
-      detail: 'unset (no signing → no prompts; nothing to optimize).',
-    }
-  }
-  if (value !== 'true') {
-    return {
-      name: 'commit.gpgsign',
-      ok: true,
-      detail: `${value} (signing disabled; nothing to optimize).`,
-    }
-  }
-  // Signing IS on globally. Check the key exists.
-  const keyR = spawnSync(
-    'git',
-    ['config', '--global', '--get', 'user.signingkey'],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  )
-  const key = typeof keyR.stdout === 'string' ? keyR.stdout.trim() : ''
-  if (!key) {
-    return {
-      name: 'commit.gpgsign',
-      ok: false,
-      detail:
-        'commit.gpgsign=true but user.signingkey is unset. Commits will fail or prompt for key selection on every sign.',
-      fix:
-        'gpg --list-secret-keys --keyid-format LONG  # find your key id\n' +
-        'git config --global user.signingkey <KEYID>',
-    }
-  }
-  // Confirm gpg can find the key without prompting.
-  const checkR = spawnSync('gpg', ['--list-secret-keys', key], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  if (checkR.status !== 0) {
-    return {
-      name: 'commit.gpgsign',
-      ok: false,
-      detail: `signing key ${key} is configured but gpg can't find it. Every sign will fail.`,
-      fix:
-        `gpg --list-secret-keys --keyid-format LONG  # confirm or pick another key\n` +
-        `git config --global user.signingkey <KEYID>`,
-    }
-  }
-  return {
-    name: 'commit.gpgsign',
-    ok: true,
-    detail: `enabled, key ${key} found.`,
-  }
+  const gpgsignValue = gitConfigGlobal('commit.gpgsign')
+  const signingKey = gitConfigGlobal('user.signingkey')
+  // Only probe gpg when a key is actually configured — the spawn is the
+  // expensive part and the verdict ignores it otherwise.
+  const key = signingKey?.trim() ?? ''
+  const gpgFindsKey =
+    key === ''
+      ? false
+      : spawnSync('gpg', ['--list-secret-keys', key], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }).status === 0
+  return evaluateCommitGpgsign({ gpgFindsKey, gpgsignValue, signingKey })
 }
 
 /**
@@ -315,17 +204,27 @@ export interface SocketTokenEnvInputs {
  * Reports the env name that is ACTUALLY set. The earlier form inverted the two
  * labels — with `SOCKET_API_TOKEN` set it announced `SOCKET_API_KEY` and vice
  * versa — so an operator following the audit would go looking at the wrong
- * variable. `apiKey` wins when both are set, matching the `||` precedence the
- * hooks themselves use.
+ * variable.
+ *
+ * Precedence is `SOCKET_API_TOKEN` then `SOCKET_API_KEY`, mirroring
+ * socket-lib's `TOKEN_ACCOUNTS` order: TOKEN is canonical and KEY is the legacy
+ * alias. The earlier `SOCKET_API_KEY || SOCKET_API_TOKEN` had that backwards
+ * too, so with both set the audit described a different value than the one
+ * every other consumer resolves.
  */
 export function evaluateSocketTokenInEnv(
   inputs: SocketTokenEnvInputs,
 ): CheckResult {
   const name = 'Socket API token in env'
-  const value = inputs.apiKey || inputs.apiToken
+  // `envAsString` normalizes before the existence test: a slot set to
+  // whitespace is NOT configured, but a raw truthiness check would call `'   '`
+  // a token and report a passing audit with a length of 3.
+  const token = envAsString(inputs.apiToken)
+  const key = envAsString(inputs.apiKey)
+  const value = token || key
   if (value) {
     // oxlint-disable-next-line socket/socket-api-token-env -- audit output: names the raw slot the operator actually populated, so the legacy alias has to appear verbatim.
-    const source = inputs.apiKey ? 'SOCKET_API_KEY' : 'SOCKET_API_TOKEN'
+    const source = token ? 'SOCKET_API_TOKEN' : 'SOCKET_API_KEY'
     return {
       detail: `${source} set (length ${value.length}). Hooks read env first; no keychain prompts.`,
       name,
@@ -380,56 +279,47 @@ export function findBridgeRcDisplayPath(home: string): string | undefined {
 }
 
 function checkSocketTokenInEnv(): CheckResult {
-  // This audit reports whether the raw env slots are wired up; the
-  // keychain-fallback getter would defeat the check.
-  const home = os.homedir()
+  // `allowEnvOnly` is the whole point: this audit reports whether the raw env
+  // slots are wired up, and the default keychain fallback would answer "found"
+  // for an empty environment — reporting success for exactly the state the
+  // audit exists to catch. It also keeps the audit from triggering the Keychain
+  // prompt it is checking for.
+  const resolved = readSocketApiTokenSync({ allowEnvOnly: true })
+  // The raw slots decide only the LABEL — `resolved` above is the presence
+  // verdict, so the audit and every other consumer agree on the value. Read on
+  // their own lines so each suppression marker stays adjacent to its read even
+  // after the formatter wraps the surrounding call.
+  // `getEnvValue` rather than `process.env`: it is the fleet's rewirable env
+  // accessor, so `withEnv` / `setEnv` / `vi.stubEnv` reach these reads the same
+  // way they reach every other getter.
+  // socket-api-token-getter: allow direct-env -- audit names which raw slot the operator populated.
+  // oxlint-disable-next-line socket/socket-api-token-env -- audit script: the legacy alias is the thing being audited.
+  const rawKey = getEnvValue('SOCKET_API_KEY')
+  // socket-api-token-getter: allow direct-env -- audit names which raw slot the operator populated.
+  const rawToken = getEnvValue('SOCKET_API_TOKEN')
   return evaluateSocketTokenInEnv({
-    // socket-api-token-getter: allow direct-env
-    // oxlint-disable-next-line socket/socket-api-token-env -- audit script: must check the primary slot because that's literally what's being audited, whether the install hook's primary export is wired up.
-    apiKey: process.env['SOCKET_API_KEY'],
-    // socket-api-token-getter: allow direct-env -- audit reports which raw env name is set.
-    apiToken: process.env['SOCKET_API_TOKEN'],
-    bridgeRcDisplayPath: findBridgeRcDisplayPath(home),
+    apiKey: resolved === undefined ? undefined : rawKey,
+    apiToken: resolved === undefined ? undefined : rawToken,
+    bridgeRcDisplayPath: findBridgeRcDisplayPath(os.homedir()),
   })
 }
 
 function checkKeychainTokenAcl(): CheckResult {
   if (!isMac()) {
-    return {
-      name: 'macOS Keychain token ACL',
-      ok: true,
-      detail: 'skipped (non-macOS).',
-    }
+    return evaluateKeychainTokenAcl({ entryFound: false, isMacOs: false })
   }
-  // `security find-generic-password -s socket-cli -a SOCKET_API_KEY -g`
-  // would print the entry. We don't want to trigger a Keychain unlock
-  // dialog by reading the password — instead, just check whether the
-  // entry exists via the non-password-fetching form.
+  // The password-fetching form (`-g`) would pop a Keychain unlock dialog — the
+  // exact prompt this audit exists to eliminate. The plain lookup only asks
+  // whether the entry exists.
   const r = spawnSync(
     'security',
-    ['find-generic-password', '-s', 'socket-cli', '-a', 'SOCKET_API_TOKEN'],
+    ['find-generic-password', '-s', KEYCHAIN_SERVICE, '-a', KEYCHAIN_ACCOUNT],
     { stdio: ['ignore', 'pipe', 'pipe'] },
   )
-  if (r.status !== 0) {
-    return {
-      name: 'macOS Keychain token ACL',
-      ok: false,
-      detail:
-        'No socket-cli/SOCKET_API_KEY entry in the Keychain. Tools that fall back to keychain (when env is empty) will prompt for input on first use.',
-      fix:
-        'node .claude/hooks/fleet/setup-security-tools/install.mts\n' +
-        '  # prompts for the token interactively and persists it to the Keychain with -T "" (any app can read).',
-    }
-  }
-  // Entry exists. We can't programmatically inspect the ACL without
-  // triggering an unlock prompt; trust that setup-security-tools wrote
-  // it with `-T ''`. Report as OK with a note.
-  return {
-    name: 'macOS Keychain token ACL',
-    ok: true,
-    detail:
-      'socket-cli/SOCKET_API_KEY entry present. Assumes ACL=any app (-T "") from setup-security-tools — if you still get Keychain prompts, open Keychain Access → search "socket-cli" → click "Always Allow" once for /usr/bin/security.',
-  }
+  return evaluateKeychainTokenAcl({
+    entryFound: r.status === 0,
+    isMacOs: true,
+  })
 }
 
 interface CheckSummary {

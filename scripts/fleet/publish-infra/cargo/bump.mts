@@ -17,6 +17,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 import { gt } from '@socketsecurity/lib-stable/versions/compare'
 
 import {
@@ -64,9 +65,7 @@ export function readCargoVersion(
   table: string,
 ): string | undefined {
   const lines = raw.split('\n')
-  const headerRe = new RegExp(
-    `^\\s*\\[\\s*${table.replace(/\./g, '\\.')}\\s*\\]\\s*$`,
-  )
+  const headerRe = new RegExp(`^\\s*\\[\\s*${escapeRegExp(table)}\\s*\\]\\s*$`)
   let start = -1
   for (let i = 0, { length } = lines; i < length; i += 1) {
     if (headerRe.test(lines[i]!)) {
@@ -178,9 +177,7 @@ export function replaceCargoVersion(
   nextVersion: string,
 ): string | undefined {
   const lines = raw.split('\n')
-  const headerRe = new RegExp(
-    `^\\s*\\[\\s*${table.replace(/\./g, '\\.')}\\s*\\]\\s*$`,
-  )
+  const headerRe = new RegExp(`^\\s*\\[\\s*${escapeRegExp(table)}\\s*\\]\\s*$`)
   let start = -1
   for (let i = 0, { length } = lines; i < length; i += 1) {
     if (headerRe.test(lines[i]!)) {

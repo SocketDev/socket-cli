@@ -197,7 +197,7 @@ export async function fetchNpmVersionDocument(
   name: string,
   version: string,
 ): Promise<RawNpmVersionDocument | undefined> {
-  const encoded = encodeURIComponent(name).replace('%40', '@')
+  const encoded = encodeURIComponent(name).replaceAll('%40', '@')
   const url = `${NPM_REGISTRY_URL}/${encoded}/${encodeURIComponent(version)}`
   try {
     return await httpJson<RawNpmVersionDocument>(url, {

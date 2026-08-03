@@ -19,6 +19,7 @@
 // import — keep it above every import that transitively loads paths.mts.
 import './cover/scratch-isolation.mts'
 
+import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -88,6 +89,14 @@ import {
   REPO_ROOT,
 } from './paths.mts'
 import { runBunCoverageLane } from './cover/bun-lane.mts'
+import {
+  combineWithTsLines,
+  defaultLaneCommandRunner,
+  persistLaneSummary,
+  rewriteSummaryLines,
+  runNativeLanes,
+} from './cover/native-lanes.mts'
+import type { NativeLanesOutcome } from './cover/native-lanes.mts'
 import type { AggregateCoverage } from './util/coverage-merge.mts'
 import {
   mergeCoverageFinal,
@@ -243,6 +252,43 @@ export async function convertChildrenCoverage(): Promise<boolean> {
   return buildChildrenCoverageReport()
 }
 
+/**
+ * The NATIVE half of the run: every coverage lane this repo's declared
+ * `capabilities` activate (rust/go/cpp), folded into the same report the TS
+ * pass produced. A TypeScript-only repo resolves no lanes, so this costs one
+ * config read and changes nothing it writes.
+ *
+ * `tsLines` is the TS line tally from the merged aggregate, or undefined when
+ * the merge produced none; the combined percentage the badge reads is the sum
+ * of both sides' raw counts, never an average of two percentages. Returns the
+ * lane exit code so the caller folds it into the run's own.
+ */
+export async function runNativeCoverageLanes(
+  tsLines: { coveredLines: number; totalLines: number } | undefined,
+): Promise<number> {
+  const outcome: NativeLanesOutcome = await runNativeLanes({
+    detailDir: path.join(COVERAGE_DIR, 'lanes'),
+    logger,
+    repoRoot: rootPath,
+    runner: defaultLaneCommandRunner,
+    scratchDir: COVERAGE_SCRATCH_DIR,
+  })
+  if (outcome.results.length === 0) {
+    return 0
+  }
+  persistLaneSummary(COVERAGE_DIR, outcome)
+  logger.log('')
+  logger.log(' Coverage by language')
+  for (let i = 0, { length } = outcome.breakdownLines; i < length; i += 1) {
+    logger.log(outcome.breakdownLines[i]!)
+  }
+  const combined = combineWithTsLines(tsLines, outcome.combined)
+  if (combined) {
+    rewriteSummaryLines(COVERAGE_SUMMARY_PATH, combined.pct)
+  }
+  return outcome.exitCode
+}
+
 export async function main(): Promise<void> {
   // Re-exec under the pinned node when a stale PATH node, below the hook floor
   // is active, so the coverage vitest + the hooks it spawns run on the fleet
@@ -321,6 +367,20 @@ export async function main(): Promise<void> {
     if (thresholdFailures.length) {
       logger.error(`Coverage below threshold: ${thresholdFailures.join(', ')}`)
       exitCode = exitCode === 0 ? 1 : exitCode
+    }
+    // The native lanes run under BOTH runners: a repo declaring `cargo` must
+    // measure its Rust whether its JS tests run on bun or on vitest, so the
+    // runner choice cannot decide whether a language is covered.
+    const nativeExitCode = await runNativeCoverageLanes(
+      lane.aggregate
+        ? {
+            coveredLines: lane.aggregate.coveredLines,
+            totalLines: lane.aggregate.totalLines,
+          }
+        : undefined,
+    )
+    if (nativeExitCode !== 0) {
+      exitCode = exitCode === 0 ? nativeExitCode : exitCode
     }
     if (buildFailed) {
       exitCode = 1
@@ -544,6 +604,20 @@ export async function main(): Promise<void> {
           `Coverage below threshold: ${thresholdFailures.join(', ')}`,
         )
         exitCode = exitCode === 0 ? 1 : exitCode
+      }
+
+      // The native lanes measure the languages the v8 pass cannot see. Skipped
+      // entirely under --type-only, which runs no test suite at all.
+      const nativeExitCode = await runNativeCoverageLanes(
+        aggregateCoverage
+          ? {
+              coveredLines: aggregateCoverage.coveredLines,
+              totalLines: aggregateCoverage.totalLines,
+            }
+          : undefined,
+      )
+      if (nativeExitCode !== 0) {
+        exitCode = exitCode === 0 ? nativeExitCode : exitCode
       }
 
       // A failing suite must say WHY before the terminal "Coverage failed":

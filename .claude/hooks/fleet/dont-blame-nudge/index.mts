@@ -21,9 +21,8 @@
 // Runs in BLOCKING mode so the assistant must continue the turn and
 // either (a) prove the blame is correct with evidence (a commit
 // hash, a hook output, etc.) or (b) keep investigating the actual
-// script that produced the reverted state. The block is suppressed
-// when stop_hook_active is set, so it can fire at most once per
-// stop chain.
+// script that produced the reverted state. The block holds on every
+// turn-end, retries included — see the note at the check.
 //
 // Not disableable by env var — the only escape hatch is the
 // `Allow <X> bypass` phrase.
@@ -62,14 +61,17 @@ const PATTERNS: readonly RuleViolation[] = [
 const CLOSING_HINT =
   "If you have hard evidence the user reverted the change (a quoted user message, a manual `git reflog` entry), restate the evidence inline. Otherwise resume the investigation into the actual cause — your own script, or a parallel session (check `git log --oneline -8` for a recent commit that isn't yours)."
 
-export const check = async (
-  payload: ToolCallPayload & { stop_hook_active?: boolean | undefined },
-): Promise<GuardResult> => {
-  // Suppress when Claude Code reports `stop_hook_active: true`, so the block
-  // fires at most once per stop chain, matches the original blocking guard.
-  if (payload.stop_hook_active) {
-    return undefined
-  }
+export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
+  // Runs on every turn-end, including a retry another Stop guard triggered.
+  // Skipping the whole scan when `stop_hook_active` was set opened a real
+  // hole, and a wider one than a notice-downgrade: the transcript was never
+  // read, so a rewritten reply that kept the unevidenced accusation — or
+  // reintroduced one while being reworked for a different guard such as
+  // `disowned-dirt-guard` — shipped with no message and no guard event to
+  // find it afterward. The guard also never got to see whether its own
+  // demanded fix landed. Blocking mid-retry cannot deadlock: the demand is
+  // to drop an accusation the reply cannot evidence, which is always
+  // available in-turn and can never be what another guard requires.
   const rawText = readLastAssistantText(payload.transcript_path)
   if (!rawText) {
     return undefined

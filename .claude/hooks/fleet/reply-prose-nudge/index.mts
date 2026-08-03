@@ -153,7 +153,7 @@ const PERFECTIONIST: ReminderGroup = {
 
 const SELF_NARRATION: ReminderGroup = {
   closingHint:
-    'CLAUDE.md "Judgment & self-evaluation": direct imperatives get the tool call, not a tradeoff paragraph; finish queued work without mid-queue status padding. Address the user in a plain, direct voice — cut warm-up, hedges, and self-narration. EXCEPTION: the BANNED honesty-framing match is a hard rule, never a false positive — remove the word, do not dismiss it. The OTHER patterns are heuristic regexes that over-fire (a line-start "let me" mid-explanation, or a warranted "you\'re right" acknowledgment); for those, treat a match as a prompt to re-read the sentence, not a verdict.',
+    'CLAUDE.md "Judgment & self-evaluation": direct imperatives get the tool call, not a tradeoff paragraph; finish queued work without mid-queue status padding. Address the user in a plain, direct voice — cut warm-up, hedges, and self-narration. These patterns are heuristic regexes that over-fire (a line-start "let me" mid-explanation, or a warranted "you\'re right" acknowledgment); treat a match as a prompt to re-read the sentence, not a verdict. The categorical bans, which ARE verdicts, block at Stop from anti-prose-guard.',
   name: 'self-narration-nudge',
   patterns: [
     {

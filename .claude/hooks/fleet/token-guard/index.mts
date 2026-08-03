@@ -100,29 +100,20 @@ export function hasRedaction(command: string) {
   return REDACTION_MARKERS.some(re => re.test(command))
 }
 
-// Env-var-context match: only fire when a sensitive keyword appears
-// in a position that ACTUALLY references an env var. Possible contexts:
-//   - `$TOKEN` / `${TOKEN}` / `${TOKEN:-default}`
-//   - `TOKEN=value` / `export TOKEN=value`
-//   - `env TOKEN` / `printenv TOKEN` / `unset TOKEN`
-//   - `ENV['TOKEN']` / `ENV["TOKEN"]` / `ENV.fetch('TOKEN')` (Ruby)
+// Env-var-context match: only fire when a sensitive keyword appears in a
+// position that ACTUALLY references an env var — `$TOKEN`/`${TOKEN}`,
+// `TOKEN=value`/`export TOKEN=value`, `env TOKEN`/`printenv TOKEN`,
+// `ENV['TOKEN']`/`ENV.fetch('TOKEN')` (Ruby).
 //
-// The previous version matched the fragment as a SUBSTRING of the
-// env-var name (`[A-Z0-9_]*FRAG[A-Z0-9_]*`). That tripped `$AUTHOR_NAME`
-// on `AUTH` (because AUTH is a prefix of AUTHOR) and `$PASSAGE_TIME`
-// on `PASS`.
+// A prior version matched the fragment as a SUBSTRING of the env-var name,
+// which tripped `$AUTHOR_NAME` on `AUTH` and `$PASSAGE_TIME` on `PASS`. Env
+// names are underscore-segmented tokens (`ACCESS_TOKEN`), so a fragment only
+// counts when it occupies WHOLE tokens — boundary chars are `^`, `$`, or
+// `_`; adjacent letters/digits mean it's part of a larger word and don't
+// count.
 //
-// Env-var names are conventionally underscore-segmented tokens
-// (`ACCESS_TOKEN`, `API_KEY`). For a fragment to be sensitive it
-// must occupy one or more WHOLE underscore-delimited tokens — not a
-// substring of a single token. Boundary chars inside the name are
-// therefore `^`, `$`, or `_`; letters/digits adjacent to the fragment
-// mean it's part of a larger word (`AUTH` inside `AUTHOR`) so it
-// doesn't count.
-//
-// Plain-prose occurrences ("tests pass") still don't trigger because
-// the env-var sigils (`$`, `${`, `=`, `env`/`printenv`/etc., `ENV[`)
-// gate every match.
+// Plain-prose occurrences ("tests pass") still don't trigger — the env-var
+// sigils (`$`, `${`, `=`, `env`/`printenv`/etc., `ENV[`) gate every match.
 const NAME_BODY = String.raw`(?:[A-Z0-9_]*_)?` // optional leading tokens
 const NAME_TAIL = String.raw`(?:_[A-Z0-9_]*)?` // optional trailing tokens
 const sensitiveEnvBoundaryRes = SENSITIVE_ENV_NAMES.map(frag => {

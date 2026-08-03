@@ -91,33 +91,24 @@ export const scanSoakAnnotations = (): number => {
   return hits.length
 }
 
-// Fast lint/format gate. The security tier above scans for secrets + signatures;
-// this catches the OTHER class of breakage that slips to main — format drift,
-// lint violations, and the fast assertion-form checks — BEFORE the push, not
-// just in CI. Whole sessions of "green locally, red in CI" trace to nothing
-// running lint at the push boundary: a parallel session lands format/sort/
-// export/naming violations straight to main and they surface only in CI.
+// Fast lint/format gate: catches lint/format drift before push, not just in
+// CI ("green locally, red in CI" traces to nothing running lint at the push
+// boundary). Deliberately the FAST, build-INDEPENDENT slice — oxfmt --check +
+// oxlint over the whole tree, never the full `check --all` (needs a built
+// dist/, too slow for every push).
 //
-// Deliberately the FAST, build-INDEPENDENT slice — the repo's `lint` runner
-// (oxfmt --check + oxlint, read-only) over the whole tree, never the full
-// `check --all` (which needs a built dist/ and would tax every push).
+// MUST invoke the lint script DIRECTLY (`node <lint-script> --all`), NOT via
+// `pnpm run lint`: the `pnpm run` path triggers pnpm's deps-status check,
+// which in a non-TTY context (CI, a linked worktree) tries to purge/reinstall
+// node_modules and aborts (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`) — a
+// false push-block unrelated to lint. `--all` is required: lint.mts defaults
+// to `modified` (git-diff vs HEAD), often empty at push time, which would
+// pass trivially without checking the pushed content.
 //
-// Invoked DIRECTLY with `node <lint-script> --all`, NOT `pnpm run lint`: the
-// `pnpm run` path triggers pnpm's deps-status check, which in a non-TTY context
-// (CI, a linked worktree) tries to purge/reinstall node_modules and aborts
-// (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`) — a false push-block unrelated
-// to lint. Running the script directly skips that and is faster. `--all` is
-// required: lint.mts defaults to `modified` (git-diff vs HEAD), often empty at
-// push time, which would pass trivially without checking the pushed content.
-//
-// Degrades gracefully:
-//   - no package.json `lint` script, a repo that doesn't lint → skip.
-//   - the `lint` script isn't a `node <path>` invocation → skip (can't run it
-//     safely without pnpm; rely on CI).
-//   - lint script present but no oxlint config → the script self-skips.
-// Bypass: `git push --no-verify`, whole-chain `HUSKY=0`, or a redirected
-// `core.hooksPath` — all three phrase-gated for Claude by no-revert-guard, and
-// no per-step env kill-switch per CLAUDE.md. Returns 1 on lint failure, 0 on
+// Degrades to a skip (not a block) when there's no lint script, the script
+// isn't a `node <path>` invocation, or there's no oxlint config. Bypass:
+// `git push --no-verify`, `HUSKY=0`, or a redirected `core.hooksPath` — all
+// phrase-gated for Claude by no-revert-guard. Returns 1 on lint failure, 0 on
 // pass/skip.
 export const scanFastChecks = (): number => {
   if (!existsSync('package.json')) {

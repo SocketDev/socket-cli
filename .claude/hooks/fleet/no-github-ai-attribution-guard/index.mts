@@ -30,7 +30,7 @@
 
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
-import { containsAiAttribution } from '../../../../.git-hooks/_shared/ai-attribution.mts'
+import { containsAiAttribution } from '../_shared/ai-attribution.mts'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
 import { readCommand } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'

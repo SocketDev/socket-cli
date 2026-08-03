@@ -4,10 +4,10 @@
  *   leakage (process.env, path-rewire overrides, vi.mock state, nock
  *   interceptors) is impossible. Correctness by default. A repo that wants the
  *   faster shared-worker mode for a known-safe subset opts those files OUT by
- *   listing globs in a repo-owned `.config/repo/vitest-non-isolated.json` (`{
- *   "include": ["test/unit/pure/**"] }`). When that file exists, those globs
- *   run in a second, non-isolated project and the default isolated project
- *   excludes them. No file → everything isolated.
+ *   listing globs in the `vitest.nonIsolated` array of the settings file,
+ *   `.config/repo/socket-wheelhouse.json`. When set, those globs run in a
+ *   second, non-isolated project and the default isolated project excludes
+ *   them. No globs → everything isolated.
  */
 import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
@@ -30,27 +30,74 @@ const isCoverageEnabled =
   envAsBoolean(process.env['COVERAGE']) ||
   process.argv.some(arg => arg.startsWith('--coverage'))
 
-// One repo-tunable vitest config, resolved fleet-default + repo-override (the
-// same shape as .config/{fleet,repo}/git-authors.json):
-//   nonIsolated        — globs safe to run in the faster non-isolated pool.
-//   nodeTestExclude    — extra node:test homes to exclude from vitest discovery
-//                        (e.g. `tools/**/test/**` for a `node --test` tool corpus).
-//                        prefer-vitest-guard reads the SAME key so its allowlist
-//                        and this exclude never drift.
-//   alias              — module resolve aliases for the test transform, e.g.
-//                        `{ "@socketsecurity/sdk": "./dist/index.browser.js" }`.
-//                        Maps merge per key with the repo tier winning; see
-//                        mergeVitestAlias for the relative-path semantics.
-// Array values from both tiers are concatenated (a repo extends, never shrinks,
-// the fleet defaults). Replaces the former vitest-non-isolated.json +
-// vitest-extra-exclude.json sidecars.
+// Every repo-tunable knob this config reads lives in the `vitest` section of
+// the canonical per-repo settings file, `.config/repo/socket-wheelhouse.json`.
+// ONE file, one parse. Each key's contract is on its field below, and
+// docs/agents.md/fleet/test-layout.md carries the tier rationale.
 export interface VitestRepoConfig {
+  // Module resolve aliases for the test transform, e.g.
+  // `{ "@socketsecurity/sdk": "./dist/index.browser.js" }`. A key is a LITERAL
+  // specifier, never a glob, so a monorepo lists one entry per package; see
+  // mergeVitestAlias for the dot-relative semantics.
   alias?: Record<string, string> | undefined
+  // Extra `resolve.conditions`. The route for a monorepo whose `exports` map
+  // carries a `source` condition: without it vitest resolves a workspace
+  // package to its built `dist`, the instrumented `src` never runs, and the
+  // repo reports 0% coverage.
+  conditions?: string[] | undefined
   conformanceExclude?: string[] | undefined
+  lanes?: VitestLanes | undefined
+  // Worker cap for the pool, floored against the CI/coverage-aware fallback.
   maxWorkers?: number | undefined
+  // Globs safe to run in the faster non-isolated pool.
   nonIsolated?: string[] | undefined
+  // node:test homes excluded from vitest discovery, e.g. `tools/**/test/**` for
+  // a `node --test` tool corpus. prefer-vitest-guard reads the SAME key so its
+  // allowlist and this exclude never drift.
   nodeTestExclude?: string[] | undefined
   pool?: 'forks' | 'threads' | undefined
+}
+
+// The settings file, canonical location first and the repo-root dotfile as the
+// one fallback a member may ship.
+const SETTINGS_FILES = [
+  '.config/repo/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+] as const
+
+/**
+ * The `vitest` section of the settings file. The ONE settings-file parse in
+ * this config: every resolver below reads its key off this, so a torn or absent
+ * file degrades to fleet defaults in exactly one place instead of six.
+ */
+export function readVitestSettings(): VitestRepoConfig {
+  for (let i = 0, { length } = SETTINGS_FILES; i < length; i += 1) {
+    const file = SETTINGS_FILES[i]!
+    if (!existsSync(file)) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+        vitest?: VitestRepoConfig | undefined
+      }
+      const section = parsed?.vitest
+      return section && typeof section === 'object' && !Array.isArray(section)
+        ? section
+        : {}
+    } catch {
+      return {}
+    }
+  }
+  return {}
+}
+
+/**
+ * A settings value read as a string array; anything else reads as empty.
+ */
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((g): g is string => typeof g === 'string')
+    : []
 }
 /**
  * Test LANES — a SPEED category, orthogonal to test TYPE (unit/integration/e2e)
@@ -70,34 +117,13 @@ export interface VitestLanes {
   slow?: string[] | undefined
 }
 export function readVitestLanes(): VitestLanes {
-  for (const file of [
-    '.config/repo/socket-wheelhouse.json',
-    '.config/socket-wheelhouse.json',
-    '.socket-wheelhouse.json',
-  ]) {
-    if (!existsSync(file)) {
-      continue
-    }
-    try {
-      const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-        vitest?: { lanes?: VitestLanes | undefined } | undefined
-      }
-      const lanes = parsed?.vitest?.lanes
-      const clean = (a: unknown): string[] =>
-        Array.isArray(a)
-          ? a.filter((g): g is string => typeof g === 'string')
-          : []
-      return lanes && typeof lanes === 'object'
-        ? { mid: clean(lanes.mid), slow: clean(lanes.slow) }
-        : {}
-    } catch {
-      return {}
-    }
-  }
-  return {}
+  const lanes = readVitestSettings().lanes
+  return lanes && typeof lanes === 'object' && !Array.isArray(lanes)
+    ? { mid: stringArray(lanes.mid), slow: stringArray(lanes.slow) }
+    : {}
 }
 export function readNonIsolatedGlobs(): string[] {
-  return resolveVitestKey('nonIsolated')
+  return stringArray(readVitestSettings().nonIsolated)
 }
 /**
  * The CONFORMANCE tier — heavy external-suite wrappers (a full Test262 corpus
@@ -113,39 +139,10 @@ export function readNonIsolatedGlobs(): string[] {
  * than the multi-hour sweep it actually is.
  */
 export function readConformanceExcludeGlobs(): string[] {
-  // Reads the canonical settings file, NOT `.config/repo/vitest.json` —
-  // `vitest.conformanceExclude` is a settings-file key, and most repos ship no
-  // vitest.json at all, so resolveVitestKey silently returns [] and the heavy
-  // tier keeps leaking into every lane.
-  const file = '.config/repo/socket-wheelhouse.json'
-  if (!existsSync(file)) {
-    return []
-  }
-  try {
-    const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-      vitest?: { conformanceExclude?: string[] | undefined } | undefined
-    }
-    const globs = parsed?.vitest?.conformanceExclude
-    return Array.isArray(globs)
-      ? globs.filter((g): g is string => typeof g === 'string')
-      : []
-  } catch {
-    return []
-  }
-}
-export function readVitestConfigTier(file: string): VitestRepoConfig {
-  if (!existsSync(file)) {
-    return {}
-  }
-  try {
-    const parsed = JSON.parse(readFileSync(file, 'utf8')) as VitestRepoConfig
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
+  return stringArray(readVitestSettings().conformanceExclude)
 }
 export function repoNodeTestExcludeGlobs(): string[] {
-  return resolveVitestKey('nodeTestExclude')
+  return stringArray(readVitestSettings().nodeTestExclude)
 }
 // Ceiling on the contention multiplier. A starved spawn is queued, not hung, so
 // it deserves more time — but a genuinely WEDGED test must still fail in
@@ -232,12 +229,10 @@ export function resolveFallbackMaxWorkers(): number {
   return isCoverageEnabled ? 8 : 16
 }
 export function resolveConfiguredMaxWorkers(): number | undefined {
-  const fleet = readVitestConfigTier('.config/fleet/vitest.json').maxWorkers
-  const repo = readVitestConfigTier('.config/repo/vitest.json').maxWorkers
-  const candidates = [fleet, repo].filter(
-    (v): v is number => typeof v === 'number' && v > 0,
-  )
-  return candidates.length > 0 ? Math.min(...candidates) : undefined
+  const configured = readVitestSettings().maxWorkers
+  return typeof configured === 'number' && configured > 0
+    ? configured
+    : undefined
 }
 export function capMaxWorkers(
   configuredMaxWorkers: number | undefined,
@@ -266,16 +261,16 @@ export function resolveBail(isCoverage: boolean, isCI: boolean): number {
   return !isCoverage && isCI ? 1 : 0
 }
 /**
- * Resolve-alias tier merge. This config is CASCADED — a member repo that
- * edited it directly lost the edit on the next cascade: socket-webext's
+ * Resolve-alias merge. This config is CASCADED — a member repo that edited it
+ * directly lost the edit on the next cascade: socket-webext's
  * `@socketsecurity/sdk` → browser-build alias was wiped exactly that way. The
- * `alias` key of .config/{fleet,repo}/vitest.json is the repo-owned surface
- * that survives: maps merge per key with the repo tier winning, matching the
- * pool/maxWorkers repo-over-fleet precedence. Dot-relative replacements — `./`
- * or `../` — resolve against `root`, the repo root at config-load time,
- * because vite substitutes alias replacements verbatim: left relative, the
- * result would resolve against each importer instead of the repo root. Bare
- * package names and absolute paths pass through untouched.
+ * settings file's `vitest.alias` map is the repo-owned surface that survives.
+ * Two maps merge per key, the second winning, which is what lets a caller layer
+ * a fleet default under a repo's own entries. Dot-relative replacements — `./`
+ * or `../` — resolve against `root`, the repo root at config-load time, because
+ * vite substitutes alias replacements verbatim: left relative, the result would
+ * resolve against each importer instead of the repo root. Bare package names
+ * and absolute paths pass through untouched.
  */
 export function mergeVitestAlias(
   fleet: unknown,
@@ -298,27 +293,39 @@ export function mergeVitestAlias(
   )
 }
 export function resolveVitestAlias(): Record<string, string> {
-  return mergeVitestAlias(
-    readVitestConfigTier('.config/fleet/vitest.json').alias,
-    readVitestConfigTier('.config/repo/vitest.json').alias,
-  )
+  return mergeVitestAlias(undefined, readVitestSettings().alias)
 }
 export function resolvePool(): 'forks' | 'threads' {
-  const fleet = readVitestConfigTier('.config/fleet/vitest.json').pool
-  const repo = readVitestConfigTier('.config/repo/vitest.json').pool
-  const chosen = repo ?? fleet
+  const chosen = readVitestSettings().pool
   return chosen === 'forks' || chosen === 'threads' ? chosen : 'threads'
 }
-export function resolveVitestKey(key: keyof VitestRepoConfig): string[] {
-  const fleet = readVitestConfigTier('.config/fleet/vitest.json')[key]
-  const repo = readVitestConfigTier('.config/repo/vitest.json')[key]
-  return [
-    ...(Array.isArray(fleet) ? fleet : []),
-    ...(Array.isArray(repo) ? repo : []),
-  ].filter(g => typeof g === 'string')
+// Vite's own server-side resolve conditions, mirrored as a literal because
+// `vite` is a transitive dep here, not a direct one — importing
+// `defaultServerConditions` from it would not typecheck, and `vitest/config`
+// does not re-export it. Verified against the installed vite 8.1.5, whose
+// DEFAULT_SERVER_CONDITIONS is exactly this list. drift-watch: re-verify on a
+// vite major bump.
+const VITE_DEFAULT_SERVER_CONDITIONS = [
+  'module',
+  'node',
+  'development|production',
+] as const
+
+/**
+ * Extra resolve conditions, from `vitest.conditions`. Vite REPLACES its default
+ * condition list rather than appending to it, so the repo's entries are listed
+ * FIRST and vite's own server defaults are appended — dropping them would break
+ * plain node resolution for every dependency.
+ */
+export function resolveVitestConditions(): string[] {
+  const configured = stringArray(readVitestSettings().conditions)
+  return configured.length > 0
+    ? [...configured, ...VITE_DEFAULT_SERVER_CONDITIONS]
+    : []
 }
 const nonIsolatedGlobs = readNonIsolatedGlobs()
 const repoResolveAlias = resolveVitestAlias()
+const repoResolveConditions = resolveVitestConditions()
 
 // Lane resolution. The runner sets FLEET_LANE (bare `pnpm test` → 'fast'); the
 // filter is inert under coverage and for an unset lane, so --all / scoped /
@@ -340,12 +347,21 @@ const conformanceGlobs = readConformanceExcludeGlobs()
 const conformanceTier = process.env['FLEET_TEST_CONFORMANCE'] === '1'
 
 export default defineConfig({
-  // Repo-owned resolve aliases from the `alias` key of
-  // .config/{fleet,repo}/vitest.json — see mergeVitestAlias. Spread
-  // conditionally so repos without aliases keep vite's own resolution
-  // untouched.
-  ...(Object.keys(repoResolveAlias).length
-    ? { resolve: { alias: repoResolveAlias } }
+  // Repo-owned resolution from the settings file's `vitest.alias` +
+  // `vitest.conditions` — see mergeVitestAlias and resolveVitestConditions.
+  // Spread conditionally so a repo declaring neither keeps vite's own
+  // resolution untouched.
+  ...(Object.keys(repoResolveAlias).length || repoResolveConditions.length
+    ? {
+        resolve: {
+          ...(Object.keys(repoResolveAlias).length
+            ? { alias: repoResolveAlias }
+            : {}),
+          ...(repoResolveConditions.length
+            ? { conditions: repoResolveConditions }
+            : {}),
+        },
+      }
     : {}),
   test: {
     deps: {
@@ -437,8 +453,8 @@ export default defineConfig({
         ? ['test/isolated/**']
         : []),
       // Repo-tunable node:test homes (e.g. `tools/**/test/**`) from the
-      // `nodeTestExclude` key of .config/{fleet,repo}/vitest.json. The same key
-      // feeds prefer-vitest-guard's allowlist so the two never drift.
+      // settings file's `vitest.nodeTestExclude`. The same key feeds
+      // prefer-vitest-guard's allowlist so the two never drift.
       ...repoNodeTestExcludeGlobs(),
       // Fast lane (`--lane fast`, the bare `pnpm test` default) skips the mid +
       // slow lane globs (heavy/isolated suites) for a quick local loop. Inert
@@ -477,9 +493,10 @@ export default defineConfig({
     // the fleet convention that any CI value means CI.
     //
     // Isolation: true by default (correctness — no cross-file state leak). A
-    // repo lists safe-to-share globs in .config/repo/vitest-non-isolated.json;
-    // when present, this default project EXCLUDES them (the second project runs
-    // them non-isolated). When absent, every file is isolated.
+    // repo lists safe-to-share globs in the `vitest.nonIsolated` array of
+    // .config/repo/socket-wheelhouse.json; when set, this default project
+    // EXCLUDES them (the second project runs them non-isolated). When unset,
+    // every file is isolated.
     isolate: true,
     ...(nonIsolatedGlobs.length
       ? {

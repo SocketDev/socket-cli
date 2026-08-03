@@ -105,15 +105,16 @@ export {
   scanSoakExcludeDateAnnotations,
 } from './scan-supply-chain.mts'
 
-// AI attribution detector lives in the gate-free `ai-attribution.mts` so the
-// Claude-side no-github-ai-attribution-guard can import it on the operator's
-// Node (this barrel carries a Node-25 hard-exit gate). Re-export here so the
-// commit-msg / pre-push consumers + their tests keep their existing surface.
+// The AI attribution catalog is the fleet-canonical, gate-free
+// .claude/hooks/fleet/_shared/ai-attribution.mts, so the Claude-side guards can
+// import it on the operator's Node (this barrel carries a Node-25 hard-exit
+// gate). Re-export here so the commit-msg / pre-push consumers + their tests
+// keep their existing surface.
 export {
   AI_ATTRIBUTION_RE,
   containsAiAttribution,
   stripAiAttribution,
-} from './ai-attribution.mts'
+} from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
 
 // External GitHub issue/PR reference scanner, re-exported from the gate-free
 // _shared/external-issue-ref.mts, single definition. The Claude-side

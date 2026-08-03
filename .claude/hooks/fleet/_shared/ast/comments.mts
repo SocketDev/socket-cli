@@ -39,27 +39,22 @@ interface ParsedComment {
 
 /**
  * Walk every comment token in `source`. Hooks that grade or filter comments
- * no-meta-comments, pointer-comment, comment-tone, use this so they don't
- * false-positive on comment-looking content inside string literals or template
- * strings.
+ * (no-meta-comments, pointer-comment, comment-tone) use this so they don't
+ * false-positive on comment-looking content inside string literals or
+ * template strings.
  *
- * Each `CommentSite` carries oxc-shape metadata: `kind` (Line / SingleLineBlock
- * / MultiLineBlock / Hashbang), `content`, pre-classified annotation,
- * `position` (Leading / Trailing), `newlines`, and `attachedTo` (offset of the
- * next token for leading comments).
+ * Each `CommentSite` carries oxc-shape metadata: `kind`, `content`,
+ * `position`, `newlines`, and `attachedTo`.
  *
- * Opt-in: comment collection is OFF by default. Pass `{ comments: true }`. The
- * default-off shape matches oxc's "free at lex time but you have to ask for it"
- * stance — `walkComments` returns `[]` when off, with zero scanner cost.
+ * Opt-in: comment collection is OFF by default — pass `{ comments: true }`
+ * to enable it. Returns `[]` when off, with zero scanner cost.
  *
- * Implementation note: the acorn-wasm parser doesn't currently expose an
- * `onComment` callback, so the fallback path uses a character-level scanner
- * that's aware of `'…'`, `"…"`, and `\`…`` to skip strings/templates correctly;
- * comment-looking text inside a string literal won't be reported. Regex
- * literals containing `//` are a documented edge case the scanner doesn't
- * disambiguate.
+ * The acorn-wasm parser has no `onComment` callback, so the fallback path
+ * scans characters directly and is aware of `'…'`, `"…"`, and `` `…` `` so
+ * it skips over strings/templates correctly. A `//` inside a regex literal
+ * is a known gap it does not disambiguate.
  *
- * Returns the comments in source order. Empty array if source is empty.
+ * Returns comments in source order.
  */
 export function walkComments(
   source: string,

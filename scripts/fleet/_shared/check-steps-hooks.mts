@@ -140,6 +140,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
       run('node', [
         'scripts/fleet/check/prose-parenthetical-asides-are-absent.mts',
       ]),
+    // No commit message carries an AI-attribution trailer and no branch uses an
+    // AI-agent tool prefix. Both are fleet commit-format policy, and both are
+    // scored as automation signals by the public @unveil/identity engine.
+    () =>
+      run('node', ['scripts/fleet/check/commits-have-no-ai-attribution.mts']),
     // Commit-time twin of markdown-filename-guard: every tracked .md has a
     // canonical filename (lowercase-hyphens, or an allowlisted SCREAMING_CASE name
     // only at root/docs/.claude). Reuses the guard's classifyMarkdownPath predicate.

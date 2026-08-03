@@ -111,22 +111,19 @@ export function listMtsFiles(dir: string): string[] {
  * Extract every STATIC bare-specifier import's raw specifier string out of a
  * `.mts` file's content: `import … from '<spec>'` / `export … from '<spec>'`
  * (both including a `type` keyword), and the bare side-effect form
- * `import '<spec>'`. Dynamic `import(...)` and `require(...)` are not static
- * and are never matched.
+ * `import '<spec>'`. Dynamic `import(...)`/`require(...)` are never matched.
  *
  * The gap between the `import`/`export` keyword and `from` is deliberately
- * restricted to `[\s\w,{}*]` — whitespace (newlines included, so a multi-line
- * named-import list still matches), identifier characters, commas, braces, and
- * `*`. This is narrower than a naive `[^;]*?` gap on purpose: TS/JS statements
- * don't require a terminating `;` (ASI), so an unbounded gap can walk straight
- * through an unrelated `export const x = [...]` all the way to an UNRELATED
- * later `from` inside a string literal (e.g. a hook's own `lines.push('...
- * cascade from ...')` reminder text), capturing garbage source as the
- * "specifier". The restricted class can't cross `=`, `(`, quotes, or any other
- * real-statement punctuation, so a false start like that fails outright
- * instead of running away. It still admits the shapes the fleet's `.mts`
- * imports actually use: named/default/namespace imports, `type` and `as`
- * keywords, and `export … from` re-exports.
+ * restricted to `[\s\w,{}*]` — whitespace, identifiers, commas, braces, `*` —
+ * not a naive `[^;]*?`. TS/JS statements don't require a terminating `;`
+ * (ASI), so an unbounded gap can walk through an unrelated `export const x =
+ * [...]` all the way to an UNRELATED later `from` inside a string literal
+ * (e.g. a hook's own `lines.push('... cascade from ...')` text), capturing
+ * garbage as the "specifier". The restricted class can't cross `=`, `(`,
+ * quotes, or other real-statement punctuation, so a false start fails
+ * outright instead of running away — while still admitting the shapes the
+ * fleet's `.mts` imports actually use: named/default/namespace imports,
+ * `type`/`as` keywords, and `export … from` re-exports.
  */
 export function extractImportSpecifiers(content: string): string[] {
   const specifiers: string[] = []
