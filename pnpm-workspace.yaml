@@ -33,7 +33,7 @@ catalogDriftIgnore:
   - 'typescript'
 
 catalog:
-  '@anthropic-ai/claude-code': 2.1.216
+  '@anthropic-ai/claude-code': 2.1.220
   '@babel/core': 7.29.7
   '@babel/generator': 7.29.7
   '@babel/parser': 7.29.7
@@ -93,7 +93,7 @@ catalog:
   '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.10
   '@types/mock-fs': 4.13.4
-  '@types/node': 26.1.1
+  '@types/node': 26.1.2
   '@types/npm-package-arg': 6.1.4
   '@types/npmcli__arborist': 6.3.3
   '@types/npmcli__config': 6.0.4
@@ -111,8 +111,8 @@ catalog:
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ajv-dist: 8.17.1
   ansi-regex: 6.2.2
-  brace-expansion: 5.0.7
-  browserslist: 4.28.6
+  brace-expansion: 5.0.8
+  browserslist: 4.28.7
   'c8': 12.0.0
   chalk-table: 1.0.2
   'chrome-devtools-mcp': 1.6.0
@@ -148,7 +148,7 @@ catalog:
   lint-staged: 16.4.0
   lodash: 4.18.1
   magic-string: 1.1.0
-  'markdownlint-cli2': 0.23.1
+  'markdownlint-cli2': 0.23.2
   'mdast-util-from-markdown': 2.0.3
   'micromark': 4.0.2
   micromatch: 4.0.8
@@ -165,12 +165,12 @@ catalog:
   oxfmt: 0.60.0
   oxlint: 1.75.0
   'oxlint-tsgolint': 7.0.2001
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.8
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.5.0
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   'playwright-core': 1.62.0
   'portless': 0.15.4
   postject: 1.0.0-alpha.6
-  react: 19.2.7
+  react: 19.2.8
   react-reconciler: 0.33.0
   # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
   # single-sourced; the override forces vite's bundled rolldown to match.
@@ -192,10 +192,10 @@ catalog:
   terminal-link: 2.1.1
   tiny-colors: 2.2.2
   trash: 10.1.1
-  type-coverage: 2.29.7
+  type-coverage: 2.30.1
   typedarray: npm:@socketregistry/typedarray@^1.0.8
   typescript: 7.0.2
-  undici: 6.27.0
+  undici: 6.28.0
   unplugin-purge-polyfills: 0.1.0
   # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
   # bundled rolldown up to the catalog's 1.0.3.
@@ -346,17 +346,17 @@ overrides:
   'graceful-fs': 'catalog:'
   'has-property-descriptors': 'catalog:'
   'has-proto': 'catalog:'
-  'hono': '>=4.12.31'
+  'hono': '>=4.12.32'
   'https-proxy-agent': 'catalog:'
   'indent-string': 'catalog:'
-  'ip-address': '>=10.2.0'
+  'ip-address': '>=10.3.1'
   'is-core-module': 'catalog:'
   'isarray': 'catalog:'
   'lodash': 'catalog:'
   'npm-package-arg': 'catalog:'
   'packageurl-js': 'catalog:'
   'path-parse': 'catalog:'
-  'postcss': '>=8.5.20'
+  'postcss': '>=8.5.23'
   'qs': '>=6.15.3'
   # Force vite's bundled rolldown (1.0.2) up to the catalog's 1.0.3.
   'rolldown': 'catalog:'
@@ -368,7 +368,7 @@ overrides:
   'string-width': 'catalog:'
   'string_decoder': 'catalog:'
   'strip-ansi': 'catalog:'
-  'tar': '>=7.5.20'
+  'tar': '>=7.5.22'
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
