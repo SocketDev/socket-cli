@@ -7,9 +7,7 @@ import type { RecursiveManifestOutcome } from './generate-recursive-manifests.mt
 import type { CResult, OutputKind } from '../../types.mts'
 
 function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
-  // A reactor member covered by its parent's own facts run is implied by that
-  // parent's line already showing up above it; listing it again here is just
-  // noise, and the aggregate count still shows up in summarize().
+  // A covered reactor member is implied by its parent's line above it.
   return outcomes
     .filter(o => o.status !== 'skippedCovered')
     .map(
@@ -19,11 +17,6 @@ function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
     .join('\n')
 }
 
-// Only the generated count is reported: a failure aborts the whole walk
-// immediately (already reported via its own fail message) rather than
-// accumulating alongside successes, and the disabled/covered/empty buckets
-// count candidate directories, not independent build roots, so a total
-// there would be just as misleading as the removed "N build root(s)" one.
 function summarize(outcomes: readonly RecursiveManifestOutcome[]): string {
   const generated = outcomes.filter(o => o.status === 'generated').length
   return `Generated ${generated} Socket facts file(s).`
