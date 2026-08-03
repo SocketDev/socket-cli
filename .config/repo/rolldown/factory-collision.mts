@@ -254,7 +254,9 @@ export function findFactoryCollisions(code: string): FactoryCollision[] {
         }
       }
     }
-    for (const key of Object.keys(n)) {
+    const keys = Object.keys(n)
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]!
       if (key === 'end' || key === 'start' || key === 'type') {
         continue
       }
@@ -284,7 +286,9 @@ export function createCollisionDetectorPlugin(): Plugin {
     name: 'factory-collision-detector',
     generateBundle(_options, bundle) {
       const failures: string[] = []
-      for (const fileName of Object.keys(bundle)) {
+      const fileNames = Object.keys(bundle)
+      for (let f = 0, { length } = fileNames; f < length; f += 1) {
+        const fileName = fileNames[f]!
         const asset = bundle[fileName]
         if (!asset || asset.type !== 'chunk') {
           continue

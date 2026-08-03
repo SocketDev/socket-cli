@@ -440,7 +440,9 @@ function collectGateSites(
         return
       }
     }
-    for (const key of Object.keys(n)) {
+    const keys = Object.keys(n)
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]!
       if (key === 'end' || key === 'start') {
         continue
       }

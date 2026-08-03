@@ -257,8 +257,12 @@ export function resolveMaxWorkers(): number {
  * no coverage, keep fast-fail bail=1; local (no CI) runs the whole suite.
  * Pure so the resolution is unit-testable without a real CI/coverage env.
  */
-export function resolveBail(isCoverage: boolean, isCI: boolean): number {
-  return !isCoverage && isCI ? 1 : 0
+export function resolveBail(config: {
+  readonly isCI: boolean
+  readonly isCoverage: boolean
+}): number {
+  const cfg = { __proto__: null, ...config }
+  return !cfg.isCoverage && cfg.isCI ? 1 : 0
 }
 /**
  * Resolve-alias merge. This config is CASCADED — a member repo that edited it
@@ -543,7 +547,10 @@ export default defineConfig({
     // threshold. Complete the ladder rather than shave the threshold.
     testTimeout: resolveTestBudgetMs(),
     hookTimeout: resolveTestBudgetMs(),
-    bail: resolveBail(isCoverageEnabled, Boolean(getCI())),
+    bail: resolveBail({
+      isCI: Boolean(getCI()),
+      isCoverage: isCoverageEnabled,
+    }),
     // Coverage shape comes from the fleet base merged with the repo-owned
     // `coverage` section of .config/repo/socket-wheelhouse.json (include
     // replace, exclude add/remove) — one canonical exclude list instead of a
