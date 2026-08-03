@@ -3010,6 +3010,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-lib-barrel-import: {}
 
+  .config/fleet/oxlint-plugin/fleet/no-literal-control-char: {}
+
   .config/fleet/oxlint-plugin/fleet/no-logger-newline-literal: {}
 
   .config/fleet/oxlint-plugin/fleet/no-malformed-bypass-marker: {}
