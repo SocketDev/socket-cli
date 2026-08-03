@@ -54,8 +54,8 @@ extension popup as it actually renders in-browser, not a static file:// approxim
 ## Caveats (state these honestly in your summary)
 
 - **Static snapshot, not interactive.** You can't hover/click/scroll in one shot. For a
-  state behind a click, drive it — a small playwright script that clicks then screenshots — or
-  capture different states by timing the `--wait`. Each state = its own screenshot.
+  state behind a click, drive it with a small playwright script that clicks then screenshots,
+  or capture different states by timing the `--wait`. Each state = its own screenshot.
 - **Mock vs live data.** If the page needs a backend that isn't running, you're seeing
   empty/placeholder states — say so. (A built-in `?preview` mock, if the app has one, is
   still mock data; the layout/colors/bugs are real, the content isn't.)

@@ -34,7 +34,7 @@ The ruleset can reject a push with EITHER of two rules, and each has its OWN cus
 
 When either is set to the literal string `"true"`, the cascade's `canSkipReviewGate()` check (in `scripts/repo/_shared/repo-properties.mts`) allows direct push for routine cascade work. Anything else (`"false"`, `"Choose the value"` placeholder, missing entirely, API failure) falls back to "open a PR".
 
-**Rule 2 — "Required workflow ... is not satisfied".** The enterprise ruleset also requires the zizmor "Audit GHA Workflows" required-workflow check to pass — a direct push (no PR run) never satisfies it. The escape is the **`disable-github-actions-security` custom property** set to `"true"`: it exempts the repo from the required-workflow rule so the direct push lands. Do NOT set it on a repo that holds GHA secrets — the required-workflow audit is that repo's guard.
+**Rule 2 - "Required workflow ... is not satisfied".** The enterprise ruleset also requires the zizmor "Audit GHA Workflows" required-workflow check to pass. A direct push (no PR run) never satisfies it. The escape is the **`disable-github-actions-security` custom property** set to `"true"`: it exempts the repo from the required-workflow rule so the direct push lands. Do NOT set it on a repo that holds GHA secrets. The required-workflow audit is that repo's guard.
 
 The strict `=== "true"` match is deliberate. A misconfigured token, transient API blip, or unset placeholder defaults to the safer "open a PR" path rather than silently pushing to main.
 

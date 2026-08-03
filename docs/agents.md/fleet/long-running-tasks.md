@@ -35,7 +35,7 @@ The hook warns once per task per threshold crossing. It keeps a fail-open JSON s
 
 Verify the task is progressing: its transcript is still growing, its result count is rising, or its phase is advancing. Use `TaskGet` or read the transcript to confirm forward motion. If the task is stuck, repeating the same failed step with no new output, `TaskStop` it and research the real root cause before relaunching.
 
-Triage the stuck step by domain. When the failing step is lint or format and the toolchain has an autofixer, the first move is the autofixer over the affected files — `pnpm run fix` or the tool's `--fix` — and verification is re-running the linter; its exit code is the proof. Plant-probes and per-finding hand-verification are reserved for semantic domains with no autofixer. The nudge text carries this triage via `AUTOFIX_FIRST_GUIDANCE` in the hook; the fuller method split lives in [adversarial-self-review](adversarial-self-review.md).
+Triage the stuck step by domain. When the failing step is lint or format and the toolchain has an autofixer, the first move is the autofixer over the affected files, `pnpm run fix` or the tool's `--fix`, and verification is re-running the linter; its exit code is the proof. Plant-probes and per-finding hand-verification are reserved for semantic domains with no autofixer. The nudge text carries this triage via `AUTOFIX_FIRST_GUIDANCE` in the hook; the fuller method split lives in [adversarial-self-review](adversarial-self-review.md).
 
 ## Waiting discipline
 
@@ -43,7 +43,7 @@ The inverse failure also happened: an orchestrator watching a background workflo
 
 Three clauses govern waiting on anything long-running:
 
-1. A job that notifies on completion — a background task, a Workflow run, `gh run watch` launched as a background job — is never watched with a blocking sleep. Launch it, tell the user what is running and what event comes next, then end the turn. The completion notification re-invokes you.
+1. A job that notifies on completion - a background task, a Workflow run, `gh run watch` launched as a background job — is never watched with a blocking sleep. Launch it, tell the user what is running and what event comes next, then end the turn. The completion notification re-invokes you.
 2. When active polling is genuinely required because no notification exists, cap each silent interval at 60-90 seconds and emit an interim one-liner every cycle: what changed, what is still pending.
 3. Status updates name concrete progress, a result count or a last-activity age, never a bare "still running".
 

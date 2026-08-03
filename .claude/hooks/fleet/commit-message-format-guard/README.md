@@ -43,7 +43,7 @@ Allow examples:
 Per the fleet's `Allow <X> bypass` convention:
 
 - `Allow commit-format bypass` — type/format issue (e.g. bringing in a fixup commit with a pre-existing message).
-- `Allow ai-attribution bypass` — for the AI-attribution check specifically. Use sparingly — only when a commit legitimately documents the forbidden strings (e.g. a CLAUDE.md edit that quotes them).
+- `Allow ai-attribution bypass` - for the AI-attribution check specifically. Use sparingly — only when a commit legitimately documents the forbidden strings (e.g. a CLAUDE.md edit that quotes them).
 
 Type the canonical phrase verbatim in a recent user message; the hook then allows the next matching commit.
 

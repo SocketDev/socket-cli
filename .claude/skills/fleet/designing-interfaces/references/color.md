@@ -110,7 +110,7 @@ Usually 3-4:
 - **Success** — Green (confirmations, completion)
 - **Warning** — Amber/Yellow (attention needed)
 - **Danger** — Red (errors, destructive actions)
-- **Info** — Blue (neutral information) — optional
+- **Info** - Blue (neutral information) — optional
 
 **Important:** Semantics work through pairs, not single colors.
 

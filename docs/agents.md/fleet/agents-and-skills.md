@@ -4,7 +4,7 @@ The CLAUDE.md `### Agents & skills` section names the entry-point skills. This f
 
 ## Naming & namespace
 
-Fleet skills live at `.claude/skills/fleet/<name>/SKILL.md`; fleet commands at `.claude/commands/fleet/<name>.md`. Claude Code derives the namespace from the `fleet/` directory, so both autocomplete as `fleet:<name>` — type `/fleet:` + Tab to browse the whole group. The `name:` frontmatter stays **bare** (`name: scanning-quality`, never `fleet:scanning-quality`); the prefix is a display affordance, not part of the name. Invoke either `/<name>` or `/fleet:<name>` — both resolve. When one skill references another (in prose or a `Skill` call), use the bare name. Skill names use action-oriented phrases (`scanning-quality`, `looping-quality`, `greening-ci`, `map`); a paired command shares the skill's name.
+Fleet skills live at `.claude/skills/fleet/<name>/SKILL.md`; fleet commands at `.claude/commands/fleet/<name>.md`. Claude Code derives the namespace from the `fleet/` directory, so both autocomplete as `fleet:<name>`. Type `/fleet:` + Tab to browse the whole group. The `name:` frontmatter stays **bare** (`name: scanning-quality`, never `fleet:scanning-quality`); the prefix is a display affordance, not part of the name. Invoke either `/<name>` or `/fleet:<name>`; both resolve. When one skill references another (in prose or a `Skill` call), use the bare name. Skill names use action-oriented phrases (`scanning-quality`, `looping-quality`, `greening-ci`, `map`); a paired command shares the skill's name.
 
 ## Operating map
 

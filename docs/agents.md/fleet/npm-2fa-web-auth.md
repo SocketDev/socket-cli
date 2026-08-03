@@ -42,9 +42,9 @@ The wrapper:
   wrapper.
 - Propagates npm's exit code.
 
-It is a **no-op passthrough** — it just execs npm directly — when a real TTY is
-present (npm handles its own flow) or when `--otp=<code>` is already supplied (no
-browser needed). It is a zero-dependency fleet script: the `script` PTY needs no
+It is a **no-op passthrough** when a real TTY is present (npm handles its own
+flow) or when `--otp=<code>` is already supplied (no browser needed): it execs
+npm directly. It is a zero-dependency fleet script: the `script` PTY needs no
 added runtime dependency.
 
 ## Driving the approval page with browser automation

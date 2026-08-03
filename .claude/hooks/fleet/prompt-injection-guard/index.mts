@@ -67,11 +67,12 @@ const MAX_SCAN_BYTES = 512 * 1024
 // and cursor moves, backspace overwrites, and runs of carriage returns
 // overwriting a line. Matched on the RAW text (before invisible-char
 // stripping) so the hiding mechanism itself is observable.
-const ANSI_HIDE_RE = /[[\]P^_]|\[[\d;]*[A-Za-z]|{2,}|(?:\r(?!\n)){2,}/
+const ANSI_HIDE_RE =
+  /\u001B[[\]P^_]|\u001B\[[\d;]*[A-Za-z]|\u0008{2,}|(?:\r(?!\n)){2,}/
 
 // SGR "conceal" (code 8) — `ESC[8m` or `ESC[...;8;...m` — hides text in
 // most terminals. Named separately so the report can call it out.
-const SGR_CONCEAL_RE = /\[(?:\d{1,3};)*8(?:;\d{1,3})*m/
+const SGR_CONCEAL_RE = /\u001B\[(?:\d{1,3};)*8(?:;\d{1,3})*m/
 
 interface Pattern {
   readonly label: string

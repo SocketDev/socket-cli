@@ -12,7 +12,7 @@ This hook verifies (b) syntactically. (a) requires following the pointer and ass
 
 ## What it catches
 
-A comment that opens with a pointer phrase — `see X` / `see X for details` / `full rationale in Y` / `documented in Z` / `defined in W` / `described in V` / `specified in U` / `reference in T` — and contains no detectable claim shape in the rest of the comment.
+A comment that opens with a pointer phrase and contains no detectable claim shape in the rest of the comment. Note: pointer phrases include `see X`, `see X for details`, `full rationale in Y`, `documented in Z`, `defined in W`, `described in V`, `specified in U`, and `reference in T`.
 
 **Flagged:**
 

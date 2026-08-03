@@ -1,10 +1,10 @@
 # npm publish-time scanning and review holds
 
-Since 2026-07-28, npm scans every publish before it goes fully live ([changelog](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata)). Three outcomes: published normally, **held for manual review** on suspicious-but-inconclusive findings, or blocked as malware. Publishes also gain a scan delay — typically ~5 minutes, 15+ at peak or for large packages — during which `npm dist-tag` works but `npm deprecate` and `npm unpublish` are refused.
+Since 2026-07-28, npm scans every publish before it goes fully live ([changelog](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata)). Three outcomes: published normally, **held for manual review** on suspicious-but-inconclusive findings, or blocked as malware. Publishes also gain a scan delay, typically ~5 minutes, 15+ at peak or for large packages, during which `npm dist-tag` works but `npm deprecate` and `npm unpublish` are refused.
 
 ## The split-brain state a hold produces
 
-A HELD package is live on the registry and invisible on the website at the same time: dist-tags resolve, the tarball downloads, `npm install` works — while `https://www.npmjs.com/package/<name>` answers 403. A human browsing npm concludes "not published"; an agent that only checks one side chases phantom causes. This cost a real diagnosis session on `@socketsecurity/odai@0.1.0` (2026-07-31), where the missing page and missing provenance badge were both mis-attributed — first to repo privacy, then to a broken publish setup.
+A HELD package is live on the registry and invisible on the website at the same time: dist-tags resolve, the tarball downloads, `npm install` works, while `https://www.npmjs.com/package/<name>` answers 403. A human browsing npm concludes "not published"; an agent that only checks one side chases phantom causes. This cost a real diagnosis session on `@socketsecurity/odai@0.1.0` (2026-07-31), where the missing page and missing provenance badge were both mis-attributed, first to repo privacy, then to a broken publish setup.
 
 **The rule: judge publish state from BOTH surfaces.** Registry (`npm view <pkg> dist-tags` + a tarball probe) answers "installable?"; the website page answers "visible?". Registry-yes + page-withheld is a review hold, not a failed publish.
 
@@ -13,7 +13,7 @@ A HELD package is live on the registry and invisible on the website at the same 
 ## What clears a hold, what prevents one
 
 - Clears: npm's manual review completing on its own, or a support ticket from the org account naming the package and version.
-- Prevents: **dual-use metadata**. Packages with security capabilities — which describes most of Socket's fleet — should declare a `contentPolicy` field in package.json and ship a text-only `DISCLOSURE` file describing the functionality and its legitimate use, so the scanner classifies deliberate capability instead of guessing. Fresh triggers stack: first-ever release, a repo that was private until just before publishing, placeholder versions in the history.
+- Prevents: **dual-use metadata**. Packages with security capabilities, which describes most of Socket's fleet, should declare a `contentPolicy` field in package.json and ship a text-only `DISCLOSURE` file describing the functionality and its legitimate use, so the scanner classifies deliberate capability instead of guessing. Fresh triggers stack: first-ever release, a repo that was private until just before publishing, placeholder versions in the history.
 
 ## Related restrictions from the same program
 

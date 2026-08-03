@@ -71,3 +71,38 @@ export function lineIsSuppressed(
   }
   return aliasMatches(m[1], rule)
 }
+
+// A line that is ONLY an opt-out marker comment — the marker right after the
+// comment opener, optionally a `-- reason` tail, optionally a block-comment
+// close. Such a line covers the LINE BELOW it, so a long pragma can sit above
+// the code it excuses instead of trailing it. Prose that merely mentions the
+// marker mid-sentence has text before it and does not match.
+export const SOCKET_LINT_MARKER_ONLY_LINE_RE: RegExp =
+  /^\s*(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?(?:\s*\*\/|\s+--.*)?\s*$/
+
+/**
+ * True when `lines[index]` is suppressed for `rule` — by a marker on the line
+ * itself, or by a marker-only comment line directly above it. Line loops
+ * should prefer this over `lineIsSuppressed` so both placements work.
+ */
+export function suppressionCoversLine(
+  lines: readonly string[],
+  index: number,
+  rule?: string | undefined,
+): boolean {
+  if (lineIsSuppressed(lines[index] ?? '', rule)) {
+    return true
+  }
+  if (index <= 0) {
+    return false
+  }
+  const m = (lines[index - 1] ?? '').match(SOCKET_LINT_MARKER_ONLY_LINE_RE)
+  if (!m) {
+    return false
+  }
+  // Bare marker or no rule context → blanket allow, same as the inline form.
+  if (!m[1] || rule === undefined) {
+    return true
+  }
+  return aliasMatches(m[1], rule)
+}

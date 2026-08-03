@@ -13,7 +13,7 @@ metadata:
 
 The fleet runs on `chore(wheelhouse): cascade template@<sha>` commits. Every wheelhouse template change has to land in every fleet repo to take effect. This skill packages the operation so it isn't recreated ad-hoc per session.
 
-🚨 **This is mechanical work, not a thinking task.** Run the canonical operation, commit, push. Don't analyze each modified file in the cascade, don't design alternatives, don't write multi-paragraph rationale — the wheelhouse template is the source of truth and the sync runner decides what changes. If a repo's cascade refuses to apply (lockfile policy reject, soak window, broken hook from a stale install), bump the immediate blocker (soak-exclude entry, lockfile rebuild) or defer the repo and report it — don't reason through a multi-step manual reproduction of what the sync runner already does. Cheap/fast model settings are the right default; reserve heavier reasoning for genuine design work.
+🚨 **This is mechanical work, not a thinking task.** Run the canonical operation, commit, push. Don't analyze each modified file in the cascade, don't design alternatives, don't write multi-paragraph rationale: the wheelhouse template is the source of truth and the sync runner decides what changes. If a repo's cascade refuses to apply (lockfile policy reject, soak window, broken hook from a stale install), bump the immediate blocker (soak-exclude entry, lockfile rebuild) or defer the repo and report it — don't reason through a multi-step manual reproduction of what the sync runner already does. Cheap/fast model settings are the right default; reserve heavier reasoning for genuine design work.
 
 ## When to use
 
@@ -57,7 +57,7 @@ Every red check refuses the wave. The gate ships no committed waiver list: a sta
 node .claude/skills/fleet/cascading-fleet/lib/cascade-template.mts <template-sha>
 ```
 
-The script reads the wave list from `lib/fleet-repos.txt` — the worktree-cascade SUBSET of the canonical roster `lib/fleet-repos.json`, validated against it at startup, where an unknown name refuses the whole wave — iterates, and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
+The script reads the wave list from `lib/fleet-repos.txt`, the worktree-cascade SUBSET of the canonical roster `lib/fleet-repos.json`. It validates the list against that roster at startup, where an unknown name refuses the whole wave, then iterates and writes a per-repo result line to stdout. Output also tees to `/tmp/cascade-<sha>.log` for post-hoc inspection.
 
 ## Membership gate — sweeps write only into roster members
 
@@ -71,7 +71,7 @@ The escape hatch is explicit and audited — never an env var: `--allow-non-memb
 
 This is a parallel fleet operation, so it is **a Workflow, not a shell loop** (`for r in …; do … & done; wait` races — multiple instances land on one repo and orphan worktrees). Two layered surfaces, executable-first:
 
-1. **The per-repo executable (the law):** `lib/reconcile-lockfiles.mts` — worktrees off the repo default branch, runs `pnpm install` (repo-pinned pnpm) to regenerate the lockfile against the cascaded catalog, and IF it changed commits `chore(wheelhouse): reconcile pnpm-lock.yaml after cascade` (FLEET_SYNC sentinel) + pushes, then force-removes its worktree. Idempotent — a repo already current reports `noop:lockfile-current` and pushes nothing. Scope to one repo with `--skip <all-others>`.
+1. **The per-repo executable (the law):** `lib/reconcile-lockfiles.mts` - worktrees off the repo default branch, runs `pnpm install` (repo-pinned pnpm) to regenerate the lockfile against the cascaded catalog, and IF it changed commits `chore(wheelhouse): reconcile pnpm-lock.yaml after cascade` (FLEET_SYNC sentinel) + pushes, then force-removes its worktree. Idempotent — a repo already current reports `noop:lockfile-current` and pushes nothing. Scope to one repo with `--skip <all-others>`.
 2. **The fan-out (the orchestrator):** the saved Workflow `reconcile-fleet-lockfiles` (`.claude/workflows/reconcile-fleet-lockfiles.js`) runs surface 1 once per repo in parallel — bounded concurrency, one task per repo, structured results, no leaked PIDs. Run it after a catalog cascade:
 
 ```
@@ -79,7 +79,7 @@ Workflow({ name: 'reconcile-fleet-lockfiles' })                 # whole roster (
 Workflow({ name: 'reconcile-fleet-lockfiles', args: ['socket-lib', 'sdxgen'] })   # only the cascade's targets
 ```
 
-Because surface 1 is idempotent, running the whole roster is safe; pass `args` — a repo-name array, or `{ only, skip }` — to narrow to just the repos a cascade touched. Local/experimental workflow scripts save to `~/.claude/workflows/` — the repo's `.claude/workflows/` is fleet-owned and delete-and-replace mirrored.
+Because surface 1 is idempotent, running the whole roster is safe; pass `args`, a repo-name array or `{ only, skip }`, to narrow to just the repos a cascade touched. Local/experimental workflow scripts save to `~/.claude/workflows/` — the repo's `.claude/workflows/` is fleet-owned and delete-and-replace mirrored.
 
 ## Worktree cleanup: the branch-cleanup bug
 

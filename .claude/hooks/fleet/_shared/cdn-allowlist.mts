@@ -27,6 +27,10 @@ import { findInvocation } from './shell-command.mts'
 export const ALLOWED_CDN_HOSTS: readonly string[] = [
   // uv installer: `curl -LsSf https://astral.sh/uv/install.sh`, fleet Python tooling.
   'astral.sh',
+  // Google Chrome stable .deb — the odai chrome-builtin provisioning path
+  // (setup-odai action + the odai repo's on-device model cache workflow);
+  // real Chrome is required, Chromium cannot run the on-device model.
+  'dl.google.com',
   // The Rust package registry's public API — the cargo publish-infra reads
   // crate state before acting (scripts/fleet/publish-infra/cargo/
   // placeholder.mts verifies a name is unclaimed; the trusted-publisher lane

@@ -166,7 +166,7 @@ After this, every bypass-authorized refresh pops a Touch ID dialog
 
 - **`/etc/pam.d/sudo_local`** — the official macOS PAM extension point introduced in macOS Sonoma (14). Apple created it so users can layer auth methods on sudo without modifying `/etc/pam.d/sudo`, which is replaced on every macOS update. `/etc/pam.d/sudo`'s first line is `auth include sudo_local`, which pulls in whatever you put here. The file doesn't exist by default; creating it is what activates the extension.
 
-- **`<<'EOF' ... EOF`** — a [heredoc](https://en.wikipedia.org/wiki/Here_document). Everything between the markers becomes stdin for `tee`. The single quotes around the opening `'EOF'` disable shell variable / backtick expansion inside the body — `$foo` and `` ` `` stay literal. Conservative default for config files.
+- **`<<'EOF' ... EOF`**, a [heredoc](https://en.wikipedia.org/wiki/Here_document). Everything between the markers becomes stdin for `tee`. The single quotes around the opening `'EOF'` disable shell variable / backtick expansion inside the body, `$foo` and `` ` `` stay literal. Conservative default for config files.
 
 - **`auth       sufficient     pam_tid.so`** — the PAM directive. Three fields:
   - **`auth`** — the module-type. PAM stacks split into `auth`, `account`, `password`, and `session`; only `auth` modules participate in the "prove who you are" phase that sudo cares about.

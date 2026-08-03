@@ -222,10 +222,10 @@ by path — no agent runs `git commit` (one reviewer between work and main; no
 `.git/index.lock` race).
 
 **Platform limit on the commit control.** `no-subagent-commit-guard` blocks an
-inline Task subagent's commit — its turn is `isSidechain` in this transcript — but
-a background / Workflow `agent()` subagent writes to its own transcript and its
-Bash reaches the hook with the PARENT transcript — so the guard cannot attribute
-it and does NOT fire. Likewise a Workflow `agent()` spawn bypasses PreToolUse
+inline Task subagent's commit. Its turn is `isSidechain` in this transcript.
+But a background / Workflow `agent()` subagent writes to its own transcript,
+and its Bash reaches the hook with the PARENT transcript, so the guard cannot
+attribute it and does NOT fire. Likewise a Workflow `agent()` spawn bypasses PreToolUse
 entirely, so `parallel-agent-spawn-nudge` never sees it. Those two paths are held
 ONLY by the inlined agent-prompt discipline: every delegation's prompt must
 forbid committing and instruct "leave work uncommitted, report touched files."

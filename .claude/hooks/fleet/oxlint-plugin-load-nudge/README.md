@@ -8,8 +8,8 @@ rule count stops matching the rule-file count.
 
 **Why:** a broken import anywhere in the plugin (a bad transitive import, a syntax error in a
 `lib/` helper, a renamed export) disables **every** `socket/` rule. oxlint only emits a
-`Failed to load JS plugin` warning on stderr — gating varies by version — and never checks
-the rule count, so a green lint can hide a fully-disabled plugin. This hook catches the
+`Failed to load JS plugin` warning on stderr, and that warning's gating varies by version.
+It never checks the rule count, so a green lint can hide a fully-disabled plugin. This hook catches the
 breakage in-session, the moment it's introduced, before it cascades out to the fleet.
 
 **Blocking:** no — PostToolUse, reporting only (exit 0). The edit already landed; the hook

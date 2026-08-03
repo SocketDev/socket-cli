@@ -4,7 +4,7 @@ PostToolUse reminder that fires when you edit a hook-bundle source without rebui
 
 ## Why
 
-Import-safe fleet hooks are rolldown-bundled into `.claude/hooks/fleet/_dist/fleet-pack.cjs` and loaded through a V8 compile-cache loader for faster warm dispatch. Editing a bundled source — the dispatcher, the generated `dispatch-table.mts`, a bundled hook's `index.mts`, or anything under `_shared/` — leaves the built `fleet-pack.cjs` stale until you rebuild. This hook closes that loop the same way `extension-build-current-reminder` does for the trusted-publisher extension.
+Import-safe fleet hooks are rolldown-bundled into `.claude/hooks/fleet/_dist/fleet-pack.cjs` and loaded through a V8 compile-cache loader for faster warm dispatch. Editing a bundled source leaves the built `fleet-pack.cjs` stale until you rebuild. Note: a bundled source is the dispatcher, the generated `dispatch-table.mts`, a bundled hook's `index.mts`, or anything under `_shared/`. This hook closes that loop the same way `extension-build-current-reminder` does for the trusted-publisher extension.
 
 ## What it does
 

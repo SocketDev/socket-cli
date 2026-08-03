@@ -57,7 +57,7 @@ Companion behavior to the no-fork rule: **don't read, grep, or debug wheelhouse-
 This matters because:
 
 1. The downstream copy may already be a few cascade-steps behind the wheelhouse. Reading it gives stale information.
-2. A "verify the bypass landed" loop in downstream is double work — once to read the file, once to act on it — when the wheelhouse already has the answer.
+2. A "verify the bypass landed" loop in downstream is double work - once to read the file, once to act on it — when the wheelhouse already has the answer.
 3. Per-session re-derivation of "what does this canonical file do?" burns tokens for zero net learning vs. just trusting that the wheelhouse + the cascade are correct.
 
 When the user says "the wheelhouse has X," X is true. Act on it without verification.
@@ -66,7 +66,7 @@ If a cascaded file genuinely seems wrong, the fix lives in `template/...`, never
 
 ## Cascade-first triage
 
-When a member repo errors that a canonical artifact is "not found" / "missing" / "unregistered" — a `socket/*` lint rule, a hook, a `_shared/` lib, a check — check the wheelhouse template FIRST. If the artifact is there, the member's cascade is incomplete, so re-cascade that member:
+When a member repo errors that a canonical artifact is "not found" / "missing" / "unregistered", check the wheelhouse template FIRST. Note: a canonical artifact can be a `socket/*` lint rule, a hook, a `_shared/` lib, or a check. If the artifact is there, the member's cascade is incomplete, so re-cascade that member:
 
 ```bash
 node scripts/repo/sync-scaffolding/cli.mts --target <repo> --fix

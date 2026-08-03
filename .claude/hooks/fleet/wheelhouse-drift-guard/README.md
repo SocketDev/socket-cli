@@ -1,7 +1,7 @@
 # wheelhouse-drift-guard
 
 PreToolUse guard. Blocks an Edit / MultiEdit / Write to a **root copy** of a
-byte-controlled fleet path — a `template/base` mirror / optional entry — that
+byte-controlled fleet path, a `template/base` mirror / optional entry, that
 **would drift** from its resolved template source, pointing at
 `template/base/<path>` + the re-cascade instead.
 

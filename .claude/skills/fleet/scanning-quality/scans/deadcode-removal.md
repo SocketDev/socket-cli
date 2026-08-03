@@ -7,7 +7,7 @@ Identifies dead source files, unused exports, stale lint-disable directives, and
 Surface four shapes of dead code:
 
 1. **Whole dead files** — source files with no importers anywhere (excluding their own test). Examples this scan caught in past sessions: `rich-progress.mts`, `bordered-input.mts`, `result-assertions.mts` (entire test-helper modules), `build-pipeline.mts`, `extraction-cache.mts`.
-2. **Test-only helpers** — exports whose ONLY non-self consumer is the colocated `<file>.test.mts`. The helper exists for the test; the test exists for the helper; nothing real calls either. Per the fleet rule discussion: _exports exist for tests_ — but if NOTHING in `src/` reaches the helper, both should be deleted together.
+2. **Test-only helpers** - exports whose ONLY non-self consumer is the colocated `<file>.test.mts`. The helper exists for the test; the test exists for the helper; nothing real calls either. Per the fleet rule discussion: _exports exist for tests_ — but if NOTHING in `src/` reaches the helper, both should be deleted together.
 3. **Stale lint-disable directives** — `// eslint-disable-next-line <rule>` or `// oxlint-disable-next-line <rule>` comments where the rule no longer fires on the line below (rule was relaxed, the offending construct was rewritten, etc.). Detected via `oxlint --report-unused-disable-directives`.
 4. **Dead string-literal constants** — `const FOO = '...'` declarations with zero readers, including the declaring file. Often a leftover from a colocation pass that dropped `export` from a now-unused symbol.
 

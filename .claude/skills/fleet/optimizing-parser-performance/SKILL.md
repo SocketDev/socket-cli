@@ -32,9 +32,9 @@ distributed to CPUs you do not control. Pin only to a floor a controlled target 
 and record why, enforced by `scripts/fleet/check/build-microarch-is-portable.mts`.
 
 - **The kernel is compare-and-reduce.** Load a 16/32-byte chunk, run the class compares,
-  OR the class masks, extract to a scalar bitmask, find the first boundary with a
-  count-trailing-zeros — or NOT then count for the first NON-member — then a scalar tail
-  handles the sub-stride remainder.
+  OR the class masks, extract to a scalar bitmask, and find the first boundary with a
+  count-trailing-zeros. To find the first NON-member instead, NOT the mask before
+  counting. A scalar tail handles the sub-stride remainder.
 - **Byte-identical or it does not ship.** A SIMD scan must match its scalar reference
   exactly: ship a SIMD-vs-scalar differential test plus an exhaustive delimiter-at-every-
   offset-across-the-stride test, and validate end to end.

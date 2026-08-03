@@ -163,5 +163,5 @@ blocks the staging that would create one in the first place.
   differs from the pinned tag — the lock-step gate described above.
 - `scripts/fleet/vendor-actions.mts --check` fails when a vendored reference
   pin is behind its latest soaked upstream release. Network-bound, so it runs
-  on the weekly-update cadence — the gate and the deterministic chain — not in
+  on the weekly-update cadence, the gate and the deterministic chain, not in
   the offline `check --all` gate.

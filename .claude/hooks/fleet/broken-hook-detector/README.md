@@ -14,7 +14,7 @@ A `pnpm install` aborted mid-purge (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`
 
 The hook detects this by a precise 3-way signature (`.pnpm` store populated, a stale state marker present, and the top-level `@socketsecurity/` link missing), then auto-repairs. It removes the stale markers and runs `CI=true pnpm install`, which re-links from the intact store in under a second with no network (every package is already in `.pnpm`). It reports the outcome as `additionalContext`.
 
-The repair is guarded. It only fires on the exact signature, skips when a `pnpm install` is already running — a second concurrent install is what *causes* the gutting — runs at most once per session (a temp-dir sentinel), and removes the markers only immediately before the install so a bail-out never leaves `node_modules` in a worse state. If any guard trips, it reports the manual command instead of acting.
+The repair is guarded. It only fires on the exact signature and skips when a `pnpm install` is already running. A second concurrent install is what *causes* the gutting. It also runs at most once per session (a temp-dir sentinel) and removes the markers only immediately before the install, so a bail-out never leaves `node_modules` in a worse state. If any guard trips, it reports the manual command instead of acting.
 
 ### (B) Missing dep, reported
 

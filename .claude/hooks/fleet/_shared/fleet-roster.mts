@@ -37,16 +37,9 @@ export interface FleetRoster {
 // `optIns` array. This tuple is the single source of truth for which
 // capabilities exist — a member opts into one by listing it, and any value
 // outside this set is a typo the roster validator rejects. Kept sorted.
-//   - freeform-readme: public README is exempt from the five-section skeleton.
 //   - squash-history: default branch is squashed on a cadence (local is
 //     canonical, origin holds pre-squash history).
-//   - thin: member is a thin-distribution consumer — it untracks the
-//     wholly-fleet payload and fetches it from the release bundle.
-export const KNOWN_OPT_INS = [
-  'freeform-readme',
-  'squash-history',
-  'thin',
-] as const
+export const KNOWN_OPT_INS = ['squash-history'] as const
 
 export type FleetOptIn = (typeof KNOWN_OPT_INS)[number]
 
@@ -197,9 +190,28 @@ export function isSquashOptIn(repoRoot: string): boolean {
 /**
  * True when the checkout at `repoRoot` is a thin-distribution consumer — it
  * untracks the wholly-fleet payload and fetches it from the release bundle.
- * The roster is the single source of truth for thin membership: enforcement
- * the belt-wiring check, derives from this, never from a hand-maintained list.
+ *
+ * Thin is not an opt-in: EVERY roster member is a thin consumer. Two shapes
+ * fall outside it, by identity rather than configuration:
+ *
+ * - A checkout that is not on the roster at all — the fleet default applies to
+ *   members, never to an arbitrary repo holding a roster copy on disk.
+ * - The wheelhouse itself — it PRODUCES the bundle, so fetching its own payload
+ *   would be circular; the producer is never a consumer.
  */
-export function isThinOptIn(repoRoot: string): boolean {
-  return isRepoOptedIn(repoRoot, 'thin')
+export function isThinMember(repoRoot: string): boolean {
+  const roster = loadRosterFromRepo(repoRoot)
+  if (!roster) {
+    return false
+  }
+  const name = resolveRepoName(repoRoot)
+  if (!name || name === 'socket-wheelhouse') {
+    return false
+  }
+  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
+    if (roster.repos[i]!.name === name) {
+      return true
+    }
+  }
+  return false
 }

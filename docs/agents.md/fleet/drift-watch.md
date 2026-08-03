@@ -10,9 +10,10 @@ When two socket-\* repos pin different versions of the same shared
 resource, the divergence is a bug. The repo with the **newer version
 is the source of truth**; older repos catch up.
 
-This applies whenever a value is meant to be byte-identical — a SHA, a
-hook, a CLAUDE.md fleet block — or semver-aligned — a tool version, a
-Node release, a pnpm pin.
+This applies whenever a value is meant to be byte-identical or
+semver-aligned. Note: byte-identical covers a SHA, a hook, or a
+CLAUDE.md fleet block; semver-aligned covers a tool version, a Node
+release, or a pnpm pin.
 
 ## Cascade scope is never a hazard to warn about
 

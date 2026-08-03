@@ -4,7 +4,8 @@ PreToolUse(Edit|Write|MultiEdit) reminder that fires when a new `###` section is
 
 ## Why
 
-CLAUDE.md is the fleet rulebook — terse rule + one-line "Why" + link to a docs/ companion file is the canonical shape. Long-form expansions belong externally. Without this nudge, the failure mode is "I'll just inline 6 lines because the byte budget tolerates it" — until the next edit hits the 40 KB whole-file cap or the 8-line per-section cap and the author has to scramble to outsource detail under deadline.
+CLAUDE.md is the fleet rulebook — terse rule + one-line "Why" + link to a docs/ companion file is the canonical shape.
+Long-form expansions belong externally. Without this nudge, the failure mode is "I'll just inline 6 lines because the byte budget tolerates it" — until the next edit hits the 40 KB whole-file cap or the 8-line per-section cap and the author has to scramble to outsource detail under deadline.
 
 Soft signal: only `PreToolUse(Edit|Write|MultiEdit)` reminders, never blocks. The companion `claude-md-section-size-guard` hard-caps each section at 8 lines (exit 2). This one fires earlier.
 

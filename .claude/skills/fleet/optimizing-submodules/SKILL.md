@@ -26,7 +26,7 @@ First gather the evidence — one deterministic pass that `rg`s every submodule,
 node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts --pretty
 ```
 
-It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` / `go` / `jsts` / `testCorpus` / `build` / `other`, the current sparse/verify state, the on-disk tree size (the why-bother signal), and an `internalHitCount` — the self-references it excluded. Plain (no `--pretty`) emits the same as a JSON envelope. It renders **no verdict** — that is your call from the buckets. Read each bucket and interpret it:
+It emits, per submodule, the OUTSIDE-only consumer hits bucketed `rust` / `cpp` / `go` / `jsts` / `testCorpus` / `build` / `other`, the current sparse/verify state, the on-disk tree size (the why-bother signal), and an `internalHitCount`, the self-references it excluded. Plain (no `--pretty`) emits the same as a JSON envelope. It renders **no verdict**. That is your call from the buckets. Read each bucket and interpret it:
 
 - Rust (`Cargo.toml` / `build.rs`): a **path/git** dep is consumption; a `version = "=x"` crates.io pin is NOT — the code comes from the registry, the submodule is reference-only.
 - C/C++ (`CMakeLists.txt` / `binding.gyp`): which subdir does `add_subdirectory` / a `*_DIR` var point at?

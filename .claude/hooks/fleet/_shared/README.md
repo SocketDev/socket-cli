@@ -4,13 +4,13 @@ Helper modules shared across multiple hooks under `.claude/hooks/`. **Not a depl
 
 ## What lives here
 
-- **`shell-command.mts`** — Tokenizes a Bash command string with `shell-quote` into discrete `Command`s (`binary`, `args`, leading env `assignments`, plus `viaVariable` / `viaEval` indirection flags). Exposes `parseCommands`, `findInvocation`, `commandsFor`, `invocationHasFlag`, and `hasOpaqueInvocation`. Used by every structure-sensitive Bash guard (`codex-no-write-guard`, `release-workflow-guard`, `no-empty-commit-guard`, the git-detection guards, …) so a forbidden invocation is matched on the actual parsed command — `$(…)` / `$VAR` / `eval` indirection is seen rather than evaded, and a quoted mention inside an `echo` or `-m` body can't false-trigger.
+- **`shell-command.mts`** - Tokenizes a Bash command string with `shell-quote` into discrete `Command`s (`binary`, `args`, leading env `assignments`, plus `viaVariable` / `viaEval` indirection flags). Exposes `parseCommands`, `findInvocation`, `commandsFor`, `invocationHasFlag`, and `hasOpaqueInvocation`. Used by every structure-sensitive Bash guard (`codex-no-write-guard`, `release-workflow-guard`, `no-empty-commit-guard`, the git-detection guards, …) so a forbidden invocation is matched on the actual parsed command — `$(…)` / `$VAR` / `eval` indirection is seen rather than evaded, and a quoted mention inside an `echo` or `-m` body can't false-trigger.
 
 - **`git-subcommand.mts`** — git's global-option grammar, downstream of `shell-command.mts`'s tokenizer: `gitSubcommand` / `splitGitSubcommand` answer "which subcommand does this `git` segment run", skipping the value token of a value-taking global so `git -C /repo clone <url>` resolves to `clone` and not to `/repo`. An option neither flag table knows marks the split `ambiguous`; `gitSubcommandReadings` widens to every candidate subcommand there, which is the fail-closed reading a guard whose miss is unrecoverable (`no-force-push-guard`, `no-revert-guard`, `shallow-clone-guard`) should use.
 
 - **`markers.mts`** — Shared sentinel constants for bypass phrases the user can type to override a hook (`Allow <name> bypass`, etc.).
 
-- **`payload.mts`** — `ToolCallPayload` and `ToolInput` types for the PreToolUse JSON payload, plus `readCommand` / `readFilePath` / `readWriteContent` narrowing helpers. **Use this instead of re-declaring `tool_input` types per-hook** — the fleet had 7 hand-rolled variants before this module landed.
+- **`payload.mts`** - `ToolCallPayload` and `ToolInput` types for the PreToolUse JSON payload, plus `readCommand` / `readFilePath` / `readWriteContent` narrowing helpers. **Use this instead of re-declaring `tool_input` types per-hook** — the fleet had 7 hand-rolled variants before this module landed.
 
 - **`stop-nudge.mts`** — `runStopReminder(config)` scaffold for Stop hooks that are pure pattern-sweep over the last assistant turn. Reduces a typical pattern-only hook from 100-200 LOC to ~50. Pass `patterns: [{label, regex, why}, ...]` and `closingHint`; the scaffold handles stdin parse, transcript walk, code-fence strip, per-hit snippet extraction, and stderr emit.
 
@@ -40,7 +40,7 @@ A module belongs in `_shared/` when:
 2. The logic is self-contained — no Claude Code hook lifecycle (`process.stdin`, exit codes, blocking semantics).
 3. Test coverage lives in `_shared/test/` alongside the helper.
 
-If only one hook uses it, keep it inline in that hook's directory. If three or more hooks need it across `.claude/hooks/` AND `.git-hooks/`, escalate it to `_helpers.mts` — the cross-boundary shared module — instead.
+If only one hook uses it, keep it inline in that hook's directory. If three or more hooks need it across `.claude/hooks/` AND `.git-hooks/`, escalate it to `_helpers.mts`, the cross-boundary shared module, instead.
 
 ## Not a hook
 

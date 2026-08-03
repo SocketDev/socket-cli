@@ -14,7 +14,7 @@ or the reply names the concrete blocker instead of a rival session.
   sentence window, in either order.
 - **Verdict:** blocks so the reply and the dirt get handled, on every
   turn-end including a retry driven by another Stop guard. The demand is
-  text-only — the guard reads the reply and never inspects git — so
+  text-only. The guard reads the reply and never inspects git, so
   rewording the attribution always satisfies it in the same turn, and it can
   never deadlock against a guard that wants the files committed. Whispering
   during a retry is what let the excuse ship: a reply being rewritten for

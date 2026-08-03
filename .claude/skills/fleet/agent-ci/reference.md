@@ -27,7 +27,7 @@ The robust agent loop: parse the stream, react to `run.paused` (fix the failure 
 
 ## The exit-77 pause contract
 
-When stdout is not a TTY (piped, redirected, captured by a parent process), the launcher detaches the run. The foreground process exits **77** the instant a step pauses. This frees the pipe — `| tee`, `> log.txt`, command substitution — while the container stays paused in the background, ready for `retry`. Exit 77 means "paused, awaiting retry," not "failed."
+When stdout is not a TTY (piped, redirected, captured by a parent process), the launcher detaches the run. The foreground process exits **77** the instant a step pauses. This frees the pipe while the container stays paused in the background, ready for `retry`. Note: freeing the pipe covers `| tee`, `> log.txt`, and command substitution. Exit 77 means "paused, awaiting retry," not "failed."
 
 ## Requirements rationale
 
@@ -35,7 +35,7 @@ When stdout is not a TTY (piped, redirected, captured by a parent process), the 
 - **Remote reusable workflows.** A fleet `ci.yml` is INLINED (fleet-canonical block cascaded from socket-wheelhouse) — no remote fetch needed for it. But other workflows still `uses:` remote reusables (e.g. the `SocketDev/socket-registry` `weekly-update.yml` delegator); running those needs `--github-token` (bare flag → `gh auth token`, or `AGENT_CI_GITHUB_TOKEN`) or the run can't assemble the job graph.
 - **macOS jobs.** `runs-on: macos-*` jobs run in a real throwaway macOS VM via `tart` (Apple Silicon only) with `sshpass`. Missing either tool, or on Linux/Intel, those jobs **skip with a reason** rather than failing the run; the Linux/container jobs still execute. VM concurrency caps at `AGENT_CI_MACOS_VM_CONCURRENCY` (default 2 — tart's free tier). Windows jobs (`runs-on: windows-*`) always skip (unsupported).
 - **Missing tools in the runner image.** Jobs run in `ghcr.io/actions/actions-runner:latest`, which ships node/git/curl/jq/unzip but **not** build toolchains, `python3`, or `xz`. A job failing on a missing tool isn't your code — add a `.github/agent-ci.Dockerfile` (`FROM ghcr.io/actions/actions-runner:latest` + `apt-get install`); agent-ci picks it up automatically and caches by content hash.
-- **Install.** `@redwoodjs/agent-ci` is a fleet devDependency declared as `catalog:` in every repo's `package.json`, pinned in the wheelhouse `pnpm-workspace.yaml` catalog. `pnpm install` provisions it. The published package is a self-contained Node CLI (`dist/cli.js`) — it has no platform-binary dependencies and its `ssh2` native build scripts are declined in the fleet's `allowBuilds`/`allowScripts` — the CLI runs without them.
+- **Install.** `@redwoodjs/agent-ci` is a fleet devDependency declared as `catalog:` in every repo's `package.json`, pinned in the wheelhouse `pnpm-workspace.yaml` catalog. `pnpm install` provisions it. The published package is a self-contained Node CLI (`dist/cli.js`). It has no platform-binary dependencies, and its `ssh2` native build scripts are declined in the fleet's `allowBuilds`/`allowScripts`, so the CLI runs without them.
 
 ## When to use agent-ci vs. remote CI
 

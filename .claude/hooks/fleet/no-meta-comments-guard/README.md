@@ -6,7 +6,7 @@
 
 2. **Describes code that was removed** rather than code that exists — e.g. `// removed: old behavior used a Map here` / `// previously called X` / `// used to be sync, made async in 6.0`.
 
-Per CLAUDE.md "Code style → Comments": comments default to none; when written, they explain the **constraint** or the **hidden invariant**, not the development context. Development context — the plan, the task, the user request, removed code — goes in commit messages and PR descriptions, not source comments.
+Per CLAUDE.md "Code style → Comments": comments default to none; when written, they explain the **constraint** or the **hidden invariant**, not the development context. Development context goes in commit messages and PR descriptions, not source comments. Note: that covers the plan, the task, the user request, and removed code.
 
 ## The comment is usually useful — it's the prefix that's noise
 

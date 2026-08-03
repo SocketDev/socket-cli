@@ -46,7 +46,7 @@ For original finding <id>: no variants found ✓
 ## When this scan adds value
 
 - **Path duplication** — once `path.join('build', mode)` is found in one file, the rest of the codebase usually has 5 more.
-- **Forbidden API drift** — `fetch(`, `fs.rm(`, `npx`, raw `fs.access` for existence — fleet rules mandate one canonical answer; variants are the drift.
+- **Forbidden API drift** - `fetch(`, `fs.rm(`, `npx`, raw `fs.access` for existence — fleet rules mandate one canonical answer; variants are the drift.
 - **Insecure default propagation** — a fail-open default copy-pasted across config files.
 - **Missing null check** — a refactor that introduced a possibly-undefined receiver usually broke siblings the same way.
 

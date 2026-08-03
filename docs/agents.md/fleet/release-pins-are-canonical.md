@@ -32,12 +32,12 @@ Two layers, deliberately paired (code-is-law):
   `release-bundle-manifest.json`. This catches a pin hand-edited past the write
   gate, or a member config that predates it. It does not relax or duplicate the
   write-time shape check — it re-asserts it, and additionally names `stable` and
-  `newest` — the two alias tokens this discipline calls out — and flags an alias
+  `newest`, the two alias tokens this discipline calls out, and flags an alias
   stored beside a canonical value.
 
 The check runs on every `check --all` — a pure local read. It is a vacuous pass
-where nothing is pinned — the wheelhouse producer, a non-thin member — and never
-false-greens.
+where nothing is pinned, such as the wheelhouse producer or a non-thin member,
+and never false-greens.
 
 ## Why aliases can't persist
 

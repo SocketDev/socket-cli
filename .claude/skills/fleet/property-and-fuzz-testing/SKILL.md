@@ -13,7 +13,7 @@ testing, then open the per-language reference for the harness.
 | Testing… | Tier | Why |
 |---|---|---|
 | A **pure function** with an invariant ("always/never") | **property** (Tier 1) | Generated inputs + shrinking to a minimal counterexample |
-| **Any untrusted-input boundary** — parser, decoder, config/manifest loader, wire-format reader, or **native C++/Rust module** — that must not crash/hang/corrupt on any input | **coverage-guided fuzzing** (Tier 2) | Finds crash / memory-safety / security inputs with no spec; replayable corpus |
+| **Any untrusted-input boundary**, such as a parser, decoder, config/manifest loader, wire-format reader, or **native C++/Rust module**, that must not crash/hang/corrupt on any input | **coverage-guided fuzzing** (Tier 2) | Finds crash / memory-safety / security inputs with no spec; replayable corpus |
 | A **stateful SUT invariant** over synthetic worlds (cascade parity, `check↔fix` idempotence) | **hand-rolled seeded** (Tier 3) | Drives the real SUTs over generated repo trees; deterministic replay |
 
 Property/fuzz tests **complement** example tests — they don't replace them.

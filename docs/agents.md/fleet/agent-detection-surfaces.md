@@ -119,6 +119,56 @@ detector list gives that existing rule a precise target, so
 `scripts/fleet/check/commits-have-no-ai-attribution.mts` makes it executable
 across history rather than only at commit time.
 
+### What the gate reports, and what it deliberately does not
+
+The gate reports only findings someone can still act on. Its default scope is
+the public default branch — `origin/<default>`, resolved from git and never
+hard-coded — and inside that scope it drops every finding at or below the
+**release boundary**, counting them on one informational line instead. Two
+classes of finding fall away as a result: a commit that lives only in some
+other local ref (a `refs/fleet/recovery/*` pre-squash snapshot, say) was never
+published, and a commit below the boundary cannot be rewritten without breaking
+the provenance of the release built from it. A gate that reports both trains
+people to ignore it.
+
+The boundary is resolved **offline** so the gate gives the same verdict in CI as
+on a laptop, and **by ancestry** rather than by tag date:
+
+1. `release.releaseLine` in `.config/repo/socket-wheelhouse.json` —
+   `{ "branch": "<ref the customer line lives on>", "boundaryTag": "<tag>" }`,
+   both optional, `boundaryTag` winning when both are set.
+2. Otherwise the newest tag that is an ancestor of the ref being scanned, read
+   with `git describe --tags --abbrev=0` and confirmed with
+   `git merge-base --is-ancestor`.
+
+**Never tag recency.** A repo can carry several independent release lines at
+once, and that divergence is the architecture rather than a defect. On
+socket-cli three signals disagreed at the same moment: the newest tag by date
+named a v2.x prerelease line that never ships, the GitHub `releases/latest`
+pointer was stale, and npm's `latest` came from a v1.x line the default branch
+had already left behind. Ancestry against the scanned ref cannot pick the dead
+line, because a tag outside the scanned ref's history is not a boundary for it.
+
+Four unresolvable states, four behaviours, none of them a silent pass:
+
+| State | Behaviour |
+| --- | --- |
+| Shallow clone | Exit non-zero. A truncated graph makes both the scan and the ancestry a lie. |
+| No tags at all | Not an error. Nothing is released, so the whole default branch is the unreleased tail; the run says which mode it is in. |
+| Tags exist, none reaches the scanned ref | Findings there exit non-zero naming the two legal moves — declare `release.releaseLine`, or pass `--all`. A clean branch passes and says the boundary was undefined. |
+| No git, no repo, no commits, unresolvable declaration | Exit non-zero. |
+
+`--all` scans every ref with the boundary ignored, which is the right shape for
+an audit and the wrong shape for a gate. `--unpushed` narrows to the commits not
+yet on the default branch. `--verify-registry` additionally reads the published
+`latest` (npm dist-tag, crates.io for a Rust crate) and fails when it disagrees
+with the offline boundary; it is opt-in because the default path never touches
+the network.
+
+Branch findings follow the same "can anyone else see it" rule: only an
+`origin/` branch fails, while a local agent-prefixed branch is reported for
+information and left alone.
+
 This is not about disguising who wrote the code. jdalton directs and reviews
 this work, and the repos say so through review history and signed commits. The
 trailers were already unwanted.

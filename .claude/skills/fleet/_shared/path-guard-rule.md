@@ -22,7 +22,7 @@ Referencing a single computed path many times is fine — that's the whole point
 
 1. **Within a package** — every script, test, and lib file that needs a build path imports it from the package's `scripts/paths.mts` (or `lib/paths.mts`). No `path.join('build', mode, ...)` outside that module.
 
-2. **Across packages** — when package B consumes package A's output, B imports A's `paths.mts` via the workspace `exports` field. Never `path.join(PKG, '..', '<sibling>', 'build', ...)`. The R28 yoga/ink bug — ink hand-building yoga's wasm path and missing the `wasm/` segment — is the canonical failure mode this rule prevents.
+2. **Across packages** - when package B consumes package A's output, B imports A's `paths.mts` via the workspace `exports` field. Never `path.join(PKG, '..', '<sibling>', 'build', ...)`. The R28 yoga/ink bug is the canonical failure mode this rule prevents: ink hand-built yoga's wasm path and missed the `wasm/` segment.
 
 3. **Workflows, Dockerfiles, shell scripts** — they can't `import` TS, so they construct the string once and reference it everywhere downstream. Workflows: a "Compute paths" step exposes `steps.paths.outputs.final_dir`; later steps read `${{ steps.paths.outputs.final_dir }}`. Dockerfiles/shell: assign once to a variable, reference by name thereafter. Each canonical construction carries a comment naming the source-of-truth `paths.mts` so the YAML can't drift from TS without a flagged change. **Re-building** the same path in a second step is the violation, not referring to the constructed value many times.
 

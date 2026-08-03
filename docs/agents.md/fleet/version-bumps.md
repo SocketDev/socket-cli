@@ -176,11 +176,11 @@ push-bypass allowlist, so the fast-forward needs no PR and no human hand-land.
 `bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`
 — the max of the registry's `dist-tags.latest` and the last `vX.Y.Z` tag —
 NEVER from `package.json`/`Cargo.toml`. A manifest can sit ahead of what
-actually published — a hand pre-bump, or a stale `X.Y.Z-prerelease` hint — and
-bumping off an ahead manifest silently SKIPS a version: package.json was
-pre-bumped to 1.4.3, then the release bumped 1.4.3 → 1.4.4, so 1.4.3 was never
-published. A `-prerelease` hint that names an already-published (or lower)
-version fails loud rather than re-publishing.
+actually published, and bumping off an ahead manifest silently SKIPS a
+version. Note: that's a hand pre-bump, or a stale `X.Y.Z-prerelease` hint. For
+example, package.json was pre-bumped to 1.4.3, then the release bumped 1.4.3
+→ 1.4.4, so 1.4.3 was never published. A `-prerelease` hint that names an
+already-published (or lower) version fails loud rather than re-publishing.
 
 The `version-is-not-ahead-of-published` check is the release-tier gate: it fails
 when the manifest is more than one valid bump ahead of the published latest, and

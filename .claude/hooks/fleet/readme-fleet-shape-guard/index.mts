@@ -46,16 +46,11 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isFleetRepo } from '../_shared/fleet-repos.mts'
-import {
-  isOptedIn,
-  loadRosterFromRepo,
-  resolveRepoName,
-} from '../_shared/fleet-roster.mts'
+import { resolveRepoName } from '../_shared/fleet-roster.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import {
   BYPASS_LOOKBACK_USER_TURNS,
@@ -153,25 +148,6 @@ const SOCIAL_BADGES: ReadonlyArray<{ name: string; signature: RegExp }> = [
   },
 ]
 
-// Repo root of THIS hook installation — the authoritative roster source. The
-// hook lives at <repoRoot>/.claude/hooks/fleet/readme-fleet-shape-guard/
-// index.mts, so the root is four levels up. loadRosterFromRepo prefers the
-// in-repo template seed, so the wheelhouse resolves its own canonical roster and
-// a member resolves its cascaded copy.
-const HOOK_REPO_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../..',
-)
-
-/**
- * True when the repo owning `readmePath` has opted into a freeform
- * (non-skeleton) README via the cascade roster's `optIns: ['freeform-readme']`.
- * Such a repo's README is product / marketplace-shaped, exempt from the
- * five-section skeleton; the universal social badges, wheelhouse-leak, and
- * sibling-path rules still apply. The target repo name is resolved from the
- * README's own directory, so a wheelhouse session editing a sibling member's
- * README looks the member up in the wheelhouse's authoritative roster.
- */
 /**
  * Non-fleet opt-in check. A foreign repo, origin not in the fleet roster
  * owns its README shape by default; it ADOPTS the fleet skeleton + hygiene
@@ -202,20 +178,6 @@ export function foreignReadmeOptIn(
     [OPT_IN_PHRASE, `${OPT_IN_PHRASE}: ${repoName}`],
     BYPASS_LOOKBACK_USER_TURNS,
   )
-}
-
-export function isFreeformReadmeRepo(readmePath: string): boolean {
-  const repoName = resolveRepoName(path.dirname(readmePath))
-  if (!repoName) {
-    return false
-  }
-  const roster = loadRosterFromRepo(HOOK_REPO_ROOT)
-  /* c8 ignore start - safety net: roster always present when running from the wheelhouse repo */
-  if (!roster) {
-    return false
-  }
-  /* c8 ignore stop */
-  return isOptedIn(roster, repoName, 'freeform-readme')
 }
 
 /**
@@ -319,21 +281,15 @@ interface ShapeFinding {
 
 export function findShapeViolations(
   text: string,
-  options?:
-    | {
-        skipSkeleton?: boolean | undefined
-        skipSocialBadges?: boolean | undefined
-      }
-    | undefined,
+  options?: { skipSocialBadges?: boolean | undefined } | undefined,
 ): ShapeFinding[] {
   const opts = { __proto__: null, ...options }
   const lines = text.split('\n')
   const findings: ShapeFinding[] = []
 
-  // The five-section skeleton is infra-repo shape; product / marketplace repos
-  // opt out via the roster (`freeform-readme`). The badge, wheelhouse-leak, and
-  // sibling-path checks below stay universal regardless.
-  if (!opts.skipSkeleton) {
+  // Every fleet README follows the five-section skeleton. The badge,
+  // wheelhouse-leak, and sibling-path checks are universal too.
+  {
     const headings: string[] = []
     for (let i = 0, { length } = lines; i < length; i += 1) {
       /* c8 ignore next */
@@ -474,7 +430,6 @@ export const check = editGuard((filePath, content, payload) => {
   }
 
   const findings = findShapeViolations(postEdit, {
-    skipSkeleton: isFreeformReadmeRepo(filePath),
     skipSocialBadges: isForeign,
   })
   if (findings.length === 0) {

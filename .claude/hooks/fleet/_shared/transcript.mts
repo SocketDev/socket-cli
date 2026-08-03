@@ -146,7 +146,7 @@ export function bypassPhrasePresent(
   // HUMAN turns only: a phrase another agent/session/orchestrator delivered
   // (peer SendMessage relay, sdk prompt, meta feedback) is not a grant.
   const text = stripQuotedSpans(
-    stripCodeFences(readHumanUserText(transcriptPath, lookbackUserTurns)),
+    stripAllCodeSpans(readHumanUserText(transcriptPath, lookbackUserTurns)),
   )
   if (!text) {
     return false
@@ -254,7 +254,7 @@ export function countBypassPhrases(
   // quoted, code-spanned, summarized, or agent-relayed occurrence is not a
   // fresh authorization slot.
   const rawText = stripQuotedSpans(
-    stripCodeFences(readHumanUserText(transcriptPath, lookbackUserTurns)),
+    stripAllCodeSpans(readHumanUserText(transcriptPath, lookbackUserTurns)),
   )
   if (!rawText) {
     return 0
@@ -1118,14 +1118,103 @@ export function eventIsHumanAuthored(e: Record<string, unknown>): boolean {
   return true
 }
 
+// A ```fenced``` block, shortest-match so two fences in one text stay separate
+// regions. Shared by both strippers: the fence pass is identical for each.
+const FENCED_BLOCK_RE = /```[\s\S]*?```/g
+
+// A single-line `inline` span. Single-line by design — a run of backticks
+// spanning a paragraph is stray markup, not a code span.
+const INLINE_SPAN_RE = /`(?<span>[^`\n]*)`/g
+
+// A span that closes with sentence-ending punctuation. Trailing quotes and
+// brackets ride along so `(like this.)` and `"done."` still read as sentences.
+const INLINE_SENTENCE_TAIL_RE = /[.!?][)\]"'”’]*$/
+
+// Punctuation on the OUTER edges of a word only. Inner punctuation survives, so
+// `auth-type=web` and `foo/bar.mts` keep the marks that make them code-shaped.
+const WORD_EDGE_PUNCT_RE = /^[^\p{L}]+|[^\p{L}]+$/gu
+
+// A word made only of letters, optionally with one internal apostrophe
+// (`doesn't`). Identifiers, flags, and paths fail this — they carry marks a
+// prose word never does.
+const INLINE_PROSE_WORD_RE = /^\p{L}+(?:['’]\p{L}+)?$/u
+
+// Two prose words alongside a sentence tail is enough to call a span a
+// sentence. One is not: `etc.` and `e.g.` are abbreviations, not prose.
+const INLINE_PROSE_WORD_MIN = 2
+
 /**
- * Strip fenced code blocks (`…`) and inline code (`…`) from a text snapshot
- * before pattern-matching. Assistant prose frequently quotes phrases as code
- * examples (`` `out of scope` ``) which would otherwise false-positive phrase
- * detectors. Cheap to run: two regex passes, O(n) over the input.
+ * Whether an inline code span — the text BETWEEN the backticks, without them —
+ * reads as a sentence rather than as a code token. `stripCodeFences` exempts a
+ * span only when this returns false, which closes an evasion: exempting ANY
+ * backtick span let a whole banned sentence in single backticks silence a
+ * prose guard, and inline monospace renders unremarkably enough that nothing
+ * looked routed-around.
+ *
+ * Sentence-shaped means BOTH: ends in `.`, `!`, or `?`, AND carries at least
+ * two purely-alphabetic words. Both are load-bearing for keeping real code
+ * exempt: a command has no sentence tail, a path has neither a tail nor an
+ * alphabetic-only word, and `etc.` has a tail but one word. It is shape, not
+ * length — a long path stays exempt while a short sentence does not. Quote a
+ * whole banned sentence in a FENCED block; fences stay fully exempt.
+ */
+export function isProseShapedInlineSpan(span: string): boolean {
+  if (!INLINE_SENTENCE_TAIL_RE.test(span)) {
+    return false
+  }
+  const words = span.split(/\s+/)
+  let proseWords = 0
+  for (let i = 0, { length } = words; i < length; i += 1) {
+    const bare = words[i]!.replace(WORD_EDGE_PUNCT_RE, '')
+    if (INLINE_PROSE_WORD_RE.test(bare)) {
+      proseWords += 1
+      if (proseWords >= INLINE_PROSE_WORD_MIN) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Strip fenced code blocks (`…`) and TOKEN-SHAPED inline code (`…`) from a text
+ * snapshot before pattern-matching. Assistant prose frequently quotes phrases
+ * as code examples (`` `out of scope` ``) which would otherwise false-positive
+ * phrase detectors. Cheap to run: two regex passes, O(n) over the input.
+ *
+ * The inline pass is bounded by `isProseShapedInlineSpan` — a span that reads
+ * as a sentence keeps its text so the detector still sees it, and only its
+ * backticks are dropped. Wrapping a whole banned sentence in monospace is
+ * therefore not an exemption.
+ *
+ * A Markdown 4-space indented code block gets NO exemption; write the sample in
+ * a fence instead. Indented lines carry ordinary prose in a chat reply — nested
+ * bullets, wrapped continuations — so exempting them by indentation would hide
+ * far more real prose than it would spare samples.
  */
 export function stripCodeFences(text: string): string {
-  return text.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`\n]*`/g, ' ')
+  return text
+    .replace(FENCED_BLOCK_RE, ' ')
+    .replace(INLINE_SPAN_RE, (_match: string, span: string): string =>
+      isProseShapedInlineSpan(span) ? ` ${span} ` : ' ',
+    )
+}
+
+/**
+ * Strip fenced blocks and EVERY inline span, whatever its shape. The
+ * fail-closed counterpart to `stripCodeFences`, for deciding whether a user
+ * GRANTED an authorization rather than whether an agent emitted banned text.
+ *
+ * The two callers want opposite failure modes, which is why they need separate
+ * functions. A detector that strips too much misses a hit, so `stripCodeFences`
+ * bounds its inline pass to token-shaped spans. A grant decision that strips
+ * too little accepts an authorization the user never gave, so this one keeps no
+ * span at all: a phrase merely quoted, code-spanned, or recapped is not a
+ * grant, and `Allow x bypass.` inside backticks must stay inert even though it
+ * reads as a sentence.
+ */
+export function stripAllCodeSpans(text: string): string {
+  return text.replace(FENCED_BLOCK_RE, ' ').replace(INLINE_SPAN_RE, ' ')
 }
 
 /**

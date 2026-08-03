@@ -1,7 +1,7 @@
 # Single source of truth
 
-Fleet-wide data — the repo roster, model pricing, tool pins, scope lists — lives in
-exactly one authoritative file. Every consumer derives from it. A second copy,
+Fleet-wide data lives in exactly one authoritative file. Note: that's the repo
+roster, model pricing, tool pins, and scope lists. Every consumer derives from it. A second copy,
 even one that currently matches, is a DRY violation: copies drift, and the drift
 ships before anyone notices.
 
@@ -27,8 +27,8 @@ ships before anyone notices.
   prevents.
 
 - **A divergence is a field, not a fork.** When one consumer needs a different
-  view — a subset, an extra trait — express it as a field or filter on the one
-  source, never as a second standalone copy.
+  view, such as a subset or an extra trait, express it as a field or filter on
+  the one source, never as a second standalone copy.
 
 ## The fleet roster, worked
 

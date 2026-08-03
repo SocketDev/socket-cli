@@ -124,8 +124,9 @@ member registered with no explicit `--opt-in` defaults to
 `optIns: ["squash-history"]` unless the shared release probe finds it already
 published. Pass `--no-squash-history` to register a member without it, and
 `--opt-in <capability>` to declare opt-ins explicitly. When the probe cannot
-run — offline, no `gh`, no auth — the default applies anyway and the run says
-so, because a brand-new member is overwhelmingly the unreleased case.
+run, the default applies anyway and the run says so, because a brand-new
+member is overwhelmingly the unreleased case. Note: the probe can't run when
+offline, when `gh` is missing, or when there's no auth.
 
 ## Enforcement
 

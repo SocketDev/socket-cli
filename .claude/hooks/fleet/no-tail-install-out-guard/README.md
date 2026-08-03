@@ -4,7 +4,7 @@ PreToolUse Bash hook that blocks install/check/test commands piped into `tail` o
 
 ## Why
 
-`pnpm i 2>&1 | tail -5` looks like a clean way to save context, but it ships releases with broken CI. pnpm prints its Socket Firewall footer at the very end of its output. Critical warnings — `[ERR_PNPM_IGNORED_BUILDS]`, peer-dep mismatches, soak-bypass tripwires — print **above** the footer. A small `tail`/`head` window captures the footer and the exit-code line, hiding every warning.
+`pnpm i 2>&1 | tail -5` looks like a clean way to save context, but it ships releases with broken CI. pnpm prints its Socket Firewall footer at the very end of its output. Critical warnings print **above** the footer. Note: that includes `[ERR_PNPM_IGNORED_BUILDS]`, peer-dep mismatches, and soak-bypass tripwires. A small `tail`/`head` window captures the footer and the exit-code line, hiding every warning.
 
 Locally, the install passes because `node_modules/` was already built from a prior run, so pnpm skips the build-script approval gate. On a fresh CI runner with no cached `node_modules/`, the gate fires and the build fails.
 

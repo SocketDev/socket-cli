@@ -149,7 +149,7 @@ Three recovery paths, ordered from cleanest to most surgical:
    ```
 
    Writes a fresh `Date.now()` to the stamp file. Use this when you've already done `gh auth refresh` externally and don't want to re-run it.
-3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms) — e.g. you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at` — the hook treats it as malformed on the next read, re-stamps, and proceeds. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion.
+3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms), the hook treats it as malformed on the next read, re-stamps, and proceeds. For example, this happens if you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at`. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion.
 
 The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access — at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
 
@@ -158,7 +158,7 @@ No escape hatches. The hook is failsafe-deny on all invariants. The OS-auth path
 ## Heartbeat and recurring loops
 
 Token freshness is tracked by a heartbeat stamp (`~/.claude/gh-token-issued-at`).
-A recurring gh loop — PR scanning on a cron tick, CI watching — can outlive the
+A recurring gh loop, PR scanning on a cron tick or CI watching, can outlive the
 8-hour window even though it is actively and successfully using the token, and
 the rotation then strands the loop mid-cycle. Active use is proof of liveness,
 so every loop tick re-stamps the heartbeat FIRST:

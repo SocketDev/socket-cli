@@ -30,7 +30,7 @@ software update. The sfw CDN allowlist is the runtime backstop regardless.
 
 ## Fleet no-phone-home env (`FLEET_ENV`)
 
-A universal env set — `.claude/hooks/fleet/_shared/fleet-env.mts` — applied on EVERY surface to force
+A universal env set, `.claude/hooks/fleet/_shared/fleet-env.mts`, applied on EVERY surface to force
 telemetry / update-notifier opt-outs fail-closed:
 
 - `NO_UPDATE_NOTIFIER=1` — the npm + pnpm update-notifier registry check.

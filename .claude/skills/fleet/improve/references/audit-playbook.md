@@ -23,9 +23,9 @@ The highest-trust category — real bugs found by reading, not speculation.
 
 Review only what is directly supported by code evidence. Keep findings framed as defensive maintenance: identify the code pattern, explain the production impact, and describe the remediation. Keep plans at the level of code changes, configuration changes, and tests; do not include runnable demonstration strings or step-by-step misuse details.
 
-**Handling rule:** never copy a secret value into a finding or plan — those files get committed. Reference the `file:line` and credential type only ("Stripe live key at `config.ts:12`"), and the fix sketch always includes rotation, not just removal — a committed secret is burned even after deletion.
+**Handling rule:** never copy a secret value into a finding or plan. Those files get committed. Reference the `file:line` and credential type only ("Stripe live key at `config.ts:12`"), and the fix sketch always includes rotation, not just removal. A committed secret is burned even after deletion.
 
-**By-design is not a finding:** standard platform conventions are intentional behavior — honoring `https_proxy`/`NO_PROXY`, reading `~/.netrc`, an explicitly local dev tool shelling out to configured package managers. A tradeoff explicitly recorded in an ADR or decision doc is likewise settled, not a finding. Flag these only when the *implementation* adds risk beyond the convention or the documented decision itself — and note that a **stale ADR is itself a finding**: if the code has drifted from what the decision doc says, report the decision drift (the doc or the code is wrong; either way the team should know), don't use the doc to suppress it.
+**By-design is not a finding:** standard platform conventions are intentional behavior. Note: that covers honoring `https_proxy`/`NO_PROXY`, reading `~/.netrc`, and an explicitly local dev tool shelling out to configured package managers. A tradeoff explicitly recorded in an ADR or decision doc is likewise settled, not a finding. Flag these only when the *implementation* adds risk beyond the convention or the documented decision itself. Note that a **stale ADR is itself a finding**: if the code has drifted from what the decision doc says, report the decision drift (the doc or the code is wrong; either way the team should know), don't use the doc to suppress it.
 
 - Credential hygiene: hardcoded keys/tokens/passwords, credentials in committed `.env` files, credentials logged or persisted in event/history stores. Findings should name only the credential type and location, then recommend removal, rotation, and a safer configuration path.
 - Data crossing into interpreters or privileged APIs: SQL or shell operations assembled from request data (SQL/command injection), HTML sinks fed by user-controlled content (XSS), dynamic execution APIs used with runtime input, or filesystem paths derived from request data (path traversal). Describe the safer API or validation boundary; do not provide runnable examples.
@@ -63,7 +63,7 @@ The goal is not a percentage — it's *which untested code is dangerous*.
 - Layering violations: UI importing from data layer internals, circular dependencies, "utils" modules that became a junk drawer with high fan-in.
 - Dead code: unexported-and-unused modules, feature flags fully rolled out but still branching, commented-out blocks with no explanation, deps in the manifest no longer imported.
 - God objects/modules: files an order of magnitude larger than the repo median that everything touches; functions with double-digit parameters or deep conditional nesting.
-- Inconsistent patterns: three ways of doing data fetching / error handling / styling in the same repo — pick the winner — the one the team converged on most recently — and plan the consolidation.
+- Inconsistent patterns: three ways of doing data fetching / error handling / styling in the same repo. Pick the winner, the one the team converged on most recently, and plan the consolidation.
 - Abstraction mismatches: premature abstractions with a single implementation, or missing abstractions where the same change always requires touching N files in lockstep.
 
 ## 6. Dependencies & Migrations
@@ -101,7 +101,7 @@ Forward-looking: not what's broken, but what this codebase wants to become. **Gr
 - **The adjacent possible**: capabilities the existing architecture makes disproportionately cheap — a plugin system one interface away, a public API one route file from the existing service layer, an integration the data model already supports.
 - **Friction worth productizing**: things users of this project evidently do by hand around it (visible in docs, examples, issues) that the project could absorb.
 
-Direction findings use the standard format with two adaptations: **Impact** is product/user value (who wants this and why now), and **Confidence** reflects how grounded the evidence is — not certainty that it's the right call. Strategy belongs to the maintainer; the advisor's job is grounded options with honest trade-offs. Effort estimates here are coarser; say so. Plans for selected direction findings are usually a *design/spike plan* (investigate, prototype, define the API, list open questions) rather than a build-everything plan — scope them that way.
+Direction findings use the standard format with two adaptations: **Impact** is product/user value (who wants this and why now), and **Confidence** reflects how grounded the evidence is, rather than certainty that it's the right call. Strategy belongs to the maintainer; the advisor's job is grounded options with candid trade-offs. Effort estimates here are coarser; say so. Plans for selected direction findings are usually a *design/spike plan* (investigate, prototype, define the API, list open questions) rather than a build-everything plan. Scope them that way.
 
 ---
 

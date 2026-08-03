@@ -12,7 +12,7 @@ metadata:
 
 # delegating-execution
 
-The fleet tier doctrine: Fable plans, a lesser model executes, Fable reviews, the lesser model follows up. This skill is the EXECUTION-tiering complement to `grilling-plan` (which stress-tests a plan's content interactively before building) and operates at the Workflow-harness tier (`agent({model, effort})`). The CLI-subprocess layer — codex/opencode/kimi backends and when to prefer each — is documented in [`.claude/skills/fleet/_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md); this skill sits above it on the Anthropic Workflow tier.
+The fleet tier doctrine: Fable plans, a lesser model executes, Fable reviews, the lesser model follows up. This skill is the EXECUTION-tiering complement to `grilling-plan` (which stress-tests a plan's content interactively before building) and operates at the Workflow-harness tier (`agent({model, effort})`). The CLI-subprocess layer, codex/opencode/kimi backends and when to prefer each, is documented in [`.claude/skills/fleet/_shared/multi-agent-backends.md`](../_shared/multi-agent-backends.md); this skill sits above it on the Anthropic Workflow tier.
 
 ## When to use
 

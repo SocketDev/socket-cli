@@ -11,7 +11,7 @@ remote: - Required workflow '<name>' is not satisfied
 remote: - Changes must be made through a pull request.
 ```
 
-These rules sit ABOVE per-repo admin. The fleet escape hatch — the wheelhouse-canonical mechanism — is the per-repo custom property `temporarily-doesnt-touch-customers === "true"`. When set, `canSkipReviewGate()` in `socket-wheelhouse/scripts/_shared/repo-properties.mts` allows direct push for routine cascade work.
+These rules sit ABOVE per-repo admin. The fleet escape hatch, the wheelhouse-canonical mechanism, is the per-repo custom property `temporarily-doesnt-touch-customers === "true"`. When set, `canSkipReviewGate()` in `socket-wheelhouse/scripts/_shared/repo-properties.mts` allows direct push for routine cascade work.
 
 The hook makes this discoverable. Without it, the rejection error leaves the operator (or the next assistant turn) guessing which of "open a PR / `gh pr merge --admin` / disable the ruleset / something else" is right. The property is the actual answer for routine work.
 

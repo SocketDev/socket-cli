@@ -1,9 +1,11 @@
 # Thin distribution — fetch the fleet payload, don't git-track it
 
-A fleet member can go **thin**: stop git-tracking the wholly-fleet payload (the
-hooks, skills, configs, scripts the cascade copies verbatim) and let the
-**fleet release bundle** repopulate it from a pinned GitHub Release. The member's
-git history then carries only what it owns, not thousands of mirrored files.
+Every fleet member is **thin**: it does not git-track the wholly-fleet payload,
+meaning the hooks, skills, configs, and scripts the cascade copies verbatim, and the
+**fleet release bundle** repopulates that payload from a pinned GitHub Release.
+A member's git history then carries only what it owns, not thousands of mirrored
+files. The wheelhouse is the one exception, because it produces the bundle and
+so has to hold the payload it ships.
 
 ## What's tracked vs untracked
 
@@ -60,18 +62,17 @@ both are required (and enforced):
 
 ## Enforcement (code-is-law)
 
-Thin membership is a roster capability: the canonical roster
-(`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`) opts a member into
-`thin` via its `optIns` array, alongside `freeform-readme` and `squash-history`.
-That roster is the single source of truth — `isThinOptIn` (in the shared
-`fleet-roster.mts`) resolves it, and `KNOWN_OPT_INS` in the same module is the
-enum every opt-in value is validated against, so a typo is rejected by
-`fleet-members-are-onboarded`.
+Thin is not an opt-in: EVERY roster member is a thin consumer. The canonical
+roster (`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`) is the
+single source of truth for membership, and `isThinMember` (in the shared
+`fleet-roster.mts`) derives thin-ness from it — a repo is thin exactly when it
+is on the roster. Two shapes fall outside by identity, never by configuration:
+a checkout absent from the roster, and the wheelhouse itself, which produces
+the bundle and is never its consumer.
 
-`scripts/repo/sync-scaffolding/checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member the
-roster opts into `thin` is missing the prepare belt — its fresh clones / CI
-would otherwise run against a missing payload. A non-thin member (the roster
-does not opt it into `thin`) tracks the payload and is exempt. Run
+`scripts/repo/sync-scaffolding/checks/thin-consumer-wiring.mts` (`thin_wiring_missing`) fails when a member
+is missing the prepare belt — its fresh clones / CI
+would otherwise run against a missing payload. Run
 `node scripts/repo/bootstrap/fleet.mjs --wire` to add the belt + `sync-fleet`
 script. The CI suspenders are enforced by the `ci.yml`-shape check
 (workflow-fleet-block), which pins the fleet block that runs the

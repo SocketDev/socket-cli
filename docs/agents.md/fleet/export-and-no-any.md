@@ -38,7 +38,7 @@ When tests or scripts touch a value of unknown shape, the right choices are:
 
 If you find yourself wanting `any` to call a method on a namespace object, the underlying issue is almost always that the namespace builder's generic types collapsed. Two patches:
 
-1. **Fix the builder** (preferred long-term): re-type the helper-namespace constructor to be properly generic — `function createHelpersNamespaceObject<H extends Record<string, Record<string, unknown>>>(helpers: H): H` — so consumers see the per-type signatures. Touches src; do it when the change is small.
+1. **Fix the builder** (preferred long-term): re-type the helper-namespace constructor to be properly generic, `function createHelpersNamespaceObject<H extends Record<string, Record<string, unknown>>>(helpers: H): H`, so consumers see the per-type signatures. Touches src; do it when the change is small.
 
 2. **Type at the consumer** (preferred short-term, for tests): define the typed shape next to the consumer and cast once.
 

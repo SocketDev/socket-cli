@@ -230,10 +230,20 @@ export async function runStopReminder(config: ReminderConfig): Promise<void> {
 
   const message = formatReminderBlock(config.name, hits, config.closingHint)
 
-  // Blocking mode: emit a Stop-hook block decision so the agent must
-  // continue the turn and address the matched phrase. Suppressed
-  // when `stop_hook_active` is already set, to avoid loops.
-  if (config.blocking && !payload.stop_hook_active) {
+  // Blocking mode: emit a Stop-hook block decision so the agent must continue
+  // the turn and address the matched phrase.
+  //
+  // Deliberately NOT suppressed when `stop_hook_active` is set. That flag means
+  // SOME earlier Stop hook blocked, not this one, so suppressing here gave a
+  // guard zero forced chances rather than the one its docs promised — and a
+  // reply rewritten to satisfy a different guard is exactly when a banned
+  // phrase reappears. Four hooks carried that bug and shipped violations
+  // through it. Every config on this runner matches on TEXT and asks for a
+  // phrase to be fixed, which the model can always do in the same turn, so a
+  // block here cannot deadlock against another guard's demand. A future config
+  // that instead demands a side effect the model may be unable to complete
+  // in-turn should carry its own opt-out rather than reinstating a blanket one.
+  if (config.blocking) {
     const reason =
       message +
       '\nFix the underlying issue now (or, if it truly cannot be fixed in this session, ' +

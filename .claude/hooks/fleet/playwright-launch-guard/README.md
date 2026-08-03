@@ -4,7 +4,7 @@ PreToolUse (Edit/Write/MultiEdit) hook that blocks a hand-rolled Playwright brow
 
 ## Why
 
-A hand-rolled npm browser bootstrap — a bare `chromium.launch(`, sandbox-disabling args, retry loops through the Cloudflare challenge — burns the operator through repeated post-OTP sign-in loops while the proven module sits unused. The contract lives in one sanctioned module, `scripts/fleet/publish-infra/npm/browser-session.mts`: persistent context only, no sandbox flags, no scripted login, pause-not-retry on Cloudflare. This guard makes the sanctioned module the only path that compiles into the repo's automation surfaces.
+A hand-rolled npm browser bootstrap burns the operator through repeated post-OTP sign-in loops while the proven module sits unused. Note: that covers a bare `chromium.launch(`, sandbox-disabling args, and retry loops through the Cloudflare challenge. The contract lives in one sanctioned module, `scripts/fleet/publish-infra/npm/browser-session.mts`: persistent context only, no sandbox flags, no scripted login, pause-not-retry on Cloudflare. This guard makes the sanctioned module the only path that compiles into the repo's automation surfaces.
 
 ## What it does
 

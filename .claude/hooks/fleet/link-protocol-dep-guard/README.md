@@ -1,8 +1,8 @@
 # link-protocol-dep-guard
 
 PreToolUse Edit/Write hook that blocks adding an unpinned dependency
-spec — a `link:`/`file:` local path, or a `workspace:` range — to any
-dependency block of a `package.json`.
+spec to any dependency block of a `package.json`. Note: an unpinned
+spec is a `link:`/`file:` local path, or a `workspace:` range.
 
 ## Why
 

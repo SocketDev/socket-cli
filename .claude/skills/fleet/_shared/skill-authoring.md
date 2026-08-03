@@ -23,11 +23,11 @@ A skill's `SKILL.md` is the **orchestrator**, not the encyclopedia. When a skill
 
 Two naming conventions are load-bearing:
 
-- **`lib/` vs `scripts/`** matches the fleet's public-vs-private convention. `lib/` names a public, importable, stable surface (think `@socketsecurity/lib`); `scripts/` names private, internal automation that's not consumed outside the host repo. Skill helpers under `_shared/scripts/` are internal automation — no external consumers — so `scripts/` is the right name. (No `_shared/lib/` exists in this tree.)
+- **`lib/` vs `scripts/`** matches the fleet's public-vs-private convention. `lib/` names a public, importable, stable surface (think `@socketsecurity/lib`); `scripts/` names private, internal automation that's not consumed outside the host repo. Skill helpers under `_shared/scripts/` are internal automation with no external consumers, so `scripts/` is the right name. (No `_shared/lib/` exists in this tree.)
 - **`reference.md` vs `reference/`** — single file by default; grow to a directory only when a skill genuinely has multiple distinct reference docs. Don't preemptively wrap a single doc in a dir.
 - **`templates/`** is reserved for file scaffolding (`.tmpl` files copied verbatim by `install` / `setup` modes). Don't mix templates into `reference/` — readers can't tell prose from scaffolding by directory name alone.
 
-The same File-size rule from CLAUDE.md applies — soft cap 500, hard cap 1000 — but for skills the trigger is usually **shape**, not lines: as soon as the SKILL.md is "this and also that and also the other thing," extract.
+The same File-size rule from CLAUDE.md applies, with soft cap 500 and hard cap 1000, but for skills the trigger is usually **shape**, not lines: as soon as the SKILL.md is "this and also that and also the other thing," extract.
 
 What goes where:
 
@@ -62,7 +62,7 @@ A fleet skill that does this well is the canonical reference; the auditor is a `
 
 ## Compound-lessons capture
 
-When a fleet skill discovers a recurring failure mode — a lint rule that catches the same kind of bug, a hook that blocks the same antipattern, a review pass that flags the same regression — codify it once:
+When a fleet skill discovers a recurring failure mode, codify it once. Note: that covers a lint rule that catches the same kind of bug, a hook that blocks the same antipattern, or a review pass that flags the same regression.
 
 1. Open a follow-up to add the rule to CLAUDE.md, the hook, or the skill prompt.
 2. Reference the original incident (commit, PR, finding ID) in a one-line `**Why:**` so future readers know the rule is load-bearing.
@@ -166,8 +166,8 @@ The resolver gives us a clean migration path: when rolldown goes fleet-wide, we 
 
 Authoritative upstream docs — keep these as the source of truth, mirror their guidance here only when fleet specifics demand it:
 
-- [Anthropic — Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) — frontmatter rules, progressive disclosure, evaluation-driven development.
-- [Anthropic — Claude Code best practices: writing an effective CLAUDE.md](https://code.claude.com/docs/en/best-practices#write-an-effective-claude-md) — CLAUDE.md scope, pruning discipline, when to push knowledge into a skill instead.
-- [Anthropic — Prompt engineering best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) — model-tuning, response-length calibration, examples-over-descriptions.
+- [Anthropic - Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) — frontmatter rules, progressive disclosure, evaluation-driven development.
+- [Anthropic - Claude Code best practices: writing an effective CLAUDE.md](https://code.claude.com/docs/en/best-practices#write-an-effective-claude-md) — CLAUDE.md scope, pruning discipline, when to push knowledge into a skill instead.
+- [Anthropic - Prompt engineering best practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices) — model-tuning, response-length calibration, examples-over-descriptions.
 
 Real-world plugin reference (not fleet-canonical, useful as a worked example of skills + hooks + templates working together): [`arscontexta`](https://github.com/agenticnotetaking/arscontexta) — knowledge-system plugin that derives skills/hooks/templates from a conversational setup. Useful as a study of the "skills compose into a system" pattern.

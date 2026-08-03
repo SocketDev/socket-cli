@@ -24,7 +24,7 @@ Code fences are stripped before matching — `// stopping here` inside a code bl
 
 ## Short-circuit: user-authorized stops
 
-If any of the 3 most recent user turns contains an explicit stop signal — "stop", "pause", "hold", "halt", "wait", "we're done", "that's enough", "enough for now/today", "let's stop", "let's pause" — the hook exits 0. In those cases the assistant is just acknowledging.
+If any of the 3 most recent user turns contains an explicit stop signal, the hook exits 0. Note: stop signals include "stop", "pause", "hold", "halt", "wait", "we're done", "that's enough", "enough for now/today", "let's stop", and "let's pause". In those cases the assistant is just acknowledging.
 
 ## What it does NOT catch
 

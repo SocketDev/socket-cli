@@ -17,7 +17,7 @@ Every gate renders identically, composed from `scripts/fleet/_shared/human-gate.
 
 The rules, each load-bearing:
 
-1. **Both lanes are always printed.** Lane A is what the human runs or types themselves; lane B is what they say to have the agent drive it, with the browser opening for them. When no agent lane can exist — authorization phrases count only when a human types them in a user turn — lane B states that honestly (`no agent lane — …`) instead of vanishing, so the operator never wonders whether an option was omitted.
+1. **Both lanes are always printed.** Lane A is what the human runs or types themselves; lane B is what they say to have the agent drive it, with the browser opening for them. Authorization phrases count only when a human types them in a user turn. When no agent lane can exist, lane B says so plainly (`no agent lane — …`) instead of vanishing, so the operator never wonders whether an option was omitted.
 2. **Same command, two runners.** Both lanes run the SAME non-interactive-capable command; only who drives it differs. A gate must never send the human down a path that fails in the other context ("oh, `!` won't work — do this instead"). The fleet routers make this possible: they pass through when a real TTY is present and run under a PTY when not.
 3. **`Mind:` names the active restriction.** The guard or tool limitation that shaped the lanes (devEngines veto, no-TTY input, sanctioned-browser law, phrase provenance) is printed, so the operator never picks a lane a guard would block and never wonders why the obvious raw command isn't offered.
 4. **`Then:` closes every block.** It names what resumes once the gate clears, which is also the cost of ignoring it.
@@ -44,7 +44,7 @@ Gate lanes never name raw `npm`/`pnpm` commands — they name the fleet routers,
 | approve / promote | npm behind a PTY | the promotion flow is npm's; the PTY carries its browser 2FA from agent shells |
 | `whoami` / identity reads | npm, from `npmScratchCwd()` | bare `npm` fails in-repo (devEngines pins pnpm), and a home-dir cwd makes lib spawn drop every home-rooted PATH entry |
 
-Two traps the `Mind:` lines keep visible: **split identities** — pnpm's config token and npm's `.npmrc` token can be different accounts, and a non-maintainer login reads a real stage as "0 staged entries"; and **no-TTY contexts** — the `!` in-session input and agent shells have no TTY, so only PTY-wrapped or web-flow commands belong in gate lanes.
+Two traps the `Mind:` lines keep visible: **split identities**: pnpm's config token and npm's `.npmrc` token can be different accounts, and a non-maintainer login reads a real stage as "0 staged entries"; and **no-TTY contexts**: the `!` in-session input and agent shells have no TTY, so only PTY-wrapped or web-flow commands belong in gate lanes.
 
 ## Where it is wired
 
@@ -54,4 +54,4 @@ Two traps the `Mind:` lines keep visible: **split identities** — pnpm's config
 
 ## Relationship to bypass phrases
 
-A push-grant gate names the phrase for the human to type — the [bypass-phrases](bypass-phrases.md) table does the same. That is not laundering: the scanner matches transcript role provenance, so a phrase printed by an agent grants nothing — only the human typing it in a user turn does. What stays forbidden is asking another agent or session to produce the phrase.
+A push-grant gate names the phrase for the human to type. The [bypass-phrases](bypass-phrases.md) table does the same. That is not laundering: the scanner matches transcript role provenance, so a phrase printed by an agent grants nothing — only the human typing it in a user turn does. What stays forbidden is asking another agent or session to produce the phrase.

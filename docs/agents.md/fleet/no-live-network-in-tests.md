@@ -1,10 +1,10 @@
 # No live network in tests
 
 Unit tests must never open a connection to a third-party server, in **any**
-fleet language — js/ts, rust, go, c++. Live calls are flaky — a slow or blocked
-network turns a green suite red; slow — a 15s timeout beats a 2ms mock;
-non-deterministic — the remote's data changes under you; and a privacy/data-exfil
-surface — a test that talks to `api.anaconda.org` leaks that the suite ran, and to
+fleet language: js/ts, rust, go, c++. Live calls are flaky: a slow or blocked
+network turns a green suite red; slow: a 15s timeout beats a 2ms mock;
+non-deterministic: the remote's data changes under you; and a privacy/data-exfil
+surface: a test that talks to `api.anaconda.org` leaks that the suite ran, and to
 whom. Mock the boundary; run the suite as if the network is off.
 
 ## Two halves: mock the boundary, and gate it
@@ -133,7 +133,7 @@ route), then run the tests offline:
     run: cargo test --workspace --all-features --offline
 ```
 
-On non-Linux runners — a macos/windows matrix leg — the action runs the command
+On non-Linux runners, a macos/windows matrix leg, the action runs the command
 normally — network behavior is OS-independent, so the Linux job is the gate.
 
 ## Mechanism notes (rust/go/c++ sandbox)

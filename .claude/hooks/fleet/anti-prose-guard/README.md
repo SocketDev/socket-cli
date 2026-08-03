@@ -49,7 +49,7 @@ Two behaviors on the Stop path are load-bearing:
   different guard smuggle the framing through. There is no deadlock risk —
   deleting a word always satisfies this guard.
 - Code fences are stripped before scanning, so a banned token quoted in a
-  fence never fires — this README, a matcher source, and a post-mortem all
+  fence never fires. This README, a matcher source, and a post-mortem all
   quote them freely.
 
 ## Scope

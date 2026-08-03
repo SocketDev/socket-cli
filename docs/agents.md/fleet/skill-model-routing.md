@@ -20,7 +20,7 @@ Skills where the work is "run the tool, commit, push" without judgment:
 - `updating-lockstep` — lockstep.json drift bump
 - `managing-worktrees` — worktree create/fanout
 
-These tasks fail-cheap — the sync runner / git command decides what changes — so Haiku's faster latency + lower cost dominates.
+These tasks fail-cheap, the sync runner / git command decides what changes, so Haiku's faster latency + lower cost dominates.
 
 ## Tier 2 — default model (general dev work)
 

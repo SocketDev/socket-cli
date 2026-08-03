@@ -14,7 +14,7 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
   truth: it is not generator-managed, cascades as an extra tracked file, is easy
   to miss when auditing what a repo ignores, and splits the answer to "what does
   this repo ignore" across the tree. A root-only `**/`-anchored pattern reaches
-  any depth — including the `template/base/` mirror — so nesting buys nothing.
+  any depth, including the `template/base/` mirror, so nesting buys nothing.
 - **Scoped ignores use `**/` anchoring, not nesting.** To ignore a generated
   artifact deep in the tree (e.g. the `_shared/` build output), add a
   `**/<path>` line to the root block — it matches the live copy AND the

@@ -10,7 +10,7 @@ PreToolUse(Bash) hook that blocks a `git push` carrying any force flag unless th
 | `git push --force-with-lease[=<branch>:<sha>]`    | `Allow force-push bypass` |
 | `git push --force-if-includes`                    | `Allow force-push bypass` |
 
-One phrase authorizes BOTH the bare form and the lease form. The split that used to live in `no-revert-guard` — a separate high-friction phrase for bare `--force` — is gone. Typing `Allow force-push bypass` unlocks whichever form the command actually uses. Two legacy aliases are still accepted so existing docs/habits keep working:
+One phrase authorizes BOTH the bare form and the lease form. The split that used to live in `no-revert-guard`, a separate high-friction phrase for bare `--force`, is gone. Typing `Allow force-push bypass` unlocks whichever form the command actually uses. Two legacy aliases are still accepted so existing docs/habits keep working:
 
 - `Allow force-with-lease bypass`
 - `Allow force-push-hard bypass`

@@ -52,7 +52,7 @@ needs it:
    by a **context pointer**, loaded only when the pointer fires.
 
 **Progressive disclosure** is the move down the ladder so the top stays legible.
-Inline what every **branch** — a distinct path through the skill — needs; push behind
+Inline what every **branch**, a distinct path through the skill, needs; push behind
 a pointer what only some branches reach. **Co-location**: keep a concept's
 definition, rules, and caveats under one heading so reading one part brings its
 neighbours.

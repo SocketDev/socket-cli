@@ -3,9 +3,9 @@
 Blocks a git command that would change the branch of a **primary** working
 tree.
 
-Branch-specific work — committing, rebasing, squashing, opening PRs — belongs
-in a `git worktree`, leaving the primary checkout on whatever branch it is
-already on. Primary checkouts are frequently in active use by another parallel
+Branch-specific work belongs in a `git worktree`, leaving the primary checkout
+on whatever branch it is already on. Note: that covers committing, rebasing,
+squashing, and opening PRs. Primary checkouts are frequently in active use by another parallel
 Claude session (uncommitted / staged WIP, cascade commits); switching their
 branch out from under that session destroys unsaved work and lands the next
 commit on the wrong branch.
@@ -15,7 +15,7 @@ commit on the wrong branch.
 This is the user-global sibling of `primary-checkout-branch-guard`. It is
 wired through the wheelhouse dispatcher (`~/.claude/settings.json` →
 `wheelhouse-dispatch.mts no-primary-branch-switch`) so it fires from **every**
-repo session — any `~/projects/<repo>` primary checkout — not only
+repo session, any `~/projects/<repo>` primary checkout, not only
 fleet-managed ones the per-repo dispatcher covers. It supersedes a hand-placed
 standalone hook that lived outside the managed fleet.
 

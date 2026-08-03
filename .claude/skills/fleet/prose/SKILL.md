@@ -59,7 +59,7 @@ If an edit changes meaning or loses the author's voice, revert it. Never rewrite
 
 2. **Break formulaic structures.** Avoid binary contrasts, negative listings, dramatic fragmentation, rhetorical setups, false agency. See [references/structures.md](references/structures.md).
 
-3. **Keep the idiom.** Sayings in the maintainer's Gen X / late-millennial register — "earning its keep", "not my first rodeo", "side quest" — are ENCOURAGED, one per thought, decorating a plain claim rather than replacing it. Do not strip them as slop; the removal lists never included them. See [references/idioms.md](references/idioms.md).
+3. **Keep the idiom.** Sayings in the maintainer's Gen X / late-millennial register - "earning its keep", "not my first rodeo", "side quest" — are ENCOURAGED, one per thought, decorating a plain claim rather than replacing it. Do not strip them as slop; the removal lists never included them. See [references/idioms.md](references/idioms.md).
 
 4. **Prefer active voice when it clarifies the actor.** Keep passive constructions when they are more precise or the actor is intentionally unknown. Avoid inanimate objects performing human actions ("the complaint becomes a fix").
 

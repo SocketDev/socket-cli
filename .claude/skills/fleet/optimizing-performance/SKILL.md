@@ -67,11 +67,11 @@ Portable SIMD is RUNTIME CPU DISPATCH: one binary detects the CPU at run time an
 AVX2/NEON when present, scalar/SSE2 otherwise. This is the only way a distributed SIMD path
 both goes fast on new CPUs and runs at all on old ones.
 
-- **Match the microarch pin to who controls the target.** Distributed to CPUs you do NOT
-  control — published npm natives, downloadable CLIs, release artifacts — must NOT pin above
-  the minimum supported microarch: no `-C target-cpu=native`, no baseline
-  `-C target-feature=+avx2`, no `GOAMD64=v2|v3|v4`, each bakes in the build machine's ISA and
-  SIGILLs on older CPUs. Use runtime dispatch instead. A CONTROLLED target — a homogeneous
+- **Match the microarch pin to who controls the target.** Anything distributed to CPUs you
+  do NOT control must NOT pin above the minimum supported microarch: no `-C target-cpu=native`,
+  no baseline `-C target-feature=+avx2`, no `GOAMD64=v2|v3|v4`, each bakes in the build
+  machine's ISA and SIGILLs on older CPUs. Note: that's published npm natives, downloadable
+  CLIs, and release artifacts. Use runtime dispatch instead. A CONTROLLED target — a homogeneous
   fleet, a constrained container, a per-microarch build matrix with a selecting loader, or a
   local build where build host == run host — MAY pin to the guaranteed floor, never to
   `native` on a random build box, and records why. Enforced by

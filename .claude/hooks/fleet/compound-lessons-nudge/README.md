@@ -6,7 +6,7 @@ Stop hook that flags repeat-finding patterns in the assistant's most-recent turn
 
 CLAUDE.md "Compound lessons into rules":
 
-> When the same kind of finding fires twice — across two runs, two PRs, or two fleet repos — **promote it to a rule** instead of fixing it again. Land it in CLAUDE.md, a `.claude/hooks/*` block, or a skill prompt — pick the lowest-friction surface. Always cite the original incident in a `**Why:**` line.
+> Promote a repeat finding to a rule instead of fixing it again. Land it in CLAUDE.md, a `.claude/hooks/*` block, or a skill prompt, picking the lowest-friction surface. Always cite the original incident in a `**Why:**` line. Note: "repeat" means the same finding fires across two runs, two PRs, or two fleet repos.
 
 This hook catches the failure mode where the assistant notices a recurring bug class but fixes it again instead of writing the rule that would prevent the next occurrence.
 

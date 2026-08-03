@@ -21,7 +21,7 @@ concurrency, pooling, or an API for escape behavior.
    GOAMD64 to v2/v3/v4 for a binary distributed to CPUs you do not control — it raises the
    ISA floor and crashes on older CPUs; a single default v1 binary plus `x/sys/cpu` dispatch
    still uses AVX2 when present and runs everywhere. Pin GOAMD64 only to a floor a controlled
-   target guarantees — a homogeneous fleet or a per-ISA build matrix — and record why.
+   target guarantees, a homogeneous fleet or a per-ISA build matrix, and record why.
    Enforced by `scripts/fleet/check/build-microarch-is-portable.mts`.
 4. Test cancellation, backpressure, and races after concurrency changes.
 5. Keep the change only when CPU, allocations, GC work, peak heap, and tail latency improve

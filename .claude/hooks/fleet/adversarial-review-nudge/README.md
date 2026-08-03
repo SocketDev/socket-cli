@@ -1,7 +1,7 @@
 # adversarial-review-nudge
 
 Stop hook that fires when the assistant's most-recent turn treats a clean
-automated review — a review bot reporting no findings — as a review verdict,
+automated review, a review bot reporting no findings, as a review verdict,
 without evidence that an adversarial self-review ran.
 
 ## Why

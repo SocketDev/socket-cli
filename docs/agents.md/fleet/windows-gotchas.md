@@ -75,7 +75,7 @@ narration).
 
 ## 7. POSIX tokenizers eat backslash paths in command strings
 
-`shell-quote` — the fleet's shell parser — applies POSIX escape semantics to
+`shell-quote`, the fleet's shell parser, applies POSIX escape semantics to
 every command string, so `cd C:\Users\x` tokenizes to `C:Usersx`. The mangled
 target then fails git resolution, fleet detection fails SAFE to fleet, and
 convention guards false-block non-fleet work — windows-only, and invisible

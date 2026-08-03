@@ -89,7 +89,7 @@ import {
   normalizeBypassText,
   phrasePattern,
   resolveRoleAndContent,
-  stripCodeFences,
+  stripAllCodeSpans,
   stripQuotedSpans,
 } from '../_shared/transcript.mts'
 
@@ -346,7 +346,10 @@ export function dispatchLedgerReport(
       const pieces = extractTurnPieces(r.content)
       if (pieces.length) {
         const haystack = normalizeBypassText(
-          stripQuotedSpans(stripCodeFences(pieces.join('\n'))),
+          // Minting a bypass credit is a GRANT decision: strip every inline
+          // span, not just token-shaped ones, so a quoted or recapped phrase
+          // never mints a credit.
+          stripQuotedSpans(stripAllCodeSpans(pieces.join('\n'))),
         )
         // One credit per typed phrase occurrence. A needle set holds
         // VARIANTS of the same phrase, exact, extension-stripped, so one

@@ -48,9 +48,9 @@ Prints each service's `snapshot` date, `pricingSource` URL, and priced model ids
 
 ## Phase 2: source
 
-For the service you're refreshing, WebFetch its `pricingSource` URL — the `--check` run printed it. Read off, for each model id already in that service, the input and output price in USD per million tokens (MTok). Price only the ids that exist — a new model/service is a deliberate add, not part of a refresh.
+For the service you're refreshing, WebFetch its `pricingSource` URL. The `--check` run printed it. Read off, for each model id already in that service, the input and output price in USD per million tokens (MTok). Price only the ids that exist — a new model/service is a deliberate add, not part of a refresh.
 
-When a number isn't directly available — the page moved, is gated, or a price just changed and the doc lags — mine the multi-source feed:
+When a number isn't directly available, that's when the page moved, is gated, or a price just changed and the doc lags. Mine the multi-source feed:
 
 ```sh
 node scripts/fleet/source-pricing-feed.mts --service <id>
@@ -66,7 +66,7 @@ If neither the page nor the feed yields a price, STOP: report the failure and th
 node scripts/fleet/update-model-pricing.mts --service anthropic --prices '{"claude-haiku-4-5":{"inputPerMtok":1.0,"outputPerMtok":5.0},"claude-sonnet-4-6":{"inputPerMtok":3.0,"outputPerMtok":15.0}}'
 ```
 
-Pass the prices read in Phase 2 as a JSON object keyed by model id, with `--service <id>` (default `anthropic`) naming which service they belong to. The script stamps that service's `snapshot` to today, writes `scripts/fleet/constants/model-pricing.json` canonically (preserving each model's other fields — contextWindow / billing / suspended), and restamps the combined `MODEL-PRICING-SNAPSHOT` marker in `docs/agents.md/fleet/skill-model-routing.md`. Models you omit keep their current rates — a partial refresh never drops a model. Override that service's recorded `pricingSource` with `--source <url>` if the vendor URL changed.
+Pass the prices read in Phase 2 as a JSON object keyed by model id, with `--service <id>` (default `anthropic`) naming which service they belong to. The script stamps that service's `snapshot` to today, writes `scripts/fleet/constants/model-pricing.json` canonically (preserving each model's other fields, such as contextWindow / billing / suspended), and restamps the combined `MODEL-PRICING-SNAPSHOT` marker in `docs/agents.md/fleet/skill-model-routing.md`. Models you omit keep their current rates — a partial refresh never drops a model. Override that service's recorded `pricingSource` with `--source <url>` if the vendor URL changed.
 
 ## Phase 4: commit
 

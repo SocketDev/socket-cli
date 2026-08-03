@@ -14,8 +14,9 @@ metadata:
 The local twin of `greening-ci`. Instead of watching GitHub Actions and
 fixing-then-pushing, this runs the workflow in **local Docker containers via
 Agent-CI** and fixes-then-**retries** in place. The win: catch a CI failure on
-your own machine — before a push, before a remote build-matrix dispatch — without
-spending remote runner minutes or shipping a half-broken release.
+your own machine without spending remote runner minutes or shipping a
+half-broken release. Note: that's before a push, before a remote
+build-matrix dispatch.
 
 `greening-ci` (remote) and `greening-ci-local` (this) are siblings: same
 fix-and-loop discipline, different engine. Reach for local when you want to

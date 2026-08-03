@@ -27,7 +27,7 @@ the script already owns end to end.
   `--version` — the script derives or consumes the version, prerelease hints
   included, so the agent must NOT reason about which version to pass.
 - `node scripts/fleet/publish-pipeline.mts` with any args.
-- read-only git — `status` / `log` / `diff` / `tag -l` / `show` — and every
+- read-only git - `status` / `log` / `diff` / `tag -l` / `show` — and every
   non-release command. Those match no rule.
 
 **Pure decision:** `decideReleaseGuard(command)` returns `{ blocked, reason }`.

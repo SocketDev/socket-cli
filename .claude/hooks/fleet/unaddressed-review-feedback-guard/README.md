@@ -1,7 +1,7 @@
 # unaddressed-review-feedback-guard
 
 Stop guard. Blocks ending a turn when this session **opened or pushed** a PR
-that still carries a review thread — bot or human — nobody has replied to.
+that still carries a review thread, bot or human, nobody has replied to.
 
 ## Why
 

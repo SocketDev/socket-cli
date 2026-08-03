@@ -74,31 +74,25 @@ GitHub auto-links `<owner>/<repo>#<num>` and `https://github.com/<owner>/<repo>/
 
 Bypass: `Allow external-issue-ref bypass` (enforced by `.claude/hooks/fleet/no-ext-issue-ref-guard/`).
 
-## Root README skeleton + `freeform-readme` opt-in
+## Root README skeleton
 
 Every fleet member's root `README.md` opens with lead prose saying why the repo
-exists — directly under the title and badges, never a `## Why this repo exists`
-heading — and carries the canonical four level-2 sections
-in order — `Install` / `Usage` / `Development` /
-`License` — plus the universal social-follow badges (X / Twitter + Bluesky) under
-the title, no fleet source repo leak, no sibling-relative script commands.
-Canonical skeleton: `template/base/README.md`.
+exists, directly under the title and badges, never a `## Why this repo exists`
+heading. It then carries the canonical four level-2 sections in order:
+`Install`, `Usage`, `Development`, `License`. It also carries the universal
+social-follow badges (X / Twitter + Bluesky) under the title, no fleet source
+repo leak, and no sibling-relative script commands. Canonical skeleton:
+`template/base/README.md`.
 
-Some repos are not infra repos. The VS Code + browser extensions and the skills
-directory ship **public product / marketplace READMEs** whose structure is owned
-by the listing, not the fleet skeleton. Those repos declare
-`"optIns": ["freeform-readme"]` in the cascade roster
-(`.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json`). The opt-in exempts
-them from the **five-section skeleton only** — the follow-badges, the
-the fleet source repo-leak check, and the sibling-relative-path check stay universal.
+Extra sections beyond the canonical four are fine anywhere, so a product or
+marketplace README can carry its own listing-shaped material. Only the four
+canonical sections and their relative order are required, which is why no member
+needs an exemption.
 
-The rule is enforced across four surfaces, all reading the one roster:
+The rule is enforced across four surfaces:
 
-- Edit-time: `.claude/hooks/fleet/readme-fleet-shape-guard/` (skips the section
-  check when the target repo is `freeform-readme`).
-- Lint-time: `.config/fleet/markdownlint-rules/socket-readme-required-sections.mts`
-  (bails via `_shared/freeform-readme-optin`); `socket-readme-social-badges` always
-  runs.
-- Sync-time: `scripts/repo/sync-scaffolding/checks/readme-skeleton-drift.mts`
-  (skips the section finding for `FREEFORM_README_REPOS`).
+- Edit-time: `.claude/hooks/fleet/readme-fleet-shape-guard/`.
+- Lint-time: `.config/fleet/markdownlint-rules/socket-readme-required-sections.mts`;
+  `socket-readme-social-badges` runs alongside it.
+- Sync-time: `scripts/repo/sync-scaffolding/checks/readme-skeleton-drift.mts`.
 - Index: the `Root README.md` bullet in `CLAUDE.md`.

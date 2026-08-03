@@ -111,9 +111,12 @@ export function isWorkflowYamlPath(rawPath: string): boolean {
   if (/\.lock\.ya?ml$/.test(p)) {
     return false
   }
+  // The composite-action arm is depth-agnostic: the fleet layout is SEGMENTED
+  // (`.github/actions/{fleet,repo}/<name>/action.yml`), so a one-level probe
+  // matches nothing at all and every real action edits through unguarded.
   return (
     /\/\.github\/workflows\/[^/]+\.(ya?ml)$/.test(p) ||
-    /\/\.github\/actions\/[^/]+\/action\.(ya?ml)$/.test(p)
+    /\/\.github\/actions\/(?:[^/]+\/)*action\.(ya?ml)$/.test(p)
   )
 }
 

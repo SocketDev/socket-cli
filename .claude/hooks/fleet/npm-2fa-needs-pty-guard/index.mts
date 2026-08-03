@@ -147,11 +147,31 @@ export function formatBlock(
   } else {
     lines.push(
       '',
-      '  Fix:   re-run under the wrapper, which runs npm under a PTY and',
+      '  Fix:   re-run under the wrapper, which runs the auth under a PTY and',
       '         auto-opens the auth URL read from the raw stream:',
       '',
       `           node scripts/fleet/npm-web-auth.mts ${d.operation} <args...>`,
     )
+    if (d.operation === 'adduser' || d.operation === 'login') {
+      lines.push(
+        '',
+        `         For ${d.operation} the wrapper drives \`pnpm login\` (web auth)`,
+        '         rather than npm, and runs it from a scratch dir. Both details',
+        '         matter: every fleet package.json pins pnpm via `devEngines`,',
+        '         so a bare `npm login` inside any fleet repo dies',
+        '         EBADDEVENGINES before it reaches auth at all — the failure',
+        '         looks like an npm bug and is really the cwd.',
+        '',
+        '         Running it yourself in a real terminal works too, but it must',
+        '         be outside a fleet repo for the same reason:',
+        '',
+        '           cd /tmp && pnpm login --auth-type=web',
+        '',
+        "         Heads up: pnpm 11 keeps its web-login token in pnpm's own",
+        '         config while bare npm keeps reading ~/.npmrc, so a green',
+        '         `pnpm login` can still leave `npm whoami` unauthenticated.',
+      )
+    }
   }
   return lines.join('\n') + '\n'
 }

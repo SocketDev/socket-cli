@@ -22,7 +22,7 @@ If no arguments given, audit the whole fleet with `--fleet` — the runner deriv
    - **What's wrong**: the specific settings drift (allowed_actions wrong mode, github_owned_allowed/verified_allowed flipped on, allowlist missing canonical patterns).
    - **How to fix**: baseline drift → the runner's `--conform` (additive-only, extras-preserving — it unions the allowlist and tightens the two toggles, never prunes); anything destructive → the exact Settings → Actions toggles, in the order the user would flip them in the web UI.
 
-4. **Write only when asked, and only additively.** Run `--conform` when the user asks for the fix; it needs admin scope. Destructive changes — pruning extras, disabling Actions, handing a repo back to org policy — stay with the user in the web UI.
+4. **Write only when asked, and only additively.** Run `--conform` when the user asks for the fix; it needs admin scope. Destructive changes stay with the user in the web UI. Note: that covers pruning extras, disabling Actions, and handing a repo back to org policy.
 
 5. After conforming or after the user reports manual changes, re-run the audit to confirm green.
 

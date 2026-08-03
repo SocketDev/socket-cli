@@ -54,7 +54,7 @@ skip):
   `uses-sha-verify-guard`). The row's `pinned_sha` is OPTIONAL and DERIVED from
   that ref (`resolvePinnedSha` in `scripts/fleet/gen/gitmodules-hash.mts`,
   injected by `loadManifestTree`); it is present only on legacy manifests and is
-  migrated away — dropped — on the next auto-bump. `pinned_tag` is
+  migrated away and dropped on the next auto-bump. `pinned_tag` is
   informational. A stored `pinned_sha` that DISAGREES with the `.gitmodules` ref
   is drift: it errors so the stale duplicate gets removed. The submodule HEAD
   must equal the derived pin or the row errors ("run `git submodule update`",
@@ -142,7 +142,7 @@ conformance:
    against the port for free — reproducible, deterministic, auto-updating.
 2. **Alias by on-disk overlay, never by loader plugin.** The alias mechanism
    is a real re-export stub file written OVER the upstream module inside the
-   throwaway sandbox copy — `export * from "<abs shim path>"` — so the
+   throwaway sandbox copy via `export * from "<abs shim path>"`, so the
    runtime's own loader resolves it, which works identically for sync,
    async, dynamic, and child-process imports. NEVER redirect upstream module
    imports via a Bun runtime-plugin `onResolve` returning a shim path: Bun,
@@ -214,7 +214,7 @@ harness rules above: each rule was validated in production by the stuie port.
 - **Hard time-boxes; revert + defer.** Cap fix attempts at ~6-8 iterations,
   then REVERT and defer with an accurate note: what broke, which impls, the
   suspected upstream change. Never trade green suites, never grind. Test
-  harnesses set hard per-command timeouts — `spawnSync` `timeout` — so a
+  harnesses set hard per-command timeouts via `spawnSync` `timeout`, so a
   hung worker fails fast instead of stalling verification.
 - **Perf rewrites in ports.** Measure first in release mode, capture the
   baseline BEFORE touching loops, keep an honest before/after table, revert
@@ -256,7 +256,7 @@ How the exemption is bounded — it is NOT a blanket dir ignore:
   `isLockstepMirror(context)` and returns no visitors on a marked mirror — the
   same shape as the `isConfigEntrypoint` guard. A rule that never consults it
   can't be silenced by the marker.
-- **Core rules the fleet doesn't own** — e.g. `curly` — route through a
+- **Core rules the fleet doesn't own** - e.g. `curly` — route through a
   file-scope `oxlint-disable` that `no-file-scope-oxlint-disable` PERMITS only
   when every named rule is in `LOCKSTEP_MIRROR_EXEMPT_RULES`.
 - **Format** is skipped via a manifest-derived, `**`-anchored block in
@@ -267,7 +267,7 @@ How the exemption is bounded — it is NOT a blanket dir ignore:
 
 Declare a mirror by adding `mirror: true` to its `file-fork` row and the header
 marker to the file, then running `pnpm run lockstep:emit-mirror-globs`. A
-deviating fork — mouse-parser and friends — stays `mirror: false` and may NOT
+deviating fork, mouse-parser and friends, stays `mirror: false` and may NOT
 carry the marker. `scripts/fleet/check/lockstep-mirror-markers-are-declared.mts`
 gates both directions: a marked file with no covering `mirror: true` row, or a
 marker whose path/sha disagrees with the row, fails; and a `mirror: true` row
@@ -283,7 +283,7 @@ pin:
 
 1. `git fetch --tags` in the submodule so the local view is current.
 2. Pin the NEWEST release with `gen/gitmodules-hash.mts --set`, which writes
-   the `.gitmodules` `ref =` — the single source of truth — AND its `sha256:`
+   the `.gitmodules` `ref =`, the single source of truth, AND its `sha256:`
    annotation in one step. Do NOT also store a `pinned_sha` in the `version-pin`
    row — the harness derives it from the ref. Set `pinned_tag` in the row only
    as an informational release label.
@@ -336,8 +336,8 @@ chain, `scripts/fleet/weekly-update/deterministic-chain.mts`) drives:
   that row's `pinned_sha`/`pinned_tag` in the OWNING manifest file (root or
   the `includes[]` sub-manifest that physically holds the row,
   `auto-bump.mts:650-663`), regenerates the `.gitmodules`
-  `# <name>-<version> sha256:…` annotation via `gen/gitmodules-hash.mts --set`
-  — the only annotation path `uses-sha-verify-guard` accepts — and commits
+  `# <name>-<version> sha256:…` annotation via `gen/gitmodules-hash.mts --set`,
+  which is the only annotation path `uses-sha-verify-guard` accepts, and commits
   surgically: `chore(deps): bump <upstream> to <tag>`
   (`auto-bump.mts:455-623`).
 

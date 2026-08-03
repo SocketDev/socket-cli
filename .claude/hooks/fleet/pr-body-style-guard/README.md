@@ -4,7 +4,7 @@ PreToolUse (Bash) hook that enforces the operator's standing write-up contract o
 
 ## Why
 
-The operator had to re-teach the same write-up contract session after session ("again write at a junior dev level, use `<details>`, point to existing npm behavior, use full sentences — why do I have to keep repeating myself", 2026-07-29, pnpm/pnpm#13479). A rule that has to be repeated is a rule that isn't codified — this hook encodes it mechanically so no future session needs reminding.
+The operator had to re-teach the same write-up contract session after session ("again write at a junior dev level, use `<details>`, point to existing npm behavior, use full sentences — why do I have to keep repeating myself", 2026-07-29, pnpm/pnpm#13479). A rule that has to be repeated is a rule that isn't codified. This hook encodes it mechanically so no future session needs reminding.
 
 The contract:
 

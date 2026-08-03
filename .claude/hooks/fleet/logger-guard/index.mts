@@ -43,7 +43,7 @@ import {
 } from '../../../../.git-hooks/_shared/logger-leaks.mts'
 import type { LoggerDecoration } from '../../../../.git-hooks/_shared/logger-leaks.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
-import { lineIsSuppressed } from '../_shared/markers.mts'
+import { suppressionCoversLine } from '../_shared/markers.mts'
 
 const EXEMPT_PATH_PATTERNS: RegExp[] = [
   /\.claude\/hooks\//,
@@ -128,14 +128,12 @@ export function scan(source: string): Hit[] {
     // Per-line allow marker, keyed by leak kind so the edit-time guard agrees
     // with the pre-push `scanLoggerLeaks`: `console.*` waives with
     // `// socket-lint: allow console`, raw `process.std*.write` waives with the
-    // more deliberate `// socket-lint: allow process-stdio`. The marker must be
-    // on the same source line as the call.
+    // more deliberate `// socket-lint: allow process-stdio`. The marker sits on
+    // the call's own line, or alone on the line above it.
     const rule = leak.fullCall.startsWith('process.')
       ? 'process-stdio'
       : 'console'
-    /* c8 ignore next - AST line numbers are always within the source range */
-    const sourceLine = lines[leak.line - 1] ?? ''
-    if (lineIsSuppressed(sourceLine, rule)) {
+    if (suppressionCoversLine(lines, leak.line - 1, rule)) {
       continue
     }
     hits.push({
@@ -180,9 +178,7 @@ export function scanDecoration(source: string): LoggerDecoration[] {
   const lines = source.split('\n')
   const out: LoggerDecoration[] = []
   for (const deco of findLoggerDecoration(source)) {
-    /* c8 ignore next - AST line numbers are always within the source range */
-    const sourceLine = lines[deco.line - 1] ?? ''
-    if (lineIsSuppressed(sourceLine, 'logger-decoration')) {
+    if (suppressionCoversLine(lines, deco.line - 1, 'logger-decoration')) {
       continue
     }
     out.push(deco)

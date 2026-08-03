@@ -14,7 +14,7 @@ a native napi binary with no `--snapshot-blob`. The equivalent startup win for
 lint is the pre-bundled rolldown `oxlint-plugin.mjs` (already live, cascaded, and
 shipped); there is no V8 snapshot to add there, so that premise is settled.
 
-## Migrating the last 10 — the prior hybrid remainder — into the frozen bundle
+## Migrating the last 10, the prior hybrid remainder, into the frozen bundle
 
 The 10 that previously could not freeze — 8 acorn-WASM guards + check-new-deps
 (SDK) + brew-supply-chain-guard (semver) — are now all snapshot-safe via lazy
@@ -238,7 +238,7 @@ supersedes — it is no longer wired anywhere.)
 
 It resolves the fast path from two build-time-FROZEN sidecars written next to it
 (`build-snapshot-launcher.mts`), mirroring `dispatch-snapshot-entry.mts`'s
-DISPATCH_DIR_FROZEN model: `node.path` — the node that built the blob — and
+DISPATCH_DIR_FROZEN model: `node.path`, the node that built the blob, and
 `snapshot-blob.path` (the content-keyed blob). Reading a frozen line beats
 re-deriving the node-ver × arch × v8tag × uid × content-hash key in C and keeps
 the launcher ~null-cost. Fail-open is total — a missing/blank sidecar, a vanished
@@ -323,7 +323,7 @@ the wiring is TWO layers:
 1. **The cascaded, fleet-canonical baseline — `settings.json` → `node
    ".../index.cjs" <Event>`.** The V8 COMPILE-CACHE path. `index.cjs` requires
    `fleet-pack.cjs` = the COMPLETE 190-hook set (same `dispatch-table.mts` the
-   snapshot freezes), so it is correct on every os/arch — Windows included — with
+   snapshot freezes), so it is correct on every os/arch, Windows included, with
    zero per-machine state. This is what ships to every fleet repo, and it is the
    launcher's own fail-open target, so the worst case anywhere is this complete,
    correct path.

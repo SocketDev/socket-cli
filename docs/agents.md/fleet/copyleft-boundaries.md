@@ -1,6 +1,6 @@
 # Copyleft boundaries
 
-A copyleft upstream — AGPL, GPL, and their variants — may be **run** and
+A copyleft upstream such as AGPL, GPL, and their variants may be **run** and
 **observed**. Its implementation may never be **read**. That single line is the
 whole rule; everything below is how the fleet makes it hold without relying on
 anyone remembering it.
@@ -11,7 +11,7 @@ anyone remembering it.
   A scanner can shell out to it, diff its output, and gate on its exit code.
 - **Observe it through its own tests.** A project's test suite and its fixture
   data describe *behavior*: which inputs it flags, which it does not. Reading
-  those to build a coverage oracle — "do we detect everything they detect?" — is
+  those to build a coverage oracle that asks "do we detect everything they detect?" is
   observation, not derivation.
 - **Never read the implementation.** The detection tables, the regexes, the
   algorithms, the source files that produce the behavior. Reading them to write
@@ -29,7 +29,7 @@ a roster entry's `testPathPatterns` could not be checked against the upstream's
 real test corpus, because checking meant listing. The entry shipped unverified.
 A rule that blocks its own maintenance rots behind itself.
 
-| Allowed — enumeration | Blocked — content |
+| Allowed - enumeration | Blocked - content |
 | --- | --- |
 | `ls` at any depth, `tree` | `cat` / `head` / `tail` / `less` / `strings` on a non-test file |
 | `find` with name-style output | `find … -exec` / `-execdir` / `-ok` |
@@ -47,7 +47,7 @@ blocked and `git ls-tree` is the sanctioned route.
 
 ### Why `-l` is allowed even though it is a content oracle
 
-`rg -l` leaks one bit per query — "does this file match?" — and with enough
+`rg -l` leaks one bit per query, namely "does this file match?", and with enough
 queries you could binary-search a file's contents out of it. We allow it
 anyway, deliberately. It returns the same information class as a listing, the
 attack needs thousands of queries to recover a few lines, and anyone willing to

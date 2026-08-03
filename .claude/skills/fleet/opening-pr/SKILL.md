@@ -59,8 +59,8 @@ and names the folds that miss — advisory, not a gate.
 
 ## 5. Open it
 
-Commit on a branch — a worktree if the primary checkout has other sessions — push,
-`gh pr create`. Opening a PR is outward-facing — confirm the base branch + that
+Commit on a branch, using a worktree if the primary checkout has other sessions,
+then push and run `gh pr create`. Opening a PR is outward-facing — confirm the base branch + that
 the diff is the intended scope first.
 
 ## Completion criterion

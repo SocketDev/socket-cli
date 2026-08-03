@@ -34,7 +34,7 @@ Type the canonical phrase in a new message:
 
     Allow node-test-in-vitest-include bypass
 
-Or — the long-term fix — add the file path to vitest's `exclude` array in
+Or, the long-term fix, add the file path to vitest's `exclude` array in
 the vitest config.
 
 ## Detection

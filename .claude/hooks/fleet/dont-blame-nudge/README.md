@@ -21,7 +21,7 @@ Quoted spans are stripped before matching, so the hook doesn't self-fire when th
 
 ## Why it blocks
 
-Unlike most `Stop` reminders, this one runs in **blocking** mode. The assistant must continue the turn and either (a) prove the blame with hard evidence — a quoted user message, a `git reflog` entry, a commit hash — or (b) keep investigating the real cause — its own script, or a parallel session — via `git log --oneline -8`, `git log -S`, pre-commit phases in isolation, and a `template/` diff. It blocks on every turn-end, including a retry another Stop guard triggered: dropping an accusation the reply cannot evidence is always available in the same turn, so this guard can never demand what another one forbids. Skipping the scan on a retry meant a reply reworked for a different guard could keep — or reintroduce — the blame with nothing logged.
+Unlike most `Stop` reminders, this one runs in **blocking** mode. The assistant must continue the turn and either (a) prove the blame with hard evidence, or (b) keep investigating the real cause via `git log --oneline -8`, `git log -S`, pre-commit phases in isolation, and a `template/` diff. Note: hard evidence means a quoted user message, a `git reflog` entry, or a commit hash; the real cause can be its own script or a parallel session. It blocks on every turn-end, including a retry another Stop guard triggered: dropping an accusation the reply cannot evidence is always available in the same turn, so this guard can never demand what another one forbids. Skipping the scan on a retry meant a reply reworked for a different guard could keep, or reintroduce, the blame with nothing logged.
 
 ## Test
 

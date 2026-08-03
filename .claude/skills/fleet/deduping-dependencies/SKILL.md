@@ -75,7 +75,7 @@ Patches are **fleet-canonical**: the `.patch` lives under `template/patches/` an
 
 - **weekly-update** (`updating` skill / `weekly-update.yml`): re-run the dedup scan, promote newly-clearable `@socketregistry` drop-ins, collapse new same-major duplicates.
 - **tidying / cleaning** (`tidying-*`): a dedup pass is part of shrinking the install + bundle.
-- **code-as-law**: a `scripts/fleet/check/` invariant flags avoidable cross-major duplicates — a dup family that the decision tree says is collapsible but isn't pinned — so the fleet doesn't silently re-accumulate them.
+- **code-as-law**: a `scripts/fleet/check/` invariant flags avoidable cross-major duplicates. When the decision tree says a dup family is collapsible but it isn't pinned, the check fires, so the fleet doesn't silently re-accumulate them.
 
 ## Scan recipe
 
@@ -84,4 +84,4 @@ Patches are **fleet-canonical**: the `.patch` lives under `template/patches/` an
 node scripts/fleet/check/dependencies-are-deduped.mts
 ```
 
-The scan is mechanical (parse `pnpm-lock.yaml` `packages:` keys → group by name → flag >1 major + cross-reference the `overrides:` drop-in set). The **judgment** — the decision tree + verification — is where care goes: fan out one analysis per package family for a large sweep, each grounding its verdict in the on-disk manifest + a consumer-grep.
+The scan is mechanical (parse `pnpm-lock.yaml` `packages:` keys → group by name → flag >1 major + cross-reference the `overrides:` drop-in set). The **judgment**, the decision tree + verification, is where care goes: fan out one analysis per package family for a large sweep, each grounding its verdict in the on-disk manifest + a consumer-grep.

@@ -21,7 +21,7 @@ If you genuinely need `pull_request_target` semantics (e.g. to access a secret-d
 
 ## Checkout credential hygiene
 
-`actions/checkout` persists the workflow token into the runner's local `.git/config` by default (`persist-credentials: true`), where every later step — and any fork code a `pull_request_target` workflow checks out — can read it. For a checkout that only READS the tree (lint, build, test, audit), set `persist-credentials: false` so the token never lands on disk:
+`actions/checkout` persists the workflow token into the runner's local `.git/config` by default (`persist-credentials: true`), where every later step, and any fork code a `pull_request_target` workflow checks out, can read it. For a checkout that only READS the tree (lint, build, test, audit), set `persist-credentials: false` so the token never lands on disk:
 
 ```yaml
 - uses: actions/checkout@<sha> # <tag> (YYYY-MM-DD)
@@ -33,4 +33,4 @@ The exception is a workflow that commits, pushes, or tags: it NEEDS the persiste
 
 ## Enforcement
 
-The `.claude/hooks/fleet/pull-request-target-guard/` hook scans workflow YAML for the fork-checkout-and-execute combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer. The persisted-credential half is enforced in CI by zizmor's `artipacked` audit — a default audit, no config needed — no edit-time hook duplicates it.
+The `.claude/hooks/fleet/pull-request-target-guard/` hook scans workflow YAML for the fork-checkout-and-execute combo and blocks edits that introduce it. The hook is byte-identical across fleet repos; the rule is the contract, the hook is the enforcer. The persisted-credential half is enforced in CI by zizmor's `artipacked` audit, a default audit with no config needed; no edit-time hook duplicates it.

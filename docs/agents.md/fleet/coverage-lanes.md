@@ -34,7 +34,7 @@ Per-language tools:
 | --- | --- | --- |
 | `cargo` | `cargo llvm-cov --lcov` | Runs through the repo's pinned toolchain so `#[cfg_attr(coverage_nightly, coverage(off))]` markers are honored — see the coverage section of [`lint-parity-across-languages`](lint-parity-across-languages.md). |
 | `go` | `go test -covermode=atomic -coverprofile` | Parsed by a dep-0, statement-block-based parser; reported under the same line denominator as the other lanes. |
-| `cpp` | delegates to `scripts/repo/cover-cpp.mts` | Repo-owned build+run step; emits lcov, which the lane reads. |
+| `cpp` | delegates to a repo-owned build+run step | The repo builds, runs, and emits lcov, which the lane reads. |
 
 ## Never a false green
 

@@ -16,7 +16,7 @@ In all three cases, name the exception in the turn summary so the user can redir
 
 ## Direct imperatives → execute, don't litigate
 
-When the user issues a bare command — `use nvm 26.2.0`, `cancel the build`, `do it`, `kill it`, `proceed` — the correct response is the tool call. Not a paragraph weighing trade-offs. Not "Before I do that, let me explain why…" Not analysis-first when the command was unambiguous.
+When the user issues a bare command such as `use nvm 26.2.0`, `cancel the build`, `do it`, `kill it`, or `proceed`, the correct response is the tool call. Not a paragraph weighing trade-offs. Not "Before I do that, let me explain why…" Not analysis-first when the command was unambiguous.
 
 The failure mode is hedge openers ("That won't help because…", "Let me first…") that delay the action the user already authorized. State the intent in one short sentence at most (`Switching to nvm 26.2.0.`), then run the command. Enforced by `.claude/hooks/fleet/follow-direct-imperative-nudge/`.
 
@@ -34,7 +34,7 @@ When discussing code or an abstraction, **lead with a small snippet or a concret
 
 ## Pause when told
 
-"wait," "stop," "hold on," "slow down," "pause," "let me," "one sec" — and short corrective interjections — are signals to **stop and listen**, not to keep executing. Stop the current line of work, check in, and let the user steer before resuming. Slowing down on request is preferred over plowing ahead; a user who says "slow down" is telling you the plan needs adjustment before more code lands.
+"wait," "stop," "hold on," "slow down," "pause," "let me," "one sec," and short corrective interjections are signals to **stop and listen**, not to keep executing. Stop the current line of work, check in, and let the user steer before resuming. Slowing down on request is preferred over plowing ahead; a user who says "slow down" is telling you the plan needs adjustment before more code lands.
 
 ## Queue authorization
 
@@ -51,7 +51,7 @@ When the user has clearly said "do it" / "yes" / "proceed" in the recent transcr
 
 ## Waiting discipline
 
-Silence while you wait reads as a hang. When a launched job notifies on completion — a background Workflow, a background Agent, a `gh run watch` running as a background task — never camp on it with a blocking `sleep`: say what is running and what event comes next, then end the turn. When you genuinely must poll because nothing notifies, keep each silent interval to 60-90 seconds and post an interim one-liner every cycle: what changed, what is still pending. Every status line names concrete progress, a result count or a last-activity age, never a bare "still running".
+Silence while you wait reads as a hang. When a launched job notifies on completion, never camp on it with a blocking `sleep`. Say what is running and what event comes next, then end the turn. Note: a background Workflow, a background Agent, and a `gh run watch` running as a background task all notify. When you genuinely must poll because nothing notifies, keep each silent interval to 60-90 seconds and post an interim one-liner every cycle: what changed, what is still pending. Every status line names concrete progress, a result count or a last-activity age, never a bare "still running".
 
 The mechanism and the enforcing hook live in [long-running-tasks](long-running-tasks.md); the PreToolUse reminder is `.claude/hooks/fleet/waiting-discipline-nudge/`, and `keep-working-while-waiting-nudge` covers the companion move — advancing a different queued todo while the result lands.
 
@@ -59,7 +59,7 @@ The mechanism and the enforcing hook live in [long-running-tasks](long-running-t
 
 A new instruction that arrives while a task is in flight is an **add**, not a redirect. The default response is `TaskCreate` the new ask, finish the current in-progress task, then pick up the new one in queue order. Dropping half-done work to chase the latest mention is the antipattern — it leaves the queue littered with abandoned tasks and re-litigates work already underway. The user has stated this directly: "a lot of the time when I am telling you something I want you to put it on the todos, but you need to prioritize finishing your todos … add as I tell you, not constantly redirect and refocus."
 
-Pivot immediately **only** when the user explicitly signals it: "stop," "drop that," "do this now/first," "urgent," "before you continue," "switch to X," "interrupt your todos," "new priority." Or when the new ask genuinely **blocks** the current task — in which case name why it blocks before switching. Absent one of those, enqueue and keep going. Enforced by `.claude/hooks/fleet/enqueue-dont-pivot-nudge/` — the inverse of `dont-stop-mid-queue-nudge`: that hook catches stopping mid-queue, this one catches pivoting mid-queue.
+Pivot immediately **only** when the user explicitly signals it: "stop," "drop that," "do this now/first," "urgent," "before you continue," "switch to X," "interrupt your todos," "new priority." Or when the new ask genuinely **blocks** the current task — in which case name why it blocks before switching. Absent one of those, enqueue and keep going. Enforced by `.claude/hooks/fleet/enqueue-dont-pivot-nudge/`, the inverse of `dont-stop-mid-queue-nudge`: that hook catches stopping mid-queue, this one catches pivoting mid-queue.
 
 ## Fix-failed-twice reset
 
@@ -74,11 +74,11 @@ Burning a third attempt on the same broken model is the antipattern.
 
 ## Adjacent bug, flag don't fix-silently
 
-If you spot a bug adjacent to the task — wrong logic in a sibling function, a broken comment, a missed edge case — flag it inline: "I also noticed X — want me to fix it?" Don't silently fix it — the diff balloons past the user's review scope — and don't silently ignore it (the bug stays). The flag-then-ask pattern keeps the user in control.
+If you spot a bug adjacent to the task, flag it inline: "I also noticed X, want me to fix it?" Note: an adjacent bug is wrong logic in a sibling function, a broken comment, or a missed edge case. Don't silently fix it, because the diff balloons past the user's review scope, and don't silently ignore it (the bug stays). The flag-then-ask pattern keeps the user in control.
 
 ## Misconception, name it before executing
 
-If the user's request is based on a misconception — the file doesn't exist anymore, the function was renamed, the bug they're describing is fixed already — name the misconception in the response before executing anything that depends on it. The execution doesn't happen until the misconception is resolved — otherwise you're building on bad assumptions.
+If the user's request is based on a misconception, name the misconception in the response before executing anything that depends on it. Note: the file may not exist anymore, the function may have been renamed, or the bug may be fixed already. The execution doesn't happen until the misconception is resolved, or you are building on bad assumptions.
 
 ## Verify rendered output before commit
 

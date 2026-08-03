@@ -17,7 +17,7 @@ RedwoodJS wrote the upstream tool and skill (MIT, https://github.com/redwoodjs/a
 
 ## Requirements
 
-- **Docker must be running** — each job runs in a container. On macOS the fleet uses **OrbStack** (`open -a OrbStack`; recommended over Docker Desktop). If the daemon is down, agent-ci fails fast with `couldn't use a Docker socket at /var/run/docker.sock … missing or a dangling symlink` and exit 1 — that's the daemon, not a workflow failure. Start the provider, confirm with `docker info`, re-run. No daemon and can't start one → fall back to `greening-ci` (push + watch remote).
+- **Docker must be running** - each job runs in a container. On macOS the fleet uses **OrbStack** (`open -a OrbStack`; recommended over Docker Desktop). If the daemon is down, agent-ci fails fast with `couldn't use a Docker socket at /var/run/docker.sock … missing or a dangling symlink` and exit 1 — that's the daemon, not a workflow failure. Start the provider, confirm with `docker info`, re-run. No daemon and can't start one → fall back to `greening-ci` (push + watch remote).
 - **The dep is already installed** — `@redwoodjs/agent-ci` is a fleet devDependency (`catalog:`), provisioned by `pnpm install`.
 - **`--github-token` for remote reusable workflows** — every socket-\* repo's `ci.yml` calls a `SocketDev/socket-registry/.github/workflows/…` reusable workflow. agent-ci can't fetch it without a token; pass `--github-token` (no value → auto-resolves via `gh auth token`). Omitting it makes a remote-reusable CI silently fail to resolve.
 - **macOS jobs (`runs-on: macos-*`)** run in a throwaway VM and need `tart` + `sshpass` on an Apple Silicon host (`brew install cirruslabs/cli/tart hudochenkov/sshpass/sshpass`). Without both, macOS jobs are skipped with a reason — the rest of the run still proceeds.
@@ -34,7 +34,7 @@ pnpm run ci:local
 
 There is no `--list` or dry-run flag — `run` executes. Args after the subcommand pass through, so a typo'd flag becomes a workflow arg rather than an error.
 
-To resolve the binary from a `.mts` script (not a package.json script — those resolve `node_modules/.bin` themselves), use the fleet helper, never a shelled-out `which`/`command -v` (which searches the global PATH and resolves the wrong binary — enforced by `socket/no-which-for-local-bin`):
+To resolve the binary from a `.mts` script (not a package.json script: those resolve `node_modules/.bin` themselves), use the fleet helper, never a shelled-out `which`/`command -v` (which searches the global PATH and resolves the wrong binary, enforced by `socket/no-which-for-local-bin`):
 
 ```ts
 import { whichSync } from "@socketsecurity/lib-stable/bin/which";

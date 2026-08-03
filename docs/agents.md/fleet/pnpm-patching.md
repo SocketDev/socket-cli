@@ -36,7 +36,7 @@ The patch is inert without the force, and the force is unsafe without the patch.
 
 ## Code is law: the justified-patches invariant
 
-A pnpm patch is opaque — a diff against minified vendor code — and high-trust (it rewrites a dependency). So every `patchedDependencies` entry must be **justified**, enforced by `scripts/fleet/check/dedup-patches-are-justified.mts`:
+A pnpm patch is opaque, a diff against minified vendor code, and high-trust (it rewrites a dependency). So every `patchedDependencies` entry must be **justified**, enforced by `scripts/fleet/check/dedup-patches-are-justified.mts`:
 
 1. **Rationale annotation**: a `# dedup: <why>` comment on or above the entry, naming the API break it shims and the consumer that needs it (generic, no dated log per the dated-citation rule). An undocumented patch reads as a backdoor.
 2. **Patch file exists** at the referenced path.
