@@ -33,14 +33,28 @@ line.
 Between releases the tree carries the next version as a hint
 (`X.Y.Z-prerelease`) and user-facing notes accrue under `## [Unreleased]`. The
 bump commit turns the hint into the release. Dispatch the workflow with
-`dry-run=true` first — it builds, packs, and smoke-tests all three packages
+`dry-run=true` first. It builds, packs, and smoke-tests all three packages
 while uploading nothing. Then dispatch with `dry-run=false` and
-`dist-tag=staged`. The run cuts the `vX.Y.Z` tag and the immutable GitHub
+`dist-tag=latest`. The run cuts the `vX.Y.Z` tag and the immutable GitHub
 release (both belong to the `socket` package, one of each per run), then stages
 all three packages. A human promotes them with `pnpm stage approve`.
 
-`latest` is refused off the default branch: that pointer belongs to the release
-line on `main`, so v1.x uses `staged`.
+## Which branch owns `latest`
+
+`v1.x` does. It is the line customers consume, so it owns the `latest`
+dist-tag, which is the pointer an untagged install resolves to. The default
+branch carries the 2.x PRERELEASE line and is refused `latest`; it publishes
+under a prerelease tag (`next`, `beta`, `canary`, `rc`).
+
+This is declared rather than hard-coded. `release.latestDistTagBranch` in
+`.config/repo/socket-wheelhouse.json` is set to `v1.x`, and the fleet's
+`npm-publish.yml` guard reads it, defaulting to the repo's default branch for
+every other member.
+
+The polarity ran the other way until 2026-08-03, and the cost was visible on
+the package page: `socket@latest` sat on 1.1.147 for a week while 1.1.148
+through 1.1.152, including a CVE bump, published under a `staged` side tag that
+no untagged install ever resolves.
 
 ## Two jobs, one credential boundary
 

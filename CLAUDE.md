@@ -149,4 +149,4 @@ Advice and critical assessment ONLY — never for making code changes. Consult b
 - 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage — both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
 - 🚨 The USER names the release version; prepare the bump commit only after they do. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
 - Between releases `package.json` carries an `X.Y.Z-prerelease` hint and notes accrue under CHANGELOG's `## [Unreleased]`; the bump strips the hint and promotes that section. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- `latest` is refused off the default branch, so v1.x publishes under the `staged` dist-tag. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
+- 🚨 `v1.x` is the consumable line and owns the `latest` dist-tag; the default branch carries the 2.x PRERELEASE line and is refused `latest`. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)

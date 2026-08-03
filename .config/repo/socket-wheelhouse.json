@@ -9,6 +9,9 @@
     "from": "npm-registry",
     "type": "js"
   },
+  "release": {
+    "latestDistTagBranch": "v1.x"
+  },
   "vite": {
     "allowEsbuild": "esbuild resolves only as vite 8's optional peer and is never invoked; nothing imports it and the bundler is rolldown"
   },
