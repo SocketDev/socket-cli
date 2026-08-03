@@ -83,9 +83,11 @@ export function runMain(main: MainFn): void {
 
 /**
  * The awaitable core of {@link runMain} — set `process.exitCode` from `main()`'s
- * resolved return (`?? 0`), or on any throw log the message + set exit code 1.
- * Resolves, never rejects. Exported so tests can await the settled result;
- * production entrypoints call the fire-and-forget {@link runMain}.
+ * resolved return, or on any throw log the message + set exit code 1. A
+ * `main()` that returns no number keeps whatever code it assigned itself, and
+ * only an unclaimed code defaults to 0. Resolves, never rejects. Exported so
+ * tests can await the settled result; production entrypoints call the
+ * fire-and-forget {@link runMain}.
  */
 export async function runMainAsync(main: MainFn): Promise<void> {
   const argv = process.argv.slice(2)
@@ -99,7 +101,18 @@ export async function runMainAsync(main: MainFn): Promise<void> {
   }
   try {
     const code = await main()
-    process.exitCode = typeof code === 'number' ? code : 0
+    if (typeof code === 'number') {
+      process.exitCode = code
+    } else if (!process.exitCode) {
+      // Only default to 0 when nothing has claimed a code. A `main(): void`
+      // signals failure the other sanctioned way — assign `process.exitCode`,
+      // then return — and unconditionally writing 0 here turned that into a
+      // SILENT GREEN: the script printed its failure and still exited 0, so
+      // every caller gating on the exit status read success. That is the
+      // false-green `code-first-then-ai` forbids, and it reached
+      // `pre-push-gate.mts`, which prints "RED — nothing pushed" and exited 0.
+      process.exitCode = 0
+    }
   } catch (e) {
     logger.error(errorMessage(e))
     process.exitCode = 1

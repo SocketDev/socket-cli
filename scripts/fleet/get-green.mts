@@ -35,6 +35,8 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { localAssistEnabled, resolveOdaiBin, runOdai } from './_shared/odai.mts'
+import { REPO_ROOT } from './paths.mts'
 import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
@@ -255,6 +257,40 @@ export async function changedPathsAgainst(baseRef: string): Promise<string[]> {
     .filter(Boolean)
 }
 
+/**
+ * The keyless failure digest's prompt budget — one summary-class call.
+ */
+const ODAI_SUMMARY_TIMEOUT_MS = 45_000
+
+/**
+ * Keyless failure digest: one on-device `summarize` over the red log tails,
+ * appended to the report the fix agent (or operator) reads first. Purely
+ * additive — every environment gap (opt-out, no bin, no backend, bad reply)
+ * returns undefined and the report prints without it.
+ */
+export async function odaiFailureSummary(
+  tailText: string,
+  repoRoot: string,
+): Promise<string | undefined> {
+  if (tailText.trim() === '' || !localAssistEnabled(repoRoot)) {
+    return undefined
+  }
+  const bin = resolveOdaiBin()
+  if (!bin) {
+    return undefined
+  }
+  const run = await runOdai('summarize', tailText, {
+    bin,
+    cwd: repoRoot,
+    timeoutMs: ODAI_SUMMARY_TIMEOUT_MS,
+  })
+  if (run.outcome !== 'ok') {
+    return undefined
+  }
+  const summary = (run.value as { summary?: unknown | undefined })?.summary
+  return typeof summary === 'string' && summary !== '' ? summary : undefined
+}
+
 async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
@@ -311,6 +347,16 @@ async function main(): Promise<void> {
   }
 
   if (!mayOpenPullRequest(result)) {
+    const redTails = [
+      result.setup.ok ? '' : result.setup.logTail,
+      result.test.ok ? '' : result.test.logTail,
+    ]
+      .filter(t => t !== '')
+      .join('\n')
+    const digest = await odaiFailureSummary(redTails, REPO_ROOT)
+    if (digest !== undefined) {
+      logger.log(`on-device failure summary: ${digest}`)
+    }
     logger.fail(
       '[get-green] the branch is RED — no pull request.\n' +
         '  Where: the update branch under verification.\n' +
