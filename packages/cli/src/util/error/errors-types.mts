@@ -92,6 +92,12 @@ export class RateLimitError extends Error {
   }
 }
 
+export interface FileSystemErrorOptions {
+  path?: string | undefined
+  code?: string | undefined
+  recovery?: string[] | undefined
+}
+
 /**
  * File system error with path context. Thrown when file operations fail.
  */
@@ -100,13 +106,12 @@ export class FileSystemError extends Error {
   public readonly code?: string | undefined
   public readonly recovery: string[]
 
-  constructor(
-    message: string,
-    path?: string | undefined,
-    code?: string | undefined,
-    recovery?: string[] | undefined,
-  ) {
+  constructor(message: string, options?: FileSystemErrorOptions | undefined) {
     super(message)
+    const { code, path, recovery } = {
+      __proto__: null,
+      ...options,
+    } as FileSystemErrorOptions
     this.name = 'FileSystemError'
     this.path = path
     this.code = code
@@ -164,6 +169,12 @@ export class ConfigError extends Error {
   }
 }
 
+export interface TimeoutErrorOptions {
+  timeoutMs?: number | undefined
+  elapsedMs?: number | undefined
+  recovery?: string[] | undefined
+}
+
 /**
  * Timeout error with retry guidance. Thrown when operations exceed time limits.
  */
@@ -172,13 +183,12 @@ export class TimeoutError extends Error {
   public readonly elapsedMs?: number | undefined
   public readonly recovery: string[]
 
-  constructor(
-    message: string,
-    timeoutMs?: number | undefined,
-    elapsedMs?: number | undefined,
-    recovery?: string[] | undefined,
-  ) {
+  constructor(message: string, options?: TimeoutErrorOptions | undefined) {
     super(message)
+    const { elapsedMs, recovery, timeoutMs } = {
+      __proto__: null,
+      ...options,
+    } as TimeoutErrorOptions
     this.name = 'TimeoutError'
     this.timeoutMs = timeoutMs
     this.elapsedMs = elapsedMs

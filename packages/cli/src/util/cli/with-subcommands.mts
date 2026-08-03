@@ -271,7 +271,7 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
-      emitBanner(name, orgFlag, compactMode, cli1.flags)
+      emitBanner(name, { orgFlag, compactMode, flags: cli1.flags })
       // Add newline in stderr.
       logger.error('')
     }
@@ -342,7 +342,7 @@ export async function meowWithSubcommands(
 
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
-    emitBanner(name, orgFlag, compactMode, cli2.flags)
+    emitBanner(name, { orgFlag, compactMode, flags: cli2.flags })
     // Meow will add newline so don't add stderr spacing here.
   }
   /* c8 ignore start - dry-run process.exit branch; tests avoid invoking this to prevent process termination */

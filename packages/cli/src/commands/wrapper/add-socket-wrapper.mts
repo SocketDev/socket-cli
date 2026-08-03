@@ -19,8 +19,7 @@ export async function addSocketWrapper(file: string): Promise<void> {
     // a path, so embedding it here would show the filename twice.
     throw new FileSystemError(
       `failed to append socket aliases (${getErrorCause(e)}); check that the file exists and is writable`,
-      file,
-      isErrnoException(e) ? e.code : undefined,
+      { path: file, code: isErrnoException(e) ? e.code : undefined },
     )
   }
   logger.success(

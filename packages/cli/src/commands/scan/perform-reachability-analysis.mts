@@ -285,7 +285,8 @@ export async function performReachabilityAnalysis(
 
   try {
     // Run Coana with the manifests tar hash.
-    const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
+    const coanaResult = await spawnCoanaDlx(coanaArgs, {
+      orgSlug,
       coanaVersion: reachabilityOptions.reachVersion || undefined,
       cwd,
       env: coanaEnv,

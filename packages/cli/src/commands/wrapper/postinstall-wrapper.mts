@@ -90,8 +90,7 @@ export async function setupSocketWrapper(query: string): Promise<void> {
     } catch (e) {
       throw new FileSystemError(
         `failed to add socket aliases to ${bashRcPath} / ${zshRcPath} (${getErrorCause(e)}); check that your shell rc files exist and are writable`,
-        undefined,
-        isErrnoException(e) ? e.code : undefined,
+        { code: isErrnoException(e) ? e.code : undefined },
       )
     }
   }

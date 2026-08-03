@@ -46,15 +46,23 @@ export type ResolvedArtifactPaths = {
   coords: Set<string>
 }
 
+export interface MavenCoordinateKeyOptions {
+  groupId?: string | undefined
+  artifactId?: string | undefined
+  type?: string | undefined
+  classifier?: string | undefined
+  version?: string | undefined
+}
+
 // Coordinate-based (not `id`-based) so it also matches foreign SBOMs like
 // CycloneDX. Empty segments dropped.
 export function mavenCoordinateKey(
-  groupId: string | undefined,
-  artifactId: string | undefined,
-  type: string | undefined,
-  classifier: string | undefined,
-  version: string | undefined,
+  options?: MavenCoordinateKeyOptions | undefined,
 ): string {
+  const { artifactId, classifier, groupId, type, version } = {
+    __proto__: null,
+    ...options,
+  } as MavenCoordinateKeyOptions
   return [groupId, artifactId, type, classifier, version]
     .filter(Boolean)
     .join(':')

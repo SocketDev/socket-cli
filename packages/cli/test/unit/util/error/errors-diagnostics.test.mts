@@ -113,7 +113,10 @@ describe('Recovery Utilities', () => {
     })
 
     it('should extract recovery from FileSystemError', () => {
-      const error = new FileSystemError('No access', '/etc', 'EACCES')
+      const error = new FileSystemError('No access', {
+        path: '/etc',
+        code: 'EACCES',
+      })
       const suggestions = getRecoverySuggestions(error)
       expect(suggestions[0]).toContain('permissions')
     })

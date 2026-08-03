@@ -130,7 +130,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, orgFlag, compactMode, cli.flags)
+    emitBanner(command, { orgFlag, compactMode, flags: cli.flags })
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
     logger.error('')

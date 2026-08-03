@@ -146,8 +146,13 @@ export async function runGhsaFixLoop(
           : []),
         ...fixConfig.unknownFlags,
       ],
-      fixConfig.orgSlug,
-      { coanaVersion, cwd, spinner, stdio: coanaStdio },
+      {
+        orgSlug: fixConfig.orgSlug,
+        coanaVersion,
+        cwd,
+        spinner,
+        stdio: coanaStdio,
+      },
     )
 
     if (!fixCResult.ok) {

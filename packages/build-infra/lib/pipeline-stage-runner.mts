@@ -56,14 +56,11 @@ export async function runStage(
         arch: process.arch,
       }
 
-  const shouldProceed = await shouldRun(
-    buildDir,
-    '',
-    stage.name,
-    forceRebuild,
+  const shouldProceed = await shouldRun(buildDir, '', stage.name, {
+    force: forceRebuild,
     sourcePaths,
-    platformMeta,
-  )
+    ...platformMeta,
+  })
 
   if (!shouldProceed) {
     // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.

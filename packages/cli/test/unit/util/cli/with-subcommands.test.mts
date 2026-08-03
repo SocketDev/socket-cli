@@ -276,7 +276,7 @@ describe('meow-with-subcommands', () => {
     it('emits banner with name and org', async () => {
       vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
-      emitBanner('socket', 'test-org', false)
+      emitBanner('socket', { orgFlag: 'test-org', compactMode: false })
 
       expect(mockLogger.error).toHaveBeenCalled()
     })
@@ -284,7 +284,7 @@ describe('meow-with-subcommands', () => {
     it('emits compact banner when compact mode is true', async () => {
       vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
-      emitBanner('socket', 'test-org', true)
+      emitBanner('socket', { orgFlag: 'test-org', compactMode: true })
 
       expect(mockLogger.error).toHaveBeenCalled()
     })
@@ -292,7 +292,7 @@ describe('meow-with-subcommands', () => {
     it('handles undefined org', async () => {
       vi.mocked(await import('@socketsecurity/lib-stable/logger/default'))
 
-      emitBanner('socket', undefined, false)
+      emitBanner('socket', { orgFlag: undefined, compactMode: false })
 
       expect(mockLogger.error).toHaveBeenCalled()
     })

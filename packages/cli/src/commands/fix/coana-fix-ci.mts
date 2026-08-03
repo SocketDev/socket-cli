@@ -88,8 +88,12 @@ export async function runCiCoanaFix(
           tarHash,
           ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
         ],
-        fixConfig.orgSlug,
-        { coanaVersion, cwd, spinner },
+        {
+          orgSlug: fixConfig.orgSlug,
+          coanaVersion,
+          cwd,
+          spinner,
+        },
         { stdio: 'pipe' },
       )
 

@@ -120,6 +120,13 @@ export function debugApiRequest(
   }
 }
 
+export interface DebugApiResponseOptions {
+  status?: number | undefined
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  error?: unknown | undefined
+  requestInfo?: ApiRequestDebugInfo | undefined
+}
+
 /**
  * Debug an API response. Failed requests (error or status >= 400) log under the
  * `error` namespace; successful responses optionally log a one-liner under
@@ -130,14 +137,12 @@ export function debugApiRequest(
  */
 export function debugApiResponse(
   endpoint: string,
-  status?: number | undefined,
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  error?: unknown | undefined,
-  requestInfo?: ApiRequestDebugInfo | undefined,
+  options?: DebugApiResponseOptions | undefined,
 ): void {
+  const { error, requestInfo, status } = {
+    __proto__: null,
+    ...options,
+  } as DebugApiResponseOptions
   if (error) {
     debugDirNs(
       'error',

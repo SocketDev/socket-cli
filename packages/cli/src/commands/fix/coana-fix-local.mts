@@ -126,8 +126,13 @@ export async function runLocalCoanaFix(
           : []),
         ...fixConfig.unknownFlags,
       ],
-      fixConfig.orgSlug,
-      { coanaVersion, cwd, spinner, stdio: coanaStdio },
+      {
+        orgSlug: fixConfig.orgSlug,
+        coanaVersion,
+        cwd,
+        spinner,
+        stdio: coanaStdio,
+      },
     )
 
     spinner?.stop()

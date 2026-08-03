@@ -95,7 +95,7 @@ describe('debug utilities', () => {
     it('logs error when error is provided', () => {
       const error = new Error('API failed')
 
-      debugApiResponse('/api/test', undefined, error)
+      debugApiResponse('/api/test', { error })
 
       expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
         endpoint: '/api/test',
@@ -104,7 +104,7 @@ describe('debug utilities', () => {
     })
 
     it('logs under error namespace for HTTP error status codes', () => {
-      debugApiResponse('/api/test', 404)
+      debugApiResponse('/api/test', { status: 404 })
 
       expect(debugNs).toHaveBeenCalledWith('error', 'API /api/test: HTTP 404')
     })
@@ -112,7 +112,7 @@ describe('debug utilities', () => {
     it('logs notice for successful responses when debug is enabled', () => {
       mockIsDebugNs.mockReturnValue(true)
 
-      debugApiResponse('/api/test', 200)
+      debugApiResponse('/api/test', { status: 200 })
 
       expect(debugNs).toHaveBeenCalledWith('notice', 'API /api/test: 200')
     })
@@ -120,13 +120,13 @@ describe('debug utilities', () => {
     it('does not log for successful responses when debug is disabled', () => {
       mockIsDebugNs.mockReturnValue(false)
 
-      debugApiResponse('/api/test', 200)
+      debugApiResponse('/api/test', { status: 200 })
 
       expect(debugNs).not.toHaveBeenCalled()
     })
 
     it('handles non-Error objects in error parameter', () => {
-      debugApiResponse('/api/test', undefined, 'String error')
+      debugApiResponse('/api/test', { error: 'String error' })
 
       expect(mockDebugDirNs).toHaveBeenCalledWith('error', {
         endpoint: '/api/test',
@@ -149,7 +149,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/test', undefined, error, requestInfo)
+      debugApiResponse('/api/test', { error, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.method).toBe('POST')
@@ -170,7 +170,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/resource', 500, undefined, requestInfo)
+      debugApiResponse('/api/resource', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.status).toBe(500)
@@ -184,7 +184,7 @@ describe('debug utilities', () => {
         method: 'PUT',
       }
 
-      debugApiResponse('/api/update', 400, undefined, requestInfo)
+      debugApiResponse('/api/update', { status: 400, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.method).toBe('PUT')
@@ -199,7 +199,7 @@ describe('debug utilities', () => {
         requestedAt: '2026-04-18T00:00:00.000Z',
       }
 
-      debugApiResponse('/api/x', 500, undefined, requestInfo)
+      debugApiResponse('/api/x', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
@@ -215,7 +215,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/y', 500, undefined, requestInfo)
+      debugApiResponse('/api/y', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('abc123-IAD')
@@ -231,7 +231,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/z', 500, undefined, requestInfo)
+      debugApiResponse('/api/z', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('xyz789-SJC')
@@ -244,7 +244,7 @@ describe('debug utilities', () => {
         responseBody: '{"error":"bad"}',
       }
 
-      debugApiResponse('/api/body', 400, undefined, requestInfo)
+      debugApiResponse('/api/body', { status: 400, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.responseBody).toBe('{"error":"bad"}')
@@ -258,7 +258,7 @@ describe('debug utilities', () => {
         responseBody: bigBody,
       }
 
-      debugApiResponse('/api/big', 500, undefined, requestInfo)
+      debugApiResponse('/api/big', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.responseBody).toMatch(/… \(truncated, 5000 chars\)$/)

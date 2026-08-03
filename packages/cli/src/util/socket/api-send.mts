@@ -92,11 +92,9 @@ export async function sendApiRequest<T>(
       )
     }
     // Log success for debugging.
-    debugApiResponse(
-      description || 'Send API Request',
-      result.status,
-      undefined,
-      {
+    debugApiResponse(description || 'Send API Request', {
+      status: result.status,
+      requestInfo: {
         method,
         url: fullUrl,
         durationMs,
@@ -106,7 +104,7 @@ export async function sendApiRequest<T>(
           'Content-Type': 'application/json',
         },
       },
-    )
+    })
   } catch (e) {
     const durationMs = Date.now() - startTime
     if (description) {
@@ -116,14 +114,17 @@ export async function sendApiRequest<T>(
     }
 
     debug(`API ${method} request failed`)
-    debugApiResponse(description || 'Send API Request', undefined, e, {
-      method,
-      url: fullUrl,
-      durationMs,
-      requestedAt,
-      headers: {
-        Authorization: '[REDACTED]',
-        'Content-Type': 'application/json',
+    debugApiResponse(description || 'Send API Request', {
+      error: e,
+      requestInfo: {
+        method,
+        url: fullUrl,
+        durationMs,
+        requestedAt,
+        headers: {
+          Authorization: '[REDACTED]',
+          'Content-Type': 'application/json',
+        },
       },
     })
 
@@ -144,17 +145,20 @@ export async function sendApiRequest<T>(
     // Include response headers, for cf-ray, and a truncated body so
     // support tickets have everything needed to file against Cloudflare
     // or backend teams.
-    debugApiResponse(description || 'Send API Request', status, undefined, {
-      method,
-      url: fullUrl,
-      durationMs,
-      requestedAt,
-      headers: {
-        Authorization: '[REDACTED]',
-        'Content-Type': 'application/json',
+    debugApiResponse(description || 'Send API Request', {
+      status,
+      requestInfo: {
+        method,
+        url: fullUrl,
+        durationMs,
+        requestedAt,
+        headers: {
+          Authorization: '[REDACTED]',
+          'Content-Type': 'application/json',
+        },
+        responseHeaders: result.headers,
+        responseBody: tryReadResponseText(result),
       },
-      responseHeaders: result.headers,
-      responseBody: tryReadResponseText(result),
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {

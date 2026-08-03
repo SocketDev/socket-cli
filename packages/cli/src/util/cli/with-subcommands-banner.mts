@@ -37,14 +37,18 @@ import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 const logger = getDefaultLogger()
 
+export interface AsciiHeaderOptions {
+  orgFlag?: string | undefined
+  compactMode?: boolean | undefined
+  flags?: Record<string, unknown> | undefined
+}
+
 /**
  * Emit the Socket CLI banner to stderr for branding and debugging.
  */
 export function emitBanner(
   name: string,
-  orgFlag: string | undefined,
-  compactMode = false,
-  flags?: Record<string, unknown> | undefined,
+  options?: AsciiHeaderOptions | undefined,
 ) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
@@ -54,7 +58,7 @@ export function emitBanner(
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag, compactMode, flags))
+  logger.error(getAsciiHeader(name, options))
 }
 
 /**
@@ -62,10 +66,13 @@ export function emitBanner(
  */
 export function getAsciiHeader(
   command: string,
-  orgFlag: string | undefined,
-  compactMode = false,
-  flags?: Record<string, unknown> | undefined,
+  options?: AsciiHeaderOptions | undefined,
 ) {
+  const {
+    compactMode = false,
+    flags,
+    orgFlag,
+  } = { __proto__: null, ...options } as AsciiHeaderOptions
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const redacting = VITEST
 

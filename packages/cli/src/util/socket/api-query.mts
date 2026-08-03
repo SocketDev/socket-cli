@@ -137,12 +137,15 @@ export async function queryApiSafeTextWithStatus(
       )
     }
     // Log success for debugging.
-    debugApiResponse(description || 'Query API', result.status, undefined, {
-      method: 'GET',
-      url: fullUrl,
-      durationMs,
-      requestedAt,
-      headers: { Authorization: '[REDACTED]' },
+    debugApiResponse(description || 'Query API', {
+      status: result.status,
+      requestInfo: {
+        method: 'GET',
+        url: fullUrl,
+        durationMs,
+        requestedAt,
+        headers: { Authorization: '[REDACTED]' },
+      },
     })
   } catch (e) {
     const durationMs = Date.now() - startTime
@@ -153,12 +156,15 @@ export async function queryApiSafeTextWithStatus(
     }
 
     debug('Query API request failed')
-    debugApiResponse(description || 'Query API', undefined, e, {
-      method: 'GET',
-      url: fullUrl,
-      durationMs,
-      requestedAt,
-      headers: { Authorization: '[REDACTED]' },
+    debugApiResponse(description || 'Query API', {
+      error: e,
+      requestInfo: {
+        method: 'GET',
+        url: fullUrl,
+        durationMs,
+        requestedAt,
+        headers: { Authorization: '[REDACTED]' },
+      },
     })
 
     // Provide detailed network diagnostics for fetch errors.
@@ -178,14 +184,17 @@ export async function queryApiSafeTextWithStatus(
     // Include response headers, for cf-ray, and a truncated body so
     // support tickets have everything needed to file against Cloudflare
     // or backend teams.
-    debugApiResponse(description || 'Query API', status, undefined, {
-      method: 'GET',
-      url: fullUrl,
-      durationMs,
-      requestedAt,
-      headers: { Authorization: '[REDACTED]' },
-      responseHeaders: result.headers,
-      responseBody: tryReadResponseText(result),
+    debugApiResponse(description || 'Query API', {
+      status,
+      requestInfo: {
+        method: 'GET',
+        url: fullUrl,
+        durationMs,
+        requestedAt,
+        headers: { Authorization: '[REDACTED]' },
+        responseHeaders: result.headers,
+        responseBody: tryReadResponseText(result),
+      },
     })
     // Log required permissions for 403 errors when in a command context.
     if (commandPath && status === 403) {

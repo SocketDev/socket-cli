@@ -125,9 +125,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
     if (description) {
       logger.fail(`An error was thrown while requesting ${description}`)
-      debugApiResponse(description, undefined, e)
+      debugApiResponse(description, { error: e })
     } else {
-      debugApiResponse('Socket API', undefined, e)
+      debugApiResponse('Socket API', { error: e })
     }
     debugDir({ socketSdkErrorResult })
     return socketSdkErrorResult
@@ -136,7 +136,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
     const endpoint = description || 'Socket API'
-    debugApiResponse(endpoint, sdkResult.status as number)
+    debugApiResponse(endpoint, { status: sdkResult.status as number })
     debugDir({ sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>

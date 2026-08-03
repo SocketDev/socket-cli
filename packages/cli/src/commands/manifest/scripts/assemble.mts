@@ -382,13 +382,13 @@ function buildArtifactPaths(
   const coords = new Set<string>()
   for (const fn of finalNodes.values()) {
     const c = fn.coord
-    const coordKey = mavenCoordinateKey(
-      c.group,
-      c.name,
-      c.ext,
-      c.classifier,
-      c.version,
-    )
+    const coordKey = mavenCoordinateKey({
+      groupId: c.group,
+      artifactId: c.name,
+      type: c.ext,
+      classifier: c.classifier,
+      version: c.version,
+    })
     if (!coordKey) {
       continue
     }
@@ -405,13 +405,11 @@ function buildArtifactPaths(
       continue
     }
     targetsByCoord.set(coordKey, targets)
-    const gavKey = mavenCoordinateKey(
-      c.group,
-      c.name,
-      undefined,
-      undefined,
-      c.version,
-    )
+    const gavKey = mavenCoordinateKey({
+      groupId: c.group,
+      artifactId: c.name,
+      version: c.version,
+    })
     if (gavKey) {
       const acc = targetsByGav.get(gavKey)
       if (acc) {
@@ -431,13 +429,11 @@ function buildArtifactPaths(
   // emit first-party module paths here.
   for (let i = 0, { length } = projects; i < length; i += 1) {
     const p = projects[i]!
-    const coordKey = mavenCoordinateKey(
-      p.group,
-      p.name,
-      undefined,
-      undefined,
-      p.version,
-    )
+    const coordKey = mavenCoordinateKey({
+      groupId: p.group,
+      artifactId: p.name,
+      version: p.version,
+    })
     if (!coordKey) {
       continue
     }

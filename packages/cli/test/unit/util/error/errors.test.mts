@@ -95,7 +95,10 @@ describe('Error Classes', () => {
 
   describe('FileSystemError', () => {
     it('should create FileSystemError with ENOENT code', () => {
-      const error = new FileSystemError('File not found', '/path', 'ENOENT')
+      const error = new FileSystemError('File not found', {
+        path: '/path',
+        code: 'ENOENT',
+      })
       expect(error).toBeInstanceOf(FileSystemError)
       expect(error.name).toBe('FileSystemError')
       expect(error.path).toBe('/path')
@@ -104,26 +107,34 @@ describe('Error Classes', () => {
     })
 
     it('should provide EACCES-specific recovery', () => {
-      const error = new FileSystemError('Permission denied', '/etc', 'EACCES')
+      const error = new FileSystemError('Permission denied', {
+        path: '/etc',
+        code: 'EACCES',
+      })
       expect(error.recovery[0]).toContain('permissions')
     })
 
     it('should provide ENOSPC-specific recovery', () => {
-      const error = new FileSystemError('Disk full', '/tmp', 'ENOSPC')
+      const error = new FileSystemError('Disk full', {
+        path: '/tmp',
+        code: 'ENOSPC',
+      })
       expect(error.recovery[0]).toContain('disk space')
     })
 
     it('shares EACCES recovery with EPERM code', () => {
-      const error = new FileSystemError(
-        'Operation not permitted',
-        '/etc',
-        'EPERM',
-      )
+      const error = new FileSystemError('Operation not permitted', {
+        path: '/etc',
+        code: 'EPERM',
+      })
       expect(error.recovery[0]).toContain('permissions')
     })
 
     it('falls back to generic recovery for unknown error codes', () => {
-      const error = new FileSystemError('Unknown error', '/tmp', 'EWHATEVER')
+      const error = new FileSystemError('Unknown error', {
+        path: '/tmp',
+        code: 'EWHATEVER',
+      })
       expect(error.recovery[0]).toContain('file system permissions')
     })
 
@@ -133,7 +144,11 @@ describe('Error Classes', () => {
     })
 
     it('uses provided custom recovery instead of defaults', () => {
-      const error = new FileSystemError('x', '/p', 'ENOENT', ['custom rec'])
+      const error = new FileSystemError('x', {
+        path: '/p',
+        code: 'ENOENT',
+        recovery: ['custom rec'],
+      })
       expect(error.recovery).toEqual(['custom rec'])
     })
   })
@@ -217,7 +232,10 @@ describe('Error Classes', () => {
 
   describe('TimeoutError', () => {
     it('should create TimeoutError with timeout and elapsed times', () => {
-      const error = new TimeoutError('Request timed out', 30_000, 35_000)
+      const error = new TimeoutError('Request timed out', {
+        timeoutMs: 30_000,
+        elapsedMs: 35_000,
+      })
       expect(error).toBeInstanceOf(TimeoutError)
       expect(error.name).toBe('TimeoutError')
       expect(error.message).toBe('Request timed out')
@@ -233,7 +251,11 @@ describe('Error Classes', () => {
 
     it('should accept custom recovery suggestions', () => {
       const recovery = ['Retry with exponential backoff']
-      const error = new TimeoutError('Timeout', 10_000, 15_000, recovery)
+      const error = new TimeoutError('Timeout', {
+        timeoutMs: 10_000,
+        elapsedMs: 15_000,
+        recovery,
+      })
       expect(error.recovery).toEqual(recovery)
     })
 

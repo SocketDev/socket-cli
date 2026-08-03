@@ -287,6 +287,14 @@ export function platformCacheKey({
 }
 
 /**
+ * Options accepted by {@link shouldRun}.
+ */
+export interface ShouldRunOptions extends PlatformCacheKeyOptions {
+  force?: boolean | undefined
+  sourcePaths?: string[] | undefined
+}
+
+/**
  * Should the stage run? True if force, no checkpoint, missing cache hash, or
  * the hash no longer matches current inputs.
  */
@@ -294,10 +302,9 @@ export async function shouldRun(
   buildDir: string,
   packageName: string | undefined,
   name: string,
-  force = false,
-  sourcePaths?: string[] | undefined,
-  options: PlatformCacheKeyOptions = {},
+  options: ShouldRunOptions = {},
 ) {
+  const { force = false, sourcePaths, ...platformOptions } = options
   if (force) {
     return true
   }
@@ -307,7 +314,10 @@ export async function shouldRun(
 
   // Only validate hash if the caller provided inputs or platform metadata.
   const wantsValidation =
-    sourcePaths?.length || options.buildMode || options.platform || options.arch
+    sourcePaths?.length ||
+    platformOptions.buildMode ||
+    platformOptions.platform ||
+    platformOptions.arch
 
   if (!wantsValidation) {
     return false
@@ -318,7 +328,7 @@ export async function shouldRun(
     return true
   }
 
-  const expected = computeCacheHash(sourcePaths, options)
+  const expected = computeCacheHash(sourcePaths, platformOptions)
   if (!data.cacheHash || data.cacheHash !== expected) {
     logger.substep(`Checkpoint ${name} stale (cache hash changed) — rebuilding`)
     return true
