@@ -1,0 +1,14 @@
+socket-btm
+socket-cli
+odai
+socket-lib
+socket-mcp
+socket-packageurl-js
+socket-registry
+socket-sdk-js
+abitious
+decmpfs
+envrypt
+sdxgen
+stuie
+ultrathink
