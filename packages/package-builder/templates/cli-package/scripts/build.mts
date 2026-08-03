@@ -1,16 +1,15 @@
 /**
- * @fileoverview Build script for Socket CLI.
- * Delegates to esbuild config for actual build.
- * Copies data/ and images from packages/cli.
+ * @file Build script for Socket CLI. Delegates to rolldown config for actual
+ *   build. Copies data/ and images from packages/cli.
  */
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -23,8 +22,8 @@ async function main() {
     const cliPath = path.join(rootPath, '..', 'cli')
 
     // Build CLI bundle.
-    logger.info('Building CLI bundle...')
-    let result = await spawn('node', ['.config/esbuild.cli.build.mjs'], {
+    logger.info('Building CLI bundle…')
+    let result = await spawn('node', ['.config/rolldown.cli.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -40,8 +39,8 @@ async function main() {
     logger.success('Built CLI bundle')
 
     // Build index loader.
-    logger.info('Building index loader...')
-    result = await spawn('node', ['.config/esbuild.index.config.mjs'], {
+    logger.info('Building index loader…')
+    result = await spawn('node', ['.config/rolldown.index.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -57,7 +56,7 @@ async function main() {
     logger.success('Built index loader')
 
     // Copy CLI to dist.
-    logger.info('Copying CLI to dist...')
+    logger.info('Copying CLI to dist…')
     await fs.copyFile(
       path.join(rootPath, 'build', 'cli.js'),
       path.join(rootPath, 'dist', 'cli.js'),
@@ -65,21 +64,22 @@ async function main() {
     logger.success('Copied CLI to dist')
 
     // Copy data directory from packages/cli.
-    logger.info('Copying data/ from packages/cli...')
+    logger.info('Copying data/ from packages/cli…')
     await fs.cp(path.join(cliPath, 'data'), path.join(rootPath, 'data'), {
       recursive: true,
     })
     logger.success('Copied data/')
 
     // Copy files from repo root.
-    logger.info('Copying files from repo root...')
+    logger.info('Copying files from repo root…')
     const filesToCopy = [
       'CHANGELOG.md',
       'LICENSE',
       'logo-dark.png',
       'logo-light.png',
     ]
-    for (const file of filesToCopy) {
+    for (let i = 0, { length } = filesToCopy; i < length; i += 1) {
+      const file = filesToCopy[i]
       await fs.cp(path.join(repoRoot, file), path.join(rootPath, file))
     }
     logger.success('Copied files from repo root')
@@ -89,4 +89,5 @@ async function main() {
   }
 }
 
-main()
+// main() catches internally and reports via process.exitCode.
+void main()

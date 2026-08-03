@@ -10,9 +10,11 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 - [Package Types](#package-types)
   - [CLI Packages](#cli-packages)
   - [Socket Wrapper Package](#socket-wrapper-package)
-  - [Socketbin Packages](#socketbin-packages)
+  - [cli.exe Tail Packages](#cliexe-tail-packages)
+  - [Socketbin Packages (legacy)](#socketbin-packages-legacy)
 - [Generator Scripts](#generator-scripts)
   - [generate-cli-packages.mjs](#generate-cli-packagesmjs)
+  - [generate-cli-exe-packages.mts](#generate-cli-exe-packagesmts)
   - [generate-socketbin-packages.mjs](#generate-socketbin-packagesmjs)
 - [Build Process](#build-process)
   - [CLI Package Build](#cli-package-build)
@@ -38,12 +40,12 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 - [Code Quality Observations](#code-quality-observations)
   - [Strengths](#strengths)
   - [Patterns](#patterns)
-  - [Potential Improvements](#potential-improvements)
+  - Potential Improvements
 - [Summary](#summary)
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Package Builder                          │
 │                                                                 │
@@ -56,6 +58,7 @@ Automated package generation system for Socket CLI distribution. Transforms temp
                               │  • cli       │
                               │  • cli-sentry│
                               │  • socket    │
+                              │  • cli-exe   │
                               │  • socketbin │
                               └──────┬───────┘
                                      │
@@ -74,7 +77,8 @@ Automated package generation system for Socket CLI distribution. Transforms temp
               │  Generated Packages:                     │
               │  • cli/                (npm package)     │
               │  • cli-with-sentry/    (npm package)     │
-              │  • socketbin-cli-*/    (6 platforms)     │
+              │  • cli.exe.*/          (8 platforms)     │
+              │  • socketbin-cli-*/    (legacy, frozen)  │
               └──────────────────────────────────────────┘
 ```
 
@@ -82,7 +86,7 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 
 Socket CLI uses a multi-channel distribution approach with VFS-based tool bundling:
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │                 Distribution Channels                      │
 ├────────────────────────────────────────────────────────────┤
@@ -102,10 +106,11 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 │         First run: Lazy download tools from GitHub         │
 │         Tools cached in ~/.socket/vfs-tools/               │
 │                                                            │
-│  4. socketbin-cli-{platform}-{arch}                        │
-│     └─→ SEA binary with embedded VFS (6 variants)          │
+│  4. @socketsecurity/cli.exe.<triplet>                      │
+│     └─→ SEA binary with embedded VFS (8 variants)          │
 │         • darwin-arm64, darwin-x64                         │
-│         • linux-arm64, linux-x64                           │
+│         • linux-arm64, linux-arm64-musl                    │
+│         • linux-x64, linux-x64-musl                        │
 │         • win32-arm64, win32-x64                           │
 │         Binary contains: CLI code + external tools in VFS  │
 │                                                            │
@@ -115,12 +120,14 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 ### Tool Management
 
 **VFS (Virtual File System) - For Binaries:**
+
 - External tools embedded in binary at build time
 - Tools: Python, OpenGrep, Trivy, TruffleHog, npm packages
 - First run: Extract from VFS → `~/.socket/vfs-tools/`
 - No network required for tool installation
 
 **Lazy Download - For Pure JS Packages:**
+
 - External tools downloaded from GitHub releases on first run
 - Same tools as VFS binaries
 - Cached in `~/.socket/vfs-tools/` (same location)
@@ -132,7 +139,8 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 
 Standard Node.js implementations with all CLI functionality.
 
-**@socketsecurity/cli**
+#### @socketsecurity/cli
+
 - Pure JavaScript CLI package (no binaries, no VFS).
 - No telemetry.
 - Built from `templates/cli-package/`.
@@ -140,7 +148,8 @@ Standard Node.js implementations with all CLI functionality.
 - Lazy downloads external tools from GitHub on first run.
 - Tools cached in `~/.socket/vfs-tools/`.
 
-**@socketsecurity/cli-with-sentry**
+#### @socketsecurity/cli-with-sentry
+
 - Pure JavaScript CLI with Sentry error reporting (no binaries, no VFS).
 - Built from `templates/cli-sentry-package/`.
 - Uses `cli-dispatch-with-sentry.mts` entry point.
@@ -150,19 +159,38 @@ Standard Node.js implementations with all CLI functionality.
 
 ### Socket Wrapper Package
 
-Installs platform-specific binaries via optionalDependencies.
+Installs platform-specific binaries via optionalDependencies. Prefers the
+`@socketsecurity/cli.exe.<triplet>` tails and falls back to the frozen legacy
+`@socketbin/cli-*` binaries until the new set is live and pinned.
 
-### Socketbin Packages
+### cli.exe Tail Packages
 
-Self-contained SEA binaries with embedded VFS.
+Self-contained SEA binaries with embedded VFS — the current distribution
+family, named per the fleet dot-naming grammar with the `.exe` target and pnpm
+pack-app platform tails.
 
-**socketbin-cli-{platform}-{arch}**
-- 6 packages total (darwin × 2, linux × 2, win32 × 2).
+#### @socketsecurity/cli.exe.&lt;triplet&gt;
+
+- 8 packages total (darwin × 2, linux × 4 incl. musl, win32 × 2).
+- Generated by `scripts/generate-cli-exe-packages.mts` from
+  `scripts/cli-exe-targets.mts` + `templates/cli-exe-package/`.
+- Executable at `bin/socket` — `bin/socket.exe` on Windows.
+- Includes exact `os` / `cpu` / `libc` constraints in package.json.
+- VFS includes: Python, OpenGrep, Trivy, TruffleHog, npm tools.
+- First run: Extracts tools from VFS → `~/.socket/vfs-tools/`.
+
+### Socketbin Packages (legacy)
+
+The decommissioned `@socketbin/cli-*` family. The scope is dead — npm still
+serves the frozen 2025-11-03 binaries, so the wrapper and installer keep them
+as a fallback, but no new publish can ever happen. The template + generator
+remain only until the cli.exe tails are live and pinned.
+
+#### socketbin-cli-{platform}-{arch} (legacy)
+
 - Generated from `templates/socketbin-package/`.
 - Contains single executable binary with CLI + VFS.
-- VFS includes: Python, OpenGrep, Trivy, TruffleHog, npm tools.
 - Includes OS and CPU constraints in package.json.
-- First run: Extracts tools from VFS → `~/.socket/vfs-tools/`.
 
 ## Generator Scripts
 
@@ -170,7 +198,7 @@ Self-contained SEA binaries with embedded VFS.
 
 Creates both standard CLI packages.
 
-```
+```text
 Input:  templates/cli-package/
         templates/cli-sentry-package/
 
@@ -180,11 +208,38 @@ Output: build/cli/
 Action: Recursive directory copy.
 ```
 
+### generate-cli-exe-packages.mts
+
+Creates the current platform-specific binary packages.
+
+```text
+Input:  scripts/cli-exe-targets.mts        # names, engine fields, manifests
+        templates/cli-exe-package/         # README template + gitignore seed
+
+Output: build/{dev|prod}/out/cli.exe.<triplet>/
+
+Action: Programmatic manifest construction + template rendering.
+```
+
+**Platform Triplets:**
+
+```text
+darwin-arm64      → macOS ARM64 (Apple Silicon)
+darwin-x64        → macOS x64 (Intel)
+linux-arm64       → Linux ARM64 (glibc)
+linux-arm64-musl  → Linux ARM64 (musl)
+linux-x64         → Linux x64 (glibc)
+linux-x64-musl    → Linux x64 (musl)
+win32-arm64       → Windows ARM64 (.exe)
+win32-x64         → Windows x64 (.exe)
+```
+
 ### generate-socketbin-packages.mjs
 
-Creates all platform-specific binary packages.
+Creates the legacy platform-specific binary packages — kept only until the
+cli.exe tails are live.
 
-```
+```text
 Input:  templates/socketbin-package/
         - package.json.template
         - README.md.template
@@ -198,7 +253,8 @@ Action: Template variable replacement:
 ```
 
 **Platform Configurations:**
-```
+
+```text
 darwin-arm64  → macOS ARM64 (Apple Silicon)
 darwin-x64    → macOS x64 (Intel)
 linux-arm64   → Linux ARM64
@@ -213,7 +269,7 @@ win32-x64     → Windows x64 (.exe)
 
 Located in `templates/cli-package/scripts/build.mjs`:
 
-```
+```text
 1. Build CLI bundle     → .config/esbuild.cli.build.mjs
 2. Build index loader   → .config/esbuild.index.config.mjs
 3. Build npm inject     → .config/esbuild.inject.config.mjs
@@ -223,6 +279,7 @@ Located in `templates/cli-package/scripts/build.mjs`:
 ```
 
 **Binary Outputs:**
+
 - `bin/cli.js` - Main CLI entry.
 - `bin/npm-cli.js` - npm wrapper.
 - `bin/npx-cli.js` - npx wrapper.
@@ -233,7 +290,7 @@ Located in `templates/cli-package/scripts/build.mjs`:
 
 ### CLI Package Template
 
-```
+```text
 cli-package/
 ├── .config/
 │   ├── esbuild.cli.build.mjs      # Main CLI build
@@ -257,7 +314,7 @@ cli-package/
 
 ### Socket Package Template
 
-```
+```text
 socket-package/
 ├── scripts/
 │   ├── build.mjs                      # Build orchestration
@@ -270,13 +327,14 @@ socket-package/
 ```
 
 **Key Features:**
+
 - Optional dependencies on all socketbin packages.
 - Bootstrap loader detects platform and downloads binary.
 - Falls back to Node.js implementation if binary unavailable.
 
 ### Socketbin Package Template
 
-```
+```text
 socketbin-package/
 ├── package.json.template    # Template with variables
 ├── README.md.template       # Template with variables
@@ -284,6 +342,7 @@ socketbin-package/
 ```
 
 **Template Variables:**
+
 - `{{PLATFORM}}` - OS platform (darwin/linux/win32).
 - `{{ARCH}}` - CPU architecture (arm64/x64).
 - `{{OS}}` - OS constraint for package.json.
@@ -296,6 +355,7 @@ socketbin-package/
 Each template includes verification scripts to validate generated packages.
 
 **Validation Checks:**
+
 - package.json exists and has correct structure.
 - Required files present (LICENSE, CHANGELOG.md).
 - Dist files exist (index.js, cli.js).
@@ -304,6 +364,7 @@ Each template includes verification scripts to validate generated packages.
 - Sentry integration present (for cli-with-sentry).
 
 **Run Validation:**
+
 ```bash
 node scripts/verify-package.mjs
 ```
@@ -312,16 +373,19 @@ node scripts/verify-package.mjs
 
 Generated packages appear in `build/` directory:
 
-```
-build/
+```text
+build/{dev|prod}/out/
 ├── cli/                      # @socketsecurity/cli
 ├── cli-with-sentry/          # @socketsecurity/cli-with-sentry
-├── socketbin-cli-darwin-arm64/
-├── socketbin-cli-darwin-x64/
-├── socketbin-cli-linux-arm64/
-├── socketbin-cli-linux-x64/
-├── socketbin-cli-win32-arm64/
-└── socketbin-cli-win32-x64/
+├── cli.exe.darwin-arm64/     # @socketsecurity/cli.exe.darwin-arm64
+├── cli.exe.darwin-x64/
+├── cli.exe.linux-arm64/
+├── cli.exe.linux-arm64-musl/
+├── cli.exe.linux-x64/
+├── cli.exe.linux-x64-musl/
+├── cli.exe.win32-arm64/
+├── cli.exe.win32-x64/
+└── socketbin-cli-*/          # legacy, frozen on npm
 ```
 
 Each directory is a complete, publishable npm package.
@@ -331,6 +395,7 @@ Each directory is a complete, publishable npm package.
 ### Dependencies on Main CLI
 
 All generated packages depend on:
+
 - Main CLI source (`packages/cli/`).
 - Bootstrap package (`packages/bootstrap/`).
 - Build infrastructure (`packages/build-infra/`).
@@ -338,6 +403,7 @@ All generated packages depend on:
 ### esbuild Configuration
 
 Templates reference base configurations from main CLI:
+
 ```javascript
 import baseConfig from '../../cli/.config/esbuild.cli.build.mjs'
 ```
@@ -347,6 +413,7 @@ This ensures consistency across all distribution channels.
 ### Version Synchronization
 
 All packages share version from monorepo:
+
 - Read from `.node-version` for Node.js version.
 - Read from `package.json` for CLI version.
 - Injected as build-time constants.
@@ -396,6 +463,7 @@ pnpm run verify
 **Pattern:** Separate templates from generated output.
 
 **Benefits:**
+
 - Templates tracked in version control.
 - Generated packages excluded from git.
 - Clear separation of source and artifacts.
@@ -406,6 +474,7 @@ pnpm run verify
 **Pattern:** Single template generates multiple platform-specific packages.
 
 **Benefits:**
+
 - Reduces duplication.
 - Ensures consistency across platforms.
 - Simplifies platform additions.
@@ -416,6 +485,7 @@ pnpm run verify
 **Pattern:** Generated packages contain their own build scripts.
 
 **Benefits:**
+
 - Packages are self-contained.
 - Can be built independently.
 - Supports incremental builds.
@@ -426,6 +496,7 @@ pnpm run verify
 **Pattern:** Main package lists binaries as optional dependencies.
 
 **Benefits:**
+
 - Graceful fallback to Node.js implementation.
 - Reduces download size.
 - Platform-specific installation.

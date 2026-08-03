@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { existsSync } from 'node:fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -13,33 +14,28 @@ const packageRoot = path.resolve(__dirname, '..')
 const logger = getDefaultLogger()
 
 /**
- * Check if a file exists and is readable.
+ * Check if a file exists.
  */
-async function fileExists(filePath) {
-  try {
-    await fs.access(filePath)
-    return true
-  } catch {
-    return false
-  }
+export function fileExists(filePath) {
+  return existsSync(filePath)
 }
 
 /**
  * Main validation function.
  */
-async function validate() {
+export async function validatePackage() {
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('CLI with Sentry Package Validation')}`)
+  logger.log(colors.blue('CLI with Sentry Package Validation'))
   logger.log('='.repeat(60))
   logger.log('')
 
   const errors = []
 
   // Check package.json exists and validate Sentry configuration.
-  logger.info('Checking package.json...')
+  logger.info('Checking package.json…')
   const pkgPath = path.join(packageRoot, 'package.json')
-  if (!(await fileExists(pkgPath))) {
+  if (!existsSync(pkgPath)) {
     errors.push('package.json does not exist')
   } else {
     logger.success('package.json exists')
@@ -63,7 +59,8 @@ async function validate() {
       'logo-dark.png',
       'logo-light.png',
     ]
-    for (const required of requiredInFiles) {
+    for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
+      const required = requiredInFiles[i]
       if (!pkg.files?.includes(required)) {
         errors.push(`package.json files array missing: ${required}`)
       }
@@ -75,10 +72,11 @@ async function validate() {
 
   // Check root files exist (LICENSE, CHANGELOG.md).
   const rootFiles = ['LICENSE', 'CHANGELOG.md']
-  for (const file of rootFiles) {
+  for (let i = 0, { length } = rootFiles; i < length; i += 1) {
+    const file = rootFiles[i]
     logger.info(`Checking ${file}...`)
     const filePath = path.join(packageRoot, file)
-    if (!(await fileExists(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`${file} does not exist`)
     } else {
       logger.success(`${file} exists`)
@@ -87,10 +85,11 @@ async function validate() {
 
   // Check dist files exist and validate Sentry integration.
   const distFiles = ['index.js', 'cli.js']
-  for (const file of distFiles) {
+  for (let i = 0, { length } = distFiles; i < length; i += 1) {
+    const file = distFiles[i]
     logger.info(`Checking dist/${file}...`)
     const filePath = path.join(packageRoot, 'dist', file)
-    if (!(await fileExists(filePath))) {
+    if (!existsSync(filePath)) {
       errors.push(`dist/${file} does not exist`)
     } else {
       logger.success(`dist/${file} exists`)
@@ -98,9 +97,9 @@ async function validate() {
   }
 
   // Verify Sentry is referenced in the build (check for @sentry/node require).
-  logger.info('Checking for Sentry integration in build...')
+  logger.info('Checking for Sentry integration in build…')
   const buildPath = path.join(packageRoot, 'build', 'cli.js')
-  if (await fileExists(buildPath)) {
+  if (existsSync(buildPath)) {
     const buildContent = await fs.readFile(buildPath, 'utf-8')
     if (!buildContent.includes('@sentry/node')) {
       errors.push('Sentry integration not found in build/cli.js')
@@ -112,9 +111,9 @@ async function validate() {
   }
 
   // Check data directory exists.
-  logger.info('Checking data directory...')
+  logger.info('Checking data directory…')
   const dataPath = path.join(packageRoot, 'data')
-  if (!(await fileExists(dataPath))) {
+  if (!existsSync(dataPath)) {
     errors.push('data directory does not exist')
   } else {
     logger.success('data directory exists')
@@ -124,10 +123,11 @@ async function validate() {
       'alert-translations.json',
       'command-api-requirements.json',
     ]
-    for (const file of dataFiles) {
+    for (let i = 0, { length } = dataFiles; i < length; i += 1) {
+      const file = dataFiles[i]
       logger.info(`Checking data/${file}...`)
       const filePath = path.join(dataPath, file)
-      if (!(await fileExists(filePath))) {
+      if (!existsSync(filePath)) {
         errors.push(`data/${file} does not exist`)
       } else {
         logger.success(`data/${file} exists`)
@@ -138,13 +138,14 @@ async function validate() {
   // Print summary.
   logger.log('')
   logger.log('='.repeat(60))
-  logger.log(`${colors.blue('Validation Summary')}`)
+  logger.log(colors.blue('Validation Summary'))
   logger.log('='.repeat(60))
   logger.log('')
 
   if (errors.length > 0) {
-    logger.log(`${colors.red('Errors:')}`)
-    for (const err of errors) {
+    logger.log(colors.red('Errors:'))
+    for (let i = 0, { length } = errors; i < length; i += 1) {
+      const err = errors[i]
       logger.fail(`  ${err}`)
     }
     logger.log('')
@@ -159,7 +160,7 @@ async function validate() {
 }
 
 // Run validation.
-validate().catch(e => {
+validatePackage().catch(e => {
   logger.error('')
   logger.fail(`Unexpected error: ${e.message}`)
   logger.error('')

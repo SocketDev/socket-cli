@@ -1,18 +1,18 @@
 /**
- * Generate cli-with-sentry package directory from template.
- * Creates the @socketsecurity/cli-with-sentry package that will be used
- * for publishing the CLI with Sentry telemetry integration.
+ * Generate cli-with-sentry package directory from template. Creates the.
  *
- * Usage:
- *   node scripts/generate-cli-sentry-package.mjs
+ * @socketsecurity/cli-with-sentry package that will be used for publishing the
+ * CLI with Sentry telemetry integration.
+ *
+ * Usage: node scripts/generate-cli-sentry-package.mts.
  */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { copyDirectory } from './utils.mjs'
+import { copyDirectory, materializeGitignore } from './utils.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const generatePath = path.join(__dirname, '..')
@@ -23,7 +23,7 @@ const logger = getDefaultLogger()
  */
 async function main() {
   logger.log('')
-  logger.log('Generating cli-with-sentry package from template...')
+  logger.log('Generating cli-with-sentry package from template…')
   logger.log('='.repeat(50))
   logger.log('')
 
@@ -32,6 +32,7 @@ async function main() {
 
   // Copy entire template directory.
   await copyDirectory(templatePath, packagePath)
+  await materializeGitignore(packagePath)
 
   logger.success('Generated @socketsecurity/cli-with-sentry package')
   logger.log('')

@@ -1,16 +1,13 @@
 /**
- * @fileoverview Generate all package directories from templates.
- * Runs all package generation scripts in sequence.
- *
- * Usage:
- *   node scripts/generate-all.mjs.
+ * @file Generate all package directories from templates. Runs all package
+ *   generation scripts in sequence. Usage: node scripts/generate-all.mts.
  */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const logger = getDefaultLogger()
@@ -19,7 +16,8 @@ const logger = getDefaultLogger()
  * Run a script and report results.
  */
 async function runScript(scriptName, description) {
-  logger.log(`\n▶ ${description}...`)
+  logger.log('')
+  logger.log(`▶ ${description}...`)
   logger.log('─'.repeat(50))
 
   const result = await spawn('node', [path.join(__dirname, scriptName)], {
@@ -50,8 +48,10 @@ async function main() {
   logger.log('═'.repeat(50))
 
   // Run all generation scripts in sequence.
-  await runScript('generate-cli-packages.mjs', 'CLI packages')
-  await runScript('generate-socketbin-packages.mjs', 'Socketbin packages')
+  await runScript('generate-cli-packages.mts', 'CLI packages')
+  await runScript('generate-cli-exe-packages.mts', 'cli.exe tail packages')
+  await runScript('generate-socketaddon-packages.mts', 'Socketaddon packages')
+  await runScript('generate-socketbin-packages.mts', 'Socketbin packages')
 
   logger.log('')
   logger.log('═'.repeat(50))

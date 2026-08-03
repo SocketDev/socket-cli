@@ -1,0 +1,69 @@
+/**
+ * Generate CLI package directories from templates. Creates the standard CLI,
+ * CLI-with-Sentry, and socket packages.
+ *
+ * Usage: node scripts/generate-cli-packages.mts.
+ */
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import {
+  CLI_SENTRY_TEMPLATE_DIR,
+  CLI_TEMPLATE_DIR,
+  getPackageOutDir,
+  SOCKET_TEMPLATE_DIR,
+} from './paths.mts'
+import { copyDirectory, materializeGitignore } from './utils.mts'
+
+const logger = getDefaultLogger()
+
+/**
+ * Package configurations.
+ */
+const PACKAGES = [
+  {
+    name: '@socketsecurity/cli',
+    outputDir: 'cli',
+    templateDir: CLI_TEMPLATE_DIR,
+  },
+  {
+    name: '@socketsecurity/cli-with-sentry',
+    outputDir: 'cli-with-sentry',
+    templateDir: CLI_SENTRY_TEMPLATE_DIR,
+  },
+  {
+    // socket package is the bootstrap loader for the platform SEA binaries —
+    // @socketsecurity/cli.exe.* tails, with the frozen @socketbin/* fallback.
+    name: 'socket',
+    outputDir: 'socket',
+    templateDir: SOCKET_TEMPLATE_DIR,
+  },
+]
+
+/**
+ * Main generation logic.
+ */
+async function main() {
+  logger.log('')
+  logger.log('Generating CLI packages from templates…')
+  logger.log('='.repeat(50))
+  logger.log('')
+
+  for (let i = 0, { length } = PACKAGES; i < length; i += 1) {
+    const pkg = PACKAGES[i]
+    const packagePath = getPackageOutDir(pkg.outputDir)
+
+    // Copy entire template directory.
+    await copyDirectory(pkg.templateDir, packagePath)
+    await materializeGitignore(packagePath)
+
+    logger.success(`Generated ${pkg.name} package`)
+  }
+
+  logger.log('')
+}
+
+main().catch(e => {
+  logger.error('Package generation failed:', e)
+  process.exitCode = 1
+})

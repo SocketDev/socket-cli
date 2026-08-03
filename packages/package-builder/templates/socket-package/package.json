@@ -1,0 +1,56 @@
+{
+  "name": "socket",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Socket CLI for Socket.dev",
+  "homepage": "https://github.com/SocketDev/socket-cli",
+  "license": "MIT",
+  "author": {
+    "name": "Socket Inc",
+    "email": "eng@socket.dev",
+    "url": "https://socket.dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
+  },
+  "bin": {
+    "socket": "./bin/socket.js"
+  },
+  "files": [
+    "bin/**",
+    "CHANGELOG.md",
+    "DISCLOSURE",
+    "LICENSE",
+    "logo-dark.png",
+    "logo-light.png"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "optionalDependencies": {
+    "@socketbin/cli-alpine-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-alpine-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-darwin-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-darwin-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-linux-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-linux-x64": "0.0.0-20251103.61247",
+    "@socketbin/cli-win32-arm64": "0.0.0-20251103.61247",
+    "@socketbin/cli-win32-x64": "0.0.0-20251103.61247",
+    "@socketsecurity/cli.exe.darwin-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.darwin-x64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-arm64-musl": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-x64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.linux-x64-musl": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.win32-arm64": "0.0.0-replaced-by-publish",
+    "@socketsecurity/cli.exe.win32-x64": "0.0.0-replaced-by-publish"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "contentPolicy": {
+    "class": "dual-use"
+  }
+}

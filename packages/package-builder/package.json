@@ -1,20 +1,23 @@
 {
-  "name": "@socketsecurity/package-builder",
+  "name": "package-builder",
   "version": "1.0.0",
-  "description": "Template-based package generation system for Socket CLI distribution",
   "private": true,
+  "description": "Template-based package generation system for Socket CLI distribution",
   "type": "module",
+  "exports": {
+    "./scripts/*": "./scripts/*"
+  },
   "scripts": {
-    "generate:all": "node scripts/generate-all.mjs",
-    "generate:cli": "node scripts/generate-cli-packages.mjs",
-    "generate:cli-sentry": "node scripts/generate-cli-sentry-package.mjs",
-    "generate:socketbin": "node scripts/generate-socketbin-packages.mjs"
+    "generate:all": "node scripts/generate-all.mts",
+    "generate:cli": "node scripts/generate-cli-packages.mts",
+    "generate:cli-exe": "node scripts/generate-cli-exe-packages.mts",
+    "generate:cli-sentry": "node scripts/generate-cli-sentry-package.mts",
+    "generate:socketaddon": "node scripts/generate-socketaddon-packages.mts",
+    "generate:socketbin": "node scripts/generate-socketbin-packages.mts"
   },
   "dependencies": {
     "@socketsecurity/lib": "catalog:",
-    "handlebars": "^4.7.8"
-  },
-  "engines": {
-    "node": ">=25.5.0"
+    "build-infra": "workspace:1.0.0",
+    "handlebars": "^4.7.9"
   }
 }

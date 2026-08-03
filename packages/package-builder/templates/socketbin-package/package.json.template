@@ -4,11 +4,8 @@
   "description": "Socket CLI binary ({{DESCRIPTION}})",
   "private": true,
   "license": "MIT",
-  "bin": {
-    "socket": "bin/socket{{BIN_EXT}}"
-  },
   "files": [
-    "bin/socket{{BIN_EXT}}"
+    "socket{{BIN_EXT}}"
   ],
   "os": [
     "{{OS}}"

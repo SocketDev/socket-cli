@@ -3,4 +3,4 @@
  */
 import baseConfig from '../../vitest.config.simple.mts'
 
-export default baseConfig
+export { baseConfig }

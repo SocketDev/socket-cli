@@ -1,0 +1,211 @@
+/**
+ * Centralized path resolution for package-builder.
+ *
+ * This is the source of truth for all build output paths. Follows ultrathink
+ * pattern: build/{mode}/out/{package}
+ */
+
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import { cliExeBinaryName, cliExeUnscopedName } from './cli-exe-targets.mts'
+import type { CliExeTriplet } from './cli-exe-targets.mts'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Package-builder root directory.
+const PACKAGE_BUILDER_ROOT = path.join(__dirname, '..')
+
+// Template directories.
+const TEMPLATES_DIR = path.join(PACKAGE_BUILDER_ROOT, 'templates')
+export const CLI_EXE_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-exe-package')
+export const CLI_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'cli-package')
+export const CLI_SENTRY_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'cli-sentry-package',
+)
+export const SOCKET_TEMPLATE_DIR = path.join(TEMPLATES_DIR, 'socket-package')
+export const SOCKETADDON_MAIN_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'socketaddon-main',
+)
+export const SOCKETADDON_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'socketaddon-package',
+)
+export const SOCKETBIN_TEMPLATE_DIR = path.join(
+  TEMPLATES_DIR,
+  'socketbin-package',
+)
+
+/**
+ * Get build mode (dev/prod).
+ *
+ * Priority:
+ *
+ * 1. --dev or --prod CLI args
+ * 2. BUILD_MODE env var
+ * 3. CI env var (prod in CI, dev locally)
+ */
+export function getBuildMode() {
+  // Check CLI args.
+  const args = process.argv.slice(2)
+  if (args.includes('--dev')) {
+    return 'dev'
+  }
+  if (args.includes('--prod')) {
+    return 'prod'
+  }
+  // Check env var.
+  if (process.env['BUILD_MODE']) {
+    return process.env['BUILD_MODE']
+  }
+  // Default based on CI.
+  const isCI = process.env['CI'] === '1' || process.env['CI'] === 'true'
+  return isCI ? 'prod' : 'dev'
+}
+
+/**
+ * Get the build output root for a given mode.
+ *
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to build output root.
+ */
+export function getBuildOutDir(mode = getBuildMode()) {
+  return path.join(PACKAGE_BUILDER_ROOT, 'build', mode, 'out')
+}
+
+/**
+ * Get the output directory for a specific package.
+ *
+ * @param {string} packageName - Package directory name (e.g., 'cli',
+ *   'socketbin-cli-darwin-arm64').
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to package output directory.
+ */
+export function getPackageOutDir(packageName: string, mode = getBuildMode()) {
+  return path.join(getBuildOutDir(mode), packageName)
+}
+
+/**
+ * Get the output directory for a `@socketsecurity/cli.exe.<triplet>` tail
+ * package. Directory name matches the unscoped npm name, e.g.
+ * `cli.exe.darwin-arm64`.
+ *
+ * @param {string} triplet - Pack-app triplet (darwin-arm64, linux-x64-musl, …).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to the tail package directory.
+ */
+export function getCliExePackageDir(
+  triplet: CliExeTriplet,
+  mode = getBuildMode(),
+) {
+  return getPackageOutDir(cliExeUnscopedName(triplet), mode)
+}
+
+/**
+ * Get the binary path within a `@socketsecurity/cli.exe.<triplet>` tail
+ * package. Payload lives under `bin/`, `.exe`-suffixed on Windows.
+ *
+ * @param {string} triplet - Pack-app triplet (darwin-arm64, linux-x64-musl, …).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to the socket binary.
+ */
+export function getCliExeBinaryPath(
+  triplet: CliExeTriplet,
+  mode = getBuildMode(),
+) {
+  return path.join(
+    getCliExePackageDir(triplet, mode),
+    'bin',
+    cliExeBinaryName(triplet),
+  )
+}
+
+/**
+ * Get the output path for a socketaddon package. Uses release platform naming
+ * (win instead of win32).
+ *
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
+ * @param {string} arch - Architecture identifier (arm64, x64).
+ * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to socketaddon package directory.
+ */
+export function getSocketaddonPackageDir(
+  platform: string,
+  arch: string,
+  libc?: string | undefined,
+  mode = getBuildMode(),
+) {
+  // Normalize win32 → win for directory naming.
+  const releasePlatform = platform === 'win32' ? 'win' : platform
+  const muslSuffix = libc === 'musl' ? '-musl' : ''
+  const packageName = `socketaddon-iocraft-${releasePlatform}-${arch}${muslSuffix}`
+  return getPackageOutDir(packageName, mode)
+}
+
+/**
+ * Get the binary path within a socketbin package.
+ *
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
+ * @param {string} arch - Architecture identifier (arm64, x64).
+ * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to the socket binary.
+ */
+export function getSocketbinBinaryPath(
+  platform: string,
+  arch: string,
+  libc?: string | undefined,
+  mode = getBuildMode(),
+) {
+  // Accept both win and win32 for Windows detection.
+  const binaryName =
+    platform === 'win' || platform === 'win32' ? 'socket.exe' : 'socket'
+  return path.join(
+    getSocketbinPackageDir(platform, arch, libc, mode),
+    binaryName,
+  )
+}
+
+/**
+ * Get the output path for a socketbin package. Uses release platform naming
+ * (win instead of win32).
+ *
+ * @param {string} platform - Platform identifier (darwin, linux, win, or
+ *   win32).
+ * @param {string} arch - Architecture identifier (arm64, x64).
+ * @param {string} [libc] - Linux libc variant ('musl' for Alpine).
+ * @param {string} [mode] - Build mode (dev/prod), defaults to BUILD_MODE or CI
+ *   detection.
+ *
+ * @returns {string} Path to socketbin package directory.
+ */
+export function getSocketbinPackageDir(
+  platform: string,
+  arch: string,
+  libc?: string | undefined,
+  mode = getBuildMode(),
+) {
+  // Normalize win32 → win for directory naming.
+  const releasePlatform = platform === 'win32' ? 'win' : platform
+  const muslSuffix = libc === 'musl' ? '-musl' : ''
+  const packageName = `socketbin-cli-${releasePlatform}-${arch}${muslSuffix}`
+  return getPackageOutDir(packageName, mode)
+}
