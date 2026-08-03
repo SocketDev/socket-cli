@@ -88,11 +88,6 @@ jobs:
       # by its own copy of this workflow, which reads the owning branch from
       # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
       #
-      # This ran inverted until 2026-08-03, and the cost was visible on the
-      # package page: `socket@latest` sat on 1.1.147 for a week while 1.1.148
-      # through 1.1.152 — including a CVE bump — published under a `staged`
-      # side tag no untagged install resolves.
-      #
       # Dry runs pass regardless of dist-tag: they upload nothing.
       - name: Guard the latest dist-tag to the consumable release line
         if: ${{ inputs.dry-run == false && inputs.dist-tag == 'latest' }}
