@@ -7,7 +7,11 @@ import type { RecursiveManifestOutcome } from './generate-recursive-manifests.mt
 import type { CResult, OutputKind } from '../../types.mts'
 
 function renderTable(outcomes: readonly RecursiveManifestOutcome[]): string {
+  // A reactor member covered by its parent's own facts run is implied by that
+  // parent's line already showing up above it; listing it again here is just
+  // noise, and the aggregate count still shows up in summarize().
   return outcomes
+    .filter(o => o.status !== 'skippedCovered')
     .map(
       o =>
         `- ${o.dir} (${o.ecosystem}): ${o.status}${o.factsPath ? ` -> ${o.factsPath}` : ''}`,
@@ -25,9 +29,8 @@ function summarize(outcomes: readonly RecursiveManifestOutcome[]): string {
     o => o.status === 'skippedDisabled',
   ).length
   const empty = outcomes.filter(o => o.status === 'empty').length
-  const roots = new Set(outcomes.map(o => o.dir)).size
   return (
-    `Generated ${generated} Socket facts file(s) across ${roots} build root(s); ` +
+    `Generated ${generated} Socket facts file(s); ` +
     `${failed} failed, ${skippedCovered} skipped (already covered), ` +
     `${skippedDisabled} skipped (disabled/pom), ${empty} empty.`
   )
