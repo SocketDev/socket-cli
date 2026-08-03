@@ -1,0 +1,240 @@
+#!/usr/bin/env node
+// Claude Code Stop hook — auto-land-on-stop.
+//
+// Fires at turn-end. Groups THIS session's authored source changes into logical
+// commits and lands them to local main, in EVERY repo the session touched
+// started in one repo, moved to another, both get their own commits. The
+// fleet biases toward landing often: banked work survives compaction, and a
+// clean tree is far less ambiguous to the next session's collision heuristics.
+//
+// Safety (own-work only; the pre-mortem's blocking flaws are all closed here +
+// in land-work):
+//   - Repos + paths come from the session touched-set (Edit/Write + git
+//     add|mv|rm in the transcript), so a FOREIGN staged feature in the shared
+//     index is never swept in. A repo the session only READ never enters.
+//   - Each repo is landed by shelling the tested `scripts/fleet/land-work.mts
+//     --commit <session-authored repo-relative paths>` with cwd=<repoRoot>. The
+//     engine is resolved FLEET-FIRST (the session's own repo if it ships one,
+//     else the wheelhouse source-of-truth) so a repo that doesn't yet carry its
+//     own land-work still lands to local main. That run restricts to the passed
+//     paths AND skips generated / both-touched (concurrent index+worktree, which
+//     a `git add` would blend) / unmerged-conflict paths, and lands clean source
+//     even mid-rebase.
+//   - Each commit passes that repo's own pre-commit gate, broken code caught.
+//     The staged run is scoped `related`, not full-suite, so turn-end stays fast.
+//   - Fail-open + deterministic: a per-repo spawn is bounded; any failure skips
+//     that repo and the hook always exits cleanly, Stop hooks must not hang.
+//   - Skipped entirely during a cascade (`FLEET_SYNC`) or a history squash
+//     (`SQUASH_HISTORY`) — those own their own commits.
+//
+// A session that sees a commit it didn't personally issue should recognize it as
+// this auto-lander (see docs/agents.md/fleet/parallel-claude-sessions.md ->
+// "Auto-landed commits are expected"), not a rival — run `whose-work` to confirm.
+
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import process from 'node:process'
+
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { readSessionTouchedPathsDetailed } from '../_shared/foreign-paths.mts'
+import { defineHook, notify, runHook } from '../_shared/guard.mts'
+import type { GuardResult } from '../_shared/guard.mts'
+import {
+  isParked,
+  readParked,
+  resolveParkedFile,
+} from '../_shared/parked-paths.mts'
+import type { ToolCallPayload } from '../_shared/payload.mts'
+import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { findWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
+
+// Per-repo land budget. land-work runs the repo's pre-commit per group; the
+// staged run is scoped `related` (fast) so this rarely bites, but bound it so a
+// wedged pre-commit can't hang the turn-end.
+const LAND_TIMEOUT_MS = 120_000
+
+function primaryDir(): string {
+  return resolveProjectDir()
+}
+
+/**
+ * The git top-level of a directory, or undefined when it isn't inside a repo.
+ */
+function gitToplevel(dir: string): string | undefined {
+  const r = spawnSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], {
+    timeout: spawnTimeoutMs(5000),
+  })
+  if (r.status !== 0) {
+    return undefined
+  }
+  return String(r.stdout ?? '').trim() || undefined
+}
+
+/**
+ * Group absolute session-authored paths by their git repo root, mapping each to
+ * the repo-relative paths under it. `resolveRoot` is injectable for tests.
+ * Pure over its inputs (the resolver does the git I/O).
+ */
+export function groupByRepo(
+  touchedAbs: readonly string[],
+  resolveRoot: (dir: string) => string | undefined,
+): Map<string, string[]> {
+  const byRoot = new Map<string, string[]>()
+  for (const abs of touchedAbs) {
+    const root = resolveRoot(path.dirname(abs))
+    if (!root) {
+      continue
+    }
+    const rel = path.relative(root, abs)
+    if (!rel || rel.startsWith('..')) {
+      continue
+    }
+    const list = byRoot.get(root)
+    if (list) {
+      list.push(rel)
+    } else {
+      byRoot.set(root, [rel])
+    }
+  }
+  return byRoot
+}
+
+/**
+ * Resolve the `scripts/fleet/land-work.mts` engine, FLEET-FIRST: a session's
+ * own repo (`primary`) if it carries its own copy, else the wheelhouse
+ * source-of-truth. Returns the absolute script path, or undefined when neither
+ * has it. `exists` / `findWheelhouse` are injectable for tests. This is what
+ * lets auto-land land session-authored work to local main even in a repo that
+ * doesn't (yet) ship its own land-work — the engine runs against each touched
+ * repo via cwd, so it needn't live there.
+ */
+export function resolveLandWork(
+  primary: string,
+  options: {
+    exists?: ((p: string) => boolean) | undefined
+    findWheelhouse?: (() => string | undefined) | undefined
+  } = {},
+): string | undefined {
+  const exists = options.exists ?? existsSync
+  const findWheelhouse = options.findWheelhouse ?? findWheelhouseRoot
+  const own = path.join(primary, 'scripts', 'fleet', 'land-work.mts')
+  if (exists(own)) {
+    return own
+  }
+  const wheelhouse = findWheelhouse()
+  if (wheelhouse) {
+    const fallback = path.join(wheelhouse, 'scripts', 'fleet', 'land-work.mts')
+    if (exists(fallback)) {
+      return fallback
+    }
+  }
+  return undefined
+}
+
+export const check = (payload: ToolCallPayload): GuardResult => {
+  // Cascade + history-squash own their own commits; never auto-land under them.
+  // SOCKET_LAND_WORK_ACTIVE marks an in-flight land-work run (including the
+  // headless child its AI summarizer spawns, which inherits the env) — never
+  // auto-land re-entrantly under one, or the summarizer's Stop hook would
+  // re-trigger land-work on the same still-dirty tree.
+  if (
+    process.env['FLEET_SYNC'] ||
+    process.env['SQUASH_HISTORY'] ||
+    process.env['SOCKET_LAND_WORK_ACTIVE']
+  ) {
+    return undefined
+  }
+  // AUTHORED paths only — a path this session merely `git add`ed was
+  // written by someone else; landing it here would sign a peer's
+  // half-done work. Staged-but-not-authored paths are surfaced instead.
+  const detailed = readSessionTouchedPathsDetailed(payload.transcript_path)
+  const allTouched = [...detailed.authored]
+  const stagedOnly = [...detailed.stagedOnly]
+  if (allTouched.length === 0 && stagedOnly.length === 0) {
+    return undefined
+  }
+  // User-intent HOLD (#238): paths the user parked (hold/park/wait, recorded
+  // via hold.mts) are excluded from landing and surfaced instead.
+  const parked = readParked(resolveParkedFile(primaryDir()), {
+    now: Date.now(),
+  })
+  const held = parked.length
+    ? allTouched.filter(abs => isParked(abs, parked))
+    : []
+  const touched = held.length
+    ? allTouched.filter(abs => !isParked(abs, parked))
+    : allTouched
+  if (touched.length === 0) {
+    return notify(
+      `[auto-land-on-stop] nothing landed — all ${held.length} touched path(s) ` +
+        'are parked by user hold. Clear via ' +
+        'node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>.\n',
+    )
+  }
+  const stagedOnlyNote =
+    stagedOnly.length > 0
+      ? [
+          `Staged-but-not-authored (NOT landed — this session only git-add'ed them;`,
+          'a peer or human wrote the content, so they need their own commit):',
+          ...stagedOnly.slice(0, 8).map(p => `  ${p}`),
+        ]
+      : []
+  const byRoot = groupByRepo(touched, dir => gitToplevel(dir))
+  if (byRoot.size === 0) {
+    return stagedOnlyNote.length
+      ? notify(
+          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
+        )
+      : undefined
+  }
+  // Resolve land-work FLEET-FIRST, the session's own repo, then fall back to
+  // the wheelhouse source-of-truth, and run it against each touched repo via cwd
+  // so a repo needn't ship its own copy to have its work land to local main.
+  const landWork = resolveLandWork(primaryDir())
+  if (!landWork) {
+    return undefined
+  }
+  const landed: string[] = []
+  for (const [root, rels] of byRoot) {
+    const r = spawnSync('node', [landWork, '--commit', ...rels], {
+      cwd: root,
+      timeout: LAND_TIMEOUT_MS,
+    })
+    // Fail-open: a non-zero land (pre-commit refusal, nothing landable, wedged
+    // gate) skips this repo silently; the next turn re-checks.
+    if (r.status === 0 && /landed /.test(String(r.stdout ?? ''))) {
+      landed.push(root)
+    }
+  }
+  if (landed.length === 0) {
+    return stagedOnlyNote.length
+      ? notify(
+          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
+        )
+      : undefined
+  }
+  const lines = [
+    `[auto-land-on-stop] landed this session's authored source in ${landed.length} repo(s):`,
+    ...landed.map(r => `  ${r}`),
+    'These are auto-lander commits (own-work only, surgical, gated). A session',
+    'that sees them should recognize the auto-lander, not investigate a rival.',
+  ]
+  if (held.length > 0) {
+    lines.push(
+      `Held (parked by user, NOT landed): ${held.length} path(s) — clear via`,
+      '  node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>',
+    )
+  }
+  lines.push(...stagedOnlyNote)
+  return notify(`${lines.join('\n')}\n`)
+}
+
+export const hook = defineHook({
+  check,
+  event: 'Stop',
+  type: 'nudge',
+})
+
+void runHook(hook, import.meta.url)

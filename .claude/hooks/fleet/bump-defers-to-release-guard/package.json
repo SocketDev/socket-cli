@@ -1,0 +1,19 @@
+{
+  "name": "hook-bump-defers-to-release-guard",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  },
+  "dependencies": {
+    "@socketsecurity/lib-stable": "catalog:",
+    "shell-quote": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}

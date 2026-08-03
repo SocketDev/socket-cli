@@ -1,0 +1,15 @@
+# clangd config for the snapshot-launcher C sources in this dir.
+#
+# dispatch-launcher-win.c is a WINDOWS-ONLY source: it #includes <windows.h>
+# and uses Win32 types/APIs (DWORD, MAX_PATH, CreateProcessW). A POSIX host's
+# clangd (the dev machine + this repo's CI hosts have no Windows SDK) can't find
+# <windows.h>, so clangd spuriously errors on every line that touches a Win32
+# symbol. That is host-LSP noise, NOT a defect: the file cross-compiles clean
+# via mingw (x86_64-w64-mingw32-gcc) and MSVC (verified), which is the only way
+# it is ever built (see scripts/fleet/build-snapshot-launcher.mts). So suppress
+# clangd diagnostics for this one file. The POSIX sibling dispatch-launcher.c
+# parses fine on a POSIX host and is deliberately NOT matched here.
+If:
+  PathMatch: .*[/\\]dispatch-launcher-win\.c
+Diagnostics:
+  Suppress: '*'
