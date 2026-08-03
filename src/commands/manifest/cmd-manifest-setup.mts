@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
       type: 'boolean',
       hidden: true,
       description:
-        'After configuring CWD, recursively discover every gradle/sbt/maven build root beneath it and mark `disabled: true` on whatever matches --exclude-paths; everything else is left untouched',
+        'After configuring CWD, recursively discover every gradle/sbt/maven build root beneath it. A build root matching --exclude-paths is bulk-disabled with no prompt; every other one gets an interactive configure-or-inherit-defaults prompt',
     },
   },
   help: (command, config) => `

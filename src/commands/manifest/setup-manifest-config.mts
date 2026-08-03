@@ -275,7 +275,7 @@ export async function setupGradle(
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
   const priorBin = config.bin
-  const bin = await askForBin(config.bin || './gradlew')
+  const bin = await askForBin(config.bin || '', './gradlew')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
@@ -351,7 +351,7 @@ export async function setupMaven(
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
   const priorBin = config.bin
-  const bin = await askForBin(config.bin || 'mvn')
+  const bin = await askForBin(config.bin || '', 'mvn')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
@@ -415,7 +415,7 @@ export async function setupSbt(
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
   const priorBin = config.bin
-  const bin = await askForBin(config.bin || 'sbt')
+  const bin = await askForBin(config.bin || '', 'sbt')
   if (bin === undefined) {
     return canceledByUser()
   } else if (bin) {
@@ -594,11 +594,25 @@ async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
   })
 }
 
-async function askForBin(defaultName = ''): Promise<string | undefined> {
+// `defaultName` is only ever a *prior* explicit value (own file or, for the
+// recursive per-project wizard, the cascaded effective value) - never the
+// tool's own hardcoded fallback (e.g. `mvn`). `input()` returns whatever's
+// shown when the user just presses Enter, so pre-filling a fabricated
+// fallback there would be indistinguishable from the user actually typing
+// it, freezing it into socket.json for no reason. The fallback is mentioned
+// in `fallbackHint` purely as informational text.
+async function askForBin(
+  defaultName = '',
+  fallbackHint = '',
+): Promise<string | undefined> {
   return await input({
     message:
       '(--bin) What should be the command to execute? Usually your build binary.' +
-      (defaultName ? ' (Backspace to leave default)' : ''),
+      (defaultName
+        ? ' (Backspace to leave default)'
+        : fallbackHint
+          ? ` (blank = ${fallbackHint})`
+          : ''),
     default: defaultName,
     required: false,
     // validate: async string => bool
@@ -608,7 +622,7 @@ async function askForBin(defaultName = ''): Promise<string | undefined> {
 async function askForJavaHome(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
-      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR} (e.g. $JAVA11_HOME) so this works across machines.' +
+      'What JDK should this build tool use? Leave blank to use the JDK already on PATH/JAVA_HOME. Supports $VAR/${VAR}.' +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
