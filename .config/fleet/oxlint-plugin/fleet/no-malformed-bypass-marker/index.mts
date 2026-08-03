@@ -23,8 +23,10 @@
 
 import {
   makeBypassCommentChecker,
+  MAX_LEADING_COMMENT_LINES,
   SOCKET_LINT_ALLOW_PREFIX_RE,
   SOCKET_LINT_ALLOW_WELL_FORMED_RE,
+  sourceTextOf,
 } from '../../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
@@ -48,6 +50,39 @@ const WELL_FORMED_SOCKET_LINT_RE = new RegExp(
 // This rule's own opt-out id — the socket-lint-owned checker builds the regex.
 const ALLOW_ID = 'malformed-bypass-marker'
 
+// A line that is entirely a comment, so the bypass checker keeps walking past
+// it. Mirrors the walk in comment-markers.mts.
+const COMMENT_ONLY_RE = /^\s*(?:\*|\/\*|\/\/)/
+
+/**
+ * Lines between a marker comment and the first code line below it. `0` means
+ * the marker shares a line with code (a trailing marker, always in range).
+ * `Infinity` means there is no code below it at all — nothing to exempt.
+ */
+export function markerDistanceToCode(
+  sourceLines: readonly string[],
+  comment: AstNode,
+): number {
+  const startLine = comment?.loc?.start?.line
+  if (typeof startLine !== 'number' || startLine < 1) {
+    return 0
+  }
+  const ownIdx = startLine - 1
+  const own = sourceLines[ownIdx] ?? ''
+  // Code precedes the marker on its own line → trailing marker, distance 0.
+  if (own.trim() !== '' && !COMMENT_ONLY_RE.test(own)) {
+    return 0
+  }
+  for (let idx = ownIdx + 1; idx < sourceLines.length; idx += 1) {
+    const text = sourceLines[idx] ?? ''
+    if (text.trim() === '' || COMMENT_ONLY_RE.test(text)) {
+      continue
+    }
+    return idx - ownIdx
+  }
+  return Number.POSITIVE_INFINITY
+}
+
 const rule = {
   meta: {
     type: 'problem',
@@ -63,6 +98,8 @@ const rule = {
         'Malformed oxlint disable: `{{body}}`. Use `oxlint-disable-next-line <rule> -- <reason>` — name the rule(s) being disabled AND a `-- <reason>` so the waiver is justified.',
       malformedSocketLintAllow:
         'Malformed bypass marker: `{{body}}`. Use `socket-lint: allow <id>` — name the opt-out token; a bare `socket-lint: allow` never matches the rule’s bypass checker, so the rule still fires.',
+      outOfRangeSocketLintAllow:
+        'Out-of-range bypass marker: `{{body}}` sits {{distance}} lines above the code it should exempt, past the {{limit}}-line lookback, so no rule will ever see it and the error stays. Move the marker to within {{limit}} lines of the code (put a long justification ABOVE the marker line, not between it and the code).',
     },
     schema: [],
   },
@@ -74,6 +111,9 @@ const rule = {
       : context.sourceCode
     return {
       Program(_node: AstNode) {
+        const sourceText = sourceTextOf(context)
+        const hasSource = sourceText.trim() !== ''
+        const sourceLines = sourceText.split('\n')
         const comments =
           (sourceCode.getAllComments && sourceCode.getAllComments()) || []
         for (let i = 0, { length } = comments; i < length; i += 1) {
@@ -86,6 +126,7 @@ const rule = {
           }
           const body = raw.trim()
           let messageId: string | undefined
+          let distance = ''
           if (PERSITE_DISABLE_RE.test(body)) {
             if (!WELL_FORMED_DISABLE_RE.test(body)) {
               messageId = 'missingDisableReason'
@@ -93,6 +134,19 @@ const rule = {
           } else if (SOCKET_LINT_ALLOW_RE.test(body)) {
             if (!WELL_FORMED_SOCKET_LINT_RE.test(body)) {
               messageId = 'malformedSocketLintAllow'
+            } else if (
+              // No readable source means the distance is unknowable, so the
+              // range check stays silent rather than guessing. The grammar
+              // check above does not depend on it.
+              hasSource &&
+              markerDistanceToCode(sourceLines, c) > MAX_LEADING_COMMENT_LINES
+            ) {
+              // Well-formed but unreachable: the bypass checker walks up only
+              // MAX_LEADING_COMMENT_LINES from the code, so a marker further
+              // away is inert. That failure is otherwise SILENT — the rule
+              // keeps firing and the marker looks like it should have worked.
+              messageId = 'outOfRangeSocketLintAllow'
+              distance = String(markerDistanceToCode(sourceLines, c))
             }
           }
           if (!messageId) {
@@ -104,7 +158,11 @@ const rule = {
           context.report({
             node: c as AstNode,
             messageId,
-            data: { body },
+            data: {
+              body,
+              distance,
+              limit: String(MAX_LEADING_COMMENT_LINES),
+            },
           })
         }
       },

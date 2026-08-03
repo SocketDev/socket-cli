@@ -24,6 +24,7 @@
  */
 
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
+import { MAX_FILE_HEADER_COMMENT_LINES } from '../../lib/comment-markers.mts'
 import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
 const SOFT_CAP = 500
@@ -89,7 +90,9 @@ const rule = {
           // the file level.
           const leadingComments = sourceCode
             .getAllComments()
-            .filter((c: AstNode) => c.loc.start.line <= 5)
+            .filter(
+              (c: AstNode) => c.loc.start.line <= MAX_FILE_HEADER_COMMENT_LINES,
+            )
           for (let i = 0, { length } = leadingComments; i < length; i += 1) {
             const c = leadingComments[i]!
             if (BYPASS_RE.test(c.value)) {

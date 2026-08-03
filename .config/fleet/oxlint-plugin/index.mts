@@ -17,6 +17,7 @@ import exportTopLevelFunctions from './fleet/export-top-level-functions/index.mt
 import exportedNameHasDomainWord from './fleet/exported-name-has-domain-word/index.mts'
 import guardContract from './fleet/guard-contract/index.mts'
 import inclusiveLanguage from './fleet/inclusive-language/index.mts'
+import maxCommentBlockLines from './fleet/max-comment-block-lines/index.mts'
 import maxFileLines from './fleet/max-file-lines/index.mts'
 import noAgentBrandAssumption from './fleet/no-agent-brand-assumption/index.mts'
 import noBareCryptoNamedUsage from './fleet/no-bare-crypto-named-usage/index.mts'
@@ -41,6 +42,7 @@ import noMinifiedBundlerOutput from './fleet/no-minified-bundler-output/index.mt
 import noModuleEvalSideEffects from './fleet/no-module-eval-side-effects/index.mts'
 import noNamespaceImport from './fleet/no-namespace-import/index.mts'
 import noNpxDlx from './fleet/no-npx-dlx/index.mts'
+import noOptionalPositionalTrap from './fleet/no-optional-positional-trap/index.mts'
 import noOptionsParamMutation from './fleet/no-options-param-mutation/index.mts'
 import noPackageManagerAutoUpdateReenable from './fleet/no-package-manager-auto-update-reenable/index.mts'
 import noParentheticalAside from './fleet/no-parenthetical-aside/index.mts'
@@ -132,6 +134,7 @@ const plugin = {
     'exported-name-has-domain-word': exportedNameHasDomainWord,
     'guard-contract': guardContract,
     'inclusive-language': inclusiveLanguage,
+    'max-comment-block-lines': maxCommentBlockLines,
     'max-file-lines': maxFileLines,
     'no-agent-brand-assumption': noAgentBrandAssumption,
     'no-bare-crypto-named-usage': noBareCryptoNamedUsage,
@@ -156,6 +159,7 @@ const plugin = {
     'no-module-eval-side-effects': noModuleEvalSideEffects,
     'no-namespace-import': noNamespaceImport,
     'no-npx-dlx': noNpxDlx,
+    'no-optional-positional-trap': noOptionalPositionalTrap,
     'no-options-param-mutation': noOptionsParamMutation,
     'no-package-manager-auto-update-reenable':
       noPackageManagerAutoUpdateReenable,

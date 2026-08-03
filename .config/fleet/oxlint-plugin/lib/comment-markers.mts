@@ -19,9 +19,29 @@
 
 import type { AstNode, RuleContext } from './rule-types.mts'
 
-// How far up a leading-comment block to look for the marker. A leading marker
-// comment may wrap onto a couple of continuation lines, so allow a few.
-const MAX_LEADING_COMMENT_LINES = 3
+// How far up a contiguous leading-comment block to look for a bypass marker,
+// counted from the line the flagged node starts on.
+//
+// This is the ONE place either window is defined, so a rule can never drift
+// its own lookback out of step with the rest (`max-file-lines` used to
+// hard-code its own `<= 5`).
+//
+// Sized against `max-file-lines`, which counts EVERY line — comments
+// included — toward its 500-line soft cap. So a lookback window is not free:
+// it is budgeted out of the same line count that cap measures. Twelve lines
+// fits a real justification (what the marker exempts, and why the rule is
+// wrong here) at ~2% of the soft cap, while still keeping the marker close
+// enough to what it exempts to mean something. Three was too tight to explain
+// anything — a normal-length reason silently pushed the marker out of reach
+// and the bypass just did not apply, with no warning.
+export const MAX_LEADING_COMMENT_LINES = 12
+
+// The same idea at FILE scope: how far into a file to accept a header-level
+// bypass marker. Larger than the node window because an `@file` docblock runs
+// longer than a function's leading comment, and the marker belongs inside that
+// block rather than jammed above it. A marker buried past the header is not a
+// file-level statement of intent, which is the point of bounding it at all.
+export const MAX_FILE_HEADER_COMMENT_LINES = 20
 
 // A line that is entirely a comment (`//`, `/*`, or a `*` block continuation).
 // Used to keep walking upward through a contiguous comment block.
@@ -138,7 +158,10 @@ export function makeBypassChecker(
       idx >= 0 && idx >= ownIdx - MAX_LEADING_COMMENT_LINES;
       idx -= 1
     ) {
-      const text = sourceLines[idx]!
+      // A node can report a line past the end of the text this context hands
+      // back, so treat a missing line as blank rather than throwing — a guard
+      // that crashes takes the whole lint run down with it.
+      const text = sourceLines[idx] ?? ''
       if (bypassRe.test(text)) {
         return true
       }
