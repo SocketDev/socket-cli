@@ -302,11 +302,15 @@ export async function setupSdk(
 
         /* c8 ignore start - SOCKET_CLI_DEBUG not set in tests */
         if (SOCKET_CLI_DEBUG) {
-          debugApiResponse(info.url, info.status, info.error, {
-            method: info.method,
-            url: info.url,
-            durationMs: info.duration,
-            headers: info.headers,
+          debugApiResponse(info.url, {
+            status: info.status,
+            error: info.error,
+            requestInfo: {
+              method: info.method,
+              url: info.url,
+              durationMs: info.duration,
+              headers: info.headers,
+            },
           })
         }
         /* c8 ignore stop */
