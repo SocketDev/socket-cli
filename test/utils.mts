@@ -69,8 +69,14 @@ function normalizeCoanaVersion(str: string): string {
 function normalizeBanner(str: string): string {
   return (
     str
-      // Replace CLI version like "v1.1.67" with "<redacted>".
-      .replace(/\| CLI: v[\d.]+/g, '| CLI: <redacted>')
+      // Replace a version like "v1.1.67" or "v1.1.67-prerelease" with
+      // "<redacted>" - also matches an already-redacted value, since whether
+      // the CLI itself redacts depends on env baked in at build time, not
+      // just this test run.
+      .replace(
+        /\| CLI: (?:v[\d.]+(?:[-+][\w.]+)?|<redacted>)/g,
+        '| CLI: <redacted>',
+      )
       // Replace token and org info with "<redacted>".
       .replace(
         /\| (?:Node: [^,]+, )?token: [^,]+, (?:org: [^\n"]+)/g,
