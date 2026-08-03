@@ -69,8 +69,31 @@ export const ProvenanceOrphanBaselineEntrySchema = Type.Object(
   },
 )
 
+export const ReleaseLineSchema = Type.Object(
+  {
+    branch: Type.Optional(
+      Type.String({
+        description:
+          'The ref the customer release line lives on, e.g. `origin/v1.x`. Set it only when releases are cut somewhere other than the branch being scanned — a repo may carry several independent release lines at once, and their divergence is the architecture rather than a defect. Consumers resolve the release boundary as the newest tag reachable from THIS ref instead of from the scanned ref.',
+      }),
+    ),
+    boundaryTag: Type.Optional(
+      Type.String({
+        description:
+          "The tag that IS the release boundary, e.g. `v1.1.152`. Overrides `branch`. Use it when the line's newest release is not the newest tag reachable from any ref — history at or below this tag is published and frozen, so scripts/fleet/check/commits-have-no-ai-attribution.mts reports findings there as frozen instead of actionable.",
+      }),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "Where this repo's customer release line lives, for gates that must tell published history from rewritable history. Resolved OFFLINE and by ANCESTRY: never by tag recency, since the newest tag by date can belong to a release line that never ships.",
+  },
+)
+
 export const ReleaseSchema = Type.Object(
   {
+    releaseLine: Type.Optional(ReleaseLineSchema),
     provenanceOrphanBaseline: Type.Optional(
       Type.Array(ProvenanceOrphanBaselineEntrySchema, {
         description:
@@ -86,7 +109,7 @@ export const ReleaseSchema = Type.Object(
     latestDistTagBranch: Type.Optional(
       Type.String({
         description:
-          "The branch that owns the `latest` npm dist-tag — the line customers get from a bare `npm install <pkg>`. Defaults to the repo's default branch, which is right for almost every member; set it only when the consumable line lives elsewhere. npm-publish.yml refuses a `latest` publish dispatched from any other branch. socket-cli sets `v1.x`: its default branch carries the 2.x PRERELEASE line, and leaving `latest` unguarded there stranded `socket@latest` on an old 1.1.147 while five newer v1.x releases published under a side tag no bare install resolves.",
+          "The branch that owns the `latest` npm dist-tag — the line customers get from a bare `npm install <pkg>`. Defaults to the repo's default branch, which is right for almost every member; set it only when the consumable line lives elsewhere, such as a maintenance branch shipping to users while the default branch carries a prerelease major. npm-publish.yml refuses a `latest` publish dispatched from any other branch.",
       }),
     ),
   },

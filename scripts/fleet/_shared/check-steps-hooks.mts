@@ -140,6 +140,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
       run('node', [
         'scripts/fleet/check/prose-parenthetical-asides-are-absent.mts',
       ]),
+    // Prose in tracked markdown must not chain spaced em-dashes. Two dashes make
+    // an X - aside - rest sentence, which reads AI-generated. Gate-time twin of
+    // the anti-prose-guard em-dash-chain pattern.
+    () =>
+      run('node', ['scripts/fleet/check/prose-em-dash-chains-are-absent.mts']),
     // No commit message carries an AI-attribution trailer and no branch uses an
     // AI-agent tool prefix. Both are fleet commit-format policy, and both are
     // scored as automation signals by the public @unveil/identity engine.
@@ -263,6 +268,11 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // every branch). A token or absent test fails the gate.
     () =>
       run('node', ['scripts/fleet/check/enforcers-have-thorough-tests.mts']),
+    // A test targeting a cascaded dir-mirror source must import the CANONICAL
+    // copy under template/base/**, not the live mirror — a mirror import reads
+    // the previous revision and deadlocks the commit that changes the source.
+    // No-ops cleanly in member repos without a template/ tree.
+    () => run('node', ['scripts/fleet/check/tests-read-canonical-sources.mts']),
     // No husk hook dirs: a hook directory holding only node_modules/ (no
     // index.mts / install.mts / README.md) is a rename leftover — git moved the
     // tracked files, the untracked node_modules stayed behind under the old name.

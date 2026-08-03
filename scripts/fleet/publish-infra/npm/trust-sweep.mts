@@ -32,6 +32,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../../_shared/is-main-module.mts'
 import { extractNpmAuthUrl } from '../../npm-web-auth.mts'
+import { expectedRepositoryFor } from '../../check/trusted-publishers-match-source.mts'
 import { logger, runCapture } from '../shared.mts'
 import { npmScratchCwd } from './shared.mts'
 import { sleep } from './browser-session.mts'
@@ -227,9 +228,15 @@ export async function sweepOne(
 ): Promise<SweepResult> {
   const cfg = { __proto__: null, ...config } as typeof config
   // The file/env/permission law is fleet-constant; only the repository varies
-  // by where the package lives (@socketregistry/* → socket-registry; a member
-  // package like @socketsecurity/odai → its own repo via --repo).
-  const repository = cfg.repository ?? LAW.repository
+  // by where the package lives. DERIVE it from the package's own packument
+  // rather than assuming the monorepo: most `@socketregistry/*` packages ship
+  // from socket-registry, but not all — packageurl-js has its own repo, and
+  // assuming otherwise writes a binding whose repository claim never matches,
+  // which is the silent-404 shape this tooling exists to repair. An explicit
+  // --repo still wins; LAW is the last resort, for a name with no usable
+  // GitHub url in its packument because it is not published yet.
+  const repository =
+    cfg.repository ?? (await expectedRepositoryFor(pkg)) ?? LAW.repository
   try {
     const current = await trustList(pkg)
     if (current && conformsToLaw(current, repository)) {

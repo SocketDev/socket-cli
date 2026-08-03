@@ -1,34 +1,35 @@
 #!/usr/bin/env node
 /*
- * @file Weekly dependency update — the PLAIN (non-gh-aw) runner. Runs the same
- *   update the gh-aw `weekly-update.lock.yml` runs, but as an ordinary process,
- *   so the update is reachable locally and as a plain CI job without the gh-aw
- *   runtime. gh-aw stays the primary scheduled path (it adds an AI-credit
- *   budget, a firewall egress allowlist, and a web-flow-signed safe-output PR);
- *   this is the escape hatch + the local-dev entry. Flow (mirrors the gh-aw
- *   .md):
+ * @file Weekly dependency update — THE runner, scheduled by the plain
+ *   `.github/workflows/weekly-update.yml` and equally runnable locally. The
+ *   judgment legs are keyless: the on-device model decides through the odai
+ *   seam, code validates and records receipts, and the keyed Claude agent is
+ *   a dev-machine fallback only — CI carries no ANTHROPIC_API_KEY for this
+ *   flow. The agentic escalation on red tests is get-green (gh-aw, keyed),
+ *   dispatched separately. Flow:
  *
  *   1. check-updates gate — `pnpm outdated`, lockstep `--json` exit 2,
  *      submodule-behind, vendored action reference pins behind their latest
  *      soaked release, and soaked-cleared minimumReleaseAgeExclude entries.
  *      No-op exit when nothing is actionable. Exposed as a
  *      standalone `--check-updates` mode (exit 0 = updates, 1 = none) so the
- *      gh-aw workflow's gate job calls THIS, not an inline bash port.
+ *      workflow's check-updates job calls THIS, not an inline bash port.
  *   2. deterministic chain (ALWAYS, IN ORDER) — lockstep version-pin auto-bumps,
  *      submodule remainder note, npm deps (`update.mts`), package-manager pins,
  *      gh-aw action pins. The judgment-free part — see
  *      `weekly-update/deterministic-chain.mts`.
- *   3. agentic update (OPTIONAL) — if the Claude Code CLI is reachable, invoke the
- *      `/updating` umbrella via the locked-down `spawnAiAgent` (AI_PROFILE.full
- *      = the four-flag lockdown the Programmatic-Claude rule mandates). No
- *      agent → log a skip note and continue on the deterministic result. A
- *      missing key NEVER fails the run, the resilience point.
- *   4. test — the configured setup and test commands.
- *   5. PR — on pass, open a PR via `gh` (unless --no-pr); on fail, print the logs
- *      and the next step without opening a PR. Flags mirror the gh-aw inputs
- *      and are all optional; each is documented at its default in `parseArgs`
- *      below. Run `node scripts/fleet/weekly-update.mts` with any of those
- *      flags.
+ *   3. on-device decision leg — the odai seam classifies the applied change
+ *      and plans the remaining candidates keylessly; code validates and
+ *      records the receipts (`weekly-update/odai-decisions.mts`). Every
+ *      environment gap clean-skips.
+ *   4. keyed agent (FALLBACK, dev machines) — only when the decision leg
+ *      produced no receipts and the Claude Code CLI is reachable: the
+ *      `/updating` umbrella via the locked-down `spawnAiAgent`. A missing
+ *      key NEVER fails the run, the resilience point.
+ *   5. test — the configured setup and test commands.
+ *   6. PR — on pass, open a PR via `gh` (unless --no-pr); on fail, print the
+ *      logs and the next step without opening a PR. Flags are all optional;
+ *      each is documented at its default in `parseArgs` below.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -55,8 +56,15 @@ import {
   vendoringEnrolled,
 } from './vendor-actions.mts'
 import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
+import { runOdaiDecisions } from './weekly-update/odai-decisions.mts'
 import { shedOutOfSurface } from './weekly-update/shed-out-of-surface.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+
+/**
+ * The fleet soak window the decision leg reasons against — the same 7 days
+ * every ecosystem's minimumReleaseAge derives from.
+ */
+const SOAK_WINDOW_DAYS = 7
 
 const logger = getDefaultLogger()
 
@@ -71,9 +79,8 @@ export interface WeeklyUpdateConfig {
   openPr: boolean
 }
 
-// Parse argv into options. Defaults mirror the gh-aw weekly-update inputs; --pr
-// is opt-in (local default leaves the branch) so a local run never surprises
-// with a PR.
+// Parse argv into options. --pr is opt-in (the local default leaves the
+// branch) so a local run never surprises with a PR.
 export function parseArgs(argv: readonly string[]): WeeklyUpdateConfig {
   const flag = (name: string): string | undefined => {
     const i = argv.indexOf(name)
@@ -122,12 +129,12 @@ async function capture(
   }
 }
 
-// The deterministic check-updates gate, ported from the gh-aw workflow: true
+// The deterministic check-updates gate: true
 // when `pnpm outdated` reports drift, the lockstep manifest is behind (exit 2),
 // a submodule is behind its remote, a vendored upstream action reference pin
 // is behind its latest soaked release, or a soaked minimumReleaseAgeExclude
 // entry has cleared its removable date. This is the single source of the gate logic —
-// the gh-aw `weekly-update.md` check-updates job calls
+// the workflow's check-updates job calls
 // `weekly-update.mts --check-updates`, not an inline bash port of it.
 export async function hasActionableUpdates(): Promise<boolean> {
   // pnpm outdated exits non-zero WHEN there are outdated deps, so key on the
@@ -153,7 +160,7 @@ export async function hasActionableUpdates(): Promise<boolean> {
     }
   }
   // A repo with submodules but NO lockstep manifest checks each submodule
-  // against its remote default branch (mirrors the gh-aw gate's third branch;
+  // against its remote default branch (the gate's third branch;
   // lockstep-managed submodules are already covered by the exit-2 check above).
   if (!hasLockstep && existsSync(path.join(REPO_ROOT, '.gitmodules'))) {
     if (await anySubmoduleBehind()) {
@@ -246,7 +253,7 @@ Run the /updating umbrella skill ONLY for the advisory remainder that needs judg
 
 async function main(): Promise<void> {
   // --check-updates: the deterministic gate as a standalone mode. Exits 0 when
-  // there is actionable drift, 1 when there is not — so the gh-aw
+  // there is actionable drift, 1 when there is not — so the
   // `weekly-update.md` check-updates job runs `weekly-update.mts --check-updates`
   // instead of an inline bash port, one source of the gate logic.
   if (process.argv.includes('--check-updates')) {
@@ -278,12 +285,50 @@ async function main(): Promise<void> {
   // lockstep version-pin bumps → submodule remainder note → npm deps
   // (update.mts) → package-manager pins → gh-aw action pins. The chain is
   // best-effort: a non-zero step warns, the chain + run continue.
+  const preChainHead = (await capture('git', ['rev-parse', 'HEAD'])).out.trim()
   logger.info('[weekly-update] running the deterministic chain…')
   await runDeterministicChain()
 
-  // Agentic update — optional. Only when an agent is reachable; a missing key
-  // degrades to deterministic-only and NEVER fails the run.
-  if (opts.agent && (await agentAvailable())) {
+  // Keyless decision leg — the on-device model classifies what the chain
+  // applied and plans the remaining candidates; code validates and renders
+  // the receipts. When it produces receipts the keyed agent below is
+  // skipped; every gap (opt-out, no bin, no backend) falls through to the
+  // keyed path unchanged.
+  let decisionReceipts = ''
+  if (opts.agent) {
+    const chainDiff = preChainHead
+      ? await capture('git', ['diff', `${preChainHead}..HEAD`])
+      : { ok: false, out: '' }
+    const outdatedNow = await capture('pnpm', ['outdated'])
+    const decisions = await runOdaiDecisions({
+      cwd: REPO_ROOT,
+      diffText: chainDiff.out,
+      outdatedText: /No outdated/i.test(outdatedNow.out) ? '' : outdatedNow.out,
+      soakWindowDays: SOAK_WINDOW_DAYS,
+    })
+    if (decisions.outcome === 'ok') {
+      decisionReceipts = decisions.markdown
+      logger.success('[weekly-update] on-device decision receipts recorded:')
+      logger.info(decisions.markdown)
+    } else if (decisions.outcome === 'failed') {
+      logger.warn(
+        `[weekly-update] on-device decisions failed: ${decisions.reason} — falling back to the keyed agent.`,
+      )
+    } else {
+      logger.info(
+        `[weekly-update] on-device decisions skipped (${decisions.reason}).`,
+      )
+    }
+  }
+
+  // Keyed agentic update — the FALLBACK when the keyless leg produced no
+  // receipts. Only when an agent is reachable; a missing key degrades to
+  // deterministic-only and NEVER fails the run.
+  if (decisionReceipts !== '') {
+    logger.info(
+      '[weekly-update] keyed agent skipped — the on-device leg covered the decision pass.',
+    )
+  } else if (opts.agent && (await agentAvailable())) {
     logger.info(
       `[weekly-update] running the /updating agent (model: ${opts.updateModel}, effort: ${opts.updateEffort})…`,
     )
@@ -337,7 +382,8 @@ async function main(): Promise<void> {
   const date = new Date().toISOString().slice(0, 10)
   const title = `${opts.prTitlePrefix} (${date})`
   const body =
-    '## Weekly Update\n\nRan the `/updating` umbrella (npm + lockstep + submodules + pins) via the plain (non-gh-aw) runner.\n'
+    '## Weekly Update\n\nRan the deterministic chain (npm + lockstep + submodules + pins) with the on-device decision leg via the plain runner.\n' +
+    (decisionReceipts === '' ? '' : `\n${decisionReceipts}`)
   const prArgs = [
     'pr',
     'create',

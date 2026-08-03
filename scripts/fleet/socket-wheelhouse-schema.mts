@@ -41,6 +41,7 @@ import {
   ReleaseSchema,
 } from './socket-wheelhouse-schema/policy.mts'
 import {
+  CoverageSchema,
   CoverSchema,
   VitestSchema,
 } from './socket-wheelhouse-schema/testing.mts'
@@ -88,6 +89,7 @@ export const SocketWheelhouseConfigSchema = Type.Object(
     capabilities: Type.Optional(CapabilitiesSchema),
     claude: Type.Optional(ClaudeSchema),
     cover: Type.Optional(CoverSchema),
+    coverage: Type.Optional(CoverageSchema),
     design: Type.Optional(DesignSchema),
     docker: Type.Optional(DockerSchema),
     docs: Type.Optional(DocsSchema),
@@ -122,3 +124,4 @@ export type BuildConfig = Static<typeof BuildSchema>
 export type Secondary = Static<typeof SecondarySchema>
 export type Vite = Static<typeof ViteSchema>
 export type Vitest = Static<typeof VitestSchema>
+export type Coverage = Static<typeof CoverageSchema>

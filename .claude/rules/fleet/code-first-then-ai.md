@@ -22,7 +22,7 @@ substitute for running (or fixing) the script.
 
 - **AI only where the script cedes.** `ai-lint-fix` runs `lint --fix` (deterministic
   oxlint autofix) first and spawns AI only for the custom `socket/*` rules oxlint
-  can't autofix. That ordering — deterministic first, AI for the residue — is the
+  can't autofix. That ordering, deterministic first and AI for the residue, is the
   shape every AI-assisted pipeline takes.
 
 - **Don't hand-format around a failing codegen step.** When a generator's own

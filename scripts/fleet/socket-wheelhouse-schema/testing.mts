@@ -90,6 +90,50 @@ export const CoverSchema = Type.Object(
 )
 
 // ---------------------------------------------------------------------------
+// Coverage block — the include/exclude overlay the canonical coverage config
+// reads (was the standalone .config/repo/coverage.json).
+// ---------------------------------------------------------------------------
+
+export const CoverageSchema = Type.Object(
+  {
+    include: Type.Optional(
+      Type.Array(Type.String(), {
+        description:
+          'Coverage include globs that REPLACE (not extend) the fleet-default `src/**` candidate set. The route for a repo whose instrumentable source lives elsewhere — a monorepo maps `packages/*/src/**/*.{ts,mts,cts}` (+ a `!packages/*/src/external/**` negation); the wheelhouse maps `scripts/**`. Absent = the fleet default stands.',
+      }),
+    ),
+    exclude: Type.Optional(
+      Type.Object(
+        {
+          add: Type.Optional(
+            Type.Array(Type.String(), {
+              description:
+                'Globs appended to the fleet-default coverage excludes — repo-specific dirs to drop from the denominator.',
+            }),
+          ),
+          remove: Type.Optional(
+            Type.Array(Type.String(), {
+              description:
+                'Fleet-default exclude entries to filter OUT (exact string match). A monorepo removes `packages/**` so its package source becomes measurable; the wheelhouse removes `scripts/**` so its script source is measured.',
+            }),
+          ),
+        },
+        {
+          additionalProperties: false,
+          description:
+            'Deltas against the fleet-default coverage excludes: `remove` filters base entries out, `add` appends new ones.',
+        },
+      ),
+    ),
+  },
+  {
+    additionalProperties: false,
+    description:
+      'Coverage include/exclude overlay the canonical coverage config (.config/fleet/vitest.coverage.fleet.config.mts) reads (folded in from the former standalone .config/repo/coverage.json). `include` REPLACES the fleet default; `exclude.remove`/`exclude.add` filter/append base excludes. Absent = fleet defaults.',
+  },
+)
+
+// ---------------------------------------------------------------------------
 // Vitest block — test-suite tuning the canonical vitest config reads.
 // ---------------------------------------------------------------------------
 

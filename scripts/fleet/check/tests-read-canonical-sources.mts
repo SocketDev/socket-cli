@@ -18,10 +18,28 @@
  *   Importing the canonical copy removes the cycle: a new export is testable in
  *   the same commit that adds it.
  *
- *   REPORT-ONLY (exit 0) while the tree is dirty — flip ENFORCING once
- *   `--fix` has swept a repo. Enforcing today would fail every member on the
- *   first run, which trains people to bypass the gate rather than fix the
- *   imports.
+ *   REPORT-ONLY (exit 0). Enforcing today would fail every member on the first
+ *   run, which trains people to bypass the gate rather than fix the imports.
+ *
+ *   `--fix` IS NOT A BULK SWEEP. Rewriting the import is mechanical; making the
+ *   test still pass afterwards is not. A 398-file run proved three ways:
+ *
+ *   1. A `vi.mock('<mirror path>')` target is a plain string this matcher
+ *      cannot see. Rewriting the import while the mock still names the mirror
+ *      leaves the mock silently inert — the test then exercises real code and
+ *      fails somewhere unrelated.
+ *   2. Canonical and mirror are DISTINCT MODULE INSTANCES even when the files
+ *      are byte-identical. `rules.test.mts` passes importing the mirror and
+ *      fails importing the canonical copy, with no diff between the two
+ *      sources: anything carrying module-level state, or comparing identity
+ *      across modules, changes behaviour under the rewrite.
+ *   3. An earlier unanchored matcher rewrote import-shaped FIXTURE STRINGS.
+ *      That specific hole is closed (see IMPORT_FROM_RE), but it is the same
+ *      family: a path in this tree is not always an import.
+ *
+ *   So `--fix` is a per-file assist — run it on one file, read the diff, run
+ *   that file's test. Migrating a repo is a review exercise, and ENFORCING
+ *   flips only once a repo has actually finished one.
  *
  *   Exit codes:
  *
@@ -205,7 +223,10 @@ export async function main(): Promise<number> {
       '  Where: the paths above.\n' +
       '  Saw:   an import of the live mirror, which lags template/base until a\n' +
       '         cascade runs — so a new export reads as a test failure.\n' +
-      '  Fix:   node scripts/fleet/check/tests-read-canonical-sources.mts --fix\n',
+      '  Fix:   --fix rewrites the import, but check the file after: a\n' +
+      '         vi.mock() naming the mirror must move with it, and a module\n' +
+      '         holding state behaves differently under the canonical path.\n' +
+      '         Run it per file, then that file\u2019s test.\n',
   )
   return ENFORCING ? 1 : 0
 }

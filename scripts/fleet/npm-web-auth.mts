@@ -68,6 +68,10 @@ const logger = getDefaultLogger()
 // the caller's cwd — publish MUST run where the package lives.
 const CWD_FREE_OPS: ReadonlySet<string> = new Set([
   'adduser',
+  // `dist-tag` names its target explicitly (`add <pkg>@<version> <tag>`), so it
+  // never needs the package's directory — and running it from one trips the
+  // devEngines veto this set exists to avoid.
+  'dist-tag',
   'login',
   'logout',
   'stage',
@@ -99,9 +103,17 @@ export function resolveOpCwd(
 export const AUTH_OPERATIONS: readonly string[] = [
   'access',
   'deprecate',
+  // Moving or deleting a dist-tag is an account-level write: npm answers a bare
+  // `npm dist-tag add|rm` with EOTP and masks the auth URL as `auth/cli/***`,
+  // which is precisely what this runner un-masks.
+  'dist-tag',
   'login',
   'owner',
   'publish',
+  // Reading or rewriting a package's trusted-publisher binding is 2FA-gated
+  // the same way, and `npm trust` is the only lane that can WRITE one: npm's
+  // bot management rejects state-changing transactions from a driven browser.
+  'trust',
   'unpublish',
 ]
 

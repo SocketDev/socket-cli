@@ -352,6 +352,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // strands when a member's old per-file config is left on disk.
     () =>
       run('node', ['scripts/fleet/check/vitest-config-is-consolidated.mts']),
+    // Coverage's include/exclude overlay lives in the SAME one settings file
+    // (socket-wheelhouse.json `coverage` section), never a standalone
+    // .config/repo/coverage.json. The canonical coverage config reads only that
+    // section, so a leftover coverage.json is dead config that silently measures
+    // a different denominator — this gate fails loud on the orphan a config
+    // consolidation strands. config-segregation twin of the vitest gate above.
+    () =>
+      run('node', ['scripts/fleet/check/coverage-config-is-consolidated.mts']),
     // Never pin the microarch of a SHIPPED build — a distributed artifact must
     // detect the CPU at run time (portable SIMD = runtime dispatch), not bake in
     // the build machine's ISA and SIGILL on older CPUs. Fails on Rust
@@ -509,6 +517,33 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // off the public-CDN/registry allowlist (catches a bare CDN domain the
     // edit-time guard's fetch-attached detection misses).
     () => run('node', ['scripts/fleet/check/cdn-allowlist-is-respected.mts']),
+    // Every SHA-pinned `uses:` in a workflow or composite action carries its
+    // `# <label> (YYYY-MM-DD)` staleness stamp. The edit-time twin
+    // (workflow-uses-comment-guard) is PreToolUse, so it only ever sees an
+    // Edit/Write payload — a GENERATED workflow's bytes never travel through a
+    // tool call, so no hook is consulted for it and no matcher tightening can
+    // change that. Incident: 37 bare `# v9.0.0` pins landed in a `gh aw compile`
+    // output and only surfaced when the cascade aborted before its mirror stage,
+    // blocking `git push` fleet-wide. This gate reads the TRACKED TREE, so it
+    // sees generated and hand-written bytes alike, at any depth, across every
+    // wheelhouse template layer. Generated artifacts (a gh-aw `*.lock.yml`) are
+    // exempt via the shared isNeverGated predicate.
+    () =>
+      run('node', ['scripts/fleet/check/workflow-sha-pins-are-stamped.mts']),
+    // No block comment closes earlier than its author meant it to. A glob
+    // written as a bare star segment inside a docblock IS the closing token, so
+    // the block ends mid-sentence and the tail parses as code. The lint rule
+    // socket/no-comment-glob-star-slash cannot see this: it walks PARSED
+    // comments, and by then the comment already ended at the glob, so nothing is
+    // left for a comment visitor to match. Two more layers miss it for their own
+    // reasons — a rule cannot run at all on a file whose residue is a syntax
+    // error, and `.config/fleet/**` (where the real incident landed) is in the
+    // oxlint ignore list. Reading raw bytes ahead of any parse sees all three.
+    // Incident: one such glob in vitest.coverage.fleet.config.mts produced
+    // `Cannot find name 'src'` plus ten knock-on tsc errors, and zero lint
+    // findings. Complements the rule, which owns the BACKSLASH-escaped form.
+    () =>
+      run('node', ['scripts/fleet/check/block-comments-are-closed-once.mts']),
     // Commit-time twin of denied-domain-reference-guard: no tracked file may
     // reference a fleet-DENIED domain or filename IOC (single source:
     // .claude/hooks/fleet/_shared/denied-domains.mts), and no gh-aw

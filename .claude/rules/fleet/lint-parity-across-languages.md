@@ -52,7 +52,7 @@ system clipboard) are honored — and only those.
 
 - **`coverage(off)` is for I/O that can't run in a unit test, not for logic.**
   Marking testable code off to inflate the number is a false corner-cut. If it's
-  reachable, test it (inject the seam — `Transport`/`Prompt`/`Io`/`Launcher` — and
+  reachable, test it (inject the seam, `Transport`/`Prompt`/`Io`/`Launcher`, and
   mock it) instead.
 
 - **Never rewrite early-returns to single-exit to satisfy coverage.** A closing

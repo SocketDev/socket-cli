@@ -145,6 +145,16 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
       'scripts/fleet/check/catalog-pins-are-not-deprecated.mts',
       '--quiet',
     ]),
+    // Every published package's npm trusted-publisher binding still names the
+    // repository that actually publishes it. npm compares repository + workflow
+    // + environment as literal strings, so a repo rename breaks the OIDC
+    // exchange with a bare 404 while GitHub's redirect keeps every manual
+    // spot-check looking correct. Reads each packument, so it rides the
+    // release/CI tier.
+    releaseStep([
+      'scripts/fleet/check/trusted-publishers-match-source.mts',
+      '--quiet',
+    ]),
     // Pre-publish source gate: every publishable package.json declares
     // publishConfig.access:"public" + provenance:true (and registry-if-set =
     // npmjs) — the source-config preconditions for a public, provenance-attested

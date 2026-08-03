@@ -664,7 +664,7 @@ export async function buildChildrenCoverageReport(): Promise<boolean> {
     return false
   }
   // Shape the children report with the SAME include/exclude set the vitest
-  // tiers use (fleet base + .config/repo/coverage.json overlay). Children
+  // tiers use (fleet base + the settings file's `coverage` overlay). Children
   // load files far outside the measured set — config, dist, fixtures — and
   // without this filter those gap-fill into the aggregate and inflate the
   // denominator (run 14 live: 3710 children dragged the aggregate BELOW the
