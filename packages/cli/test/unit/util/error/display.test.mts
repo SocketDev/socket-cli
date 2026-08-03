@@ -83,7 +83,9 @@ describe('error/display', () => {
     })
 
     it('formats FileSystemError', () => {
-      const error = new FileSystemError('Permission denied', '/etc/config')
+      const error = new FileSystemError('Permission denied', {
+        path: '/etc/config',
+      })
 
       const result = formatErrorForDisplay(error)
 
