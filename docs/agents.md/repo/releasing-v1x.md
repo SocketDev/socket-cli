@@ -51,11 +51,6 @@ This is declared rather than hard-coded. `release.latestDistTagBranch` in
 `npm-publish.yml` guard reads it, defaulting to the repo's default branch for
 every other member.
 
-The polarity ran the other way until 2026-08-03, and the cost was visible on
-the package page: `socket@latest` sat on 1.1.147 for a week while 1.1.148
-through 1.1.152, including a CVE bump, published under a `staged` side tag that
-no untagged install ever resolves.
-
 ## Two jobs, one credential boundary
 
 `verify` binds no environment and mints no OIDC token, so nothing it runs —
