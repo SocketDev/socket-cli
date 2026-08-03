@@ -2958,6 +2958,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/inclusive-language: {}
 
+  .config/fleet/oxlint-plugin/fleet/max-comment-block-lines: {}
+
   .config/fleet/oxlint-plugin/fleet/max-file-lines: {}
 
   .config/fleet/oxlint-plugin/fleet/no-agent-brand-assumption: {}
@@ -3005,6 +3007,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/no-namespace-import: {}
 
   .config/fleet/oxlint-plugin/fleet/no-npx-dlx: {}
+
+  .config/fleet/oxlint-plugin/fleet/no-optional-positional-trap: {}
 
   .config/fleet/oxlint-plugin/fleet/no-options-param-mutation: {}
 
