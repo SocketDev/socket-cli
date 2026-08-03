@@ -11,8 +11,10 @@ name: Publish to npm registry
 #   3. Dispatch this workflow with dry-run=true (the default): the `verify`
 #      job builds, packs, and smoke-tests all three variants — uploads
 #      nothing, marks nothing, and needs no publish credential.
-#   4. Dispatch with dry-run=false + a NON-latest dist-tag (the guard below
-#      refuses `latest` off the default branch). `verify` runs again and
+#   4. Dispatch with dry-run=false + dist-tag=latest. This branch is the line
+#      customers consume, so it owns `latest`; the guard below refuses that
+#      tag from anywhere else, and the default branch (the 2.x prerelease
+#      line) publishes under next/beta/canary/rc. `verify` runs again and
 #      hands its three tarballs to `publish`, which cuts the v<X.Y.Z> tag +
 #      the immutable GitHub release — both belong to the `socket` package,
 #      exactly one of each per run — then STAGES those exact tarballs.
@@ -78,23 +80,33 @@ jobs:
       # npm trusted publishing authorizes on repository + workflow filename +
       # GitHub environment. It does NOT pin a branch. The `npm-publish`
       # environment's deployment-branch policy (main + v1.x) is the outer
-      # gate; this guard is the in-repo half: `latest` may only be published
-      # from the default branch, so a v1.x dispatch must pick an explicit
-      # non-latest dist-tag (next, beta, canary, backport, ...). Dry runs
-      # pass regardless of dist-tag — they upload nothing, and a
-      # default-input dry run (dist-tag defaults to latest) must stay green.
-      - name: Guard the latest dist-tag to the default branch
+      # gate; this guard is the in-repo half.
+      #
+      # `latest` is what an untagged install of the package resolves to, so it
+      # belongs to the line customers consume — and that is THIS branch. The
+      # default branch carries the 2.x PRERELEASE line and is refused `latest`
+      # by its own copy of this workflow, which reads the owning branch from
+      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
+      #
+      # This ran inverted until 2026-08-03, and the cost was visible on the
+      # package page: `socket@latest` sat on 1.1.147 for a week while 1.1.148
+      # through 1.1.152 — including a CVE bump — published under a `staged`
+      # side tag no untagged install resolves.
+      #
+      # Dry runs pass regardless of dist-tag: they upload nothing.
+      - name: Guard the latest dist-tag to the consumable release line
         if: ${{ inputs.dry-run == false && inputs.dist-tag == 'latest' }}
         env:
+          LATEST_BRANCH: v1.x
           REF: ${{ github.ref }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          if [ "$REF" != "refs/heads/$DEFAULT_BRANCH" ]; then
+          if [ "$REF" != "refs/heads/$LATEST_BRANCH" ]; then
             echo "Refusing to publish dist-tag 'latest' from $REF." >&2
-            echo "Only refs/heads/$DEFAULT_BRANCH may publish 'latest'." >&2
-            echo "Re-dispatch from the default branch, or pick a non-latest dist-tag." >&2
+            echo "Only refs/heads/$LATEST_BRANCH may publish 'latest' — it is the line customers consume." >&2
+            echo "Re-dispatch from $LATEST_BRANCH, or pick a prerelease dist-tag (next, beta, canary, rc)." >&2
             exit 1
           fi
+          echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
         with:
