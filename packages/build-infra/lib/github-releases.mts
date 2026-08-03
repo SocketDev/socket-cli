@@ -4,44 +4,29 @@
 
 import path from 'node:path'
 
-import { createTtlCache } from '@socketsecurity/lib/cache-with-ttl'
-import { safeMkdir } from '@socketsecurity/lib/fs'
-import { httpDownload, httpRequest } from '@socketsecurity/lib/http-request'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pRetry } from '@socketsecurity/lib/promises'
+import { createTtlCache } from '@socketsecurity/lib-stable/cache/ttl/store'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
+import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { pRetry } from '@socketsecurity/lib-stable/promises/retry'
 
 const logger = getDefaultLogger()
 
-// Cache GitHub API responses for 1 hour to avoid rate limiting.
+// Cache GitHub API responses for 4 hours to reduce API calls and avoid rate limiting.
 const cache = createTtlCache({
   memoize: true,
   prefix: 'github-releases',
-  ttl: 60 * 60 * 1000, // 1 hour.
+  ttl: 4 * 60 * 60 * 1000, // 4 hours.
 })
-
-/**
- * Get GitHub authentication headers if token is available.
- *
- * @returns {object} - Headers object with Authorization if token exists.
- */
-function getAuthHeaders() {
-  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
-  const headers = {
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`
-  }
-  return headers
-}
 
 /**
  * Download a specific release asset.
  *
- * Uses browser_download_url to avoid consuming GitHub API quota.
- * The httpDownload function from @socketsecurity/lib@5.1.3+ automatically
- * follows HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
+ * Uses browser_download_url to avoid consuming GitHub API quota. The
+ * httpDownload function from @socketsecurity/lib@5.1.3+ automatically follows
+ * HTTP redirects, eliminating the need for Octokit's getReleaseAsset API.
  *
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
@@ -50,6 +35,7 @@ function getAuthHeaders() {
  * @param {string} outputPath - Path to write the downloaded file.
  * @param {object} [options] - Options.
  * @param {boolean} [options.quiet] - Suppress log messages.
+ *
  * @returns {Promise<void>}
  */
 export async function downloadReleaseAsset(
@@ -78,8 +64,31 @@ export async function downloadReleaseAsset(
     logger: quiet ? undefined : logger,
     progressInterval: 10,
     retries: 2,
-    retryDelay: 5_000,
+    retryDelay: 5000,
   })
+}
+
+/**
+ * Get GitHub authentication headers if token is available.
+ *
+ * @returns {object} - Headers object with Authorization if token exists.
+ */
+export function getAuthHeaders() {
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    // Request an uncompressed response. @socketsecurity/lib <= 6.0.6 advertises
+    // Accept-Encoding: gzip but doesn't decode the body, so JSON.parse sees raw
+    // gzip bytes and fails ("Failed to parse GitHub API response"). Asking for
+    // identity sidesteps that regardless of the installed lib version (6.0.7
+    // fixes the decode). GitHub honors identity for the JSON API.
+    'Accept-Encoding': 'identity',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  return headers
 }
 
 /**
@@ -88,9 +97,11 @@ export async function downloadReleaseAsset(
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
  * @param {object} [options] - Options.
- * @param {string} [options.prefix] - Tag prefix to filter by (for socket-btm tool releases).
+ * @param {string} [options.prefix] - Tag prefix to filter by (for socket-btm
+ *   tool releases).
  * @param {boolean} [options.quiet] - Suppress log messages.
- * @returns {Promise<string|null>} - Latest release tag or null if not found.
+ *
+ * @returns {Promise<string | null>} - Latest release tag or null if not found.
  */
 export async function getLatestRelease(
   owner,
@@ -113,12 +124,22 @@ export async function getLatestRelease(
           throw new Error(`Failed to fetch releases: ${response.status}`)
         }
 
+        // `response.body` may already be parsed (the lib auto-parses JSON
+        // responses into an object/array) or still be a raw string, depending
+        // on the installed @socketsecurity/lib version. JSON.parse on an
+        // already-parsed object stringifies to "[object Object]" and throws —
+        // that was the "Failed to parse releases response" build failure.
+        // Accept both shapes.
         let releases
         try {
-          releases = JSON.parse(response.body)
+          releases = Buffer.isBuffer(response.body)
+            ? JSON.parse(response.body.toString('utf8'))
+            : typeof response.body === 'string'
+              ? JSON.parse(response.body)
+              : response.body
         } catch (e) {
           throw new Error(
-            `Failed to parse GitHub API response: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to parse GitHub API response: ${errorMessage(e)}`,
           )
         }
 
@@ -128,7 +149,7 @@ export async function getLatestRelease(
             if (!quiet) {
               logger.info(`  No releases found for ${owner}/${repo}`)
             }
-            return null
+            return undefined
           }
           const tag = releases[0].tag_name
           if (!quiet) {
@@ -138,7 +159,8 @@ export async function getLatestRelease(
         }
 
         // Find the first release matching the prefix.
-        for (const release of releases) {
+        for (let i = 0, { length } = releases; i < length; i += 1) {
+          const release = releases[i]
           const { tag_name: tag } = release
           if (tag.startsWith(`${prefix}-`)) {
             if (!quiet) {
@@ -152,15 +174,15 @@ export async function getLatestRelease(
         if (!quiet) {
           logger.info(`  No ${prefix} release found in latest 100 releases`)
         }
-        return null
+        return undefined
       },
       {
-        backoffFactor: 1,
-        baseDelayMs: 5_000,
+        backoffFactor: 2,
+        baseDelayMs: 3000,
         onRetry: (attempt, error) => {
           if (!quiet) {
             logger.info(
-              `  Retry attempt ${attempt + 1}/3 for ${owner}/${repo} release list...`,
+              `  Retry attempt ${attempt + 1}/3 for ${owner}/${repo} release list…`,
             )
             logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
           }
@@ -174,8 +196,8 @@ export async function getLatestRelease(
 /**
  * Get download URL for a specific release asset.
  *
- * Returns the browser download URL which requires redirect following.
- * For public repositories, this URL returns HTTP 302 redirect to CDN.
+ * Returns the browser download URL which requires redirect following. For
+ * public repositories, this URL returns HTTP 302 redirect to CDN.
  *
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
@@ -183,7 +205,8 @@ export async function getLatestRelease(
  * @param {string} assetName - Asset name to download.
  * @param {object} [options] - Options.
  * @param {boolean} [options.quiet] - Suppress log messages.
- * @returns {Promise<string|null>} - Download URL or null if not found.
+ *
+ * @returns {Promise<string | null>} - Download URL or null if not found.
  */
 export async function getReleaseAssetUrl(
   owner,
@@ -208,12 +231,19 @@ export async function getReleaseAssetUrl(
           throw new Error(`Failed to fetch release ${tag}: ${response.status}`)
         }
 
+        // See the releases-list parse above: `response.body` may be a Buffer,
+        // a raw string, or a parsed object depending on the lib version.
+        // Accept all three shapes.
         let release
         try {
-          release = JSON.parse(response.body)
+          release = Buffer.isBuffer(response.body)
+            ? JSON.parse(response.body.toString('utf8'))
+            : typeof response.body === 'string'
+              ? JSON.parse(response.body)
+              : response.body
         } catch (e) {
           throw new Error(
-            `Failed to parse GitHub release ${tag}: ${e instanceof Error ? e.message : String(e)}`,
+            `Failed to parse GitHub release ${tag}: ${errorMessage(e)}`,
           )
         }
 
@@ -231,11 +261,11 @@ export async function getReleaseAssetUrl(
         return asset.browser_download_url
       },
       {
-        backoffFactor: 1,
-        baseDelayMs: 5_000,
+        backoffFactor: 2,
+        baseDelayMs: 3000,
         onRetry: (attempt, error) => {
           if (!quiet) {
-            logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL...`)
+            logger.info(`  Retry attempt ${attempt + 1}/3 for asset URL…`)
             logger.warn(`  Attempt ${attempt + 1}/3 failed: ${error.message}`)
           }
         },

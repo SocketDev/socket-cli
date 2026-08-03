@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Schema for external-tools.json files",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "extends": {
+      "type": "string",
+      "description": "Path to a base external-tools.json to inherit from"
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string" },
+          "version": { "type": "string" },
+          "packageManager": {
+            "type": "string",
+            "enum": ["npm", "pip", "pnpm"]
+          },
+          "notes": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "repository": { "type": "string" },
+          "release": { "type": "string", "enum": ["asset", "archive"] },
+          "tag": { "type": "string" },
+          "checksums": {
+            "type": "object",
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "asset": { "type": "string" },
+                    "sha256": { "type": "string" }
+                  },
+                  "required": ["asset", "sha256"]
+                },
+                { "type": "string" }
+              ]
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

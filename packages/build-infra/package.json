@@ -1,27 +1,25 @@
 {
   "name": "build-infra",
   "version": "1.0.0",
-  "description": "Shared build infrastructure utilities for Socket CLI",
   "private": true,
+  "description": "Shared build infrastructure utilities for Socket CLI",
   "type": "module",
   "exports": {
-    "./lib/esbuild-helpers": "./lib/esbuild-helpers.mjs",
-    "./lib/esbuild-plugin-dead-code-elimination": "./lib/esbuild-plugin-dead-code-elimination.mjs",
-    "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mjs",
-    "./lib/extraction-cache": "./lib/extraction-cache.mjs",
-    "./lib/github-error-utils": "./lib/github-error-utils.mjs",
-    "./lib/github-releases": "./lib/github-releases.mjs",
-    "./lib/platform-targets": "./lib/platform-targets.mjs",
-    "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mjs"
+    "./lib/constants": "./lib/constants.mts",
+    "./lib/esbuild-helpers": "./lib/esbuild-helpers.mts",
+    "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mts",
+    "./lib/github-error-utils": "./lib/github-error-utils.mts",
+    "./lib/github-releases": "./lib/github-releases.mts",
+    "./lib/platform-mappings": "./lib/platform-mappings.mts",
+    "./lib/platform-targets": "./lib/platform-targets.mts",
+    "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mts"
   },
   "dependencies": {
     "@babel/parser": "catalog:",
     "@babel/traverse": "catalog:",
+    "@sinclair/typebox": "catalog:",
     "@socketsecurity/lib": "catalog:",
+    "@socketsecurity/lib-stable": "catalog:",
     "magic-string": "catalog:"
-  },
-  "engines": {
-    "node": ">=25.5.0",
-    "pnpm": ">=10.22.0"
   }
 }
