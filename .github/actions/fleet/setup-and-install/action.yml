@@ -1,0 +1,248 @@
+# Layer 2b — aggregator. References Layer 1 (checkout, install) +
+# Layer 2a (setup). When ANY of those bump, THIS file bumps next, then
+# Layer 3 (ci.yml / provenance.yml / weekly-update.yml) bumps to ref
+# this file's new SHA. See the updating-workflows skill at
+# .claude/skills/updating-workflows/.
+
+name: 'Setup and Install'
+description: 'Aggregate: checkout + setup environment + install dependencies'
+
+# Dependencies:
+#   - ./.github/actions/checkout
+#   - ./.github/actions/setup
+#     - ./.github/actions/debug
+#     - actions/setup-node@v6.4.0
+#   - ./.github/actions/cache-pnpm-store
+#     - actions/cache/restore@v6.1.0
+#   - actions/cache/save@v6.1.0 (explicit save after install; see the
+#     "Save pnpm store" step below)
+#   - ./.github/actions/install
+
+inputs:
+  checkout:
+    description: 'Whether to checkout code'
+    required: false
+    default: 'true'
+  checkout-fetch-depth:
+    # Mirrors the fleet checkout action's default — 25 covers every git
+    # operation fleet CI performs at a fraction of a full-history clone.
+    description: 'Number of commits to fetch (0 = full history)'
+    required: false
+    default: '25'
+  checkout-ref:
+    description: 'Git ref to checkout'
+    required: false
+    default: ''
+  debug:
+    description: 'Enable debug output'
+    required: false
+    default: '0'
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '26.5.0'
+  scope:
+    description: 'npm registry scope for package authentication'
+    required: false
+    default: ''
+  registry-url:
+    description: 'npm registry URL'
+    required: false
+    default: 'https://registry.npmjs.org'
+  socket-api-token:
+    description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
+    required: false
+    default: ''
+  socket-api-key:
+    description: 'DEPRECATED alias of socket-api-token. Pass `socket-api-token:` instead. Tracked for one cycle so existing callers keep working.'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+  store-dir:
+    description: >-
+      Pin the pnpm store to this path for the whole job (exported as
+      pnpm_config_store_dir before restore + install, then asserted against
+      `pnpm store path`). Pass a workspace-relative path when a later step
+      runs pnpm inside a container/sandbox that mounts the workspace but not
+      the runner home — node_modules linked against the default home store
+      are unreadable there and pnpm fails with a store mismatch.
+    required: false
+    default: ''
+  payload-token-client-id:
+    description: >-
+      Client ID of the GitHub App that mints the thin-distribution read-only
+      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
+      skips the mint entirely: a non-thin member needs no token, and its
+      `prepare` fetch no-ops. A thin member sets this so CI can download the
+      private wheelhouse release bundle during install.
+    required: false
+    default: ''
+  payload-token-private-key:
+    description: >-
+      Private key of the payload-token GitHub App — pass
+      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
+      payload-token-client-id is set.
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      if: inputs.checkout == 'true'
+      uses: ./.github/actions/fleet/checkout
+      with:
+        fetch-depth: ${{ inputs.checkout-fetch-depth }}
+        ref: ${{ inputs.checkout-ref }}
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Setup environment
+      uses: ./.github/actions/fleet/setup
+      with:
+        debug: ${{ inputs.debug }}
+        node-version: ${{ inputs.node-version }}
+        scope: ${{ inputs.scope }}
+        registry-url: ${{ inputs.registry-url }}
+        socket-api-token: ${{ inputs.socket-api-token != '' && inputs.socket-api-token || inputs.socket-api-key }}
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Pin the pnpm store location
+      # Before restore + install so the cache action's `pnpm store path`, the
+      # install, and every later pnpm in the job resolve the SAME store.
+      #
+      # The variable is `pnpm_config_store_dir`, NOT `npm_config_store_dir`.
+      # pnpm 10 honored the npm_ prefix; pnpm 11.0.0 narrowed its env reader to
+      # pnpm_config_ only and discards every other prefix with no warning
+      # (upstream pnpm issue 13543). This step was correct when written and went
+      # silently dead on the pnpm 11 upgrade — and an unpinned store only ever
+      # looks like a slow install, so the cache degraded invisibly.
+      #
+      # The assertion below is the durable part: `pnpm store path` is the
+      # authoritative resolver pnpm itself uses (and the one cache-pnpm-store
+      # reads), so the NEXT rename fails this step loudly instead of quietly
+      # reverting to the default store. Paths are normalized (case, separators,
+      # trailing slash) so the compare holds on Windows runners, and a prefix
+      # match absorbs the store-version suffix pnpm appends (`…/<dir>/v11`).
+      #
+      # The local `export` is load-bearing: $GITHUB_ENV only affects LATER
+      # steps, so without it the assertion would check an unpinned pnpm.
+      #
+      # Env-var indirection, never `${{ }}` inside the run block — an inline
+      # expansion of a caller-controlled input into shell source is the
+      # zizmor template-injection shape (its gate fails the job on it).
+      if: inputs.store-dir != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PNPM_STORE_DIR_INPUT: ${{ inputs.store-dir }}
+      run: | # zizmor: ignore[github-env] - pnpm store path from the caller's own input, not runtime-attacker data.
+        set -euo pipefail
+
+        normalize() {
+          printf '%s' "$1" | tr '\\' '/' | tr '[:upper:]' '[:lower:]' | sed -e 's:/*$::'
+        }
+
+        mkdir -p "$PNPM_STORE_DIR_INPUT"
+        export pnpm_config_store_dir="$PNPM_STORE_DIR_INPUT"
+        echo "pnpm_config_store_dir=${PNPM_STORE_DIR_INPUT}" >> "$GITHUB_ENV"
+
+        RESOLVED="$(pnpm store path 2>/dev/null || true)"
+        WANT="$(normalize "$PNPM_STORE_DIR_INPUT")"
+        GOT="$(normalize "$RESOLVED")"
+
+        case "$GOT" in
+          "$WANT" | "$WANT"/*)
+            echo "pnpm store pinned to ${RESOLVED}"
+            ;;
+          *)
+            echo "::error title=pnpm store pin did not take effect::pnpm store path resolves outside the requested store-dir, so the store cache would be a silent no-op"
+            {
+              echo 'The store-dir input pins pnpm by exporting pnpm_config_store_dir, then'
+              echo 'verifies the pin with `pnpm store path` — the authoritative resolver pnpm'
+              echo 'itself uses, and the one the cache action reads.'
+              echo 'They disagree, which means the pin did NOT take effect:'
+              echo
+              echo "  requested store-dir : ${PNPM_STORE_DIR_INPUT}"
+              echo "  pnpm store path     : ${RESOLVED:-<empty>}"
+              echo "  pnpm config get     : $(pnpm config get store-dir 2>/dev/null || true)"
+              echo "  pnpm version        : $(pnpm --version 2>/dev/null || true)"
+              echo
+              echo 'Every later pnpm in this job would use a different store than the one the'
+              echo 'cache restores and saves, so installs stay cold and node_modules links point'
+              echo 'somewhere a workspace-mounted sandbox cannot read.'
+              echo
+              echo 'The usual cause is pnpm renaming the knob. It has happened once already:'
+              echo 'pnpm 10 read npm_config_store_dir, pnpm 11.0.0 narrowed its env reader to'
+              echo 'the pnpm_config_ prefix and dropped the rest silently (pnpm issue 13543).'
+              echo 'Re-check what this pnpm honors — the pnpm_config_store_dir env var, the'
+              echo '--store-dir flag, camelCase storeDir: in pnpm-workspace.yaml, or'
+              echo '`pnpm config set store-dir` — and update this action to match.'
+            } >&2
+            exit 1
+            ;;
+        esac
+
+    - name: Cache pnpm store
+      # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /
+      # PNPM_STORE_CACHE_HIT via $GITHUB_ENV for the save step below.
+      uses: ./.github/actions/fleet/cache-pnpm-store
+      with:
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Mint fleet payload read token
+      # Thin-distribution CI auth: mint a contents:read-only token scoped to the
+      # payload repo so the bootstrap fetch (`gh release download` fired by the
+      # `prepare` lifecycle during the install below) can read the private
+      # wheelhouse release bundle. Gated on the client-id: a non-thin member
+      # (and any caller not passing credentials) skips the mint, and its fetch
+      # no-ops with an empty token. The minted token is masked by the minter and
+      # only ever leaves this composite via the step output consumed below.
+      id: payload-token
+      if: inputs.payload-token-client-id != ''
+      uses: ./.github/actions/fleet/github-payload-app-token
+      with:
+        client-id: ${{ inputs.payload-token-client-id }}
+        private-key: ${{ inputs.payload-token-private-key }}
+
+    - name: Install dependencies
+      uses: ./.github/actions/fleet/install
+      with:
+        fleet-payload-token: ${{ steps.payload-token.outputs.token }}
+        working-directory: ${{ inputs.working-directory }}
+
+    - name: Save pnpm store
+      # Explicit save because actions/cache's post step cannot re-evaluate
+      # composite step outputs (run 30097714390: "Input required and not
+      # supplied: path") — so cache-pnpm-store only restores and this step
+      # saves once the store is actually populated. `always()` keeps red
+      # runs seeding the store — a failed install still populated part of
+      # the closure, so reruns start warm. Skips on an exact-key hit (save
+      # would be a rejected no-op) and when the restore never ran (empty
+      # key, e.g. setup failed).
+      if: always() && env.PNPM_STORE_CACHE_KEY != '' && env.PNPM_STORE_CACHE_HIT != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: ${{ env.PNPM_STORE_CACHE_KEY }}
+
+    - name: Build oxlint plugin
+      # oxlint-plugin.mjs is GENERATED (gitignored, never committed); tests that
+      # invoke oxlint need it, so build here after install. Builds the fleet's
+      # custom oxlint rules into a single ESM module.
+      run: node scripts/fleet/build-oxlint-bundle.mts
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+
+    - name: Generate hook dispatch table
+      # dispatch-manifest.json + dispatch-table.mts are GENERATED (gitignored,
+      # never committed); checks + tests read them, so regenerate here after
+      # install. Uses gen/hook-dispatch (pure JS, cross-platform) rather than
+      # build-hook-bundle (whose native rolldown spawn does not resolve on
+      # Windows) — the rolldown fleet-pack.cjs is only needed at hook-run time, not
+      # by the checks/tests. The per-machine snapshot blob/launcher is NOT built.
+      run: node scripts/fleet/gen/hook-dispatch.mts
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}

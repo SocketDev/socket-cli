@@ -1,0 +1,140 @@
+# Fleet-canonical composite: edit HERE in template/base and cascade. Promoted
+# from socket-registry's repo-owned copy, which ultrathink had re-vendored
+# after registry HEAD moved the path — three copies of one concern, drifting.
+# One home now, so a rustup change lands everywhere at once.
+#
+# Refresh against the action this replaces, dtolnay/rust-toolchain, by reading
+# its upstream/ submodule rather than re-deriving the behaviour from memory.
+# That upstream is MIT, so reading it is fine, and rustup's own book at
+# https://rust-lang.github.io/rustup/ documents the CLI underneath.
+#
+# It is pinned to a timestamped master SHA rather than a tag: the repo has cut
+# one tag ever, `v1`, and moves it, so pinning that tag by hash would record a
+# commit the tag stops reaching. See the port map for the review anchor.
+
+name: 'Setup Rust Toolchain'
+description: |
+  Install the Rust toolchain via rustup (downloading rustup-init from the
+  canonical rustup URL when not already on the runner), optionally add
+  cross-compile targets and components, and configure the default toolchain.
+
+  Replaces the third-party `dtolnay/rust-toolchain` action so the consumer's
+  allowlist doesn't need `dtolnay/rust-toolchain@*`. rustup itself is a
+  single self-contained binary served at sh.rustup.rs — already on the
+  fleet's SFW bypass list — so a direct fetch is the right shape.
+
+  Defaults follow rustup's own defaults: channel=stable, profile=minimal
+  (rustc + cargo, no docs / rust-analyzer). Use components=clippy,rustfmt
+  for full lint/format coverage.
+
+inputs:
+  channel:
+    description: |
+      Rust release channel: "stable", "beta", "nightly", or a pinned
+      version like "1.83.0". Default: "stable" (latest).
+    required: false
+    default: 'stable'
+  targets:
+    description: |
+      Comma- or space-separated list of cross-compile targets to add
+      (e.g. "x86_64-unknown-linux-gnu,aarch64-apple-darwin"). Empty
+      means host-only.
+    required: false
+    default: ''
+  components:
+    description: |
+      Comma- or space-separated list of components to install
+      (e.g. "clippy,rustfmt,rust-src"). Empty means no extra
+      components beyond rustc + cargo.
+    required: false
+    default: ''
+  profile:
+    description: |
+      rustup install profile: "minimal" (rustc + cargo only),
+      "default" (+ docs + rustfmt + clippy), "complete" (+ extras).
+      Default: "minimal" — keeps install fast; ask for components
+      individually when needed.
+    required: false
+    default: 'minimal'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install or update Rust toolchain
+      shell: bash
+      env:
+        CHANNEL: ${{ inputs.channel }}
+        TARGETS: ${{ inputs.targets }}
+        COMPONENTS: ${{ inputs.components }}
+        PROFILE: ${{ inputs.profile }}
+      run: | # zizmor: ignore[github-env]
+        set -euo pipefail
+
+        # rustup is preinstalled on GitHub-hosted runners. On
+        # self-hosted / minimal images, we fetch rustup-init from
+        # sh.rustup.rs (already on the SFW bypass list).
+        if ! command -v rustup >/dev/null 2>&1; then
+          echo "rustup not on PATH, installing via rustup-init..."
+
+          case "$(uname -s)" in
+            Linux|Darwin)
+              # rustup-init.sh is the canonical bootstrap script.
+              # --default-toolchain none: we'll install the requested
+              #   channel explicitly in the next step.
+              # --profile minimal: don't pull docs/clippy here; the
+              #   per-input PROFILE controls the final set.
+              # -y: non-interactive.
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+                | sh -s -- -y --default-toolchain none --profile minimal
+              # shellcheck disable=SC1091
+              . "$HOME/.cargo/env"
+              ;;
+            MINGW*|MSYS*|CYGWIN*)
+              # Windows rustup-init.exe; same flags.
+              curl --proto '=https' --tlsv1.2 -sSfo rustup-init.exe \
+                https://win.rustup.rs/x86_64
+              ./rustup-init.exe -y --default-toolchain none --profile minimal
+              rm rustup-init.exe
+              ;;
+            *)
+              echo "× Unsupported platform: $(uname -s)" >&2
+              exit 1
+              ;;
+          esac
+        fi
+
+        # Ensure ~/.cargo/bin is on PATH for subsequent steps.
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        # Also export for the rest of this step.
+        export PATH="$HOME/.cargo/bin:$PATH"
+
+        # Install the requested channel with the requested profile.
+        # `rustup toolchain install` is idempotent — re-running with the
+        # same channel is a no-op if already present.
+        rustup toolchain install "$CHANNEL" --profile "$PROFILE"
+        rustup default "$CHANNEL"
+
+        # Optional components (clippy, rustfmt, rust-src, ...).
+        if [ -n "$COMPONENTS" ]; then
+          # Tolerate comma OR space separation; collapse to spaces.
+          COMPONENT_LIST="$(echo "$COMPONENTS" | tr ',' ' ')"
+          for component in $COMPONENT_LIST; do
+            echo "Adding component: $component"
+            rustup component add "$component"
+          done
+        fi
+
+        # Optional cross-compile targets.
+        if [ -n "$TARGETS" ]; then
+          TARGET_LIST="$(echo "$TARGETS" | tr ',' ' ')"
+          for target in $TARGET_LIST; do
+            echo "Adding target: $target"
+            rustup target add "$target"
+          done
+        fi
+
+        echo
+        echo "Toolchain summary:"
+        rustup show
+        rustc --version
+        cargo --version

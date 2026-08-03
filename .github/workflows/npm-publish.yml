@@ -1,0 +1,222 @@
+name: 📦 npm publish
+
+# Cascade-owned — every npm-publishing repo carries the byte-identical copy
+# (adopt by copying the template once; the sync then keeps it in lock-step;
+# member edits are reverted on the next cascade). The thin dispatch shell:
+# checkout → setup-and-install → build → scripts/fleet/npm-publish.mts, which
+# owns what + how the repo publishes.
+#
+# Default flow: manual dispatch, DRY-RUN unless `publish: true`; publishes the
+# workspace's publishable packages via the fleet staged-publish script with
+# npm provenance (OIDC trusted publishing — id-token: write, no long-lived
+# npm token).
+#
+# ORDER RULE: this workflow only STAGES — nothing is public, and NO git tag or
+# GitHub release exists yet. The tag + immutable GH release are cut LAST, by
+# the local `--approve` promote (publish-pipeline.mts / npm-publish.mts
+# --approve), only after the approved version is live on npm. The
+# github-release workflow independently refuses to cut for a version that is
+# not resolvable on the registry.
+#
+# BACKFILL: to republish prior content as a skipped GAP version — 1.4.3
+# between a live 1.4.2 and 1.4.4 — dispatch from MAIN, where this file always
+# exists, with `backfill-version` + `checkout-ref`. The checkout-ref supplies
+# the CONTENT while the workflow definition stays main's. The bump/changelog
+# gate is bypassed; hard gap-fill-only guards replace it (never-published
+# version, lower than latest, non-latest dist-tag, content declares its own
+# version) — see scripts/fleet/publish-infra/npm/backfill.mts.
+#
+# NAPI ADDON PATH: not here. A member that declares a `napi` block in
+# .config/repo/socket-wheelhouse.json receives a SEPARATE, conditionally
+# cascaded `.github/workflows/npm-publish-napi.yml` carrying the per-platform
+# `.node` build + platform-package publish. GitHub parses a workflow against
+# the repo's Actions allowlist BEFORE evaluating any job-level `if:`, so addon
+# jobs living in this fleet-wide file would force the Rust toolchain actions
+# onto every member's allowlist — and a strict-allowlist member that lacks them
+# fails the whole file at startup with zero jobs and no logs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish for real (false = dry-run, the default).'
+        type: boolean
+        default: false
+      dist-tag:
+        description: 'npm dist-tag to publish under.'
+        type: string
+        default: 'latest'
+      release-as:
+        description: >-
+          Force the bump level. MAJOR is never derived from commits — the
+          bump script stops on breaking commits unless a human selects
+          major here.
+        type: choice
+        options:
+          - ''
+          - major
+          - minor
+          - patch
+        default: ''
+      bump:
+        description: >-
+          Run the CI bump step: consume the committed version hint, write
+          CHANGELOG, and commit via the release App before staging. The
+          publish pipeline dispatches with false — its bump stage already
+          landed the bump commit, and a re-entrant CI bump once committed a
+          duplicate CHANGELOG section. Ignored by backfills, which never
+          bump.
+        type: boolean
+        default: true
+      backfill-version:
+        description: >-
+          Backfill a never-published GAP version below registry latest with
+          the content at checkout-ref. Bypasses the bump/changelog gate
+          behind hard gap-fill-only guards; requires checkout-ref and a
+          non-latest dist-tag.
+        type: string
+        default: ''
+      checkout-ref:
+        description: >-
+          Backfill only — the branch/tag/SHA whose CONTENT is republished.
+          The workflow definition always comes from the dispatched ref,
+          main, so historical content stays reachable.
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # npm's trusted-publisher config pins this GitHub environment name; the
+    # OIDC token exchange 404s if the job runs outside it.
+    environment: npm-publish
+    permissions:
+      contents: read
+      # npm provenance / trusted publishing mints its OIDC token here.
+      id-token: write
+    env:
+      # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install —
+      # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves; setup-and-install re-checks-out
+      # at its own deeper default.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          # Backfill checks out the content ref; empty = the dispatched ref.
+          ref: ${{ inputs.checkout-ref }}
+          fetch-depth: 1
+          # The bump derivation anchors on registry-latest + the last v-tag.
+          # On a first-publish repo the registry has nothing, so the tags are
+          # the only anchor — a tagless shallow checkout makes the engine
+          # derive from zero (0.1.0) and trip the half-applied-bump gate on
+          # historical CHANGELOG sections that describe shipped versions.
+          fetch-tags: true
+          persist-credentials: false
+
+      # `latest` is what an untagged install of the package resolves to, so it belongs
+      # to whichever branch carries the line customers actually consume. For
+      # almost every member that IS the default branch, which is the default
+      # here — those repos see no behavior change.
+      #
+      # A member whose consumable line is NOT the default branch declares it as
+      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
+      # socket-cli is the case that forced this: its default branch carries the
+      # 2.x PRERELEASE line while customers install from v1.x. With `latest`
+      # unguarded, `socket@latest` sat on 1.1.147 for a week while five newer
+      # v1.x releases — including a CVE bump — published under a side tag no
+      # bare install ever resolves.
+      #
+      # Read from the manifest rather than hard-coded so one file states the
+      # law for the whole fleet and each member parameterizes it.
+      - name: Guard the latest dist-tag to the consumable release line
+        if: ${{ inputs.publish == true && inputs.dist-tag == 'latest' }}
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REF: ${{ github.ref }}
+        run: |
+          LATEST_BRANCH="$(node -e '
+            const fs = require("node:fs")
+            const p = ".config/repo/socket-wheelhouse.json"
+            let branch = ""
+            try {
+              branch = JSON.parse(fs.readFileSync(p, "utf8"))?.release?.latestDistTagBranch ?? ""
+            } catch {}
+            process.stdout.write(String(branch))
+          ')"
+          if [ -z "$LATEST_BRANCH" ]; then
+            LATEST_BRANCH="$DEFAULT_BRANCH"
+          fi
+          if [ "$REF" != "refs/heads/$LATEST_BRANCH" ]; then
+            echo "::error::Refusing to publish dist-tag 'latest' from $REF." >&2
+            echo "::error::Where: this dispatch, against the '$LATEST_BRANCH' consumable release line." >&2
+            echo "::error::Saw vs wanted: 'latest' requested off refs/heads/$LATEST_BRANCH; 'latest' is what an untagged install resolves to, so only the consumable line may move it." >&2
+            echo "::error::Fix: re-dispatch from $LATEST_BRANCH, or pick a prerelease dist-tag (next, beta, canary, rc). To change which branch owns 'latest', set release.latestDistTagBranch in .config/repo/socket-wheelhouse.json." >&2
+            exit 1
+          fi
+          echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
+
+      - name: Setup + install
+        uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Forward the backfill content ref — setup-and-install re-checks-out
+          # internally (fleet checkout falls back to the TRIGGERING ref when
+          # unset), which would silently swap the backfill content back to
+          # main's tree; the backfill gate then refuses against main's
+          # version. Empty forwards as unset, so normal dispatches keep the
+          # dispatched-ref re-checkout.
+          checkout-ref: ${{ inputs.checkout-ref }}
+      # Build dist/ before publishing — the staged-publish script imports the
+      # package's own built output (`@socketsecurity/lib/stdio/prompts` self-
+      # resolves to dist/), and `files` ships dist/, so the tarball needs it.
+      - name: Build
+        run: pnpm run build
+      # The release App signs the bump commit via the GitHub API — the
+      # workflow's own GITHUB_TOKEN stays contents: read. A backfill never
+      # commits a bump, and a bump=false pipeline dispatch already carries
+      # its bump commit, so both skip the mint.
+      - name: Mint release App token
+        if: ${{ inputs.backfill-version == '' && inputs.bump }}
+        id: release-app
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+      # --bump consumes the committed version hint (X.Y.Z-prerelease →
+      # X.Y.Z), writes CHANGELOG, and commits via the release App (verified,
+      # signed) onto a throwaway npm-publish-v<version> branch — main's ref is
+      # fast-forwarded to that exact commit only after the publish succeeds, and
+      # the branch is nuked on a rejected publish, so a failed stage never
+      # creeps the version. The bump NEVER goes through a pull request: the
+      # release App's contents:write lands it directly. The version decision
+      # stays with the human: it is whatever the committed hint names.
+      # The bump runs EXACTLY ONCE across the pipeline + workflow chain: the
+      # publish pipeline dispatches with bump=false because its own bump stage
+      # already landed the bump commit — the CI re-bump once re-derived the
+      # same version and committed a duplicate CHANGELOG section. Manual
+      # dispatches keep the default bump=true hint-consuming flow.
+      # Backfill swaps --bump for --backfill + --checkout-ref: no bump commit,
+      # no changelog — the checked-out content publishes as-is once the
+      # backfill guards pass (npm-publish.mts fails loud when they don't).
+      - name: Publish
+        env:
+          BACKFILL_VERSION: ${{ inputs.backfill-version }}
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          # actions/setup-node (registry-url) exports a placeholder
+          # NODE_AUTH_TOKEN into every later step's env. The publish step runs
+          # tokenless: the trusted-publishing preflight refuses ANY set token,
+          # and with the variable empty a failed OIDC exchange interpolates an
+          # empty .npmrc credential and dies loud (E401) instead of masking.
+          NODE_AUTH_TOKEN: ''
+          RELEASE_AS: ${{ inputs.release-as }}
+          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+        # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
+        # backfill-version is refused by the script instead of silently
+        # bump-publishing historical content.
+        run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '' && inputs.bump) && '--bump' || '' }} --tag "$DIST_TAG" ${RELEASE_AS:+--release-as "$RELEASE_AS"} ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}

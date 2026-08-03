@@ -1,414 +1,90 @@
-name: 🚀 CI
-
-# Dependencies:
-#   - SocketDev/socket-registry/.github/workflows/ci.yml
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+# <fleet-canonical>
+# Managed by socket-wheelhouse. Don't edit this block locally — edit
+# template/base/.github/workflows/ci.yml upstream and re-cascade via
+# `pnpm run sync`. Fleet CI runs check + test using the LOCAL composite actions
+# under .github/actions/ (inlined — no cross-repo reusable, no `uses:@sha` for
+# first-party). Repo-owned jobs go BELOW the END marker (still under the
+# top-level `jobs:` key). See scripts/repo/sync-scaffolding/checks/workflow-fleet-block.mts.
+name: ⚡ CI
 
 on:
   push:
     branches: [main]
     tags: ['*']
-    paths:
-      - 'packages/cli/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'packages/cli/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/ci.yml'
   workflow_dispatch:
-    inputs:
-      force:
-        description: 'Force rebuild (ignore cache)'
-        type: boolean
-        default: false
-      node-versions:
-        description: 'Node.js versions to test (JSON array)'
-        required: false
-        type: string
-        # Default should match .node-version file.
-        default: '["25"]'
 
-permissions: {}
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Fleet no-phone-home posture: CI runners don't source the shell-rc that dev
+# machines get from setup-security-tools, so set every FLEET_ENV knob
+# workflow-level or the telemetry-env-is-disabled +
+# package-manager-auto-update-is-disabled gates (under `check --all`) fail.
+# Lockstep source: .claude/hooks/fleet/_shared/fleet-env.mts (FLEET_ENV) —
+# the telemetry-env-is-disabled check asserts each knob at CI runtime.
+env:
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+  COREPACK_ENABLE_PROJECT_SPEC: '0'
+  DISABLE_TELEMETRY: '1'
+  DO_NOT_TRACK: '1'
+  NO_UPDATE_NOTIFIER: '1'
+  OTEL_SDK_DISABLED: 'true'
 
 jobs:
-  versions:
-    name: Load Tool Versions
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read # Read .node-version file from repository.
-    outputs:
-      node: ${{ steps.versions.outputs.node }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-
-      - name: Load Node.js version from .node-version
-        id: versions
-        run: |
-          NODE_VERSION=$(cat .node-version)
-          echo "node=[\"$NODE_VERSION\"]" >> $GITHUB_OUTPUT
-          echo "Loaded Node.js: $NODE_VERSION"
-
-  ci:
-    name: Run CI Pipeline
-    needs: versions
-    permissions:
-      contents: read # Read repository contents for CI checks and build operations.
-    uses: SocketDev/socket-registry/.github/workflows/ci.yml@67a3db92603c23c58031586611c7cc852244c87c # main
-    with:
-      test-setup-script: 'pnpm --filter @socketsecurity/cli run build'
-      lint-script: 'pnpm --filter @socketsecurity/cli run check'
-      type-check-script: 'pnpm --filter @socketsecurity/cli run type'
-      run-test: false  # Tests run in separate sharded job below.
-      node-versions: ${{ inputs.node-versions || needs.versions.outputs.node }}
-      os-versions: '["ubuntu-latest"]'
-      fail-fast: false
-      max-parallel: 4
-      test-timeout-minutes: 15
-
-  # Sharded unit tests for faster CI.
-  # Splits 2,819 tests across 3 shards (~16s per shard vs 48s monolithic).
-  # Runs on Linux only to optimize CI runtime and build requirements.
-  test-sharded:
-    name: Unit Tests (Shard ${{ matrix.shard }}/3)
-    needs: [ci, versions]
+  # First step of every job is the third-party actions/checkout (GitHub fetches
+  # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
+  # composites resolve. setup-and-install then re-checks-out at its deeper
+  # default (fetch-depth 25 — covers CI's git operations) and
+  # runs the zizmor Actions audit (its own `strategy.job-total < 2` skip runs it
+  # in the non-matrix check job, skips it in the test matrix).
+  check:
+    name: 🔎 Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions:
-      contents: read # Read repository contents for unit test execution.
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - uses: ./.github/actions/fleet/run-script
+        with:
+          main-script: pnpm run check --all
+
+  test:
+    name: 🧪 Test
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
-        shard: [1, 2, 3]
-    steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Generate CLI build cache key
-        id: cli-cache-key
-        shell: bash
-        run: |
-          # Validate required files exist.
-          if [ ! -f pnpm-lock.yaml ]; then
-            echo "Error: pnpm-lock.yaml not found" >&2
-            exit 1
-          fi
-          if [ ! -d packages/cli/src ]; then
-            echo "Error: packages/cli/src directory not found" >&2
-            exit 1
-          fi
-
-          # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(find packages/cli/.config packages/cli/scripts -type f -name "*.mjs" -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-
-          # Validate hashes were computed successfully.
-          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
-            echo "Error: Failed to compute one or more cache key hashes" >&2
-            exit 1
-          fi
-
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
-
-      - name: Restore CLI build cache
-        id: cli-build-cache
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
-        with:
-          path: |
-            packages/cli/build/
-            packages/cli/dist/
-          key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          # Note: restore-keys removed to prevent cache poisoning attacks.
-          lookup-only: true
-
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
-
-      - name: Run unit tests (shard ${{ matrix.shard }})
-        working-directory: packages/cli
-        run: pnpm test:unit --shard=${{ matrix.shard }}/3
-
-  # Binary distribution integration tests.
-  # Tests the JS distribution and optionally SEA/smol if cached binaries are available.
-  integration:
-    name: Integration Tests
-    needs: [ci, versions]
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read # Read repository contents for integration test execution.
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
-    steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Generate CLI build cache key
-        id: cli-cache-key
-        shell: bash
-        run: |
-          # Validate required files exist.
-          if [ ! -f pnpm-lock.yaml ]; then
-            echo "Error: pnpm-lock.yaml not found" >&2
-            exit 1
-          fi
-          if [ ! -d packages/cli/src ]; then
-            echo "Error: packages/cli/src directory not found" >&2
-            exit 1
-          fi
-
-          # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(find packages/cli/.config packages/cli/scripts -type f -name "*.mjs" -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-
-          # Validate hashes were computed successfully.
-          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
-            echo "Error: Failed to compute one or more cache key hashes" >&2
-            exit 1
-          fi
-
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
-
-      - name: Restore CLI build cache
-        id: cli-build-cache
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
-        with:
-          path: |
-            packages/cli/build/
-            packages/cli/dist/
-          key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          # Note: restore-keys removed to prevent cache poisoning attacks.
-          lookup-only: true
-
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
-
-      - name: Generate cache keys for binary distributions
-        id: cache-keys
-        shell: bash
-        run: |
-          # Validate required files/directories exist.
-          if [ ! -f pnpm-lock.yaml ]; then
-            echo "Error: pnpm-lock.yaml not found" >&2
-            exit 1
-          fi
-          if [ ! -d packages/node-sea-builder ]; then
-            echo "Error: packages/node-sea-builder directory not found" >&2
-            exit 1
-          fi
-
-          # SEA cache key (matches build-sea.yml).
-          SEA_HASH=$(find packages/node-sea-builder packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          DEPS_HASH=$(find packages/bootstrap packages/socket -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" -o -name "*.json" \) ! -path "*/node_modules/*" ! -path "*/dist/*" ! -path "*/build/*" | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-
-          # Validate hashes were computed successfully.
-          if [ -z "$SEA_HASH" ] || [ -z "$DEPS_HASH" ] || [ -z "$LOCK_HASH" ]; then
-            echo "Error: Failed to compute one or more SEA cache key hashes" >&2
-            exit 1
-          fi
-
-          SEA_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
-          SEA_COMBINED=$(echo "$SEA_HASH-$SEA_DEPS_HASH" | shasum -a 256 | cut -d' ' -f1)
-          echo "sea-hash=$SEA_COMBINED" >> $GITHUB_OUTPUT
-
-          # Smol cache key (matches build-smol.yml).
-          SMOL_HASH=$(find patches packages/node-smol-builder/patches packages/node-smol-builder/additions scripts -type f \( -name "*.patch" -o -name "*.template.patch" -o -name "*.mjs" -o -name "*.template.mjs" -o -name "*.h" -o -name "*.c" -o -name "*.cc" \) | sort | xargs shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-
-          # Validate smol hash was computed successfully.
-          if [ -z "$SMOL_HASH" ]; then
-            echo "Error: Failed to compute SMOL cache key hash" >&2
-            exit 1
-          fi
-
-          SMOL_DEPS_HASH=$(echo "$DEPS_HASH-$LOCK_HASH" | shasum -a 256 | cut -d' ' -f1)
-          SMOL_COMBINED=$(echo "$SMOL_HASH-$SMOL_DEPS_HASH" | shasum -a 256 | cut -d' ' -f1)
-          echo "smol-hash=$SMOL_COMBINED" >> $GITHUB_OUTPUT
-
-      - name: Restore SEA binary cache
-        id: sea-cache
-        uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
-        with:
-          path: packages/node-sea-builder/dist/sea/
-          key: node-sea-linux-x64-${{ steps.cache-keys.outputs.sea-hash }}
-          # Note: restore-keys removed to prevent cache poisoning attacks.
-
-      - name: Restore smol binary cache
-        id: smol-cache
-        uses: actions/cache/restore@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
-        with:
-          path: packages/node-smol-builder/dist/
-          key: node-smol-linux-x64-${{ steps.cache-keys.outputs.smol-hash }}
-          # Note: restore-keys removed to prevent cache poisoning attacks.
-
-      - name: Setup cached binaries for testing
-        id: setup-binaries
-        shell: bash
-        run: |
-          echo "Setting up cached binaries for integration tests..."
-          echo ""
-          echo "Cache restoration status:"
-          echo "  SEA cache hit: ${STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT}"
-          echo "  Smol cache hit: ${STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT}"
-          echo ""
-
-          # Debug: List cache directories.
-          echo "SEA dist directory contents:"
-          ls -lah packages/node-sea-builder/dist/ 2>/dev/null || echo "  (directory does not exist)"
-          echo ""
-          echo "Smol dist directory contents:"
-          ls -lah packages/node-smol-builder/dist/ 2>/dev/null || echo "  (directory does not exist)"
-          echo ""
-
-          # Copy SEA binary from cache to expected test location.
-          SEA_CACHED="packages/node-sea-builder/dist/sea/socket-linux-x64"
-          SEA_TARGET="packages/node-sea-builder/dist/socket-sea"
-          if [ -f "$SEA_CACHED" ]; then
-            mkdir -p "$(dirname "$SEA_TARGET")"
-            cp "$SEA_CACHED" "$SEA_TARGET"
-            chmod +x "$SEA_TARGET"
-            echo "✓ SEA binary restored from cache: $SEA_TARGET"
-            echo "sea=true" >> $GITHUB_OUTPUT
-          else
-            echo "✗ SEA binary not found in cache (expected: $SEA_CACHED)"
-            if [ "${STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT}" = "true" ]; then
-              echo "  Cache was restored but binary not at expected location"
-              echo "  Available files in packages/node-sea-builder/dist/:"
-              find packages/node-sea-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
-            else
-              echo "  No cache available - binaries not built yet"
-              echo "  Run build-sea.yml workflow to build and cache SEA binaries"
-            fi
-            echo "sea=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Copy smol binary from cache to expected test location.
-          SMOL_CACHED="packages/node-smol-builder/dist/socket-smol-linux-x64"
-          SMOL_TARGET="packages/node-smol-builder/dist/socket-smol"
-          if [ -f "$SMOL_CACHED" ]; then
-            mkdir -p "$(dirname "$SMOL_TARGET")"
-            cp "$SMOL_CACHED" "$SMOL_TARGET"
-            chmod +x "$SMOL_TARGET"
-            echo "✓ Smol binary restored from cache: $SMOL_TARGET"
-            echo "smol=true" >> $GITHUB_OUTPUT
-          else
-            echo "✗ Smol binary not found in cache (expected: $SMOL_CACHED)"
-            if [ "${STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT}" = "true" ]; then
-              echo "  Cache was restored but binary not at expected location"
-              echo "  Available files in packages/node-smol-builder/dist/:"
-              find packages/node-smol-builder/dist/ -type f 2>/dev/null || echo "  (no files found)"
-            else
-              echo "  No cache available - binaries not built yet"
-              echo "  Run build-smol.yml workflow to build and cache smol binaries"
-            fi
-            echo "smol=false" >> $GITHUB_OUTPUT
-          fi
-
-          # JS distribution (always available after build).
-          if [ -f "packages/cli/dist/index.js" ]; then
-            echo "✓ JS distribution: packages/cli/dist/index.js"
-            echo "js=true" >> $GITHUB_OUTPUT
-          else
-            echo "✗ JS distribution: not found"
-            echo "js=false" >> $GITHUB_OUTPUT
-          fi
-
-          echo ""
-          echo "Integration tests will run against all available distributions."
-        env:
-          STEPS_SEA_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.sea-cache.outputs.cache-hit || 'false' }}
-          STEPS_SMOL_CACHE_OUTPUTS_CACHE_HIT: ${{ steps.smol-cache.outputs.cache-hit || 'false' }}
-
-      - name: Run integration tests (all available distributions)
-        working-directory: packages/cli
-        run: node scripts/integration.mjs --all
-
-  e2e:
-    name: E2E Tests (Shard ${{ matrix.shard }}/2)
-    needs: [ci, versions]
+        # JS/TS tests only need a fast Linux run; cross-platform behavior is
+        # covered by unit tests, not the CI matrix.
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
-    permissions:
-      contents: read # Read repository contents for e2e test execution.
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        node-version: ${{ fromJSON(inputs.node-versions || needs.versions.outputs.node) }}
-        os: [ubuntu-latest]
-        shard: [1, 2]
     steps:
-      - uses: SocketDev/socket-registry/.github/actions/setup-and-install@67a3db92603c23c58031586611c7cc852244c87c # main
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Generate CLI build cache key
-        id: cli-cache-key
-        shell: bash
-        run: |
-          # Validate required files exist.
-          if [ ! -f pnpm-lock.yaml ]; then
-            echo "Error: pnpm-lock.yaml not found" >&2
-            exit 1
-          fi
-          if [ ! -d packages/cli/src ]; then
-            echo "Error: packages/cli/src directory not found" >&2
-            exit 1
-          fi
-
-          # Compute hashes with proper error handling.
-          PNPM_LOCK_HASH=$(shasum -a 256 pnpm-lock.yaml | cut -d' ' -f1)
-          CLI_SRC_HASH=$(find packages/cli/src -type f \( -name "*.mts" -o -name "*.ts" -o -name "*.mjs" -o -name "*.js" \) -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-          CLI_CONFIG_HASH=$(find packages/cli/.config packages/cli/scripts -type f -name "*.mjs" -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -d' ' -f1)
-
-          # Validate hashes were computed successfully.
-          if [ -z "$PNPM_LOCK_HASH" ] || [ -z "$CLI_SRC_HASH" ] || [ -z "$CLI_CONFIG_HASH" ]; then
-            echo "Error: Failed to compute one or more cache key hashes" >&2
-            exit 1
-          fi
-
-          CLI_COMBINED=$(echo "$PNPM_LOCK_HASH-$CLI_SRC_HASH-$CLI_CONFIG_HASH" | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=$CLI_COMBINED" >> $GITHUB_OUTPUT
-
-      - name: Restore CLI build cache
-        id: cli-build-cache
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: ./.github/actions/fleet/setup-and-install
         with:
-          path: |
-            packages/cli/build/
-            packages/cli/dist/
-          key: cli-build-${{ runner.os }}-${{ steps.cli-cache-key.outputs.hash }}
-          # Note: restore-keys removed to prevent cache poisoning attacks.
-          lookup-only: true
-
-      - name: Build CLI
-        working-directory: packages/cli
-        run: pnpm run build
-
-      - name: Run e2e tests (shard ${{ matrix.shard }})
-        working-directory: packages/cli
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - uses: ./.github/actions/fleet/run-script
         env:
-          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
-        run: pnpm run e2e-tests --shard=${{ matrix.shard }}/2
+          # Authenticate build-time GitHub API reads (release listings,
+          # prebuilt-artifact downloads). Unauthenticated calls share the
+          # hosted runner's IP-scoped rate limit and 403 under load.
+          GH_TOKEN: ${{ github.token }}
+        with:
+          setup-script: pnpm run build
+          main-script: pnpm test --all
+  # </fleet-canonical>

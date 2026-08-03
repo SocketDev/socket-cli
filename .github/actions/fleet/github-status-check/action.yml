@@ -1,0 +1,54 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by the
+# reusable `ci.yml` (Layer 3) as a pre-flight check at the start of
+# every job. When this file bumps, cascade is: 2b → 3 → 4 → external
+# repos. See updating-workflows skill at .claude/skills/updating-workflows/.
+
+name: 'GitHub Status Check'
+description: >
+  Probe githubstatus.com/api/v2/components.json and emit warning
+  annotations when GitHub Actions, Git Operations, or API Requests are
+  degraded or experiencing an incident. The job continues regardless —
+  degraded != down — but the warning appears in the run summary so
+  operators know to correlate unexpected CI failures with an upstream
+  outage rather than blaming their code.
+
+inputs:
+  fail-on-incident:
+    description: >
+      When "true", exit 1 if any monitored component reports an active
+      incident (major_outage or partial_outage). Use for release-blocking
+      workflows where you'd rather retry clean than risk a partial publish.
+    required: false
+    default: 'false'
+
+outputs:
+  status:
+    description: >
+      Worst-case status across all monitored components:
+      "operational" | "degraded_performance" | "partial_outage" |
+      "major_outage" | "unknown" (when the probe itself fails).
+    value: ${{ steps.probe.outputs.status }}
+  summary:
+    description: >
+      Human-readable one-liner, e.g.
+      "All monitored GitHub components operational" or
+      "⚠️  Actions: degraded_performance".
+    value: ${{ steps.probe.outputs.summary }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Probe githubstatus.com
+      id: probe
+      shell: bash
+      env:
+        FAIL_ON_INCIDENT: ${{ inputs.fail-on-incident }}
+      run: |
+        set -euo pipefail
+        # Decision core extracted to the co-located probe-github-status.mjs —
+        # pure functions with fixture tests in the wheelhouse unit suite; this
+        # step is only the invocation. Runs on the runner's system Node before
+        # any install exists, so the script is dependency-free .mjs, reached
+        # via $GITHUB_ACTION_PATH so it travels when a member consumes the
+        # action — same shape as github-release-app-token's minter.
+        node "${GITHUB_ACTION_PATH}/probe-github-status.mjs"

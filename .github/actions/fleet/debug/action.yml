@@ -1,0 +1,49 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Consumed by
+# `setup` (Layer 2a). When this file bumps, cascade is: 2a → 2b → 3 → 4
+# → external repos. See updating-workflows skill at
+# .claude/skills/updating-workflows/.
+
+name: 'Setup Debug'
+description: 'Parse and setup debug environment variables'
+
+inputs:
+  debug:
+    description: 'Debug input - accepts "0", "1", or DEBUG="..." format'
+    required: false
+    default: '0'
+
+outputs:
+  socket_debug:
+    description: 'The processed SOCKET_DEBUG value'
+    value: ${{ steps.parse.outputs.socket_debug }}
+  debug_value:
+    description: 'The processed DEBUG value'
+    value: ${{ steps.parse.outputs.debug_value }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Parse debug input
+      id: parse
+      shell: bash
+      env:
+        DEBUG_INPUT: ${{ inputs.debug }}
+      run: | # zizmor: ignore[github-env]
+        # Normalize DEBUG='...' and simple inputs to one value first.
+        if [[ "$DEBUG_INPUT" =~ ^DEBUG=[\'\"]*(.+)[\'\"]*$ ]]; then
+          debug_value="${BASH_REMATCH[1]}"
+        else
+          debug_value="$DEBUG_INPUT"
+        fi
+        {
+          echo "socket_debug=$debug_value"
+          echo "debug_value=$debug_value"
+        } >> "$GITHUB_OUTPUT"
+        # Debug consumers use env presence/truthiness. Exporting the string "0"
+        # therefore turns debugging ON; disabled must leave both vars unset.
+        if [[ -n "$debug_value" && "$debug_value" != "0" ]]; then
+          {
+            echo "DEBUG=$debug_value"
+            echo "SOCKET_DEBUG=$debug_value"
+          } >> "$GITHUB_ENV"
+        fi

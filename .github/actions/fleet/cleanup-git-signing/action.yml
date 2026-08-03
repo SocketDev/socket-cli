@@ -1,0 +1,28 @@
+# Layer 1 — leaf action (no internal SocketDev refs). Fleet-inlined so
+# member workflows reference it locally (./.github/actions/fleet/...)
+# instead of a cross-repo pin. Paired with `setup-git-signing`
+# (use both, always() the cleanup).
+
+name: 'Clean up GPG commit signing'
+description: 'Remove imported GPG key, kill gpg-agent, and unset git signing config. Always use with if: always().'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Clean up GPG signing
+      shell: bash
+      run: |
+        # Delete secret key from keyring
+        GPG_FINGERPRINT=$(gpg --list-secret-keys --with-colons 2>/dev/null | grep '^fpr' | head -1 | cut -d':' -f10)
+        if [ -n "$GPG_FINGERPRINT" ]; then
+          gpg --batch --yes --delete-secret-and-public-key "$GPG_FINGERPRINT" 2>/dev/null || true
+        fi
+
+        # Kill gpg-agent so no key material lingers in memory
+        gpgconf --kill gpg-agent 2>/dev/null || true
+
+        # Remove git signing config
+        git config --local --unset user.signingkey 2>/dev/null || true
+        git config --local --unset commit.gpgsign 2>/dev/null || true
+        git config --local --unset user.name 2>/dev/null || true
+        git config --local --unset user.email 2>/dev/null || true

@@ -1,0 +1,108 @@
+name: 🚀 GitHub release
+
+# PRESET — seeded once from template/presets/ (onboarding or first cascade),
+# then repo-owned: customize what THIS repo releases. The fleet base actions
+# do the heavy lifting — github-release-app-token mints the release App token,
+# github-release cuts the immutable 3-step release tied to the pushed tag
+# (create --draft → upload assets → edit --draft=false).
+#
+# Default flow: push a signed v* tag → this workflow cuts a GitHub Release for
+# it. A manual dispatch is a DRY-RUN (prints the cut plan) unless
+# `release: true`. Add build steps + assets for whatever this repo ships.
+#
+# ORDER RULE: the tag + immutable GH release are the FINAL markers of a
+# release — they may only exist AFTER the registry publish is live. A STAGED
+# npm package is not published (staging may never be approved), so this
+# workflow refuses to cut when the tagged version is not resolvable on its
+# registry (npm packument / crates.io sparse index). Registry-less repos
+# (private, github-release-only) skip the gate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Cut the release for real (false = dry-run plan, the default).'
+        type: boolean
+        default: false
+      tag:
+        description: 'Tag to release. Required on dispatch (tag pushes use the pushed tag).'
+        type: string
+        default: ''
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+# Fleet no-phone-home posture, lockstep with the FLEET_ENV list in
+# .claude/hooks/fleet/_shared/fleet-env.mts (mirror of ci.yml's env block) —
+# the release job runs the same telemetry + update-notifier opt-outs, so a
+# release build never phones home. OTEL_SDK_DISABLED holds the OpenTelemetry
+# exporter that ships in the skillspector security tool's closure inert.
+env:
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+  COREPACK_ENABLE_PROJECT_SPEC: '0'
+  DISABLE_TELEMETRY: '1'
+  DO_NOT_TRACK: '1'
+  NO_UPDATE_NOTIFIER: '1'
+  OTEL_SDK_DISABLED: 'true'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # First step must be the third-party actions/checkout (GitHub fetches it
+      # independently) to populate the workspace so the LOCAL
+      # ./.github/actions/* composite resolves; the fleet checkout action then
+      # re-checks-out at its own depth.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Checkout
+        uses: ./.github/actions/fleet/checkout
+      # The resolved tag is the single input every later step trusts — it
+      # feeds the registry-liveness gate as TAG and names the release cut, so
+      # wrong resolution here silently bypasses the publish-before-release
+      # order rule. The branch logic lives in the dependency-free
+      # scripts/fleet/resolve-release-tag.mjs (system Node only — no install
+      # has run here), where the wheelhouse unit suite regression-tests it;
+      # byte-parity with the inline predecessor is pinned per scenario.
+      - name: Resolve tag
+        id: tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: node scripts/fleet/resolve-release-tag.mjs
+      # Belt-and-braces publish-before-release gate: refuse to cut when the
+      # tagged version is not actually live on its registry. Runs only when a
+      # real cut would happen (tag push, or dispatch with release: true) so a
+      # dry-run plan stays inspectable pre-publish. The branch logic lives in
+      # the dependency-free scripts/fleet/registry-liveness-gate.mjs (system
+      # Node only — no install has run here), where the wheelhouse unit suite
+      # regression-tests it; the inline predecessor was untestable and shipped
+      # a regressed single-crate-only gate to cargo workspaces in v1.0.13.
+      - name: Registry publish is live
+        if: ${{ github.event_name == 'push' || inputs.release }}
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: node scripts/fleet/registry-liveness-gate.mjs
+      - name: Mint release-app token
+        id: app-token
+        uses: ./.github/actions/fleet/github-release-app-token
+        with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+      # Build this repo's release assets here, then list them under the cut
+      # step's `assets:` (newline-separated paths; each must exist).
+      - name: Cut immutable GitHub release
+        uses: ./.github/actions/fleet/github-release
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          dry-run: ${{ (github.event_name == 'push' || inputs.release) && 'false' || 'true' }}
+          token: ${{ steps.app-token.outputs.token }}

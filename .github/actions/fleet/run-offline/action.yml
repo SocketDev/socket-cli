@@ -1,0 +1,48 @@
+# Fleet-canonical composite action — run a command with external network
+# disabled so unit tests fail on any real outbound call: the compiled-language
+# equivalent of the JS/TS `nock.disableNetConnect()` gate. On Linux the command
+# runs inside a network namespace with only loopback up (localhost fixture
+# servers still work; there is no route off-box). On non-Linux runners the
+# command runs normally — network behavior is OS-independent, so the Linux job
+# is the gate. Fail-closed: if no namespace can be created the step errors, it
+# never silently runs the command with the network up.
+# See docs/agents.md/fleet/no-live-network-in-tests.md.
+name: 'Run Offline'
+description: 'Run a command with external network disabled (loopback-only) for network-off unit tests.'
+inputs:
+  run:
+    description: 'Command to run with the network disabled.'
+    required: true
+  working-directory:
+    description: 'Working directory.'
+    required: false
+    default: '.'
+runs:
+  using: 'composite'
+  steps:
+    - name: run (network-off)
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      # Route the command through env (no ${{ }} in the shell body — zizmor
+      # expression-injection). The input comes from trusted workflow definitions.
+      env:
+        RUN_OFFLINE_CMD: ${{ inputs.run }}
+      run: |
+        set -euo pipefail
+        if [ "$(uname -s)" != "Linux" ]; then
+          echo "run-offline: $(uname -s) has no net namespace; running normally (the Linux job is the network-off gate)."
+          exec bash -c "$RUN_OFFLINE_CMD"
+        fi
+        # Ubuntu 24.04 restricts unprivileged user namespaces via AppArmor;
+        # relax it on this ephemeral runner (passwordless sudo is present).
+        if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 >/dev/null 2>&1 || true
+        fi
+        if ! unshare --map-root-user --net true 2>/dev/null; then
+          echo "::error::run-offline: cannot create a network namespace on this runner; refusing to run WITH the network up (a false-green network-off gate)." >&2
+          exit 1
+        fi
+        # Fresh net namespace, loopback up: localhost fixtures work, no route
+        # off-box so any real outbound call fails.
+        exec unshare --map-root-user --net -- \
+          bash -c 'ip link set lo up 2>/dev/null || true; exec bash -c "$RUN_OFFLINE_CMD"'

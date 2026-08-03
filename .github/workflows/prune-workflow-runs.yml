@@ -1,0 +1,112 @@
+name: 🧹 Prune Actions Storage
+
+# Reclaims GitHub Actions storage on a weekly cadence, in two steps.
+#
+# Run history (scripts/fleet/prune-workflow-runs.mts):
+#   - keeps only the newest 20 runs per workflow still present on the default
+#     branch (an optional `days` input adds a time window),
+#   - purges dependabot / gh-audit run groups wholesale, and
+#   - purges every run of workflows whose source is gone from the default
+#     branch.
+#
+# Cache (scripts/fleet/prune-actions-caches.mts): keeps the newest generations
+# per cache-key group and holds the total under an 8 GB budget. This one is not
+# cosmetic — GitHub caps a repo at 10 GB and silently LRU-evicts past it, so an
+# over-budget repo quietly loses the entries it restores most and every job
+# rebuilds cold.
+#
+# Byte-identical across the fleet (cascaded); edit
+# template/base/.github/workflows/prune-workflow-runs.yml and re-cascade via
+# `pnpm run sync`.
+
+on:
+  schedule:
+    # Sundays at 04:00 UTC — off-peak, clear of the daily/weekly update runs.
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Optional retention window in days for present workflows (empty = keep-count policy only)'
+        required: false
+        type: string
+        default: ''
+      dry-run:
+        description: 'Report what would be deleted without deleting'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # same inline git-fetch shape at fetch-depth 1, non-persisting auth.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - uses: ./.github/actions/fleet/setup-and-install
+      - name: Prune workflow runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DAYS: ${{ inputs.days || '' }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          # No --days by default: the script's own policy applies (keep the
+          # newest 20 runs per present workflow, purge dependabot/gh-audit
+          # run groups and absent workflows).
+          ARGS=()
+          if [ -n "$DAYS" ]; then
+            ARGS+=(--days "$DAYS")
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/fleet/prune-workflow-runs.mts "${ARGS[@]}"
+      # Same job, not a second one: every job starts on a bare runner and would
+      # need its own copy of the inline bootstrap above, and that bootstrap is
+      # deliberately tri-plicated and lock-step checked. `always()` keeps the
+      # cache sweep independent of the run sweep's result, which is the only
+      # thing a separate job would have bought.
+      - name: Prune Actions caches
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          # No flags by default: the script's own policy applies (keep the
+          # newest 2 generations per key group, hold the total under 8 GB, and
+          # never evict an entry accessed in the last 7 days).
+          ARGS=()
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          node scripts/fleet/prune-actions-caches.mts "${ARGS[@]}"
