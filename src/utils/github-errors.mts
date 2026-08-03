@@ -12,12 +12,17 @@
  * - Classifying a GitHub response as a blocking error (rate limit / abuse
  *   detection / auth) with a clear, actionable message.
  * - A bounded-retry request wrapper that respects `Retry-After` /
- *   `x-ratelimit-reset` for short reset windows and retries transient 5xx /
- *   network failures with capped exponential backoff.
+ *   `x-ratelimit-reset` for short reset windows and hands transient 5xx /
+ *   network failures to the fleet's shared `pRetry` for backoff.
  */
 
+import process from 'node:process'
+import { setTimeout as sleep } from 'node:timers/promises'
+
 import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { envAsNumber } from '@socketsecurity/registry/lib/env'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pRetry } from '@socketsecurity/registry/lib/promises'
 
 import { apiFetch } from './api.mts'
 import { debugApiRequest, debugApiResponse } from './debug.mts'
@@ -35,12 +40,12 @@ import type { CResult } from '../types.mts'
 // constant for it in constants.mts, so define it locally.
 const HTTP_STATUS_TOO_MANY_REQUESTS = 429
 
-// Retry at most this many times for transient (5xx / network) failures,
-// counting the initial attempt.
-const MAX_TRANSIENT_ATTEMPTS = 3
-
-// Cap for exponential backoff between transient retries.
-const MAX_BACKOFF_MS = 10_000
+// Base delay before the first transient retry. Mirrors the default in
+// @socketsecurity/lib's releases/github-retry-config, including the env var
+// name, so both socket-cli lines back off against the GitHub API on the same
+// schedule. Read live rather than captured at import so a test or a CI job can
+// set it to 0 and skip the real wallclock wait.
+const DEFAULT_RETRY_BASE_DELAY_MS = 5000
 
 // Only wait-and-retry a rate-limited response when the reset window is at
 // most this many seconds. The usual primary-limit reset is up to an hour
@@ -167,14 +172,43 @@ export function classifyGitHubResponse(
   return undefined
 }
 
-function backoffMs(attempt: number): number {
-  return Math.min(1000 * 2 ** (attempt - 1), MAX_BACKOFF_MS)
+/**
+ * Retry policy for transient GitHub failures. Same values as the shared
+ * GITHUB_RETRY_CONFIG in @socketsecurity/lib: two retries on top of the initial
+ * attempt, delay doubling each time, capped at 10 seconds. Built per call
+ * rather than at import so the env override is read live.
+ */
+function githubRetryOptions(): {
+  backoffFactor: number
+  baseDelayMs: number
+  maxDelayMs: number
+  retries: number
+} {
+  return {
+    backoffFactor: 2,
+    baseDelayMs: envAsNumber(
+      process.env['SOCKET_GITHUB_RETRY_BASE_DELAY_MS'],
+      DEFAULT_RETRY_BASE_DELAY_MS,
+    ),
+    maxDelayMs: 10_000,
+    retries: 2,
+  }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms)
-  })
+/**
+ * Thrown by one request attempt to tell `pRetry` what happened. `retryable`
+ * false means another attempt cannot help, so the retry loop stops early
+ * instead of burning its budget. The CResult is what the caller sees.
+ */
+class GitHubRequestFailure extends Error {
+  result: CResult<never>
+  retryable: boolean
+  constructor(result: CResult<never>, retryable: boolean) {
+    super(result.message)
+    this.name = 'GitHubRequestFailure'
+    this.result = result
+    this.retryable = retryable
+  }
 }
 
 /**
@@ -192,7 +226,8 @@ function sleep(ms: number): Promise<void> {
  *   short (<= CHEAP_RATE_LIMIT_WAIT_MAX_SECONDS); otherwise surface the error
  *   immediately. Long primary-limit resets are not worth blocking on.
  * - Auth: never retried.
- * - 5xx / network: capped exponential backoff, MAX_TRANSIENT_ATTEMPTS total.
+ * - 5xx / network: handed to the fleet's shared `pRetry` for exponential
+ *   backoff, on the policy in `githubRetryOptions`.
  */
 export async function githubApiRequest(
   url: string,
@@ -205,31 +240,42 @@ export async function githubApiRequest(
 ): Promise<CResult<{ response: Response; bodyText: string }>> {
   const method = init.method || 'GET'
   let rateLimitWaitUsed = false
-  for (let attempt = 1; ; attempt += 1) {
+  // pRetry rethrows whichever error it stored first. Track the newest one
+  // ourselves so the caller always sees the failure that actually ended the
+  // run, not an earlier one it had already recovered past.
+  let lastFailure: GitHubRequestFailure | undefined
+
+  const fail = (
+    result: CResult<never>,
+    retryable: boolean,
+  ): GitHubRequestFailure => {
+    const failure = new GitHubRequestFailure(result, retryable)
+    lastFailure = failure
+    return failure
+  }
+
+  const attempt = async (): Promise<{
+    response: Response
+    bodyText: string
+  }> => {
     debugApiRequest(method, url)
     let response: Response
     try {
-      // eslint-disable-next-line no-await-in-loop
       response = await fetchImpl(url, init)
       debugApiResponse(method, url, response.status)
     } catch (e) {
       debugApiResponse(method, url, undefined, e)
-      // Network-level failure (DNS, connection reset, timeout). Retry a few
-      // times with bounded backoff before giving up.
-      if (attempt < MAX_TRANSIENT_ATTEMPTS) {
-        debugFn('notice', `retry: network error while ${context}`, attempt)
-        // eslint-disable-next-line no-await-in-loop
-        await sleep(backoffMs(attempt))
-        continue
-      }
-      return {
-        ok: false,
-        message: 'Network error connecting to GitHub',
-        cause: formatErrorWithDetail(`Network error while ${context}`, e),
-      }
+      // Network-level failure (DNS, connection reset, timeout).
+      throw fail(
+        {
+          ok: false,
+          message: 'Network error connecting to GitHub',
+          cause: formatErrorWithDetail(`Network error while ${context}`, e),
+        },
+        true,
+      )
     }
 
-    // eslint-disable-next-line no-await-in-loop
     const bodyText = await response.text()
 
     const blocking = classifyGitHubResponse(
@@ -241,10 +287,10 @@ export async function githubApiRequest(
     if (blocking) {
       // Auth failures never succeed on retry.
       if (blocking.message === GITHUB_ERR_AUTH_FAILED) {
-        return blocking
+        throw fail(blocking, false)
       }
-      // Rate limit / abuse: retry once, but only when the reset window is
-      // short enough to be worth waiting on.
+      // Rate limit / abuse: wait once, but only when the reset window is short
+      // enough to be worth waiting on.
       const waitSeconds = getRateLimitWaitSeconds(response.headers)
       if (
         !rateLimitWaitUsed &&
@@ -255,35 +301,59 @@ export async function githubApiRequest(
         logger.info(
           `GitHub rate limit hit while ${context}; waiting ${waitSeconds}s before one retry...`,
         )
-        // Add a second of slack so we retry just past the reset boundary.
-        // eslint-disable-next-line no-await-in-loop
+        // GitHub told us exactly when the quota comes back, so this wait is
+        // honoring a server instruction rather than backing off. Backoff is
+        // pRetry's job and its delay is capped well below a reset window.
+        // A second of slack lands the retry just past the reset boundary.
         await sleep((waitSeconds + 1) * 1000)
-        continue
+        throw fail(blocking, true)
       }
-      return blocking
+      throw fail(blocking, false)
     }
 
-    // Transient server errors: retry with bounded backoff, then surface.
+    // Transient server errors.
     if (response.status >= HTTP_STATUS_INTERNAL_SERVER_ERROR) {
-      if (attempt < MAX_TRANSIENT_ATTEMPTS) {
+      throw fail(
+        {
+          ok: false,
+          message: 'GitHub server error',
+          cause:
+            `GitHub server error (${response.status}) while ${context}. ` +
+            'GitHub may be experiencing issues; try again shortly.',
+        },
+        true,
+      )
+    }
+
+    return { response, bodyText }
+  }
+
+  try {
+    const data = await pRetry(attempt, {
+      ...githubRetryOptions(),
+      onRetry(attemptNumber: number, e: unknown) {
+        if (e instanceof GitHubRequestFailure && !e.retryable) {
+          // Stop now; another attempt cannot change the answer.
+          return false
+        }
         debugFn(
           'notice',
-          `retry: GitHub ${response.status} while ${context}`,
-          attempt,
+          `retry: ${e instanceof Error ? e.message : 'failure'} while ${context}`,
+          attemptNumber,
         )
-        // eslint-disable-next-line no-await-in-loop
-        await sleep(backoffMs(attempt))
-        continue
-      }
-      return {
+        return undefined
+      },
+      onRetryCancelOnFalse: true,
+    })
+    return { ok: true, data }
+  } catch {
+    /* c8 ignore next - `lastFailure` is set on every throw out of `attempt`. */
+    return (
+      lastFailure?.result ?? {
         ok: false,
-        message: 'GitHub server error',
-        cause:
-          `GitHub server error (${response.status}) while ${context}. ` +
-          'GitHub may be experiencing issues; try again shortly.',
+        message: 'GitHub request failed',
+        cause: `GitHub request failed while ${context}.`,
       }
-    }
-
-    return { ok: true, data: { response, bodyText } }
+    )
   }
 }
