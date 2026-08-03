@@ -1,0 +1,19 @@
+{
+  "$comment": "Fleet-canonical git author/committer identity policy. Cascaded to every repo; the single in-wheelhouse source of truth for what identities may author a commit. The DENYLIST is universal (placeholder/sandbox identities that are NEVER valid anywhere) and is the part that catches test-harness / worktree / CI commits. The ALLOWLIST (whose real email is OK) is intentionally empty here — it is per-repo, so set it in .config/repo/git-authors.json (repo override), not in the cascaded fleet default. Resolution is wheelhouse-scoped only: .config/repo/git-authors.json overrides this file; there is NO machine-local (~/) fallback by design (minimize outside-wheelhouse settings). Hooks ALWAYS block a denylist match; they block an allowlist-miss only when an allowlist is actually configured. Email comparison is case-insensitive; denylist emails support a leading-`*@` wildcard for whole-domain matches.",
+  "denylist": {
+    "emails": [
+      "*@example.com",
+      "*@example.org",
+      "*@example.net",
+      "test@test.com",
+      "you@example.com",
+      "noreply@example.com",
+      "root@localhost",
+      "user@localhost",
+      "you@localhost"
+    ],
+    "names": ["Test", "User", "Your Name", "Unknown", "root", "admin"]
+  },
+  "canonical": {},
+  "aliases": []
+}

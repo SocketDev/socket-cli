@@ -1,0 +1,12 @@
+{
+  "name": "socket-oxlint-rule-no-vitest-identical-title",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  }
+}

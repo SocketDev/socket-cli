@@ -1,0 +1,25 @@
+{
+  "$schema": "./socket-wheelhouse-schema.json",
+  "schemaVersion": 1,
+  "repoName": "socket-cli",
+  "repo": {
+    "type": "mono"
+  },
+  "build": {
+    "from": "npm-registry",
+    "type": "js"
+  },
+  "release": {
+    "latestDistTagBranch": "v1.x"
+  },
+  "vite": {
+    "allowEsbuild": "esbuild resolves only as vite 8's optional peer and is never invoked; nothing imports it and the bundler is rolldown"
+  },
+  "contentPolicy": {
+    "class": "dual-use",
+    "packages": [
+      "packages/cli",
+      "packages/package-builder/templates/socket-package"
+    ]
+  }
+}

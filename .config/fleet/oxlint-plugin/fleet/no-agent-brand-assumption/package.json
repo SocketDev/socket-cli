@@ -1,0 +1,5 @@
+{
+  "name": "oxlint-rule-no-agent-brand-assumption",
+  "private": true,
+  "type": "module"
+}

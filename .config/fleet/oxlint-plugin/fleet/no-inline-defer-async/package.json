@@ -1,0 +1,12 @@
+{
+  "name": "socket-oxlint-rule-no-inline-defer-async",
+  "private": true,
+  "type": "module",
+  "main": "./index.mts",
+  "exports": {
+    ".": "./index.mts"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mts"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.check.base.json",
+  "compilerOptions": {
+    "rootDir": "../.."
+  },
+  "include": [
+    "../../scripts/**/*.mts",
+    "../../.claude/hooks/repo/**/*.mts",
+    "../../.config/fleet/oxlint-plugin/**/*.mts"
+  ],
+  "exclude": [
+    "../../.cache",
+    "../../.claude/hooks/fleet",
+    "../../build",
+    "../../coverage",
+    "../../dist",
+    "../../node_modules",
+    "../../scripts/fleet",
+    "../../template",
+    "**/node_modules"
+  ]
+}

@@ -1,0 +1,92 @@
+# Format-ignore (but track) — files we keep byte-identical with their upstream /
+# vendored / generated source. oxfmt reads this file via
+# `--ignore-path .config/fleet/.prettierignore`; the lint runner threads the flag
+# so the convention works from any working directory.
+#
+# EVERY pattern here is `**/`-anchored. oxfmt builds the matcher with
+# `Gitignore::new(path)` (oxc apps/oxfmt/src/cli/resolve.rs), which roots it at
+# THIS file's directory (.config/fleet/) — so a bare slashed pattern like
+# `upstream/**` anchors to `.config/fleet/upstream/**` and silently matches nothing.
+# A leading `**/` matches at any depth. Enforced by
+# scripts/fleet/check/prettierignore-globs-are-anchored.mts.
+#
+# `.claude/` is treated like node_modules — never formatted, never linted, no
+# matter whether the files are git-tracked. Hooks, skills, settings, and the
+# acorn AST helper (`_shared/ast/`, a thin npm-backed wrapper over the
+# `@ultrathink/acorn.rs.wasm` wasm parser) are all opaque to the formatter under
+# this single exclusion.
+**/.claude/**
+
+# `.agents/skills/` is the GENERATED cross-tool skill mirror
+# (gen/agents-skills-mirror.mts flattens .claude/skills/{fleet,repo}/<name>/ to
+# .agents/skills/<tier>-<name>/ for Codex + OpenCode). Generated output whose
+# source (.claude/, above) is itself unformatted-by-design, so the byte-identical
+# mirror is ignored too. agents-skills-mirror-is-current keeps it in sync.
+**/.agents/**
+
+# Every `fleet/` segment is fleet-canonical (`.config/fleet/`, `scripts/fleet/`,
+# `docs/agents.md/fleet/`, …): a downstream repo can't fix its cascaded copy
+# without forking, so the normal walk never format-gates it. The wheelhouse's own
+# `template/` fleet sources are formatted by template-is-format-clean.mts (the
+# git-ls-files template gate), not this walk.
+**/fleet/**
+
+# The rolldown-inlined dep-0 fetcher — a build artifact (from template/bootstrap/
+# src/* via scripts/repo/gen/bootstrap.mts), not hand-written source; oxfmt would
+# fight the bundler output. The template/bootstrap/src/* modules ARE formatted.
+# The .d.mts sibling is the generator's rolldown-plugin-dts declaration emit —
+# same contract.
+**/bootstrap/fleet.mjs
+**/bootstrap/fleet.d.mts
+# The SessionStart fetch-kernel's declaration emit, from the same generator.
+**/bootstrap/session-fetch.d.mts
+
+# The rolldown-bundled fleet oxlint plugin (scripts/fleet/build-oxlint-bundle.mts
+# output) — generated + gitignored; oxfmt would fight the bundler output. The
+# `**/fleet/**` glob above does not reach it (the whole-tree walk's matcher skips
+# the dotdir `.config`), so it needs an explicit line — twin of isNeverGated() in
+# scripts/fleet/_shared/format-scope.mts and the oxfmtrc.json ignorePatterns.
+# NB: this matcher is rooted at THIS file's dir (.config/fleet/), so the pattern
+# is anchored to the BASENAME — a `**/.config/fleet/oxlint-plugin.mjs` form is a
+# silent no-op here (the file's path relative to the matcher root is just
+# `oxlint-plugin.mjs`). The `.gitignore` twin keeps the repo-root-anchored
+# `**/.config/fleet/oxlint-plugin.mjs` form because THAT matcher roots at the
+# repo root.
+**/oxlint-plugin.mjs
+
+# Generated build/test output — machine-written trees whose generators own the
+# bytes; formatting them is churn against the next build. These are the
+# GENERATED_GLOBS twins (scripts/fleet/constants/generated-globs.mts is the
+# single source; scripts/fleet/check/generated-globs-are-consistent.mts asserts
+# this file covers every entry).
+**/build/**
+**/dist/**
+**/out/**
+
+# Vendored / upstream trees — kept byte-identical with their source of truth. Per
+# CLAUDE.md "untracked-by-default for vendored / build-copied trees": someone
+# else's source, not ours; the formatter would rewrite it into our local style.
+# `test/fixtures/` is the conformance-corpus flavor of the same contract (see
+# docs/agents.md/fleet/conformance-runners.md): spec suites vendored there must
+# stay byte-identical to their pinned upstream or the owning sync's drift check
+# fires on every formatter pass.
+**/test/fixtures/**
+# `tests/fixtures/` is the cargo-convention spelling of the same contract —
+# a Rust crate's `tests/` dir carrying language fixtures (e.g. golden .d.ts
+# inputs) that must stay byte-stable for its harness.
+**/tests/fixtures/**
+**/upstream/**
+
+# gh-aw generated workflows. `gh aw compile` turns a `<name>.md` agentic workflow
+# into a hardened `<name>.lock.yml`; that artifact is tool-owned and must stay
+# byte-identical to the compiler output (the .md is the source of truth).
+**/.github/workflows/*.lock.yml
+
+# Everything from the top of this file through the end sentinel below is
+# fleet-canonical: cascade and bundle placement rewrite that whole span from
+# the wheelhouse source on every refresh — see
+# scripts/fleet/_shared/fleet-canonical-splice.mts. Member-generated content,
+# like the lockstep-mirrors block scripts/fleet/lockstep/emit-mirror-globs.mts
+# appends, must live BELOW the end sentinel; placement preserves that tail
+# byte-for-byte.
+#fleet-canonical-end

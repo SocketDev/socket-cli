@@ -1,0 +1,5 @@
+{
+  "allow": {
+    "install.sh": "published curl|sh installer at a stable raw URL"
+  }
+}

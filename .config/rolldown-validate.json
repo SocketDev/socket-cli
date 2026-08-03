@@ -1,0 +1,6 @@
+{
+  "configs": [
+    "packages/cli/.config/rolldown.cli.mts",
+    "packages/cli/.config/rolldown.index.mts"
+  ]
+}
