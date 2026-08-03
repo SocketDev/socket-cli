@@ -1,90 +1,134 @@
 packages:
   - packages/*
+  - tools/*
   - '!packages/package-builder/build'
+  - '.config/fleet/oxlint-plugin'
+  - '.config/fleet/oxlint-plugin/fleet/*'
+  - '.claude/hooks/fleet/*'
+  - '.claude/hooks/repo/*'
+
+# Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
+allowBuilds:
+  # @swc/core native binding — vitiate's coverage-guided fuzz lane
+  # (packages/cli/scripts/repo/fuzz.mts) SWC-instruments src for coverage.
+  '@swc/core': true
+  cpu-features: false
+  protobufjs: false
+  puppeteer: false
+  rolldown: true
+  postject: false
+  ssh2: false
+
+# Refuse to run if the pnpm version on PATH differs from the packageManager
+# field in package.json. Our setup action pins pnpm via external-tools.json;
+# any drift should fail fast, not silently auto-download via @pnpm/exe
+# (which in rc.5 leaves a placeholder launcher that errors at runtime).
+pmOnFail: warn
+
+catalogDriftIgnore:
+  # type-coverage uses TypeScript's JavaScript compiler API. TypeScript 7 is a
+  # native compiler and its npm package does not expose that API, so
+  # type-coverage crashes before scanning any files. Keep the last JavaScript
+  # compiler release until type-coverage supports the native API.
+  - 'typescript'
 
 catalog:
-  '@babel/core': 7.28.4
-  '@types/adm-zip': 0.5.7
-  adm-zip: 0.5.16
-  '@babel/generator': 7.28.5
-  '@babel/parser': 7.28.4
-  '@babel/plugin-proposal-export-default-from': 7.27.1
-  '@babel/plugin-transform-export-namespace-from': 7.27.1
-  '@babel/plugin-transform-runtime': 7.28.3
-  '@babel/preset-react': 7.27.1
-  '@babel/preset-typescript': 7.27.1
-  '@babel/runtime': 7.28.4
-  '@babel/traverse': 7.28.4
-  '@babel/types': 7.28.5
-  '@biomejs/biome': 2.2.4
-  '@dotenvx/dotenvx': 1.49.0
-  '@eslint/compat': 1.3.2
-  '@eslint/js': 9.35.0
-  '@gitbeaker/rest': 43.7.0
-  '@iarna/toml': ^2.2.5
-  '@npmcli/arborist': 9.1.4
-  '@npmcli/config': 10.4.0
-  '@octokit/graphql': 9.0.1
+  '@anthropic-ai/claude-code': 2.1.216
+  '@babel/core': 7.29.7
+  '@babel/generator': 7.29.7
+  '@babel/parser': 7.29.7
+  '@babel/plugin-proposal-export-default-from': 7.29.7
+  '@babel/plugin-transform-export-namespace-from': 7.29.7
+  '@babel/plugin-transform-runtime': 7.29.7
+  '@babel/preset-react': 7.29.7
+  '@babel/preset-typescript': 7.29.7
+  '@babel/runtime': 7.29.7
+  '@babel/traverse': 7.29.7
+  '@babel/types': 7.29.7
+  '@gitbeaker/rest': 43.8.0
+  '@iarna/toml': 2.2.5
+  '@modelcontextprotocol/client': 2.0.0
+  '@modelcontextprotocol/core': 2.0.0
+  '@modelcontextprotocol/node': 2.0.0
+  '@modelcontextprotocol/server': 2.0.0
+  '@npmcli/arborist': 9.9.0
+  '@npmcli/config': 10.12.0
+  '@octokit/graphql': 9.0.3
   '@octokit/openapi-types': 25.1.0
-  '@octokit/request-error': 7.0.0
-  '@octokit/rest': 22.0.0
+  '@octokit/request-error': 7.1.0
+  '@octokit/rest': 22.0.1
   '@octokit/types': 14.1.0
-  '@pnpm/dependency-path': 1001.1.0
-  '@pnpm/lockfile.detect-dep-types': 1001.0.13
-  '@pnpm/lockfile.fs': 1001.1.17
-  '@pnpm/logger': 1001.0.0
-  '@sentry/node': 8.0.0
+  '@pnpm/dependency-path': 1001.1.10
+  '@pnpm/lockfile.detect-dep-types': 1100.0.16
+  '@pnpm/lockfile.fs': 1100.1.14
+  '@pnpm/logger': 1100.0.0
+  '@redwoodjs/agent-ci': 0.17.1
+  '@sentry/node': 8.55.2
+  '@shadscan/cli': 0.5.0
+  '@sinclair/typebox': 0.34.52
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 1.3.5
+  '@socketregistry/packageurl-js': 1.5.0
+  '@socketsecurity/lib': 6.5.2
+  '@types/shell-quote': 1.7.5
+  '@ultrathink/acorn.rs.wasm': 0.1.1
+  # -stable aliases: pnpm `overrides:` can't redirect a package's own
+  # name from inside the same package — Node ESM resolves it as a
+  # self-reference. The 4 Socket-published packages each need a
+  # SECOND name (`<canonical>-stable`) so build/script/hook/config
+  # code resolves to the published catalog version regardless of where
+  # the importing file lives. See socket-wheelhouse@92cd3e3 for the
+  # full rationale.
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.0'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/config': 3.0.1
-  '@socketsecurity/lib': 5.7.0
-  '@socketsecurity/registry': 2.0.2
-  '@socketsecurity/sdk': 3.3.1
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.5.2'
+  '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.5'
+  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
+  '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.1.3'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.3'
+  '@types/adm-zip': 0.5.8
   '@types/cmd-shim': 5.0.2
-  '@types/ink': 2.0.3
   '@types/js-yaml': 4.0.9
-  '@types/micromatch': 4.0.9
+  '@types/mdast': 4.0.4
+  '@types/micromatch': 4.0.10
   '@types/mock-fs': 4.13.4
-  '@types/node': 24.9.2
+  '@types/node': 26.1.1
   '@types/npm-package-arg': 6.1.4
-  '@types/npmcli__arborist': 6.3.1
-  '@types/npmcli__config': 6.0.3
+  '@types/npmcli__arborist': 6.3.3
+  '@types/npmcli__config': 6.0.4
   '@types/proc-log': 3.0.4
-  '@types/react': 19.2.2
+  '@types/react': 19.2.17
   '@types/semver': 7.7.1
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
-  '@typescript-eslint/parser': 8.44.1
-  '@vitest/coverage-v8': 4.0.3
-  '@yao-pkg/pkg': 6.8.0
-  '@yarnpkg/parsers': ^3.0.3
+  '@typescript/native-preview': 7.0.0-dev.20260510.1
+  '@vitiate/core': 0.3.1
+  '@vitest/coverage-v8': 4.1.10
+  '@vitest/ui': 4.1.10
+  '@yarnpkg/parsers': 3.0.3
+  adm-zip: 0.5.18
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ajv-dist: 8.17.1
   ansi-regex: 6.2.2
-  brace-expansion: 2.0.2
-  browserslist: 4.25.4
+  brace-expansion: 5.0.7
+  browserslist: 4.28.6
+  'c8': 12.0.0
   chalk-table: 1.0.2
+  'chrome-devtools-mcp': 1.6.0
   cmd-shim: 7.0.0
-  compromise: 14.14.4
+  compromise: 14.16.0
   del-cli: 6.0.0
   dev-null-cli: 2.0.0
+  'dtu-github-actions': 0.17.1
+  ecc-agentshield: 1.4.0
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
-  esbuild: 0.25.11
-  eslint: 9.35.0
-  eslint-import-resolver-typescript: 4.4.4
-  eslint-plugin-import-x: 4.16.1
-  eslint-plugin-n: 17.21.3
-  eslint-plugin-sort-destructure-keys: 2.0.0
-  eslint-plugin-unicorn: 56.0.1
+  'fast-check': 4.9.0
   fast-glob: 3.3.3
-  fast-xml-parser: ^5.5.1
+  fast-xml-parser: 5.10.1
   function-bind: npm:@socketregistry/function-bind@^1.0.7
-  globals: 16.4.0
   globalthis: npm:@socketregistry/globalthis@^1.0.8
   gopd: npm:@socketregistry/gopd@^1.0.7
   graceful-fs: 4.2.11
@@ -96,61 +140,292 @@ catalog:
   hpagent: 1.2.0
   https-proxy-agent: 7.0.6
   husky: 9.1.7
-  ignore: 7.0.5
+  ignore: 7.0.6
   indent-string: npm:@socketregistry/indent-string@^1.0.14
-  ink: 6.3.1
-  ink-table: 3.1.0
-  ink-text-input: 6.0.0
   is-core-module: npm:@socketregistry/is-core-module@^1.0.11
   isarray: npm:@socketregistry/isarray@^1.0.8
   js-yaml: npm:@zkochan/js-yaml@0.0.10
-  lint-staged: 16.1.6
-  lodash: 4.17.21
-  magic-string: 0.30.19
+  lint-staged: 16.4.0
+  lodash: 4.18.1
+  magic-string: 1.1.0
+  'markdownlint-cli2': 0.23.1
+  'mdast-util-from-markdown': 2.0.3
+  'micromark': 4.0.2
   micromatch: 4.0.8
   mock-fs: 5.5.0
-  nanotar: 0.2.0
-  nock: 14.0.10
-  npm-package-arg: 13.0.0
-  npm-run-all2: 8.0.4
+  nanotar: 0.2.1
+  'neosanitize': 0.3.0
+  nock: 14.0.16
+  'npm-high-impact': 1.13.0
+  npm-package-arg: 13.0.2
+  npm-run-all2: 9.0.2
   octokit: 5.0.5
-  onnxruntime-web: 1.23.0
+  onnxruntime-web: 1.27.0
   open: 10.2.0
-  packageurl-js: npm:@socketregistry/packageurl-js@^1.3.5
+  oxfmt: 0.60.0
+  oxlint: 1.75.0
+  'oxlint-tsgolint': 7.0.2001
+  packageurl-js: npm:@socketregistry/packageurl-js@^1.4.8
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  pony-cause: 2.1.11
+  'playwright-core': 1.62.0
+  'portless': 0.15.4
   postject: 1.0.0-alpha.6
-  react: 19.2.0
+  react: 19.2.7
   react-reconciler: 0.33.0
-  registry-auth-token: 5.1.0
-  registry-url: 7.2.0
+  # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
+  # single-sourced; the override forces vite's bundled rolldown to match.
+  'regjsparser': 0.13.2
+  rolldown: 1.1.4
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
-  semver: 7.7.2
+  semver: 7.8.5
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: 1.8.3
+  shell-quote: 1.10.0
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
-  string-width: 8.1.0
+  string-width: 8.2.2
   string_decoder: 0.10.31
-  strip-ansi: 7.1.2
-  tar-stream: 3.1.7
-  taze: 19.6.0
+  strip-ansi: 7.2.0
+  'svgo': 4.0.2
+  tar-stream: 3.2.0
+  taze: 19.16.0
   terminal-link: 2.1.1
-  tiny-colors: 2.1.3
-  trash: 10.0.0
+  tiny-colors: 2.2.2
+  trash: 10.1.1
   type-coverage: 2.29.7
   typedarray: npm:@socketregistry/typedarray@^1.0.8
-  typescript: 5.9.3
-  typescript-eslint: 8.44.1
-  undici: 6.21.3
+  typescript: 7.0.2
+  undici: 6.27.0
   unplugin-purge-polyfills: 0.1.0
-  vite: 7.1.12
-  vitest: 4.0.3
+  # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
+  # bundled rolldown up to the catalog's 1.0.3.
+  vite: 8.1.5
+  vitiate: 0.3.1
+  vitest: 4.1.10
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
-  yaml: 2.8.1
+  yaml: 2.9.0
   yargs-parser: 21.1.1
   yoctocolors-cjs: 2.1.3
-  yoga-layout: 3.2.1
-  zod: 4.1.8
+  zod: 4.4.3
+# pnpm v11 reads settings from this file; only auth/registry go in .npmrc.
+ignoreScripts: true
+linkWorkspacePackages: false
+# vite 8 is rolldown-native but still declares esbuild as an OPTIONAL peer, so
+# a lockfile regeneration can pull the whole @esbuild/* platform family back in
+# and trip vite-is-rolldown-native. rolldown is the fleet bundler; refuse the
+# optional peer outright, matching socket-lib.
+ignoredOptionalDependencies:
+  - esbuild
+# Keep the rolling `workspace:*` specs as written. The default rewrites them
+# to the dependency's current version on every install, so an unrelated
+# install shows up as churn across every manifest that links a sibling.
+saveWorkspaceProtocol: rolling
+
+# Wait 7 days (10080 minutes) before installing newly published packages.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  # @pnpm/lockfile.detect-dep-types@latest (1100.0.16) + its 1100.x/1101.x
+  # transitive tree; all published 2026-07-23, soak naturally by 2026-07-30.
+  # @pnpm/lockfile.fs@1100.1.14 + its 1100.x transitive tree (off the
+  # provenance-less 1001.1.35 trust-downgrade); all published 2026-07-23,
+  # soak naturally by 2026-07-30.
+  - '@socketregistry/*'
+  - '@socketsecurity/*'
+  - 'sfw'
+  - '@stuie/*'
+  - '@ultrathink/*'
+  - '@socketoverride/*'
+  - 'socket'
+  - '@sdxgen/*'
+  - 'sdxgen'
+  # The fleet-cascaded .npmrc already excludes verkit; mirrored here because
+  # pnpm v11 reads excludes from this file.
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/client@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/core@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/node@2.0.0'
+  # published: 2026-07-27 | removable: 2026-08-03
+  - '@modelcontextprotocol/server@2.0.0'
+
+# Refuse transitive dependencies declared via git/tarball/local-tarball
+# specs — an npm package shouldn't be allowed to drag in a git URL we
+# don't control (bypasses npm registry validation, no provenance, no
+# soak window). Direct git deps are still allowed (the test suite at
+# pnpm/pkg-manager/core/test/install/blockExoticSubdeps.ts confirms
+# this). pnpm's current default is `false`; declared explicitly so a
+# future flip can't silently change install behavior.
+blockExoticSubdeps: true
+
+# type-coverage-core 2.29.7 declares a typescript peer through 5. The catalog
+# already resolves typescript 7 for the private tools/type-coverage workspace
+# (the lockfile has carried 7.0.2 since the catalog bump; only a fresh
+# resolution re-checks peers), so allow 6 and 7 to keep re-resolution green.
+peerDependencyRules:
+  allowedVersions:
+    'type-coverage-core>typescript': '6 || 7'
+confirmModulesPurge: false
+managePackageManagerVersions: false
+
+# Dependency overrides (migrated from package.json pnpm.overrides).
+# Force every consumer of Socket's own packages to resolve through the
+# catalog-pinned published versions. The `catalog:` form rewrites
+# `workspace:*`, `^x.y.z`, and bare-version specs alike to the version
+# in the default `catalog:` block above. This defeats accidental
+# local-checkout resolution when a sibling repo is on disk.
+overrides:
+  # Fleet-canonical overrides (managed by socket-wheelhouse sync; do not edit).
+  '@socketregistry/packageurl-js': 'catalog:'
+  '@socketsecurity/lib': 'catalog:'
+  '@socketsecurity/registry': 'catalog:'
+  '@socketsecurity/sdk': 'catalog:'
+  'chalk@>=5': '5.6.2'
+  'es-define-property': 'npm:@socketregistry/es-define-property@1.0.7'
+  'es-set-tostringtag': 'npm:@socketregistry/es-set-tostringtag@1.0.10'
+  'function-bind': 'npm:@socketregistry/function-bind@1.0.7'
+  'glob': '13.0.6'
+  'gopd': 'npm:@socketregistry/gopd@1.0.7'
+  'has-symbols': 'npm:@socketregistry/has-symbols@1.0.7'
+  'has-tostringtag': 'npm:@socketregistry/has-tostringtag@1.0.7'
+  'hasown': 'npm:@socketregistry/hasown@1.0.7'
+  'iconv-lite': '0.7.3'
+  'isexe@>=3': '4.0.0'
+  'js-yaml@>=5.0.0 <5.2.2': '5.2.2'
+  'lru-cache@>=10': '11.5.2'
+  'magic-string': '1.1.0'
+  'mime-db': '1.54.0'
+  'mime-types@>=3': '3.0.2'
+  'minipass@>=4': '7.1.3'
+  'safe-buffer': 'npm:@socketregistry/safe-buffer@1.0.9'
+  'safer-buffer': 'npm:@socketregistry/safer-buffer@1.0.10'
+  'semver@>=5.0.0 <7.6.0': '7.8.5'
+  'side-channel': 'npm:@socketregistry/side-channel@1.0.10'
+  'ssri@>=12': '13.0.1'
+  'string-width@>=5': '8.2.2'
+  'update-notifier@>=4.0.0': '7.3.1'
+  'uuid': '11.1.1'
+  'which': '7.0.0'
+  'wrap-ansi@>=8': '9.0.2'
+  'yaml@2': '2.9.0'
+
+  # Repo-specific overrides below.
+  '@octokit/graphql': 'catalog:'
+  '@octokit/request-error': 'catalog:'
+  '@sigstore/core': '3.2.1'
+  '@sigstore/sign': '5.0.0'
+  '@sigstore/verify': '3.1.1'
+  # Dedup: @sindresorhus/df 1 (mount-point) + 3 (xdg-trashdir) → 5.0.0, the
+  # only line that is maintained and the one that drops execa@2 (df 5 uses
+  # execa ^9.6.0, which dedups onto the 9.6.1 already in the tree). df 5 is
+  # ESM-only with named exports, so both CJS consumers carry a paired patch
+  # swapping their top-level require for a dynamic import inside the async
+  # function that already wraps the call.
+  '@sindresorhus/df': '5.0.0'
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.0'
+  '@socketsecurity/lib-stable': 'catalog:'
+  '@socketsecurity/registry-stable': 'catalog:'
+  '@socketsecurity/sdk-stable': 'catalog:'
+  'aggregate-error': 'catalog:'
+  'ansi-regex': 'catalog:'
+  # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
+  # cleared the seven-day soak and restores the normal no-downgrade gate.
+  'ast-v8-to-istanbul': '1.0.5'
+  'brace-expansion': 'catalog:'
+  'defu': '>=6.1.7'
+  'emoji-regex': 'catalog:'
+  # Dedup: execa 2 (the legacy df chain) + 9 → 10.0.0. execa 10 keeps the
+  # named `execa` export and the `{stdout}` result df calls for, and depends
+  # on signal-exit v4 natively — the very mismatch the old execa@2 patch
+  # existed to shim, so that patch retires with this collapse.
+  'execa': '10.0.0'
+  'fast-uri': '>=4.1.1'
+  'form-data': '>=4.0.6'
+  'globalthis': 'catalog:'
+  'graceful-fs': 'catalog:'
+  'has-property-descriptors': 'catalog:'
+  'has-proto': 'catalog:'
+  'hono': '>=4.12.31'
+  'https-proxy-agent': 'catalog:'
+  'indent-string': 'catalog:'
+  'ip-address': '>=10.2.0'
+  'is-core-module': 'catalog:'
+  'isarray': 'catalog:'
+  'lodash': 'catalog:'
+  'npm-package-arg': 'catalog:'
+  'packageurl-js': 'catalog:'
+  'path-parse': 'catalog:'
+  'postcss': '>=8.5.20'
+  'qs': '>=6.15.3'
+  # Force vite's bundled rolldown (1.0.2) up to the catalog's 1.0.3.
+  'rolldown': 'catalog:'
+  'semver': 'catalog:'
+  'set-function-length': 'catalog:'
+  'shell-quote': 'catalog:'
+  'signal-exit': '4.1.0'
+  'sigstore': '4.1.1'
+  'string-width': 'catalog:'
+  'string_decoder': 'catalog:'
+  'strip-ansi': 'catalog:'
+  'tar': '>=7.5.20'
+  'tiny-colors': 'catalog:'
+  'typedarray': 'catalog:'
+  'undici': 'catalog:'
+  'vite': 'catalog:'
+  'which@>=4': '7.0.0'
+  'wrap-ansi': 'catalog:'
+  'xml2js': 'catalog:'
+  'yaml': 'catalog:'
+  'yargs-parser': 'catalog:'
+
+# Auto-install missing peer deps (pnpm default). Declared explicitly
+# so a future default flip can't silently change install behavior.
+autoInstallPeers: true
+
+# Run pre/post lifecycle scripts on the workspace root (e.g.
+# prepare -> husky). This is the pnpm default; declared explicitly
+# so a future default flip can't silently disable husky setup.
+enablePrePostScripts: true
+
+# Patched dependencies (migrated from package.json pnpm.patchedDependencies).
+patchedDependencies:
+  # Splits the 'node-gyp/bin/node-gyp.js' literal in require.resolve so the
+  # CLI's rolldown bundle keeps the lookup at runtime instead of inlining a
+  # build-machine path. Consumer: packages/cli bundled npm shim.
+  '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
+  # de-http2: inline the HTTP header/status constants in dist/external/fetch.js
+  # so @sigstore/sign resolves without the node:http2 builtin, keeping the CLI
+  # bundle node:http2-free. Consumer: the CLI's sigstore-backed provenance path.
+  # Re-keyed across the 4.1.0 -> 5.0.0 bump.
+  '@sigstore/sign@5.0.0': patches/@sigstore__sign@5.0.0.patch
+  # Matches df's declared execa range to the 10.x it resolves to, so the
+  # manifest reads as the tree installs. Consumer: the trash chain
+  # (trash -> xdg-trashdir -> df), the only df consumer.
+  '@sindresorhus/df@5.0.0': patches/@sindresorhus__df@5.0.0.patch
+  # df 5 is ESM-only and replaced the callback `df.file` with the promise
+  # `diskSpaceForFilesystemOwningPath`, so the require moves to a dynamic
+  # import inside the async call and the unused pify/pinkie-promise go away.
+  # Consumer: xdg-trashdir, via the trash chain.
+  mount-point@3.0.0: patches/mount-point@3.0.0.patch
+  # Drops the bundled Find-VisualStudio.cs source (compiled ad hoc on Windows
+  # hosts) so the CLI package payload carries no compilable C# for AV/pack
+  # scanners to flag. Consumer: packages/cli bundled npm tooling.
+  node-gyp@12.4.0: patches/node-gyp@12.4.0.patch
+  # Single-registry: drops taze's default-registry fast path in
+  # getVersionsForContext so version lookups stay on the configured registry;
+  # consumer: the fleet update runner (`pnpm run update` via taze), which must
+  # keep version lookups on the registry .npmrc configures.
+  taze@19.16.0: patches/taze@19.16.0.patch
+  # Same df 5 ESM/named-export move as mount-point: the require becomes a
+  # dynamic import inside the already-async `all()`, calling diskSpace()
+  # instead of the dropped callable default. Consumer: trash, via this chain.
+  xdg-trashdir@3.1.0: patches/xdg-trashdir@3.1.0.patch
+saveExact: true
+strictPeerDependencies: true
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Transitive dep of @vitest/coverage-v8@4.1.6. Same maintainer
+  # (ariperkkio) + same repo + provenance attestation as earlier
+  - undici@6.21.3
+  - 'compromise@14.15.0'
