@@ -1,0 +1,32 @@
+/**
+ * @file Helper script to prepare package.json for publishing. Handles removing
+ *   private field and optionally setting version.
+ */
+
+import path from 'node:path'
+
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
+
+const logger = getDefaultLogger()
+
+const args = process.argv.slice(2)
+const packagePath: string | undefined = args[0]
+const version: string | undefined = args[1]
+
+if (!packagePath) {
+  logger.error(
+    'Usage: prepare-package-for-publish.mts <package-path> [version]',
+  )
+  process.exitCode = 1
+} else {
+  try {
+    preparePackageForPublish(path.resolve(packagePath), { version })
+  } catch (e) {
+    const message = errorMessage(e)
+    logger.error(`Error preparing package: ${message}`)
+    process.exitCode = 1
+  }
+}

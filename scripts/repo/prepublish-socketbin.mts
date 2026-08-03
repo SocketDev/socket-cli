@@ -1,0 +1,87 @@
+/**
+ * @file Prepares @socketbin/* binary packages for publishing. Updates
+ *   package.json with version and buildMethod, removes private field. Binary is
+ *   already in place from SEA build, following biome convention.
+ */
+
+import { existsSync } from 'node:fs'
+
+import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import {
+  getSocketbinBinaryPath,
+  getSocketbinPackageDir,
+} from 'package-builder/scripts/paths.mts'
+import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
+
+const logger = getDefaultLogger()
+
+interface PrepublishSocketbinArgs {
+  arch?: string | undefined
+  dev?: boolean | undefined
+  libc?: string | undefined
+  method: string
+  platform?: string | undefined
+  prod?: boolean | undefined
+  version?: string | undefined
+}
+
+const { values } = parseArgs<PrepublishSocketbinArgs>({
+  options: {
+    arch: { type: 'string' },
+    dev: { type: 'boolean' },
+    libc: { type: 'string' },
+    method: { default: 'sea', type: 'string' },
+    platform: { type: 'string' },
+    prod: { type: 'boolean' },
+    version: { type: 'string' },
+  },
+})
+
+const {
+  arch,
+  libc,
+  method: buildMethod,
+  platform,
+  version: providedVersion,
+} = values
+
+if (!platform || !arch) {
+  logger.error(
+    'Usage: prepublish-socketbin.mts --platform=darwin --arch=arm64 --version=2.1.0 [--method=sea]',
+  )
+  process.exitCode = 1
+} else if (!providedVersion) {
+  logger.error('--version is required')
+  process.exitCode = 1
+} else {
+  // Get package directory from centralized paths.
+  const packageDir = getSocketbinPackageDir(platform, arch, libc)
+
+  // Verify binary exists (should be built by SEA build).
+  const binaryPath = getSocketbinBinaryPath(platform, arch, libc)
+  if (!existsSync(binaryPath)) {
+    logger.error(`Binary not found at ${binaryPath}`)
+    logger.error('Run SEA build first: pnpm run build:sea')
+    process.exitCode = 1
+  } else {
+    const version = providedVersion.replace(/^v/, '')
+
+    // Prepare package for publishing.
+    preparePackageForPublish(packageDir, {
+      buildMethod,
+      version,
+    })
+
+    logger.log(`  Version: ${version}`)
+    logger.log(`  Build method: ${buildMethod}`)
+    logger.log(`  Binary: ${binaryPath}`)
+    logger.log('')
+    logger.log(`Package ready for publishing at: ${packageDir}`)
+    logger.log('')
+    logger.log('To publish:')
+    logger.log(`  cd ${packageDir}`)
+    logger.log('  npm publish --provenance --access public')
+  }
+}
