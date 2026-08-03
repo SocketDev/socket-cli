@@ -33,6 +33,7 @@ yarn-error.log*
 # Build outputs and artifacts
 # ============================================================================
 **/.build-checkpoints
+**/*.build-signature
 **/.cache/
 /.rollup.cache
 **/.type-coverage/
@@ -74,8 +75,18 @@ yarn-error.log*
 # ============================================================================
 *.log
 **/build/*.log
-**/.claude/*
-!**/.claude/skills/
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/hooks/
+!/.claude/ops/
+!/.claude/settings.json
+!/.claude/skills/
+
+# ============================================================================
+# Kimi Code CLI user-local overrides
+# ============================================================================
+/.kimi-code/local.toml
 
 # ============================================================================
 # Backup and temporary files
@@ -129,4 +140,167 @@ packages/socket/*.png
 !.env.example
 !/.vscode/extensions.json
 !docs/build/
+!packages/package-builder/templates/**/*.d.ts
 !src/types/**/*.d.ts
+!packages/*/src/types/**/*.d.ts
+
+# <fleet>
+# Managed by socket-wheelhouse. Don't edit locally — edit upstream
+# in scripts/sync-scaffolding/checks/gitignore-fleet-block.mts and
+# re-cascade via `pnpm run sync`. Project-specific ignores stay
+# OUTSIDE this block; the fixer preserves them.
+# Per-machine Claude Code permission config + log dirs stay ignored;
+# the cascaded subdirs (agents, commands, hooks, output-styles,
+# settings.json, skills, workflows) are explicitly re-included so the
+# wheelhouse cascade can ship them.
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/hooks/
+!/.claude/output-styles/
+!/.claude/rules/
+!/.claude/settings.json
+!/.claude/skills/
+!/.claude/workflows/
+# Transient agent work-state: handoff + planning docs live in these
+# gitignored operator-notes homes and are NEVER committed. Re-asserted here
+# AFTER the re-include lines above so a future `!/.claude/<x>/` re-include
+# can't accidentally start tracking them. Dir-scoped so no sibling path is
+# caught. handoff-docs-are-untracked backstops a stray committed handoff doc.
+/.claude/plans/
+/.claude/reports/
+# Release-only GENERATED hook-dispatch artifacts: all three dispatch-table
+# variants, the rolldown bundles, the native snapshot launcher + its frozen
+# sidecars, and the dispatch manifest. Rebuilt by
+# build-hook-bundle / build-hook-snapshot / setup:3-hook-snapshot, shipped in
+# the GitHub-release bundle, NEVER committed to the cascade. Unanchored (**/)
+# so each is ignored in BOTH the repo-root live copy AND the template/base/
+# mirror — the fleet keeps ignores in this root block, not nested per-dir
+# files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
+# sync-scaffolding/dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
+**/.claude/hooks/fleet/_dist/fleet-pack.cjs
+# Legacy pre-v1.0.16 dispatch layout: socket-sdk-js still tracks the
+# _dispatch/index.cjs loader, which requires ./fleet-pack.cjs — that generated
+# bundle must stay untracked there. This path stays _dispatch/ on purpose: it
+# describes a layout that member still has on disk, so renaming it here would
+# un-ignore that repo's generated bundle. Keep the entry until every member
+# has migrated to the fleet/index.cjs + _dist/fleet-pack.cjs layout; it
+# matches nothing once the legacy bundle is gone.
+**/.claude/hooks/fleet/_dispatch/fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/dispatch-launcher
+**/.claude/hooks/fleet/_shared/dispatch-launcher.exe
+**/.claude/hooks/fleet/_shared/dispatch-table-excluded.mts
+**/.claude/hooks/fleet/_shared/dispatch-table-snapshot.mts
+**/.claude/hooks/fleet/_shared/dispatch-table.mts
+**/.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/node.path
+**/.claude/hooks/fleet/_shared/snapshot-blob.path
+**/.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/dispatch-manifest.json
+# The rolldown-bundled fleet oxlint plugin (build-oxlint-bundle.mts): members
+# load this single artifact via jsPlugins instead of the ~100 rule source
+# dirs. Release-only + gitignored like the hook bundles above.
+**/.config/fleet/oxlint-plugin.mjs
+
+# Derived cross-harness rule adapters — generated per-repo, per-platform by
+# the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
+# and CLAUDE.md, never committed. A tracked symlink checks out as a plain
+# pointer file on Windows, so each host gets a real symlink generated on its
+# own OS. Tracking them only produces churn + merge conflicts. Keep in sync
+# with ADAPTERS in scripts/fleet/gen/harness-adapters.mts + the .agents/ mirror
+# (and the .mcp.json projections in scripts/fleet/mcp-config.mts: /.codex/,
+# /.kimi-code/, and /opencode.json — all generated from the single committed
+# .mcp.json authority at setup:mcp and rebuilt into the release bundle at
+# make-release-bundle, never committed).
+# Host dirs we own entirely are ignored wholesale; .github/ holds tracked
+# fleet files, so only its generated adapter file is named.
+/.agents/
+/.clinerules/
+/.codex/
+/.cursor/
+/.github/copilot-instructions.md
+/.janus/
+/.kimi-code/
+/.kiro/
+/.windsurf/
+/AGENTS.md
+/opencode.json
+
+# VS Code: ignore the dir contents so a hidden tasks.json with a `folderOpen`
+# auto-run (a known npm supply-chain vector — runs on folder open, zero clicks)
+# cannot be committed. Re-include only the benign shared settings.json. Use the
+# `/.vscode/*` contents form (NOT `.vscode/`) so the re-include can take effect.
+# vscode-folder-open-task-guard backstops any explicitly-added auto-run task.
+/.vscode/*
+!/.vscode/settings.json
+
+# OS noise
+.DS_Store
+._.DS_Store
+Thumbs.db
+
+# Build outputs — universal across the fleet. Project-specific
+# variants (e.g. a non-standard dist path) go OUTSIDE this block.
+# The build/test-output + vendored-tree entries below are kept in
+# lock-step with GENERATED_GLOBS (scripts/fleet/constants/
+# generated-globs.mts) by generated-globs-are-consistent.mts.
+**/build/
+**/dist/
+/template/generated/
+**/out/
+**/.cache/
+**/.repo-map/
+**/.swc/
+**/.vitiate/
+
+# Vendored / upstream trees + conformance fixtures — untracked-by-default
+# (docs/agents.md/fleet/untracked-by-default.md): someone else's source or
+# synced corpora, restored by the owning sync/build step, never hand-edited.
+# A repo that must track a hand-written file inside one re-includes it
+# OUTSIDE this block (!<dir>/ then <dir>/* then !<dir>/<file>).
+**/test/fixtures/
+**/upstream/
+
+# Node
+node_modules/
+# Workspace-local pnpm store — CI jobs whose pnpm runs inside a
+# workspace-mounted sandbox pin the store here (setup-and-install
+# store-dir input); never committed.
+/.pnpm-store/
+npm-debug.log
+pnpm-debug.log
+*.tgz
+# </fleet>
+# <repo>
+# </repo>
+
+# ─── repo-local (socket-wheelhouse): keep hand-authored files that the
+# fleet-canonical globs would otherwise ignore (untrack-ignored-files fix) ───
+!/packages/cli/test/fixtures/
+!/.node-version
+
+# vitiate coverage-guided fuzz lane caches (regenerable; never commit)
+/.swc/
+/.vitiate/
+**/.swc/
+**/.vitiate/
+
+# jvm manifest facts — build + smoke-test artifacts generated under the
+# tracked emitter/harness trees; compiled or produced at test/build time.
+/packages/cli/src/commands/manifest/scripts/maven-extension/target/
+/packages/cli/src/commands/manifest/scripts/maven-extension/coana-maven-extension.jar
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/localrepo/
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/records.tsv
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/.socket.facts.json
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/.gradle/
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/build/
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/.gradle-home/
+/packages/cli/src/commands/manifest/scripts/test/gradle-compat/.populate-for.txt
+/packages/cli/src/commands/manifest/scripts/test/maven-compat/project/records.tsv
+/packages/cli/src/commands/manifest/scripts/test/maven-compat/project/target/
+/packages/cli/src/commands/manifest/scripts/test/maven-compat/project/*/target/
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/target/
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/project/target/
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/project/build.properties
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/scala-version.sbt
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/records.tsv
