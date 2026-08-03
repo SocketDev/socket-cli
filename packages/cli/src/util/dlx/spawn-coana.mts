@@ -33,14 +33,13 @@ import type { SpawnExtra } from '@socketsecurity/lib-stable/process/spawn/types'
  */
 export async function spawnCoana(
   args: string[] | readonly string[],
-  orgSlug?: string | undefined,
   options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   if (isSeaBinary() && areExternalToolsAvailable()) {
     return await spawnCoanaVfs(args, options, spawnExtra)
   }
-  return await spawnCoanaDlx(args, orgSlug, options, spawnExtra)
+  return await spawnCoanaDlx(args, options, spawnExtra)
 }
 
 /**
@@ -53,13 +52,13 @@ export async function spawnCoana(
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
-  orgSlug?: string | undefined,
   options?: CoanaDlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
   const {
     coanaVersion,
     env: spawnEnv,
+    orgSlug,
     ...dlxOptions
   } = {
     __proto__: null,

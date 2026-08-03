@@ -90,7 +90,11 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: Buffer.from('hello') })
 
-    const result = await spawnCoanaDlx(['scan'], 'my-org', undefined, undefined)
+    const result = await spawnCoanaDlx(
+      ['scan'],
+      { orgSlug: 'my-org' },
+      undefined,
+    )
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/coana',
@@ -105,7 +109,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'script' })
     mockSpawn.mockResolvedValue({ stdout: Buffer.from('') })
 
-    await spawnCoanaDlx([], undefined, undefined, undefined)
+    await spawnCoanaDlx([], undefined, undefined)
 
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
@@ -120,7 +124,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: undefined })
 
-    await spawnCoanaDlx([], 'org', undefined, undefined)
+    await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     const call = mockSpawn.mock.calls[0]
     expect(call[2].env.SOCKET_CLI_API_TOKEN).toBe('tok-xyz')
@@ -133,7 +137,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: undefined })
 
-    await spawnCoanaDlx([], undefined, undefined, undefined)
+    await spawnCoanaDlx([], undefined, undefined)
 
     const call = mockSpawn.mock.calls[0]
     expect(call[2].env.SOCKET_ORG_SLUG).toBe('auto-org')
@@ -145,7 +149,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: undefined })
 
-    await spawnCoanaDlx([], 'org', undefined, undefined)
+    await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     const call = mockSpawn.mock.calls[0]
     expect(call[2].env.SOCKET_CLI_API_PROXY).toBe('http://proxy:8080')
@@ -156,7 +160,7 @@ describe('spawnCoanaDlx', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: undefined })
 
-    await spawnCoanaDlx([], 'org', undefined, { stdio: 'pipe' })
+    await spawnCoanaDlx([], { orgSlug: 'org' }, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
       '/local/coana',
@@ -174,7 +178,7 @@ describe('spawnCoanaDlx', () => {
       spawnPromise: Promise.resolve({ stdout: Buffer.from('dlx-out') }),
     })
 
-    const result = await spawnCoanaDlx([], 'org', undefined, undefined)
+    const result = await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     expect(mockSpawnDlx).toHaveBeenCalled()
     expect(result).toEqual({ ok: true, data: 'dlx-out' })
@@ -189,7 +193,11 @@ describe('spawnCoanaDlx', () => {
       spawnPromise: Promise.resolve({ stdout: undefined }),
     })
 
-    await spawnCoanaDlx([], 'org', { coanaVersion: '2.0.0' }, undefined)
+    await spawnCoanaDlx(
+      [],
+      { orgSlug: 'org', coanaVersion: '2.0.0' },
+      undefined,
+    )
 
     expect(mockSpawnDlx).toHaveBeenCalledWith(
       expect.objectContaining({ version: '2.0.0' }),
@@ -208,7 +216,7 @@ describe('spawnCoanaDlx', () => {
       spawnPromise: Promise.resolve({ stdout: undefined }),
     })
 
-    await spawnCoanaDlx([], 'org', undefined, undefined)
+    await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     const env = mockSpawnDlx.mock.calls[0]![2].env
     expect(env['SOCKET_CALLER_USER_AGENT']).toMatch(
@@ -227,8 +235,7 @@ describe('spawnCoanaDlx', () => {
 
     await spawnCoanaDlx(
       [],
-      'org',
-      { env: { SOCKET_CALLER_USER_AGENT: 'caller/1.0' } },
+      { orgSlug: 'org', env: { SOCKET_CALLER_USER_AGENT: 'caller/1.0' } },
       undefined,
     )
 
@@ -247,7 +254,7 @@ describe('spawnCoanaDlx', () => {
       spawnPromise: Promise.resolve({ stdout: undefined }),
     })
 
-    await spawnCoanaDlx([], 'org', undefined, undefined)
+    await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     const env = mockSpawnDlx.mock.calls[0]![2].env
     expect(env).not.toHaveProperty('npm_package_dependencies_lodash')
@@ -262,7 +269,7 @@ describe('spawnCoanaDlx', () => {
       details: {} as never,
     })
 
-    const result = await spawnCoanaDlx([], 'org', undefined, undefined)
+    const result = await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     expect(result.ok).toBe(false)
   })
@@ -275,7 +282,7 @@ describe('spawnCoanaDlx', () => {
     })
     mockSpawn.mockRejectedValue(err)
 
-    const result = await spawnCoanaDlx([], 'org', undefined, undefined)
+    const result = await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     expect(result.ok).toBe(false)
     expect((result as { message?: string | undefined }).message).toBe(
@@ -289,7 +296,7 @@ describe('spawnCoanaDlx', () => {
     mockSpawn.mockRejectedValue(new Error('boom'))
     mockGetErrorCause.mockReturnValue('error-cause-msg')
 
-    const result = await spawnCoanaDlx([], 'org', undefined, undefined)
+    const result = await spawnCoanaDlx([], { orgSlug: 'org' }, undefined)
 
     expect(result.ok).toBe(false)
     expect((result as { message?: string | undefined }).message).toBe(
@@ -388,7 +395,7 @@ describe('spawnCoana (auto-dispatch)', () => {
       spawnPromise: Promise.resolve({ stdout: Buffer.from('via-vfs') }),
     })
 
-    const result = await spawnCoana(['x'], 'org', undefined, undefined)
+    const result = await spawnCoana(['x'], { orgSlug: 'org' }, undefined)
 
     expect(mockSpawnToolVfs).toHaveBeenCalled()
     expect(result).toEqual({ ok: true, data: 'via-vfs' })
@@ -401,7 +408,7 @@ describe('spawnCoana (auto-dispatch)', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: Buffer.from('via-dlx') })
 
-    const result = await spawnCoana(['x'], 'org', undefined, undefined)
+    const result = await spawnCoana(['x'], { orgSlug: 'org' }, undefined)
 
     expect(mockSpawn).toHaveBeenCalled()
     expect(result).toEqual({ ok: true, data: 'via-dlx' })
@@ -414,7 +421,7 @@ describe('spawnCoana (auto-dispatch)', () => {
     mockDetectExecutableType.mockReturnValue({ type: 'binary' })
     mockSpawn.mockResolvedValue({ stdout: Buffer.from('') })
 
-    await spawnCoana(['x'], 'org', undefined, undefined)
+    await spawnCoana(['x'], { orgSlug: 'org' }, undefined)
     expect(mockSpawn).toHaveBeenCalled()
   })
 })

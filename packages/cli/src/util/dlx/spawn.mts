@@ -66,6 +66,7 @@ export type DlxOptions = DlxSpawnOptions & {
 
 export type CoanaDlxOptions = DlxOptions & {
   coanaVersion?: string | undefined
+  orgSlug?: string | undefined
 }
 
 export type DlxPackageSpec = {
