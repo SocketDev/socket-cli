@@ -119,6 +119,40 @@ export function lineIsSuppressed(
   return rule === undefined || aliasMatches(m[1], rule)
 }
 
+// A line that is ONLY an opt-out marker comment — the marker right after the
+// comment opener, optionally a `-- reason` tail, optionally a block-comment
+// close. Such a line covers the LINE BELOW it, so a long pragma can sit above
+// the code it excuses instead of trailing it. Mirrors
+// SOCKET_LINT_MARKER_ONLY_LINE_RE in .claude/hooks/fleet/_shared/markers.mts.
+const SOCKET_LINT_MARKER_ONLY_LINE_RE =
+  /^\s*(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?(?:\s*\*\/|\s+--.*)?\s*$/
+
+/**
+ * True when `lines[index]` is suppressed for `rule` — by a marker on the line
+ * itself, or by a marker-only comment line directly above it.
+ */
+export function suppressionCoversLine(
+  lines: readonly string[],
+  index: number,
+  rule?: string | undefined,
+): boolean {
+  if (lineIsSuppressed(lines[index] ?? '', rule)) {
+    return true
+  }
+  if (index <= 0) {
+    return false
+  }
+  const m = (lines[index - 1] ?? '').match(SOCKET_LINT_MARKER_ONLY_LINE_RE)
+  if (!m) {
+    return false
+  }
+  // Bare marker or no rule context → blanket allow, same as the inline form.
+  if (!m[1] || rule === undefined) {
+    return true
+  }
+  return aliasMatches(m[1], rule)
+}
+
 // Heuristic context flags: lines that look like "this is a doc example"
 // rather than a real call leaked into runtime code.
 //   - Comment lines (start with `*`, `//`, `#`).
@@ -230,7 +264,8 @@ export function scanLines(
     }
     if (
       options.skipDocs &&
-      looksLikeDocumentation(lineForMatch, pattern, options.skipDocs.rule)
+      (looksLikeDocumentation(lineForMatch, pattern, options.skipDocs.rule) ||
+        suppressionCoversLine(lines, i, options.skipDocs.rule))
     ) {
       continue
     }

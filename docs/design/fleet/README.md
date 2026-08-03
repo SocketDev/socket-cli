@@ -392,6 +392,6 @@ hex literals, no magic numbers — even `padding: 13px` is a smell (use
 
 Add it to all four theme blocks in `tokens.css` (light, dark, synthwave,
 and the `prefers-color-scheme: dark` system override). Pick perceptually
-matched values — same lightness, different hue — so the token tells the
+matched values, same lightness but different hue, so the token tells the
 same story across themes. Run the contrast lint to verify any pair against
 its surface.

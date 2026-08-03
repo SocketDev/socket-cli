@@ -18,7 +18,6 @@
 
 import type { MarkdownlintRule } from './_shared/rule-types.mts'
 
-import { isFreeformReadmeOptIn } from './_shared/freeform-readme-optin.mts'
 import { isRootReadme } from './_shared/root-readme.mts'
 import { isInsideWheelhouse } from './_shared/wheelhouse-self-skip.mts'
 
@@ -40,12 +39,6 @@ const rule: MarkdownlintRule = {
       return
     }
     if (!isRootReadme(params.name)) {
-      return
-    }
-    // Product / marketplace repos, freeform-readme roster opt-in, carry public
-    // READMEs that don't fit the five-section infra skeleton. The universal
-    // badge / leak / sibling rules still apply; this section rule does not.
-    if (isFreeformReadmeOptIn()) {
       return
     }
     const headings = []

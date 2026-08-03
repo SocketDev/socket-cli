@@ -125,12 +125,9 @@ jobs:
       # here — those repos see no behavior change.
       #
       # A member whose consumable line is NOT the default branch declares it as
-      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json.
-      # socket-cli is the case that forced this: its default branch carries the
-      # 2.x PRERELEASE line while customers install from v1.x. With `latest`
-      # unguarded, `socket@latest` sat on 1.1.147 for a week while five newer
-      # v1.x releases — including a CVE bump — published under a side tag no
-      # bare install ever resolves.
+      # `release.latestDistTagBranch` in .config/repo/socket-wheelhouse.json —
+      # the shape being a maintenance branch shipping to users while the
+      # default branch carries a prerelease major.
       #
       # Read from the manifest rather than hard-coded so one file states the
       # law for the whole fleet and each member parameterizes it.

@@ -30,6 +30,7 @@
     "socket/no-fileoverview-prefer-file": "error",
     "socket/no-inline-defer-async": "error",
     "socket/no-inline-logger": "error",
+    "socket/no-literal-control-char": "error",
     "socket/no-logger-newline-literal": "error",
     "socket/no-malformed-bypass-marker": "error",
     "socket/no-minified-bundler-output": "error",

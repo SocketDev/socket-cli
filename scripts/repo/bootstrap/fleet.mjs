@@ -1346,9 +1346,28 @@ function thinIgnoreEntries(manifest) {
   return [...entries].toSorted()
 }
 /**
- * Apply thin mode: write a fleet-managed `.gitignore` block listing the
- * wholly-fleet bundle paths (see thinIgnoreEntries) plus `.agents/`, then
- * untrack them from git so the fetch action repopulates them going forward.
+ * The lines currently inside a target's fleet-marked gitignore block, or an
+ * empty array when the target has no block. Used to carry the cascade's rules
+ * through the thin-mode splice instead of replacing them.
+ */
+function extractFleetBlockLines(target) {
+  const begin = beginMarker('hash')
+  const end = endMarker('hash')
+  const beginAt = target.indexOf(begin)
+  if (beginAt === -1) return []
+  const bodyStart = beginAt + begin.length
+  const endAt = target.indexOf(end, bodyStart)
+  if (endAt === -1) return []
+  return target
+    .slice(bodyStart, endAt)
+    .split('\n')
+    .filter(line => line.trim() !== '')
+}
+/**
+ * Apply thin mode: write a fleet-managed `.gitignore` block carrying the
+ * cascade's existing rules plus the wholly-fleet bundle untrack paths (see
+ * thinIgnoreEntries) and `.agents/`, then untrack them from git so the fetch
+ * action repopulates them going forward.
  */
 function applyThinMode(config) {
   const { dest, manifest } = {
@@ -1356,21 +1375,23 @@ function applyThinMode(config) {
     ...config,
   }
   const sortedRoots = thinIgnoreEntries(manifest)
-  const blockLines = ['.agents/', ...sortedRoots]
-  const fleetBlock = [
-    beginMarker('hash'),
-    ...blockLines,
-    endMarker('hash'),
-  ].join('\n')
   const gitignorePath = path.join(dest, '.gitignore')
+  const existing = existsSync(gitignorePath)
+    ? readFileSync(gitignorePath, 'utf8')
+    : ''
+  const priorBlockLines = extractFleetBlockLines(existing)
+  const untrackLines = ['.agents/', ...sortedRoots].filter(
+    line => !priorBlockLines.includes(line),
+  )
+  const blockLines = [...priorBlockLines, ...untrackLines]
   writeFileSync(
     gitignorePath,
     spliceFleetBlock({
       commentStyle: 'hash',
-      fleetBlock,
-      target: existsSync(gitignorePath)
-        ? readFileSync(gitignorePath, 'utf8')
-        : '',
+      fleetBlock: [beginMarker('hash'), ...blockLines, endMarker('hash')].join(
+        '\n',
+      ),
+      target: existing,
     }),
   )
   const rmTargets = ['.agents/', ...sortedRoots]
@@ -2459,6 +2480,7 @@ export {
   computeSha256,
   endMarker,
   errorMessage,
+  extractFleetBlockLines,
   extractManifestFromTarball,
   fetchBlob,
   fetchBundleSource,

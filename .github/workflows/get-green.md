@@ -120,6 +120,61 @@ safe-outputs:
 A weekly dependency update was applied on branch `${{ inputs.branch }}`, but the
 build/tests are failing. Fix the failures so the update can ship.
 
+## Never write a credential into a report
+
+Everything you emit — issue bodies, comments, pull-request descriptions, and the
+`missing_data` and incomplete-result paths — is posted verbatim to a repository
+that may be public. Never write a string shaped like a credential into any of
+them.
+
+That includes a value you invent to illustrate a point. A made-up key is
+indistinguishable from a real one to a secret scanner, to a reader, and to a
+crawler, so it opens a real alert that a human then has to investigate and
+disprove. Writing "the key looked like `AKIA` followed by twenty characters"
+costs nothing; writing a filled-in example costs someone an investigation.
+
+Read the build and test output below with that in mind. It is raw CI output, so
+it can contain a token some tool printed. Quoting a failing line straight back
+into a report is the easy way to leak one. Quote the error, not the surrounding
+output, and drop any fragment shaped like a key.
+
+Describe the credential instead of reproducing it. Write "the API key is missing
+from the environment", never the key itself and never a stand-in for it.
+
+These are the shapes the fleet's own scanners block. Treat any string matching
+one as unpublishable, and note the list is not exhaustive — an unfamiliar
+vendor's key is still a key.
+
+<!-- BEGIN GENERATED token-shapes: scripts/fleet/gen/aw-token-shapes.mts -->
+
+- AWS access key ID (AKIA)
+- Anthropic API key (sk-ant-)
+- DigitalOcean PAT (dop_v1_)
+- GitHub OAuth token (gho_)
+- GitHub app server token (ghs_)
+- GitHub fine-grained PAT
+- GitHub personal access token (ghp_)
+- GitHub refresh token (ghr_)
+- GitHub user access token (ghu_)
+- GitLab PAT (glpat-)
+- Google API key (AIza)
+- Hugging Face token (hf_)
+- JWT
+- Linear API token (lin_api_)
+- OpenAI project key (sk-proj-)
+- OpenAI/Anthropic-style secret key (sk-)
+- Slack token (xox_-)
+- Socket API key (sktsec_)
+- Stripe live publishable (pk_live_)
+- Stripe live restricted (rk_live_)
+- Stripe live secret (sk_live_)
+- Stripe test secret (sk_test_)
+- Val Town token (vtwn_)
+- npm access token (npm_)
+- private key (PEM block)
+
+<!-- END GENERATED token-shapes -->
+
 ## Context
 
 Build output (last 100 lines):

@@ -36,6 +36,7 @@ import noFileoverviewPreferFile from './fleet/no-fileoverview-prefer-file/index.
 import noInlineDeferAsync from './fleet/no-inline-defer-async/index.mts'
 import noInlineLogger from './fleet/no-inline-logger/index.mts'
 import noLibBarrelImport from './fleet/no-lib-barrel-import/index.mts'
+import noLiteralControlChar from './fleet/no-literal-control-char/index.mts'
 import noLoggerNewlineLiteral from './fleet/no-logger-newline-literal/index.mts'
 import noMalformedBypassMarker from './fleet/no-malformed-bypass-marker/index.mts'
 import noMinifiedBundlerOutput from './fleet/no-minified-bundler-output/index.mts'
@@ -153,6 +154,7 @@ const plugin = {
     'no-inline-defer-async': noInlineDeferAsync,
     'no-inline-logger': noInlineLogger,
     'no-lib-barrel-import': noLibBarrelImport,
+    'no-literal-control-char': noLiteralControlChar,
     'no-logger-newline-literal': noLoggerNewlineLiteral,
     'no-malformed-bypass-marker': noMalformedBypassMarker,
     'no-minified-bundler-output': noMinifiedBundlerOutput,

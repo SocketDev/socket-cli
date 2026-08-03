@@ -545,8 +545,9 @@ export default defineConfig({
     hookTimeout: resolveTestBudgetMs(),
     bail: resolveBail(isCoverageEnabled, Boolean(getCI())),
     // Coverage shape comes from the fleet base merged with the repo-owned
-    // `.config/repo/coverage.json` overlay (include replace, exclude
-    // add/remove) — one canonical exclude list instead of a drifted copy here.
+    // `coverage` section of .config/repo/socket-wheelhouse.json (include
+    // replace, exclude add/remove) — one canonical exclude list instead of a
+    // drifted copy here.
     coverage: {
       enabled: isCoverageEnabled,
       ...resolveCoverageConfig(),

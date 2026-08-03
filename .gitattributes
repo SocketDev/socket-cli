@@ -132,6 +132,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/actions/fleet/setup linguist-generated=true
 .github/actions/fleet/setup-and-install linguist-generated=true
 .github/actions/fleet/setup-git-signing linguist-generated=true
+.github/actions/fleet/setup-odai linguist-generated=true
 .github/actions/fleet/setup-rust-cache linguist-generated=true
 .github/actions/fleet/setup-rust-toolchain linguist-generated=true
 .github/agent-ci.Dockerfile linguist-generated=true
@@ -144,8 +145,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/workflows/npm-publish.yml linguist-generated=true
 .github/workflows/prune-workflow-runs.yml linguist-generated=true
 .github/workflows/release-reconcile.yml linguist-generated=true
-.github/workflows/weekly-update.lock.yml linguist-generated=true
-.github/workflows/weekly-update.md linguist-generated=true
+.github/workflows/weekly-update.yml linguist-generated=true
 .mcp.json linguist-generated=true
 .npmrc linguist-generated=true
 assets/fleet/badge-follow-bluesky.svg linguist-generated=true

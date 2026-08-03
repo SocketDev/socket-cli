@@ -1,9 +1,10 @@
 /**
  * @file Fleet-canonical coverage defaults — the shape every socket-* repo
  *   shares. Repos layer their own include/exclude/threshold deltas on top via
- *   a repo-owned `.config/repo/coverage.json` overlay, resolved by
- *   `resolveCoverageConfig()`. Do NOT add repo-specific paths here; anything
- *   in this file cascades to every fleet repo.
+ *   the `coverage` section of the ONE per-repo settings file,
+ *   `.config/repo/socket-wheelhouse.json`, resolved by
+ *   `resolveCoverageConfig()`. Do NOT add repo-specific paths here; anything in
+ *   this file cascades to every fleet repo.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -16,7 +17,8 @@ import { COVERAGE_SCRATCH_VITEST_DIR } from '../../scripts/fleet/paths.mts'
 /**
  * Fleet-shared coverage base. Excludes cover the dirs every fleet repo has
  * (node_modules, dist, test, scripts, perf, external bundles). Repo-specific
- * deltas live in the repo's `.config/repo/coverage.json` overlay.
+ * deltas live in the `coverage` section of the repo's settings file
+ * (.config/repo/socket-wheelhouse.json).
  */
 export const baseFleetCoverageConfig: CoverageOptions = {
   clean: true,
@@ -84,10 +86,13 @@ export const baseFleetAggregateThresholds = {
 }
 
 /**
- * Repo-owned coverage overlay, read from `.config/repo/coverage.json`. A repo
- * whose instrumentable code lives outside the fleet-default `src/**` shape
- * (the wheelhouse: `template/**` + `scripts/repo/**`) declares its own set
- * here instead of forking the cascaded config.
+ * Repo-owned coverage overlay, read from the `coverage` section of the ONE
+ * per-repo settings file, `.config/repo/socket-wheelhouse.json` (config
+ * segregation — the same surface `vitest`, `cover`, and every other tunable
+ * live in). A repo whose instrumentable code lives outside the fleet-default
+ * `src/**` shape (the wheelhouse: `template/**` + `scripts/repo/**`; a
+ * monorepo: `packages/<name>/src/**`) declares its own set here instead of
+ * forking the cascaded config.
  */
 export interface RepoCoverageOverlay {
   readonly exclude?:
@@ -99,30 +104,51 @@ export interface RepoCoverageOverlay {
   readonly include?: string[] | undefined
 }
 
-export const REPO_COVERAGE_OVERLAY_PATH = '.config/repo/coverage.json'
+// The settings file, canonical location first and the repo-root dotfile as the
+// one fallback a member may ship — mirrors readVitestSettings in the sibling
+// vitest.config.mts so the two configs read the same file family.
+const SETTINGS_FILES = [
+  '.config/repo/socket-wheelhouse.json',
+  '.socket-wheelhouse.json',
+] as const
 
+/**
+ * The `coverage` section of the settings file. `settingsPath` overrides the
+ * lookup for a unit test; production reads the SETTINGS_FILES in order and
+ * stops at the first present. A torn or absent file, or an absent/ malformed
+ * `coverage` key, degrades to the empty overlay (fleet base) — the same
+ * fail-soft posture as readVitestSettings.
+ */
 export function readRepoCoverageOverlay(
-  options?: { readonly overlayPath?: string | undefined } | undefined,
+  options?: { readonly settingsPath?: string | undefined } | undefined,
 ): RepoCoverageOverlay {
   const opts = { __proto__: null, ...options }
-  const overlayPath = opts.overlayPath ?? REPO_COVERAGE_OVERLAY_PATH
-  if (!existsSync(overlayPath)) {
-    return {}
+  const files = opts.settingsPath ? [opts.settingsPath] : SETTINGS_FILES
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const file = files[i]!
+    if (!existsSync(file)) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+        coverage?: RepoCoverageOverlay | undefined
+      }
+      const section = parsed?.coverage
+      return section && typeof section === 'object' && !Array.isArray(section)
+        ? section
+        : {}
+    } catch {
+      // A torn settings file must not kill the test run — fall back to the
+      // fleet base (the same fail-soft posture as readVitestSettings).
+      return {}
+    }
   }
-  try {
-    const parsed = JSON.parse(
-      readFileSync(overlayPath, 'utf8'),
-    ) as RepoCoverageOverlay
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    // A torn overlay must not kill the test run — fall back to the fleet base
-    // (the same fail-soft posture as readVitestConfigTier).
-    return {}
-  }
+  return {}
 }
 
 /**
- * Fleet base + repo overlay, merged. Overlay semantics: `include` REPLACES the
+ * Fleet base + repo overlay (the settings file's `coverage` section), merged.
+ * Overlay semantics: `include` REPLACES the
  * base include set when present (a repo with a different source shape needs a
  * different candidate set, not a union); `exclude.remove` filters entries out
  * of the base excludes (exact string match — vitest applies exclude over
@@ -130,7 +156,7 @@ export function readRepoCoverageOverlay(
  * `exclude.add` appends repo-specific excludes.
  */
 export function resolveCoverageConfig(
-  options?: { readonly overlayPath?: string | undefined } | undefined,
+  options?: { readonly settingsPath?: string | undefined } | undefined,
 ): CoverageOptions {
   const overlay = readRepoCoverageOverlay(options)
   const removals = new Set(overlay.exclude?.remove ?? [])
