@@ -1,26 +1,22 @@
 /**
  * Unit tests for handleDiffScan.
  *
- * Purpose:
- * Tests the handler that orchestrates scan diffing. Validates comparison workflow and diff output.
+ * Purpose: Tests the handler that orchestrates scan diffing. Validates
+ * comparison workflow and diff output.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleDiffScan.mts (implementation)
+ * Related Files: - src/commands/handleDiffScan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { handleDiffScan } from '../../../../src/commands/scan/handle-diff-scan.mts'
 import {
   createErrorResult,
   createSuccessResult,
@@ -39,22 +35,18 @@ const mockLogger = vi.hoisted(() => ({
 const mockFetchDiffScan = vi.hoisted(() => vi.fn())
 const mockOutputDiffScan = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/commands/scan/fetch-diff-scan.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/fetch-diff-scan.mts'), () => ({
   fetchDiffScan: mockFetchDiffScan,
 }))
 
-vi.mock('../../../../src/commands/scan/output-diff-scan.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-diff-scan.mts'), () => ({
   outputDiffScan: mockOutputDiffScan,
 }))
-
-const { handleDiffScan } = await import(
-  '../../../../src/commands/scan/handle-diff-scan.mts'
-)
 
 describe('handleDiffScan', () => {
   beforeEach(() => {
@@ -154,8 +146,8 @@ describe('handleDiffScan', () => {
 
     const depths = [0, 1, 5, 10, 100]
 
-    for (const depth of depths) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = depths; i < length; i += 1) {
+      const depth = depths[i]
       await handleDiffScan({
         depth,
         file: '',

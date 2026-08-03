@@ -1,33 +1,29 @@
 import path from 'node:path'
 
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
 import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ScanGithubFlags {
+export interface ScanGithubFlags {
   all: boolean | undefined
   githubApiUrl: string
   githubToken: string
@@ -53,16 +49,16 @@ export const cmdScanGithub = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       all: {
@@ -105,8 +101,8 @@ async function run(
         description:
           'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -126,7 +122,7 @@ async function run(
     You can use \`socket scan setup\` to configure certain repo flag defaults.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -141,17 +137,11 @@ async function run(
     parentName,
   })
 
-  const {
-    githubToken = getSocketCliGithubToken(),
-    interactive = true,
-    json,
-    markdown,
-    org: orgFlag,
-  } = cli.flags as unknown as ScanGithubFlags
+  const { githubToken, interactive, json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  let { all, githubApiUrl, orgGithub, repos } = cli.flags as unknown as ScanGithubFlags
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -159,7 +149,7 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   let { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -172,6 +162,7 @@ async function run(
       all = false
     }
   }
+  /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
   if (!githubApiUrl) {
     if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
       githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
@@ -179,6 +170,7 @@ async function run(
       githubApiUrl = DEFAULT_GITHUB_URL
     }
   }
+  /* c8 ignore stop */
   if (!orgGithub) {
     if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
       orgGithub = sockJson.defaults.scan.github.orgGithub
@@ -254,15 +246,25 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const details: Record<string, unknown> = {
+      organization: orgSlug,
+      githubOrganization: orgGithub,
+      githubApiUrl,
+    }
+    if (all) {
+      details['scope'] = 'all repositories'
+    } else if (repos) {
+      details['repositories'] = repos
+    }
+    outputDryRunUpload('GitHub scan', details)
     return
   }
 
   await handleCreateGithubScan({
-    all: Boolean(all),
+    all: all,
     githubApiUrl,
     githubToken: githubToken || '',
-    interactive: Boolean(interactive),
+    interactive: interactive,
     orgSlug,
     orgGithub,
     outputKind,

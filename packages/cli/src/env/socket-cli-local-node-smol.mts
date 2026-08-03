@@ -1,7 +1,7 @@
 /**
- * Path to local node-smol binary for development.
- * When set, this binary will be used instead of downloading from GitHub releases.
- * The binary must exist at the specified path or a warning will be shown.
+ * Path to local node-smol binary for development. When set, this binary will be
+ * used instead of downloading from GitHub releases. The binary must exist at
+ * the specified path or a warning will be shown.
  */
 
 import process from 'node:process'

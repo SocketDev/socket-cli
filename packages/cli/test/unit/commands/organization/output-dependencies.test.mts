@@ -1,29 +1,25 @@
 /**
- * Unit Tests: Organization Dependencies Output Formatter
+ * Unit Tests: Organization Dependencies Output Formatter.
  *
- * Purpose:
- * Tests the output formatting system for organization-wide dependency data. Validates
- * JSON and markdown/table output formats, pagination info display, error messaging,
- * and proper exit code setting based on result status.
+ * Purpose: Tests the output formatting system for organization-wide dependency
+ * data. Validates JSON and markdown/table output formats, pagination info
+ * display, error messaging, and proper exit code setting based on result
+ * status.
  *
- * Test Coverage:
- * - JSON format output for successful results
- * - JSON format error output with exit codes
- * - Markdown/table format with chalk-table rendering
- * - Pagination metadata display (offset, limit, has more data)
- * - Error messaging in markdown format with badges
- * - Empty dependency list handling
- * - Default exit code setting when code is undefined
+ * Test Coverage: - JSON format output for successful results - JSON format
+ * error output with exit codes - Markdown/table format with chalk-table
+ * rendering - Pagination metadata display, offset, limit, has more data -
+ * Error messaging in markdown format with badges - Empty dependency list
+ * handling - Default exit code setting when code is undefined.
  *
- * Testing Approach:
- * Uses vi.doMock to reset module state between tests, mocking logger, chalk-table,
- * yoctocolors-cjs, and result serialization utilities. Tests verify output content
- * and exit code behavior.
+ * Testing Approach: Uses vi.doMock to reset module state between tests, mocking
+ * logger, chalk-table, yoctocolors-cjs, and result serialization utilities.
+ * Tests verify output content and exit code behavior.
  *
- * Related Files:
- * - src/commands/organization/output-dependencies.mts - Output formatter
- * - src/commands/organization/handle-dependencies.mts - Command handler
- * - src/commands/organization/fetch-dependencies.mts - Dependencies fetcher
+ * Related Files: - src/commands/organization/output-dependencies.mts - Output
+ * formatter - src/commands/organization/handle-dependencies.mts - Command
+ * handler - src/commands/organization/fetch-dependencies.mts - Dependencies
+ * fetcher.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -34,7 +30,7 @@ import {
 } from '../../../../test/helpers/index.mts'
 
 import type { CResult } from '../../../../src/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 describe('outputDependencies', () => {
   beforeEach(async () => {
@@ -52,17 +48,16 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -103,17 +98,16 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -145,15 +139,15 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('chalk-table', () => ({
+    vi.doMock(import('chalk-table'), () => ({
       default: mockChalkTable,
     }))
 
-    vi.doMock('yoctocolors-cjs', () => ({
+    vi.doMock(import('yoctocolors-cjs'), () => ({
       default: {
         bgRedBright: vi.fn(text => text),
         bold: vi.fn(text => text),
@@ -164,9 +158,8 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -225,17 +218,19 @@ describe('outputDependencies', () => {
     }
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
-      failMsgWithBadge: mockFailMsgWithBadge,
-    }))
-
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
+    vi.doMock(
+      import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      () => ({
+        failMsgWithBadge: mockFailMsgWithBadge,
+      }),
     )
+
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -271,15 +266,15 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('chalk-table', () => ({
+    vi.doMock(import('chalk-table'), () => ({
       default: mockChalkTable,
     }))
 
-    vi.doMock('yoctocolors-cjs', () => ({
+    vi.doMock(import('yoctocolors-cjs'), () => ({
       default: {
         bgRedBright: vi.fn(text => text),
         bold: vi.fn(text => text),
@@ -290,9 +285,8 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -336,15 +330,15 @@ describe('outputDependencies', () => {
       (_options, data) => `Table with ${data.length} rows`,
     )
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('chalk-table', () => ({
+    vi.doMock(import('chalk-table'), () => ({
       default: mockChalkTable,
     }))
 
-    vi.doMock('yoctocolors-cjs', () => ({
+    vi.doMock(import('yoctocolors-cjs'), () => ({
       default: {
         bgRedBright: vi.fn(text => text),
         bold: vi.fn(text => text),
@@ -355,9 +349,8 @@ describe('outputDependencies', () => {
       },
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']
@@ -386,17 +379,16 @@ describe('outputDependencies', () => {
     }
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
     }))
 
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
-    const { outputDependencies } = await import(
-      '../../../../src/commands/organization/output-dependencies.mts'
-    )
+    const { outputDependencies } =
+      await import('../../../../src/commands/organization/output-dependencies.mts')
 
     const result: CResult<
       SocketSdkSuccessResult<'searchDependencies'>['data']

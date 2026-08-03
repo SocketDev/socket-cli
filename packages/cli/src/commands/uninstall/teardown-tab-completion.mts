@@ -1,13 +1,21 @@
-import fs from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { homePath } from '../../constants/paths.mts'
 import {
   COMPLETION_CMD_PREFIX,
   getBashrcDetails,
-} from '../../utils/cli/completion.mts'
+} from '../../util/cli/completion.mts'
 
 import type { CResult } from '../../types.mts'
+
+export function findRemainingCompletionSetups(bashrc: string): string[] {
+  return bashrc
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
+    .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
+}
 
 export async function teardownTabCompletion(
   targetName: string,
@@ -22,8 +30,8 @@ export async function teardownTabCompletion(
   // Remove from ~/.bashrc if found
   const bashrc = homePath ? path.join(homePath, '.bashrc') : ''
 
-  if (bashrc && fs.existsSync(bashrc)) {
-    const content = fs.readFileSync(bashrc, 'utf8')
+  if (bashrc && existsSync(bashrc)) {
+    const content = readFileSync(bashrc, 'utf8')
 
     if (content.includes(toAddToBashrc)) {
       const newContent = content
@@ -33,7 +41,7 @@ export async function teardownTabCompletion(
         .replaceAll(sourcingCommand, '')
         .replaceAll(completionCommand, '')
 
-      fs.writeFileSync(bashrc, newContent, 'utf8')
+      writeFileSync(bashrc, newContent, 'utf8')
 
       return {
         ok: true,
@@ -59,12 +67,4 @@ export async function teardownTabCompletion(
     data: { action: 'not found', left: [] },
     message: '~/.bashrc not found, skipping',
   }
-}
-
-function findRemainingCompletionSetups(bashrc: string): string[] {
-  return bashrc
-    .split('\n')
-    .map(s => s.trim())
-    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
-    .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
 }

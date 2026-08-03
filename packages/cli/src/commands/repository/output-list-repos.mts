@@ -1,14 +1,14 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mts'
 
 import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export async function outputListRepos(
@@ -66,7 +66,7 @@ export async function outputListRepos(
   logger.log(chalkTable(options, result.data.results))
   if (nextPage) {
     logger.info(
-      `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
+      `This is page ${page}. Server indicated there are more results available on page ${nextPage}…`,
     )
     logger.info(
       `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,

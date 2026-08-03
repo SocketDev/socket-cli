@@ -1,10 +1,13 @@
 /**
  * Unit tests for manifest auto command.
  *
- * Tests the command that auto-detects build systems and generates manifest files.
+ * Tests the command that auto-detects build systems and generates manifest
+ * files.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdManifestAuto } from '../../../../src/commands/manifest/cmd-manifest-auto.mts'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -18,33 +21,40 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock detectManifestActions and generateAutoManifest.
 const mockDetectManifestActions = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ count: 0, gradle: false, sbt: false, pip: false }),
+  vi
+    .fn()
+    .mockResolvedValue({ count: 0, gradle: false, sbt: false, pip: false }),
 )
-const mockGenerateAutoManifest = vi.hoisted(() => vi.fn().mockResolvedValue(undefined))
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockGenerateAutoManifest = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
-vi.mock('../../../../src/commands/manifest/detect-manifest-actions.mts', () => ({
-  detectManifestActions: mockDetectManifestActions,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/detect-manifest-actions.mts'),
+  () => ({
+    detectManifestActions: mockDetectManifestActions,
+  }),
+)
 
-vi.mock('../../../../src/commands/manifest/generate_auto_manifest.mts', () => ({
-  generateAutoManifest: mockGenerateAutoManifest,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/generate_auto_manifest.mts'),
+  () => ({
+    generateAutoManifest: mockGenerateAutoManifest,
+  }),
+)
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestAuto } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-auto.mts'
-)
 
 describe('cmd-manifest-auto', () => {
   beforeEach(() => {
@@ -76,9 +86,20 @@ describe('cmd-manifest-auto', () => {
       // Dry run should still detect but not generate.
       expect(mockDetectManifestActions).toHaveBeenCalled()
       expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
+    })
+
+    it('logs "no manifest targets" on dry-run when nothing is detected', async () => {
+      mockDetectManifestActions.mockResolvedValueOnce({ count: 0 })
+
+      await cmdManifestAuto.run(['--dry-run'], importMeta, context)
+
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        'No manifest targets detected in the specified directory.',
+      )
+      expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
     })
 
     it('should detect manifest actions with socket.json config', async () => {
@@ -118,10 +139,25 @@ describe('cmd-manifest-auto', () => {
         detected,
         cwd: expect.stringContaining('/'),
         outputKind: 'text',
+        trustSocketJson: false,
         verbose: false,
       })
       expect(mockLogger.success).toHaveBeenCalledWith(
         expect.stringContaining('2 targets'),
+      )
+    })
+
+    it('should pass trustSocketJson through when the flag is provided', async () => {
+      mockDetectManifestActions.mockResolvedValueOnce({ count: 1 })
+
+      await cmdManifestAuto.run(
+        ['--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
+
+      expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
+        expect.objectContaining({ trustSocketJson: true }),
       )
     })
 

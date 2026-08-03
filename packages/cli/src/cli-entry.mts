@@ -1,17 +1,21 @@
 #!/usr/bin/env node
 
 // Set global Socket theme for consistent CLI branding.
-import { setTheme } from '@socketsecurity/lib/themes'
+import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { setTheme } from '@socketsecurity/lib-stable/themes/context'
 setTheme('socket')
 
+import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import url, { fileURLToPath } from 'node:url'
 
 // Suppress MaxListenersExceeded warning for AbortSignal.
 // The Socket SDK properly manages listeners but may exceed the default limit of 30
 // during high-concurrency batch operations.
-const originalEmitWarning = process.emitWarning
+// Bind the captured original so the reference is safe to call standalone
+// and clear of the type-aware unbound-method rule.
+const originalEmitWarning = process.emitWarning.bind(process)
 process.emitWarning = function (warning, ...args) {
   if (
     (typeof warning === 'string' &&
@@ -24,52 +28,50 @@ process.emitWarning = function (warning, ...args) {
     // Suppress the specific MaxListenersExceeded warning for AbortSignal.
     return
   }
-  return Reflect.apply(originalEmitWarning, this, [warning, ...args])
+  Reflect.apply(originalEmitWarning, this, [warning, ...args])
 }
-
-import { messageWithCauses, stackWithCauses } from 'pony-cause'
-import lookupRegistryAuthToken from 'registry-auth-token'
-import lookupRegistryUrl from 'registry-url'
 
 import {
   debug as debugNs,
   debugDir,
   debugDirNs,
-} from '@socketsecurity/lib/debug'
-import { getCI } from '@socketsecurity/lib/env/ci'
+} from '@socketsecurity/lib-stable/debug/output'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import {
   getSocketCliBootstrapCacheDir,
   getSocketCliBootstrapSpec,
-} from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+} from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
-import { rootAliases, rootCommands } from './commands.mts'
+import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
 import { getCliName } from './env/cli-name.mts'
 import { getCliVersion } from './env/cli-version.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
 import { VITEST } from './env/vitest.mts'
-import meow from './meow.mts'
-import { meowWithSubcommands } from './utils/cli/with-subcommands.mts'
+import { meow } from './meow.mts'
+import { meowWithSubcommands } from './util/cli/with-subcommands.mts'
 import {
-  AuthError,
-  captureException,
-  InputError,
-} from './utils/error/errors.mts'
-import { failMsgWithBadge } from './utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from './utils/output/result-json.mts'
-import { runPreflightDownloads } from './utils/preflight/downloads.mts'
-import { isSeaBinary } from './utils/sea/detect.mts'
+  formatErrorForJson,
+  formatErrorForTerminal,
+} from './util/error/display.mts'
+import { captureException } from './util/error/errors.mts'
+import { serializeResultJson } from './util/output/result-json.mts'
+import { runPreflightDownloads } from './util/preflight/downloads.mts'
+import { isSeaBinary } from './util/sea/detect.mts'
 import {
   finalizeTelemetry,
   setupTelemetryExitHandlers,
   trackCliComplete,
   trackCliError,
   trackCliStart,
-} from './utils/telemetry/integration.mts'
-import { scheduleUpdateCheck } from './utils/update/manager.mts'
+} from './util/telemetry/integration.mts'
+import { scheduleUpdateCheck } from './util/update/manager.mts'
 
-import { dlxManifest } from '@socketsecurity/lib/dlx/manifest'
+import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
 
 const logger = getDefaultLogger()
 
@@ -85,10 +87,10 @@ const cliStartTime = Date.now()
 setupTelemetryExitHandlers()
 
 /**
- * Write manifest entry for CLI installed via bootstrap.
- * Bootstrap passes spec and cache dir via environment variables.
+ * Write manifest entry for CLI installed via bootstrap. Bootstrap passes spec
+ * and cache dir via environment variables.
  */
-async function writeBootstrapManifestEntry(): Promise<void> {
+export async function writeBootstrapManifestEntry(): Promise<void> {
   const spec = getSocketCliBootstrapSpec()
   const cacheDir = getSocketCliBootstrapCacheDir()
 
@@ -98,7 +100,7 @@ async function writeBootstrapManifestEntry(): Promise<void> {
   }
 
   try {
-    // Extract cache key from path (last segment)
+    // Extract cache key from path, last segment
     const cacheKey = path.basename(cacheDir)
 
     // Read package.json to get installed version
@@ -112,7 +114,6 @@ async function writeBootstrapManifestEntry(): Promise<void> {
 
     let installedVersion = '0.0.0'
     try {
-      const fs = await import('node:fs/promises')
       const pkgJson = JSON.parse(await fs.readFile(pkgJsonPath, 'utf8'))
       installedVersion = pkgJson.version || '0.0.0'
     } catch {
@@ -125,7 +126,7 @@ async function writeBootstrapManifestEntry(): Promise<void> {
     })
   } catch (e) {
     // Silently ignore manifest write errors - not critical
-    debug(`Failed to write bootstrap manifest entry: ${e}`)
+    debug(`Failed to write bootstrap manifest entry: ${errorMessage(e)}`)
   }
 }
 
@@ -137,26 +138,31 @@ void (async () => {
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
   // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
   if (!VITEST && !getCI() && !SOCKET_CLI_SKIP_UPDATE_CHECK) {
-    const registryUrl = lookupRegistryUrl()
     // Unified update notifier handles both SEA and npm automatically.
+    // The registry is pinned to the public npm registry rather than resolved
+    // from the local npm config, so the check answers the same question no
+    // matter which directory the CLI runs in — a repo whose .npmrc points at a
+    // private mirror that does not carry the socket package used to report "no
+    // update" forever.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
-    scheduleUpdateCheck({
-      authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
+    // scheduleUpdateCheck catches internally, so void can't drop a rejection.
+    void scheduleUpdateCheck({
       name: isSeaBinary()
         ? SOCKET_CLI_BIN_NAME
         : getCliName() || SOCKET_CLI_BIN_NAME,
-      registryUrl,
+      registryUrl: NPM_REGISTRY_URL,
       version: getCliVersion() || '0.0.0',
     })
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.
-    // Fire-and-forget: Don't await to avoid blocking.
-    writeBootstrapManifestEntry()
+    // Fire-and-forget: Don't await to avoid blocking. The function catches
+    // internally, so void can't drop a rejection.
+    void writeBootstrapManifestEntry()
 
     // Background preflight downloads for optional dependencies.
-    // This silently downloads @coana-tech/cli and @socketbin/cli-ai in the
-    // background to ensure they're cached for future use.
+    // This silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and the
+    // Python tooling in the background so they're cached for future use.
     runPreflightDownloads()
   }
 
@@ -165,10 +171,10 @@ void (async () => {
       {
         name: SOCKET_CLI_BIN_NAME,
         argv: process.argv.slice(2),
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
         subcommands: rootCommands,
       },
-      { aliases: rootAliases },
+      { aliases: rootAliases, buckets: rootCommandBuckets },
     )
 
     // Track successful CLI completion.
@@ -176,28 +182,16 @@ void (async () => {
   } catch (e) {
     process.exitCode = 1
 
+    // Stop any active spinner before emitting error output, otherwise
+    // its animation clashes with the error text on the same line.
+    // Spinner-wrapped command paths stop their own on catch, but any
+    // exception that bypasses those handlers reaches us here.
+    getDefaultSpinner()?.stop()
+
     // Track CLI error for telemetry.
     await trackCliError(process.argv, cliStartTime, e, process.exitCode)
     debug('CLI uncaught error')
     debugDir(e)
-
-    let errorBody: string | undefined
-    let errorTitle: string
-    let errorMessage = ''
-    if (e instanceof AuthError) {
-      errorTitle = 'Authentication error'
-      errorMessage = e.message
-    } else if (e instanceof InputError) {
-      errorTitle = 'Invalid input'
-      errorMessage = e.message
-      errorBody = e.body
-    } else if (e instanceof Error) {
-      errorTitle = 'Unexpected error'
-      errorMessage = messageWithCauses(e)
-      errorBody = stackWithCauses(e)
-    } else {
-      errorTitle = 'Unexpected error with no details'
-    }
 
     // Try to parse the flags, find out if --json is set.
     const isJson = (() => {
@@ -206,27 +200,20 @@ void (async () => {
         // Prevent meow from potentially exiting early.
         autoHelp: false,
         autoVersion: false,
-        flags: {},
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        allowUnknownFlags: true,
+        flags: {
+          json: { type: 'boolean' },
+        },
+        importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
       })
-      return !!cli.flags['json']
+      return !!cli.flags.json
     })()
 
     if (isJson) {
-      logger.log(
-        serializeResultJson({
-          ok: false,
-          message: errorTitle,
-          cause: errorMessage,
-        }),
-      )
+      logger.log(serializeResultJson(formatErrorForJson(e)))
     } else {
-      // Add 2 newlines in stderr to bump below any spinner.
-      logger.error('\n')
-      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
-      if (errorBody) {
-        debugDirNs('inspect', { errorBody })
-      }
+      logger.error(formatErrorForTerminal(e))
+      debugDirNs('inspect', { error: e })
     }
 
     await captureException(e)
@@ -236,8 +223,9 @@ void (async () => {
   try {
     logger.error('Fatal error:', err)
   } catch {
-    // Fallback to console if logger fails.
-    console.error('Fatal error:', err)
+    // Last-ditch fallback when logger itself throws — the catch
+    // ensures we still report the original error before exit.
+    logger.fail('Fatal error:', err) // # socket-lint: allow logger
   }
 
   // Track CLI error for fatal exceptions.
@@ -246,7 +234,6 @@ void (async () => {
   // Finalize telemetry before fatal exit.
   await finalizeTelemetry()
 
-  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 })
 
@@ -256,8 +243,8 @@ process.on('uncaughtException', async err => {
     try {
       logger.error('Uncaught exception:', err)
     } catch {
-      // Fallback to console if logger fails.
-      console.error('Uncaught exception:', err)
+      // Last-ditch fallback when logger itself throws.
+      logger.fail('Uncaught exception:', err) // # socket-lint: allow logger
     }
 
     // Track CLI error for uncaught exception.
@@ -270,10 +257,10 @@ process.on('uncaughtException', async err => {
     try {
       logger.error('Error in uncaughtException handler:', e)
     } catch {
-      console.error('Error in uncaughtException handler:', e)
+      // Last-ditch fallback when logger itself throws.
+      logger.fail('Error in uncaughtException handler:', e) // # socket-lint: allow logger
     }
   } finally {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 })
@@ -284,12 +271,12 @@ process.on('unhandledRejection', async (reason, promise) => {
     try {
       logger.error('Unhandled rejection at:', promise, 'reason:', reason)
     } catch {
-      // Fallback to console if logger fails.
-      console.error('Unhandled rejection at:', promise, 'reason:', reason)
+      // Last-ditch fallback when logger itself throws.
+      logger.fail('Unhandled rejection at:', promise, 'reason:', reason) // # socket-lint: allow logger
     }
 
     // Track CLI error for unhandled rejection.
-    const error = reason instanceof Error ? reason : new Error(String(reason))
+    const error = isError(reason) ? reason : new Error(String(reason))
     await trackCliError(process.argv, cliStartTime, error, 1)
 
     // Finalize telemetry before exit.
@@ -299,10 +286,10 @@ process.on('unhandledRejection', async (reason, promise) => {
     try {
       logger.error('Error in unhandledRejection handler:', e)
     } catch {
-      console.error('Error in unhandledRejection handler:', e)
+      // Last-ditch fallback when logger itself throws.
+      logger.fail('Error in unhandledRejection handler:', e) // # socket-lint: allow logger
     }
   } finally {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 })

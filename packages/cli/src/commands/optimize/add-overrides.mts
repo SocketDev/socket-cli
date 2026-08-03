@@ -1,12 +1,14 @@
 import path from 'node:path'
 
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
 import semver from 'semver'
 
-import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
-import { hasOwn, toSortedObject } from '@socketsecurity/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/lib/packages'
-import { pEach } from '@socketsecurity/lib/promises'
-import { getManifestData } from '@socketsecurity/registry'
+import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
+import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
+import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
+import { pEach } from '@socketsecurity/lib-stable/promises/iterate'
+import { getManifestData } from '@socketsecurity/registry-stable'
 
 import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
@@ -19,26 +21,25 @@ import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
-import { globWorkspace } from '../../utils/fs/glob.mts'
-import { safeNpa } from '../../utils/npm/package-arg.mts'
-import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
-import { getMajor } from '../../utils/semver.mts'
+import { globWorkspace } from '../../util/fs/glob.mts'
+import { safeNpa } from '../../util/npm/package-arg.mts'
+import { cmdPrefixMessage } from '../../util/process/cmd.mts'
+import { getMajor } from '../../util/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { AliasResult } from '../../utils/npm/package-arg.mts'
-import type { Logger } from '@socketsecurity/lib/logger'
-import type { PackageJson } from '@socketsecurity/lib/packages'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { AliasResult } from '../../util/npm/package-arg.mts'
+import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-type AddOverridesOptions = {
+export type AddOverridesOptions = {
   logger?: Logger | undefined
   pin?: boolean | undefined
   prod?: boolean | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   state?: AddOverridesState | undefined
 }
-type AddOverridesState = {
+export type AddOverridesState = {
   added: Set<string>
   addedInWorkspaces: Set<string>
   updated: Set<string>
@@ -116,9 +117,16 @@ export async function addOverrides(
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(
     manifestNpmOverrides,
-    async ({ 1: data }: { 1: any }) => {
+    async ({
+      1: data,
+    }: {
+      1: { name: string; package: string; version: string }
+    }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
-      const major = getMajor(version)!
+      const major = getMajor(version)
+      if (major === undefined) {
+        return
+      }
       const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
       for (const { 1: depObj } of depEntries) {
@@ -147,7 +155,8 @@ export async function addOverrides(
                 if (!parsed || parsed.type !== 'alias') {
                   return false
                 }
-                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version
+                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)
+                  ?.version
               })()
             )
           ) {
@@ -169,9 +178,7 @@ export async function addOverrides(
         // The lockSrcIncludes and lsStdoutIncludes functions overlap in their
         // first two parameters. lockSrcIncludes accepts an optional third parameter
         // which lsStdoutIncludes will ignore.
-        const thingScanner = (
-          isLockScanned ? lockSrcIncludes : lsStdoutIncludes
-        ) as typeof lockSrcIncludes
+        const thingScanner = isLockScanned ? lockSrcIncludes : lsStdoutIncludes
 
         const thingToScan = isLockScanned
           ? lockSrc
@@ -216,18 +223,28 @@ export async function addOverrides(
                       // default to the manifest entry version.
                       (() => {
                         const parsed = safeNpa(thisSpec)
+                        /* c8 ignore start - defensive: alias-spec path with semver.coerce returning falsy is unreachable in current optimize tests */
                         if (parsed && parsed.type === 'alias') {
-                          return semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version ?? version
+                          return (
+                            semver.coerce(
+                              (parsed as AliasResult).subSpec.rawSpec,
+                            )?.version ?? version
+                          )
                         }
+                        /* c8 ignore stop */
                         return version
                       })(),
                     ) !== major
                   ) {
                     const manifest = await fetchPackageManifest(thisSpec)
-                    const otherVersion = (manifest as { version?: string })
-                      ?.version
+                    const otherVersion = (
+                      manifest as { version?: string | undefined }
+                    )?.version
                     if (otherVersion && otherVersion !== version) {
-                      newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
+                      const otherMajor = getMajor(otherVersion)
+                      if (otherMajor !== undefined) {
+                        newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${otherMajor}`}`
+                      }
                     }
                   }
                 } else {
@@ -272,15 +289,13 @@ export async function addOverrides(
           'addedInWorkspaces',
           'updated',
           'updatedInWorkspaces',
-        ] satisfies
-          // Here we're just telling TS that we're looping over key names
-          // of the type and that they're all Set<string> props.
-          Array<
-            keyof Pick<
-              AddOverridesState,
-              'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'
-            >
-          >) {
+        ] satisfies Array<
+          // of the type and that they're all Set<string> props. // Here we're just telling TS that we're looping over key names
+          keyof Pick<
+            AddOverridesState,
+            'added' | 'addedInWorkspaces' | 'updated' | 'updatedInWorkspaces'
+          >
+        >) {
           for (const value of otherState[key]) {
             state[key].add(value)
           }
@@ -291,16 +306,14 @@ export async function addOverrides(
   }
 
   if (state.added.size > 0 || state.updated.size > 0) {
-    pkgEnvDetails.editablePkgJson.update(
-      Object.fromEntries(depEntries) as PackageJson,
-    )
+    pkgEnvDetails.editablePkgJson.update(Object.fromEntries(depEntries))
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
-        updateManifest(
-          type,
-          pkgEnvDetails.editablePkgJson,
-          toSortedObject(overrides),
-        )
+        // updateManifest is async because the pnpm 11+ path writes to
+        // pnpm-workspace.yaml; older pnpm and other agents resolve
+        // synchronously inside this call.
+        // each agent's overrides write must complete before the next.
+        await updateManifest(type, pkgEnvDetails, toSortedObject(overrides))
       }
     }
     await pkgEnvDetails.editablePkgJson.save()

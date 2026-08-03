@@ -1,23 +1,18 @@
 /**
  * Unit tests for output-update-repo.
  *
- * Purpose:
- * Tests output formatting for repository update results. Validates change summaries
- * and diff formatting for update operations.
+ * Purpose: Tests output formatting for repository update results. Validates
+ * change summaries and diff formatting for update operations.
  *
- * Test Coverage:
- * - Successful update output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Updated field highlighting
+ * Test Coverage: - Successful update output formatting - Error message
+ * formatting - Multiple output formats, text, json, markdown - Updated field
+ * highlighting.
  *
- * Testing Approach:
- * Uses result helpers to create test data. Validates formatted output strings showing
- * what changed during updates.
+ * Testing Approach: Uses result helpers to create test data. Validates
+ * formatted output strings showing what changed during updates.
  *
- * Related Files:
- * - src/commands/repository/output-update-repo.mts (implementation)
- * - src/commands/repository/handle-update-repo.mts (handler)
+ * Related Files: - src/commands/repository/output-update-repo.mts
+ * (implementation) - src/commands/repository/handle-update-repo.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -25,7 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputUpdateRepo } from '../../../../src/commands/repository/output-update-repo.mts'
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -37,16 +32,16 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
@@ -58,7 +53,7 @@ describe('outputUpdateRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { serializeResultJson } = await vi.importMock(
-      '../../../../src/utils/output/result-json.mjs',
+      '../../../../src/util/output/result-json.mjs',
     )
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -70,7 +65,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(mockSerialize).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -86,7 +81,7 @@ describe('outputUpdateRepo', () => {
         cause: 'Invalid API token',
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(mockLogger.log).toHaveBeenCalled()
     expect(process.exitCode).toBe(2)
@@ -101,7 +96,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'my-repository', 'text')
+    await outputUpdateRepo(result, 'my-repository', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `my-repository` updated successfully',
@@ -111,7 +106,7 @@ describe('outputUpdateRepo', () => {
 
   it('outputs error in text format', async () => {
     const { failMsgWithBadge } = await vi.importMock(
-      '../../../../src/utils/error/fail-msg-with-badge.mts',
+      '../../../../src/util/error/fail-msg-with-badge.mts',
     )
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 
@@ -123,7 +118,7 @@ describe('outputUpdateRepo', () => {
         cause: 'Not found error',
       }
 
-    outputUpdateRepo(result, 'nonexistent-repo', 'text')
+    await outputUpdateRepo(result, 'nonexistent-repo', 'text')
 
     expect(mockFailMsg).toHaveBeenCalledWith(
       'Repository not found',
@@ -142,7 +137,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'markdown-repo', 'markdown')
+    await outputUpdateRepo(result, 'markdown-repo', 'markdown')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `markdown-repo` updated successfully',
@@ -158,7 +153,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
+    await outputUpdateRepo(result, 'repo-with-dashes_and_underscores', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `repo-with-dashes_and_underscores` updated successfully',
@@ -174,7 +169,7 @@ describe('outputUpdateRepo', () => {
         },
       }
 
-    outputUpdateRepo(result, '', 'text')
+    await outputUpdateRepo(result, '', 'text')
 
     expect(mockLogger.success).toHaveBeenCalledWith(
       'Repository `` updated successfully',
@@ -188,7 +183,7 @@ describe('outputUpdateRepo', () => {
         message: 'Error without code',
       }
 
-    outputUpdateRepo(result, 'test-repo', 'json')
+    await outputUpdateRepo(result, 'test-repo', 'json')
 
     expect(process.exitCode).toBe(1)
   })

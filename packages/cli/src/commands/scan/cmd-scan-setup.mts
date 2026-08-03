@@ -1,37 +1,33 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleScanConfig } from './handle-scan-config.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
 import { SOCKET_JSON } from '../../constants/paths.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'setup',
   description:
     'Start interactive configurator to customize default flag values for `socket scan` in this dir',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     defaultOnReadError: {
       type: 'boolean',
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Interactive configurator to create a local json file in the target directory
     that helps to set flag defaults for \`socket scan create\`.
@@ -49,6 +45,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj
   `,
+  hidden: false,
 }
 
 export const cmdScanSetup = {
@@ -57,7 +54,7 @@ export const cmdScanSetup = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -69,14 +66,7 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
+  const dryRun = cli.flags['dryRun']
   const { defaultOnReadError = false } = cli.flags
 
   let [cwd = '.'] = cli.input
@@ -84,5 +74,15 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  await handleScanConfig(cwd, Boolean(defaultOnReadError))
+  if (dryRun) {
+    const socketJsonPath = path.join(cwd, SOCKET_JSON)
+    outputDryRunWrite(socketJsonPath, 'create or update scan configuration', [
+      'Set default repository name',
+      'Set default branch name',
+      'Configure scan options',
+    ])
+    return
+  }
+
+  await handleScanConfig(cwd, defaultOnReadError)
 }

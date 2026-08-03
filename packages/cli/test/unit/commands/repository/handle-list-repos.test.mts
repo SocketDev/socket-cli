@@ -1,24 +1,18 @@
 /**
  * Unit tests for handleListRepos.
  *
- * Purpose:
- * Tests the handler that orchestrates repository listing. Validates pagination handling,
- * filtering, and output formatting for repository lists.
+ * Purpose: Tests the handler that orchestrates repository listing. Validates
+ * pagination handling, filtering, and output formatting for repository lists.
  *
- * Test Coverage:
- * - Successful repository listing flow
- * - Pagination configuration
- * - Fetch failure handling
- * - Output formatting delegation
- * - Filtering and sorting options
+ * Test Coverage: - Successful repository listing flow - Pagination
+ * configuration - Fetch failure handling - Output formatting delegation -
+ * Filtering and sorting options.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic. Tests
- * paginated data handling.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Tests paginated data handling.
  *
- * Related Files:
- * - src/commands/repository/handle-list-repos.mts (implementation)
- * - src/commands/repository/fetch-list-repos.mts (API fetcher)
+ * Related Files: - src/commands/repository/handle-list-repos.mts
+ * (implementation) - src/commands/repository/fetch-list-repos.mts (API fetcher)
  * - src/commands/repository/output-list-repos.mts (formatter)
  */
 
@@ -31,15 +25,24 @@ const mockFetchListAllRepos = vi.hoisted(() => vi.fn())
 const mockFetchListRepos = vi.hoisted(() => vi.fn())
 const mockOutputListRepos = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({
-  fetchListAllRepos: mockFetchListAllRepos,
-}))
-vi.mock('../../../../src/commands/repository/fetch-list-repos.mts', () => ({
-  fetchListRepos: mockFetchListRepos,
-}))
-vi.mock('../../../../src/commands/repository/output-list-repos.mts', () => ({
-  outputListRepos: mockOutputListRepos,
-}))
+vi.mock(
+  import('../../../../src/commands/repository/fetch-list-all-repos.mts'),
+  () => ({
+    fetchListAllRepos: mockFetchListAllRepos,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/repository/fetch-list-repos.mts'),
+  () => ({
+    fetchListRepos: mockFetchListRepos,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/repository/output-list-repos.mts'),
+  () => ({
+    outputListRepos: mockOutputListRepos,
+  }),
+)
 
 describe('handleListRepos', () => {
   beforeEach(() => {
@@ -162,7 +165,7 @@ describe('handleListRepos', () => {
       ok: true,
       data: {
         repos: [{ id: '1', name: 'repo1' }],
-        nextPage: null,
+        nextPage: undefined,
       },
     }
     mockFetchListRepos.mockResolvedValue(mockData)
@@ -181,7 +184,7 @@ describe('handleListRepos', () => {
       mockData,
       'json',
       3,
-      null,
+      undefined,
       'name',
       10,
       'asc',
@@ -219,13 +222,13 @@ describe('handleListRepos', () => {
   it('handles different sort options', async () => {
     const sortOptions = ['name', 'created', 'updated', 'pushed']
 
-    for (const sort of sortOptions) {
+    for (let i = 0, { length } = sortOptions; i < length; i += 1) {
+      const sort = sortOptions[i]
       mockFetchListRepos.mockResolvedValue({
         ok: true,
-        data: { repos: [], nextPage: null },
+        data: { repos: [], nextPage: undefined },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleListRepos({
         all: false,
         direction: 'asc',
@@ -246,7 +249,7 @@ describe('handleListRepos', () => {
   it('handles different page sizes', async () => {
     const mockData = {
       ok: true,
-      data: { repos: [], nextPage: null },
+      data: { repos: [], nextPage: undefined },
     }
     mockFetchListRepos.mockResolvedValue(mockData)
 
@@ -268,7 +271,7 @@ describe('handleListRepos', () => {
       mockData,
       'json',
       1,
-      null,
+      undefined,
       'name',
       100,
       'asc',

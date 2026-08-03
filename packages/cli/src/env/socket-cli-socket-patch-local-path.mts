@@ -1,6 +1,6 @@
 /**
- * Local path override for socket-patch binary.
- * Useful for local development and testing with custom socket-patch builds.
+ * Local path override for socket-patch binary. Useful for local development and
+ * testing with custom socket-patch builds.
  */
 
 import { env } from 'node:process'

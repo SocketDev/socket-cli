@@ -1,24 +1,19 @@
 /**
  * Integration tests for `socket config auto` command.
  *
- * Tests the auto-discovery and automatic configuration of CLI settings.
- * This command attempts to intelligently determine and set config values
- * based on the user's environment and API token.
+ * Tests the auto-discovery and automatic configuration of CLI settings. This
+ * command attempts to intelligently determine and set config values based on
+ * the user's environment and API token.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Key argument requirement
- * - Available config keys listing
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Key argument requirement - Available config keys listing.
  *
- * Auto-Discoverable Keys:
- * - defaultOrg: Automatically detects the organization from API token
- * - Other keys may be added in future releases
+ * Auto-Discoverable Keys: - defaultOrg: Automatically detects the organization
+ * from API token - Other keys may be added in future releases.
  *
- * Related Files:
- * - src/commands/config/cmd-config-auto.mts - Command definition
- * - src/commands/config/handle-config-auto.mts - Auto-discovery logic
- * - src/utils/config.mts - Config management utilities
+ * Related Files: - src/commands/config/cmd-config-auto.mts - Command definition
+ * - src/commands/config/handle-config-auto.mts - Auto-discovery logic -
+ * src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'
@@ -49,6 +44,7 @@ describe('socket config auto', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Attempt to automatically discover the correct value for a given config KEY.
           
@@ -93,14 +89,24 @@ describe('socket config auto', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config auto\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config auto\`, cwd: <redacted>
+
+
+        [DryRun]: Would auto-discover and set config value for "defaultOrg"
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Discover the correct value for config key: defaultOrg
+            - Update config file with discovered value
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

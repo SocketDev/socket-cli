@@ -1,12 +1,13 @@
 /**
- * Unit Tests: Conda Environment to Requirements.txt Converter
+ * Unit Tests: Conda Environment to Requirements.txt Converter.
  *
- * Purpose:
- * Tests the YAML parser that extracts pip dependencies from Conda environment.yml files and
- * converts them to requirements.txt format. Validates handling of various YAML indentation
- * styles, comments, and edge cases in Conda environment specifications.
+ * Purpose: Tests the YAML parser that extracts pip dependencies from Conda
+ * environment.yml files and converts them to requirements.txt format. Validates
+ * handling of various YAML indentation styles, comments, and edge cases in
+ * Conda environment specifications.
  *
  * Test Coverage:
+ *
  * - Simple Conda environment conversion with pip dependencies
  * - Arbitrary indentation block support
  * - Single space indentation handling
@@ -16,13 +17,16 @@
  * - Git dependencies and requirements.txt references
  * - Version specifier preservation (==, >=, ~=, <)
  *
- * Testing Approach:
- * Uses direct function invocation with inline snapshot testing to validate YAML parsing logic.
- * Tests verify correct extraction of pip dependencies while ignoring Conda-specific packages.
+ * Testing Approach: Uses direct function invocation with inline snapshot
+ * testing to validate YAML parsing logic. Tests verify correct extraction of
+ * pip dependencies while ignoring Conda-specific packages.
  *
  * Related Files:
- * - src/commands/manifest/convert-conda-to-requirements.mts - Conda to requirements converter
- * - src/commands/manifest/handle-manifest-conda.mts - Command handler using converter
+ *
+ * - Src/commands/manifest/convert-conda-to-requirements.mts - Conda to
+ *   requirements converter
+ * - Src/commands/manifest/handle-manifest-conda.mts - Command handler using
+ *   converter
  */
 
 import { describe, expect, it } from 'vitest'
@@ -111,6 +115,25 @@ dependencies:
       "pandas
       numpy==1.21.0
       requests>=2.26.0"
+    `)
+  })
+
+  it('skips # comment lines inside the pip block (line 129-131)', () => {
+    // A flush-left `#` comment line inside the pip block must be ignored
+    // by the `if (line.startsWith('#')) { continue }` branch.
+    const output = convertCondaToRequirementsFromInput(`
+name: myenv
+dependencies:
+  - python=3.8
+  - pip:
+            - pandas
+# flush-left comment
+            - numpy==1.21.0
+`)
+
+    expect(output).toMatchInlineSnapshot(`
+      "pandas
+      numpy==1.21.0"
     `)
   })
 
@@ -250,5 +273,29 @@ dependencies:                   # List of packages to install
       -r requirements.txt       # Can include requirements.txt file
       git+https://github.com/user/repo.git    # Install from git"
     `)
+  })
+
+  it('bails when an in-block line does not start with the recorded indent', () => {
+    // First "- foo" sets indent to "    -"; the "weird" line has no
+    // leading whitespace, so the indent prefix check at L154 fails and
+    // the function bails. Exercises the "Unexpected input" break.
+    const result = convertCondaToRequirementsFromInput(`
+- pip:
+    - foo
+weird
+    - bar
+`)
+    expect(result).toBe('foo')
+  })
+
+  it('bails when first line in pip block does not indent further than the delim', () => {
+    // delim becomes "-" (the "- pip:" line); the next line is "- foo"
+    // with the same single-char prefix, so indent.length (1) <=
+    // delim.length (1) and the function exits with no captured packages.
+    const result = convertCondaToRequirementsFromInput(`
+- pip:
+- foo
+`)
+    expect(result).toBe('')
   })
 })

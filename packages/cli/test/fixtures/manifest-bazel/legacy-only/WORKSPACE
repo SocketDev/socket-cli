@@ -1,0 +1,22 @@
+workspace(name = "legacy_only_fixture")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "rules_jvm_external",
+    sha256 = "0000000000000000000000000000000000000000000000000000000000000000",
+    strip_prefix = "rules_jvm_external-6.0",
+    url = "https://example.invalid/rules_jvm_external-6.0.tar.gz",
+)
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    name = "maven",
+    artifacts = [
+        "com.google.guava:guava:33.0.0-jre",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)

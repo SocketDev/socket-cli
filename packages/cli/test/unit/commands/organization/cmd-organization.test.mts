@@ -1,0 +1,320 @@
+/**
+ * Unit tests for organization parent command.
+ *
+ * Tests the parent command that routes to organization management subcommands.
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdOrganization } from '../../../../src/commands/organization/cmd-organization.mts'
+import { cmdOrganizationDependencies } from '../../../../src/commands/organization/cmd-organization-dependencies.mts'
+import { cmdOrganizationList } from '../../../../src/commands/organization/cmd-organization-list.mts'
+import { cmdOrganizationPolicy } from '../../../../src/commands/organization/cmd-organization-policy.mts'
+import { cmdOrganizationPolicyLicense } from '../../../../src/commands/organization/cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicySecurity } from '../../../../src/commands/organization/cmd-organization-policy-security.mts'
+import { cmdOrganizationQuota } from '../../../../src/commands/organization/cmd-organization-quota.mts'
+
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
+
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
+  getDefaultLogger: () => mockLogger,
+}))
+
+const mockMeowWithSubcommands = vi.hoisted(() => vi.fn())
+
+vi.mock(import('../../../../src/util/cli/with-subcommands.mts'), () => ({
+  meowWithSubcommands: mockMeowWithSubcommands,
+}))
+
+describe('cmd-organization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('command metadata', () => {
+    it('should have correct description', () => {
+      expect(cmdOrganization.description).toBe(
+        'Manage Socket organization account details',
+      )
+    })
+
+    it('should not be hidden', () => {
+      expect(cmdOrganization.hidden).toBe(false)
+    })
+
+    it('should have a run method', () => {
+      expect(typeof cmdOrganization.run).toBe('function')
+    })
+  })
+
+  describe('subcommand routing', () => {
+    const importMeta = { url: 'file:///test/cmd-organization.mts' }
+    const context = { parentName: 'socket' }
+
+    it('should call meowWithSubcommands with correct configuration', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(['list'], importMeta, context)
+
+      expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
+      const [config, callOptions] = mockMeowWithSubcommands.mock.calls[0]
+      expect(config).toMatchObject({
+        argv: ['list'],
+        name: 'socket organization',
+      })
+      expect(config.importMeta === importMeta).toBe(true)
+      // Subcommand identity (each entry IS the imported src module instance)
+      // is asserted in the "subcommand validation" block below.
+      expect(Object.keys(config.subcommands).toSorted()).toEqual([
+        'dependencies',
+        'list',
+        'policy',
+        'quota',
+      ])
+      expect(callOptions.description).toBe(
+        'Manage Socket organization account details',
+      )
+      expect(callOptions.aliases.deps).toMatchObject({
+        argv: ['dependencies'],
+        hidden: true,
+      })
+      expect(callOptions.aliases.license).toMatchObject({
+        argv: ['policy', 'license'],
+        hidden: true,
+      })
+      expect(callOptions.aliases.security).toMatchObject({
+        argv: ['policy', 'security'],
+        hidden: true,
+      })
+      // Identity checks inside the bare expect(actual) call: each alias must
+      // reuse its src subcommand's own description string.
+      expect(
+        callOptions.aliases.deps.description ===
+          cmdOrganizationDependencies.description,
+      ).toBe(true)
+      expect(
+        callOptions.aliases.license.description ===
+          cmdOrganizationPolicyLicense.description,
+      ).toBe(true)
+      expect(
+        callOptions.aliases.security.description ===
+          cmdOrganizationPolicySecurity.description,
+      ).toBe(true)
+    })
+
+    it('should construct correct command name from parent', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(['quota'], importMeta, {
+        parentName: 'custom-parent',
+      })
+
+      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'custom-parent organization',
+        }),
+        expect.anything(),
+      )
+    })
+
+    it('should include all subcommands', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run([], importMeta, context)
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const subcommands = call[0].subcommands
+
+      expect(Object.keys(subcommands)).toEqual([
+        'dependencies',
+        'list',
+        'quota',
+        'policy',
+      ])
+    })
+
+    it('should pass through argv unchanged', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+      const argv = ['dependencies', '--json']
+
+      await cmdOrganization.run(argv, importMeta, context)
+
+      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
+        expect.objectContaining({
+          argv,
+        }),
+        expect.anything(),
+      )
+    })
+
+    it('should handle readonly argv', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+      const argv = Object.freeze(['list'])
+
+      await cmdOrganization.run(argv, importMeta, context)
+
+      expect(mockMeowWithSubcommands).toHaveBeenCalledWith(
+        expect.objectContaining({
+          argv,
+        }),
+        expect.anything(),
+      )
+    })
+  })
+
+  describe('subcommand validation', () => {
+    it('should reference correct subcommand objects', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const subcommands = call[0].subcommands
+
+      // Reference-identity checks (=== inside the expect(actual) call): the
+      // routed subcommand must BE the imported src module instance, so the
+      // -stable alias, a different module instance, can't stand in here.
+      expect(subcommands.dependencies === cmdOrganizationDependencies).toBe(
+        true,
+      )
+      expect(subcommands.list === cmdOrganizationList).toBe(true)
+      expect(subcommands.policy === cmdOrganizationPolicy).toBe(true)
+      expect(subcommands.quota === cmdOrganizationQuota).toBe(true)
+    })
+  })
+
+  describe('aliases configuration', () => {
+    it('should configure deps alias for dependencies', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const aliases = call[1].aliases
+
+      expect(aliases.deps).toMatchObject({
+        argv: ['dependencies'],
+        hidden: true,
+      })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.deps.description === cmdOrganizationDependencies.description,
+      ).toBe(true)
+    })
+
+    it('should configure license alias for policy license', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const aliases = call[1].aliases
+
+      expect(aliases.license).toMatchObject({
+        argv: ['policy', 'license'],
+        hidden: true,
+      })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.license.description ===
+          cmdOrganizationPolicyLicense.description,
+      ).toBe(true)
+    })
+
+    it('should configure security alias for policy security', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const aliases = call[1].aliases
+
+      expect(aliases.security).toMatchObject({
+        argv: ['policy', 'security'],
+        hidden: true,
+      })
+      // Identity check inside the bare expect(actual) call: the alias must
+      // reuse the src subcommand's own description string.
+      expect(
+        aliases.security.description ===
+          cmdOrganizationPolicySecurity.description,
+      ).toBe(true)
+    })
+
+    it('should mark all aliases as hidden', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const aliases = call[1].aliases
+
+      expect(aliases.deps.hidden).toBe(true)
+      expect(aliases.license.hidden).toBe(true)
+      expect(aliases.security.hidden).toBe(true)
+    })
+  })
+
+  describe('error handling', () => {
+    it('should propagate errors from meowWithSubcommands', async () => {
+      const testError = new Error('Subcommand error')
+      mockMeowWithSubcommands.mockRejectedValue(testError)
+
+      await expect(
+        cmdOrganization.run(
+          [],
+          { url: 'file:///test' },
+          { parentName: 'socket' },
+        ),
+      ).rejects.toThrow('Subcommand error')
+    })
+  })
+
+  describe('options configuration', () => {
+    it('should pass description in options', async () => {
+      mockMeowWithSubcommands.mockResolvedValue(undefined)
+
+      await cmdOrganization.run(
+        [],
+        { url: 'file:///test' },
+        { parentName: 'socket' },
+      )
+
+      const call = mockMeowWithSubcommands.mock.calls[0]
+      const options = call[1]
+
+      expect(options.description).toBe(
+        'Manage Socket organization account details',
+      )
+    })
+  })
+})

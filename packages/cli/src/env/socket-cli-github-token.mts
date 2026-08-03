@@ -1,12 +1,12 @@
 /**
- * SOCKET_CLI_GITHUB_TOKEN environment variable snapshot.
- * Overrides GitHub token for Socket CLI operations.
- * Falls back to GITHUB_TOKEN, then GH_TOKEN if not set.
+ * SOCKET_CLI_GITHUB_TOKEN environment variable snapshot. Overrides GitHub token
+ * for Socket CLI operations. Falls back to GITHUB_TOKEN, then GH_TOKEN if not
+ * set.
  */
 
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 
-function getGithubToken(): string {
+export function getGithubToken(): string {
   // Try Socket-specific env var first.
   const socketCliToken = getSocketCliGithubToken()
   if (socketCliToken) {

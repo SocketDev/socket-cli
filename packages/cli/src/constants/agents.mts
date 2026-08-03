@@ -1,12 +1,12 @@
 /**
- * Agent-specific constants and utilities.
- * Functions for package manager version requirements and execution paths.
+ * Agent-specific constants and utilities. Functions for package manager version
+ * requirements and execution paths.
  */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { whichReal } from '@socketsecurity/lib/bin'
+import { whichReal } from '@socketsecurity/lib-stable/bin/which'
 import {
   BUN,
   NPM,
@@ -16,19 +16,19 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
-import type { Agent } from '../utils/ecosystem/environment.mjs'
+import type { Agent } from '../util/ecosystem/environment.mjs'
 
 // Re-export agent constants for backward compatibility.
 export { BUN, NPM, NPX, PNPM, VLT, YARN, YARN_BERRY, YARN_CLASSIC }
 
 /**
- * Minimum supported versions for each package manager agent.
- * These are the minimum versions required by Socket CLI.
+ * Minimum supported versions for each package manager agent. These are the
+ * minimum versions required by Socket CLI.
  */
 const MINIMUM_VERSIONS_BY_AGENT = {
-  __proto__: null as any,
+  __proto__: undefined as unknown as null,
   // Bun >=1.1.39 supports the text-based lockfile.
   [BUN]: '1.1.39',
   // The npm version bundled with Node 18.
@@ -46,7 +46,8 @@ const MINIMUM_VERSIONS_BY_AGENT = {
 /**
  * Get the minimum supported version for a package manager agent.
  *
- * @param agent - The package manager agent name
+ * @param agent - The package manager agent name.
+ *
  * @returns The minimum version string (e.g., "10.8.2") or "*" for any version
  */
 export function getMinimumVersionByAgent(agent: Agent): string {
@@ -54,8 +55,8 @@ export function getMinimumVersionByAgent(agent: Agent): string {
 }
 
 /**
- * Get the execution path for npm.
- * Checks in order: node directory, PATH via which.
+ * Get the execution path for npm. Checks in order: node directory, PATH via
+ * which.
  *
  * @returns The npm executable path
  */
@@ -75,8 +76,7 @@ export async function getNpmExecPath(): Promise<string> {
 }
 
 /**
- * Get the execution path for pnpm.
- * Uses whichReal to locate pnpm in PATH.
+ * Get the execution path for pnpm. Uses whichReal to locate pnpm in PATH.
  *
  * @returns The pnpm executable path
  */

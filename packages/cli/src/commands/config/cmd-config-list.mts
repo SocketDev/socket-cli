@@ -1,29 +1,20 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { outputConfigList } from './output-config-list.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger()
-
-const config: CliCommandConfig = {
+const config = {
   commandName: 'list',
   description: 'Show all local CLI config items and their values',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
     full: {
@@ -31,17 +22,18 @@ const config: CliCommandConfig = {
       default: false,
       description: 'Show full tokens in plaintext (unsafe)',
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
   `,
+  hidden: false,
 }
 
 export const cmdConfigList = {
@@ -50,7 +42,7 @@ export const cmdConfigList = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -64,7 +56,7 @@ async function run(
 
   const { full, json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const outputKind = getOutputKind(json, markdown)
 
@@ -79,12 +71,14 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('configuration settings', {
+      showFullTokens: full ? 'yes' : 'no (masked)',
+    })
     return
   }
 
   await outputConfigList({
-    full: !!full,
+    full: full,
     outputKind,
   })
 }

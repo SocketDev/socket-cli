@@ -1,0 +1,325 @@
+#!/usr/bin/env node
+/**
+ * Sync checksums from GitHub releases to bundle-tools.json.
+ *
+ * For each GitHub-released tool, this script:
+ *
+ * 1. Fetches checksums.txt from the release, if available
+ * 2. Or downloads each asset and computes SHA-256 checksums
+ * 3. Updates bundle-tools.json with the new checksums
+ *
+ * Usage: node scripts/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]
+ *
+ * Options: --tool=<name> Only sync specific tool --force Force update even if
+ * checksums haven't changed --dry-run Show what would be updated without
+ * writing.
+ */
+
+import crypto from 'node:crypto'
+import {
+  createReadStream,
+  existsSync,
+  promises as fs,
+  readFileSync,
+} from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { pipeline } from 'node:stream/promises'
+
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const packageRoot = path.join(__dirname, '..')
+
+const logger = getDefaultLogger()
+
+const EXTERNAL_TOOLS_FILE = path.join(packageRoot, 'bundle-tools.json')
+
+/**
+ * Compute SHA-256 hash of a file.
+ */
+export async function computeFileHash(filePath) {
+  const hash = crypto.createHash('sha256')
+  const stream = createReadStream(filePath)
+  for await (const chunk of stream) {
+    hash.update(chunk)
+  }
+  return hash.digest('hex')
+}
+
+/**
+ * Download a file from a URL.
+ */
+export async function downloadFile(url, destPath) {
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- streams response.body into a write stream via pipeline(); httpJson/httpText/httpRequest decode to string/JSON and don't expose the raw response body stream.
+  const response = await fetch(url, {
+    headers: {
+      Accept: 'application/octet-stream',
+      'User-Agent': 'socket-cli-sync-checksums',
+    },
+    redirect: 'follow',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+
+  const fileStream = await fs.open(destPath, 'w')
+  try {
+    const writer = fileStream.createWriteStream()
+    await pipeline(response.body, writer)
+  } finally {
+    await fileStream.close()
+  }
+}
+
+/**
+ * Fetch checksums for a GitHub release. First tries checksums.txt, then falls
+ * back to downloading assets.
+ */
+async function fetchGitHubReleaseChecksums(
+  repo,
+  releaseTag,
+  existingChecksums = {},
+) {
+  const [owner, repoName] = repo.split('/')
+  const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${releaseTag}`
+
+  logger.log(`  Fetching release info from ${apiUrl}...`)
+
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dev script needs response.ok + response.status + response.statusText for diagnostic error; helpers throw HttpError without exposing those fields ergonomically.
+  const response = await fetch(apiUrl, {
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+      'User-Agent': 'socket-cli-sync-checksums',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      `GitHub API error: ${response.status} ${response.statusText}`,
+    )
+  }
+
+  const release = await response.json()
+  const assets = release.assets || []
+
+  // Try to find checksums.txt in assets.
+  const checksumsAsset = assets.find(a => a.name === 'checksums.txt')
+  if (checksumsAsset) {
+    logger.log(`  Found checksums.txt, downloading…`)
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'socket-checksums-'),
+    )
+    const checksumPath = path.join(tempDir, 'checksums.txt')
+
+    try {
+      await downloadFile(checksumsAsset.browser_download_url, checksumPath)
+      const content = await fs.readFile(checksumPath, 'utf8')
+      const checksums = parseChecksums(content)
+
+      // Clean up.
+      await safeDelete(tempDir)
+
+      logger.log(
+        `  Parsed ${Object.keys(checksums).length} checksums from checksums.txt`,
+      )
+      return checksums
+    } catch (e) {
+      logger.log(`  Failed to download checksums.txt: ${e.message}`)
+      await safeDelete(tempDir).catch(() => {})
+      // Fall through to download assets.
+    }
+  }
+
+  // No checksums.txt - need to download assets and compute checksums.
+  // Only download assets that are in existingChecksums, to avoid downloading unnecessary files.
+  const assetNames = Object.keys(existingChecksums)
+  if (assetNames.length === 0) {
+    logger.log(`  No existing checksums to update and no checksums.txt found`)
+    return {}
+  }
+
+  logger.log(
+    `  No checksums.txt found, downloading ${assetNames.length} assets to compute checksums…`,
+  )
+
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'socket-checksums-'))
+  const checksums = {}
+
+  try {
+    for (let i = 0, { length } = assetNames; i < length; i += 1) {
+      const assetName = assetNames[i]
+      const asset = assets.find(a => a.name === assetName)
+      if (!asset) {
+        logger.log(`    Warning: Asset ${assetName} not found in release`)
+        continue
+      }
+
+      const assetPath = path.join(tempDir, assetName)
+      logger.log(`    Downloading ${assetName}...`)
+      await downloadFile(asset.browser_download_url, assetPath)
+
+      const hash = await computeFileHash(assetPath)
+      checksums[assetName] = hash
+      logger.log(`    ${assetName}: ${hash.slice(0, 16)}...`)
+
+      // Clean up as we go to save disk space.
+      await safeDelete(assetPath)
+    }
+  } finally {
+    await safeDelete(tempDir).catch(() => {})
+  }
+
+  return checksums
+}
+
+/**
+ * Parse checksums.txt content into a map.
+ */
+export function parseChecksums(content) {
+  const checksums = {}
+  const lines = content.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const trimmed = line.trim()
+    if (!trimmed) {
+      continue
+    }
+    // Format: hash  filename, two spaces or whitespace between
+    const match = trimmed.match(/^([a-f0-9]{64})\s+(.+)$/)
+    if (match) {
+      checksums[match[2]] = match[1]
+    }
+  }
+  return checksums
+}
+
+/**
+ * Main sync function.
+ */
+async function main() {
+  const args = process.argv.slice(2)
+  const force = args.includes('--force')
+  const dryRun = args.includes('--dry-run')
+  const toolArg = args.find(arg => arg.startsWith('--tool='))
+  const toolFilter = toolArg ? toolArg.split('=')[1] : undefined
+
+  // Load current bundle-tools.json.
+  if (!existsSync(EXTERNAL_TOOLS_FILE)) {
+    logger.fail(`Error: ${EXTERNAL_TOOLS_FILE} not found`)
+    process.exitCode = 1
+    return
+  }
+
+  // Entries live under `tools`; keep the outer config for the round-trip write.
+  const config = JSON.parse(readFileSync(EXTERNAL_TOOLS_FILE, 'utf8'))
+  const externalTools = config.tools
+
+  // Find all GitHub-released tools.
+  const githubTools = Object.entries(externalTools)
+    .filter(([, value]) => value.release === 'asset')
+    .map(([key, value]) => ({ key, ...value }))
+
+  if (toolFilter) {
+    const filtered = githubTools.filter(t => t.key === toolFilter)
+    if (filtered.length === 0) {
+      logger.fail(
+        `Error: Tool '${toolFilter}' not found or is not a GitHub release tool`,
+      )
+      logger.log(
+        `Available GitHub release tools: ${githubTools.map(t => t.key).join(', ')}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    githubTools.length = 0
+    githubTools.push(...filtered)
+  }
+
+  logger.log(
+    `Syncing checksums for ${githubTools.length} GitHub release tool(s)...`,
+  )
+  logger.log('')
+
+  let updated = 0
+  let unchanged = 0
+  let failed = 0
+
+  for (let i = 0, { length } = githubTools; i < length; i += 1) {
+    const tool = githubTools[i]
+    const repoPath = tool.repository.replace(/^[^:]+:/, '')
+    const releaseTag = tool.tag ?? tool.version
+    logger.log(`[${tool.key}] ${repoPath} @ ${releaseTag}`)
+
+    try {
+      const newChecksums = await fetchGitHubReleaseChecksums(
+        repoPath,
+        releaseTag,
+        tool.checksums || {},
+      )
+
+      if (Object.keys(newChecksums).length === 0) {
+        logger.log(`  Skipped: No checksums found`)
+        logger.log('')
+        unchanged++
+        continue
+      }
+
+      // Check if update is needed.
+      const oldChecksums = tool.checksums || {}
+      const checksumChanged =
+        JSON.stringify(newChecksums) !== JSON.stringify(oldChecksums)
+
+      if (!force && !checksumChanged) {
+        logger.log(`  Unchanged: ${Object.keys(newChecksums).length} checksums`)
+        logger.log('')
+        unchanged++
+        continue
+      }
+
+      // Update the data.
+      externalTools[tool.key].checksums = newChecksums
+
+      const oldCount = Object.keys(oldChecksums).length
+      const newCount = Object.keys(newChecksums).length
+      logger.log(`  Updated: ${oldCount} -> ${newCount} checksums`)
+      logger.log('')
+      updated++
+    } catch (e) {
+      logger.log(`  Error: ${e.message}`)
+      logger.log('')
+      failed++
+    }
+  }
+
+  // Write updated file.
+  if (updated > 0 && !dryRun) {
+    await fs.writeFile(
+      EXTERNAL_TOOLS_FILE,
+      JSON.stringify(config, null, 2) + '\n',
+      'utf8',
+    )
+    logger.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
+  } else if (dryRun && updated > 0) {
+    logger.log('Dry run - no changes written')
+  }
+
+  // Summary.
+  logger.log('')
+  logger.log(
+    `Summary: ${updated} updated, ${unchanged} unchanged, ${failed} failed`,
+  )
+
+  if (failed > 0) {
+    process.exitCode = 1
+  }
+}
+
+main().catch(error => {
+  logger.fail(`Sync failed: ${error.message}`)
+  process.exitCode = 1
+})

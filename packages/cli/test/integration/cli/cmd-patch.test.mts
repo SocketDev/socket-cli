@@ -1,25 +1,22 @@
 /**
  * Integration tests for `socket patch` root command.
  *
- * Tests the patch management root command which forwards to socket-patch v2.0.0+
- * (a standalone Rust binary from GitHub releases).
+ * Tests the patch management root command which forwards to socket-patch
+ * v2.0.0+ (a standalone Rust binary from GitHub releases).
  *
- * Test Coverage:
- * - Help text display and subcommand listing
- * - Subcommand routing to socket-patch binary
+ * Test Coverage: - Help text display and subcommand listing - Subcommand
+ * routing to socket-patch binary.
  *
- * Available socket-patch v2.0.0 Commands:
- * - apply: Apply security patches from local manifest
- * - get (alias: download): Get security patches from Socket API
- * - list: List all patches in local manifest
- * - remove: Remove a patch from manifest (replaces old 'rm')
- * - repair (alias: gc): Download missing blobs and clean up
- * - rollback: Rollback patches to restore original files
- * - scan: Scan installed packages for available patches
- * - setup: Configure package.json postinstall scripts
+ * Available socket-patch v2.0.0 Commands: - apply: Apply security patches from
+ * local manifest - get (alias: download): Get security patches from Socket API
+ * - list: List all patches in local manifest - remove: Remove a patch from
+ * manifest (replaces old 'rm') - repair (alias: gc): Download missing blobs and
+ * clean up - rollback: Rollback patches to restore original files - scan: Scan
+ * installed packages for available patches - setup: Configure package.json
+ * postinstall scripts.
  *
- * Related Files:
- * - src/commands/patch/cmd-patch.mts - Root command that forwards to socket-patch
+ * Related Files: - src/commands/patch/cmd-patch.mts - Root command that
+ * forwards to socket-patch.
  */
 
 import path from 'node:path'
@@ -54,9 +51,10 @@ describe('socket patch', async () => {
       'should show help when no arguments provided',
       async cmd => {
         const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // Without subcommand, shows Socket CLI help.
+        // Without subcommand, shows Socket CLI help and exits 2 (missing
+        // input), matching the with-subcommands convention.
         expect(stdout).toContain('Manage CVE patches for dependencies')
-        expect(code).toBe(0)
+        expect(code, 'missing subcommand should exit with code 2').toBe(2)
       },
     )
   })
@@ -87,8 +85,8 @@ describe('socket patch', async () => {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        // socket-patch v2.0.0 lists patches from manifest. May show patches or "no patches".
-        expect(output).toMatch(/patches|manifest|No .socket directory/i)
+        // socket-patch v2.0.0 lists patches from the fixture manifest.
+        expect(output).toMatch(/Found \d+ patch|No patches found|manifest/i)
         // Exit code depends on whether manifest exists.
         expect(typeof code).toBe('number')
       },
@@ -102,8 +100,11 @@ describe('socket patch', async () => {
           cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
-        // socket-patch v2.0.0 applies patches. Without manifest, shows error.
-        expect(output).toMatch(/Applied|No patches|manifest|nothing to apply/i)
+        // socket-patch v2.0.0 applies patches. Without installed packages it
+        // reports that nothing matches the available patches.
+        expect(output).toMatch(
+          /Applied|No patches|No packages found|manifest|nothing to apply/i,
+        )
         // Exit code depends on state.
         expect(typeof code).toBe('number')
       },

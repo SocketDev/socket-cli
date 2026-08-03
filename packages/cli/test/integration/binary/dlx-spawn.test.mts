@@ -1,11 +1,11 @@
-import { execSync } from 'node:child_process'
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import ENV from '../../../src/constants/env.mts'
-import { spawnDlx } from '../../../src/utils/dlx/spawn.mts'
-import { findUp } from '../../../src/utils/fs/find-up.mts'
-import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
+import { ENV } from '../../../src/constants/env.mts'
+import { spawnDlx } from '../../../src/util/dlx/spawn.mts'
+import { findUp } from '../../../src/util/fs/find-up.mts'
+import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 
 describe('dlx e2e tests', () => {
   let hasAuth = false
@@ -13,31 +13,29 @@ describe('dlx e2e tests', () => {
   beforeAll(async () => {
     // Check if running e2e tests and if Socket API token is available.
     if (ENV.RUN_INTEGRATION_TESTS) {
-      const apiToken = await getDefaultApiToken()
+      const apiToken = getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
-        console.log()
-        console.warn('E2E tests require Socket authentication.')
-        console.log('Please run one of the following:')
-        console.log('  1. socket login (to authenticate with Socket)')
-        console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-        console.log(
-          '  3. Skip e2e tests by not setting RUN_INTEGRATION_TESTS\n',
-        )
-        console.log(
-          'E2E tests will be skipped due to missing authentication.\n',
-        )
+        logger.log()
+        logger.warn('E2E tests require Socket authentication.')
+        logger.log('Please run one of the following:')
+        logger.log('  1. socket login (to authenticate with Socket)')
+        logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+        logger.log('  3. Skip e2e tests by not setting RUN_INTEGRATION_TESTS')
+        logger.log('')
+        logger.log('E2E tests will be skipped due to missing authentication.')
+        logger.log('')
       }
     }
   })
-  describe('pnpm dlx regression test', () => {
+  describe('pnpm exec regression test', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'successfully runs pnpm dlx with cowsay (verifies no unsupported flags)',
+      'successfully runs pnpm exec with cowsay (verifies no unsupported flags)',
       async () => {
         // Check if we're in a pnpm project.
         const pnpmLock = await findUp('pnpm-lock.yaml')
         if (!pnpmLock) {
-          console.log('Skipping test - not in a pnpm project')
+          logger.log('Skipping test - not in a pnpm project')
           return
         }
 
@@ -64,16 +62,16 @@ describe('dlx e2e tests', () => {
           expect(spawnResult.stdout).toMatch(/\^__\^/)
         }
       },
-      30000, // 30 second timeout for download.
+      30_000, // 30 second timeout for download.
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'verifies pnpm dlx command construction uses only supported flags',
+      'verifies pnpm exec command construction uses only supported flags',
       async () => {
         // This test verifies by checking what command would be run.
         const pnpmLock = await findUp('pnpm-lock.yaml')
         if (!pnpmLock) {
-          console.log('Skipping test - not in a pnpm project')
+          logger.log('Skipping test - not in a pnpm project')
           return
         }
 
@@ -83,41 +81,48 @@ describe('dlx e2e tests', () => {
 
         // Try to run a simple pnpm dlx command directly to ensure it works.
         try {
-          const output = execSync('pnpm dlx cowsay@1.6.0 "Direct test"', {
-            encoding: 'utf8',
+          const r = spawnSync('pnpm', ['exec', 'cowsay@1.6.0', 'Direct test'], {
             stdio: 'pipe',
+            stdioString: true,
           })
-          expect(output).toContain('Direct test')
+          if (r.status !== 0) {
+            throw new Error(r.stderr ?? r.stdout ?? '')
+          }
+          expect(r.stdout).toContain('Direct test')
 
           // Verify that adding unsupported flags would fail.
           // For example, --ignore-scripts is only for pnpm install, not dlx.
           expect(() => {
-            execSync('pnpm dlx --ignore-scripts cowsay@1.6.0 "Should fail"', {
-              encoding: 'utf8',
-              stdio: 'pipe',
-            })
+            const r2 = spawnSync(
+              'pnpm',
+              ['exec', '--ignore-scripts', 'cowsay@1.6.0', 'Should fail'],
+              { stdio: 'pipe', stdioString: true },
+            )
+            if (r2.status !== 0) {
+              throw new Error(r2.stderr ?? r2.stdout ?? '')
+            }
           }).toThrow()
         } catch (e) {
           // If pnpm is not available globally, skip this part.
-          console.log('Could not run direct pnpm test:', e.message)
+          logger.log('Could not run direct pnpm test:', e.message)
         }
       },
-      15000,
+      15_000,
     )
   })
 
-  describe('npm npx regression test', () => {
+  describe('npm pnpm exec regression test', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
-      'successfully runs npm/npx with cowsay',
+      'successfully runs npm/pnpm exec with cowsay',
       async () => {
         // Force npm by not finding any pnpm/yarn lockfiles.
-        const _npmLock = await findUp('package-lock.json')
+        const npmLock = await findUp('package-lock.json')
         const pnpmLock = await findUp('pnpm-lock.yaml')
         const yarnLock = await findUp('yarn.lock')
 
         // Skip if we're in a pnpm/yarn project to ensure npm is used.
         if (pnpmLock || yarnLock) {
-          console.log('Skipping npm test - in pnpm/yarn project')
+          logger.log('Skipping npm test - in pnpm/yarn project')
           return
         }
 
@@ -136,7 +141,7 @@ describe('dlx e2e tests', () => {
           expect(result.data).toContain('Moo from npm!')
         }
       },
-      30000,
+      30_000,
     )
   })
 
@@ -144,7 +149,8 @@ describe('dlx e2e tests', () => {
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
       'executes @coana-tech/cli via dlx with correct binary name',
       async () => {
-        const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
+        const { spawnCoanaDlx } =
+          await import('../../../src/util/dlx/spawn.mts')
         const result = await spawnCoanaDlx(['--help'])
 
         // Coana should succeed - if it fails, it indicates a real issue.
@@ -159,16 +165,16 @@ describe('dlx e2e tests', () => {
           throw new Error(`Coana execution failed: ${result.message}`)
         }
       },
-      30000,
+      30_000,
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
       'verifies coana binary is correctly resolved from package name',
       async () => {
-        const { spawnCoanaDlx } = await import('../../src/utils/dlx/spawn.mts')
-        const { resolveCoana } = await import(
-          '../../src/utils/dlx/resolve-binary.mts'
-        )
+        const { spawnCoanaDlx } =
+          await import('../../../src/util/dlx/spawn.mts')
+        const { resolveCoana } =
+          await import('../../../src/util/dlx/resolve-binary.mts')
 
         // Verify the resolution includes correct binary name.
         const resolution = resolveCoana()
@@ -188,7 +194,7 @@ describe('dlx e2e tests', () => {
           expect(result.data).toBeTruthy()
         }
       },
-      30000,
+      30_000,
     )
   })
 
@@ -206,7 +212,7 @@ describe('dlx e2e tests', () => {
           expect(spawnResult.stdout).toContain('synp')
         }
       },
-      30000,
+      30_000,
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
@@ -232,7 +238,7 @@ describe('dlx e2e tests', () => {
           expect(error).toBeDefined()
         }
       },
-      30000,
+      30_000,
     )
   })
 
@@ -251,7 +257,7 @@ describe('dlx e2e tests', () => {
         const spawnResult = await result.spawnPromise
         expect(spawnResult).toBeDefined()
       },
-      30000,
+      30_000,
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
@@ -270,7 +276,7 @@ describe('dlx e2e tests', () => {
         const spawnResult = await result.spawnPromise
         expect(spawnResult).toBeDefined()
       },
-      30000,
+      30_000,
     )
 
     it.skipIf(!ENV.RUN_INTEGRATION_TESTS || !hasAuth)(
@@ -289,7 +295,7 @@ describe('dlx e2e tests', () => {
         const spawnResult = await result.spawnPromise
         expect(spawnResult).toBeDefined()
       },
-      30000,
+      30_000,
     )
   })
 })

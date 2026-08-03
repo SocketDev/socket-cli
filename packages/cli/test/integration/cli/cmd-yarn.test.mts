@@ -1,32 +1,26 @@
 /**
  * Integration tests for `socket yarn` wrapper command.
  *
- * Tests the Yarn package manager wrapper that adds Socket security scanning
- * to Yarn operations via Socket Firewall (sfw). Commands are forwarded to
- * sfw which provides security scanning before installation.
+ * Tests the Yarn package manager wrapper that adds Socket security scanning to
+ * Yarn operations via Socket Firewall (sfw). Commands are forwarded to sfw
+ * which provides security scanning before installation.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Yarn install operations with scanning
- * - Config flag variants
- * - Issue rules configuration
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Yarn install operations with scanning - Config flag variants -
+ * Issue rules configuration.
  *
- * Security Features:
- * - Pre-installation security scanning via Socket Firewall
- * - Malware detection integration
- * - Workspace support
+ * Security Features: - Pre-installation security scanning via Socket Firewall -
+ * Malware detection integration - Workspace support.
  *
- * Related Files:
- * - src/commands/yarn/cmd-yarn.mts - yarn command implementation
- * - src/yarn-cli.mts - yarn CLI entry point
- * - src/utils/dlx/resolve-binary.mjs - sfw resolution
- * - test/integration/cli/cmd-yarn-malware.test.mts - Malware tests
+ * Related Files: - src/commands/yarn/cmd-yarn.mts - yarn command implementation
+ * - src/yarn-cli.mts - yarn CLI entry point - src/util/dlx/resolve-binary.mjs -
+ * sfw resolution - test/integration/cli/cmd-yarn-malware.test.mts - Malware
+ * tests.
  */
 
 import { describe, expect } from 'vitest'
 
-import { YARN } from '@socketsecurity/lib/constants/agents'
+import { YARN } from '@socketsecurity/lib-stable/constants/agents'
 
 import {
   FLAG_CONFIG,
@@ -63,8 +57,7 @@ describe('socket yarn', async () => {
               Examples
                 $ socket yarn
                 $ socket yarn install
-                $ socket yarn add package-name
-                $ socket yarn dlx package-name"
+                $ socket yarn add package-name"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -88,8 +81,8 @@ describe('socket yarn', async () => {
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(stderr).toContain('CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -178,13 +171,13 @@ describe('socket yarn', async () => {
     ],
     'should handle exec with -c flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec with -c should exit with code 0').toBe(0)
     },
   )
@@ -201,13 +194,13 @@ describe('socket yarn', async () => {
     ],
     'should handle exec with --config flag and issueRules for malware',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run exec with --config should exit with code 0').toBe(0)
     },
   )
@@ -224,13 +217,13 @@ describe('socket yarn', async () => {
     ],
     'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with multiple issueRules should exit with code 0',
@@ -250,13 +243,13 @@ describe('socket yarn', async () => {
     ],
     'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         timeout: 30_000,
       })
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(
         code,
         'dry-run exec with --config and multiple issueRules should exit with code 0',

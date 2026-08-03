@@ -4,26 +4,23 @@
  * Tests the data fetching logic for repository analytics. These tests verify
  * SDK integration for repository-specific metrics and error handling.
  *
- * Test Coverage:
- * - Successful repository analytics fetch (commits, contributors, issues, PRs, stars)
- * - SDK setup failure with error propagation
- * - API call failure with 404 handling for non-existent repositories
- * - Custom SDK options pass-through (apiToken, baseUrl)
- * - Different repository name formats (org/repo, user/project)
- * - Multiple time range parameters (1, 7, 14, 30, 60, 90, 365 days)
- * - Prototype pollution protection verification
+ * Test Coverage: - Successful repository analytics fetch (commits,
+ * contributors, issues, PRs, stars) - SDK setup failure with error propagation
+ * - API call failure with 404 handling for non-existent repositories - Custom
+ * SDK options pass-through (apiToken, baseUrl) - Different repository name
+ * formats (org/repo, user/project) - Multiple time range parameters (1, 7, 14,
+ * 30, 60, 90, 365 days) - Prototype pollution protection verification.
  *
- * Testing Approach:
- * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
- * - Mock handleApiCall from utils/socket/api.mts
- * - Mock setupSdk from utils/socket/sdk.mts
- * - Verify SDK method calls with correct repository and time parameters
- * - Test CResult pattern (ok/error states)
+ * Testing Approach: - Mock Socket SDK using
+ * setupSdkMockSuccess/Error/SetupFailure helpers - Mock handleApiCall from
+ * util/socket/api.mts - Mock setupSdk from util/socket/sdk.mts - Verify SDK
+ * method calls with correct repository and time parameters - Test CResult
+ * pattern (ok/error states)
  *
- * Related Files:
- * - src/commands/analytics/fetch-repo-analytics.mts - Implementation
- * - src/commands/analytics/handle-analytics.mts - Handler that calls this fetcher
- * - test/helpers/sdk-test-helpers.mts - SDK mocking utilities
+ * Related Files: - src/commands/analytics/fetch-repo-analytics.mts -
+ * Implementation - src/commands/analytics/handle-analytics.mts - Handler that
+ * calls this fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking
+ * utilities.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -32,15 +29,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchRepoAnalyticsData } from '../../../../src/src/commands/../../../../src/commands/analytics/fetch-repo-analytics.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchRepoAnalyticsData } from '../../../../src/commands/analytics/fetch-repo-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -110,8 +107,8 @@ describe('fetchRepoAnalytics', () => {
 
     const repos = ['org/repo1', 'org/repo2', 'another-org/repo', 'user/project']
 
-    for (const repo of repos) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = repos; i < length; i += 1) {
+      const repo = repos[i]
       await fetchRepoAnalyticsData(repo, 30)
       expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(repo, '30')
     }
@@ -122,8 +119,8 @@ describe('fetchRepoAnalytics', () => {
 
     const timeRanges = [1, 7, 14, 30, 60, 90, 365]
 
-    for (const time of timeRanges) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = timeRanges; i < length; i += 1) {
+      const time = timeRanges[i]
       await fetchRepoAnalyticsData('test-repo', time)
       expect(mockSdk.getRepoAnalytics).toHaveBeenCalledWith(
         'test-repo',

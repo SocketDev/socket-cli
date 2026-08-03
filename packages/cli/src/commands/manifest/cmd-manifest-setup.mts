@@ -1,39 +1,33 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleManifestSetup } from './handle-manifest-setup.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger()
-
-const config: CliCommandConfig = {
+const config = {
   commandName: 'setup',
   description:
     'Start interactive configurator to customize default flag values for `socket manifest` in this dir',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     defaultOnReadError: {
       type: 'boolean',
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     This command will try to detect all supported ecosystems in given CWD. Then
     it starts a configurator where you can setup default values for certain flags
@@ -58,6 +52,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj
   `,
+  hidden: false,
 }
 
 export const cmdManifestSetup = {
@@ -66,7 +61,7 @@ export const cmdManifestSetup = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -79,8 +74,7 @@ async function run(
   })
 
   const { defaultOnReadError = false } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -88,9 +82,18 @@ async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const socketJsonPath = path.join(cwd, SOCKET_JSON)
+    outputDryRunWrite(
+      socketJsonPath,
+      'create or update manifest configuration',
+      [
+        'Detect supported ecosystems',
+        'Configure manifest generation defaults',
+        'Enable/disable specific ecosystems',
+      ],
+    )
     return
   }
 
-  await handleManifestSetup(cwd, Boolean(defaultOnReadError))
+  await handleManifestSetup(cwd, defaultOnReadError)
 }

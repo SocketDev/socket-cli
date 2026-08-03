@@ -1,14 +1,17 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
-import { pluralize } from '@socketsecurity/lib/words'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 const logger = getDefaultLogger()
 
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { outputScanReach } from './output-scan-reach.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
@@ -18,6 +21,7 @@ export type HandleScanReachConfig = {
   interactive: boolean
   orgSlug: string
   outputKind: OutputKind
+  outputPath: string
   reachabilityOptions: ReachabilityOptions
   targets: string[]
 }
@@ -27,6 +31,7 @@ export async function handleScanReach({
   interactive: _interactive,
   orgSlug,
   outputKind,
+  outputPath,
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
@@ -36,7 +41,6 @@ export async function handleScanReach({
   const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, {
-      cwd,
       outputKind,
       outputPath: '',
     })
@@ -44,11 +48,27 @@ export async function handleScanReach({
   }
 
   spinner.start(
-    'Searching for local manifest files to include in reachability analysis...',
+    'Searching for local manifest files to include in reachability analysis…',
   )
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
+      cwd,
+      reachabilityOptions,
+      socketConfig,
+      target: targets[0]!,
+    })
+
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
+    config: effectiveSocketConfig,
     cwd,
   })
 
@@ -71,13 +91,14 @@ export async function handleScanReach({
     `Found ${packagePaths.length} local ${pluralize('file', { count: packagePaths.length })}`,
   )
 
-  spinner.start('Running reachability analysis...')
+  spinner.start('Running reachability analysis…')
 
   const result = await performReachabilityAnalysis({
     cwd,
     orgSlug,
+    outputPath,
     packagePaths,
-    reachabilityOptions,
+    reachabilityOptions: mergedReachabilityOptions,
     spinner,
     target: targets[0]!,
     uploadManifests: true,
@@ -85,6 +106,26 @@ export async function handleScanReach({
 
   spinner.stop()
 
-  const outputPath = result.ok ? result.data.reachabilityReport : ''
-  await outputScanReach(result, { cwd, outputKind, outputPath })
+  // A standalone reachability run has no full scan to bind to, but the tier1
+  // reachability row coana registered still has to reach its DONE terminal
+  // state — otherwise it sits at the post-coana intermediate state forever and
+  // is indistinguishable from a stuck run. The endpoint accepts a null full
+  // scan id for this flow (finalizeTier1Scan normalizes the omitted argument to
+  // the wire null). Best-effort: a finalize failure must not block the
+  // user-visible reachability output.
+  const tier1Id = result.ok ? result.data?.tier1ReachabilityScanId : undefined
+  if (tier1Id) {
+    const finalizeResult = await finalizeTier1Scan(tier1Id)
+    if (!finalizeResult.ok) {
+      logger.warn(
+        `Failed to finalize tier1 reachability scan: ${finalizeResult.message}${finalizeResult.cause ? ` — ${finalizeResult.cause}` : ''}`,
+      )
+    }
+  }
+
+  const resolvedOutputPath = result.ok ? result.data.reachabilityReport : ''
+  await outputScanReach(result, {
+    outputKind,
+    outputPath: resolvedOutputPath || outputPath,
+  })
 }

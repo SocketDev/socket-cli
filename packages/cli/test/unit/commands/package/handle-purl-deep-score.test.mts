@@ -1,26 +1,23 @@
 /**
  * Unit tests for handlePurlDeepScore.
  *
- * Purpose:
- * Tests the handler function that orchestrates fetching and outputting deep security
- * scores for a single package PURL. Deep scores include transitive dependency analysis.
- * Validates the fetch-process-output pipeline and debug logging.
+ * Purpose: Tests the handler function that orchestrates fetching and outputting
+ * deep security scores for a single package PURL. Deep scores include
+ * transitive dependency analysis. Validates the fetch-process-output pipeline
+ * and debug logging.
  *
- * Test Coverage:
- * - Successful deep score fetch and output
- * - Fetch failure handling
- * - Multiple output formats (json, text, markdown)
- * - Debug logging for successful and failed fetches
- * - Different PURL formats (unscoped, scoped, version tags)
+ * Test Coverage: - Successful deep score fetch and output - Fetch failure
+ * handling - Multiple output formats, json, text, markdown - Debug logging for
+ * successful and failed fetches - Different PURL formats (unscoped, scoped,
+ * version tags)
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler logic. Verifies proper
- * orchestration between fetching, logging, and formatting layers.
+ * Testing Approach: Mocks fetch and output functions to isolate handler logic.
+ * Verifies proper orchestration between fetching, logging, and formatting
+ * layers.
  *
- * Related Files:
- * - src/commands/package/handle-purl-deep-score.mts (implementation)
- * - src/commands/package/fetch-purl-deep-score.mts (API fetcher)
- * - src/commands/package/output-purls-deep-score.mts (formatter)
+ * Related Files: - src/commands/package/handle-purl-deep-score.mts
+ * (implementation) - src/commands/package/fetch-purl-deep-score.mts (API
+ * fetcher) - src/commands/package/output-purls-deep-score.mts (formatter)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -34,15 +31,23 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/package/fetch-purl-deep-score.mts', () => ({
-  fetchPurlDeepScore: mockFetchPurlDeepScore,
-}))
-vi.mock('../../../../src/commands/package/output-purls-deep-score.mts', () => ({
-  outputPurlsDeepScore: mockOutputPurlsDeepScore,
-}))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(
+  import('../../../../src/commands/package/fetch-purl-deep-score.mts'),
+  () => ({
+    fetchPurlDeepScore: mockFetchPurlDeepScore,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/package/output-purls-deep-score.mts'),
+  () => ({
+    outputPurlsDeepScore: mockOutputPurlsDeepScore,
+  }),
+)
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
 
@@ -153,13 +158,13 @@ describe('handlePurlDeepScore', () => {
       'pkg:npm/package@latest',
     ]
 
-    for (const purl of purls) {
+    for (let i = 0, { length } = purls; i < length; i += 1) {
+      const purl = purls[i]
       mockFetchPurlDeepScore.mockResolvedValue({
         ok: true,
         data: { name: 'test', version: '1.0.0', score: 85 },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handlePurlDeepScore(purl, 'json')
 
       expect(mockFetchPurlDeepScore).toHaveBeenCalledWith(purl)

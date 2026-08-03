@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleScanConfig.
  *
- * Purpose:
- * Tests the handler that manages scan configuration. Validates config file handling and option processing.
+ * Purpose: Tests the handler that manages scan configuration. Validates config
+ * file handling and option processing.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanConfig.mts (implementation)
+ * Related Files: - src/commands/handleScanConfig.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,18 +19,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleScanConfig } from '../../../../src/commands/scan/handle-scan-config.mts'
 
 // Mock the dependencies.
 const mockOutputScanConfigResult = vi.hoisted(() => vi.fn())
 const mockSetupScanConfig = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/output-scan-config-result.mts', () => ({
-  outputScanConfigResult: mockOutputScanConfigResult,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/output-scan-config-result.mts'),
+  () => ({
+    outputScanConfigResult: mockOutputScanConfigResult,
+  }),
+)
 
-vi.mock('../../../../src/commands/scan/setup-scan-config.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/setup-scan-config.mts'), () => ({
   setupScanConfig: mockSetupScanConfig,
 }))
 
@@ -106,9 +104,9 @@ describe('handleScanConfig', () => {
 
     const cwds = ['/root', '/home/user/project', './relative/path', '.']
 
-    for (const cwd of cwds) {
+    for (let i = 0, { length } = cwds; i < length; i += 1) {
+      const cwd = cwds[i]
       mockSetup.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleScanConfig(cwd, false)
       expect(mockSetup).toHaveBeenCalledWith(cwd, false)
     }

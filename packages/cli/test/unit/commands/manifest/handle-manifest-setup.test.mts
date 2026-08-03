@@ -1,28 +1,24 @@
 /**
- * Unit Tests: Manifest Configuration Setup Handler
+ * Unit Tests: Manifest Configuration Setup Handler.
  *
- * Purpose:
- * Tests the command handler that initializes Socket manifest configuration (socket.json) for
- * a project. Validates the orchestration between configuration setup and output formatting
- * with support for error recovery through the defaultOnReadError flag.
+ * Purpose: Tests the command handler that initializes Socket manifest
+ * configuration (socket.json) for a project. Validates the orchestration
+ * between configuration setup and output formatting with support for error
+ * recovery through the defaultOnReadError flag.
  *
- * Test Coverage:
- * - Successful manifest configuration setup
- * - Setup failure handling with error output
- * - defaultOnReadError flag behavior (true/false)
- * - Empty data result handling
- * - Current directory and absolute path support
- * - Async error propagation
+ * Test Coverage: - Successful manifest configuration setup - Setup failure
+ * handling with error output - defaultOnReadError flag behavior (true/false) -
+ * Empty data result handling - Current directory and absolute path support -
+ * Async error propagation.
  *
- * Testing Approach:
- * Mocks setupManifestConfig and outputManifestSetup modules to test handler orchestration
- * without actual file system operations. Tests verify correct parameter passing and
- * CResult pattern handling.
+ * Testing Approach: Mocks setupManifestConfig and outputManifestSetup modules
+ * to test handler orchestration without actual file system operations. Tests
+ * verify correct parameter passing and CResult pattern handling.
  *
- * Related Files:
- * - src/commands/manifest/handle-manifest-setup.mts - Command handler
- * - src/commands/manifest/setup-manifest-config.mts - Configuration setup logic
- * - src/commands/manifest/output-manifest-setup.mts - Output formatting
+ * Related Files: - src/commands/manifest/handle-manifest-setup.mts - Command
+ * handler - src/commands/manifest/setup-manifest-config.mts - Configuration
+ * setup logic - src/commands/manifest/output-manifest-setup.mts - Output
+ * formatting.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -33,12 +29,18 @@ import { handleManifestSetup } from '../../../../src/commands/manifest/handle-ma
 const mockOutputManifestSetup = vi.hoisted(() => vi.fn())
 const mockSetupManifestConfig = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/manifest/output-manifest-setup.mts', () => ({
-  outputManifestSetup: mockOutputManifestSetup,
-}))
-vi.mock('../../../../src/commands/manifest/setup-manifest-config.mts', () => ({
-  setupManifestConfig: mockSetupManifestConfig,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/output-manifest-setup.mts'),
+  () => ({
+    outputManifestSetup: mockOutputManifestSetup,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/manifest/setup-manifest-config.mts'),
+  () => ({
+    setupManifestConfig: mockSetupManifestConfig,
+  }),
+)
 
 describe('handleManifestSetup', () => {
   beforeEach(() => {
@@ -46,12 +48,10 @@ describe('handleManifestSetup', () => {
   })
 
   it('sets up manifest config successfully', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
-    const { outputManifestSetup } = await import(
-      '../../../../src/commands/manifest/output-manifest-setup.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } =
+      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -72,12 +72,10 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles setup failure', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
-    const { outputManifestSetup } = await import(
-      '../../../../src/commands/manifest/output-manifest-setup.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } =
+      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockError = {
       ok: false,
@@ -92,12 +90,10 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag true', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
-    const { outputManifestSetup } = await import(
-      '../../../../src/commands/manifest/output-manifest-setup.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
+    const { outputManifestSetup } =
+      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -112,9 +108,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles defaultOnReadError flag false', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
@@ -128,9 +123,8 @@ describe('handleManifestSetup', () => {
 
   it('handles empty data result', async () => {
     await import('../../../../src/commands/manifest/setup-manifest-config.mts')
-    const { outputManifestSetup } = await import(
-      '../../../../src/commands/manifest/output-manifest-setup.mts'
-    )
+    const { outputManifestSetup } =
+      await import('../../../../src/commands/manifest/output-manifest-setup.mts')
 
     const mockResult = {
       ok: true,
@@ -154,9 +148,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles current directory path', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,
@@ -169,9 +162,8 @@ describe('handleManifestSetup', () => {
   })
 
   it('handles absolute path', async () => {
-    const { setupManifestConfig } = await import(
-      '../../../../src/commands/manifest/setup-manifest-config.mts'
-    )
+    const { setupManifestConfig } =
+      await import('../../../../src/commands/manifest/setup-manifest-config.mts')
 
     mockSetupManifestConfig.mockResolvedValue({
       ok: true,

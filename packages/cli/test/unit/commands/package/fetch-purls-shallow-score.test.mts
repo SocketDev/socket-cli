@@ -1,30 +1,24 @@
 /**
  * Unit tests for fetchPurlsShallowScore.
  *
- * Purpose:
- * Tests the batch package fetching functionality for retrieving shallow security scores
- * for multiple PURLs (Package URLs) via the Socket API. Validates SDK integration,
- * error handling, and batch request handling.
+ * Purpose: Tests the batch package fetching functionality for retrieving
+ * shallow security scores for multiple PURLs, Package URLs, via the Socket API.
+ * Validates SDK integration, error handling, and batch request handling.
  *
- * Test Coverage:
- * - Successful batch package score retrieval
- * - SDK setup failure handling
- * - API call error scenarios (rate limits, large batches)
- * - Custom SDK options (API tokens, base URLs)
- * - Empty PURL array handling
- * - Mixed ecosystem PURL types (npm, pypi, maven, gem)
- * - Large batch processing (100+ packages)
- * - Null prototype usage for security
+ * Test Coverage: - Successful batch package score retrieval - SDK setup failure
+ * handling - API call error scenarios, rate limits, large batches - Custom SDK
+ * options (API tokens, base URLs) - Empty PURL array handling - Mixed ecosystem
+ * PURL types, npm, pypi, maven, gem - Large batch processing (100+ packages) -
+ * Null prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Tests various batch sizes
- * and PURL formats to ensure robust multi-package score fetching.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Tests various batch sizes and PURL formats to ensure robust multi-package
+ * score fetching.
  *
- * Related Files:
- * - src/commands/package/fetch-purls-shallow-score.mts (implementation)
- * - src/commands/package/handle-purls-shallow-score.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * Related Files: - src/commands/package/fetch-purls-shallow-score.mts
+ * (implementation) - src/commands/package/handle-purls-shallow-score.mts
+ * (handler) - src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts
+ * (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -46,15 +40,15 @@ const mockGetDefaultLogger = vi.hoisted(() =>
   })),
 )
 
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: mockGetDefaultLogger,
 }))
 
@@ -116,7 +110,10 @@ describe('fetchPurlsShallowScore', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('batchPackageFetch', [])
+    const { mockSetupSdk: scopedMockSetupSdk } = await setupSdkMockSuccess(
+      'batchPackageFetch',
+      [],
+    )
 
     const sdkOpts = {
       apiToken: 'batch-token',
@@ -125,7 +122,7 @@ describe('fetchPurlsShallowScore', () => {
 
     await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'], { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles empty purl array', async () => {

@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleListScans.
  *
- * Purpose:
- * Tests the handler that orchestrates scan listing. Validates pagination, filtering, and list output.
+ * Purpose: Tests the handler that orchestrates scan listing. Validates
+ * pagination, filtering, and list output.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleListScans.mts (implementation)
+ * Related Files: - src/commands/handleListScans.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -24,18 +19,18 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleListScans } from '../../../../src/commands/scan/handle-list-scans.mts'
 
 // Mock the dependencies.
 const mockFetchOrgFullScanList = vi.hoisted(() => vi.fn())
 const mockOutputListScans = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/fetch-list-scans.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/fetch-list-scans.mts'), () => ({
   fetchOrgFullScanList: mockFetchOrgFullScanList,
 }))
 
-vi.mock('../../../../src/commands/scan/output-list-scans.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-list-scans.mts'), () => ({
   outputListScans: mockOutputListScans,
 }))
 

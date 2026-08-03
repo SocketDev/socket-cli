@@ -1,6 +1,6 @@
 /**
- * npm_config_cache environment variable snapshot.
- * Points to the npm cache directory.
+ * Npm_config_cache environment variable snapshot. Points to the npm cache
+ * directory.
  */
 
 import { env } from 'node:process'

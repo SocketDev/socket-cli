@@ -1,73 +1,39 @@
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_DRY_RUN,
-  FLAG_HELP,
-} from '../../constants/cli.mts'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getNpxBinPath } from '../../utils/npm/paths.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { getNpxBinPath } from '../../util/npm/paths.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-
-const logger = getDefaultLogger()
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'raw-npx'
 
-const description = 'Run npx without the Socket wrapper'
+const description = 'Run pnpm exec without the Socket wrapper'
 
 const hidden = false
 
 // Helper functions.
 
-async function runRawNpx(argv: string[] | readonly string[]): Promise<void> {
-  process.exitCode = 1
-
-  const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
-    // On Windows, npx is often a .cmd file that requires shell execution.
-    // The spawn function from @socketsecurity/registry will handle this properly
-    // when shell is true.
-    shell: WIN32,
-    stdio: 'inherit',
-  })
-
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on(
-    'exit',
-    (code: number | null, signalName: string | null) => {
-      if (signalName) {
-        process.kill(process.pid, signalName)
-      } else if (typeof code === 'number') {
-        // eslint-disable-next-line n/no-process-exit
-        process.exit(code)
-      }
-    },
-  )
-
-  await spawnPromise
-}
-
-// Command handler.
-
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} ...
 
@@ -90,14 +56,42 @@ async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunExecute(getNpxBinPath(), argv, 'raw pnpm exec command')
     return
   }
 
   await runRawNpx(argv)
+}
+
+export async function runRawNpx(
+  argv: string[] | readonly string[],
+): Promise<void> {
+  process.exitCode = 1
+
+  const spawnPromise = spawn(getNpxBinPath(), argv, {
+    // On Windows, npx is often a .cmd file that requires shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
+    shell: WIN32,
+    stdio: 'inherit',
+  })
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on(
+    'exit',
+    (code: number | null, signalName: string | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        process.exit(code)
+      }
+    },
+  )
+
+  await spawnPromise
 }
 
 // Exported command.

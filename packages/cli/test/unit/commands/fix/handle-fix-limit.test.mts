@@ -1,27 +1,22 @@
 /**
- * Unit Tests: Fix Command Handler - Limit Behavior
+ * Unit Tests: Fix Command Handler - Limit Behavior.
  *
- * Purpose:
- * Tests the --limit flag behavior to ensure it correctly limits the number of
- * vulnerabilities processed by the fix command. Validates that the limit is
- * properly applied in both local mode and PR mode.
+ * Purpose: Tests the --limit flag behavior to ensure it correctly limits the
+ * number of vulnerabilities processed by the fix command. Validates that the
+ * limit is properly applied in both local mode and PR mode.
  *
- * Test Coverage:
- * - Local mode: Verify --limit N processes only N GHSAs
- * - Local mode: Verify --limit 0 processes no GHSAs
- * - Local mode: Verify limit exceeding GHSA count processes all
- * - PR mode: Verify --limit N with adjusted limit based on open PRs
- * - PR mode: Verify limit 0 when existing PRs exceed limit
- * - --id filtering: Verify limit applies to filtered IDs
+ * Test Coverage: - Local mode: Verify --limit N processes only N GHSAs - Local
+ * mode: Verify --limit 0 processes no GHSAs - Local mode: Verify limit
+ * exceeding GHSA count processes all - PR mode: Verify --limit N with adjusted
+ * limit based on open PRs - PR mode: Verify limit 0 when existing PRs exceed
+ * limit.
  *
- * Testing Approach:
- * Uses mocks and spies to verify the actual arguments passed to coana CLI,
- * ensuring the business logic correctly applies the limit without making
- * real API calls or creating actual PRs.
+ * Testing Approach: Uses mocks and spies to verify the actual arguments passed
+ * to coana CLI, ensuring the business logic correctly applies the limit without
+ * making real API calls or creating actual PRs.
  *
- * Related Files:
- * - src/commands/fix/coana-fix.mts - Main fix implementation
- * - src/commands/fix/handle-fix.mts - Fix command handler
+ * Related Files: - src/commands/fix/coana-fix.mts - Main fix implementation -
+ * src/commands/fix/handle-fix.mts - Fix command handler.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -41,51 +36,51 @@ const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
-const mockCleanupTempFile = vi.hoisted(() => vi.fn())
+const mockSafeDelete = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mjs', () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
 vi.mock(
-  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),
 )
 
-vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
+vi.mock(import('../../../../src/util/fs/path-resolve.mjs'), () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../src/commands/fix/env-helpers.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/env-helpers.mts'), () => ({
   checkCiEnvVars: vi.fn(() => ({ missing: [], present: [] })),
   getCiEnvInstructions: vi.fn(() => 'Set CI env vars'),
   getFixEnv: mockGetFixEnv,
 }))
 
-vi.mock('../../../../src/commands/fix/pull-request.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/pull-request.mts'), () => ({
   cleanupSocketFixPrs: vi.fn(),
   getSocketFixPrs: mockGetSocketFixPrs,
   openSocketFixPr: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock(import('../../../../src/util/git/github.mts'), () => ({
   enablePrAutoMerge: vi.fn(),
   fetchGhsaDetails: mockFetchGhsaDetails,
   getOctokit: vi.fn(),
   setGitRemoteGithubRepoUrl: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock(import('../../../../src/util/git/operations.mjs'), () => ({
   gitCheckoutBranch: vi.fn(() => Promise.resolve(true)),
   gitCommit: vi.fn(() => Promise.resolve(true)),
   gitCreateBranch: vi.fn(() => Promise.resolve(true)),
@@ -95,30 +90,31 @@ vi.mock('../../../../src/utils/git/operations.mjs', () => ({
   gitUnstagedModifiedFiles: mockGitUnstagedModifiedFiles,
 }))
 
-vi.mock('../../../../src/commands/fix/branch-cleanup.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/branch-cleanup.mts'), () => ({
   cleanupErrorBranches: vi.fn(),
   cleanupFailedPrBranches: vi.fn(),
   cleanupStaleBranch: vi.fn(() => Promise.resolve(true)),
   cleanupSuccessfulPrLocalBranch: vi.fn(),
 }))
 
-vi.mock('../../../../src/commands/fix/ghsa-tracker.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/ghsa-tracker.mts'), () => ({
   isGhsaFixed: vi.fn(() => false),
   markGhsaFixed: vi.fn(),
 }))
 
-vi.mock('../../../../src/commands/fix/pr-lifecycle-logger.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/pr-lifecycle-logger.mts'), () => ({
   logPrEvent: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
-
-vi.mock('node:fs', () => ({
-  promises: {
-    unlink: mockCleanupTempFile,
-  },
+vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
+  safeDelete: mockSafeDelete,
+}))
+vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
+  // Return undefined so findSocketYmlSync treats socket.yml as absent.
+  safeReadFileSync: vi.fn(() => undefined),
 }))
 
 describe('socket fix --limit behavior verification', () => {
@@ -131,6 +127,8 @@ describe('socket fix --limit behavior verification', () => {
     disableMajorUpdates: false,
     ecosystems: [],
     exclude: [],
+    excludePaths: [],
+    packageManagers: [],
     ghsas: [],
     include: [],
     minSatisfying: false,
@@ -177,7 +175,7 @@ describe('socket fix --limit behavior verification', () => {
       gitUserEmail: '',
       gitUserName: '',
       isCi: false,
-      repoInfo: null,
+      repoInfo: undefined,
     })
 
     mockGitUnstagedModifiedFiles.mockResolvedValue({
@@ -186,7 +184,7 @@ describe('socket fix --limit behavior verification', () => {
     })
 
     mockReadJsonSync.mockReturnValue({ fixed: true })
-    mockCleanupTempFile.mockResolvedValue(undefined)
+    mockSafeDelete.mockResolvedValue(undefined)
   })
 
   describe('local mode (no PRs)', () => {
@@ -271,7 +269,7 @@ describe('socket fix --limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // spawnCoanaDlx should not be called at all with limit 0.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
@@ -419,72 +417,10 @@ describe('socket fix --limit behavior verification', () => {
       })
 
       expect(result.ok).toBe(true)
-      expect(result.data?.fixed).toBe(false)
+      expect(result.data?.fixedAll).toBe(false)
 
       // With 5 open PRs and limit 3, adjusted limit is 0, so no processing.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('--id filtering with --limit', () => {
-    it('should apply limit to filtered GHSA IDs', async () => {
-      const ghsas = [
-        'GHSA-1111-1111-1111',
-        'GHSA-2222-2222-2222',
-        'GHSA-3333-3333-3333',
-        'GHSA-4444-4444-4444',
-        'GHSA-5555-5555-5555',
-      ]
-
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas,
-        prLimit: 2,
-      })
-
-      expect(result.ok).toBe(true)
-
-      // Should only process first 2 GHSAs.
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
-      const ghsaArgs = callArgs
-        .slice(applyFixesIndex + 1)
-        .filter(arg => arg.startsWith('GHSA-'))
-
-      expect(ghsaArgs).toHaveLength(2)
-      expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111', 'GHSA-2222-2222-2222'])
-    })
-
-    it('should handle limit 1 with single GHSA ID', async () => {
-      const ghsas = ['GHSA-1111-1111-1111']
-
-      mockSpawnCoanaDlx.mockResolvedValue({
-        ok: true,
-        data: 'fix applied',
-      })
-
-      const result = await coanaFix({
-        ...baseConfig,
-        ghsas,
-        prLimit: 1,
-      })
-
-      expect(result.ok).toBe(true)
-      expect(mockSpawnCoanaDlx).toHaveBeenCalledTimes(1)
-
-      const callArgs = mockSpawnCoanaDlx.mock.calls[0]?.[0] as string[]
-      const applyFixesIndex = callArgs.indexOf('--apply-fixes-to')
-      const ghsaArgs = callArgs
-        .slice(applyFixesIndex + 1)
-        .filter(arg => arg.startsWith('GHSA-'))
-
-      expect(ghsaArgs).toEqual(['GHSA-1111-1111-1111'])
     })
   })
 })

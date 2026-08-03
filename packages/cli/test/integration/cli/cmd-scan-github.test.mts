@@ -3,15 +3,11 @@
  *
  * Tests GitHub integration features for scan management.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - GitHub PR commenting
- * - Check run creation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - GitHub PR commenting - Check run creation.
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-github.mts - Command definition
- * - src/commands/scan/handle-scan-github.mts - GitHub integration logic
+ * Related Files: - src/commands/scan/cmd-scan-github.mts - Command definition -
+ * src/commands/scan/handle-scan-github.mts - GitHub integration logic.
  */
 
 import { describe, expect } from 'vitest'
@@ -64,6 +60,7 @@ describe('socket scan github', async () => {
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
                 --org-github        Alternate GitHub Org if the name is different than the Socket Org
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --repos             List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.
           
               Examples
@@ -98,7 +95,7 @@ describe('socket scan github', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan github\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -128,7 +125,7 @@ describe('socket scan github', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -136,11 +133,20 @@ describe('socket scan github', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan github\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
-        \\xd7 Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+
+        [DryRun]: Would upload GitHub scan
+
+          Details:
+            organization: ""
+            githubOrganization: ""
+            githubApiUrl: "https://api.github.com"
+
+          Run without --dry-run to perform this upload."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

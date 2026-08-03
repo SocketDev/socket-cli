@@ -1,22 +1,17 @@
 /**
  * Unit tests for outputCreateNewScan.
  *
- * Purpose:
- * Tests output formatting for new scan creation. Validates scan ID display and status messages.
+ * Purpose: Tests output formatting for new scan creation. Validates scan ID
+ * display and status messages.
  *
- * Test Coverage:
- * - Successful operation output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Data presentation and formatting
- * - Edge case handling
+ * Test Coverage: - Successful operation output formatting - Error message
+ * formatting - Multiple output formats, text, json, markdown - Data
+ * presentation and formatting - Edge case handling.
  *
- * Testing Approach:
- * Uses result helpers and fixtures to create test data. Validates formatted
- * output strings across different output modes.
+ * Testing Approach: Uses result helpers and fixtures to create test data.
+ * Validates formatted output strings across different output modes.
  *
- * Related Files:
- * - src/commands/outputCreateNewScan.mts (implementation)
+ * Related Files: - src/commands/outputCreateNewScan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,7 +19,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputCreateNewScan } from '../../../../src/commands/scan/output-create-new-scan.mts'
 
 import type { CResult } from '../../../../src/commands/scan/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -47,28 +42,28 @@ const mockSerializeResultJson = vi.hoisted(() =>
 const mockOpenDefault = vi.hoisted(() => vi.fn())
 const mockConfirmFn = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
-vi.mock('open', () => ({
+vi.mock(import('open'), () => ({
   default: mockOpenDefault,
 }))
 
-vi.mock('terminal-link', () => ({
+vi.mock(import('terminal-link'), () => ({
   default: vi.fn((text: string, url: string) => `[${text}](${url})`),
 }))
 
-vi.mock('@socketsecurity/lib/stdio/prompts', () => ({
+vi.mock(import('@socketsecurity/lib-stable/stdio/prompts'), () => ({
   confirm: mockConfirmFn,
 }))
 
@@ -165,7 +160,7 @@ describe('outputCreateNewScan', () => {
         ok: true,
         data: {
           html_report_url: 'https://socket.dev/report/no-id',
-          id: undefined as any,
+          id: undefined as unknown,
         },
       }
 
@@ -271,7 +266,7 @@ describe('outputCreateNewScan', () => {
       {
         ok: true,
         data: {
-          html_report_url: undefined as any,
+          html_report_url: undefined as unknown,
           id: 'scan-no-url',
         },
       }
@@ -290,6 +285,49 @@ describe('outputCreateNewScan', () => {
 
     await outputCreateNewScan(result, { outputKind: 'json' })
 
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('restarts spinner after JSON output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } },
+      { outputKind: 'json', spinner: spinner as unknown },
+    )
+
+    expect(spinner.stop).toHaveBeenCalled()
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('restarts spinner after text-mode error if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: false, message: 'fail' },
+      { outputKind: 'text', spinner: spinner as unknown },
+    )
+
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('restarts spinner after markdown output if it was spinning', async () => {
+    const spinner = { isSpinning: true, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: 'x', html_report_url: 'http://x' } },
+      { outputKind: 'markdown', spinner: spinner as unknown },
+    )
+
+    expect(spinner.start).toHaveBeenCalled()
+  })
+
+  it('renders no-id markdown branch', async () => {
+    const spinner = { isSpinning: false, start: vi.fn(), stop: vi.fn() }
+    await outputCreateNewScan(
+      { ok: true, data: { id: '', html_report_url: '' } },
+      { outputKind: 'markdown', spinner: spinner as unknown },
+    )
+
+    const calls = mockLog.mock.calls.map(c => c[0]).join('\n')
+    expect(calls).toContain('did not return a Scan ID')
     expect(process.exitCode).toBe(1)
   })
 })

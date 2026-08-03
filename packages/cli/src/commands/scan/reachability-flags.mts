@@ -1,4 +1,15 @@
+import { getReachabilityEcosystemChoices } from '../../util/ecosystem/types.mts'
+
 import type { MeowFlags } from '../../flags.mts'
+
+export const excludePathsFlag: MeowFlags = {
+  excludePaths: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. `tests` becomes `tests/**`). Trailing slashes are stripped. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
+  },
+}
 
 export const reachabilityFlags: MeowFlags = {
   reachAnalysisMemoryLimit: {
@@ -25,23 +36,41 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.',
   },
+  reachDetailedAnalysisLogFile: {
+    type: 'boolean',
+    default: false,
+    description: 'Write a detailed analysis log file alongside the output.',
+    hidden: true,
+  },
+  reachDisableAnalysisSplitting: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Deprecated: Analysis splitting is now disabled by default. Use --reach-enable-analysis-splitting to enable it.',
+    hidden: true,
+  },
   reachDisableAnalytics: {
     type: 'boolean',
     default: false,
     description:
       'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
   },
-  reachDisableAnalysisSplitting: {
+  reachDisableExternalToolChecks: {
     type: 'boolean',
     default: false,
-    description:
-      'Limits Coana to at most 1 reachability analysis run per workspace.',
+    description: 'Disable external tool checks during reachability analysis.',
+    hidden: true,
   },
   reachEcosystems: {
     type: 'string',
     isMultiple: true,
+    description: `List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: ${getReachabilityEcosystemChoices().join(', ')}. Defaults to all supported ecosystems.`,
+  },
+  reachEnableAnalysisSplitting: {
+    type: 'boolean',
+    default: false,
     description:
-      'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
+      'Enable analysis splitting, allowing Coana to split reachability analysis into multiple runs per workspace.',
   },
   reachExcludePaths: {
     type: 'string',
@@ -78,5 +107,12 @@ export const reachabilityFlags: MeowFlags = {
     default: false,
     description:
       'Use unreachable information from precomputation to improve analysis accuracy.',
+  },
+  reachVersion: {
+    type: 'string',
+    default: '',
+    description:
+      'Override the default @coana-tech/cli version used for reachability analysis.',
+    hidden: true,
   },
 }

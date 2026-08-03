@@ -1,7 +1,7 @@
 {
   "name": "cdxgen-test-fixture",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "Test fixture for cdxgen command testing",
   "main": "index.js",
   "dependencies": {

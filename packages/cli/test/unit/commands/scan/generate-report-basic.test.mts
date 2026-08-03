@@ -1,28 +1,23 @@
 /**
  * Unit tests for generateReportBasic.
  *
- * Purpose:
- * Tests basic scan report generation. Validates core report structure and formatting without advanced features.
+ * Purpose: Tests basic scan report generation. Validates core report structure
+ * and formatting without advanced features.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/generateReportBasic.mts (implementation)
+ * Related Files: - src/generateReportBasic.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'
 
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 
@@ -62,7 +57,7 @@ describe('generate-report - basic functionality', () => {
       {
         securityPolicyRules: {},
         securityPolicyDefault: 'medium',
-      } as SecurityPolicyData,
+      },
       {
         orgSlug: 'testOrg',
         scanId: 'test-scan-id',

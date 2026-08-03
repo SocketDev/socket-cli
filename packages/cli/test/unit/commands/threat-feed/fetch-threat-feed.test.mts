@@ -1,25 +1,18 @@
 /**
  * Unit tests for fetchThreatFeed.
  *
- * Purpose:
- * Tests fetching threat intelligence feed via the Socket API. Retrieves current security threat information and malware reports.
+ * Purpose: Tests fetching threat intelligence feed via the Socket API.
+ * Retrieves current security threat information and malware reports.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Threat data retrieval
- * - Feed pagination
- * - Filter options
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Threat
+ * data retrieval - Feed pagination - Filter options - Null prototype usage for
+ * security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/ThreatFeed.mts (implementation)
+ * Related Files: - src/commands/ThreatFeed.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -37,7 +30,7 @@ describe('fetchThreatFeed', () => {
   it('fetches threat feed successfully', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -66,9 +59,8 @@ describe('fetchThreatFeed', () => {
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult(mockData))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'desc',
@@ -92,7 +84,7 @@ describe('fetchThreatFeed', () => {
   it('handles SDK setup failure', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -102,9 +94,8 @@ describe('fetchThreatFeed', () => {
     })
     mockQueryApiSafeJson.mockResolvedValue(error)
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'desc',
@@ -123,7 +114,7 @@ describe('fetchThreatFeed', () => {
   it('handles API call failure', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
@@ -131,9 +122,8 @@ describe('fetchThreatFeed', () => {
       createErrorResult('Threat feed service unavailable', { code: 503 }),
     )
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const result = await fetchThreatFeed({
       direction: 'asc',
@@ -153,15 +143,14 @@ describe('fetchThreatFeed', () => {
   it('passes custom SDK options', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({}))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -183,15 +172,14 @@ describe('fetchThreatFeed', () => {
   it('handles filtering by severity levels', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -213,15 +201,14 @@ describe('fetchThreatFeed', () => {
   it('handles pagination parameters', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'asc',
@@ -243,15 +230,14 @@ describe('fetchThreatFeed', () => {
   it('handles date range filtering', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     await fetchThreatFeed({
       direction: 'desc',
@@ -270,18 +256,77 @@ describe('fetchThreatFeed', () => {
     )
   })
 
+  it('omits filter, name, and version params entirely when absent', async () => {
+    const mockQueryApiSafeJson = vi.fn()
+
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
+      queryApiSafeJson: mockQueryApiSafeJson,
+    }))
+
+    mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
+
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: '',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: '',
+      version: '',
+    })
+
+    // The exact query string: no `filter=`/`name=`/`version=` keys and no
+    // `=&` filler entries from the absent params.
+    expect(mockQueryApiSafeJson).toHaveBeenCalledWith(
+      'orgs/test-org/threat-feed?direction=desc&ecosystem=npm&page_cursor=1&per_page=100',
+      'the Threat Feed data',
+    )
+  })
+
+  it('keeps present optional params in the emitted query string', async () => {
+    const mockQueryApiSafeJson = vi.fn()
+
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
+      queryApiSafeJson: mockQueryApiSafeJson,
+    }))
+
+    mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({ threats: [] }))
+
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+
+    await fetchThreatFeed({
+      direction: 'desc',
+      ecosystem: 'npm',
+      filter: 'mal',
+      orgSlug: 'test-org',
+      page: '1',
+      perPage: 100,
+      pkg: 'lodash',
+      version: '4.17.21',
+    })
+
+    expect(mockQueryApiSafeJson).toHaveBeenCalledWith(
+      'orgs/test-org/threat-feed?direction=desc&ecosystem=npm&filter=mal&page_cursor=1&per_page=100&name=lodash&version=4.17.21',
+      'the Threat Feed data',
+    )
+  })
+
   it('uses null prototype for options', async () => {
     const mockQueryApiSafeJson = vi.fn()
 
-    vi.doMock('../../../../src/utils/socket/api.mjs', () => ({
+    vi.doMock(import('../../../../src/util/socket/api.mjs'), () => ({
       queryApiSafeJson: mockQueryApiSafeJson,
     }))
 
     mockQueryApiSafeJson.mockResolvedValue(createSuccessResult({}))
 
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     // This tests that the function properly uses __proto__: null.
     await fetchThreatFeed({

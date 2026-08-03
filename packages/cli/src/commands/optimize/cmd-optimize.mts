@@ -1,21 +1,21 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleOptimize } from './handle-optimize.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { CMD_NAME as CMD_NAME_FULL } from './shared.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { DryRunAction } from '../../util/dry-run/output.mts'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'optimize'
 
@@ -29,16 +29,16 @@ export const cmdOptimize = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       pin: {
         type: 'boolean',
@@ -50,8 +50,8 @@ async function run(
         default: false,
         description: 'Add overrides for production dependencies only',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -59,7 +59,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -74,13 +74,7 @@ async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
+  const dryRun = cli.flags['dryRun']
 
   const { json, markdown, pin, prod } = cli.flags
 
@@ -91,10 +85,73 @@ async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
+  if (dryRun) {
+    // Detect package environment to show meaningful dry-run output.
+    const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
+      cmdName: CMD_NAME_FULL,
+      prod: prod,
+    })
+
+    if (!pkgEnvCResult.ok) {
+      outputDryRunPreview({
+        summary: 'Optimize dependencies with @socketregistry overrides',
+        actions: [
+          {
+            type: 'fetch',
+            description: 'Detect package environment',
+            target: cwd,
+          },
+        ],
+        wouldSucceed: false,
+      })
+      return
+    }
+
+    const pkgEnvDetails = pkgEnvCResult.data
+    const { agent, agentVersion, pkgPath } = pkgEnvDetails
+
+    const actions: DryRunAction[] = [
+      {
+        type: 'fetch',
+        description: `Detected ${agent} v${agentVersion.version}`,
+        target: pkgPath,
+      },
+      {
+        type: 'fetch',
+        description: 'Analyze dependencies against @socketregistry overrides',
+        target: 'package.json and lockfile',
+      },
+      {
+        type: 'modify',
+        description: 'Add or update overrides section in package.json',
+        target: path.join(pkgPath, 'package.json'),
+        details: {
+          pin: pin
+            ? 'Yes - pin to specific versions'
+            : 'No - use version ranges',
+          prod: prod
+            ? 'Yes - production dependencies only'
+            : 'No - all dependencies',
+        },
+      },
+      {
+        type: 'execute',
+        description: `Run ${agent} to install optimized dependencies`,
+      },
+    ]
+
+    outputDryRunPreview({
+      summary: `Optimize dependencies with @socketregistry overrides (${agent} v${agentVersion.version})`,
+      actions,
+      wouldSucceed: true,
+    })
+    return
+  }
+
   await handleOptimize({
     cwd,
-    pin: Boolean(pin),
+    pin: pin,
     outputKind,
-    prod: Boolean(prod),
+    prod: prod,
   })
 }

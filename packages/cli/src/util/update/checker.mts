@@ -1,0 +1,334 @@
+/**
+ * Update checking utilities for Socket CLI. Handles version comparison and
+ * registry lookups for available updates.
+ *
+ * Key Functions: - checkForUpdates: Check registry for available updates -
+ * isUpdateAvailable: Compare current vs latest versions - fetchLatestVersion:
+ * Get latest version from npm registry.
+ *
+ * Features: - Robust version comparison using semver - Network error handling
+ * and timeouts - Registry authentication support - Retry mechanism with
+ * exponential backoff.
+ *
+ * Usage: - CLI update checking - Automated update notifications - Version
+ * compatibility checks.
+ */
+
+import https from 'node:https'
+
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+import semver from 'semver'
+
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { onExit } from '@socketsecurity/lib-stable/events/exit/handler'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
+
+import { UPDATE_NOTIFIER_TIMEOUT } from '../../constants/cache.mts'
+import { assertSafeEndpointUrl } from '../url/safe-endpoint.mts'
+
+const logger = getDefaultLogger()
+
+export interface AuthInfo {
+  token: string
+  type: string
+}
+
+// Type compatibility with registry-auth-token.
+export interface NpmCredentials {
+  token: string
+  type: string
+}
+
+export interface UpdateCheckOptions {
+  authInfo?: AuthInfo | NpmCredentials | undefined
+  name: string
+  registryUrl?: string | undefined
+  version: string
+}
+
+export interface UpdateCheckResult {
+  current: string
+  latest: string
+  updateAvailable: boolean
+}
+
+export interface FetchOptions {
+  authInfo?: AuthInfo | NpmCredentials | undefined
+}
+
+export interface GetLatestVersionOptions {
+  authInfo?: AuthInfo | NpmCredentials | undefined
+  registryUrl?: string | undefined
+}
+
+/**
+ * Network utilities with robust error handling and timeouts.
+ */
+const NetworkUtils = {
+  /**
+   * Fetch package information from npm registry using https.request(). Uses
+   * Node.js built-in https module to avoid keep-alive connection pooling that
+   * causes 30-second delays in process exit.
+   */
+  async fetch(
+    url: string,
+    options: FetchOptions = {},
+    timeoutMs = UPDATE_NOTIFIER_TIMEOUT,
+  ): Promise<{ version?: string | undefined }> {
+    if (!isNonEmptyString(url)) {
+      throw new Error(
+        `NetworkUtils.fetch(url) requires a non-empty string (got: ${typeof url === 'string' ? '""' : typeof url}); pass a valid registry URL like https://registry.npmjs.org/<package>`,
+      )
+    }
+
+    const { authInfo } = { __proto__: null, ...options } as FetchOptions
+
+    const parsedUrl = new URL(url)
+    const headers: Record<string, string> = {
+      Accept:
+        'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
+      'User-Agent': 'socket-cli-updater/1.0',
+    }
+
+    if (
+      authInfo &&
+      isNonEmptyString(authInfo.token) &&
+      isNonEmptyString(authInfo.type)
+    ) {
+      headers['Authorization'] = `${authInfo.type} ${authInfo.token}`
+    }
+
+    return new Promise((resolve, reject) => {
+      // Cleanup function to remove exit handler and prevent memory leak.
+      /* c8 ignore next - exitHandler only fires on actual process exit */
+      const exitHandler = () => req.destroy()
+      const removeExitHandler = onExit(exitHandler)
+
+      const cleanup = () => {
+        removeExitHandler()
+      }
+
+      const req = https.request(
+        {
+          agent: false, // Disable connection pooling.
+          headers,
+          hostname: parsedUrl.hostname,
+          method: 'GET',
+          path: parsedUrl.pathname + parsedUrl.search,
+          port: parsedUrl.port,
+          timeout: timeoutMs,
+        },
+        res => {
+          let data = ''
+
+          res.on('data', chunk => {
+            data += chunk
+          })
+
+          res.on('end', () => {
+            cleanup()
+            try {
+              if (res.statusCode !== 200) {
+                reject(
+                  new Error(`HTTP ${res.statusCode}: ${res.statusMessage}`),
+                )
+                return
+              }
+
+              const json = JSON.parse(data) as unknown
+
+              if (!json || typeof json !== 'object') {
+                reject(new Error('Invalid JSON response from registry'))
+                return
+              }
+
+              resolve(json)
+              /* c8 ignore start - JSON parse failure path; tests inject pre-parsed mock responses */
+            } catch (parseError) {
+              const contentType = res.headers['content-type']
+              if (!contentType || !contentType.includes('application/json')) {
+                debug(`Unexpected content type: ${contentType}`)
+              }
+              reject(
+                new Error(
+                  `Failed to parse JSON response: ${errorMessage(parseError)}`,
+                ),
+              )
+            }
+            /* c8 ignore stop */
+          })
+        },
+      )
+
+      req.on('timeout', () => {
+        cleanup()
+        req.destroy()
+        reject(new Error(`Request timed out after ${timeoutMs}ms`))
+      })
+
+      req.on('error', error => {
+        cleanup()
+        reject(new Error(`Network request failed: ${error.message}`))
+      })
+
+      req.end()
+    })
+  },
+
+  /**
+   * Get the latest version of a package from npm registry.
+   */
+  async getLatestVersion(
+    name: string,
+    options: GetLatestVersionOptions = {},
+  ): Promise<string | undefined> {
+    if (!isNonEmptyString(name)) {
+      throw new Error(
+        `getLatestVersion(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      )
+    }
+
+    const { authInfo, registryUrl = NPM_REGISTRY_URL } = {
+      __proto__: null,
+      ...options,
+    } as GetLatestVersionOptions
+
+    if (!isNonEmptyString(registryUrl)) {
+      throw new Error(
+        `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === 'string' ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
+      )
+    }
+
+    // The registry URL comes from .npmrc, which a checked-out repo can supply,
+    // and the auth token for that registry rides along in the Authorization
+    // header. SSRF-guard it before the request leaves the box.
+    const normalizedRegistryUrl = assertSafeEndpointUrl(registryUrl, {
+      label: 'npm registry URL',
+      source: 'the registry setting in .npmrc or options.registryUrl',
+    }).toString()
+
+    const maybeSlash = normalizedRegistryUrl.endsWith('/') ? '' : '/'
+    const latestUrl = `${normalizedRegistryUrl}${maybeSlash}${encodeURIComponent(name)}/latest`
+
+    let attempts = 0
+    const maxAttempts = 3
+    const baseDelay = 1000 // 1 second
+
+    while (attempts < maxAttempts) {
+      try {
+        const json = await NetworkUtils.fetch(
+          latestUrl,
+          authInfo ? { authInfo } : {},
+        )
+
+        if (!json || !isNonEmptyString(json.version)) {
+          throw new Error(
+            `${latestUrl} responded without a .version string (got: ${JSON.stringify(json)?.slice(0, 200) ?? 'null'}); the registry may be misconfigured or ${name} may not exist — verify the URL in a browser`,
+          )
+        }
+
+        return json.version
+      } catch (e) {
+        attempts++
+        const isLastAttempt = attempts === maxAttempts
+
+        if (isLastAttempt) {
+          logger.warn(
+            `Failed to fetch version after ${maxAttempts} attempts: ${errorMessage(e)}`,
+          )
+          throw e
+        }
+
+        // Exponential backoff with cap to prevent integer overflow.
+        const delay = Math.min(baseDelay * 2 ** (attempts - 1), 60_000)
+        logger.log(
+          `Attempt ${attempts} failed, retrying in ${delay}ms: ${errorMessage(e)}`,
+        )
+
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+
+    /* c8 ignore start - unreachable: while loop either returns on success or throws on last attempt */
+    return undefined
+    /* c8 ignore stop */
+  },
+}
+
+/**
+ * Check for available updates for a package. Fetches latest version from
+ * registry and compares with current.
+ */
+export async function checkForUpdates(
+  config: UpdateCheckOptions,
+): Promise<UpdateCheckResult> {
+  const { authInfo, name, registryUrl, version } = {
+    __proto__: null,
+    ...config,
+  } as UpdateCheckOptions
+
+  if (!isNonEmptyString(name)) {
+    throw new Error(
+      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+    )
+  }
+
+  if (!isNonEmptyString(version)) {
+    throw new Error(
+      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+    )
+  }
+
+  try {
+    const latest = await NetworkUtils.getLatestVersion(name, {
+      ...(authInfo ? { authInfo } : {}),
+      ...(registryUrl ? { registryUrl } : {}),
+    })
+
+    /* c8 ignore start - defensive: getLatestVersion throws on empty so this guard never fires */
+    if (!isNonEmptyString(latest)) {
+      throw new Error(
+        `registry returned no latest version for ${name} (getLatestVersion resolved to ${JSON.stringify(latest)}); check that ${name} exists on ${registryUrl || NPM_REGISTRY_URL}`,
+      )
+    }
+    /* c8 ignore stop */
+
+    const updateAvailable = isUpdateAvailable(version, latest)
+
+    return {
+      current: version,
+      latest,
+      updateAvailable,
+    }
+  } catch (e) {
+    logger.log(`Failed to check for updates: ${errorMessage(e)}`)
+    throw e
+  }
+}
+
+/**
+ * Version comparison using semver library.
+ */
+export function isUpdateAvailable(current: string, latest: string): boolean {
+  try {
+    // Use semver for robust version comparison.
+    const currentClean = semver.clean(current)
+    const latestClean = semver.clean(latest)
+
+    if (!currentClean || !latestClean) {
+      // Fallback to string comparison if semver parsing fails.
+      return latest !== current
+    }
+
+    return semver.gt(latestClean, currentClean)
+    /* c8 ignore start - semver.gt fallback for non-semver inputs; both inputs already passed semver.coerce */
+  } catch {
+    return latest !== current
+  }
+  /* c8 ignore stop */
+}
+
+export { NetworkUtils }

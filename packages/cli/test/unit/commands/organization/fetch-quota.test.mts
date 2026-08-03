@@ -1,29 +1,25 @@
 /**
- * Unit Tests: API Token Quota Fetcher
+ * Unit Tests: API Token Quota Fetcher.
  *
- * Purpose:
- * Tests the Socket SDK integration that fetches quota/usage information for the authenticated
- * API token. Validates quota data retrieval including scans, packages, and repositories limits,
- * SDK setup handling, API error handling, and custom configuration passing for the getQuota
- * API endpoint.
+ * Purpose: Tests the Socket SDK integration that fetches quota/usage
+ * information for the authenticated API token. Validates quota data retrieval
+ * including scans, packages, and repositories limits, SDK setup handling, API
+ * error handling, and custom configuration passing for the getQuota API
+ * endpoint.
  *
- * Test Coverage:
- * - Successful quota fetching with usage and limit data
- * - SDK setup failure handling
- * - API call error handling with HTTP status codes
- * - Custom SDK options passing (API token, base URL)
- * - Quota at limit scenario (100% usage)
- * - Various organization slug handling
- * - Null prototype usage for security
+ * Test Coverage: - Successful quota fetching with usage and limit data - SDK
+ * setup failure handling - API call error handling with HTTP status codes -
+ * Custom SDK options passing (API token, base URL) - Quota at limit scenario
+ * (100% usage) - Various organization slug handling - Null prototype usage for
+ * security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
- * Tests verify proper CResult pattern usage and quota data structure validation.
+ * Testing Approach: Uses SDK test helpers to mock setupSdk and handleApiCall
+ * without actual API calls. Tests verify proper CResult pattern usage and quota
+ * data structure validation.
  *
- * Related Files:
- * - src/commands/organization/fetch-quota.mts - Quota fetcher
- * - src/commands/organization/handle-quota.mts - Command handler
- * - src/commands/organization/output-quota.mts - Output formatter
+ * Related Files: - src/commands/organization/fetch-quota.mts - Quota fetcher -
+ * src/commands/organization/handle-quota.mts - Command handler -
+ * src/commands/organization/output-quota.mts - Output formatter.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -32,15 +28,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchQuota } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-quota.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchQuota } from '../../../../src/commands/organization/fetch-quota.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -121,8 +117,8 @@ describe('fetchQuota', () => {
       'org123numbers',
     ]
 
-    for (const _orgSlug of orgSlugs) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
+      const orgSlug = orgSlugs[i]
       await fetchQuota()
       expect(mockSdk.getQuota).toHaveBeenCalledWith()
     }

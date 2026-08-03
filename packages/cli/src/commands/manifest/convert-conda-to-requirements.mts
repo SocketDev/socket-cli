@@ -1,16 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { stripAnsi } from '@socketsecurity/lib/strings'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-function prepareContent(content: string): string {
-  return stripAnsi(content.trim())
-}
-
+// socket-lint: allow boolean-trap -- exported call sites span handle-manifest-conda.mts and its test suite, outside this fix's scope; an options-object migration needs those call sites updated together.
 export async function convertCondaToRequirements(
   filename: string,
   cwd: string,
@@ -79,7 +76,10 @@ export async function convertCondaToRequirements(
       }
     }
   } else {
-    const filepath = path.join(cwd, filename)
+    // path.resolve, not path.join: callers hand us the absolute path the
+    // socket.json containment check already approved, and path.join would
+    // re-root it under cwd.
+    const filepath = path.resolve(cwd, filename)
 
     if (verbose) {
       logger.info(`[VERBOSE] target: ${filepath}`)
@@ -119,7 +119,9 @@ export function convertCondaToRequirementsFromInput(input: string): string {
   let delim = '-'
   let indent = ''
   const keeping: string[] = []
-  for (const line of input.split('\n')) {
+  const lines = input.split('\n')
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const trimmed = line.trim()
     if (!trimmed) {
       // Ignore empty lines.
@@ -139,10 +141,11 @@ export function convertCondaToRequirementsFromInput(input: string): string {
         // Store the indentation of the block.
         if (trimmed.startsWith('-') && line.includes('-')) {
           const parts = line.split('-')
+          /* c8 ignore start - String.split always returns ≥1 element */
           if (!parts.length) {
-            // Unexpected: split should always return at least one element.
             break
           }
+          /* c8 ignore stop */
           indent = `${parts[0]}-`
           if (indent.length <= delim.length) {
             // The first line after the `pip:` line does not indent further
@@ -161,14 +164,19 @@ export function convertCondaToRequirementsFromInput(input: string): string {
     // Note: the line may end with a line comment so don't === it.
     else if (trimmed.startsWith('- pip:') && line.includes('-')) {
       const parts = line.split('-')
+      /* c8 ignore start - String.split always returns ≥1 element */
       if (!parts.length) {
-        // Unexpected: split should always return at least one element.
         continue
       }
+      /* c8 ignore stop */
       delim = `${parts[0]}-`
       collecting = true
     }
   }
 
   return prepareContent(keeping.join('\n'))
+}
+
+export function prepareContent(content: string): string {
+  return stripAnsi(content.trim())
 }

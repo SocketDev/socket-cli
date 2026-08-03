@@ -1,0 +1,10 @@
+module(name = "custom_name_fixture", version = "0.0.0")
+
+bazel_dep(name = "rules_jvm_external", version = "6.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "maven_rules_kotlin_example",
+    artifacts = ["com.google.dagger:dagger:2.51.1"],
+)
+use_repo(maven, "maven_rules_kotlin_example")

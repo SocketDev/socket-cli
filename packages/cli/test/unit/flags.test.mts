@@ -1,24 +1,22 @@
 /**
- * @fileoverview Unit tests for CLI flag definitions and memory management.
+ * @file Unit tests for CLI flag definitions and memory management. Tests the
+ *   flag system including common flags, output flags, validation flags, and
+ *   dynamic memory configuration based on system resources. Test Coverage:
  *
- * Tests the flag system including common flags, output flags, validation flags,
- * and dynamic memory configuration based on system resources.
- *
- * Test Coverage:
- * - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), CLI flag override
- * - getMaxSemiSpaceSizeFlag: Calculation based on old space size, CLI flag override
- * - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull, maxOldSpaceSize, maxSemiSpaceSize, spinner flags
- * - outputFlags: JSON and markdown output format flags
- * - validationFlags: All and strict validation mode flags
- * - Flag structure validation (type, description, shortFlag properties)
- *
- * Testing Approach:
- * - Mock meow to control CLI flag parsing
- * - Test flag calculations with various memory configurations
- * - Validate flag metadata and structure
- *
- * Related Files:
- * - src/flags.mts - Flag definitions and memory management
+ *   - getMaxOldSpaceSizeFlag: Default based on system memory (75% of RAM), CLI
+ *     flag override
+ *   - getMaxSemiSpaceSizeFlag: Calculation based on old space size, CLI flag
+ *     override
+ *   - commonFlags: Banner, compactHeader, config, dryRun, help, helpFull,
+ *     maxOldSpaceSize, maxSemiSpaceSize, spinner flags
+ *   - outputFlags: JSON and markdown output format flags
+ *   - validationFlags: All and strict validation mode flags
+ *   - Flag structure validation (type, description, shortFlag properties) Testing
+ *     Approach:
+ *   - Mock meow to control CLI flag parsing
+ *   - Test flag calculations with various memory configurations
+ *   - Validate flag metadata and structure Related Files:
+ *   - src/flags.mts - Flag definitions and memory management
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,19 +29,22 @@ const mockValues = vi.hoisted(() => ({
   totalMem: 8 * 1024 * 1024 * 1024, // 8GB default.
 }))
 
-// Mock meow to return controlled flag values.
-vi.mock('../../src/meow.mts', () => ({
-  default: vi.fn(() => ({
+// Mock meow to return controlled flag values. defineFlags is re-exported
+// as the identity helper since flags.mts uses it to declare commonFlags
+// / outputFlags / validationFlags.
+vi.mock(import('../../src/meow.mts'), () => ({
+  meow: vi.fn(() => ({
     flags: {
       maxOldSpaceSize: mockValues.maxOldSpaceSize,
       maxSemiSpaceSize: mockValues.maxSemiSpaceSize,
     },
   })),
+  defineFlags: <T,>(flags: T): T => flags,
 }))
 
 // Mock node:os to control total memory.
-vi.mock('node:os', async importOriginal => {
-  const original = await importOriginal<typeof import('node:os')>()
+vi.mock(import('node:os'), async importOriginal => {
+  const original = await importOriginal<typeof OsModule>()
   return {
     ...original,
     default: {
@@ -54,7 +55,7 @@ vi.mock('node:os', async importOriginal => {
 })
 
 // Mock NODE_OPTIONS to be controllable.
-vi.mock('../../src/env/node-options.mts', () => ({
+vi.mock(import('../../src/env/node-options.mts'), () => ({
   get NODE_OPTIONS() {
     return mockValues.nodeOptions
   },
@@ -66,8 +67,9 @@ import {
   getMaxSemiSpaceSizeFlag,
   outputFlags,
   resetFlagCache,
-  validationFlags,
 } from '../../src/flags.mts'
+
+import type * as OsModule from 'node:os'
 
 describe('flags', () => {
   beforeEach(() => {
@@ -126,6 +128,17 @@ describe('flags', () => {
       // Should be 75% of 4GB in MiB = 3072.
       expect(result).toBe(3072)
     })
+
+    it('handles invalid NODE_OPTIONS value gracefully', () => {
+      // Set NODE_OPTIONS with an invalid pattern, non-numeric after equals.
+      // Since the regex only matches digits, this will fall through to default.
+      mockValues.nodeOptions = '--max-old-space-size=abc'
+      resetFlagCache()
+
+      const result = getMaxOldSpaceSizeFlag()
+      // Should fall back to default (75% of 8GB).
+      expect(result).toBe(6144)
+    })
   })
 
   describe('getMaxSemiSpaceSizeFlag', () => {
@@ -161,7 +174,7 @@ describe('flags', () => {
     })
 
     it('scales for large heaps', () => {
-      mockValues.maxOldSpaceSize = 16384
+      mockValues.maxOldSpaceSize = 16_384
       resetFlagCache()
 
       const result = getMaxSemiSpaceSizeFlag()
@@ -176,6 +189,34 @@ describe('flags', () => {
       const result = getMaxSemiSpaceSizeFlag()
       // 2048 MiB heap should use 16 MiB semi-space.
       expect(result).toBe(16)
+    })
+
+    it('scales for 1024 MiB heap', () => {
+      mockValues.maxOldSpaceSize = 1024
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 1024 MiB heap should use 8 MiB semi-space.
+      expect(result).toBe(8)
+    })
+
+    it('scales for 4096 MiB heap', () => {
+      mockValues.maxOldSpaceSize = 4096
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // 4096 MiB heap should use 32 MiB semi-space.
+      expect(result).toBe(32)
+    })
+
+    it('handles invalid NODE_OPTIONS for semi-space gracefully', () => {
+      // Set NODE_OPTIONS with a non-matching pattern.
+      mockValues.nodeOptions = '--max-semi-space-size=xyz'
+      resetFlagCache()
+
+      const result = getMaxSemiSpaceSizeFlag()
+      // Should fall back to calculated default based on old space.
+      expect(result).toBe(64) // Default for 6144 MiB old space.
     })
   })
 
@@ -219,6 +260,17 @@ describe('flags', () => {
       expect(commonFlags.config?.shortFlag).toBe('c')
       expect(commonFlags.help?.shortFlag).toBe('h')
     })
+
+    it('exposes default getters for memory flags', () => {
+      // The max*SpaceSize flags use accessor properties for default.
+      // Reading them invokes the getter body.
+      const oldDefault = (commonFlags.maxOldSpaceSize as unknown)?.default
+      const semiDefault = (commonFlags.maxSemiSpaceSize as unknown)?.default
+      expect(typeof oldDefault).toBe('number')
+      expect(typeof semiDefault).toBe('number')
+      expect(oldDefault).toBeGreaterThanOrEqual(0)
+      expect(semiDefault).toBeGreaterThanOrEqual(0)
+    })
   })
 
   describe('outputFlags', () => {
@@ -246,35 +298,6 @@ describe('flags', () => {
     it('has short flags for output options', () => {
       expect(outputFlags.json?.shortFlag).toBe('j')
       expect(outputFlags.markdown?.shortFlag).toBe('m')
-    })
-  })
-
-  describe('validationFlags', () => {
-    it('exports validation-related flags', () => {
-      expect(validationFlags).toBeDefined()
-      expect(typeof validationFlags).toBe('object')
-
-      // Check for expected validation flags.
-      expect(validationFlags).toHaveProperty('all')
-      expect(validationFlags).toHaveProperty('strict')
-
-      // Check flag types.
-      expect(validationFlags.all?.type).toBe('boolean')
-      expect(validationFlags.strict?.type).toBe('boolean')
-    })
-
-    it('has descriptions for all flags', () => {
-      for (const [, flag] of Object.entries(validationFlags)) {
-        expect(flag).toHaveProperty('description')
-        expect(typeof flag.description).toBe('string')
-        expect(flag.description.length).toBeGreaterThan(0)
-      }
-    })
-
-    it('validation flags do not have short flags', () => {
-      // Validation flags don't have short flags by design.
-      expect(validationFlags.all?.shortFlag).toBeUndefined()
-      expect(validationFlags.strict?.shortFlag).toBeUndefined()
     })
   })
 })

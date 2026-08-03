@@ -3,17 +3,13 @@
  *
  * Tests viewing detailed scan results.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Scan details display
- * - Issue breakdown
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Scan details display - Issue breakdown - Output format support
+ * (JSON, markdown)
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-view.mts - Command definition
- * - src/commands/scan/handle-scan-view.mts - View logic
- * - src/commands/scan/output-scan-view.mts - Formatting
+ * Related Files: - src/commands/scan/cmd-scan-view.mts - Command definition -
+ * src/commands/scan/handle-scan-view.mts - View logic -
+ * src/commands/scan/output-scan-view.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -53,6 +49,7 @@ describe('socket scan view', async () => {
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --stream            Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).
           
               Examples
@@ -87,7 +84,7 @@ describe('socket scan view', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan view\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -119,14 +116,24 @@ describe('socket scan view', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan view\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan view\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch scan details
+
+          Query parameters:
+            organization: fakeOrg
+            scanId: scanidee
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -1,15 +1,17 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { coanaFix } from './coana-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
-import { convertCveToGhsa } from '../../utils/cve-to-ghsa.mts'
-import { convertPurlToGhsas } from '../../utils/purl/to-ghsa.mts'
+import { convertCveToGhsa } from '../../util/cve-to-ghsa.mts'
+import { convertPurlToGhsas } from '../../util/purl/to-ghsa.mts'
 
 import type { FixConfig } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib/objects'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 const logger = getDefaultLogger()
 
 const GHSA_FORMAT_REGEXP = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/
@@ -29,8 +31,8 @@ export type HandleFixConfig = Remap<
 >
 
 /**
- * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only.
- * Filters out invalid IDs and logs conversion results.
+ * Converts mixed CVE/GHSA/PURL IDs to GHSA IDs only. Filters out invalid IDs
+ * and logs conversion results.
  */
 export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   debug(`Converting ${ids.length} IDs to GHSA format`)
@@ -39,7 +41,8 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
   const validGhsas: string[] = []
   const errors: string[] = []
 
-  for (const id of ids) {
+  for (let i = 0, { length } = ids; i < length; i += 1) {
+    const id = ids[i]!
     const trimmedId = id.trim()
 
     if (trimmedId.startsWith('GHSA-')) {
@@ -56,7 +59,6 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
         continue
       }
 
-      // eslint-disable-next-line no-await-in-loop
       const conversionResult = await convertCveToGhsa(trimmedId)
       if (conversionResult.ok) {
         validGhsas.push(conversionResult.data)
@@ -66,7 +68,6 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       }
     } else if (trimmedId.startsWith('pkg:')) {
       // Convert PURL to GHSAs
-      // eslint-disable-next-line no-await-in-loop
       const conversionResult = await convertPurlToGhsas(trimmedId)
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)
@@ -110,9 +111,11 @@ export async function handleFix({
   coanaVersion,
   cwd,
   debug: debugFlag,
+  disableExternalToolChecks,
   disableMajorUpdates,
   ecosystems,
   exclude,
+  excludePaths,
   ghsas,
   include,
   minSatisfying,
@@ -120,6 +123,7 @@ export async function handleFix({
   orgSlug,
   outputFile,
   outputKind,
+  packageManagers,
   prCheck,
   prLimit,
   rangeStyle,
@@ -136,15 +140,18 @@ export async function handleFix({
     coanaVersion,
     cwd,
     debug: debugFlag,
+    disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems,
     exclude,
+    excludePaths,
     ghsas,
     include,
     minSatisfying,
     minimumReleaseAge,
     outputFile,
     outputKind,
+    packageManagers,
     prCheck,
     prLimit,
     rangeStyle,
@@ -160,9 +167,11 @@ export async function handleFix({
       coanaVersion,
       cwd,
       debug: debugFlag,
+      disableExternalToolChecks,
       disableMajorUpdates,
       ecosystems,
       exclude,
+      excludePaths,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only.
       ghsas: await convertIdsToGhsas(ghsas),
       include,
@@ -171,6 +180,7 @@ export async function handleFix({
       orgSlug,
       outputFile,
       outputKind,
+      packageManagers,
       prCheck,
       prLimit,
       rangeStyle,

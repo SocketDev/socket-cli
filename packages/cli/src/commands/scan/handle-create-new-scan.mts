@@ -1,13 +1,15 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
-import { pluralize } from '@socketsecurity/lib/words'
+import { debugDir, debugNs } from '@socketsecurity/lib-stable/debug/output'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 const logger = getDefaultLogger()
 
+import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
@@ -20,28 +22,32 @@ import {
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,
 } from '../../constants.mts'
-import { runSocketBasics } from '../../utils/basics/spawn.mts'
+import { runSocketBasics } from '../../util/basics/spawn.mts'
 
 /**
  * Filter out .socket.facts.json files from scan paths to avoid duplicates.
  *
  * @param paths - Array of file paths to filter.
+ *
  * @returns Filtered paths without .socket.facts.json files.
  */
-function excludeFactsJson(paths: string[]): string[] {
+export function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
-import { socketDocsLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
+import { socketDocsLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { Remap } from '@socketsecurity/lib/objects'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
@@ -68,6 +74,8 @@ export type HandleCreateNewScanConfig = {
   reportLevel: REPORT_LEVEL
   targets: string[]
   tmp: boolean
+  trustSocketJson: boolean
+  workspace?: string | undefined
 }
 
 export async function handleCreateNewScan({
@@ -91,8 +99,13 @@ export async function handleCreateNewScan({
   reportLevel,
   targets,
   tmp,
+  trustSocketJson,
+  workspace,
 }: HandleCreateNewScanConfig): Promise<void> {
-  debug('notice', `Creating new scan for ${orgSlug}/${repoName}`)
+  debugNs(
+    'notice',
+    `Creating new scan for ${orgSlug}/${workspace ? `${workspace}/` : ''}${repoName}`,
+  )
   debugDir('inspect', {
     autoManifest,
     branchName,
@@ -106,28 +119,46 @@ export async function handleCreateNewScan({
     reportLevel,
     targets,
     tmp,
+    workspace,
   })
 
+  // Scan targets grow with generated manifests (e.g. Bazel writes synthetic
+  // files under a dot-directory the file walk would skip).
+  let scanTargets = targets
+  // Sidecar forwarded to reachability; populated only when reach runs.
+  let resolvedPathsSidecar: ResolvedPathsSidecar | undefined
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    debug('notice', 'Auto-manifest mode enabled')
+    debugNs('notice', 'Auto-manifest mode enabled')
     const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     debugDir('inspect', { detected })
-    await generateAutoManifest({
-      detected,
+    const autoManifestResult = await generateAutoManifest({
+      computeArtifactsSidecar: reach.runReachabilityAnalysis,
       cwd,
+      detected,
+      excludePaths: reach.excludePaths,
       outputKind,
+      trustSocketJson,
       verbose: false,
     })
+    resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
+    if (autoManifestResult.generatedFiles.length) {
+      scanTargets = [
+        ...new Set([...targets, ...autoManifestResult.generatedFiles]),
+      ]
+    }
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
   const spinner = getDefaultSpinner()
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  const supportedFilesCResult = await fetchSupportedScanFileNames({
+    orgSlug,
+    spinner,
+  })
   if (!supportedFilesCResult.ok) {
-    debug('warn', 'Failed to fetch supported scan file names')
+    debugNs('warn', 'Failed to fetch supported scan file names')
     debugDir('inspect', { supportedFilesCResult })
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
@@ -135,17 +166,37 @@ export async function handleCreateNewScan({
     })
     return
   }
-  debug(
+  debugNs(
     'notice',
-    `Fetched ${supportedFilesCResult.data['size']} supported file types`,
+    `Fetched supported file types for ${Object.keys(supportedFilesCResult.data).length} ecosystems`,
   )
 
-  spinner.start('Searching for local files to include in scan...')
+  spinner.start('Searching for local files to include in scan…')
 
   const supportedFiles = supportedFilesCResult.data
-  const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
-    cwd,
-  })
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
+  const { effectiveSocketConfig, mergedReachabilityOptions } =
+    applyFullExcludePaths({
+      cwd,
+      reachabilityOptions: reach,
+      socketConfig,
+      target: targets[0]!,
+    })
+
+  const packagePaths = await getPackageFilesForScan(
+    scanTargets,
+    supportedFiles,
+    {
+      config: effectiveSocketConfig,
+      cwd,
+    },
+  )
 
   spinner.successAndStop(
     `Found ${packagePaths.length} ${pluralize('file', { count: packagePaths.length })} to include in scan.`,
@@ -159,7 +210,7 @@ export async function handleCreateNewScan({
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
-    debug('warn', 'No eligible files found to scan')
+    debugNs('warn', 'No eligible files found to scan')
     return
   }
 
@@ -171,19 +222,27 @@ export async function handleCreateNewScan({
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
-    debug('notice', 'Read-only mode, exiting early')
+    debugNs('notice', 'Read-only mode, exiting early')
     return
   }
 
   let scanPaths: string[] = packagePaths
   let tier1ReachabilityScanId: string | undefined
+  let reachabilityReport: string | undefined
+  // Whether this run generated the .socket.facts.json itself. We only clean
+  // up a facts file we produced — a pre-existing one (the user pre-generated
+  // it, or --reach-use-only-pregenerated-sboms points at their own artifacts)
+  // is left untouched.
+  let generatedFactsFile = false
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
+    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths({ target: targets[0]! }) — this guard is unreachable in practice. */
     if (!targets.length) {
       logger.fail('Reachability analysis requires at least one target')
       return
     }
+    /* c8 ignore stop */
 
     const [firstTarget] = targets
     if (!firstTarget) {
@@ -192,9 +251,18 @@ export async function handleCreateNewScan({
     }
 
     logger.error('')
-    logger.info('Starting reachability analysis...')
-    debug('notice', 'Reachability analysis enabled')
-    debugDir('inspect', { reachabilityOptions: reach })
+    logger.info('Starting reachability analysis…')
+    debugNs('notice', 'Reachability analysis enabled')
+    debugDir('inspect', { reachabilityOptions: mergedReachabilityOptions })
+
+    // Record whether the facts file was already on disk before the analysis
+    // ran. The create flow always writes coana's report to the default
+    // .socket.facts.json in cwd, so a file present now was not produced by
+    // this run and must be preserved. --reach-use-only-pregenerated-sboms
+    // likewise signals the user is managing their own artifacts.
+    const factsFilePreExisted = existsSync(
+      path.resolve(cwd, DOT_SOCKET_DOT_FACTS_JSON),
+    )
 
     spinner.start()
 
@@ -203,8 +271,9 @@ export async function handleCreateNewScan({
       cwd,
       orgSlug,
       packagePaths,
-      reachabilityOptions: reach,
+      reachabilityOptions: mergedReachabilityOptions,
       repoName,
+      resolvedPathsSidecar,
       spinner,
       target: firstTarget,
     })
@@ -218,7 +287,9 @@ export async function handleCreateNewScan({
 
     logger.success('Reachability analysis completed successfully')
 
-    const reachabilityReport = reachResult.data?.reachabilityReport
+    reachabilityReport = reachResult.data?.reachabilityReport
+    generatedFactsFile =
+      !factsFilePreExisted && !reach.reachUseOnlyPregeneratedSboms
 
     scanPaths = [
       ...excludeFactsJson(packagePaths),
@@ -232,7 +303,7 @@ export async function handleCreateNewScan({
   if (basics) {
     logger.error('')
     logger.info('Starting comprehensive security scan (socket-basics)...')
-    debug('notice', 'Socket-basics enabled')
+    debugNs('notice', 'Socket-basics enabled')
 
     spinner.start()
 
@@ -249,7 +320,7 @@ export async function handleCreateNewScan({
       logger.warn(
         'Socket-basics scan failed, continuing without SAST/secrets findings',
       )
-      debug('error', 'socket-basics error:', basicsResult.message)
+      debugNs('error', 'socket-basics error:', basicsResult.message)
     } else {
       logger.success('Comprehensive security scan completed successfully')
 
@@ -275,32 +346,62 @@ export async function handleCreateNewScan({
     }
   }
 
-  const fullScanCResult = await fetchCreateOrgFullScan(
-    scanPaths,
-    orgSlug,
-    {
-      commitHash,
-      commitMessage,
-      committers,
-      pullRequest,
-      repoName,
-      branchName,
-      scanType: reach.runReachabilityAnalysis
-        ? SCAN_TYPE_SOCKET_TIER1
-        : SCAN_TYPE_SOCKET,
-    },
-    {
-      cwd,
-      defaultBranch,
-      pendingHead,
-      tmp,
-    },
-  )
+  // Brotli-compress any .socket.facts.json paths in scanPaths just before
+  // upload. depscan's api-v0 multipart boundary streams brotli decode based
+  // on the .br filename suffix. Coana keeps writing plain .socket.facts.json
+  // on disk, so the local read path (extractTier1ReachabilityScanId) stays
+  // correct. The cleanup() in the finally block removes the sibling .br
+  // files whether the upload succeeded or threw.
+  const compressed = await compressSocketFactsForUpload(scanPaths)
+  let fullScanCResult: Awaited<ReturnType<typeof fetchCreateOrgFullScan>>
+  try {
+    fullScanCResult = await fetchCreateOrgFullScan(
+      compressed.paths,
+      orgSlug,
+      {
+        commitHash,
+        commitMessage,
+        committers,
+        pullRequest,
+        repoName,
+        branchName,
+        scanType: reach.runReachabilityAnalysis
+          ? SCAN_TYPE_SOCKET_TIER1
+          : SCAN_TYPE_SOCKET,
+        workspace,
+      },
+      {
+        cwd,
+        defaultBranch,
+        pendingHead,
+        tmp,
+      },
+    )
+  } finally {
+    await compressed.cleanup()
+  }
 
   const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
 
   if (reach && scanId && tier1ReachabilityScanId) {
     await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+  } else if (reach && reachabilityReport && scanId) {
+    // Reachability ran and a scan was created, but no tier 1 scan id came out
+    // of the facts file. Say so instead of skipping finalize in silence — the
+    // tier 1 row otherwise stays stuck and the full scan is never linked to
+    // its reachability report.
+    logger.warn(
+      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
+    )
+  }
+
+  if (fullScanCResult.ok && reachabilityReport && generatedFactsFile) {
+    // The facts file is an upload artifact, not user-facing output — remove
+    // it once the scan is submitted so it doesn't linger in the project. Only
+    // a file we generated this run is removed; a pre-existing or
+    // user-pre-generated facts file is left in place (see generatedFactsFile).
+    // On submission failure we intentionally keep the file for debuggability.
+    await safeDelete(path.resolve(cwd, reachabilityReport), { force: true })
   }
 
   if (report && fullScanCResult.ok) {

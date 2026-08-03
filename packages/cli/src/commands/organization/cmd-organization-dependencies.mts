@@ -1,25 +1,20 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleDependencies } from './handle-dependencies.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'dependencies'
 
@@ -34,16 +29,16 @@ export const cmdOrganizationDependencies = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       limit: {
         type: 'number',
@@ -56,8 +51,8 @@ async function run(
         description: 'Page number',
       },
       ...outputFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       ${command} [options]
 
@@ -65,7 +60,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       ${command}
@@ -82,7 +77,7 @@ async function run(
 
   const { json, limit, markdown, offset } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -107,21 +102,27 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedLimit = Number(limit || 0)
   const validatedOffset = Number(offset || 0)
 
+  if (dryRun) {
+    outputDryRunFetch('organization dependencies', {
+      limit: validatedLimit || 50,
+      offset: validatedOffset,
+    })
+    return
+  }
+
   if (Number.isNaN(validatedLimit) || validatedLimit < 0) {
-    throw new Error(`Invalid value for --limit: ${limit}`)
+    throw new InputError(
+      `--limit must be a non-negative integer (saw: "${limit}"); pass a number like --limit=50`,
+    )
   }
   if (Number.isNaN(validatedOffset) || validatedOffset < 0) {
-    throw new Error(`Invalid value for --offset: ${offset}`)
+    throw new InputError(
+      `--offset must be a non-negative integer (saw: "${offset}"); pass a number like --offset=0`,
+    )
   }
 
   await handleDependencies({

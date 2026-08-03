@@ -1,0 +1,488 @@
+/**
+ * Unit tests for raw-npx command.
+ *
+ * Tests the command that runs npx without the Socket wrapper.
+ *
+ * Test Coverage: - Command metadata, description, hidden flag - --dry-run flag
+ * support - npx binary path resolution - Argument passing to npx - Process
+ * spawning configuration - Exit code handling - Signal handling.
+ *
+ * Testing Approach: - Mock logger to capture output - Mock meowOrExit to
+ * control flag values - Mock spawn from @socketsecurity/lib/spawn - Mock
+ * getNpxBinPath to return controlled path - Mock outputDryRunExecute for
+ * dry-run testing - Verify spawn configuration (shell, stdio, etc.)
+ *
+ * Related Files: - src/commands/raw-npx/cmd-raw-npx.mts - Implementation.
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import {
+  CMD_NAME,
+  cmdRawNpx,
+} from '../../../../src/commands/raw-npx/cmd-raw-npx.mts'
+
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
+import type * as WithSubcommandsModule from '../../../../src/util/cli/with-subcommands.mjs'
+
+// Mock the logger.
+const mockLogger = vi.hoisted(() => ({
+  error: vi.fn(),
+  fail: vi.fn(),
+  info: vi.fn(),
+  log: vi.fn(),
+  success: vi.fn(),
+  warn: vi.fn(),
+}))
+
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
+
+// Mock spawn.
+const mockSpawn = vi.hoisted(() => {
+  const mockProcess = {
+    on: vi.fn(),
+    kill: vi.fn(),
+    pid: 12_345,
+    stdin: undefined,
+    stdout: undefined,
+    stderr: undefined,
+  }
+  return vi.fn(() => {
+    return Object.assign(Promise.resolve({ exitCode: 0 }), {
+      process: mockProcess,
+    })
+  })
+})
+
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
+  spawn: mockSpawn,
+}))
+
+// Mock WIN32 constant.
+const mockWIN32 = vi.hoisted(() => false)
+
+vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
+  get WIN32() {
+    return mockWIN32
+  },
+}))
+
+// Mock npx path utilities.
+const mockGetNpxBinPath = vi.hoisted(() => vi.fn(() => '/usr/bin/npx'))
+
+vi.mock(import('../../../../src/util/npm/paths.mts'), () => ({
+  getNpxBinPath: mockGetNpxBinPath,
+}))
+
+// Mock dry-run output.
+const mockOutputDryRunExecute = vi.hoisted(() => vi.fn())
+
+vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
+  outputDryRunExecute: mockOutputDryRunExecute,
+}))
+
+// Mock meowOrExit to prevent actual CLI parsing.
+const mockMeowOrExit = vi.hoisted(() =>
+  vi.fn((options: unknown) => {
+    const argv = options.argv as string[] | readonly string[]
+    const flags: Record<string, unknown> = {}
+
+    // Parse flags from argv.
+    if (argv.includes('--dry-run')) {
+      flags['dryRun'] = true
+    }
+
+    // Invoke the help() callback so its template-string body is
+    // recorded as covered; production meowOrExit only invokes it on
+    // --help, which the test suite never exercises.
+    const help = options.config?.help
+      ? options.config.help('socket raw-npx')
+      : ''
+
+    return {
+      flags,
+      help,
+      input: [],
+      pkg: {},
+    }
+  }),
+)
+
+vi.mock(
+  import('../../../../src/util/cli/with-subcommands.mjs'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof WithSubcommandsModule>()
+    return {
+      ...actual,
+      meowOrExit: mockMeowOrExit,
+    }
+  },
+)
+
+describe('cmd-raw-npx', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.exitCode = undefined
+    mockGetNpxBinPath.mockReturnValue('/usr/bin/npx')
+  })
+
+  describe('command metadata', () => {
+    it('should export CMD_NAME as raw-npx', () => {
+      expect(CMD_NAME).toBe('raw-npx')
+    })
+
+    it('should have correct description', () => {
+      expect(cmdRawNpx.description).toBe(
+        'Run pnpm exec without the Socket wrapper',
+      )
+    })
+
+    it('should not be hidden', () => {
+      expect(cmdRawNpx.hidden).toBe(false)
+    })
+  })
+
+  describe('run', () => {
+    const importMeta = { url: 'file:///test/cmd-raw-npx.mts' }
+    const context = { parentName: 'socket' }
+
+    describe('--dry-run flag', () => {
+      it('should show preview without spawning npx', async () => {
+        await cmdRawNpx.run(['cowsay', '--dry-run'], importMeta, context)
+
+        expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
+          '/usr/bin/npx',
+          ['cowsay', '--dry-run'],
+          'raw pnpm exec command',
+        )
+        expect(mockSpawn).not.toHaveBeenCalled()
+      })
+
+      it('should use pnpm exec path from getNpxBinPath in dry-run', async () => {
+        mockGetNpxBinPath.mockReturnValue('/custom/path/to/npx')
+
+        await cmdRawNpx.run(['cowsay', '--dry-run'], importMeta, context)
+
+        expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
+          '/custom/path/to/npx',
+          expect.any(Array),
+          'raw pnpm exec command',
+        )
+      })
+
+      it('should pass all arguments to dry-run output', async () => {
+        await cmdRawNpx.run(
+          ['prettier', '--check', '.', '--dry-run'],
+          importMeta,
+          context,
+        )
+
+        expect(mockOutputDryRunExecute).toHaveBeenCalledWith(
+          expect.any(String),
+          ['prettier', '--check', '.', '--dry-run'],
+          'raw pnpm exec command',
+        )
+      })
+    })
+
+    describe('pnpm exec execution', () => {
+      it('should spawn pnpm exec with correct path', async () => {
+        mockGetNpxBinPath.mockReturnValue('/usr/local/bin/npx')
+
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          '/usr/local/bin/npx',
+          ['cowsay'],
+          expect.objectContaining({
+            shell: false,
+            stdio: 'inherit',
+          }),
+        )
+      })
+
+      it('should pass arguments to npx', async () => {
+        await cmdRawNpx.run(['prettier', '--check', '.'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['prettier', '--check', '.'],
+          expect.any(Object),
+        )
+      })
+
+      it('should use stdio inherit mode', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.any(Array),
+          expect.objectContaining({
+            stdio: 'inherit',
+          }),
+        )
+      })
+
+      it('should set shell to false on non-Windows', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          expect.any(Array),
+          expect.objectContaining({
+            shell: false,
+          }),
+        )
+      })
+
+      it('should set initial exit code to 1', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(process.exitCode).toBe(1)
+      })
+    })
+
+    describe('process event handling', () => {
+      it('should register exit event handler', async () => {
+        const mockProcess = {
+          on: vi.fn(),
+          kill: vi.fn(),
+          pid: 12_345,
+          stdin: undefined,
+          stdout: undefined,
+          stderr: undefined,
+        }
+
+        mockSpawn.mockReturnValue(
+          Object.assign(Promise.resolve({ exitCode: 0 }), {
+            process: mockProcess,
+          }),
+        )
+
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockProcess.on).toHaveBeenCalledWith(
+          'exit',
+          expect.any(Function),
+        )
+      })
+    })
+
+    describe('exit handler callback', () => {
+      let exitHandler: (
+        code: number | null,
+        signal: NodeJS.Signals | null,
+      ) => void
+      let mockProcessKill: ReturnType<typeof vi.fn>
+      let mockProcessExit: ReturnType<typeof vi.fn>
+      let mockProcess: {
+        on: ReturnType<typeof vi.fn>
+        kill: ReturnType<typeof vi.fn>
+        pid: number
+        stdin: null
+        stdout: null
+        stderr: null
+      }
+
+      beforeEach(() => {
+        mockProcess = {
+          on: vi.fn(),
+          kill: vi.fn(),
+          pid: 12_345,
+          stdin: undefined,
+          stdout: undefined,
+          stderr: undefined,
+        }
+
+        // Capture the exit handler when it's registered.
+        mockProcess.on.mockImplementation(
+          (
+            event: string,
+            handler: (
+              code: number | null,
+              signal: NodeJS.Signals | null,
+            ) => void,
+          ) => {
+            if (event === 'exit') {
+              exitHandler = handler
+            }
+          },
+        )
+
+        mockSpawn.mockReturnValue(
+          Object.assign(Promise.resolve({ exitCode: 0 }), {
+            process: mockProcess,
+          }),
+        )
+
+        // Mock process.kill and process.exit.
+        mockProcessKill = vi.fn()
+        mockProcessExit = vi.fn()
+        vi.stubGlobal('process', {
+          ...process,
+          kill: mockProcessKill,
+          exit: mockProcessExit,
+          pid: process.pid,
+          exitCode: undefined,
+        })
+      })
+
+      afterEach(() => {
+        vi.unstubAllGlobals()
+      })
+
+      it('should call process.exit with numeric exit code', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with a numeric code.
+        exitHandler(42, undefined)
+
+        expect(mockProcessExit).toHaveBeenCalledWith(42)
+      })
+
+      it('should call process.kill with signal', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with a signal.
+        exitHandler(undefined, 'SIGTERM')
+
+        expect(mockProcessKill).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      })
+
+      it('should not call process.exit when code is null and no signal', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        // Invoke the exit handler with null code and no signal.
+        exitHandler(undefined, undefined)
+
+        expect(mockProcessExit).not.toHaveBeenCalled()
+        expect(mockProcessKill).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('argument handling', () => {
+      it('should handle empty arguments', async () => {
+        await cmdRawNpx.run([], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          [],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle single argument', async () => {
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['cowsay'],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle multiple arguments', async () => {
+        await cmdRawNpx.run(['typescript', '--version'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['typescript', '--version'],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle arguments with special characters', async () => {
+        await cmdRawNpx.run(
+          ['@angular/cli', 'new', 'my-app'],
+          importMeta,
+          context,
+        )
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['@angular/cli', 'new', 'my-app'],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle package@version syntax', async () => {
+        await cmdRawNpx.run(['cowsay@1.5.0', 'hello'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['cowsay@1.5.0', 'hello'],
+          expect.any(Object),
+        )
+      })
+    })
+
+    describe('readonly arguments', () => {
+      it('should handle readonly argv array', async () => {
+        const readonlyArgv = Object.freeze(['cowsay'])
+
+        await cmdRawNpx.run(readonlyArgv, importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['cowsay'],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle readonly argv in dry-run', async () => {
+        const readonlyArgv = Object.freeze(['cowsay', '--dry-run'])
+
+        await cmdRawNpx.run(readonlyArgv, importMeta, context)
+
+        expect(mockOutputDryRunExecute).toHaveBeenCalled()
+      })
+    })
+
+    describe('edge cases', () => {
+      it('should handle pnpm exec path with spaces', async () => {
+        mockGetNpxBinPath.mockReturnValue('/Program Files/npx/npx.exe')
+
+        await cmdRawNpx.run(['cowsay'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          '/Program Files/npx/npx.exe',
+          expect.any(Array),
+          expect.any(Object),
+        )
+      })
+
+      it('should handle complex pnpm exec commands', async () => {
+        await cmdRawNpx.run(
+          ['create-react-app', 'my-app', '--template', 'typescript'],
+          importMeta,
+          context,
+        )
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['create-react-app', 'my-app', '--template', 'typescript'],
+          expect.any(Object),
+        )
+      })
+
+      it('should handle binary executables from packages', async () => {
+        await cmdRawNpx.run(['acme-lint', '--fix'], importMeta, context)
+
+        expect(mockSpawn).toHaveBeenCalledWith(
+          expect.any(String),
+          ['acme-lint', '--fix'],
+          expect.any(Object),
+        )
+      })
+    })
+  })
+})

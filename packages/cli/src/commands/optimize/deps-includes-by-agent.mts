@@ -2,17 +2,9 @@ import {
   BUN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-
-export function matchLsCmdViewHumanStdout(stdout: string, name: string) {
-  return stdout.includes(` ${name}@`)
-}
-
-export function matchQueryCmdStdout(stdout: string, name: string) {
-  return stdout.includes(`"${name}"`)
-}
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function lsStdoutIncludes(
   pkgEnvDetails: EnvDetails,
@@ -27,4 +19,12 @@ export function lsStdoutIncludes(
     default:
       return matchQueryCmdStdout(stdout, name)
   }
+}
+
+export function matchLsCmdViewHumanStdout(stdout: string, name: string) {
+  return stdout.includes(` ${name}@`)
+}
+
+export function matchQueryCmdStdout(stdout: string, name: string) {
+  return stdout.includes(`"${name}"`)
 }

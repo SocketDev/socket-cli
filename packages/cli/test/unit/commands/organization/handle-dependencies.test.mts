@@ -1,26 +1,23 @@
 /**
- * Unit Tests: Organization Dependencies Command Handler
+ * Unit Tests: Organization Dependencies Command Handler.
  *
- * Purpose:
- * Tests the command handler that orchestrates fetching and displaying organization-wide
- * dependency information. Validates parameter forwarding, pagination handling, output
- * format selection, and error propagation through the fetch/output pipeline.
+ * Purpose: Tests the command handler that orchestrates fetching and displaying
+ * organization-wide dependency information. Validates parameter forwarding,
+ * pagination handling, output format selection, and error propagation through
+ * the fetch/output pipeline.
  *
- * Test Coverage:
- * - Successful fetch and output orchestration
- * - Fetch failure error handling
- * - Multiple output kind support (json, table, markdown)
- * - Large offset and limit parameter handling
+ * Test Coverage: - Successful fetch and output orchestration - Fetch failure
+ * error handling - Multiple output kind support, json, table, markdown - Large
+ * offset and limit parameter handling.
  *
- * Testing Approach:
- * Mocks fetchDependencies and outputDependencies modules to test orchestration logic
- * without actual API calls or terminal output. Uses test environment setup helpers
- * for consistent test isolation.
+ * Testing Approach: Mocks fetchDependencies and outputDependencies modules to
+ * test orchestration logic without actual API calls or terminal output. Uses
+ * test environment setup helpers for consistent test isolation.
  *
- * Related Files:
- * - src/commands/organization/handle-dependencies.mts - Command handler
- * - src/commands/organization/fetch-dependencies.mts - Dependencies fetcher
- * - src/commands/organization/output-dependencies.mts - Output formatter
+ * Related Files: - src/commands/organization/handle-dependencies.mts - Command
+ * handler - src/commands/organization/fetch-dependencies.mts - Dependencies
+ * fetcher - src/commands/organization/output-dependencies.mts - Output
+ * formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -39,18 +36,21 @@ const mockOutputDependencies = vi.hoisted(() => vi.fn())
 const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/organization/fetch-dependencies.mts', () => ({
-  fetchDependencies: mockFetchDependencies,
-}))
+vi.mock(
+  import('../../../../src/commands/organization/fetch-dependencies.mts'),
+  () => ({
+    fetchDependencies: mockFetchDependencies,
+  }),
+)
 
 vi.mock(
-  '../../../../src/commands/organization/output-dependencies.mts',
+  import('../../../../src/commands/organization/output-dependencies.mts'),
   () => ({
     outputDependencies: mockOutputDependencies,
   }),
 )
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
 }))

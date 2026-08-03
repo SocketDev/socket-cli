@@ -1,28 +1,22 @@
 /**
  * Unit tests for parsePackageSpecifiers.
  *
- * Purpose:
- * Tests the parser that converts user-provided package specifiers into valid PURLs
- * (Package URLs). Handles ecosystem prefixes, scoped packages, mixed formats, and
- * validates input correctness.
+ * Purpose: Tests the parser that converts user-provided package specifiers into
+ * valid PURLs, Package URLs. Handles ecosystem prefixes, scoped packages,
+ * mixed formats, and validates input correctness.
  *
- * Test Coverage:
- * - Simple npm package parsing (e.g., "npm babel")
- * - PURL with pkg: prefix parsing
- * - npm scoped packages (@babel/core)
- * - PURL without pkg: prefix
- * - Multiple PURL parsing
- * - Mixed package names and PURLs
- * - Invalid unscoped package without namespace error
- * - Namespace-only input error
- * - Empty namespace error
+ * Test Coverage: - Simple npm package parsing (e.g., "npm babel") - PURL with
+ * pkg: prefix parsing - npm scoped packages (@babel/core) - PURL without pkg:
+ * prefix - Multiple PURL parsing - Mixed package names and PURLs - Invalid
+ * unscoped package without namespace error - Namespace-only input error - Empty
+ * namespace error.
  *
- * Testing Approach:
- * Tests various input formats and validates PURL construction and error detection.
- * Uses snapshot testing for complex multi-package scenarios.
+ * Testing Approach: Tests various input formats and validates PURL construction
+ * and error detection. Uses snapshot testing for complex multi-package
+ * scenarios.
  *
- * Related Files:
- * - src/commands/package/parse-package-specifiers.mts (implementation)
+ * Related Files: - src/commands/package/parse-package-specifiers.mts
+ * (implementation)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -48,9 +42,8 @@ describe('parse-package-specifiers', async () => {
   })
 
   it('should support npm scoped packages', () => {
-    expect(
-      parsePackageSpecifiers('npm', ['@babel/core']),
-    ).toMatchInlineSnapshot(`
+    expect(parsePackageSpecifiers('npm', ['@babel/core']))
+      .toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/@babel/core",
@@ -72,9 +65,8 @@ describe('parse-package-specifiers', async () => {
   })
 
   it('should parse a multiple purls', () => {
-    expect(
-      parsePackageSpecifiers('npm/babel', ['golang/foo']),
-    ).toMatchInlineSnapshot(`
+    expect(parsePackageSpecifiers('npm/babel', ['golang/foo']))
+      .toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:npm/babel",
@@ -101,9 +93,8 @@ describe('parse-package-specifiers', async () => {
   })
 
   it('should complain when seeing an unscoped package without namespace', () => {
-    expect(
-      parsePackageSpecifiers('golang/foo', ['babel', 'pkg:npm/tenko']),
-    ).toMatchInlineSnapshot(`
+    expect(parsePackageSpecifiers('golang/foo', ['babel', 'pkg:npm/tenko']))
+      .toMatchInlineSnapshot(`
       {
         "purls": [
           "pkg:golang/foo",
@@ -124,6 +115,52 @@ describe('parse-package-specifiers', async () => {
 
   it('should complain when getting an empty namespace', () => {
     expect(parsePackageSpecifiers('', [])).toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('flags valid:false when an empty package name appears in the list', () => {
+    // Exercises the inner `if (!pkg) { valid = false; break }` branch.
+    expect(parsePackageSpecifiers('npm', ['babel', '', 'lodash']))
+      .toMatchInlineSnapshot(`
+      {
+        "purls": [
+          "pkg:npm/babel",
+        ],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('returns valid:false when purl-mode has nothing parseable', () => {
+    // Exercise the !purls.length branch in the purl-mode path.
+    expect(parsePackageSpecifiers('not-a-purl', ['also-bad']))
+      .toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('handles undefined slot in pkgs array (sparse) for npm-mode', () => {
+    // pkgs[0] = undefined → `pkgs[i] ?? ''` returns '', then breaks valid.
+    // Use Array.from with explicit undefined.
+    const sparse = [undefined as unknown]
+    expect(parsePackageSpecifiers('npm', sparse)).toMatchInlineSnapshot(`
+      {
+        "purls": [],
+        "valid": false,
+      }
+    `)
+  })
+
+  it('handles undefined slot in pkgs array (sparse) for purl-mode', () => {
+    const sparse = [undefined as unknown]
+    expect(parsePackageSpecifiers('not-a-purl', sparse)).toMatchInlineSnapshot(`
       {
         "purls": [],
         "valid": false,

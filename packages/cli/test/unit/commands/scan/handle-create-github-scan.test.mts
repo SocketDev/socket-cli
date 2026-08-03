@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleCreateGithubScan.
  *
- * Purpose:
- * Tests the handler that orchestrates GitHub repository scanning. Validates GitHub integration, repository selection, and scan initialization.
+ * Purpose: Tests the handler that orchestrates GitHub repository scanning.
+ * Validates GitHub integration, repository selection, and scan initialization.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleCreateGithubScan.mts (implementation)
+ * Related Files: - src/commands/handleCreateGithubScan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,18 +19,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleCreateGithubScan } from '../../../../src/commands/scan/handle-create-github-scan.mts'
 
 // Mock the dependencies.
 const mockCreateScanFromGithub = vi.hoisted(() => vi.fn())
 const mockOutputScanGithub = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/create-scan-from-github.mts', () => ({
-  createScanFromGithub: mockCreateScanFromGithub,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/create-scan-from-github.mts'),
+  () => ({
+    createScanFromGithub: mockCreateScanFromGithub,
+  }),
+)
 
-vi.mock('../../../../src/commands/scan/output-scan-github.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-scan-github.mts'), () => ({
   outputScanGithub: mockOutputScanGithub,
 }))
 
@@ -163,21 +161,22 @@ describe('handleCreateGithubScan', () => {
     expect(mockOutput).toHaveBeenCalledWith(expect.any(Object), 'markdown')
   })
 
-  it('converts parameters to proper types', async () => {
+  it('passes falsy parameters through unmangled', async () => {
     const mockCreate = mockCreateScanFromGithub
 
     mockCreate.mockResolvedValue(createSuccessResult({}))
 
-    // Test with various falsy values.
+    // Falsy-but-typed values (the meow layer guarantees booleans/strings)
+    // must reach createScanFromGithub as-is.
     await handleCreateGithubScan({
-      all: 0 as any,
+      all: false,
       githubApiUrl: 'https://api.github.com',
       githubToken: 'token',
-      interactive: null as any,
+      interactive: false,
       orgGithub: 'org',
       orgSlug: 'org',
       outputKind: 'json',
-      repos: undefined as any,
+      repos: '',
     })
 
     expect(mockCreate).toHaveBeenCalledWith({

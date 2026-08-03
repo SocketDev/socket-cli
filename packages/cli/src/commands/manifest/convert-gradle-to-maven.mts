@@ -1,9 +1,10 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { distPath } from '../../constants/paths.mjs'
 
@@ -24,12 +25,12 @@ export async function convertGradleToMaven({
   outputKind?: OutputKind | undefined
   verbose: boolean
 }): Promise<CResult<ManifestResult>> {
-  // Note: Resolve bin relative to cwd (or use absolute path if provided).
+  // Note: Resolve bin relative to cwd, or use absolute path if provided.
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
-  const binExists = fs.existsSync(rBin)
-  const cwdExists = fs.existsSync(cwd)
+  const binExists = existsSync(rBin)
+  const cwdExists = existsSync(cwd)
 
   // Only show logging in text mode.
   const isTextMode = outputKind === 'text'
@@ -66,12 +67,9 @@ export async function convertGradleToMaven({
     if (isTextMode) {
       logger.log(`Converting gradle to maven from \`${bin}\` on \`${cwd}\` ...`)
     }
-    const output = await execGradleWithSpinner(
-      rBin,
-      commandArgs,
-      cwd,
-      isTextMode,
-    )
+    const output = await execGradleWithSpinner(rBin, commandArgs, cwd, {
+      showSpinner: isTextMode,
+    })
     if (verbose && isTextMode) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)
@@ -81,7 +79,7 @@ export async function convertGradleToMaven({
       if (isTextMode) {
         process.exitCode = 1
         logger.fail(`Gradle exited with exit code ${output.code}`)
-        // (In verbose mode, stderr was printed above, no need to repeat it)
+        // In verbose mode, stderr was printed above, no need to repeat it
         if (!verbose) {
           logger.group('stderr:')
           logger.error(output.stderr)
@@ -99,6 +97,7 @@ export async function convertGradleToMaven({
     // Extract file paths from output.
     const files: string[] = []
     output.stdout.replace(
+      // oxlint-disable-next-line socket/prefer-non-capturing-group -- the capture is consumed as `fn` in the replace callback below.
       /^POM file copied to: (.*)/gm,
       (_all: string, fn: string) => {
         files.push(fn)
@@ -112,6 +111,7 @@ export async function convertGradleToMaven({
     if (isTextMode) {
       logger.success('Executed gradle successfully')
       logger.log('Reported exports:')
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
       files.forEach(fn => logger.log('- ', fn))
       logger.log('')
       logger.log(
@@ -128,13 +128,13 @@ export async function convertGradleToMaven({
       },
     }
   } catch (e) {
-    const errorMessage =
+    const summary =
       'There was an unexpected error while generating manifests' +
       (verbose ? '' : '  (use --verbose for details)')
 
     if (isTextMode) {
       process.exitCode = 1
-      logger.fail(errorMessage)
+      logger.fail(summary)
       if (verbose) {
         logger.group('[VERBOSE] error:')
         logger.log(e)
@@ -144,18 +144,19 @@ export async function convertGradleToMaven({
 
     return {
       ok: false,
-      message: errorMessage,
-      cause: e instanceof Error ? e.message : String(e),
+      message: summary,
+      cause: errorMessage(e),
     }
   }
 }
 
-async function execGradleWithSpinner(
+export async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   cwd: string,
-  showSpinner: boolean,
+  config: { showSpinner: boolean },
 ): Promise<{ code: number; stdout: string; stderr: string }> {
+  const { showSpinner } = { __proto__: null, ...config } as typeof config
   let pass = false
   const spinner = showSpinner ? getDefaultSpinner() : undefined
   try {
@@ -166,7 +167,7 @@ async function execGradleWithSpinner(
       logger.info(
         '(It will show no output, you can use --verbose to see its output)',
       )
-      spinner?.start('Running gradlew...')
+      spinner?.start('Running gradlew…')
     }
 
     const output = await spawn(bin, commandArgs, {
@@ -178,15 +179,17 @@ async function execGradleWithSpinner(
     })
 
     if (!output) {
-      throw new Error(`Failed to execute gradle: ${bin}`)
+      throw new Error(
+        `spawn returned no output for gradle (bin: ${bin}); check that the gradlew wrapper is executable and re-run with --verbose`,
+      )
     }
 
     pass = true
     const { code, stderr, stdout } = output
     return {
       code,
-      stdout: typeof stdout === 'string' ? stdout : stdout.toString('utf8'),
-      stderr: typeof stderr === 'string' ? stderr : stderr.toString('utf8'),
+      stdout: stdout,
+      stderr: stderr,
     }
   } finally {
     if (pass) {

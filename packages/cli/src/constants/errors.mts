@@ -10,7 +10,7 @@ export const ERROR_UNABLE_RESOLVE_ORG =
   'Unable to resolve a Socket account organization'
 
 /**
- * Sentinel value to detect infinite loops during tree traversal.
- * Used as a safety check when walking dependency trees.
+ * Sentinel value to detect infinite loops during tree traversal. Used as a
+ * safety check when walking dependency trees.
  */
 export const LOOP_SENTINEL = 50_000

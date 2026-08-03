@@ -1,48 +1,42 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 const logger = getDefaultLogger()
 
-import { handleCreateNewScan } from './handle-create-new-scan.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
-import { suggestOrgSlug } from './suggest-org-slug.mts'
-import { suggestTarget } from './suggest_target.mts'
-import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { applyScanCreateDefaults } from './cmd-scan-create-defaults.mts'
 import {
-  detectDefaultBranch,
-  getRepoName,
-  gitBranch,
-} from '../../utils/git/operations.mts'
+  computeReachabilityFlagUsage,
+  validateReachEcosystems,
+  validateScanCreateInput,
+} from './cmd-scan-create-checks.mts'
+import { resolveScanCreateTargetsAndOrg } from './cmd-scan-create-interactive.mts'
+import { validateScanCreateNumericFlags } from './cmd-scan-create-numeric-flags.mts'
+import { assertNoNegationPatterns } from './exclude-paths.mts'
+import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import { validateReachabilityTarget } from './validate-reachability-target.mts'
+import { REQUIREMENTS_TXT } from '../../constants.mts'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mts'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { readOrDefaultSocketJsonUp } from '../../utils/socket/json.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mts'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
-import { socketDashboardLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
-import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mts'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { readOrDefaultSocketJsonUp } from '../../util/socket/json.mts'
+import { determineOrgSlug } from '../../util/socket/org-slug.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
+import { socketDashboardLink } from '../../util/terminal/link.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
-import type { MeowFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
 
 // Flags interface for type safety.
-interface ScanCreateFlags {
+export interface ScanCreateFlags {
   autoManifest?: boolean | undefined
   basics?: boolean | undefined
   branch: string
@@ -51,6 +45,7 @@ interface ScanCreateFlags {
   committers: string
   cwd: string
   defaultBranch: boolean
+  makeDefaultBranch: boolean
   interactive: boolean
   json: boolean
   markdown: boolean
@@ -61,19 +56,24 @@ interface ScanCreateFlags {
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachLazyMode: boolean
   reachMinSeverity: string
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string
   readOnly: boolean
   repo: string
   report?: boolean | undefined
   reportLevel: REPORT_LEVEL
   setAsAlertsPage: boolean
   tmp: boolean
+  trustSocketJson?: boolean | undefined
+  workspace: string
 }
 
 export const CMD_NAME = 'create'
@@ -82,113 +82,24 @@ const description = 'Create a new Socket scan and report'
 
 const hidden = false
 
-const generalFlags: MeowFlags = {
-  ...commonFlags,
-  ...outputFlags,
-  autoManifest: {
-    type: 'boolean',
-    description:
-      'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
-  },
-  basics: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Run comprehensive security scanning (SAST, secrets, containers) via socket-basics. Requires Python, Trivy, TruffleHog, and OpenGrep to be available.',
-  },
-  branch: {
-    type: 'string',
-    default: '',
-    description: 'Branch name',
-    shortFlag: 'b',
-  },
-  commitHash: {
-    type: 'string',
-    default: '',
-    description: 'Commit hash',
-    shortFlag: 'ch',
-  },
-  commitMessage: {
-    type: 'string',
-    default: '',
-    description: 'Commit message',
-    shortFlag: 'm',
-  },
-  committers: {
-    type: 'string',
-    default: '',
-    description: 'Committers',
-    shortFlag: 'c',
-  },
-  cwd: {
-    type: 'string',
-    default: '',
-    description: 'working directory, defaults to process.cwd()',
-  },
-  defaultBranch: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
-  },
-  interactive: {
-    type: 'boolean',
-    default: true,
-    description:
-      'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-  },
-  pullRequest: {
-    type: 'number',
-    default: 0,
-    description: 'Pull request number',
-    shortFlag: 'pr',
-  },
-  org: {
-    type: 'string',
-    default: '',
-    description:
-      'Force override the organization slug, overrides the default org from config',
-  },
-  reach: {
-    type: 'boolean',
-    default: false,
-    description: 'Run tier 1 full application reachability analysis',
-  },
-  readOnly: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
-  },
-  repo: {
-    type: 'string',
-    shortFlag: 'r',
-    description: 'Repository name',
-  },
-  report: {
-    type: 'boolean',
-    description:
-      'Wait for the scan creation to complete, then basically run `socket scan report` on it',
-  },
-  reportLevel: {
-    type: 'string',
-    default: constants.REPORT_LEVEL_ERROR,
-    description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_ERROR}')`,
-  },
-  setAsAlertsPage: {
-    type: 'boolean',
-    default: true,
-    description:
-      'When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.',
-    aliases: ['pendingHead'],
-  },
-  tmp: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Set the visibility (true/false) of the scan in your dashboard.',
-    shortFlag: 't',
-  },
+// Flag schema extracted to keep this file under the 1000-line File-size cap.
+import { generalFlags } from './cmd-scan-create-flags.mts'
+
+// Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
+// Detected here so we can warn on use and keep the misuse heuristic
+// working against both the primary and legacy names.
+// --default-branch / --make-default-branch validation helpers extracted
+// to keep this file under the 1000-line File-size cap.
+import {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
+} from './cmd-scan-create-validation.mts'
+
+export {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
 }
 
 export const cmdScanCreate = {
@@ -197,20 +108,21 @@ export const cmdScanCreate = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
-    },
-    help: command => `
+    }),
+    help: (command: string) => `
     Usage
       $ ${command} [options] [TARGET...]
 
@@ -218,7 +130,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(generalFlags)}
+      ${getFlagListOutput({ ...generalFlags, ...excludePathsFlag })}
 
     Reachability Options (when --reach is used)
       ${getFlagListOutput(reachabilityFlags)}
@@ -242,8 +154,10 @@ async function run(
     The --repo and --branch flags tell Socket to associate this Scan with that
     repo/branch. The names will show up on your dashboard on the Socket website.
 
-    Note: for a first run you probably want to set --default-branch to indicate
-          the default branch name, like "main" or "master".
+    Note: on a first scan you probably want to pass --make-default-branch so
+          Socket records this branch ("main", "master", etc.) as your repo's
+          default branch. Subsequent scans don't need the flag unless you're
+          reassigning the default-branch pointer to a different branch.
 
     The ${socketDashboardLink('/org/YOURORG/alerts', '"alerts page"')} will show
     the results from the last scan designated as the "pending head" on the branch
@@ -254,11 +168,46 @@ async function run(
 
     You can use \`socket scan setup\` to configure certain repo flag defaults.
 
+    With --auto-manifest, gradle and sbt run a build binary. The defaults are
+    \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that points
+    \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+    you also pass --trust-socket-json: those values choose what gets executed
+    and the repository being scanned owns that file.
+
     Examples
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
   `,
+  }
+
+  // `--make-default-branch` (and its deprecated alias `--default-branch`)
+  // is a boolean flag, so meow/yargs-parser silently drops any value
+  // attached to it — the resulting scan is untagged and invisible in the
+  // Main/PR dashboard tabs. Catch that shape before meow parses so the
+  // user sees an actionable error instead of a mysteriously-mislabelled
+  // scan hours later.
+  const defaultBranchMisuse = findDefaultBranchValueMisuse(argv)
+  if (defaultBranchMisuse) {
+    const { form, value } = defaultBranchMisuse
+    logger.fail(
+      `"${form}" looks like you meant to name the branch "${value}", but --make-default-branch is a boolean flag (no value).\n\n` +
+        `To scan "${value}" as the default branch, use --branch for the name and --make-default-branch as a flag:\n` +
+        `  socket scan create --branch ${value} --make-default-branch\n\n` +
+        `To scan a non-default branch, drop --make-default-branch:\n` +
+        `  socket scan create --branch ${value}`,
+    )
+    process.exitCode = 2
+    return
+  }
+
+  // `--default-branch` / `--defaultBranch` is kept working via meow's
+  // aliases, but nudge callers to migrate so we can eventually retire
+  // the legacy name.
+  if (hasLegacyDefaultBranchFlag(argv)) {
+    logger.warn(
+      '--default-branch is deprecated on `socket scan create`; use --make-default-branch instead. The old flag still works for now.',
+    )
   }
 
   const cli = meowOrExit({
@@ -273,8 +222,9 @@ async function run(
     commitMessage,
     committers,
     cwd: cwdOverride,
-    defaultBranch,
-    interactive = true,
+    defaultBranch: legacyDefaultBranch,
+    interactive,
+    makeDefaultBranch: makeDefaultBranchFlag,
     json,
     markdown,
     org: orgFlag,
@@ -284,45 +234,46 @@ async function run(
     reachAnalysisTimeout,
     reachConcurrency,
     reachDebug,
-    reachDisableAnalysisSplitting,
+    reachDetailedAnalysisLogFile,
     reachDisableAnalytics,
+    reachDisableExternalToolChecks,
+    reachEnableAnalysisSplitting,
     reachLazyMode,
     reachMinSeverity,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
+    reachVersion,
     readOnly,
     reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as unknown as ScanCreateFlags
 
+  // Merge the legacy --default-branch flag into the primary. Both are
+  // declared as separate boolean flags in the config (see the comment
+  // on the `defaultBranch` flag definition above).
+  const makeDefaultBranch = makeDefaultBranchFlag || legacyDefaultBranch
+
   // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (const ecosystem of reachEcosystemsRaw) {
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  const reachEcosystems: PURL_Type[] =
+    validateReachEcosystems(reachEcosystemsRaw)
 
   const dryRun = !!cli.flags['dryRun']
 
-  const { basics } = cli.flags as unknown as ScanCreateFlags
+  const { basics, trustSocketJson } = cli.flags as unknown as ScanCreateFlags
 
   let {
     autoManifest,
     branch: branchName,
     repo: repoName,
     report,
+    workspace,
   } = cli.flags as unknown as ScanCreateFlags
 
   let { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -335,54 +286,14 @@ async function run(
 
   const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
-  // Note: This needs meow booleanDefault=undefined.
-  if (typeof autoManifest !== 'boolean') {
-    if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
-      autoManifest = sockJson.defaults.scan.create.autoManifest
-      logger.info(
-        `Using default --auto-manifest from ${SOCKET_JSON}:`,
-        autoManifest,
-      )
-    } else {
-      autoManifest = false
-    }
-  }
-  if (!branchName) {
-    if (sockJson.defaults?.scan?.create?.branch) {
-      branchName = sockJson.defaults.scan.create.branch
-      logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
-    } else {
-      branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
-    }
-  }
-  if (!repoName) {
-    if (sockJson.defaults?.scan?.create?.repo) {
-      repoName = sockJson.defaults.scan.create.repo
-      logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
-    } else {
-      repoName = await getRepoName(cwd)
-    }
-  }
-  if (typeof report !== 'boolean') {
-    if (sockJson.defaults?.scan?.create?.report !== undefined) {
-      report = sockJson.defaults.scan.create.report
-      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
-    } else {
-      report = false
-    }
-  }
-
-  // If we updated any inputs then we should print the command line to repeat
-  // the command without requiring user input, as a suggestion.
-  let updatedInput = false
-
-  // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input.length ? [...cli.input] : [cwd]
-
-  if (!targets.length && !dryRun && interactive) {
-    targets = await suggestTarget()
-    updatedInput = true
-  }
+  ;({ autoManifest, branchName, repoName, report, workspace } =
+    await applyScanCreateDefaults(cwd, sockJson, {
+      autoManifest,
+      branchName,
+      repoName,
+      report,
+      workspace,
+    }))
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -393,87 +304,39 @@ async function run(
 
   const pendingHead = tmp ? false : pendingHeadFlag
 
-  // If the current cwd is unknown and is used as a repo slug anyways, we will
-  // first need to register the slug before we can use it.
-  // Only do suggestions with an apiToken and when not in dryRun mode
-  if (hasApiToken && !dryRun && interactive) {
-    if (!orgSlug) {
-      const suggestion = await suggestOrgSlug()
-      if (suggestion === undefined) {
-        await outputCreateNewScan(
-          {
-            ok: false,
-            message: 'Canceled by user',
-            cause: 'Org selector was canceled by user',
-          },
-          {
-            interactive: false,
-            outputKind,
-          },
-        )
-        return
-      }
-      if (suggestion) {
-        orgSlug = suggestion
-      }
-      updatedInput = true
-    }
+  const suggestResult = await resolveScanCreateTargetsAndOrg({
+    autoManifest,
+    cli,
+    cwd,
+    dryRun,
+    hasApiToken,
+    interactive,
+    orgSlug,
+    outputKind,
+    sockJson,
+  })
+  if (suggestResult.canceled) {
+    return
   }
+  const targets = suggestResult.targets
+  orgSlug = suggestResult.orgSlug
 
-  const detected = await detectManifestActions(sockJson, cwd)
-  if (detected.count > 0 && !autoManifest) {
-    logger.info(
-      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
-    )
-  }
-
-  if (updatedInput && orgSlug && targets.length) {
-    logger.info(
-      'Note: You can invoke this command next time to skip the interactive questions:',
-    )
-    logger.error('```')
-    logger.error(
-      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
-    )
-    logger.error('```')
-    logger.error('')
-    logger.info(
-      `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
-    )
-    logger.error('')
-  }
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertNoNegationPatterns(excludePaths)
 
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
-  // Validation helpers for better readability.
-  const hasReachEcosystems = reachEcosystems.length > 0
-
-  const hasReachExcludePaths = reachExcludePaths.length > 0
-
-  const isUsingNonDefaultMemoryLimit =
-    reachAnalysisMemoryLimit !==
-    reachabilityFlags['reachAnalysisMemoryLimit']?.default
-
-  const isUsingNonDefaultTimeout =
-    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
-
-  const isUsingNonDefaultConcurrency =
-    reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
-
-  const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !==
-    reachabilityFlags['reachDisableAnalytics']?.default
-
-  const isUsingAnyReachabilityFlags =
-    isUsingNonDefaultMemoryLimit ||
-    isUsingNonDefaultTimeout ||
-    isUsingNonDefaultConcurrency ||
-    isUsingNonDefaultAnalytics ||
-    hasReachEcosystems ||
-    hasReachExcludePaths ||
-    reachLazyMode ||
-    reachSkipCache ||
-    reachDisableAnalysisSplitting
+  const isUsingAnyReachabilityFlags = computeReachabilityFlagUsage({
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+    reachDisableAnalytics,
+    reachEcosystems,
+    reachEnableAnalysisSplitting,
+    reachExcludePaths,
+    reachLazyMode,
+    reachSkipCache,
+  })
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
@@ -485,159 +348,100 @@ async function run(
         targetExists: false,
       }
 
-  const wasValidInput = checkCommandInput(
+  const wasValidInput = validateScanCreateInput({
+    branchName,
+    hasApiToken,
+    isUsingAnyReachabilityFlags,
+    json,
+    makeDefaultBranch,
+    markdown,
+    orgSlug,
     outputKind,
-    {
-      nook: true,
-      test: !!orgSlug,
-      message: 'Org name by default setting, --org, or auto-discovered',
-      fail: 'missing',
-    },
-    {
-      test: !!targets.length,
-      message: 'At least one TARGET (e.g. `.` or `./package.json`)',
-      fail: 'missing',
-    },
-    {
-      nook: true,
-      test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
-    },
-    {
-      nook: true,
-      test: hasApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-    {
-      nook: true,
-      test: !defaultBranch || !!branchName,
-      message: 'When --default-branch is set, --branch is mandatory',
-      fail: 'missing branch name',
-    },
-    {
-      nook: true,
-      test: !pendingHead || !!branchName,
-      message: 'When --pending-head is set, --branch is mandatory',
-      fail: 'missing branch name',
-    },
-    {
-      nook: true,
-      test: reach || !isUsingAnyReachabilityFlags,
-      message: 'Reachability analysis flags require --reach to be enabled',
-      fail: 'add --reach flag to use --reach-* options',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isValid,
-      message:
-        'Reachability analysis requires exactly one target directory when --reach is enabled',
-      fail: 'provide exactly one directory path',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isDirectory,
-      message:
-        'Reachability analysis target must be a directory when --reach is enabled',
-      fail: 'provide a directory path, not a file',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.targetExists,
-      message: 'Target directory must exist when --reach is enabled',
-      fail: 'provide an existing directory path',
-    },
-    {
-      nook: true,
-      test: !reach || reachTargetValidation.isInsideCwd,
-      message:
-        'Target directory must be inside the current working directory when --reach is enabled',
-      fail: 'provide a path inside the working directory',
-    },
-  )
+    pendingHead,
+    reach,
+    reachTargetValidation,
+    targets,
+  })
   if (!wasValidInput) {
     return
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    const details: Record<string, unknown> = {
+      organization: orgSlug,
+      targets: targets.join(', '),
+    }
+    if (repoName) {
+      details['repository'] = repoName
+    }
+    if (branchName) {
+      details['branch'] = branchName
+    }
+    if (reach) {
+      details['reachabilityAnalysis'] = 'enabled'
+      if (reachEcosystems.length > 0) {
+        details['ecosystems'] = reachEcosystems.join(', ')
+      }
+    }
+    outputDryRunUpload('scan', details)
     return
   }
 
   // Validate numeric flag conversions.
-  const validatedPullRequest = Number(pullRequest)
-  if (pullRequest !== undefined && Number.isNaN(validatedPullRequest)) {
-    throw new Error(`Invalid number value for --pull-request: ${pullRequest}`)
-  }
-
-  const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
-  if (
-    reachAnalysisMemoryLimit !== undefined &&
-    Number.isNaN(validatedReachAnalysisMemoryLimit)
-  ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-memory-limit: ${reachAnalysisMemoryLimit}`,
-    )
-  }
-
-  const validatedReachAnalysisTimeout = Number(reachAnalysisTimeout)
-  if (
-    reachAnalysisTimeout !== undefined &&
-    Number.isNaN(validatedReachAnalysisTimeout)
-  ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-timeout: ${reachAnalysisTimeout}`,
-    )
-  }
-
-  const validatedReachConcurrency = Number(reachConcurrency)
-  if (
-    reachConcurrency !== undefined &&
-    Number.isNaN(validatedReachConcurrency)
-  ) {
-    throw new Error(
-      `Invalid number value for --reach-concurrency: ${reachConcurrency}`,
-    )
-  }
+  const {
+    validatedPullRequest,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanCreateNumericFlags({
+    pullRequest,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
 
   await handleCreateNewScan({
-    autoManifest: Boolean(autoManifest),
+    autoManifest: autoManifest,
     basics: Boolean(basics),
-    branchName: branchName as string,
-    commitHash: (commitHash && String(commitHash)) || '',
-    commitMessage: (commitMessage && String(commitMessage)) || '',
-    committers: (committers && String(committers)) || '',
+    branchName: branchName,
+    commitHash: (commitHash && commitHash) || '',
+    commitMessage: (commitMessage && commitMessage) || '',
+    committers: (committers && committers) || '',
     cwd,
-    defaultBranch: Boolean(defaultBranch),
-    interactive: Boolean(interactive),
+    defaultBranch: makeDefaultBranch,
+    interactive: interactive,
     orgSlug,
     outputKind,
-    pendingHead: Boolean(pendingHead),
+    pendingHead: pendingHead,
     pullRequest: validatedPullRequest,
     reach: {
-      runReachabilityAnalysis: Boolean(reach),
+      excludePaths,
+      runReachabilityAnalysis: reach,
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
-      reachDebug: Boolean(reachDebug),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
       reachEcosystems,
       reachExcludePaths,
-      reachLazyMode: Boolean(reachLazyMode),
-      reachMinSeverity: String(reachMinSeverity),
-      reachSkipCache: Boolean(reachSkipCache),
-      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
-      reachUseUnreachableFromPrecomputation: Boolean(
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
         reachUseUnreachableFromPrecomputation,
-      ),
+      reachVersion: reachVersion || undefined,
     },
-    readOnly: Boolean(readOnly),
+    readOnly: readOnly,
     repoName,
     report,
     reportLevel,
     targets,
-    tmp: Boolean(tmp),
+    tmp: tmp,
+    trustSocketJson: Boolean(trustSocketJson),
+    workspace: (workspace && workspace) || '',
   })
 }

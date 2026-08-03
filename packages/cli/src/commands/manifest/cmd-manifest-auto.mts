@@ -1,47 +1,57 @@
 import path from 'node:path'
 
-import { debugDirNs } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debugDirNs } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
 import { generateAutoManifest } from './generate_auto_manifest.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'auto',
   description: 'Auto-detect build and attempt to generate manifest file',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the build binaries and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
+    },
     verbose: {
       type: 'boolean',
       default: false,
       description:
         'Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors',
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
+
+    Gradle and sbt run a build binary. This command has no --bin of its own, so
+    it uses \`CWD/gradlew\` and the \`sbt\` on your PATH. A ${SOCKET_JSON} that
+    points \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused
+    unless you pass --trust-socket-json: those values choose what gets executed
+    and the repository being scanned owns that file.
 
     Note: you can exclude languages from being auto-generated if you don't want
           them to. Run \`socket manifest setup\` in the same dir to disable it.
@@ -51,6 +61,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./project/foo
   `,
+  hidden: false,
 }
 
 export const cmdManifestAuto = {
@@ -59,7 +70,7 @@ export const cmdManifestAuto = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -71,11 +82,11 @@ async function run(
     parentName,
   })
   // Feature request: Pass outputKind to manifest generators for json/md output support.
-  const { json, markdown, verbose: verboseFlag } = cli.flags
+  const { json, markdown, trustSocketJson, verbose: verboseFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const verbose = !!verboseFlag
+  const verbose = verboseFlag
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -99,13 +110,21 @@ async function run(
   debugDirNs('inspect', { detected })
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    if (detected.count > 0) {
+      outputDryRunExecute(
+        'manifest generators',
+        [cwd],
+        `auto-detect and generate ${detected.count} manifest file(s)`,
+      )
+    } else {
+      logger.log('No manifest targets detected in the specified directory.')
+    }
     return
   }
 
   if (!detected.count) {
     logger.fail(
-      'Was unable to discover any targets for which we can generate manifest files...',
+      'Was unable to discover any targets for which we can generate manifest files…',
     )
     logger.log('')
     logger.log(
@@ -123,6 +142,7 @@ async function run(
     detected,
     cwd,
     outputKind,
+    trustSocketJson,
     verbose,
   })
 

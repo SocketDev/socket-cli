@@ -1,18 +1,18 @@
 /**
- * Socket Patch version getter function.
- * Uses direct process.env access so esbuild define can inline values.
- * IMPORTANT: esbuild's define plugin can only replace direct process.env['KEY'] references.
- * If we imported from env modules, esbuild couldn't inline the values at build time.
- * This is critical for embedding version info into the binary.
+ * Socket Patch version getter function. Uses direct process.env access so
+ * esbuild define can inline values. IMPORTANT: esbuild's define plugin can only
+ * replace direct process.env['KEY'] references. If we imported from env
+ * modules, esbuild couldn't inline the values at build time. This is critical
+ * for embedding version info into the binary.
  */
 
 import process from 'node:process'
 
 export function getSocketPatchVersion(): string {
-  const version = process.env['INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION']
+  const version = process.env['INLINED_SOCKET_PATCH_VERSION']
   if (!version) {
     throw new Error(
-      'INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION not found. Please ensure socket-patch is properly configured in external-tools.json.',
+      `process.env.INLINED_SOCKET_PATCH_VERSION is empty at runtime; this value should be inlined at build time from bundle-tools.json tools["socket-patch"].version — rebuild socket-cli (\`pnpm run build:cli\`) or check that esbuild's define step ran`,
     )
   }
   return version

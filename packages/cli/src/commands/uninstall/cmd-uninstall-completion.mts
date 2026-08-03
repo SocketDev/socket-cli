@@ -1,26 +1,20 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleUninstallCompletion } from './handle-uninstall-completion.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunDelete } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger()
-
-const config: CliCommandConfig = {
+const config = {
   commandName: 'completion',
   description: 'Uninstall bash completion for Socket CLI',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [COMMAND_NAME=socket]
 
@@ -33,13 +27,14 @@ const config: CliCommandConfig = {
     tab completion that is registered for it in bash.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 
       $ ${command}
       $ ${command} sd
   `,
+  hidden: false,
 }
 
 export const cmdUninstallCompletion = {
@@ -59,14 +54,16 @@ export async function run(
     parentName,
     importMeta,
   })
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
+  const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunDelete(
+      'bash completion',
+      `completion for "${targetName}" from ~/.bashrc`,
+    )
     return
   }
 
-  const targetName = cli.input[0] || 'socket'
-
-  await handleUninstallCompletion(String(targetName))
+  await handleUninstallCompletion(targetName)
 }

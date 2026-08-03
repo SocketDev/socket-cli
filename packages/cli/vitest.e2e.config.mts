@@ -2,6 +2,7 @@ import os from 'node:os'
 
 import { defineConfig } from 'vitest/config'
 
+// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
 export default defineConfig({
   resolve: {
     preserveSymlinks: false,
@@ -20,14 +21,11 @@ export default defineConfig({
     setupFiles: ['./test/setup.mts'],
     // Use threads for better performance.
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        maxThreads: os.cpus().length,
-        minThreads: Math.min(4, os.cpus().length),
-        // E2E tests need full isolation for clean execution.
-        isolate: true,
-      },
+    maxWorkers: os.cpus().length,
+    // E2E tests need full isolation for clean execution.
+    isolate: true,
+    deps: {
+      interopDefault: false,
     },
     // E2E tests need longer timeouts for spawning processes.
     testTimeout: 60_000,

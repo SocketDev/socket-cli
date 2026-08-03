@@ -1,6 +1,6 @@
 /**
- * SOCKET_CLI_DEBUG environment variable snapshot.
- * Controls Socket CLI-specific debug output.
+ * SOCKET_CLI_DEBUG environment variable snapshot. Controls Socket CLI-specific
+ * debug output.
  */
 
 import { env } from 'node:process'

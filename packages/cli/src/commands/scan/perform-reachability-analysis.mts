@@ -1,29 +1,42 @@
+import crypto from 'node:crypto'
+import { writeFile } from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { HTTP_STATUS_UNAUTHORIZED } from '../../constants/http.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } from '../../constants/socket.mts'
-import { extractTier1ReachabilityScanId } from '../../utils/coana/extract-scan-id.mjs'
-import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
-import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
-import { socketDevLink } from '../../utils/terminal/link.mts'
+import { extractTier1ReachabilityScanId } from '../../util/coana/extract-scan-id.mjs'
+import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
+import { getMachineOutputMode } from '../../util/output/ambient-mode.mts'
+import { hasEnterpriseOrgPlan } from '../../util/organization.mts'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { socketDevLink } from '../../util/terminal/link.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
+import type { StdioOptions } from 'node:child_process'
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { PURL_Type } from '../../util/ecosystem/types.mjs'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type ReachabilityOptions = {
+  excludePaths: string[]
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
   reachConcurrency: number
   reachDebug: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
   reachLazyMode: boolean
@@ -31,6 +44,7 @@ export type ReachabilityOptions = {
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string | undefined
 }
 
 export type ReachabilityAnalysisOptions = {
@@ -41,7 +55,10 @@ export type ReachabilityAnalysisOptions = {
   packagePaths?: string[] | undefined
   reachabilityOptions: ReachabilityOptions
   repoName?: string | undefined
-  spinner?: Spinner | undefined
+  // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
+  // reuses these paths instead of re-resolving the build.
+  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
+  spinner?: SpinnerInstance | undefined
   target: string
   uploadManifests?: boolean | undefined
 }
@@ -62,6 +79,7 @@ export async function performReachabilityAnalysis(
     packagePaths,
     reachabilityOptions,
     repoName,
+    resolvedPathsSidecar,
     spinner,
     target,
     uploadManifests = true,
@@ -76,6 +94,17 @@ export async function performReachabilityAnalysis(
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
+    const httpCode = (
+      orgsCResult as { data?: { code?: number | undefined } | undefined }
+    ).data?.code
+    if (httpCode === HTTP_STATUS_UNAUTHORIZED) {
+      return {
+        ok: false,
+        message: 'Authentication failed',
+        cause:
+          'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      }
+    }
     return {
       ok: false,
       message: 'Unable to verify plan permissions',
@@ -98,7 +127,7 @@ export async function performReachabilityAnalysis(
 
   let tarHash: string | undefined
 
-  if (uploadManifests && orgSlug && packagePaths) {
+  if (orgSlug && packagePaths && uploadManifests) {
     // Setup SDK for uploading manifests
     const sockSdkCResult = await setupSdk()
     if (!sockSdkCResult.ok) {
@@ -107,39 +136,44 @@ export async function performReachabilityAnalysis(
 
     const sockSdk = sockSdkCResult.data
 
-    // Exclude any .socket.facts.json files that happen to be in the scan
-    // folder before the analysis was run.
-    const filepathsToUpload = packagePaths.filter(
-      p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
-    )
+    spinner?.start('Uploading manifests for reachability analysis…')
 
-    spinner?.start('Uploading manifests for reachability analysis...')
-
+    // A `.socket.facts.json` in packagePaths is legitimate INPUT to
+    // compute-artifacts (the auto-manifest facts generators write it), so it
+    // uploads with the rest. Coana reads the plain filename out of the
+    // manifests tar, so this path stays uncompressed; the full-scan upload in
+    // handle-create-new-scan.mts is where facts files go up brotli-compressed.
+    // Stale facts files are cleaned up downstream — see the post-success
+    // deletion in handle-create-new-scan.mts.
     // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
     const uploadCResult = (await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
+      sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
         pathsRelativeTo: path.resolve(cwd, analysisTarget),
       }),
       {
         description: 'upload manifests',
         spinner,
       },
-    )) as any
+    )) as CResult<{ tarHash?: string | undefined }>
 
     spinner?.stop()
 
     if (!uploadCResult.ok) {
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
+      /* c8 ignore stop */
       return uploadCResult
     }
 
-    tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
+    tarHash = uploadCResult.data?.tarHash
     if (!tarHash) {
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
       if (wasSpinning) {
         spinner?.start()
       }
+      /* c8 ignore stop */
       return {
         ok: false,
         message: 'Failed to get manifest tar hash',
@@ -152,13 +186,29 @@ export async function performReachabilityAnalysis(
   }
 
   spinner?.start()
-  spinner?.infoAndStop('Running reachability analysis with Coana...')
+  spinner?.infoAndStop('Running reachability analysis with Coana…')
 
   const outputFilePath = outputPath?.trim()
     ? outputPath
     : DOT_SOCKET_DOT_FACTS_JSON
+
+  // Write the sidecar to a temp file for `--compute-artifacts-sidecar`;
+  // cleaned up in the finally below.
+  let sidecarPath: string | undefined
+  if (resolvedPathsSidecar?.length) {
+    sidecarPath = path.join(
+      os.tmpdir(),
+      `socket-compute-artifacts-sidecar-${crypto.randomUUID()}.json`,
+    )
+    await writeFile(sidecarPath, JSON.stringify(resolvedPathsSidecar), 'utf8')
+  }
+
   // Build Coana arguments.
+  // Under machine-output mode, --silent suppresses coana's Winston
+  // logger entirely; the report still lands in --socket-mode's file.
+  const machineMode = getMachineOutputMode()
   const coanaArgs = [
+    ...(machineMode ? ['--silent'] : []),
     'run',
     analysisTarget,
     '--output-dir',
@@ -176,12 +226,19 @@ export async function performReachabilityAnalysis(
       ? ['--concurrency', `${reachabilityOptions.reachConcurrency}`]
       : []),
     ...(reachabilityOptions.reachDebug ? ['--debug'] : []),
+    ...(reachabilityOptions.reachDetailedAnalysisLogFile
+      ? ['--detailed-analysis-log-file']
+      : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    ...(reachabilityOptions.reachDisableAnalysisSplitting
-      ? ['--disable-analysis-splitting']
+    ...(reachabilityOptions.reachDisableExternalToolChecks
+      ? ['--disable-external-tool-checks']
       : []),
+    // Analysis splitting is disabled by default; only skip the flag when explicitly enabled.
+    ...(reachabilityOptions.reachEnableAnalysisSplitting
+      ? []
+      : ['--disable-analysis-splitting']),
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
       : []),
@@ -203,12 +260,13 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
       ? ['--use-unreachable-from-precomputation']
       : []),
+    ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
   ]
 
   // Build environment variables.
   const coanaEnv: Record<string, string> = {}
   // do not pass default repo and branch name to coana to avoid mixing
-  // buckets (cached configuration) from projects that are likely very different.
+  // buckets, cached configuration, from projects that are likely very different.
   if (repoName && repoName !== SOCKET_DEFAULT_REPOSITORY) {
     coanaEnv['SOCKET_REPO_NAME'] = repoName
   }
@@ -216,27 +274,65 @@ export async function performReachabilityAnalysis(
     coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
-    cwd,
-    env: coanaEnv,
-    spinner,
-    stdio: 'inherit',
-  })
+  // Under --json/--markdown the final payload owns stdout, and coana streams
+  // its progress there under 'inherit'. Route the child's stdout to our stderr
+  // (fd 2) instead of dropping it: `2>/dev/null` still isolates the payload,
+  // and a human watching a long reachability run keeps seeing progress. stdin
+  // and stderr stay inherited. Text mode inherits stdout unchanged.
+  const coanaStdio: StdioOptions = machineMode
+    ? ['inherit', 2, 'inherit']
+    : 'inherit'
 
-  if (wasSpinning) {
-    spinner?.start()
-  }
+  try {
+    // Run Coana with the manifests tar hash.
+    const coanaResult = await spawnCoanaDlx(coanaArgs, {
+      orgSlug,
+      coanaVersion: reachabilityOptions.reachVersion || undefined,
+      cwd,
+      env: coanaEnv,
+      spinner,
+      stdio: coanaStdio,
+    })
 
-  return coanaResult.ok
-    ? {
-        ok: true,
-        data: {
-          // Use the actual output filename for the scan.
-          reachabilityReport: outputFilePath,
-          tier1ReachabilityScanId:
-            extractTier1ReachabilityScanId(outputFilePath),
-        },
+    /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+    if (wasSpinning) {
+      spinner?.start()
+    }
+    /* c8 ignore stop */
+
+    if (!coanaResult.ok) {
+      const logger = getDefaultLogger()
+      logger.error('Reachability analysis failed')
+      logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`)
+      if (coanaResult.message) {
+        logger.error(`  ${coanaResult.message}`)
       }
-    : coanaResult
+    }
+
+    return coanaResult.ok
+      ? {
+          ok: true,
+          data: {
+            // Use the actual output filename for the scan. Keep it
+            // `cwd`-relative so the upload (which relativizes against `cwd`)
+            // and the post-success delete (`path.resolve(cwd, …)`) keep
+            // working.
+            reachabilityReport: outputFilePath,
+            // Coana is spawned with `cwd`, so it writes the facts file there.
+            // Reading the bare relative path resolves against `process.cwd()`
+            // and misses the file whenever `cwd !== process.cwd()` (`--cwd
+            // <dir>`), which silently drops the tier 1 scan id and skips
+            // finalize downstream.
+            tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+              path.resolve(cwd, outputFilePath),
+            ),
+          },
+        }
+      : coanaResult
+  } finally {
+    // Best-effort cleanup of the temp sidecar.
+    if (sidecarPath) {
+      await safeDelete(sidecarPath, { force: true })
+    }
+  }
 }

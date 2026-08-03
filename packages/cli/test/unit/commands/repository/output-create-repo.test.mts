@@ -1,23 +1,19 @@
 /**
  * Unit tests for output-create-repo.
  *
- * Purpose:
- * Tests output formatting for repository creation results. Validates text, JSON, and
- * markdown formatting for successful and failed repository creation.
+ * Purpose: Tests output formatting for repository creation results. Validates
+ * text, JSON, and markdown formatting for successful and failed repository
+ * creation.
  *
- * Test Coverage:
- * - Successful creation output formatting
- * - Error message formatting
- * - Multiple output formats (text, json, markdown)
- * - Repository metadata display
+ * Test Coverage: - Successful creation output formatting - Error message
+ * formatting - Multiple output formats, text, json, markdown - Repository
+ * metadata display.
  *
- * Testing Approach:
- * Uses result helpers to create test data. Validates formatted output strings across
- * different output modes.
+ * Testing Approach: Uses result helpers to create test data. Validates
+ * formatted output strings across different output modes.
  *
- * Related Files:
- * - src/commands/repository/output-create-repo.mts (implementation)
- * - src/commands/repository/handle-create-repo.mts (handler)
+ * Related Files: - src/commands/repository/output-create-repo.mts
+ * (implementation) - src/commands/repository/handle-create-repo.mts (handler)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -25,7 +21,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { outputCreateRepo } from '../../../../src/commands/repository/output-create-repo.mts'
 
 import type { CResult } from '../../../../src/commands/repository/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -37,16 +33,16 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: vi.fn(result => JSON.stringify(result)),
 }))
 
-vi.mock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
+vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
 }))
 
@@ -58,7 +54,7 @@ describe('outputCreateRepo', () => {
 
   it('outputs JSON format for successful result', async () => {
     const { serializeResultJson } = await vi.importMock(
-      '../../../../src/utils/output/result-json.mjs',
+      '../../../../src/util/output/result-json.mjs',
     )
     const mockSerialize = vi.mocked(serializeResultJson)
 
@@ -128,7 +124,7 @@ describe('outputCreateRepo', () => {
 
   it('outputs error in text format', async () => {
     const { failMsgWithBadge } = await vi.importMock(
-      '../../../../src/utils/error/fail-msg-with-badge.mts',
+      '../../../../src/util/error/fail-msg-with-badge.mts',
     )
     const mockFailMsg = vi.mocked(failMsgWithBadge)
 

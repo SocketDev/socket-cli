@@ -1,8 +1,9 @@
 import { RequestError } from '@octokit/request-error'
 
-import { UNKNOWN_VALUE } from '@socketsecurity/lib/constants/core'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { isNonEmptyString } from '@socketsecurity/lib/strings'
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/sentinels'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 
 import {
   getSocketFixBranchPattern,
@@ -16,21 +17,327 @@ import {
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
 } from '../../constants/github.mts'
-import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {
   cacheFetch,
-  type GhsaDetails,
   getOctokit,
   getOctokitGraphql,
   handleGraphqlError,
-  type Pr,
   withGitHubRetry,
   writeCache,
-} from '../../utils/git/github.mts'
-import { createPrProvider } from '../../utils/git/provider-factory.mts'
+} from '../../util/git/github.mts'
+import type { GhsaDetails, Pr } from '../../util/git/github.mts'
+import { createPrProvider } from '../../util/git/provider-factory.mts'
 
 import type { OctokitResponse } from '@octokit/types'
-import type { JsonContent } from '@socketsecurity/lib/fs'
+import type { JsonContent } from '@socketsecurity/lib-stable/fs/types'
+
+export type GQL_MERGE_STATE_STATUS =
+  | 'BEHIND'
+  | 'BLOCKED'
+  | 'CLEAN'
+  | 'DIRTY'
+  | 'DRAFT'
+  | 'HAS_HOOKS'
+  | 'UNKNOWN'
+  | 'UNSTABLE'
+
+export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
+
+export type PrMatch = {
+  author: string
+  baseRefName: string
+  headRefName: string
+  mergeStateStatus: GQL_MERGE_STATE_STATUS
+  number: number
+  state: GQL_PR_STATE
+  title: string
+}
+
+export async function cleanupSocketFixPrs(
+  owner: string,
+  repo: string,
+  ghsaId: string,
+): Promise<PrMatch[]> {
+  const contextualMatches = await getSocketFixPrsWithContext(owner, repo, {
+    ghsaId,
+  })
+
+  if (!contextualMatches.length) {
+    return []
+  }
+
+  const cachesToSave = new Map<string, JsonContent>()
+  const provider = await createPrProvider()
+
+  const settledMatches = await Promise.allSettled(
+    contextualMatches.map(async ({ context, match }) => {
+      // Update stale PRs.
+      // https://docs.github.com/en/graphql/reference/enums#mergestatestatus
+      if (match.mergeStateStatus === 'BEHIND') {
+        const { number: prNum } = match
+        const prRef = `PR #${prNum}`
+        try {
+          // Update the PR using the provider.
+          await provider.updatePr({
+            owner,
+            repo,
+            prNumber: prNum,
+            head: match.headRefName,
+            base: match.baseRefName,
+          })
+
+          debug(`pr: updated stale ${prRef}`)
+          logPrEvent('updated', prNum, ghsaId, 'Updated from base branch')
+
+          // Update cache entry - only GraphQL is used now.
+          context.entry.mergeStateStatus = 'CLEAN'
+          // Mark cache to be saved.
+          cachesToSave.set(context.cacheKey, context.data)
+        } catch (e) {
+          debug(formatErrorWithDetail(`pr: failed to update ${prRef}`, e))
+          debugDir(e)
+        }
+      }
+
+      // Clean up merged PR branches.
+      if (match.state === GQL_PR_STATE_MERGED) {
+        const { number: prNum } = match
+        const prRef = `PR #${prNum}`
+        try {
+          const success = await provider.deleteBranch(match.headRefName)
+          if (success) {
+            debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
+            logPrEvent('merged', prNum, ghsaId, 'Branch cleaned up')
+            /* c8 ignore start - branch-delete failure path; depends on remote git state we don't control in tests */
+          } else {
+            debug(
+              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
+            )
+          }
+          /* c8 ignore stop */
+        } catch (e) {
+          // Don't treat this as a hard error - branch might already be deleted.
+          debug(
+            formatErrorWithDetail(
+              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
+              e,
+            ),
+          )
+          debugDir(e)
+        }
+      }
+
+      return match
+    }),
+  )
+
+  if (cachesToSave.size) {
+    await Promise.allSettled(
+      Array.from(cachesToSave).map(({ 0: key, 1: data }) =>
+        writeCache(key, data),
+      ),
+    )
+  }
+
+  const fulfilledMatches = settledMatches.filter(
+    (r): r is PromiseFulfilledResult<PrMatch> => r.status === 'fulfilled',
+  )
+
+  return fulfilledMatches.map(r => r.value)
+}
+
+export type PrAutoMergeState = {
+  enabled: boolean
+  details?: string[] | undefined
+}
+
+export type SocketPrsOptions = {
+  author?: string | undefined
+  ghsaId?: string | undefined
+  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[] | undefined
+}
+
+export async function getSocketFixPrs(
+  owner: string,
+  repo: string,
+  options?: SocketPrsOptions | undefined,
+): Promise<PrMatch[]> {
+  return (await getSocketFixPrsWithContext(owner, repo, options)).map(
+    d => d.match,
+  )
+}
+
+export type GqlPrNode = {
+  author?:
+    | {
+        login: string
+      }
+    | undefined
+  baseRefName: string
+  headRefName: string
+  mergeStateStatus: GQL_MERGE_STATE_STATUS
+  number: number
+  state: GQL_PR_STATE
+  title: string
+}
+
+export type GqlPullRequestsResponse = {
+  repository: {
+    pullRequests: {
+      pageInfo: {
+        hasNextPage: boolean
+        endCursor: string | undefined
+      }
+      nodes: GqlPrNode[]
+    }
+  }
+}
+
+export type ContextualPrMatch = {
+  context: {
+    apiType: 'graphql' | 'rest'
+    cacheKey: string
+    data: JsonContent
+    entry: GqlPrNode
+    index: number
+    parent: GqlPrNode[]
+  }
+  match: PrMatch
+}
+
+export async function getSocketFixPrsWithContext(
+  owner: string,
+  repo: string,
+  options?: SocketPrsOptions | undefined,
+): Promise<ContextualPrMatch[]> {
+  const {
+    author,
+    ghsaId,
+    states: statesValue = 'all',
+  } = {
+    __proto__: null,
+    ...options,
+  } as SocketPrsOptions
+  const branchPattern = getSocketFixBranchPattern(ghsaId)
+  const checkAuthor = isNonEmptyString(author)
+  const octokitGraphql = getOctokitGraphql()
+  const contextualMatches: ContextualPrMatch[] = []
+  const states = (
+    typeof statesValue === 'string'
+      ? statesValue.toLowerCase() === 'all'
+        ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
+        : [statesValue]
+      : statesValue
+  ).map(s => s.toUpperCase())
+
+  try {
+    let hasNextPage = true
+    let cursor: string | undefined = undefined
+    let pageIndex = 0
+    // Include owner in cache key to avoid collisions with same repo name.
+    const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
+    while (hasNextPage) {
+      const gqlResp = (await cacheFetch(
+        `${gqlCacheKey}-page-${pageIndex}`,
+        /* c8 ignore start - cacheFetch factory only fires on cache miss; tests pass mocked cached values directly */
+        () =>
+          octokitGraphql(
+            `
+              query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: 100, states: $states, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                    nodes {
+                      author {
+                        login
+                      }
+                      baseRefName
+                      headRefName
+                      mergeStateStatus
+                      number
+                      state
+                      title
+                    }
+                  }
+                }
+              }
+              `,
+            {
+              owner,
+              repo,
+              states,
+              after: cursor,
+            },
+          ),
+        /* c8 ignore stop */
+      )) as GqlPullRequestsResponse
+
+      const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
+        nodes: [],
+        pageInfo: { hasNextPage: false, endCursor: undefined },
+      }
+
+      for (let i = 0, { length } = nodes; i < length; i += 1) {
+        const node = nodes[i]!
+        const login = node.author?.login
+        const matchesAuthor = checkAuthor ? login === author : true
+        const matchesBranch = branchPattern.test(node.headRefName)
+        if (matchesAuthor && matchesBranch) {
+          contextualMatches.push({
+            context: {
+              apiType: 'graphql',
+              cacheKey: `${gqlCacheKey}-page-${pageIndex}`,
+              data: gqlResp,
+              entry: node,
+              index: i,
+              parent: nodes,
+            },
+            match: {
+              ...node,
+              author: login ?? UNKNOWN_VALUE,
+            },
+          })
+        }
+      }
+
+      // Continue to next page.
+      hasNextPage = pageInfo.hasNextPage
+      cursor = pageInfo.endCursor
+      pageIndex += 1
+
+      /* c8 ignore start - GQL_PAGE_SENTINEL safety limit; tests page through at most a few pages */
+      if (pageIndex === GQL_PAGE_SENTINEL) {
+        debug(
+          `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
+        )
+        break
+      }
+      /* c8 ignore stop */
+
+      // Early exit optimization: if we found matches and only looking for specific GHSA,
+      // we can stop pagination since we likely found what we need.
+      if (contextualMatches.length > 0 && ghsaId) {
+        break
+      }
+    }
+  } catch (e) {
+    // Use centralized error handling for better error messages.
+    const errorResult = handleGraphqlError(
+      e,
+      `listing PRs for ${owner}/${repo}`,
+    )
+    // errorResult is always ok: false from handleGraphqlError.
+    if (!errorResult.ok) {
+      debug(errorResult.cause ?? errorResult.message)
+    }
+  }
+
+  return contextualMatches
+}
 
 export type OpenSocketFixPrOptions = {
   baseBranch?: string | undefined
@@ -68,7 +375,7 @@ export async function openSocketFixPr(
     ...options,
   } as OpenSocketFixPrOptions
 
-  const provider = createPrProvider()
+  const provider = await createPrProvider()
 
   try {
     const result = await provider.createPr({
@@ -110,11 +417,17 @@ export async function openSocketFixPr(
 
     // Handle RequestError from Octokit/provider.
     if (e instanceof RequestError) {
-      const errors = (e.response?.data as any)?.['errors']
+      const errors = (
+        e.response?.data as { errors?: unknown | undefined } | undefined
+      )?.errors
       const errorMessages = Array.isArray(errors)
         ? errors.map(
-            (d: any) =>
-              d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
+            (d: {
+              message?: string | undefined
+              resource?: string | undefined
+              field?: string | undefined
+              code?: string | undefined
+            }) => d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`,
           )
         : []
 
@@ -129,7 +442,7 @@ export async function openSocketFixPr(
       }
 
       // Check for validation errors (e.g., no commits between branches).
-      if (errors && errors.length > 0) {
+      if (Array.isArray(errors) && errors.length > 0) {
         const details = errorMessages.map((d: string) => `- ${d}`).join('\n')
         debug(`Failed to create pull request:\n${details}`)
         return {
@@ -154,308 +467,7 @@ export async function openSocketFixPr(
     }
 
     // Unknown error.
-    debug(`Failed to create pull request: ${e}`)
+    debug(`Failed to create pull request: ${errorMessage(e)}`)
     return { ok: false, reason: 'unknown', error: e as Error }
   }
-}
-
-export type GQL_MERGE_STATE_STATUS =
-  | 'BEHIND'
-  | 'BLOCKED'
-  | 'CLEAN'
-  | 'DIRTY'
-  | 'DRAFT'
-  | 'HAS_HOOKS'
-  | 'UNKNOWN'
-  | 'UNSTABLE'
-
-export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
-
-export type PrMatch = {
-  author: string
-  baseRefName: string
-  headRefName: string
-  mergeStateStatus: GQL_MERGE_STATE_STATUS
-  number: number
-  state: GQL_PR_STATE
-  title: string
-}
-
-export async function cleanupSocketFixPrs(
-  owner: string,
-  repo: string,
-  ghsaId: string,
-): Promise<PrMatch[]> {
-  const contextualMatches = await getSocketFixPrsWithContext(owner, repo, {
-    ghsaId,
-  })
-
-  if (!contextualMatches.length) {
-    return []
-  }
-
-  const cachesToSave = new Map<string, JsonContent>()
-  const provider = createPrProvider()
-
-  const settledMatches = await Promise.allSettled(
-    contextualMatches.map(async ({ context, match }) => {
-      // Update stale PRs.
-      // https://docs.github.com/en/graphql/reference/enums#mergestatestatus
-      if (match.mergeStateStatus === 'BEHIND') {
-        const { number: prNum } = match
-        const prRef = `PR #${prNum}`
-        try {
-          // Update the PR using the provider.
-          await provider.updatePr({
-            owner,
-            repo,
-            prNumber: prNum,
-            head: match.headRefName,
-            base: match.baseRefName,
-          })
-
-          debug(`pr: updated stale ${prRef}`)
-          logPrEvent('updated', prNum, ghsaId, 'Updated from base branch')
-
-          // Update cache entry - only GraphQL is used now.
-          context.entry.mergeStateStatus = 'CLEAN'
-          // Mark cache to be saved.
-          cachesToSave.set(context.cacheKey, context.data)
-        } catch (e) {
-          debug(formatErrorWithDetail(`pr: failed to update ${prRef}`, e))
-          debugDir(e)
-        }
-      }
-
-      // Clean up merged PR branches.
-      if (match.state === GQL_PR_STATE_MERGED) {
-        const { number: prNum } = match
-        const prRef = `PR #${prNum}`
-        try {
-          const success = await provider.deleteBranch(match.headRefName)
-          if (success) {
-            debug(`pr: deleted merged branch ${match.headRefName} for ${prRef}`)
-            logPrEvent('merged', prNum, ghsaId, 'Branch cleaned up')
-          } else {
-            debug(
-              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
-            )
-          }
-        } catch (e) {
-          // Don't treat this as a hard error - branch might already be deleted.
-          debug(
-            formatErrorWithDetail(
-              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
-              e,
-            ),
-          )
-          debugDir(e)
-        }
-      }
-
-      return match
-    }),
-  )
-
-  if (cachesToSave.size) {
-    await Promise.allSettled(
-      Array.from(cachesToSave).map(({ 0: key, 1: data }) =>
-        writeCache(key, data),
-      ),
-    )
-  }
-
-  const fulfilledMatches = settledMatches.filter(
-    (r): r is PromiseFulfilledResult<PrMatch> => r.status === 'fulfilled',
-  )
-
-  return fulfilledMatches.map(r => r.value)
-}
-
-export type PrAutoMergeState = {
-  enabled: boolean
-  details?: string[] | undefined
-}
-
-export type SocketPrsOptions = {
-  author?: string | undefined
-  ghsaId?: string | undefined
-  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[]
-}
-
-export async function getSocketFixPrs(
-  owner: string,
-  repo: string,
-  options?: SocketPrsOptions | undefined,
-): Promise<PrMatch[]> {
-  return (await getSocketFixPrsWithContext(owner, repo, options)).map(
-    d => d.match,
-  )
-}
-
-type GqlPrNode = {
-  author?: {
-    login: string
-  }
-  baseRefName: string
-  headRefName: string
-  mergeStateStatus: GQL_MERGE_STATE_STATUS
-  number: number
-  state: GQL_PR_STATE
-  title: string
-}
-
-type GqlPullRequestsResponse = {
-  repository: {
-    pullRequests: {
-      pageInfo: {
-        hasNextPage: boolean
-        endCursor: string | null
-      }
-      nodes: GqlPrNode[]
-    }
-  }
-}
-
-type ContextualPrMatch = {
-  context: {
-    apiType: 'graphql' | 'rest'
-    cacheKey: string
-    data: any
-    entry: any
-    index: number
-    parent: any[]
-  }
-  match: PrMatch
-}
-
-async function getSocketFixPrsWithContext(
-  owner: string,
-  repo: string,
-  options?: SocketPrsOptions | undefined,
-): Promise<ContextualPrMatch[]> {
-  const {
-    author,
-    ghsaId,
-    states: statesValue = 'all',
-  } = {
-    __proto__: null,
-    ...options,
-  } as SocketPrsOptions
-  const branchPattern = getSocketFixBranchPattern(ghsaId)
-  const checkAuthor = isNonEmptyString(author)
-  const octokitGraphql = getOctokitGraphql()
-  const contextualMatches: ContextualPrMatch[] = []
-  const states = (
-    typeof statesValue === 'string'
-      ? statesValue.toLowerCase() === 'all'
-        ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
-        : [statesValue]
-      : statesValue
-  ).map(s => s.toUpperCase())
-
-  try {
-    let hasNextPage = true
-    let cursor: string | null = null
-    let pageIndex = 0
-    // Include owner in cache key to avoid collisions with same repo name.
-    const gqlCacheKey = `${owner}::${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
-    while (hasNextPage) {
-      // eslint-disable-next-line no-await-in-loop
-      const gqlResp = (await cacheFetch(
-        `${gqlCacheKey}-page-${pageIndex}`,
-        () =>
-          octokitGraphql(
-            `
-              query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequests(first: 100, states: $states, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
-                    pageInfo {
-                      hasNextPage
-                      endCursor
-                    }
-                    nodes {
-                      author {
-                        login
-                      }
-                      baseRefName
-                      headRefName
-                      mergeStateStatus
-                      number
-                      state
-                      title
-                    }
-                  }
-                }
-              }
-              `,
-            {
-              owner,
-              repo,
-              states,
-              after: cursor,
-            },
-          ),
-      )) as GqlPullRequestsResponse
-
-      const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
-        nodes: [],
-        pageInfo: { hasNextPage: false, endCursor: null },
-      }
-
-      for (let i = 0, { length } = nodes; i < length; i += 1) {
-        const node = nodes[i]!
-        const login = node.author?.login
-        const matchesAuthor = checkAuthor ? login === author : true
-        const matchesBranch = branchPattern.test(node.headRefName)
-        if (matchesAuthor && matchesBranch) {
-          contextualMatches.push({
-            context: {
-              apiType: 'graphql',
-              cacheKey: `${gqlCacheKey}-page-${pageIndex}`,
-              data: gqlResp,
-              entry: node,
-              index: i,
-              parent: nodes,
-            },
-            match: {
-              ...node,
-              author: login ?? UNKNOWN_VALUE,
-            },
-          })
-        }
-      }
-
-      // Continue to next page.
-      hasNextPage = pageInfo.hasNextPage
-      cursor = pageInfo.endCursor
-      pageIndex += 1
-
-      // Safety limit to prevent infinite loops.
-      if (pageIndex === GQL_PAGE_SENTINEL) {
-        debug(
-          `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
-        )
-        break
-      }
-
-      // Early exit optimization: if we found matches and only looking for specific GHSA,
-      // we can stop pagination since we likely found what we need.
-      if (contextualMatches.length > 0 && ghsaId) {
-        break
-      }
-    }
-  } catch (e) {
-    // Use centralized error handling for better error messages.
-    const errorResult = handleGraphqlError(
-      e,
-      `listing PRs for ${owner}/${repo}`,
-    )
-    // errorResult is always ok: false from handleGraphqlError.
-    if (!errorResult.ok) {
-      debug(errorResult.cause ?? errorResult.message)
-    }
-  }
-
-  return contextualMatches
 }

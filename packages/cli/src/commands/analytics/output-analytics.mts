@@ -1,15 +1,16 @@
 import fs from 'node:fs/promises'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { debugFileOp } from '../../utils/debug.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTableStringNumber } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { fileLink } from '../../utils/terminal/link.mts'
+import { debugFileOp } from '../../util/debug.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTableStringNumber } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { fileLink } from '../../util/terminal/link.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+
 const logger = getDefaultLogger()
 
 const METRICS = [
@@ -42,6 +43,140 @@ const Months = [
   'Nov',
   'Dec',
 ] as const
+
+export function formatDataOrg(
+  data: SocketSdkSuccessResult<'getOrgAnalytics'>['data'],
+): FormattedData {
+  const sortedTopFiveAlerts: Record<string, number> = {}
+  const totalTopAlerts: Record<string, number> = {}
+
+  const formattedData: Omit<FormattedData, 'top_five_alert_types'> = {
+    total_critical_alerts: {},
+    total_high_alerts: {},
+    total_medium_alerts: {},
+    total_low_alerts: {},
+    total_critical_added: {},
+    total_medium_added: {},
+    total_low_added: {},
+    total_high_added: {},
+    total_critical_prevented: {},
+    total_high_prevented: {},
+    total_medium_prevented: {},
+    total_low_prevented: {},
+  }
+
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]!
+    const topFiveAlertTypes = entry.top_five_alert_types
+    const types = Object.keys(topFiveAlertTypes)
+    for (let j = 0, { length: typesLength } = types; j < typesLength; j += 1) {
+      const type = types[j]!
+      const count = topFiveAlertTypes[type] ?? 0
+      if (totalTopAlerts[type]) {
+        totalTopAlerts[type] += count
+      } else {
+        totalTopAlerts[type] = count
+      }
+    }
+  }
+
+  for (let i = 0, { length } = METRICS; i < length; i += 1) {
+    const metric = METRICS[i]!
+    const formatted = formattedData[metric]
+    for (let j = 0, { length: dataLength } = data; j < dataLength; j += 1) {
+      const entry = data[j]!
+      const date = formatDate(entry.created_at)
+      if (formatted[date]) {
+        formatted[date] += entry[metric]
+      } else {
+        formatted[date] = entry[metric]!
+      }
+    }
+  }
+
+  const topFiveAlertEntries = Object.entries(totalTopAlerts)
+    .toSorted(([_keya, a], [_keyb, b]) => b - a)
+    .slice(0, 5)
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
+    sortedTopFiveAlerts[key] = value
+  }
+
+  return {
+    ...formattedData,
+    top_five_alert_types: sortedTopFiveAlerts,
+  }
+}
+
+export function formatDataRepo(
+  data: SocketSdkSuccessResult<'getRepoAnalytics'>['data'],
+): FormattedData {
+  const sortedTopFiveAlerts: Record<string, number> = {}
+  const totalTopAlerts: Record<string, number> = {}
+
+  const formattedData: Omit<FormattedData, 'top_five_alert_types'> = {
+    total_critical_alerts: {},
+    total_high_alerts: {},
+    total_medium_alerts: {},
+    total_low_alerts: {},
+    total_critical_added: {},
+    total_medium_added: {},
+    total_low_added: {},
+    total_high_added: {},
+    total_critical_prevented: {},
+    total_high_prevented: {},
+    total_medium_prevented: {},
+    total_low_prevented: {},
+  }
+
+  // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]!
+    const topFiveAlertTypes = entry.top_five_alert_types
+    const types = Object.keys(topFiveAlertTypes)
+    for (let j = 0, { length: typesLength } = types; j < typesLength; j += 1) {
+      const type = types[j]!
+      const count = topFiveAlertTypes[type] ?? 0
+      if (totalTopAlerts[type]) {
+        totalTopAlerts[type] += count
+      } else {
+        totalTopAlerts[type] = count
+      }
+    }
+  }
+  for (let i = 0, { length } = data; i < length; i += 1) {
+    const entry = data[i]!
+    for (
+      let j = 0, { length: metricsLength } = METRICS;
+      j < metricsLength;
+      j += 1
+    ) {
+      const metric = METRICS[j]!
+      formattedData[metric][formatDate(entry.created_at)] = entry[metric]
+    }
+  }
+
+  const topFiveAlertEntries = Object.entries(totalTopAlerts)
+    .toSorted(([_keya, a], [_keyb, b]) => b - a)
+    .slice(0, 5)
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
+    sortedTopFiveAlerts[key] = value
+  }
+
+  return {
+    ...formattedData,
+    top_five_alert_types: sortedTopFiveAlerts,
+  }
+}
+
+export function formatDate(date: string): string {
+  const dateObj = new Date(date)
+  const month = dateObj.getMonth()
+  const day = dateObj.getDate()
+  if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
+    return date.slice(0, 10)
+  }
+  return `${Months[month]} ${day}`
+}
 
 export type OutputAnalyticsConfig = {
   filepath: string
@@ -100,24 +235,24 @@ export async function outputAnalytics(
   const fdata =
     scope === 'org' ? formatDataOrg(result.data) : formatDataRepo(result.data)
 
-  if (outputKind === 'markdown') {
-    const serialized = renderMarkdown(fdata, time, repo)
+  // Default + OUTPUT_MARKDOWN: render the markdown report. The
+  // previous default branched through an iocraft TUI renderer; the
+  // renderer was retired alongside iocraft itself, and markdown is the
+  // natural plain-text fallback.
+  const serialized = renderMarkdown(fdata, time, repo)
 
-    // Write markdown output to file if filepath is specified.
-    if (filepath) {
-      try {
-        await fs.writeFile(filepath, serialized, 'utf8')
-        debugFileOp('write', filepath)
-        logger.success(`Data successfully written to ${fileLink(filepath)}`)
-      } catch (e) {
-        debugFileOp('write', filepath, e)
-        logger.error(e)
-      }
-    } else {
-      logger.log(serialized)
+  // Write markdown output to file if filepath is specified.
+  if (filepath) {
+    try {
+      await fs.writeFile(filepath, serialized, 'utf8')
+      debugFileOp('write', filepath)
+      logger.success(`Data successfully written to ${fileLink(filepath)}`)
+    } catch (e) {
+      debugFileOp('write', filepath, e)
+      logger.error(e)
     }
   } else {
-    await displayAnalyticsWithInk(fdata)
+    logger.log(serialized)
   }
 }
 
@@ -194,115 +329,4 @@ ${table}
 
 ${mdTableStringNumber('Name', 'Counts', data.top_five_alert_types)}
 `.trim()}\n`
-}
-
-/**
- * Display analytics using Ink React components.
- */
-async function displayAnalyticsWithInk(data: FormattedData): Promise<void> {
-  const React = await import('react')
-  const { render } = await import('ink')
-  const { AnalyticsApp } = await import('./AnalyticsApp.js')
-
-  render(React.createElement(AnalyticsApp, { data }))
-}
-
-export function formatDataRepo(
-  data: SocketSdkSuccessResult<'getRepoAnalytics'>['data'],
-): FormattedData {
-  const sortedTopFiveAlerts: Record<string, number> = {}
-  const totalTopAlerts: Record<string, number> = {}
-
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
-    formattedData[metric] = {}
-  }
-
-  // Aggregate alert counts: sum across time entries (consistent with formatDataOrg).
-  for (const entry of data) {
-    const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
-      const count = topFiveAlertTypes[type] ?? 0
-      if (totalTopAlerts[type]) {
-        totalTopAlerts[type] += count
-      } else {
-        totalTopAlerts[type] = count
-      }
-    }
-  }
-  for (const entry of data) {
-    for (const metric of METRICS) {
-      formattedData[metric]![formatDate(entry.created_at)] = entry[metric]
-    }
-  }
-
-  const topFiveAlertEntries = Object.entries(totalTopAlerts)
-    .sort(([_keya, a], [_keyb, b]) => b - a)
-    .slice(0, 5)
-  for (const { 0: key, 1: value } of topFiveAlertEntries) {
-    sortedTopFiveAlerts[key] = value
-  }
-
-  return {
-    ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts,
-  }
-}
-
-export function formatDataOrg(
-  data: SocketSdkSuccessResult<'getOrgAnalytics'>['data'],
-): FormattedData {
-  const sortedTopFiveAlerts: Record<string, number> = {}
-  const totalTopAlerts: Record<string, number> = {}
-
-  const formattedData = {} as Omit<FormattedData, 'top_five_alert_types'>
-  for (const metric of METRICS) {
-    formattedData[metric] = {}
-  }
-
-  for (const entry of data) {
-    const topFiveAlertTypes = entry.top_five_alert_types
-    for (const type of Object.keys(topFiveAlertTypes)) {
-      const count = topFiveAlertTypes[type] ?? 0
-      if (totalTopAlerts[type]) {
-        totalTopAlerts[type] += count
-      } else {
-        totalTopAlerts[type] = count
-      }
-    }
-  }
-
-  for (const metric of METRICS) {
-    const formatted = formattedData[metric]
-    for (const entry of data) {
-      const date = formatDate(entry.created_at)
-      if (formatted[date]) {
-        formatted[date] += entry[metric]!
-      } else {
-        formatted[date] = entry[metric]!
-      }
-    }
-  }
-
-  const topFiveAlertEntries = Object.entries(totalTopAlerts)
-    .sort(([_keya, a], [_keyb, b]) => b - a)
-    .slice(0, 5)
-  for (const { 0: key, 1: value } of topFiveAlertEntries) {
-    sortedTopFiveAlerts[key] = value
-  }
-
-  return {
-    ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts,
-  }
-}
-
-function formatDate(date: string): string {
-  const dateObj = new Date(date)
-  const month = dateObj.getMonth()
-  const day = dateObj.getDate()
-  if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
-    return date.slice(0, 10)
-  }
-  return `${Months[month]} ${day}`
 }

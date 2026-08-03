@@ -1,30 +1,31 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { NPM } from '@socketsecurity/lib/constants/agents'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags, outputFlags, stringFlagValue } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { mailtoLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { mailtoLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
 export const CMD_NAME = 'threat-feed'
 
+// oxlint-disable-next-line socket/sort-set-args -- alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget' which would be its sort position if inlined.
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([
@@ -51,16 +52,16 @@ export const cmdThreatFeed = {
   run,
 }
 
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       direction: {
@@ -110,8 +111,8 @@ async function run(
         default: '',
         description: 'Filter by this package version',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 
@@ -123,7 +124,7 @@ async function run(
     ${mailtoLink('sales@socket.dev')} if you are interested in purchasing this access.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Valid ecosystems:
 
@@ -187,14 +188,14 @@ async function run(
     version,
   } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
-  let ecoFilter = String(eco || '')
-  let versionFilter = String(version || '')
-  let typeFilter = String(typef || '')
-  let nameFilter = String(pkg || '')
+  let ecoFilter = eco || ''
+  let versionFilter = version || ''
+  let typeFilter = stringFlagValue(typef)
+  let nameFilter = pkg || ''
 
   const argSet = new Set(cli.input)
   cli.input.some(str => {
@@ -203,6 +204,7 @@ async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   cli.input.some(str => {
@@ -211,6 +213,7 @@ async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   cli.input.some(str => {
@@ -219,8 +222,10 @@ async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
+  // oxlint-disable-next-line socket/sort-set-args -- elements are runtime variables, not literals, so there is no comparable sort order to enforce.
   const haves = new Set([ecoFilter, versionFilter, typeFilter])
   cli.input.some(str => {
     if (!haves.has(str)) {
@@ -228,6 +233,7 @@ async function run(
       argSet.delete(str)
       return true
     }
+    return false
   })
 
   if (argSet.size) {
@@ -239,7 +245,7 @@ async function run(
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -271,24 +277,35 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Validate numeric pagination parameter.
   const validatedPerPage = Number(cli.flags['perPage']) || 30
+
+  if (dryRun) {
+    outputDryRunFetch('threat feed data', {
+      organization: orgSlug,
+      ecosystem: ecoFilter || 'all',
+      type: typeFilter || 'mal (default)',
+      package: nameFilter || undefined,
+      version: versionFilter || undefined,
+      perPage: validatedPerPage,
+      page: cli.flags['page'] || '1',
+      direction: cli.flags['direction'] || 'desc',
+    })
+    return
+  }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleThreatFeed({
-    direction: String(cli.flags['direction'] || 'desc'),
+    direction: cli.flags['direction'] || 'desc',
     ecosystem: ecoFilter,
     filter: typeFilter,
     outputKind,
     orgSlug,
-    page: String(cli.flags['page'] || '1'),
+    page: cli.flags['page'] || '1',
     perPage: validatedPerPage,
     pkg: nameFilter,
     version: versionFilter,

@@ -1,22 +1,21 @@
-/** @fileoverview Integration tests for JS Distribution binary. */
+/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
+/**
+ * @file Integration tests for JS Distribution binary.
+ */
 
 import path from 'node:path'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import {
-  ROOT_DIR,
-  logger,
-  prepareBinary,
-  type BinaryConfig,
-} from './helpers.mts'
-import ENV from '../../../src/constants/env.mts'
-import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
+import { logger, prepareBinary, ROOT_DIR } from './helpers.mts'
+import type { BinaryConfig } from './helpers.mts'
+import { ENV } from '../../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const BINARY: BinaryConfig = {
-  buildCommand: null,
-  // In CI: always enabled. Locally: controlled by env vars (defaults to true).
+  buildCommand: undefined,
+  // In CI: always enabled. Locally: controlled by env vars, defaults to true.
   enabled: process.env.CI
     ? true
     : !process.env.TEST_SEA_BINARY &&
@@ -38,7 +37,7 @@ if (BINARY.enabled) {
 
       // Check authentication.
       if (ENV.RUN_INTEGRATION_TESTS) {
-        const apiToken = await getDefaultApiToken()
+        const apiToken = getDefaultApiToken()
         hasAuth = !!apiToken
         if (!apiToken && !process.env.CI) {
           logger.log('')
@@ -70,7 +69,7 @@ if (BINARY.enabled) {
             isolateConfig: false,
           })
 
-          // Note: --version currently shows help and exits with code 2 (known issue).
+          // Note: --version currently shows help and exits with code 2, known issue.
           // This test validates the CLI executes without crashing.
           expect(result.code).toBeGreaterThanOrEqual(0)
           expect(result.stdout.length).toBeGreaterThan(0)
@@ -178,7 +177,7 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display npx command help',
+        'should display pnpm exec command help',
         async () => {
           if (!binaryExists) {
             return
@@ -975,23 +974,6 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should display patch get help',
-        async () => {
-          if (!binaryExists) {
-            return
-          }
-
-          const result = await executeCliCommand(['patch', 'get', '--help'], {
-            binPath: BINARY.path,
-            isolateConfig: false,
-          })
-
-          expect(result.code).toBe(0)
-          expect(result.stdout).toContain('get')
-        },
-      )
-
-      it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
         'should display patch repair help',
         async () => {
           if (!binaryExists) {
@@ -1549,7 +1531,7 @@ if (BINARY.enabled) {
             },
           )
 
-          // JSON flag should be recognized (may fail due to auth, but shouldn't reject flag).
+          // JSON flag should be recognized, may fail due to auth, but shouldn't reject flag.
           expect(result.code).toBeGreaterThanOrEqual(0)
         },
       )
@@ -1769,7 +1751,7 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should handle npx --dry-run',
+        'should handle pnpm exec --dry-run',
         async () => {
           if (!binaryExists) {
             return

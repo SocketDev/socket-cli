@@ -1,14 +1,17 @@
-import fs, { existsSync } from 'node:fs'
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+import { existsSync } from 'node:fs'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { isErrnoException } from '@socketsecurity/lib-stable/errors/predicates'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mts'
-import { getBashrcDetails } from '../../utils/cli/completion.mts'
-import { getErrorCause } from '../../utils/error/errors.mjs'
+import { getBashrcDetails } from '../../util/cli/completion.mts'
+import { FileSystemError, getErrorCause } from '../../util/error/errors.mjs'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 const logger = getDefaultLogger()
 
@@ -36,7 +39,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   try {
     const details = getBashrcDetails('') // Note: command is not relevant, we just want the config path
     if (details.ok) {
-      if (fs.existsSync(details.data.targetPath)) {
+      if (existsSync(details.data.targetPath)) {
         // Replace the file with the one from this installation
         const result = updateInstalledTabCompletionScript(
           details.data.targetPath,
@@ -61,7 +64,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   }
 }
 
-async function setupSocketWrapper(query: string): Promise<void> {
+export async function setupSocketWrapper(query: string): Promise<void> {
   logger.log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_
@@ -85,8 +88,9 @@ async function setupSocketWrapper(query: string): Promise<void> {
         await addSocketWrapper(zshRcPath)
       }
     } catch (e) {
-      throw new Error(
-        `There was an issue setting up the alias: ${getErrorCause(e)}`,
+      throw new FileSystemError(
+        `failed to add socket aliases to ${bashRcPath} / ${zshRcPath} (${getErrorCause(e)}); check that your shell rc files exist and are writable`,
+        { code: isErrnoException(e) ? e.code : undefined },
       )
     }
   }

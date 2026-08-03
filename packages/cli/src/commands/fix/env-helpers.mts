@@ -1,19 +1,48 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, isDebug } from '@socketsecurity/lib/debug'
-import { getCI } from '@socketsecurity/lib/env/ci'
-import { getSocketCliGithubToken } from '@socketsecurity/lib/env/socket-cli'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getSocketFixPrs } from './pull-request.mts'
 import { GITHUB_REPOSITORY } from '../../env/github-repository.mts'
 import { SOCKET_CLI_GIT_USER_EMAIL } from '../../env/socket-cli-git-user-email.mts'
 import { SOCKET_CLI_GIT_USER_NAME } from '../../env/socket-cli-git-user-name.mts'
-import { getBaseBranch, getRepoInfo } from '../../utils/git/operations.mjs'
+import { getBaseBranch, getRepoInfo } from '../../util/git/operations.mjs'
 
 import type { PrMatch } from './pull-request.mts'
-import type { RepoInfo } from '../../utils/git/operations.mjs'
+import type { RepoInfo } from '../../util/git/operations.mjs'
 
-function ciRepoInfo(): RepoInfo | undefined {
+/**
+ * Check which required CI environment variables are missing. Returns lists of
+ * missing and present variables.
+ */
+export function checkCiEnvVars(): MissingEnvVars {
+  const missing: string[] = []
+  const present: string[] = []
+
+  // Helper to categorize env var as present or missing.
+  const checkVar = (value: unknown, name: string) => {
+    if (value) {
+      present.push(name)
+    } else {
+      missing.push(name)
+    }
+  }
+
+  checkVar(getCI(), 'CI')
+  checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
+  checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
+  checkVar(
+    getSocketCliGithubToken(),
+    'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)',
+  )
+
+  return { missing, present }
+}
+
+export function ciRepoInfo(): RepoInfo | undefined {
   if (!GITHUB_REPOSITORY) {
     debug('miss: GITHUB_REPOSITORY env var')
     return undefined
@@ -57,31 +86,6 @@ export function getCiEnvInstructions(): string {
   )
 }
 
-/**
- * Check which required CI environment variables are missing.
- * Returns lists of missing and present variables.
- */
-export function checkCiEnvVars(): MissingEnvVars {
-  const missing: string[] = []
-  const present: string[] = []
-
-  // Helper to categorize env var as present or missing.
-  const checkVar = (value: unknown, name: string) => {
-    if (value) {
-      present.push(name)
-    } else {
-      missing.push(name)
-    }
-  }
-
-  checkVar(getCI(), 'CI')
-  checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
-  checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
-  checkVar(getSocketCliGithubToken(), 'SOCKET_CLI_GITHUB_TOKEN (or GITHUB_TOKEN)')
-
-  return { missing, present }
-}
-
 export async function getFixEnv(): Promise<FixEnv> {
   const baseBranch = await getBaseBranch()
   const gitEmail = SOCKET_CLI_GIT_USER_EMAIL
@@ -92,7 +96,7 @@ export async function getFixEnv(): Promise<FixEnv> {
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (getCI() && envCheck.missing.length > 1) {
+  if (getCI() && envCheck.missing.length) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {

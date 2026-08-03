@@ -7,7 +7,7 @@ export {
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
 // Package manifest files
 export const PACKAGE_JSON = 'package.json'
@@ -26,7 +26,7 @@ export const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 export const BLESSED = 'blessed'
 export const BLESSED_CONTRIB = 'blessed-contrib'
 export const SENTRY_NODE = '@sentry/node'
-export const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
+export const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry-stable'
 
 // Socket CLI Package Names
 export const SOCKET_CLI_PACKAGE_NAME = 'socket'

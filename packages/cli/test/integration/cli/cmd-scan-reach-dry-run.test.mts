@@ -1,21 +1,20 @@
 /**
  * Integration tests for `socket scan reach` dry-run mode.
  *
- * Tests reachability analysis in dry-run mode. This is one of three test
- * files for reach command (dry-run, validation, execution).
+ * Tests reachability analysis in dry-run mode: help output, the basic
+ * dry-run bail, and single/combined flag validation. The flag-combination
+ * and output-format cases live in
+ * test/integration/cli/cmd-scan-reach-dry-run-flags.test.mts.
  *
- * Test Coverage:
- * - Dry-run behavior validation
- * - Flag parsing without execution
- * - Input validation in dry-run mode
+ * Test Coverage: - Dry-run behavior validation - Flag parsing without execution
+ * - Input validation in dry-run mode.
  *
- * Note: This test suite was split from cmd-scan-reach.test.mts to improve
- * test performance and reduce CI bottlenecks.
+ * Note: This test suite was split from cmd-scan-reach.test.mts to improve test
+ * performance and reduce CI bottlenecks.
  *
- * Related Files:
- * - src/commands/scan/cmd-scan-reach.mts - Command definition
- * - test/integration/cli/cmd-scan-reach-validation.test.mts - Validation tests
- * - test/integration/cli/cmd-scan-reach-execution.test.mts - Execution tests
+ * Related Files: - src/commands/scan/cmd-scan-reach.mts - Command definition -
+ * test/integration/cli/cmd-scan-reach-validation.test.mts - Validation tests -
+ * test/integration/cli/cmd-scan-reach-execution.test.mts - Execution tests.
  */
 
 import path from 'node:path'
@@ -33,7 +32,7 @@ import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
 
-const _fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
 describe('socket scan reach - dry-run tests', async () => {
   cmdit(
@@ -53,19 +52,26 @@ describe('socket scan reach - dry-run tests', async () => {
           
               Options
                 --cwd               working directory, defaults to process.cwd()
+                --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
                 --output            Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Reachability Options
+                --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) Tier 1 reachability analysis. Patterns are matched relative to the project root. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Trailing slashes are stripped. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
                 --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
                 --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+                --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available. NPM reachability analysis does not support concurrent execution, so the concurrency level is ignored for NPM.
+                --reach-debug       Enable debug mode for reachability analysis. Provides verbose logging from the reachability CLI.
                 --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
-                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+                --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Supported: cargo, composer, gem, golang, maven, npm, nuget, pypi. Defaults to all supported ecosystems.
+                --reach-enable-analysis-splitting  Enable analysis splitting, allowing Coana to split reachability analysis into multiple runs per workspace.
                 --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
                 --reach-min-severity  Set the minimum severity of vulnerabilities to analyze. Supported severities are info, low, moderate, high and critical.
                 --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
+                --reach-use-only-pregenerated-sboms  When using this option, the scan is created based only on pre-generated CDX and SPDX files in your project.
                 --reach-use-unreachable-from-precomputation  Use unreachable information from precomputation to improve analysis accuracy.
           
               Runs the Socket reachability analysis without creating a scan in Socket.
@@ -113,15 +119,23 @@ describe('socket scan reach - dry-run tests', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan reach\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket scan reach\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute reachability analysis
+
+          Command: coana
+          Arguments: --target [PROJECT] --org fakeOrg
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -142,7 +156,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept --reach-disable-analytics flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -162,7 +176,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -182,7 +196,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept --reach-analysis-timeout flag',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -202,7 +216,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -225,7 +239,7 @@ describe('socket scan reach - dry-run tests', async () => {
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(code, 'should exit with code 0').toBe(0)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
     },
   )
 
@@ -244,7 +258,7 @@ describe('socket scan reach - dry-run tests', async () => {
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(output).toContain('(saw: "invalid-ecosystem")')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
@@ -264,7 +278,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -286,7 +300,7 @@ describe('socket scan reach - dry-run tests', async () => {
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -296,13 +310,50 @@ describe('socket scan reach - dry-run tests', async () => {
       'scan',
       'reach',
       FLAG_DRY_RUN,
-      '--reach-disable-analytics',
-      '--reach-analysis-memory-limit',
-      '4096',
-      '--reach-analysis-timeout',
-      '3600',
-      '--reach-ecosystems',
-      'npm,pypi',
+      '--exclude-paths',
+      'node_modules,dist',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept --exclude-paths with comma-separated values',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      'node_modules',
+      '--exclude-paths',
+      'dist',
+      '--org',
+      'fakeOrg',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should accept multiple --exclude-paths flags',
+    async cmd => {
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'reach',
+      FLAG_DRY_RUN,
+      '--exclude-paths',
+      'build',
       '--reach-exclude-paths',
       'node_modules,dist',
       '--org',
@@ -310,10 +361,10 @@ describe('socket scan reach - dry-run tests', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept all reachability flags together',
+    'should accept --exclude-paths together with --reach-exclude-paths',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -323,216 +374,21 @@ describe('socket scan reach - dry-run tests', async () => {
       'scan',
       'reach',
       FLAG_DRY_RUN,
-      '--reach-analysis-memory-limit',
-      '1',
+      '--exclude-paths',
+      '!tests/keep',
       '--org',
       'fakeOrg',
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept minimal positive memory limit',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--reach-ecosystems',
-      'npm',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should handle single ecosystem flag',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--reach-exclude-paths',
-      'path1',
-      '--reach-exclude-paths',
-      'path2',
-      '--reach-exclude-paths',
-      'path3',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept many exclude paths flags',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--reach-ecosystems',
-      'npm',
-      '--reach-ecosystems',
-      'pypi',
-      '--reach-ecosystems',
-      'cargo',
-      '--reach-ecosystems',
-      'maven',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept multiple different ecosystems',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--reach-analysis-memory-limit',
-      '1024',
-      '--reach-analysis-timeout',
-      '300',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept custom memory limit and timeout values',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      '--reach-ecosystems',
-      'npm,invalid1,pypi,invalid2',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should fail when mixed valid and invalid ecosystems are provided',
+    'should reject --exclude-paths negation patterns',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain('Invalid ecosystem: "invalid1"')
+      expect(output).toContain(
+        "--exclude-paths does not support negation patterns. Got: '!tests/keep'.",
+      )
       expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--json',
-      '--markdown',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should fail when both json and markdown output flags are used',
-    async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain('The json and markdown flags cannot be both set')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--json',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept json output flag alone',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      FLAG_DRY_RUN,
-      '--markdown',
-      '--org',
-      'fakeOrg',
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept markdown output flag alone',
-    async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  it(
-    'should accept comprehensive reachability configuration in dry-run: `scan reach --dry-run --reach-analysis-memory-limit 16384 --reach-analysis-timeout 7200 --reach-ecosystems npm --reach-exclude-paths node_modules --org fakeOrg --config {"apiToken":"fakeToken"}`',
-    { timeout: 30_000 },
-    async () => {
-      const cmd = [
-        'scan',
-        'reach',
-        FLAG_DRY_RUN,
-        '--reach-analysis-memory-limit',
-        '16384',
-        '--reach-analysis-timeout',
-        '7200',
-        '--reach-ecosystems',
-        'npm',
-        '--reach-exclude-paths',
-        'node_modules',
-        '--org',
-        'fakeOrg',
-        FLAG_CONFIG,
-        '{"apiToken":"fakeToken"}',
-      ]
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
     },
   )
 })

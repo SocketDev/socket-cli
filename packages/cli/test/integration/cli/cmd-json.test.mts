@@ -2,29 +2,23 @@
  * Integration tests for `socket json` command.
  *
  * Tests the socket.json discovery and display command. This command shows the
- * effective socket.json configuration that would be applied for a given directory,
- * taking into account inheritance from parent directories.
+ * effective socket.json configuration that would be applied for a given
+ * directory, taking into account inheritance from parent directories.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - File discovery in target directory
- * - Error handling when socket.json not found
- * - Error handling for non-existent paths
- * - File content display (raw JSON output)
- * - Exit codes (0 for found, 1 for not found)
+ * Test Coverage: - Help text display and usage examples - File discovery in
+ * target directory - Error handling when socket.json not found - Error handling
+ * for non-existent paths - File content display (raw JSON output) - Exit codes
+ * (0 for found, 1 for not found)
  *
- * Socket.json Configuration:
- * The socket.json file controls Socket CLI behavior including:
- * - Issue rules and severity thresholds
- * - Ignored packages and vulnerabilities
- * - Project-specific security policies
- * - Workspace configurations for monorepos
+ * Socket.json Configuration: The socket.json file controls Socket CLI behavior
+ * including: - Issue rules and severity thresholds - Ignored packages and
+ * vulnerabilities - Project-specific security policies - Workspace
+ * configurations for monorepos.
  *
- * Related Files:
- * - src/commands/json/cmd-json.mts - Command definition
- * - src/commands/json/handle-json.mts - Socket.json discovery logic
- * - test/fixtures/commands/json/ - Test fixtures with socket.json files
- * - docs/socket-json-schema.md - socket.json schema documentation
+ * Related Files: - src/commands/json/cmd-json.mts - Command definition -
+ * src/commands/json/handle-json.mts - Socket.json discovery logic -
+ * test/fixtures/commands/json/ - Test fixtures with socket.json files -
+ * docs/socket-json-schema.md - socket.json schema documentation.
  */
 
 import path from 'node:path'
@@ -149,7 +143,25 @@ describe('socket json', async () => {
         cwd: path.join(testPath, 'fixtures/commands/json'),
       })
       expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(
-        `"<Buffer 7b 0a 20 20 22 20 5f 5f 5f 5f 5f 20 20 20 20 20 20 20 20 20 5f 20 20 20 20 20 20 20 5f 20 20 20 20 20 22 3a 20 22 4c 6f 63 61 6c 20 63 6f 6e 66 69 67 ... 691 more bytes>"`,
+        `
+        "{
+          " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",
+          "|   __|___ ___| |_ ___| |_   ": "     The config in this file is used to set as defaults for flags or cmmand args when using the CLI",
+          "|__   | . |  _| '_| -_|  _|  ": "     in this dir, often a repo root. You can choose commit or .ignore this file, both works.",
+          "|_____|___|___|_,_|___|_|.dev": "Warning: This file may be overwritten without warning by \`socket manifest setup\` or other commands",
+          "version": 1,
+          "defaults": {
+            "manifest": {
+              "sbt": {
+                "bin": "/bin/sbt",
+                "outfile": "sbt.pom.xml",
+                "stdout": false,
+                "verbose": true
+              }
+            }
+          }
+        }"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

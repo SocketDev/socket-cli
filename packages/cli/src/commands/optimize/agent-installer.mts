@@ -1,48 +1,44 @@
 /**
- * Package manager agent installation utilities for optimize command.
- * Manages package installation via different package managers during optimization.
+ * Package manager agent installation utilities for optimize command. Manages
+ * package installation via different package managers during optimization.
  *
- * Key Functions:
- * - runAgentInstall: Execute package installation with detected agent
+ * Key Functions: - runAgentInstall: Execute package installation with detected
+ * agent.
  *
- * Supported Agents:
- * - npm: Node Package Manager
- * - pnpm: Fast, disk space efficient package manager
- * - yarn: Alternative package manager
+ * Supported Agents: - npm: Node Package Manager - pnpm: Fast, disk space
+ * efficient package manager - yarn: Alternative package manager.
  *
- * Features:
- * - Automatic agent detection
- * - Spinner support for progress indication
- * - CI-mode configuration for non-interactive execution
+ * Features: - Automatic agent detection - Spinner support for progress
+ * indication - CI-mode configuration for non-interactive execution.
  */
 
-import { NPM, PNPM } from '@socketsecurity/lib/constants/agents'
+import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
 import {
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
-} from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { getOwn } from '@socketsecurity/lib/objects'
-import { spawn } from '@socketsecurity/lib/spawn'
+} from '@socketsecurity/lib-stable/constants/node'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { cmdFlagsToString } from '../../utils/process/cmd.mts'
+import { mergeNodeOptions } from '../../util/process/cmd.mts'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
+export type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 export interface AgentInstallOptions extends SpawnOption {
   args?: string[] | readonly string[] | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
 }
 
 export type AgentSpawnResult = ReturnType<typeof spawn>
 
 /**
- * Execute package installation with the detected package manager agent.
- * Handles different package managers with appropriate configuration for optimization.
+ * Execute package installation with the detected package manager agent. Handles
+ * different package managers with appropriate configuration for optimization.
  */
 export function runAgentInstall(
   pkgEnvDetails: EnvDetails,
@@ -76,7 +72,7 @@ export function runAgentInstall(
       'install',
       // Prevent interactive prompts in CI environments.
       '--config.confirmModulesPurge=false',
-      // Allow lockfile updates (required for optimization).
+      // Allow lockfile updates, required for optimization.
       '--no-frozen-lockfile',
       ...args,
     ]
@@ -95,7 +91,9 @@ export function runAgentInstall(
       ...process.env,
       // Set CI mode for pnpm to ensure consistent behavior.
       ...(isPnpm ? { CI: '1' } : {}),
-      NODE_OPTIONS: cmdFlagsToString([
+      // Merge our flags into any inherited NODE_OPTIONS instead of replacing
+      // it, so a user's globally-configured NODE_OPTIONS is preserved.
+      NODE_OPTIONS: mergeNodeOptions(process.env['NODE_OPTIONS'], [
         ...(skipNodeHardenFlags ? [] : getNodeHardenFlags()),
         ...getNodeNoWarningsFlags(),
         ...getNodeDisableSigusr1Flags(),

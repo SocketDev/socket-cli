@@ -1,11 +1,19 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdError, mdHeader, mdList } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdError, mdHeader, mdList } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
+
+export function createActionMessage(
+  verb: string,
+  overrideCount: number,
+  workspaceCount: number,
+): string {
+  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', { count: overrideCount })}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', { count: workspaceCount })}` : ''}`
+}
 
 export async function outputOptimizeResult(
   result: CResult<{
@@ -49,7 +57,7 @@ export async function outputOptimizeResult(
         changes.push(addedText)
       }
       logger.log(mdList(changes))
-      logger.log('\n✓ Finished!')
+      logger.success('Finished!')
     } else {
       logger.log('No Socket.dev optimized overrides applied.')
     }
@@ -80,12 +88,4 @@ export async function outputOptimizeResult(
   logger.log('')
   logger.success('Finished!')
   logger.log('')
-}
-
-function createActionMessage(
-  verb: string,
-  overrideCount: number,
-  workspaceCount: number,
-): string {
-  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', { count: overrideCount })}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', { count: workspaceCount })}` : ''}`
 }

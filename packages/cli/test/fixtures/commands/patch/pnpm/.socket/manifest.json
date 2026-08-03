@@ -19,7 +19,10 @@
           "description": "### Impact\n\nA bug in on-headers versions `< 1.1.0` may result in response headers being inadvertently modified when an array is passed to `response.writeHead()`\n\n### Patches\n\nUsers should upgrade to `1.1.0`\n\n### Workarounds\n\nUses are encouraged to upgrade to `1.1.0`, but this issue can be worked around by passing an object to `response.writeHead()` rather than an array.",
           "patchExplanation": ""
         }
-      }
+      },
+      "description": "Patch for GHSA-76c9-3jph-rj3q in on-headers 1.0.2",
+      "license": "MIT",
+      "tier": "free"
     }
   }
 }

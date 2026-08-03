@@ -1,77 +1,28 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import {
-  FLAG_JSON,
-  OUTPUT_JSON,
-  OUTPUT_MARKDOWN,
-  REDACTED,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, OUTPUT_JSON, REDACTED } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { operations } from '@socketsecurity/sdk-stable/types/api'
 const logger = getDefaultLogger()
 
-type AuditLogEvent =
-  SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number]
+/**
+ * The `getAuditLogEvents` response payload, typed from the SDK's raw OpenAPI
+ * schema — the root export's `SocketSdkSuccessResult` data resolves to `any`
+ * under TypeScript 7's nodenext resolution.
+ */
+export type AuditLogData =
+  operations['getAuditLogEvents']['responses']['200']['content']['application/json']
 
-export async function outputAuditLog(
-  result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
-  {
-    logType,
-    orgSlug,
-    outputKind,
-    page,
-    perPage,
-  }: {
-    logType: string
-    outputKind: OutputKind
-    orgSlug: string
-    page: number
-    perPage: number
-  },
-): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === OUTPUT_JSON) {
-    logger.log(
-      await outputAsJson(result, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-  }
-
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  if (outputKind === OUTPUT_MARKDOWN) {
-    logger.log(
-      await outputAsMarkdown(result.data, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-    return
-  }
-
-  await outputWithInk(result.data, orgSlug)
-}
+export type AuditLogEvent = AuditLogData['results'][number]
 
 export async function outputAsJson(
-  auditLogs: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<AuditLogData>,
   {
     logType,
     orgSlug,
@@ -122,7 +73,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
+  auditLogs: AuditLogData,
   {
     logType,
     orgSlug,
@@ -136,7 +87,15 @@ export async function outputAsMarkdown(
   },
 ): Promise<string> {
   try {
-    const table = mdTable<any>(auditLogs.results, [
+    const rows = auditLogs.results.map(log => ({
+      event_id: log.event_id ?? '',
+      created_at: log.created_at ?? '',
+      type: log.type ?? '',
+      user_email: log.user_email ?? '',
+      ip_address: log.ip_address ?? '',
+      user_agent: log.user_agent ?? '',
+    }))
+    const table = mdTable(rows, [
       'event_id',
       'created_at',
       'type',
@@ -169,30 +128,53 @@ ${table}
   }
 }
 
-/**
- * Display audit log using Ink React components.
- */
-async function outputWithInk(
-  data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
-  orgSlug: string,
+export async function outputAuditLog(
+  result: CResult<AuditLogData>,
+  {
+    logType,
+    orgSlug,
+    outputKind,
+    page,
+    perPage,
+  }: {
+    logType: string
+    outputKind: OutputKind
+    orgSlug: string
+    page: number
+    perPage: number
+  },
 ): Promise<void> {
-  const React = await import('react')
-  const { render } = await import('ink')
-  const { AuditLogApp } = await import('./AuditLogApp.js')
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
 
-  render(
-    React.createElement(AuditLogApp, {
+  if (outputKind === OUTPUT_JSON) {
+    logger.log(
+      await outputAsJson(result, {
+        logType,
+        orgSlug,
+        page,
+        perPage,
+      }),
+    )
+  }
+
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  // Default + OUTPUT_MARKDOWN: render the markdown table. (Previously
+  // OUTPUT_MARKDOWN and the default branched separately, with the
+  // default going through an iocraft TUI renderer; the renderer was
+  // retired alongside iocraft itself, and markdown is the natural
+  // plain-text fallback.)
+  logger.log(
+    await outputAsMarkdown(result.data, {
+      logType,
       orgSlug,
-      results: data.results.map((entry: AuditLogEvent) => ({
-        created_at: entry.created_at || '',
-        event_id: entry.event_id || '',
-        formatted_created_at: entry.created_at || '',
-        ip_address: entry.ip_address || '',
-        type: entry.type || '',
-        user_agent: entry.user_agent || '',
-        user_email: entry.user_email || '',
-        payload: entry.payload ?? {},
-      })),
+      page,
+      perPage,
     }),
   )
 }

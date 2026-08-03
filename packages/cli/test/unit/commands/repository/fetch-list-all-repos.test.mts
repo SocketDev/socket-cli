@@ -1,29 +1,22 @@
 /**
  * Unit tests for fetchListAllRepos.
  *
- * Purpose:
- * Tests fetching all repositories for an organization with automatic pagination.
- * Validates multi-page fetching, infinite loop protection, and sorting options.
+ * Purpose: Tests fetching all repositories for an organization with automatic
+ * pagination. Validates multi-page fetching, infinite loop protection, and
+ * sorting options.
  *
- * Test Coverage:
- * - Successful single-page repository listing
- * - SDK setup failure handling
- * - API call errors (403 access denied)
- * - Multiple page pagination handling
- * - Sort and direction options
- * - Infinite loop protection (> 100 pages)
- * - Custom SDK options
- * - Null prototype usage for security
+ * Test Coverage: - Successful single-page repository listing - SDK setup
+ * failure handling - API call errors (403 access denied) - Multiple page
+ * pagination handling - Sort and direction options - Infinite loop protection
+ * (> 100 pages) - Custom SDK options - Null prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers with pagination mocking. Tests infinite loop protection
- * that triggers after 100 page requests.
+ * Testing Approach: Uses SDK test helpers with pagination mocking. Tests
+ * infinite loop protection that triggers after 100 page requests.
  *
- * Related Files:
- * - src/commands/repository/fetch-list-all-repos.mts (implementation)
- * - src/commands/repository/handle-list-repos.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * Related Files: - src/commands/repository/fetch-list-all-repos.mts
+ * (implementation) - src/commands/repository/handle-list-repos.mts (handler) -
+ * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
+ * setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -36,11 +29,11 @@ import {
 } from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -51,7 +44,7 @@ describe('fetchListAllRepos', () => {
         { id: 'repo-1', name: 'first-repo' },
         { id: 'repo-2', name: 'second-repo' },
       ],
-      nextPage: null,
+      nextPage: undefined,
     }
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
@@ -116,7 +109,7 @@ describe('fetchListAllRepos', () => {
         ok: true,
         data: {
           results: [{ id: 'repo-2', name: 'second-repo' }],
-          nextPage: null,
+          nextPage: undefined,
         },
       })
 
@@ -133,7 +126,7 @@ describe('fetchListAllRepos', () => {
   it('passes sort and direction options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     await fetchListAllRepos('sorted-org', {
@@ -177,7 +170,7 @@ describe('fetchListAllRepos', () => {
   it('passes custom SDK options', async () => {
     const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const sdkOpts = {
@@ -193,7 +186,7 @@ describe('fetchListAllRepos', () => {
   it('uses null prototype for options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     // This tests that the function properly uses __proto__: null.

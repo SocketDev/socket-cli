@@ -1,22 +1,19 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleSecurityPolicy } from './handle-security-policy.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'security'
 
@@ -30,16 +27,16 @@ export const cmdOrganizationPolicySecurity = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       interactive: {
@@ -53,8 +50,8 @@ async function run(
         description:
           'Force override the organization slug, overrides the default org from config',
       },
-    },
-    help: (command, _config) => `
+    }),
+    help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -82,14 +79,14 @@ async function run(
 
   const { json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -116,8 +113,9 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('organization security policy', {
+      organization: orgSlug || '(will be determined)',
+    })
     return
   }
 

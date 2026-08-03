@@ -1,31 +1,22 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleConfigAuto } from './handle-config-auto.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
-} from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/config.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../utils/config.mts'
-
-const logger = getDefaultLogger()
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ConfigAutoFlags {
+export interface ConfigAutoFlags {
   json: boolean
   markdown: boolean
 }
@@ -43,25 +34,25 @@ export const cmdConfigAuto = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] KEY
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Attempt to automatically discover the correct value for a given config KEY.
 
@@ -70,7 +61,9 @@ async function run(
 
     Keys:
 ${getSupportedConfigEntries()
-  .map(({ 0: key, 1: description }) => `     - ${key} -- ${description}`)
+  .map(
+    ({ 0: key, 1: entryDescription }) => `     - ${key} -- ${entryDescription}`,
+  )
   .join('\n')}
   `,
   }
@@ -82,9 +75,9 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags as unknown as ConfigAutoFlags
+  const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const [key = ''] = cli.input
 
@@ -109,12 +102,26 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    // Runtime read so tests that mutate process.env['HOME'] pick up changes.
+    const configPath = `${process.env['HOME']}/.config/socket/config.json`
+    outputDryRunWrite(
+      configPath,
+      `auto-discover and set config value for "${key}"`,
+      [
+        `Discover the correct value for config key: ${key}`,
+        `Update config file with discovered value`,
+      ],
+    )
+    return
+  }
+
+  // Re-assert the checkCommandInput guard for the type system.
+  if (!isSupportedConfigKey(key)) {
     return
   }
 
   await handleConfigAuto({
-    key: key as keyof LocalConfig,
+    key,
     outputKind,
   })
 }

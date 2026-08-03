@@ -1,26 +1,24 @@
 /**
- * Unit Tests: Conda Manifest Command Handler
+ * Unit Tests: Conda Manifest Command Handler.
  *
- * Purpose:
- * Tests the command handler that converts Conda environment files to requirements.txt format.
- * Validates orchestration between conversion logic and output formatting with support for
- * multiple output formats (text, json, markdown) and verbose mode.
+ * Purpose: Tests the command handler that converts Conda environment files to
+ * requirements.txt format. Validates orchestration between conversion logic and
+ * output formatting with support for multiple output formats (text, json,
+ * markdown) and verbose mode.
  *
- * Test Coverage:
- * - Successful conversion and requirements output
- * - Conversion failure handling with error propagation
- * - Multiple output format support (text, json, markdown)
- * - Verbose mode flag passing
- * - Different working directory handling (absolute, relative, current)
+ * Test Coverage: - Successful conversion and requirements output - Conversion
+ * failure handling with error propagation - Multiple output format support
+ * text, json, markdown - Verbose mode flag passing - Different working
+ * directory handling, absolute, relative, current.
  *
- * Testing Approach:
- * Mocks convertCondaToRequirements and outputRequirements modules to test handler orchestration
- * without actual file I/O. Uses test helpers for CResult pattern validation.
+ * Testing Approach: Mocks convertCondaToRequirements and outputRequirements
+ * modules to test handler orchestration without actual file I/O. Uses test
+ * helpers for CResult pattern validation.
  *
- * Related Files:
- * - src/commands/manifest/handle-manifest-conda.mts - Command handler
- * - src/commands/manifest/convert-conda-to-requirements.mts - Conversion logic
- * - src/commands/manifest/output-requirements.mts - Output formatting
+ * Related Files: - src/commands/manifest/handle-manifest-conda.mts - Command
+ * handler - src/commands/manifest/convert-conda-to-requirements.mts -
+ * Conversion logic - src/commands/manifest/output-requirements.mts - Output
+ * formatting.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -36,21 +34,22 @@ const mockConvertCondaToRequirements = vi.hoisted(() => vi.fn())
 const mockOutputRequirements = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  '../../../../src/commands/manifest/convert-conda-to-requirements.mts',
+  import('../../../../src/commands/manifest/convert-conda-to-requirements.mts'),
   () => ({
     convertCondaToRequirements: mockConvertCondaToRequirements,
   }),
 )
 
-vi.mock('../../../../src/commands/manifest/output-requirements.mts', () => ({
-  outputRequirements: mockOutputRequirements,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/output-requirements.mts'),
+  () => ({
+    outputRequirements: mockOutputRequirements,
+  }),
+)
 
 describe('handleManifestConda', () => {
   it('converts conda file and outputs requirements successfully', async () => {
-    await import(
-      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
-    )
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
     await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
@@ -84,9 +83,7 @@ describe('handleManifestConda', () => {
   })
 
   it('handles conversion failure', async () => {
-    await import(
-      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
-    )
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
     await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
@@ -107,9 +104,7 @@ describe('handleManifestConda', () => {
   })
 
   it('handles different output formats', async () => {
-    await import(
-      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
-    )
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
     await import('../../../../src/commands/manifest/output-requirements.mts')
     const mockConvert = mockConvertCondaToRequirements
     const mockOutput = mockOutputRequirements
@@ -118,8 +113,8 @@ describe('handleManifestConda', () => {
 
     const formats = ['text', 'json', 'markdown'] as const
 
-    for (const format of formats) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = formats; i < length; i += 1) {
+      const format = formats[i]
       await handleManifestConda({
         cwd: '.',
         filename: 'conda.yml',
@@ -137,9 +132,7 @@ describe('handleManifestConda', () => {
   })
 
   it('handles verbose mode', async () => {
-    await import(
-      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
-    )
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
     const mockConvert = mockConvertCondaToRequirements
 
     mockConvert.mockResolvedValue(createSuccessResult([]))
@@ -160,17 +153,15 @@ describe('handleManifestConda', () => {
   })
 
   it('handles different working directories', async () => {
-    await import(
-      '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
-    )
+    await import('../../../../src/commands/manifest/convert-conda-to-requirements.mts')
     const mockConvert = mockConvertCondaToRequirements
 
     mockConvert.mockResolvedValue(createSuccessResult([]))
 
     const cwds = ['/root', '/home/user/project', './relative', '.']
 
-    for (const cwd of cwds) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = cwds; i < length; i += 1) {
+      const cwd = cwds[i]
       await handleManifestConda({
         cwd,
         filename: 'conda.yml',

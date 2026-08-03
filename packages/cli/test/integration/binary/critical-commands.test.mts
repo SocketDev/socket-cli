@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import ENV from '../../../src/constants/env.mts'
-import { getDefaultApiToken } from '../../../src/utils/socket/sdk.mts'
+import { ENV } from '../../../src/constants/env.mts'
+import { getDefaultApiToken } from '../../../src/util/socket/sdk.mts'
 import { executeCliCommand } from '../../helpers/cli-execution.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -16,20 +16,18 @@ describe('Critical CLI Commands E2E', () => {
   beforeAll(async () => {
     // Check if running E2E tests and if Socket API token is available.
     if (ENV.RUN_INTEGRATION_TESTS) {
-      const apiToken = await getDefaultApiToken()
+      const apiToken = getDefaultApiToken()
       hasAuth = !!apiToken
       if (!apiToken) {
-        console.log()
-        console.warn('E2E tests require Socket authentication.')
-        console.log('Please run one of the following:')
-        console.log('  1. socket login (to authenticate with Socket)')
-        console.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
-        console.log(
-          '  3. Skip E2E tests by not setting RUN_INTEGRATION_TESTS\n',
-        )
-        console.log(
-          'E2E tests will be skipped due to missing authentication.\n',
-        )
+        logger.log()
+        logger.warn('E2E tests require Socket authentication.')
+        logger.log('Please run one of the following:')
+        logger.log('  1. socket login (to authenticate with Socket)')
+        logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+        logger.log('  3. Skip E2E tests by not setting RUN_INTEGRATION_TESTS')
+        logger.log('')
+        logger.log('E2E tests will be skipped due to missing authentication.')
+        logger.log('')
       }
     }
   })
@@ -43,7 +41,7 @@ describe('Critical CLI Commands E2E', () => {
           isolateConfig: false,
         })
 
-        // Note: --version currently shows help and exits with code 2 (known issue)
+        // Note: --version currently shows help and exits with code 2, known issue
         // This test validates the CLI executes without crashing
         expect(result.code).toBeGreaterThanOrEqual(0)
         expect(result.stdout.length).toBeGreaterThan(0)

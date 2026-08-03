@@ -1,17 +1,97 @@
+import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { defineConfig } from 'vitest/config'
 
+import { vitiatePlugin } from '@vitiate/core/plugin'
+
+// The vitiate coverage-guided fuzz lane (scripts/repo/fuzz.mts) sets
+// VITIATE_FUZZ=1 and runs `vitest run` against THIS auto-discovered config. In
+// a monorepo package that already owns its vitest.config.mts we can't drop a
+// separate root config, so gate the SWC-instrumenting plugin + the fuzz-target
+// include behind VITIATE_FUZZ: a normal `pnpm test` never loads the plugin, and
+// the supervisor's re-spawned child (which inherits VITIATE_FUZZ) auto-discovers
+// this same file and gates the plugin ON. See the property-and-fuzz-testing
+// skill's javascript-typescript.md.
+const FUZZING = process.env['VITIATE_FUZZ'] === '1'
+const FUZZ_TIME_MS = Number(process.env['FUZZ_TIME_MS']) || 15_000
+
+// Pin TZ in the parent process before vitest spawns its workers, so
+// every worker inherits TZ=UTC from spawn env. V8 caches the timezone
+// at the first Date op per-worker, so it must be present before any
+// test code, or vitest worker bootstrap, runs. test.env below sets it
+// on the worker for additional belt-and-suspenders coverage.
+if (!process.env['TZ']) {
+  process.env['TZ'] = 'UTC'
+}
+
+// Inject INLINED_* env vars from bundle-tools.json before workers
+// spawn. These are normally inlined at build time by esbuild's define
+// step; tests run from source so we feed them in at config-eval time.
+// Doing this here (instead of just in test/setup.mts) means modules
+// that read INLINED_* at the top level (e.g. constants/paths.mts via
+// constants/env.mts → env/coana-version.mts) get the values *before*
+// they evaluate, so single-file vitest runs no longer fail with
+// "process.env.INLINED_COANA_VERSION is empty at runtime".
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const bundleToolsPath = path.join(__dirname, 'bundle-tools.json')
+
+// INLINED_* values fed into worker `test.env` (below). Built from
+// bundle-tools.json so source-run tests see the same versions esbuild
+// would inline at build time. Stays empty if bundle-tools.json is
+// missing/unreadable; test/setup.mts is the fallback.
+const inlinedEnv: Record<string, string> = {}
+if (existsSync(bundleToolsPath)) {
+  try {
+    const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8')).tools
+    const toolVersions: Record<string, string | undefined> = {
+      INLINED_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
+      INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,
+      INLINED_CYCLONEDX_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
+      INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
+      INLINED_NAME: '@socketsecurity/cli',
+      INLINED_OPENGREP_VERSION: tools['opengrep']?.version,
+      INLINED_PUBLISHED_BUILD: '',
+      INLINED_PYCLI_VERSION: tools['socketsecurity']?.version,
+      INLINED_PYTHON_BUILD_TAG: tools['python']?.tag,
+      INLINED_PYTHON_VERSION: tools['python']?.version,
+      INLINED_SENTRY_BUILD: '',
+      INLINED_SFW_VERSION: tools['sfw']?.version,
+      INLINED_SOCKET_PATCH_VERSION: tools['socket-patch']?.version,
+      INLINED_SYNP_VERSION: tools['synp']?.version,
+      INLINED_TRIVY_VERSION: tools['trivy']?.version,
+      INLINED_TRUFFLEHOG_VERSION: tools['trufflehog']?.version,
+      INLINED_VERSION: '0.0.0-test',
+      INLINED_VERSION_HASH: '0.0.0-test:abc1234:test',
+    }
+    for (const [key, value] of Object.entries(toolVersions)) {
+      if (value !== undefined) {
+        inlinedEnv[key] = value
+      }
+      if (!process.env[key] && value) {
+        process.env[key] = value
+      }
+    }
+  } catch {
+    // Ignore — fall back to test/setup.mts injection.
+  }
+}
+
 const isCoverageEnabled =
-  process.env.npm_lifecycle_event === 'cover' ||
+  process.env['npm_lifecycle_event'] === 'cover' ||
   process.argv.includes('--coverage')
 
+// Detect if running in CI.
+const isCI = 'CI' in process.env
+
 // Detect if running in CI on macOS.
-const isMacCI = 'CI' in process.env && process.platform === 'darwin'
+const isMacCI = isCI && process.platform === 'darwin'
 
 // Calculate optimal thread count based on environment.
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
-function getMaxThreads(): number {
+export function getMaxThreads(): number {
   if (isCoverageEnabled) {
     return 1
   }
@@ -23,13 +103,28 @@ function getMaxThreads(): number {
   return os.cpus().length
 }
 
-export default defineConfig({
+const normalConfig = defineConfig({
   resolve: {
     preserveSymlinks: false,
   },
   test: {
     globals: false,
     environment: 'node',
+    // Pin timezone for stable date-formatting snapshots regardless of
+    // how vitest is invoked. CI runners are UTC; without this, devs on
+    // local timezones see shifted dates (a 2025-04-19T04:50Z fixture
+    // renders as Apr 18 in PDT). Vitest applies `test.env` to the
+    // worker process before any module loads, so this is set early
+    // enough that V8's internal timezone cache picks it up.
+    env: {
+      ...inlinedEnv,
+      // Text-report snapshots intentionally cover ANSI formatting. Force color
+      // in workers so they are stable when Vitest runs without a TTY (as in CI
+      // and programmatic quality scans).
+      FORCE_COLOR: '1',
+      NO_COLOR: '',
+      TZ: 'UTC',
+    },
     include: ['test/**/*.test.{mts,ts}'],
     exclude: [
       '**/node_modules/**',
@@ -38,41 +133,36 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
       // Exclude E2E tests from regular test runs.
       '**/*.e2e.test.mts',
-      // Exclude integration tests (run separately via scripts/integration.mjs).
+      // Exclude integration tests (run separately via scripts/integration.mts).
       'test/integration/**',
     ],
     reporters: ['default'],
     setupFiles: ['./test/setup.mts'],
-    // Use threads for better performance
+    // Use threads for better performance.
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        // Maximize parallel execution to offset isolate: true performance cost.
-        // Use CPU count for better hardware utilization.
-        // Reduce threads on macOS CI to prevent memory exhaustion (SIGABRT).
-        maxThreads: getMaxThreads(),
-        minThreads: isCoverageEnabled
-          ? 1
-          : Math.min(2, Math.floor(getMaxThreads() / 2)),
-        // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
-        //
-        // Previous configuration (isolate: false) caused "Terminating worker thread"
-        // errors due to resource cleanup issues when tests completed.
-        //
-        // Tradeoff Analysis:
-        // - isolate: true  = Full isolation, slower, but reliable cleanup
-        // - isolate: false = Shared worker context, faster, but cleanup issues
-        //
-        // We choose isolate: true to ensure:
-        // 1. Clean worker thread termination without errors
-        // 2. Reliable test execution in CI environments
-        // 3. Proper resource cleanup between tests
-        // 4. No "Terminating worker thread" errors
-        //
-        // Performance impact is acceptable for reliability.
-        isolate: true,
-      },
+    // Maximize parallel execution to offset isolate: true performance cost.
+    // Use CPU count for better hardware utilization.
+    // Reduce threads on macOS CI to prevent memory exhaustion (SIGABRT).
+    maxWorkers: getMaxThreads(),
+    // IMPORTANT: Changed to isolate: true to fix worker thread termination issues.
+    //
+    // Previous configuration (isolate: false) caused "Terminating worker thread"
+    // errors due to resource cleanup issues when tests completed.
+    //
+    // Tradeoff Analysis:
+    // - isolate: true  = Full isolation, slower, but reliable cleanup
+    // - isolate: false = Shared worker context, faster, but cleanup issues
+    //
+    // We choose isolate: true to ensure:
+    // 1. Clean worker thread termination without errors
+    // 2. Reliable test execution in CI environments
+    // 3. Proper resource cleanup between tests
+    // 4. No "Terminating worker thread" errors
+    //
+    // Performance impact is acceptable for reliability.
+    isolate: true,
+    deps: {
+      interopDefault: false,
     },
     testTimeout: 30_000,
     hookTimeout: 30_000,
@@ -108,7 +198,6 @@ export default defineConfig({
         '/test/**',
       ],
       include: ['src/**/*.mts', 'src/**/*.ts'],
-      all: true,
       clean: true,
       skipFull: false,
       ignoreClassMethods: ['constructor'],
@@ -121,3 +210,26 @@ export default defineConfig({
     },
   },
 })
+
+// When VITIATE_FUZZ=1, use a MINIMAL config (mirrors socket-lib's working
+// reference): the vitiatePlugin + the `*.fuzz.ts` include only. The full cli
+// test config's pool:'threads' + custom setupFiles conflict with vitiate's
+// supervisor (which spawns a coverage-guided child process sharing an SWC
+// coverage shmem) and trip "shmem attach failed"; a stripped config avoids it.
+// `pnpm test` never sets VITIATE_FUZZ, so it uses normalConfig unchanged.
+// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
+export default FUZZING
+  ? defineConfig({
+      plugins: [
+        vitiatePlugin({
+          instrument: { include: ['src/**/*.mts', 'src/**/*.ts'] },
+          fuzz: {
+            fuzzTimeMs: FUZZ_TIME_MS,
+            stopOnCrash: true,
+            detectors: { prototypePollution: true },
+          },
+        }),
+      ],
+      test: { include: ['test/**/*.fuzz.ts'] },
+    })
+  : normalConfig

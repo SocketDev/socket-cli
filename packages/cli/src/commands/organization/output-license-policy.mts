@@ -1,11 +1,11 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader, mdTableOfPairs } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader, mdTableOfPairs } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export async function outputLicensePolicy(
@@ -34,7 +34,15 @@ export async function outputLicensePolicy(
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ({ 0: key, 1: value }) =>
-      [key, (value as any)?.allowed ? ' yes' : ' no'] as const,
+      [
+        key,
+        value &&
+        typeof value === 'object' &&
+        'allowed' in value &&
+        value.allowed
+          ? ' yes'
+          : ' no',
+      ] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))

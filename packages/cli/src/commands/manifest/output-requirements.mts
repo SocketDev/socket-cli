@@ -1,11 +1,11 @@
-import fs from 'node:fs'
+import { writeFileSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
@@ -34,7 +34,7 @@ export async function outputRequirements(
     if (out === '-') {
       logger.log(json)
     } else {
-      fs.writeFileSync(out, json, 'utf8')
+      writeFileSync(out, json, 'utf8')
     }
 
     return
@@ -57,7 +57,7 @@ export async function outputRequirements(
     if (out === '-') {
       logger.log(md)
     } else {
-      fs.writeFileSync(out, md, 'utf8')
+      writeFileSync(out, md, 'utf8')
     }
     return
   }
@@ -66,6 +66,6 @@ export async function outputRequirements(
     logger.log(result.data.pip)
     logger.log('')
   } else {
-    fs.writeFileSync(out, result.data.pip, 'utf8')
+    writeFileSync(out, result.data.pip, 'utf8')
   }
 }

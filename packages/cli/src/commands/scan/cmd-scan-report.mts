@@ -1,28 +1,28 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleScanReport } from './handle-scan-report.mts'
-import { DRY_RUN_BAILING_NOW, FOLD_SETTING_NONE } from '../../constants/cli.mts'
+import { FOLD_SETTING_NONE } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { REPORT_LEVEL_WARN } from '../../constants/reporting.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type {
-  CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ScanReportFlags {
+export interface ScanReportFlags {
   fold: FOLD_SETTING
   json: boolean
   markdown: boolean
@@ -43,16 +43,16 @@ export const cmdScanReport: CliSubcommand = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       fold: {
@@ -86,8 +86,8 @@ async function run(
         default: false,
         description: 'Also report the license policy status. Default: false',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID> [OUTPUT_PATH]
 
@@ -95,7 +95,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     When no output path is given the contents is sent to stdout.
 
@@ -135,23 +135,28 @@ async function run(
     parentName,
   })
 
-  const { fold, json, markdown, org: orgFlag, reportLevel } =
-    cli.flags as unknown as ScanReportFlags
+  const {
+    fold,
+    json,
+    markdown,
+    org: orgFlag,
+    reportLevel,
+  } = cli.flags as unknown as ScanReportFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
-  const includeLicensePolicy = !!cli.flags['license']
+  const includeLicensePolicy = cli.flags['license']
 
-  const short = !!cli.flags['short']
+  const short = cli.flags['short']
 
   const [scanId = '', filepath = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -189,8 +194,14 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('scan report', {
+      organization: orgSlug,
+      scanId,
+      fold,
+      reportLevel,
+      includeLicense: includeLicensePolicy,
+      short,
+    })
     return
   }
 

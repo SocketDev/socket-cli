@@ -1,13 +1,15 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
   getConfigValue,
   getSupportedConfigKeys,
   isConfigFromFlag,
   isSensitiveConfigKey,
-} from '../../utils/config.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+} from '../../util/config.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
@@ -24,7 +26,8 @@ export async function outputConfigList({
   if (outputKind === 'json') {
     let failed = false
     const obj: Record<string, unknown> = {}
-    for (const key of supportedConfigKeys) {
+    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+      const key = supportedConfigKeys[i]!
       const result = getConfigValue(key)
       let value = result.data
       if (!result.ok) {
@@ -34,7 +37,7 @@ export async function outputConfigList({
         value = '********'
       }
       if (full || value !== undefined) {
-        obj[key as any] = value ?? '<none>'
+        obj[key] = value ?? '<none>'
       }
     }
     if (failed) {
@@ -45,7 +48,7 @@ export async function outputConfigList({
         failed
           ? {
               ok: false,
-              message: 'At least one config key failed to be fetched...',
+              message: 'At least one config key failed to be fetched…',
               data: JSON.stringify({
                 full,
                 config: obj,
@@ -70,9 +73,10 @@ export async function outputConfigList({
 
     logger.log(mdHeader('Local CLI Config'))
     logger.log('')
-    logger.log(`This is the local CLI config (full=${!!full}):`)
+    logger.log(`This is the local CLI config (full=${full}):`)
     logger.log('')
-    for (const key of supportedConfigKeys) {
+    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+      const key = supportedConfigKeys[i]!
       const result = getConfigValue(key)
       if (!result.ok) {
         logger.log(`- ${key}: failed to read: ${result.message}`)
@@ -82,8 +86,11 @@ export async function outputConfigList({
           value = '********'
         }
         if (full || value !== undefined) {
+          const displayValue = Array.isArray(value)
+            ? value.join(', ') || '<none>'
+            : String(value ?? '<none>')
           logger.log(
-            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`,
+            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
           )
         }
       }

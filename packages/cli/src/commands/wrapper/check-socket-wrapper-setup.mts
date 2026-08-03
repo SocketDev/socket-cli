@@ -1,12 +1,15 @@
-import fs from 'node:fs'
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { readFileSync } from 'node:fs'
+
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 const logger = getDefaultLogger()
 
 export function checkSocketWrapperSetup(file: string): boolean {
   let fileContent: string
   try {
-    fileContent = fs.readFileSync(file, 'utf8')
+    fileContent = readFileSync(file, 'utf8')
   } catch {
     // File may have been deleted or become unreadable.
     return false

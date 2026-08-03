@@ -1,23 +1,19 @@
 /**
  * Unit tests for handleCreateRepo.
  *
- * Purpose:
- * Tests the handler that orchestrates repository creation. Validates fetch-process-output
- * pipeline, input validation, and error handling for repository creation workflows.
+ * Purpose: Tests the handler that orchestrates repository creation. Validates
+ * fetch-process-output pipeline, input validation, and error handling for
+ * repository creation workflows.
  *
- * Test Coverage:
- * - Successful repository creation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
+ * Test Coverage: - Successful repository creation flow - Fetch failure handling
+ * - Input validation - Output formatting delegation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic.
  *
- * Related Files:
- * - src/commands/repository/handle-create-repo.mts (implementation)
- * - src/commands/repository/fetch-create-repo.mts (API fetcher)
- * - src/commands/repository/output-create-repo.mts (formatter)
+ * Related Files: - src/commands/repository/handle-create-repo.mts
+ * (implementation) - src/commands/repository/fetch-create-repo.mts (API
+ * fetcher) - src/commands/repository/output-create-repo.mts (formatter)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,15 +27,23 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => false)
 
-vi.mock('../../../../src/commands/repository/fetch-create-repo.mts', () => ({
-  fetchCreateRepo: mockFetchCreateRepo,
-}))
-vi.mock('../../../../src/commands/repository/output-create-repo.mts', () => ({
-  outputCreateRepo: mockOutputCreateRepo,
-}))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(
+  import('../../../../src/commands/repository/fetch-create-repo.mts'),
+  () => ({
+    fetchCreateRepo: mockFetchCreateRepo,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/repository/output-create-repo.mts'),
+  () => ({
+    outputCreateRepo: mockOutputCreateRepo,
+  }),
+)
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
 
@@ -207,13 +211,13 @@ describe('handleCreateRepo', () => {
   it('handles different visibility types', async () => {
     const visibilities = ['public', 'private', 'internal']
 
-    for (const visibility of visibilities) {
+    for (let i = 0, { length } = visibilities; i < length; i += 1) {
+      const visibility = visibilities[i]
       mockFetchCreateRepo.mockResolvedValue({
         ok: true,
         data: { id: '1', name: 'repo', visibility },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleCreateRepo(
         {
           orgSlug: 'org',

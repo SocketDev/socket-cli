@@ -1,33 +1,58 @@
-/** @fileoverview Test mock helpers for Socket CLI. Provides utilities for mocking SDK, API, logger, and output functions consistently across test files. */
+/**
+ * @file Test mock helpers for Socket CLI. Provides utilities for mocking SDK,
+ *   API, logger, and output functions consistently across test files.
+ */
 
 import { vi } from 'vitest'
 
 import type { CResult } from '../../src/types.mts'
-import type { SocketSdk } from '@socketsecurity/sdk'
+import type { SocketSdk } from '@socketsecurity/sdk-stable'
 
 /**
- * Error options for creating error results
+ * Error options for creating error results.
  */
-export type ErrorOptions = {
+type ErrorOptions = {
   code?: number | undefined
   cause?: string | undefined
 }
 
 /**
- * Creates mock functions for SDK and API utilities
+ * Creates a failed CResult.
  */
-export function createSdkMocks() {
+export function createErrorResult(
+  message: string,
+  options?: ErrorOptions | undefined,
+): CResult<never> {
+  const opts = { __proto__: null, ...options } as ErrorOptions
   return {
-    handleApiCall: vi.fn(),
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
+    ok: false,
+    message,
+    code: opts.code ?? 1,
+    cause: opts.cause,
   }
 }
 
 /**
- * Creates a mock Socket SDK with common methods
+ * Creates mock logger functions.
  */
-export function createMockSdk(overrides: Partial<SocketSdk> = {}): any {
+/**
+ * A SocketSdk whose methods are all vi.fn() mocks. The mapped Mock
+ * intersection keeps `expect(mockSdk.method)` assertions clear of the
+ * type-aware unbound-method rule, which flags references to real class
+ * methods.
+ */
+export type MockSocketSdk = {
+  [K in keyof SocketSdk]: ReturnType<typeof vi.fn>
+}
+
+/**
+ * Creates a mock Socket SDK with common methods.
+ */
+export function createMockSdk(
+  overrides: Partial<SocketSdk> = {},
+): MockSocketSdk {
+  // Tests substitute a vitest-mock-shaped object for the real SocketSdk; this
+  // is intentionally structural so command code under test sees a method to call.
   return {
     deleteOrgRepo: vi.fn(),
     createOrgRepo: vi.fn(),
@@ -44,11 +69,11 @@ export function createMockSdk(overrides: Partial<SocketSdk> = {}): any {
     getRepoAnalytics: vi.fn(),
     batchPackageFetch: vi.fn(),
     ...overrides,
-  }
+  } as unknown as MockSocketSdk
 }
 
 /**
- * Creates a successful CResult
+ * Creates a successful CResult.
  */
 export function createSuccessResult<T>(data: T): CResult<T> {
   return {
@@ -58,142 +83,13 @@ export function createSuccessResult<T>(data: T): CResult<T> {
 }
 
 /**
- * Creates a failed CResult
- */
-export function createErrorResult(
-  message: string,
-  options?: ErrorOptions | undefined,
-): CResult<never> {
-  const opts = { __proto__: null, ...options } as ErrorOptions
-  return {
-    ok: false,
-    message,
-    code: opts.code ?? 1,
-    cause: opts.cause,
-  }
-}
-
-/**
- * Creates mock logger functions
- */
-export function createLoggerMocks() {
-  return {
-    log: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fail: vi.fn(),
-    success: vi.fn(),
-  }
-}
-
-/**
- * Creates mock output utility functions
- */
-export function createOutputMocks() {
-  return {
-    failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-    serializeResultJson: vi.fn(result => JSON.stringify(result)),
-  }
-}
-
-/**
- * Setup common module mocks for SDK operations
- */
-export function setupSdkModuleMocks() {
-  vi.mock('../../src/utils/socket/api.mts', () => ({
-    handleApiCall: vi.fn(),
-  }))
-
-  vi.mock('../../src/utils/socket/sdk.mts', () => ({
-    setupSdk: vi.fn(),
-    withSdk: vi.fn(),
-  }))
-}
-
-/**
- * Setup common module mocks for output operations
- */
-export function setupOutputModuleMocks() {
-  vi.mock('@socketsecurity/lib/logger', () => ({
-    getDefaultLogger: vi.fn(() => ({
-      fail: vi.fn(),
-      log: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    })),
-    logger: {
-      fail: vi.fn(),
-      log: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-    },
-  }))
-
-  vi.mock('../../src/utils/error/fail-msg-with-badge.mts', () => ({
-    failMsgWithBadge: vi.fn((msg, cause) => `${msg}: ${cause}`),
-  }))
-
-  vi.mock('../../src/utils/output/result-json.mts', () => ({
-    serializeResultJson: vi.fn(result => JSON.stringify(result)),
-  }))
-}
-
-/**
- * Setup successful SDK mock chain
- */
-export async function setupSuccessfulSdkChain(
-  sdkMethod: string,
-  mockData: any,
-): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
-
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockResolvedValue({
-      success: true,
-      data: mockData,
-    }),
-  })
-
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(createSuccessResult(mockData))
-}
-
-/**
- * Setup SDK setup failure mock
+ * Setup SDK setup failure mock.
  */
 export async function setupSdkSetupFailure(
   message: string,
   cause?: string | undefined,
 ): Promise<void> {
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
+  const { setupSdk } = await import('../../src/util/socket/sdk.mts')
   const options: ErrorOptions = cause !== undefined ? { cause } : {}
   vi.mocked(setupSdk).mockResolvedValue(createErrorResult(message, options))
-}
-
-/**
- * Setup API call failure mock
- */
-export async function setupApiCallFailure(
-  sdkMethod: string,
-  error: Error | string,
-  code = 404,
-): Promise<void> {
-  const { handleApiCall } = await import('../../src/utils/socket/api.mts')
-  const { setupSdk } = await import('../../src/utils/socket/sdk.mts')
-
-  const errorObj = typeof error === 'string' ? new Error(error) : error
-  const mockSdk = createMockSdk({
-    [sdkMethod]: vi.fn().mockRejectedValue(errorObj),
-  })
-
-  vi.mocked(setupSdk).mockResolvedValue(createSuccessResult(mockSdk))
-  vi.mocked(handleApiCall).mockResolvedValue(
-    createErrorResult(errorObj.message, { code }),
-  )
 }

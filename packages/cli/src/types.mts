@@ -2,10 +2,15 @@ export type StringKeyValueObject = { [key: string]: string }
 
 export type OutputKind = 'json' | 'markdown' | 'text'
 
-// Base options type for fetch functions that use SDK.
-export type BaseFetchOptions = {
-  sdkOpts?: import('./utils/socket/sdk.mjs').SetupSdkOptions | undefined
-}
+// Checksum types for external tool integrity verification.
+// Maps asset filename to SHA-256 hex checksum.
+export type OpengrepChecksums = Record<string, string>
+export type PyCliChecksums = Record<string, string>
+export type PythonChecksums = Record<string, string>
+export type SfwChecksums = Record<string, string>
+export type SocketPatchChecksums = Record<string, string>
+export type TrivyChecksums = Record<string, string>
+export type TrufflehogChecksums = Record<string, string>
 
 // CResult is akin to the "Result" or "Outcome" or "Either" pattern.
 // Main difference might be that it's less strict about the error side of

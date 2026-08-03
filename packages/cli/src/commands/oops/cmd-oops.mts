@@ -1,15 +1,14 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { DRY_RUN_LABEL } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -21,16 +20,16 @@ const hidden = true
 
 // Command handler.
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       throw: {
@@ -39,10 +38,13 @@ async function run(
         description:
           'Throw an explicit error even if --json or --markdown are set',
       },
-    },
-    help: (parentName, config) => `
+    }),
+    help: (
+      helpParentName: string,
+      helpConfig: { commandName: string; flags: MeowFlags },
+    ) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${helpParentName} ${helpConfig.commandName}
 
     Don't run me.
   `,
@@ -57,10 +59,29 @@ async function run(
 
   const { json, markdown, throw: justThrow } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    // Dry-run previews are contextual output; route to stderr per the
+    // stream discipline rule so stdout stays payload-only.
+    logger.error('')
+    logger.error(`${DRY_RUN_LABEL}: Would trigger an intentional error`)
+    logger.error('')
+    logger.error(
+      '  This command throws an error for development/testing purposes.',
+    )
+    logger.error(`  Error message: "This error was intentionally left blank."`)
+    logger.error('')
+    if (json && !justThrow) {
+      logger.error('  Output format: JSON error response')
+    } else if (markdown && !justThrow) {
+      logger.error('  Output format: Markdown error message')
+    } else {
+      logger.error('  Output format: Thrown Error exception')
+    }
+    logger.error('')
+    logger.error('  Run without --dry-run to trigger the error.')
+    logger.error('')
     return
   }
 

@@ -1,29 +1,23 @@
 /**
- * Unit Tests: API Token Quota Output Formatter
+ * Unit Tests: API Token Quota Output Formatter.
  *
- * Purpose:
- * Tests the output formatting system for API token quota data. Validates JSON and text/markdown
- * output formats, error messaging, exit code setting, and quota value display including zero
- * quota scenarios.
+ * Purpose: Tests the output formatting system for API token quota data.
+ * Validates JSON and text/markdown output formats, error messaging, exit code
+ * setting, and quota value display including zero quota scenarios.
  *
- * Test Coverage:
- * - JSON format output for successful results
- * - JSON format error output with exit codes
- * - Text format with quota information display
- * - Text format error output with badges
- * - Markdown format output
- * - Zero quota handling
- * - Default text output when format unspecified
- * - Default exit code setting when code is undefined
+ * Test Coverage: - JSON format output for successful results - JSON format
+ * error output with exit codes - Text format with remaining/max/refresh display
+ * - Fallback when maxQuota is missing - Text format error output with badges -
+ * Markdown format output - Zero quota handling - Default text output when
+ * format unspecified - Default exit code setting when code is undefined.
  *
- * Testing Approach:
- * Uses vi.doMock to reset module state between tests, mocking logger, result serialization,
- * markdown utilities, and error formatting. Tests verify output content and exit code behavior.
+ * Testing Approach: Uses vi.doMock to reset module state between tests, mocking
+ * logger, result serialization, markdown utilities, and error formatting. Tests
+ * verify output content and exit code behavior.
  *
- * Related Files:
- * - src/commands/organization/output-quota.mts - Output formatter
- * - src/commands/organization/handle-quota.mts - Command handler
- * - src/commands/organization/fetch-quota.mts - Quota fetcher
+ * Related Files: - src/commands/organization/output-quota.mts - Output
+ * formatter - src/commands/organization/handle-quota.mts - Command handler -
+ * src/commands/organization/fetch-quota.mts - Quota fetcher.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -51,25 +45,24 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 1000,
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'json')
+    await outputQuota(result as unknown, 'json')
 
     expect(mockSerializeResultJson).toHaveBeenCalledWith(result)
     expect(mockLogger.log).toHaveBeenCalledWith(JSON.stringify(result))
@@ -89,18 +82,17 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createErrorResult('Unauthorized', {
       code: 2,
@@ -126,28 +118,60 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 500,
+      maxQuota: 1000,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 500',
+      'Quota remaining: 500 / 1000 (50% used)',
     )
+    expect(mockLogger.log).toHaveBeenCalledWith('Next refresh: unknown')
     expect(mockLogger.log).toHaveBeenCalledWith('')
     expect(process.exitCode).toBeUndefined()
+  })
+
+  it('falls back to remaining-only when maxQuota is missing', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const result = createSuccessResult({
+      quota: 250,
+      maxQuota: 0,
+      nextWindowRefresh: undefined,
+    })
+
+    process.exitCode = undefined
+    await outputQuota(result as unknown, 'text')
+
+    expect(mockLogger.log).toHaveBeenCalledWith('Quota remaining: 250')
   })
 
   it('outputs error in text format', async () => {
@@ -163,18 +187,20 @@ describe('outputQuota', () => {
     const mockFailMsgWithBadge = vi.fn((msg, cause) => `${msg}: ${cause}`)
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/error/fail-msg-with-badge.mts', () => ({
-      failMsgWithBadge: mockFailMsgWithBadge,
-    }))
+    vi.doMock(
+      import('../../../../src/util/error/fail-msg-with-badge.mts'),
+      () => ({
+        failMsgWithBadge: mockFailMsgWithBadge,
+      }),
+    )
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createErrorResult('Failed to fetch quota', {
       code: 1,
@@ -204,31 +230,37 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/markdown.mts', () => ({
+    vi.doMock(import('../../../../src/util/output/markdown.mts'), () => ({
       mdHeader: vi.fn(title => `# ${title}`),
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 750,
+      maxQuota: 1000,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'markdown')
+    await outputQuota(result as unknown, 'markdown')
 
-    expect(mockLogger.log).toHaveBeenCalledWith('# Quota')
-    expect(mockLogger.log).toHaveBeenCalledWith('')
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 750',
-    )
+    // Markdown output routes through emitPayload — the whole markdown
+    // body is logged as one string (sentinel-wrapped so downstream
+    // spawns can't contaminate stdout). Match with stringContaining on
+    // the concatenated call args.
+    const loggedPayload = mockLogger.log.mock.calls
+      .map(call => String(call[0]))
+      .join('\n')
+    expect(loggedPayload).toContain('# Quota')
+    expect(loggedPayload).toContain('- Quota remaining: 750 / 1000 (25% used)')
+    expect(loggedPayload).toContain('- Next refresh: unknown')
   })
 
   it('handles zero quota correctly', async () => {
@@ -243,25 +275,26 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 0,
+      maxQuota: 1000,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'text')
+    await outputQuota(result as unknown, 'text')
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 0',
+      'Quota remaining: 0 / 1000 (100% used)',
     )
   })
 
@@ -277,25 +310,26 @@ describe('outputQuota', () => {
     }
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createSuccessResult({
       quota: 100,
+      maxQuota: 1000,
+      nextWindowRefresh: undefined,
     })
 
     process.exitCode = undefined
-    await outputQuota(result as any)
+    await outputQuota(result as unknown)
 
     expect(mockLogger.log).toHaveBeenCalledWith(
-      'Quota left on the current API token: 100',
+      'Quota remaining: 100 / 1000 (90% used)',
     )
     expect(mockLogger.log).toHaveBeenCalledWith('')
   })
@@ -313,23 +347,55 @@ describe('outputQuota', () => {
     const mockSerializeResultJson = vi.fn(result => JSON.stringify(result))
 
     // Use vi.doMock (NOT vi.mock).
-    vi.doMock('@socketsecurity/lib/logger', () => ({
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
       getDefaultLogger: () => mockLogger,
       logger: mockLogger,
     }))
-    vi.doMock('../../../../src/utils/output/result-json.mjs', () => ({
+    vi.doMock(import('../../../../src/util/output/result-json.mjs'), () => ({
       serializeResultJson: mockSerializeResultJson,
     }))
 
     // Dynamic import AFTER mocks.
-    const { outputQuota } = await import(
-      '../../../../src/commands/organization/output-quota.mts'
-    )
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
 
     const result = createErrorResult('Error')
 
     process.exitCode = undefined
-    await outputQuota(result as any, 'json')
+    await outputQuota(result, 'json')
+
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('falls back to exitCode 1 when result has no code field', async () => {
+    const mockLogger = {
+      fail: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      success: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    }
+
+    vi.doMock(import('@socketsecurity/lib-stable/logger/default'), () => ({
+      getDefaultLogger: () => mockLogger,
+      logger: mockLogger,
+    }))
+    vi.doMock(import('../../../../src/util/output/emit-payload.mts'), () => ({
+      emitPayload: vi.fn(),
+    }))
+
+    const { outputQuota } =
+      await import('../../../../src/commands/organization/output-quota.mts')
+
+    const result = {
+      ok: false as const,
+      message: 'No code',
+      cause: 'no code',
+    }
+
+    process.exitCode = undefined
+    await outputQuota(result, 'json')
 
     expect(process.exitCode).toBe(1)
   })

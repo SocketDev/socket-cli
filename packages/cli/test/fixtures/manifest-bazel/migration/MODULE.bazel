@@ -1,0 +1,9 @@
+module(name = "migration_fixture", version = "0.0.0")
+
+bazel_dep(name = "rules_jvm_external", version = "6.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = ["com.google.guava:guava:33.0.0-jre"],
+)
+use_repo(maven, "maven")

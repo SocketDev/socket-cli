@@ -1,9 +1,9 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchUpdateRepoConfig = {
   defaultBranch: string
@@ -30,7 +30,10 @@ export async function fetchUpdateRepo(
     orgSlug,
     repoName,
     visibility,
-  } = { __proto__: null, ...config } as FetchUpdateRepoConfig
+  } = {
+    __proto__: null,
+    ...config,
+  } as FetchUpdateRepoConfig
 
   const { commandPath, sdkOpts } = {
     __proto__: null,

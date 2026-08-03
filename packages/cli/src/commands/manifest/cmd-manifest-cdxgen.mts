@@ -1,26 +1,32 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/sort-source-methods -- `arrayToLower` / `toLower` helpers are kept together at the top, alphabetical anchor for the cdxgen flag mapping below; `run` is the command entry point and lives near its config + cmdManifestCdxgen export, not interleaved with helpers. */
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { isPath } from '@socketsecurity/lib/paths/normalize'
-import { pluralize } from '@socketsecurity/lib/words'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isPath } from '@socketsecurity/lib-stable/paths/normalize'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-import { runCdxgen } from './run-cdxgen.mts'
-import { DRY_RUN_BAILING_NOW, FLAG_HELP } from '../../constants/cli.mjs'
+import {
+  detectNodejsCdxgenSources,
+  isNodejsCdxgenType,
+  runCdxgen,
+} from './run-cdxgen.mts'
+import { FLAG_HELP } from '../../constants/cli.mjs'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface CdxgenFlags {
+export interface CdxgenFlags {
   dryRun: boolean
 }
 
@@ -28,8 +34,12 @@ interface CdxgenFlags {
 // Socket CLI's custom meow implementation would provide consistency with other
 // commands but requires significant work to map all cdxgen flags and maintain
 // compatibility with cdxgen's complex option structure.
-const toLower = (arg: string) => arg.toLowerCase()
-const arrayToLower = (arg: string[]) => arg.map(toLower)
+export function arrayToLower(arg: string[]): string[] {
+  return arg.map(toLower)
+}
+export function toLower(arg: string): string {
+  return arg.toLowerCase()
+}
 
 // npx @cyclonedx/cdxgen@11.2.7 --help
 //
@@ -111,28 +121,6 @@ const arrayToLower = (arg: string[]) => arg.map(toLower)
 // Yargs CDXGEN configuration defined at:
 // https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64
 const yargsConfig = {
-  configuration: {
-    'camel-case-expansion': false,
-    'greedy-arrays': false,
-    'parse-numbers': false,
-    'populate--': true,
-    'short-option-groups': false,
-    'strip-aliased': true,
-    'unknown-options-as-args': true,
-  },
-  coerce: {
-    'exclude-type': arrayToLower,
-    'feature-flags': arrayToLower,
-    filter: arrayToLower,
-    only: arrayToLower,
-    profile: toLower,
-    standard: arrayToLower,
-    technique: arrayToLower,
-    type: arrayToLower,
-  },
-  default: {
-    type: ['js'],
-  },
   alias: {
     help: ['h'],
     output: ['o'],
@@ -176,6 +164,28 @@ const yargsConfig = {
     'validate',
     'version',
   ],
+  coerce: {
+    'exclude-type': arrayToLower,
+    'feature-flags': arrayToLower,
+    filter: arrayToLower,
+    only: arrayToLower,
+    profile: toLower,
+    standard: arrayToLower,
+    technique: arrayToLower,
+    type: arrayToLower,
+  },
+  configuration: {
+    'camel-case-expansion': false,
+    'greedy-arrays': false,
+    'parse-numbers': false,
+    'populate--': true,
+    'short-option-groups': false,
+    'strip-aliased': true,
+    'unknown-options-as-args': true,
+  },
+  default: {
+    type: ['js'],
+  },
   string: [
     'api-key',
     'data-flow-slices-file', // hidden
@@ -202,14 +212,14 @@ const yargsConfig = {
   ],
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'cdxgen',
   description: 'Run cdxgen for SBOM generation',
-  hidden: false,
   // Stub out flags and help since cdxgen uses yargs internally.
   // Socket CLI uses custom meow - see note above about conversion complexity.
   flags: {},
   help: () => '',
+  hidden: false,
 }
 
 export const cmdManifestCdxgen = {
@@ -218,7 +228,7 @@ export const cmdManifestCdxgen = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
@@ -235,7 +245,7 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as CdxgenFlags
+  const { dryRun } = cli.flags
 
   // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
@@ -244,12 +254,15 @@ async function run(
     '-h',
   ])
   const yargv = {
-    ...yargsParse(argsToProcess as string[], yargsConfig),
+    ...yargsParse(argsToProcess, yargsConfig),
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- yargs-parser returns a dynamic flag bag; downstream code reads .help/.lifecycle/.output/.type/_/--.
   } as any
 
   const pathArgs: string[] = []
   const unknowns: string[] = []
-  for (const a of yargv._) {
+  const positionals = yargv._ as string[]
+  for (let i = 0, { length } = positionals; i < length; i += 1) {
+    const a = positionals[i]!
     if (isPath(a)) {
       pathArgs.push(a)
     } else {
@@ -272,7 +285,10 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const cdxgenArgs = argsToProcess.filter(
+      arg => arg !== '--dry-run' && !arg.startsWith('--dry-run='),
+    )
+    outputDryRunExecute('cdxgen', cdxgenArgs, 'SBOM generation')
     return
   }
 
@@ -281,7 +297,8 @@ async function run(
     // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
     // to avoid arbitrary code execution on the cdxgen scan.
     // https://github.com/CycloneDX/cdxgen/issues/1328
-    if (yargv.lifecycle === undefined) {
+    const lifecycleWasDefaulted = yargv.lifecycle === undefined
+    if (lifecycleWasDefaulted) {
       yargv.lifecycle = 'pre-build'
       yargv['install-deps'] = false
       logger.info(
@@ -294,6 +311,29 @@ async function run(
     if (yargv.output === undefined) {
       yargv.output = 'socket-cdx.json'
     }
+
+    // Hard gate: in the default pre-build + install-deps=false path, cdxgen
+    // needs either a lockfile or an installed node_modules/ to produce any
+    // Node.js components. Without both, it emits a valid CycloneDX doc with
+    // "components": []. Refuse with an actionable error instead of shipping
+    // an empty SBOM.
+    if (
+      lifecycleWasDefaulted &&
+      isNodejsCdxgenType(yargv.type) &&
+      !yargv['filter'] &&
+      !yargv['only']
+    ) {
+      const { hasLockfile, hasNodeModules } = await detectNodejsCdxgenSources()
+      if (!hasLockfile && !hasNodeModules) {
+        process.exitCode = 2
+        logger.fail(
+          `socket cdxgen found no lockfile (pnpm-lock.yaml / package-lock.json / yarn.lock) or node_modules/ at or above ${process.cwd()}.\n` +
+            '  The default --lifecycle pre-build with --no-install-deps needs one of them to resolve components; otherwise the SBOM ships with "components": [].\n' +
+            '  Fix: install dependencies first (e.g. `npm install`, `pnpm install`, `yarn install`), or re-run with `--lifecycle build` to let cdxgen resolve during the build.',
+        )
+        return
+      }
+    }
   }
 
   process.exitCode = 1
@@ -305,7 +345,6 @@ async function run(
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
-    // eslint-disable-next-line n/no-process-exit
     process.exit(result.code)
   }
 }

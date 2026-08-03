@@ -1,16 +1,16 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
-type ScanListItem =
+export type ScanListItem =
   SocketSdkSuccessResult<'listFullScans'>['data']['results'][number]
 
 export async function outputListScans(

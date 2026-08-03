@@ -1,22 +1,17 @@
 /**
  * Unit tests for fetchDeleteOrgFullScan.
  *
- * Purpose:
- * Tests deleting organization-wide full scans via the Socket API. Validates scan deletion and cleanup operations.
+ * Purpose: Tests deleting organization-wide full scans via the Socket API.
+ * Validates scan deletion and cleanup operations.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Null
+ * prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/DeleteOrgFullScan.mts (implementation)
+ * Related Files: - src/commands/DeleteOrgFullScan.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -25,18 +20,18 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
 import { fetchDeleteOrgFullScan } from '../../../../src/commands/scan/fetch-delete-org-full-scan.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
@@ -84,7 +79,10 @@ describe('fetchDeleteOrgFullScan', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('deleteFullScan', {})
+    const { mockSetupSdk: mockSetupSdkForCall } = await setupSdkMockSuccess(
+      'deleteFullScan',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'custom-token',
@@ -93,7 +91,7 @@ describe('fetchDeleteOrgFullScan', () => {
 
     await fetchDeleteOrgFullScan('org', 'scan', { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockSetupSdkForCall).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles different org slugs and scan IDs', async () => {
@@ -106,7 +104,6 @@ describe('fetchDeleteOrgFullScan', () => {
     ]
 
     for (const [org, scanId] of testCases) {
-      // eslint-disable-next-line no-await-in-loop
       await fetchDeleteOrgFullScan(org, scanId)
       expect(mockSdk.deleteFullScan).toHaveBeenCalledWith(org, scanId)
     }

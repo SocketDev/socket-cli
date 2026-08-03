@@ -1,15 +1,16 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
+import type { Direction, RepositorySort } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchListAllReposOptions = {
   commandPath?: string | undefined
-  direction?: string | undefined
+  direction?: Direction | undefined
   sdkOpts?: SetupSdkOptions | undefined
-  sort?: string | undefined
+  sort?: RepositorySort | undefined
 }
 
 export async function fetchListAllRepos(
@@ -38,11 +39,10 @@ export async function fetchListAllRepos(
         cause: `Either there are over 100 pages of results or the fetch has run into an infinite loop. Breaking it off now. nextPage=${nextPage}`,
       }
     }
-    // eslint-disable-next-line no-await-in-loop
     const orgRepoListCResult = await handleApiCall<'listRepositories'>(
       sockSdk.listRepositories(orgSlug, {
-        ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
-        ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+        ...(sort ? { sort: sort } : {}),
+        ...(direction ? { direction: direction } : {}),
         per_page: 100, // max
         page: nextPage,
       }),
@@ -63,6 +63,7 @@ export async function fetchListAllRepos(
     ok: true,
     data: {
       results: rows,
+      // oxlint-disable-next-line socket/prefer-undefined-over-null -- SDK schema uses `nextPage: string | null` for the GitHub-style pagination sentinel.
       nextPage: null,
     },
   }

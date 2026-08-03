@@ -1,19 +1,16 @@
 /**
  * Integration tests for `socket package shallow` command.
  *
- * Tests shallow package analysis which provides quick security insights
- * without deep dependency traversal.
+ * Tests shallow package analysis which provides quick security insights without
+ * deep dependency traversal.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Shallow analysis retrieval
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Shallow analysis retrieval - Output format support (JSON,
+ * markdown)
  *
- * Related Files:
- * - src/commands/package/cmd-package-shallow.mts - Command definition
- * - src/commands/package/handle-package-shallow.mts - Analysis logic
- * - src/commands/package/output-package-shallow.mts - Formatting
+ * Related Files: - src/commands/package/cmd-package-shallow.mts - Command
+ * definition - src/commands/package/handle-package-shallow.mts - Analysis logic
+ * - src/commands/package/output-package-shallow.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -48,6 +45,7 @@ describe('socket package shallow', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Show scoring details for one or more packages purely based on their own package.
               This means that any dependency scores are not reflected by the score. You can
@@ -126,14 +124,24 @@ describe('socket package shallow', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package shallow\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package shallow\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch package information
+
+          Query parameters:
+            packages: pkg:npm/babel
+            count: 1
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

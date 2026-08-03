@@ -3,20 +3,17 @@
  *
  * Tests checking Socket CLI authentication status.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Authentication status display
- * - User information retrieval
- * - Token validation
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Authentication status display - User information retrieval -
+ * Token validation.
  *
- * Related Files:
- * - src/commands/whoami/cmd-whoami.mts - Complete command implementation
+ * Related Files: - src/commands/whoami/cmd-whoami.mts - Complete command
+ * implementation.
  */
 
 /**
- * @fileoverview Tests for whoami command.
- * Validates authentication status display with various token sources.
+ * @file Tests for whoami command. Validates authentication status display with
+ *   various token sources.
  */
 
 import { afterEach, beforeEach, describe, expect } from 'vitest'
@@ -124,8 +121,9 @@ describe('socket whoami', () => {
         expect(code).toBe(0)
         expect(stdout).toContain('"authenticated"') // JSON has spaces after colons
         expect(stdout).toContain('false')
-        expect(stdout).toContain('"token"')
-        expect(stdout).toContain('null')
+        // Unauthenticated JSON output omits the token/location fields
+        // entirely rather than emitting them as null.
+        expect(stdout).not.toContain('"token"')
         expect(stderr).toBe('')
       },
     )
@@ -144,7 +142,9 @@ describe('socket whoami', () => {
 
         expect(code).toBe(0)
         expect(stdout).toContain('Token: sktsec_')
-        expect(stdout).toContain('...')
+        // The CLI masks with a unicode ellipsis, which cleanOutput encodes as
+        // a literal … escape.
+        expect(stdout).toContain('\\u2026')
         // Should not contain full token.
         expect(stdout).not.toContain('abcdefghijklmnopqrstuvwxyz')
       },

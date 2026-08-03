@@ -2,46 +2,54 @@
  * Integration tests for `socket config get` command.
  *
  * Tests retrieving configuration values from the CLI config store, including
- * comprehensive validation of environment variable and config override precedence.
+ * comprehensive validation of environment variable and config override
+ * precedence.
  *
  * Test Coverage:
+ *
  * - Help text display and usage examples
  * - Key argument validation
  * - Config value retrieval
- * - Environment variable precedence (SOCKET_CLI_API_TOKEN, SOCKET_SECURITY_API_KEY, etc.)
+ * - Environment variable precedence (SOCKET_CLI_API_TOKEN,
+ *   SOCKET_SECURITY_API_KEY, etc.)
  * - Config override precedence (--config flag)
  * - Read-only mode notification when overrides are active
  * - Backward compatibility with legacy env var names
  * - Platform-specific behavior (Windows Node 24+ skips)
  *
- * Configuration Precedence (highest to lowest):
+ * Configuration Precedence, highest to lowest:
+ *
  * 1. Environment variables (SOCKET_CLI_API_TOKEN, SOCKET_CLI_API_KEY)
  * 2. Legacy environment variables (SOCKET_SECURITY_API_KEY)
  * 3. Command-line flag (--config)
  * 4. Local config file
  *
  * Available Config Keys:
- * - apiBaseUrl: Socket API base URL
- * - apiProxy: Proxy for API requests
- * - apiToken: Authentication token
- * - defaultOrg: Default organization slug
- * - enforcedOrgs: Organizations with enforced policies
- * - skipAskToPersistDefaultOrg: Skip org persistence prompt
+ *
+ * - ApiBaseUrl: Socket API base URL
+ * - ApiProxy: Proxy for API requests
+ * - ApiToken: Authentication token
+ * - DefaultOrg: Default organization slug
+ * - EnforcedOrgs: Organizations with enforced policies
+ * - SkipAskToPersistDefaultOrg: Skip org persistence prompt
  *
  * Platform-Specific Behavior:
- * - Windows Node 24+ has known stderr assertion failures (skipped in tests)
+ *
+ * - Windows Node 24+ has known stderr assertion failures, skipped in tests
  *
  * Related Files:
- * - src/commands/config/cmd-config-get.mts - Command definition
- * - src/commands/config/handle-config-get.mts - Config retrieval logic
- * - src/utils/config.mts - Config management utilities
+ *
+ * - Src/commands/config/cmd-config-get.mts - Command definition
+ * - Src/commands/config/handle-config-get.mts - Config retrieval logic
+ * - Src/util/config.mts - Config management utilities
  */
 
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is a devDep in tests so no runtime dep leaks.
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import { getNodeVersion } from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,
@@ -49,7 +57,6 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -66,14 +73,17 @@ describe('socket config get', async () => {
           Usage
                 $ socket config get [options] KEY
           
-              Retrieve the value for given KEY at this time. If you have overridden the
-              config then the value will come from that override.
-          
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+          
+              Retrieve the value for given KEY at this time. If you have overridden the
+              config then the value will come from that override.
           
               KEY is an enum. Valid keys:
+          
+              Keys:
           
                - apiBaseUrl -- Base URL of the Socket API endpoint
                - apiProxy -- A proxy through which to access the Socket API
@@ -138,24 +148,20 @@ describe('socket config get', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should require args with just dry-run',
+    'should reject unknown subcommands even with dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
-      // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      // Unknown subcommands now error out instead of falling through to the
+      // dry-run no-op.
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config\`, cwd: <redacted>"
+           \\xd7 Unknown command "test".
+        i Tip: Use \`socket pycli\` to invoke the Python CLI directly."
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'unknown command should exit with code 2').toBe(2)
     },
   )
 

@@ -1,29 +1,24 @@
 /**
  * Unit tests for addSocketWrapper.
  *
- * Purpose:
- * Tests adding Socket wrapper scripts to package managers. Validates wrapper installation for npm, pnpm, and yarn.
+ * Purpose: Tests adding Socket wrapper scripts to package managers. Validates
+ * wrapper installation for npm, pnpm, and yarn.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/addSocketWrapper.mts (implementation)
+ * Related Files: - src/addSocketWrapper.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { addSocketWrapper } from '../../../../src/commands/../../../../src/commands/wrapper/add-socket-wrapper.mts'
+import { addSocketWrapper } from '../../../../src/commands/wrapper/add-socket-wrapper.mts'
 
 // Mock the dependencies.
-vi.mock('node:fs', () => ({
+vi.mock(import('node:fs'), () => ({
   promises: {
     appendFile: vi.fn(),
   },
@@ -38,7 +33,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -49,7 +44,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('successfully adds wrapper aliases to file', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger/default')
     const fs = await import('node:fs')
     const mockAppendFile = vi.mocked(fs.promises.appendFile)
 
@@ -77,8 +72,18 @@ describe('addSocketWrapper', () => {
 
     mockAppendFile.mockRejectedValue(error)
 
+    // The FileSystemError wraps the cause in the message; the path is
+    // stored on the `.path` property, not embedded in the message, to
+    // avoid display.formatErrorForDisplay double-printing it. Assert on
+    // the message shape + the path property separately.
     await expect(addSocketWrapper('/etc/protected-file')).rejects.toThrow(
-      'There was an error setting up the alias',
+      /failed to append socket aliases \(Permission denied\)/,
+    )
+    await expect(addSocketWrapper('/etc/protected-file')).rejects.toMatchObject(
+      {
+        name: 'FileSystemError',
+        path: '/etc/protected-file',
+      },
     )
 
     expect(fs.promises.appendFile).toHaveBeenCalledWith(
@@ -104,7 +109,7 @@ describe('addSocketWrapper', () => {
   })
 
   it('logs disable instructions', async () => {
-    await import('@socketsecurity/lib/logger')
+    await import('@socketsecurity/lib-stable/logger/default')
     const fs = await import('node:fs')
     const mockAppendFile = vi.mocked(fs.promises.appendFile)
 
@@ -127,7 +132,8 @@ describe('addSocketWrapper', () => {
       '/home/user/.profile',
     ]
 
-    for (const shellFile of shells) {
+    for (let i = 0, { length } = shells; i < length; i += 1) {
+      const shellFile = shells[i]
       vi.clearAllMocks()
       mockAppendFile.mockResolvedValue(undefined)
 

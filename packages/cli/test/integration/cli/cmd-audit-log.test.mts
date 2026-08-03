@@ -1,33 +1,27 @@
 /**
  * Integration tests for `socket audit-log` command.
  *
- * Tests the audit log command for viewing organization audit trails.
- * This is an Enterprise Plan feature that tracks all organization activities.
+ * Tests the audit log command for viewing organization audit trails. This is an
+ * Enterprise Plan feature that tracks all organization activities.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Organization resolution (default org, --org flag, auto-discovery)
- * - Event type filtering (enum validation)
- * - Pagination support (--page, --per-page flags)
- * - Legacy flag detection and rejection (--type)
- * - Error handling (missing org, missing token, dry-run auto-discovery skip)
- * - Interactive vs non-interactive modes
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Organization resolution (default org, --org flag,
+ * auto-discovery) - Event type filtering, enum validation - Pagination support
+ * (--page, --per-page flags) - Legacy flag detection and rejection (--type) -
+ * Error handling, missing org, missing token, dry-run auto-discovery skip -
+ * Interactive vs non-interactive modes.
  *
- * Enterprise Feature:
- * Requires Enterprise Plan subscription for audit log access.
+ * Enterprise Feature: Requires Enterprise Plan subscription for audit log
+ * access.
  *
- * Audit Event Types:
- * - Organization changes (member roles, subscriptions, settings)
- * - API token operations (create, rotate, update, delete)
- * - Label management (create, delete, associate)
- * - Security operations (alert triage, report deletion)
- * - Access control (invitations, transfers, removals)
+ * Audit Event Types: - Organization changes (member roles, subscriptions,
+ * settings) - API token operations, create, rotate, update, delete - Label
+ * management, create, delete, associate - Security operations (alert triage,
+ * report deletion) - Access control, invitations, transfers, removals.
  *
- * Related Files:
- * - src/commands/audit-log/cmd-audit-log.mts - Command definition
- * - src/commands/audit-log/handle-audit-log.mts - Audit log handler
- * - src/commands/audit-log/output-audit-log.mts - Output formatting
+ * Related Files: - src/commands/audit-log/cmd-audit-log.mts - Command
+ * definition - src/commands/audit-log/handle-audit-log.mts - Audit log handler
+ * - src/commands/audit-log/output-audit-log.mts - Output formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -83,6 +77,7 @@ describe('socket audit-log', async () => {
                 --org               Force override the organization slug, overrides the default org from config
                 --page              Result page to fetch
                 --per-page          Results per page - default is 30
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket audit-log
@@ -116,7 +111,7 @@ describe('socket audit-log', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -171,14 +166,26 @@ describe('socket audit-log', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch audit log entries
+
+          Query parameters:
+            organization: fakeOrg
+            filter: any
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -199,14 +206,26 @@ describe('socket audit-log', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket audit-log\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch audit log entries
+
+          Query parameters:
+            organization: forcedorg
+            filter: any
+            page: 1
+            perPage: 30
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

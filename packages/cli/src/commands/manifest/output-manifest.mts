@@ -1,10 +1,10 @@
-import fs from 'node:fs'
+import { writeFileSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
@@ -39,7 +39,7 @@ export async function outputManifest(
     if (out === '-') {
       logger.log(json)
     } else {
-      fs.writeFileSync(out, json, 'utf8')
+      writeFileSync(out, json, 'utf8')
     }
 
     return
@@ -57,7 +57,8 @@ export async function outputManifest(
     )
     arr.push('')
 
-    for (const file of files) {
+    for (let i = 0, { length } = files; i < length; i += 1) {
+      const file = files[i]
       arr.push(`- \`${file}\``)
     }
 
@@ -76,7 +77,7 @@ export async function outputManifest(
     if (out === '-') {
       logger.log(md)
     } else {
-      fs.writeFileSync(out, md, 'utf8')
+      writeFileSync(out, md, 'utf8')
     }
     return
   }

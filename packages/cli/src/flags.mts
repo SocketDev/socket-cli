@@ -1,7 +1,7 @@
 import os from 'node:os'
 
 import { NODE_OPTIONS } from './env/node-options.mts'
-import meow from './meow.mts'
+import { defineFlags, meow } from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
 
@@ -22,25 +22,123 @@ export type MeowFlag = AnyFlag & {
 // We use this description in getFlagListOutput, meow doesn't care.
 export type MeowFlags = Record<string, MeowFlag>
 
-type RawSpaceSizeFlags = {
+export type RawSpaceSizeFlags = {
   maxOldSpaceSize: number
   maxSemiSpaceSize: number
 }
 
-let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
+let rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 
-/**
- * Reset cached flag values for testing purposes.
- * @internal
- */
-export function resetFlagCache(): void {
-  _rawSpaceSizeFlags = undefined
-  _maxOldSpaceSizeFlag = undefined
-  _maxSemiSpaceSizeFlag = undefined
+let maxOldSpaceSizeFlag: number | undefined
+
+// Ensure export because dist/flags.js is required in src/constants.mts.
+if (typeof exports === 'object' && exports !== null) {
+  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
 }
 
-function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
-  if (_rawSpaceSizeFlags === undefined) {
+let maxSemiSpaceSizeFlag: number | undefined
+
+export function getMaxOldSpaceSizeFlag(): number {
+  if (maxOldSpaceSizeFlag === undefined) {
+    const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
+    // Check if flag was explicitly set (> 0).
+    if (rawFlag > 0) {
+      maxOldSpaceSizeFlag = rawFlag
+    } else {
+      const match = /(?<=--max-old-space-size=)\d+/.exec(
+        NODE_OPTIONS ?? '',
+      )?.[0]
+      if (match) {
+        const parsed = Number(match)
+        /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
+        if (Number.isNaN(parsed) || parsed < 0) {
+          maxOldSpaceSizeFlag = 0
+          /* c8 ignore stop */
+        } else {
+          maxOldSpaceSizeFlag = parsed
+        }
+      }
+    }
+    // Only apply default if no value was set (null/undefined, not 0).
+    if (maxOldSpaceSizeFlag == null) {
+      // Default value determined by available system memory.
+      maxOldSpaceSizeFlag = Math.floor(
+        // Total system memory in MiB.
+        (os.totalmem() / 1024 / 1024) *
+          // Set 75% of total memory, safe buffer to avoid system pressure.
+          0.75,
+      )
+    }
+  }
+  return maxOldSpaceSizeFlag
+}
+
+export function getMaxSemiSpaceSizeFlag(): number {
+  if (maxSemiSpaceSizeFlag === undefined) {
+    maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
+    if (!maxSemiSpaceSizeFlag) {
+      const match = /(?<=--max-semi-space-size=)\d+/.exec(
+        NODE_OPTIONS ?? '',
+      )?.[0]
+      if (match) {
+        const parsed = Number(match)
+        /* c8 ignore start - regex (\d+) guarantees a numeric string; defensive guard */
+        if (Number.isNaN(parsed) || parsed < 0) {
+          maxSemiSpaceSizeFlag = 0
+          /* c8 ignore stop */
+        } else {
+          maxSemiSpaceSizeFlag = parsed
+        }
+      } else {
+        maxSemiSpaceSizeFlag = 0
+      }
+    }
+    if (!maxSemiSpaceSizeFlag) {
+      const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
+      // Dynamically scale semi-space size based on max-old-space-size.
+      // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
+      if (maxOldSpaceSize <= 8192) {
+        // Use tiered values for smaller heaps to avoid excessive young
+        // generation size. This helps stay within safe memory limits on
+        // constrained systems or CI.
+        if (maxOldSpaceSize <= 512) {
+          maxSemiSpaceSizeFlag = 4
+        } else if (maxOldSpaceSize <= 1024) {
+          maxSemiSpaceSizeFlag = 8
+        } else if (maxOldSpaceSize <= 2048) {
+          maxSemiSpaceSizeFlag = 16
+        } else if (maxOldSpaceSize <= 4096) {
+          maxSemiSpaceSizeFlag = 32
+        } else {
+          maxSemiSpaceSizeFlag = 64
+        }
+      } else {
+        // For large heaps (> 8 GiB), compute semi-space size using a log-scaled
+        // function.
+        //
+        // The idea:
+        //   - log2(16_384 MiB) = 14  → semi = 14 * 8 = 112
+        //   - log2(32_768 MiB) = 15  → semi = 15 * 8 = 120
+        //   - Scales gradually as heap increases, avoiding overly large jumps
+        //
+        // Each 1 MiB of semi-space adds ~3 MiB to the total young generation
+        // (V8 uses 3 spaces). So this keeps semi-space proportional, without
+        // over committing.
+        //
+        // Also note: V8 won’t benefit much from >256 MiB semi-space unless
+        // you’re allocating large short-lived objects very frequently
+        // (e.g. large arrays, buffers).
+        const log2OldSpace = Math.log2(maxOldSpaceSize)
+        const scaledSemiSpace = Math.floor(log2OldSpace) * 8
+        maxSemiSpaceSizeFlag = scaledSemiSpace
+      }
+    }
+  }
+  return maxSemiSpaceSizeFlag
+}
+
+export function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
+  if (rawSpaceSizeFlags === undefined) {
     const cli = meow({
       argv: process.argv.slice(2),
       // Prevent meow from potentially exiting early.
@@ -61,138 +159,57 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
     const maxOldSpaceSize = Number(cli.flags['maxOldSpaceSize'])
     const maxSemiSpaceSize = Number(cli.flags['maxSemiSpaceSize'])
 
-    // Validate numeric flags (should be guaranteed by meow type='number', but defensive).
+    /* c8 ignore start - meow type='number' guarantees numeric values; these guards are belt-and-suspenders */
     if (Number.isNaN(maxOldSpaceSize) || maxOldSpaceSize < 0) {
       throw new Error(
-        `Invalid value for --max-old-space-size: ${cli.flags['maxOldSpaceSize']}`,
+        `--max-old-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxOldSpaceSize']}"); pass a whole number like --max-old-space-size=4096 for 4GB`,
       )
     }
     if (Number.isNaN(maxSemiSpaceSize) || maxSemiSpaceSize < 0) {
       throw new Error(
-        `Invalid value for --max-semi-space-size: ${cli.flags['maxSemiSpaceSize']}`,
+        `--max-semi-space-size must be a non-negative integer in megabytes (saw: "${cli.flags['maxSemiSpaceSize']}"); pass a whole number like --max-semi-space-size=128`,
       )
     }
+    /* c8 ignore stop */
 
-    _rawSpaceSizeFlags = {
+    rawSpaceSizeFlags = {
       maxOldSpaceSize,
       maxSemiSpaceSize,
     }
   }
-  return _rawSpaceSizeFlags!
+  return rawSpaceSizeFlags
 }
 
-let _maxOldSpaceSizeFlag: number | undefined
-export function getMaxOldSpaceSizeFlag(): number {
-  if (_maxOldSpaceSizeFlag === undefined) {
-    const rawFlag = getRawSpaceSizeFlags().maxOldSpaceSize
-    // Check if flag was explicitly set (> 0).
-    if (rawFlag > 0) {
-      _maxOldSpaceSizeFlag = rawFlag
-    } else {
-      const match = /(?<=--max-old-space-size=)\d+/.exec(
-        NODE_OPTIONS ?? '',
-      )?.[0]
-      if (match) {
-        const parsed = Number(match)
-        // Regex guarantees numeric string, but validate defensively.
-        if (Number.isNaN(parsed) || parsed < 0) {
-          _maxOldSpaceSizeFlag = 0
-        } else {
-          _maxOldSpaceSizeFlag = parsed
-        }
-      }
-    }
-    // Only apply default if no value was set (null/undefined, not 0).
-    if (_maxOldSpaceSizeFlag == null) {
-      // Default value determined by available system memory.
-      _maxOldSpaceSizeFlag = Math.floor(
-        // Total system memory in MiB.
-        (os.totalmem() / 1_024 / 1_024) *
-          // Set 75% of total memory (safe buffer to avoid system pressure).
-          0.75,
-      )
-    }
-  }
-  return _maxOldSpaceSizeFlag
-}
-// Ensure export because dist/flags.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
-if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
-  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
+/**
+ * Reset cached flag values. Test-only — the V8 space-size flag getters memoize
+ * their first read of process.execArgv + process.env; tests need a way to clear
+ * the cache between assertions over different env values.
+ *
+ * @internal
+ */
+export function resetFlagCache(): void {
+  rawSpaceSizeFlags = undefined
+  maxOldSpaceSizeFlag = undefined
+  maxSemiSpaceSizeFlag = undefined
 }
 
-let _maxSemiSpaceSizeFlag: number | undefined
-export function getMaxSemiSpaceSizeFlag(): number {
-  if (_maxSemiSpaceSizeFlag === undefined) {
-    _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
-    if (!_maxSemiSpaceSizeFlag) {
-      const match = /(?<=--max-semi-space-size=)\d+/.exec(
-        NODE_OPTIONS ?? '',
-      )?.[0]
-      if (match) {
-        const parsed = Number(match)
-        // Regex guarantees numeric string, but validate defensively.
-        if (Number.isNaN(parsed) || parsed < 0) {
-          _maxSemiSpaceSizeFlag = 0
-        } else {
-          _maxSemiSpaceSizeFlag = parsed
-        }
-      } else {
-        _maxSemiSpaceSizeFlag = 0
-      }
-    }
-    if (!_maxSemiSpaceSizeFlag) {
-      const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
-      // Dynamically scale semi-space size based on max-old-space-size.
-      // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
-      if (maxOldSpaceSize <= 8_192) {
-        // Use tiered values for smaller heaps to avoid excessive young
-        // generation size. This helps stay within safe memory limits on
-        // constrained systems or CI.
-        if (maxOldSpaceSize <= 512) {
-          _maxSemiSpaceSizeFlag = 4
-        } else if (maxOldSpaceSize <= 1_024) {
-          _maxSemiSpaceSizeFlag = 8
-        } else if (maxOldSpaceSize <= 2_048) {
-          _maxSemiSpaceSizeFlag = 16
-        } else if (maxOldSpaceSize <= 4_096) {
-          _maxSemiSpaceSizeFlag = 32
-        } else {
-          _maxSemiSpaceSizeFlag = 64
-        }
-      } else {
-        // For large heaps (> 8 GiB), compute semi-space size using a log-scaled
-        // function.
-        //
-        // The idea:
-        //   - log2(16_384 MiB) = 14  → semi = 14 * 8 = 112
-        //   - log2(32_768 MiB) = 15  → semi = 15 * 8 = 120
-        //   - Scales gradually as heap increases, avoiding overly large jumps
-        //
-        // Each 1 MiB of semi-space adds ~3 MiB to the total young generation
-        // (V8 uses 3 spaces). So this keeps semi-space proportional, without
-        // over committing.
-        //
-        // Also note: V8 won’t benefit much from >256 MiB semi-space unless
-        // you’re allocating large short-lived objects very frequently
-        // (e.g. large arrays, buffers).
-        const log2OldSpace = Math.log2(maxOldSpaceSize)
-        const scaledSemiSpace = Math.floor(log2OldSpace) * 8
-        _maxSemiSpaceSizeFlag = scaledSemiSpace
-      }
-    }
-  }
-  return _maxSemiSpaceSizeFlag
+/**
+ * Narrow a parsed flag value to a string. Handler surfaces receive flag
+ * values as `unknown`; a `typeof` check keeps the narrowing honest instead
+ * of `String()`-coercing values whose stringification could be
+ * '[object Object]'. Empty strings fall back too, matching the
+ * `String(value || fallback)` shape this replaces.
+ */
+export function stringFlagValue(value: unknown, fallback = ''): string {
+  return typeof value === 'string' && value ? value : fallback
 }
+
 // Ensure export because dist/flags.js is required in src/constants.mts.
-// eslint-disable-next-line n/exports-style
 if (typeof exports === 'object' && exports !== null) {
-  // eslint-disable-next-line n/exports-style
   exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 }
 
-export const commonFlags: MeowFlags = {
+export const commonFlags = defineFlags({
   animateHeader: {
     type: 'boolean',
     default: true,
@@ -269,6 +286,12 @@ export const commonFlags: MeowFlags = {
     // Only show in root command in debug mode.
     hidden: true,
   },
+  quiet: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.',
+  },
   spinner: {
     type: 'boolean',
     default: true,
@@ -276,9 +299,9 @@ export const commonFlags: MeowFlags = {
     // Hidden to allow custom documenting of the negated `--no-spinner` variant.
     hidden: true,
   },
-}
+})
 
-export const outputFlags: MeowFlags = {
+export const outputFlags = defineFlags({
   json: {
     type: 'boolean',
     default: false,
@@ -291,17 +314,4 @@ export const outputFlags: MeowFlags = {
     description: 'Output as Markdown',
     shortFlag: 'm',
   },
-}
-
-export const validationFlags: MeowFlags = {
-  all: {
-    type: 'boolean',
-    default: false,
-    description: 'Include all issues',
-  },
-  strict: {
-    type: 'boolean',
-    default: false,
-    description: 'Exits with an error code if any matching issues are found',
-  },
-}
+})

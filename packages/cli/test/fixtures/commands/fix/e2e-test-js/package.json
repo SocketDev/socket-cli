@@ -1,7 +1,7 @@
 {
   "name": "e2e-test-js",
-  "private": true,
   "version": "1.0.0",
+  "private": true,
   "description": "E2E test fixture with known vulnerabilities",
   "main": "index.js",
   "dependencies": {

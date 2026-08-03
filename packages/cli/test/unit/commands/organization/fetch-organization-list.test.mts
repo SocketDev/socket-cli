@@ -1,27 +1,23 @@
 /**
- * Unit Tests: User Organizations List Fetcher
+ * Unit Tests: User Organizations List Fetcher.
  *
- * Purpose:
- * Tests the Socket SDK integration that fetches the list of organizations accessible to the
- * authenticated user. Validates organization data retrieval, SDK setup handling, API error
- * handling, custom configuration passing, and SDK instance reuse for the listOrganizations
- * API endpoint.
+ * Purpose: Tests the Socket SDK integration that fetches the list of
+ * organizations accessible to the authenticated user. Validates organization
+ * data retrieval, SDK setup handling, API error handling, custom configuration
+ * passing, and SDK instance reuse for the listOrganizations API endpoint.
  *
- * Test Coverage:
- * - Successful organization list fetching with multiple orgs
- * - SDK setup failure handling
- * - API call error handling with HTTP status codes
- * - Custom SDK options passing (API token, base URL)
- * - Provided SDK instance usage (bypassing SDK setup)
- * - Null prototype usage for security
+ * Test Coverage: - Successful organization list fetching with multiple orgs -
+ * SDK setup failure handling - API call error handling with HTTP status codes -
+ * Custom SDK options passing (API token, base URL) - Provided SDK instance
+ * usage (bypassing SDK setup) - Null prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock setupSdk and handleApiCall without actual API calls.
- * Tests verify proper CResult pattern usage and organization data structure validation.
+ * Testing Approach: Uses SDK test helpers to mock setupSdk and handleApiCall
+ * without actual API calls. Tests verify proper CResult pattern usage and
+ * organization data structure validation.
  *
- * Related Files:
- * - src/commands/organization/fetch-organization-list.mts - Organization list fetcher
- * - src/commands/organization/handle-organization-list.mts - Command handler
+ * Related Files: - src/commands/organization/fetch-organization-list.mts -
+ * Organization list fetcher -
+ * src/commands/organization/handle-organization-list.mts - Command handler.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -30,15 +26,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchOrganization } from '../../../../src/src/commands/../../../../src/commands/organization/fetch-organization-list.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchOrganization } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -114,16 +110,13 @@ describe('fetchOrganizationList', () => {
   })
 
   it('uses provided SDK instance', async () => {
-    const { handleApiCall } = await import(
-      '../../../../../src/commands/../../../../src/utils/socket/api.mts'
-    )
-    const { createSuccessResult } = await import(
-      '../../../../../src/commands/../../test/helpers/mocks.mts'
-    )
+    const { handleApiCall } =
+      await import('../../../../src/util/socket/api.mts')
+    const { createSuccessResult } = await import('../../../helpers/mocks.mts')
 
     const mockSdk = {
       listOrganizations: vi.fn().mockResolvedValue({}),
-    } as any
+    } as unknown
 
     vi.mocked(handleApiCall).mockResolvedValue(
       createSuccessResult({ organizations: {} }),

@@ -1,25 +1,19 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleOrganizationList } from './handle-organization-list.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'list'
 
@@ -33,20 +27,20 @@ export const cmdOrganizationList = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
-    },
-    help: (command, _config) => `
+    }),
+    help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -71,7 +65,7 @@ async function run(
 
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -97,8 +91,7 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('organizations')
     return
   }
 

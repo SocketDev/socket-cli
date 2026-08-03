@@ -2,26 +2,22 @@
  * Integration tests for `socket config unset` command.
  *
  * Tests clearing local CLI configuration values to restore default behavior.
- * This command removes a value from the config store, allowing defaults to be used.
+ * This command removes a value from the config store, allowing defaults to be
+ * used.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Key argument validation
- * - Dry-run behavior validation
- * - Error handling (missing arguments)
+ * Test Coverage: - Help text display and usage examples - Key argument
+ * validation - Dry-run behavior validation - Error handling (missing
+ * arguments)
  *
- * Use Cases:
- * - Restoring default values after testing custom settings
- * - Removing custom API endpoints or proxies
- * - Clearing organization settings
+ * Use Cases: - Restoring default values after testing custom settings -
+ * Removing custom API endpoints or proxies - Clearing organization settings.
  *
- * Note: This is the recommended way to restore defaults. Setting a value
- * to "undefined" using `config set` will NOT achieve the same result.
+ * Note: This is the recommended way to restore defaults. Setting a value to
+ * "undefined" using `config set` will NOT achieve the same result.
  *
- * Related Files:
- * - src/commands/config/cmd-config-unset.mts - Command definition
- * - src/commands/config/handle-config-unset.mts - Config clearing logic
- * - src/utils/config.mts - Config management utilities
+ * Related Files: - src/commands/config/cmd-config-unset.mts - Command
+ * definition - src/commands/config/handle-config-unset.mts - Config clearing
+ * logic - src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'
@@ -52,9 +48,12 @@ describe('socket config unset', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Removes a value from a config key, allowing the default value to be used
               for it instead.
+          
+              Keys:
           
               Keys:
           
@@ -120,14 +119,23 @@ describe('socket config unset', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config unset\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config unset\`, cwd: <redacted>
+
+
+        [DryRun]: Would unset config value for "test"
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Remove "test" from config
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

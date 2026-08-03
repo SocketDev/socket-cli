@@ -6,6 +6,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdScanGithub } from '../../../../src/commands/scan/cmd-scan-github.mts'
+
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
+import type * as SdkModule from '../../../../src/util/socket/sdk.mjs'
+import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -16,65 +22,78 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 // Mock environment functions.
-vi.mock('@socketsecurity/lib/env/socket-cli', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/env/socket-cli')>()
-  return {
-    ...actual,
-    getSocketCliGithubToken: vi.fn().mockReturnValue(''),
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/env/socket-cli'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof SocketCliModule>()
+    return {
+      ...actual,
+      getSocketCliGithubToken: vi.fn().mockReturnValue(''),
+    }
+  },
+)
 
 // Mock dependencies.
 const mockHandleCreateGithubScan = vi.hoisted(() => vi.fn())
 const mockOutputScanGithub = vi.hoisted(() => vi.fn())
-const mockSuggestOrgSlug = vi.hoisted(() => vi.fn().mockResolvedValue('test-org'))
+const mockSuggestOrgSlug = vi.hoisted(() =>
+  vi.fn().mockResolvedValue('test-org'),
+)
 const mockDetermineOrgSlug = vi.hoisted(() =>
   vi.fn().mockResolvedValue(['test-org', 'test-org']),
 )
 const mockHasDefaultApiToken = vi.hoisted(() => vi.fn().mockReturnValue(false))
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
-vi.mock('../../../../src/commands/scan/handle-create-github-scan.mts', () => ({
-  handleCreateGithubScan: mockHandleCreateGithubScan,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/handle-create-github-scan.mts'),
+  () => ({
+    handleCreateGithubScan: mockHandleCreateGithubScan,
+  }),
+)
 
-vi.mock('../../../../src/commands/scan/output-scan-github.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-scan-github.mts'), () => ({
   outputScanGithub: mockOutputScanGithub,
 }))
 
-vi.mock('../../../../src/commands/scan/suggest-org-slug.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/suggest-org-slug.mts'), () => ({
   suggestOrgSlug: mockSuggestOrgSlug,
 }))
 
-vi.mock('../../../../src/utils/socket/org-slug.mjs', () => ({
+vi.mock(import('../../../../src/util/socket/org-slug.mjs'), () => ({
   determineOrgSlug: mockDetermineOrgSlug,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mjs', async importOriginal => {
-  const actual = await importOriginal<typeof import('../../../../src/utils/socket/sdk.mjs')>()
+vi.mock(import('../../../../src/util/socket/sdk.mjs'), async importOriginal => {
+  const actual = await importOriginal<typeof SdkModule>()
   return {
     ...actual,
     hasDefaultApiToken: mockHasDefaultApiToken,
   }
 })
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
 
-// Import after mocks.
-const { cmdScanGithub } = await import(
-  '../../../../src/commands/scan/cmd-scan-github.mts'
-)
+const mockOutputDryRunUpload = vi.hoisted(() => vi.fn())
+vi.mock(import('../../../../src/util/dry-run/output.mts'), () => ({
+  outputDryRunUpload: mockOutputDryRunUpload,
+}))
 
 describe('cmd-scan-github', () => {
   beforeEach(() => {
@@ -84,7 +103,9 @@ describe('cmd-scan-github', () => {
 
   describe('command metadata', () => {
     it('should have correct description', () => {
-      expect(cmdScanGithub.description).toBe('Create a scan for given GitHub repo')
+      expect(cmdScanGithub.description).toBe(
+        'Create a scan for given GitHub repo',
+      )
     })
 
     it('should be hidden', () => {
@@ -106,8 +127,10 @@ describe('cmd-scan-github', () => {
       )
 
       expect(mockHandleCreateGithubScan).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
-        expect.stringContaining('DryRun'),
+      // Now that outputDryRunUpload is mocked, assert on it directly.
+      expect(mockOutputDryRunUpload).toHaveBeenCalledWith(
+        'GitHub scan',
+        expect.any(Object),
       )
     })
 
@@ -178,7 +201,13 @@ describe('cmd-scan-github', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--repos', 'repo1,repo2', '--no-interactive'],
+        [
+          '--github-token',
+          'test-token',
+          '--repos',
+          'repo1,repo2',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -195,12 +224,22 @@ describe('cmd-scan-github', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--org', 'custom-org', '--no-interactive'],
+        [
+          '--github-token',
+          'test-token',
+          '--org',
+          'custom-org',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
 
-      expect(mockDetermineOrgSlug).toHaveBeenCalledWith('custom-org', false, false)
+      expect(mockDetermineOrgSlug).toHaveBeenCalledWith(
+        'custom-org',
+        false,
+        false,
+      )
       expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
         expect.objectContaining({
           orgSlug: 'custom-org',
@@ -212,7 +251,13 @@ describe('cmd-scan-github', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--org-github', 'github-org', '--no-interactive'],
+        [
+          '--github-token',
+          'test-token',
+          '--org-github',
+          'github-org',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -228,7 +273,13 @@ describe('cmd-scan-github', () => {
       mockHasDefaultApiToken.mockReturnValueOnce(true)
 
       await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--github-api-url', 'https://custom.github.com', '--no-interactive'],
+        [
+          '--github-token',
+          'test-token',
+          '--github-api-url',
+          'https://custom.github.com',
+          '--no-interactive',
+        ],
         importMeta,
         context,
       )
@@ -236,81 +287,6 @@ describe('cmd-scan-github', () => {
       expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
         expect.objectContaining({
           githubApiUrl: 'https://custom.github.com',
-        }),
-      )
-    })
-
-    it('should use socket.json defaults for all flag', async () => {
-      mockReadOrDefaultSocketJson.mockReturnValueOnce({
-        defaults: {
-          scan: {
-            github: {
-              all: true,
-            },
-          },
-        },
-      })
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          all: true,
-        }),
-      )
-    })
-
-    it('should use socket.json defaults for repos', async () => {
-      mockReadOrDefaultSocketJson.mockReturnValueOnce({
-        defaults: {
-          scan: {
-            github: {
-              repos: 'default-repo1,default-repo2',
-            },
-          },
-        },
-      })
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          repos: 'default-repo1,default-repo2',
-        }),
-      )
-    })
-
-    it('should use socket.json defaults for orgGithub', async () => {
-      mockReadOrDefaultSocketJson.mockReturnValueOnce({
-        defaults: {
-          scan: {
-            github: {
-              orgGithub: 'default-github-org',
-            },
-          },
-        },
-      })
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanGithub.run(
-        ['--github-token', 'test-token', '--no-interactive'],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orgGithub: 'default-github-org',
         }),
       )
     })
@@ -343,41 +319,6 @@ describe('cmd-scan-github', () => {
       expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
         expect.objectContaining({
           outputKind: 'markdown',
-        }),
-      )
-    })
-
-    it('should override socket.json defaults with CLI flags', async () => {
-      mockReadOrDefaultSocketJson.mockReturnValueOnce({
-        defaults: {
-          scan: {
-            github: {
-              all: true,
-              repos: 'default-repo',
-              githubApiUrl: 'https://default.github.com',
-            },
-          },
-        },
-      })
-      mockHasDefaultApiToken.mockReturnValueOnce(true)
-
-      await cmdScanGithub.run(
-        [
-          '--github-token', 'test-token',
-          '--no-all',
-          '--repos', 'cli-repo',
-          '--github-api-url', 'https://cli.github.com',
-          '--no-interactive',
-        ],
-        importMeta,
-        context,
-      )
-
-      expect(mockHandleCreateGithubScan).toHaveBeenCalledWith(
-        expect.objectContaining({
-          all: false,
-          repos: 'cli-repo',
-          githubApiUrl: 'https://cli.github.com',
         }),
       )
     })

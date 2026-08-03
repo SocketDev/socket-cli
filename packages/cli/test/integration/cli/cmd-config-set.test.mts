@@ -1,32 +1,25 @@
 /**
  * Integration tests for `socket config set` command.
  *
- * Tests updating local CLI configuration values. This command provides a
- * simple key-value store interface for modifying config settings.
+ * Tests updating local CLI configuration values. This command provides a simple
+ * key-value store interface for modifying config settings.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Key and value argument validation
- * - Dry-run behavior validation
- * - Error handling (missing arguments)
+ * Test Coverage: - Help text display and usage examples - Key and value
+ * argument validation - Dry-run behavior validation - Error handling (missing
+ * arguments)
  *
- * Important Notes:
- * - No validation is performed on values (validation happens at API time)
- * - Use `socket config unset` to restore defaults
- * - Setting a key to "undefined" does NOT restore defaults
+ * Important Notes: - No validation is performed on values (validation happens
+ * at API time) - Use `socket config unset` to restore defaults - Setting a key
+ * to "undefined" does NOT restore defaults.
  *
- * Available Config Keys:
- * - apiBaseUrl: Socket API base URL
- * - apiProxy: Proxy for API requests
- * - apiToken: Authentication token
- * - defaultOrg: Default organization slug
- * - enforcedOrgs: Organizations with enforced policies
- * - skipAskToPersistDefaultOrg: Skip org persistence prompt
+ * Available Config Keys: - apiBaseUrl: Socket API base URL - apiProxy: Proxy
+ * for API requests - apiToken: Authentication token - defaultOrg: Default
+ * organization slug - enforcedOrgs: Organizations with enforced policies -
+ * skipAskToPersistDefaultOrg: Skip org persistence prompt.
  *
- * Related Files:
- * - src/commands/config/cmd-config-set.mts - Command definition
- * - src/commands/config/handle-config-set.mts - Config update logic
- * - src/utils/config.mts - Config management utilities
+ * Related Files: - src/commands/config/cmd-config-set.mts - Command definition
+ * - src/commands/config/handle-config-set.mts - Config update logic -
+ * src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'
@@ -57,6 +50,7 @@ describe('socket config get', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               This is a crude way of updating the local configuration for this CLI tool.
           
@@ -66,6 +60,8 @@ describe('socket config get', async () => {
           
               Note: use \`socket config unset\` to restore to defaults. Setting a key
               to \`undefined\` will not allow default values to be set on it.
+          
+              Keys:
           
               Keys:
           
@@ -133,14 +129,23 @@ describe('socket config get', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config set\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config set\`, cwd: <redacted>
+
+
+        [DryRun]: Would set config value for "test"
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Set "test" to: xyz
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

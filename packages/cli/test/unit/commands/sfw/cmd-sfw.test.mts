@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdSfw } from '../../../../src/commands/sfw/cmd-sfw.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -10,29 +12,29 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock spawnSfw.
 const mockSpawnSfw = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/dlx/spawn.mts', () => ({
+vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
   spawnSfw: mockSpawnSfw,
 }))
-
-// Import after mocks.
-const { cmdSfw } = await import('../../../../src/commands/sfw/cmd-sfw.mts')
 
 describe('cmd-sfw', () => {
   const mockChildProcess = {
     on: vi.fn(),
-    pid: 12345,
+    pid: 12_345,
   }
 
-  const createMockSpawnResult = (exitCode = 0, signal?: string) => ({
+  const createMockSpawnResult = (
+    exitCode = 0,
+    signal?: string | undefined,
+  ) => ({
     spawnPromise: Promise.resolve({
-      code: signal ? null : exitCode,
+      code: signal ? undefined : exitCode,
       signal,
       success: exitCode === 0 && !signal,
     }).then(result => Object.assign(result, { process: mockChildProcess })),
@@ -64,10 +66,9 @@ describe('cmd-sfw', () => {
 
       await cmdSfw.run(['npm', 'install', 'lodash'], importMeta, context)
 
-      expect(mockSpawnSfw).toHaveBeenCalledWith(
-        ['npm', 'install', 'lodash'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npm', 'install', 'lodash'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should handle pip install command', async () => {
@@ -77,25 +78,30 @@ describe('cmd-sfw', () => {
 
       expect(mockSpawnSfw).toHaveBeenCalledWith(
         ['pip', 'install', 'requests'],
-        { stdio: 'inherit' },
+        {
+          stdio: 'inherit',
+        },
       )
     })
 
-    it('should handle npx command', async () => {
+    it('should handle pnpm exec command', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
       await cmdSfw.run(['npx', 'cowsay', 'hello'], importMeta, context)
 
-      expect(mockSpawnSfw).toHaveBeenCalledWith(
-        ['npx', 'cowsay', 'hello'],
-        { stdio: 'inherit' },
-      )
+      expect(mockSpawnSfw).toHaveBeenCalledWith(['npx', 'cowsay', 'hello'], {
+        stdio: 'inherit',
+      })
     })
 
     it('should set exitCode on non-zero exit', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(1))
 
-      await cmdSfw.run(['npm', 'install', 'nonexistent-pkg'], importMeta, context)
+      await cmdSfw.run(
+        ['npm', 'install', 'nonexistent-pkg'],
+        importMeta,
+        context,
+      )
 
       expect(process.exitCode).toBe(1)
     })
@@ -125,11 +131,7 @@ describe('cmd-sfw', () => {
     it('should filter Socket CLI flags', async () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
-      await cmdSfw.run(
-        ['--dry-run', 'npm', 'install'],
-        importMeta,
-        context,
-      )
+      await cmdSfw.run(['--dry-run', 'npm', 'install'], importMeta, context)
 
       // Dry run should bail early.
       expect(mockSpawnSfw).not.toHaveBeenCalled()
@@ -139,14 +141,75 @@ describe('cmd-sfw', () => {
       mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
 
       // Test various package managers.
-      for (const pm of ['npm', 'pnpm', 'yarn', 'pip', 'cargo', 'go', 'gem', 'bundler', 'nuget', 'uv']) {
+      for (const pm of [
+        'npm',
+        'pnpm',
+        'yarn',
+        'pip',
+        'cargo',
+        'go',
+        'gem',
+        'bundler',
+        'nuget',
+        'uv',
+      ]) {
         vi.clearAllMocks()
         await cmdSfw.run([pm, 'install'], importMeta, context)
-        expect(mockSpawnSfw).toHaveBeenCalledWith(
-          [pm, 'install'],
-          { stdio: 'inherit' },
-        )
+        expect(mockSpawnSfw).toHaveBeenCalledWith([pm, 'install'], {
+          stdio: 'inherit',
+        })
       }
+    })
+
+    it('shows wrapper help when --help is passed and skips spawn', async () => {
+      mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0))
+
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
+
+      try {
+        await cmdSfw.run(['--help'], importMeta, context).catch(() => undefined)
+        expect(mockSpawnSfw).not.toHaveBeenCalled()
+      } finally {
+        exitSpy.mockRestore()
+      }
+    })
+
+    it('forwards spawn signal via process.kill when present', async () => {
+      mockSpawnSfw.mockResolvedValue(createMockSpawnResult(0, 'SIGTERM'))
+      const killSpy = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => true) as unknown)
+
+      try {
+        await cmdSfw.run(['npm', 'install'], importMeta, context)
+        expect(killSpy).toHaveBeenCalledWith(process.pid, 'SIGTERM')
+      } finally {
+        killSpy.mockRestore()
+      }
+    })
+
+    it('does nothing when both code and signal are null', async () => {
+      // Construct a result with both code: null and signal: null (rare).
+      mockSpawnSfw.mockResolvedValue({
+        spawnPromise: Promise.resolve({
+          code: undefined,
+          signal: undefined,
+          success: false,
+        }),
+      })
+      process.exitCode = undefined
+
+      const killSpy = vi
+        .spyOn(process, 'kill')
+        .mockImplementation((() => true) as unknown)
+      killSpy.mockClear()
+
+      await cmdSfw.run(['npm', 'install'], importMeta, context)
+
+      expect(killSpy).not.toHaveBeenCalled()
+      killSpy.mockRestore()
     })
   })
 })

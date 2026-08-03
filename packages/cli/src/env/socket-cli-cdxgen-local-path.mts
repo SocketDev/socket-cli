@@ -1,6 +1,6 @@
 /**
- * Local path override for cdxgen binary.
- * Useful for local development and testing with custom cdxgen builds.
+ * Local path override for cdxgen binary. Useful for local development and
+ * testing with custom cdxgen builds.
  */
 
 import { env } from 'node:process'

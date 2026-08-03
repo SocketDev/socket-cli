@@ -6,6 +6,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdConfigList } from '../../../../src/commands/config/cmd-config-list.mts'
+
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -16,24 +20,25 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 // Mock outputConfigList.
 const mockOutputConfigList = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/config/output-config-list.mts', () => ({
-  outputConfigList: mockOutputConfigList,
-}))
-
-// Import after mocks.
-const { cmdConfigList } = await import(
-  '../../../../src/commands/config/cmd-config-list.mts'
+vi.mock(
+  import('../../../../src/commands/config/output-config-list.mts'),
+  () => ({
+    outputConfigList: mockOutputConfigList,
+  }),
 )
 
 describe('cmd-config-list', () => {
@@ -62,9 +67,17 @@ describe('cmd-config-list', () => {
       await cmdConfigList.run(['--dry-run'], importMeta, context)
 
       expect(mockOutputConfigList).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
+    })
+
+    it('shows "yes" for showFullTokens in dry-run when --full is set', async () => {
+      await cmdConfigList.run(['--dry-run', '--full'], importMeta, context)
+
+      expect(mockOutputConfigList).not.toHaveBeenCalled()
+      const errors = mockLogger.error.mock.calls.flat().join(' ')
+      expect(errors).toContain('yes')
     })
 
     it('should call outputConfigList with default options', async () => {

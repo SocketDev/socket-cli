@@ -1,30 +1,23 @@
 /**
- * Unit Tests: GHSA Fix Tracker Persistence Module
+ * Unit Tests: GHSA Fix Tracker Persistence Module.
  *
- * Purpose:
- * Tests the GHSA fix tracker system that maintains a persistent record of fixed GitHub Security
- * Advisories in .socket/fixed-ghsas.json. Validates tracker loading, saving, querying, and
- * updating operations to ensure the fix command can track which vulnerabilities have already
- * been addressed.
+ * Purpose: Tests the GHSA fix tracker system that maintains a persistent record
+ * of fixed GitHub Security Advisories in .socket/fixed-ghsas.json. Validates
+ * tracker loading, saving, querying, and updating operations to ensure the fix
+ * command can track which vulnerabilities have already been addressed.
  *
- * Test Coverage:
- * - Loading existing tracker files and creating new trackers on first run
- * - Saving tracker data with proper directory creation
- * - Marking GHSAs as fixed with automatic deduplication
- * - Querying fixed GHSA status
- * - Retrieving all fixed GHSA records
- * - Error handling for file system failures
- * - Tracker record sorting by timestamp
+ * Test Coverage: - Checking whether a tracked PID is still alive - Loading
+ * existing tracker files and creating new trackers on first run - Saving
+ * tracker data with proper directory creation.
  *
- * Testing Approach:
- * Mocks @socketsecurity/lib/fs functions (readJson, writeJson, safeMkdir) to test tracker
- * operations without actual file I/O. Tests verify correct file paths, data structures,
- * and error recovery behavior.
+ * Testing Approach: Mocks @socketsecurity/lib/fs functions (readJson,
+ * writeJson, safeMkdir) to test tracker operations without actual file I/O.
+ * Tests verify correct file paths, data structures, and error recovery
+ * behavior.
  *
- * Related Files:
- * - src/commands/fix/ghsa-tracker.mts - GHSA tracker persistence module
- * - src/commands/fix/handle-fix.mts - Main fix command using tracker
- * - src/commands/fix/pull-request.mts - PR creation using tracker data
+ * Related Files: - src/commands/fix/ghsa-tracker.mts - GHSA tracker persistence
+ * module - src/commands/fix/handle-fix.mts - Main fix command using tracker -
+ * src/commands/fix/pull-request.mts - PR creation using tracker data.
  */
 
 import path from 'node:path'
@@ -32,10 +25,8 @@ import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  getFixedGhsas,
-  isGhsaFixed,
+  isPidAlive,
   loadGhsaTracker,
-  markGhsaFixed,
   saveGhsaTracker,
 } from '../../../../src/commands/fix/ghsa-tracker.mts'
 
@@ -46,26 +37,55 @@ const mockReadJson = vi.hoisted(() => vi.fn())
 const mockSafeMkdir = vi.hoisted(() => vi.fn())
 const mockWriteJson = vi.hoisted(() => vi.fn())
 
-vi.mock('node:fs', async () => {
-  const actual = await vi.importActual<typeof import('node:fs')>('node:fs')
-  return {
-    ...actual,
-    promises: {
-      ...actual.promises,
-      mkdir: vi.fn(),
-      readFile: vi.fn(),
-      writeFile: vi.fn(),
-    },
-  }
-})
-
-vi.mock('@socketsecurity/lib/fs', () => ({
+vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJson: mockReadJson,
+}))
+vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeMkdir: mockSafeMkdir,
+}))
+vi.mock(import('@socketsecurity/lib-stable/fs/write-json'), () => ({
   writeJson: mockWriteJson,
 }))
 
 describe('ghsa-tracker', () => {
+  describe('isPidAlive', () => {
+    it('returns true for the current process', () => {
+      // process.kill(self, 0) is a no-op that succeeds when the process exists.
+      expect(isPidAlive(process.pid)).toBe(true)
+    })
+
+    it('returns false for a PID that does not exist', () => {
+      // PID 0 / very large PID throws ESRCH, no such process.
+      expect(isPidAlive(2 ** 22)).toBe(false)
+    })
+
+    it('returns true when process.kill throws EPERM (alive but no permission)', () => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+        const e = new Error('Operation not permitted') as NodeJS.ErrnoException
+        e.code = 'EPERM'
+        throw e
+      })
+      try {
+        expect(isPidAlive(1)).toBe(true)
+      } finally {
+        killSpy.mockRestore()
+      }
+    })
+
+    it('returns false when process.kill throws non-EPERM (e.g. EINVAL)', () => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => {
+        const e = new Error('Invalid') as NodeJS.ErrnoException
+        e.code = 'EINVAL'
+        throw e
+      })
+      try {
+        expect(isPidAlive(1)).toBe(false)
+      } finally {
+        killSpy.mockRestore()
+      }
+    })
+  })
+
   const mockCwd = '/test/repo'
   const trackerPath = path.join(mockCwd, '.socket/fixed-ghsas.json')
 
@@ -75,7 +95,8 @@ describe('ghsa-tracker', () => {
 
   describe('loadGhsaTracker', () => {
     it('loads existing tracker file', async () => {
-      const { readJson } = await import('@socketsecurity/lib/fs')
+      const { readJson } =
+        await import('@socketsecurity/lib-stable/fs/read-json')
       const mockTracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -108,7 +129,7 @@ describe('ghsa-tracker', () => {
     })
 
     it('handles null tracker data', async () => {
-      mockReadJson.mockResolvedValue(null)
+      mockReadJson.mockResolvedValue(undefined)
 
       const result = await loadGhsaTracker(mockCwd)
 
@@ -121,7 +142,9 @@ describe('ghsa-tracker', () => {
 
   describe('saveGhsaTracker', () => {
     it('saves tracker to file', async () => {
-      const { safeMkdir, writeJson } = await import('@socketsecurity/lib/fs')
+      const { safeMkdir } = await import('@socketsecurity/lib-stable/fs/safe')
+      const { writeJson } =
+        await import('@socketsecurity/lib-stable/fs/write-json')
       const tracker: GhsaTracker = {
         version: 1,
         fixed: [
@@ -142,184 +165,6 @@ describe('ghsa-tracker', () => {
       expect(writeJson).toHaveBeenCalledWith(trackerPath, tracker, {
         spaces: 2,
       })
-    })
-  })
-
-  describe('markGhsaFixed', () => {
-    it('adds new GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
-      const existingTracker: GhsaTracker = {
-        version: 1,
-        fixed: [],
-      }
-
-      mockReadJson.mockResolvedValue(existingTracker)
-
-      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123)
-
-      expect(writeJson).toHaveBeenCalledWith(
-        trackerPath,
-        expect.objectContaining({
-          version: 1,
-          fixed: expect.arrayContaining([
-            expect.objectContaining({
-              ghsaId: 'GHSA-1234-5678-90ab',
-              prNumber: 123,
-              branch: 'socket/fix/GHSA-1234-5678-90ab',
-            }),
-          ]),
-        }),
-        { spaces: 2 },
-      )
-    })
-
-    it('replaces existing GHSA fix record', async () => {
-      const { writeJson } = await import('@socketsecurity/lib/fs')
-      const existingTracker: GhsaTracker = {
-        version: 1,
-        fixed: [
-          {
-            ghsaId: 'GHSA-1234-5678-90ab',
-            fixedAt: '2025-01-01T00:00:00Z',
-            prNumber: 100,
-            branch: 'socket/fix/GHSA-1234-5678-90ab',
-          },
-        ],
-      }
-
-      mockReadJson.mockResolvedValue(existingTracker)
-
-      await markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 200)
-
-      expect(writeJson).toHaveBeenCalledWith(
-        trackerPath,
-        expect.objectContaining({
-          version: 1,
-          fixed: [
-            expect.objectContaining({
-              ghsaId: 'GHSA-1234-5678-90ab',
-              prNumber: 200,
-            }),
-          ],
-        }),
-        { spaces: 2 },
-      )
-
-      // Verify only one record exists (old one was removed).
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
-      expect(savedTracker.fixed).toHaveLength(1)
-    })
-
-    it('sorts records by fixedAt descending', async () => {
-      const existingTracker: GhsaTracker = {
-        version: 1,
-        fixed: [
-          {
-            ghsaId: 'GHSA-old',
-            fixedAt: '2025-01-01T00:00:00Z',
-            prNumber: 100,
-            branch: 'socket/fix/GHSA-old',
-          },
-        ],
-      }
-
-      mockReadJson.mockResolvedValue(existingTracker)
-
-      // Add a new record with a later timestamp.
-      await markGhsaFixed(mockCwd, 'GHSA-new', 200)
-
-      const savedTracker = mockWriteJson.mock.calls[0]![1] as GhsaTracker
-      expect(savedTracker.fixed[0]!.ghsaId).toBe('GHSA-new')
-      expect(savedTracker.fixed[1]!.ghsaId).toBe('GHSA-old')
-    })
-
-    it('handles errors gracefully', async () => {
-      mockReadJson.mockRejectedValue(new Error('Permission denied'))
-
-      // Should not throw.
-      await expect(
-        markGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab', 123),
-      ).resolves.toBeUndefined()
-    })
-  })
-
-  describe('isGhsaFixed', () => {
-    it('returns true for fixed GHSA', async () => {
-      const tracker: GhsaTracker = {
-        version: 1,
-        fixed: [
-          {
-            ghsaId: 'GHSA-1234-5678-90ab',
-            fixedAt: '2025-01-01T00:00:00Z',
-            prNumber: 123,
-            branch: 'socket/fix/GHSA-1234-5678-90ab',
-          },
-        ],
-      }
-
-      mockReadJson.mockResolvedValue(tracker)
-
-      const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
-
-      expect(result).toBe(true)
-    })
-
-    it('returns false for unfixed GHSA', async () => {
-      const tracker: GhsaTracker = {
-        version: 1,
-        fixed: [],
-      }
-
-      mockReadJson.mockResolvedValue(tracker)
-
-      const result = await isGhsaFixed(mockCwd, 'GHSA-9999-9999-9999')
-
-      expect(result).toBe(false)
-    })
-
-    it('returns false on error', async () => {
-      mockReadJson.mockRejectedValue(new Error('Read error'))
-
-      const result = await isGhsaFixed(mockCwd, 'GHSA-1234-5678-90ab')
-
-      expect(result).toBe(false)
-    })
-  })
-
-  describe('getFixedGhsas', () => {
-    it('returns all fixed GHSA records', async () => {
-      const tracker: GhsaTracker = {
-        version: 1,
-        fixed: [
-          {
-            ghsaId: 'GHSA-1111-1111-1111',
-            fixedAt: '2025-01-01T00:00:00Z',
-            prNumber: 100,
-            branch: 'socket/fix/GHSA-1111-1111-1111',
-          },
-          {
-            ghsaId: 'GHSA-2222-2222-2222',
-            fixedAt: '2025-01-02T00:00:00Z',
-            prNumber: 200,
-            branch: 'socket/fix/GHSA-2222-2222-2222',
-          },
-        ],
-      }
-
-      mockReadJson.mockResolvedValue(tracker)
-
-      const result = await getFixedGhsas(mockCwd)
-
-      expect(result).toEqual(tracker.fixed)
-      expect(result).toHaveLength(2)
-    })
-
-    it('returns empty array on error', async () => {
-      mockReadJson.mockRejectedValue(new Error('Read error'))
-
-      const result = await getFixedGhsas(mockCwd)
-
-      expect(result).toEqual([])
     })
   })
 })

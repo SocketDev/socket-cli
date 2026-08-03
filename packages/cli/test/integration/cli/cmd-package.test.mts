@@ -5,18 +5,21 @@
  * package-specific security and metadata operations.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Package spec parsing (npm/lodash@4.17.21)
  * - Subcommand routing
  *
  * Available Subcommands:
- * - score: Get package security score
- * - shallow: Get shallow package analysis
+ *
+ * - Score: Get package security score
+ * - Shallow: Get shallow package analysis
  *
  * Related Files:
- * - src/commands/package/cmd-package.mts - Root command definition
- * - src/commands/package/cmd-package-*.mts - Subcommands
+ *
+ * - Src/commands/package/cmd-package.mts - Root command definition
+ * - Src/commands/package/cmd-package-*.mts - Subcommands
  */
 
 import { describe, expect } from 'vitest'
@@ -51,7 +54,8 @@ describe('socket package', async () => {
             Options
           
               --no-banner                 Hide the Socket banner
-              --no-spinner                Hide the console spinner"
+              --no-spinner                Hide the console spinner
+              --quiet                     Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown."
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -75,16 +79,15 @@ describe('socket package', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package\`, cwd: <redacted>
+        [DryRun]: No-op, call a sub-command; ok"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

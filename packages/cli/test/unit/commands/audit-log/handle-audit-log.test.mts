@@ -2,28 +2,24 @@
  * Unit tests for audit log command handler.
  *
  * Tests the main handler logic that orchestrates audit log fetching and output.
- * Validates integration between fetch and output layers with various configurations.
+ * Validates integration between fetch and output layers with various
+ * configurations.
  *
- * Test Coverage:
- * - Successful audit log fetch and output
- * - Pagination handling (different page numbers and perPage values)
- * - Different log types (security, access, all)
- * - Multiple output kinds (json, text, markdown)
- * - Fetch error pass-through to output layer
- * - Empty audit log handling
- * - Organization slug parameter passing
+ * Test Coverage: - Successful audit log fetch and output - Pagination handling
+ * (different page numbers and perPage values) - Different log types (security,
+ * access, all) - Multiple output kinds, json, text, markdown - Fetch error
+ * pass-through to output layer - Empty audit log handling - Organization slug
+ * parameter passing.
  *
- * Testing Approach:
- * - Mock fetchAuditLog to control API responses
- * - Mock outputAuditLog to verify output layer calls
- * - Mock logger (getDefaultLogger) for error handling verification
- * - Use createSuccessResult/createErrorResult helpers for CResult pattern
- * - Verify correct parameter passing between layers
+ * Testing Approach: - Mock fetchAuditLog to control API responses - Mock
+ * outputAuditLog to verify output layer calls - Mock logger (getDefaultLogger)
+ * for error handling verification - Use createSuccessResult/createErrorResult
+ * helpers for CResult pattern - Verify correct parameter passing between
+ * layers.
  *
- * Related Files:
- * - src/commands/audit-log/handle-audit-log.mts - Implementation
- * - src/commands/audit-log/fetch-audit-log.mts - Fetcher
- * - src/commands/audit-log/output-audit-log.mts - Output formatter
+ * Related Files: - src/commands/audit-log/handle-audit-log.mts - Implementation
+ * - src/commands/audit-log/fetch-audit-log.mts - Fetcher -
+ * src/commands/audit-log/output-audit-log.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -38,20 +34,26 @@ import {
 const mockFetchAuditLog = vi.hoisted(() => vi.fn())
 const mockOutputAuditLog = vi.hoisted(() => vi.fn())
 const mockGetDefaultLogger = vi.hoisted(() => vi.fn())
-const _mockLog = vi.hoisted(() => vi.fn())
-const _mockInfo = vi.hoisted(() => vi.fn())
-const _mockWarn = vi.hoisted(() => vi.fn())
-const _mockError = vi.hoisted(() => vi.fn())
-const _mockFail = vi.hoisted(() => vi.fn())
-const _mockSuccess = vi.hoisted(() => vi.fn())
+const mockLog = vi.hoisted(() => vi.fn())
+const mockInfo = vi.hoisted(() => vi.fn())
+const mockWarn = vi.hoisted(() => vi.fn())
+const mockError = vi.hoisted(() => vi.fn())
+const mockFail = vi.hoisted(() => vi.fn())
+const mockSuccess = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/audit-log/fetch-audit-log.mts', () => ({
-  fetchAuditLog: mockFetchAuditLog,
-}))
-vi.mock('../../../../src/commands/audit-log/output-audit-log.mts', () => ({
-  outputAuditLog: mockOutputAuditLog,
-}))
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(
+  import('../../../../src/commands/audit-log/fetch-audit-log.mts'),
+  () => ({
+    fetchAuditLog: mockFetchAuditLog,
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/audit-log/output-audit-log.mts'),
+  () => ({
+    outputAuditLog: mockOutputAuditLog,
+  }),
+)
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: mockGetDefaultLogger,
 }))
 
@@ -61,12 +63,10 @@ describe('handleAuditLog', () => {
   })
 
   it('fetches and outputs audit logs', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
-    const { outputAuditLog } = await import(
-      '../../../../src/commands/audit-log/output-audit-log.mts'
-    )
+    const { fetchAuditLog } =
+      await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
+    const { outputAuditLog } =
+      await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([
       { id: 1, type: 'security', message: 'Security event' },
@@ -104,12 +104,10 @@ describe('handleAuditLog', () => {
   })
 
   it('handles pagination', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
-    const { outputAuditLog } = await import(
-      '../../../../src/commands/audit-log/output-audit-log.mts'
-    )
+    const { fetchAuditLog } =
+      await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
+    const { outputAuditLog } =
+      await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([])
     mockFetchAuditLog.mockResolvedValue(mockLogs)
@@ -144,12 +142,10 @@ describe('handleAuditLog', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
-    const { outputAuditLog } = await import(
-      '../../../../src/commands/audit-log/output-audit-log.mts'
-    )
+    const { fetchAuditLog } =
+      await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
+    const { outputAuditLog } =
+      await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([
       { id: 1, type: 'config', message: 'Config change' },
@@ -187,9 +183,8 @@ describe('handleAuditLog', () => {
 
   it('handles empty audit logs', async () => {
     await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
-    const { outputAuditLog } = await import(
-      '../../../../src/commands/audit-log/output-audit-log.mts'
-    )
+    const { outputAuditLog } =
+      await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
     const mockLogs = createSuccessResult([])
     mockFetchAuditLog.mockResolvedValue(mockLogs)
@@ -207,12 +202,11 @@ describe('handleAuditLog', () => {
 
   it('handles fetch errors', async () => {
     await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
-    const { outputAuditLog } = await import(
-      '../../../../src/commands/audit-log/output-audit-log.mts'
-    )
+    const { outputAuditLog } =
+      await import('../../../../src/commands/audit-log/output-audit-log.mts')
 
-    const mockError = createErrorResult('API error')
-    mockFetchAuditLog.mockResolvedValue(mockError)
+    const mockFetchErrorResult = createErrorResult('API error')
+    mockFetchAuditLog.mockResolvedValue(mockFetchErrorResult)
 
     await handleAuditLog({
       logType: 'security',
@@ -222,20 +216,22 @@ describe('handleAuditLog', () => {
       perPage: 10,
     })
 
-    expect(outputAuditLog).toHaveBeenCalledWith(mockError, expect.any(Object))
+    expect(outputAuditLog).toHaveBeenCalledWith(
+      mockFetchErrorResult,
+      expect.any(Object),
+    )
   })
 
   it('handles different log types', async () => {
-    const { fetchAuditLog } = await import(
-      '../../../../src/commands/audit-log/fetch-audit-log.mts'
-    )
+    const { fetchAuditLog } =
+      await import('../../../../src/commands/audit-log/fetch-audit-log.mts')
 
     const logTypes = ['all', 'security', 'access', 'config', 'data']
 
-    for (const logType of logTypes) {
+    for (let i = 0, { length } = logTypes; i < length; i += 1) {
+      const logType = logTypes[i]
       mockFetchAuditLog.mockResolvedValue(createSuccessResult([]))
 
-      // eslint-disable-next-line no-await-in-loop
       await handleAuditLog({
         logType,
         orgSlug: 'test-org',

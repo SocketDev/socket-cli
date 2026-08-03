@@ -1,27 +1,22 @@
 /**
  * Integration tests for Socket CLI root command.
  *
- * Tests the main entry point (`socket`) behavior including help output,
- * command discovery, and graceful handling of unrecognized input.
+ * Tests the main entry point (`socket`) behavior including help output, command
+ * discovery, and graceful handling of unrecognized input.
  *
- * Test Coverage:
- * - Help text display (--help flag)
- * - Banner output format and content
- * - Command list structure and categories
- * - Dry-run behavior with package specs
- * - Exit codes for valid invocations
+ * Test Coverage: - Help text display (--help flag) - Banner output format and
+ * content - Command list structure and categories - Dry-run behavior with
+ * package specs - Exit codes for valid invocations.
  *
- * Command Categories Validated:
- * - Main commands (login, scan, fix, optimize, cdxgen, ci)
- * - Socket API commands (analytics, audit-log, organization, package, repository, scan, threat-feed)
- * - Local tools (manifest, npm, npx, raw-npm, raw-npx)
- * - CLI configuration (config, install, login, logout, uninstall, whoami, wrapper)
- * - Global flags (--compact-header, --config, --dry-run, --help, --version, etc.)
+ * Command Categories Validated: - Main commands (login, scan, fix, optimize,
+ * cdxgen, ci) - Socket API commands (analytics, audit-log, organization,
+ * package, repository, scan, threat-feed) - Local tools (manifest, npm, npx,
+ * raw-npm, raw-npx) - CLI configuration (config, install, login, logout,
+ * uninstall, whoami, wrapper) - Global flags (--compact-header, --config,
+ * --dry-run, --help, --version, etc.)
  *
- * Related Files:
- * - src/cli.mts - Main CLI entry point
- * - src/constants/cli.mts - CLI flag constants
- * - test/utils.mts - Test utilities (cmdit, spawnSocketCli)
+ * Related Files: - src/cli.mts - Main CLI entry point - src/constants/cli.mts -
+ * CLI flag constants - test/utils.mts - Test utilities (cmdit, spawnSocketCli)
  */
 
 import { describe, expect } from 'vitest'
@@ -54,10 +49,10 @@ describe('socket root command', async () => {
               socket login                Setup Socket CLI with an API token and defaults
               socket scan create          Create a new Socket scan and report
               socket npm/lodash@4.17.21   Request the Socket score of a package
-              socket fix                  Fix CVEs in dependencies
-              socket optimize             Optimize dependencies with @socketregistry overrides
-              socket cdxgen               Run cdxgen for SBOM generation
-              socket ci                   Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
+              cdxgen                      Run cdxgen for SBOM generation
+              ci                          Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
+              fix                         Fix CVEs in dependencies
+              optimize                    Optimize dependencies with @socketregistry overrides
           
             Socket API
               analytics                   Look up analytics data
@@ -70,19 +65,22 @@ describe('socket root command', async () => {
           
             Local tools
               manifest                    Generate a dependency manifest for certain ecosystems
-              npm                         Wraps npm with Socket security scanning
-              npx                         Wraps npx with Socket security scanning
+              npm                         Run npm with Socket Firewall security
+              npx                         Run pnpm exec with Socket Firewall security
+              pycli                       Run Socket Python CLI (socketsecurity) directly
               raw-npm                     Run npm without the Socket wrapper
-              raw-npx                     Run npx without the Socket wrapper
+              raw-npx                     Run pnpm exec without the Socket wrapper
+              sfw                         Run Socket Firewall directly (alias: firewall)
           
             CLI configuration
               config                      Manage Socket CLI configuration
               install                     Install Socket CLI tab completion
-              login                       Socket API login and CLI setup
+              login                       Setup Socket CLI with an API token and defaults
               logout                      Socket API logout
               uninstall                   Uninstall Socket CLI tab completion
               whoami                      Check Socket CLI authentication status
-              wrapper                     Enable or disable the Socket npm/npx wrapper
+              wrapper                     Enable or disable the Socket npm/pnpm exec wrapper
+          
           
             Options
               Note: All commands have these flags even when not displayed in their help
@@ -94,6 +92,7 @@ describe('socket root command', async () => {
               --help-full                 Show full help including environment variables
               --no-banner                 Hide the Socket banner
               --no-spinner                Hide the console spinner
+              --quiet                     Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
               --version                   Print the app version
           
             Environment variables [more\\u2026]
@@ -117,18 +116,14 @@ describe('socket root command', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket\`, cwd: <redacted>"
+           \\xd7 Unknown command "mootools".
+        i Tip: Use \`socket pycli\` to invoke the Python CLI directly."
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'unknown command should exit with code 2').toBe(2)
     },
   )
 })

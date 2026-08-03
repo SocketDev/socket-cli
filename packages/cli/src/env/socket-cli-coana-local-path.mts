@@ -1,6 +1,6 @@
 /**
- * SOCKET_CLI_COANA_LOCAL_PATH environment variable snapshot.
- * Overrides the default Coana CLI path for local development.
+ * SOCKET_CLI_COANA_LOCAL_PATH environment variable snapshot. Overrides the
+ * default Coana CLI path for local development.
  */
 
 import { env } from 'node:process'

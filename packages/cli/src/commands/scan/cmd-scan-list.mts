@@ -1,25 +1,25 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleListScans } from './handle-list-scans.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { webLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type {
-  CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'list'
 
@@ -33,16 +33,16 @@ export const cmdScanList: CliSubcommand = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       branch: {
@@ -97,8 +97,8 @@ async function run(
         default: '',
         description: 'Until time - as a unix timestamp',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [REPO [BRANCH]]
 
@@ -110,7 +110,7 @@ async function run(
     \`--branch\` to filter by branch across all repos).
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -127,20 +127,20 @@ async function run(
 
   const { branch: branchFlag, json, markdown, org: orgFlag } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   const noLegacy = !cli.flags['repo']
 
   const [repo = '', branchArg = ''] = cli.input
 
-  const branch = String(branchFlag || branchArg || '')
+  const branch = branchFlag || branchArg || ''
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -185,32 +185,43 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedPage = Number(cli.flags['page'] || 1)
   const validatedPerPage = Number(cli.flags['perPage'] || 30)
 
+  if (dryRun) {
+    outputDryRunFetch('scans', {
+      organization: orgSlug,
+      repo: repo || undefined,
+      branch: branch || undefined,
+      sort: cli.flags['sort'] || 'created_at',
+      direction: cli.flags['direction'] || 'desc',
+      page: validatedPage,
+      perPage: validatedPerPage,
+    })
+    return
+  }
+
   if (Number.isNaN(validatedPage) || validatedPage < 1) {
-    throw new Error(`Invalid value for --page: ${cli.flags['page']}`)
+    throw new InputError(
+      `--page must be a positive integer (saw: "${cli.flags['page']}"); pass a number like --page=1`,
+    )
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new Error(`Invalid value for --per-page: ${cli.flags['perPage']}`)
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleListScans({
-    branch: branch ? String(branch) : '',
-    direction: String(cli.flags['direction'] || ''),
-    from_time: String(cli.flags['fromTime'] || ''),
+    branch: branch ? branch : '',
+    direction: cli.flags['direction'] || '',
+    from_time: cli.flags['fromTime'] || '',
     orgSlug,
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    repo: repo ? String(repo) : '',
-    sort: String(cli.flags['sort'] || ''),
+    repo: repo ? repo : '',
+    sort: cli.flags['sort'] || '',
   })
 }

@@ -1,25 +1,19 @@
 /**
  * Unit tests for fetchCreateOrgFullScan.
  *
- * Purpose:
- * Tests creating organization-wide full security scans via the Socket API. Validates scan configuration, project selection, and scan initialization.
+ * Purpose: Tests creating organization-wide full security scans via the Socket
+ * API. Validates scan configuration, project selection, and scan
+ * initialization.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Scan configuration options
- * - Project selection
- * - Full scan parameters
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Scan
+ * configuration options - Project selection - Full scan parameters - Null
+ * prototype usage for security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/CreateOrgFullScan.mts (implementation)
+ * Related Files: - src/commands/CreateOrgFullScan.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -28,25 +22,24 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
 describe('fetchCreateOrgFullScan', () => {
   it('creates org full scan successfully', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const { mockHandleApi, mockSdk } = await setupSdkMockSuccess(
       'createFullScan',
@@ -91,9 +84,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles SDK setup failure', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     await setupSdkSetupFailure('Failed to setup SDK', {
       cause: 'Invalid configuration',
@@ -123,9 +115,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles API call failure', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     await setupSdkMockError('createFullScan', 'Failed to create scan', 500)
 
@@ -149,14 +140,11 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('passes custom SDK options and scan options', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
-    const { mockSdk, mockSetupSdk } = await setupSdkMockSuccess(
-      'createFullScan',
-      {},
-    )
+    const { mockSdk, mockSetupSdk: scopedMockSetupSdk } =
+      await setupSdkMockSuccess('createFullScan', {})
 
     const config = {
       branchName: 'develop',
@@ -185,7 +173,7 @@ describe('fetchCreateOrgFullScan', () => {
       options,
     )
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
+    expect(scopedMockSetupSdk).toHaveBeenCalledWith(options.sdkOpts)
     expect(mockSdk.createFullScan).toHaveBeenCalledWith(
       'custom-org',
       ['/path/to/package.json'],
@@ -205,9 +193,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles empty optional config values', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -233,9 +220,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles multiple package paths', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -266,9 +252,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('uses null prototype for config and options', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -289,9 +274,8 @@ describe('fetchCreateOrgFullScan', () => {
   })
 
   it('handles edge cases for different org slugs and repo names', async () => {
-    const { fetchCreateOrgFullScan } = await import(
-      '../../../../../src/commands/scan/fetch-create-org-full-scan.mts'
-    )
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
 
     const { mockSdk } = await setupSdkMockSuccess('createFullScan', {})
 
@@ -311,7 +295,6 @@ describe('fetchCreateOrgFullScan', () => {
         repoName: repo,
       }
 
-      // eslint-disable-next-line no-await-in-loop
       await fetchCreateOrgFullScan(['/path/to/package.json'], org, config)
 
       expect(mockSdk.createFullScan).toHaveBeenCalledWith(
@@ -323,5 +306,59 @@ describe('fetchCreateOrgFullScan', () => {
         }),
       )
     }
+  })
+
+  it('omits repoName, scanType, and workspace when not provided', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {
+      id: 'scan-no-opts',
+    })
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
+
+    const config = {
+      branchName: '',
+      commitHash: '',
+      commitMessage: '',
+      committers: '',
+      pullRequest: 0,
+      // No repoName, no scanType, no workspace.
+    }
+
+    await fetchCreateOrgFullScan(
+      ['/p/package.json'],
+      'my-org',
+      config as unknown,
+    )
+
+    // Confirm the SDK was called WITHOUT those keys.
+    const callArgs = mockSdk.createFullScan.mock.calls[0][2]
+    expect(callArgs.repo).toBeUndefined()
+    expect(callArgs.scan_type).toBeUndefined()
+    expect(callArgs.workspace).toBeUndefined()
+  })
+
+  it('includes scanType and workspace when both provided', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('createFullScan', {
+      id: 'scan-with-opts',
+    })
+    const { fetchCreateOrgFullScan } =
+      await import('../../../../src/commands/scan/fetch-create-org-full-scan.mts')
+
+    const config = {
+      branchName: 'main',
+      commitHash: 'abc',
+      commitMessage: 'msg',
+      committers: 'me',
+      pullRequest: 1,
+      repoName: 'r',
+      scanType: 'tier1',
+      workspace: 'workspace-1',
+    }
+
+    await fetchCreateOrgFullScan(['/p/package.json'], 'my-org', config)
+
+    const callArgs = mockSdk.createFullScan.mock.calls[0][2]
+    expect(callArgs.scan_type).toBe('tier1')
+    expect(callArgs.workspace).toBe('workspace-1')
   })
 })

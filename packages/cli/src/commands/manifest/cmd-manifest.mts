@@ -1,91 +1,37 @@
+import { cmdManifestBazel } from './bazel/cmd-manifest-bazel.mts'
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
+import { cmdManifestMaven } from './cmd-manifest-maven.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
-import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
-import { commonFlags } from '../../flags.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+const description = 'Generate a dependency manifest for certain ecosystems'
 
-const config: CliCommandConfig = {
-  commandName: 'manifest',
-  description: 'Generate a dependency manifest for certain ecosystems',
+export const cmdManifest = defineSubcommandGroup({
+  name: 'manifest',
+  description,
   hidden: false,
-  flags: {
-    ...commonFlags,
+  passCommonFlags: true,
+  subcommands: {
+    auto: cmdManifestAuto,
+    bazel: cmdManifestBazel,
+    cdxgen: cmdManifestCdxgen,
+    conda: cmdManifestConda,
+    gradle: cmdManifestGradle,
+    kotlin: cmdManifestKotlin,
+    maven: cmdManifestMaven,
+    scala: cmdManifestScala,
+    setup: cmdManifestSetup,
   },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] <LANGUAGE> <TARGET>
-
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Generates a declarative dependency manifest (like a package.json for Node.JS
-    or ${REQUIREMENTS_TXT} for PyPi), but for certain supported ecosystems
-    where it's common to use a dynamic manifest, like Scala's sbt.
-
-    Only certain languages are supported and there may be language specific
-    configurations available. See \`manifest <language> --help\` for usage details
-    per language.
-
-    Currently supported language: scala [beta], gradle [beta], kotlin (through
-    gradle) [beta].
-
-    Examples
-
-      $ ${command} scala .
-
-    To have it auto-detect and attempt to run:
-
-      $ ${command} auto
-  `,
-}
-
-export const cmdManifest = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: CliCommandContext,
-): Promise<void> {
-  await meowWithSubcommands(
-    {
-      argv,
-      name: `${parentName} ${config.commandName}`,
-      importMeta,
-      subcommands: {
-        auto: cmdManifestAuto,
-        cdxgen: cmdManifestCdxgen,
-        conda: cmdManifestConda,
-        gradle: cmdManifestGradle,
-        kotlin: cmdManifestKotlin,
-        scala: cmdManifestScala,
-        setup: cmdManifestSetup,
-      },
+  aliases: {
+    yolo: {
+      description,
+      hidden: true,
+      argv: ['auto'],
     },
-    {
-      aliases: {
-        yolo: {
-          description: config.description,
-          hidden: true,
-          argv: ['auto'],
-        },
-      },
-      description: config.description,
-      flags: config.flags,
-    },
-  )
-}
+  },
+})

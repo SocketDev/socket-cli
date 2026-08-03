@@ -1,34 +1,26 @@
 /**
  * Unit tests for CI command handler.
  *
- * Tests the main CI command that orchestrates repository scanning in CI/CD environments.
- * This is a complex handler integrating organization detection, branch detection, and scan creation.
+ * Tests the main CI command that orchestrates repository scanning in CI/CD
+ * environments. This is a complex handler integrating organization detection,
+ * branch detection, and scan creation.
  *
- * Test Coverage:
- * - Successful CI scan creation with full workflow
- * - Organization slug detection (config, env, API fallback)
- * - Repository name detection from Git
- * - Default branch detection
- * - Current branch detection (Git)
- * - Scan creation with proper parameters
- * - Error handling for missing organization
- * - Error handling for Git detection failures
- * - Debug logging integration
- * - JSON result serialization
+ * Test Coverage: - Successful CI scan creation with full workflow -
+ * Organization slug detection (config, env, API fallback) - Repository name
+ * detection from Git - Default branch detection - Current branch detection
+ * (Git) - Scan creation with proper parameters - Error handling for missing
+ * organization - Error handling for Git detection failures - Debug logging
+ * integration - JSON result serialization.
  *
- * Testing Approach:
- * - Mock getDefaultOrgSlug for organization detection
- * - Mock detectDefaultBranch and gitBranch for Git operations
- * - Mock getRepoName for repository detection
- * - Mock handleCreateNewScan for scan creation
- * - Mock logger for output verification
- * - Mock debug utilities for debug logging
- * - Test complete workflow integration
+ * Testing Approach: - Mock getDefaultOrgSlug for organization detection - Mock
+ * detectDefaultBranch and gitBranch for Git operations - Mock getRepoName for
+ * repository detection - Mock handleCreateNewScan for scan creation - Mock
+ * logger for output verification - Mock debug utilities for debug logging -
+ * Test complete workflow integration.
  *
- * Related Files:
- * - src/commands/ci/handle-ci.mts - Implementation
- * - src/commands/ci/fetch-default-org-slug.mts - Org detection
- * - src/commands/scan/handle-create-new-scan.mts - Scan creation
+ * Related Files: - src/commands/ci/handle-ci.mts - Implementation -
+ * src/commands/ci/fetch-default-org-slug.mts - Org detection -
+ * src/commands/scan/handle-create-new-scan.mts - Scan creation.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -73,59 +65,69 @@ const {
 const mockDebugLog = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
   debugLog: mockDebugLog,
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/commands/ci/fetch-default-org-slug.mts', () => ({
-  getDefaultOrgSlug: mockGetDefaultOrgSlug,
-}))
+vi.mock(
+  import('../../../../src/commands/ci/fetch-default-org-slug.mts'),
+  () => ({
+    getDefaultOrgSlug: mockGetDefaultOrgSlug,
+  }),
+)
 
-vi.mock('../../../../src/constants.mts', () => ({
-  default: {
+vi.mock(import('../../../../src/constants.mts'), () => ({
+  constants: {
     REPORT_LEVEL_ERROR: 'error',
   },
 }))
 
-vi.mock('../../../../src/utils/git/operations.mjs', () => ({
+vi.mock(import('../../../../src/util/git/operations.mjs'), () => ({
   detectDefaultBranch: mockDetectDefaultBranch,
   getRepoName: mockGetRepoName,
   gitBranch: mockGitBranch,
 }))
 
-vi.mock('../../../../src/utils/output/result-json.mjs', () => ({
+vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: mockSerializeResultJson,
 }))
 
-vi.mock('../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
-  handleCreateNewScan: mockHandleCreateNewScan,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/handle-create-new-scan.mts'),
+  () => ({
+    handleCreateNewScan: mockHandleCreateNewScan,
+  }),
+)
 
 describe('handleCi', () => {
-  const originalCwd = process.cwd
   const originalExitCode = process.exitCode
   const logger = mockLogger
+  let cwdSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.cwd = vi.fn(() => '/test/project')
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/test/project')
     process.exitCode = undefined
   })
 
   afterEach(() => {
-    process.cwd = originalCwd
+    cwdSpy.mockRestore()
     process.exitCode = originalExitCode
+    vi.unstubAllEnvs()
   })
 
-  it('handles CI scan successfully', async () => {
+  it('derives the pull request number from a GitHub Actions PR ref', async () => {
+    vi.stubEnv('GITHUB_REF', 'refs/pull/482/merge')
     mockGetDefaultOrgSlug.mockResolvedValue({
       ok: true,
       data: 'test-org',
@@ -133,7 +135,25 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('feature-branch')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
+
+    expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
+      expect.objectContaining({ pullRequest: 482 }),
+    )
+  })
+
+  it('handles CI scan successfully', async () => {
+    // Pin GITHUB_REF so the derived PR number is 0 even when this test
+    // itself runs inside a GitHub Actions pull_request job.
+    vi.stubEnv('GITHUB_REF', 'refs/heads/feature-branch')
+    mockGetDefaultOrgSlug.mockResolvedValue({
+      ok: true,
+      data: 'test-org',
+    })
+    mockGitBranch.mockResolvedValue('feature-branch')
+    mockGetRepoName.mockResolvedValue('test-repo')
+
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockGetDefaultOrgSlug).toHaveBeenCalled()
     expect(mockGitBranch).toHaveBeenCalledWith('/test/project')
@@ -162,6 +182,7 @@ describe('handleCi', () => {
       reportLevel: 'error',
       targets: ['.'],
       tmp: false,
+      trustSocketJson: false,
     })
   })
 
@@ -170,11 +191,11 @@ describe('handleCi', () => {
       ok: true,
       data: 'test-org',
     })
-    mockGitBranch.mockResolvedValue(null)
+    mockGitBranch.mockResolvedValue(undefined)
     mockDetectDefaultBranch.mockResolvedValue('main')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockGitBranch).toHaveBeenCalled()
     expect(mockDetectDefaultBranch).toHaveBeenCalledWith('/test/project')
@@ -193,7 +214,7 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('develop')
     mockGetRepoName.mockResolvedValue('test-repo')
 
-    await handleCi(true)
+    await handleCi({ autoManifest: true, trustSocketJson: false })
 
     expect(mockHandleCreateNewScan).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -210,7 +231,7 @@ describe('handleCi', () => {
     }
     mockGetDefaultOrgSlug.mockResolvedValue(error)
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(process.exitCode).toBe(401)
     expect(mockSerializeResultJson).toHaveBeenCalledWith(error)
@@ -226,7 +247,7 @@ describe('handleCi', () => {
     mockGetDefaultOrgSlug.mockResolvedValue(error)
     mockSerializeResultJson.mockReturnValue('{"error":"Unknown error"}')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(process.exitCode).toBe(1)
     expect(logger.log).toHaveBeenCalled()
@@ -240,10 +261,13 @@ describe('handleCi', () => {
     mockGitBranch.mockResolvedValue('debug-branch')
     mockGetRepoName.mockResolvedValue('debug-repo')
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockDebug).toHaveBeenCalledWith('Starting CI scan')
-    expect(mockDebugDir).toHaveBeenCalledWith({ autoManifest: false })
+    expect(mockDebugDir).toHaveBeenCalledWith({
+      autoManifest: false,
+      trustSocketJson: false,
+    })
     expect(mockDebug).toHaveBeenCalledWith(
       'CI scan for debug-org/debug-repo on branch debug-branch',
     )
@@ -262,7 +286,7 @@ describe('handleCi', () => {
     }
     mockGetDefaultOrgSlug.mockResolvedValue(error)
 
-    await handleCi(false)
+    await handleCi({ autoManifest: false, trustSocketJson: false })
 
     expect(mockDebug).toHaveBeenCalledWith('Failed to get default org slug')
     expect(mockDebugDir).toHaveBeenCalledWith({ orgSlugCResult: error })

@@ -1,22 +1,19 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handlePurlDeepScore } from './handle-purl-deep-score.mts'
 import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'score'
 
@@ -31,20 +28,20 @@ export const cmdPackageScore = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <<ECOSYSTEM> <NAME> | <PURL>>
 
@@ -52,7 +49,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Show deep scoring details for one package. The score will reflect the package
     itself, any of its dependencies, and any of its transitive dependencies.
@@ -90,7 +87,7 @@ async function run(
 
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const [ecosystem = '', purl] = cli.input
 
@@ -110,7 +107,7 @@ async function run(
     {
       test: purls.length === 1,
       message: 'Expecting at least one package',
-      fail: purls.length === 0 ? 'missing' : 'too many',
+      fail: !purls.length ? 'missing' : 'too many',
     },
     {
       nook: true,
@@ -130,8 +127,9 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('package score', {
+      package: purls[0] || '(invalid)',
+    })
     return
   }
 

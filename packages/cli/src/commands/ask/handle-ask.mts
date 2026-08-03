@@ -1,28 +1,35 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import nlp from 'compromise'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { getHome } from '@socketsecurity/lib/env/home'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-// Import compromise for NLP text normalization.
-
+import { onnxSemanticMatch } from './onnx-match.mts'
 import { outputAskCommand } from './output-ask.mts'
+import { normalizeQuery, wordOverlapMatch } from './word-overlap-match.mts'
+import { isSeaBinary } from '../../util/sea/detect.mts'
+
+// Re-export the matchers + helpers so existing import paths keep working.
+export {
+  cosineSimilarity,
+  ensureCommandEmbeddings,
+  getEmbedding,
+  getEmbeddingPipeline,
+  onnxSemanticMatch,
+} from './onnx-match.mts'
+export {
+  extractWords,
+  loadSemanticIndex,
+  normalizeQuery,
+  wordOverlap,
+  wordOverlapMatch,
+} from './word-overlap-match.mts'
 
 const logger = getDefaultLogger()
 
-// Semantic index for fast word-overlap matching (lazy-loaded, ~3KB).
-let semanticIndex: any = null
-
-// ONNX embedding pipeline for deep semantic matching (lazy-loaded, ~17MB model).
-const embeddingPipeline: any = null
-let embeddingPipelineFailure = false
-const commandEmbeddings: Record<string, Float32Array> = {}
-
-// Confidence thresholds.
-const WORD_OVERLAP_THRESHOLD = 0.3 // Minimum for word overlap match.
-const PATTERN_MATCH_THRESHOLD = 0.6 // If below this, try ONNX fallback.
+// Confidence threshold: pattern-match scores below this trigger the ONNX
+// semantic-match fallback (currently a no-op; see onnx-match.mts).
+const PATTERN_MATCH_THRESHOLD = 0.6
 
 export interface HandleAskOptions {
   query: string
@@ -35,10 +42,10 @@ export interface ParsedIntent {
   command: string[]
   confidence: number
   explanation: string
-  packageName?: string
-  severity?: string
-  environment?: string
-  isDryRun?: boolean
+  packageName?: string | undefined
+  severity?: string | undefined
+  environment?: string | undefined
+  isDryRun?: boolean | undefined
 }
 
 /**
@@ -74,7 +81,7 @@ const PATTERNS = {
     explanation: 'Replacing dependencies with Socket registry alternatives',
     priority: 3,
   },
-  // Package safety patterns (medium priority).
+  // Package safety patterns, medium priority.
   package: {
     keywords: [
       'safe',
@@ -89,7 +96,7 @@ const PATTERNS = {
     explanation: 'Checking package security score',
     priority: 2,
   },
-  // Scan patterns (medium priority).
+  // Scan patterns, medium priority.
   scan: {
     keywords: [
       'scan',
@@ -113,6 +120,18 @@ const PATTERNS = {
   },
 } as const
 
+export type AskPattern = (typeof PATTERNS)[Exclude<
+  keyof typeof PATTERNS,
+  '__proto__'
+>]
+
+// Widened view of PATTERNS for dynamic action strings from the semantic
+// matchers — plain assignment widening, no assertion needed. `null` appears in
+// the value union only because TS models the literal's `__proto__: null`
+// prototype marker as a property; lookupPattern folds it away.
+const PATTERNS_BY_ACTION: Record<string, AskPattern | null | undefined> =
+  PATTERNS
+
 /**
  * Severity levels mapping.
  */
@@ -134,262 +153,109 @@ const ENVIRONMENT_KEYWORDS = {
 } as const
 
 /**
- * Normalize query using NLP to handle variations in phrasing.
- * Converts verbs to infinitive and nouns to singular for better matching.
+ * Arguments that re-enter this CLI through `process.execPath`.
+ *
+ * A SEA binary is itself the CLI, so the command is passed straight through.
+ * Otherwise the entry script running under Node is prepended. Returns
+ * undefined when the entry script is unknown, which happens only outside a
+ * normal CLI launch (`node -e`).
  */
-function normalizeQuery(query: string): string {
-  try {
-    const doc = nlp(query)
-
-    // Normalize verbs to infinitive form: "fixing" → "fix", "scanned" → "scan".
-    doc.verbs().toInfinitive()
-
-    // Normalize nouns to singular: "vulnerabilities" → "vulnerability".
-    doc.nouns().toSingular()
-
-    return doc.out('text').toLowerCase()
-  } catch (_e) {
-    // Fallback to original query if NLP fails.
-    return query.toLowerCase()
+export function getCliReentryArgv(
+  command: string[] | readonly string[],
+): string[] | undefined {
+  if (isSeaBinary()) {
+    return [...command]
   }
+  const entryPath = process.argv[1]
+  return entryPath ? [entryPath, ...command] : undefined
 }
 
 /**
- * Lazily load the pre-computed semantic index.
- * NO ML models - just word overlap + synonyms (~3KB).
+ * Read package.json to get context.
  */
-async function loadSemanticIndex() {
-  if (semanticIndex) {
-    return semanticIndex
-  }
-
+export async function getProjectContext(cwd: string): Promise<{
+  hasPackageJson: boolean
+  dependencies?: Record<string, string> | undefined
+  devDependencies?: Record<string, string> | undefined
+}> {
   try {
-    const homeDir = getHome()
-    if (!homeDir) {
-      return null
+    const pkgPath = path.join(cwd, 'package.json')
+    const content = await fs.readFile(pkgPath, 'utf8')
+    const pkg = JSON.parse(content)
+    return {
+      hasPackageJson: true,
+      dependencies: pkg.dependencies || {},
+      devDependencies: pkg.devDependencies || {},
     }
-    const indexPath = path.join(
-      homeDir,
-      '.claude/skills/socket-cli/semantic-index.json',
-    )
-
-    const content = await fs.readFile(indexPath, 'utf-8')
-    semanticIndex = JSON.parse(content)
-
-    return semanticIndex
   } catch (_e) {
-    // Semantic index not available - not a critical error.
-    return null
+    return { hasPackageJson: false }
   }
 }
 
 /**
- * Extract meaningful words from text (lowercase, >2 chars).
+ * Main handler for ask command.
  */
-function extractWords(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .split(/\s+/)
-    .filter(w => w.length > 2)
-}
+export async function handleAsk(config: HandleAskOptions): Promise<void> {
+  const { execute, explain, query } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
 
-/**
- * Compute word overlap score between query and command.
- * Uses Jaccard similarity: |intersection| / |union|.
- */
-function wordOverlap(queryWords: Set<string>, commandWords: string[]): number {
-  const commandSet = new Set(commandWords)
-  const intersection = new Set([...queryWords].filter(w => commandSet.has(w)))
-  const union = new Set([...queryWords, ...commandWords])
+  // Parse the intent.
+  const intent = await parseIntent(query)
 
-  return union.size === 0 ? 0 : intersection.size / union.size
-}
+  // Get project context.
+  const context = await getProjectContext(process.cwd())
 
-/**
- * Find best matching command using word overlap + synonym expansion.
- * Fast path - NO ML models, pure JavaScript, ~3KB overhead.
- */
-async function wordOverlapMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | null> {
-  const index = await loadSemanticIndex()
-  if (!index || !index.commands) {
-    return null
-  }
+  // Show what we understood.
+  outputAskCommand({
+    query,
+    intent,
+    context,
+    explain,
+  })
 
-  // Extract query words.
-  const queryWords = new Set(extractWords(query))
-
-  if (queryWords.size === 0) {
-    return null
-  }
-
-  let bestAction = ''
-  let bestScore = 0
-
-  // Match against each command's word index.
-  for (const [commandName, commandData] of Object.entries(index.commands)) {
-    if (
-      !commandData ||
-      typeof commandData !== 'object' ||
-      !('words' in commandData) ||
-      !Array.isArray(commandData.words)
-    ) {
-      continue
-    }
-    const score = wordOverlap(queryWords, commandData.words)
-
-    if (score > bestScore) {
-      bestScore = score
-      bestAction = commandName
-    }
-  }
-
-  // Require minimum overlap threshold.
-  if (bestScore < WORD_OVERLAP_THRESHOLD) {
-    return null
-  }
-
-  return {
-    action: bestAction,
-    confidence: bestScore,
-  }
-}
-
-/**
- * Lazily load the ONNX embedding pipeline for deep semantic matching.
- * Only loads when word-overlap matching has low confidence.
- */
-async function getEmbeddingPipeline() {
-  if (embeddingPipeline) {
-    return embeddingPipeline
-  }
-
-  // If we already failed to load, don't try again.
-  if (embeddingPipelineFailure) {
-    return null
-  }
-
-  try {
-    // TEMPORARILY DISABLED: ONNX Runtime build issues.
-    // Load our custom MiniLM inference engine.
-    // This uses direct ONNX Runtime + embedded WASM (no transformers.js).
-    // Note: Model is optional - pattern matching works fine without it.
-    // const { MiniLMInference } = await import('../../utils/minilm-inference.mts')
-    // embeddingPipeline = await MiniLMInference.create()
-    // return embeddingPipeline
-
-    // Temporarily fall back to pattern matching only.
-    embeddingPipelineFailure = true
-    return null
-  } catch (_e) {
-    // Model not available - silently fall back to pattern matching.
-    embeddingPipelineFailure = true
-    return null
-  }
-}
-
-/**
- * Compute cosine similarity between two vectors.
- * Since our embeddings are already normalized, this is just dot product.
- */
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
-  if (a.length !== b.length) {
-    return 0
-  }
-
-  let dotProduct = 0
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += (a[i] ?? 0) * (b[i] ?? 0)
-  }
-
-  return dotProduct
-}
-
-/**
- * Get embedding for a text string using ONNX Runtime.
- */
-async function getEmbedding(text: string): Promise<Float32Array | null> {
-  const model = await getEmbeddingPipeline()
-  if (!model) {
-    return null
-  }
-
-  try {
-    const result = await model.embed(text)
-    return result.embedding
-  } catch (_e) {
-    // Silently fail - pattern matching will handle the query.
-    return null
-  }
-}
-
-/**
- * Pre-compute embeddings for all command patterns.
- */
-async function ensureCommandEmbeddings() {
-  if (Object.keys(commandEmbeddings).length > 0) {
+  // If not executing, just show the command.
+  if (!execute) {
+    logger.log('')
+    logger.log('💡 Tip: Add --execute or -e to run this command directly')
     return
   }
 
-  const commandDescriptions = {
-    __proto__: null,
-    fix: 'fix vulnerabilities by updating packages to secure versions',
-    patch: 'apply patches to remove CVEs from code',
-    optimize:
-      'replace dependencies with better alternatives from Socket registry',
-    package: 'check safety score and rating of a package',
-    scan: 'scan project for security vulnerabilities and issues',
-  } as const
+  // Execute the command.
+  logger.log('')
+  logger.log('🚀 Executing…')
+  logger.log('')
 
-  for (const [action, description] of Object.entries(commandDescriptions)) {
-    if (description) {
-      // eslint-disable-next-line no-await-in-loop
-      const embedding = await getEmbedding(description)
-      if (embedding) {
-        commandEmbeddings[action] = embedding
-      }
-    }
+  const reentryArgv = getCliReentryArgv(intent.command)
+  if (!reentryArgv) {
+    logger.error(
+      `Unable to re-run the Socket CLI: the entry script is unknown (process.argv[1] is empty). Run it yourself: socket ${intent.command.join(' ')}`,
+    )
+    process.exit(1)
+  }
+
+  const result = await spawn(process.execPath, reentryArgv, {
+    stdio: 'inherit',
+    cwd: process.cwd(),
+  })
+
+  if (!result) {
+    logger.error('Failed to execute command')
+    process.exit(1)
+  }
+
+  if (result.code !== 0) {
+    logger.error(`Command failed with exit code ${result.code}`)
+    process.exit(result.code)
   }
 }
 
 /**
- * Find best matching command using ONNX embeddings.
- * Fallback for when word-overlap has low confidence - slower but more accurate.
+ * Look up a PATTERNS entry from a dynamic matcher action string.
  */
-async function onnxSemanticMatch(query: string): Promise<{
-  action: string
-  confidence: number
-} | null> {
-  await ensureCommandEmbeddings()
-
-  const queryEmbedding = await getEmbedding(query)
-  if (!queryEmbedding || Object.keys(commandEmbeddings).length === 0) {
-    return null
-  }
-
-  let bestAction = ''
-  let bestScore = 0
-
-  for (const [action, embedding] of Object.entries(commandEmbeddings)) {
-    const similarity = cosineSimilarity(queryEmbedding, embedding)
-    if (similarity > bestScore) {
-      bestScore = similarity
-      bestAction = action
-    }
-  }
-
-  // Require minimum 0.5 similarity to use ONNX match.
-  if (bestScore < 0.5) {
-    return null
-  }
-
-  return {
-    action: bestAction,
-    confidence: bestScore,
-  }
+export function lookupPattern(action: string): AskPattern | undefined {
+  return PATTERNS_BY_ACTION[action] ?? undefined
 }
 
 /**
@@ -403,7 +269,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   const isDryRun =
     lowerQuery.includes('dry run') || lowerQuery.includes('preview')
 
-  // Extract package name from original query (not normalized).
+  // Extract package name from original query, not normalized.
   let packageName: string | undefined
   const quotedMatch = query.match(/['"]([^'"]+)['"]/)
   if (quotedMatch) {
@@ -411,12 +277,14 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   } else {
     // Try to find package name after "is", "check", "about", "with".
     // Must look like a real package (has @, /, or contains common package patterns).
-    const pkgMatch = query
-      .toLowerCase()
-      .match(/(?:is|check|about|with)\s+([a-z0-9-@/]+)/i)
+    // (?:about|check|is|with) — one of four trigger verbs (non-capturing)
+    // \s+                     — one or more whitespace chars after the verb
+    // ([a-z0-9-@/]+)          — capture: package-name chars (letters, digits, dash, @, slash)
+    const packageNameRe = /(?:about|check|is|with)\s+([a-z0-9-@/]+)/i
+    const pkgMatch = query.toLowerCase().match(packageNameRe)
     if (pkgMatch) {
       const candidate = pkgMatch[1]
-      // Only accept if it looks like a real package name (not common words).
+      // Only accept if it looks like a real package name, not common words.
       if (
         candidate &&
         (candidate.includes('@') ||
@@ -469,13 +337,15 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   }
 
   // Match against patterns.
-  let bestMatch: {
-    action: string
-    command: string[]
-    explanation: string
-    confidence: number
-    score: number
-  } | null = null
+  let bestMatch:
+    | {
+        action: string
+        command: string[]
+        explanation: string
+        confidence: number
+        score: number
+      }
+    | undefined = undefined
 
   for (const [action, pattern] of Object.entries(PATTERNS)) {
     if (!pattern) {
@@ -509,7 +379,8 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
 
     if (wordMatch && wordMatch.confidence > (bestMatch?.confidence || 0)) {
       // Use word-overlap match.
-      const pattern = PATTERNS[wordMatch.action as keyof typeof PATTERNS]
+      /* c8 ignore start - word-overlap match selected branch; requires wordOverlapMatch to return a specific PATTERNS-keyed action that beats the current pattern-match confidence; tests cover the matchers in isolation */
+      const pattern = lookupPattern(wordMatch.action)
       if (pattern) {
         bestMatch = {
           action: wordMatch.action,
@@ -519,6 +390,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
           score: wordMatch.confidence,
         }
       }
+      /* c8 ignore stop */
     }
 
     // Strategy 2: ONNX semantic matching (50-80ms, 95-98% accuracy).
@@ -528,7 +400,8 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
 
       if (onnxMatch && onnxMatch.confidence > (bestMatch?.confidence || 0)) {
         // Use ONNX semantic match.
-        const pattern = PATTERNS[onnxMatch.action as keyof typeof PATTERNS]
+        /* c8 ignore start - ONNX match selected branch; requires onnxSemanticMatch to return a specific PATTERNS-keyed action that beats the current confidence; tests cover the matchers in isolation */
+        const pattern = lookupPattern(onnxMatch.action)
         if (pattern) {
           bestMatch = {
             action: onnxMatch.action,
@@ -538,6 +411,7 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
             score: onnxMatch.confidence,
           }
         }
+        /* c8 ignore stop */
       }
     }
   }
@@ -598,76 +472,4 @@ export async function parseIntent(query: string): Promise<ParsedIntent> {
   }
 
   return result
-}
-
-/**
- * Read package.json to get context.
- */
-async function getProjectContext(cwd: string): Promise<{
-  hasPackageJson: boolean
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-}> {
-  try {
-    const pkgPath = path.join(cwd, 'package.json')
-    const content = await fs.readFile(pkgPath, 'utf8')
-    const pkg = JSON.parse(content)
-    return {
-      hasPackageJson: true,
-      dependencies: pkg.dependencies || {},
-      devDependencies: pkg.devDependencies || {},
-    }
-  } catch (_e) {
-    return { hasPackageJson: false }
-  }
-}
-
-/**
- * Main handler for ask command.
- */
-export async function handleAsk(options: HandleAskOptions): Promise<void> {
-  const { execute, explain, query } = options
-
-  // Parse the intent.
-  const intent = await parseIntent(query)
-
-  // Get project context.
-  const context = await getProjectContext(process.cwd())
-
-  // Show what we understood.
-  outputAskCommand({
-    query,
-    intent,
-    context,
-    explain,
-  })
-
-  // If not executing, just show the command.
-  if (!execute) {
-    logger.log('')
-    logger.log('💡 Tip: Add --execute or -e to run this command directly')
-    return
-  }
-
-  // Execute the command.
-  logger.log('')
-  logger.log('🚀 Executing...')
-  logger.log('')
-
-  const result = await spawn('socket', intent.command, {
-    stdio: 'inherit',
-    cwd: process.cwd(),
-  })
-
-  if (!result) {
-    logger.error('Failed to execute command')
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(1)
-  }
-
-  if (result.code !== 0) {
-    logger.error(`Command failed with exit code ${result.code}`)
-    // eslint-disable-next-line n/no-process-exit
-    process.exit(result.code)
-  }
 }

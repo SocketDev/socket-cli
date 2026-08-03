@@ -1,27 +1,21 @@
 /**
  * Unit tests for config set handler.
  *
- * Tests the handler that updates configuration values in the config file.
- * This command writes configuration persistently.
+ * Tests the handler that updates configuration values in the config file. This
+ * command writes configuration persistently.
  *
- * Test Coverage:
- * - Successful config value setting
- * - Set failure handling
- * - Different config keys (apiToken, orgSlug, defaultOrg, etc.)
- * - Value validation and sanitization
- * - Output function integration
+ * Test Coverage: - Successful config value setting - Set failure handling -
+ * Different config keys (apiToken, orgSlug, defaultOrg, etc.) - Value
+ * validation and sanitization - Output function integration.
  *
- * Testing Approach:
- * - Mock setConfigValue from utils/config.mts
- * - Mock outputConfigSet for output verification
- * - Mock logger for error/success messages
- * - Use createSuccessResult/createErrorResult helpers
- * - Test CResult pattern flow
+ * Testing Approach: - Mock setConfigValue from util/config.mts - Mock
+ * outputConfigSet for output verification - Mock logger for error/success
+ * messages - Use createSuccessResult/createErrorResult helpers - Test CResult
+ * pattern flow.
  *
- * Related Files:
- * - src/commands/config/handle-config-set.mts - Implementation
- * - src/utils/config.mts - Config file utilities
- * - src/commands/config/output-config-set.mts - Output formatter
+ * Related Files: - src/commands/config/handle-config-set.mts - Implementation -
+ * src/util/config.mts - Config file utilities -
+ * src/commands/config/output-config-set.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -47,20 +41,25 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 const mockIsDebug = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/commands/config/output-config-set.mts', () => ({
-  outputConfigSet: mockOutputConfigSet,
-}))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock(
+  import('../../../../src/commands/config/output-config-set.mts'),
+  () => ({
+    outputConfigSet: mockOutputConfigSet,
+  }),
+)
+vi.mock(import('../../../../src/util/config.mts'), () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
+}))
+vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
 
@@ -70,14 +69,12 @@ describe('handleConfigSet', () => {
   })
 
   it('sets config value successfully', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
 
-    const mockResult = createSuccessResult('new-value')
+    const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
@@ -94,12 +91,10 @@ describe('handleConfigSet', () => {
   })
 
   it('handles config update failure', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
 
     const mockResult = createErrorResult('Config update failed')
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -114,15 +109,39 @@ describe('handleConfigSet', () => {
     expect(outputConfigSet).toHaveBeenCalledWith(mockResult, 'text')
   })
 
-  it('handles markdown output', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigSet } = await import(
-      '../../../../src/commands/config/output-config-set.mts'
+  it('reports a failure when the config is read-only', async () => {
+    // updateConfigValue only fills `data` for a read-only config; `config set`
+    // is one-shot, so an in-memory-only change is not a success.
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
+    mockUpdateConfigValue.mockReturnValue(
+      createSuccessResult('The active config is read-only'),
     )
 
-    const mockResult = createSuccessResult('markdown-value')
+    await handleConfigSet({
+      key: 'defaultOrg',
+      outputKind: 'json',
+      value: 'my-org',
+    })
+
+    expect(outputConfigSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        code: 1,
+        message: "Config key 'defaultOrg' was not saved",
+        cause: 'The active config is read-only',
+      }),
+      'json',
+    )
+  })
+
+  it('handles markdown output', async () => {
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigSet } =
+      await import('../../../../src/commands/config/output-config-set.mts')
+
+    const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
 
     await handleConfigSet({
@@ -136,9 +155,10 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information', async () => {
-    const { debug, debugDir } = await import('@socketsecurity/lib/debug')
+    const { debug, debugDir } =
+      await import('@socketsecurity/lib-stable/debug/output')
 
-    mockUpdateConfigValue.mockReturnValue(createSuccessResult('debug-value'))
+    mockUpdateConfigValue.mockReturnValue(createSuccessResult(undefined))
 
     await handleConfigSet({
       key: 'apiBaseUrl',
@@ -158,7 +178,7 @@ describe('handleConfigSet', () => {
   })
 
   it('logs debug information on failure', async () => {
-    const { debug } = await import('@socketsecurity/lib/debug')
+    const { debug } = await import('@socketsecurity/lib-stable/debug/output')
 
     mockUpdateConfigValue.mockReturnValue(createErrorResult('Failed'))
 
@@ -171,21 +191,32 @@ describe('handleConfigSet', () => {
     expect(debug).toHaveBeenCalledWith('Config update failed')
   })
 
+  it('throws InputError when value is undefined', async () => {
+    await expect(
+      handleConfigSet({
+        key: 'apiToken',
+        outputKind: 'json',
+        value: undefined,
+      }),
+    ).rejects.toThrow(/requires a VALUE argument/)
+    expect(mockUpdateConfigValue).not.toHaveBeenCalled()
+    expect(mockOutputConfigSet).not.toHaveBeenCalled()
+  })
+
   it('handles different config keys', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
-    for (const key of keys) {
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
       mockUpdateConfigValue.mockReturnValue(
         createSuccessResult(`value-for-${key}`),
       )
 
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigSet({
-        key: key as any,
+        key: key as unknown,
         outputKind: 'json',
         value: `test-${key}`,
       })

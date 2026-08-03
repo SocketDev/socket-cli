@@ -1,0 +1,163 @@
+/**
+ * Remote-repository information for Socket CLI's git utilities: current
+ * branch/commit detection, remote-URL parsing, and working-tree status.
+ *
+ * Extracted from operations.mts to keep that file under the 1000-line
+ * File size hard cap.
+ */
+
+import { env } from 'node:process'
+
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import {
+  getGithubRefName,
+  getGithubRefType,
+} from '@socketsecurity/lib-stable/env/github'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+
+import { SOCKET_DEFAULT_REPOSITORY } from '../../constants/socket.mts'
+import { extractName, extractOwner } from '../sanitize-names.mts'
+import { spawnGit } from './spawn-git.mts'
+
+import type { CResult } from '../../types.mjs'
+
+export type RepoInfo = {
+  owner: string
+  repo: string
+}
+
+const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
+
+export async function getRepoInfo(
+  cwd = process.cwd(),
+): Promise<RepoInfo | undefined> {
+  let info: RepoInfo | undefined
+  try {
+    const result = await spawnGit(['remote', 'get-url'], {
+      cwd,
+      operands: ['origin'],
+    })
+
+    if (!result) {
+      return undefined
+    }
+
+    const remoteUrl = result.stdout
+    info = parseGitRemoteUrl(remoteUrl)
+    if (!info) {
+      debug(`Unmatched git remote URL format: ${remoteUrl}`)
+      debugDir({ remoteUrl })
+    }
+  } catch (e) {
+    // Expected failure when not in a git repo.
+    debugDir({ message: 'git remote get-url failed', error: e })
+  }
+  return info
+}
+
+export async function getRepoName(cwd = process.cwd()): Promise<string> {
+  const repoInfo = await getRepoInfo(cwd)
+  return repoInfo?.repo ? extractName(repoInfo.repo) : SOCKET_DEFAULT_REPOSITORY
+}
+
+export async function getRepoOwner(
+  cwd = process.cwd(),
+): Promise<string | undefined> {
+  const repoInfo = await getRepoInfo(cwd)
+  return repoInfo?.owner ? extractOwner(repoInfo.owner) : undefined
+}
+
+export async function gitBranch(
+  cwd = process.cwd(),
+): Promise<string | undefined> {
+  // Try symbolic-ref first which returns the branch name or fails in a
+  // detached HEAD state.
+  try {
+    const gitSymbolicRefResult = await spawnGit(['symbolic-ref', '--short'], {
+      cwd,
+      operands: ['HEAD'],
+    })
+    return gitSymbolicRefResult.stdout
+  } catch (e) {
+    // Expected in detached HEAD state, fallback to rev-parse.
+    debugDir({ message: 'In detached HEAD state', error: e })
+  }
+  // Detached HEAD is the normal state in CI checkouts (actions/checkout),
+  // where the commit-SHA fallback below would mislabel the scan's branch —
+  // a SHA can never match the repo's default branch, so scans vanish from
+  // the Main/PR tabs. Prefer the branch the CI run says it is on: the PR
+  // head branch, else the pushed branch ref.
+  const githubHeadRef = envAsString(env['GITHUB_HEAD_REF'])
+  if (githubHeadRef) {
+    return githubHeadRef
+  }
+  const githubRefName = getGithubRefName()
+  if (getGithubRefType() === 'branch' && githubRefName) {
+    return githubRefName
+  }
+  // Fallback to using rev-parse to get the short commit hash in a
+  // detached HEAD state.
+  try {
+    const gitRevParseResult = await spawnGit(['rev-parse', '--short'], {
+      cwd,
+      operands: ['HEAD'],
+    })
+    return gitRevParseResult.stdout
+  } catch (e) {
+    // Both methods failed, likely not in a git repo.
+    debugDir({ message: 'Unable to determine git branch', error: e })
+  }
+  return undefined
+}
+
+export async function gitUnstagedModifiedFiles(
+  cwd = process.cwd(),
+): Promise<CResult<string[]>> {
+  try {
+    const gitDiffResult = await spawnGit(['diff', '--name-only'], { cwd })
+    const changedFilesDetails = gitDiffResult.stdout
+    const relPaths = changedFilesDetails.split('\n')
+    return {
+      ok: true,
+      data: relPaths.map((p: string) => normalizePath(p)),
+    }
+  } catch (e) {
+    debug('Failed to get unstaged modified files')
+    debugDir(e)
+    return {
+      ok: false,
+      message: 'Git Error',
+      cause: 'Unexpected error while trying to ask git whether repo is dirty',
+    }
+  }
+}
+
+export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | undefined {
+  let result = parsedGitRemoteUrlCache.get(remoteUrl)
+  if (result) {
+    return { ...result }
+  }
+  // Handle SSH-style
+  const sshMatch = /^git@[^:]+:([^/]+)\/(.+?)(?:\.git)?$/.exec(remoteUrl)
+  // 1. Handle SSH-style, e.g. git@github.com:owner/repo.git
+  if (sshMatch) {
+    result = { owner: sshMatch[1]!, repo: sshMatch[2]! }
+  } else {
+    // 2. Handle HTTPS/URL-style, e.g. https://github.com/owner/repo.git
+    try {
+      const parsed = new URL(remoteUrl)
+      // Remove leading slashes from pathname and split by "/" to extract segments.
+      const segments = parsed.pathname.replace(/^\/+/, '').split('/')
+      // The second-to-last segment is expected to be the owner (e.g., "owner" in /owner/repo.git).
+      const owner = segments.at(-2)
+      // The last segment is expected to be the repo name, so we remove the ".git" suffix if present.
+      const repo = segments.at(-1)?.replace(/\.git$/, '')
+      if (owner && repo) {
+        result = { owner, repo }
+      }
+    } catch {}
+  }
+  parsedGitRemoteUrlCache.set(remoteUrl, result)
+  return result ? { ...result } : result
+}

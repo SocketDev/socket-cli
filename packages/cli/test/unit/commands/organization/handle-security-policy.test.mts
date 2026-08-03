@@ -1,25 +1,23 @@
 /**
- * Unit Tests: Organization Security Policy Command Handler
+ * Unit Tests: Organization Security Policy Command Handler.
  *
- * Purpose:
- * Tests the command handler that orchestrates fetching and displaying organization security
- * policy configuration. Validates organization slug forwarding, output format selection,
- * and error propagation through the fetch/output pipeline.
+ * Purpose: Tests the command handler that orchestrates fetching and displaying
+ * organization security policy configuration. Validates organization slug
+ * forwarding, output format selection, and error propagation through the
+ * fetch/output pipeline.
  *
- * Test Coverage:
- * - Successful security policy fetch and output
- * - Fetch error handling and propagation
- * - Multiple output format support (json, text, markdown)
- * - Organization slug parameter passing
+ * Test Coverage: - Successful security policy fetch and output - Fetch error
+ * handling and propagation - Multiple output format support (json, text,
+ * markdown) - Organization slug parameter passing.
  *
- * Testing Approach:
- * Mocks fetchSecurityPolicy and outputSecurityPolicy modules to test orchestration logic
- * without actual API calls or terminal output. Uses test helpers for CResult pattern validation.
+ * Testing Approach: Mocks fetchSecurityPolicy and outputSecurityPolicy modules
+ * to test orchestration logic without actual API calls or terminal output. Uses
+ * test helpers for CResult pattern validation.
  *
- * Related Files:
- * - src/commands/organization/handle-security-policy.mts - Command handler
- * - src/commands/organization/fetch-security-policy.mts - Security policy fetcher
- * - src/commands/organization/output-security-policy.mts - Output formatter
+ * Related Files: - src/commands/organization/handle-security-policy.mts -
+ * Command handler - src/commands/organization/fetch-security-policy.mts -
+ * Security policy fetcher -
+ * src/commands/organization/output-security-policy.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -37,14 +35,14 @@ const mockFetchSecurityPolicy = vi.hoisted(() => vi.fn())
 const mockOutputSecurityPolicy = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  '../../../../src/commands/organization/fetch-security-policy.mts',
+  import('../../../../src/commands/organization/fetch-security-policy.mts'),
   () => ({
     fetchSecurityPolicy: mockFetchSecurityPolicy,
   }),
 )
 
 vi.mock(
-  '../../../../src/commands/organization/output-security-policy.mts',
+  import('../../../../src/commands/organization/output-security-policy.mts'),
   () => ({
     outputSecurityPolicy: mockOutputSecurityPolicy,
   }),
@@ -114,9 +112,9 @@ describe('handleSecurityPolicy', () => {
       'org123',
     ]
 
-    for (const orgSlug of orgSlugs) {
+    for (let i = 0, { length } = orgSlugs; i < length; i += 1) {
+      const orgSlug = orgSlugs[i]
       mockFetchSecurityPolicy.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleSecurityPolicy(orgSlug, 'json')
       expect(fetchSecurityPolicy).toHaveBeenCalledWith(orgSlug, {
         commandPath: 'socket organization policy security',

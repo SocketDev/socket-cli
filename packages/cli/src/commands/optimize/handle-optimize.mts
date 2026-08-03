@@ -1,12 +1,12 @@
-import { VLT } from '@socketsecurity/lib/constants/agents'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { VLT } from '@socketsecurity/lib-stable/constants/agents'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { CMD_NAME } from './shared.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/ecosystem/environment.mjs'
-import { cmdPrefixMessage } from '../../utils/process/cmd.mts'
+import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
+import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
 import type { OutputKind } from '../../types.mts'
 
@@ -55,7 +55,7 @@ export async function handleOptimize({
   }
 
   debug(
-    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}`,
+    `Detected package manager: ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion.version}`,
   )
   debugDir({ pkgEnvDetails })
 
@@ -69,7 +69,7 @@ export async function handleOptimize({
         message: 'Unsupported',
         cause: cmdPrefixMessage(
           CMD_NAME,
-          `${agent} v${agentVersion} does not support overrides.`,
+          `${agent} v${agentVersion.version} does not support overrides.`,
         ),
       },
       outputKind,
@@ -77,7 +77,8 @@ export async function handleOptimize({
     return
   }
 
-  logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
+  logger.info(`Optimizing packages for ${agent} v${agentVersion.version}.`)
+  logger.error('')
 
   debug('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {

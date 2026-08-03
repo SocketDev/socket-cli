@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleThreatFeed.
  *
- * Purpose:
- * Tests the handler that orchestrates threat feed retrieval. Validates feed fetching, filtering, and output formatting.
+ * Purpose: Tests the handler that orchestrates threat feed retrieval. Validates
+ * feed fetching, filtering, and output formatting.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleThreatFeed.mts (implementation)
+ * Related Files: - src/commands/handleThreatFeed.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,12 +19,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { handleThreatFeed } from '../../../../src/commands/threat-feed/handle-threat-feed.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../src/commands/threat-feed/fetch-threat-feed.mts', () => ({
-  fetchThreatFeed: vi.fn(),
-}))
-vi.mock('../../../../src/commands/threat-feed/output-threat-feed.mts', () => ({
-  outputThreatFeed: vi.fn(),
-}))
+vi.mock(
+  import('../../../../src/commands/threat-feed/fetch-threat-feed.mts'),
+  () => ({
+    fetchThreatFeed: vi.fn(),
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/threat-feed/output-threat-feed.mts'),
+  () => ({
+    outputThreatFeed: vi.fn(),
+  }),
+)
 
 describe('handleThreatFeed', () => {
   beforeEach(() => {
@@ -37,12 +38,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('fetches and outputs threat feed successfully', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const mockData = {
       ok: true,
@@ -92,12 +91,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const mockError = {
       ok: false,
@@ -121,12 +118,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles specific package and version filter', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed: _outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const mockData = {
       ok: true,
@@ -162,12 +157,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles markdown output', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const mockData = {
       ok: true,
@@ -191,22 +184,20 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles different ecosystems', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed: _outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const ecosystems = ['npm', 'pypi', 'rubygems', 'maven', 'nuget']
 
-    for (const ecosystem of ecosystems) {
+    for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+      const ecosystem = ecosystems[i]
       vi.mocked(fetchThreatFeed).mockResolvedValue({
         ok: true,
         data: [],
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleThreatFeed({
         direction: 'desc',
         ecosystem,
@@ -226,19 +217,18 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles different filter types', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
 
     const filters = ['malware', 'vulnerability', 'typosquat', 'supply-chain']
 
-    for (const filter of filters) {
+    for (let i = 0, { length } = filters; i < length; i += 1) {
+      const filter = filters[i]
       vi.mocked(fetchThreatFeed).mockResolvedValue({
         ok: true,
         data: [],
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleThreatFeed({
         direction: 'desc',
         ecosystem: 'npm',
@@ -258,12 +248,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles pagination', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed: _outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed: _outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     vi.mocked(fetchThreatFeed).mockResolvedValue({
       ok: true,
@@ -291,12 +279,10 @@ describe('handleThreatFeed', () => {
   })
 
   it('handles empty threat feed', async () => {
-    const { fetchThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/fetch-threat-feed.mts'
-    )
-    const { outputThreatFeed } = await import(
-      '../../../../src/commands/threat-feed/output-threat-feed.mts'
-    )
+    const { fetchThreatFeed } =
+      await import('../../../../src/commands/threat-feed/fetch-threat-feed.mts')
+    const { outputThreatFeed } =
+      await import('../../../../src/commands/threat-feed/output-threat-feed.mts')
 
     const mockData = {
       ok: true,

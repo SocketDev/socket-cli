@@ -1,11 +1,13 @@
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { spawnSocketPatchDlx } from '../../utils/dlx/spawn.mjs'
+import { commonFlags } from '../../flags.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { spawnSocketPatchDlx } from '../../util/dlx/spawn.mjs'
+import { outputDryRunExecute } from '../../util/dry-run/output.mjs'
+import { filterFlags } from '../../util/process/cmd.mjs'
 
 import type {
-  CliCommandConfig,
   CliCommandContext,
   CliSubcommand,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
 
 export const CMD_NAME = 'patch'
 
@@ -19,25 +21,33 @@ export const cmdPatch: CliSubcommand = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
 ): Promise<void> {
   const { parentName } = { __proto__: null, ...context } as CliCommandContext
 
-  // Check if there are any non-flag arguments (subcommands).
-  const hasSubcommand = argv.some(arg => !arg.startsWith('-'))
+  // Strip Socket CLI global flags (--config, --dry-run, banner/header knobs)
+  // before forwarding — socket-patch is a strict clap CLI that exits 2 on any
+  // unknown flag. --help survives so `patch <sub> --help` reaches socket-patch.
+  const forwardArgs = filterFlags(argv, commonFlags, ['--help', '-h'])
+  const dryRun = argv.includes('--dry-run')
+
+  // Check if there are any non-flag arguments (subcommands). Detect on the
+  // filtered argv so a flag VALUE (e.g. the JSON payload of --config) does not
+  // count as a subcommand.
+  const hasSubcommand = forwardArgs.some(arg => !arg.startsWith('-'))
 
   // Only show Socket CLI help if no subcommand is provided.
   // If a subcommand is present (like 'list', 'info'), forward to socket-patch.
   if (!hasSubcommand) {
-    const config: CliCommandConfig = {
+    const config = {
       commandName: CMD_NAME,
       description,
       hidden,
       flags: {},
-      help: command => `
+      help: (command: string) => `
     Usage
       $ ${command} ...
 
@@ -50,26 +60,34 @@ async function run(
     `,
     }
 
-    // Parse arguments to handle --help for patch-level help.
-    meowOrExit({
+    // Parse arguments to handle --help for patch-level help (exits 0).
+    const cli = meowOrExit({
       argv,
       config,
       importMeta,
       parentName,
     })
+    // No subcommand and no --help: missing input, show help and exit 2
+    // matching the with-subcommands convention.
+    cli.showHelp(2)
+  }
+
+  if (dryRun) {
+    outputDryRunExecute('socket-patch', forwardArgs, 'socket-patch')
+    return
   }
 
   process.exitCode = 1
 
-  // Forward all arguments to socket-patch via DLX.
-  const { spawnPromise } = await spawnSocketPatchDlx([...argv], {
+  // Forward the remaining arguments to socket-patch via DLX.
+  const { spawnPromise } = await spawnSocketPatchDlx(forwardArgs, {
     stdio: 'inherit',
   })
 
   // Wait for the spawn to complete and set exit code.
   const result = await spawnPromise
 
-  if (result.code !== null && result.code !== 0) {
+  if (result.code != null && result.code !== 0) {
     process.exitCode = result.code
   } else if (result.code === 0) {
     process.exitCode = 0

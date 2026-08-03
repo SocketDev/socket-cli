@@ -1,27 +1,30 @@
 /**
  * Unit tests for getDefaultOrgSlug function.
  *
- * Tests the organization slug resolution logic used in CI environments.
- * This function checks multiple sources in priority order.
+ * Tests the organization slug resolution logic used in CI environments. This
+ * function checks multiple sources in priority order.
  *
  * Test Coverage:
- * - Config file defaultOrg value (highest priority)
+ *
+ * - Config file defaultOrg value, highest priority
  * - SOCKET_CLI_ORG_SLUG environment variable
  * - Fallback to fetching first organization from API
  * - Error handling when no organizations exist
  * - API call failures during organization fetch
  *
  * Testing Approach:
- * - Mock getConfigValueOrUndef from utils/config.mts
+ *
+ * - Mock getConfigValueOrUndef from util/config.mts
  * - Mock fetchOrganization from organization/fetch-organization-list.mts
  * - Mock env.SOCKET_CLI_ORG_SLUG environment variable
  * - Test priority order and fallback chain
  * - Verify CResult pattern (ok/error states)
  *
  * Related Files:
- * - src/commands/ci/fetch-default-org-slug.mts - Implementation
- * - src/commands/ci/handle-ci.mts - CI command handler that uses this
- * - src/utils/config.mts - Config file utilities
+ *
+ * - Src/commands/ci/fetch-default-org-slug.mts - Implementation
+ * - Src/commands/ci/handle-ci.mts - CI command handler that uses this
+ * - Src/util/config.mts - Config file utilities
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -39,19 +42,19 @@ const { mockOrgSlug, mockFetchOrganization, mockGetConfigValueOrUndef } =
   })
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock(import('../../../../src/util/config.mts'), () => ({
   getConfigValueOrUndef: mockGetConfigValueOrUndef,
 }))
 
 // Mock the SOCKET_CLI_ORG_SLUG environment variable module.
-vi.mock('../../../../src/env/socket-cli-org-slug.mts', () => ({
+vi.mock(import('../../../../src/env/socket-cli-org-slug.mts'), () => ({
   get SOCKET_CLI_ORG_SLUG() {
     return mockOrgSlug.value
   },
 }))
 
 vi.mock(
-  '../../../../src/commands/organization/fetch-organization-list.mts',
+  import('../../../../src/commands/organization/fetch-organization-list.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),
@@ -97,13 +100,15 @@ describe('getDefaultOrgSlug', () => {
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
-        organizations: {
-          'org-1': {
+        // fetchOrganization converts the SDK dict into an array of org
+        // objects before returning, so mock the array shape directly.
+        organizations: [
+          {
             id: 'org-1',
             name: 'Test Organization',
             slug: 'test-org',
           },
-        },
+        ],
       },
     })
 
@@ -112,7 +117,31 @@ describe('getDefaultOrgSlug', () => {
     expect(result).toEqual({
       ok: true,
       message: 'Retrieved default org from server',
-      data: 'Test Organization',
+      data: 'test-org',
+    })
+  })
+
+  it('returns slug (not display name) for orgs with spaces', async () => {
+    // Regression guard: orgs whose display name has spaces produce
+    // URLs like `/v0/orgs/Example%20Org%20Ltd/...` that 404.
+    mockFn.mockReturnValue(undefined)
+    mockOrgSlug.value = undefined
+
+    mockFetchFn.mockResolvedValue({
+      ok: true,
+      data: {
+        organizations: [
+          { id: 'org-1', name: 'Example Org Ltd', slug: 'example-org-ltd' },
+        ],
+      },
+    })
+
+    const result = await getDefaultOrgSlug()
+
+    expect(result).toEqual({
+      ok: true,
+      message: 'Retrieved default org from server',
+      data: 'example-org-ltd',
     })
   })
 
@@ -139,7 +168,7 @@ describe('getDefaultOrgSlug', () => {
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
-        organizations: {},
+        organizations: [],
       },
     })
 
@@ -152,20 +181,15 @@ describe('getDefaultOrgSlug', () => {
     })
   })
 
-  it('returns error when organization has no name', async () => {
+  it('returns error when organization has no slug', async () => {
     mockFn.mockReturnValue(undefined)
     mockOrgSlug.value = undefined
 
     mockFetchFn.mockResolvedValue({
       ok: true,
       data: {
-        organizations: {
-          'org-1': {
-            id: 'org-1',
-            slug: 'org-slug',
-            // Missing name field.
-          },
-        },
+        // Missing slug — defensive check in case the API ever omits it.
+        organizations: [{ id: 'org-1', name: 'Test Org' }],
       },
     })
 

@@ -1,27 +1,19 @@
 /**
- * Unit tests for GitHub scan internal functions.
+ * Unit tests for createScanFromGithub rate-limit short-circuiting.
  *
- * Purpose:
- * Tests the internal functions that interact with GitHub API during scans.
- * Validates proper error handling, rate limit detection, and data extraction
- * from GitHub API responses.
+ * Purpose: Drives the full createScanFromGithub function through mocked
+ * Octokit calls (via the withGitHubRetry wrapper) to verify that a
+ * rate-limited, abuse-detected, or unauthenticated GitHub response
+ * short-circuits the per-repo scan loop instead of silently swallowing the
+ * failure.
  *
- * Test Coverage:
- * - getRepoDetails: fetching repository metadata
- * - getRepoBranchTree: fetching file tree
- * - getLastCommitDetails: fetching latest commit SHA
- * - Error handling for rate limits and API failures
- *
- * Testing Approach:
- * Mocks Octokit to test the scan functions without actual GitHub API calls.
- * Tests verify proper error propagation and user-friendly error messages.
- *
- * Related Files:
- * - src/commands/scan/create-scan-from-github.mts (implementation)
- * - src/utils/git/github.mts (GitHub utilities)
+ * Related Files: - src/commands/scan/create-scan-from-github.mts
+ * (implementation) - src/util/git/github.mts (GitHub utilities)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: {
@@ -43,24 +35,28 @@ const mockWithGitHubRetry = vi.hoisted(() =>
       return {
         ok: false,
         message: 'GitHub API error',
-        cause: `Error while ${context}: ${e instanceof Error ? e.message : String(e)}`,
+        cause: `Error while ${context}: ${errorMessage(e)}`,
       }
     }
   }),
 )
 
 // Mock dependencies.
-vi.mock('../../../../src/utils/git/github.mts', () => ({
+vi.mock(import('../../../../src/util/git/github.mts'), () => ({
+  GITHUB_ERR_ABUSE_DETECTION: 'GitHub abuse detection triggered',
+  GITHUB_ERR_AUTH_FAILED: 'GitHub authentication failed',
+  GITHUB_ERR_GRAPHQL_RATE_LIMIT: 'GitHub GraphQL rate limit exceeded',
+  GITHUB_ERR_RATE_LIMIT: 'GitHub rate limit exceeded',
   getOctokit: vi.fn(() => mockOctokit),
   withGitHubRetry: mockWithGitHubRetry,
 }))
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: vi.fn(() => ({
     fail: vi.fn(),
     group: vi.fn(),
@@ -74,7 +70,7 @@ vi.mock('@socketsecurity/lib/logger', () => ({
 
 // Mock other dependencies to isolate the functions under test.
 vi.mock(
-  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts'),
   () => ({
     fetchSupportedScanFileNames: vi.fn().mockResolvedValue({
       ok: true,
@@ -83,348 +79,257 @@ vi.mock(
   }),
 )
 
-vi.mock('../../../../src/commands/scan/handle-create-new-scan.mts', () => ({
-  handleCreateNewScan: vi.fn().mockResolvedValue({ ok: true, data: undefined }),
-}))
-
-vi.mock('../../../../src/commands/repository/fetch-list-all-repos.mts', () => ({
-  fetchListAllRepos: vi.fn().mockResolvedValue({
-    ok: true,
-    data: { results: [{ slug: 'test-repo' }] },
+vi.mock(
+  import('../../../../src/commands/scan/handle-create-new-scan.mts'),
+  () => ({
+    handleCreateNewScan: vi
+      .fn()
+      .mockResolvedValue({ ok: true, data: undefined }),
   }),
-}))
+)
 
-// Import after mocks are set up.
-// Note: We can't directly import the internal functions as they're not exported.
-// Instead, we test them through the exported createScanFromGithub function
-// or test the withGitHubRetry wrapper behavior.
+vi.mock(
+  import('../../../../src/commands/repository/fetch-list-all-repos.mts'),
+  () => ({
+    fetchListAllRepos: vi.fn().mockResolvedValue({
+      ok: true,
+      data: { results: [{ slug: 'test-repo' }] },
+    }),
+  }),
+)
 
-describe('GitHub scan API interactions', () => {
+// Regression tests: the bulk loop in createScanFromGithub used to
+// swallow per-repo failures, so a rate-limited token returned ok:true
+// with "0 manifests". These drive the full function through mocked
+// octokit calls.
+describe('createScanFromGithub rate-limit short-circuit', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  describe('getRepoDetails behavior', () => {
-    it('handles successful repo details fetch', async () => {
-      mockOctokit.repos.get.mockResolvedValue({
-        data: {
-          default_branch: 'main',
-          name: 'test-repo',
-          full_name: 'org/test-repo',
-        },
-      })
-
-      // Call the mock to simulate the behavior.
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.repos.get({
-          owner: 'org',
-          repo: 'test-repo',
-        })
-        return data
-      }, 'fetching repository details for org/test-repo')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.default_branch).toBe('main')
-      }
-    })
-
-    it('handles rate limit error from repo details', async () => {
-      mockOctokit.repos.get.mockRejectedValue(
-        new Error('API rate limit exceeded'),
-      )
-
-      // Simulate withGitHubRetry returning a rate limit error.
-      mockWithGitHubRetry.mockResolvedValueOnce({
-        ok: false,
-        message: 'GitHub rate limit exceeded',
-        cause:
-          'GitHub API rate limit exceeded while fetching repository details. ' +
-          'Try again in a few minutes.\n\n' +
-          'To increase your rate limit:\n' +
-          '- Set GITHUB_TOKEN environment variable',
-      })
-
-      const result = await mockWithGitHubRetry(
-        async () => mockOctokit.repos.get({ owner: 'org', repo: 'test-repo' }),
-        'fetching repository details',
-      )
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
-        expect(result.cause).toContain('GITHUB_TOKEN')
-      }
-    })
-
-    it('handles 404 not found for repo', async () => {
-      mockOctokit.repos.get.mockRejectedValue(new Error('Not Found'))
-
-      mockWithGitHubRetry.mockResolvedValueOnce({
-        ok: false,
-        message: 'GitHub resource not found',
-        cause:
-          'GitHub resource not found while fetching repository details. ' +
-          'The repository may not exist or you may not have access.',
-      })
-
-      const result = await mockWithGitHubRetry(
-        async () =>
-          mockOctokit.repos.get({ owner: 'org', repo: 'nonexistent' }),
-        'fetching repository details',
-      )
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('GitHub resource not found')
-      }
-    })
-  })
-
-  describe('getRepoBranchTree behavior', () => {
-    it('handles successful tree fetch', async () => {
-      mockOctokit.git.getTree.mockResolvedValue({
-        data: {
-          sha: 'abc123',
-          tree: [
-            { type: 'blob', path: 'package.json' },
-            { type: 'blob', path: 'src/index.ts' },
-            { type: 'tree', path: 'src' },
-          ],
-        },
-      })
-
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.git.getTree({
-          owner: 'org',
-          repo: 'test-repo',
-          tree_sha: 'main',
-          recursive: 'true',
-        })
-        return data
-      }, 'fetching file tree for branch main in org/test-repo')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.tree).toHaveLength(3)
-        // Should filter to only blobs.
-        const files = result.data.tree
-          .filter((obj: any) => obj.type === 'blob')
-          .map((obj: any) => obj.path)
-        expect(files).toEqual(['package.json', 'src/index.ts'])
-      }
-    })
-
-    it('handles rate limit error during tree fetch', async () => {
-      mockWithGitHubRetry.mockResolvedValueOnce({
-        ok: false,
-        message: 'GitHub rate limit exceeded',
-        cause: 'GitHub API rate limit exceeded while fetching file tree.',
-      })
-
-      const result = await mockWithGitHubRetry(
-        async () => mockOctokit.git.getTree({ owner: 'org', repo: 'test' }),
-        'fetching file tree',
-      )
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
-      }
-    })
-
-    it('handles empty tree (empty repo)', async () => {
-      mockOctokit.git.getTree.mockResolvedValue({
-        data: {
-          sha: 'abc123',
-          tree: [],
-        },
-      })
-
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.git.getTree({
-          owner: 'org',
-          repo: 'empty-repo',
-          tree_sha: 'main',
-          recursive: 'true',
-        })
-        return data
-      }, 'fetching file tree')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.tree).toHaveLength(0)
-      }
-    })
-  })
-
-  describe('getLastCommitDetails behavior', () => {
-    it('handles successful commit fetch', async () => {
-      mockOctokit.repos.listCommits.mockResolvedValue({
-        data: [
-          {
-            sha: 'abc123def456',
-            commit: {
-              message: 'feat: add new feature',
-              author: { name: 'John Doe' },
-              committer: { name: 'John Doe' },
-            },
-          },
-        ],
-      })
-
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.repos.listCommits({
-          owner: 'org',
-          repo: 'test-repo',
-          sha: 'main',
-          per_page: 1,
-        })
-        return data
-      }, 'fetching latest commit SHA for org/test-repo')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data[0].sha).toBe('abc123def456')
-        expect(result.data[0].commit.message).toBe('feat: add new feature')
-      }
-    })
-
-    it('handles rate limit error during commit fetch (the original bug)', async () => {
-      // This is the exact scenario that caused "Cannot read properties of undefined (reading 'sha')".
-      mockWithGitHubRetry.mockResolvedValueOnce({
-        ok: false,
-        message: 'GitHub rate limit exceeded',
-        cause:
-          'GitHub API rate limit exceeded while fetching latest commit SHA. ' +
-          'Try again in a few minutes.',
-      })
-
-      const result = await mockWithGitHubRetry(
-        async () =>
-          mockOctokit.repos.listCommits({ owner: 'org', repo: 'test' }),
-        'fetching latest commit SHA',
-      )
-
-      // With the fix, we get a proper error instead of crashing.
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
-        // Should NOT crash with "Cannot read properties of undefined (reading 'sha')".
-      }
-    })
-
-    it('handles empty commits response', async () => {
-      mockOctokit.repos.listCommits.mockResolvedValue({
-        data: [],
-      })
-
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.repos.listCommits({
-          owner: 'org',
-          repo: 'empty-repo',
-          sha: 'main',
-          per_page: 1,
-        })
-        return data
-      }, 'fetching latest commit')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        // The actual function checks for empty commits.
-        expect(result.data).toHaveLength(0)
-      }
-    })
-  })
-
-  describe('downloadManifestFile behavior', () => {
-    it('handles successful file content fetch', async () => {
-      mockOctokit.repos.getContent.mockResolvedValue({
-        data: {
-          type: 'file',
-          content: Buffer.from('{"name": "test"}').toString('base64'),
-          download_url:
-            'https://raw.githubusercontent.com/org/repo/main/package.json',
-          size: 16,
-        },
-      })
-
-      const result = await mockWithGitHubRetry(async () => {
-        const { data } = await mockOctokit.repos.getContent({
-          owner: 'org',
-          repo: 'test-repo',
-          path: 'package.json',
-          ref: 'main',
-        })
-        return data
-      }, 'fetching file content for package.json in org/test-repo')
-
-      expect(result.ok).toBe(true)
-      if (result.ok) {
-        expect(result.data.type).toBe('file')
-        expect(result.data.download_url).toContain('raw.githubusercontent.com')
-      }
-    })
-
-    it('handles rate limit during file fetch', async () => {
-      mockWithGitHubRetry.mockResolvedValueOnce({
-        ok: false,
-        message: 'GitHub rate limit exceeded',
-        cause: 'GitHub API rate limit exceeded while fetching file content.',
-      })
-
-      const result = await mockWithGitHubRetry(
-        async () =>
-          mockOctokit.repos.getContent({
-            owner: 'org',
-            repo: 'test',
-            path: 'package.json',
-          }),
-        'fetching file content',
-      )
-
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
-      }
-    })
-  })
-})
-
-describe('error message quality', () => {
-  it('provides actionable error messages for rate limits', () => {
-    const errorResult = {
-      ok: false as const,
+  it('returns ok:false and stops the loop on GitHub rate limit', async () => {
+    // First call (getRepoDetails for repo-a) fails with rate limit.
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
       message: 'GitHub rate limit exceeded',
-      cause:
-        'GitHub API rate limit exceeded while fetching commits. ' +
-        'Try again in a few minutes.\n\n' +
-        'To increase your rate limit:\n' +
-        '- Set GITHUB_TOKEN environment variable with a valid token\n' +
-        '- In GitHub Actions, GITHUB_TOKEN is automatically available',
-    }
+      cause: 'GitHub API rate limit exceeded.',
+    })
 
-    expect(errorResult.cause).toContain('GITHUB_TOKEN')
-    expect(errorResult.cause).toContain('GitHub Actions')
-    expect(errorResult.cause).toContain('Try again')
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub rate limit exceeded')
+    }
+    // Short-circuit: only the first repo's getRepoDetails should have run.
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
   })
 
-  it('provides context-specific error messages', () => {
-    const contexts = [
-      'fetching repository details for org/repo',
-      'fetching file tree for branch main in org/repo',
-      'fetching latest commit SHA for org/repo',
-      'fetching file content for package.json in org/repo',
-    ]
+  it('returns ok:false and stops on GitHub GraphQL rate limit', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub GraphQL rate limit exceeded',
+      cause: 'GraphQL rate limit hit.',
+    })
 
-    for (const context of contexts) {
-      const errorResult = {
-        ok: false as const,
-        message: 'GitHub API error',
-        cause: `Unexpected error while ${context}: Network failure`,
-      }
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
 
-      expect(errorResult.cause).toContain(context)
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub GraphQL rate limit exceeded')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns ok:false and stops on GitHub abuse detection', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub abuse detection triggered',
+      cause: 'Secondary rate limit hit.',
+    })
+
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b,repo-c',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub abuse detection triggered')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns ok:false and stops on GitHub auth failure', async () => {
+    mockWithGitHubRetry.mockResolvedValueOnce({
+      ok: false,
+      message: 'GitHub authentication failed',
+      cause: 'Bad credentials.',
+    })
+
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('GitHub authentication failed')
+    }
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns "All repos failed to scan" when every repo errors with a non-blocking reason', async () => {
+    // Each repo's getRepoDetails fails with a non-rate-limit error;
+    // the loop should finish all repos and return the catch-all error.
+    mockWithGitHubRetry.mockResolvedValue({
+      ok: false,
+      message: 'GitHub resource not found',
+      cause: 'Not found.',
+    })
+
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+
+    const result = await createScanFromGithub({
+      all: false,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: 'repo-a,repo-b',
+    })
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('All repos failed to scan')
+      expect(result.cause).toContain('repo-a')
+    }
+    // Both repos should have been attempted (no short-circuit for 404).
+    expect(mockWithGitHubRetry).toHaveBeenCalledTimes(2)
+  })
+
+  it('uses fetchListAllRepos when all=true (lines 57-64)', async () => {
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: true,
+      data: { results: [{ slug: 'a' }, { slug: 'b' }] },
+    } as unknown)
+    // Make all repos fail with a quick 404 so the test exits cleanly.
+    mockWithGitHubRetry.mockResolvedValue({
+      ok: false,
+      message: 'GitHub resource not found',
+      cause: 'Not found.',
+    })
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(fetchListAllRepos).toHaveBeenCalled()
+    expect(result.ok).toBe(false)
+  })
+
+  it('returns ok:false on fetchListAllRepos failure (lines 61-62)', async () => {
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: false,
+      message: 'API Error',
+      cause: 'Something broke',
+    } as unknown)
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('API Error')
+    }
+  })
+
+  it('returns "No repo found" when targetRepos is empty (lines 73-79)', async () => {
+    const { fetchListAllRepos } =
+      await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
+    vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
+      ok: true,
+      data: { results: [] },
+    } as unknown)
+    const { createScanFromGithub } =
+      await import('../../../../src/commands/scan/create-scan-from-github.mts')
+    const result = await createScanFromGithub({
+      all: true,
+      githubApiUrl: '',
+      githubToken: '',
+      interactive: false,
+      orgGithub: 'org',
+      orgSlug: 'org',
+      outputKind: 'text',
+      repos: '',
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('No repo found')
     }
   })
 })

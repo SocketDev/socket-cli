@@ -7,11 +7,33 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
+} from '@socketsecurity/lib-stable/constants/agents'
 
 import type { NpmOverrides, Overrides, PnpmOrYarnOverrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/ecosystem/environment.mjs'
-import type { PackageJson } from '@socketsecurity/lib/packages'
+import type { Agent, EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { PackageJson } from '@socketsecurity/lib-stable/packages/types'
+
+export type GetOverridesResult = { type: Agent; overrides: Overrides }
+
+export function getOverridesData(
+  pkgEnvDetails: EnvDetails,
+  pkgJson?: PackageJson | undefined,
+): GetOverridesResult {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return getOverridesDataBun(pkgEnvDetails, pkgJson)
+    case PNPM:
+      return getOverridesDataPnpm(pkgEnvDetails, pkgJson)
+    case VLT:
+      return getOverridesDataVlt(pkgEnvDetails, pkgJson)
+    case YARN_BERRY:
+      return getOverridesDataYarn(pkgEnvDetails, pkgJson)
+    case YARN_CLASSIC:
+      return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
+    default:
+      return getOverridesDataNpm(pkgEnvDetails, pkgJson)
+  }
+}
 
 export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,
@@ -37,8 +59,9 @@ export function getOverridesDataPnpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ): { type: Agent; overrides: PnpmOrYarnOverrides } {
-  const overrides = ((pkgJson as any)?.[PNPM]?.[OVERRIDES] ??
-    {}) as PnpmOrYarnOverrides
+  const overrides = ((
+    pkgJson as Record<string, Record<string, unknown> | undefined> | undefined
+  )?.[PNPM]?.[OVERRIDES] ?? {}) as PnpmOrYarnOverrides
   return { type: PNPM, overrides }
 }
 
@@ -68,31 +91,4 @@ export function getOverridesDataYarnClassic(
 ): { type: Agent; overrides: PnpmOrYarnOverrides } {
   const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_CLASSIC, overrides }
-}
-
-export type GetOverrides = (
-  pkgEnvDetails: EnvDetails,
-  pkgJson?: PackageJson | undefined,
-) => GetOverridesResult
-
-export type GetOverridesResult = { type: Agent; overrides: Overrides }
-
-export function getOverridesData(
-  pkgEnvDetails: EnvDetails,
-  pkgJson?: PackageJson | undefined,
-): GetOverridesResult {
-  switch (pkgEnvDetails.agent) {
-    case BUN:
-      return getOverridesDataBun(pkgEnvDetails, pkgJson)
-    case PNPM:
-      return getOverridesDataPnpm(pkgEnvDetails, pkgJson)
-    case VLT:
-      return getOverridesDataVlt(pkgEnvDetails, pkgJson)
-    case YARN_BERRY:
-      return getOverridesDataYarn(pkgEnvDetails, pkgJson)
-    case YARN_CLASSIC:
-      return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
-    default:
-      return getOverridesDataNpm(pkgEnvDetails, pkgJson)
-  }
 }

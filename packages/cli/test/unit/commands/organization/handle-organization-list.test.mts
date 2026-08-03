@@ -1,25 +1,24 @@
 /**
- * Unit Tests: User Organizations List Command Handler
+ * Unit Tests: User Organizations List Command Handler.
  *
- * Purpose:
- * Tests the command handler that orchestrates fetching and displaying the list of organizations
- * accessible to the authenticated user. Validates output format selection and error propagation
- * through the fetch/output pipeline.
+ * Purpose: Tests the command handler that orchestrates fetching and displaying
+ * the list of organizations accessible to the authenticated user. Validates
+ * output format selection and error propagation through the fetch/output
+ * pipeline.
  *
- * Test Coverage:
- * - Successful organization list fetch and output
- * - Multiple output format support (json, text, markdown)
- * - Error handling and propagation
+ * Test Coverage: - Successful organization list fetch and output - Multiple
+ * output format support, json, text, markdown - Error handling and
+ * propagation.
  *
- * Testing Approach:
- * Mocks fetchOrganization and outputOrganizationList modules to test orchestration logic
- * without actual API calls or terminal output. Uses test environment setup helpers for
- * consistent isolation.
+ * Testing Approach: Mocks fetchOrganization and outputOrganizationList modules
+ * to test orchestration logic without actual API calls or terminal output. Uses
+ * test environment setup helpers for consistent isolation.
  *
- * Related Files:
- * - src/commands/organization/handle-organization-list.mts - Command handler
- * - src/commands/organization/fetch-organization-list.mts - Organization list fetcher
- * - src/commands/organization/output-organization-list.mts - Output formatter (not in test files)
+ * Related Files: - src/commands/organization/handle-organization-list.mts -
+ * Command handler - src/commands/organization/fetch-organization-list.mts -
+ * Organization list fetcher -
+ * src/commands/organization/output-organization-list.mts - Output formatter
+ * not in test files.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -36,20 +35,20 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  '../../../../src/commands/organization/fetch-organization-list.mts',
+  import('../../../../src/commands/organization/fetch-organization-list.mts'),
   () => ({
     fetchOrganization: mockFetchOrganization,
   }),
 )
 
 vi.mock(
-  '../../../../src/commands/organization/output-organization-list.mts',
+  import('../../../../src/commands/organization/output-organization-list.mts'),
   () => ({
     outputOrganizationList: mockOutputOrganizationList,
   }),
 )
 
-vi.mock('@socketsecurity/lib/debug', () => ({
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
 }))

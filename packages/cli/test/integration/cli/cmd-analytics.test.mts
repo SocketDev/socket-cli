@@ -4,31 +4,27 @@
  * Tests the analytics command for querying organization and repository-level
  * analytics data over specified time periods (7, 30, or 90 days).
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Scope selection (org vs repo)
- * - Time filter validation (7, 30, 90 days)
- * - Repository name requirement when scope is "repo"
- * - Legacy flag detection and rejection (--scope, --repo, --time)
- * - Argument parsing (positional vs flag-based)
- * - Error handling (missing token, invalid time values, missing repo names)
- * - Exit codes for various scenarios
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Scope selection, org vs repo - Time filter validation (7, 30,
+ * 90 days) - Repository name requirement when scope is "repo" - Legacy flag
+ * detection and rejection (--scope, --repo, --time) - Argument parsing
+ * positional vs flag-based - Error handling (missing token, invalid time
+ * values, missing repo names) - Exit codes for various scenarios.
  *
- * Platform-Specific Behavior:
- * - Windows Node 24+ has known stderr assertion failures (skipped in tests)
+ * Platform-Specific Behavior: - Windows Node 24+ has known stderr assertion
+ * failures, skipped in tests.
  *
- * Related Files:
- * - src/commands/analytics/cmd-analytics.mts - Command definition
- * - src/commands/analytics/handle-analytics.mts - Analytics handler
- * - src/commands/analytics/output-analytics.mts - Output formatting
+ * Related Files: - src/commands/analytics/cmd-analytics.mts - Command
+ * definition - src/commands/analytics/handle-analytics.mts - Analytics handler
+ * - src/commands/analytics/output-analytics.mts - Output formatting.
  */
 
+// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is a devDep in tests so no runtime dep leaks.
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import { getNodeVersion } from '@socketsecurity/lib/constants/node'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,
@@ -67,6 +63,7 @@ describe('socket analytics', async () => {
                 --file              Path to store result, only valid with --json/--markdown
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket analytics org 7
@@ -156,15 +153,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 30 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -178,15 +185,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 30 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -236,15 +253,26 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: repo
+            repo: daname
+            time: 30 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -258,15 +286,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 7 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -280,15 +318,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 30 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -302,15 +350,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 90 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -362,15 +420,25 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: org
+            time: 7 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -392,15 +460,26 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket analytics\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch analytics data
+
+          Query parameters:
+            scope: repo
+            repo: slowpo
+            time: 30 days
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

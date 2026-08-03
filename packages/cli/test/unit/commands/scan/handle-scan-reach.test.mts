@@ -1,30 +1,26 @@
 /**
  * Unit tests for handleScanReach.
  *
- * Purpose:
- * Tests the handler that performs reachability analysis. Validates dependency reachability checks and impact analysis.
+ * Purpose: Tests the handler that performs reachability analysis. Validates
+ * dependency reachability checks and impact analysis.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanReach.mts (implementation)
+ * Related Files: - src/commands/handleScanReach.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { handleScanReach } from '../../../../src/commands/scan/handle-scan-reach.mts'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -52,49 +48,55 @@ const mockPerformReachabilityAnalysis = vi.hoisted(() => vi.fn())
 const mockCheckCommandInput = vi.hoisted(() => vi.fn())
 const mockGetPackageFilesForScan = vi.hoisted(() => vi.fn())
 const mockPluralize = vi.hoisted(() => vi.fn(str => str))
+const mockFinalizeTier1Scan = vi.hoisted(() =>
+  vi.fn(async () => ({ ok: true, data: undefined })),
+)
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('@socketsecurity/lib/constants/process', () => ({
-  getSpinner: mockGetSpinner,
+vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
+  getDefaultSpinner: mockGetSpinner,
 }))
 
-vi.mock('@socketsecurity/lib/words', () => ({
+vi.mock(import('@socketsecurity/lib-stable/words/pluralize'), () => ({
   pluralize: mockPluralize,
 }))
 
 vi.mock(
-  '../../../../src/commands/scan/fetch-supported-scan-file-names.mts',
+  import('../../../../src/commands/scan/fetch-supported-scan-file-names.mts'),
   () => ({
     fetchSupportedScanFileNames: mockFetchSupportedScanFileNames,
   }),
 )
 
-vi.mock('../../../../src/commands/scan/output-scan-reach.mts', () => ({
+vi.mock(
+  import('../../../../src/commands/scan/finalize-tier1-scan.mts'),
+  () => ({
+    finalizeTier1Scan: mockFinalizeTier1Scan,
+  }),
+)
+
+vi.mock(import('../../../../src/commands/scan/output-scan-reach.mts'), () => ({
   outputScanReach: mockOutputScanReach,
 }))
 
 vi.mock(
-  '../../../../src/commands/scan/perform-reachability-analysis.mts',
+  import('../../../../src/commands/scan/perform-reachability-analysis.mts'),
   () => ({
     performReachabilityAnalysis: mockPerformReachabilityAnalysis,
   }),
 )
 
-vi.mock('../../../../src/utils/validation/check-input.mts', () => ({
+vi.mock(import('../../../../src/util/validation/check-input.mts'), () => ({
   checkCommandInput: mockCheckCommandInput,
 }))
 
-vi.mock('../../../../src/utils/fs/path-resolve.mjs', () => ({
+vi.mock(import('../../../../src/util/fs/path-resolve.mjs'), () => ({
   getPackageFilesForScan: mockGetPackageFilesForScan,
 }))
-
-const { handleScanReach } = await import(
-  '../../../../src/commands/scan/handle-scan-reach.mts'
-)
 
 describe('handleScanReach', () => {
   beforeEach(() => {
@@ -128,7 +130,9 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'json',
+      outputPath: '',
       reachabilityOptions: {
+        excludePaths: [],
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
         reachDisableAnalytics: false,
@@ -144,9 +148,10 @@ describe('handleScanReach', () => {
     expect(mockPerformAnalysis).toHaveBeenCalledWith({
       cwd: '/project',
       orgSlug: 'test-org',
-      outputPath: undefined,
+      outputPath: '',
       packagePaths: ['/project/package.json', '/project/package-lock.json'],
       reachabilityOptions: {
+        excludePaths: [],
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
         reachDisableAnalytics: false,
@@ -163,6 +168,90 @@ describe('handleScanReach', () => {
     expect(mockOutput).toHaveBeenCalled()
   })
 
+  it('finalizes the tier1 row with no full-scan id', async () => {
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      ok: true,
+      data: ['package.json'],
+    })
+    mockGetPackageFilesForScan.mockResolvedValue(['/project/package.json'])
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-abc',
+      },
+    })
+
+    await handleScanReach({
+      cwd: '/project',
+      interactive: false,
+      orgSlug: 'test-org',
+      outputKind: 'json',
+      outputPath: '',
+      reachabilityOptions: {
+        excludePaths: [],
+        reachAnalysisTimeout: 300,
+        reachAnalysisMemoryLimit: 2048,
+        reachDisableAnalytics: false,
+        reachEcosystems: [],
+        reachExcludePaths: [],
+        reachMinSeverity: 'low',
+        reachSkipCache: false,
+        reachUseUnreachableFromPrecomputation: false,
+      },
+      targets: ['src'],
+    })
+
+    expect(mockFinalizeTier1Scan).toHaveBeenCalledWith('tier1-abc')
+  })
+
+  it('warns but still emits output when tier1 finalize fails', async () => {
+    mockCheckCommandInput.mockReturnValue(true)
+    mockFetchSupportedScanFileNames.mockResolvedValue({
+      ok: true,
+      data: ['package.json'],
+    })
+    mockGetPackageFilesForScan.mockResolvedValue(['/project/package.json'])
+    mockPerformReachabilityAnalysis.mockResolvedValue({
+      ok: true,
+      data: {
+        reachabilityReport: '.socket.facts.json',
+        tier1ReachabilityScanId: 'tier1-abc',
+      },
+    })
+    mockFinalizeTier1Scan.mockResolvedValueOnce({
+      ok: false,
+      message: 'finalize failed',
+      cause: 'server said no',
+    } as never)
+
+    await handleScanReach({
+      cwd: '/project',
+      interactive: false,
+      orgSlug: 'test-org',
+      outputKind: 'json',
+      outputPath: '',
+      reachabilityOptions: {
+        excludePaths: [],
+        reachAnalysisTimeout: 300,
+        reachAnalysisMemoryLimit: 2048,
+        reachDisableAnalytics: false,
+        reachEcosystems: [],
+        reachExcludePaths: [],
+        reachMinSeverity: 'low',
+        reachSkipCache: false,
+        reachUseUnreachableFromPrecomputation: false,
+      },
+      targets: ['src'],
+    })
+
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('finalize failed'),
+    )
+    expect(mockOutputScanReach).toHaveBeenCalled()
+  })
+
   it('handles supported files fetch failure', async () => {
     const mockFetchSupported = mockFetchSupportedScanFileNames
     const mockOutput = mockOutputScanReach
@@ -175,12 +264,12 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'text',
+      outputPath: '',
       reachabilityOptions: {},
       targets: [],
     })
 
     expect(mockOutput).toHaveBeenCalledWith(mockError, {
-      cwd: '/project',
       outputKind: 'text',
       outputPath: '',
     })
@@ -200,7 +289,8 @@ describe('handleScanReach', () => {
       interactive: false,
       orgSlug: 'test-org',
       outputKind: 'json',
-      reachabilityOptions: {},
+      outputPath: '',
+      reachabilityOptions: { excludePaths: [], reachExcludePaths: [] },
       targets: ['nonexistent'],
     })
 
@@ -231,12 +321,16 @@ describe('handleScanReach', () => {
       interactive: true,
       orgSlug: 'test-org',
       outputKind: 'markdown',
-      reachabilityOptions: { maxDepth: 10 },
+      outputPath: '',
+      reachabilityOptions: {
+        excludePaths: [],
+        reachExcludePaths: [],
+        maxDepth: 10,
+      },
       targets: ['./'],
     })
 
     expect(mockOutput).toHaveBeenCalledWith(analysisError, {
-      cwd: '/project',
       outputKind: 'markdown',
       outputPath: '',
     })

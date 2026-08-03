@@ -1,8 +1,8 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
 import type { CResult, OutputKind } from '../../types.mts'
@@ -10,10 +10,7 @@ const logger = getDefaultLogger()
 
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
-  {
-    outputKind,
-    outputPath,
-  }: { cwd: string; outputKind: OutputKind; outputPath: string },
+  { outputKind, outputPath }: { outputKind: OutputKind; outputPath: string },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

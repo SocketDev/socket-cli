@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleScanView.
  *
- * Purpose:
- * Tests the handler that displays scan results. Validates scan data presentation and formatting.
+ * Purpose: Tests the handler that displays scan results. Validates scan data
+ * presentation and formatting.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanView.mts (implementation)
+ * Related Files: - src/commands/handleScanView.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -27,10 +22,10 @@ import { handleScanView } from '../../../../src/commands/scan/handle-scan-view.m
 const mockFetchScan = vi.hoisted(() => vi.fn())
 const mockOutputScanView = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/fetch-scan.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/fetch-scan.mts'), () => ({
   fetchScan: mockFetchScan,
 }))
-vi.mock('../../../../src/commands/scan/output-scan-view.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-scan-view.mts'), () => ({
   outputScanView: mockOutputScanView,
 }))
 
@@ -40,12 +35,10 @@ describe('handleScanView', () => {
   })
 
   it('fetches and outputs scan view successfully', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -75,12 +68,10 @@ describe('handleScanView', () => {
   })
 
   it('handles fetch failure', async () => {
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const mockError = {
       ok: false,
@@ -101,17 +92,16 @@ describe('handleScanView', () => {
   })
 
   it('handles markdown output', async () => {
-    await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
       data: {
         id: 'scan-456',
         status: 'in_progress',
-        results: null,
+        results: undefined,
       },
     }
     mockFetchScan.mockResolvedValue(mockData)
@@ -128,10 +118,9 @@ describe('handleScanView', () => {
   })
 
   it('handles empty file path', async () => {
-    await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -151,20 +140,19 @@ describe('handleScanView', () => {
   })
 
   it('handles different scan statuses', async () => {
-    await import('../../../../../src/commands/scan/fetch-scan.mts')
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const statuses = ['pending', 'in_progress', 'completed', 'failed']
 
-    for (const status of statuses) {
+    for (let i = 0, { length } = statuses; i < length; i += 1) {
+      const status = statuses[i]
       mockFetchScan.mockResolvedValue({
         ok: true,
         data: { id: 'scan-test', status },
       })
 
-      // eslint-disable-next-line no-await-in-loop
       await handleScanView('org', 'scan-test', 'output.json', 'json')
 
       expect(outputScanView).toHaveBeenCalledWith(
@@ -181,12 +169,10 @@ describe('handleScanView', () => {
 
   it('handles text output format', async () => {
     // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
-    const { outputScanView } = await import(
-      '../../../../../src/commands/scan/output-scan-view.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../src/commands/scan/fetch-scan.mts')
+    const { outputScanView } =
+      await import('../../../../src/commands/scan/output-scan-view.mts')
 
     const mockData = {
       ok: true,
@@ -211,9 +197,8 @@ describe('handleScanView', () => {
 
   it('handles async errors', async () => {
     // biome-ignore lint/correctness/noUnusedVariables: imported for mocking.
-    const { fetchScan } = await import(
-      '../../../../../src/commands/scan/fetch-scan.mts'
-    )
+    const { fetchScan } =
+      await import('../../../../src/commands/scan/fetch-scan.mts')
 
     mockFetchScan.mockRejectedValue(new Error('Network error'))
 

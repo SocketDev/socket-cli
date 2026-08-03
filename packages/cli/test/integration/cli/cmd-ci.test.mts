@@ -2,24 +2,22 @@
  * Integration tests for `socket ci` command.
  *
  * Tests the CI command which is an alias for `socket scan create --report`.
- * This command creates a security scan and exits with a non-zero code if
- * the scan detects policy violations, making it ideal for automated CI/CD pipelines.
+ * This command creates a security scan and exits with a non-zero code if the
+ * scan detects policy violations, making it ideal for automated CI/CD
+ * pipelines.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Auto-manifest flag support
- * - Exit codes (success vs policy violations)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Auto-manifest flag support - Exit codes (success vs policy
+ * violations)
  *
- * CI/CD Integration:
- * This command is specifically designed for automated builds where security
- * policy enforcement is required. It uses the default organization from the
- * API token and fails the build when issues are detected.
+ * CI/CD Integration: This command is specifically designed for automated builds
+ * where security policy enforcement is required. It uses the default
+ * organization from the API token and fails the build when issues are
+ * detected.
  *
- * Related Files:
- * - src/commands/ci/cmd-ci.mts - Command definition
- * - src/commands/ci/handle-ci.mts - CI handler (delegates to scan create)
- * - src/commands/scan/cmd-scan-create.mts - Underlying scan create command
+ * Related Files: - src/commands/ci/cmd-ci.mts - Command definition -
+ * src/commands/ci/handle-ci.mts - CI handler, delegates to scan create -
+ * src/commands/scan/cmd-scan-create.mts - Underlying scan create command.
  */
 
 import { describe, expect } from 'vitest'
@@ -49,6 +47,8 @@ describe('socket ci', async () => {
           
               Options
                 --auto-manifest     Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+                --trust-socket-json  Run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.
           
               This command is intended to use in CI runs to allow automated systems to
               accept or reject a current build. It will use the default org of the
@@ -59,6 +59,11 @@ describe('socket ci', async () => {
               but is not enabled by default since the CI is less likely to be set up with
               all the necessary dev tooling. Enable it if you want the scan to include
               locally generated manifests like for gradle and sbt.
+          
+              With --auto-manifest, gradle and sbt run a build binary. The defaults are
+              \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that points
+              \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+              you also pass --trust-socket-json.
           
               Examples
                 $ socket ci
@@ -84,14 +89,29 @@ describe('socket ci', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket ci\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket ci\`, cwd: <redacted>
+
+
+        [DryRun]: Would upload CI scan
+
+          Details:
+            autoManifest: false
+            branchName: "[BRANCH]"
+            cwd: "[PROJECT]"
+            organizationSlug: "(from API token)"
+            repoName: "socket-cli"
+            report: true
+            targets:
+              0: "."
+
+          Run without --dry-run to perform this upload."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -4,25 +4,22 @@
  * Tests the data fetching logic for organization analytics. These tests verify
  * SDK integration, API call handling, and error scenarios.
  *
- * Test Coverage:
- * - Successful analytics data fetch with complete vulnerability breakdown
- * - SDK setup failure with error propagation
- * - API call failure with status code handling
- * - Custom SDK options pass-through (apiToken, baseUrl)
- * - Different time period parameters (7, 14, 30, 60, 90 days)
- * - Prototype pollution protection verification
+ * Test Coverage: - Successful analytics data fetch with complete vulnerability
+ * breakdown - SDK setup failure with error propagation - API call failure with
+ * status code handling - Custom SDK options pass-through (apiToken, baseUrl) -
+ * Different time period parameters (7, 14, 30, 60, 90 days) - Prototype
+ * pollution protection verification.
  *
- * Testing Approach:
- * - Mock Socket SDK using setupSdkMockSuccess/Error/SetupFailure helpers
- * - Mock handleApiCall from utils/socket/api.mts
- * - Mock setupSdk from utils/socket/sdk.mts
- * - Verify SDK method calls with correct parameters
- * - Test CResult pattern (ok/error states)
+ * Testing Approach: - Mock Socket SDK using
+ * setupSdkMockSuccess/Error/SetupFailure helpers - Mock handleApiCall from
+ * util/socket/api.mts - Mock setupSdk from util/socket/sdk.mts - Verify SDK
+ * method calls with correct parameters - Test CResult pattern (ok/error
+ * states)
  *
- * Related Files:
- * - src/commands/analytics/fetch-org-analytics.mts - Implementation
- * - src/commands/analytics/handle-analytics.mts - Handler that calls this fetcher
- * - test/helpers/sdk-test-helpers.mts - SDK mocking utilities
+ * Related Files: - src/commands/analytics/fetch-org-analytics.mts -
+ * Implementation - src/commands/analytics/handle-analytics.mts - Handler that
+ * calls this fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking
+ * utilities.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -31,15 +28,15 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
-import { fetchOrgAnalyticsData } from '../../../../src/src/commands/../../../../src/commands/analytics/fetch-org-analytics.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
+import { fetchOrgAnalyticsData } from '../../../../src/commands/analytics/fetch-org-analytics.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../../src/commands/../utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../../src/commands/../utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -113,8 +110,8 @@ describe('fetchOrgAnalytics', () => {
 
     const times = [7, 14, 30, 60, 90]
 
-    for (const time of times) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = times; i < length; i += 1) {
+      const time = times[i]
       await fetchOrgAnalyticsData(time)
       expect(mockSdk.getOrgAnalytics).toHaveBeenCalledWith(time.toString())
     }

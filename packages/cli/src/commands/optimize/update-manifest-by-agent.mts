@@ -6,12 +6,18 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
-import { hasKeys, isObject } from '@socketsecurity/lib/objects'
+} from '@socketsecurity/lib-stable/constants/agents'
+import {
+  hasKeys,
+  isObject,
+} from '@socketsecurity/lib-stable/objects/predicates'
+
+import { updatePnpmWorkspaceYamlOverrides } from './update-pnpm-workspace-yaml.mts'
 
 import type { Overrides } from './types.mts'
-import type { Agent } from '../../utils/ecosystem/environment.mjs'
-import type { EditablePackageJson } from '@socketsecurity/lib/packages'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
+import type { Agent } from '../../util/ecosystem/environment.mjs'
+import type { EditablePackageJson } from '@socketsecurity/lib-stable/packages/types'
 
 const depFields = [
   'dependencies',
@@ -22,34 +28,91 @@ const depFields = [
   'bundleDependencies',
 ]
 
-function getEntryIndexes(
-  entries: Array<[string | symbol, any]>,
+export function getEntryIndexes(
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ): number[] {
   return keys
     .map(n => entries.findIndex(p => p[0] === n))
     .filter(n => n !== -1)
-    .sort((a, b) => a - b)
+    .toSorted((a, b) => a - b)
 }
 
-function getLowestEntryIndex(
-  entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>,
-) {
-  return getEntryIndexes(entries, keys)?.[0] ?? -1
-}
-
-function getHighestEntryIndex(
-  entries: Array<[string | symbol, any]>,
+export function getHighestEntryIndex(
+  entries: Array<[string | symbol, unknown]>,
   keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.at(-1) ?? -1
 }
 
-function updatePkgJsonField(
+export function getLowestEntryIndex(
+  entries: Array<[string | symbol, unknown]>,
+  keys: Array<string | symbol>,
+) {
+  return getEntryIndexes(entries, keys)?.[0] ?? -1
+}
+
+/**
+ * Apply overrides to the host repo's manifest, picking the correct destination
+ * based on agent + version:
+ *
+ * - Pnpm 11+ → pnpm-workspace.yaml `overrides:` block (async write, preserves
+ *   comments via the `yaml` package's Document API).
+ * - Pnpm < 11 → package.json `pnpm.overrides`.
+ * - Bun / yarn-classic / yarn-berry → package.json `resolutions`.
+ * - Vlt / npm / fallback → package.json `overrides`.
+ *
+ * The `pkgEnvDetails` parameter carries `agentVersion` (a SemVer instance)
+ * needed to disambiguate pnpm versions. Callers reach this via
+ * `applyOptimization()` which already has the env in scope.
+ */
+export async function updateManifest(
+  agent: Agent,
+  pkgEnvDetails: EnvDetails,
+  overrides: Overrides,
+): Promise<void> {
+  const { editablePkgJson } = pkgEnvDetails
+  switch (agent) {
+    case BUN:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case PNPM:
+      if (usesPnpmWorkspaceOverrides(pkgEnvDetails)) {
+        // Route to pnpm-workspace.yaml. Also clear any stale
+        // `pnpm.overrides` in package.json — pnpm 11 ignores it, but
+        // leaving it there is misleading + drift-prone.
+        updatePnpmField(editablePkgJson, {})
+        await updatePnpmWorkspaceYamlOverrides(pkgEnvDetails.pkgPath, overrides)
+      } else {
+        updatePnpmField(editablePkgJson, overrides)
+      }
+      return
+    case VLT:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+    case YARN_BERRY:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case YARN_CLASSIC:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    default:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+  }
+}
+
+export function updateOverridesField(
+  editablePkgJson: EditablePackageJson,
+  overrides: Overrides,
+) {
+  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
+}
+
+export function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
-  value: any,
+  value: unknown,
 ) {
   const oldValue = editablePkgJson.content[field]
   if (oldValue) {
@@ -60,30 +123,28 @@ function updatePkgJsonField(
         editablePkgJson.update({
           [field]: {
             ...(isPnpmObj ? oldValue : {}),
-            overrides: {
-              ...(isPnpmObj ? (oldValue as any)[OVERRIDES] : {}),
-              ...value,
-            },
+            [OVERRIDES]: value,
           },
         })
+      } else if (isPnpmObj) {
+        // Drop the overrides key but keep the rest of the pnpm config.
+        const { overrides: _omitted, ...rest } = oldValue as Record<
+          string,
+          unknown
+        >
+        editablePkgJson.update({
+          [field]: hasKeys(rest) ? rest : undefined,
+        })
       } else {
-        // Properties with undefined values are deleted when saved as JSON.
-        editablePkgJson.update(
-          (hasKeys(oldValue)
-            ? {
-                [field]: {
-                  ...(isPnpmObj ? oldValue : {}),
-                  overrides: undefined,
-                },
-              }
-            : { [field]: undefined }) as typeof editablePkgJson.content,
-        )
+        editablePkgJson.update({
+          [field]: undefined,
+        })
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are deleted when saved as JSON.
       editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined,
-      } as typeof editablePkgJson.content)
+      })
     } else {
       editablePkgJson.update({ [field]: value })
     }
@@ -138,11 +199,11 @@ function updatePkgJsonField(
   )
 }
 
-export function updateOverridesField(
+export function updatePnpmField(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides,
 ) {
-  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
+  updatePkgJsonField(editablePkgJson, PNPM, overrides)
 }
 
 export function updateResolutionsField(
@@ -152,36 +213,14 @@ export function updateResolutionsField(
   updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
 }
 
-export function updatePnpmField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-) {
-  updatePkgJsonField(editablePkgJson, PNPM, overrides)
-}
-
-export function updateManifest(
-  agent: Agent,
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides,
-): void {
-  switch (agent) {
-    case BUN:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    case PNPM:
-      updatePnpmField(editablePkgJson, overrides)
-      return
-    case VLT:
-      updateOverridesField(editablePkgJson, overrides)
-      return
-    case YARN_BERRY:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    case YARN_CLASSIC:
-      updateResolutionsField(editablePkgJson, overrides)
-      return
-    default:
-      updateOverridesField(editablePkgJson, overrides)
-      return
-  }
+/**
+ * Pnpm 11+ reads `overrides:` from `pnpm-workspace.yaml`. The `pnpm.overrides`
+ * block in package.json is silently ignored. Returns true when the host repo's
+ * `packageManager` field declares pnpm 11+, meaning we should write to the YAML
+ * file instead of package.json.
+ */
+export function usesPnpmWorkspaceOverrides(
+  pkgEnvDetails: Pick<EnvDetails, 'agent' | 'agentVersion'>,
+): boolean {
+  return pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major >= 11
 }

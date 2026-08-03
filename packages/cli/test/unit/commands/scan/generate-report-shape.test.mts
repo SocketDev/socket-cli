@@ -1,21 +1,16 @@
 /**
  * Unit tests for generateReportShape.
  *
- * Purpose:
- * Tests scan report data structure shaping. Validates report data transformation and normalization.
+ * Purpose: Tests scan report data structure shaping. Validates report data
+ * transformation and normalization.
  *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
+ * Test Coverage: - Core functionality validation - Edge case handling - Error
+ * scenarios - Input validation.
  *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
+ * Testing Approach: Comprehensive unit testing of module functionality with
+ * mocked dependencies where appropriate.
  *
- * Related Files:
- * - src/generateReportShape.mts (implementation)
+ * Related Files: - src/generateReportShape.mts (implementation)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -23,11 +18,11 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
-} from '../../../../src/commands/scan/generate-report-test-helpers.mts'
+} from '../../../helpers/generate-report-test-helpers.mts'
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
 import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup
 type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']

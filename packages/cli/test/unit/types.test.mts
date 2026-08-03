@@ -4,23 +4,18 @@
  * Tests the type system used throughout the Socket CLI, focusing on the CResult
  * pattern for error handling and the configuration object types.
  *
- * Test Coverage:
- * - CResult type: ValidResult and InvalidResult structures
- * - CResult union type: Type narrowing with ok property
- * - SocketCliConfigObject: Minimal and full configuration objects
- * - SocketCliConfigObject output formats: Text, JSON, markdown, and combined formats
- * - SocketconfigAny: String or object config representations
- * - Type guards: isValidResult implementation
- * - Type utilities: unwrapResult for extracting values
+ * Test Coverage: - CResult type: ValidResult and InvalidResult structures -
+ * CResult union type: Type narrowing with ok property - SocketCliConfigObject:
+ * Minimal and full configuration objects - SocketCliConfigObject output
+ * formats: Text, JSON, markdown, and combined formats - SocketconfigAny: String
+ * or object config representations - Type guards: isValidResult implementation
+ * - Type utilities: unwrapResult for extracting values.
  *
- * Testing Approach:
- * - Type-level testing using TypeScript inference
- * - Runtime validation of type behavior
- * - Test type guards and utility functions
- * - Validate config object structure variations
+ * Testing Approach: - Type-level testing using TypeScript inference - Runtime
+ * validation of type behavior - Test type guards and utility functions -
+ * Validate config object structure variations.
  *
- * Related Files:
- * - src/types.mts - Core type definitions
+ * Related Files: - src/types.mts - Core type definitions.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -58,7 +53,6 @@ describe('types', () => {
 
     it('can be used as a union type', () => {
       // Intentionally defined inline to test type inference in specific context.
-      // eslint-disable-next-line unicorn/consistent-function-scoping
       const processResult = (value: number): CResult<string> => {
         if (value > 0) {
           return { ok: true, data: `Positive: ${value}` }
@@ -128,7 +122,8 @@ describe('types', () => {
         { outputDefault: { format: ['text', 'json'] } },
       ]
 
-      for (const config of configs) {
+      for (let i = 0, { length } = configs; i < length; i += 1) {
+        const config = configs[i]
         expect(config.outputDefault).toBeDefined()
         expect(Array.isArray(config.outputDefault?.format)).toBe(true)
       }
@@ -150,7 +145,7 @@ describe('types', () => {
   describe('Type guards and utilities', () => {
     it('can check if result is valid', () => {
       function isValidResult<T>(result: CResult<T>): result is ValidResult<T> {
-        return result.ok === true
+        return result.ok
       }
 
       const valid: CResult<number> = { ok: true, value: 42 }

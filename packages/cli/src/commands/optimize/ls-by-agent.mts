@@ -5,19 +5,19 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib/constants/agents'
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
-import { spawn } from '@socketsecurity/lib/spawn'
+} from '@socketsecurity/lib-stable/constants/agents'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
 
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
-function cleanupQueryStdout(stdout: string): string {
+export function cleanupQueryStdout(stdout: string): string {
   if (stdout === '') {
     return ''
   }
-  let pkgs: any
+  let pkgs: unknown
   try {
     pkgs = JSON.parse(stdout)
   } catch {
@@ -45,33 +45,29 @@ function cleanupQueryStdout(stdout: string): string {
   return JSON.stringify(Array.from(names), null, 2)
 }
 
-function parsableToQueryStdout(stdout: string) {
-  if (stdout === '') {
-    return ''
-  }
-  // Convert the parsable stdout into a json array of unique names.
-  // The matchAll regexp looks for a forward (posix) or backward (win32) slash
-  // and matches one or more non-slashes until the newline.
-  const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
-  return JSON.stringify(Array.from(names), null, 2)
+export type AgentListDepsOptions = {
+  cwd?: string | undefined
+  npmExecPath?: string | undefined
 }
 
-async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
-  let stdout = ''
-  try {
-    const result = await spawn(npmExecPath, ['query', ':not(.dev)'], {
-      cwd,
-      // On Windows, npm is often a .cmd file that requires shell execution.
-      // The spawn function from @socketsecurity/registry will handle this properly
-      // when shell is true.
-      shell: WIN32,
-    })
-    stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
-  } catch {}
-  return cleanupQueryStdout(stdout)
+export async function listPackages(
+  pkgEnvDetails: EnvDetails,
+  options?: AgentListDepsOptions | undefined,
+): Promise<string> {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return await lsBun(pkgEnvDetails, options)
+    case PNPM:
+      return await lsPnpm(pkgEnvDetails, options)
+    case VLT:
+      return await lsVlt(pkgEnvDetails, options)
+    case YARN_BERRY:
+      return await lsYarnBerry(pkgEnvDetails, options)
+    case YARN_CLASSIC:
+      return await lsYarnClassic(pkgEnvDetails, options)
+    default:
+      return await lsNpm(pkgEnvDetails, options)
+  }
 }
 
 export async function lsBun(
@@ -96,9 +92,7 @@ export async function lsBun(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
@@ -143,10 +137,7 @@ export async function lsPnpm(
         shell: WIN32,
       },
     )
-    stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+    stdout = result.stdout
   } catch {}
   return parsableToQueryStdout(stdout)
 }
@@ -173,10 +164,7 @@ export async function lsVlt(
         shell: WIN32,
       },
     )
-    stdout =
-      typeof result.stdout === 'string'
-        ? result.stdout
-        : result.stdout.toString('utf8')
+    stdout = result.stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -203,9 +191,7 @@ export async function lsYarnBerry(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
@@ -234,34 +220,36 @@ export async function lsYarnClassic(
         shell: WIN32,
       },
     )
-    return typeof result.stdout === 'string'
-      ? result.stdout
-      : result.stdout.toString('utf8')
+    return result.stdout
   } catch {}
   return ''
 }
 
-export type AgentListDepsOptions = {
-  cwd?: string | undefined
-  npmExecPath?: string | undefined
+export async function npmQuery(
+  npmExecPath: string,
+  cwd: string,
+): Promise<string> {
+  let stdout = ''
+  try {
+    const result = await spawn(npmExecPath, ['query', ':not(.dev)'], {
+      cwd,
+      // On Windows, npm is often a .cmd file that requires shell execution.
+      // The spawn function from @socketsecurity/registry will handle this properly
+      // when shell is true.
+      shell: WIN32,
+    })
+    stdout = result.stdout
+  } catch {}
+  return cleanupQueryStdout(stdout)
 }
 
-export async function listPackages(
-  pkgEnvDetails: EnvDetails,
-  options?: AgentListDepsOptions | undefined,
-): Promise<string> {
-  switch (pkgEnvDetails.agent) {
-    case BUN:
-      return await lsBun(pkgEnvDetails, options)
-    case PNPM:
-      return await lsPnpm(pkgEnvDetails, options)
-    case VLT:
-      return await lsVlt(pkgEnvDetails, options)
-    case YARN_BERRY:
-      return await lsYarnBerry(pkgEnvDetails, options)
-    case YARN_CLASSIC:
-      return await lsYarnClassic(pkgEnvDetails, options)
-    default:
-      return await lsNpm(pkgEnvDetails, options)
+export function parsableToQueryStdout(stdout: string) {
+  if (stdout === '') {
+    return ''
   }
+  // Convert the parsable stdout into a json array of unique names.
+  // The matchAll regexp looks for a forward (posix) or backward (win32) slash
+  // and matches one or more non-slashes until the newline.
+  const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
+  return JSON.stringify(Array.from(names), null, 2)
 }

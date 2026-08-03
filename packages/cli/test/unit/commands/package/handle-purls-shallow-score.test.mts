@@ -1,32 +1,28 @@
 /**
  * Unit tests for handlePurlsShallowScore.
  *
- * Purpose:
- * Tests the handler function that orchestrates fetching and outputting shallow security
- * scores for multiple package PURLs. Shallow scores analyze only the package itself,
- * excluding dependencies. Validates the batch fetch-process-output pipeline.
+ * Purpose: Tests the handler function that orchestrates fetching and outputting
+ * shallow security scores for multiple package PURLs. Shallow scores analyze
+ * only the package itself, excluding dependencies. Validates the batch
+ * fetch-process-output pipeline.
  *
- * Test Coverage:
- * - Successful batch fetch and output
- * - Fetch failure handling
- * - Multiple output formats (json, text, markdown)
- * - Empty PURL array handling
- * - Debug logging for successes and failures
- * - Multiple package batch processing
+ * Test Coverage: - Successful batch fetch and output - Fetch failure handling -
+ * Multiple output formats, json, text, markdown - Empty PURL array handling -
+ * Debug logging for successes and failures - Multiple package batch
+ * processing.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic. Verifies
- * proper data flow and debug logging throughout the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Verifies proper data flow and debug logging throughout
+ * the handler pipeline.
  *
- * Related Files:
- * - src/commands/package/handle-purls-shallow-score.mts (implementation)
- * - src/commands/package/fetch-purls-shallow-score.mts (API fetcher)
- * - src/commands/package/output-purls-shallow-score.mts (formatter)
+ * Related Files: - src/commands/package/handle-purls-shallow-score.mts
+ * (implementation) - src/commands/package/fetch-purls-shallow-score.mts (API
+ * fetcher) - src/commands/package/output-purls-shallow-score.mts (formatter)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { fetchPurlsShallowScore } from '../../../../src/commands/package/fetch-purls-shallow-score.mts'
 import { handlePurlsShallowScore } from '../../../../src/commands/package/handle-purls-shallow-score.mts'
@@ -40,19 +36,18 @@ const mockDebug = vi.hoisted(() => vi.fn())
 const mockDebugDir = vi.hoisted(() => vi.fn())
 
 vi.mock(
-  '../../../../src/commands/package/fetch-purls-shallow-score.mts',
+  import('../../../../src/commands/package/fetch-purls-shallow-score.mts'),
   () => ({
     fetchPurlsShallowScore: mockFetchPurlsShallowScore,
   }),
 )
 vi.mock(
-  '../../../../src/commands/package/output-purls-shallow-score.mts',
+  import('../../../../src/commands/package/output-purls-shallow-score.mts'),
   () => ({
     outputPurlsShallowScore: mockOutputPurlsShallowScore,
   }),
 )
-vi.mock('@socketsecurity/lib/debug', () => ({
-  _debug: mock_debug,
+vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: mockDebug,
   debugDir: mockDebugDir,
 }))

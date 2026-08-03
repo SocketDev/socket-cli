@@ -1,39 +1,40 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
+
 import { existsSync } from 'node:fs'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import { postinstallWrapper } from './postinstall-wrapper.mts'
 import { removeSocketWrapper } from './remove-socket-wrapper.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mjs'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { getBashRcPath, getZshRcPath } from '../../constants/paths.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'wrapper',
-  description: 'Enable or disable the Socket npm/npx wrapper',
-  hidden: false,
-  flags: {
+  description: 'Enable or disable the Socket npm/pnpm exec wrapper',
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} <"on" | "off">
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     While enabled, the wrapper makes it so that when you call npm/npx on your
     machine, it will automatically actually run \`socket npm\` / \`socket npx\`
@@ -43,6 +44,7 @@ const config: CliCommandConfig = {
       $ ${command} on
       $ ${command} off
   `,
+  hidden: false,
 }
 
 export const cmdWrapper = {
@@ -51,7 +53,7 @@ export const cmdWrapper = {
   run,
 }
 
-async function run(
+export async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -72,15 +74,15 @@ async function run(
   // Feature request: Implement json/markdown output for wrapper command status.
   const { json, markdown } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   let enable = false
   let disable = false
   const [arg] = cli.input
-  if (arg === 'on' || arg === 'enable' || arg === 'enabled') {
+  if (arg === 'enable' || arg === 'enabled' || arg === 'on') {
     enable = true
     disable = false
-  } else if (arg === 'off' || arg === 'disable' || arg === 'disabled') {
+  } else if (arg === 'disable' || arg === 'disabled' || arg === 'off') {
     enable = false
     disable = true
   }
@@ -105,13 +107,35 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   const bashRcPath = getBashRcPath()
   const zshRcPath = getZshRcPath()
+
+  if (dryRun) {
+    const files = []
+    if (existsSync(bashRcPath)) {
+      files.push(bashRcPath)
+    }
+    if (existsSync(zshRcPath)) {
+      files.push(zshRcPath)
+    }
+    const changes = enable
+      ? [
+          'Add shell aliases/functions to wrap npm/pnpm exec commands',
+          'Redirect npm/pnpm exec calls to socket npm/socket npx',
+        ]
+      : [
+          'Remove Socket wrapper aliases/functions from shell config',
+          'Restore original npm/pnpm exec behavior',
+        ]
+    outputDryRunWrite(
+      files.join(', '),
+      enable
+        ? 'enable Socket npm/pnpm exec wrapper'
+        : 'disable Socket npm/pnpm exec wrapper',
+      changes,
+    )
+    return
+  }
   const modifiedFiles: string[] = []
   const skippedFiles: string[] = []
 
@@ -165,7 +189,8 @@ async function run(
     if (modifiedFiles.length > 0) {
       arr.push('## Modified Files')
       arr.push('')
-      for (const file of modifiedFiles) {
+      for (let i = 0, { length } = modifiedFiles; i < length; i += 1) {
+        const file = modifiedFiles[i]
         arr.push(`- \`${file}\``)
       }
       arr.push('')
@@ -174,7 +199,8 @@ async function run(
     if (skippedFiles.length > 0) {
       arr.push('## Skipped Files (already configured)')
       arr.push('')
-      for (const file of skippedFiles) {
+      for (let i = 0, { length } = skippedFiles; i < length; i += 1) {
+        const file = skippedFiles[i]
         arr.push(`- \`${file}\``)
       }
       arr.push('')

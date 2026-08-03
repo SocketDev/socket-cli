@@ -1,25 +1,19 @@
 /**
  * Unit tests for fetchViewRepo.
  *
- * Purpose:
- * Tests fetching repository details via the Socket API. Validates SDK integration
- * and error handling for viewing repository information.
+ * Purpose: Tests fetching repository details via the Socket API. Validates SDK
+ * integration and error handling for viewing repository information.
  *
- * Test Coverage:
- * - Successful repository view
- * - SDK setup failure handling
- * - API call errors (404 not found, 403 forbidden)
- * - Custom SDK options
+ * Test Coverage: - Successful repository view - SDK setup failure handling -
+ * API call errors (404 not found, 403 forbidden) - Custom SDK options.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Tests read-only repository
- * data retrieval.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Tests read-only repository data retrieval.
  *
- * Related Files:
- * - src/commands/repository/fetch-view-repo.mts (implementation)
- * - src/commands/repository/handle-view-repo.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * Related Files: - src/commands/repository/fetch-view-repo.mts (implementation)
+ * - src/commands/repository/handle-view-repo.mts (handler) -
+ * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
+ * setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -28,18 +22,18 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../../../src/commands/../../../test/helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-test-helpers.mts'
 import { fetchViewRepo } from '../../../../src/commands/repository/fetch-view-repo.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
@@ -91,7 +85,10 @@ describe('fetchViewRepo', () => {
   })
 
   it('passes custom SDK options', async () => {
-    const { mockSetupSdk } = await setupSdkMockSuccess('getRepository', {})
+    const { mockSetupSdk: mockSetupSdkForCall } = await setupSdkMockSuccess(
+      'getRepository',
+      {},
+    )
 
     const sdkOpts = {
       apiToken: 'view-token',
@@ -100,7 +97,7 @@ describe('fetchViewRepo', () => {
 
     await fetchViewRepo('my-org', 'my-repo', { sdkOpts })
 
-    expect(mockSetupSdk).toHaveBeenCalledWith(sdkOpts)
+    expect(mockSetupSdkForCall).toHaveBeenCalledWith(sdkOpts)
   })
 
   it('handles private repository access', async () => {

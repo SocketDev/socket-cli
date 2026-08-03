@@ -3,15 +3,12 @@
  *
  * Tests Conda environment manifest generation for Python/data science projects.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - environment.yml parsing
- * - Dependency resolution
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - environment.yml parsing - Dependency resolution.
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-conda.mts - Command definition
- * - src/commands/manifest/handle-manifest-conda.mts - Conda manifest logic
+ * Related Files: - src/commands/manifest/cmd-manifest-conda.mts - Command
+ * definition - src/commands/manifest/handle-manifest-conda.mts - Conda manifest
+ * logic.
  */
 
 import { describe, expect } from 'vitest'
@@ -49,13 +46,21 @@ describe('socket manifest conda', async () => {
               Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
                     contents of a file to have it processed.
           
+              A socket.json \`infile\` or \`outfile\` that resolves outside CWD is
+              refused unless you pass --trust-socket-json: the repository being scanned
+              owns that file, and the output content comes from its own environment.yml.
+              Pass --file and --out yourself to read or write outside CWD without trusting
+              socket.json.
+          
               Options
                 --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --out               Output path (relative to cwd)
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --stdin             Read the input from stdin (supersedes --file)
                 --stdout            Print resulting requirements.txt to stdout (supersedes --out)
+                --trust-socket-json  Read and write the paths declared in socket.json even when they leave the project. Off by default because the scanned repository controls that file.
                 --verbose           Print debug messages
           
               Examples
@@ -85,7 +90,7 @@ describe('socket manifest conda', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
@@ -93,7 +98,14 @@ describe('socket manifest conda', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest conda\`, cwd: <redacted>
 
-        \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+        \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.
+
+        [DryRun]: Would execute convert Conda environment.yml to requirements.txt
+
+          Command: conda converter
+          Arguments: environment.yml requirements.txt
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

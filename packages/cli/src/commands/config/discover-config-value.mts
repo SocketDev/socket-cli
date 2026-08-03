@@ -1,6 +1,6 @@
-import { isSupportedConfigKey } from '../../utils/config.mts'
-import { getOrgSlugs } from '../../utils/organization.mts'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
+import { isSupportedConfigKey } from '../../util/config.mts'
+import { getOrgSlugs } from '../../util/organization.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
@@ -128,7 +128,7 @@ export async function discoverConfigValue(
   }
 }
 
-async function getDefaultOrgFromToken(): Promise<
+export async function getDefaultOrgFromToken(): Promise<
   string[] | string | undefined
 > {
   const orgsCResult = await fetchOrganization()
@@ -137,7 +137,7 @@ async function getDefaultOrgFromToken(): Promise<
   }
 
   const { organizations } = orgsCResult.data
-  if (organizations.length === 0) {
+  if (!organizations.length) {
     return undefined
   }
   const slugs = getOrgSlugs(organizations)
@@ -147,7 +147,9 @@ async function getDefaultOrgFromToken(): Promise<
   return slugs
 }
 
-async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
+export async function getEnforceableOrgsFromToken(): Promise<
+  string[] | undefined
+> {
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
     return undefined

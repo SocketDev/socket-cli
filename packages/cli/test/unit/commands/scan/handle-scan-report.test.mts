@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleScanReport.
  *
- * Purpose:
- * Tests the handler that generates scan reports. Validates comprehensive report generation and formatting.
+ * Purpose: Tests the handler that generates scan reports. Validates
+ * comprehensive report generation and formatting.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanReport.mts (implementation)
+ * Related Files: - src/commands/handleScanReport.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,27 +26,26 @@ const mockFetchScanData = vi.hoisted(() => vi.fn())
 const mockOutputScanReport = vi.hoisted(() => vi.fn())
 const mockSetupSdk = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/fetch-report-data.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/fetch-report-data.mts'), () => ({
   fetchScanData: mockFetchScanData,
 }))
 
-vi.mock('../../../../src/commands/scan/output-scan-report.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-scan-report.mts'), () => ({
   outputScanReport: mockOutputScanReport,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
 
 describe('handleScanReport', () => {
-  let handleScanReport: any
+  let handleScanReport: unknown
 
   beforeEach(async () => {
     vi.clearAllMocks()
     if (!handleScanReport) {
-      const module = await import(
-        '../../../../src/commands/scan/handle-scan-report.mts'
-      )
+      const module =
+        await import('../../../../src/commands/scan/handle-scan-report.mts')
       handleScanReport = module.handleScanReport
     }
   })

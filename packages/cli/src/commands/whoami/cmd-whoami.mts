@@ -1,23 +1,22 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { CONFIG_KEY_API_TOKEN } from '../../constants/config.mjs'
 import { SOCKET_CLI_API_TOKEN } from '../../env/socket-cli-api-token.mts'
 import { TOKEN_PREFIX } from '../../constants/socket.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getConfigValueOrUndef } from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getConfigValueOrUndef } from '../../util/config.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 import {
   getDefaultApiToken,
   getVisibleTokenPrefix,
-} from '../../utils/socket/sdk.mjs'
+} from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
@@ -29,15 +28,15 @@ const hidden = false
 
 // Types.
 
-interface WhoamiStatus {
+export interface WhoamiStatus {
   authenticated: boolean
-  location: string | null
-  token: string | null
+  location: string | undefined
+  token: string | undefined
 }
 
 // Helper functions.
 
-function getTokenLocation(): string {
+export function getTokenLocation(): string {
   // Check environment variable first.
   if (SOCKET_CLI_API_TOKEN) {
     return 'Environment variable (SOCKET_SECURITY_API_KEY)'
@@ -52,7 +51,7 @@ function getTokenLocation(): string {
   return 'Unknown'
 }
 
-function outputWhoami(status: WhoamiStatus): void {
+export function outputWhoami(status: WhoamiStatus): void {
   const result: CResult<WhoamiStatus> = {
     ok: true,
     data: status,
@@ -60,28 +59,26 @@ function outputWhoami(status: WhoamiStatus): void {
   logger.log(serializeResultJson(result))
 }
 
-// Command handler.
-
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command}
 
     Check if you are authenticated with Socket
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -103,7 +100,7 @@ async function run(
 
   if (apiToken) {
     const visiblePrefix = getVisibleTokenPrefix()
-    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}...`
+    const tokenDisplay = `${TOKEN_PREFIX}${visiblePrefix}…`
 
     if (flags['json']) {
       outputWhoami({
@@ -120,8 +117,8 @@ async function run(
     if (flags['json']) {
       outputWhoami({
         authenticated: false,
-        location: null,
-        token: null,
+        location: undefined,
+        token: undefined,
       })
     } else {
       logger.fail('Not authenticated with Socket')

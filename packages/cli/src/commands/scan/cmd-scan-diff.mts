@@ -1,30 +1,24 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleDiffScan } from './handle-diff-scan.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface ScanDiffFlags {
+export interface ScanDiffFlags {
   depth: number
   dryRun: boolean
   file: string
@@ -45,16 +39,16 @@ export const cmdScanDiff = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       depth: {
@@ -81,8 +75,8 @@ async function run(
         description:
           'Force override the organization slug, overrides the default org from config',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] <SCAN_ID1> <SCAN_ID2>
 
@@ -98,7 +92,7 @@ async function run(
           added/removed list (similar to diffing two files with git).
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
@@ -125,7 +119,7 @@ async function run(
     org: orgFlag,
   } = cli.flags as unknown as ScanDiffFlags
 
-  const interactive = !!cli.flags['interactive']
+  const interactive = cli.flags['interactive']
 
   let [id1 = '', id2 = ''] = cli.input
   // Support dropping in full socket urls to an sbom.
@@ -139,7 +133,7 @@ async function run(
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -155,9 +149,9 @@ async function run(
       fail:
         !id1 && !id2
           ? 'missing both Scan IDs'
-          : !id2
-            ? 'missing second Scan ID'
-            : 'missing first Scan ID', // Not sure how this can happen but ok.
+          : !id1
+            ? 'missing first Scan ID'
+            : 'missing second Scan ID',
     },
     {
       test: !!orgSlug,
@@ -183,8 +177,12 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('scan differences', {
+      organization: orgSlug,
+      scanId1: id1,
+      scanId2: id2,
+      depth,
+    })
     return
   }
 

@@ -1,44 +1,12 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { PurlDataResponse } from './fetch-purl-deep-score.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
-
-export async function outputPurlsDeepScore(
-  purl: string,
-  result: CResult<PurlDataResponse>,
-  outputKind: OutputKind,
-): Promise<void> {
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
-  }
-
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  if (outputKind === 'markdown') {
-    const md = createMarkdownReport(result.data)
-    logger.success(`Score report for "${result.data.purl}" ("${purl}"):\n`)
-    logger.log(md)
-    return
-  }
-
-  logger.log(
-    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
-  )
-  logger.log(result.data)
-  logger.log('')
-}
 
 export function createMarkdownReport(data: PurlDataResponse): string {
   const {
@@ -118,7 +86,8 @@ export function createMarkdownReport(data: PurlDataResponse): string {
   if (selfCaps.length) {
     o.push('These are the capabilities detected in the package itself:')
     o.push('')
-    for (const cap of selfCaps) {
+    for (let i = 0, { length } = selfCaps; i < length; i += 1) {
+      const cap = selfCaps[i]
       o.push(`- ${cap}`)
     }
   } else {
@@ -164,7 +133,7 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     o.push(`- Vulnerability: ${score.vulnerability}`)
     o.push(`- License: ${score.license}`)
     o.push('')
-    o.push('### Capabilities')
+    o.push('### Lowest Scoring Package Per Category')
     o.push('')
     o.push(
       'These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.',
@@ -182,7 +151,8 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     if (capabilities.length) {
       o.push('These are the capabilities detected in at least one package:')
       o.push('')
-      for (const cap of capabilities) {
+      for (let i = 0, { length } = capabilities; i < length; i += 1) {
+        const cap = capabilities[i]
         o.push(`- ${cap}`)
       }
     } else {
@@ -212,4 +182,37 @@ export function createMarkdownReport(data: PurlDataResponse): string {
     o.push('')
   }
   return o.join('\n')
+}
+
+export async function outputPurlsDeepScore(
+  purl: string,
+  result: CResult<PurlDataResponse>,
+  outputKind: OutputKind,
+): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (outputKind === 'markdown') {
+    const md = createMarkdownReport(result.data)
+    logger.success(`Score report for "${result.data.purl}" ("${purl}"):`)
+    logger.error('')
+    logger.log(md)
+    return
+  }
+
+  logger.log(
+    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
+  )
+  logger.log(result.data)
+  logger.log('')
 }

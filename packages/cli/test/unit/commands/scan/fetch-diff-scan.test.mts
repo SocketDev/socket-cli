@@ -1,30 +1,23 @@
 /**
  * Unit tests for fetchDiffScan.
  *
- * Purpose:
- * Tests fetching scan diffs via the Socket API. Compares two scans to identify changes in security posture.
+ * Purpose: Tests fetching scan diffs via the Socket API. Compares two scans to
+ * identify changes in security posture.
  *
- * Test Coverage:
- * - Successful API operation
- * - SDK setup failure handling
- * - API call error scenarios
- * - Custom SDK options (API tokens, base URLs)
- * - Scan comparison
- * - Diff calculation
- * - Change detection
- * - Null prototype usage for security
+ * Test Coverage: - Successful API operation - SDK setup failure handling - API
+ * call error scenarios - Custom SDK options (API tokens, base URLs) - Scan
+ * comparison - Diff calculation - Change detection - Null prototype usage for
+ * security.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates comprehensive
- * error handling and API integration.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates comprehensive error handling and API integration.
  *
- * Related Files:
- * - src/commands/DiffScan.mts (implementation)
+ * Related Files: - src/commands/DiffScan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchDiffScan } from '../../../../../src/commands/scan/fetch-diff-scan.mts'
+import { fetchDiffScan } from '../../../../src/commands/scan/fetch-diff-scan.mts'
 
 // Mock the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -39,16 +32,16 @@ const mockLogger = vi.hoisted(() => ({
 const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
 const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/utils/socket/api.mjs', () => ({
+vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   queryApiSafeJson: mockQueryApiSafeJson,
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
 }))
 
@@ -152,8 +145,8 @@ describe('fetchDiffScan', () => {
       'long.org.name.with.dots',
     ]
 
-    for (const orgSlug of testCases) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = testCases; i < length; i += 1) {
+      const orgSlug = testCases[i]
       await fetchDiffScan({
         id1: 'scan-1',
         id2: 'scan-2',

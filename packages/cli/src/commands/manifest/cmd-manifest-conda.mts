@@ -1,35 +1,36 @@
 import path from 'node:path'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+  resolveCondaInfile,
+  resolveCondaOutfile,
+} from './manifest-build-trust.mts'
+import { outputRequirements } from './output-requirements.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
 import {
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
   REQUIREMENTS_TXT,
 } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { readOrDefaultSocketJson } from '../../utils/socket/json.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface CondaFlags {
+export interface CondaFlags {
   dryRun: boolean
   file: string
   json: boolean
@@ -37,14 +38,14 @@ interface CondaFlags {
   out: string
   stdin: boolean | undefined
   stdout: boolean | undefined
+  trustSocketJson: boolean | undefined
   verbose: boolean | undefined
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'conda',
   description: `[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}`,
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
     file: {
@@ -65,12 +66,17 @@ const config: CliCommandConfig = {
       type: 'boolean',
       description: `Print resulting ${REQUIREMENTS_TXT} to stdout (supersedes --out)`,
     },
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Read and write the paths declared in ${SOCKET_JSON} even when they leave the project. Off by default because the scanned repository controls that file.`,
+    },
     verbose: {
       type: 'boolean',
       description: 'Print debug messages',
     },
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -83,14 +89,21 @@ const config: CliCommandConfig = {
     Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
           contents of a file to have it processed.
 
+    A ${SOCKET_JSON} \`infile\` or \`outfile\` that resolves outside CWD is
+    refused unless you pass --trust-socket-json: the repository being scanned
+    owns that file, and the output content comes from its own ${ENVIRONMENT_YML}.
+    Pass --file and --out yourself to read or write outside CWD without trusting
+    ${SOCKET_JSON}.
+
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 
       $ ${command}
       $ ${command} ./project/foo --file ${ENVIRONMENT_YAML}
   `,
+  hidden: false,
 }
 
 export const cmdManifestConda = {
@@ -99,7 +112,7 @@ export const cmdManifestConda = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -111,7 +124,9 @@ async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags as unknown as CondaFlags
+  const { dryRun, json, markdown, trustSocketJson } = cli.flags
+
+  const outputKind = getOutputKind(json, markdown)
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -120,13 +135,7 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  let {
-    file: filename,
-    out,
-    stdin,
-    stdout,
-    verbose,
-  } = cli.flags as unknown as CondaFlags
+  let { file: filename, out, stdin, stdout, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (
@@ -138,13 +147,18 @@ async function run(
   }
   if (stdin) {
     filename = '-'
-  } else if (!filename) {
-    if (sockJson.defaults?.manifest?.conda?.infile) {
-      filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
-    } else {
-      filename = ENVIRONMENT_YML
+  } else {
+    const infile = resolveCondaInfile({
+      cliFile: filename,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson,
+    })
+    if (!infile.ok) {
+      await outputRequirements(infile, outputKind, '-')
+      return
     }
+    filename = infile.data
   }
   if (
     stdout === undefined &&
@@ -155,13 +169,18 @@ async function run(
   }
   if (stdout) {
     out = '-'
-  } else if (!out) {
-    if (sockJson.defaults?.manifest?.conda?.outfile) {
-      out = sockJson.defaults?.manifest?.conda?.outfile
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
-    } else {
-      out = REQUIREMENTS_TXT
+  } else {
+    const outfile = resolveCondaOutfile({
+      cliOut: out,
+      cwd,
+      socketJson: sockJson,
+      trustSocketJson,
+    })
+    if (!outfile.ok) {
+      await outputRequirements(outfile, outputKind, '-')
+      return
     }
+    out = outfile.data
   }
   if (
     verbose === undefined &&
@@ -181,8 +200,6 @@ async function run(
     logger.log('- output:', out)
     logger.groupEnd()
   }
-
-  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -208,7 +225,11 @@ async function run(
   )
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunExecute(
+      'conda converter',
+      [filename, out],
+      `convert Conda ${ENVIRONMENT_YML} to ${REQUIREMENTS_TXT}`,
+    )
     return
   }
 

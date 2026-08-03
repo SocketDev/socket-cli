@@ -1,27 +1,20 @@
 /**
  * Integration tests for `socket manifest auto` command.
  *
- * Tests automatic manifest generation with ecosystem detection.
- * This command analyzes the project structure and generates appropriate
- * manifest files for detected ecosystems.
+ * Tests automatic manifest generation with ecosystem detection. This command
+ * analyzes the project structure and generates appropriate manifest files for
+ * detected ecosystems.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Ecosystem auto-detection
- * - Multi-ecosystem project support
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Ecosystem auto-detection - Multi-ecosystem project support.
  *
- * Supported Ecosystems:
- * - npm (package.json)
- * - pnpm (pnpm-lock.yaml)
- * - yarn (yarn.lock)
- * - Gradle (build.gradle, build.gradle.kts)
- * - SBT (build.sbt)
- * - Conda (environment.yml)
+ * Supported Ecosystems: - npm (package.json) - pnpm (pnpm-lock.yaml) - yarn
+ * (yarn.lock) - Gradle (build.gradle, build.gradle.kts) - SBT (build.sbt) -
+ * Conda (environment.yml)
  *
- * Related Files:
- * - src/commands/manifest/cmd-manifest-auto.mts - Command definition
- * - src/commands/manifest/handle-manifest-auto.mts - Auto-detection logic
+ * Related Files: - src/commands/manifest/cmd-manifest-auto.mts - Command
+ * definition - src/commands/manifest/handle-manifest-auto.mts - Auto-detection
+ * logic.
  */
 
 import { describe, expect } from 'vitest'
@@ -32,7 +25,6 @@ import {
   FLAG_HELP,
 } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
@@ -50,11 +42,19 @@ describe('socket manifest auto', async () => {
                 $ socket manifest auto [options] [CWD=.]
           
               Options
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+                --trust-socket-json  Run the build binaries and options declared in socket.json. Off by default because the scanned repository controls that file.
                 --verbose           Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
           
               Tries to figure out what language your target repo uses. If it finds a
               supported case then it will try to generate the manifest file for that
               language with the default or detected settings.
+          
+              Gradle and sbt run a build binary. This command has no --bin of its own, so
+              it uses \`CWD/gradlew\` and the \`sbt\` on your PATH. A socket.json that
+              points \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused
+              unless you pass --trust-socket-json: those values choose what gets executed
+              and the repository being scanned owns that file.
           
               Note: you can exclude languages from being auto-generated if you don't want
                     them to. Run \`socket manifest setup\` in the same dir to disable it.
@@ -81,22 +81,30 @@ describe('socket manifest auto', async () => {
 
   cmdit(
     ['manifest', 'auto', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
-    'should require args with just dry-run',
+    'should report when no manifest targets are detected',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
-      // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // manifest auto scans the cwd for generatable manifest targets and
+      // reports when none exist; there is no dry-run bail anymore.
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest auto\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket manifest auto\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute auto-detect and generate 1 manifest file(s)
+
+          Command: manifest generators
+          Arguments: [PROJECT]
+
+          Run without --dry-run to execute this command."
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code, 'should exit with code 0 when nothing to generate').toBe(0)
     },
   )
 })

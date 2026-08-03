@@ -3,15 +3,12 @@
  *
  * Tests removing bash tab completion for Socket CLI.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Completion script removal
- * - Shell configuration cleanup
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Completion script removal - Shell configuration cleanup.
  *
- * Related Files:
- * - src/commands/uninstall/cmd-uninstall-completion.mts - Command definition
- * - src/commands/uninstall/handle-uninstall-completion.mts - Removal logic
+ * Related Files: - src/commands/uninstall/cmd-uninstall-completion.mts -
+ * Command definition - src/commands/uninstall/handle-uninstall-completion.mts -
+ * Removal logic.
  */
 
 import { describe, expect } from 'vitest'
@@ -48,7 +45,7 @@ describe('socket uninstall completion', async () => {
               tab completion that is registered for it in bash.
           
               Options
-                (none)
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
           
@@ -83,14 +80,22 @@ describe('socket uninstall completion', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket uninstall completion\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket uninstall completion\`, cwd: <redacted>
+
+
+        [DryRun]: Would delete bash completion
+
+          Target: completion for "socket" from ~/.bashrc
+
+          This action cannot be undone.
+          Run without --dry-run to perform this deletion."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

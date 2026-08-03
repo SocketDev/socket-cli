@@ -1,11 +1,12 @@
 /**
  * Unit tests for fetchListRepos.
  *
- * Purpose:
- * Tests fetching a single page of repositories for an organization. Validates
- * pagination configuration, sorting options, and parameter transformation.
+ * Purpose: Tests fetching a single page of repositories for an organization.
+ * Validates pagination configuration, sorting options, and parameter
+ * transformation.
  *
  * Test Coverage:
+ *
  * - Successful paginated repository listing
  * - SDK setup failure handling
  * - API call errors (400 invalid page)
@@ -15,15 +16,15 @@
  * - Empty results on specific page
  * - Null prototype usage for security
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Validates pagination
- * parameters and various sorting configurations.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Validates pagination parameters and various sorting configurations.
  *
  * Related Files:
- * - src/commands/repository/fetch-list-repos.mts (implementation)
- * - src/commands/repository/handle-list-repos.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ *
+ * - Src/commands/repository/fetch-list-repos.mts (implementation)
+ * - Src/commands/repository/handle-list-repos.mts (handler)
+ * - Src/util/socket/api.mts (API utilities)
+ * - Src/util/socket/sdk.mts (SDK setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -36,11 +37,11 @@ import {
 } from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 
@@ -122,7 +123,7 @@ describe('fetchListRepos', () => {
   it('passes custom SDK options', async () => {
     const { mockSetupSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -146,7 +147,7 @@ describe('fetchListRepos', () => {
   it('handles large page size configuration', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -170,7 +171,7 @@ describe('fetchListRepos', () => {
   it('handles different sort criteria', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -194,7 +195,7 @@ describe('fetchListRepos', () => {
   it('handles empty results on specific page', async () => {
     await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -216,7 +217,7 @@ describe('fetchListRepos', () => {
   it('uses null prototype for options', async () => {
     const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
       results: [],
-      nextPage: null,
+      nextPage: undefined,
     })
 
     const config = {
@@ -232,5 +233,51 @@ describe('fetchListRepos', () => {
 
     // The function should work without prototype pollution issues.
     expect(mockSdk.listRepositories).toHaveBeenCalled()
+  })
+
+  it('omits sort and direction when both are empty', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: undefined,
+    })
+
+    const config = {
+      direction: '',
+      orgSlug: 'no-sort-org',
+      page: 0,
+      perPage: 10,
+      sort: '',
+    }
+
+    await fetchListRepos(config)
+
+    // The call should NOT include sort or direction keys.
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('no-sort-org', {
+      per_page: 10,
+      page: 0,
+    })
+  })
+
+  it('includes sort but omits direction when only sort is set', async () => {
+    const { mockSdk } = await setupSdkMockSuccess('listRepositories', {
+      results: [],
+      nextPage: undefined,
+    })
+
+    const config = {
+      direction: '',
+      orgSlug: 'sort-only-org',
+      page: 0,
+      perPage: 10,
+      sort: 'name',
+    }
+
+    await fetchListRepos(config)
+
+    expect(mockSdk.listRepositories).toHaveBeenCalledWith('sort-only-org', {
+      sort: 'name',
+      per_page: 10,
+      page: 0,
+    })
   })
 })

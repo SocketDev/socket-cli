@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleScanMetadata.
  *
- * Purpose:
- * Tests the handler that retrieves scan metadata. Validates metadata fetching and formatting.
+ * Purpose: Tests the handler that retrieves scan metadata. Validates metadata
+ * fetching and formatting.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleScanMetadata.mts (implementation)
+ * Related Files: - src/commands/handleScanMetadata.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -24,20 +19,26 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleOrgScanMetadata } from '../../../../src/commands/scan/handle-scan-metadata.mts'
 
 // Mock the dependencies.
 const mockFetchScanMetadata = vi.hoisted(() => vi.fn())
 const mockOutputScanMetadata = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/fetch-scan-metadata.mts', () => ({
-  fetchScanMetadata: mockFetchScanMetadata,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/fetch-scan-metadata.mts'),
+  () => ({
+    fetchScanMetadata: mockFetchScanMetadata,
+  }),
+)
 
-vi.mock('../../../../src/commands/scan/output-scan-metadata.mts', () => ({
-  outputScanMetadata: mockOutputScanMetadata,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/output-scan-metadata.mts'),
+  () => ({
+    outputScanMetadata: mockOutputScanMetadata,
+  }),
+)
 
 describe('handleOrgScanMetadata', () => {
   it('fetches and outputs scan metadata successfully', async () => {
@@ -109,7 +110,7 @@ describe('handleOrgScanMetadata', () => {
     await import('../../../../src/commands/scan/fetch-scan-metadata.mts')
     await import('../../../../src/commands/scan/output-scan-metadata.mts')
     const mockFetch = mockFetchScanMetadata
-    const _mockOutput = mockOutputScanMetadata
+    const mockOutput = mockOutputScanMetadata
 
     const scanIds = [
       'scan-abc123',
@@ -118,9 +119,9 @@ describe('handleOrgScanMetadata', () => {
       'uuid-1234-5678-9012-3456',
     ]
 
-    for (const scanId of scanIds) {
+    for (let i = 0, { length } = scanIds; i < length; i += 1) {
+      const scanId = scanIds[i]
       mockFetch.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleOrgScanMetadata('test-org', scanId, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
         commandPath: 'socket scan metadata',

@@ -4,24 +4,18 @@
  * Tests the handler that removes configuration values from the config file.
  * This command deletes configuration keys.
  *
- * Test Coverage:
- * - Successful config value removal
- * - Unset failure handling
- * - Different config keys (apiToken, orgSlug, defaultOrg, etc.)
- * - Non-existent key handling
- * - Output function integration
+ * Test Coverage: - Successful config value removal - Unset failure handling -
+ * Different config keys (apiToken, orgSlug, defaultOrg, etc.) - Non-existent
+ * key handling - Output function integration.
  *
- * Testing Approach:
- * - Mock unsetConfigValue from utils/config.mts
- * - Mock outputConfigUnset for output verification
- * - Mock logger for error/success messages
- * - Use createSuccessResult/createErrorResult helpers
- * - Test CResult pattern flow
+ * Testing Approach: - Mock unsetConfigValue from util/config.mts - Mock
+ * outputConfigUnset for output verification - Mock logger for error/success
+ * messages - Use createSuccessResult/createErrorResult helpers - Test CResult
+ * pattern flow.
  *
- * Related Files:
- * - src/commands/config/handle-config-unset.mts - Implementation
- * - src/utils/config.mts - Config file utilities
- * - src/commands/config/output-config-unset.mts - Output formatter
+ * Related Files: - src/commands/config/handle-config-unset.mts - Implementation
+ * - src/util/config.mts - Config file utilities -
+ * src/commands/config/output-config-unset.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -44,15 +38,18 @@ const mockLogger = vi.hoisted(() => ({
 const mockOutputConfigUnset = vi.hoisted(() => vi.fn())
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock('../../../../src/commands/config/output-config-unset.mts', () => ({
-  outputConfigUnset: mockOutputConfigUnset,
-}))
-vi.mock('../../../../src/utils/config.mts', () => ({
+vi.mock(
+  import('../../../../src/commands/config/output-config-unset.mts'),
+  () => ({
+    outputConfigUnset: mockOutputConfigUnset,
+  }),
+)
+vi.mock(import('../../../../src/util/config.mts'), () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
 
@@ -62,12 +59,10 @@ describe('handleConfigUnset', () => {
   })
 
   it('unsets config value successfully', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -82,12 +77,10 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles unset failure', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createErrorResult('Cannot unset config')
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -102,12 +95,10 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles markdown output', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -122,22 +113,20 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles different config keys', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     const keys = ['apiToken', 'org', 'repoName', 'apiBaseUrl', 'apiProxy']
 
-    for (const key of keys) {
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      const key = keys[i]
       const mockResult = createSuccessResult(undefined)
       mockUpdateConfigValue.mockReturnValue(mockResult)
 
-      // eslint-disable-next-line no-await-in-loop
       await handleConfigUnset({
-        key: key as any,
+        key: key as unknown,
         outputKind: 'json',
       })
 
@@ -147,9 +136,8 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles text output', async () => {
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     const mockResult = createSuccessResult(undefined)
     mockUpdateConfigValue.mockReturnValue(mockResult)
@@ -163,12 +151,10 @@ describe('handleConfigUnset', () => {
   })
 
   it('handles already unset config value', async () => {
-    const { updateConfigValue } = await import(
-      '../../../../src/utils/config.mts'
-    )
-    const { outputConfigUnset } = await import(
-      '../../../../src/commands/config/output-config-unset.mts'
-    )
+    const { updateConfigValue } =
+      await import('../../../../src/util/config.mts')
+    const { outputConfigUnset } =
+      await import('../../../../src/commands/config/output-config-unset.mts')
 
     // Even if already unset, the function should still succeed.
     const mockResult = createSuccessResult(undefined)

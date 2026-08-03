@@ -1,10 +1,10 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 
 export async function handlePurlsShallowScore({
   outputKind,

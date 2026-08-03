@@ -1,24 +1,25 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
+import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { handleCi } from './handle-ci.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunUpload } from '../../util/dry-run/output.mts'
+import {
+  detectDefaultBranch,
+  getRepoName,
+  gitBranch,
+} from '../../util/git/operations.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const logger = getDefaultLogger()
-
-const config: CliCommandConfig = {
+const config = {
   commandName: 'ci',
   description:
     'Alias for `socket scan create --report` (creates report and exits with error if unhealthy)',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
     autoManifest: {
       type: 'boolean',
@@ -27,8 +28,13 @@ const config: CliCommandConfig = {
       description:
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
-  },
-  help: (command, _config) => `
+    trustSocketJson: {
+      type: 'boolean',
+      default: false,
+      description: `Run the build binaries and options declared in ${SOCKET_JSON}. Off by default because the scanned repository controls that file.`,
+    },
+  }),
+  help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -45,10 +51,16 @@ const config: CliCommandConfig = {
     all the necessary dev tooling. Enable it if you want the scan to include
     locally generated manifests like for gradle and sbt.
 
+    With --auto-manifest, gradle and sbt run a build binary. The defaults are
+    \`CWD/gradlew\` and the \`sbt\` on your PATH. A ${SOCKET_JSON} that points
+    \`bin\` elsewhere, or that sets \`gradleOpts\`/\`sbtOpts\`, is refused unless
+    you also pass --trust-socket-json.
+
     Examples
       $ ${command}
       $ ${command} --auto-manifest
   `,
+  hidden: false,
 }
 
 export const cmdCI = {
@@ -57,7 +69,7 @@ export const cmdCI = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -69,12 +81,33 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
+  const autoManifest = cli.flags['autoManifest']
+  const trustSocketJson = cli.flags['trustSocketJson']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    const orgSlugCResult = await getDefaultOrgSlug()
+    const cwd = process.cwd()
+    const branchName =
+      (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
+    const repoName = await getRepoName(cwd)
+
+    outputDryRunUpload('CI scan', {
+      autoManifest,
+      branchName: branchName || '(default)',
+      cwd,
+      organizationSlug: orgSlugCResult.ok
+        ? orgSlugCResult.data
+        : '(from API token)',
+      repoName: repoName || '(auto-detected)',
+      report: true,
+      targets: ['.'],
+    })
     return
   }
 
-  await handleCi(Boolean(cli.flags['autoManifest']))
+  await handleCi({
+    autoManifest,
+    trustSocketJson,
+  })
 }

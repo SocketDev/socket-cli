@@ -1,22 +1,17 @@
 /**
  * Unit tests for handleDeleteScan.
  *
- * Purpose:
- * Tests the handler that orchestrates scan deletion. Validates scan cleanup and confirmation workflows.
+ * Purpose: Tests the handler that orchestrates scan deletion. Validates scan
+ * cleanup and confirmation workflows.
  *
- * Test Coverage:
- * - Successful operation flow
- * - Fetch failure handling
- * - Input validation
- * - Output formatting delegation
- * - Error propagation
+ * Test Coverage: - Successful operation flow - Fetch failure handling - Input
+ * validation - Output formatting delegation - Error propagation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
- * Validates proper data flow through the handler pipeline.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Validates proper data flow through the handler
+ * pipeline.
  *
- * Related Files:
- * - src/commands/handleDeleteScan.mts (implementation)
+ * Related Files: - src/commands/handleDeleteScan.mts (implementation)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -24,18 +19,21 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createErrorResult,
   createSuccessResult,
-} from '../../../../../test/helpers/mocks.mts'
+} from '../../../helpers/mocks.mts'
 import { handleDeleteScan } from '../../../../src/commands/scan/handle-delete-scan.mts'
 
 // Mock the dependencies.
 const mockFetchDeleteOrgFullScan = vi.hoisted(() => vi.fn())
 const mockOutputDeleteScan = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/scan/fetch-delete-org-full-scan.mts', () => ({
-  fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
-}))
+vi.mock(
+  import('../../../../src/commands/scan/fetch-delete-org-full-scan.mts'),
+  () => ({
+    fetchDeleteOrgFullScan: mockFetchDeleteOrgFullScan,
+  }),
+)
 
-vi.mock('../../../../src/commands/scan/output-delete-scan.mts', () => ({
+vi.mock(import('../../../../src/commands/scan/output-delete-scan.mts'), () => ({
   outputDeleteScan: mockOutputDeleteScan,
 }))
 
@@ -100,8 +98,8 @@ describe('handleDeleteScan', () => {
       'scan_with_underscore',
     ]
 
-    for (const scanId of scanIds) {
-      // eslint-disable-next-line no-await-in-loop
+    for (let i = 0, { length } = scanIds; i < length; i += 1) {
+      const scanId = scanIds[i]
       await handleDeleteScan('test-org', scanId, 'json')
       expect(mockFetch).toHaveBeenCalledWith('test-org', scanId, {
         commandPath: 'socket scan del',

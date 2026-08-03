@@ -1,33 +1,18 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJson, safeMkdir, writeJson } from '@socketsecurity/lib/fs'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
+import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
 
 import { getSocketFixBranchName } from './git.mts'
-
-/**
- * Check if a process with the given PID is still running.
- */
-function isPidAlive(pid: number): boolean {
-  try {
-    // Signal 0 checks process existence without sending actual signal.
-    process.kill(pid, 0)
-    return true
-  } catch (e) {
-    const err = e as NodeJS.ErrnoException
-    // EPERM means process exists but no permission (treat as alive).
-    // ESRCH means process doesn't exist (dead).
-    // All other errors (EINVAL, etc.) treat as dead to be safe.
-    return err.code === 'EPERM'
-  }
-}
 
 export type GhsaFixRecord = {
   branch: string
   fixedAt: string // ISO 8601
   ghsaId: string
-  prNumber?: number
+  prNumber?: number | undefined
 }
 
 export type GhsaTracker = {
@@ -38,8 +23,42 @@ export type GhsaTracker = {
 const TRACKER_FILE = '.socket/fixed-ghsas.json'
 
 /**
- * Load the GHSA tracker from the repository.
- * Creates a new tracker if the file doesn't exist.
+ * Check if a GHSA has been fixed according to the tracker.
+ */
+export async function isGhsaFixed(
+  cwd: string,
+  ghsaId: string,
+): Promise<boolean> {
+  try {
+    const tracker = await loadGhsaTracker(cwd)
+    return tracker.fixed.some(r => r.ghsaId === ghsaId)
+  } catch (e) {
+    debug(`ghsa-tracker: failed to check if ${ghsaId} is fixed`)
+    debugDir(e)
+    return false
+  }
+}
+
+/**
+ * Check if a process with the given PID is still running.
+ */
+export function isPidAlive(pid: number): boolean {
+  try {
+    // Signal 0 checks process existence without sending actual signal.
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    const err = e as NodeJS.ErrnoException
+    // EPERM means process exists but no permission, treat as alive.
+    // ESRCH means process doesn't exist (dead).
+    // All other errors (EINVAL, etc.) treat as dead to be safe.
+    return err.code === 'EPERM'
+  }
+}
+
+/**
+ * Load the GHSA tracker from the repository. Creates a new tracker if the file
+ * doesn't exist.
  */
 export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
   const trackerPath = path.join(cwd, TRACKER_FILE)
@@ -54,32 +73,15 @@ export async function loadGhsaTracker(cwd: string): Promise<GhsaTracker> {
 }
 
 /**
- * Save the GHSA tracker to the repository.
- * Creates the .socket directory if it doesn't exist.
- */
-export async function saveGhsaTracker(
-  cwd: string,
-  tracker: GhsaTracker,
-): Promise<void> {
-  const trackerPath = path.join(cwd, TRACKER_FILE)
-
-  // Ensure .socket directory exists.
-  await safeMkdir(path.dirname(trackerPath), { recursive: true })
-
-  await writeJson(trackerPath, tracker, { spaces: 2 })
-  debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)
-}
-
-/**
- * Mark a GHSA as fixed in the tracker.
- * Removes any existing record for the same GHSA before adding the new one.
- * Uses file locking to prevent race conditions with concurrent operations.
+ * Mark a GHSA as fixed in the tracker. Removes any existing record for the same
+ * GHSA before adding the new one. Uses file locking to prevent race conditions
+ * with concurrent operations.
  */
 export async function markGhsaFixed(
   cwd: string,
   ghsaId: string,
-  prNumber?: number,
-  branch?: string,
+  prNumber?: number | undefined,
+  branch?: string | undefined,
 ): Promise<void> {
   const trackerPath = path.join(cwd, TRACKER_FILE)
   const lockFile = `${trackerPath}.lock`
@@ -103,7 +105,7 @@ export async function markGhsaFixed(
             debug(
               `ghsa-tracker: removing stale lock from dead process ${lockPid}`,
             )
-            await fs.unlink(lockFile).catch(() => {})
+            await safeDelete(lockFile, { force: true })
             continue
           }
         } catch {
@@ -139,7 +141,7 @@ export async function markGhsaFixed(
     }
     tracker.fixed.push(record)
 
-    // Sort by fixedAt descending (most recent first).
+    // Sort by fixedAt descending, most recent first.
     tracker.fixed.sort((a, b) => b.fixedAt.localeCompare(a.fixedAt))
 
     await saveGhsaTracker(cwd, tracker)
@@ -150,42 +152,24 @@ export async function markGhsaFixed(
   } finally {
     // Release lock.
     if (lockAcquired) {
-      try {
-        await fs.unlink(lockFile)
-      } catch {
-        // Ignore cleanup errors.
-      }
+      await safeDelete(lockFile, { force: true })
     }
   }
 }
 
 /**
- * Check if a GHSA has been fixed according to the tracker.
+ * Save the GHSA tracker to the repository. Creates the .socket directory if it
+ * doesn't exist.
  */
-export async function isGhsaFixed(
+export async function saveGhsaTracker(
   cwd: string,
-  ghsaId: string,
-): Promise<boolean> {
-  try {
-    const tracker = await loadGhsaTracker(cwd)
-    return tracker.fixed.some(r => r.ghsaId === ghsaId)
-  } catch (e) {
-    debug(`ghsa-tracker: failed to check if ${ghsaId} is fixed`)
-    debugDir(e)
-    return false
-  }
-}
+  tracker: GhsaTracker,
+): Promise<void> {
+  const trackerPath = path.join(cwd, TRACKER_FILE)
 
-/**
- * Get all fixed GHSA records from the tracker.
- */
-export async function getFixedGhsas(cwd: string): Promise<GhsaFixRecord[]> {
-  try {
-    const tracker = await loadGhsaTracker(cwd)
-    return tracker.fixed
-  } catch (e) {
-    debug('ghsa-tracker: failed to get fixed GHSAs')
-    debugDir(e)
-    return []
-  }
+  // Ensure .socket directory exists.
+  await safeMkdir(path.dirname(trackerPath), { recursive: true })
+
+  await writeJson(trackerPath, tracker, { spaces: 2 })
+  debug(`ghsa-tracker: saved ${tracker.fixed.length} records to ${trackerPath}`)
 }

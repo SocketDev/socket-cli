@@ -1,55 +1,64 @@
+/* max-file-lines: test — comprehensive test suite for one command/module; splitting would fragment closely related assertions. */
 /**
  * Integration tests for `socket fix` command.
  *
- * Tests the CVE fixing command that automatically upgrades vulnerable dependencies
- * to secure versions. Supports local fixes and automated CI/PR workflows.
+ * Tests the CVE fixing command that automatically upgrades vulnerable
+ * dependencies to secure versions. Supports local fixes and automated CI/PR
+ * workflows.
  *
  * Test Coverage:
+ *
  * - Help text display and usage examples
- * - Dry-run behavior (validation without applying fixes)
+ * - Dry-run behavior, validation without applying fixes
  * - Vulnerability identification (GHSA IDs, CVE IDs, PURLs)
- * - Autopilot mode (auto-merge PRs)
+ * - Autopilot mode, auto-merge PRs
  * - Fix limit control (--limit flag)
- * - Version range styles (pin, preserve)
+ * - Version range styles, pin, preserve
  * - Major version update control (--no-major-updates)
  * - Direct dependency impact analysis (--show-affected-direct-dependencies)
  * - Minimum release age filtering (--minimum-release-age)
  * - Output formats (JSON, markdown, text)
- * - CI environment variable handling (GITHUB_TOKEN, GIT_USER_NAME, GIT_USER_EMAIL)
- * - Fixture testing (monorepos, vulnerable-deps projects)
- * - Error handling (invalid IDs, missing tokens, non-existent paths)
+ * - CI environment variable handling (GITHUB_TOKEN, GIT_USER_NAME,
+ *   GIT_USER_EMAIL)
+ * - Fixture testing, monorepos, vulnerable-deps projects
+ * - Error handling, invalid IDs, missing tokens, non-existent paths
  *
  * CI/PR Workflow Features:
+ *
  * - Automatic PR creation for vulnerability fixes
  * - Auto-merge support via GitHub's auto-merge feature
  * - Git commit configuration via environment variables
  * - Multiple fixes batching with --limit
  *
  * Version Range Styles:
- * - pin: Use exact versions (e.g., 1.2.3)
- * - preserve: Retain existing range style (e.g., ^1.2.3)
+ *
+ * - Pin: Use exact versions (e.g., 1.2.3)
+ * - Preserve: Retain existing range style (e.g., ^1.2.3)
  *
  * Vulnerability ID Formats:
+ *
  * - GHSA IDs (e.g., GHSA-xxxx-xxxx-xxxx)
  * - CVE IDs (e.g., CVE-2021-23337) - auto-converted to GHSA
  * - PURLs (e.g., pkg:npm/package@1.0.0) - auto-converted to GHSA
  * - Comma-separated or multiple --id flags supported
  *
  * Platform-Specific Behavior:
+ *
  * - Extended test timeouts on Windows and CI (60s vs 30s)
  *
  * Related Files:
- * - src/commands/fix/cmd-fix.mts - Command definition
- * - src/commands/fix/handle-fix.mts - Fix computation and application logic
- * - src/commands/fix/output-fix.mts - Output formatting
- * - test/fixtures/commands/fix/ - Test fixtures (monorepo, vulnerable-deps)
+ *
+ * - Src/commands/fix/cmd-fix.mts - Command definition
+ * - Src/commands/fix/handle-fix.mts - Fix computation and application logic
+ * - Src/commands/fix/output-fix.mts - Output formatting
+ * - Test/fixtures/commands/fix/ - Test fixtures, monorepo, vulnerable-deps
  */
 
 import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
 
-import { WIN32 } from '@socketsecurity/lib/constants/platform'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,
@@ -59,7 +68,7 @@ import {
   FLAG_JSON,
   FLAG_MARKDOWN,
 } from '../../../src/constants/cli.mts'
-import ENV from '../../../src/constants/env.mts'
+import { ENV } from '../../../src/constants/env.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { withTempFixture } from '../../helpers/test-fixtures.mts'
@@ -89,7 +98,12 @@ describe('socket fix', async () => {
     // The implementation is still correct and will show warnings in real usage.
 
     cmdit(
-      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_CONFIG,
+        '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+      ],
       'should not show env var names when all CI env vars are present',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -113,7 +127,12 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_CONFIG,
+        '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+      ],
       'should not show env var names when CI is not set',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -137,7 +156,12 @@ describe('socket fix', async () => {
     )
 
     cmdit(
-      ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+      [
+        'fix',
+        FLAG_DRY_RUN,
+        FLAG_CONFIG,
+        '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+      ],
       'should not show env var names when CI is not set but some vars are present',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -165,7 +189,7 @@ describe('socket fix', async () => {
       ['fix', FLAG_HELP, FLAG_CONFIG, '{}'],
       'should show exact env var names in help text',
       async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         // Help text doesn't directly show env vars, but the implementation
         // would show them when actually running the command with missing vars.
         expect(stdout).toContain('Examples')
@@ -187,28 +211,37 @@ describe('socket fix', async () => {
           
               API Token Requirements
                 - Quota: 101 units
-                - Permissions: full-scans:create and packages:list
+                - Permissions: fixes:list, full-scans:create, and packages:list
           
               Options
+                --all               Process all discovered vulnerabilities in local mode. Cannot be used with --id.
                 --autopilot         Enable auto-merge for pull requests that Socket opens.
                                     See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
+                --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
+                --ecosystems        Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.
+                --exclude-paths     Skip matching paths entirely: manifests under them are not uploaded, and fixes are not applied to workspaces under them. Patterns are matched relative to the target directory. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. Use this to skip directories the current user cannot read so they do not abort manifest collection.
+                --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.9.5.
                 --id                Provide a list of vulnerability identifiers to compute fixes for:
                                         - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
-                                        - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2025-1234) - automatically converted to GHSA
+                                        - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2026-1234) - automatically converted to GHSA
                                         - PURLs (https://github.com/package-url/purl-spec) (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
-                                        Can be provided as comma separated values or as multiple flags
+                                        Can be provided as comma separated values or as multiple flags. Cannot be used with --all.
+                --include           Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags
                 --json              Output as JSON
-                --limit             The number of fixes to attempt at a time (default 10)
                 --markdown          Output as Markdown
                 --minimum-release-age  Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.
                 --no-apply-fixes    Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.
                 --no-major-updates  Do not suggest or apply fixes that require major version updates of direct or transitive dependencies
                 --output-file       Path to store upgrades as a JSON file at this path.
+                --package-managers  Limit fix analysis to specific package managers within an ecosystem (e.g. NPM, PNPM, YARN, MAVEN, POETRY). Accepts space- or comma-separated values and is case-insensitive. When combined with --ecosystems, an artifact must satisfy both filters.
+                --pr-limit          Maximum number of pull requests to create in CI mode (default 10). Has no effect in local mode.
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                     Available styles:
                                       * pin - Use the exact version (e.g. 1.2.3)
                                       * preserve - Retain the existing version range style as-is
                 --show-affected-direct-dependencies  List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities
+                --silence           Silence all output except the final result
           
               Environment Variables (for CI/PR mode)
                 CI                          Set to enable CI mode
@@ -235,7 +268,12 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -244,13 +282,31 @@ describe('socket fix', async () => {
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket fix\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket fix\`, cwd: <redacted>
+
+
+        [DryRun]: Analyze and compute and apply fixes for discovered vulnerabilities
+
+          Actions that would be performed:
+            - [fetch] Scan project dependencies for vulnerabilities \\u2192 [PROJECT]
+                organization: "fake-org"
+                ecosystems: "all"
+            - [fetch] Analyze vulnerability fix options
+                targets: "auto-discovered"
+                majorUpdates: "enabled"
+                rangeStyle: "preserve"
+            - [modify] Update package manifest files with fixes \\u2192 package.json and lock files
+            - [execute] Run package manager to install updated dependencies
+
+          Would complete successfully.
+
+          Run without --dry-run to execute these actions."
       `)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
   )
@@ -261,16 +317,16 @@ describe('socket fix', async () => {
       FLAG_DRY_RUN,
       '--autopilot',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --autopilot flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -280,30 +336,36 @@ describe('socket fix', async () => {
       FLAG_DRY_RUN,
       '--auto-merge',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --auto-merge alias',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
 
   cmdit(
-    ['fix', FLAG_DRY_RUN, '--test', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [
+      'fix',
+      FLAG_DRY_RUN,
+      '--test',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
+    ],
     'should ignore --test flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -315,16 +377,16 @@ describe('socket fix', async () => {
       '--test-script',
       'custom-test',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should ignore --test-script flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -336,16 +398,16 @@ describe('socket fix', async () => {
       '--limit',
       '5',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --limit flag with custom value',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -356,16 +418,16 @@ describe('socket fix', async () => {
       FLAG_DRY_RUN,
       '--min-satisfying',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --min-satisfying flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -394,16 +456,16 @@ describe('socket fix', async () => {
       '--range-style',
       'pin',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept range style pin',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -420,16 +482,16 @@ describe('socket fix', async () => {
       'preserve',
       '--min-satisfying',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept comprehensive flag combination',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -440,16 +502,16 @@ describe('socket fix', async () => {
       FLAG_DRY_RUN,
       '--no-major-updates',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --no-major-updates flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -460,16 +522,16 @@ describe('socket fix', async () => {
       FLAG_DRY_RUN,
       '--show-affected-direct-dependencies',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept --show-affected-direct-dependencies flag',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -483,16 +545,16 @@ describe('socket fix', async () => {
       '--limit',
       '5',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should accept new flags in combination',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -504,19 +566,24 @@ describe('socket fix', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fake-token"}',
     ],
-    'should show helpful error when no package.json found',
+    'should show helpful error when target directory is missing',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
+      // The target-directory check now runs before org resolution.
+      expect(output).toContain('Target directory does not exist')
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
   cmdit(
-    ['fix', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '.',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+    ],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -535,7 +602,13 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '.', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '.',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+    ],
     'should handle monorepo fixture project',
     async cmd => {
       const { cleanup, tempDir } = await withTempFixture(
@@ -561,16 +634,16 @@ describe('socket fix', async () => {
       '--limit',
       '1',
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","defaultOrg":"fake-org"}',
     ],
     'should handle autopilot mode with custom limit',
     async cmd => {
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
@@ -582,7 +655,7 @@ describe('socket fix', async () => {
       'GHSA-35jh-r3h4-6jhm',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should handle specific GHSA ID for lodash vulnerability',
     async cmd => {
@@ -600,7 +673,7 @@ describe('socket fix', async () => {
       'CVE-2021-23337',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
@@ -618,7 +691,7 @@ describe('socket fix', async () => {
       '1',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should respect fix limit parameter',
     async cmd => {
@@ -637,7 +710,7 @@ describe('socket fix', async () => {
       '--autopilot',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should handle autopilot mode with preserve range style',
     async cmd => {
@@ -655,7 +728,7 @@ describe('socket fix', async () => {
       'pin',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should handle pin range style for exact versions',
     async cmd => {
@@ -667,7 +740,13 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--json', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      '--json',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
+    ],
     'should output results in JSON format',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -683,7 +762,7 @@ describe('socket fix', async () => {
       '--markdown',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fake-token"}',
+      '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
     ],
     'should output results in markdown format',
     async cmd => {
@@ -703,7 +782,7 @@ describe('socket fix', async () => {
         '.',
         FLAG_DRY_RUN,
         FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
+        '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
       ],
       'should handle PURL-based vulnerability identification',
       async cmd => {
@@ -729,7 +808,7 @@ describe('socket fix', async () => {
         '.',
         FLAG_DRY_RUN,
         FLAG_CONFIG,
-        '{"apiToken":"fake-token"}',
+        '{"apiToken":"fake-token","defaultOrg":"fake-org"}',
       ],
       'should handle multiple vulnerability IDs in comma-separated format',
       async cmd => {
@@ -850,9 +929,8 @@ describe('socket fix', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain(
-          'Unable to resolve a Socket account organization',
-        )
+        // The target-directory check now runs before org resolution.
+        expect(output).toContain('Target directory does not exist')
         expect(code).toBeGreaterThan(0)
       },
     )
@@ -1009,7 +1087,7 @@ describe('socket fix', async () => {
       ['fix', FLAG_HELP, '--autopilot', '--limit', '5', FLAG_CONFIG, '{}'],
       'should prioritize help over other flags',
       async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toContain('Fix CVEs in dependencies')
         expect(code).toBe(0)
       },

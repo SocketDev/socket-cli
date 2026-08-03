@@ -1,0 +1,40 @@
+# Dual-use disclosure
+
+Package: @socketsecurity/cli (the private engine of the Socket CLI; its
+compiled builds ship to users as the `socket` launcher package and the
+platform binary packages listed in that launcher's optional dependencies)
+Content policy class: dual-use (https://docs.npmjs.com/policies/dual-use)
+
+## What the tool does that can look like malware
+
+This package builds the Socket CLI, a security research tool. It ships the
+socket, socket-npm, and socket-npx executables. The socket-npm and
+socket-npx commands wrap the npm and npx package managers: when a user runs
+an install through them, the tool reads the dependency tree first, sends
+package names and versions to the socket.dev security API for analysis, and
+can warn about or refuse to continue an install when a dependency looks
+risky. The tool can also read project files such as manifests, lockfiles,
+and package contents to build a security scan, and it uploads those scan
+inputs to socket.dev when the user requests a scan. Wrapping package
+managers, stopping installs, reading project files, and uploading scan data
+are behaviors that automated malware scanning can mistake for malicious
+software.
+
+## What the tool sends over the network
+
+The tool talks to the socket.dev API to run the security analysis the user
+asked for. It sends what that analysis needs: package names and versions,
+dependency manifests and lockfiles, and the scan files the user chose to
+upload. The user's API token is sent to authenticate those requests. This
+source tree also contains an optional Sentry instrumentation entry point; a
+build that includes it reports errors and crashes to Sentry so the
+maintainers can debug failures, and a build that does not include it sends
+nothing to Sentry.
+
+## Intended legitimate use
+
+The tool exists for defensive supply-chain security: developers and CI
+systems use it to find known-malicious, hijacked, typosquatted, or
+policy-violating dependencies before those dependencies run. The tool runs
+only when a user or a CI job invokes it. Its source code is public at
+https://github.com/SocketDev/socket-cli and issues are tracked there.

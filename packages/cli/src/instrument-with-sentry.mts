@@ -3,8 +3,8 @@
 
 import { createRequire } from 'node:module'
 
-import { kInternalsSymbol } from '@socketsecurity/lib/constants/core'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { kInternalsSymbol } from '@socketsecurity/lib-stable/constants/sentinels'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getCliVersionHash } from './env/cli-version-hash.mts'
 import { isPublishedBuild } from './env/is-published-build.mts'
@@ -36,7 +36,12 @@ if (isSentryBuild()) {
   } else {
     Sentry.setTag('debugging', false)
   }
-  const internals = (global as any)[kInternalsSymbol]
+  const internals = (
+    global as unknown as Record<
+      symbol,
+      { setSentry?: ((s: typeof Sentry) => void) | undefined } | undefined
+    >
+  )[kInternalsSymbol]
   if (internals?.setSentry) {
     internals.setSentry(Sentry)
   }

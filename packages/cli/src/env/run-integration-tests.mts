@@ -1,6 +1,6 @@
 /**
- * RUN_INTEGRATION_TESTS environment variable.
- * Set to enable integration tests that require Socket API access.
+ * RUN_INTEGRATION_TESTS environment variable. Set to enable integration tests
+ * that require Socket API access.
  */
 
 import { env } from 'node:process'

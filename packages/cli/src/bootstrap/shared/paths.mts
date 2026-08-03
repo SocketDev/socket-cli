@@ -1,41 +1,22 @@
 /**
- * Shared path resolution for all bootstrap implementations.
- * This file is bundled into each bootstrap, not imported at runtime.
+ * Shared path resolution for all bootstrap implementations. This file is
+ * bundled into each bootstrap, not imported at runtime.
  *
- * IMPORTANT: This bootstrap code runs BEFORE the main CLI loads.
- * We CANNOT use the centralized ENV module here because:
- * 1. Bootstrap needs to set up paths before ENV module can be imported
- * 2. ENV module depends on constants that need these paths
- * 3. This creates a circular dependency
- * Therefore, we use direct process.env access for bootstrap-specific env vars.
+ * IMPORTANT: This bootstrap code runs BEFORE the main CLI loads. We CANNOT use
+ * the centralized ENV module here because: 1. Bootstrap needs to set up paths
+ * before ENV module can be imported 2. ENV module depends on constants that
+ * need these paths 3. This creates a circular dependency Therefore, we use
+ * direct process.env access for bootstrap-specific env vars.
  */
 
-import { homedir } from 'node:os'
+import os from 'node:os'
 import path from 'node:path'
 
 /**
- * Get the Socket home directory path.
- * Supports SOCKET_HOME environment variable override.
- * Direct process.env access required - bootstrap runs before ENV module loads.
+ * Get the CLI entry point path.
  */
-export function getSocketHome(): string {
-  return process.env['SOCKET_HOME'] || path.join(homedir(), '.socket')
-}
-
-/**
- * Get the bootstrap binary installation directory.
- * This is where SEA/yao-pkg executables are cached.
- */
-export function getBootstrapBinaryDir(): string {
-  return path.join(getSocketHome(), '_cli')
-}
-
-/**
- * Get the DLX cache directory for downloaded packages.
- * This is where @socketsecurity/cli and other packages are installed.
- */
-export function getDlxDir(): string {
-  return path.join(getSocketHome(), '_dlx')
+export function getCliEntryPoint(): string {
+  return path.join(getCliPackageDir(), 'dist', 'cli.js')
 }
 
 /**
@@ -46,28 +27,27 @@ export function getCliPackageDir(): string {
 }
 
 /**
- * Get the CLI entry point path.
- */
-export function getCliEntryPoint(): string {
-  return path.join(getCliPackageDir(), 'dist', 'cli.js')
-}
-
-/**
- * Get npm registry URL with environment variable support.
- * Direct process.env access required - bootstrap runs before ENV module loads.
- */
-export function getRegistryUrl(): string {
-  return (
-    process.env['SOCKET_NPM_REGISTRY'] ||
-    process.env['NPM_REGISTRY'] ||
-    'https://registry.npmjs.org'
-  )
-}
-
-/**
- * Get package name to download.
- * Direct process.env access required - bootstrap runs before ENV module loads.
+ * Get package name to download. Direct process.env access required - bootstrap
+ * runs before ENV module loads.
  */
 export function getCliPackageName(): string {
   return process.env['SOCKET_CLI_PACKAGE'] || '@socketsecurity/cli'
+}
+
+/**
+ * Get the DLX cache directory for downloaded packages. This is where.
+ *
+ * @socketsecurity/cli and other packages are installed.
+ */
+export function getDlxDir(): string {
+  return path.join(getSocketHome(), '_dlx')
+}
+
+/**
+ * Get the Socket home directory path. Supports SOCKET_HOME environment variable
+ * override. Direct process.env access required - bootstrap runs before ENV
+ * module loads.
+ */
+export function getSocketHome(): string {
+  return process.env['SOCKET_HOME'] || path.join(os.homedir(), '.socket')
 }

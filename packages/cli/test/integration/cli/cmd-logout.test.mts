@@ -2,28 +2,23 @@
  * Integration tests for `socket logout` command.
  *
  * Tests the Socket API logout flow. This command clears all stored credentials
- * from the local configuration, requiring re-authentication for future API operations.
+ * from the local configuration, requiring re-authentication for future API
+ * operations.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Credential clearing from local config
- * - Exit codes for successful logout
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Credential clearing from local config - Exit codes for
+ * successful logout.
  *
- * Logout Behavior:
- * - Removes API token from local config
- * - Clears default organization setting
- * - Does not revoke token on server (token remains valid)
+ * Logout Behavior: - Removes API token from local config - Clears default
+ * organization setting - Does not revoke token on server, token remains valid
  * - Preserves other config settings (API URL, proxy, etc.)
  *
- * Security Note:
- * This command only clears local credentials. To revoke an API token
- * completely, use the Socket dashboard to delete the token.
+ * Security Note: This command only clears local credentials. To revoke an API
+ * token completely, use the Socket dashboard to delete the token.
  *
- * Related Files:
- * - src/commands/logout/cmd-logout.mts - Command definition
- * - src/commands/logout/handle-logout.mts - Logout logic
- * - src/utils/config.mts - Config management utilities
+ * Related Files: - src/commands/logout/cmd-logout.mts - Command definition -
+ * src/commands/logout/handle-logout.mts - Logout logic - src/util/config.mts -
+ * Config management utilities.
  */
 
 import { describe, expect } from 'vitest'
@@ -84,14 +79,22 @@ describe('socket logout', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket logout\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket logout\`, cwd: <redacted>
+
+
+        [DryRun]: Would delete Socket API credentials
+
+          Target: /[HOME]/.config/socket/config.json
+
+          This action cannot be undone.
+          Run without --dry-run to perform this deletion."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

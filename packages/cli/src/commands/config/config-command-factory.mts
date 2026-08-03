@@ -1,52 +1,47 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getSupportedConfigEntries,
   isSupportedConfigKey,
-} from '../../utils/config.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/config.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { OutputKind } from '../../types.mjs'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { LocalConfig } from '../../utils/config.mts'
+} from '../../util/cli/with-subcommands.mjs'
+import type { LocalConfig } from '../../util/config.mts'
 
-const logger = getDefaultLogger()
-
-type ConfigCommandSpec = {
+export type ConfigCommandSpec = {
   commandName: string
   description: string
-  hidden?: boolean
-  flags?: MeowFlags
-  needsValue?: boolean
+  hidden?: boolean | undefined
+  flags?: MeowFlags | undefined
+  needsValue?: boolean | undefined
   helpUsage: string
   helpDescription: string
   helpExamples: string[]
-  validate?: (cli: {
-    input: readonly string[]
-    flags: Record<string, unknown>
-  }) => Array<{
-    test: boolean
-    message: string
-    fail: string
-    nook?: boolean
-    pass?: string
-  }>
+  validate?:
+    | ((cli: {
+        input: readonly string[]
+        flags: Record<string, unknown>
+      }) => Array<{
+        test: boolean
+        message: string
+        fail: string
+        nook?: boolean | undefined
+        pass?: string | undefined
+      }>)
+    | undefined
   handler: (params: {
     key: keyof LocalConfig
-    value?: string
+    value?: string | undefined
     outputKind: OutputKind
   }) => Promise<void>
 }
@@ -60,12 +55,12 @@ export function createConfigCommand(spec: ConfigCommandSpec) {
       ...commonFlags,
       ...outputFlags,
     },
-    help: (command, config) => `
+    help: (command, helpConfig) => `
     Usage
       $ ${command} [options] ${spec.helpUsage}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     ${spec.helpDescription}
 
@@ -101,8 +96,18 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       const value = rest.join(' ')
       const outputKind = getOutputKind(json, markdown)
 
-      // Build validation checks.
-      const validations = [
+      // Build validation checks. The shape matches `checkCommandInput`'s
+      // param exactly so spec.validate() output (which may include
+      // `pass?`) appends cleanly without the inferred discriminated-union
+      // narrowing kicking in.
+      type Validation = {
+        test: boolean
+        message: string
+        fail: string
+        nook?: boolean | undefined
+        pass?: string | undefined
+      }
+      const validations: Validation[] = [
         {
           test: key === 'test' || isSupportedConfigKey(key),
           message: 'Config key should be the first arg',
@@ -137,11 +142,23 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        logger.log(DRY_RUN_BAILING_NOW)
+        // Runtime read so tests that mutate process.env['HOME'] pick up changes.
+        const configPath = `${process.env['HOME']}/.config/socket/config.json`
+        const changes = spec.needsValue
+          ? [`Set "${key}" to: ${value}`]
+          : [`Remove "${key}" from config`]
+        outputDryRunWrite(
+          configPath,
+          spec.needsValue
+            ? `set config value for "${key}"`
+            : `unset config value for "${key}"`,
+          changes,
+        )
         return
       }
 
       await spec.handler({
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the validation above admits the literal 'test' sentinel, the config test-mode key, alongside real LocalConfig keys, so a type guard cannot narrow this; handlers treat 'test' explicitly.
         key: key as keyof LocalConfig,
         ...(spec.needsValue && value !== undefined ? { value } : {}),
         outputKind,

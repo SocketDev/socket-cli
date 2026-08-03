@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { generateReport } from './generate-report.mts'
 import {
@@ -11,17 +11,17 @@ import {
   OUTPUT_TEXT,
 } from '../../constants/cli.mts'
 import { REPORT_LEVEL_DEFER } from '../../constants/reporting.mts'
-import { mapToObject } from '../../utils/data/map-to-object.mjs'
-import { walkNestedMap } from '../../utils/data/walk-nested-map.mjs'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdTable } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { mapToObject } from '../../util/data/map-to-object.mjs'
+import { walkNestedMap } from '../../util/data/walk-nested-map.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export type OutputScanReportConfig = {
@@ -64,7 +64,7 @@ export async function outputScanReport(
     return
   }
 
-  const spinner = getDefaultSpinner()!
+  const spinner = getDefaultSpinner()
   const scanReport = generateReport(
     result.data.scan,
     result.data.securityPolicy,
@@ -111,7 +111,7 @@ export async function outputScanReport(
       : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing json report to', filepath)
+      logger.error('Writing json report to', filepath)
       return await fs.writeFile(filepath, json)
     }
 
@@ -129,7 +129,7 @@ export async function outputScanReport(
         )
 
     if (filepath && filepath !== '-') {
-      logger.log('Writing markdown report to', filepath)
+      logger.error('Writing markdown report to', filepath)
       return await fs.writeFile(filepath, md)
     }
 
@@ -141,10 +141,13 @@ export async function outputScanReport(
   if (short) {
     logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
   } else {
-    logger.dir(scanReport.data, { depth: null })
+    logger.dir(scanReport.data, { depth: undefined })
   }
 }
 
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
+// which is out of scope for this pass.
 export function toJsonReport(
   report: ScanReport,
   includeLicensePolicy?: boolean | undefined,
@@ -163,6 +166,9 @@ export function toJsonReport(
   })
 }
 
+// socket-lint: allow boolean-trap -- collapsing into an options object would
+// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
+// which is out of scope for this pass.
 export function toMarkdownReport(
   report: ScanReport,
   includeLicensePolicy?: boolean | undefined,

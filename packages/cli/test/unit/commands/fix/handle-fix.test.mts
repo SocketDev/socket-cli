@@ -1,30 +1,26 @@
 /**
- * Unit Tests: Fix Command Handler - ID Conversion Logic
+ * Unit Tests: Fix Command Handler - ID Conversion Logic.
  *
- * Purpose:
- * Tests the vulnerability ID conversion system that normalizes various vulnerability identifiers
- * (GHSA, CVE, PURL) into standardized GHSA format. Validates the conversion pipeline used by the
- * fix command to accept flexible input formats while working with unified GHSA identifiers.
+ * Purpose: Tests the vulnerability ID conversion system that normalizes various
+ * vulnerability identifiers (GHSA, CVE, PURL) into standardized GHSA format.
+ * Validates the conversion pipeline used by the fix command to accept flexible
+ * input formats while working with unified GHSA identifiers.
  *
- * Test Coverage:
- * - GHSA ID validation and passthrough
- * - CVE to GHSA conversion via Socket API
- * - PURL to GHSA conversion for package-based lookups
- * - Invalid format detection and filtering
- * - Conversion failure handling with user-friendly warnings
- * - Mixed ID type processing in single batch
- * - Whitespace normalization
+ * Test Coverage: - GHSA ID validation and passthrough - CVE to GHSA conversion
+ * via Socket API - PURL to GHSA conversion for package-based lookups - Invalid
+ * format detection and filtering - Conversion failure handling with
+ * user-friendly warnings - Mixed ID type processing in single batch -
+ * Whitespace normalization.
  *
- * Testing Approach:
- * Mocks CVE and PURL conversion utilities, logger functions, and array utilities to test
- * the conversion logic in isolation. Tests verify proper error handling, logging, and
- * filtering of invalid or unconvertible identifiers.
+ * Testing Approach: Mocks CVE and PURL conversion utilities, logger functions,
+ * and array utilities to test the conversion logic in isolation. Tests verify
+ * proper error handling, logging, and filtering of invalid or unconvertible
+ * identifiers.
  *
- * Related Files:
- * - src/commands/fix/handle-fix.mts - Main fix command handler
- * - src/utils/cve-to-ghsa.mts - CVE ID conversion utility
- * - src/utils/purl/to-ghsa.mts - PURL to GHSA conversion
- * - src/commands/fix/coana-fix.mts - Coana API integration for applying fixes
+ * Related Files: - src/commands/fix/handle-fix.mts - Main fix command handler -
+ * src/util/cve-to-ghsa.mts - CVE ID conversion utility -
+ * src/util/purl/to-ghsa.mts - PURL to GHSA conversion -
+ * src/commands/fix/coana-fix.mts - Coana API integration for applying fixes.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -36,7 +32,7 @@ const mockJoinAnd = vi.hoisted(() => vi.fn(arr => arr.join(' and ')))
 const mockCoanaFix = vi.hoisted(() => vi.fn())
 const mockOutputFixResult = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/arrays', () => ({
+vi.mock(import('@socketsecurity/lib-stable/arrays/join'), () => ({
   joinAnd: mockJoinAnd,
 }))
 
@@ -52,20 +48,20 @@ const mockLogger = vi.hoisted(() => ({
 const mockConvertCveToGhsa = vi.hoisted(() => vi.fn())
 const mockConvertPurlToGhsas = vi.hoisted(() => vi.fn())
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-vi.mock('../../../../src/commands/fix/coana-fix.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/coana-fix.mts'), () => ({
   coanaFix: mockCoanaFix,
 }))
-vi.mock('../../../../src/commands/fix/output-fix-result.mts', () => ({
+vi.mock(import('../../../../src/commands/fix/output-fix-result.mts'), () => ({
   outputFixResult: mockOutputFixResult,
 }))
-vi.mock('../../../../src/utils/cve-to-ghsa.mts', () => ({
+vi.mock(import('../../../../src/util/cve-to-ghsa.mts'), () => ({
   convertCveToGhsa: mockConvertCveToGhsa,
 }))
-vi.mock('../../../../src/utils/purl/to-ghsa.mts', () => ({
+vi.mock(import('../../../../src/util/purl/to-ghsa.mts'), () => ({
   convertPurlToGhsas: mockConvertPurlToGhsas,
 }))
 
@@ -228,6 +224,15 @@ describe('convertIdsToGhsas', () => {
     )
   })
 
+  it('warns about IDs that are neither GHSA, CVE, nor PURL', async () => {
+    const result = await convertIdsToGhsas(['some-other-format'])
+
+    expect(result).toEqual([])
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Unsupported ID format'),
+    )
+  })
+
   it('trims whitespace from IDs', async () => {
     const result = await convertIdsToGhsas([
       '  GHSA-1234-5678-9abc  ',
@@ -235,5 +240,114 @@ describe('convertIdsToGhsas', () => {
     ])
 
     expect(result).toEqual(['GHSA-1234-5678-9abc', 'GHSA-abcd-efgh-ijkl'])
+  })
+})
+
+describe('handleFix', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCoanaFix.mockResolvedValue({ ok: true, data: {} })
+  })
+
+  it('runs coanaFix and pipes the result through outputFixResult', async () => {
+    const { handleFix } =
+      await import('../../../../src/commands/fix/handle-fix.mts')
+
+    await handleFix({
+      all: false,
+      applyFixes: false,
+      autopilot: false,
+      coanaVersion: '1.0.0',
+      cwd: '/proj',
+      debug: false,
+      disableExternalToolChecks: false,
+      disableMajorUpdates: false,
+      ecosystems: ['npm'],
+      exclude: [],
+      excludePaths: [],
+      packageManagers: [],
+      ghsas: ['GHSA-1234-5678-9abc'],
+      include: [],
+      minSatisfying: false,
+      minimumReleaseAge: '7d',
+      orgSlug: 'my-org',
+      outputFile: '',
+      outputKind: 'json',
+      prCheck: false,
+      prLimit: 5,
+      rangeStyle: 'caret',
+      showAffectedDirectDependencies: false,
+      silence: false,
+      spinner: undefined,
+      unknownFlags: [],
+    })
+
+    expect(mockCoanaFix).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ghsas: ['GHSA-1234-5678-9abc'],
+        orgSlug: 'my-org',
+      }),
+    )
+    expect(mockOutputFixResult).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: true }),
+      'json',
+    )
+  })
+
+  it('converts mixed CVE/PURL/GHSA inputs before calling coanaFix', async () => {
+    mockConvertCveToGhsa.mockResolvedValueOnce({
+      ok: true,
+      data: 'GHSA-from-cve',
+    })
+    mockConvertPurlToGhsas.mockResolvedValueOnce({
+      ok: true,
+      data: ['GHSA-from-purl'],
+    })
+
+    const { handleFix } =
+      await import('../../../../src/commands/fix/handle-fix.mts')
+
+    await handleFix({
+      all: false,
+      applyFixes: true,
+      autopilot: false,
+      coanaVersion: '1.0.0',
+      cwd: '/proj',
+      debug: false,
+      disableExternalToolChecks: false,
+      disableMajorUpdates: false,
+      ecosystems: [],
+      exclude: [],
+      excludePaths: [],
+      packageManagers: [],
+      ghsas: [
+        'GHSA-1234-5678-9abc',
+        'CVE-2021-44228',
+        'pkg:npm/lodash@4.17.21',
+      ],
+      include: [],
+      minSatisfying: false,
+      minimumReleaseAge: '0',
+      orgSlug: 'my-org',
+      outputFile: '',
+      outputKind: 'text',
+      prCheck: false,
+      prLimit: 5,
+      rangeStyle: 'caret',
+      showAffectedDirectDependencies: false,
+      silence: false,
+      spinner: undefined,
+      unknownFlags: [],
+    })
+
+    expect(mockCoanaFix).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ghsas: expect.arrayContaining([
+          'GHSA-1234-5678-9abc',
+          'GHSA-from-cve',
+          'GHSA-from-purl',
+        ]),
+      }),
+    )
   })
 })

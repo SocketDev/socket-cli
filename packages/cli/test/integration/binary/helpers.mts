@@ -1,12 +1,14 @@
-/** @fileoverview Shared helpers for binary integration tests. */
+/**
+ * @file Shared helpers for binary integration tests.
+ */
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { spawn } from '@socketsecurity/lib/spawn'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -76,7 +78,7 @@ export async function prepareBinary(
   let binaryExists = existsSync(binary.path)
 
   if (!binaryExists) {
-    // In CI: Skip building (rely on cache).
+    // In CI: Skip building, rely on cache.
     if (process.env.CI) {
       logger.log(`⊘ ${binary.name} (not cached)`)
       if (binaryType === 'sea') {
@@ -100,7 +102,7 @@ export async function prepareBinary(
       return false
     }
 
-    logger.log('  Building...')
+    logger.log('  Building…')
     const buildSuccess = await buildBinary(binary, binaryType)
 
     if (buildSuccess) {
@@ -108,14 +110,14 @@ export async function prepareBinary(
     }
 
     if (!binaryExists) {
-      logger.log('  ✗ Build failed')
+      logger.fail('Build failed')
       logger.log(
         `  To build manually: ${binary.buildCommand?.join(' ') ?? 'N/A'}`,
       )
       return false
     }
 
-    logger.log('  ✓ Build complete')
+    logger.success('Build complete')
   } else {
     // Binary exists.
     logger.log(`✓ ${binary.name}`)

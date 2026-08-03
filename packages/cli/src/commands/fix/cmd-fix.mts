@@ -1,44 +1,56 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import terminalLink from 'terminal-link'
+import { joinAnd, joinOr } from '@socketsecurity/lib-stable/arrays/join'
+import { arrayUnique } from '@socketsecurity/lib-stable/arrays/unique'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-import { arrayUnique, joinAnd, joinOr } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
+import { generalFlags, hiddenFlags } from './cmd-fix-flags.mts'
 import { handleFix } from './handle-fix.mts'
-import { DRY_RUN_NOT_SAVING, FLAG_ID } from '../../constants/cli.mts'
+import { FLAG_ID } from '../../constants/cli.mts'
 import { ERROR_UNABLE_RESOLVE_ORG } from '../../constants/errors.mts'
-import * as constants from '../../constants.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { outputDryRunPreview } from '../../util/dry-run/output.mts'
+import {
+  COANA_PACKAGE_MANAGERS,
+  isCoanaPackageManager,
+} from '../../util/ecosystem/coana-package-managers.mts'
+import { getEcosystemChoicesForMeow } from '../../util/ecosystem/types.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { RangeStyles } from '../../utils/semver.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { RangeStyles } from '../../util/semver.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
+import { assertNoNegationPatterns } from '../scan/exclude-paths.mts'
+
+import type { DryRunAction } from '../../util/dry-run/output.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import type { RangeStyle } from '../../util/semver.mts'
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface FixFlags {
+export interface FixFlags {
   all: boolean
   applyFixes: boolean
   autopilot: boolean
   debug: boolean
+  disableExternalToolChecks: boolean
   ecosystems: string[]
   exclude: string[]
+  excludePaths: string[]
+  packageManagers: string[]
   fixVersion: string | undefined
   include: string[]
   json: boolean
@@ -53,12 +65,10 @@ interface FixFlags {
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   silence: boolean
-  unknownFlags?: string[]
+  unknownFlags?: string[] | undefined
 }
 
 export const CMD_NAME = 'fix'
-
-const DEFAULT_LIMIT = 10
 
 const description = 'Fix CVEs in dependencies'
 
@@ -70,205 +80,22 @@ export const cmdFix = {
   run,
 }
 
-const generalFlags: MeowFlags = {
-  autopilot: {
-    type: 'boolean',
-    default: false,
-    description: `Enable auto-merge for pull requests that Socket opens.\nSee ${terminalLink(
-      'GitHub documentation',
-      'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
-    )} for managing auto-merge for pull requests in your repository.`,
-  },
-  batch: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Create a single PR for all fixes instead of one PR per GHSA (CI mode only)',
-    hidden: true,
-  },
-  applyFixes: {
-    aliases: ['onlyCompute'],
-    type: 'boolean',
-    default: true,
-    description:
-      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
-    // Hidden to allow custom documenting of the negated `--no-apply-fixes` variant.
-    hidden: true,
-  },
-  majorUpdates: {
-    type: 'boolean',
-    default: true,
-    description:
-      'Allow major version updates. Use --no-major-updates to disable.',
-    // Hidden to allow custom documenting the negated `--no-major-updates` variant.
-    hidden: true,
-  },
-  all: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Process all discovered vulnerabilities in local mode. Cannot be used with --id.',
-  },
-  ecosystems: {
-    type: 'string',
-    default: [],
-    description:
-      'Limit fix analysis to specific ecosystems. Can be provided as comma separated values or as multiple flags. Defaults to all ecosystems.',
-    isMultiple: true,
-  },
-  fixVersion: {
-    type: 'string',
-    description: `Override the version of @coana-tech/cli used for fix analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_VERSION}.`,
-  },
-  id: {
-    type: 'string',
-    default: [],
-    description: `Provide a list of vulnerability identifiers to compute fixes for:
-    - ${terminalLink(
-      'GHSA IDs',
-      'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
-    )} (e.g., GHSA-xxxx-xxxx-xxxx)
-    - ${terminalLink(
-      'CVE IDs',
-      'https://cve.mitre.org/cve/identifiers/',
-    )} (e.g., CVE-${new Date().getFullYear()}-1234) - automatically converted to GHSA
-    - ${terminalLink(
-      'PURLs',
-      'https://github.com/package-url/purl-spec',
-    )} (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
-    Can be provided as comma separated values or as multiple flags. Cannot be used with --all.`,
-    isMultiple: true,
-  },
-  prLimit: {
-    aliases: ['limit'],
-    type: 'number',
-    default: DEFAULT_LIMIT,
-    description: `Maximum number of pull requests to create in CI mode (default ${DEFAULT_LIMIT}). Has no effect in local mode.`,
-  },
-  rangeStyle: {
-    type: 'string',
-    default: 'preserve',
-    description: `
-Define how dependency version ranges are updated in package.json (default 'preserve').
-Available styles:
-  * pin - Use the exact version (e.g. 1.2.3)
-  * preserve - Retain the existing version range style as-is
-      `.trim(),
-  },
-  outputFile: {
-    type: 'string',
-    default: '',
-    description: 'Path to store upgrades as a JSON file at this path.',
-  },
-  minimumReleaseAge: {
-    type: 'string',
-    default: '',
-    description:
-      'Set a minimum age requirement for suggested upgrade versions (e.g., 1h, 2d, 3w). A higher age requirement reduces the risk of upgrading to malicious versions. For example, setting the value to 1 week (1w) gives ecosystem maintainers one week to remove potentially malicious versions.',
-  },
-  debug: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Enable debug logging in the Coana-based Socket Fix CLI invocation.',
-    shortFlag: 'd',
-  },
-  showAffectedDirectDependencies: {
-    type: 'boolean',
-    default: false,
-    description:
-      'List the direct dependencies responsible for introducing transitive vulnerabilities and list the updates required to resolve the vulnerabilities',
-  },
-  silence: {
-    type: 'boolean',
-    default: false,
-    description: 'Silence all output except the final result',
-  },
-  exclude: {
-    type: 'string',
-    default: [],
-    description:
-      'Exclude workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-  },
-  include: {
-    type: 'string',
-    default: [],
-    description:
-      'Include workspaces matching these glob patterns. Can be provided as comma separated values or as multiple flags',
-    isMultiple: true,
-  },
-}
-
-const hiddenFlags: MeowFlags = {
-  autoMerge: {
-    ...generalFlags['autopilot'],
-    hidden: true,
-  } as MeowFlag,
-  ghsa: {
-    ...generalFlags['id'],
-    hidden: true,
-  } as MeowFlag,
-  maxSatisfying: {
-    type: 'boolean',
-    default: true,
-    description: 'Use the maximum satisfying version for dependency updates',
-    hidden: true,
-  },
-  minSatisfying: {
-    type: 'boolean',
-    default: false,
-    description:
-      'Constrain dependency updates to the minimum satisfying version',
-    hidden: true,
-  },
-  prCheck: {
-    type: 'boolean',
-    default: true,
-    description: 'Check for an existing PR before attempting a fix',
-    hidden: true,
-  },
-  purl: {
-    type: 'string',
-    default: [],
-    description: `Provide a list of ${terminalLink(
-      'PURLs',
-      'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl',
-    )} to compute fixes for, as either a comma separated value or as\nmultiple flags`,
-    isMultiple: true,
-    shortFlag: 'p',
-    hidden: true,
-  },
-  test: {
-    type: 'boolean',
-    default: false,
-    description: 'Verify the fix by running unit tests',
-    hidden: true,
-  },
-  testScript: {
-    type: 'string',
-    default: 'test',
-    description: "The test script to run for fix attempts (default 'test')",
-    hidden: true,
-  },
-}
-
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       ...generalFlags,
       ...hiddenFlags,
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -277,15 +104,15 @@ async function run(
 
     Options
       ${getFlagListOutput({
-        ...config.flags,
+        ...helpConfig.flags,
         // Explicitly document the negated --no-apply-fixes variant.
         noApplyFixes: {
-          ...config.flags['applyFixes'],
+          ...helpConfig.flags['applyFixes'],
           hidden: false,
         } as MeowFlag,
         // Explicitly document the negated --no-major-updates variant.
         noMajorUpdates: {
-          ...config.flags['majorUpdates'],
+          ...helpConfig.flags['majorUpdates'],
           description:
             'Do not suggest or apply fixes that require major version updates of direct or transitive dependencies',
           hidden: false,
@@ -320,9 +147,12 @@ async function run(
     applyFixes,
     autopilot,
     debug,
+    disableExternalToolChecks,
     ecosystems,
     exclude,
+    excludePaths,
     fixVersion,
+    packageManagers,
     include,
     json,
     majorUpdates,
@@ -340,29 +170,52 @@ async function run(
     unknownFlags = [],
   } = cli.flags as unknown as FixFlags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const minSatisfying = (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
+  const minSatisfying =
+    (cli.flags as unknown as FixFlags).minSatisfying || !maxSatisfying
 
   const disableMajorUpdates = !majorUpdates
 
   const outputKind = getOutputKind(json, markdown)
 
-  // Process comma-separated values for ecosystems flag.
-  const ecosystemsRaw = cmdFlagValueToArray(ecosystems)
+  // Process comma-separated values for ecosystems flag. The choice list is
+  // lowercase, so normalize the input for a case-insensitive match.
+  const ecosystemsRaw = cmdFlagValueToArray(ecosystems).map(value =>
+    value.toLowerCase(),
+  )
 
   // Validate ecosystem values early, before dry-run check.
   const validatedEcosystems: PURL_Type[] = []
   const validEcosystemChoices = getEcosystemChoicesForMeow()
-  for (const ecosystem of ecosystemsRaw) {
+  for (let i = 0, { length } = ecosystemsRaw; i < length; i += 1) {
+    const ecosystem = ecosystemsRaw[i]!
     if (!validEcosystemChoices.includes(ecosystem)) {
       logger.fail(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystemChoices)}`,
+        `--ecosystems must be one of: ${joinAnd(validEcosystemChoices)} (saw: "${ecosystem}"); pass a supported ecosystem like --ecosystems=${validEcosystemChoices[0]}`,
       )
       process.exitCode = 1
       return
     }
     validatedEcosystems.push(ecosystem as PURL_Type)
+  }
+
+  // Coana uppercases --package-managers input and rejects unknown values, so
+  // normalize and validate here for the same UX and an early failure.
+  const packageManagersRaw = cmdFlagValueToArray(packageManagers).map(value =>
+    value.toUpperCase(),
+  )
+  const validatedPackageManagers: string[] = []
+  for (let i = 0, { length } = packageManagersRaw; i < length; i += 1) {
+    const packageManager = packageManagersRaw[i]!
+    if (!isCoanaPackageManager(packageManager)) {
+      logger.fail(
+        `--package-managers must be one of: ${joinAnd([...COANA_PACKAGE_MANAGERS])} (saw: "${packageManager}"); pass a supported package manager like --package-managers=${COANA_PACKAGE_MANAGERS[0]}`,
+      )
+      process.exitCode = 1
+      return
+    }
+    validatedPackageManagers.push(packageManager)
   }
 
   const ghsas = arrayUnique([
@@ -395,8 +248,51 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
+  // Detect the common mistake of passing a vulnerability ID (GHSA / CVE /
+  // PURL) as a positional argument when the user meant to use `--id`.
+  // Without this guard we treat the ID as a directory path, resolve to cwd,
+  // and eventually fail with a confusing upload error. Run this before
+  // `getDefaultOrgSlug()` so users still get the helpful message when no
+  // API token is configured.
+  const rawInput = cli.input[0]
+  if (rawInput) {
+    const upperInput = rawInput.toUpperCase()
+    const isGhsa = upperInput.startsWith('GHSA-')
+    const isCve = upperInput.startsWith('CVE-')
+    const isPurl = rawInput.startsWith('pkg:')
+    if (isCve || isGhsa || isPurl) {
+      // `handle-fix.mts` validates IDs with case-sensitive format regexes:
+      //   * GHSA — prefix must be uppercase, body segments lowercase [a-z0-9]
+      //   * CVE  — prefix must be uppercase, body is all digits (case-free)
+      // PURLs are intentionally lowercase and validated separately.
+      let suggestion: string
+      if (isGhsa) {
+        suggestion = 'GHSA-' + rawInput.slice(5).toLowerCase()
+      } else if (isCve) {
+        suggestion = 'CVE-' + rawInput.slice(4)
+      } else {
+        suggestion = rawInput
+      }
+      logger.fail(
+        `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${suggestion}`,
+      )
+      process.exitCode = 1
+      return
+    }
+  }
+
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
+
+  // Validate the target directory exists so we fail fast with a clear
+  // message instead of the API's "Need at least one file to be uploaded".
+  // Also runs before the org-slug resolution so the user sees a clearer
+  // error when pointing at a typo'd path without an API token set.
+  if (!existsSync(cwd)) {
+    logger.fail(`Target directory does not exist: ${cwd}`)
+    process.exitCode = 1
     return
   }
 
@@ -411,15 +307,76 @@ async function run(
 
   const orgSlug = orgSlugCResult.data
 
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
-
   const spinner = undefined
 
   const includePatterns = cmdFlagValueToArray(include)
   const excludePatterns = cmdFlagValueToArray(exclude)
+  const excludePathsPatterns = cmdFlagValueToArray(excludePaths)
+  try {
+    assertNoNegationPatterns(excludePathsPatterns)
+  } catch (e) {
+    logger.fail((e as Error).message)
+    process.exitCode = 1
+    return
+  }
+
+  if (dryRun) {
+    const actions: DryRunAction[] = [
+      {
+        type: 'fetch',
+        description: 'Scan project dependencies for vulnerabilities',
+        target: cwd,
+        details: {
+          organization: orgSlug,
+          ecosystems: validatedEcosystems.length
+            ? validatedEcosystems.join(', ')
+            : 'all',
+        },
+      },
+      {
+        type: 'fetch',
+        description: 'Analyze vulnerability fix options',
+        details: {
+          targets: all
+            ? 'all vulnerabilities'
+            : ghsas.length
+              ? ghsas.join(', ')
+              : 'auto-discovered',
+          majorUpdates: disableMajorUpdates ? 'disabled' : 'enabled',
+          rangeStyle,
+        },
+      },
+    ]
+
+    if (applyFixes) {
+      actions.push({
+        type: 'modify',
+        description: 'Update package manifest files with fixes',
+        target: 'package.json and lock files',
+      })
+      actions.push({
+        type: 'execute',
+        description: 'Run package manager to install updated dependencies',
+      })
+    }
+
+    const targetDescription = all
+      ? 'all vulnerabilities'
+      : ghsas.length
+        ? `${ghsas.length} specified ${pluralize('vulnerability', { count: ghsas.length })}`
+        : 'discovered vulnerabilities'
+
+    const fixModeDescription = applyFixes
+      ? 'compute and apply fixes'
+      : 'compute fixes only (not applying)'
+
+    outputDryRunPreview({
+      summary: `Analyze and ${fixModeDescription} for ${targetDescription}`,
+      actions,
+      wouldSucceed: true,
+    })
+    return
+  }
 
   await handleFix({
     all,
@@ -428,9 +385,11 @@ async function run(
     coanaVersion: fixVersion,
     cwd,
     debug,
+    disableExternalToolChecks: disableExternalToolChecks,
     disableMajorUpdates,
     ecosystems: validatedEcosystems,
     exclude: excludePatterns,
+    excludePaths: excludePathsPatterns,
     ghsas,
     include: includePatterns,
     minimumReleaseAge,
@@ -438,6 +397,7 @@ async function run(
     orgSlug,
     outputFile,
     outputKind,
+    packageManagers: validatedPackageManagers,
     prCheck,
     prLimit,
     rangeStyle,

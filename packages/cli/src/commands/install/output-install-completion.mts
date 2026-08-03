@@ -1,6 +1,6 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
@@ -30,9 +30,10 @@ export async function outputInstallCompletion(
   )
   logger.log('')
 
-  result.data.actions.forEach(action => {
+  for (let i = 0, { length } = result.data.actions; i < length; i += 1) {
+    const action = result.data.actions[i]
     logger.log(`  - ${action}`)
-  })
+  }
   logger.log('')
   logger.log('Socket tab completion works automatically in new terminals.')
   logger.log('')

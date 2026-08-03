@@ -1,8 +1,8 @@
 /**
- * CI environment variable.
- * Set to true/1 when running in a continuous integration environment.
+ * CI environment variable. Set to true/1 when running in a continuous
+ * integration environment.
  */
 
-import { getCI } from '@socketsecurity/lib/env/ci'
+import { getCI } from '@socketsecurity/lib-stable/env/ci'
 
 export const CI = getCI()

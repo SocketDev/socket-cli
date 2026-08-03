@@ -1,16 +1,17 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
+import type { Direction, RepositorySort } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchListReposConfig = {
-  direction: string
+  direction: Direction
   orgSlug: string
   page: number
   perPage: number
-  sort: string
+  sort: RepositorySort
 }
 
 export type FetchListReposOptions = {
@@ -40,8 +41,8 @@ export async function fetchListRepos(
 
   return await handleApiCall<'listRepositories'>(
     sockSdk.listRepositories(orgSlug, {
-      ...(sort ? { sort: sort as 'name' | 'created_at' } : {}),
-      ...(direction ? { direction: direction as 'asc' | 'desc' } : {}),
+      ...(sort ? { sort: sort } : {}),
+      ...(direction ? { direction: direction } : {}),
       per_page: perPage,
       page,
     }),

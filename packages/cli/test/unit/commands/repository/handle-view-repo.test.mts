@@ -1,41 +1,42 @@
 /**
  * Unit tests for handleViewRepo.
  *
- * Purpose:
- * Tests the handler that orchestrates repository viewing. Validates fetch-process-output
- * pipeline and detailed repository data formatting.
+ * Purpose: Tests the handler that orchestrates repository viewing. Validates
+ * fetch-process-output pipeline and detailed repository data formatting.
  *
- * Test Coverage:
- * - Successful repository view flow
- * - Fetch failure handling
- * - Output formatting delegation
- * - Detailed data presentation
+ * Test Coverage: - Successful repository view flow - Fetch failure handling -
+ * Output formatting delegation - Detailed data presentation.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic.
  *
- * Related Files:
- * - src/commands/repository/handle-view-repo.mts (implementation)
- * - src/commands/repository/fetch-view-repo.mts (API fetcher)
+ * Related Files: - src/commands/repository/handle-view-repo.mts
+ * (implementation) - src/commands/repository/fetch-view-repo.mts (API fetcher)
  * - src/commands/repository/output-view-repo.mts (formatter)
  */
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { createSuccessResult } from '../../../../../src/commands/../../../test/helpers/index.mts'
+import { createSuccessResult } from '../../../helpers/index.mts'
 import { handleViewRepo } from '../../../../src/commands/repository/handle-view-repo.mts'
 
 // Setup mocks at module level
 const mockFetchViewRepo = vi.hoisted(() => vi.fn())
 const mockOutputViewRepo = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/repository/fetch-view-repo.mts', () => ({
-  fetchViewRepo: mockFetchViewRepo,
-}))
+vi.mock(
+  import('../../../../src/commands/repository/fetch-view-repo.mts'),
+  () => ({
+    fetchViewRepo: mockFetchViewRepo,
+  }),
+)
 
-vi.mock('../../../../src/commands/repository/output-view-repo.mts', () => ({
-  outputViewRepo: mockOutputViewRepo,
-}))
+vi.mock(
+  import('../../../../src/commands/repository/output-view-repo.mts'),
+  () => ({
+    outputViewRepo: mockOutputViewRepo,
+  }),
+)
 
 describe('handleViewRepo', () => {
   it('fetches and outputs repository details successfully', async () => {
@@ -126,7 +127,6 @@ describe('handleViewRepo', () => {
 
     for (const [org, repo] of testCases) {
       mockFetchViewRepo.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleViewRepo(org, repo, 'json')
       expect(mockFetchViewRepo).toHaveBeenCalledWith(org, repo, {
         commandPath: 'socket repository view',

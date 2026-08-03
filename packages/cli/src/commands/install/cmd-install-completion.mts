@@ -1,24 +1,20 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleInstallCompletion } from './handle-install-completion.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'completion',
   description: 'Install bash completion for Socket CLI',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: (command, config) => `
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [NAME=socket]
 
@@ -38,7 +34,7 @@ const config: CliCommandConfig = {
     different alias for socket on your system.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 
@@ -46,6 +42,7 @@ const config: CliCommandConfig = {
       $ ${command} sd
       $ ${command} ./sd
   `,
+  hidden: false,
 }
 
 export const cmdInstallCompletion = {
@@ -54,7 +51,7 @@ export const cmdInstallCompletion = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -66,15 +63,22 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
+  const targetName = cli.input[0] || 'socket'
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    // Runtime read so tests that mutate process.env['HOME'] pick up changes.
+    const bashRcPath = `${process.env['HOME']}/.bashrc`
+    outputDryRunWrite(
+      bashRcPath,
+      `install bash completion for "${targetName}"`,
+      [
+        'Add completion script source command to ~/.bashrc',
+        'Enable tab completion in current shell',
+      ],
+    )
     return
   }
 
-  const targetName = cli.input[0] || 'socket'
-
-  await handleInstallCompletion(String(targetName))
+  await handleInstallCompletion(targetName)
 }

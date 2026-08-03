@@ -1,46 +1,47 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import {
+  outputDryRunDelete,
+  outputDryRunFetch,
+  outputDryRunUpload,
+} from '../../util/dry-run/output.mts'
+import { commonFlags, outputFlags, stringFlagValue } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { webLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { OutputKind } from '../../types.mjs'
 import type {
   CliCommandConfig,
   CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+} from '../../util/cli/with-subcommands.mjs'
 
 const logger = getDefaultLogger()
 
-type RepositoryCommandSpec = {
+export type RepositoryCommandSpec = {
   commandName: string
   description: string
-  extraFlags?: MeowFlags
+  extraFlags?: MeowFlags | undefined
   handler: (params: {
     orgSlug: string
     repoName: string
     outputKind: OutputKind
     flags: Record<string, unknown>
   }) => Promise<void>
-  helpDescription?: string
+  helpDescription?: string | undefined
   helpExamples: string[]
-  hidden?: boolean
-  needsRepoName?: boolean
+  hidden?: boolean | undefined
+  needsRepoName?: boolean | undefined
 }
 
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {
@@ -52,6 +53,24 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       importMeta: ImportMeta,
       { parentName }: CliCommandContext,
     ): Promise<void> {
+      // Only guard the commands that actually accept `--default-branch`
+      // as a string (create / update). The list/view/delete commands
+      // don't, so the check is a no-op for them.
+      if (
+        (spec.commandName === 'create' || spec.commandName === 'update') &&
+        spec.extraFlags?.['defaultBranch']
+      ) {
+        const emptyShape = findEmptyDefaultBranch(argv)
+        if (emptyShape) {
+          logger.fail(
+            emptyShape === 'empty-value'
+              ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
+              : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
+          )
+          process.exitCode = 2
+          return
+        }
+      }
       const config: CliCommandConfig = {
         commandName: spec.commandName,
         description: spec.description,
@@ -71,7 +90,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
           },
           ...(spec.extraFlags || {}),
         },
-        help: (command, config) => `
+        help: (command, helpConfig) => `
     Usage
       $ ${command} [options]${spec.needsRepoName !== false ? ' <REPO>' : ''}
 
@@ -79,7 +98,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       ${getFlagApiRequirementsOutput(`${parentName}:${spec.commandName}`)}
 ${spec.helpDescription ? `\n    ${spec.helpDescription}\n` : ''}
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
 ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
@@ -107,7 +126,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       const hasApiToken = hasDefaultApiToken()
 
       const { 0: orgSlug } = await determineOrgSlug(
-        String(orgFlag || ''),
+        stringFlagValue(orgFlag),
         interactive,
         dryRun,
       )
@@ -159,7 +178,25 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        logger.log(DRY_RUN_BAILING_NOW)
+        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+        if (spec.commandName === 'create') {
+          outputDryRunUpload('repository', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'update') {
+          outputDryRunUpload('repository (update)', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'del') {
+          outputDryRunDelete('repository', identifier)
+        } else {
+          outputDryRunFetch(`repository ${identifier}`, {
+            organization: orgSlug,
+            repository: repoName || undefined,
+          })
+        }
         return
       }
 
@@ -171,4 +208,27 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       })
     },
   }
+}
+
+// If the user wrote `--default-branch`, bare, no value, or
+// `--default-branch=`, meow would coerce it to an empty string and
+// silently persist a blank default-branch name on the repo record.
+// Detect that before meow parses so we can stop with an actionable
+// error instead of saving junk data.
+export function findEmptyDefaultBranch(
+  argv: readonly string[],
+): 'bare' | 'empty-value' | undefined {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--default-branch=' || arg === '--defaultBranch=') {
+      return 'empty-value'
+    }
+    if (arg === '--default-branch' || arg === '--defaultBranch') {
+      const next = argv[i + 1]
+      if (next === undefined || next.startsWith('-')) {
+        return 'bare'
+      }
+    }
+  }
+  return undefined
 }

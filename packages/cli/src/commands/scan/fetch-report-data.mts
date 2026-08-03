@@ -1,21 +1,20 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
-import { formatErrorWithDetail } from '../../utils/error/errors.mjs'
+import { formatErrorWithDetail } from '../../util/error/errors.mjs'
 import {
   handleApiCallNoSpinner,
   queryApiSafeText,
-} from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+} from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 const logger = getDefaultLogger()
-const spinner = getDefaultSpinner()
 
 export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined
@@ -40,14 +39,15 @@ export async function fetchScanData(
     __proto__: null,
     ...options,
   } as FetchScanData
+  const spinner = getDefaultSpinner()
   const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
 
-  let policyStatus = 'requested...'
-  let scanStatus = 'requested...'
+  let policyStatus = 'requested…'
+  let scanStatus = 'requested…'
   let finishedFetching = false
 
   function updateScan(status: string) {
@@ -89,7 +89,8 @@ export async function fetchScanData(
     // This is nd-json; each line is a json object.
     const lines = ndJsonString.split('\n').filter(Boolean)
     const data: SocketArtifact[] = []
-    for (const line of lines) {
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
       try {
         data.push(JSON.parse(line))
       } catch (e) {
@@ -177,6 +178,7 @@ export async function fetchScanData(
     return securityPolicy
   }
 
+  /* c8 ignore start - defensive: scan.data is always SocketArtifact[] from the loop above */
   if (!Array.isArray(scan.data)) {
     return {
       ok: false,
@@ -184,6 +186,7 @@ export async function fetchScanData(
       cause: 'Was unable to fetch scan result, bailing',
     }
   }
+  /* c8 ignore stop */
 
   return {
     ok: true,

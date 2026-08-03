@@ -1,3 +1,6 @@
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
+/* oxlint-disable socket/no-npx-dlx -- product feature name / command wrapping npx; the literal is intentional. */
+
 /**
  * Socket Firewall (sfw) command.
  *
@@ -9,35 +12,32 @@
  * allows direct access to sfw for advanced use cases and troubleshooting.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { spawnSfw } from '../../utils/dlx/spawn.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
+import { spawnSfw } from '../../util/dlx/spawn.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface SfwFlags {
+export interface SfwFlags {
   dryRun: boolean
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'sfw',
   description: 'Run Socket Firewall directly (alias: firewall)',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: command => `
+  }),
+  help: (command: string) => `
     Usage
       $ ${command} <package-manager> [args...]
 
@@ -62,6 +62,7 @@ const config: CliCommandConfig = {
       $ ${command} pip install requests
       $ ${command} --help
   `,
+  hidden: false,
 }
 
 export const cmdSfw = {
@@ -70,7 +71,7 @@ export const cmdSfw = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
@@ -103,12 +104,7 @@ async function run(
   })
 
   // Extract typed flags (commonFlags defines dryRun as boolean).
-  const { dryRun } = cli.flags as unknown as SfwFlags
-
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
+  const { dryRun } = cli.flags
 
   // Filter Socket-specific flags from argv, pass rest to sfw.
   const sfwArgs = filterFlags(argv, commonFlags, [])
@@ -118,6 +114,11 @@ async function run(
     logger.info('Usage: socket sfw <package-manager> [args...]')
     logger.info('Example: socket sfw npm install lodash')
     process.exitCode = 2
+    return
+  }
+
+  if (dryRun) {
+    outputDryRunExecute('sfw', sfwArgs, 'Socket Firewall (sfw)')
     return
   }
 

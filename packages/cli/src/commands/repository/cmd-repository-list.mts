@@ -1,30 +1,24 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleListRepos } from './handle-list-repos.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mjs'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mjs'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { Direction } from './types.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { Direction, RepositorySort } from './types.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface RepositoryListFlags {
+export interface RepositoryListFlags {
   all: boolean
   direction: Direction
   dryRun: boolean
@@ -34,7 +28,7 @@ interface RepositoryListFlags {
   org: string
   page: number
   perPage: number
-  sort: string
+  sort: RepositorySort
 }
 
 export const CMD_NAME = 'list'
@@ -49,16 +43,16 @@ export const cmdRepositoryList = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       all: {
@@ -102,8 +96,8 @@ async function run(
         description: 'Sorting option',
         shortFlag: 's',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -111,7 +105,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -128,7 +122,7 @@ async function run(
 
   const {
     all,
-    direction = 'desc',
+    direction,
     dryRun,
     interactive,
     json,
@@ -137,7 +131,7 @@ async function run(
     page,
     perPage,
     sort,
-  } = cli.flags as unknown as RepositoryListFlags
+  } = cli.flags
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -171,14 +165,50 @@ async function run(
       message: 'The --direction value must be "asc" or "desc"',
       fail: 'unexpected value',
     },
+    {
+      nook: true,
+      test: sort === 'created_at' || sort === 'name' || sort === 'updated_at',
+      message: 'The --sort value must be "created_at", "name", or "updated_at"',
+      fail: 'unexpected value',
+    },
+    {
+      nook: true,
+      test: typeof page === 'number' && Number.isFinite(page),
+      message: 'The --page value must be a number',
+      fail: 'unexpected value',
+    },
+    {
+      nook: true,
+      test: typeof perPage === 'number' && Number.isFinite(perPage),
+      message: 'The --per-page value must be a number',
+      fail: 'unexpected value',
+    },
   )
   if (!wasValidInput) {
     return
   }
 
+  // Re-assert the checkCommandInput guards for the type system — meow's
+  // number-typed flags deliver the raw string for garbage input, and the
+  // string-typed enum flags accept any string.
+  if (
+    (direction !== 'asc' && direction !== 'desc') ||
+    (sort !== 'created_at' && sort !== 'name' && sort !== 'updated_at') ||
+    typeof page !== 'number' ||
+    typeof perPage !== 'number'
+  ) {
+    return
+  }
+
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('repositories', {
+      organization: orgSlug,
+      all: all || undefined,
+      sort,
+      direction,
+      page: all ? undefined : page,
+      perPage: all ? undefined : perPage,
+    })
     return
   }
 

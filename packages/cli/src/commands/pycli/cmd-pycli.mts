@@ -2,48 +2,44 @@
  * Socket Python CLI (pycli) command.
  *
  * Explicit passthrough to the Socket Python CLI (socketsecurity) for features
- * not yet available in the Node.js CLI. This replaces implicit fallback behavior
- * with an explicit command that makes it clear when Python CLI is being used.
+ * not yet available in the Node.js CLI. This replaces implicit fallback
+ * behavior with an explicit command that makes it clear when Python CLI is
+ * being used.
  *
- * Features available via Python CLI:
- * - --generate-license: Generate license metadata for packages
- * - --enable-sarif: Output in SARIF format
- * - --strict-blocking: Fail on any policy violations (not just new ones)
- * - --disable-blocking: Always exit 0
- * - --enable-gitlab-security: GitLab Dependency Scanning format
- * - --slack-webhook: Send notifications to Slack
- * - --save-manifest-tar: Archive manifests for audit trail
+ * Features available via Python CLI: - --generate-license: Generate license
+ * metadata for packages - --enable-sarif: Output in SARIF format -
+ * --strict-blocking: Fail on any policy violations, not just new ones -
+ * --disable-blocking: Always exit 0 - --enable-gitlab-security: GitLab
+ * Dependency Scanning format - --slack-webhook: Send notifications to Slack -
+ * --save-manifest-tar: Archive manifests for audit trail.
  */
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { filterFlags, isHelpFlag } from '../../utils/process/cmd.mts'
-import { spawnSocketPyCli } from '../../utils/python/standalone.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
+import { spawnSocketPyCli } from '../../util/python/standalone.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 
 const logger = getDefaultLogger()
 
 // Flags interface for type safety.
-interface PycliFlags {
+export interface PycliFlags {
   dryRun: boolean
 }
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'pycli',
   description: 'Run Socket Python CLI (socketsecurity) directly',
-  hidden: false,
-  flags: {
+  flags: defineFlags({
     ...commonFlags,
-  },
-  help: command => `
+  }),
+  help: (command: string) => `
     Usage
       $ ${command} [python-cli-options] [TARGET...]
 
@@ -77,6 +73,7 @@ const config: CliCommandConfig = {
       $ ${command} --enable-sarif --strict-blocking .
       $ ${command} --slack-webhook https://hooks.slack.com/... .
   `,
+  hidden: false,
 }
 
 export const cmdPyCli = {
@@ -85,7 +82,7 @@ export const cmdPyCli = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: CliCommandContext,
@@ -117,17 +114,17 @@ async function run(
     parentName,
   })
 
-  const { dryRun } = cli.flags as unknown as PycliFlags
-
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
+  const { dryRun } = cli.flags
 
   // Filter Socket-specific flags from argv, pass rest to Python CLI.
   const pyCliArgs = filterFlags(argv, commonFlags, [])
 
-  logger.info('Invoking Socket Python CLI...')
+  if (dryRun) {
+    outputDryRunExecute('socketsecurity', pyCliArgs, 'Python CLI')
+    return
+  }
+
+  logger.info('Invoking Socket Python CLI…')
 
   const result = await spawnSocketPyCli(pyCliArgs, {
     stdio: 'inherit',

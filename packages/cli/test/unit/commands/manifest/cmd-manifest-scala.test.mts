@@ -1,10 +1,15 @@
 /**
  * Unit tests for manifest scala command.
  *
- * Tests the command that uses SBT to generate pom.xml manifest files for Scala projects.
+ * Tests the command that uses SBT to generate pom.xml manifest files for Scala
+ * projects.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdManifestScala } from '../../../../src/commands/manifest/cmd-manifest-scala.mts'
+
+import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -18,37 +23,53 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', async importOriginal => {
-  const actual = await importOriginal<typeof import('@socketsecurity/lib/logger')>()
-  return {
-    ...actual,
-    getDefaultLogger: () => mockLogger,
-  }
-})
+vi.mock(
+  import('@socketsecurity/lib-stable/logger/default'),
+  async importOriginal => {
+    const actual = await importOriginal<typeof LoggerModule>()
+    return {
+      ...actual,
+      getDefaultLogger: () => mockLogger,
+    }
+  },
+)
 
 // Mock convertSbtToMaven and outputManifest.
 const mockConvertSbtToMaven = vi.hoisted(() =>
   vi.fn().mockResolvedValue({ ok: true, data: { files: [] } }),
 )
+const mockConvertToFacts = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
 const mockOutputManifest = vi.hoisted(() => vi.fn())
-const mockReadOrDefaultSocketJson = vi.hoisted(() => vi.fn().mockReturnValue({}))
+const mockReadOrDefaultSocketJson = vi.hoisted(() =>
+  vi.fn().mockReturnValue({}),
+)
 
-vi.mock('../../../../src/commands/manifest/convert-sbt-to-maven.mts', () => ({
-  convertSbtToMaven: mockConvertSbtToMaven,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/convert-sbt-to-maven.mts'),
+  () => ({
+    convertSbtToMaven: mockConvertSbtToMaven,
+  }),
+)
 
-vi.mock('../../../../src/commands/manifest/output-manifest.mts', () => ({
-  outputManifest: mockOutputManifest,
-}))
+vi.mock(
+  import('../../../../src/commands/manifest/output-manifest.mts'),
+  () => ({
+    outputManifest: mockOutputManifest,
+  }),
+)
 
-vi.mock('../../../../src/utils/socket/json.mts', () => ({
+vi.mock(
+  import('../../../../src/commands/manifest/convert-sbt-to-facts.mts'),
+  () => ({
+    convertSbtToFacts: mockConvertToFacts,
+  }),
+)
+
+vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-// Import after mocks.
-const { cmdManifestScala } = await import(
-  '../../../../src/commands/manifest/cmd-manifest-scala.mts'
-)
 
 describe('cmd-manifest-scala', () => {
   beforeEach(() => {
@@ -75,18 +96,40 @@ describe('cmd-manifest-scala', () => {
       await cmdManifestScala.run(['--dry-run', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
-      expect(mockLogger.log).toHaveBeenCalledWith(
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
+    it('forwards --bin, --out, --sbt-opts in the dry-run preview args', async () => {
+      await cmdManifestScala.run(
+        [
+          '--pom',
+          '--dry-run',
+          '.',
+          '--bin',
+          '/custom/sbt',
+          '--out',
+          '/tmp/out.xml',
+          '--sbt-opts',
+          '--debug --no-colors',
+        ],
+        importMeta,
+        context,
+      )
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('DryRun'),
       )
     })
 
     it('should call convertSbtToMaven with correct default parameters', async () => {
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith({
         bin: 'sbt',
         cwd: expect.stringContaining('/'),
-        out: './socket.pom.xml',
+        out: './pom.xml',
         outputKind: 'text',
         sbtOpts: [],
         verbose: false,
@@ -94,7 +137,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should pass custom --bin flag to convertSbtToMaven', async () => {
-      await cmdManifestScala.run(['--bin', '/custom/sbt', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--bin', '/custom/sbt', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -104,7 +151,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should pass custom --out flag to convertSbtToMaven', async () => {
-      await cmdManifestScala.run(['--out', '/output/pom.xml', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--out', '/output/pom.xml', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -114,7 +165,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should set out to - when --stdout flag is used', async () => {
-      await cmdManifestScala.run(['--stdout', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--stdout', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -126,7 +181,7 @@ describe('cmd-manifest-scala', () => {
     it('should parse and pass --sbt-opts flag', async () => {
       // Use = syntax for values that look like flags.
       await cmdManifestScala.run(
-        ['--sbt-opts=-batch -mem 2048', '.'],
+        ['--pom', '--sbt-opts=-batch -mem 2048', '.'],
         importMeta,
         context,
       )
@@ -139,7 +194,11 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should pass --verbose flag to convertSbtToMaven', async () => {
-      await cmdManifestScala.run(['--verbose', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--verbose', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -148,7 +207,7 @@ describe('cmd-manifest-scala', () => {
       )
     })
 
-    it('should use socket.json defaults for bin', async () => {
+    it('should refuse a socket.json bin that is not the conventional sbt', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -159,16 +218,40 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
+
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused a sbt binary'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use a socket.json bin under --trust-socket-json', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            sbt: {
+              bin: '/socket-json/sbt',
+            },
+          },
+        },
+      })
+
+      await cmdManifestScala.run(
+        ['--pom', '--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
           bin: '/socket-json/sbt',
         }),
-      )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        expect.stringContaining('--bin'),
-        '/socket-json/sbt',
       )
     })
 
@@ -183,7 +266,7 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -203,7 +286,7 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -212,7 +295,31 @@ describe('cmd-manifest-scala', () => {
       )
     })
 
-    it('should use socket.json defaults for sbtOpts', async () => {
+    it('should refuse socket.json sbtOpts', async () => {
+      mockReadOrDefaultSocketJson.mockReturnValueOnce({
+        defaults: {
+          manifest: {
+            sbt: {
+              sbtOpts: '-J-javaagent:/tmp/agent.jar',
+            },
+          },
+        },
+      })
+
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
+
+      expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
+      expect(mockOutputManifest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          message: expect.stringContaining('Refused sbt options'),
+        }),
+        'text',
+        '-',
+      )
+    })
+
+    it('should use socket.json sbtOpts under --trust-socket-json', async () => {
       mockReadOrDefaultSocketJson.mockReturnValueOnce({
         defaults: {
           manifest: {
@@ -223,7 +330,11 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--trust-socket-json', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -243,7 +354,7 @@ describe('cmd-manifest-scala', () => {
         },
       })
 
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -253,7 +364,7 @@ describe('cmd-manifest-scala', () => {
     })
 
     it('should reject multiple directory arguments', async () => {
-      await cmdManifestScala.run(['dir1', 'dir2'], importMeta, context)
+      await cmdManifestScala.run(['--pom', 'dir1', 'dir2'], importMeta, context)
 
       expect(process.exitCode).toBe(2)
       expect(mockConvertSbtToMaven).not.toHaveBeenCalled()
@@ -263,7 +374,7 @@ describe('cmd-manifest-scala', () => {
       const result = { ok: true, data: { files: ['pom.xml'] } }
       mockConvertSbtToMaven.mockResolvedValueOnce(result)
 
-      await cmdManifestScala.run(['--json', '.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '--json', '.'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -273,7 +384,7 @@ describe('cmd-manifest-scala', () => {
       expect(mockOutputManifest).toHaveBeenCalledWith(
         result,
         'json',
-        './socket.pom.xml',
+        './pom.xml',
       )
     })
 
@@ -281,7 +392,11 @@ describe('cmd-manifest-scala', () => {
       const result = { ok: true, data: { files: [] } }
       mockConvertSbtToMaven.mockResolvedValueOnce(result)
 
-      await cmdManifestScala.run(['--markdown', '.'], importMeta, context)
+      await cmdManifestScala.run(
+        ['--pom', '--markdown', '.'],
+        importMeta,
+        context,
+      )
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -291,18 +406,18 @@ describe('cmd-manifest-scala', () => {
       expect(mockOutputManifest).toHaveBeenCalledWith(
         result,
         'markdown',
-        './socket.pom.xml',
+        './pom.xml',
       )
     })
 
     it('should not call outputManifest in text mode', async () => {
-      await cmdManifestScala.run(['.'], importMeta, context)
+      await cmdManifestScala.run(['--pom', '.'], importMeta, context)
 
       expect(mockOutputManifest).not.toHaveBeenCalled()
     })
 
     it('should resolve cwd to absolute path', async () => {
-      await cmdManifestScala.run(['./relative'], importMeta, context)
+      await cmdManifestScala.run(['--pom', './relative'], importMeta, context)
 
       expect(mockConvertSbtToMaven).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -325,7 +440,15 @@ describe('cmd-manifest-scala', () => {
       })
 
       await cmdManifestScala.run(
-        ['--bin', '/cli/sbt', '--out', '/cli/out.xml', '--verbose', '.'],
+        [
+          '--pom',
+          '--bin',
+          '/cli/sbt',
+          '--out',
+          '/cli/out.xml',
+          '--verbose',
+          '.',
+        ],
         importMeta,
         context,
       )
@@ -341,7 +464,7 @@ describe('cmd-manifest-scala', () => {
 
     it('should prefer --stdout over --out', async () => {
       await cmdManifestScala.run(
-        ['--out', '/some/file.xml', '--stdout', '.'],
+        ['--pom', '--out', '/some/file.xml', '--stdout', '.'],
         importMeta,
         context,
       )

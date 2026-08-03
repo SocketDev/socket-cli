@@ -1,37 +1,34 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleAuditLog } from './handle-audit-log.mts'
-import {
-  DRY_RUN_BAILING_NOW,
-  FLAG_JSON,
-  FLAG_MARKDOWN,
-} from '../../constants/cli.mts'
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
 import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mjs'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { webLink } from '../../utils/terminal/link.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
-interface AuditLogFlags {
+export interface AuditLogFlags {
   interactive: boolean
   json: boolean
   markdown: boolean
   org: string
-  page: number
-  perPage: number
+  // The meow layer leaves garbage numeric input (`--page=invalid`) as the
+  // raw string; Number() coercion below turns it into NaN for validation.
+  page: number | string
+  perPage: number | string
 }
 
 export const CMD_NAME = 'audit-log'
@@ -46,16 +43,16 @@ export const cmdAuditLog = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       ...outputFlags,
       interactive: {
@@ -78,8 +75,8 @@ async function run(
         default: 30,
         description: 'Results per page - default is 30',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options] [FILTER]
 
@@ -87,7 +84,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit the ${webLink(`${'https://socket.dev'}/pricing`, 'Socket pricing page')}.
+    to this feature and many more, please visit the ${webLink(`https://socket.dev/pricing`, 'Socket pricing page')}.
 
     The type FILTER arg is an enum. Defaults to any. It should be one of these:
       associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -102,7 +99,7 @@ async function run(
     The page arg should be a positive integer, offset 1. Defaults to 1.
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command}
@@ -117,27 +114,18 @@ async function run(
     importMeta,
   })
 
-  const {
-    interactive,
-    json,
-    markdown,
-    org: orgFlag,
-    page,
-    perPage,
-  } = cli.flags as unknown as AuditLogFlags
+  const { interactive, json, markdown, org: orgFlag, page, perPage } = cli.flags
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
   const noLegacy = !cli.flags['type']
 
-  let [typeFilter = ''] = cli.input
-
-  typeFilter = String(typeFilter)
+  const [typeFilter = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
   const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag || '',
     interactive,
     dryRun,
   )
@@ -181,21 +169,29 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Validate numeric pagination parameters.
   const validatedPage = Number(page || 0)
   const validatedPerPage = Number(perPage || 0)
 
+  if (dryRun) {
+    outputDryRunFetch('audit log entries', {
+      organization: orgSlug,
+      filter: typeFilter || 'any',
+      page: validatedPage || 1,
+      perPage: validatedPerPage || 30,
+    })
+    return
+  }
+
   if (Number.isNaN(validatedPage) || validatedPage < 0) {
-    throw new Error(`Invalid value for --page: ${page}`)
+    throw new InputError(
+      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
+    )
   }
   if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
-    throw new Error(`Invalid value for --per-page: ${perPage}`)
+    throw new InputError(
+      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
   }
 
   await handleAuditLog({
@@ -203,6 +199,9 @@ async function run(
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    logType: typeFilter && typeFilter.length > 0 ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1) : '',
+    logType:
+      typeFilter && typeFilter.length > 0
+        ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
+        : '',
   })
 }

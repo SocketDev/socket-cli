@@ -1,9 +1,9 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 
 const logger = getDefaultLogger()
 
@@ -28,12 +28,12 @@ export async function streamScan(
   }
   const sockSdk = sockSdkCResult.data
 
-  logger.info('Requesting data from API...')
+  logger.info('Requesting data from API…')
 
   // Note: This will write to stdout or target file. It is not a noop.
   return await handleApiCall<'getOrgFullScan'>(
     sockSdk.streamFullScan(orgSlug, scanId, {
-      output: file === '-' ? undefined : file,
+      output: file === '-' ? true : file,
     }),
     {
       commandPath,

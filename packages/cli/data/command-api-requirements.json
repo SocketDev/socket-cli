@@ -10,7 +10,7 @@
     },
     "fix": {
       "quota": 101,
-      "permissions": ["full-scans:create", "packages:list"]
+      "permissions": ["fixes:list", "full-scans:create", "packages:list"]
     },
     "login": {
       "quota": 1,

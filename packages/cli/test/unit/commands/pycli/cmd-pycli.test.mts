@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { cmdPyCli } from '../../../../src/commands/pycli/cmd-pycli.mts'
+
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
@@ -10,19 +12,16 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock spawnSocketPyCli.
 const mockSpawnSocketPyCli = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/utils/python/standalone.mts', () => ({
+vi.mock(import('../../../../src/util/python/standalone.mts'), () => ({
   spawnSocketPyCli: mockSpawnSocketPyCli,
 }))
-
-// Import after mocks.
-const { cmdPyCli } = await import('../../../../src/commands/pycli/cmd-pycli.mts')
 
 describe('cmd-pycli', () => {
   beforeEach(() => {
@@ -92,17 +91,39 @@ describe('cmd-pycli', () => {
 
       await cmdPyCli.run(['--strict-blocking'], importMeta, context)
 
-      // Success means exitCode is 0 or undefined (not an error code).
+      // Success means exitCode is 0 or undefined, not an error code.
       expect(process.exitCode).not.toBe(1)
+    })
+
+    it('shows wrapper help when --help is passed and skips spawn', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
+
+      // meow's showHelp() calls process.exit(0); intercept with throw.
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit')
+      })
+
+      try {
+        await cmdPyCli
+          .run(['--help'], importMeta, context)
+          .catch(() => undefined)
+        expect(mockSpawnSocketPyCli).not.toHaveBeenCalled()
+      } finally {
+        exitSpy.mockRestore()
+      }
     })
 
     it('should log info message when invoking Python CLI', async () => {
       mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
 
-      await cmdPyCli.run(['--slack-webhook', 'https://hooks.slack.com/...'], importMeta, context)
+      await cmdPyCli.run(
+        ['--slack-webhook', 'https://hooks.slack.com/...'],
+        importMeta,
+        context,
+      )
 
       expect(mockLogger.info).toHaveBeenCalledWith(
-        'Invoking Socket Python CLI...',
+        'Invoking Socket Python CLI…',
       )
     })
 
@@ -111,7 +132,44 @@ describe('cmd-pycli', () => {
 
       await cmdPyCli.run([], importMeta, context)
 
-      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith([], { stdio: 'inherit' })
+      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith([], {
+        stdio: 'inherit',
+      })
+    })
+
+    it('should handle failure without message', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: false })
+
+      await cmdPyCli.run(['--enable-sarif'], importMeta, context)
+
+      expect(process.exitCode).toBe(1)
+      // Should not call logger.fail when message is missing.
+      expect(mockLogger.fail).not.toHaveBeenCalled()
+    })
+
+    it('should output dry-run preview when --dry-run is used', async () => {
+      await cmdPyCli.run(
+        ['--dry-run', '--generate-license', '--repo', 'owner/repo'],
+        importMeta,
+        context,
+      )
+
+      expect(mockSpawnSocketPyCli).not.toHaveBeenCalled()
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('DryRun'),
+      )
+    })
+
+    it('should filter help flags from arguments', async () => {
+      mockSpawnSocketPyCli.mockResolvedValue({ ok: true, data: '' })
+
+      await cmdPyCli.run(['--generate-license', '.'], importMeta, context)
+
+      // Help flags should not be in arguments passed to Python CLI.
+      expect(mockSpawnSocketPyCli).toHaveBeenCalledWith(
+        ['--generate-license', '.'],
+        expect.any(Object),
+      )
     })
   })
 })

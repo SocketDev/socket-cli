@@ -1,24 +1,19 @@
 /**
  * Unit tests for handleDeleteRepo.
  *
- * Purpose:
- * Tests the handler that orchestrates repository deletion. Validates fetch-process-output
- * pipeline and confirmation workflows for destructive operations.
+ * Purpose: Tests the handler that orchestrates repository deletion. Validates
+ * fetch-process-output pipeline and confirmation workflows for destructive
+ * operations.
  *
- * Test Coverage:
- * - Successful repository deletion flow
- * - Fetch failure handling
- * - Output formatting delegation
- * - Deletion confirmation handling
+ * Test Coverage: - Successful repository deletion flow - Fetch failure handling
+ * - Output formatting delegation - Deletion confirmation handling.
  *
- * Testing Approach:
- * Mocks fetch and output functions to isolate handler orchestration logic. Tests
- * destructive operation handling.
+ * Testing Approach: Mocks fetch and output functions to isolate handler
+ * orchestration logic. Tests destructive operation handling.
  *
- * Related Files:
- * - src/commands/repository/handle-delete-repo.mts (implementation)
- * - src/commands/repository/fetch-delete-repo.mts (API fetcher)
- * - src/commands/repository/output-delete-repo.mts (formatter)
+ * Related Files: - src/commands/repository/handle-delete-repo.mts
+ * (implementation) - src/commands/repository/fetch-delete-repo.mts (API
+ * fetcher) - src/commands/repository/output-delete-repo.mts (formatter)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -29,17 +24,23 @@ import { createSuccessResult } from '../../../../test/helpers/index.mts'
 const mockFetchDeleteRepo = vi.hoisted(() => vi.fn())
 const mockOutputDeleteRepo = vi.hoisted(() => vi.fn())
 
-vi.mock('../../../../src/commands/repository/fetch-delete-repo.mts', () => ({
-  fetchDeleteRepo: mockFetchDeleteRepo,
-}))
-
-vi.mock('../../../../src/commands/repository/output-delete-repo.mts', () => ({
-  outputDeleteRepo: mockOutputDeleteRepo,
-}))
-
-const { handleDeleteRepo } = await import(
-  '../../../../src/commands/repository/handle-delete-repo.mts'
+vi.mock(
+  import('../../../../src/commands/repository/fetch-delete-repo.mts'),
+  () => ({
+    fetchDeleteRepo: mockFetchDeleteRepo,
+  }),
 )
+
+vi.mock(
+  import('../../../../src/commands/repository/output-delete-repo.mts'),
+  () => ({
+    outputDeleteRepo: mockOutputDeleteRepo,
+  }),
+)
+
+const { handleDeleteRepo } =
+  // oxlint-disable-next-line socket/no-top-level-await -- vitest test module, never CJS-bundled; the static-import rewrite is blocked by the prompt-injection-guard false-positive on this filename.
+  await import('../../../../src/commands/repository/handle-delete-repo.mts')
 
 describe('handleDeleteRepo', () => {
   it('deletes repository and outputs result successfully', async () => {
@@ -101,9 +102,9 @@ describe('handleDeleteRepo', () => {
       'repo123',
     ]
 
-    for (const repoName of repoNames) {
+    for (let i = 0, { length } = repoNames; i < length; i += 1) {
+      const repoName = repoNames[i]
       mockFetchDeleteRepo.mockResolvedValue(createSuccessResult({}))
-      // eslint-disable-next-line no-await-in-loop
       await handleDeleteRepo('test-org', repoName, 'json')
       expect(mockFetchDeleteRepo).toHaveBeenCalledWith('test-org', repoName, {
         commandPath: 'socket repository del',

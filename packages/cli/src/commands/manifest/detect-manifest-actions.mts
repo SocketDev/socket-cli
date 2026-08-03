@@ -4,33 +4,66 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/lib/debug'
+import { debugLog } from '@socketsecurity/lib-stable/debug/output'
 
+import {
+  DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+  DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+} from './bazel/bazel-maven-types.mts'
+import { findWorkspaceRoots } from './bazel/bazel-workspace-walk.mts'
 import { ENVIRONMENT_YAML, ENVIRONMENT_YML } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 
-import type { SocketJson } from '../../utils/socket/json.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 export interface GeneratableManifests {
+  bazel: boolean
   cdxgen: boolean
   count: number
   conda: boolean
   gradle: boolean
+  maven: boolean
   sbt: boolean
 }
 
 export async function detectManifestActions(
-  // Passing in null means we attempt detection for every supported language
-  // regardless of local socket.json status. Sometimes we want that.
-  sockJson: SocketJson | null,
+  // Passing in undefined means we attempt detection for every supported
+  // language regardless of local socket.json status. Sometimes we want that.
+  sockJson: SocketJson | undefined,
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {
+    bazel: false,
     cdxgen: false,
     count: 0,
     conda: false,
     gradle: false,
+    maven: false,
     sbt: false,
+  }
+
+  if (sockJson?.defaults?.manifest?.bazel?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - bazel auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (
+    existsSync(path.join(cwd, 'MODULE.bazel')) ||
+    existsSync(path.join(cwd, 'WORKSPACE')) ||
+    existsSync(path.join(cwd, 'WORKSPACE.bazel')) ||
+    // Real monorepos host nested workspace roots with no marker at the top
+    // (e.g. `mobile/MODULE.bazel`). The extractor walks the same tree with the
+    // same prune policy, so detection matching it never flags a workspace the
+    // extraction cannot find.
+    findWorkspaceRoots({
+      cwd,
+      ignoreDirNames: DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+      ignoreDirPrefixes: DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+    }).length > 0
+  ) {
+    debugLog('notice', '[DEBUG] - Detected a Bazel workspace')
+    output.bazel = true
+    output.count += 1
   }
 
   if (sockJson?.defaults?.manifest?.sbt?.disabled) {
@@ -50,9 +83,28 @@ export async function detectManifestActions(
       'notice',
       `[DEBUG] - gradle auto-detection is disabled in ${SOCKET_JSON}`,
     )
-  } else if (existsSync(path.join(cwd, 'gradlew'))) {
+  } else if (
+    existsSync(path.join(cwd, 'build.gradle')) ||
+    existsSync(path.join(cwd, 'build.gradle.kts')) ||
+    existsSync(path.join(cwd, 'settings.gradle')) ||
+    existsSync(path.join(cwd, 'settings.gradle.kts'))
+  ) {
+    // Detect by build descriptor, not the `gradlew` wrapper (a project can
+    // build via `gradle` on PATH). `settings.gradle(.kts)` covers Kotlin-DSL
+    // roots with no root build script.
     debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
+    output.count += 1
+  }
+
+  if (sockJson?.defaults?.manifest?.maven?.disabled) {
+    debugLog(
+      'notice',
+      `[DEBUG] - maven auto-detection is disabled in ${SOCKET_JSON}`,
+    )
+  } else if (existsSync(path.join(cwd, 'pom.xml'))) {
+    debugLog('notice', '[DEBUG] - Detected a Maven pom.xml build file')
+    output.maven = true
     output.count += 1
   }
 

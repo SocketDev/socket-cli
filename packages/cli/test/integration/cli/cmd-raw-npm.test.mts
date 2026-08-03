@@ -1,23 +1,18 @@
 /**
  * Integration tests for `socket raw-npm` command.
  *
- * Tests running npm without Socket security scanning wrapper.
- * This command provides an escape hatch for operations that must bypass scanning.
+ * Tests running npm without Socket security scanning wrapper. This command
+ * provides an escape hatch for operations that must bypass scanning.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Unwrapped npm execution
- * - Pass-through of npm flags and arguments
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Unwrapped npm execution - Pass-through of npm flags and
+ * arguments.
  *
- * Use Cases:
- * - Testing npm behavior without Socket intervention
- * - CI/CD scenarios requiring unwrapped npm
- * - Debugging wrapper-related issues
+ * Use Cases: - Testing npm behavior without Socket intervention - CI/CD
+ * scenarios requiring unwrapped npm - Debugging wrapper-related issues.
  *
- * Related Files:
- * - src/commands/wrapper/raw-npm.mts - Unwrapped npm command
- * - test/integration/cli/cmd-npm.test.mts - Wrapped npm tests
+ * Related Files: - src/commands/wrapper/raw-npm.mts - Unwrapped npm command -
+ * test/integration/cli/cmd-npm.test.mts - Wrapped npm tests.
  */
 
 import { describe, expect } from 'vitest'
@@ -77,14 +72,22 @@ describe('socket raw-npm', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket raw-npm\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket raw-npm\`, cwd: <redacted>
+
+
+        [DryRun]: Would execute raw npm command
+
+          Command: [NPM_CLI]
+          Arguments: --dry-run --config {"apiToken":"fakeToken"}
+
+          Run without --dry-run to execute this command."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

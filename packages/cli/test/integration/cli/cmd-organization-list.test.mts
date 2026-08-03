@@ -1,19 +1,15 @@
 /**
  * Integration tests for `socket organization list` command.
  *
- * Tests listing all organizations accessible with the current API token.
- * Used for discovering available organizations for scanning and management.
+ * Tests listing all organizations accessible with the current API token. Used
+ * for discovering available organizations for scanning and management.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Organization listing
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Organization listing - Output format support (JSON, markdown)
  *
- * Related Files:
- * - src/commands/organization/cmd-organization-list.mts - Command definition
- * - src/commands/organization/handle-organization-list.mts - Logic
- * - src/commands/organization/output-organization-list.mts - Formatting
+ * Related Files: - src/commands/organization/cmd-organization-list.mts -
+ * Command definition - src/commands/organization/handle-organization-list.mts -
+ * Logic - src/commands/organization/output-organization-list.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -46,6 +42,7 @@ describe('socket organization list', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket organization list
@@ -77,13 +74,19 @@ describe('socket organization list', async () => {
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization list\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization list\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch organizations
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

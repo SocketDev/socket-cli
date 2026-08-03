@@ -5,8 +5,23 @@ End-to-end tests for all Socket CLI commands across multiple binary types.
 ## Test Files
 
 - **`binary-test-suite.e2e.test.mts`** - Comprehensive test suite for all 73 commands
-- **`critical-commands.e2e.test.mts`** - Critical command smoke tests
 - **`dlx-spawn.e2e.test.mts`** - DLX execution tests
+
+Per-domain smoke files (ported from the retired `smoke.sh`):
+
+- **`analytics.e2e.test.mts`** - `socket analytics`
+- **`audit-fix-ci.e2e.test.mts`** - `socket audit-log`, `socket fix`, `socket ci`
+- **`auth.e2e.test.mts`** - `socket login`, `socket logout`, `socket whoami`
+- **`cli-help.e2e.test.mts`** - top-level `--version` / `--help`
+- **`config.e2e.test.mts`** - `socket config`
+- **`manifest.e2e.test.mts`** - `socket manifest` generators
+- **`oops.e2e.test.mts`** - `socket oops`
+- **`organization.e2e.test.mts`** - `socket organization`
+- **`package.e2e.test.mts`** - `socket package`
+- **`package-managers.e2e.test.mts`** - `socket npm`, `npx`, `raw-npm`, `raw-npx`, `wrapper`, `optimize`, `cdxgen`, `dependencies`
+- **`repos.e2e.test.mts`** - `socket repos` (destructive round-trip behind `RUN_E2E_DESTRUCTIVE=1`)
+- **`scan.e2e.test.mts`** - `socket scan`
+- **`threat-feed.e2e.test.mts`** - `socket threat-feed`
 
 ## Coverage Summary
 
@@ -17,17 +32,20 @@ All commands have E2E tests that execute real CLI binaries and verify basic func
 ### Coverage Breakdown
 
 **Test Type:**
+
 - ✅ Real binary execution (no mocks)
 - ✅ Process spawning via `executeCliCommand()` → `spawnSocketCli()` → `spawn()`
 - ✅ All tests verified by parallel agent analysis
 
 **Coverage Levels:**
+
 - ✅ **Minimum** (73/73 commands): `--help` flag test for every command
 - ✅ **Enhanced** (2 commands): Functional tests with authentication
   - `whoami` - User identity verification
   - `config list` - Configuration listing
 
 **Binary Types:**
+
 - ✅ **JS Binary** (`dist/cli.js`) - Always tested
 - ✅ **SEA Binary** (`dist/sea/socket-sea`) - Optional via `TEST_SEA_BINARY=1`
 - ✅ **Smol Binary** - Optional via `TEST_SMOL_BINARY=1`
@@ -67,6 +85,7 @@ Missing binaries are automatically built without prompting:
 - ✅ JS and SEA builds complete in seconds
 
 **How it works:**
+
 1. Test suite detects missing binary
 2. Automatically runs appropriate build command
 3. Waits for build to complete
@@ -90,6 +109,7 @@ it('should display <command> help', async () => {
 ```
 
 **What this validates:**
+
 - ✅ Command exists and is registered
 - ✅ CLI binary can be executed
 - ✅ Command loads without crashing
@@ -134,11 +154,13 @@ it('should list config settings', async () => {
 ## Test Quality Metrics
 
 **Performance:**
+
 - ⚡ ~22 seconds for 78 tests (all 73 commands + extras)
 - ⚡ Parallel execution where possible
 - ⚡ Fast auto-builds using prebuilt binaries
 
 **Reliability:**
+
 - ✅ No fake or placeholder tests found
 - ✅ All tests spawn real processes
 - ✅ Meaningful assertions (exit codes + output)
@@ -153,6 +175,7 @@ For complete command documentation including all subcommands, integrations, and 
 **📚 [src/commands/README.md](../../src/commands/README.md)**
 
 The command architecture README includes:
+
 - Complete command hierarchy with subcommands
 - Integration mappings (Socket APIs, third-party tools)
 - Command file structure patterns
@@ -169,6 +192,7 @@ When adding a new command:
 4. **Verify**: Run `node scripts/e2e.mjs --js` to test
 
 Example:
+
 ```typescript
 // In binary-test-suite.e2e.test.mts
 const commands = [

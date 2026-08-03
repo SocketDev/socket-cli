@@ -1,0 +1,407 @@
+import path from 'node:path'
+
+import fastGlob from 'fast-glob'
+import ignore from 'ignore'
+import micromatch from 'micromatch'
+import { parse as yamlParse } from 'yaml'
+
+import { isDirSync } from '@socketsecurity/lib-stable/fs/inspect'
+import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
+import { defaultIgnore } from '@socketsecurity/lib-stable/globs/defaults'
+import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
+import { transform } from '@socketsecurity/lib-stable/streams/transform'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
+
+import { homePath } from '../../constants/paths.mts'
+import { NODE_MODULES, PNPM } from '../../constants.mts'
+
+import type { Agent } from '../ecosystem/environment.mts'
+import type { SocketYml } from '../socket-yaml.mts'
+import type { operations } from '@socketsecurity/sdk-stable/types/api'
+import type { Options as GlobOptions } from 'fast-glob'
+
+/**
+ * The `getSupportedFiles` response payload: ecosystem name -> pattern name ->
+ * `{ pattern }` glob. Typed from the SDK's raw OpenAPI schema because the SDK
+ * root export's `SocketSdkSuccessResult<'getSupportedFiles'>['data']` resolves
+ * to `any` under TypeScript 7's nodenext resolution (extensionless relative
+ * imports inside the SDK's dist typings fail to resolve).
+ */
+export type SupportedFiles =
+  operations['getSupportedFiles']['responses']['200']['content']['application/json']
+
+const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
+  (p: string) => !p.endsWith('.gitignore'),
+)
+
+export const IGNORED_DIRS = [
+  // Taken from ignore-by-default:
+  // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
+  '.git', // Git repository files, see <https://git-scm.com/>
+  '.log', // Log files emitted by tools such as `tsserver`, see <https://github.com/Microsoft/TypeScript/wiki/Standalone-Server-%28tsserver%29>
+  '.nyc_output', // Temporary directory where nyc stores coverage data, see <https://github.com/bcoe/nyc>
+  '.sass-cache', // Cache folder for node-sass, see <https://github.com/sass/node-sass>
+  '.yarn', // Where node modules are installed when using Yarn, see <https://yarnpkg.com/>
+  'bower_components', // Where Bower packages are installed, see <http://bower.io/>
+  'coverage', // Standard output directory for code coverage reports, see <https://github.com/gotwarlost/istanbul>
+  NODE_MODULES, // Where Node modules are installed, see <https://nodejs.org/>
+  // Taken from globby:
+  // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
+  'flow-typed',
+  // Conventional Python virtual environment dir. Arbitrarily-named venvs are
+  // detected via their pyvenv.cfg marker during the discovery walk below.
+  '.venv',
+] as const
+
+const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
+
+// Marker file at the root of every Python virtual environment (stdlib `venv`
+// per PEP 405, and virtualenv >= 20). Detects venvs that do not use a
+// conventional directory name.
+const PYVENV_CFG = 'pyvenv.cfg'
+
+export function createSupportedFilesFilter(
+  supportedFiles: SupportedFiles,
+): (filepath: string) => boolean {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return (filepath: string) =>
+    micromatch.some(filepath, patterns, { dot: true, nocase: true })
+}
+
+export function getSupportedFilePatterns(
+  supportedFiles: SupportedFiles,
+): string[] {
+  const patterns: string[] = []
+  const keys = Object.keys(supportedFiles)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
+    const supported = supportedFiles[key]
+    if (supported) {
+      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
+    }
+  }
+  return patterns
+}
+
+export async function getWorkspaceGlobs(
+  agent: Agent,
+  cwd = process.cwd(),
+): Promise<string[]> {
+  let workspacePatterns: unknown
+  if (agent === PNPM) {
+    const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
+    const yml = await safeReadFile(workspacePath, { encoding: 'utf8' })
+    if (yml) {
+      try {
+        workspacePatterns = yamlParse(yml)?.packages
+      } catch {}
+    }
+  } else {
+    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
+      'workspaces'
+    ]
+  }
+  return Array.isArray(workspacePatterns)
+    ? workspacePatterns
+        .filter(isNonEmptyString)
+        .map(workspacePatternToGlobPattern)
+    : []
+}
+
+export type GlobWithGitIgnoreOptions = GlobOptions & {
+  // Optional filter function to apply during streaming.
+  // When provided, only files passing this filter are accumulated.
+  // This is critical for memory efficiency when scanning large monorepos.
+  filter?: ((filepath: string) => boolean) | undefined
+  socketConfig?: SocketYml | undefined
+}
+
+export async function globWithGitIgnore(
+  patterns: string[] | readonly string[],
+  config: GlobWithGitIgnoreOptions,
+): Promise<string[]> {
+  const {
+    cwd = process.cwd(),
+    filter,
+    socketConfig,
+    ...additionalOptions
+  } = { __proto__: null, ...config } as GlobWithGitIgnoreOptions
+
+  const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
+
+  const projectIgnorePaths = socketConfig?.projectIgnorePaths
+  const projectIgnoreGlobs = Array.isArray(projectIgnorePaths)
+    ? ignoreFileLinesToGlobPatterns(
+        projectIgnorePaths,
+        path.join(cwd, '.gitignore'),
+        cwd,
+      )
+    : []
+  for (let i = 0, { length } = projectIgnoreGlobs; i < length; i += 1) {
+    const pattern = projectIgnoreGlobs[i]!
+    ignores.add(pattern)
+  }
+
+  // The discovery walk — .gitignore files plus pyvenv.cfg venv markers — honors
+  // the same directory exclusions as the package walk below. Without them an
+  // unreadable subtree (a postgres `pgdata` directory owned by another uid, a
+  // Docker volume mount) makes fast-glob throw `EACCES: permission denied,
+  // scandir` here, before projectIgnorePaths (which is where --exclude-paths
+  // lands) reaches the main walk. `suppressErrors` is the backstop: a directory
+  // the user cannot read cannot hold manifests they could scan, so skip it
+  // instead of aborting the whole run. Negated patterns are dropped — in a
+  // discovery walk they can only re-include a subtree, never prevent a crash,
+  // and fast-glob handles `!` ignore entries inconsistently. Folding pyvenv.cfg
+  // discovery into this walk avoids a second full-tree traversal.
+  const discoveryStream = fastGlob.globStream(
+    ['**/.gitignore', `**/${PYVENV_CFG}`],
+    {
+      absolute: true,
+      cwd,
+      dot: true,
+      ignore: [...DEFAULT_IGNORE_FOR_GIT_IGNORE, ...projectIgnoreGlobs]
+        .filter(p => p.charCodeAt(0) !== 33 /*'!'*/)
+        .map(stripTrailingSlashFromIgnorePattern),
+      suppressErrors: true,
+    },
+  ) as AsyncIterable<string>
+  for await (const ignorePatterns of transform(
+    discoveryStream,
+    async (filepath: string) => {
+      if (path.basename(filepath) === PYVENV_CFG) {
+        // A pyvenv.cfg sits at the venv root, so exclude the whole directory.
+        const relDir = normalizePath(path.relative(cwd, path.dirname(filepath)))
+        // An empty relDir means the scan target itself is a venv root; emitting
+        // `/**` there would exclude everything the user explicitly targeted.
+        return relDir ? [`${relDir}/**`] : []
+      }
+      return ignoreFileToGlobPatterns(
+        (await safeReadFile(filepath, { encoding: 'utf8' })) ?? '',
+        filepath,
+        cwd,
+      )
+    },
+    { concurrency: 8 },
+  )) {
+    for (let i = 0, { length } = ignorePatterns; i < length; i += 1) {
+      const p = ignorePatterns[i]!
+      ignores.add(p)
+    }
+  }
+
+  let hasNegatedPattern = false
+  for (const p of ignores) {
+    if (p.charCodeAt(0) === 33 /*'!'*/) {
+      hasNegatedPattern = true
+      break
+    }
+  }
+
+  const globOptions = {
+    __proto__: null,
+    absolute: true,
+    cwd,
+    dot: true,
+    ignore: hasNegatedPattern
+      ? [...defaultIgnore]
+      : [...ignores].map(stripTrailingSlashFromIgnorePattern),
+    ...additionalOptions,
+    // Skip directories the running user cannot read rather than aborting the
+    // whole walk on the first EACCES; the .gitignore discovery walk above
+    // carries the full rationale. Pinned after `...additionalOptions` so a
+    // caller's options bag cannot flip it back to `false` and re-introduce the
+    // crash — this is a safety invariant, not a tunable.
+    suppressErrors: true,
+  } as GlobOptions
+
+  // When no filter is provided and no negated patterns exist, use the fast path.
+  if (!hasNegatedPattern && !filter) {
+    return await fastGlob.glob(patterns as string[], globOptions)
+  }
+  // Add support for negated "ignore" patterns which many globbing libraries,
+  // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
+  // Use streaming to avoid unbounded memory accumulation.
+  // This is critical for large monorepos with 100k+ files.
+  const results: string[] = []
+  const ig = hasNegatedPattern ? ignore().add([...ignores]) : undefined
+  const stream = fastGlob.globStream(
+    patterns as string[],
+    globOptions,
+  ) as AsyncIterable<string>
+  for await (const p of stream) {
+    // Check gitignore patterns with negation support.
+    if (ig) {
+      // Note: the input files must be INSIDE the cwd. If you get strange looking
+      // relative path errors here, most likely your path is outside the given cwd.
+      const relPath = globOptions.absolute ? path.relative(cwd, p) : p
+      if (ig.ignores(relPath)) {
+        continue
+      }
+    }
+    // Apply the optional filter to reduce memory usage.
+    // When scanning large monorepos, this filters early (e.g., to manifest files only)
+    // instead of accumulating all 100k+ files and filtering later.
+    if (filter && !filter(p)) {
+      continue
+    }
+    results.push(p)
+  }
+  return results
+}
+
+export async function globWorkspace(
+  agent: Agent,
+  cwd = process.cwd(),
+): Promise<string[]> {
+  const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
+  return workspaceGlobs.length
+    ? await fastGlob.glob(workspaceGlobs, {
+        absolute: true,
+        cwd,
+        dot: true,
+        ignore: [...defaultIgnore],
+      })
+    : []
+}
+
+export function ignoreFileLinesToGlobPatterns(
+  lines: string[] | readonly string[],
+  filepath: string,
+  cwd: string,
+): string[] {
+  const base = normalizePath(path.relative(cwd, path.dirname(filepath)))
+  const patterns = []
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const pattern = lines[i]!.trim()
+    if (pattern.length > 0 && pattern.charCodeAt(0) !== 35 /*'#'*/) {
+      patterns.push(
+        ignorePatternToMinimatch(
+          pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/
+            ? `!${path.posix.join(base, pattern.slice(1))}`
+            : path.posix.join(base, pattern),
+        ),
+      )
+    }
+  }
+  return patterns
+}
+
+export function ignoreFileToGlobPatterns(
+  content: string,
+  filepath: string,
+  cwd: string,
+): string[] {
+  return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
+}
+
+// Based on `@eslint/compat` convertIgnorePatternToMinimatch.
+// Apache v2.0 licensed
+// Copyright Nicholas C. Zakas
+// https://github.com/eslint/rewrite/blob/compat-v1.2.1/packages/compat/src/ignore-file.js#L28
+export function ignorePatternToMinimatch(pattern: string): string {
+  const isNegated = pattern.startsWith('!')
+  const negatedPrefix = isNegated ? '!' : ''
+  const patternToTest = (isNegated ? pattern.slice(1) : pattern).trimEnd()
+  // Special cases.
+  if (
+    patternToTest === '' ||
+    patternToTest === '**' ||
+    patternToTest === '**' ||
+    patternToTest === '/**'
+  ) {
+    return `${negatedPrefix}${patternToTest}`
+  }
+  const firstIndexOfSlash = patternToTest.indexOf('/')
+  const matchEverywherePrefix =
+    firstIndexOfSlash === -1 || firstIndexOfSlash === patternToTest.length - 1
+      ? '**/'
+      : ''
+  const patternWithoutLeadingSlash =
+    firstIndexOfSlash === 0 ? patternToTest.slice(1) : patternToTest
+  // Escape `{` and `(` because in gitignore patterns they are just
+  // literal characters without any specific syntactic meaning,
+  // while in minimatch patterns they can form brace expansion or extglob syntax.
+  //
+  // For example, gitignore pattern `src/{a,b}.js` ignores file `src/{a,b}.js`.
+  // But, the same minimatch pattern `src/{a,b}.js` ignores files `src/a.js` and `src/b.js`.
+  // Minimatch pattern `src/\{a,b}.js` is equivalent to gitignore pattern `src/{a,b}.js`.
+  const escapedPatternWithoutLeadingSlash =
+    patternWithoutLeadingSlash.replaceAll(
+      /(?=((?:\\.|[^{(])*))\1([{(])/guy, // socket-lint: allow regex-alternation-order -- `\\.` must come first so escape pairs are consumed atomically.
+      '$1\\$2',
+    )
+  const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
+  return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
+}
+
+export function isReportSupportedFile(
+  filepath: string,
+  supportedFiles: SupportedFiles,
+) {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return micromatch.some(filepath, patterns, { dot: true, nocase: true })
+}
+
+export function pathsToGlobPatterns(
+  paths: string[] | readonly string[],
+  cwd?: string | undefined,
+): string[] {
+  return paths.map(p => {
+    // Convert current directory references to glob patterns.
+    if (p === '.' || p === './') {
+      return '**/*'
+    }
+    // Expand tilde to home directory.
+    let resolvedPath = p
+    if (p.startsWith('~/')) {
+      resolvedPath = path.join(homePath, p.slice(2))
+    } else if (p === '~') {
+      resolvedPath = homePath
+    }
+    const absolutePath = path.isAbsolute(resolvedPath)
+      ? resolvedPath
+      : path.resolve(cwd ?? process.cwd(), resolvedPath)
+    // If the path is a directory, scan it recursively for all files.
+    if (isDirSync(absolutePath)) {
+      return `${resolvedPath}/**/*`
+    }
+    return resolvedPath
+  })
+}
+
+// fast-glob treats an `ignore` entry ending in `/` as a literal directory path
+// rather than a glob and silently discards it. The gitignore convention of
+// writing a directory entry as `dist/` reaches here as `**/dist/` after
+// `ignorePatternToMinimatch`, so the whole ignore is dropped and fast-glob
+// walks the subtree anyway. Strip the trailing slash so the pattern matches.
+export function stripTrailingSlashFromIgnorePattern(pattern: string): string {
+  if (
+    pattern.length > 1 &&
+    pattern.charCodeAt(pattern.length - 1) === 47 /*'/'*/
+  ) {
+    return pattern.slice(0, -1)
+  }
+  return pattern
+}
+
+export function workspacePatternToGlobPattern(workspace: string): string {
+  const { length } = workspace
+  if (!length) {
+    return ''
+  }
+  // If the workspace ends with "/"
+  if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
+    return `${workspace}/*/package.json`
+  }
+  // If the workspace ends with "/**"
+  if (
+    workspace.charCodeAt(length - 1) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 2) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 3) === 47 /*'/'*/
+  ) {
+    return `${workspace}/*/**/package.json`
+  }
+  // Things like "packages/a" or "packages/*"
+  return `${workspace}/package.json`
+}

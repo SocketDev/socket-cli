@@ -1,18 +1,193 @@
 import colors from 'yoctocolors-cjs'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { debug } from '@socketsecurity/lib-stable/debug/output'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
 const logger = getDefaultLogger()
 
+export function formatReportCard(
+  artifact: DedupedArtifact,
+  config: { colorize: boolean },
+): string {
+  const { colorize } = { __proto__: null, ...config } as typeof config
+  const scoreResult = {
+    'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
+    Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),
+    Quality: Math.floor((artifact.score?.quality ?? 0) * 100),
+    Vulnerabilities: Math.floor((artifact.score?.vulnerability ?? 0) * 100),
+    License: Math.floor((artifact.score?.license ?? 0) * 100),
+  }
+  const alertString = getAlertString(artifact.alerts, { colorize })
+  /* c8 ignore start - artifact.ecosystem is required by the SDK contract */
+  if (!artifact.ecosystem) {
+    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
+  }
+  /* c8 ignore stop */
+  const purl = `pkg:${artifact.ecosystem}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
+
+  // Calculate proper padding based on longest label.
+  const maxLabelLength = Math.max(
+    ...Object.keys(scoreResult).map(label => label.length),
+  )
+  const labelPadding = maxLabelLength + 2 // +2 for ": "
+
+  return [
+    `Package: ${colorize ? colors.bold(purl) : purl}`,
+    '',
+    ...Object.entries(scoreResult).map(
+      score =>
+        `- ${score[0]}:`.padEnd(labelPadding, ' ') +
+        `  ${formatScore(score[1], { colorize })}`,
+    ),
+    alertString,
+  ].join('\n')
+}
+
+export type FormatScoreOptions = {
+  colorize?: boolean | undefined
+  padding?: number | undefined
+}
+
+export function formatScore(
+  score: number,
+  options?: FormatScoreOptions | undefined,
+): string {
+  const { colorize, padding = 3 } = {
+    __proto__: null,
+    ...options,
+  } as FormatScoreOptions
+  const padded = String(score).padStart(padding, ' ')
+  if (!colorize) {
+    return padded
+  }
+  if (score >= 80) {
+    return colors.green(padded)
+  }
+  if (score >= 60) {
+    return colors.yellow(padded)
+  }
+  return colors.red(padded)
+}
+
+export function generateMarkdownReport(
+  artifacts: Map<string, DedupedArtifact>,
+  missing: string[],
+): string {
+  const blocks: string[] = []
+  const dupes: Set<string> = new Set()
+  for (const artifact of artifacts.values()) {
+    const block = `## ${formatReportCard(artifact, { colorize: false })}`
+    if (dupes.has(block)) {
+      // Omit duplicate blocks.
+      continue
+    }
+    dupes.add(block)
+    blocks.push(block)
+  }
+  return `
+# Shallow Package Report
+
+This report contains the response for requesting data on some package url(s).
+
+Please note: The listed scores are ONLY for the package itself. It does NOT
+             reflect the scores of any dependencies, transitive or otherwise.
+
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
+
+${blocks.join('\n\n\n')}
+    `.trim()
+}
+
+export function generateTextReport(
+  artifacts: Map<string, DedupedArtifact>,
+  missing: string[],
+): string {
+  const o: string[] = []
+  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
+  o.push(
+    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
+      '             reflect the scores of any dependencies, transitive or otherwise.',
+  )
+  if (missing.length) {
+    o.push(
+      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
+    )
+  }
+  const dupes: Set<string> = new Set()
+  for (const artifact of artifacts.values()) {
+    const block = formatReportCard(artifact, { colorize: true })
+    if (dupes.has(block)) {
+      // Omit duplicate blocks.
+      continue
+    }
+    dupes.add(block)
+    o.push('\n')
+    o.push(block)
+  }
+  o.push('')
+
+  return o.join('\n')
+}
+
+export type AlertStringOptions = {
+  colorize?: boolean | undefined
+}
+
+export function getAlertString(
+  alerts: DedupedArtifact['alerts'],
+  options?: AlertStringOptions | undefined,
+): string {
+  const { colorize } = { __proto__: null, ...options } as AlertStringOptions
+
+  if (!alerts.size) {
+    return `- Alerts: ${colorize ? colors.green('none') : 'none'}!`
+  }
+
+  const o = Array.from(alerts.values())
+
+  const bad = o
+    .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+
+  const mid = o
+    .filter(alert => alert.severity === 'middle')
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+
+  const low = o
+    .filter(alert => alert.severity === 'low')
+    .toSorted((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+
+  // We need to create the no-color string regardless because the actual string
+  // contains a bunch of invisible ANSI chars which would screw up length checks.
+  const colorless = `- Alerts (${bad.length}/${mid.length}/${low.length}):`
+  const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
+
+  if (colorize) {
+    return `- Alerts (${colors.red(String(bad.length))}/${colors.yellow(String(mid.length))}/${low.length}):${
+      padding
+    }${joinAnd([
+      ...bad.map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
+      ...mid.map(a =>
+        colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`),
+      ),
+      ...low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`),
+    ])}`
+  }
+  return `${colorless}${padding}${joinAnd([
+    ...bad.map(a => `[${a.severity}] ${a.type}`),
+    ...mid.map(a => `[${a.severity}] ${a.type}`),
+    ...low.map(a => `[${a.severity}] ${a.type}`),
+  ])}`
+}
+
 // This is a simplified view of an artifact. Potentially merged with other artifacts.
-interface DedupedArtifact {
+export interface DedupedArtifact {
   ecosystem: string // artifact.type
   namespace: string
   name: string
@@ -63,118 +238,6 @@ export function outputPurlsShallowScore(
   logger.log(txt)
 }
 
-function formatReportCard(
-  artifact: DedupedArtifact,
-  colorize: boolean,
-): string {
-  const scoreResult = {
-    'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
-    Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),
-    Quality: Math.floor((artifact.score?.quality ?? 0) * 100),
-    Vulnerabilities: Math.floor((artifact.score?.vulnerability ?? 0) * 100),
-    License: Math.floor((artifact.score?.license ?? 0) * 100),
-  }
-  const alertString = getAlertString(artifact.alerts, { colorize })
-  if (!artifact.ecosystem) {
-    debug(`miss: artifact ecosystem ${JSON.stringify(artifact)}`)
-  }
-  const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
-
-  // Calculate proper padding based on longest label.
-  const maxLabelLength = Math.max(
-    ...Object.keys(scoreResult).map(label => label.length),
-  )
-  const labelPadding = maxLabelLength + 2 // +2 for ": "
-
-  return [
-    `Package: ${colorize ? colors.bold(purl) : purl}`,
-    '',
-    ...Object.entries(scoreResult).map(
-      score =>
-        `- ${score[0]}:`.padEnd(labelPadding, ' ') +
-        `  ${formatScore(score[1], { colorize })}`,
-    ),
-    alertString,
-  ].join('\n')
-}
-
-type FormatScoreOptions = {
-  colorize?: boolean | undefined
-  padding?: number | undefined
-}
-
-function formatScore(
-  score: number,
-  options?: FormatScoreOptions | undefined,
-): string {
-  const { colorize, padding = 3 } = {
-    __proto__: null,
-    ...options,
-  } as FormatScoreOptions
-  const padded = String(score).padStart(padding, ' ')
-  if (!colorize) {
-    return padded
-  }
-  if (score >= 80) {
-    return colors.green(padded)
-  }
-  if (score >= 60) {
-    return colors.yellow(padded)
-  }
-  return colors.red(padded)
-}
-
-type AlertStringOptions = {
-  colorize?: boolean | undefined
-}
-
-function getAlertString(
-  alerts: DedupedArtifact['alerts'],
-  options?: AlertStringOptions | undefined,
-): string {
-  const { colorize } = { __proto__: null, ...options } as AlertStringOptions
-
-  if (!alerts.size) {
-    return `- Alerts: ${colorize ? colors.green('none') : 'none'}!`
-  }
-
-  const o = Array.from(alerts.values())
-
-  const bad = o
-    .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-
-  const mid = o
-    .filter(alert => alert.severity === 'middle')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-
-  const low = o
-    .filter(alert => alert.severity === 'low')
-    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-
-  // We need to create the no-color string regardless because the actual string
-  // contains a bunch of invisible ANSI chars which would screw up length checks.
-  const colorless = `- Alerts (${bad.length}/${mid.length}/${low.length}):`
-  const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
-
-  if (colorize) {
-    return `- Alerts (${colors.red(bad.length as any)}/${colors.yellow(mid.length as any)}/${low.length}):${
-      padding
-    }${joinAnd([
-      ...bad.map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
-      ...mid.map(a =>
-        colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`),
-      ),
-      ...low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`),
-    ])}`
-  }
-  return `${colorless}${padding}${joinAnd([
-    ...bad.map(a => `[${a.severity}] ${a.type}`),
-    ...mid.map(a => `[${a.severity}] ${a.type}`),
-    ...low.map(a => `[${a.severity}] ${a.type}`),
-  ])}`
-}
-
 export function preProcess(
   artifacts: SocketArtifact[],
   requestedPurls: string[],
@@ -188,7 +251,8 @@ export function preProcess(
   // API does not tell us which purls were not found.
   // Generate all purls to try so we can try to match search request.
   const purls: Set<string> = new Set()
-  for (const data of artifacts) {
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const data = artifacts[i]!
     purls.add(
       `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
     )
@@ -215,17 +279,19 @@ export function preProcess(
 
   // Create a unique set of rows which represents each artifact that is returned
   // while deduping when the artifact (main) meta data only differs due to the
-  // .release field (observed with python, at least).
+  // .release field, observed with python, at least.
   // Merge the alerts for duped packages. Use lowest score between all of them.
   const rows: Map<string, DedupedArtifact> = new Map()
-  for (const artifact of artifacts) {
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const artifact = artifacts[i]!
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
+      /* c8 ignore start - rows.has just confirmed; .get cannot return undefined here */
       if (!row) {
-        // Unreachable; Satisfy TS.
         continue
       }
+      /* c8 ignore stop */
       if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {
         row.score.supplyChain = artifact.score?.supplyChain ?? 100
       }
@@ -242,22 +308,30 @@ export function preProcess(
         row.score.license = artifact.score?.license ?? 100
       }
 
-      artifact.alerts?.forEach((alert: any) => {
-        const { severity, type } = alert
-        row.alerts.set(`${type}:${severity}`, {
-          type,
-          severity,
-        })
-      })
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
+      artifact.alerts?.forEach(
+        (alert: { type: string; severity?: string | undefined }) => {
+          const severity = alert.severity ?? ''
+          const { type } = alert
+          row.alerts.set(`${type}:${severity}`, {
+            type,
+            severity,
+          })
+        },
+      )
     } else {
       const alerts = new Map<string, { type: string; severity: string }>()
-      artifact.alerts?.forEach((alert: any) => {
-        const { severity, type } = alert
-        alerts.set(`${type}:${severity}`, {
-          type,
-          severity,
-        })
-      })
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
+      artifact.alerts?.forEach(
+        (alert: { type: string; severity?: string | undefined }) => {
+          const severity = alert.severity ?? ''
+          const { type } = alert
+          alerts.set(`${type}:${severity}`, {
+            type,
+            severity,
+          })
+        },
+      )
 
       rows.set(purl, {
         ecosystem: artifact.type,
@@ -277,64 +351,4 @@ export function preProcess(
   }
 
   return { rows, missing }
-}
-
-export function generateMarkdownReport(
-  artifacts: Map<string, DedupedArtifact>,
-  missing: string[],
-): string {
-  const blocks: string[] = []
-  const dupes: Set<string> = new Set()
-  for (const artifact of artifacts.values()) {
-    const block = `## ${formatReportCard(artifact, false)}`
-    if (dupes.has(block)) {
-      // Omit duplicate blocks.
-      continue
-    }
-    dupes.add(block)
-    blocks.push(block)
-  }
-  return `
-# Shallow Package Report
-
-This report contains the response for requesting data on some package url(s).
-
-Please note: The listed scores are ONLY for the package itself. It does NOT
-             reflect the scores of any dependencies, transitive or otherwise.
-
-${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
-
-${blocks.join('\n\n\n')}
-    `.trim()
-}
-
-export function generateTextReport(
-  artifacts: Map<string, DedupedArtifact>,
-  missing: string[],
-): string {
-  const o: string[] = []
-  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
-  o.push(
-    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
-      '             reflect the scores of any dependencies, transitive or otherwise.',
-  )
-  if (missing.length) {
-    o.push(
-      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
-    )
-  }
-  const dupes: Set<string> = new Set()
-  for (const artifact of artifacts.values()) {
-    const block = formatReportCard(artifact, true)
-    if (dupes.has(block)) {
-      // Omit duplicate blocks.
-      continue
-    }
-    dupes.add(block)
-    o.push('\n')
-    o.push(block)
-  }
-  o.push('')
-
-  return o.join('\n')
 }

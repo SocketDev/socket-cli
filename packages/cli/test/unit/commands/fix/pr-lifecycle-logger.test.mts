@@ -1,34 +1,31 @@
 /**
- * Unit Tests: Pull Request Lifecycle Event Logger
+ * Unit Tests: Pull Request Lifecycle Event Logger.
  *
- * Purpose:
- * Tests the PR lifecycle logging utility that provides consistent, color-coded terminal output
- * for pull request events during automated fix workflows. Validates proper log level selection,
- * message formatting, and symbol coloring for different PR lifecycle events.
+ * Purpose: Tests the PR lifecycle logging utility that provides consistent,
+ * color-coded terminal output for pull request events during automated fix
+ * workflows. Validates proper log level selection, message formatting, and
+ * symbol coloring for different PR lifecycle events.
  *
- * Test Coverage:
- * - Created event logging with success level
- * - Merged event logging with success level and cleanup details
- * - Closed event logging with info level
- * - Updated event logging with info level and change details
- * - Superseded event logging with warning level
- * - Failed event logging with error level
- * - Optional details parameter handling
- * - Color coding application to status symbols
+ * Test Coverage: - Created event logging with success level - Merged event
+ * logging with success level and cleanup details - Closed event logging with
+ * info level - Updated event logging with info level and change details -
+ * Superseded event logging with warning level - Failed event logging with error
+ * level - Optional details parameter handling - Color coding application to
+ * status symbols.
  *
- * Testing Approach:
- * Mocks logger and yoctocolors-cjs to verify correct log level usage and color application
- * without actual terminal output. Tests validate message content and symbol formatting.
+ * Testing Approach: Mocks logger and yoctocolors-cjs to verify correct log
+ * level usage and color application without actual terminal output. Tests
+ * validate message content and symbol formatting.
  *
- * Related Files:
- * - src/commands/fix/pr-lifecycle-logger.mts - PR event logging utility
- * - src/commands/fix/pull-request.mts - PR creation and management using logger
- * - src/commands/fix/handle-fix.mts - Main fix command orchestrating PR workflow
+ * Related Files: - src/commands/fix/pr-lifecycle-logger.mts - PR event logging
+ * utility - src/commands/fix/pull-request.mts - PR creation and management
+ * using logger - src/commands/fix/handle-fix.mts - Main fix command
+ * orchestrating PR workflow.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { logPrEvent } from '../../../../src/src/commands/../../../../src/commands/fix/pr-lifecycle-logger.mts'
+import { logPrEvent } from '../../../../src/commands/fix/pr-lifecycle-logger.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -40,13 +37,13 @@ const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   logger: mockLogger,
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock colors.
-vi.mock('yoctocolors-cjs', () => ({
+vi.mock(import('yoctocolors-cjs'), () => ({
   __esModule: true,
   default: {
     green: (str: string) => `[green]${str}[/green]`,

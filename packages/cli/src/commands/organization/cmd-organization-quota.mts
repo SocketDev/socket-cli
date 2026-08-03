@@ -1,28 +1,25 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
 import { handleQuota } from './handle-quota.mts'
-import { DRY_RUN_BAILING_NOW } from '../../constants/cli.mts'
+import { outputDryRunFetch } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { getFlagListOutput } from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mjs'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mjs'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
-const config: CliCommandConfig = {
+const config = {
   commandName: 'quota',
-  description: 'List organizations associated with the Socket API token',
-  hidden: true,
-  flags: {
+  description:
+    'Show remaining Socket API quota for the current token, plus refresh window',
+  flags: defineFlags({
     ...commonFlags,
     ...outputFlags,
-  },
-  help: (command, _config) => `
+  }),
+  help: (command: string, _config: { flags: MeowFlags }) => `
     Usage
       $ ${command} [options]
 
@@ -33,6 +30,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} --json
   `,
+  hidden: false,
 }
 
 export const cmdOrganizationQuota = {
@@ -41,7 +39,7 @@ export const cmdOrganizationQuota = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
@@ -53,11 +51,11 @@ async function run(
     importMeta,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const dryRun = cli.flags['dryRun']
 
-  const json = Boolean(cli.flags['json'])
+  const json = cli.flags['json']
 
-  const markdown = Boolean(cli.flags['markdown'])
+  const markdown = cli.flags['markdown']
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -83,8 +81,7 @@ async function run(
   }
 
   if (dryRun) {
-    const logger = getDefaultLogger()
-    logger.log(DRY_RUN_BAILING_NOW)
+    outputDryRunFetch('organization quota')
     return
   }
 

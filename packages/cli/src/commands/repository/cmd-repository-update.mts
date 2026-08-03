@@ -1,5 +1,6 @@
 import { handleUpdateRepo } from './handle-update-repo.mts'
 import { createRepositoryCommand } from './repository-command-factory.mts'
+import { stringFlagValue } from '../../flags.mts'
 
 export const CMD_NAME = 'update'
 
@@ -35,12 +36,12 @@ export const cmdRepositoryUpdate = createRepositoryCommand({
   handler: async ({ flags, orgSlug, outputKind, repoName }) => {
     await handleUpdateRepo(
       {
-        defaultBranch: String(flags['defaultBranch'] || ''),
-        description: String(flags['repoDescription'] || ''),
-        homepage: String(flags['homepage'] || ''),
+        defaultBranch: stringFlagValue(flags['defaultBranch']),
+        description: stringFlagValue(flags['repoDescription']),
+        homepage: stringFlagValue(flags['homepage']),
         orgSlug,
-        repoName: String(repoName),
-        visibility: String(flags['visibility'] || 'private'),
+        repoName: repoName,
+        visibility: stringFlagValue(flags['visibility'], 'private'),
       },
       outputKind,
     )

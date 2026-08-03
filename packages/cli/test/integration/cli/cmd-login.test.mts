@@ -1,31 +1,26 @@
 /**
  * Integration tests for `socket login` command.
  *
- * Tests the Socket API authentication flow. This command prompts for an API token
- * and stores it in the local configuration for subsequent CLI operations.
+ * Tests the Socket API authentication flow. This command prompts for an API
+ * token and stores it in the local configuration for subsequent CLI
+ * operations.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - API base URL customization (--api-base-url)
- * - API proxy configuration (--api-proxy)
- * - Exit codes for successful/failed authentication
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - API base URL customization (--api-base-url) - API proxy
+ * configuration (--api-proxy) - Exit codes for successful/failed
+ * authentication.
  *
- * Authentication Flow:
- * 1. Prompts user for Socket API token
- * 2. Validates token with Socket API
- * 3. Auto-discovers default organization
- * 4. Stores credentials in local config
+ * Authentication Flow: 1. Prompts user for Socket API token 2. Validates token
+ * with Socket API 3. Auto-discovers default organization 4. Stores credentials
+ * in local config.
  *
- * Custom API Configuration:
- * - --api-base-url: Connect to alternative Socket API endpoints
- * - --api-proxy: Route API requests through proxy server
+ * Custom API Configuration: - --api-base-url: Connect to alternative Socket API
+ * endpoints - --api-proxy: Route API requests through proxy server.
  *
- * Related Files:
- * - src/commands/login/cmd-login.mts - Command definition
- * - src/commands/login/handle-login.mts - Authentication logic
- * - src/utils/config.mts - Config storage utilities
- * - src/utils/api.mts - Socket API client
+ * Related Files: - src/commands/login/cmd-login.mts - Command definition -
+ * src/commands/login/handle-login.mts - Authentication logic -
+ * src/util/config.mts - Config storage utilities - src/util/api.mts - Socket
+ * API client.
  */
 
 import { describe, expect } from 'vitest'
@@ -61,6 +56,7 @@ describe('socket login', async () => {
               Options
                 --api-base-url      API server to connect to for login
                 --api-proxy         Proxy to use when making connection to API server
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket login
@@ -92,15 +88,28 @@ describe('socket login', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
+      expectDryRunOutput(stderr)
 
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket login\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket login\`, cwd: <redacted>
+
+
+        [DryRun]: Would authenticate with Socket API
+
+          Target file: /[HOME]/.config/socket/config.json
+          Changes:
+            - Prompt for Socket API token
+            - Verify token with Socket API
+            - Save API token to config
+            - Optionally set default organization
+            - Optionally install bash completion
+
+          Run without --dry-run to apply these changes."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

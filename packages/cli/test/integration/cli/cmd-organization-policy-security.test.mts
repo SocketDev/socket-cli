@@ -4,15 +4,14 @@
  * Tests security policy management for organizations. Controls security
  * thresholds and issue detection rules.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Security policy viewing and modification
- * - Threshold configuration
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Security policy viewing and modification - Threshold
+ * configuration.
  *
- * Related Files:
- * - src/commands/organization/cmd-organization-policy-security.mts - Command definition
- * - src/commands/organization/handle-organization-policy-security.mts - Logic
+ * Related Files: -
+ * src/commands/organization/cmd-organization-policy-security.mts - Command
+ * definition -
+ * src/commands/organization/handle-organization-policy-security.mts - Logic.
  */
 
 import { describe, expect } from 'vitest'
@@ -53,6 +52,7 @@ describe('socket organization policy security', async () => {
                 --json              Output as JSON
                 --markdown          Output as Markdown
                 --org               Force override the organization slug, overrides the default org from config
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Your API token will need the \`security-policy:read\` permission otherwise
               the request will fail with an authentication error.
@@ -115,13 +115,22 @@ describe('socket organization policy security', async () => {
     'should accept default org in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch organization security policy
+
+          Query parameters:
+            organization: fakeOrg
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -142,13 +151,22 @@ describe('socket organization policy security', async () => {
     'should accept --org flag in v1',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket organization policy security\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch organization security policy
+
+          Query parameters:
+            organization: forcedorg
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

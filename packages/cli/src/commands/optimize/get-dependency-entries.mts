@@ -1,4 +1,4 @@
-import type { EnvDetails } from '../../utils/ecosystem/environment.mjs'
+import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
 export function getDependencyEntries(pkgEnvDetails: EnvDetails) {
   const {

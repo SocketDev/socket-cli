@@ -171,6 +171,22 @@ const envSnapshot = {
   GITHUB_REPOSITORY,
   GITHUB_SERVER_URL,
   HOME,
+  // Build metadata, inlined by esbuild define.
+  INLINED_CDXGEN_VERSION: getCdxgenVersion(),
+  INLINED_COANA_VERSION: getCoanaVersion(),
+  INLINED_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
+  INLINED_HOMEPAGE: getCliHomepage(),
+  INLINED_NAME: getCliName(),
+  INLINED_PUBLISHED_BUILD: isPublishedBuild(),
+  INLINED_PYCLI_VERSION: getPyCliVersion(),
+  INLINED_PYTHON_BUILD_TAG: getPythonBuildTag(),
+  INLINED_PYTHON_VERSION: getPythonVersion(),
+  INLINED_SENTRY_BUILD: isSentryBuild(),
+  INLINED_SFW_VERSION: getSwfVersion(),
+  INLINED_SOCKET_PATCH_VERSION: getSocketPatchVersion(),
+  INLINED_SYNP_VERSION: getSynpVersion(),
+  INLINED_VERSION: getCliVersion(),
+  INLINED_VERSION_HASH: getCliVersionHash(),
   LOCALAPPDATA,
   NODE_ENV,
   NODE_OPTIONS,
@@ -217,29 +233,13 @@ const envSnapshot = {
   VITEST,
   XDG_CACHE_HOME,
   XDG_DATA_HOME,
-  // Build metadata (inlined by esbuild define).
-  INLINED_SOCKET_CLI_CDXGEN_VERSION: getCdxgenVersion(),
-  INLINED_SOCKET_CLI_COANA_VERSION: getCoanaVersion(),
-  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
-  INLINED_SOCKET_CLI_HOMEPAGE: getCliHomepage(),
-  INLINED_SOCKET_CLI_NAME: getCliName(),
-  INLINED_SOCKET_CLI_PUBLISHED_BUILD: isPublishedBuild(),
-  INLINED_SOCKET_CLI_PYTHON_BUILD_TAG: getPythonBuildTag(),
-  INLINED_SOCKET_CLI_PYTHON_VERSION: getPythonVersion(),
-  INLINED_SOCKET_CLI_PYCLI_VERSION: getPyCliVersion(),
-  INLINED_SOCKET_CLI_SENTRY_BUILD: isSentryBuild(),
-  INLINED_SOCKET_CLI_SFW_VERSION: getSwfVersion(),
-  INLINED_SOCKET_CLI_SOCKET_PATCH_VERSION: getSocketPatchVersion(),
-  INLINED_SOCKET_CLI_SYNP_VERSION: getSynpVersion(),
-  INLINED_SOCKET_CLI_VERSION: getCliVersion(),
-  INLINED_SOCKET_CLI_VERSION_HASH: getCliVersionHash(),
 }
 
 // Create a Proxy that uses live process.env in VITEST mode and snapshot in production.
 // This allows tests to manipulate process.env and see those changes reflected in ENV,
 // while production builds use the more efficient snapshot.
 // Check if we're in VITEST mode once at module load time.
-const isVitestMode = !!VITEST
+const isVitestMode = VITEST
 
 const ENV = new Proxy(envSnapshot, {
   get(target, prop) {
@@ -247,19 +247,23 @@ const ENV = new Proxy(envSnapshot, {
     // Fall back to snapshot for build-time values (INLINED_*) and other non-env properties.
     if (isVitestMode && typeof prop === 'string') {
       // Check if the property exists in process.env.
-      // If it does, use it (allows tests to manipulate env vars).
+      // If it does, use it, allows tests to manipulate env vars.
       // If not, fall back to snapshot (for INLINED_* and other values).
       if (prop in process.env) {
         return process.env[prop]
       }
     }
+    /* c8 ignore start - vitest sets all INLINED_* in process.env so the snapshot-fallback path is never reached in tests */
     return Reflect.get(target, prop)
+    /* c8 ignore stop */
   },
   has(target, prop) {
     if (isVitestMode && typeof prop === 'string') {
       return prop in process.env || Reflect.has(target, prop)
     }
+    /* c8 ignore start - non-vitest fallback unreachable from tests */
     return Reflect.has(target, prop)
+    /* c8 ignore stop */
   },
   ownKeys(target) {
     if (isVitestMode) {
@@ -268,7 +272,9 @@ const ENV = new Proxy(envSnapshot, {
       const snapshotKeys = Reflect.ownKeys(target)
       return [...new Set([...envKeys, ...snapshotKeys])]
     }
+    /* c8 ignore start - non-vitest fallback unreachable from tests */
     return Reflect.ownKeys(target)
+    /* c8 ignore stop */
   },
   getOwnPropertyDescriptor(target, prop) {
     if (isVitestMode && typeof prop === 'string') {
@@ -290,11 +296,11 @@ const ENV = new Proxy(envSnapshot, {
       process.env[prop] = value
       return true
     }
-    // In production, ENV is read-only.
+    /* c8 ignore start - non-vitest path; production ENV is read-only */
     return false
+    /* c8 ignore stop */
   },
 })
 
 // Named export for ES module imports.
 export { ENV }
-export default ENV

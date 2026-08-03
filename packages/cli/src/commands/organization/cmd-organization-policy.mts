@@ -1,14 +1,14 @@
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
 const description = 'Organization policy details'
 
 export const cmdOrganizationPolicy: CliSubcommand = {
   description,
-  // Hidden because it was broken all this time (nobody could be using it)
+  // Hidden because it was broken all this time, nobody could be using it
   // and we're not sure if it's useful to anyone in its current state.
   // Until we do, we'll hide this to keep the help tidier.
   // And later, we may simply move this under `scan`, anyways.

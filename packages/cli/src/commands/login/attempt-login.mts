@@ -1,7 +1,11 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib/constants/socket'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { confirm, password, select } from '@socketsecurity/lib/stdio/prompts'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import {
+  confirm,
+  password,
+  select,
+} from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { applyLogin } from './apply-login.mts'
 import {
@@ -14,19 +18,19 @@ import {
   getConfigValueOrUndef,
   isConfigFromFlag,
   updateConfigValue,
-} from '../../utils/config.mts'
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
-import { socketDocsLink } from '../../utils/terminal/link.mts'
+} from '../../util/config.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { getEnterpriseOrgs, getOrgSlugs } from '../../util/organization.mts'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { socketDocsLink } from '../../util/terminal/link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
-import type { Choice } from '@socketsecurity/lib/stdio/prompts'
+import type { Choice } from '@socketsecurity/lib-stable/stdio/prompts'
 const logger = getDefaultLogger()
 
-type OrgChoice = Choice<string>
-type OrgChoices = OrgChoice[]
+export type OrgChoice = Choice<string>
+export type OrgChoices = OrgChoice[]
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,
@@ -49,7 +53,7 @@ export async function attemptLogin(
   if (!sockSdkCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause))
-    return
+    return undefined
   }
 
   const sockSdk = sockSdkCResult.data
@@ -61,7 +65,7 @@ export async function attemptLogin(
   if (!orgsCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
-    return
+    return undefined
   }
 
   const { organizations } = orgsCResult.data
@@ -147,7 +151,7 @@ export async function attemptLogin(
   }
   if (wantToComplete) {
     logger.log('')
-    logger.log('Setting up tab completion...')
+    logger.log('Setting up tab completion…')
     const setupCResult = await setupTabCompletion('socket')
     if (setupCResult.ok) {
       logger.success(
@@ -181,4 +185,5 @@ export async function attemptLogin(
     process.exitCode = 1
     logger.fail('API login failed')
   }
+  return undefined
 }

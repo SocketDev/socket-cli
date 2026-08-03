@@ -1,11 +1,13 @@
 /**
  * Unit tests for ask command.
  *
- * Tests the command entry point that parses natural language queries
- * and translates them into Socket CLI commands.
+ * Tests the command entry point that parses natural language queries and
+ * translates them into Socket CLI commands.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { cmdAsk } from '../../../../src/commands/ask/cmd-ask.mts'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -17,17 +19,14 @@ const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
 // Mock spawn to prevent actual command execution.
-vi.mock('@socketsecurity/lib/spawn', () => ({
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: vi.fn().mockResolvedValue({ code: 0 }),
 }))
-
-// Import after mocks.
-const { cmdAsk } = await import('../../../../src/commands/ask/cmd-ask.mts')
 
 describe('cmd-ask', () => {
   beforeEach(() => {
@@ -50,7 +49,7 @@ describe('cmd-ask', () => {
 
     it('should throw InputError when no query provided', async () => {
       await expect(cmdAsk.run([], importMeta, context)).rejects.toThrow(
-        'Please provide a question',
+        /socket ask requires a QUERY positional argument/,
       )
     })
 

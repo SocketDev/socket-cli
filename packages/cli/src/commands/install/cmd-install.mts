@@ -1,7 +1,7 @@
 import { cmdInstallCompletion } from './cmd-install-completion.mts'
-import { meowWithSubcommands } from '../../utils/cli/with-subcommands.mjs'
+import { meowWithSubcommands } from '../../util/cli/with-subcommands.mjs'
 
-import type { CliSubcommand } from '../../utils/cli/with-subcommands.mjs'
+import type { CliSubcommand } from '../../util/cli/with-subcommands.mjs'
 
 const description = 'Install Socket CLI tab completion'
 

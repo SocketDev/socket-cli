@@ -1,53 +1,54 @@
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-
-const logger = getDefaultLogger()
-
+import { assertNoNegationPatterns } from './exclude-paths.mts'
+import { validateReachEcosystems } from './cmd-scan-create-checks.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
-import { reachabilityFlags } from './reachability-flags.mts'
+import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
-import constants from '../../constants.mts'
+import { outputDryRunExecute } from '../../util/dry-run/output.mts'
+import { InputError } from '../../util/error/errors.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mts'
-import { getEcosystemChoicesForMeow } from '../../utils/ecosystem/types.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
-import { getOutputKind } from '../../utils/output/mode.mts'
-import { cmdFlagValueToArray } from '../../utils/process/cmd.mts'
-import { determineOrgSlug } from '../../utils/socket/org-slug.mts'
-import { hasDefaultApiToken } from '../../utils/socket/sdk.mts'
-import { checkCommandInput } from '../../utils/validation/check-input.mts'
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mts'
+import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
+import { determineOrgSlug } from '../../util/socket/org-slug.mts'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { MeowFlags } from '../../flags.mts'
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 
 // Flags interface for type safety.
-interface ScanReachFlags {
+export interface ScanReachFlags {
   cwd: string
   interactive: boolean
   json: boolean
   markdown: boolean
   org: string
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
-  reachConcurrency: number
+  output: string
+  // The meow layer leaves garbage numeric input (`--reach-concurrency=abc`)
+  // as the raw string; the Number() coercions below turn it into NaN so the
+  // validators can reject it.
+  reachAnalysisMemoryLimit: number | string
+  reachAnalysisTimeout: number | string
+  reachConcurrency: number | string
   reachDebug: boolean
-  reachDisableAnalysisSplitting: boolean
+  reachDetailedAnalysisLogFile: boolean
   reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
   reachLazyMode: boolean
   reachMinSeverity: string
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
   reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string
 }
 
 export const CMD_NAME = 'reach'
@@ -64,11 +65,24 @@ const generalFlags: MeowFlags = {
     default: '',
     description: 'working directory, defaults to process.cwd()',
   },
+  interactive: {
+    type: 'boolean',
+    default: true,
+    description:
+      'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+  },
   org: {
     type: 'string',
     default: '',
     description:
       'Force override the organization slug, overrides the default org from config',
+  },
+  output: {
+    type: 'string',
+    default: '',
+    description:
+      'Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.',
+    shortFlag: 'o',
   },
 }
 
@@ -78,20 +92,21 @@ export const cmdScanReach = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...generalFlags,
+      ...excludePathsFlag,
       ...reachabilityFlags,
-    },
-    help: command =>
+    }),
+    help: (command: string) =>
       `
     Usage
       $ ${command} [options] [CWD=.]
@@ -103,10 +118,11 @@ async function run(
       ${getFlagListOutput(generalFlags)}
 
     Reachability Options
-      ${getFlagListOutput(reachabilityFlags)}
+      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlags })}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
-    The output is written to .socket.facts.json in the current working directory.
+    The output is written to .socket.facts.json in the current working directory
+    unless the --output flag is specified.
 
     Note: Manifest files are uploaded to Socket's backend services because the
     reachability analysis requires creating a Software Bill of Materials (SBOM)
@@ -116,6 +132,8 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
+      $ ${command} --output custom-report.json
+      $ ${command} ./proj --output ./reports/analysis.json
   `,
   }
 
@@ -128,40 +146,37 @@ async function run(
 
   const {
     cwd: cwdOverride,
-    interactive = true,
+    interactive,
     json,
     markdown,
     org: orgFlag,
+    output: outputPath,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachConcurrency,
     reachDebug,
-    reachDisableAnalysisSplitting,
+    reachDetailedAnalysisLogFile,
     reachDisableAnalytics,
+    reachDisableExternalToolChecks,
+    reachEnableAnalysisSplitting,
     reachLazyMode,
     reachMinSeverity,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
     reachUseUnreachableFromPrecomputation,
+    reachVersion,
   } = cli.flags as unknown as ScanReachFlags
 
   const dryRun = !!cli.flags['dryRun']
 
   // Process comma-separated values for isMultiple flags.
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+  assertNoNegationPatterns(excludePaths)
 
-  // Validate ecosystem values.
-  const reachEcosystems: PURL_Type[] = []
-  const validEcosystems = getEcosystemChoicesForMeow()
-  for (const ecosystem of reachEcosystemsRaw) {
-    if (!validEcosystems.includes(ecosystem)) {
-      throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
-      )
-    }
-    reachEcosystems.push(ecosystem as PURL_Type)
-  }
+  // Validate ecosystem values against the reachability-supported set.
+  const reachEcosystems = validateReachEcosystems(reachEcosystemsRaw)
 
   const processCwd = process.cwd()
   const cwd =
@@ -172,10 +187,11 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
 
-  // Use suggestTarget if no targets specified and in interactive mode
+  /* c8 ignore start - defensive: targets always has at least [cwd] from the line above, so this branch never fires in practice */
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
   }
+  /* c8 ignore stop */
 
   const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
 
@@ -208,6 +224,12 @@ async function run(
     },
     {
       nook: true,
+      test: !outputPath || outputPath.endsWith('.json'),
+      message: 'The --output path must end with .json',
+      fail: 'use a path ending with .json',
+    },
+    {
+      nook: true,
       test: targetValidation.isValid,
       message: 'Reachability analysis requires exactly one target directory',
       fail: 'provide exactly one directory path',
@@ -236,7 +258,17 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(constants.DRY_RUN_BAILING_NOW)
+    const args: string[] = []
+    if (targets[0]) {
+      args.push('--target', targets[0])
+    }
+    if (orgSlug) {
+      args.push('--org', orgSlug)
+    }
+    if (reachEcosystems.length > 0) {
+      args.push('--ecosystems', reachEcosystems.join(','))
+    }
+    outputDryRunExecute('coana', args, 'reachability analysis')
     return
   }
 
@@ -246,8 +278,8 @@ async function run(
     reachAnalysisMemoryLimit !== undefined &&
     Number.isNaN(validatedReachAnalysisMemoryLimit)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-memory-limit: ${reachAnalysisMemoryLimit}`,
+    throw new InputError(
+      `--reach-analysis-memory-limit must be a number of megabytes (saw: "${reachAnalysisMemoryLimit}"); pass an integer like --reach-analysis-memory-limit=4096`,
     )
   }
 
@@ -256,43 +288,49 @@ async function run(
     reachAnalysisTimeout !== undefined &&
     Number.isNaN(validatedReachAnalysisTimeout)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-analysis-timeout: ${reachAnalysisTimeout}`,
+    throw new InputError(
+      `--reach-analysis-timeout must be a number of seconds (saw: "${reachAnalysisTimeout}"); pass an integer like --reach-analysis-timeout=300`,
     )
   }
 
   const validatedReachConcurrency = Number(reachConcurrency)
   if (
     reachConcurrency !== undefined &&
-    Number.isNaN(validatedReachConcurrency)
+    (Number.isNaN(validatedReachConcurrency) ||
+      !Number.isInteger(validatedReachConcurrency) ||
+      validatedReachConcurrency <= 0)
   ) {
-    throw new Error(
-      `Invalid number value for --reach-concurrency: ${reachConcurrency}`,
+    throw new InputError(
+      `--reach-concurrency must be a positive integer (saw: "${reachConcurrency}"); pass a number like --reach-concurrency=4`,
     )
   }
 
   await handleScanReach({
     cwd,
+    interactive,
     orgSlug,
     outputKind,
+    outputPath: outputPath || '',
     targets,
-    interactive,
     reachabilityOptions: {
+      excludePaths,
       reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
       reachAnalysisTimeout: validatedReachAnalysisTimeout,
       reachConcurrency: validatedReachConcurrency,
-      reachDebug: Boolean(reachDebug),
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
-      reachDisableAnalysisSplitting: Boolean(reachDisableAnalysisSplitting),
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
       reachEcosystems,
       reachExcludePaths,
-      reachLazyMode: Boolean(reachLazyMode),
-      reachMinSeverity: String(reachMinSeverity),
-      reachSkipCache: Boolean(reachSkipCache),
-      reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),
-      reachUseUnreachableFromPrecomputation: Boolean(
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
         reachUseUnreachableFromPrecomputation,
-      ),
+      reachVersion: reachVersion || undefined,
     },
   })
 }

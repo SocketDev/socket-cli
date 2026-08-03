@@ -1,7 +1,7 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { select } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { getConfigValue, updateConfigValue } from '../../utils/config.mts'
+import { getConfigValue, updateConfigValue } from '../../util/config.mts'
 const logger = getDefaultLogger()
 
 export async function suggestToPersistOrgSlug(orgSlug: string): Promise<void> {

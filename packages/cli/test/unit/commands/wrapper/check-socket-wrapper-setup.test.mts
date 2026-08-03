@@ -1,31 +1,19 @@
 /**
- * Unit tests for checkSocketWrapperSetup.
- *
- * Purpose:
- * Tests checking Socket wrapper installation status. Validates detection of installed wrappers across package managers.
- *
- * Test Coverage:
- * - Core functionality validation
- * - Edge case handling
- * - Error scenarios
- * - Input validation
- *
- * Testing Approach:
- * Comprehensive unit testing of module functionality with mocked dependencies
- * where appropriate.
- *
- * Related Files:
- * - src/checkSocketWrapperSetup.mts (implementation)
+ * @file Unit tests for checkSocketWrapperSetup.
  */
 
-import fs from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+const mockReadFileSync = vi.hoisted(() => vi.fn())
 
-import { checkSocketWrapperSetup } from '../../../../src/commands/../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
+vi.mock(import('node:fs'), () => ({
+  readFileSync: mockReadFileSync,
+  default: {
+    readFileSync: mockReadFileSync,
+  },
+}))
 
-// Mock the dependencies.
-vi.mock('node:fs')
+import { checkSocketWrapperSetup } from '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -36,7 +24,7 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-vi.mock('@socketsecurity/lib/logger', () => ({
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
@@ -46,18 +34,20 @@ describe('checkSocketWrapperSetup', () => {
     vi.clearAllMocks()
   })
 
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('detects npm alias in file', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('alias npm="socket npm"\nother content')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
     expect(result).toBe(true)
-    expect(fs.readFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
+    expect(mockReadFileSync).toHaveBeenCalledWith('/home/user/.bashrc', 'utf8')
   })
 
-  it('detects npx alias in file', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
+  it('detects pnpm exec alias in file', () => {
     mockReadFileSync.mockReturnValue('alias npx="socket npx"\nother content')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
@@ -66,7 +56,6 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('detects both aliases in file', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue(
       'alias npm="socket npm"\nalias npx="socket npx"\nother content',
     )
@@ -77,7 +66,6 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('returns false when no aliases found', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('some other content\nno aliases here')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
@@ -86,7 +74,6 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('returns false for empty file', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
@@ -94,9 +81,7 @@ describe('checkSocketWrapperSetup', () => {
     expect(result).toBe(false)
   })
 
-  it('logs instructions when wrapper is set up', async () => {
-    await import('@socketsecurity/lib/logger')
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
+  it('logs instructions when wrapper is set up', () => {
     mockReadFileSync.mockReturnValue('alias npm="socket npm"')
 
     checkSocketWrapperSetup('/home/user/.bashrc')
@@ -108,7 +93,6 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('ignores partial alias matches', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue(
       'alias npm="other-tool npm"\nalias npx="other-tool npx"',
     )
@@ -119,7 +103,6 @@ describe('checkSocketWrapperSetup', () => {
   })
 
   it('handles multiline file with aliases mixed in', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue(
       `#!/bin/bash
 # User bashrc
@@ -135,7 +118,6 @@ export NODE_ENV=development`,
   })
 
   it('is case-sensitive for alias detection', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
     mockReadFileSync.mockReturnValue('ALIAS NPM="SOCKET NPM"')
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
@@ -144,17 +126,22 @@ export NODE_ENV=development`,
   })
 
   it('handles files with Windows line endings', () => {
-    const mockReadFileSync = vi.mocked(fs.readFileSync) as any
-    // When splitting on \n, Windows line endings leave \r at the end of lines,
-    // so 'alias npm="socket npm"\r' !== 'alias npm="socket npm"'.
-    // The function doesn't handle Windows line endings properly.
     mockReadFileSync.mockReturnValue(
       'line1\r\nalias npm="socket npm"\r\nalias npx="socket npx"\r\n',
     )
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
-    // The function splits by \n, leaving \r at the end, so exact match fails.
+    expect(result).toBe(false)
+  })
+
+  it('returns false when readFileSync throws (deleted/unreadable file)', () => {
+    mockReadFileSync.mockImplementation(() => {
+      const err = new Error('ENOENT') as NodeJS.ErrnoException
+      err.code = 'ENOENT'
+      throw err
+    })
+    const result = checkSocketWrapperSetup('/home/user/.bashrc-missing')
     expect(result).toBe(false)
   })
 })

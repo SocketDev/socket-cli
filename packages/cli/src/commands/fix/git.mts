@@ -1,56 +1,17 @@
-import { joinAnd } from '@socketsecurity/lib/arrays'
+import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { SOCKET_WEBSITE_URL } from '../../constants/socket.mts'
 
-import type { GhsaDetails } from '../../utils/git/github.mts'
+import type { GhsaDetails } from '../../util/git/github.mts'
 
 const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
-/**
- * Extract unique package names with ecosystems from vulnerability details.
- */
-function getUniquePackages(details: GhsaDetails): string[] {
-  return [
-    ...new Set(
-      details.vulnerabilities.nodes.map(
-        v => `${v.package.name} (${v.package.ecosystem})`,
-      ),
-    ),
-  ]
-}
-
-export type SocketFixBranchParser = (
-  branch: string,
-) => SocketFixBranchParseResult | undefined
-
-export type SocketFixBranchParseResult = {
-  ghsaId: string
-}
-
-export function createSocketFixBranchParser(
-  ghsaId?: string | undefined,
-): SocketFixBranchParser {
-  const pattern = getSocketFixBranchPattern(ghsaId)
-  return function parse(
-    branch: string,
-  ): SocketFixBranchParseResult | undefined {
-    const match = pattern.exec(branch) as [string, string] | null
-    if (!match) {
-      return undefined
-    }
-    const { 1: ghsaId } = match
-    return { ghsaId } as SocketFixBranchParseResult
-  }
-}
-
-export const genericSocketFixBranchParser = createSocketFixBranchParser()
+// GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
+const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 
 export function getSocketFixBranchName(ghsaId: string): string {
   return `socket/fix/${ghsaId}`
 }
-
-// GHSA ID pattern: GHSA-xxxx-xxxx-xxxx (4 alphanumeric segments).
-const GHSA_ID_PATTERN = /^GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i
 
 export function getSocketFixBranchPattern(ghsaId?: string | undefined): RegExp {
   // Escape special regex characters to prevent ReDoS attacks.
@@ -117,4 +78,17 @@ export function getSocketFixPullRequestTitle(ghsaIds: string[]): string {
   return vulnCount === 1 && firstGhsa
     ? `Fix for ${firstGhsa}`
     : `Fixes for ${vulnCount} GHSAs`
+}
+
+/**
+ * Extract unique package names with ecosystems from vulnerability details.
+ */
+export function getUniquePackages(details: GhsaDetails): string[] {
+  return [
+    ...new Set(
+      details.vulnerabilities.nodes.map(
+        v => `${v.package.name} (${v.package.ecosystem})`,
+      ),
+    ),
+  ]
 }

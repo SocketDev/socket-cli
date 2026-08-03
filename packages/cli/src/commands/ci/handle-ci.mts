@@ -1,5 +1,8 @@
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { env } from 'node:process'
+
+import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
@@ -7,15 +10,34 @@ import {
   detectDefaultBranch,
   getRepoName,
   gitBranch,
-} from '../../utils/git/operations.mjs'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+} from '../../util/git/operations.mjs'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 const logger = getDefaultLogger()
 
-export async function handleCi(autoManifest: boolean): Promise<void> {
+/**
+ * Derive the pull request number from CI environment. GitHub Actions
+ * pull_request events check out `refs/pull/<n>/merge`, so the number is
+ * recoverable from GITHUB_REF; returns 0 outside a PR run (the API omits
+ * `pull_request` for falsy values).
+ */
+export function detectCiPullRequestNumber(): number {
+  const match = /^refs\/pull\/(\d+)\//.exec(envAsString(env['GITHUB_REF']))
+  return match ? Number(match[1]) : 0
+}
+
+export async function handleCi(config: {
+  autoManifest: boolean
+  trustSocketJson: boolean
+}): Promise<void> {
+  const { autoManifest, trustSocketJson } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+
   debug('Starting CI scan')
-  debugDir({ autoManifest })
+  debugDir({ autoManifest, trustSocketJson })
 
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
@@ -49,14 +71,17 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     outputKind: 'json',
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
-    pullRequest: 0,
+    pullRequest: detectCiPullRequestNumber(),
     reach: {
+      excludePaths: [],
       reachAnalysisMemoryLimit: 0,
       reachAnalysisTimeout: 0,
       reachConcurrency: 1,
       reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
       reachDisableAnalytics: false,
-      reachDisableAnalysisSplitting: false,
+      reachDisableExternalToolChecks: false,
+      reachEnableAnalysisSplitting: false,
       reachEcosystems: [],
       reachExcludePaths: [],
       reachLazyMode: false,
@@ -64,6 +89,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachSkipCache: false,
       reachUseOnlyPregeneratedSboms: false,
       reachUseUnreachableFromPrecomputation: false,
+      reachVersion: undefined,
       runReachabilityAnalysis: false,
     },
     repoName,
@@ -73,5 +99,6 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     targets: ['.'],
     // Don't set 'tmp' when 'pendingHead' is true.
     tmp: false,
+    trustSocketJson,
   })
 }

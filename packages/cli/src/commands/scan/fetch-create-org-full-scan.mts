@@ -1,10 +1,10 @@
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
 
 import type { CResult } from '../../types.mts'
-import type { SetupSdkOptions } from '../../utils/socket/sdk.mjs'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type FetchCreateOrgFullScanConfigs = {
   branchName: string
@@ -14,6 +14,7 @@ export type FetchCreateOrgFullScanConfigs = {
   pullRequest: number
   repoName: string
   scanType: string | undefined
+  workspace?: string | undefined
 }
 
 export type FetchCreateOrgFullScanOptions = {
@@ -22,7 +23,7 @@ export type FetchCreateOrgFullScanOptions = {
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
   sdkOpts?: SetupSdkOptions | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
   tmp?: boolean | undefined
 }
 
@@ -40,6 +41,7 @@ export async function fetchCreateOrgFullScan(
     pullRequest,
     repoName,
     scanType,
+    workspace,
   } = { __proto__: null, ...config } as FetchCreateOrgFullScanConfigs
 
   const {
@@ -66,15 +68,17 @@ export async function fetchCreateOrgFullScan(
       ...(commitMessage ? { commit_message: commitMessage } : {}),
       ...(committers ? { committers } : {}),
       ...(defaultBranch !== undefined
-        ? { make_default_branch: Boolean(defaultBranch) }
+        ? { make_default_branch: defaultBranch }
         : {}),
       ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
       ...(repoName ? { repo: repoName } : {}),
       ...(scanType ? { scan_type: scanType } : {}),
+      ...(workspace ? { workspace } : {}),
       ...(pendingHead !== undefined
-        ? { set_as_pending_head: Boolean(pendingHead) }
+        ? { set_as_pending_head: pendingHead }
         : {}),
-      ...(tmp !== undefined ? { tmp: Boolean(tmp) } : {}),
+      ...(tmp !== undefined ? { tmp: tmp } : {}),
+      // eslint-disable-next-line typescript-eslint/no-explicit-any -- SDK option shape varies by spread; downstream validates against canonical API contract.
     } as any),
     {
       commandPath,

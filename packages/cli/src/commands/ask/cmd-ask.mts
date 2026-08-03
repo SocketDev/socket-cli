@@ -1,16 +1,15 @@
 import { handleAsk } from './handle-ask.mts'
+import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
-import { meowOrExit } from '../../utils/cli/with-subcommands.mjs'
-import { InputError } from '../../utils/error/errors.mjs'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { InputError } from '../../util/error/errors.mjs'
 import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
-} from '../../utils/output/formatting.mts'
+} from '../../util/output/formatting.mts'
 
-import type {
-  CliCommandConfig,
-  CliCommandContext,
-} from '../../utils/cli/with-subcommands.mjs'
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
 
 export const CMD_NAME = 'ask'
 
@@ -24,16 +23,16 @@ export const cmdAsk = {
   run,
 }
 
-async function run(
+export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: CliCommandContext,
 ): Promise<void> {
-  const config: CliCommandConfig = {
+  const config = {
     commandName: CMD_NAME,
     description,
     hidden,
-    flags: {
+    flags: defineFlags({
       ...commonFlags,
       execute: {
         type: 'boolean',
@@ -46,8 +45,8 @@ async function run(
         default: false,
         description: 'Show detailed explanation',
       },
-    },
-    help: (command, config) => `
+    }),
+    help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
       $ ${command} "<question>" [options]
 
@@ -55,7 +54,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(helpConfig.flags)}
 
     Examples
       $ ${command} "scan for vulnerabilities"
@@ -83,12 +82,12 @@ async function run(
 
   if (!query) {
     throw new InputError(
-      'Please provide a question.\n\nExample: socket ask "scan for vulnerabilities"',
+      'socket ask requires a QUERY positional argument; pass a question like `socket ask "scan for vulnerabilities"`',
     )
   }
 
-  const execute = !!cli.flags['execute']
-  const explain = !!cli.flags['explain']
+  const execute = cli.flags['execute']
+  const explain = cli.flags['explain']
 
   await handleAsk({
     query,

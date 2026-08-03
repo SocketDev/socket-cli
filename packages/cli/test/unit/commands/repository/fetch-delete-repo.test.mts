@@ -1,26 +1,20 @@
 /**
  * Unit tests for fetchDeleteRepo.
  *
- * Purpose:
- * Tests repository deletion via the Socket API. Validates SDK integration, error
- * handling for deletion workflows, and permission checks.
+ * Purpose: Tests repository deletion via the Socket API. Validates SDK
+ * integration, error handling for deletion workflows, and permission checks.
  *
- * Test Coverage:
- * - Successful repository deletion
- * - SDK setup failure handling
- * - API call errors (404 not found, 403 forbidden)
- * - Custom SDK options (API tokens, base URLs)
- * - Insufficient permissions error handling
+ * Test Coverage: - Successful repository deletion - SDK setup failure handling
+ * - API call errors (404 not found, 403 forbidden) - Custom SDK options (API
+ * tokens, base URLs) - Insufficient permissions error handling.
  *
- * Testing Approach:
- * Uses SDK test helpers to mock Socket API interactions. Tests destructive operation
- * error handling and permission scenarios.
+ * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
+ * Tests destructive operation error handling and permission scenarios.
  *
- * Related Files:
- * - src/commands/repository/fetch-delete-repo.mts (implementation)
- * - src/commands/repository/handle-delete-repo.mts (handler)
- * - src/utils/socket/api.mts (API utilities)
- * - src/utils/socket/sdk.mts (SDK setup)
+ * Related Files: - src/commands/repository/fetch-delete-repo.mts
+ * (implementation) - src/commands/repository/handle-delete-repo.mts (handler) -
+ * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
+ * setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -33,11 +27,11 @@ import {
 } from '../../../helpers/sdk-test-helpers.mts'
 
 // Mock the dependencies.
-vi.mock('../../../../src/utils/socket/api.mts', () => ({
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
   handleApiCall: vi.fn(),
 }))
 
-vi.mock('../../../../src/utils/socket/sdk.mts', () => ({
+vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: vi.fn(),
 }))
 

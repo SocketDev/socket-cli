@@ -5,6 +5,7 @@
  * subcommands for viewing and modifying local CLI configuration settings.
  *
  * Test Coverage:
+ *
  * - Help text display and subcommand listing
  * - Dry-run behavior validation
  * - Config override parsing (JSON validation)
@@ -12,22 +13,25 @@
  * - Flag-based config override (--config)
  * - Error handling for invalid JSON in config overrides
  *
- * Configuration Sources (in priority order):
+ * Configuration Sources, in priority order:
+ *
  * 1. Environment variable (SOCKET_CLI_CONFIG)
  * 2. Command-line flag (--config)
  * 3. Local config file
  *
  * Available Subcommands:
- * - auto: Auto-discover and set config values
- * - get: Retrieve a config value
- * - list: Show all config items
- * - set: Update a config value
- * - unset: Clear a config value
+ *
+ * - Auto: Auto-discover and set config values
+ * - Get: Retrieve a config value
+ * - List: Show all config items
+ * - Set: Update a config value
+ * - Unset: Clear a config value
  *
  * Related Files:
- * - src/commands/config/cmd-config.mts - Root command definition
- * - src/commands/config/cmd-config-*.mts - Subcommand definitions
- * - src/utils/config.mts - Config management utilities
+ *
+ * - Src/commands/config/cmd-config.mts - Root command definition
+ * - Src/commands/config/cmd-config-*.mts - Subcommand definitions
+ * - Src/util/config.mts - Config management utilities
  */
 
 import { describe, expect } from 'vitest'
@@ -65,7 +69,8 @@ describe('socket config', async () => {
             Options
           
               --no-banner                 Hide the Socket banner
-              --no-spinner                Hide the console spinner"
+              --no-spinner                Hide the console spinner
+              --quiet                     Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown."
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -89,16 +94,15 @@ describe('socket config', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`,
-      )
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket config\`, cwd: <redacted>
+        [DryRun]: No-op, call a sub-command; ok"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

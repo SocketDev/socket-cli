@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with {
-  type: 'json',
-}
+import FIXTURE from '../../../../src/commands/analytics/analytics-fixture.json' with { type: 'json' }
 import {
   formatDataOrg,
   formatDataRepo,
+  formatDate,
   renderMarkdown,
 } from '../../../../src/commands/analytics/output-analytics.mts'
 
+// formatDate() in output-analytics.mts uses local-time getMonth() /
+// getDate() — the user-visible output is intentionally local. The
+// snapshots encode UTC-day dates (e.g. "Apr 19" for 2025-04-19T04:50Z),
+// matching CI runners which are UTC. scripts/test-wrapper.mts pins TZ
+// to UTC for the spawned vitest process so these snapshots are stable
+// across developer timezones.
 describe('output-analytics', () => {
   describe('format data', () => {
     it('should formatDataRepo', () => {
@@ -188,6 +193,60 @@ describe('output-analytics', () => {
     })
   })
 
+  describe('format data with same-date aggregation', () => {
+    it('aggregates metrics across entries that share a date (line 272)', () => {
+      // Two entries on the same day, formatDataOrg sums their metrics into
+      // the same date bucket. The else-branch creates the first entry; the
+      // if-branch adds onto it.
+      const data = [
+        {
+          created_at: '2025-05-01T01:00:00Z',
+          top_five_alert_types: { alpha: 5 },
+          total_critical_alerts: 1,
+          total_high_alerts: 2,
+          total_medium_alerts: 3,
+          total_low_alerts: 4,
+          total_critical_added: 0,
+          total_high_added: 0,
+          total_medium_added: 0,
+          total_low_added: 0,
+          total_critical_prevented: 0,
+          total_high_prevented: 0,
+          total_medium_prevented: 0,
+          total_low_prevented: 0,
+        },
+        {
+          created_at: '2025-05-01T02:00:00Z', // same day
+          top_five_alert_types: { alpha: 7 },
+          total_critical_alerts: 10,
+          total_high_alerts: 20,
+          total_medium_alerts: 30,
+          total_low_alerts: 40,
+          total_critical_added: 0,
+          total_high_added: 0,
+          total_medium_added: 0,
+          total_low_added: 0,
+          total_critical_prevented: 0,
+          total_high_prevented: 0,
+          total_medium_prevented: 0,
+          total_low_prevented: 0,
+        },
+      ] as unknown
+
+      const result = formatDataOrg(data)
+      // Both entries on the same day get the same date key after formatDate;
+      // we look up that single key dynamically so we don't depend on the
+      // exact format string.
+      const criticalKeys = Object.keys(result.total_critical_alerts)
+      expect(criticalKeys.length).toBe(1)
+      const dateKey = criticalKeys[0]
+      expect(result.total_critical_alerts[dateKey]).toBe(11)
+      expect(result.total_high_alerts[dateKey]).toBe(22)
+      // top_five aggregation also doubles up: 5 + 7 = 12.
+      expect(result.top_five_alert_types['alpha']).toBe(12)
+    })
+  })
+
   describe('format markdown', () => {
     it('should renderMarkdown for repo', () => {
       const fdata = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
@@ -290,6 +349,26 @@ describe('output-analytics', () => {
         | ---------------- | ------ |
         "
       `)
+    })
+  })
+
+  describe('formatDate', () => {
+    it('formats valid dates as "MonthName Day"', () => {
+      const result = formatDate('2026-03-15T00:00:00Z')
+      expect(result).toMatch(
+        /^(?:Apr|Aug|Dec|Feb|Jan|Jul|Jun|Mar|May|Nov|Oct|Sep) \d+$/,
+      )
+    })
+
+    it('returns first 10 chars for invalid date strings', () => {
+      // Invalid date string → getMonth/getDate return NaN → fallback path.
+      const result = formatDate('not-a-real-date')
+      expect(result).toBe('not-a-real')
+    })
+
+    it('returns truncated input when date does not parse', () => {
+      const result = formatDate('XXXX-YY-ZZ')
+      expect(result).toBe('XXXX-YY-ZZ')
     })
   })
 })

@@ -1,20 +1,16 @@
 /**
  * Integration tests for `socket package score` command.
  *
- * Tests retrieving Socket security scores for npm packages. The score
- * reflects overall package security based on multiple issue categories.
+ * Tests retrieving Socket security scores for npm packages. The score reflects
+ * overall package security based on multiple issue categories.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Package spec parsing (ecosystem/name@version)
- * - Score retrieval and display
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Package spec parsing (ecosystem/name@version) - Score retrieval
+ * and display - Output format support (JSON, markdown)
  *
- * Related Files:
- * - src/commands/package/cmd-package-score.mts - Command definition
- * - src/commands/package/handle-package-score.mts - Score retrieval logic
- * - src/commands/package/output-package-score.mts - Formatting
+ * Related Files: - src/commands/package/cmd-package-score.mts - Command
+ * definition - src/commands/package/handle-package-score.mts - Score retrieval
+ * logic - src/commands/package/output-package-score.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -48,6 +44,7 @@ describe('socket package score', async () => {
               Options
                 --json              Output as JSON
                 --markdown          Output as Markdown
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Show deep scoring details for one package. The score will reflect the package
               itself, any of its dependencies, and any of its transitive dependencies.
@@ -132,13 +129,22 @@ describe('socket package score', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket package score\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch package score
+
+          Query parameters:
+            package: pkg:npm/babel
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

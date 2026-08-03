@@ -1,6 +1,6 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { queryApiSafeJson } from '../../utils/socket/api.mjs'
+import { queryApiSafeJson } from '../../util/socket/api.mjs'
 
 import type { CResult } from '../../types.mts'
 

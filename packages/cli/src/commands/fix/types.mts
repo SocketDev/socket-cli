@@ -1,7 +1,7 @@
 import type { OutputKind } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem/types.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
+import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import type { RangeStyle } from '../../util/semver.mts'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
 export type FixConfig = {
   all: boolean
@@ -10,9 +10,11 @@ export type FixConfig = {
   coanaVersion: string | undefined
   cwd: string
   debug: boolean
+  disableExternalToolChecks: boolean
   disableMajorUpdates: boolean
   ecosystems: PURL_Type[]
   exclude: string[]
+  excludePaths: string[]
   ghsas: string[]
   include: string[]
   minimumReleaseAge: string
@@ -20,11 +22,12 @@ export type FixConfig = {
   orgSlug: string
   outputFile: string
   outputKind: OutputKind
+  packageManagers: string[]
   prCheck: boolean
   prLimit: number
   rangeStyle: RangeStyle
   showAffectedDirectDependencies: boolean
   silence: boolean
-  spinner: Spinner | undefined
+  spinner: SpinnerInstance | undefined
   unknownFlags: string[]
 }

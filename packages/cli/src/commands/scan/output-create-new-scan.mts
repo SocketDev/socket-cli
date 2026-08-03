@@ -1,23 +1,23 @@
 import open from 'open'
 import terminalLink from 'terminal-link'
 
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { getDefaultSpinner } from '@socketsecurity/lib/spinner'
-import { confirm } from '@socketsecurity/lib/stdio/prompts'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
+import { confirm } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { mdHeader } from '../../utils/output/markdown.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdHeader } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/lib/spinner'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export type CreateNewScanOptions = {
   interactive?: boolean | undefined
   outputKind?: OutputKind | undefined
-  spinner?: Spinner | undefined
+  spinner?: SpinnerInstance | undefined
 }
 
 export async function outputCreateNewScan(
@@ -34,7 +34,7 @@ export async function outputCreateNewScan(
     process.exitCode = result.code ?? 1
   }
 
-  const wasSpinning = !!spinner?.isSpinning
+  const wasSpinning = spinner?.isSpinning
 
   spinner?.stop()
 

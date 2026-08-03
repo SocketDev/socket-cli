@@ -3,20 +3,15 @@
  *
  * Tests the beta threat feed feature for viewing recent security threats.
  *
- * Test Coverage:
- * - Help text display and usage examples
- * - Dry-run behavior validation
- * - Threat feed retrieval
- * - Filtering options
- * - Output format support (JSON, markdown)
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Threat feed retrieval - Filtering options - Output format
+ * support (JSON, markdown)
  *
- * Beta Feature:
- * This command is in beta and subject to changes.
+ * Beta Feature: This command is in beta and subject to changes.
  *
- * Related Files:
- * - src/commands/threat-feed/cmd-threat-feed.mts - Command definition
- * - src/commands/threat-feed/handle-threat-feed.mts - Feed retrieval logic
- * - src/commands/threat-feed/output-threat-feed.mts - Formatting
+ * Related Files: - src/commands/threat-feed/cmd-threat-feed.mts - Command
+ * definition - src/commands/threat-feed/handle-threat-feed.mts - Feed retrieval
+ * logic - src/commands/threat-feed/output-threat-feed.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'
@@ -64,6 +59,7 @@ describe('socket threat-feed', async () => {
                 --page              Page token
                 --per-page          Number of items per page
                 --pkg               Filter by this package name
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
                 --version           Filter by this package version
           
               Valid ecosystems:
@@ -137,7 +133,7 @@ describe('socket threat-feed', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -166,14 +162,28 @@ describe('socket threat-feed', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch threat feed data
+
+          Query parameters:
+            organization: boo
+            ecosystem: all
+            type: mal (default)
+            perPage: 30
+            page: 1
+            direction: desc
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -193,7 +203,7 @@ describe('socket threat-feed', async () => {
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>
 
-        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        \\u203c Unable to determine the target org. Trying to auto-discover it now\\u2026
         i Note: Run \`socket login\` to set a default org.
               Use the --org flag to override the default org.
 
@@ -219,14 +229,28 @@ describe('socket threat-feed', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch threat feed data
+
+          Query parameters:
+            organization: fakeOrg
+            ecosystem: all
+            type: mal (default)
+            perPage: 30
+            page: 1
+            direction: desc
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -247,14 +271,28 @@ describe('socket threat-feed', async () => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
 
       // Validate dry-run output to prevent flipped snapshots.
-      expectDryRunOutput(stdout)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _          /---------------
             |   __|___ ___| |_ ___| |_        | CLI: <redacted>
             |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket threat-feed\`, cwd: <redacted>
+
+
+        [DryRun]: Would fetch threat feed data
+
+          Query parameters:
+            organization: forcedorg
+            ecosystem: all
+            type: mal (default)
+            perPage: 30
+            page: 1
+            direction: desc
+
+          This is a read-only operation that does not modify any data.
+          Run without --dry-run to fetch and display the data."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

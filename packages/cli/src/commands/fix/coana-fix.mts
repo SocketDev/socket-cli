@@ -1,100 +1,41 @@
-import { promises as fs } from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 
-import { joinAnd } from '@socketsecurity/lib/arrays'
-import { debug, debugDir } from '@socketsecurity/lib/debug'
-import { readJsonSync } from '@socketsecurity/lib/fs'
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
-import { pluralize } from '@socketsecurity/lib/words'
+import { debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-import {
-  cleanupErrorBranches,
-  cleanupFailedPrBranches,
-  cleanupStaleBranch,
-  cleanupSuccessfulPrLocalBranch,
-} from './branch-cleanup.mts'
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from './env-helpers.mts'
-import { isGhsaFixed, markGhsaFixed } from './ghsa-tracker.mts'
-import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { logPrEvent } from './pr-lifecycle-logger.mts'
-import {
-  cleanupSocketFixPrs,
-  getSocketFixPrs,
-  openSocketFixPr,
-} from './pull-request.mts'
-import { FLAG_DRY_RUN } from '../../constants/cli.mts'
-import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
+import { runCiCoanaFix } from './coana-fix-ci.mts'
+import { runLocalCoanaFix } from './coana-fix-local.mts'
+import { getFixEnv } from './env-helpers.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { spawnCoanaDlx } from '../../utils/dlx/spawn.mjs'
-import { getErrorCause } from '../../utils/error/errors.mjs'
-import { getPackageFilesForScan } from '../../utils/fs/path-resolve.mjs'
-import {
-  enablePrAutoMerge,
-  fetchGhsaDetails,
-  getOctokit,
-  setGitRemoteGithubRepoUrl,
-} from '../../utils/git/github.mts'
-import {
-  gitCheckoutBranch,
-  gitCommit,
-  gitCreateBranch,
-  gitPushBranch,
-  gitRemoteBranchExists,
-  gitResetAndClean,
-  gitUnstagedModifiedFiles,
-} from '../../utils/git/operations.mjs'
-import { handleApiCall } from '../../utils/socket/api.mjs'
-import { setupSdk } from '../../utils/socket/sdk.mjs'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { excludePathToProjectIgnorePath } from '../scan/exclude-paths.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
-const logger = getDefaultLogger()
+import type { GhsaFixResult } from './coana-fix-ci.mts'
 
-/**
- * Safely delete a temporary file, ignoring errors.
- */
-async function cleanupTempFile(filePath: string): Promise<void> {
-  try {
-    await fs.unlink(filePath)
-  } catch (_e) {
-    // Ignore cleanup errors.
-  }
-}
+export type { GhsaFixResult } from './coana-fix-ci.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
-): Promise<CResult<{ data?: unknown; fixed: boolean }>> {
-  const {
-    all,
-    applyFixes,
-    autopilot,
-    coanaVersion,
-    cwd,
-    debug: debugFlag,
-    disableMajorUpdates,
-    ecosystems,
-    exclude,
-    ghsas,
-    include,
-    minimumReleaseAge,
-    orgSlug,
-    outputFile,
-    outputKind,
-    prLimit,
-    showAffectedDirectDependencies,
-    spinner,
-  } = fixConfig
+): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
+  const { all, cwd, excludePaths, ghsas, orgSlug, outputKind, spinner } =
+    fixConfig
 
-  // Determine stdio based on output mode:
-  // - 'ignore' when outputKind === 'json': suppress all coana output, return clean JSON response
-  // - 'inherit' otherwise: user sees coana progress in real-time
+  // Under json/markdown mode we route coana's chatter away from our
+  // stdout (its JSON report comes from --output-file, not stdout, so
+  // coana stdout is entirely informational). 'ignore' drops it; that
+  // was the previous behavior and it remains safe. When interactive we
+  // inherit so the user sees coana progress in real-time.
   const coanaStdio = outputKind === 'json' ? 'ignore' : 'inherit'
+  // Ask coana to silence its own Winston logger under json mode. Belt
+  // and braces with stdio:'ignore' and harmless if coana ignores the
+  // flag.
+  const coanaSilenceArgs = outputKind === 'json' ? ['--silent'] : []
 
   const fixEnv = await getFixEnv()
   debugDir({ fixEnv })
@@ -114,17 +55,52 @@ export async function coanaFix(
   }
 
   const supportedFiles = supportedFilesCResult.data
+
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
+  // --exclude-paths joins socket.yml's projectIgnorePaths so manifest
+  // discovery skips those subtrees. Without it a directory the running user
+  // cannot enter aborts collection before coana is ever invoked, and the user
+  // has no way to route around it.
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+
   const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+    config: effectiveSocketConfig,
     cwd,
   })
 
-  // Exclude any .socket.facts.json files that happen to be in the scan
-  // folder before the analysis was run.
-  const filepathsToUpload = scanFilepaths.filter(
-    p => path.basename(p).toLowerCase() !== DOT_SOCKET_DOT_FACTS_JSON,
+  // A .socket.facts.json in the scan folder is an analysis artifact from an
+  // earlier run, not a manifest. Uploading it silently poisons the fix input,
+  // so stop and name the files to delete.
+  const factsFiles = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON,
   )
+  if (factsFiles.length) {
+    spinner?.stop()
+    return {
+      ok: false,
+      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} among the manifest files collected under ${cwd}`,
+      cause: `Delete the following ${pluralize('file', { count: factsFiles.length })} and run socket fix again:\n${factsFiles.map(p => `  - ${p}`).join('\n')}`,
+    }
+  }
   const uploadCResult = (await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload, {
+    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
       pathsRelativeTo: cwd,
     }),
     {
@@ -132,13 +108,13 @@ export async function coanaFix(
       description: 'upload manifests',
       spinner,
     },
-  )) as any
+  )) as CResult<{ tarHash?: string | undefined }>
 
   if (!uploadCResult.ok) {
     return uploadCResult
   }
 
-  const tarHash: string = (uploadCResult as any).data.tarHash
+  const tarHash: string | undefined = uploadCResult.data.tarHash
   if (!tarHash) {
     spinner?.stop()
     return {
@@ -155,558 +131,20 @@ export async function coanaFix(
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
   if (!shouldOpenPrs) {
-    // In local mode, if neither --all nor --id is provided, show deprecation warning.
-    if (shouldDiscoverGhsaIds && !all) {
-      logger.warn(
-        'Implicit --all is deprecated in local mode and will be removed in a future release. Please use --all explicitly.',
-      )
-    }
-
-    // Inform user about local mode when fixes will be applied.
-    if (applyFixes && ghsas.length) {
-      const envCheck = checkCiEnvVars()
-      if (envCheck.present.length) {
-        // Some CI vars are set but not all - show what's missing.
-        if (envCheck.missing.length) {
-          logger.info(
-            'Running in local mode - fixes will be applied directly to your working directory.\n' +
-              `Missing environment variables for PR creation: ${joinAnd(envCheck.missing)}`,
-          )
-        }
-      } else {
-        // No CI vars are present - show general local mode message.
-        logger.info(
-          'Running in local mode - fixes will be applied directly to your working directory.\n' +
-            getCiEnvInstructions(),
-        )
-      }
-    }
-
-    // In local mode, apply limit to provided IDs.
-    const idsToProcess = shouldDiscoverGhsaIds
-      ? ['all']
-      : ghsas.slice(0, prLimit)
-    if (!idsToProcess.length) {
-      spinner?.stop()
-      return { ok: true, data: { fixed: false } }
-    }
-
-    // Create a temporary file for the output.
-    const tmpDir = os.tmpdir()
-    const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`)
-
-    try {
-      const fixCResult = await spawnCoanaDlx(
-        [
-          'compute-fixes-and-upgrade-purls',
-          cwd,
-          '--manifests-tar-hash',
-          tarHash,
-          '--apply-fixes-to',
-          ...idsToProcess,
-          ...(fixConfig.rangeStyle
-            ? ['--range-style', fixConfig.rangeStyle]
-            : []),
-          ...(minimumReleaseAge
-            ? ['--minimum-release-age', minimumReleaseAge]
-            : []),
-          ...(include.length ? ['--include', ...include] : []),
-          ...(exclude.length ? ['--exclude', ...exclude] : []),
-          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-          ...(!applyFixes ? [FLAG_DRY_RUN] : []),
-          '--output-file',
-          tmpFile,
-          ...(debugFlag ? ['--debug'] : []),
-          ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-          ...(showAffectedDirectDependencies
-            ? ['--show-affected-direct-dependencies']
-            : []),
-          ...fixConfig.unknownFlags,
-        ],
-        fixConfig.orgSlug,
-        { coanaVersion, cwd, spinner, stdio: coanaStdio },
-      )
-
-      spinner?.stop()
-
-      if (!fixCResult.ok) {
-        return fixCResult
-      }
-
-      // Read the temporary file to get the actual fixes result.
-      const fixesResultJson = readJsonSync(tmpFile, { throws: false })
-
-      // Copy to outputFile if provided.
-      if (outputFile) {
-        logger.info(`Copying fixes result to ${outputFile}`)
-        const tmpContent = await fs.readFile(tmpFile, 'utf8')
-        await fs.writeFile(outputFile, tmpContent, 'utf8')
-      }
-
-      return { ok: true, data: { data: fixesResultJson, fixed: true } }
-    } finally {
-      // Clean up the temporary file.
-      await cleanupTempFile(tmpFile)
-    }
+    return await runLocalCoanaFix(fixConfig, {
+      coanaSilenceArgs,
+      coanaStdio,
+      shouldDiscoverGhsaIds,
+      tarHash,
+    })
   }
 
-  // Adjust PR limit based on open Socket Fix PRs.
-  let adjustedLimit = prLimit
-  if (shouldOpenPrs && fixEnv.repoInfo) {
-    try {
-      const openPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { states: GQL_PR_STATE_OPEN },
-      )
-      const openPrCount = openPrs.length
-      // Reduce limit by number of open PRs to avoid creating too many.
-      adjustedLimit = Math.max(0, prLimit - openPrCount)
-      if (openPrCount > 0) {
-        debug(
-          `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
-        )
-      }
-    } catch (e) {
-      debug('Failed to count open PRs, using original limit')
-      debugDir(e)
-    }
-  }
-
-  const shouldSpawnCoana = adjustedLimit > 0
-
-  let ids: string[] | undefined
-
-  // When shouldDiscoverGhsaIds is true, discover vulnerabilities using find-vulnerabilities command.
-  // This gives us the GHSA IDs needed to create individual PRs in CI mode.
-  if (shouldSpawnCoana && shouldDiscoverGhsaIds) {
-    try {
-      const discoverCResult = await spawnCoanaDlx(
-        [
-          'find-vulnerabilities',
-          cwd,
-          '--manifests-tar-hash',
-          tarHash,
-          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ],
-        fixConfig.orgSlug,
-        { coanaVersion, cwd, spinner },
-        { stdio: 'pipe' },
-      )
-
-      if (discoverCResult.ok) {
-        // Coana prints ghsaIds as json-formatted string on the final line of the output.
-        const discoveredIds: string[] = []
-        try {
-          const lines = discoverCResult.data
-            .trim()
-            .split('\n')
-            .filter(line => line.trim())
-          const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
-          if (ghsaIdsRaw && ghsaIdsRaw.trim()) {
-            const parsed = JSON.parse(ghsaIdsRaw)
-            if (!Array.isArray(parsed)) {
-              throw new Error('Expected array of GHSA IDs from coana output')
-            }
-            discoveredIds.push(...parsed)
-          }
-        } catch (e) {
-          debug('Failed to parse GHSA IDs from find-vulnerabilities output')
-          debugDir(e)
-        }
-        ids = discoveredIds.slice(0, adjustedLimit)
-      }
-    } catch (e) {
-      debug('Failed to discover vulnerabilities')
-      debugDir(e)
-    }
-  } else if (shouldSpawnCoana) {
-    ids = ghsas.slice(0, adjustedLimit)
-  }
-
-  if (!ids?.length) {
-    debug('miss: no GHSA IDs to process')
-  }
-
-  if (!fixEnv.repoInfo) {
-    debug('miss: no repo info detected')
-  }
-
-  if (!ids?.length || !fixEnv.repoInfo) {
-    spinner?.stop()
-    return { ok: true, data: { fixed: false } }
-  }
-
-  const displayIds =
-    ids.length > 3
-      ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
-      : joinAnd(ids)
-  debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
-
-  const ghsaDetails = await fetchGhsaDetails(ids)
-  const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
-
-  debug(`found: ${ghsaDetails.size} GHSA details`)
-
-  // Filter out already-fixed GHSAs to avoid duplicate work.
-  const unprocessedIds: string[] = []
-  for (const ghsaId of ids) {
-    // eslint-disable-next-line no-await-in-loop
-    const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
-    if (!alreadyFixed) {
-      unprocessedIds.push(ghsaId)
-    }
-  }
-
-  const skippedCount = ids.length - unprocessedIds.length
-  if (skippedCount > 0) {
-    logger.info(
-      `Skipping ${skippedCount} already-fixed ${pluralize('GHSA', { count: skippedCount })}`,
-    )
-  }
-
-  // Clean up stale and merged Socket Fix PRs before creating new ones.
-  if (shouldOpenPrs && fixEnv.repoInfo) {
-    logger.substep('Cleaning up stale and merged Socket Fix PRs...')
-
-    for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
-      const ghsaId = unprocessedIds[i]!
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        const cleaned = await cleanupSocketFixPrs(
-          fixEnv.repoInfo.owner,
-          fixEnv.repoInfo.repo,
-          ghsaId,
-        )
-        if (cleaned.length) {
-          debug(`pr: cleaned ${cleaned.length} PRs for ${ghsaId}`)
-        }
-      } catch (e) {
-        debug(`pr: cleanup failed for ${ghsaId}`)
-        debugDir(e)
-      }
-    }
-  }
-
-  let count = 0
-  let overallFixed = false
-
-  // Process each GHSA ID individually.
-  // Use unprocessedIds instead of ids to skip already-fixed GHSAs.
-  for (let i = 0, { length } = unprocessedIds; i < length; i += 1) {
-    const ghsaId = unprocessedIds[i]!
-    debug(`check: ${ghsaId}`)
-
-    // Apply fix for single GHSA ID.
-    // eslint-disable-next-line no-await-in-loop
-    const fixCResult = await spawnCoanaDlx(
-      [
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
-        tarHash,
-        '--apply-fixes-to',
-        ghsaId,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(exclude.length ? ['--exclude', ...exclude] : []),
-        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ...(debugFlag ? ['--debug'] : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ],
-      fixConfig.orgSlug,
-      { coanaVersion, cwd, spinner, stdio: coanaStdio },
-    )
-
-    if (!fixCResult.ok) {
-      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
-      continue
-    }
-
-    // Check for modified files after applying the fix.
-    // eslint-disable-next-line no-await-in-loop
-    const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-    const modifiedFiles = unstagedCResult.ok
-      ? unstagedCResult.data.filter(relPath =>
-          scanBaseNames.has(path.basename(relPath)),
-        )
-      : []
-
-    if (!modifiedFiles.length) {
-      debug(`skip: no changes for ${ghsaId}`)
-      continue
-    }
-
-    overallFixed = true
-
-    const branch = getSocketFixBranchName(ghsaId)
-
-    try {
-      // Check for existing open PRs for this GHSA before creating a new one.
-      // eslint-disable-next-line no-await-in-loop
-      const existingPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { ghsaId, states: GQL_PR_STATE_OPEN },
-      )
-
-      if (existingPrs.length) {
-        debug(`pr: found ${existingPrs.length} existing open PRs for ${ghsaId}`)
-
-        // Close outdated PRs with explanatory comment.
-        for (
-          let j = 0, { length: prLength } = existingPrs;
-          j < prLength;
-          j += 1
-        ) {
-          const pr = existingPrs[j]!
-          try {
-            const octokit = getOctokit()
-            // eslint-disable-next-line no-await-in-loop
-            await octokit.issues.createComment({
-              owner: fixEnv.repoInfo.owner,
-              repo: fixEnv.repoInfo.repo,
-              issue_number: pr.number,
-              body: 'Closing this PR as a newer fix is available.',
-            })
-
-            // eslint-disable-next-line no-await-in-loop
-            await octokit.pulls.update({
-              owner: fixEnv.repoInfo.owner,
-              repo: fixEnv.repoInfo.repo,
-              pull_number: pr.number,
-              state: 'closed',
-            })
-
-            debug(`pr: closed superseded PR #${pr.number} for ${ghsaId}`)
-            logPrEvent('superseded', pr.number, ghsaId)
-          } catch (e) {
-            debug(`pr: failed to close superseded PR #${pr.number}`)
-            debugDir(e)
-          }
-        }
-      }
-
-      // Check if an open PR already exists for this GHSA.
-      // eslint-disable-next-line no-await-in-loop
-      const existingOpenPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        { ghsaId, states: GQL_PR_STATE_OPEN },
-      )
-
-      if (existingOpenPrs.length > 0) {
-        const [firstPr] = existingOpenPrs
-        const prNum = firstPr?.number
-        if (prNum) {
-          logger.info(`PR #${prNum} already exists for ${ghsaId}, skipping.`)
-          debug(`skip: open PR #${prNum} exists for ${ghsaId}`)
-        }
-        continue
-      }
-
-      // If branch exists but no open PR, delete the stale branch.
-      // This handles cases where PR creation failed but branch was pushed.
-      // eslint-disable-next-line no-await-in-loop
-      if (await gitRemoteBranchExists(branch, cwd)) {
-        // eslint-disable-next-line no-await-in-loop
-        const shouldContinue = await cleanupStaleBranch(branch, ghsaId, cwd)
-        if (!shouldContinue) {
-          continue
-        }
-      }
-
-      // Check for GitHub token before doing any git operations.
-      if (!fixEnv.githubToken) {
-        logger.error(
-          'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
-            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
-        )
-        debug(`skip: missing GitHub token for ${ghsaId}`)
-        continue
-      }
-
-      debug(`pr: creating for ${ghsaId}`)
-
-      const details = ghsaDetails.get(ghsaId)
-      debug(`ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`)
-
-      const pushed =
-        // eslint-disable-next-line no-await-in-loop
-        (await gitCreateBranch(branch, cwd)) &&
-        // eslint-disable-next-line no-await-in-loop
-        (await gitCheckoutBranch(branch, cwd)) &&
-        // eslint-disable-next-line no-await-in-loop
-        (await gitCommit(
-          getSocketFixCommitMessage(ghsaId, details),
-          modifiedFiles,
-          {
-            cwd,
-            email: fixEnv.gitEmail,
-            user: fixEnv.gitUser,
-          },
-        )) &&
-        // eslint-disable-next-line no-await-in-loop
-        (await gitPushBranch(branch, cwd))
-
-      if (!pushed) {
-        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
-        // Clean up branches after push failure.
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-          // eslint-disable-next-line no-await-in-loop
-          await cleanupErrorBranches(branch, cwd, remoteBranchExists)
-        } catch (e) {
-          debug('pr: failed to cleanup branches after push failure')
-          debugDir(e)
-        }
-        // Clean up local state.
-        // eslint-disable-next-line no-await-in-loop
-        await gitResetAndClean(fixEnv.baseBranch, cwd)
-        // eslint-disable-next-line no-await-in-loop
-        await gitCheckoutBranch(fixEnv.baseBranch, cwd)
-        continue
-      }
-
-      // Set up git remote.
-      // eslint-disable-next-line no-await-in-loop
-      await setGitRemoteGithubRepoUrl(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        fixEnv.githubToken,
-        cwd,
-      )
-
-      // eslint-disable-next-line no-await-in-loop
-      const prResult = await openSocketFixPr(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        branch,
-        // Single GHSA ID.
-        [ghsaId],
-        {
-          baseBranch: fixEnv.baseBranch,
-          cwd,
-          ghsaDetails,
-        },
-      )
-
-      if (prResult.ok) {
-        const { data } = prResult.pr
-        const prRef = `PR #${data.number}`
-
-        logger.success(`Opened ${prRef} for ${ghsaId}.`)
-        logger.info(`PR URL: ${data.html_url}`)
-        logPrEvent('created', data.number, ghsaId, data.html_url)
-
-        // Mark GHSA as fixed in tracker.
-        // eslint-disable-next-line no-await-in-loop
-        await markGhsaFixed(cwd, ghsaId, data.number, branch)
-
-        if (autopilot) {
-          logger.indent()
-          spinner?.indent()
-          // eslint-disable-next-line no-await-in-loop
-          const { details, enabled } = await enablePrAutoMerge(data)
-          if (enabled) {
-            logger.info(`Auto-merge enabled for ${prRef}.`)
-          } else {
-            const message = `Failed to enable auto-merge for ${prRef}${
-              details ? `:\n${details.map(d => ` - ${d}`).join('\n')}` : '.'
-            }`
-            logger.error(message)
-          }
-          logger.dedent()
-          spinner?.dedent()
-        }
-
-        // Clean up local branch only - keep remote branch for PR merge.
-        // eslint-disable-next-line no-await-in-loop
-        await cleanupSuccessfulPrLocalBranch(branch, cwd)
-      } else {
-        // Handle PR creation failures.
-        if (prResult.reason === 'already_exists') {
-          logger.info(
-            `PR already exists for ${ghsaId} (this should not happen due to earlier check).`,
-          )
-          // Don't delete branch - PR exists and needs it.
-        } else if (prResult.reason === 'validation_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}:\n${prResult.details}`,
-          )
-          // eslint-disable-next-line no-await-in-loop
-          await cleanupFailedPrBranches(branch, cwd)
-        } else if (prResult.reason === 'permission_denied') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: Permission denied. Check SOCKET_CLI_GITHUB_TOKEN permissions.`,
-          )
-          // eslint-disable-next-line no-await-in-loop
-          await cleanupFailedPrBranches(branch, cwd)
-        } else if (prResult.reason === 'network_error') {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: Network error. Please try again.`,
-          )
-          // eslint-disable-next-line no-await-in-loop
-          await cleanupFailedPrBranches(branch, cwd)
-        } else {
-          logger.error(
-            `Failed to create PR for ${ghsaId}: ${prResult.error.message}`,
-          )
-          // eslint-disable-next-line no-await-in-loop
-          await cleanupFailedPrBranches(branch, cwd)
-        }
-      }
-
-      // Reset back to base branch for next iteration.
-      // eslint-disable-next-line no-await-in-loop
-      await gitResetAndClean(fixEnv.baseBranch, cwd)
-      // eslint-disable-next-line no-await-in-loop
-      await gitCheckoutBranch(fixEnv.baseBranch, cwd)
-    } catch (e) {
-      logger.warn(
-        `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
-      )
-      debugDir(e)
-      // Clean up branches after unexpected error.
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        const remoteBranchExists = await gitRemoteBranchExists(branch, cwd)
-        // eslint-disable-next-line no-await-in-loop
-        await cleanupErrorBranches(branch, cwd, remoteBranchExists)
-      } catch (cleanupError) {
-        debug('pr: failed to cleanup branches during exception cleanup')
-        debugDir(cleanupError)
-      }
-      // Clean up local state.
-      // eslint-disable-next-line no-await-in-loop
-      await gitResetAndClean(fixEnv.baseBranch, cwd)
-      // eslint-disable-next-line no-await-in-loop
-      await gitCheckoutBranch(fixEnv.baseBranch, cwd)
-    }
-
-    count += 1
-    debug(
-      `increment: count ${count}/${Math.min(adjustedLimit, unprocessedIds.length)}`,
-    )
-    if (count >= adjustedLimit) {
-      break
-    }
-  }
-
-  spinner?.stop()
-
-  return {
-    ok: true,
-    data: { fixed: overallFixed },
-  }
+  return await runCiCoanaFix(fixConfig, {
+    coanaSilenceArgs,
+    coanaStdio,
+    fixEnv,
+    scanFilepaths,
+    shouldDiscoverGhsaIds,
+    tarHash,
+  })
 }

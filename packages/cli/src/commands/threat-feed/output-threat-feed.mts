@@ -1,12 +1,36 @@
-import { getDefaultLogger } from '@socketsecurity/lib/logger'
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { failMsgWithBadge } from '../../utils/error/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/output/result-json.mjs'
-import { getPurlObject } from '../../utils/purl/parse.mts'
+import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
+import { mdTable } from '../../util/output/markdown.mts'
+import { serializeResultJson } from '../../util/output/result-json.mjs'
+import { getPurlObject } from '../../util/purl/parse.mts'
 
 import type { ThreadFeedResponse } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+
 const logger = getDefaultLogger()
+
+export function formatThreatFeedTable(data: ThreadFeedResponse): string {
+  const rows = data.results.map(r => {
+    const purlObj = getPurlObject(r.purl, { throws: false })
+    return {
+      created: r.createdAt,
+      ecosystem: purlObj?.type ?? '',
+      name: purlObj?.name ?? '',
+      version: purlObj?.version ?? '',
+      threat: r.threatType,
+      description: r.description,
+    }
+  })
+  return mdTable(rows, [
+    'created',
+    'ecosystem',
+    'name',
+    'version',
+    'threat',
+    'description',
+  ])
+}
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
@@ -30,30 +54,5 @@ export async function outputThreatFeed(
     return
   }
 
-  await outputWithInk(result.data)
-}
-
-/**
- * Display threat feed using Ink React components.
- */
-async function outputWithInk(data: ThreadFeedResponse): Promise<void> {
-  const React = await import('react')
-  const { render } = await import('ink')
-  const { ThreatFeedApp } = await import('./ThreatFeedApp.js')
-
-  render(
-    React.createElement(ThreatFeedApp, {
-      results: data.results.map(result => {
-        const purlObj = getPurlObject(result.purl, { throws: false })
-        return {
-          ...result,
-          parsed: {
-            ecosystem: purlObj?.type || '',
-            name: purlObj?.name || '',
-            version: purlObj?.version || '',
-          },
-        }
-      }),
-    }),
-  )
+  logger.log(formatThreatFeedTable(result.data))
 }
