@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { expandEnvVarRefs } from './expand-env-var-refs.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
+import { getErrorMessageOr } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
@@ -62,7 +63,9 @@ export async function enumerateWorkspaces({
     process.exitCode = 1
     logger.fail(
       `Could not run the ${ecosystem} build tool` +
-        (verbose ? `: ${e}` : ' (run with --verbose for details).'),
+        (verbose
+          ? `: ${getErrorMessageOr(e, String(e))}`
+          : ' (run with --verbose for details).'),
     )
     return
   }

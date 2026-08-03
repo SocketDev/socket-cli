@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('./discover-manifest-roots.mts', () => ({
-  findBuildToolCandidates: vi.fn(),
-  // Identity: test dirs are already-absolute plain strings, no symlinks involved.
-  realpathOrResolved: vi.fn(async (dir: string) => dir),
-}))
+vi.mock('./discover-manifest-roots.mts', async importOriginal => {
+  const actual =
+    await importOriginal<typeof import('./discover-manifest-roots.mts')>()
+  return {
+    findBuildToolCandidates: vi.fn(),
+    // Identity: test dirs are already-absolute plain strings, no symlinks involved.
+    realpathOrResolved: vi.fn(async (dir: string) => dir),
+    // Real (pure) implementation - no need to mock it.
+    withoutDisabledFlags: actual.withoutDisabledFlags,
+  }
+})
 vi.mock('./enumerate-workspaces.mts', () => ({
   enumerateWorkspaces: vi.fn(),
 }))

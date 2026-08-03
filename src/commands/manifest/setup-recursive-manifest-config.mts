@@ -9,6 +9,7 @@ import { select } from '@socketsecurity/registry/lib/prompts'
 import {
   findBuildToolCandidates,
   realpathOrResolved,
+  withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { enumerateWorkspaces } from './enumerate-workspaces.mts'
 import { resolveEcosystemConfig } from './generate-recursive-manifests.mts'
@@ -41,28 +42,6 @@ const ECOSYSTEM_LABELS: Record<BuildTool, string> = {
   maven: 'Maven',
   sbt: 'sbt',
 } as unknown as Record<BuildTool, string>
-
-// findBuildToolCandidates skips scanning for a root-disabled tool entirely
-// (correct for generation) but that would hide it from this wizard with no
-// way to re-enable it. Strip disabled before the scan only; every prompt and
-// write still reads the real sockJson.
-function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
-  const manifest = sockJson.defaults?.manifest
-  if (!manifest) {
-    return sockJson
-  }
-  const stripped: Record<string, unknown> = { ...manifest }
-  for (const ecosystem of ROOT_ECOSYSTEMS) {
-    const section = manifest[ecosystem]
-    if (section?.disabled) {
-      stripped[ecosystem] = { ...section, disabled: false }
-    }
-  }
-  return {
-    ...sockJson,
-    defaults: { ...sockJson.defaults, manifest: stripped },
-  } as SocketJson
-}
 
 // The shallowest directory matching `--exclude-paths`, not necessarily a
 // project dir itself - one write here covers every project beneath it.

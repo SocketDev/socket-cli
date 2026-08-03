@@ -8,6 +8,7 @@ import { commonFlags } from '../../flags.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
 
 import type {
   CliCommandConfig,
@@ -105,6 +106,7 @@ async function run(
   }
 
   const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertValidExcludePaths(excludePaths)
 
   await handleManifestSetup(
     cwd,

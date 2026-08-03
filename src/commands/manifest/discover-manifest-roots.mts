@@ -32,6 +32,29 @@ for (const tool of BUILD_TOOLS) {
   }
 }
 
+// A disabled ecosystem is skipped entirely by the glob scan below, so a
+// nested socket.json re-enabling it would never even be searched for. Callers
+// that need the cascade (not just the root file) to decide skip vs. include
+// must strip `disabled` here first, and let their own per-directory cascade
+// check apply it instead.
+export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
+  const manifest = sockJson.defaults?.manifest
+  if (!manifest) {
+    return sockJson
+  }
+  const stripped: Record<string, unknown> = { ...manifest }
+  for (const tool of BUILD_TOOLS) {
+    const section = manifest[tool]
+    if (section?.disabled) {
+      stripped[tool] = { ...section, disabled: false }
+    }
+  }
+  return {
+    ...sockJson,
+    defaults: { ...sockJson.defaults, manifest: stripped },
+  } as SocketJson
+}
+
 export async function realpathOrResolved(dir: string): Promise<string> {
   try {
     return await fs.realpath(dir)

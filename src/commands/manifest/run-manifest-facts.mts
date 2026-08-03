@@ -8,6 +8,7 @@ import { renderResolutionErrorReport } from './scripts/resolution-report-render.
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
+import { getErrorMessageOr } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
@@ -30,6 +31,12 @@ function tailBuildOutput(stdout: string, stderr: string): string {
     .join('\n')
   return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
 }
+
+// `null` = a real failure (crash, missing config, blocking unresolved
+// dependency); `undefined` = genuinely nothing to resolve, not a failure.
+// Distinguishing the two here means callers never have to infer it from
+// `process.exitCode`, which can already be non-zero for an unrelated reason.
+export type RunManifestFactsOutcome = RunManifestFactsResult | null | undefined
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
@@ -66,7 +73,7 @@ export async function runManifestFacts({
   tmpDir?: string | undefined
   verbose: boolean
   withFiles?: boolean | undefined
-}): Promise<RunManifestFactsResult | undefined> {
+}): Promise<RunManifestFactsOutcome> {
   const factsPath = path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)
 
   let resolvedJavaHome: string | undefined
@@ -77,12 +84,12 @@ export async function runManifestFacts({
       logger.fail(
         `javaHome (\`${javaHome}\`) references \`${expanded.missing}\`, which is not set in this environment.`,
       )
-      return
+      return null
     }
     resolvedJavaHome = expanded.value
   }
 
-  logger.log(
+  logger.info(
     `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
   )
 
@@ -134,9 +141,11 @@ export async function runManifestFacts({
     process.exitCode = 1
     logger.fail(
       `Could not run the ${ecosystem} build tool` +
-        (verbose ? `: ${e}` : ' (run with --verbose for details).'),
+        (verbose
+          ? `: ${getErrorMessageOr(e, String(e))}`
+          : ' (run with --verbose for details).'),
     )
-    return
+    return null
   }
   const { artifactPaths, code, facts, report, stderr, stdout } = result
 
@@ -156,7 +165,7 @@ export async function runManifestFacts({
       if (verbose && rendered.details) {
         logger.log(rendered.details)
       }
-      return
+      return null
     }
   }
   if (rendered.nonBlockingNotice) {
@@ -195,7 +204,7 @@ export async function runManifestFacts({
     logger.fail(
       `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
     )
-    return
+    return null
   }
 
   // Nothing resolved at all — no dependencies and no first-party modules. A

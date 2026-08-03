@@ -17,7 +17,12 @@ vi.mock('./run-manifest-facts.mts', () => ({
 import { generateRecursiveManifests } from './generate-recursive-manifests.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { testPath } from '../../../test/utils.mts'
-import { readSocketJsonCascade } from '../../utils/socket-json.mts'
+import {
+  readOrDefaultSocketJson,
+  readSocketJsonCascade,
+} from '../../utils/socket-json.mts'
+
+import type { SocketJson } from '../../utils/socket-json.mts'
 
 const monorepo = path.join(
   testPath,
@@ -33,6 +38,7 @@ function relOf(dir: string): string {
 describe('generateRecursiveManifests', () => {
   beforeEach(() => {
     vi.mocked(runManifestFacts).mockReset()
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({} as SocketJson)
     vi.mocked(readSocketJsonCascade).mockImplementation(
       (_dir, _boundaryDir, fallback) => fallback,
     )
@@ -122,7 +128,7 @@ describe('generateRecursiveManifests', () => {
       async ({ cwd, ecosystem }) => {
         if (ecosystem === 'maven' && cwd === dualMarkerDir) {
           process.exitCode = 1
-          return undefined
+          return null
         }
         return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
       },
@@ -158,6 +164,34 @@ describe('generateRecursiveManifests', () => {
           /Aborting recursive discovery/.test(String(c[0])),
         ),
       ).toBe(true)
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('still classifies a failure as failed (not empty) when process.exitCode was already non-zero beforehand', async () => {
+    process.exitCode = 1
+    vi.mocked(runManifestFacts).mockImplementation(
+      async ({ cwd, ecosystem }) => {
+        if (ecosystem === 'maven' && cwd === dualMarkerDir) {
+          process.exitCode = 1
+          return null
+        }
+        return { factsPath: path.join(cwd, '.socket.facts.json'), projects: [] }
+      },
+    )
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      expect(byKey.get('maven:dual-marker-dir')).toBe('failed')
     } finally {
       warnSpy.mockRestore()
     }
@@ -384,6 +418,40 @@ describe('generateRecursiveManifests', () => {
       expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
         'generated',
       )
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  it('still discovers a build root when the root socket.json disables its whole ecosystem, so a nested override can re-enable it', async () => {
+    vi.mocked(readOrDefaultSocketJson).mockReturnValue({
+      defaults: { manifest: { maven: { disabled: true } } },
+    } as SocketJson)
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      (dir, _boundaryDir, fallback) =>
+        dir === reactor
+          ? { defaults: { manifest: { maven: { disabled: false } } } }
+          : fallback,
+    )
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => logger)
+
+    try {
+      const outcomes = await generateRecursiveManifests({
+        cwd: monorepo,
+        verbose: false,
+      })
+
+      const byKey = new Map(
+        outcomes.map(o => [`${o.ecosystem}:${relOf(o.dir)}`, o.status]),
+      )
+      // Root-disabled maven is still scanned for at all (not dropped
+      // entirely), so the nested override is actually found and generated.
+      expect(byKey.get('maven:reactor')).toBe('generated')
+      expect(byKey.get('maven:dual-marker-dir')).toBe('skippedDisabled')
     } finally {
       warnSpy.mockRestore()
     }

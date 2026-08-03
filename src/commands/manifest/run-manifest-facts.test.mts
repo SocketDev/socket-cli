@@ -85,7 +85,7 @@ describe('runManifestFacts - javaHome', () => {
       cwd,
       javaHome: `$${ENV_VAR}`,
     })
-    expect(result).toBeUndefined()
+    expect(result).toBeNull()
     expect(runManifestScript).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })

@@ -2,7 +2,10 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { findBuildToolCandidates } from './discover-manifest-roots.mts'
+import {
+  findBuildToolCandidates,
+  withoutDisabledFlags,
+} from './discover-manifest-roots.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
@@ -142,10 +145,13 @@ export async function generateRecursiveManifests({
   verbose: boolean
 }): Promise<RecursiveManifestOutcome[]> {
   const rootSockJson = readOrDefaultSocketJson(cwd)
+  // A root-disabled ecosystem must still be scanned for - a nested socket.json
+  // may re-enable it - so the per-directory cascade below, not this scan, is
+  // what actually decides skip vs. include.
   const candidatesByTool = await findBuildToolCandidates({
     cwd,
     excludePaths,
-    sockJson: rootSockJson,
+    sockJson: withoutDisabledFlags(rootSockJson),
   })
 
   const outcomes: RecursiveManifestOutcome[] = []
@@ -191,7 +197,6 @@ export async function generateRecursiveManifests({
         { cwd, target: dir },
       )
 
-      const beforeExitCode = process.exitCode
       // eslint-disable-next-line no-await-in-loop
       const result = await runManifestFacts({
         bin,
@@ -206,21 +211,15 @@ export async function generateRecursiveManifests({
         verbose,
       })
 
-      if (!result) {
-        const failed = Boolean(
-          process.exitCode && process.exitCode !== beforeExitCode,
+      if (result === null) {
+        outcomes.push({ dir, ecosystem, status: 'failed' })
+        logger.warn(
+          `Aborting recursive discovery: ${dir}'s (${ecosystem}) workspace layout could not be determined, so remaining build roots cannot be safely classified as covered or independent.`,
         )
-        outcomes.push({
-          dir,
-          ecosystem,
-          status: failed ? 'failed' : 'empty',
-        })
-        if (failed) {
-          logger.warn(
-            `Aborting recursive discovery: ${dir}'s (${ecosystem}) workspace layout could not be determined, so remaining build roots cannot be safely classified as covered or independent.`,
-          )
-          break ecosystems
-        }
+        break ecosystems
+      }
+      if (!result) {
+        outcomes.push({ dir, ecosystem, status: 'empty' })
         continue
       }
 
