@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
       type: 'boolean',
       hidden: true,
       description:
-        'After configuring CWD, recursively discover every gradle/sbt/maven build root beneath it. A build root matching --exclude-paths is bulk-disabled with no prompt; every other one gets an interactive configure-or-inherit-defaults prompt',
+        'Recursively scans for every gradle/sbt/maven build root beneath CWD first, so the CWD config step only asks about ecosystems actually found somewhere in the tree. A build root matching --exclude-paths is bulk-disabled with no prompt, applied unconditionally; eligible build roots found afterward can be configured individually',
     },
   },
   help: (command, config) => `

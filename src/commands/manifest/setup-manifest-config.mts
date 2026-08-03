@@ -273,6 +273,9 @@ export async function setupGradle(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
   >,
+  // Set by the recursive dynamic-sbom-inference wizard, which has no
+  // pom-mode equivalent - skips the facts/pom question entirely.
+  { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   const priorBin = config.bin
   const bin = await askForBin(config.bin || '', './gradlew')
@@ -280,7 +283,7 @@ export async function setupGradle(
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
-  } else if (priorBin) {
+  } else if (priorBin !== undefined) {
     config.bin = null
   } else {
     delete config.bin
@@ -292,7 +295,7 @@ export async function setupGradle(
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
-  } else if (priorJavaHome) {
+  } else if (priorJavaHome !== undefined) {
     config.javaHome = null
   } else {
     delete config.javaHome
@@ -309,24 +312,26 @@ export async function setupGradle(
     return canceledByUser()
   } else if (opts) {
     config.gradleOpts = opts
-  } else if (priorGradleOpts) {
+  } else if (priorGradleOpts !== undefined) {
     config.gradleOpts = null
   } else {
     delete config.gradleOpts
   }
 
-  const facts = await askForFactsFlag(config.facts)
-  if (facts === undefined) {
-    return canceledByUser()
-  } else if (facts === 'yes' || facts === 'no') {
-    config.facts = facts === 'yes'
-  } else {
-    delete config.facts
+  if (!factsOnly) {
+    const facts = await askForFactsFlag(config.facts)
+    if (facts === undefined) {
+      return canceledByUser()
+    } else if (facts === 'yes' || facts === 'no') {
+      config.facts = facts === 'yes'
+    } else {
+      delete config.facts
+    }
   }
 
   // The config filters and --ignore-unresolved only apply to facts generation
   // (the default); skip them when pom generation (--pom) is selected.
-  if (config.facts !== false) {
+  if (factsOnly || config.facts !== false) {
     const factsOptions = await setupFactsOptions(config)
     if (!factsOptions.ok || factsOptions.data.canceled) {
       return factsOptions
@@ -356,7 +361,7 @@ export async function setupMaven(
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
-  } else if (priorBin) {
+  } else if (priorBin !== undefined) {
     config.bin = null
   } else {
     delete config.bin
@@ -368,7 +373,7 @@ export async function setupMaven(
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
-  } else if (priorJavaHome) {
+  } else if (priorJavaHome !== undefined) {
     config.javaHome = null
   } else {
     delete config.javaHome
@@ -384,7 +389,7 @@ export async function setupMaven(
     return canceledByUser()
   } else if (opts) {
     config.mavenOpts = opts
-  } else if (priorMavenOpts) {
+  } else if (priorMavenOpts !== undefined) {
     config.mavenOpts = null
   } else {
     delete config.mavenOpts
@@ -413,6 +418,8 @@ export async function setupSbt(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
   >,
+  // See setupGradle's matching parameter for why.
+  { factsOnly = false }: { factsOnly?: boolean } = {},
 ): Promise<CResult<{ canceled: boolean }>> {
   const priorBin = config.bin
   const bin = await askForBin(config.bin || '', 'sbt')
@@ -420,7 +427,7 @@ export async function setupSbt(
     return canceledByUser()
   } else if (bin) {
     config.bin = bin
-  } else if (priorBin) {
+  } else if (priorBin !== undefined) {
     config.bin = null
   } else {
     delete config.bin
@@ -432,7 +439,7 @@ export async function setupSbt(
     return canceledByUser()
   } else if (javaHome) {
     config.javaHome = javaHome
-  } else if (priorJavaHome) {
+  } else if (priorJavaHome !== undefined) {
     config.javaHome = null
   } else {
     delete config.javaHome
@@ -449,25 +456,27 @@ export async function setupSbt(
     return canceledByUser()
   } else if (opts) {
     config.sbtOpts = opts
-  } else if (priorSbtOpts) {
+  } else if (priorSbtOpts !== undefined) {
     config.sbtOpts = null
   } else {
     delete config.sbtOpts
   }
 
-  const facts = await askForFactsFlag(config.facts)
-  if (facts === undefined) {
-    return canceledByUser()
-  } else if (facts === 'yes' || facts === 'no') {
-    config.facts = facts === 'yes'
-  } else {
-    delete config.facts
+  if (!factsOnly) {
+    const facts = await askForFactsFlag(config.facts)
+    if (facts === undefined) {
+      return canceledByUser()
+    } else if (facts === 'yes' || facts === 'no') {
+      config.facts = facts === 'yes'
+    } else {
+      delete config.facts
+    }
   }
 
   // Socket facts is the default. The pom output questions (stdout/outfile)
   // only apply when pom generation (--pom) is explicitly selected; otherwise
   // ask the facts-only options.
-  if (config.facts === false) {
+  if (!factsOnly && config.facts === false) {
     const stdout = await askForStdout(config.stdout)
     if (stdout === undefined) {
       return canceledByUser()
@@ -594,13 +603,9 @@ async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
   })
 }
 
-// `defaultName` is only ever a *prior* explicit value (own file or, for the
-// recursive per-project wizard, the cascaded effective value) - never the
-// tool's own hardcoded fallback (e.g. `mvn`). `input()` returns whatever's
-// shown when the user just presses Enter, so pre-filling a fabricated
-// fallback there would be indistinguishable from the user actually typing
-// it, freezing it into socket.json for no reason. The fallback is mentioned
-// in `fallbackHint` purely as informational text.
+// `defaultName` must be a prior explicit/cascaded value, never the tool's
+// hardcoded fallback (e.g. `mvn`) - pre-filling that would freeze it into
+// socket.json on a bare Enter. `fallbackHint` is informational text only.
 async function askForBin(
   defaultName = '',
   fallbackHint = '',
@@ -728,7 +733,7 @@ async function setupFactsOptions(config: {
     return canceledByUser()
   } else if (includeConfigs) {
     config.includeConfigs = includeConfigs
-  } else if (priorIncludeConfigs) {
+  } else if (priorIncludeConfigs !== undefined) {
     // Was previously set; clear it explicitly instead of just deleting the
     // key, so it doesn't silently start inheriting an ancestor's value again.
     config.includeConfigs = null
@@ -747,7 +752,7 @@ async function setupFactsOptions(config: {
     return canceledByUser()
   } else if (excludeConfigs) {
     config.excludeConfigs = excludeConfigs
-  } else if (priorExcludeConfigs) {
+  } else if (priorExcludeConfigs !== undefined) {
     config.excludeConfigs = null
   } else {
     delete config.excludeConfigs

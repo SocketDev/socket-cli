@@ -29,7 +29,7 @@ export type RecursiveManifestOutcome = {
   status: RecursiveManifestOutcomeStatus
 }
 
-type EcosystemBuildConfig = {
+export type EcosystemBuildConfig = {
   bin: string
   buildOpts: string[]
   excludeConfigs: string
@@ -59,15 +59,9 @@ function getSkipReason(
 
 type DisabledRoot = { dir: string; sockJson: SocketJson }
 
-// Nearest already-confirmed-disabled ancestor of `dir` (if any): lets the
+// Nearest already-confirmed-disabled ancestor of `dir`, if any - lets the
 // caller shorten `readSocketJsonCascade`'s walk to start there instead of
-// all the way back at `cwd`. A build root with hundreds of nested candidates
-// (a big disabled legacy reactor, say) would otherwise re-walk the same long
-// ancestor chain from `cwd` for every single one. Correctness is unaffected
-// - the shortened walk still checks every directory between `dir` and the
-// chosen boundary, so a nested override (re-enabling a specific subproject)
-// is still honored - it's just cheaper when nothing overrides it, which is
-// the common case. Picks the deepest (nearest) match if several qualify.
+// all the way back at `cwd`, without skipping any nested override.
 function nearestDisabledRoot(
   dir: string,
   disabledRoots: readonly DisabledRoot[],
@@ -84,11 +78,10 @@ function nearestDisabledRoot(
   return nearest
 }
 
-// Resolves this build root's effective per-ecosystem build-tool config from
-// its cascaded socket.json; a wrapper-preferred `bin` default is resolved
-// per-root (`dir`, not `cwd`) since a wrapper script only exists at the
-// actual build root.
-function resolveEcosystemConfig(
+// A wrapper-preferred `bin` default is resolved per-root (`dir`, not `cwd`)
+// since a wrapper script only exists at the actual build root. Exported for
+// reuse by the recursive setup wizard's reactor-coverage pruning.
+export function resolveEcosystemConfig(
   ecosystem: BuildTool,
   dir: string,
   sockJson: SocketJson,
@@ -132,22 +125,13 @@ function resolveEcosystemConfig(
   }
 }
 
-// Recursively discovers gradle/sbt/maven build roots under `cwd` and
-// generates one `.socket.facts.json` per independent build root. Coverage is
-// tracked per ecosystem (not globally) using the facts SBOM's own
-// `projects[].subprojectDir` — never by pruning an entire discovered
-// subtree — so a reactor/multi-project member is skipped on re-encounter
-// while an unrelated nested project the reactor doesn't declare (e.g. a
-// stray git-submodule pom, or a different-ecosystem project nested inside a
-// covered directory tree) still gets its own invocation. Fail-closed: a build
-// root whose workspace layout couldn't be determined (the build tool crashed
-// or a blocking resolution failure prevented `projects[]` from being read)
-// aborts the entire walk instead of continuing to its still-undiscovered
-// descendants - without that root's `projects[]`, there's no way to tell
-// whether a later candidate is one of its own already-covered members or a
-// genuinely independent project, and guessing risks silently mis-scanning a
-// subproject as standalone (or vice versa) plus a cascade of doomed attempts
-// against a build that's already known to be broken.
+// Generates one .socket.facts.json per independent gradle/sbt/maven build
+// root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
+// own projects[].subprojectDir, not by pruning the whole discovered subtree,
+// so an unrelated nested project a reactor doesn't declare still gets its
+// own invocation. Fail-closed: a root whose workspace layout can't be
+// determined aborts the whole walk, since without its projects[] a later
+// candidate can't safely be classified as covered vs. independent.
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,
