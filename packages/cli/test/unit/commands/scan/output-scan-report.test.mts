@@ -138,7 +138,10 @@ describe('output-scan-report', () => {
       await outputScanReport(successResult, baseConfig)
 
       expect(process.exitCode).toBeUndefined()
-      expect(mockLogger.dir).toHaveBeenCalled()
+      expect(mockLogger.log).toHaveBeenCalledWith(
+        expect.stringContaining('Socket scan policy report'),
+      )
+      expect(mockLogger.dir).not.toHaveBeenCalled()
     })
 
     it('should set exit code 1 for unhealthy report', async () => {
