@@ -40,20 +40,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:pypi/discordpydebug@0.0.4[22m
+        Package: \u001B[1mpkg:pypi/discordpydebug@0.0.4\u001B[22m
 
-        - Supply Chain Risk:  [31m 22[39m
-        - Maintenance:       [32m100[39m
-        - Quality:           [32m 99[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [32m100[39m
-        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
+        - Supply Chain Risk:  \u001B[31m 22\u001B[39m
+        - Maintenance:       \u001B[32m100\u001B[39m
+        - Quality:           \u001B[32m 99\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[32m100\u001B[39m
+        - Alerts (\u001B[31m1\u001B[39m/\u001B[33m3\u001B[39m/2):     \u001B[31m\u001B[2m[critical] \u001B[22mmalware\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mshellAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22munpopularPackage\u001B[39m, \u001B[2m[low] \u001B[22mfilesystemAccess, and \u001B[2m[low] \u001B[22munidentifiedLicense
         "
       `)
     })
@@ -88,20 +88,20 @@ describe('package score output', async () => {
         const txt = generateTextReport(rows, missing)
         expect(txt).toMatchInlineSnapshot(`
           "
-          [1mShallow Package Score[22m
+          \u001B[1mShallow Package Score\u001B[22m
 
           Please note: The listed scores are ONLY for the package itself. It does NOT
                        reflect the scores of any dependencies, transitive or otherwise.
 
 
-          Package: [1mpkg:pypi/charset-normalizer@3.4.0[22m
+          Package: \u001B[1mpkg:pypi/charset-normalizer@3.4.0\u001B[22m
 
-          - Supply Chain Risk:  [32m 99[39m
-          - Maintenance:       [32m100[39m
-          - Quality:           [32m100[39m
-          - Vulnerabilities:   [32m100[39m
-          - License:           [32m100[39m
-          - Alerts ([31m0[39m/[33m2[39m/1):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22musesEval[39m, and [2m[low] [22mfilesystemAccess
+          - Supply Chain Risk:  \u001B[32m 99\u001B[39m
+          - Maintenance:       \u001B[32m100\u001B[39m
+          - Quality:           \u001B[32m100\u001B[39m
+          - Vulnerabilities:   \u001B[32m100\u001B[39m
+          - License:           \u001B[32m100\u001B[39m
+          - Alerts (\u001B[31m0\u001B[39m/\u001B[33m2\u001B[39m/1):     \u001B[33m\u001B[2m[middle] \u001B[22mhasNativeCode\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22musesEval\u001B[39m, and \u001B[2m[low] \u001B[22mfilesystemAccess
           "
         `)
 

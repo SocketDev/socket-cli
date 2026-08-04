@@ -88,20 +88,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:npm/bowserify@10.2.1[22m
+        Package: \u001B[1mpkg:npm/bowserify@10.2.1\u001B[22m
 
-        - Supply Chain Risk:  [31m 36[39m
-        - Maintenance:       [33m 75[39m
-        - Quality:           [32m 99[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [32m100[39m
-        - Alerts ([31m2[39m/[33m2[39m/4):     [31m[2m[critical] [22mdidYouMean[39m, [31m[2m[high] [22mtroll[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mdebugAccess, [2m[low] [22mdynamicRequire, [2m[low] [22mfilesystemAccess, and [2m[low] [22munmaintained
+        - Supply Chain Risk:  \u001B[31m 36\u001B[39m
+        - Maintenance:       \u001B[33m 75\u001B[39m
+        - Quality:           \u001B[32m 99\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[32m100\u001B[39m
+        - Alerts (\u001B[31m2\u001B[39m/\u001B[33m2\u001B[39m/4):     \u001B[31m\u001B[2m[critical] \u001B[22mdidYouMean\u001B[39m, \u001B[31m\u001B[2m[high] \u001B[22mtroll\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22munpopularPackage\u001B[39m, \u001B[2m[low] \u001B[22mdebugAccess, \u001B[2m[low] \u001B[22mdynamicRequire, \u001B[2m[low] \u001B[22mfilesystemAccess, and \u001B[2m[low] \u001B[22munmaintained
         "
       `)
     })
@@ -137,20 +137,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60[22m
+        Package: \u001B[1mpkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60\u001B[22m
 
-        - Supply Chain Risk:  [31m 39[39m
-        - Maintenance:       [32m100[39m
-        - Quality:           [32m100[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [32m100[39m
-        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
+        - Supply Chain Risk:  \u001B[31m 39\u001B[39m
+        - Maintenance:       \u001B[32m100\u001B[39m
+        - Quality:           \u001B[32m100\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[32m100\u001B[39m
+        - Alerts (\u001B[31m1\u001B[39m/\u001B[33m3\u001B[39m/2):     \u001B[31m\u001B[2m[critical] \u001B[22mmalware\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mshellAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22musesEval\u001B[39m, \u001B[2m[low] \u001B[22menvVars, and \u001B[2m[low] \u001B[22mfilesystemAccess
         "
       `)
     })
@@ -186,20 +186,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:gem/plaid@14.11.0[22m
+        Package: \u001B[1mpkg:gem/plaid@14.11.0\u001B[22m
 
-        - Supply Chain Risk:  [32m 86[39m
-        - Maintenance:       [32m100[39m
-        - Quality:           [32m100[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [32m100[39m
-        - Alerts ([31m2[39m/[33m3[39m/2):     [31m[2m[high] [22mgptMalware[39m, [31m[2m[high] [22mobfuscatedFile[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
+        - Supply Chain Risk:  \u001B[32m 86\u001B[39m
+        - Maintenance:       \u001B[32m100\u001B[39m
+        - Quality:           \u001B[32m100\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[32m100\u001B[39m
+        - Alerts (\u001B[31m2\u001B[39m/\u001B[33m3\u001B[39m/2):     \u001B[31m\u001B[2m[high] \u001B[22mgptMalware\u001B[39m, \u001B[31m\u001B[2m[high] \u001B[22mobfuscatedFile\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mshellAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22musesEval\u001B[39m, \u001B[2m[low] \u001B[22menvVars, and \u001B[2m[low] \u001B[22mfilesystemAccess
         "
       `)
     })
@@ -235,20 +235,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:nuget/needpluscommonlibrary@1.0.0[22m
+        Package: \u001B[1mpkg:nuget/needpluscommonlibrary@1.0.0\u001B[22m
 
-        - Supply Chain Risk:  [32m 91[39m
-        - Maintenance:       [32m100[39m
-        - Quality:           [32m 86[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [32m100[39m
-        - Alerts ([31m0[39m/[33m4[39m/2):     [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
+        - Supply Chain Risk:  \u001B[32m 91\u001B[39m
+        - Maintenance:       \u001B[32m100\u001B[39m
+        - Quality:           \u001B[32m 86\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[32m100\u001B[39m
+        - Alerts (\u001B[31m0\u001B[39m/\u001B[33m4\u001B[39m/2):     \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mshellAccess\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22munpopularPackage\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22musesEval\u001B[39m, \u001B[2m[low] \u001B[22mfilesystemAccess, and \u001B[2m[low] \u001B[22munidentifiedLicense
         "
       `)
     })
@@ -284,20 +284,20 @@ describe('package score output', async () => {
       const txt = generateTextReport(rows, missing)
       expect(txt).toMatchInlineSnapshot(`
         "
-        [1mShallow Package Score[22m
+        \u001B[1mShallow Package Score\u001B[22m
 
         Please note: The listed scores are ONLY for the package itself. It does NOT
                      reflect the scores of any dependencies, transitive or otherwise.
 
 
-        Package: [1mpkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0[22m
+        Package: \u001B[1mpkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0\u001B[22m
 
-        - Supply Chain Risk:  [33m 67[39m
-        - Maintenance:       [32m100[39m
-        - Quality:           [32m100[39m
-        - Vulnerabilities:   [32m100[39m
-        - License:           [33m 60[39m
-        - Alerts ([31m0[39m/[33m3[39m/0):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22mnetworkAccess[39m, and [33m[2m[middle] [22musesEval[39m
+        - Supply Chain Risk:  \u001B[33m 67\u001B[39m
+        - Maintenance:       \u001B[32m100\u001B[39m
+        - Quality:           \u001B[32m100\u001B[39m
+        - Vulnerabilities:   \u001B[32m100\u001B[39m
+        - License:           \u001B[33m 60\u001B[39m
+        - Alerts (\u001B[31m0\u001B[39m/\u001B[33m3\u001B[39m/0):     \u001B[33m\u001B[2m[middle] \u001B[22mhasNativeCode\u001B[39m, \u001B[33m\u001B[2m[middle] \u001B[22mnetworkAccess\u001B[39m, and \u001B[33m\u001B[2m[middle] \u001B[22musesEval\u001B[39m
         "
       `)
     })
