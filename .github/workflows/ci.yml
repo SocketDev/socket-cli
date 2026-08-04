@@ -39,10 +39,13 @@ env:
 jobs:
   # First step of every job is the third-party actions/checkout (GitHub fetches
   # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
-  # composites resolve. setup-and-install then re-checks-out at its deeper
-  # default (fetch-depth 25 — covers CI's git operations) and
-  # runs the zizmor Actions audit (its own `strategy.job-total < 2` skip runs it
-  # in the non-matrix check job, skips it in the test matrix).
+  # composites resolve. setup-and-install then re-checks-out — full history
+  # (fetch-depth 0) in the check job, since the commit-history checks it runs
+  # (AI-attribution, release-boundary) read the default branch's history and
+  # refuse a shallow clone rather than false-green; the test matrix stays at
+  # the default depth (25 — covers CI's other git operations) and runs the
+  # zizmor Actions audit (its own `strategy.job-total < 2` skip runs it in the
+  # non-matrix check job, skips it in the test matrix).
   check:
     name: 🔎 Check
     runs-on: ubuntu-latest
@@ -54,6 +57,10 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # Full history: the commit-history checks (AI-attribution,
+          # release-boundary) read the default branch's history and refuse a
+          # shallow clone rather than false-green.
+          checkout-fetch-depth: '0'
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - uses: ./.github/actions/fleet/run-script
         with:
