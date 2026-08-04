@@ -311,7 +311,10 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
       target: '.',
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
-    const opts = mockSpawnCoanaDlx.mock.calls[0][2]
+    // Argument 1 is the CoanaDlxOptions bag that carries stdio. Argument 2 is
+    // spawnExtra, which performReachabilityAnalysis never passes, so reading
+    // it here threw instead of asserting.
+    const opts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(args[0]).toBe('--silent')
     // Payload owns stdout; coana progress goes to fd 2 so it stays visible.
     expect(opts.stdio).toEqual(['inherit', 2, 'inherit'])
@@ -323,7 +326,7 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const opts = mockSpawnCoanaDlx.mock.calls[0][2]
+    const opts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(opts.stdio).toBe('inherit')
   })
 })
