@@ -21,7 +21,7 @@ Thumbs.db
 /.nvm
 /.pnpmfile.cjs
 .npmrc.local
-**/node_modules/
+**/node_modules
 /npm-debug.log
 pnpm-debug.log*
 /yarn.lock
@@ -262,7 +262,7 @@ Thumbs.db
 **/upstream/
 
 # Node
-node_modules/
+node_modules
 # Workspace-local pnpm store — CI jobs whose pnpm runs inside a
 # workspace-mounted sandbox pin the store here (setup-and-install
 # store-dir input); never committed.
