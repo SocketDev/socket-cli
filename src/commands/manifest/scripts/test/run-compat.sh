@@ -52,6 +52,7 @@ run_gradle() {
       unzip -q -o "$CACHE/gradle.zip" -d "$CACHE"
     fi
     bash "$HERE/gradle-compat/smoke-test.sh" "$dir/bin/gradle"
+    bash "$HERE/gradle-compat/smoke-test-workspaces.sh" "$dir/bin/gradle"
   done
 }
 
@@ -71,6 +72,7 @@ run_maven() {
       unzip -q -o "$CACHE/maven.zip" -d "$CACHE"
     fi
     bash "$HERE/maven-compat/smoke-test.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
   done
 }
 
@@ -86,6 +88,7 @@ run_sbt() {
     echo "== sbt $ver / scala $scala (wants JDK $java) =="
     use_jdk "$java"
     bash "$HERE/sbt-compat/smoke-test.sh" "$ver" "$scala"
+    bash "$HERE/sbt-compat/smoke-test-workspaces.sh" "$ver" "$scala"
   done
 }
 
