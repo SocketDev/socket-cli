@@ -18,8 +18,9 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TOOL="${1:-all}"
-CACHE="${SOCKET_COMPAT_CACHE:-${TMPDIR:-/tmp}/socket-manifest-compat}"
-mkdir -p "$CACHE"
+# shellcheck source=SCRIPTDIR/compat-cache.sh
+. "$HERE/compat-cache.sh"
+CACHE="$SOCKET_COMPAT_CACHE"
 
 # Same matrix as the former CI workflow. Rows: "<ver> <javaMajor> [scala]".
 GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "8.10.2 17" "9.2.1 21")
