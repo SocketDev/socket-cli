@@ -360,6 +360,14 @@ export async function configureCandidate({
     ownSockJson.defaults.manifest = {}
   }
 
+  // Ancestor-only baseline (excludes dir's own file, unlike the cascade below)
+  // so a field left exactly as shown can be told apart from one the user
+  // actually set - otherwise every accepted default gets written verbatim,
+  // permanently pinning it against future changes to an ancestor's value.
+  const inherited = getEcosystemSection(
+    readSocketJsonCascade(path.dirname(dir), cwd, rootSockJson),
+    ecosystem,
+  )
   const cascade = readSocketJsonCascade(dir, cwd, rootSockJson)
   const seed: Record<string, unknown> = {
     ...getEcosystemSection(cascade, ecosystem),
@@ -370,15 +378,22 @@ export async function configureCandidate({
   if (!result.ok || result.data.canceled) {
     return result
   }
-  // Nothing inherited and nothing set - writing an empty section would just
-  // be noise (own file unaffected, `dir` keeps inheriting exactly as before).
-  if (!Object.keys(seed).length) {
+
+  const toWrite: Record<string, unknown> = {}
+  for (const key of Object.keys(seed)) {
+    if (seed[key] !== inherited[key]) {
+      toWrite[key] = seed[key]
+    }
+  }
+  // Every field equals what dir would already inherit - writing it would just
+  // be noise (own file unaffected, dir keeps inheriting exactly as before).
+  if (!Object.keys(toWrite).length) {
     logger.log(`No changes for ${relDir} (${ecosystem}); nothing written.`)
     return notCanceled()
   }
 
   const manifest = ownSockJson.defaults.manifest as Record<string, unknown>
-  manifest[ecosystem] = seed
+  manifest[ecosystem] = toWrite
 
   const writeResult = await writeSocketJson(dir, ownSockJson)
   if (!writeResult.ok) {

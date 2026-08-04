@@ -407,7 +407,7 @@ describe('configureCandidate', () => {
     vi.mocked(setupGradle).mockReset()
   })
 
-  it('seeds the sub-wizard with the cascaded value, own-file value winning, and writes the mutated result', async () => {
+  it('seeds the sub-wizard with the cascaded value, own-file value winning, but only writes fields that actually differ from what dir would inherit', async () => {
     vi.mocked(readOrDefaultSocketJson).mockImplementation(
       () =>
         ({
@@ -444,7 +444,9 @@ describe('configureCandidate', () => {
         defaults: {
           manifest: {
             gradle: {
-              bin: './gradlew',
+              // `bin` is omitted: it's identical to what dir already inherits
+              // from its ancestors, so writing it would only pin a value that
+              // should keep tracking the ancestor's own if that ever changes.
               javaHome: '/opt/jdk-17',
               gradleOpts: '--offline',
             },
