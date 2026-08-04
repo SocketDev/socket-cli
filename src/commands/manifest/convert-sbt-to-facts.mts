@@ -12,6 +12,7 @@ export async function convertSbtToFacts({
   excludePaths,
   ignoreUnresolved,
   includeConfigs,
+  javaHome,
   sbtOpts,
   sidecarAcc,
   tmpDir,
@@ -24,6 +25,7 @@ export async function convertSbtToFacts({
   excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome?: string | undefined
   sbtOpts: string[]
   sidecarAcc?: SidecarAccumulator | undefined
   // Caller-owned; see ManifestScriptOptions.tmpDir.
@@ -40,6 +42,7 @@ export async function convertSbtToFacts({
     excludePaths,
     ignoreUnresolved,
     includeConfigs,
+    javaHome,
     sidecarAcc,
     tmpDir,
     verbose,

@@ -85,7 +85,7 @@ public final class SocketFactsRecordsEngine {
     for (MavenProject p : reactor) {
       reactorGavs.add(p.getGroupId() + ":" + p.getArtifactId() + ":" + p.getVersion());
     }
-    List<java.nio.file.PathMatcher> excludes = SocketSupport.parseExcludeMatchers(opts.excludePaths);
+    List<Pattern> excludes = SocketSupport.parseExcludePatterns(opts.excludePaths);
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));

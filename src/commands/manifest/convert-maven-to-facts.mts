@@ -10,6 +10,7 @@ export async function convertMavenToFacts({
   excludePaths,
   ignoreUnresolved,
   includeConfigs,
+  javaHome,
   mavenOpts,
   sidecarAcc,
   verbose,
@@ -21,6 +22,7 @@ export async function convertMavenToFacts({
   excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome?: string | undefined
   mavenOpts: string[]
   sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
@@ -35,6 +37,7 @@ export async function convertMavenToFacts({
     excludePaths,
     ignoreUnresolved,
     includeConfigs,
+    javaHome,
     sidecarAcc,
     verbose,
     withFiles,

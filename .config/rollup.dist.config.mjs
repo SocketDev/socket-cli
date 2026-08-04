@@ -98,6 +98,14 @@ async function copyManifestScripts() {
       path.join(srcDir, 'socket-facts.plugin.scala'),
       path.join(destDir, 'socket-facts.plugin.scala'),
     ),
+    fs.copyFile(
+      path.join(srcDir, 'socket-workspaces.init.gradle'),
+      path.join(destDir, 'socket-workspaces.init.gradle'),
+    ),
+    fs.copyFile(
+      path.join(srcDir, 'socket-workspaces.plugin.scala'),
+      path.join(destDir, 'socket-workspaces.plugin.scala'),
+    ),
   ])
   const jarPath = path.join(
     srcDir,

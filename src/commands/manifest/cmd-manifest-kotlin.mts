@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
+import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
@@ -16,7 +17,6 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,
@@ -211,8 +211,8 @@ async function run(
     }
   }
   if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.gradle?.includeConfigs
+    if (sockJson.defaults?.manifest?.gradle?.includeConfigs) {
+      includeConfigs = sockJson.defaults.manifest.gradle.includeConfigs
       logger.info(
         `Using default --include-configs from ${SOCKET_JSON}:`,
         includeConfigs,
@@ -222,8 +222,8 @@ async function run(
     }
   }
   if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.gradle?.excludeConfigs
+    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs) {
+      excludeConfigs = sockJson.defaults.manifest.gradle.excludeConfigs
       logger.info(
         `Using default --exclude-configs from ${SOCKET_JSON}:`,
         excludeConfigs,
@@ -279,10 +279,13 @@ async function run(
     return
   }
 
+  const javaHome = sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined
+
   if (verbose) {
     logger.group()
     logger.info('- cwd:', cwd)
     logger.info('- gradle bin:', bin)
+    logger.info('- java home:', javaHome || '(inherited)')
     logger.groupEnd()
   }
 
@@ -305,6 +308,7 @@ async function run(
       gradleOpts: parsedGradleOpts,
       ignoreUnresolved: Boolean(ignoreUnresolved),
       includeConfigs: String(includeConfigs || ''),
+      javaHome,
       verbose: Boolean(verbose),
     })
     return

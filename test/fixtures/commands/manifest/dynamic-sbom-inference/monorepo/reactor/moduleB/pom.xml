@@ -1,0 +1,9 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.example</groupId>
+    <artifactId>reactor</artifactId>
+    <version>1.0.0</version>
+  </parent>
+  <artifactId>moduleB</artifactId>
+</project>

@@ -1,0 +1,61 @@
+package tech.coana.socket;
+
+import org.apache.maven.project.MavenProject;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+/**
+ * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`project` records from the
+ * already-populated reactor list, building no dependency graph - cheap workspace discovery for
+ * `socket manifest setup --dynamic-sbom-inference` without a full facts-generation build.
+ */
+public final class SocketWorkspacesRecordsEngine {
+
+  public static final class Options {
+    // Scan-root-relative `--exclude-paths` (CSV): a wholly excluded reactor module is skipped.
+    public String excludePaths;
+    public String recordsFile;
+  }
+
+  private SocketWorkspacesRecordsEngine() {}
+
+  public static void run(List<MavenProject> reactor, File rootDir, Options opts, String mavenVersion)
+      throws IOException {
+    List<Pattern> excludes = SocketSupport.parseExcludePatterns(opts.excludePaths);
+
+    List<String> lines = new ArrayList<>();
+    rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));
+
+    for (MavenProject module : reactor) {
+      String ws = SocketSupport.workspace(rootDir.toPath(), module.getBasedir().toPath());
+      if (SocketSupport.isExcludedPath(ws, excludes)) continue;
+      rec(lines, "project", ws, module.getGroupId(), module.getArtifactId(), module.getVersion(), ws);
+    }
+
+    write(opts.recordsFile, lines);
+  }
+
+  private static void rec(List<String> lines, String... fields) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < fields.length; i++) {
+      if (i > 0) sb.append('\t');
+      sb.append(SocketSupport.escapeField(fields[i]));
+    }
+    lines.add(sb.toString());
+  }
+
+  private static void write(String recordsFile, List<String> lines) throws IOException {
+    File out = new File(recordsFile);
+    if (out.getParentFile() != null) Files.createDirectories(out.getParentFile().toPath());
+    try (PrintWriter writer = new PrintWriter(out, StandardCharsets.UTF_8.name())) {
+      for (String line : lines) writer.print(line + "\n");
+    }
+  }
+}

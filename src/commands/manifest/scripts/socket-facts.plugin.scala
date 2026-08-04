@@ -392,66 +392,35 @@ object SocketFactsPlugin extends AutoPlugin {
     catch { case _: Throwable => c.toString }
   }
 
-  // `-Dsocket.excludePaths` → glob PathMatchers, used only to skip whole excluded subprojects. Each
-  // entry variant yields the entry itself and `entry/**` so it matches the dir and its subtree (same expansion
-  // as the SCA ignore path). A trailing `/**` is stripped first, so a user-written `dir/**` still excludes the
-  // `dir` directory itself, not only its contents. Standard glob semantics (anchored to the scan root, matching
-  // the CLI flag): `x` is root-level, `**/x` matches at any depth. Mirrors the gradle/maven producers.
-  private def parseExcludeMatchers(): Seq[java.nio.file.PathMatcher] = {
+  // `-Dsocket.excludePaths` → PRE-COMPILED, comma-joined, anchored regex pattern sources, used only
+  // to skip whole excluded subprojects. The CLI compiles the user-facing globs in
+  // exclude-paths-glob.mts (the single glob implementation, tested in CI); this plugin only
+  // Pattern.compile()s what it receives.
+  private def parseExcludeMatchers(): Seq[java.util.regex.Pattern] = {
     sys.props.get("socket.excludePaths").map(_.trim).filter(_.nonEmpty) match {
       case None => Nil
       case Some(raw) =>
-        val fs = java.nio.file.FileSystems.getDefault
         raw.split(",").toSeq.flatMap { r =>
-          var g = r.trim.replace("\\", "/")
-          while (g.startsWith("/")) g = g.substring(1)
-          while (g.endsWith("/")) g = g.substring(0, g.length - 1)
-          while (g.endsWith("/**")) {
-            g = g.substring(0, g.length - 3)
-            while (g.endsWith("/")) g = g.substring(0, g.length - 1)
-          }
-          if (g.isEmpty) Nil
-          else zeroDepthVariants(g).flatMap { v =>
-            Seq(fs.getPathMatcher("glob:" + v), fs.getPathMatcher("glob:" + v + "/**"))
-          }
+          val p = r.trim
+          // A pattern that doesn't compile is dropped, never thrown: the CLI emits a
+          // dialect-portable subset, so this only guards against a broken transport.
+          if (p.isEmpty) Nil
+          else
+            try Seq(java.util.regex.Pattern.compile(p))
+            catch { case _: java.util.regex.PatternSyntaxException => Nil }
         }
     }
   }
 
-  // NIO glob requires a slash-adjacent `**` to consume at least one path segment, but the CLI's
-  // micromatch lets it match zero (`**/x` matches root-level `x`). Emit every variant with `**/`
-  // occurrences dropped so both semantics hold.
-  private def zeroDepthVariants(glob: String): Seq[String] = {
-    val out = mutable.LinkedHashSet[String]()
-    val work = mutable.Queue(glob)
-    while (work.nonEmpty) {
-      val cur = work.dequeue()
-      if (out.add(cur)) {
-        var idx = cur.indexOf("**/")
-        while (idx >= 0) {
-          if (idx == 0 || cur.charAt(idx - 1) == '/') {
-            val collapsed = cur.substring(0, idx) + cur.substring(idx + 3)
-            if (collapsed.nonEmpty) work.enqueue(collapsed)
-          }
-          idx = cur.indexOf("**/", idx + 1)
-        }
-      }
-    }
-    out.toSeq
-  }
-
-  private def isExcludedPath(rel: String, matchers: Seq[java.nio.file.PathMatcher]): Boolean = {
-    if (matchers.isEmpty) false
+  private def isExcludedPath(rel: String, patterns: Seq[java.util.regex.Pattern]): Boolean = {
+    if (patterns.isEmpty) false
     else {
       var c = (if (rel == null) "" else rel).replace("\\", "/")
       while (c.startsWith("./")) c = c.substring(2)
       while (c.startsWith("/")) c = c.substring(1)
       while (c.endsWith("/")) c = c.substring(0, c.length - 1)
       if (c.isEmpty) false
-      else {
-        val p = java.nio.file.Paths.get(c)
-        matchers.exists(_.matches(p))
-      }
+      else patterns.exists(_.matcher(c).matches())
     }
   }
 

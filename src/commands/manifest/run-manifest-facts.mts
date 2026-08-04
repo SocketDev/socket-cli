@@ -3,16 +3,27 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import {
+  expandEnvVarRefs,
+  formatMissingEnvVarRefs,
+} from './expand-env-var-refs.mts'
 import { renderResolutionErrorReport } from './scripts/resolution-report-render.mts'
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
+import { getErrorMessageOr } from '../../utils/errors.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { SocketFactsSbomProject } from './scripts/facts.mts'
 import type { ManifestRunResult } from './scripts/run.mts'
 import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const MAX_FAILURE_OUTPUT_LINES = 40
+
+export type RunManifestFactsResult = {
+  factsPath: string
+  projects: SocketFactsSbomProject[]
+}
 
 // Last N non-empty lines of the captured build output, for diagnosing a crash
 // without forcing a --verbose rebuild.
@@ -23,6 +34,12 @@ function tailBuildOutput(stdout: string, stderr: string): string {
     .join('\n')
   return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
 }
+
+// `null` = a real failure (crash, missing config, blocking unresolved
+// dependency); `undefined` = genuinely nothing to resolve, not a failure.
+// Distinguishing the two here means callers never have to infer it from
+// `process.exitCode`, which can already be non-zero for an unrelated reason.
+export type RunManifestFactsOutcome = RunManifestFactsResult | null | undefined
 
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
@@ -39,6 +56,7 @@ export async function runManifestFacts({
   excludePaths,
   ignoreUnresolved,
   includeConfigs,
+  javaHome,
   sidecarAcc,
   tmpDir,
   verbose,
@@ -52,15 +70,29 @@ export async function runManifestFacts({
   excludePaths?: string[] | undefined
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome?: string | undefined
   sidecarAcc?: SidecarAccumulator | undefined
   // sbt only; see ManifestScriptOptions.tmpDir.
   tmpDir?: string | undefined
   verbose: boolean
   withFiles?: boolean | undefined
-}): Promise<void> {
+}): Promise<RunManifestFactsOutcome> {
   const factsPath = path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)
 
-  logger.log(
+  let resolvedJavaHome: string | undefined
+  if (javaHome) {
+    const expanded = expandEnvVarRefs(javaHome)
+    if (expanded.missing) {
+      process.exitCode = 1
+      logger.fail(
+        `javaHome (\`${javaHome}\`) ${formatMissingEnvVarRefs(expanded.missing)}.`,
+      )
+      return null
+    }
+    resolvedJavaHome = expanded.value
+  }
+
+  logger.info(
     `Generating Socket facts for the ${ecosystem} project at \`${cwd}\` ...`,
   )
 
@@ -68,6 +100,10 @@ export async function runManifestFacts({
     bin: bin || undefined,
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
+    // `env` replaces the spawned process's whole environment, not just JAVA_HOME.
+    env: resolvedJavaHome
+      ? { ...process.env, JAVA_HOME: resolvedJavaHome }
+      : undefined,
     includeConfigs: includeConfigs || undefined,
     projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and
@@ -108,9 +144,11 @@ export async function runManifestFacts({
     process.exitCode = 1
     logger.fail(
       `Could not run the ${ecosystem} build tool` +
-        (verbose ? `: ${e}` : ' (run with --verbose for details).'),
+        (verbose
+          ? `: ${getErrorMessageOr(e, String(e))}`
+          : ' (run with --verbose for details).'),
     )
-    return
+    return null
   }
   const { artifactPaths, code, facts, report, stderr, stdout } = result
 
@@ -128,16 +166,16 @@ export async function runManifestFacts({
       process.exitCode = 1
       logger.fail(rendered.summary)
       if (verbose && rendered.details) {
-        logger.log(rendered.details)
+        logger.info(rendered.details)
       }
-      return
+      return null
     }
   }
   if (rendered.nonBlockingNotice) {
     logger.info(rendered.nonBlockingNotice)
   }
   if (verbose && rendered.details) {
-    logger.log(rendered.details)
+    logger.info(rendered.details)
   }
 
   // A non-zero build exit with no usable output (no graph, no first-party
@@ -169,7 +207,7 @@ export async function runManifestFacts({
     logger.fail(
       `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
     )
-    return
+    return null
   }
 
   // Nothing resolved at all — no dependencies and no first-party modules. A
@@ -189,4 +227,5 @@ export async function runManifestFacts({
   }
 
   logger.success('Generated Socket facts')
+  return { factsPath, projects: facts.projects ?? [] }
 }

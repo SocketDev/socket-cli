@@ -1,6 +1,7 @@
 # generated at test time
 project/localrepo/
 project/records.tsv
+project/workspaces-records.tsv
 project/.socket.facts.json
 project/.gradle/
 project/build/

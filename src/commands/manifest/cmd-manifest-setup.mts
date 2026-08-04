@@ -5,8 +5,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleManifestSetup } from './handle-manifest-setup.mts'
 import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
 
 import type {
   CliCommandConfig,
@@ -20,9 +22,23 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    // Only meaningful alongside the hidden --dynamic-sbom-inference below; kept hidden too.
+    excludePaths: {
+      type: 'string',
+      isMultiple: true,
+      hidden: true,
+      description:
+        'Build roots matching these glob patterns (and everything beneath them) are marked disabled. Patterns are anchored micromatch globs matched relative to CWD: `legacy` matches only `<cwd>/legacy`; use `**/legacy` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
+    },
     defaultOnReadError: {
       type: 'boolean',
       description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
+    },
+    dynamicSbomInference: {
+      type: 'boolean',
+      hidden: true,
+      description:
+        'Recursively scans for every gradle/sbt/maven build root beneath CWD first, so the CWD config step only asks about ecosystems actually found somewhere in the tree. A build root matching --exclude-paths is bulk-disabled with no prompt, applied unconditionally; eligible build roots found afterward can be configured individually',
     },
   },
   help: (command, config) => `
@@ -75,7 +91,7 @@ async function run(
     parentName,
   })
 
-  const { defaultOnReadError = false } = cli.flags
+  const { defaultOnReadError = false, dynamicSbomInference = false } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
 
@@ -89,5 +105,13 @@ async function run(
     return
   }
 
-  await handleManifestSetup(cwd, Boolean(defaultOnReadError))
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertValidExcludePaths(excludePaths)
+
+  await handleManifestSetup(
+    cwd,
+    Boolean(defaultOnReadError),
+    Boolean(dynamicSbomInference),
+    excludePaths,
+  )
 }

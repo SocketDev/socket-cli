@@ -60,35 +60,55 @@ export interface SocketJson {
         verbose?: boolean | undefined
       }
       gradle?: {
+        // Root-only: gates auto-detection for socket manifest auto/gradle.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        // A field set to null explicitly clears an inherited cascade value
+        // (widens back to the tool default) instead of restating it.
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         facts?: boolean | undefined
-        gradleOpts?: string | undefined
+        gradleOpts?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
+        javaHome?: string | undefined | null
         verbose?: boolean | undefined
       }
       maven?: {
+        // Root-only: gates auto-detection for socket manifest auto/maven.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         ignoreUnresolved?: boolean | undefined
-        mavenOpts?: string | undefined
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
+        javaHome?: string | undefined | null
+        mavenOpts?: string | undefined | null
         verbose?: boolean | undefined
       }
       sbt?: {
+        // Root-only: gates auto-detection for socket manifest auto/scala.
+        // Cascaded (any level): also skips that build root in
+        // dynamic-sbom-inference specifically.
         disabled?: boolean | undefined
-        infile?: string | undefined
+        infile?: string | undefined | null
         stdin?: boolean | undefined
-        bin?: string | undefined
-        excludeConfigs?: string | undefined
-        includeConfigs?: string | undefined
+        bin?: string | undefined | null
+        excludeConfigs?: string | undefined | null
+        includeConfigs?: string | undefined | null
         facts?: boolean | undefined
         ignoreUnresolved?: boolean | undefined
-        outfile?: string | undefined
-        sbtOpts?: string | undefined
+        // JDK path; sets JAVA_HOME for this ecosystem's build tool. Supports
+        // $VAR/${VAR} expansion against the CLI's own environment.
+        javaHome?: string | undefined | null
+        outfile?: string | undefined | null
+        sbtOpts?: string | undefined | null
         stdout?: boolean | undefined
         verbose?: boolean | undefined
       }
@@ -135,6 +155,74 @@ export async function readOrDefaultSocketJsonUp(
     return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
   }
   return getDefaultSocketJson()
+}
+
+// Shallow-merges `defaults.manifest.<ecosystem>` per ecosystem: fields set in
+// `override` win, others fall through to `base`. Only this section cascades;
+// everything else in `defaults` comes from `base` only.
+function mergeManifestDefaults(
+  base: SocketJson,
+  override: SocketJson,
+): SocketJson {
+  const overrideManifest = override.defaults?.manifest
+  if (!overrideManifest) {
+    return base
+  }
+  const baseManifest = base.defaults?.manifest
+  const mergedManifest: NonNullable<
+    NonNullable<SocketJson['defaults']>['manifest']
+  > = { ...baseManifest }
+  if (overrideManifest.bazel) {
+    mergedManifest.bazel = { ...baseManifest?.bazel, ...overrideManifest.bazel }
+  }
+  if (overrideManifest.conda) {
+    mergedManifest.conda = { ...baseManifest?.conda, ...overrideManifest.conda }
+  }
+  if (overrideManifest.gradle) {
+    mergedManifest.gradle = {
+      ...baseManifest?.gradle,
+      ...overrideManifest.gradle,
+    }
+  }
+  if (overrideManifest.maven) {
+    mergedManifest.maven = { ...baseManifest?.maven, ...overrideManifest.maven }
+  }
+  if (overrideManifest.sbt) {
+    mergedManifest.sbt = { ...baseManifest?.sbt, ...overrideManifest.sbt }
+  }
+  return {
+    ...base,
+    defaults: { ...base.defaults, manifest: mergedManifest },
+  }
+}
+
+// Cascades `defaults.manifest.*` from `rootSockJson` down to `dir`: each
+// ancestor's own socket.json, between `dir` and `boundaryDir` (exclusive),
+// merges in, nearest-to-`dir` winning field by field.
+export function readSocketJsonCascade(
+  dir: string,
+  boundaryDir: string,
+  rootSockJson: SocketJson,
+): SocketJson {
+  const boundary = path.resolve(boundaryDir)
+  let current = path.resolve(dir)
+  // Farthest-from-dir first, so the merge loop below applies overrides in
+  // increasing precedence and the nearest-to-dir file wins last.
+  const ancestorsFarToNear: SocketJson[] = []
+  while (current !== boundary) {
+    if (existsSync(path.join(current, SOCKET_JSON))) {
+      const jsonCResult = readSocketJsonSync(current, true)
+      if (jsonCResult.ok) {
+        ancestorsFarToNear.unshift(jsonCResult.data)
+      }
+    }
+    const parent = path.dirname(current)
+    if (parent === current) {
+      break
+    }
+    current = parent
+  }
+  return ancestorsFarToNear.reduce(mergeManifestDefaults, rootSockJson)
 }
 
 export function getDefaultSocketJson(): SocketJson {

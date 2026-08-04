@@ -11,6 +11,7 @@ export async function convertGradleToFacts({
   gradleOpts,
   ignoreUnresolved,
   includeConfigs,
+  javaHome,
   sidecarAcc,
   verbose,
   withFiles,
@@ -22,6 +23,7 @@ export async function convertGradleToFacts({
   gradleOpts: string[]
   ignoreUnresolved: boolean
   includeConfigs: string
+  javaHome?: string | undefined
   sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
   withFiles?: boolean | undefined
@@ -35,6 +37,7 @@ export async function convertGradleToFacts({
     excludePaths,
     ignoreUnresolved,
     includeConfigs,
+    javaHome,
     sidecarAcc,
     verbose,
     withFiles,

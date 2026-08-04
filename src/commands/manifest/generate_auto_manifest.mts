@@ -88,7 +88,9 @@ export async function generateAutoManifest({
       // Note: `sbt` is more likely to be resolved against PATH env.
       bin: sockJson.defaults?.manifest?.sbt?.bin ?? 'sbt',
       cwd,
-      sbtOpts: parseBuildToolOpts(sockJson.defaults?.manifest?.sbt?.sbtOpts),
+      sbtOpts: parseBuildToolOpts(
+        sockJson.defaults?.manifest?.sbt?.sbtOpts ?? undefined,
+      ),
       verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
     }
     // Socket facts is the default; opt into pom generation with
@@ -104,6 +106,7 @@ export async function generateAutoManifest({
           sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
         ),
         includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
+        javaHome: sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined,
         sidecarAcc,
         tmpDir,
         withFiles: computeArtifactsSidecar,
@@ -129,7 +132,7 @@ export async function generateAutoManifest({
       cwd,
       verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
       gradleOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.gradle?.gradleOpts,
+        sockJson.defaults?.manifest?.gradle?.gradleOpts ?? undefined,
       ),
     }
     // Socket facts is the default; opt into pom generation with
@@ -149,6 +152,7 @@ export async function generateAutoManifest({
         ),
         includeConfigs:
           sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
+        javaHome: sockJson.defaults?.manifest?.gradle?.javaHome ?? undefined,
         sidecarAcc,
         withFiles: computeArtifactsSidecar,
       })
@@ -178,8 +182,9 @@ export async function generateAutoManifest({
         sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
       ),
       includeConfigs: sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
+      javaHome: sockJson.defaults?.manifest?.maven?.javaHome ?? undefined,
       mavenOpts: parseBuildToolOpts(
-        sockJson.defaults?.manifest?.maven?.mavenOpts,
+        sockJson.defaults?.manifest?.maven?.mavenOpts ?? undefined,
       ),
       sidecarAcc,
       verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),

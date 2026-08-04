@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToFacts } from './convert-sbt-to-facts.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
+import { excludePathsFlag } from './manifest-flags.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
@@ -16,7 +17,6 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { assertValidExcludePaths } from '../scan/exclude-paths.mts'
-import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type {
   CliCommandConfig,
@@ -208,8 +208,8 @@ async function run(
     }
   }
   if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.sbt?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.sbt?.includeConfigs
+    if (sockJson.defaults?.manifest?.sbt?.includeConfigs) {
+      includeConfigs = sockJson.defaults.manifest.sbt.includeConfigs
       logger.info(
         `Using default --include-configs from ${SOCKET_JSON}:`,
         includeConfigs,
@@ -219,8 +219,8 @@ async function run(
     }
   }
   if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.sbt?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.sbt?.excludeConfigs
+    if (sockJson.defaults?.manifest?.sbt?.excludeConfigs) {
+      excludeConfigs = sockJson.defaults.manifest.sbt.excludeConfigs
       logger.info(
         `Using default --exclude-configs from ${SOCKET_JSON}:`,
         excludeConfigs,
@@ -330,11 +330,14 @@ async function run(
     return
   }
 
+  const javaHome = sockJson.defaults?.manifest?.sbt?.javaHome ?? undefined
+
   if (verbose) {
     logger.group()
     logger.log('- target:', cwd)
     logger.log('- sbt bin:', bin)
     logger.log('- out:', out)
+    logger.log('- java home:', javaHome || '(inherited)')
     logger.groupEnd()
   }
 
@@ -357,6 +360,7 @@ async function run(
         excludePaths,
         ignoreUnresolved: Boolean(ignoreUnresolved),
         includeConfigs: String(includeConfigs || ''),
+        javaHome,
         sbtOpts: parsedSbtOpts,
         tmpDir,
         verbose: Boolean(verbose),

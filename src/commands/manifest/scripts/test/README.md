@@ -1,9 +1,12 @@
 # JVM manifest-script compatibility tests
 
 These exercise the bundled build-tool scripts — the Gradle init script
-(`socket-facts.init.gradle`), the sbt plugin (`socket-facts.plugin.scala`), and
-the Maven extension (`maven-extension/`) — against a matrix of build-tool
-versions, asserting they still emit the expected line-protocol records.
+(`socket-facts.init.gradle`), the sbt plugin (`socket-facts.plugin.scala`), the
+Maven extension (`maven-extension/`), and each ecosystem's lightweight
+workspace-enumeration sibling (`socket-workspaces.init.gradle`,
+`socket-workspaces.plugin.scala`, `CoanaWorkspacesLifecycleParticipant`) —
+against a matrix of build-tool versions, asserting they still emit the
+expected line-protocol records.
 
 ## Run locally, on demand
 

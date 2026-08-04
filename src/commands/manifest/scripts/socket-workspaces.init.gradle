@@ -1,0 +1,99 @@
+// Invoke via:
+//   ./gradlew --init-script socket-workspaces.init.gradle socketWorkspaces
+
+// Sibling of socket-facts.init.gradle: emits only `meta`/`project` records, no dependency
+// resolution. Kept as a separate script so it can't affect that file's already-verified,
+// wide Gradle-version compatibility (1.0+).
+
+// `Project.findProperty` only exists since Gradle 2.13; fall back to hasProperty/property for older Gradle.
+gradle.ext.socketProp = { proj, name -> proj.hasProperty(name) ? proj.property(name) : null }
+
+// `-Psocket.excludePaths` → PRE-COMPILED, comma-joined, anchored regex pattern sources, used only
+// to skip whole excluded subprojects. The CLI compiles the user-facing globs in
+// exclude-paths-glob.mts (the single glob implementation, tested in CI); this script only
+// Pattern.compile()s what it receives.
+gradle.ext.socketExcludeMatchersCache = null
+gradle.ext.socketExcludeMatchers = {
+  if (gradle.ext.socketExcludeMatchersCache != null) return gradle.ext.socketExcludeMatchersCache
+  def raw = gradle.socketProp.call(gradle.rootProject, 'socket.excludePaths')?.toString()
+  def patterns = []
+  if (raw != null && !raw.trim().isEmpty()) {
+    raw.split(',').each { r ->
+      def p = r.trim()
+      if (!p.isEmpty()) {
+        // A pattern that doesn't compile is dropped, never thrown: the CLI emits a
+        // dialect-portable subset, so this only guards against a broken transport.
+        try { patterns << java.util.regex.Pattern.compile(p) }
+        catch (java.util.regex.PatternSyntaxException ignored) { }
+      }
+    }
+  }
+  gradle.ext.socketExcludeMatchersCache = patterns
+  patterns
+}
+gradle.ext.socketIsExcluded = { String rel ->
+  def c = (rel == null ? '' : rel).replace('\\', '/')
+  while (c.startsWith('./')) { c = c.substring(2) }
+  while (c.startsWith('/')) { c = c.substring(1) }
+  while (c.endsWith('/')) { c = c.substring(0, c.length() - 1) }
+  if (c.isEmpty()) { return false }
+  gradle.ext.socketExcludeMatchers.call().any { p -> p.matcher(c).matches() }
+}
+
+gradle.ext.socketWorkspacesInfo = Collections.synchronizedList([])
+
+// Collect every non-excluded project's identity at configuration time - cheap, no dependency
+// resolution, no sourceSets/jar introspection (unlike the full facts script, which also stamps
+// sources/targets/artifact-ext for resolution-time use).
+gradle.projectsEvaluated { g ->
+  def rootPath = g.rootProject.projectDir.toPath()
+  def rel = { java.io.File f ->
+    def r = rootPath.relativize(f.toPath()).toString().replace(File.separator, '/')
+    r.isEmpty() ? '.' : r
+  }
+  g.rootProject.allprojects.each { p ->
+    if (g.ext.socketIsExcluded.call(rel(p.projectDir))) {
+      return
+    }
+    g.socketWorkspacesInfo.add([
+      path   : p.path,
+      group  : (p.group ?: '').toString(),
+      name   : p.name,
+      version: (p.version ?: '').toString(),
+      dir    : rel(p.projectDir),
+    ])
+  }
+}
+
+rootProject { rp ->
+  def recordsFileOverride = gradle.socketProp.call(rp, 'socket.recordsFile')?.toString()
+  def defaultRecordsFile = new File(rp.projectDir, '.socket.workspaces.records.tsv').absolutePath
+
+  rp.tasks.create('socketWorkspaces') {
+    group = 'socket'
+    description = 'Emits Socket workspace records (project list only; no dependency resolution)'
+    outputs.upToDateWhen { false }
+
+    doLast {
+      def esc = { v ->
+        (v == null ? '' : v.toString())
+          .replace('\\', '\\\\').replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
+      }
+      def lines = []
+      def rec = { List fields -> lines << fields.collect { esc(it) }.join('\t') }
+
+      rec(['meta', 'gradle', gradle.gradleVersion, System.getProperty('java.version')])
+
+      def info
+      synchronized (gradle.socketWorkspacesInfo) { info = new ArrayList(gradle.socketWorkspacesInfo) }
+      info.each { pi ->
+        rec(['project', pi.path, pi.group, pi.name, pi.version, pi.dir])
+      }
+
+      def outFile = new File(recordsFileOverride ?: defaultRecordsFile)
+      outFile.parentFile?.mkdirs()
+      outFile.withWriter('UTF-8') { it.write(lines.join('\n') + '\n') }
+      println "Socket workspace records written to: ${outFile.absolutePath}"
+    }
+  }
+}

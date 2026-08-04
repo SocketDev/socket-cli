@@ -4,4 +4,5 @@ project/project/target/
 project/project/build.properties
 project/scala-version.sbt
 project/records.tsv
+project/workspaces-records.tsv
 project/target

@@ -2,6 +2,7 @@ import { cmdManifestBazel } from './bazel/cmd-manifest-bazel.mts'
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
 import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
+import { cmdManifestDynamicSbomInference } from './cmd-manifest-dynamic-sbom-inference.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestMaven } from './cmd-manifest-maven.mts'
@@ -73,6 +74,7 @@ async function run(
         bazel: cmdManifestBazel,
         cdxgen: cmdManifestCdxgen,
         conda: cmdManifestConda,
+        'dynamic-sbom-inference': cmdManifestDynamicSbomInference,
         gradle: cmdManifestGradle,
         kotlin: cmdManifestKotlin,
         maven: cmdManifestMaven,
