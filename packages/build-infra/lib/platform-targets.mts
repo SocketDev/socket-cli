@@ -160,12 +160,8 @@ export interface PlatformTargetInfo {
  * @example
  *   parsePlatformTarget('darwin-arm64')
  *   // { platform: 'darwin', arch: 'arm64' }
- *
- * @example
  *   parsePlatformTarget('linux-x64-musl')
  *   // { platform: 'linux', arch: 'x64', libc: 'musl' }
- *
- * @example
  *   parsePlatformTarget('win-x64')
  *   // { platform: 'win32', arch: 'x64' }
  *

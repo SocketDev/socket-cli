@@ -389,7 +389,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       repoName: 'socket-default-repository',
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBeUndefined()
   })
 
@@ -399,7 +399,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       repoName: 'my-repo',
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBe('my-repo')
   })
 
@@ -409,7 +409,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBeUndefined()
   })
 
@@ -419,7 +419,7 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
-    const callOpts = mockSpawnCoanaDlx.mock.calls[0][2]
+    const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/x')
   })
 })

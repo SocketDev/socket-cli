@@ -27,23 +27,17 @@ import { SOCKET_CLI_SEA_BUILD_DIR } from '../constants/paths.mts'
 // c8 ignore start
 /**
  * Generate SEA configuration file for Node.js single executable application.
- * Creates sea-config-{name}.json with blob output path and settings.
  *
- * Configuration includes: - Entry point, main file to bundle. - Output blob
- * path. - Code cache enabled for optimization. - Snapshot disabled for
- * compatibility. - No bundled assets, minimizes size.
- *
- * @example
- *   const configPath = await generateSeaConfig(
- *     '/path/to/dist/cli.js',
- *     '/path/to/socket-darwin-arm64',
- *   )
- *   // Returns: /path/to/sea-config-socket-darwin-arm64.json
+ * Writes `sea-config-<name>.json` naming the entry point to bundle and the blob
+ * output path, with the code cache on for faster startup, snapshots off (they
+ * would freeze build-time env values, and the CLI reads env at module load),
+ * and no bundled assets so the binary stays small.
  *
  * @param {string} entryPoint - Absolute path to the entry point file.
  * @param {string} outputPath - Absolute path to the output binary.
  *
- * @returns Promise resolving to absolute path of generated config file.
+ * @returns Promise resolving to the absolute config path, which is
+ *   `sea-config-<basename of outputPath>.json` beside that binary.
  */
 export async function generateSeaConfig(entryPoint, outputPath) {
   const outputName = path.basename(outputPath, path.extname(outputPath))
@@ -105,51 +99,19 @@ export async function generateSeaConfig(entryPoint, outputPath) {
 /**
  * Inject SEA blob and optional VFS assets into a Node.js binary using binject.
  *
- * This function performs the core SEA binary build step by:
- *
- * 1. Invoking binject to inject the SEA blob into the Node.js binary.
- * 2. Optionally embedding security tools via VFS compression (binject --vfs).
- *
- * Config-Based Blob Generation: Instead of pre-generating the SEA blob with
- * `node --experimental-sea-config`, binject reads the sea-config.json directly
- * and generates the blob automatically. This simplifies the API and reduces
- * build steps.
- *
- * VFS Compression (Optional): If vfsTarGz is provided, binject's --vfs flag
- * embeds the compressed tar.gz of security tools into the binary. This achieves
- * ~70% compression compared to Node.js SEA assets. If vfsTarGz is omitted,
- * --vfs-compat mode is used (no actual VFS bundling).
- *
- * @example
- *   await injectSeaBlob(
- *     'build-infra/build/downloaded/node-smol/darwin-arm64/node',
- *     'dist/sea/sea-config-socket-darwin-arm64.json',
- *     'dist/sea/socket-darwin-arm64',
- *     'socket-darwin-arm64-abc123',
- *     'build-infra/build/external-tools/darwin-arm64.tar.gz',
- *   )
- *   // Creates: dist/sea/socket-darwin-arm64 with CLI + compressed VFS
- *
- * @example
- *   await injectSeaBlob(
- *     'build-infra/build/downloaded/node-smol/linux-x64/node',
- *     'dist/sea/sea-config-socket-linux-x64.json',
- *     'dist/sea/socket-linux-x64',
- *     'socket-linux-x64-abc123',
- *   )
- *   // Creates: dist/sea/socket-linux-x64 with CLI only (no VFS)
+ * Binject reads sea-config.json directly and generates the blob itself, so
+ * there is no separate `node --experimental-sea-config` step. When `vfsTarGz`
+ * is given, its `--vfs` flag also embeds that compressed tar.gz of security
+ * tools, roughly 70% smaller than the equivalent Node.js SEA assets; without
+ * it binject runs in `--vfs-compat` mode and bundles the CLI alone.
  *
  * @param {string} nodeBinary - Path to the node-smol binary to inject into.
- * @param {string} configPath - Path to the sea-config.json file for
- *   config-based blob generation.
- * @param {string} outputPath - Path to the output SEA binary (may be same as
- *   nodeBinary).
- * @param {string} cacheId - Unique cache identifier for parallel builds
- *   prevents interference.
- * @param {string} [vfsTarGz] - Optional path to tar.gz file containing security
- *   tools for VFS bundling. If provided, security tools are compressed and
- *   embedded in the binary. If omitted, only the CLI code is bundled (no
- *   additional tools).
+ * @param {string} configPath - Path to the sea-config.json file.
+ * @param {string} outputPath - Path to the output SEA binary (may be the same
+ *   as nodeBinary).
+ * @param {string} cacheId - Unique cache identifier, so parallel builds do not
+ *   interfere with each other.
+ * @param {string} [vfsTarGz] - Optional tar.gz of security tools to embed.
  *
  * @returns Promise that resolves when injection completes.
  */

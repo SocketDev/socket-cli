@@ -67,9 +67,7 @@ export function areBasicsToolsAvailable(): boolean {
  * Extract basics tools from VFS using process.smol.mount().
  *
  * Extracts Python, Trivy, TruffleHog, and OpenGrep binaries from the SEA's VFS.
- * process.smol.mount() handles caching, locking, and extraction automatically.
- *
- * Extraction is managed by node-smol and tools are cached persistently.
+ * process.smol.mount() handles caching, locking, and persistent extraction.
  *
  * @example
  *   const toolsDir = await extractBasicsTools()

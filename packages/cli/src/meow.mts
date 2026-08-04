@@ -61,6 +61,7 @@ export function defineFlags<const F extends MeowFlags>(flags: F): F {
 // `cli.flags.someFlag` from a wide-typed result don't get the wrong
 // runtime shape narrowed away. Concrete schemas with literal `type`
 // strings still resolve to the precise primitive.
+
 // 'number' maps to `number | string`, not `number`: the parse layer only
 // converts a number flag when `Number(raw)` is not NaN, so garbage input
 // (`--page=invalid`) arrives as the raw STRING. The union keeps that honest

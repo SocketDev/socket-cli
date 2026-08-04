@@ -37,29 +37,11 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
 /**
  * Combine npm packages and external tools into a single VFS archive.
  *
- * Creates a unified tar.gz containing both:
- *
- * - Node_modules/ with npm packages and dependencies.
- * - External tool binaries (Python, Trivy, TruffleHog, OpenGrep, socket-patch).
- *
- * The combined archive is used by binject for VFS embedding into SEA binaries.
- *
- * Directory structure in combined archive: ./node_modules/ # npm packages with
- * dependencies ├── @coana-tech/cli/ ├── @cyclonedx/cdxgen/ └── synp/ ./python/
- *
- * # Python runtime ./trivy # Trivy binary ./trufflehog # TruffleHog binary
- *
- * ./opengrep # OpenGrep binary ./socket-patch # Socket Patch Rust binary
- * (v2.0.0+)
- *
- * @example
- *   const combined = await combineVfsArchives(
- *     '../build-infra/build/npm-packages/npm-packages.tar.gz',
- *     '../build-infra/build/external-tools/darwin-arm64.tar.gz',
- *     'darwin',
- *     'arm64',
- *   )
- *   // Returns: '../build-infra/build/vfs/darwin-arm64.tar.gz'
+ * Writes one tar.gz holding `node_modules/` — the npm packages plus their
+ * production dependencies — alongside the external tool payloads at the archive
+ * root: `python/` (the runtime directory), and the `trivy`, `trufflehog`,
+ * `opengrep`, and `socket-patch` binaries. binject reads this archive to embed
+ * the VFS into a SEA binary.
  *
  * @param {string} npmPackagesTarGz - Path to npm packages tar.gz.
  * @param {string} externalToolsTarGz - Path to external tools tar.gz.
@@ -67,7 +49,8 @@ const externalTools = JSON.parse(readFileSync(externalToolsPath, 'utf8')).tools
  * @param {string} arch - Architecture identifier (arm64, x64).
  * @param {boolean} [isMusl=false] - Whether this is musl libc, Linux only.
  *
- * @returns Promise resolving to path of combined tar.gz.
+ * @returns Promise resolving to the combined tar.gz path, `<vfsDir>/
+ *   <platform>-<arch>.tar.gz`.
  */
 async function combineVfsArchives(
   npmPackagesTarGz,
@@ -176,19 +159,10 @@ async function combineVfsArchives(
 /**
  * Download a single npm package with full dependency tree using Arborist.
  *
- * Downloads the complete package structure including node_modules/ with all
- * production dependencies, ready for VFS bundling.
- *
- * The install is checked against the tool's `integrity` pin before it is used.
- * A missing or mismatched pin throws — see npm-integrity.mts for why both the
- * npm-recorded hash and our pin are needed.
- *
- * @example
- *   await downloadNpmPackage(
- *     { integrity: 'sha512-xxx', name: 'synp', version: '1.9.14' },
- *     '/tmp/synp',
- *   )
- *   // Creates: /tmp/synp/node_modules/synp/ with full dependency tree
+ * Installs into `<targetDir>/node_modules/<name>/` with all production
+ * dependencies, ready for VFS bundling, then checks the result against the
+ * tool's `integrity` pin. A missing or mismatched pin throws — see
+ * npm-integrity.mts for why both the npm-recorded hash and our pin are needed.
  *
  * @param {object} pin - The npm tool as declared in bundle-tools.json.
  * @param {string} targetDir - Directory to install package into.
@@ -254,32 +228,19 @@ async function downloadNpmPackage(pin, targetDir) {
 /**
  * Download all npm packages with full dependency trees for VFS bundling.
  *
- * Downloads npm packages specified in bundle-tools.json that have type='npm',
- * installs them with full production dependency trees using Arborist, and
- * packages them into a compressed tar.gz for VFS embedding.
+ * Installs every `type='npm'` entry in bundle-tools.json with its full
+ * production dependency tree via Arborist, then packs the result into one
+ * tar.gz for VFS embedding. Today that is @coana-tech/cli (static analysis and
+ * reachability), @cyclonedx/cdxgen (CycloneDX SBOM generation), and synp
+ * (yarn.lock to package-lock.json).
  *
- * Npm Packages:
+ * Each package keeps its normal layout under `<targetDir>/node_modules/`: its
+ * own `bin/`, its `package.json`, and a nested `node_modules/` for its
+ * dependencies. socket-patch is NOT here — it ships as a standalone Rust
+ * binary from GitHub releases, handled by downloads.mts.
  *
- * - @coana-tech/cli: Static analysis and reachability detection.
- * - @cyclonedx/cdxgen: CycloneDX SBOM generator.
- * - Synp: yarn.lock to package-lock.json converter.
- *
- * Note: socket-patch was migrated from npm to GitHub releases in v2.0.0. It's
- * now bundled as a standalone Rust binary via downloads.mts.
- *
- * Directory Structure: <targetDir>/ └── node_modules/ ├── @coana-tech/cli/ │
- * ├── bin/coana │ ├── package.json │ └── node_modules/ # Dependencies ├──
- *
- * @example
- *   const tarGzPath = await downloadNpmPackages()
- *   // Returns: '../build-infra/build/npm-packages/npm-packages.tar.gz'
- *
- * @returns Promise resolving to path of tar.gz archive, or null if no npm
- *   packages defined.
- *
- * @cyclonedx/cdxgen/ │ ├── bin/cdxgen │ ├── package.json │ └── node_modules/ #
- * Dependencies └── synp/ ├── bin/synp ├── package.json └── node_modules/ #
- * Dependencies.
+ * @returns Promise resolving to the tar.gz path, `<npmPackagesDir>/
+ *   npm-packages.tar.gz`, or null when no npm packages are defined.
  */
 async function downloadNpmPackages() {
   const rootPath = getRootPath()

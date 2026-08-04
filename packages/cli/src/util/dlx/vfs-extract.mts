@@ -93,28 +93,6 @@ export {
   type ExternalTool,
 } from './vfs-extract-config.mts'
 
-/**
- * Extract external tools from VFS to node-smol's dlx directory.
- *
- * Extracts external tools from the SEA's VFS and writes them to node-smol's
- * shared dlx directory (~/.socket/_dlx/<node-smol-hash>/).
- *
- * Tool extraction paths:
- *
- * - Standalone binaries: ~/.socket/_dlx/<hash>/{tool}
- * - Npm packages:
- *   ~/.socket/_dlx/<hash>/node_modules/{packageName}/bin/{binaryName}
- *
- * @example
- *   const toolPaths = await extractExternalTools()
- *   if (toolPaths) {
- *     const sfwPath = toolPaths.sfw // ~/.socket/_dlx/<hash>/sfw
- *     const cdxgenPath = toolPaths.cdxgen // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
- *   }
- *
- * @returns Record of tool names to their extracted paths, or null if extraction
- *   failed.
- */
 // Maximum recursion depth for extraction retries.
 const MAX_EXTRACTION_DEPTH = 5
 
@@ -141,6 +119,24 @@ export function areExternalToolsAvailable(): boolean {
   return false
 }
 
+/**
+ * Extract external tools from VFS to node-smol's dlx directory.
+ *
+ * Extracts external tools from the SEA's VFS and writes them to node-smol's
+ * shared dlx directory (~/.socket/_dlx/<node-smol-hash>/). A standalone binary
+ * lands at the directory root; an npm package keeps its
+ * node_modules/{packageName}/bin/{binaryName} layout under it.
+ *
+ * @example
+ *   const toolPaths = await extractExternalTools()
+ *   if (toolPaths) {
+ *     const sfwPath = toolPaths.sfw // ~/.socket/_dlx/<hash>/sfw
+ *     const cdxgenPath = toolPaths.cdxgen // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
+ *   }
+ *
+ * @returns Record of tool names to their extracted paths, or null if extraction
+ *   failed.
+ */
 export async function extractExternalTools(
   depth = 0,
 ): Promise<Record<ExternalTool, string> | undefined> {

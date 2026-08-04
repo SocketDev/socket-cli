@@ -248,30 +248,16 @@ interface CliInScratchOptions extends CliExecutionOptions {
 }
 
 /**
- * Execute Socket CLI inside a fully isolated scratch directory. Pins
- * **everything** the CLI or its spawned subprocesses might read or write
- * outside of cwd into the scratch tree, so an e2e run never touches the
- * developer's system:
+ * Execute Socket CLI inside a fully isolated scratch directory, so an e2e run
+ * never touches the developer's system. `cwd` and `HOME` / `USERPROFILE` each
+ * get a fresh `os.tmpdir()` tree, and every XDG base-directory var plus the
+ * npm / pnpm / yarn / pip / cargo / gradle cache and config vars are redirected
+ * under that scratch HOME — the `env` literal in the body is the exhaustive
+ * list, grouped by tool.
  *
- * - `cwd` → fresh `os.os.tmpdir()/socket-e2e-<n>/`
- * - `HOME` / `USERPROFILE` → fresh `os.os.tmpdir()/socket-e2e-home-<n>/`
- * - `XDG_CONFIG_HOME` → `<scratchHome>/.config`
- * - `XDG_CACHE_HOME` → `<scratchHome>/.cache`
- * - `XDG_DATA_HOME` → `<scratchHome>/.local/share`
- * - `XDG_STATE_HOME` → `<scratchHome>/.local/state`
- * - `NPM_CONFIG_CACHE` / `npm_config_cache` → `<scratchHome>/.npm`
- * - `NPM_CONFIG_PREFIX` / `npm_config_prefix` → `<scratchHome>/.npm-global`
- * - `NPM_CONFIG_USERCONFIG` / `npm_config_userconfig` → `<scratchHome>/.npmrc`
- * - `PNPM_HOME` → `<scratchHome>/.pnpm`
- * - `YARN_CACHE_FOLDER` → `<scratchHome>/.yarn-cache`
- * - `PIP_CACHE_DIR` → `<scratchHome>/.pip-cache`
- * - `CARGO_HOME` → `<scratchHome>/.cargo`
- * - `GRADLE_USER_HOME` → `<scratchHome>/.gradle`
- *
- * Anything not pinned by the helper (the developer's `SOCKET_API_KEY` env, the
- * real OS keychain for credentials) is **read-only** from the CLI's perspective
- * — the CLI may read the token but the scratch HOME ensures it can't persist a
- * new one back into the dev's config.
+ * What it does NOT redirect (the developer's `SOCKET_API_KEY`, the real OS
+ * keychain) stays readable: the CLI may read a token, but the scratch HOME
+ * stops it persisting a new one into the dev's config.
  *
  * Cleans up the scratch trees via `safeDelete()` even on failure.
  *
@@ -352,21 +338,18 @@ export async function executeCliInScratch(
  * the duration of `fn`. Restores the original env on exit and `safeDelete()`s
  * the scratch tree.
  *
- * Use this when an e2e test calls socket-cli internals directly (in-process) —
- * e.g. `spawnDlx()` — rather than spawning the CLI binary. The
- * `executeCliInScratch` helper covers the spawn-the-binary path; this is the
- * sibling for the in-process path.
+ * Use this when an e2e test calls socket-cli internals in-process (say
+ * `spawnDlx()`) rather than spawning the binary, which `executeCliInScratch`
+ * covers.
  *
- * Concurrency note: vitest runs tests within a single file serially by default.
- * Each worker has its own Node process so env mutation here doesn't race
- * against other test files. Don't use this in a file that opts into
- * `it.concurrent`.
+ * Concurrency: vitest runs a single file's tests serially and gives each worker
+ * its own Node process, so this env mutation races nothing. Do NOT use it in a
+ * file that opts into `it.concurrent`.
  *
  * @example
  *   await withScratchHome(async () => {
- *     const result = await spawnDlx({ name: 'cowsay', version: '1.6.0' }, [
- *       'moo',
- *     ])
+ *     const cowsay = { name: 'cowsay', version: '1.6.0' }
+ *     const result = await spawnDlx(cowsay, ['moo'])
  *     expect((await result.spawnPromise).code).toBe(0)
  *   })
  */

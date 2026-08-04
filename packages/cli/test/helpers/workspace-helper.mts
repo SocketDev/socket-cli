@@ -110,25 +110,16 @@ export interface Workspace {
  * Create a temporary test workspace with specified files and configuration.
  *
  * @example
- *   ;```typescript
  *   const workspace = await createTestWorkspace({
- *     packageJson: {
- *       name: 'test-project',
- *       dependencies: { express: '^4.18.0' },
- *     },
+ *     packageJson: { name: 'test-project' },
  *     files: [{ path: 'index.js', content: 'console.log("hello")' }],
  *   })
- *
- *   // Use workspace
- *   const result = await executeCliCommand(['scan'], { cwd: workspace.path })
- *
- *   // Cleanup
+ *   await executeCliCommand(['scan'], { cwd: workspace.path })
  *   await workspace.cleanup()
- *   ```
  *
  * @param config - Workspace configuration.
  *
- * @returns Workspace instance with cleanup
+ * @returns Workspace instance whose `cleanup()` removes the temporary tree.
  */
 export async function createTestWorkspace(
   config?: WorkspaceConfig | undefined,

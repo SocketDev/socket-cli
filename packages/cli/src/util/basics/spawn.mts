@@ -146,11 +146,9 @@ export type SocketBasicsResult = {
 /**
  * Run socket-basics comprehensive security scanning.
  *
- * Spawns socket-basics, Python tool, to perform:
- *
- * - SAST, Static Application Security Testing, via OpenGrep
- * - Secret detection via TruffleHog
- * - Container scanning via Trivy, if images are specified
+ * Spawns socket-basics, a Python tool, for SAST via OpenGrep, secret detection
+ * via TruffleHog, and — when images are specified — container scanning via
+ * Trivy.
  *
  * Environment Variables Set:
  *
@@ -158,24 +156,11 @@ export type SocketBasicsResult = {
  * - SKIP_SOCKET_SUBMISSION=1 - Skip socket-basics submitting to Socket API
  * - PATH - Updated to include extracted tool directories
  *
- * @example
- *   const result = await runSocketBasics({
- *     cwd: '/path/to/project',
- *     orgSlug: 'my-org',
- *     repoName: 'my-repo',
- *     languages: ['python', 'javascript'],
- *     scanSecrets: true,
- *   })
- *
- *   if (result.ok && result.data.factsPath) {
- *     logger.log('Socket facts:', result.data.factsPath)
- *     logger.log('SAST findings:', result.data.findings.sast)
- *     logger.log('Secrets found:', result.data.findings.secrets)
- *   }
- *
  * @param config - Socket-basics configuration options.
  *
- * @returns Result with path to .socket.facts.json and finding counts.
+ * @returns Result whose `data` carries `factsPath`, the path to the written
+ *   `.socket.facts.json`, and a `findings` count per scanner (`sast`,
+ *   `secrets`, `containers`).
  */
 export async function runSocketBasics(
   config: SocketBasicsOptions,

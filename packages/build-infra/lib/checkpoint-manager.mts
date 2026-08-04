@@ -126,19 +126,12 @@ export function computeCacheHash(
  * @param {string} name - Checkpoint name (must be a CHECKPOINTS value).
  * @param {() => Promise<void>} smokeTest - Throws if the stage output is
  *   invalid.
- * @param {object} [options]
- * @param {string} [options.packageName]
- * @param {string} [options.artifactPath] - Informational; recorded in JSON.
- * @param {string} [options.binaryPath] - Informational; recorded in JSON.
- * @param {string | number} [options.binarySize] - Informational; recorded in
- *   JSON.
- * @param {string[]} [options.sourcePaths] - Inputs hashed into the cache key.
- * @param {string} [options.buildMode]
- * @param {string} [options.nodeVersion]
- * @param {string} [options.platform]
- * @param {string} [options.arch]
- * @param {string} [options.libc]
- * @param {string} [options.packageRoot]
+ * @param {CreateCheckpointOptions} [options] - Only `sourcePaths` and the
+ *   inherited platform fields (`buildMode`, `nodeVersion`, `platform`, `arch`,
+ *   `libc`) feed the cache key. `packageName` picks which checkpoint file is
+ *   written and `packageRoot` only shortens the logged path; `artifactPath`,
+ *   `binaryPath`, and `binarySize` are recorded in the marker for humans. None
+ *   of those five invalidate the checkpoint when they change.
  */
 export async function createCheckpoint(
   buildDir: string,
