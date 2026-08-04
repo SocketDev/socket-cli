@@ -1,6 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { expandEnvVarRefs } from './expand-env-var-refs.mts'
+import {
+  expandEnvVarRefs,
+  formatMissingEnvVarRefs,
+} from './expand-env-var-refs.mts'
 import { enumerateWorkspaces as enumerateWorkspacesScript } from './scripts/run.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
 
@@ -38,7 +41,7 @@ export async function enumerateWorkspaces({
     if (expanded.missing) {
       process.exitCode = 1
       logger.fail(
-        `javaHome (\`${javaHome}\`) references \`${expanded.missing}\`, which is not set in this environment.`,
+        `javaHome (\`${javaHome}\`) ${formatMissingEnvVarRefs(expanded.missing)}.`,
       )
       return
     }

@@ -3,7 +3,10 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { expandEnvVarRefs } from './expand-env-var-refs.mts'
+import {
+  expandEnvVarRefs,
+  formatMissingEnvVarRefs,
+} from './expand-env-var-refs.mts'
 import { renderResolutionErrorReport } from './scripts/resolution-report-render.mts'
 import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
@@ -82,7 +85,7 @@ export async function runManifestFacts({
     if (expanded.missing) {
       process.exitCode = 1
       logger.fail(
-        `javaHome (\`${javaHome}\`) references \`${expanded.missing}\`, which is not set in this environment.`,
+        `javaHome (\`${javaHome}\`) ${formatMissingEnvVarRefs(expanded.missing)}.`,
       )
       return null
     }
