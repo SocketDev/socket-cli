@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`project` records from the
@@ -28,7 +28,7 @@ public final class SocketWorkspacesRecordsEngine {
 
   public static void run(List<MavenProject> reactor, File rootDir, Options opts, String mavenVersion)
       throws IOException {
-    List<PathMatcher> excludes = SocketSupport.parseExcludeMatchers(opts.excludePaths);
+    List<Pattern> excludes = SocketSupport.parseExcludePatterns(opts.excludePaths);
 
     List<String> lines = new ArrayList<>();
     rec(lines, "meta", "maven", mavenVersion, System.getProperty("java.version"));

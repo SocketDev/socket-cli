@@ -5,6 +5,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { assembleFacts } from './assemble.mts'
 import { resolveBuildToolBin } from './build-tool.mts'
+import { serializeExcludePathPatterns } from './exclude-paths-glob.mts'
 import { parseRecords } from './records.mts'
 import constants from '../../../constants.mts'
 import { withTmpDir } from '../../../utils/fs.mts'
@@ -212,10 +213,12 @@ function commonProps(
   if (opts.excludeConfigs) {
     props.push(`${prefix}socket.excludeConfigs=${opts.excludeConfigs}`)
   }
-  if (opts.excludePaths?.length) {
-    // CSV: `--exclude-paths` is comma-split at the CLI, so an entry can never
-    // contain a comma.
-    props.push(`${prefix}socket.excludePaths=${opts.excludePaths.join(',')}`)
+  // Globs compile to regex pattern sources HERE (exclude-paths-glob.mts is
+  // the single glob implementation); the scripts just Pattern.compile what
+  // they receive.
+  const excludePatterns = serializeExcludePathPatterns(opts.excludePaths)
+  if (excludePatterns) {
+    props.push(`${prefix}socket.excludePaths=${excludePatterns}`)
   }
   return props
 }
