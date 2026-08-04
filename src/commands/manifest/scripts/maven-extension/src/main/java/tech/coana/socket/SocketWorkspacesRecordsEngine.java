@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * Sibling of {@link SocketFactsRecordsEngine} that emits only `meta`/`project` records from the
  * already-populated reactor list, building no dependency graph - cheap workspace discovery for
- * `socket manifest setup --recursive` without a full facts-generation build.
+ * `socket manifest setup --dynamic-sbom-inference` without a full facts-generation build.
  */
 public final class SocketWorkspacesRecordsEngine {
 

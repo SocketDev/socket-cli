@@ -39,25 +39,31 @@ export async function outputManifestDynamicSbomInference(
     logger.fail(failMsgWithBadge(result.message, result.cause))
     const data = result.data as RecursiveManifestOutcome[] | undefined
     if (Array.isArray(data)) {
-      logger.log(renderTable(data))
+      const table = renderTable(data)
+      if (table) {
+        logger.log(table)
+      }
       logger.log(summarize(data))
     }
     return
   }
+
+  const table = renderTable(result.data)
 
   if (outputKind === 'markdown') {
     logger.log(
       [
         '# Dynamic SBOM inference',
         '',
-        renderTable(result.data),
-        '',
+        ...(table ? [table, ''] : []),
         summarize(result.data),
       ].join('\n'),
     )
     return
   }
 
-  logger.log(renderTable(result.data))
+  if (table) {
+    logger.log(table)
+  }
   logger.log(summarize(result.data))
 }

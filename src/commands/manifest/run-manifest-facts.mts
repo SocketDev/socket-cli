@@ -163,7 +163,7 @@ export async function runManifestFacts({
       process.exitCode = 1
       logger.fail(rendered.summary)
       if (verbose && rendered.details) {
-        logger.log(rendered.details)
+        logger.info(rendered.details)
       }
       return null
     }
@@ -172,7 +172,7 @@ export async function runManifestFacts({
     logger.info(rendered.nonBlockingNotice)
   }
   if (verbose && rendered.details) {
-    logger.log(rendered.details)
+    logger.info(rendered.details)
   }
 
   // A non-zero build exit with no usable output (no graph, no first-party

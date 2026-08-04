@@ -22,7 +22,10 @@ const config: CliCommandConfig = {
   commandName: 'dynamic-sbom-inference',
   description:
     'Recursively discover gradle/sbt/maven build roots and generate a Socket facts SBOM for each',
-  hidden: false,
+  // Hidden: `--dynamic-sbom-inference` already names an unrelated, root-only
+  // scan create/reach flag (see reachability-flags.mts). Keep this hidden
+  // until the naming collision between the two is resolved.
+  hidden: true,
   flags: {
     ...commonFlags,
     ...outputFlags,
@@ -88,7 +91,9 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  if (verbose) {
+  // This debug block prints to stdout; --json's payload does too, so skip it
+  // here (unlike the other manifest commands, this one supports --json).
+  if (verbose && !json) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
     logger.groupEnd()

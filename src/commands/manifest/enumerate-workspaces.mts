@@ -12,8 +12,9 @@ export type EnumerateWorkspacesResult = {
 }
 
 // Cheap subproject discovery (no dependency resolution) for
-// `socket manifest setup --recursive`; dynamic-sbom-inference instead gets
-// this list for free as a side effect of its own full facts run.
+// `socket manifest setup --dynamic-sbom-inference`; dynamic-sbom-inference
+// itself instead gets this list for free as a side effect of its own full
+// facts run.
 export async function enumerateWorkspaces({
   bin,
   buildOpts,
