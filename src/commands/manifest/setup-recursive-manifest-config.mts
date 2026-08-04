@@ -245,8 +245,13 @@ export async function markWorkspaceCoverage({
 
   const set = coveredByEcosystem.get(candidate.ecosystem) ?? new Set<string>()
   set.add(candidate.dir)
-  for (const project of enumResult.projects) {
-    set.add(path.resolve(candidate.dir, project.subprojectDir))
+  const resolvedSubprojectDirs = await Promise.all(
+    enumResult.projects.map(project =>
+      realpathOrResolved(path.resolve(candidate.dir, project.subprojectDir)),
+    ),
+  )
+  for (const subprojectDir of resolvedSubprojectDirs) {
+    set.add(subprojectDir)
   }
   coveredByEcosystem.set(candidate.ecosystem, set)
   return { ok: true, data: undefined }

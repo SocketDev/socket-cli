@@ -70,10 +70,10 @@ export async function enumerateWorkspaces({
     return
   }
 
-  if (result.code !== 0 && !result.projects.length) {
+  if (!result.projects.length) {
     process.exitCode = 1
     logger.fail(
-      `The ${ecosystem} build failed (exit code ${result.code}) before producing any workspace records.`,
+      `The ${ecosystem} build produced no workspace records (exit code ${result.code}); every build reports at least its own root project, so the enumeration task did not run.`,
     )
     return
   }

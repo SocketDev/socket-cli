@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   findBuildToolCandidates,
+  realpathOrResolved,
   withoutDisabledFlags,
 } from './discover-manifest-roots.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
@@ -145,6 +146,10 @@ export async function generateRecursiveManifests({
   verbose: boolean
 }): Promise<RecursiveManifestOutcome[]> {
   const rootSockJson = readOrDefaultSocketJson(cwd)
+  // Candidate dirs come back realpath-resolved (findBuildToolCandidates); cwd
+  // must match or every boundary/relative-path comparison below breaks as
+  // soon as cwd contains a symlink (macOS /tmp -> /private/tmp, etc.).
+  const realCwd = await realpathOrResolved(cwd)
   // A root-disabled ecosystem must still be scanned for - a nested socket.json
   // may re-enable it - so the per-directory cascade below, not this scan, is
   // what actually decides skip vs. include.
@@ -167,7 +172,7 @@ export async function generateRecursiveManifests({
       const nearestRoot = nearestDisabledRoot(dir, disabledRoots)
       const sockJson = nearestRoot
         ? readSocketJsonCascade(dir, nearestRoot.dir, nearestRoot.sockJson)
-        : readSocketJsonCascade(dir, cwd, rootSockJson)
+        : readSocketJsonCascade(dir, realCwd, rootSockJson)
       const {
         bin,
         buildOpts,
@@ -194,7 +199,7 @@ export async function generateRecursiveManifests({
 
       const excludePathsForRoot = projectIgnorePathsToReachExcludePaths(
         excludePaths,
-        { cwd, target: dir },
+        { cwd: realCwd, target: dir },
       )
 
       // eslint-disable-next-line no-await-in-loop
@@ -224,8 +229,14 @@ export async function generateRecursiveManifests({
       }
 
       covered.add(dir)
-      for (const project of result.projects) {
-        covered.add(path.resolve(dir, project.subprojectDir))
+      // eslint-disable-next-line no-await-in-loop
+      const resolvedSubprojectDirs = await Promise.all(
+        result.projects.map(project =>
+          realpathOrResolved(path.resolve(dir, project.subprojectDir)),
+        ),
+      )
+      for (const subprojectDir of resolvedSubprojectDirs) {
+        covered.add(subprojectDir)
       }
       outcomes.push({
         dir,

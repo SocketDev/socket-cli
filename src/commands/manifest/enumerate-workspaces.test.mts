@@ -94,4 +94,16 @@ describe('enumerateWorkspaces', () => {
     expect(result).toBeUndefined()
     expect(process.exitCode).toBe(1)
   })
+
+  it('fails even on a clean exit if no workspace records were produced - every real run reports at least its own root project', async () => {
+    vi.mocked(enumerateWorkspacesScript).mockResolvedValue({
+      code: 0,
+      projects: [],
+      stderr: '',
+      stdout: '',
+    })
+    const result = await enumerateWorkspaces(baseArgs)
+    expect(result).toBeUndefined()
+    expect(process.exitCode).toBe(1)
+  })
 })

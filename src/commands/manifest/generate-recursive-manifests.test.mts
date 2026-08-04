@@ -1,3 +1,5 @@
+import { promises as fs } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -485,6 +487,54 @@ describe('generateRecursiveManifests', () => {
       expect(byKey.get('maven:reactor')).toBe('skippedDisabled')
     } finally {
       warnSpy.mockRestore()
+    }
+  })
+
+  it('bounds the socket.json cascade at a symlinked cwd instead of walking past it to the real filesystem root', async () => {
+    const actual = await vi.importActual<
+      typeof import('../../utils/socket-json.mts')
+    >('../../utils/socket-json.mts')
+    vi.mocked(readOrDefaultSocketJson).mockImplementation(
+      actual.readOrDefaultSocketJson,
+    )
+    vi.mocked(readSocketJsonCascade).mockImplementation(
+      actual.readSocketJsonCascade,
+    )
+
+    const outer = await fs.mkdtemp(path.join(tmpdir(), 'symlink-cascade-'))
+    const realCwd = path.join(outer, 'real-cwd')
+    const cwdLink = path.join(outer, 'cwd-link')
+    const project = path.join(realCwd, 'project')
+    try {
+      await fs.mkdir(project, { recursive: true })
+      await fs.writeFile(path.join(project, 'pom.xml'), '<project/>')
+      // Sits strictly above the intended recursion root - must never be read.
+      await fs.writeFile(
+        path.join(outer, 'socket.json'),
+        JSON.stringify({
+          version: 1,
+          defaults: { manifest: { maven: { bin: 'LEAKED-BIN' } } },
+        }),
+      )
+      await fs.symlink(realCwd, cwdLink)
+
+      vi.mocked(runManifestFacts).mockImplementation(async ({ bin, cwd }) => {
+        expect(bin).not.toBe('LEAKED-BIN')
+        return {
+          factsPath: path.join(cwd, '.socket.facts.json'),
+          projects: [],
+        }
+      })
+
+      const outcomes = await generateRecursiveManifests({
+        cwd: cwdLink,
+        verbose: false,
+      })
+
+      expect(outcomes.some(o => o.status === 'generated')).toBe(true)
+      expect(runManifestFacts).toHaveBeenCalled()
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
     }
   })
 })
