@@ -125,7 +125,7 @@ describe('generateRecursiveManifests', () => {
     expect(atDualMarkerDir.every(o => o.status === 'generated')).toBe(true)
   })
 
-  it('aborts the entire walk (fail-closed) once a build root fails, instead of continuing to further candidates', async () => {
+  it('aborts only the failing ecosystem (fail-closed), marking its remaining candidates aborted, while an unrelated ecosystem proceeds normally', async () => {
     vi.mocked(runManifestFacts).mockImplementation(
       async ({ cwd, ecosystem }) => {
         if (ecosystem === 'maven' && cwd === dualMarkerDir) {
@@ -149,10 +149,11 @@ describe('generateRecursiveManifests', () => {
       expect(byKey.get('maven:dual-marker-dir')).toBe('failed')
       // Without dual-marker-dir's own projects[], reactor's still-undiscovered
       // members can't be safely told apart from independent projects - so
-      // nothing else in the maven ecosystem gets attempted, or reported at all.
-      expect(byKey.has('maven:reactor')).toBe(false)
-      expect(byKey.has('maven:reactor/moduleB/independent-submodule')).toBe(
-        false,
+      // nothing else in the maven ecosystem gets attempted, but that's now
+      // reported explicitly rather than silently omitted.
+      expect(byKey.get('maven:reactor')).toBe('aborted')
+      expect(byKey.get('maven:reactor/moduleB/independent-submodule')).toBe(
+        'aborted',
       )
       expect(
         vi
@@ -161,9 +162,12 @@ describe('generateRecursiveManifests', () => {
             ([opts]) => opts.ecosystem === 'maven' && opts.cwd === reactor,
           ),
       ).toBe(false)
+      // Coverage is tracked per ecosystem, so maven's failure has nothing to
+      // do with gradle's - it still runs to completion at the same directory.
+      expect(byKey.get('gradle:dual-marker-dir')).toBe('generated')
       expect(
         warnSpy.mock.calls.some(c =>
-          /Aborting recursive discovery/.test(String(c[0])),
+          /Aborting maven discovery/.test(String(c[0])),
         ),
       ).toBe(true)
     } finally {

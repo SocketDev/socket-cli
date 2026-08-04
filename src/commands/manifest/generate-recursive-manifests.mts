@@ -20,6 +20,7 @@ import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 export type RecursiveManifestOutcomeStatus =
+  | 'aborted'
   | 'empty'
   | 'failed'
   | 'generated'
@@ -133,9 +134,10 @@ export function resolveEcosystemConfig(
 // root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
 // own projects[].subprojectDir, not by pruning the whole discovered subtree,
 // so an unrelated nested project a reactor doesn't declare still gets its
-// own invocation. Fail-closed: a root whose workspace layout can't be
-// determined aborts the whole walk, since without its projects[] a later
-// candidate can't safely be classified as covered vs. independent.
+// own invocation. Fail-closed per ecosystem, not globally: a root whose
+// workspace layout can't be determined aborts only that ecosystem's own
+// remaining walk (marking its untried candidates 'aborted'), since coverage
+// is tracked per ecosystem and an unrelated one has nothing to lose from it.
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,
@@ -160,10 +162,11 @@ export async function generateRecursiveManifests({
   })
 
   const outcomes: RecursiveManifestOutcome[] = []
-  ecosystems: for (const [ecosystem, dirs] of candidatesByTool) {
+  for (const [ecosystem, dirs] of candidatesByTool) {
     const covered = new Set<string>()
     const disabledRoots: DisabledRoot[] = []
-    for (const dir of dirs) {
+    for (let dirIndex = 0; dirIndex < dirs.length; dirIndex += 1) {
+      const dir = dirs[dirIndex] as string
       if (covered.has(dir)) {
         outcomes.push({ dir, ecosystem, status: 'skippedCovered' })
         continue
@@ -219,9 +222,12 @@ export async function generateRecursiveManifests({
       if (result === null) {
         outcomes.push({ dir, ecosystem, status: 'failed' })
         logger.warn(
-          `Aborting recursive discovery: ${dir}'s (${ecosystem}) workspace layout could not be determined, so remaining build roots cannot be safely classified as covered or independent.`,
+          `Aborting ${ecosystem} discovery: ${dir}'s workspace layout could not be determined, so its remaining build roots cannot be safely classified as covered or independent.`,
         )
-        break ecosystems
+        for (const abortedDir of dirs.slice(dirIndex + 1)) {
+          outcomes.push({ dir: abortedDir, ecosystem, status: 'aborted' })
+        }
+        break
       }
       if (!result) {
         outcomes.push({ dir, ecosystem, status: 'empty' })
