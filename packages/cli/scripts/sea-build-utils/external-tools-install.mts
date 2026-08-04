@@ -127,27 +127,10 @@ export async function downloadAndInstallTool(
   let extractedBinaryPath
 
   if (toolName === 'python') {
-    // Python extracts to different structures on Windows vs Unix.
-    // Unlike other tools, Python requires its entire directory structure (stdlib, lib,
-    // include directories) to function. The python-build-standalone package is a
-    // complete, self-contained Python installation (~19 MB compressed).
-    //
-    // Unix directory structure after extraction:
-    // python/
-    // ├── bin/           # Python executable and symlinks.
-    // ├── lib/           # Standard library and site-packages.
-    // ├── include/       # C headers for extension modules.
-    // └── share/         # Documentation and other resources.
-    //
-    // Windows directory structure after extraction:
-    // python/
-    // ├── python.exe     # Python executable at root.
-    // ├── DLLs/          # Python DLLs and extensions.
-    // ├── Lib/           # Standard library and site-packages.
-    // ├── libs/          # Import libraries for linking.
-    // └── include/       # C headers for extension modules.
-    //
-    // We keep the entire python/ directory in the VFS for socket-basics to use.
+    // Python is the one tool we keep as a whole directory rather than moving a
+    // single binary out: it needs its stdlib and headers present to run. The
+    // executable sits at a different place per platform, hence the branch.
+    // Per-platform layout: docs/references/repo/vfs-archive-layout.md
     const pythonBinPath = normalizePath(
       path.join(
         toolsDir,

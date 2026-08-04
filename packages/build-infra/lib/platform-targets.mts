@@ -153,27 +153,14 @@ export interface PlatformTargetInfo {
 }
 
 /**
- * Parse a platform target string into components. Handles formats:
- * darwin-arm64, linux-x64, linux-arm64-musl, win-x64, win32-x64 Accepts both
- * 'win', release naming, and 'win32' (Node.js naming) for Windows.
+ * Parse a platform target string into its components, or undefined when the
+ * string is not a recognized target. Accepted shapes are `<platform>-<arch>`
+ * and `<platform>-<arch>-musl`, so both `darwin-arm64` and `linux-x64-musl`
+ * parse.
  *
- * @example
- *   parsePlatformTarget('darwin-arm64')
- *   // { platform: 'darwin', arch: 'arm64' }
- *
- * @example
- *   parsePlatformTarget('linux-x64-musl')
- *   // { platform: 'linux', arch: 'x64', libc: 'musl' }
- *
- * @example
- *   parsePlatformTarget('win-x64')
- *   // { platform: 'win32', arch: 'x64' }
- *
- * @param {string} target - Target string (e.g., "darwin-arm64" or
- *   "linux-x64-musl").
- *
- * @returns {PlatformTargetInfo | undefined} Parsed info or undefined if
- *   invalid.
+ * Windows is the case worth knowing: the release name `win` and the Node.js
+ * name `win32` are both accepted, and both normalize to `win32` on the way out,
+ * so callers only ever have to handle one spelling.
  */
 export function parsePlatformTarget(
   target: string,

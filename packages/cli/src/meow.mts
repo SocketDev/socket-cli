@@ -45,27 +45,16 @@ export function defineFlags<const F extends MeowFlags>(flags: F): F {
   return flags
 }
 
-// Map a flag's schema entry to the runtime value type for that flag.
-// - `type: 'boolean'` → boolean
-// - `type: 'string'`  → string
-// - `type: 'number'`  → number
-// - `isMultiple: true` → array of the above
-// - `default` set     → value is required (no `| undefined`)
-// - otherwise         → value | undefined
+// Map a flag's schema entry to its runtime value type, so a callsite can write
+// `cli.flags.http` and get back `boolean` rather than `MeowFlag | undefined`,
+// with no String() / Boolean() / cast machinery.
 //
-// Using mapped + conditional types lets each callsite write
-// `cli.flags.http` and get back `boolean` (not `MeowFlag | undefined`)
-// without any String() / Boolean() / cast machinery.
-// When `type` is not narrowed (e.g. the wide default `MeowFlag`), fall
-// through to `unknown` rather than `boolean` so callers reading
-// `cli.flags.someFlag` from a wide-typed result don't get the wrong
-// runtime shape narrowed away. Concrete schemas with literal `type`
-// strings still resolve to the precise primitive.
-// 'number' maps to `number | string`, not `number`: the parse layer only
-// converts a number flag when `Number(raw)` is not NaN, so garbage input
-// (`--page=invalid`) arrives as the raw STRING. The union keeps that honest
-// at the type level — consumers coerce with `Number(...)` and validate,
-// with the raw string still available for error messages.
+// Two results are deliberately wider than they look. A `number` flag maps to
+// `number | string`, because the parse layer only converts when `Number(raw)`
+// is not NaN, so `--page=invalid` arrives as the raw STRING; consumers coerce
+// and validate, keeping the string for error messages. A flag whose `type` is
+// not narrowed falls through to `unknown` rather than `boolean`, so reading one
+// off a wide-typed result cannot quietly claim the wrong runtime shape.
 export type ValueOfFlagType<F extends MeowFlag> = F['type'] extends 'string'
   ? string
   : F['type'] extends 'number'

@@ -248,38 +248,18 @@ interface CliInScratchOptions extends CliExecutionOptions {
 }
 
 /**
- * Execute Socket CLI inside a fully isolated scratch directory. Pins
- * **everything** the CLI or its spawned subprocesses might read or write
- * outside of cwd into the scratch tree, so an e2e run never touches the
- * developer's system:
+ * Execute Socket CLI as a subprocess inside a fully isolated scratch directory.
+ * Every home-directory and package-manager-cache variable the CLI or its own
+ * subprocesses might write to is pinned into the scratch tree, so an e2e run
+ * never touches the developer's system. The full pinned set is in
+ * docs/references/repo/e2e-scratch-isolation.md.
  *
- * - `cwd` → fresh `os.os.tmpdir()/socket-e2e-<n>/`
- * - `HOME` / `USERPROFILE` → fresh `os.os.tmpdir()/socket-e2e-home-<n>/`
- * - `XDG_CONFIG_HOME` → `<scratchHome>/.config`
- * - `XDG_CACHE_HOME` → `<scratchHome>/.cache`
- * - `XDG_DATA_HOME` → `<scratchHome>/.local/share`
- * - `XDG_STATE_HOME` → `<scratchHome>/.local/state`
- * - `NPM_CONFIG_CACHE` / `npm_config_cache` → `<scratchHome>/.npm`
- * - `NPM_CONFIG_PREFIX` / `npm_config_prefix` → `<scratchHome>/.npm-global`
- * - `NPM_CONFIG_USERCONFIG` / `npm_config_userconfig` → `<scratchHome>/.npmrc`
- * - `PNPM_HOME` → `<scratchHome>/.pnpm`
- * - `YARN_CACHE_FOLDER` → `<scratchHome>/.yarn-cache`
- * - `PIP_CACHE_DIR` → `<scratchHome>/.pip-cache`
- * - `CARGO_HOME` → `<scratchHome>/.cargo`
- * - `GRADLE_USER_HOME` → `<scratchHome>/.gradle`
- *
- * Anything not pinned by the helper (the developer's `SOCKET_API_KEY` env, the
- * real OS keychain for credentials) is **read-only** from the CLI's perspective
- * — the CLI may read the token but the scratch HOME ensures it can't persist a
- * new one back into the dev's config.
+ * Credentials are the deliberate exception. The developer's `SOCKET_API_KEY`
+ * and the real OS keychain stay readable, so a test can authenticate as them.
+ * The scratch HOME blocks only the reverse direction: the CLI cannot persist a
+ * new token back into the developer's config.
  *
  * Cleans up the scratch trees via `safeDelete()` even on failure.
- *
- * @example
- *   const result = await executeCliInScratch(['scan', 'create', '.'], {
- *     seedFiles: { 'package.json': '{"name":"test","version":"0.0.0"}' },
- *   })
- *   expect(result.code).toBe(0)
  */
 export async function executeCliInScratch(
   args: string[],
@@ -348,27 +328,17 @@ export async function executeCliInScratch(
 }
 
 /**
- * Run a block with `HOME` / `USERPROFILE` swapped to a fresh scratch tmpdir for
- * the duration of `fn`. Restores the original env on exit and `safeDelete()`s
- * the scratch tree.
+ * Run `fn` with the home-directory environment swapped to a fresh scratch
+ * tmpdir, restoring the original env on exit and `safeDelete()`ing the tree.
  *
- * Use this when an e2e test calls socket-cli internals directly (in-process) —
- * e.g. `spawnDlx()` — rather than spawning the CLI binary. The
- * `executeCliInScratch` helper covers the spawn-the-binary path; this is the
- * sibling for the in-process path.
+ * Use this when a test calls socket-cli internals in-process, such as
+ * `spawnDlx()`, rather than spawning the binary. It pins a SMALLER set than
+ * `executeCliInScratch`, notably leaving pip, cargo, and gradle pointed at the
+ * developer's real caches. See docs/references/repo/e2e-scratch-isolation.md.
  *
- * Concurrency note: vitest runs tests within a single file serially by default.
- * Each worker has its own Node process so env mutation here doesn't race
- * against other test files. Don't use this in a file that opts into
- * `it.concurrent`.
- *
- * @example
- *   await withScratchHome(async () => {
- *     const result = await spawnDlx({ name: 'cowsay', version: '1.6.0' }, [
- *       'moo',
- *     ])
- *     expect((await result.spawnPromise).code).toBe(0)
- *   })
+ * This mutates the current process's environment, so do not use it in a file
+ * that opts into `it.concurrent`. The vitest default of serial tests per file,
+ * each file in its own worker, is safe.
  */
 export async function withScratchHome<T>(fn: () => Promise<T>): Promise<T> {
   const scratchHome = mkdtempSync(path.join(os.tmpdir(), 'socket-e2e-home-'))

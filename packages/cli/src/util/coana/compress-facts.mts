@@ -29,31 +29,20 @@ export type CompressedScanPaths = {
 /**
  * For each `.socket.facts.json` in `scanPaths`, stream-brotli-compress a
  * sibling `.socket.facts.json.br` next to the original file and swap its path
- * in. Other paths pass through unchanged. Missing files also pass through
- * unchanged (the upload will fail downstream with the same error it would
- * have).
+ * in. Other paths, and missing files, pass through unchanged.
  *
- * Streaming + worker-thread compression keeps the event loop responsive:
- * default brotli quality (11) on a 60+MB facts file takes multiple seconds of
- * CPU, which would otherwise freeze the spinner / signal handlers / any
- * concurrent work.
+ * Compression is streamed onto a worker thread because brotli quality 11 on a
+ * 60+MB facts file costs multiple seconds of CPU, which would otherwise freeze
+ * the spinner, the signal handlers, and any concurrent work.
  *
- * The `.br` lives next to the source rather than under the OS temp dir because
- * depscan's multipart ingest (`addStreamEntry`) rejects entries whose names
- * contain `..` traversal segments. The SDK computes the multipart entry name
- * via `path.relative(cwd, brPath)`, so an OS-tmpdir temp path turns into
- * `../../../var/folders/...` and gets dropped as `unmatchedFiles`.
- * Sibling-write keeps the relative path inside cwd, and keeps the directory
- * shape symmetric with the plain `.socket.facts.json` upload (depscan strips
- * only the `.br` suffix at ingest, so `<dir>/.socket.facts.json.br` and
- * `<dir>/.socket.facts.json` resolve to the same storage path).
+ * The `.br` MUST be a sibling rather than a temp file. depscan drops multipart
+ * entries whose names contain `..`, and an OS-tmpdir path relativizes into
+ * exactly that, so the upload silently loses the facts. Detail:
+ * docs/references/repo/socket-facts-compression.md.
  *
- * Concurrent scans against the same source directory are already racy on
- * `.socket.facts.json` itself, coana writes to a single path, so the sibling
- * `.br` doesn't introduce a new race.
- *
- * Caller MUST `await cleanup()` (typically in a `finally` block) once the
- * upload completes — successful or not — to remove the sibling files.
+ * Caller MUST `await cleanup()`, typically in a `finally`, once the upload
+ * finishes either way, or the `.br` siblings are left behind in the user's
+ * tree.
  */
 export async function compressSocketFactsForUpload(
   scanPaths: string[],

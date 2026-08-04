@@ -120,25 +120,16 @@ export function computeCacheHash(
 }
 
 /**
- * Run `smokeTest`, then write a checkpoint JSON marker.
+ * Run `smokeTest`, then write a checkpoint JSON marker. `name` must be one of
+ * the CHECKPOINTS values. A `smokeTest` throw aborts the checkpoint, so no
+ * marker is written for a stage that produced invalid output.
  *
- * @param {string} buildDir
- * @param {string} name - Checkpoint name (must be a CHECKPOINTS value).
- * @param {() => Promise<void>} smokeTest - Throws if the stage output is
- *   invalid.
- * @param {object} [options]
- * @param {string} [options.packageName]
- * @param {string} [options.artifactPath] - Informational; recorded in JSON.
- * @param {string} [options.binaryPath] - Informational; recorded in JSON.
- * @param {string | number} [options.binarySize] - Informational; recorded in
- *   JSON.
- * @param {string[]} [options.sourcePaths] - Inputs hashed into the cache key.
- * @param {string} [options.buildMode]
- * @param {string} [options.nodeVersion]
- * @param {string} [options.platform]
- * @param {string} [options.arch]
- * @param {string} [options.libc]
- * @param {string} [options.packageRoot]
+ * Only some options change behavior. `sourcePaths` and the platform fields
+ * (`arch`, `buildMode`, `libc`, `nodeVersion`, `platform`) are hashed into the
+ * cache key, so changing one invalidates the checkpoint. `packageName` selects
+ * the checkpoint directory and `packageRoot` relativizes the recorded paths.
+ * The rest (`artifactPath`, `binaryPath`, `binarySize`) are informational and
+ * only get written into the JSON.
  */
 export async function createCheckpoint(
   buildDir: string,

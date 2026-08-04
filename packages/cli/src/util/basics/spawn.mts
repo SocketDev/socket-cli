@@ -144,36 +144,14 @@ export type SocketBasicsResult = {
 }
 
 /**
- * Run socket-basics comprehensive security scanning.
+ * Run socket-basics, the Python security scanner, covering SAST via OpenGrep,
+ * secret detection via TruffleHog, and container scanning via Trivy when images
+ * are specified.
  *
- * Spawns socket-basics, Python tool, to perform:
- *
- * - SAST, Static Application Security Testing, via OpenGrep
- * - Secret detection via TruffleHog
- * - Container scanning via Trivy, if images are specified
- *
- * Environment Variables Set:
- *
- * - SKIP_SOCKET_REACH=1 - Skip reachability analysis (handled separately by CLI)
- * - SKIP_SOCKET_SUBMISSION=1 - Skip socket-basics submitting to Socket API
- * - PATH - Updated to include extracted tool directories
- *
- * @example
- *   const result = await runSocketBasics({
- *     cwd: '/path/to/project',
- *     orgSlug: 'my-org',
- *     repoName: 'my-repo',
- *     languages: ['python', 'javascript'],
- *     scanSecrets: true,
- *   })
- *
- *   if (result.ok && result.data.factsPath) {
- *     logger.log('Socket facts:', result.data.factsPath)
- *     logger.log('SAST findings:', result.data.findings.sast)
- *     logger.log('Secrets found:', result.data.findings.secrets)
- *   }
- *
- * @param config - Socket-basics configuration options.
+ * The spawn sets three environment variables worth knowing about.
+ * `SKIP_SOCKET_REACH=1` because the CLI runs reachability itself,
+ * `SKIP_SOCKET_SUBMISSION=1` so socket-basics does not submit to the Socket API
+ * on its own, and `PATH` extended to reach the extracted tool directories.
  *
  * @returns Result with path to .socket.facts.json and finding counts.
  */

@@ -90,30 +90,16 @@ const SHOW_EXT_SECTION_HEADER_RE =
 const FETCHED_HUB_BULLET_RE =
   /^ {2}- (?<name>\S+) \(imported by (?<importers>[^)]+)\)\s*$/
 
-// `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`
-// exits non-zero in two very different situations, and conflating them is
-// dangerous for a security tool:
+// `bazel mod show_extension` exits non-zero for two opposite reasons, and
+// conflating them is a security bug, not a cosmetic one. An unresolvable
+// extension argument is an authoritative "no Maven here" and maps to
+// `not-defined`; a module-graph evaluation failure tells us nothing and must
+// map to `indeterminate`, which keeps the run from being reported complete.
+// Turning the second into the first would hide real dependencies from the scan.
 //
-//   (a) `@rules_jvm_external` simply isn't in the root module's resolved
-//       dependency graph. This is the COMMON case for any bzlmod repo that
-//       doesn't use rules_jvm_external (no Maven at all). Bazel's ModCommand
-//       resolves the extension argument up front via
-//       `ExtensionArg.resolveToExtensionId`, which throws
-//       `InvalidArgumentException` and exits non-zero before evaluating any
-//       Starlark. This is NOT a failure to analyze; it is a positive,
-//       authoritative "there is no maven extension here". It must map to
-//       `not-defined` so the workspace cleanly contributes no Maven.
-//
-//   (b) The module graph genuinely fails to evaluate: a Starlark eval error,
-//       an unbound name (e.g. a MODULE.bazel referencing `PYTHON_VERSION` /
-//       `pip` before definition), a syntax error, or the bazel binary itself
-//       being missing/spawn-failed (normalized to code -1). Here we have NO
-//       evidence about whether a maven extension exists, so it must map to
-//       `indeterminate` and the run can never be reported complete.
-//
-// We classify by stderr shape. The exact wording differs across Bazel
-// versions; the regex families below are intentionally broad and SHOULD be
-// confirmed against live `bazel mod show_extension` output.
+// The two regex families below classify by stderr shape, so they are a
+// version-sensitive heuristic. Confirm changes against live output.
+// Full rationale: docs/references/repo/bazel-extension-probe.md
 
 // Family (a): the extension / module is not resolvable in the dependency
 // graph — an argument-resolution error, not an evaluation failure. These all
