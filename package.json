@@ -207,8 +207,6 @@
     "shadow-bin/**",
     "CHANGELOG.md",
     "DISCLOSURE",
-    "logo-dark.png",
-    "logo-light.png",
     "requirements.json",
     "translations.json"
   ],
