@@ -143,6 +143,28 @@ Each command follows a consistent pattern:
 - Custom patches applied to dependencies via `custompatch`
 - Overrides specified in package.json for enhanced alternatives
 
+## Releasing
+
+Never hand-write a version bump on `v1.x`. The `Publish to npm registry`
+workflow derives it:
+
+- Write user-facing notes under the changelog's `## [Unreleased]` section as
+  the work lands. The release promotes that block verbatim under the new
+  version heading. If nothing accrued, the release falls back to a section
+  derived from the Conventional Commits in range.
+- Dispatch the workflow with `dry-run: true` (the default) to see which
+  version it would ship. It writes nothing.
+- Dispatch with `dry-run: false` to release. `scripts/release/bump.mts` picks
+  the version, writes `package.json` + `CHANGELOG.md`, and commits them via
+  the release App onto a throwaway `npm-publish-v<X.Y.Z>` branch. `v1.x` is
+  fast-forwarded to that commit only after all three packages are staged.
+- The level is patch by default and minor when a `feat:` is in range. A major
+  is never derived — a breaking commit stops the bump until someone passes
+  `release-as: major`.
+- A staged release that is never approved BURNS its version. The base is the
+  highest release tag reachable from `v1.x`, so the burned number is skipped
+  automatically; there is nothing to remember and nothing to clean up.
+
 ## Changelog Management
 
 When updating the changelog (`CHANGELOG.md`):
@@ -150,6 +172,7 @@ When updating the changelog (`CHANGELOG.md`):
 - Use the format: `## [version](https://github.com/SocketDev/socket-cli/releases/tag/vversion) - date`
 - Example: `## [1.0.80](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.80) - 2025-07-29`
 - This allows users to click version numbers to view the corresponding GitHub release
+- Add new entries under `## [Unreleased]`, never under a released version heading
 
 ### Keep a Changelog Compliance
 Follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
