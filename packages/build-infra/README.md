@@ -4,6 +4,9 @@ Shared build infrastructure utilities for Socket CLI. Provides esbuild plugins, 
 
 ## Architecture
 
+<details>
+<summary><b>Component diagram</b> — esbuild plugins, GitHub Releases client, and caching, plus who calls them</summary>
+
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      build-infra                             │
@@ -34,6 +37,8 @@ Shared build infrastructure utilities for Socket CLI. Provides esbuild plugins, 
          │  • Asset download scripts            │
          └──────────────────────────────────────┘
 ```
+
+</details>
 
 ## Purpose
 
@@ -98,6 +103,9 @@ const __importMetaUrl = require('node:url').pathToFileURL(__filename).href
 ### GitHub Releases
 
 Downloads assets from SocketDev/socket-btm releases with retry logic and caching. Used for node-smol binaries, AI models, and build tools.
+
+<details>
+<summary><b>API reference</b> — getLatestRelease, getReleaseAssetUrl, downloadReleaseAsset signatures, parameters, and features</summary>
 
 #### `getLatestRelease(tool, options)`
 
@@ -174,9 +182,14 @@ await downloadReleaseAsset(
 - 3 retry attempts with 5s delay
 - Uses `browser_download_url` to avoid API quota consumption
 
+</details>
+
 ## Usage Examples
 
 ### esbuild Configuration
+
+<details>
+<summary><b>esbuild.cli.mjs</b> — full config wiring the Unicode transform plugin and import.meta.url banner</summary>
 
 ```javascript
 // .config/esbuild.cli.mjs
@@ -202,6 +215,8 @@ export default {
   plugins: [unicodeTransformPlugin()],
 }
 ```
+
+</details>
 
 ### Asset Download Script
 

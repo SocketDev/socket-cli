@@ -4,6 +4,9 @@ Automated package generation system for Socket CLI distribution. Transforms temp
 
 ## Table of Contents
 
+<details>
+<summary><b>Full section list</b> — every heading and subheading in this document, in order</summary>
+
 - [Architecture](#architecture)
 - [Distribution Strategy](#distribution-strategy)
   - [Tool Management](#tool-management)
@@ -43,7 +46,12 @@ Automated package generation system for Socket CLI distribution. Transforms temp
   - Potential Improvements
 - [Summary](#summary)
 
+</details>
+
 ## Architecture
+
+<details>
+<summary><b>Component diagram</b> — templates, generator scripts, and the build directory they produce</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -82,9 +90,14 @@ Automated package generation system for Socket CLI distribution. Transforms temp
               └──────────────────────────────────────────┘
 ```
 
+</details>
+
 ## Distribution Strategy
 
 Socket CLI uses a multi-channel distribution approach with VFS-based tool bundling:
+
+<details>
+<summary><b>The four distribution channels</b> — socket wrapper, pure-JS cli, cli-with-sentry, and the cli.exe SEA binaries</summary>
 
 ```text
 ┌────────────────────────────────────────────────────────────┐
@@ -116,6 +129,8 @@ Socket CLI uses a multi-channel distribution approach with VFS-based tool bundli
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
+
+</details>
 
 ### Tool Management
 
@@ -290,6 +305,9 @@ Located in `templates/cli-package/scripts/build.mjs`:
 
 ### CLI Package Template
 
+<details>
+<summary><b>Full directory tree</b> — config, bin wrappers, scripts, and test layout for the cli-package template</summary>
+
 ```text
 cli-package/
 ├── .config/
@@ -311,6 +329,8 @@ cli-package/
 ├── package.json
 └── vitest.config.mts
 ```
+
+</details>
 
 ### Socket Package Template
 
