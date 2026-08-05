@@ -14,8 +14,7 @@
     "publishedPackages": [
       "socket",
       "@socketsecurity/cli",
-      "@socketsecurity/cli-with-sentry",
-      "@socketaddon/iocraft"
+      "@socketsecurity/cli-with-sentry"
     ]
   },
   "vite": {
