@@ -19,10 +19,12 @@ You are a **Principal Software Engineer** responsible for:
 - **Build types**: `npm run build:dist:types`
 - **Test**: `npm run test` (runs check + all tests)
 - **Test unit only**: `npm run test:unit` or `pnpm test:unit`
-- **Lint**: `npm run check:lint` (uses eslint)
-- **Type check**: `npm run check:tsc` (uses tsgo)
-- **Check all**: `npm run check` (lint + typecheck)
-- **Fix linting**: `npm run lint:fix`
+- **Lint**: `pnpm run lint` (oxlint + biome + eslint over the files you changed; add `--all` for the whole workspace)
+- **Type check**: `pnpm run check:tsc` (tsgo, both projects)
+- **Check all**: `pnpm run check` (lint + type check, aggregated; every step runs and the summary names what failed)
+- **Fix linting**: `pnpm run fix` (the autofix lane of the same three linters `check` runs)
+- **🚨 A scoped run over 0 files is NOT a pass** — `lint`/`fix`/`check` say so out loud. Only `--all` is a whole-workspace verdict.
+- **Self-describing scripts**: every entry under `scripts/` answers `--describe` and `--help` before it does anything, via `runMain(main, SCRIPT_META)` from `scripts/lib/run-main.mts`. Do not read argv or start work at module scope — a `--describe` that reaches `main()` runs the side effect.
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
@@ -60,7 +62,7 @@ You are a **Principal Software Engineer** responsible for:
 - **Install dependencies**: `pnpm install`
 - **Add dependency**: `pnpm add <package>`
 - **Add dev dependency**: `pnpm add -D <package>`
-- **Update dependencies**: `pnpm update`
+- **Update dependencies**: `pnpm run update` (three ordered passes: soak-gated third party, Socket scopes, then the lockfile). `pnpm run update --dry-run` previews without writing. Note that bare `pnpm update` is pnpm's own command, not this script.
 - **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
 - **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 
