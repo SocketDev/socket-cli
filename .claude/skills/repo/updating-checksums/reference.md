@@ -98,6 +98,9 @@ Summary: X updated, Y unchanged
 
 Each tool has specific asset naming conventions:
 
+<details>
+<summary><b>Per-tool asset filenames</b> — the exact release-asset names for opengrep, python, socket-patch, sfw, trivy, and trufflehog</summary>
+
 **opengrep:**
 
 - `opengrep-core_linux_aarch64.tar.gz`
@@ -149,6 +152,8 @@ Each tool has specific asset naming conventions:
 - `trufflehog_{version}_windows_amd64.tar.gz`
 - `trufflehog_{version}_windows_arm64.tar.gz`
 - Includes checksums in release
+
+</details>
 
 ### Checksum Storage Format
 

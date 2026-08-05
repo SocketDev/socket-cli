@@ -45,6 +45,9 @@ pnpm dev
 
 ### Directory Structure
 
+<details>
+<summary><b>Full tree</b> — every build-relevant directory under packages/ and scripts/</summary>
+
 ```text
 socket-cli/
 ├── packages/
@@ -72,6 +75,8 @@ socket-cli/
 │   └── package-builder/          # Package generation templates
 └── scripts/                      # Monorepo build scripts
 ```
+
+</details>
 
 ### Build Phases
 
@@ -143,6 +148,9 @@ pnpm build --platform darwin --arch arm64
 
 **Output**: `packages/package-builder/build/{dev|prod}/out/cli.exe.<triplet>/bin/socket` — `bin/socket.exe` on Windows. These directories are the publishable `@socketsecurity/cli.exe.<triplet>` tail packages.
 
+<details>
+<summary><b>Supported platforms and build steps</b> — the full target table and the SEA build phases</summary>
+
 #### Supported Platforms
 
 | Target             | Platform | Architecture  | Notes         |
@@ -175,6 +183,8 @@ pnpm build --platform darwin --arch arm64
    ├── CLI blob (JavaScript bundle)
    └── VFS (Virtual File System with tools)
 ```
+
+</details>
 
 ### 3. Watch Mode (Development)
 
@@ -353,6 +363,9 @@ pnpm build --force
 
 ### GitHub Actions Example
 
+<details>
+<summary><b>Full workflow</b> — build + test job plus the SEA matrix build across all eight targets</summary>
+
 ```yaml
 jobs:
   build:
@@ -397,6 +410,8 @@ jobs:
       - run: pnpm build:cli
       - run: pnpm build --target ${{ matrix.target }}
 ```
+
+</details>
 
 ---
 

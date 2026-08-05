@@ -31,6 +31,9 @@ own next action. Grep for `pending:` to list them.
 
 ## Rows
 
+<details>
+<summary><b>All 210 rows</b> — every v1.x commit mapped to its main verdict</summary>
+
 | v1.x sha    | PR#   | subject                                                                                                               | verdict                                                                                                                                                                                                                                               |
 | ----------- | ----- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `a67f517ae` | —     | Add dist-tag support to provenance workflow                                                                           | obsolete — main owns `provenance.yml`; dist-tag handling differs                                                                                                                                                                                      |
@@ -243,3 +246,5 @@ own next action. Grep for `pending:` to list them.
 | `d9c2bdc3c` | #1441 | upgrading coana to version 15.9.4 (#1441)                                                                             | covered-by: 294dfa3ff                                                                                                                                                                                                                                 |
 | `4e2403a39` | #1442 | upgrading coana to version 15.9.5 (#1442)                                                                             | covered-by: 294dfa3ff                                                                                                                                                                                                                                 |
 | `70a77fef8` | #1446 | upgrading coana to version 15.9.6 (#1446)                                                                             | covered-by: main's `packages/cli/bundle-tools.json` pin at 15.10.3                                                                                                                                                                                    |
+
+</details>

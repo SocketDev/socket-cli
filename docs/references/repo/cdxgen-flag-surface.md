@@ -37,6 +37,9 @@ Upstream sources for the pinned version:
 
 ## Frozen output
 
+<details>
+<summary><b>cdxgen@11.2.7 --help</b> — the full frozen flag list this repo's parser config must match</summary>
+
 ```console
 npx @cyclonedx/cdxgen@11.2.7 --help
 
@@ -109,3 +112,5 @@ Options:
   -h, --help                   Show help                                                                       [boolean]
   -v, --version                Show version number                                                             [boolean]
 ```
+
+</details>
