@@ -220,7 +220,7 @@ describe('socket fix', async () => {
                 --debug             Enable debug logging in the Coana-based Socket Fix CLI invocation.
                 --ecosystems        Limit fix analysis to specific ecosystems. Accepts space- or comma-separated values and is case-insensitive. Defaults to all ecosystems.
                 --exclude-paths     Skip matching paths entirely: manifests under them are not uploaded, and fixes are not applied to workspaces under them. Patterns are matched relative to the target directory. Bare directory names are auto-extended to recursive globs (e.g. \`tests\` becomes \`tests/**\`). Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags. Use this to skip directories the current user cannot read so they do not abort manifest collection.
-                --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.9.5.
+                --fix-version       Override the version of @coana-tech/cli used for fix analysis. Default: 15.10.3.
                 --id                Provide a list of vulnerability identifiers to compute fixes for:
                                         - GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) (e.g., GHSA-xxxx-xxxx-xxxx)
                                         - CVE IDs (https://cve.mitre.org/cve/identifiers/) (e.g., CVE-2026-1234) - automatically converted to GHSA

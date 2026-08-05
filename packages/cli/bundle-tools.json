@@ -2,10 +2,18 @@
   "$schema": "https://raw.githubusercontent.com/SocketDev/socket-btm/main/packages/build-infra/lib/external-tools-schema.json",
   "tools": {
     "@coana-tech/cli": {
+      "notes": [
+        "15.10.3 published 2026-08-05, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). Drop the cleared soakBypass on the next routine bump."
+      ],
       "description": "Coana CLI for static analysis and reachability detection",
-      "version": "15.9.5",
+      "version": "15.10.3",
       "packageManager": "npm",
-      "integrity": "sha512-RWL5CnK4q1k5Mo+vDlDSZWqVyhUTQ22zjfnHrkm94dwg8PHOyCAQgkHkl5opeLSoKm4T+lOPzMrrx5O7gblWvg==",
+      "integrity": "sha512-mhIrcOihimlp4MKgbkarKZWkWRhkhLvtsaSE3KabMT+0Bl/Y6mrL+Gaae09w4OmnfotXx6wVV8/faCl0opxhGQ==",
+      "soakBypass": {
+        "version": "15.10.3",
+        "published": "2026-08-05",
+        "removable": "2026-08-12"
+      },
       "bundled": true
     },
     "@cyclonedx/cdxgen": {
