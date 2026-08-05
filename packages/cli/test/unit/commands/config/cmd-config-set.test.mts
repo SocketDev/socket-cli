@@ -372,7 +372,8 @@ describe('cmd-config-set', () => {
         )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/test/home/.config/socket/config.json', // socket-lint: allow personal-path
+          // socket-lint: allow personal-path
+          '/test/home/.config/socket/config.json',
           'set config value for "defaultOrg"',
           ['Set "defaultOrg" to: my-org'],
         )
@@ -389,7 +390,8 @@ describe('cmd-config-set', () => {
         )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          '/custom/home/.config/socket/config.json', // socket-lint: allow personal-path
+          // socket-lint: allow personal-path
+          '/custom/home/.config/socket/config.json',
           'set config value for "apiToken"',
           ['Set "apiToken" to: token'],
         )
