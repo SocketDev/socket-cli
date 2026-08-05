@@ -48,6 +48,11 @@ import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 
 import { rootAliases, rootCommandBuckets, rootCommands } from './commands.mts'
 import { SOCKET_CLI_BIN_NAME } from './constants/packages.mts'
+import {
+  buildRootManifest,
+  describeRequest,
+  renderDescribe,
+} from './util/cli/describe-manifest.mts'
 import { getCliName } from './env/cli-name.mts'
 import { getCliVersion } from './env/cli-version.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
@@ -131,6 +136,24 @@ export async function writeBootstrapManifestEntry(): Promise<void> {
 }
 
 void (async () => {
+  // `--describe` answers before ANY side effect — telemetry included: a
+  // caller inventorying tools must never show up in usage metrics or wait on
+  // an update check.
+  const describeKind = describeRequest(process.argv.slice(2))
+  if (describeKind) {
+    process.stdout.write(
+      renderDescribe(
+        describeKind,
+        buildRootManifest({
+          name: SOCKET_CLI_BIN_NAME,
+          subcommands: rootCommands,
+          version: getCliVersion() || '0.0.0',
+        }),
+      ),
+    )
+    return
+  }
+
   // Track CLI start for telemetry.
   await trackCliStart(process.argv)
 
