@@ -1,0 +1,20 @@
+{
+  "extends": "./.config/tsconfig.base.json",
+  // The top-level entry scripts get their own project so tsconfig.json can
+  // leave them out. eslint.config.js hands `scripts/*.mts` to the project
+  // service's default project via `allowDefaultProject`, and a file that is
+  // BOTH a default-project file and a member of a discovered project is a hard
+  // parsing error. The project service only ever discovers files named
+  // `tsconfig.json`, so a differently-named project like this one type-checks
+  // them without eslint noticing.
+  //
+  // Like tsconfig.dts.json, this lives in the repository root because
+  // @typescript/native-preview cannot resolve "include" paths for a config
+  // outside it.
+  // scripts/lib is listed here as well as in tsconfig.json. A file may belong
+  // to two tsc projects — they are separate invocations — and the entry scripts
+  // import from it, so leaving it out is a TS6307 "not listed within the file
+  // list of project" error.
+  "include": ["scripts/*.mts", "scripts/lib/**/*.mts"],
+  "exclude": ["node_modules/**"]
+}
