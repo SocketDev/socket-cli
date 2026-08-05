@@ -37,8 +37,11 @@ import {
   deriveNextVersion,
   parseConventionalCommits,
 } from './version.mts'
+import { isMainModule } from '../lib/is-main-module.mts'
+import { runMain } from '../lib/run-main.mts'
 
 import type { ReleaseBranch } from './release-branch.mts'
+import type { ScriptMeta } from '../lib/run-main.mts'
 
 const execFile = promisify(execFileCallback)
 
@@ -315,7 +318,21 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  process.stderr.write(`${e instanceof Error ? e.message : String(e)}\n`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'derives the next release version from the landed commits and commits package.json + CHANGELOG.md via the release App',
+  help: `Usage: node scripts/release/bump.mts [flags]
+
+  --dry-run                       derive and print the version without opening
+                                  a release branch or committing anything
+  --release-as major|minor|patch  force the bump level instead of deriving it
+                                  from the conventional commits
+
+  The npm-publish workflow runs this between install and build. It is not a
+  hand-run script: it needs RELEASE_APP_TOKEN and the GitHub Actions
+  environment to reach the release App.`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

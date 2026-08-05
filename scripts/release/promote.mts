@@ -20,6 +20,10 @@ import {
   promoteReleaseBranch,
   resolveReleaseEnv,
 } from './release-branch.mts'
+import { isMainModule } from '../lib/is-main-module.mts'
+import { runMain } from '../lib/run-main.mts'
+
+import type { ScriptMeta } from '../lib/run-main.mts'
 
 function readFlag(argv: readonly string[], name: string): string | undefined {
   const index = argv.indexOf(`--${name}`)
@@ -53,7 +57,20 @@ async function main(): Promise<void> {
   await promoteReleaseBranch(releaseBranch, sha)
 }
 
-main().catch((e: unknown) => {
-  process.stderr.write(`${e instanceof Error ? e.message : String(e)}\n`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'lands or discards the throwaway release branch the bump stage created',
+  help: `Usage: node scripts/release/promote.mts --branch <name> --sha <sha> [--discard]
+
+  --branch <name>  the npm-publish-v<version> branch the bump stage opened
+  --sha <sha>      that branch's tip commit
+  --discard        delete the branch instead of landing it, which is what a
+                   failed publish run does
+
+  The npm-publish workflow runs this last, whether the publish succeeded or
+  not. It needs RELEASE_APP_TOKEN and the GitHub Actions environment.`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}
