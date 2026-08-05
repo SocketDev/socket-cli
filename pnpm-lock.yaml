@@ -109,6 +109,9 @@ importers:
       '@socketsecurity/socket-patch':
         specifier: 2.0.0
         version: 2.0.0
+      form-data:
+        specifier: 4.0.6
+        version: 4.0.6
     devDependencies:
       '@babel/core':
         specifier: 7.29.6
