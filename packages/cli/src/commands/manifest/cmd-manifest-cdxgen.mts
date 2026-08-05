@@ -6,10 +6,15 @@ import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
+import { debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isPath } from '@socketsecurity/lib-stable/paths/normalize'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
+import {
+  describeCdxgenSource,
+  formatCdxgenFailureMessage,
+} from '../../util/dlx/cdxgen-diagnostics.mts'
 import {
   detectNodejsCdxgenSources,
   isNodejsCdxgenType,
@@ -272,15 +277,36 @@ export async function run(
     }
   }
 
+  // Assume failure until cdxgen reports otherwise, so an unexpected early exit
+  // cannot be mistaken for a successful scan.
   process.exitCode = 1
 
-  const { spawnPromise } = await runCdxgen(yargv)
+  let result
+  try {
+    const { spawnPromise } = await runCdxgen(yargv)
+    result = await spawnPromise
+  } catch (e) {
+    // cdxgen runs with stdio: 'inherit', so a failure to start it produces no
+    // child output at all. Say where we looked and what to try next.
+    // The message tells the user to re-run with SOCKET_CLI_DEBUG=1, so put the
+    // underlying error on the 'error' category that flag turns on. Handling it
+    // here means it never reaches the top level, and nothing else on this path
+    // logs it, so without this the advice would lead nowhere.
+    debugNs('error', `cdxgen failed to run while ${describeCdxgenSource()}`, e)
+    logger.fail(formatCdxgenFailureMessage(e))
+    return
+  }
 
-  // Wait for the spawn promise to resolve and handle the result.
-  const result = await spawnPromise
   if (result.signal) {
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
     process.exit(result.code)
+  } else {
+    // Neither an exit code nor a signal. Without this branch the command
+    // returns here with the exit code armed above and prints nothing at all.
+    // There is no error to show, so the spawn result is what SOCKET_CLI_DEBUG=1
+    // has to offer.
+    debugNs('error', 'cdxgen returned no exit code and no signal', result)
+    logger.fail(formatCdxgenFailureMessage())
   }
 }

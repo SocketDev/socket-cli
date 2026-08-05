@@ -29,6 +29,9 @@
  * - Src/constants/env.mts - Environment variable configuration
  */
 
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ENV } from '../../src/constants/env.mts'
@@ -73,8 +76,9 @@ describe('constants', () => {
   it('has correct path properties', async () => {
     const constants = (await import('../../src/constants.mts')).constants
 
-    // rootPath should be the parent of src directory.
-    expect(constants.rootPath).toContain('socket-cli')
+    // rootPath should be the parent of src directory, wherever the checkout
+    // lives — a linked worktree's directory name carries no repo name.
+    expect(existsSync(path.join(constants.rootPath, 'src'))).toBe(true)
     expect(constants.rootPath).not.toContain('/src')
 
     // distPath should be dist directory.

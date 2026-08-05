@@ -29,11 +29,38 @@ vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
   resolveCdxgen: mockResolveCdxgen,
 }))
 
+// The local-override paths below are fixtures, not real files. Stub the
+// on-disk check so these tests stay about spawning; the check itself is
+// covered in cdxgen-diagnostics.test.mts.
+const mockIsMissingCdxgenLocalPath = vi.hoisted(() =>
+  vi.fn().mockReturnValue(false),
+)
+
+vi.mock(import('../../../../src/util/dlx/cdxgen-diagnostics.mts'), () => ({
+  isMissingCdxgenLocalPath: mockIsMissingCdxgenLocalPath,
+  formatMissingCdxgenLocalPathMessage: (p: string) =>
+    `SOCKET_CLI_CDXGEN_LOCAL_PATH points at a file that does not exist: ${p}`,
+}))
+
 import { spawnCdxgenDlx } from '../../../../src/util/dlx/spawn-cdxgen.mts'
 
 describe('spawnCdxgenDlx', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockIsMissingCdxgenLocalPath.mockReturnValue(false)
+  })
+
+  it('refuses a SOCKET_CLI_CDXGEN_LOCAL_PATH that is not on disk', async () => {
+    mockResolveCdxgen.mockReturnValue({
+      type: 'local',
+      path: '/local/missing-cdxgen',
+    })
+    mockIsMissingCdxgenLocalPath.mockReturnValue(true)
+
+    await expect(
+      spawnCdxgenDlx(['-r', '.'], undefined, undefined),
+    ).rejects.toThrow(/SOCKET_CLI_CDXGEN_LOCAL_PATH/)
+    expect(mockSpawn).not.toHaveBeenCalled()
   })
 
   it('runs a local cdxgen binary when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {

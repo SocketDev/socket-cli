@@ -14,17 +14,17 @@
       <artifactId>lib</artifactId>
       <version>1.0</version>
     </dependency>
-    <!-- external prod dep (plain Java artifact, no transitive deps) -->
+    <!-- external prod dep (stub artifact from the generated repo, no transitive deps) -->
     <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.22.0</version>
+      <groupId>demo.ext</groupId>
+      <artifactId>tool</artifactId>
+      <version>1.0</version>
     </dependency>
-    <!-- test dep -> dev flag; pulls hamcrest transitively -->
+    <!-- test dep -> dev flag; pulls harness-core transitively -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
+      <groupId>demo.ext</groupId>
+      <artifactId>harness</artifactId>
+      <version>1.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

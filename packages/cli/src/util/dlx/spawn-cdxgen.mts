@@ -13,9 +13,14 @@
 import { detectExecutableType } from '@socketsecurity/lib-stable/dlx/detect'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import {
+  formatMissingCdxgenLocalPathMessage,
+  isMissingCdxgenLocalPath,
+} from './cdxgen-diagnostics.mts'
 import { defineAutoDispatch, defineVfsSpawn } from './define-tool-spawn.mts'
 import { spawnDlx } from './spawn.mts'
 import { resolveCdxgen } from './resolve-binary.mjs'
+import { InputError } from '../error/errors.mts'
 import { buildSystemToolEnv } from '../spawn/system-tool.mts'
 import { resolveNodeExecutable } from '../spawn/spawn-node.mts'
 
@@ -37,6 +42,12 @@ export async function spawnCdxgenDlx(
 
   // Use local cdxgen if available.
   if (resolution.type === 'local') {
+    // Check the override before spawning. Otherwise a wrong path surfaces as a
+    // bare ENOENT that never mentions the environment variable, so the
+    // override looks like it was ignored.
+    if (isMissingCdxgenLocalPath(resolution.path)) {
+      throw new InputError(formatMissingCdxgenLocalPathMessage(resolution.path))
+    }
     const detection = detectExecutableType(resolution.path)
     const { env: spawnEnv, ...dlxOptions } = {
       __proto__: null,

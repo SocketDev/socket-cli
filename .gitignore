@@ -298,6 +298,7 @@ pnpm-debug.log
 /packages/cli/src/commands/manifest/scripts/test/gradle-compat/project/build/
 /packages/cli/src/commands/manifest/scripts/test/gradle-compat/.gradle-home/
 /packages/cli/src/commands/manifest/scripts/test/gradle-compat/.populate-for.txt
+/packages/cli/src/commands/manifest/scripts/test/maven-compat/project/localrepo/
 /packages/cli/src/commands/manifest/scripts/test/maven-compat/project/records.tsv
 /packages/cli/src/commands/manifest/scripts/test/maven-compat/project/target/
 /packages/cli/src/commands/manifest/scripts/test/maven-compat/project/*/target/
@@ -305,4 +306,5 @@ pnpm-debug.log
 /packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/project/target/
 /packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/project/build.properties
 /packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/scala-version.sbt
+/packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/localrepo/
 /packages/cli/src/commands/manifest/scripts/test/sbt-compat/project/records.tsv
