@@ -12,7 +12,7 @@ array or a string, the answer is here rather than in a browser tab.
 
 ## Why a snapshot instead of a link
 
-A link tells you what upstream looks like *today*. Our parser has to match the
+A link tells you what upstream looks like _today_. Our parser has to match the
 version we actually pin, so the useful reference is the output as of that pin.
 Keeping it in the repo also means the diff shows up in review when someone
 bumps the version.
@@ -25,7 +25,7 @@ Run the same command against the new version and replace the block below:
 npx @cyclonedx/cdxgen@<new-version> --help
 ```
 
-Then diff the two. Pay closest attention to flags that change *type* — a flag
+Then diff the two. Pay closest attention to flags that change _type_ — a flag
 that moves between boolean, string, and array does not raise an error when our
 config disagrees. It parses to the wrong shape silently, and the mistake
 surfaces much later as a malformed SBOM.

@@ -15,12 +15,12 @@ below show shape, not versions, so they do not go stale when a pin moves.
 `collectNpmToolPins()` selects the npm-managed entries, so the split below
 follows whatever that function reads rather than a hand-kept list.
 
-| Source | Tools |
-| --- | --- |
-| npm, installed with full dependency trees | `@coana-tech/cli`, `@cyclonedx/cdxgen`, `synp` |
-| pip | `socketsecurity` |
-| GitHub release assets | `opengrep`, `python`, `sfw`, `socket-patch`, `trivy`, `trufflehog` |
-| GitHub release archive | `socket-basics` |
+| Source                                    | Tools                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------ |
+| npm, installed with full dependency trees | `@coana-tech/cli`, `@cyclonedx/cdxgen`, `synp`                     |
+| pip                                       | `socketsecurity`                                                   |
+| GitHub release assets                     | `opengrep`, `python`, `sfw`, `socket-patch`, `trivy`, `trufflehog` |
+| GitHub release archive                    | `socket-basics`                                                    |
 
 ## The npm-packages archive
 

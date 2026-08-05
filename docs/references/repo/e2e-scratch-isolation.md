@@ -14,20 +14,20 @@ they do not pin the same set.
 Use this when the test runs the CLI as a subprocess. It builds a fresh scratch
 cwd and a fresh scratch HOME, then hands the child a pinned environment.
 
-| Variable | Points at |
-| --- | --- |
-| `HOME`, `USERPROFILE` | the scratch home |
-| `XDG_CONFIG_HOME` | `<scratchHome>/.config` |
-| `XDG_CACHE_HOME` | `<scratchHome>/.cache` |
-| `XDG_DATA_HOME` | `<scratchHome>/.local/share` |
-| `XDG_STATE_HOME` | `<scratchHome>/.local/state` |
-| `npm_config_cache`, `NPM_CONFIG_CACHE` | `<scratchHome>/.npm` |
-| `npm_config_prefix`, `NPM_CONFIG_PREFIX` | `<scratchHome>/.npm-global` |
-| `PNPM_HOME` | `<scratchHome>/.pnpm` |
-| `YARN_CACHE_FOLDER` | `<scratchHome>/.yarn-cache` |
-| `PIP_CACHE_DIR` | `<scratchHome>/.pip-cache` |
-| `CARGO_HOME` | `<scratchHome>/.cargo` |
-| `GRADLE_USER_HOME` | `<scratchHome>/.gradle` |
+| Variable                                 | Points at                    |
+| ---------------------------------------- | ---------------------------- |
+| `HOME`, `USERPROFILE`                    | the scratch home             |
+| `XDG_CONFIG_HOME`                        | `<scratchHome>/.config`      |
+| `XDG_CACHE_HOME`                         | `<scratchHome>/.cache`       |
+| `XDG_DATA_HOME`                          | `<scratchHome>/.local/share` |
+| `XDG_STATE_HOME`                         | `<scratchHome>/.local/state` |
+| `npm_config_cache`, `NPM_CONFIG_CACHE`   | `<scratchHome>/.npm`         |
+| `npm_config_prefix`, `NPM_CONFIG_PREFIX` | `<scratchHome>/.npm-global`  |
+| `PNPM_HOME`                              | `<scratchHome>/.pnpm`        |
+| `YARN_CACHE_FOLDER`                      | `<scratchHome>/.yarn-cache`  |
+| `PIP_CACHE_DIR`                          | `<scratchHome>/.pip-cache`   |
+| `CARGO_HOME`                             | `<scratchHome>/.cargo`       |
+| `GRADLE_USER_HOME`                       | `<scratchHome>/.gradle`      |
 
 npm reads both the lowercase `npm_config_*` and uppercase `NPM_CONFIG_*` forms,
 so both are set and neither can win by accident.
