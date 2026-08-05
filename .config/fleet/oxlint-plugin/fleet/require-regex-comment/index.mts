@@ -23,7 +23,7 @@
  *   - Test files (`*.test.mts` / `*.test.ts`): a regex in `assert.match` /
  *     `expect().toMatch` is an assertion documented by the test's own name.
  *     Escape (per-call-site, when a complex pattern is still obvious in
- *     context): append `// socket-lint: allow uncommented-regex` on the regex's
+ *     context): add `// socket-lint: allow uncommented-regex` on its own line above the regex's
  *     line. Report-only — NO deterministic autofix: a comment's CONTENT can't
  *     be mechanically derived from the pattern. The AI-fix orchestrator
  *     (`scripts/fleet/ai-lint-fix/`) handles this rule: it reads each flagged
@@ -70,6 +70,19 @@ function isLineMarkered(line: string): boolean {
   }
   const tag = m.groups?.['tag']
   return !tag || tag === 'uncommented-regex'
+}
+
+/**
+ * True when the line is a `socket-lint:` directive for ANY rule.
+ *
+ * The lead-in walk skips these rather than stopping on them. A regex often
+ * carries a marker for a different rule — a `personal-path` allowance on a
+ * placeholder-token detector, say — and that line is neither an explanation
+ * nor this rule's bypass. Treating it as prior code would cut the walk off
+ * before the real breakdown comment sitting above it.
+ */
+function isAnyLintDirectiveLine(line: string): boolean {
+  return SOCKET_LINT_MARKER_RE.test(line)
 }
 
 // Node kinds that make a disjunction BRANCH dense to read: a characterClass is
@@ -252,7 +265,7 @@ const rule = {
     // No deterministic fix — the AI-fix step writes the comment content.
     messages: {
       uncommented:
-        'Complex regex `{{pattern}}` (combines groups / alternation / lookaround / backreference) has no adjacent explanatory comment. Add a `//` breakdown on the line above (what each part matches) for a junior reader, or append `// socket-lint: allow uncommented-regex` if it is obvious in context.',
+        'Complex regex `{{pattern}}` (combines groups / alternation / lookaround / backreference) has no adjacent explanatory comment. Add a `//` breakdown on the line above (what each part matches) for a junior reader, or add `// socket-lint: allow uncommented-regex` on its own line above if it is obvious in context.',
     },
     schema: [],
   },
@@ -298,9 +311,17 @@ const rule = {
       let explained = false
       for (let i = lineIdx - 1; i >= 0; i -= 1) {
         const line = lines[i] ?? ''
-        if (lineHasComment(line)) {
+        // The opt-out marker counts here too — its PREFERRED placement is a
+        // marker-only line above the regex (no-malformed-bypass-marker hoists
+        // trailing markers into exactly that shape).
+        if (isLineMarkered(line) || lineHasComment(line)) {
           explained = true
           break
+        }
+        // A directive for a DIFFERENT rule is machinery, not prior code — step
+        // over it so the breakdown comment above it still counts.
+        if (isAnyLintDirectiveLine(line)) {
+          continue
         }
         // A statement lead-in line ends with an operator/opener the regex value
         // continues from (`= ( [ { : , ? | & +`). Anything else is prior code.

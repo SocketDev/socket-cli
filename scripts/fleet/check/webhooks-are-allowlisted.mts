@@ -51,8 +51,10 @@ import {
   selectRepos,
   unmatchedSelectorMessage,
 } from '../_shared/repo-filter.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -323,8 +325,16 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "audits every fleet member's repo webhooks against the declared allowlist",
+  help: `Usage: node scripts/fleet/check/webhooks-are-allowlisted.mts [flags]
+
+  --repo <name>[,<name>…]  narrow the sweep to the named roster repos (repeatable)`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

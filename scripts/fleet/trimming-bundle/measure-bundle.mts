@@ -30,6 +30,8 @@ import { findDistFiles } from '../validate-bundle-deps.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
 
+import type { ScriptMeta } from '../_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 export interface Preconditions {
@@ -122,7 +124,8 @@ export async function main(argv: readonly string[]): Promise<number> {
     const m = await measureBundle(repoDir)
     if (argv.includes('--json')) {
       const json = `${JSON.stringify(m, undefined, 2)}\n`
-      process.stdout.write(json) // socket-lint: allow console -- machine JSON; logger would corrupt it
+      // socket-lint: allow console -- machine JSON; logger would corrupt it
+      process.stdout.write(json)
     } else {
       logger.info(
         `bundle size: ${m.bundleSizeBytes} bytes across ${m.perFileSizes.length} file(s)`,
@@ -143,6 +146,15 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'measures dist bundle size, per-file sizes, preconditions, and the import survey',
+  help: `Usage: node scripts/fleet/trimming-bundle/measure-bundle.mts [flags]
+
+  --repo <dir>  repo to measure (default: this repo's root)
+  --json        emit the measurement as JSON`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(() => main(process.argv.slice(2)))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

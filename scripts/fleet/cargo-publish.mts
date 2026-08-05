@@ -62,6 +62,9 @@ import {
 } from './publish-infra/release.mts'
 import { logger } from './publish-infra/shared.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 export {
   crateNameStatus,
@@ -85,7 +88,6 @@ async function main(): Promise<void> {
       bump: { default: false, type: 'boolean' },
       direct: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       // Accepted for signature parity with npm-publish.mts; a no-op on crates.io
       // (no OTP on publish). Threaded to runApprove so the parity is honest.
       otp: { type: 'string' },
@@ -97,48 +99,6 @@ async function main(): Promise<void> {
     allowPositionals: false,
     strict: false,
   })
-
-  if (values['help']) {
-    logger.log(
-      'Usage: cargo-publish [--staged | --approve | --direct] [--dry-run] [--bump] [--package <name>] [--yes]',
-    )
-    logger.log('  (no mode → --staged, the default publish path)')
-    logger.log('')
-    logger.log(
-      '  --staged             verify + package the crate (cargo publish',
-    )
-    logger.log(
-      '                       --dry-run) and record its sha256; nothing is',
-    )
-    logger.log('                       uploaded (recommended default)')
-    logger.log(
-      '  --approve            local: sha256-verify + confirm, then publish',
-    )
-    logger.log('                       (PERMANENT), then tag + GitHub release')
-    logger.log(
-      '  --direct             classic `cargo publish` — public in one step,',
-    )
-    logger.log('                       no stage/approve, then tag + release')
-    logger.log('  --dry-run            simulate; no registry writes')
-    logger.log(
-      '  --package <name>     select one crate in a multi-crate workspace',
-    )
-    logger.log('  --yes                approve without the confirmation prompt')
-    logger.log(
-      '  --bump               CI: bump version + CHANGELOG, commit via the',
-    )
-    logger.log(
-      '                       release App (signed), then run the chosen mode',
-    )
-    logger.log(
-      '  --release-as <lvl>   force bump level major|minor|patch (with --bump)',
-    )
-    logger.log(
-      '  --otp <code>         accepted for parity; no-op on crates.io (no OTP)',
-    )
-    process.exitCode = 0
-    return
-  }
 
   const modes = [values['staged'], values['approve'], values['direct']].filter(
     Boolean,
@@ -205,9 +165,23 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'publishes a crate to crates.io via staged, approve, or direct mode, then tags + creates the GitHub release',
+  help: `Usage: node scripts/fleet/cargo-publish.mts [--staged | --approve | --direct] [--dry-run] [--bump] [--package <name>] [--yes]
+  (no mode → --staged, the default publish path)
+
+  --staged             verify + package the crate (cargo publish --dry-run) and record its sha256; nothing is uploaded (recommended default)
+  --approve            local: sha256-verify + confirm, then publish (PERMANENT), then tag + GitHub release
+  --direct             classic \`cargo publish\` — public in one step, no stage/approve, then tag + release
+  --dry-run            simulate; no registry writes
+  --package <name>     select one crate in a multi-crate workspace
+  --yes                approve without the confirmation prompt
+  --bump               CI: bump version + CHANGELOG, commit via the release App (signed), then run the chosen mode
+  --release-as <lvl>   force bump level major|minor|patch (with --bump)
+  --otp <code>         accepted for parity; no-op on crates.io (no OTP)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

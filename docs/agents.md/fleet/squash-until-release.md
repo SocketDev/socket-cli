@@ -80,11 +80,12 @@ provenance does not — and both properties are named for exactly that
 impermanence.
 
 > [!IMPORTANT]
-> A freshly created fleet repo has **no** custom properties set, and nothing in
-> the onboarding path sets them. Setting both is a manual onboarding step today;
-> until it is automated, `squashing-history` will fail its final push on a
-> brand-new member. Wiring it into `register-fleet-member.mts` (or
-> `onboard-fleet-member.mts`) is the natural follow-up.
+> A freshly created fleet repo has **no** custom properties set, so
+> `squashing-history` fails its final push until they are. The onboarding
+> pipeline's identity stage sets them: it runs `register-fleet-member.mts`
+> without `--skip-github`, which syncs the property seed right after the roster
+> write. A member registered with `--skip-github` still owes that sync — re-run
+> the stage.
 
 So in practice: history is malleable while a member is **private and
 unreleased**. Anyone reaching for a squash after either transition is fighting

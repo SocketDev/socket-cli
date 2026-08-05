@@ -41,6 +41,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { PACKAGE_JSON, REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -128,7 +131,8 @@ export function listMtsFiles(dir: string): string[] {
 export function extractImportSpecifiers(content: string): string[] {
   const specifiers: string[] = []
   const fromRe =
-    /(?:^|\n)[ \t]*(?:export|import)\b[\s\w,{}*]*?\bfrom[ \t]*['"]([^'"]+)['"]/g // socket-lint: allow uncommented-regex
+    // socket-lint: allow uncommented-regex
+    /(?:^|\n)[ \t]*(?:export|import)\b[\s\w,{}*]*?\bfrom[ \t]*['"]([^'"]+)['"]/g
   let m: RegExpExecArray | null
   while ((m = fromRe.exec(content)) !== null) {
     specifiers.push(m[1]!)
@@ -136,7 +140,8 @@ export function extractImportSpecifiers(content: string): string[] {
   // Bare side-effect import: `import '<spec>'` (no `from`). Anchored so the
   // first non-space token after `import` must be a quote, so it never
   // re-matches a `from`-form line already caught above.
-  const sideEffectRe = /(?:^|\n)[ \t]*import[ \t]*['"]([^'"]+)['"]/g // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  const sideEffectRe = /(?:^|\n)[ \t]*import[ \t]*['"]([^'"]+)['"]/g
   while ((m = sideEffectRe.exec(content)) !== null) {
     specifiers.push(m[1]!)
   }
@@ -426,6 +431,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies every static hook import is declared in the owning package.json',
+  help: `Usage: node scripts/fleet/check/hook-imports-are-declared.mts [flags]
+
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

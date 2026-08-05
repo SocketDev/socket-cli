@@ -14,10 +14,11 @@
 name: 'Setup Rust Cache'
 description: |
   Cache the cargo registry, git index, and one or more target/ directories
-  via actions/cache@v5. Replaces the third-party `Swatinem/rust-cache`
-  action so the consumer's GH Actions allowlist doesn't need
-  `Swatinem/rust-cache@*` — the cache layer goes through `actions/cache`
-  which is already on the canonical allowlist.
+  via the fleet cache CLIs (scripts/fleet/cache/{restore,save}.mts — the
+  native port of the actions/cache steps over the @actions/cache package).
+  Replaces the third-party `Swatinem/rust-cache` action so the consumer's
+  GH Actions allowlist doesn't need `Swatinem/rust-cache@*`, and no
+  third-party cache action at all.
 
   The cache key is computed from:
     - prefix-key (caller-supplied, distinguishes matrix slots)
@@ -25,20 +26,36 @@ description: |
     - the rustc version (so toolchain upgrades invalidate the cache)
     - the hash of each workspace's Cargo.lock
 
-  Caches are saved at job-end via actions/cache@v5's post-step (always
-  runs on success, gated by `save-if`).
+  TWO-PHASE CONTRACT (a composite has no post step to save at job end the
+  way the upstream actions/cache action did): call this action once after
+  the toolchain step (default `phase: restore` — computes the key, restores,
+  and exports RUST_CACHE_* job env), and once more with `phase: save` as the
+  job's LAST step (reads that env and saves, gated by `save-if` and skipped
+  on an exact-key hit). A workflow-level step at the end of the job runs
+  only when every previous step succeeded, which is the same success gate
+  the upstream post step used.
 
 inputs:
+  phase:
+    description: |
+      'restore' (the default) computes the key, restores, and exports the
+      RUST_CACHE_* job env. 'save' reads that env and saves the cache — call
+      it as the job's last step. Only the restore phase reads the other
+      inputs.
+    required: false
+    default: 'restore'
   workspaces:
     description: |
-      Newline-or-space-separated list of cargo workspace paths.
+      Newline-or-space-separated list of cargo workspace paths. Required for
+      the restore phase (validated there); the save phase ignores it.
       Each entry can be:
         "path"                       — caches path/target
         "path -> target-dir"         — explicit target dir relative to workspace
       Examples:
         "packages/foo"                                 (caches packages/foo/target)
         "packages/foo -> target/release/build-cache"   (explicit target dir)
-    required: true
+    required: false
+    default: ''
   prefix-key:
     description: |
       Caller-supplied cache key prefix. Combined with OS + rustc version
@@ -53,9 +70,10 @@ inputs:
     default: 'rust'
   save-if:
     description: |
-      Conditional expression: when "true" (the default) save the cache
-      at job-end; when "false" only restore, don't save. Useful for
-      matrix slots that only consume.
+      When "true" (the default) the `phase: save` call saves the cache;
+      when "false" it skips, so the job only restores. Useful for matrix
+      slots that only consume. Read at restore time and carried in
+      RUST_CACHE_SAVE_IF, so the save call needs no inputs.
     required: false
     default: 'true'
 
@@ -64,6 +82,7 @@ runs:
   steps:
     - name: Resolve rustc version for cache key
       id: rustc-version
+      if: inputs.phase == 'restore'
       shell: bash
       run: |
         set -euo pipefail
@@ -80,6 +99,7 @@ runs:
 
     - name: Compose target-dir list + cache key
       id: paths
+      if: inputs.phase == 'restore'
       shell: bash
       env:
         WORKSPACES: ${{ inputs.workspaces }}
@@ -87,6 +107,13 @@ runs:
         RUSTC_VERSION: ${{ steps.rustc-version.outputs.version }}
       run: |
         set -euo pipefail
+
+        # workspaces went optional when the save phase arrived (a save call
+        # needs no inputs), so the restore phase owns the required-ness.
+        if [ -z "${WORKSPACES// /}" ]; then
+          echo "× setup-rust-cache: the restore phase needs the workspaces input. Saw: empty. Fix: pass workspaces: <path> (or 'path -> target-dir')." >&2
+          exit 1
+        fi
 
         # Compose the list of paths to cache. Always include the
         # global cargo registry + git index — those are workspace-
@@ -138,10 +165,75 @@ runs:
         echo "restore-key=${PREFIX_KEY}-${RUNNER_OS}-rust-${RUSTC_VERSION}-" >> "$GITHUB_OUTPUT"
         echo "Cache key: $KEY"
 
-    - name: Restore / save cargo + target cache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: ${{ steps.paths.outputs.paths }}
-        key: ${{ steps.paths.outputs.key }}
-        restore-keys: ${{ steps.paths.outputs.restore-key }}
-        save-always: ${{ inputs.save-if }}
+    - name: Restore cargo + target cache
+      id: cache
+      if: inputs.phase == 'restore'
+      shell: bash
+      env:
+        CACHE_PATHS: ${{ steps.paths.outputs.paths }}
+        CACHE_KEY: ${{ steps.paths.outputs.key }}
+        RESTORE_KEY: ${{ steps.paths.outputs.restore-key }}
+      run: |
+        set -euo pipefail
+        # The fleet cache restore CLI (the actions/cache port). Rust-only
+        # jobs never run pnpm install, so the CLI provisions its own
+        # @actions/cache client into RUNNER_TEMP (catalog-pinned version,
+        # see scripts/fleet/cache/cache-cli.mts). Paths arrive one per line;
+        # repeat --path per entry. Env-routed, never a GitHub expression
+        # inside the run body (zizmor template-injection shape).
+        ARGS=(--key "$CACHE_KEY" --restore-key "$RESTORE_KEY")
+        while IFS= read -r cache_path; do
+          [ -z "$cache_path" ] && continue
+          ARGS+=(--path "$cache_path")
+        done <<<"$CACHE_PATHS"
+        node scripts/fleet/cache/restore.mts "${ARGS[@]}"
+
+    - name: Export the cache verdict for the save phase
+      if: inputs.phase == 'restore'
+      shell: bash
+      env:
+        CACHE_PATHS: ${{ steps.paths.outputs.paths }}
+        CACHE_KEY: ${{ steps.paths.outputs.key }}
+        CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+        SAVE_IF: ${{ inputs.save-if }}
+      run: | # zizmor: ignore[github-env] - key/paths composed above from the caller's own inputs, not runtime-attacker data.
+        # The save phase is a SECOND invocation of this composite, so step
+        # outputs are out of scope there — job env is the only channel that
+        # spans both, the same shape cache-pnpm-store uses for its
+        # setup-and-install save step.
+        {
+          echo 'RUST_CACHE_PATHS<<RUST_CACHE_PATHS_EOF'
+          echo "$CACHE_PATHS"
+          echo 'RUST_CACHE_PATHS_EOF'
+          echo "RUST_CACHE_KEY=${CACHE_KEY}"
+          echo "RUST_CACHE_HIT=${CACHE_HIT}"
+          echo "RUST_CACHE_SAVE_IF=${SAVE_IF}"
+        } >> "$GITHUB_ENV"
+
+    - name: Save cargo + target cache
+      if: inputs.phase == 'save'
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Reads the RUST_CACHE_* job env the restore phase exported. Skips
+        # (with the reason) when the restore hit the exact key — saving an
+        # existing key is a rejected no-op — or when the caller asked for
+        # restore-only via save-if.
+        if [ -z "${RUST_CACHE_KEY:-}" ]; then
+          echo "× setup-rust-cache: phase 'save' found no RUST_CACHE_KEY in the job env. Saw: no restore phase ran in this job. Fix: call setup-rust-cache (default phase) after the toolchain step, then phase: save last." >&2
+          exit 1
+        fi
+        if [ "${RUST_CACHE_SAVE_IF:-true}" != 'true' ]; then
+          echo "save-if is '${RUST_CACHE_SAVE_IF}' — restore-only slot, skipping the save."
+          exit 0
+        fi
+        if [ "${RUST_CACHE_HIT:-}" = 'true' ]; then
+          echo "Exact-key cache hit on restore — the entry already exists, skipping the save."
+          exit 0
+        fi
+        ARGS=(--key "$RUST_CACHE_KEY")
+        while IFS= read -r cache_path; do
+          [ -z "$cache_path" ] && continue
+          ARGS+=(--path "$cache_path")
+        done <<<"$RUST_CACHE_PATHS"
+        node scripts/fleet/cache/save.mts "${ARGS[@]}"

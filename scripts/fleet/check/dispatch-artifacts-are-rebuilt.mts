@@ -57,6 +57,8 @@ import {
 } from '../paths.mts'
 import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -475,6 +477,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every built dispatch artifact carries the current dispatch-table routing',
+  help: `Usage: node scripts/fleet/check/dispatch-artifacts-are-rebuilt.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main()
+  runMain(main, SCRIPT_META)
 }

@@ -20,11 +20,14 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -181,4 +184,12 @@ function main(): number {
   return 0
 }
 
-process.exitCode = main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the SkillSpector SHA pin agrees across external-tools.json, pyproject.toml, and uv.lock',
+  help: 'Usage: node scripts/fleet/check/skillspector-pin-is-consistent.mts',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

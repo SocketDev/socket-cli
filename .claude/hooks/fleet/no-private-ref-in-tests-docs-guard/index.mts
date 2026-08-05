@@ -29,10 +29,13 @@ import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 
 // SocketDev org references in any of the shapes that name a repo:
 //   SocketDev/<repo>   github.com/SocketDev/<repo>   git@github.com:SocketDev/<repo>
-const ORG_REPO_RE = /\bSocketDev[/:]([\w.-]+)/g // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const ORG_REPO_RE = /\bSocketDev[/:]([\w.-]+)/g
 
-const LINEAR_RE = /\blinear\.app\//i // socket-lint: allow uncommented-regex
-const SLACK_RE = /\b(?:app\.)?slack\.com\/(?:archives|client)\//i // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const LINEAR_RE = /\blinear\.app\//i
+// socket-lint: allow uncommented-regex
+const SLACK_RE = /\b(?:app\.)?slack\.com\/(?:archives|client)\//i
 
 const FLEET_NAMES_LOWER: ReadonlySet<string> = new Set(
   FLEET_REPO_NAMES.map(n => n.toLowerCase()),

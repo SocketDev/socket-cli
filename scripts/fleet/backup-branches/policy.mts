@@ -1,8 +1,7 @@
 /*
  * @file The backup-branch retention policy, as pure data + pure functions —
  *   no git, no network, so every rule here is unit-testable without a fixture
- *   repo. `../prune-backup-branches.mts` supplies the discovered refs and
- *   performs the deletes.
+ *   repo. `prune.mts` supplies the discovered refs and performs the deletes.
  *
  *   A backup branch is a REWRITE SAFETY NET: something force-pushed history
  *   and parked the pre-rewrite tip so the old commits stay reachable. Once the
@@ -16,14 +15,12 @@
  *   so N alone would keep a wall of same-day nets."
  */
 
-// What counts as a backup ref is NOT decided here. `lib/backup-branch.mts` is
-// the one owner of fleet recovery-ref naming — `normalize-backup-branches.mts`
-// renames against it and the release scan reads it to find parked work. A
-// second pattern list here would drift, and a scrubber that disagreed with the
-// normalizer about what a backup ref is would either skip refs forever or
-// delete a branch nobody called a backup. Re-exported so the prune script has
-// one import for the whole policy.
-export { isBackupBranch } from '../lib/backup-branch.mts'
+// What counts as a backup ref is NOT decided here. `naming.mts` is the one
+// owner of fleet recovery-ref naming — `normalize.mts` renames against it and
+// the release scan reads it to find parked work. A second pattern list here
+// would drift, and a scrubber that disagreed with the normalizer about what a
+// backup ref is would either skip refs forever or delete a branch nobody
+// called a backup.
 
 // Newest N backup refs always survive, per repo, regardless of age. The most
 // recent net is the one an operator is most likely to still want.

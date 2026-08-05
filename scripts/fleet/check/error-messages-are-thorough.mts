@@ -41,6 +41,8 @@ import {
 } from '../../../.claude/hooks/fleet/_shared/error-message-quality.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -199,6 +201,13 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks the committed source tree for vague-only error messages',
+  help: `Usage: node scripts/fleet/check/error-messages-are-thorough.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

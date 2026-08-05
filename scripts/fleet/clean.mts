@@ -20,12 +20,14 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { NODE_MODULES_DIR, REPO_ROOT, TOOL_CACHE_DIR } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -164,9 +166,18 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "removes this repo's build output; cache and node_modules removal are opt-in",
+  help: `Usage: node scripts/fleet/clean.mts [flags]
+
+  --cache         also remove .cache/
+  --node-modules  also remove node_modules/
+  --all           both of the above
+  --dry-run       list what would be removed without deleting
+  --quiet         suppress the summary`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`[clean] failed: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

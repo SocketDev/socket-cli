@@ -16,8 +16,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-
 import { checkGitVersion, logger } from './git-partial-submodule/internal.mts'
 import type { CommonOpts } from './git-partial-submodule/internal.mts'
 import type { AddOpts } from './git-partial-submodule/internal.mts'
@@ -28,6 +26,8 @@ import {
   cmdSaveSparse,
 } from './git-partial-submodule/commands.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const USAGE = `git-partial-submodule — add / clone / save-sparse / restore-sparse partial submodules
 
@@ -58,8 +58,6 @@ export function parseArgs(argv: string[]): {
       opts.dryRun = true
     } else if (arg === '--verbose' || arg === '-v') {
       opts.verbose = true
-    } else if (arg === '--help' || arg === '-h') {
-      return { command: 'help', opts, rest: [] }
     } else {
       remaining.push(arg)
     }
@@ -141,10 +139,12 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'add, clone, save-sparse, or restore-sparse partial submodules declared in .gitmodules',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((err: unknown) => {
-    const msg = errorMessage(err)
-    logger.error(`git-partial-submodule: ${msg}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -39,19 +39,65 @@ export interface StagedPayload {
   total: number
 }
 
-// The Cloudflare bot-challenge markers — a challenge body is a 200 (or a
-// 403/503) carrying JS-challenge markup, never the JSON we asked for.
+// Markers only an INTERSTITIAL carries: the holding page's own copy and the
+// challenge-run scaffolding. None of these appear on a served npm page.
+const INTERSTITIAL_MARKERS: readonly RegExp[] = [
+  /Just a moment/i,
+  /cf-(?:browser-verification|challenge|chl-)/i,
+  /_cf_chl_/i,
+  /Checking if the site connection is secure/i,
+  /Verify you are human/i,
+]
+
+// Markers that ride EVERY npm response because the site embeds Cloudflare's
+// bot-management script inline. On their own they prove nothing — treating them
+// as a challenge made a solved page read as still-challenged forever, so the
+// poller re-navigated in a loop the operator could never satisfy.
+const AMBIENT_CHALLENGE_MARKERS: readonly RegExp[] = [
+  /cdn-cgi\/challenge-platform\//i,
+  /challenges\.cloudflare\.com\/turnstile/i,
+]
+
+// Content that only a SERVED page carries. Its presence settles an ambient
+// marker: the page rendered, so whatever challenge ran has already cleared.
+const SERVED_PAGE_MARKERS: readonly RegExp[] = [
+  /id="github-repoInfo"/,
+  /Trusted [Pp]ublish(?:er|ing)/,
+  /publishingAccess/,
+  /Publishing access/i,
+  /"trustedPublisher\\?"\s*:/,
+  /id="app"|__NEXT_DATA__|id="root"/,
+]
+
+function matchesAny(body: string, patterns: readonly RegExp[]): boolean {
+  for (let i = 0, { length } = patterns; i < length; i += 1) {
+    if (patterns[i]!.test(body)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Whether `body` is a Cloudflare bot-challenge INTERSTITIAL rather than the
+ * page or JSON that was asked for.
+ *
+ * Two tiers, because npm serves Cloudflare's challenge-platform script on
+ * ordinary pages: an interstitial-only marker is decisive, while an ambient
+ * marker counts only when no served-page content accompanies it. Without that
+ * split a challenge the operator had already solved still read as outstanding,
+ * and the pause loop refreshed the same page until its budget ran out.
+ */
 export function isCloudflareChallenge(body: string): boolean {
   if (!body) {
     return false
   }
+  if (matchesAny(body, INTERSTITIAL_MARKERS)) {
+    return true
+  }
   return (
-    /Just a moment/i.test(body) ||
-    /cf-(?:browser-verification|challenge|chl-)/i.test(body) ||
-    /_cf_chl_/i.test(body) ||
-    /cdn-cgi\/challenge-platform\//i.test(body) ||
-    /challenges\.cloudflare\.com\/turnstile/i.test(body) ||
-    /Checking if the site connection is secure/i.test(body)
+    matchesAny(body, AMBIENT_CHALLENGE_MARKERS) &&
+    !matchesAny(body, SERVED_PAGE_MARKERS)
   )
 }
 

@@ -46,6 +46,8 @@ import type { SubmoduleBlock } from '../verify-submodule-sparse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
 
+import type { ScriptMeta } from '../_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 // The file-type buckets the skill's "Determine" step enumerates. Each is a set
@@ -289,6 +291,16 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'collects outside-only consumer evidence for each .gitmodules submodule as JSON',
+  help: `Usage: node scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts [flags] [<.gitmodules>]
+
+  --name <submodule>  scope the collection to one submodule by name
+  --path <path>       scope the collection to one submodule by path
+  --pretty            add a human table to the JSON envelope`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

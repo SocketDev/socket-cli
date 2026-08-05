@@ -35,6 +35,9 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -419,11 +422,16 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the fleet security scanners (AgentShield, zizmor, skillscanner) over the repo',
+  help: `Usage: pnpm run security [flags]
+
+  --json  emit the unified findings envelope as JSON instead of streaming live output`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the script.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

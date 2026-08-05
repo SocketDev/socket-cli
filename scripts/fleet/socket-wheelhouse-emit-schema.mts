@@ -18,6 +18,9 @@ import { REPO_ROOT } from './paths.mts'
 import { SocketWheelhouseConfigSchema } from './socket-wheelhouse-schema.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -58,6 +61,12 @@ export async function main(): Promise<void> {
   logger.success(`wrote ${path.relative(REPO_ROOT, outPath)}`)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'emits .config/repo/socket-wheelhouse-schema.json from the TypeBox source',
+  help: 'Usage: pnpm run socket-wheelhouse:emit-schema',
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

@@ -10,7 +10,7 @@
  *   - Single-alternative groups (`(foo)`) — nothing to sort.
  *   - Position-bearing alternations where order encodes precedence (e.g.
  *     `<!--|-->` where `-->` MUST be tried after `<!--`). The rule can't prove
- *     this is the case, so it requires authors to append `// socket-lint: allow
+ *     this is the case, so it requires authors to add `// socket-lint: allow
  *     regex-alternation-order` on the line for the genuine exception.
  *   - Alternations whose elements aren't simple literals (containing `(`, `[`,
  *     `?`, `*`, `+`, `{`, etc.) — sorting may change match semantics in subtle
@@ -20,6 +20,7 @@
  *     alternations, reports without autofix.
  */
 
+import { markerOnlyLineAllows } from '../../lib/comment-markers.mts'
 import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 import { isLockstepMirror } from '../../lib/lockstep-mirror.mts'
 
@@ -235,7 +236,7 @@ const rule = {
       unsorted:
         'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`.',
       unsortedNoFix:
-        'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`. (Not auto-fixed: contains non-literal elements; sort manually or append `// socket-lint: allow regex-alternation-order` if the order is intentional.)',
+        'Regex alternation `({{actual}})` is not sorted alphanumerically. Expected `({{sorted}})`. (Not auto-fixed: contains non-literal elements; sort manually or add `// socket-lint: allow regex-alternation-order` on its own line above if the order is intentional.)',
     },
     schema: [],
   },
@@ -252,8 +253,15 @@ const rule = {
       const sourceCode = context.getSourceCode
         ? context.getSourceCode()
         : context.sourceCode
-      const line = sourceCode.lines[node.loc.start.line - 1] ?? ''
-      if (isLineMarkered(line)) {
+      const lineIdx = node.loc.start.line - 1
+      const line = sourceCode.lines[lineIdx] ?? ''
+      if (
+        isLineMarkered(line) ||
+        markerOnlyLineAllows(
+          sourceCode.lines[lineIdx - 1] ?? '',
+          'regex-alternation-order',
+        )
+      ) {
         return
       }
       const pattern = node.regex.pattern

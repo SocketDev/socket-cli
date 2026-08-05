@@ -144,7 +144,7 @@ export const check = editGuard((filePath, content) => {
       'when you pinned/refreshed (today is fine for new pins). The\n' +
       'date-stamp is the staleness signal — reviewers can see at-a-glance\n' +
       'when a SHA was last touched without running a drift audit.\n' +
-      '\nOne-off override: append `# socket-lint: allow uses-no-stamp`\n' +
+      '\nOne-off override: add `# socket-lint: allow uses-no-stamp` on its own line above\n' +
       'to the `uses:` line.',
   )
 })

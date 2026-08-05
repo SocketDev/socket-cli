@@ -9,7 +9,6 @@ name: 'Setup'
 description: 'Setup debug, Node.js, pnpm, Socket firewall shims, and bootstrap zero-dep foundation packages (@socketsecurity/lib, @socketsecurity/sdk, @socketregistry/packageurl-js, @sinclair/typebox)'
 
 # Dependencies:
-#   - actions/setup-node@v6.4.0
 #   - ./.github/actions/debug
 
 inputs:
@@ -25,14 +24,6 @@ inputs:
     description: 'Node.js version'
     required: false
     default: '26.5.0'
-  scope:
-    description: 'npm registry scope for package authentication'
-    required: false
-    default: ''
-  registry-url:
-    description: 'npm registry URL'
-    required: false
-    default: 'https://registry.npmjs.org'
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false
@@ -68,103 +59,162 @@ runs:
         # Bundle fleet pins beside the action so sparse bootstrap checkouts have them.
         # A repo's own .config/repo/external-tools.json is optional and may contain repo-only tools.
         TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
-        if [ ! -f "$TOOLS_FILE" ]; then
-          echo "× the fleet setup action is broken: external-tools.json not found at ${TOOLS_FILE}." >&2
-          echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
-          echo "" >&2
-          echo "  Diagnostics — what's actually present at runtime:" >&2
-          echo "    GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH}" >&2
-          echo "    ls -la \"\${GITHUB_ACTION_PATH}\":" >&2
-          ls -la "${GITHUB_ACTION_PATH}" 2>&1 | sed 's/^/      /' >&2 || true
-          echo "    ls -la \"\${GITHUB_ACTION_PATH}/..\" (parent — should be .github/actions/fleet/):" >&2
-          ls -la "${GITHUB_ACTION_PATH}/.." 2>&1 | sed 's/^/      /' >&2 || true
-          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../..\" (grandparent — should be .github/actions/):" >&2
-          ls -la "${GITHUB_ACTION_PATH}/../.." 2>&1 | sed 's/^/      /' >&2 || true
-          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../..\" (should be .github/):" >&2
-          ls -la "${GITHUB_ACTION_PATH}/../../.." 2>&1 | sed 's/^/      /' >&2 || true
-          echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../../..\" (should be repo root):" >&2
-          ls -la "${GITHUB_ACTION_PATH}/../../../.." 2>&1 | sed 's/^/      /' >&2 || true
-          exit 1
-        fi
-        # Copy the tools file to RUNNER_TEMP so consumer workflows and
-        # Docker builds can reach it after `setup` finishes. Actions
-        # lose their $GITHUB_ACTION_PATH scope between steps, so we
-        # stash the file at a stable location and export the path via
-        # SOCKET_TOOL_CHECKSUMS_FILE. Dockerfiles that verify any
-        # registry-published tool (pnpm, zizmor, …) can `COPY` this
-        # into their build context without duplicating per-platform
-        # SHAs across each Dockerfile.
-        TOOLS_DEST="${RUNNER_TEMP:-/tmp}/fleet-external-tools.json"
-        cp "$TOOLS_FILE" "$TOOLS_DEST"
-        if [ ! -s "$TOOLS_DEST" ]; then
-          echo "× failed to stage external-tools.json at ${TOOLS_DEST} (missing or empty after copy)." >&2
-          exit 1
-        fi
-        # Branch decisions — the tools-file schema probe and the extended-env
-        # disabled-seam gating — live in the co-located plan-setup-tools.mjs:
-        # pure functions, unit-tested in the wheelhouse, run via
-        # $GITHUB_ACTION_PATH so it travels when a member consumes the action
-        # — same shape as github-status-check's probe-github-status.mjs.
-        # Inputs go in via env; decisions come back on stdout.
+        # Tool paths used by both the normal (TOOLS_FILE present) and
+        # bootstrap (TOOLS_FILE absent) branches below.
         PLAN="${GITHUB_ACTION_PATH}/plan-setup-tools.mjs"
-        export TOOLS_FILE
-        # The staged file always exists at $TOOLS_DEST; only the env-var
-        # pointer to it is gated. Disabled-seam: the cp above stays
-        # unconditional (the wire-in point), but the SOCKET_TOOL_CHECKSUMS_FILE
-        # export — which no load-bearing step reads — is off unless a consumer
-        # opts in via extended-env. See disabled-seam-pattern (fleet docs).
-        TOOLS_DEST="$TOOLS_DEST" node "$PLAN" pnpm-checksums-env >> "${GITHUB_ENV:-/dev/null}"
-        # Read JSON values via lib/jq.mjs. Node is preinstalled on
-        # every GitHub-hosted runner image and in node:* Docker base
-        # images, so this avoids depending on jq (absent from
-        # node:*-alpine and distroless). The reader exits non-zero on
-        # missing/empty values, so set -e turns a packaging bug here
-        # into a loud failure rather than a silent empty env export
-        # that surfaces later as `cp: cannot stat ''`.
+        # Separate decision core for the pnpm BOOTSTRAP path (TOOLS_FILE
+        # absent) — see bootstrap-pnpm.mjs's header for why this is a
+        # distinct file rather than more subcommands on $PLAN.
+        BOOTSTRAP_PLAN="${GITHUB_ACTION_PATH}/bootstrap-pnpm.mjs"
         JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
-        # The tools file nests entries under `tools` (current schema) or at the
-        # top level (legacy flat). Probe once; an empty $NS splits away.
-        NS="$(node "$PLAN" namespace)"
-        PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS pnpm version)"
-        PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
         # Canonical platform string (linux-x64, linux-arm64-musl,
         # darwin-arm64, win-x64, …). Detects musl via Node's own
         # process.report so we don't shell out to ldd.
-        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         PLATFORM="$(node "$PLATFORM_TOOL")"
-        ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
-        # An `<name>-<version>.tgz` asset is a JS-only npm-registry tarball
-        # (pnpm ships no darwin-x64 SEA binary since 11.0.5,
-        # nodejs/node#62893) — it downloads from the npm registry and runs
-        # through the system Node. Derived from the asset shape itself: the
-        # external-tools updater regenerates platform entries as
-        # asset+integrity pairs, so a separate `source` data field silently
-        # vanishes on update (it did — every fleet copy lost it and Intel
-        # mac setup 404'd against the GitHub release).
-        SOURCE=""
-        [[ "$ASSET" == *.tgz ]] && SOURCE="npm-registry"
-        BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
-        BINARY_REL="${BINARY_REL:-package/bin/pnpm.cjs}"
+        PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
         PNPM_BIN="$PNPM_DIR/pnpm"
-        [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
-        # Shared installer: fetches, integrity-verifies (SRI), extracts.
-        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
-        if [ ! -x "$PNPM_BIN" ]; then
-          if [ "$SOURCE" = "npm-registry" ]; then
-            URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
-          else
-            URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+        if [ -f "$TOOLS_FILE" ]; then
+          # Copy the tools file to RUNNER_TEMP so consumer workflows and
+          # Docker builds can reach it after `setup` finishes. Actions
+          # lose their $GITHUB_ACTION_PATH scope between steps, so we
+          # stash the file at a stable location and export the path via
+          # SOCKET_TOOL_CHECKSUMS_FILE. Dockerfiles that verify any
+          # registry-published tool (pnpm, zizmor, …) can `COPY` this
+          # into their build context without duplicating per-platform
+          # SHAs across each Dockerfile.
+          TOOLS_DEST="${RUNNER_TEMP:-/tmp}/fleet-external-tools.json"
+          cp "$TOOLS_FILE" "$TOOLS_DEST"
+          if [ ! -s "$TOOLS_DEST" ]; then
+            echo "× failed to stage external-tools.json at ${TOOLS_DEST} (missing or empty after copy)." >&2
+            exit 1
           fi
-          node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR"
-        fi
-        # If the platform uses the npm-registry shape, the extracted
-        # tarball is a JS package — no native binary. Write a wrapper
-        # that runs it through the system Node.
-        if [ "$SOURCE" = "npm-registry" ]; then
-          BINARY_PATH="$PNPM_DIR/$BINARY_REL"
+          # Branch decisions — the tools-file schema probe and the extended-env
+          # disabled-seam gating — live in the co-located plan-setup-tools.mjs:
+          # pure functions, unit-tested in the wheelhouse, run via
+          # $GITHUB_ACTION_PATH so it travels when a member consumes the action
+          # — same shape as github-status-check's probe-github-status.mjs.
+          # Inputs go in via env; decisions come back on stdout.
+          export TOOLS_FILE
+          # The staged file always exists at $TOOLS_DEST; only the env-var
+          # pointer to it is gated. Disabled-seam: the cp above stays
+          # unconditional (the wire-in point), but the SOCKET_TOOL_CHECKSUMS_FILE
+          # export — which no load-bearing step reads — is off unless a consumer
+          # opts in via extended-env. See disabled-seam-pattern (fleet docs).
+          TOOLS_DEST="$TOOLS_DEST" node "$PLAN" pnpm-checksums-env >> "${GITHUB_ENV:-/dev/null}"
+          # Read JSON values via lib/jq.mjs. Node is preinstalled on
+          # every GitHub-hosted runner image and in node:* Docker base
+          # images, so this avoids depending on jq (absent from
+          # node:*-alpine and distroless). The reader exits non-zero on
+          # missing/empty values, so set -e turns a packaging bug here
+          # into a loud failure rather than a silent empty env export
+          # that surfaces later as `cp: cannot stat ''`.
+          # The tools file nests entries under `tools` (current schema) or at the
+          # top level (legacy flat). Probe once; an empty $NS splits away.
+          NS="$(node "$PLAN" namespace)"
+          PNPM_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS pnpm version)"
+          ASSET="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" asset)"
+          INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" integrity)"
+          # An `<name>-<version>.tgz` asset is a JS-only npm-registry tarball
+          # (pnpm ships no darwin-x64 SEA binary since 11.0.5,
+          # nodejs/node#62893) — it downloads from the npm registry and runs
+          # through the system Node. Derived from the asset shape itself: the
+          # external-tools updater regenerates platform entries as
+          # asset+integrity pairs, so a separate `source` data field silently
+          # vanishes on update (it did — every fleet copy lost it and Intel
+          # mac setup 404'd against the GitHub release).
+          SOURCE=""
+          [[ "$ASSET" == *.tgz ]] && SOURCE="npm-registry"
+          BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM" binary 2>/dev/null || echo "")"
+          BINARY_REL="${BINARY_REL:-package/bin/pnpm.cjs}"
+          [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
+          if [ ! -x "$PNPM_BIN" ]; then
+            if [ "$SOURCE" = "npm-registry" ]; then
+              URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
+            else
+              URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
+            fi
+            node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR"
+          fi
+          # If the platform uses the npm-registry shape, the extracted
+          # tarball is a JS package — no native binary. Write a wrapper
+          # that runs it through the system Node.
+          if [ "$SOURCE" = "npm-registry" ]; then
+            BINARY_PATH="$PNPM_DIR/$BINARY_REL"
+            if [ ! -f "$BINARY_PATH" ]; then
+              echo "× pnpm npm-registry tarball missing $BINARY_REL after extract" >&2
+              exit 1
+            fi
+            printf '#!/bin/bash\nexec node "%s" "$@"\n' "$BINARY_PATH" > "$PNPM_BIN"
+            chmod +x "$PNPM_BIN"
+          fi
+        else
+          # A THIN member untracks the whole scripts/fleet/** payload and
+          # repopulates it from the pinned release bundle during `pnpm install`
+          # — which needs a working pnpm to run, so on a fresh thin checkout
+          # TOOLS_FILE legitimately does not exist yet. Bootstrap from
+          # package.json's `devEngines.packageManager` instead — the fleet's
+          # ENFORCED package-manager pin (derived from external-tools.json by
+          # sync-package-manager-pins.mts) and, unlike external-tools.json
+          # itself, always tracked, even on a thin member. Corepack and its
+          # `packageManager` field are retired fleet-wide (no-corepack-guard,
+          # docs/agents.md/fleet/tooling.md) — this is deliberately the ONLY
+          # bootstrap source. This pnpm only has to be good enough to run the
+          # `pnpm install` that fetches TOOLS_FILE — every later step
+          # re-resolves pnpm from $GITHUB_PATH set below, so nothing
+          # downstream trusts this beyond that one install.
+          echo "::warning::fleet setup: scripts/fleet/setup/external-tools.json not found — bootstrapping pnpm from package.json's devEngines.packageManager pin instead. This is expected on a thin member's first install; the pinned external-tools.json binary takes over once it lands."
+          PACKAGE_JSON="${GITHUB_WORKSPACE}/package.json"
+          DEVENGINES_NAME="$(node "$JQ" "$PACKAGE_JSON" devEngines packageManager name 2>/dev/null || echo "")"
+          DEVENGINES_VERSION_RANGE="$(node "$JQ" "$PACKAGE_JSON" devEngines packageManager version 2>/dev/null || echo "")"
+          # devEngines.packageManager.version is a SemVer RANGE
+          # (sync-package-manager-pins.mts's majorBoundedRange, e.g.
+          # `>=11.0.0 <12.0.0`), not a concrete version — there is no single
+          # download until it is resolved against what pnpm has actually
+          # published. bootstrap-pnpm.mjs fetches the npm registry's
+          # packument and picks the highest satisfying version.
+          if ! PNPM_VERSION="$(DEVENGINES_NAME="$DEVENGINES_NAME" DEVENGINES_VERSION_RANGE="$DEVENGINES_VERSION_RANGE" node "$BOOTSTRAP_PLAN" devengines-version)"; then
+            echo "× the fleet setup action is broken: neither external-tools.json nor a usable package.json devEngines.packageManager pin is present." >&2
+            echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2
+            echo "" >&2
+            echo "  Diagnostics — what's actually present at runtime:" >&2
+            echo "    GITHUB_ACTION_PATH=${GITHUB_ACTION_PATH}" >&2
+            echo "    package.json devEngines.packageManager: name=${DEVENGINES_NAME:-<absent>} version=${DEVENGINES_VERSION_RANGE:-<absent>}" >&2
+            echo "    ls -la \"\${GITHUB_ACTION_PATH}\":" >&2
+            ls -la "${GITHUB_ACTION_PATH}" 2>&1 | sed 's/^/      /' >&2 || true
+            echo "    ls -la \"\${GITHUB_ACTION_PATH}/..\" (parent — should be .github/actions/fleet/):" >&2
+            ls -la "${GITHUB_ACTION_PATH}/.." 2>&1 | sed 's/^/      /' >&2 || true
+            echo "    ls -la \"\${GITHUB_ACTION_PATH}/../..\" (grandparent — should be .github/actions/):" >&2
+            ls -la "${GITHUB_ACTION_PATH}/../.." 2>&1 | sed 's/^/      /' >&2 || true
+            echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../..\" (should be .github/):" >&2
+            ls -la "${GITHUB_ACTION_PATH}/../../.." 2>&1 | sed 's/^/      /' >&2 || true
+            echo "    ls -la \"\${GITHUB_ACTION_PATH}/../../../..\" (should be repo root):" >&2
+            ls -la "${GITHUB_ACTION_PATH}/../../../.." 2>&1 | sed 's/^/      /' >&2 || true
+            exit 1
+          fi
+          # The bootstrap pin has no per-platform asset table to read an
+          # integrity hash from (that table lives IN the missing
+          # external-tools.json) — so this reads the SRI hash from the npm
+          # registry's OWN per-version manifest (`dist.integrity`) instead.
+          # That is the same shape as _shared/install-tool.mjs verifies
+          # everywhere else; integrity checking is not weakened, only its
+          # source moves from our pin file to npm's registry metadata for
+          # this bootstrap-only install.
+          DIST="$(PNPM_VERSION="$PNPM_VERSION" node "$BOOTSTRAP_PLAN" dist)"
+          {
+            read -r TARBALL_URL
+            read -r INTEGRITY
+          } <<<"$DIST"
+          ASSET="$(basename "$TARBALL_URL")"
+          if [ ! -x "$PNPM_BIN" ]; then
+            node "$INSTALL_TOOL" "$TARBALL_URL" "$INTEGRITY" "$PNPM_DIR"
+          fi
+          # The npm-registry tarball is always the JS-only package (no native
+          # binary) — same wrapper shape as the npm-registry branch above.
+          BINARY_PATH="$PNPM_DIR/package/bin/pnpm.cjs"
           if [ ! -f "$BINARY_PATH" ]; then
-            echo "× pnpm npm-registry tarball missing $BINARY_REL after extract" >&2
+            echo "× pnpm bootstrap tarball missing package/bin/pnpm.cjs after extract" >&2
             exit 1
           fi
           printf '#!/bin/bash\nexec node "%s" "$@"\n' "$BINARY_PATH" > "$PNPM_BIN"
@@ -173,16 +223,20 @@ runs:
         echo "$PNPM_DIR" >> "${GITHUB_PATH:-/dev/null}"
         # The pnpm installed above is pinned + SRI-verified from
         # external-tools.json — it IS the source of truth for the pnpm
-        # version in CI. A consumer repo's package.json `packageManager`
-        # field is an exact Corepack pin (it cannot be a range) meant for
-        # dev machines, and it routinely drifts ahead of the action SHA a
-        # consumer pins. With pnpm managing package-manager versions (the
-        # default), that skew makes every `pnpm install` hard-fail with
-        # "configured to use X, your current pnpm is Y" — even a one-patch
-        # gap. Turn the management off so the action-pinned binary always
-        # wins; the floor a repo actually cares about is its `engines.pnpm`
-        # range, and pnpm versions are reconciled by cascade, not by
-        # failing CI on a stale SHA.
+        # version in CI. Corepack and its exact `packageManager` field are
+        # retired fleet-wide (no-corepack-guard,
+        # docs/agents.md/fleet/tooling.md); package.json's
+        # `devEngines.packageManager` is the enforced pin instead — a
+        # major-bounded SemVer RANGE derived from external-tools.json by
+        # sync-package-manager-pins.mts, meant for dev machines, and it
+        # routinely differs from the exact version a consumer's action pin
+        # resolves to. With pnpm managing package-manager versions (the
+        # default), that difference makes every `pnpm install` hard-fail with
+        # "configured to use X, your current pnpm is Y". Turn the management
+        # off so the action-pinned binary always wins; the floor a repo
+        # actually cares about is its `engines.pnpm` range, and pnpm versions
+        # are reconciled by cascade, not by failing CI on a version outside
+        # the devEngines range.
         echo "npm_config_manage_package_manager_versions=false" >> "${GITHUB_ENV:-/dev/null}"
         # Optional pnpm provenance for downstream steps and Docker builds —
         # lets a consumer pass `--build-arg PNPM_VERSION` sourced from the
@@ -194,23 +248,69 @@ runs:
         export PNPM_VERSION PLATFORM ASSET INTEGRITY PNPM_BIN PNPM_DIR
         node "$PLAN" pnpm-env >> "${GITHUB_ENV:-/dev/null}"
 
-    - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0 (2026-05-15)
-      with:
-        node-version: ${{ inputs.node-version }}
-        registry-url: ${{ inputs.registry-url }}
-        scope: ${{ inputs.scope }}
-
-    - name: Export Node.js version
+    - name: Install Node.js
       shell: bash
       env:
-        # Route through env to avoid zizmor template-injection findings —
-        # the input is still plumbed from the caller but never expanded
-        # directly into the shell source.
-        NODE_VERSION: ${{ inputs.node-version }}
+        # Map the input to env so the run block reads $NODE_WANTED instead of
+        # interpolating ${{ inputs.* }} into shell (zizmor template-injection).
+        NODE_WANTED: ${{ inputs.node-version }}
       run: | # zizmor: ignore[github-env]
-        # Mirror the node version that setup-node resolved so Docker
-        # builds COPY'd from CI can pin to the same Node major.
+        set -euo pipefail
+        # Native port of actions/setup-node (reference pin
+        # upstream/actions-setup-node, reviewed at v7.0.0): resolve the wanted
+        # version, download the platform archive from nodejs.org, verify it
+        # against the release's own SHASUMS256.txt, extract, and prepend the
+        # bin dir to $GITHUB_PATH — the same pinned-tool shape as the pnpm and
+        # sfw installs beside it. Deliberately NOT ported: the
+        # registry-url/.npmrc surface. Upstream writes
+        # `//<registry>/:_authToken=${NODE_AUTH_TOKEN}` into the runner .npmrc
+        # and leaves a placeholder NODE_AUTH_TOKEN in every later step's env;
+        # fleet npm publishes authenticate via OIDC trusted publishing and the
+        # preflight refuses any set token
+        # (scripts/fleet/publish-infra/npm/auth-posture.mts), so the port
+        # removes that credential surface instead of reproducing it. Branch
+        # decisions — version-spec resolution, the platform → asset mapping,
+        # and the SHASUMS256 hex → SRI conversion — live in the co-located
+        # plan-setup-node.mjs: pure functions, unit-tested in the wheelhouse,
+        # run via $GITHUB_ACTION_PATH so they travel when a member consumes
+        # the action. Inputs go in via env; decisions come back on stdout.
+        PLAN="${GITHUB_ACTION_PATH}/plan-setup-node.mjs"
+        PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        PLATFORM="$(node "$PLATFORM_TOOL")"
+        # An exact X.Y.Z input passes through with no network read; a bare
+        # X / X.Y / X.x prefix resolves against the nodejs.org release index.
+        NODE_VERSION="$(node "$PLAN" resolve-version)"
+        DIST="$(NODE_VERSION="$NODE_VERSION" PLATFORM="$PLATFORM" node "$PLAN" dist-asset)"
+        {
+          read -r ASSET
+          read -r BIN_REL
+        } <<<"$DIST"
+        NODE_DIR="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}/socket-node/${NODE_VERSION}-${PLATFORM}"
+        NODE_BIN_DIR="${NODE_DIR}/${BIN_REL}"
+        NODE_BIN="${NODE_BIN_DIR}/node"
+        [[ "$ASSET" == *.zip ]] && NODE_BIN="${NODE_BIN_DIR}/node.exe"
+        if [ ! -x "$NODE_BIN" ]; then
+          # SHASUMS256.txt is fetched fresh beside the archive on every
+          # install; the plan converts the asset's hex line into the SRI
+          # string install-tool.mjs verifies, so a digest mismatch fails the
+          # step before any extraction.
+          INTEGRITY="$(NODE_VERSION="$NODE_VERSION" ASSET="$ASSET" node "$PLAN" shasums-sri)"
+          node "$INSTALL_TOOL" \
+            "https://nodejs.org/dist/v${NODE_VERSION}/${ASSET}" \
+            "$INTEGRITY" \
+            "$NODE_DIR"
+          if [ ! -x "$NODE_BIN" ]; then
+            echo "× Node.js install reported success but ${NODE_BIN} is missing or not executable." >&2
+            echo "  Contents of ${NODE_DIR}:" >&2
+            ls -la "$NODE_DIR" >&2 || true
+            exit 1
+          fi
+        fi
+        echo "$NODE_BIN_DIR" >> "${GITHUB_PATH:-/dev/null}"
+        # Mirror the resolved node version so Docker builds COPY'd from CI can
+        # pin to the same Node — SOCKET_TOOL_NODE_VERSION is load-bearing and
+        # exports unconditionally.
         echo "SOCKET_TOOL_NODE_VERSION=$NODE_VERSION" >> "${GITHUB_ENV:-/dev/null}"
 
     - name: Download sfw
@@ -643,7 +743,7 @@ runs:
       # no minimum-release-age, so the fleet enforces one with per-tap SHA pins
       # in scripts/fleet/constants/brew-tap-pins.mts (owned by
       # scripts/fleet/update/brew.mts --apply, gated by
-      # scripts/fleet/check/brew-install-is-pinned.mts). Runs after Setup Node.js,
+      # scripts/fleet/check/brew-install-is-pinned.mts). Runs after Install Node.js,
       # but the pins are read with grep/sed so this stays dependency-free.
       if: ${{ hashFiles('.config/repo/Brewfile') != '' }}
       shell: bash

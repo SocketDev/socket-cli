@@ -26,6 +26,9 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -106,6 +109,12 @@ async function main(): Promise<void> {
   logger.log('Open a new shell (or `source ~/.zshenv`) to pick up the pin.')
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'activates the pinned Node for all shells via fnm and a ~/.zshenv hook',
+  help: 'Usage: node scripts/fleet/setup/activate-node.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

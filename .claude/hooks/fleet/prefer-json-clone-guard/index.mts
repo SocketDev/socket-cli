@@ -124,7 +124,7 @@ export const check = editGuard((filePath, content): GuardResult => {
       '  // oxlint-disable-next-line socket/no-structured-clone-prefer-json -- <reason>\n' +
       '  const copy = structuredClone(value)\n' +
       '\n' +
-      'One-off override: append `// socket-lint: allow structured-clone`\n' +
+      'One-off override: add `// socket-lint: allow structured-clone` on its own line above\n' +
       'to the line.\n',
   )
 })

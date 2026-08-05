@@ -31,12 +31,13 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -292,13 +293,13 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that pnpm run citations in docs name a real package.json script',
+  help: `Usage: node scripts/fleet/check/pnpm-run-citations-resolve.mts [flags]
+  --quiet   suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    main()
-  } catch (e) {
-    logger.error(
-      `[check-pnpm-run-citations-resolve] failed: ${errorMessage(e)}`,
-    )
-    process.exitCode = 1
-  }
+  runMain(main, SCRIPT_META)
 }

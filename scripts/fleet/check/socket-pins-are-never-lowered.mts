@@ -26,6 +26,11 @@
  *   cascade splicing an older canonical value forward, and a merge alike. A
  *   package absent from HEAD is new, not a downgrade.
  *
+ *   The comparison itself lives in `lib/catalog-pin-floor.mts`, shared with
+ *   `update.mts`, which applies the same rule at write time so taze can never
+ *   land a downgrade for this gate to find. One definition of "moved down",
+ *   used by the generator and the gate alike.
+ *
  *   Exit: 0 — no Socket pin moved down, or none could be compared; 1 — a
  *   Socket pin is below its committed value with no hold behind it.
  *   Usage: node scripts/fleet/check/socket-pins-are-never-lowered.mts [--quiet]
@@ -34,72 +39,15 @@
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { gt } from '@socketsecurity/lib-stable/versions/compare'
-import { isValidVersion } from '@socketsecurity/lib-stable/versions/parse'
 
-import { getCatalogHold } from '../constants/catalog-holds.mts'
-import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { catalogsForDowngradeCheck } from '../lib/catalog-diff.mts'
+import { findSocketPinDowngrades } from '../lib/catalog-pin-floor.mts'
+import type { PinDowngrade } from '../lib/catalog-pin-floor.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
-
-export interface PinDowngrade {
-  readonly name: string
-  readonly committed: string
-  readonly proposed: string
-}
-
-/**
- * The version a catalog value pins, or undefined when it pins no concrete
- * version. Handles the bare form (`4.1.3`) and the `-stable` alias form
- * (`npm:@socketsecurity/sdk@4.1.3`), and skips `catalog:` / `false`.
- */
-export function catalogPinnedVersion(value: string): string | undefined {
-  const raw = value.trim().replace(/^['"]|['"]$/g, '')
-  if (!raw || raw === 'catalog:' || raw === 'false') {
-    return undefined
-  }
-  const aliased = raw.startsWith('npm:')
-    ? raw.slice(raw.lastIndexOf('@') + 1)
-    : raw
-  return isValidVersion(aliased) ? aliased : undefined
-}
-
-/**
- * Socket-published pins that moved DOWN from `committed` to `proposed`, minus
- * any the update script's holds sanction. Pure — callers supply both catalogs.
- */
-export function findSocketPinDowngrades(
-  committed: ReadonlyMap<string, string>,
-  proposed: ReadonlyMap<string, string>,
-): PinDowngrade[] {
-  const downgrades: PinDowngrade[] = []
-  for (const { 0: name, 1: proposedValue } of proposed) {
-    if (!isSocketSourcedPackage(name)) {
-      continue
-    }
-    const committedValue = committed.get(name)
-    if (committedValue === undefined) {
-      // Absent from HEAD: a new pin, not a downgrade.
-      continue
-    }
-    const before = catalogPinnedVersion(committedValue)
-    const after = catalogPinnedVersion(proposedValue)
-    if (before === undefined || after === undefined || !gt(before, after)) {
-      continue
-    }
-    // A hold is the update script's own sanctioned lower pin. Landing at or
-    // below it is the documented case this gate deliberately allows.
-    const hold = getCatalogHold(name)
-    if (hold && !gt(after, hold.heldAt)) {
-      continue
-    }
-    downgrades.push({ name, committed: before, proposed: after })
-  }
-  return downgrades
-}
 
 export function formatDowngradeFailure(
   downgrades: readonly PinDowngrade[],
@@ -162,6 +110,13 @@ export async function main(): Promise<number> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks no Socket-published catalog pin moves down from the committed tree',
+  help: `Usage: node scripts/fleet/check/socket-pins-are-never-lowered.mts [flags]
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

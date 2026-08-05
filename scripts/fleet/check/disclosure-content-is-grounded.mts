@@ -46,6 +46,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { declaredRoots } from './dual-use-declarations-are-complete.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -203,6 +205,14 @@ export async function main(): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks DISCLOSURE files state only what the manifest beside them proves',
+  help: `Usage: node scripts/fleet/check/disclosure-content-is-grounded.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

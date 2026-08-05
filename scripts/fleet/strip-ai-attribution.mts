@@ -31,6 +31,8 @@ import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
 
+import type { ScriptMeta } from './_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 interface GitRunResult {
@@ -237,6 +239,15 @@ export async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'rewrites base..HEAD to remove AI-attribution lines from commit messages, tree byte-identical',
+  help: `Usage: node scripts/fleet/strip-ai-attribution.mts --base <ref> [flags]
+
+  --base <ref>  the commit below the span to clean (required)
+  --dry-run     preview which commits would be reworded`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

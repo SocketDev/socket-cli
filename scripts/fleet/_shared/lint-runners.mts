@@ -4,11 +4,14 @@
  *   under the file-size cap. `createLintRunners(context)` closes the runners
  *   over the CLI-derived context (fix / quiet / stdio / useShell / log) and
  *   returns `runAll` (whole-workspace) + `runFiles` (a scoped, already-filtered
- *   file set). Both keep oxlint BEFORE oxfmt so the format pass is the last
- *   writer and an oxlint autofix can never land unformatted. Type-aware
- *   linting (--type-aware, via the oxlint-tsgolint sidecar) runs on the
- *   whole-tree gate only — the pre-commit budget and template/ (no tsconfig
- *   project) keep runFiles/runDogfood non-type-aware.
+ *   file set). Both keep oxfmt BEFORE oxlint — the formatter owns final line
+ *   wrapping, so a line-counting oxlint rule (e.g.
+ *   socket/max-comment-block-lines) must see already-formatted text, not text
+ *   the formatter is about to rewrite. See
+ *   docs/agents.md/fleet/format-before-lint.md for the measured incident this
+ *   fixes. Type-aware linting (--type-aware, via the oxlint-tsgolint sidecar)
+ *   runs on the whole-tree gate only — the pre-commit budget and template/
+ *   (no tsconfig project) keep runFiles/runDogfood non-type-aware.
  */
 
 // prefer-async-spawn: sync-required — the lint runner is a top-level CLI whose
@@ -224,10 +227,17 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
   // MUTATING spawn instead of trusting config plumbing. The globs are
   // root-anchored, so the wheelhouse's template/base/** sources — which the
   // any-depth canonical globs also match — stay fixable via the dogfood +
-  // template-payload passes. Read-only lint keeps its current scope and may
-  // still REPORT mirror findings; only mutation is barred.
-  const mirrorOxlintGuardArgs = fix ? cascadeMirrorOxlintIgnoreArgs() : []
-  const mirrorOxfmtGuardArgs = fix ? cascadeMirrorOxfmtExcludeArgs() : []
+  // template-payload passes.
+  //
+  // Reporting is barred too, not just mutation. A member cannot legally edit a
+  // mirror (no-fleet-fork-guard blocks the write), so a mirror finding in a
+  // member is an instruction nobody can carry out: socket-lib red-lit 12
+  // findings in `.config/repo/vitest.*.mts`, byte-identical to the template.
+  // Mirror correctness is still enforced, by the cascade's own drift check and
+  // by the wheelhouse's dogfood + template-payload legs, which gate the SOURCE
+  // where a fix can actually land.
+  const mirrorOxlintGuardArgs = cascadeMirrorOxlintIgnoreArgs()
+  const mirrorOxfmtGuardArgs = cascadeMirrorOxfmtExcludeArgs()
 
   // Assert the socket/ oxlint plugin actually loaded. A dead plugin (a rule with
   // a missing dep / bad import) makes oxlint silently disable EVERY socket/ rule
@@ -470,8 +480,13 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
   }
 
   function runAll(): number {
-    // oxlint before oxfmt — the format pass is the last writer, so oxlint
-    // autofixes can never land unformatted.
+    // oxfmt before oxlint — the formatter owns final line wrapping, so a
+    // line-counting rule evaluates against the text oxlint will actually
+    // ship, not text the formatter is about to rewrite.
+    log('Formatting all files…')
+    if (runOxfmt() !== 0) {
+      return 1
+    }
     log('Running oxlint on all files…')
     const allConfig = pickOxlintConfig()
     if (
@@ -479,6 +494,11 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
         '-c',
         allConfig,
         ...oxlintIgnoreArgs(allConfig),
+        // Mirrors are skipped here for the same reason runFiles skips them: a
+        // member cannot edit one, so the finding is unactionable there.
+        // runDogfood below deliberately does NOT pass these — it gates the
+        // template source, which is exactly where a mirror fix has to land.
+        ...mirrorOxlintGuardArgs,
         // Type-aware rules run on the whole-tree gate only: runFiles() keeps
         // the pre-commit 10s budget, runDogfood() lints template/ which has no
         // tsconfig project. Needs the oxlint-tsgolint sidecar, fleet catalog.
@@ -487,13 +507,9 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     ) {
       return 1
     }
-    // Second oxlint leg, still before the format pass: the template
+    // Second oxlint leg, still after the format pass: the template
     // code-payload sources the canonical ignores shadow.
     if (runTemplatePayload(templatePayloadLintPaths()) !== 0) {
-      return 1
-    }
-    log('Formatting all files…')
-    if (runOxfmt() !== 0) {
       return 1
     }
     // A green oxlint run is vacuous if the socket/ plugin failed to load (every
@@ -512,6 +528,10 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     if (files.length === 0) {
       log('No lintable files; skipping.')
       return 0
+    }
+    log(`Formatting ${files.length} file(s)...`)
+    if (runOxfmt(files) !== 0) {
+      return 1
     }
     log(`Running oxlint on ${files.length} file(s)...`)
     // --no-error-on-unmatched-pattern keeps the command exit-0 when every
@@ -533,12 +553,8 @@ export function createLintRunners(context: LintRunnerContext): LintRunners {
     // Template code-payload files in the scope are silently skipped by the
     // canonical ignore args above (their paths are shadowed by the mirror
     // globs), so give them the dedicated payload pass — same config, floor
-    // ignores — before the format leg.
+    // ignores — after the format leg.
     if (runTemplatePayload(files.filter(isTemplatePayloadPath)) !== 0) {
-      return 1
-    }
-    log(`Formatting ${files.length} file(s)...`)
-    if (runOxfmt(files) !== 0) {
       return 1
     }
     if (assertPluginLoaded() !== 0) {

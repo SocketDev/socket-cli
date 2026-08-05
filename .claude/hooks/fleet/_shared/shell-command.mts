@@ -16,15 +16,15 @@
  *   - `findInvocation(command, { binary, subcommand })` — true when any segment
  *     invokes `binary` (optionally with `subcommand` as its first non-flag
  *     argument). Sees through chains, substitution, and quoting.
- *   - Each Command exposes `viaVariable` (binary resolved from `$VAR` →
- *     shell-quote yields an empty binary token) and `viaEval` (the binary is
- *     `eval`), so a guard can choose to BLOCK or fail-loud on indirection it
- *     can't statically resolve rather than silently allow it. Limitation:
- *     shell-quote tokenizes, it doesn't fully evaluate. It cannot expand a
- *     variable's value (`g=git; $g push` yields an empty binary, not `git`) —
- *     but it FLAGS that the binary was variable-sourced, which is the
- *     actionable signal. Aliases defined elsewhere and wrapper scripts remain
- *     out of scope for any static parser.
+ *   - `$VAR` binaries resolve when the SAME command string carries the
+ *     `VAR=value` assignment (`g=git; $g push` matches `{ binary: 'git' }`) —
+ *     that indirection shape evaded every binary-matching guard before the
+ *     resolution pass. Each Command still exposes `viaVariable` (the binary
+ *     was `$VAR`-sourced and UNRESOLVABLE → empty binary token) and `viaEval`
+ *     (the binary is `eval`), so a guard can BLOCK or fail-loud on
+ *     indirection it can't statically resolve rather than silently allow it.
+ *     Variables assigned outside the command string, aliases, and wrapper
+ *     scripts remain out of scope for any static parser.
  */
 
 // Use the fleet-canonical shell parser from @socketsecurity/lib-stable
@@ -81,7 +81,9 @@ export interface Command {
    */
   readonly assignments: readonly string[]
   /**
-   * True when the binary token came from a variable (`$g push` → '').
+   * True when the binary token came from a variable with no in-command
+   * assignment to resolve it (`$g push` with `g` assigned elsewhere → '').
+   * A variable the resolution pass expands is a plain binary, not this.
    */
   readonly viaVariable: boolean
   /**
@@ -300,6 +302,33 @@ function readHeredocDelimiter(
 }
 
 /**
+ * Simple `NAME=value` assignments anywhere in `command`, later wins. Feeds the
+ * variable resolution in parseCommands so a binary held in a shell variable
+ * (`OXFMT=oxfmt; "$OXFMT" -w f.mts`) resolves to its value instead of
+ * collapsing to an opaque placeholder — an evasion a binary-matching guard
+ * would otherwise never see. `export NAME=value` is covered too: the token
+ * matches the same shape wherever it sits.
+ */
+function harvestAssignments(normalized: string): Map<string, string> {
+  const assignments = new Map<string, string>()
+  let entries: ParseEntry[]
+  try {
+    entries = parseShell(normalized)
+  } catch {
+    return assignments
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const e = entries[i]!
+    if (typeof e !== 'string' || !ASSIGNMENT_RE.test(e)) {
+      continue
+    }
+    const eq = e.indexOf('=')
+    assignments.set(e.slice(0, eq), e.slice(eq + 1))
+  }
+  return assignments
+}
+
+/**
  * Parse a shell command line into its constituent Command segments.
  *
  * Token handling:
@@ -311,12 +340,18 @@ function readHeredocDelimiter(
  * - Comments are dropped.
  * - A leading run of `NAME=value` tokens are assignments; the first
  *   non-assignment token is the binary.
- * - An empty-string binary token means the binary was `$VAR`-sourced.
+ * - `$VAR` whose NAME=value assignment appears in the same command string
+ *   resolves to that value (whole-string scope, later assignment wins), so the
+ *   resolved binary is matched like a literal and is NOT indirection.
+ * - An empty-string binary token means the binary was `$VAR`-sourced and
+ *   unresolvable.
  */
 export function parseCommands(command: string): Command[] {
+  const normalized = normalizeNewlineSeparators(command)
+  const assignments = harvestAssignments(normalized)
   let entries: ParseEntry[]
   try {
-    entries = parseShell(normalizeNewlineSeparators(command))
+    entries = parseShell(normalized, name => assignments.get(name) ?? '')
   } catch {
     return []
   }
@@ -341,10 +376,10 @@ export function parseCommands(command: string): Command[] {
       sawVarPlaceholder = false
       return
     }
-    const assignments: string[] = []
+    const leadingAssignments: string[] = []
     let i = 0
     while (i < tokens.length && ASSIGNMENT_RE.test(tokens[i]!)) {
-      assignments.push(tokens[i]!)
+      leadingAssignments.push(tokens[i]!)
       i += 1
     }
     const binary = i < tokens.length ? tokens[i]! : ''
@@ -352,7 +387,7 @@ export function parseCommands(command: string): Command[] {
     commands.push({
       binary,
       args,
-      assignments,
+      assignments: leadingAssignments,
       // Empty binary after assignments means a `$VAR` placeholder collapsed
       // to '' sat in the binary slot.
       viaVariable: binary === '' && sawVarPlaceholder,

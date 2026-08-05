@@ -1,4 +1,3 @@
-socket-btm
 socket-cli
 odai
 socket-lib

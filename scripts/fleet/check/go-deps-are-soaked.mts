@@ -24,6 +24,7 @@ import {
 } from '../constants/soak-excludes.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import {
   checkModuleAges,
   fetchVersionTimeWithFallback,
@@ -34,6 +35,7 @@ import {
 } from '../update/go.mts'
 
 import type { SoakExclude } from '../constants/soak-excludes.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { GoModule, Violation } from '../update/go.mts'
 
 const logger = getDefaultLogger()
@@ -128,9 +130,14 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies every own go.mod dependency pin clears the soak window against GOPROXY publish times',
+  help: `Usage: node scripts/fleet/check/go-deps-are-soaked.mts [flags]
+
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

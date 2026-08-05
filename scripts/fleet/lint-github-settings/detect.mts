@@ -98,7 +98,7 @@ export function resolveRepo(): string | undefined {
  * A `gh` runner, injected so the API-shaped detectors below are testable
  * without the network. Mirrors the subset of `spawnSync`'s result these
  * functions read. Same seam convention as `GitExec` in
- * `../prune-backup-branches.mts` — one way to make a shelling-out fleet script
+ * `../backup-branches/prune.mts` — one way to make a shelling-out fleet script
  * testable, not one per script.
  */
 export type GhSpawn = (args: string[]) => {

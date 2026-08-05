@@ -30,12 +30,14 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { simulateOverrideCut } from './lib/ecosystem-impact.mts'
 import { FLEET_CACHE_DIR } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 import type {
   DependencyGraph,
@@ -72,7 +74,6 @@ export type ResolveDependencies = (name: string) => Promise<string[]>
  */
 export interface ImpactCliArgs {
   readonly gateways: number
-  readonly help: boolean
   readonly json: boolean
   readonly maxDepth: number
   readonly offline: boolean
@@ -154,7 +155,6 @@ export function parseImpactArgs(argv: readonly string[]): ImpactCliArgs {
     args: [...argv],
     options: {
       gateways: { type: 'string' },
-      help: { default: false, type: 'boolean' },
       json: { default: false, type: 'boolean' },
       'max-depth': { type: 'string' },
       offline: { default: false, type: 'boolean' },
@@ -172,7 +172,6 @@ export function parseImpactArgs(argv: readonly string[]): ImpactCliArgs {
     : 'high-impact'
   return {
     gateways: toPositiveInt(values['gateways'], 10),
-    help: values['help'] === true,
     json: values['json'] === true,
     maxDepth: toPositiveInt(values['max-depth'], 12),
     offline: values['offline'] === true,
@@ -510,10 +509,6 @@ export function summarizeNames(names: readonly string[]): string {
 
 export async function main(): Promise<void> {
   const args = parseImpactArgs(process.argv.slice(2))
-  if (args.help) {
-    logger.log(impactHelpText())
-    return
-  }
   if (args.targets.length === 0) {
     logger.fail(
       'measure-ecosystem-impact: no targets to measure.\n' +
@@ -562,9 +557,12 @@ export async function main(): Promise<void> {
   logger.log(formatImpactReport(report, { ranks }))
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'ranks npm packages by ecosystem reach and models what overriding them removes from an install tree',
+  help: impactHelpText(),
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

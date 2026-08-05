@@ -10,18 +10,17 @@
 import process from 'node:process'
 
 import { getCI } from '@socketsecurity/lib-stable/env/ci'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { confirm } from '@socketsecurity/lib/stdio/prompts'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
-
-const logger = getDefaultLogger()
+import type { ScriptMeta } from '../_shared/run-main.mts'
 const PRIVACY_SECURITY_SETTINGS_URL =
   'x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy'
 
@@ -104,16 +103,12 @@ export async function setupDeveloperTools(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'offers the macOS Developer Tools terminal exemption as an explicit opt-in',
+  help: 'Usage: pnpm run setup:developer-tools',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupDeveloperTools().then(
-    result => {
-      if (!result.ok) {
-        process.exitCode = 1
-      }
-    },
-    (e: unknown) => {
-      logger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupDeveloperTools()).ok ? 0 : 1), SCRIPT_META)
 }

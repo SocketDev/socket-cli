@@ -31,6 +31,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // runs it. Past incident (2026-06-06): a check rename left doctor:auth
     // pointing at a deleted file and no gate caught it.
     () => run('node', ['scripts/fleet/check/script-paths-resolve.mts']),
+    // A managed file's relative imports must be managed too. The cascade ships
+    // only what a manifest list names, so a managed file importing an unmanaged
+    // sibling delivers a module whose import target never arrives. Past incident:
+    // the conditional vitest group shipped `.config/repo/vitest.config.mts`
+    // without the `./vitest.settings.mts` it imports, and every member's suite
+    // died before a single test ran.
+    () =>
+      run('node', ['scripts/fleet/check/managed-file-imports-are-managed.mts']),
     // Root `scripts/` is a namespace only: fleet and repo automation must
     // declare ownership by living below scripts/fleet/ or scripts/repo/.
     () => run('node', ['scripts/fleet/check/root-scripts-are-segregated.mts']),
@@ -105,7 +113,7 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // incident: a drifted tool entry left an INLINED_* env var empty and hung a
     // pre-commit test run.
     () => run('node', ['scripts/fleet/check/external-tools-are-valid.mts']),
-    // Brand marks under assets/repo/brand/ follow the canonical
+    // Brand marks under assets/ follow the canonical
     // <repo>-<mark>[-light|-dark].<svg|png> grammar (mark ∈ combomark | favicon |
     // logomark | wordmark). Conditional: a repo with no brand/ dir vacuous-passes;
     // the gate bites the moment marks land, so a stray logo.svg or wrong-repo
@@ -183,6 +191,13 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // third-party actions. See docs/agents.md/fleet/upstream-references.md.
     () =>
       run('node', ['scripts/fleet/check/action-ports-are-lock-stepped.mts']),
+    // Sibling gate on the same pins: an alias tag (`v4`, `main`) that upstream
+    // MOVES must not be recorded as if it were immutable, or the recorded pin
+    // stops reaching the commit it names.
+    () =>
+      run('node', [
+        'scripts/fleet/check/github-action-aliases-are-not-frozen.mts',
+      ]),
     // The canonical GH Actions allowlist (auditing-gha CANONICAL_PATTERNS)
     // matches the template's workflow surface in BOTH directions: every
     // cascaded template/base `uses:` is pattern-covered — GitHub validates
@@ -488,6 +503,10 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // Every fleet/repo CLI entrypoint must FAIL SOFT (use runMain / a .catch),
     // never crash the user with a raw unhandled-rejection stack trace.
     () => run('node', ['scripts/fleet/check/entry-scripts-are-fail-soft.mts']),
+    // Every fleet/repo CLI entrypoint must SELF-DESCRIBE: runMain(main, meta)
+    // so --describe and -h/--help print purpose/usage instead of running the
+    // script's side effect.
+    () => run('node', ['scripts/fleet/check/entry-scripts-self-describe.mts']),
     // No committed dependency spec resolves through a local filesystem path
     // the repo does not carry: a hand-written `link:`/`file:` spec in a
     // package.json dependency block, or a pnpm-GENERATED lockfile `link:`

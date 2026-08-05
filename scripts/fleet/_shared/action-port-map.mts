@@ -43,8 +43,16 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
 > = {
   // Socket-original helper scripts: SRI tool fetch/verify, jq.mjs, platform.mjs.
   _shared: [],
-  // Wrapper, not a port: the cache engine stays `uses: actions/cache/restore`.
-  'cache-pnpm-store': [],
+  // Restore leg of the cache port: the fleet cache CLI over @actions/cache
+  // (scripts/fleet/cache/restore.mts) replaces `uses: actions/cache/restore`.
+  'cache-pnpm-store': [
+    {
+      portedAt: 'main',
+      portedOn: '2026-08-04',
+      portedSha: 'ffdc20ef9208b774c9a99db718b9b02c64d84e70',
+      upstream: 'actions/toolkit',
+    },
+  ],
   // Inline git-fetch port of the checkout surface: ref / working-directory /
   // fetch-depth / persist-credentials=false / the pull_request merge ref.
   checkout: [{ portedAt: 'v7.0.1', upstream: 'actions/checkout' }],
@@ -82,16 +90,40 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   'run-offline': [],
   // Socket-original setup+main script runner.
   'run-script': [],
-  // The Install-pnpm step ports pnpm/action-setup: pinned, SRI-verified pnpm
-  // binary download + PATH. Node itself stays `uses: actions/setup-node`.
-  setup: [{ portedAt: 'v6.0.9', upstream: 'pnpm/action-setup' }],
-  // Aggregator: ports nothing itself, `uses: actions/cache/save` directly.
-  'setup-and-install': [],
+  // Two ports in one composite: the Install-pnpm step ports pnpm/action-setup
+  // (pinned, SRI-verified binary + PATH) and the Install Node.js step ports
+  // actions/setup-node (SHASUMS256-verified tarball + PATH, no NODE_AUTH_TOKEN
+  // placeholder — the tokenless publish posture depends on that absence).
+  setup: [
+    { portedAt: 'v7.0.0', upstream: 'actions/setup-node' },
+    { portedAt: 'v6.0.9', upstream: 'pnpm/action-setup' },
+  ],
+  // Save leg of the cache port: the fleet cache CLI over @actions/cache
+  // (scripts/fleet/cache/save.mts) replaces `uses: actions/cache/save`.
+  'setup-and-install': [
+    {
+      portedAt: 'main',
+      portedOn: '2026-08-04',
+      portedSha: 'ffdc20ef9208b774c9a99db718b9b02c64d84e70',
+      upstream: 'actions/toolkit',
+    },
+  ],
   // Port of import-gpg's core: import key from env, extract the long key ID,
   // set user.signingkey/commit.gpgsign/user.name/user.email. Paired with
   // cleanup-git-signing — upstream does that half in its post step.
   'setup-git-signing': [
     { portedAt: 'v7.0.0', upstream: 'crazy-max/ghaction-import-gpg' },
+  ],
+  // Provisions the keyless on-device AI CLI (@socketsecurity/odai) — the CLI
+  // wrapping and cache keying are Socket-original, and the model-cache
+  // restore/save legs run the fleet cache CLIs (the @actions/cache port).
+  'setup-odai': [
+    {
+      portedAt: 'main',
+      portedOn: '2026-08-04',
+      portedSha: 'ffdc20ef9208b774c9a99db718b9b02c64d84e70',
+      upstream: 'actions/toolkit',
+    },
   ],
   // Socket-original cache wrapper over `uses: actions/cache`: cargo registry +
   // git index + each workspace's target dir, keyed on prefix + OS + rustc
@@ -102,9 +134,18 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   // COPYLEFT_UPSTREAMS as run-and-observe-only; declaring the port here would
   // provision an `upstream/Swatinem-rust-cache` reference block whose whole
   // purpose is reading the implementation, which is the derivation the
-  // copyleft boundary exists to prevent. Evolve this composite against
-  // `actions/cache` and its own behavior, never against that source.
-  'setup-rust-cache': [],
+  // copyleft boundary exists to prevent. Evolve this composite against the
+  // fleet cache CLIs and its own behavior, never against that source. The
+  // cache engine itself IS a declared port: the fleet cache CLIs over
+  // @actions/cache (scripts/fleet/cache/) replace `uses: actions/cache`.
+  'setup-rust-cache': [
+    {
+      portedAt: 'main',
+      portedOn: '2026-08-04',
+      portedSha: 'ffdc20ef9208b774c9a99db718b9b02c64d84e70',
+      upstream: 'actions/toolkit',
+    },
+  ],
   // Port of the rustup surface: channel / profile / targets / components, with
   // a rustup-init fetch for images that lack it.
   //

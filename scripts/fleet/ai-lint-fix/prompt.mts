@@ -26,8 +26,16 @@ export function bucketFindings(
     if (isGeneratedPath(f.filePath)) {
       continue
     }
+    // Error tier only. The lint verdict gates on oxlint's exit code, which
+    // only errors drive — a warn-tier finding never fails `pnpm run lint`, so
+    // it never buys a paid AI spawn either. Every AI_HANDLED_RULES entry is
+    // configured "error" in the canonical config; this filter keeps a future
+    // warn-tier rule from silently widening the batch past the verdict.
     const handled = f.messages.filter(
-      m => m.ruleId !== undefined && AI_HANDLED_RULES.has(m.ruleId),
+      m =>
+        m.severity === 2 &&
+        m.ruleId !== undefined &&
+        AI_HANDLED_RULES.has(m.ruleId),
     )
     if (handled.length === 0) {
       continue

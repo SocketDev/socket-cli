@@ -51,11 +51,13 @@ import { parseCatalogBlock } from '../lib/workspace-yaml.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { fetchLatestPublishedVersionChecked } from '../publish-infra/npm/registry.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type {
   ObligationReading,
   RepoManifest,
 } from '../lib/release-cascade.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -244,11 +246,23 @@ async function main(): Promise<void> {
   process.exitCode = 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks that every release-cascade follow-up is settled downstream',
+  help: `Usage: node scripts/fleet/check/cascade-followups-are-settled.mts [--quiet]
+
+  --quiet  suppress the per-obligation notes and the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    // Fail-open: a crash in the check must not block an otherwise-valid push;
-    // the owed computation only reds on evidence it actually gathered.
-    process.exitCode = 0
-  })
+  runMain(
+    () =>
+      main().catch((e: unknown) => {
+        logger.error(e)
+        // Fail-open: a crash in the check must not block an otherwise-valid
+        // push; the owed computation only reds on evidence it actually
+        // gathered.
+        return 0
+      }),
+    SCRIPT_META,
+  )
 }

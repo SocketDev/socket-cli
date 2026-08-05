@@ -35,6 +35,9 @@ import {
 } from '../../../.claude/hooks/fleet/_shared/memory-store.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -153,8 +156,14 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every codifiable memory carries an enforcement: disposition in its frontmatter',
+  help: 'Usage: node scripts/fleet/check/memories-are-codified.mts',
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

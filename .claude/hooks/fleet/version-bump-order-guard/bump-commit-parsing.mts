@@ -6,6 +6,18 @@ import path from 'node:path'
 
 import { gitSubcommand } from '../_shared/git-subcommand.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { writesAliasTag } from '../_shared/tag-shapes.mts'
+
+// `git tag` options that consume the following token, so a tag message is never
+// misread as the tag being written.
+const TAG_VALUE_FLAGS: ReadonlySet<string> = new Set([
+  '--file',
+  '--local-user',
+  '--message',
+  '-F',
+  '-m',
+  '-u',
+])
 
 // `git tag <name>` (also `git tag -a`, `git tag -s`, etc.) creating a
 // version tag (`vX.Y.Z`). Parser-based: a real `git` command whose
@@ -13,13 +25,24 @@ import { commandsFor } from '../_shared/shell-command.mts'
 // tag v1.2.3` (fetching an upstream's tag ref) and a quoted "git tag
 // v1.2.3" in a message or a sibling command's string aren't false
 // triggers.
+//
+// A command that writes a floating ALIAS is not a version tag, even though a
+// release tag appears among its args: `git tag -f v1 v1.3.2` writes `v1` and
+// merely READS `v1.3.2`. Demanding a bump commit for that would gate routine
+// post-release pointer maintenance behind a release ceremony.
 const VERSION_ARG_RE = /^v\d+\.\d+\.\d+$/
 export function isVersionTagCommand(command: string): boolean {
-  return commandsFor(command, 'git').some(
-    c =>
-      gitSubcommand(c.args) === 'tag' &&
-      c.args.some(a => VERSION_ARG_RE.test(a)),
-  )
+  return commandsFor(command, 'git').some(c => {
+    if (gitSubcommand(c.args) !== 'tag') {
+      return false
+    }
+    // Drop the leading `tag` subcommand before reading positionals.
+    const rest = c.args.slice(c.args.indexOf('tag') + 1)
+    if (writesAliasTag(rest, TAG_VALUE_FLAGS)) {
+      return false
+    }
+    return c.args.some(a => VERSION_ARG_RE.test(a))
+  })
 }
 
 // Subject patterns that count as a "bump commit". Matches Keep-a-

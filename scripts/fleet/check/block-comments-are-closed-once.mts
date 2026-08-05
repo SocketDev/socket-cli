@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file `check --all` gate: no block comment closes earlier than its author
  *   intended. A glob written as star-slash inside a docblock — the shape
  *   `packages/<star>/src/<star><star>` — IS the comment-closing token, so the
@@ -46,7 +46,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isNeverGated } from '../_shared/format-scope.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -238,6 +241,14 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that no block comment closes earlier than its author intended',
+  help: `Usage: node scripts/fleet/check/block-comments-are-closed-once.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

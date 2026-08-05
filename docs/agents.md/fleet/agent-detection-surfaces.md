@@ -126,7 +126,7 @@ the public default branch — `origin/<default>`, resolved from git and never
 hard-coded — and inside that scope it drops every finding at or below the
 **release boundary**, counting them on one informational line instead. Two
 classes of finding fall away as a result: a commit that lives only in some
-other local ref (a `refs/fleet/recovery/*` pre-squash snapshot, say) was never
+other local ref, say an unpushed branch or a worktree snapshot, was never
 published, and a commit below the boundary cannot be rewritten without breaking
 the provenance of the release built from it. A gate that reports both trains
 people to ignore it.
@@ -230,5 +230,5 @@ table.
 - `@unveil/identity@2.0.1` (MIT), the detection engine behind agentscan. Source
   files cited above: `src/modifiers/analyze-commit-metadata.ts`,
   `src/detectors/ai-branch-prefix.ts`. Read 2026-08-02.
-- agentscan pull request #281, "feat(gh-app): add honeypot comment" (merged),
+- agentscan pull request #281, "feat(gh-app): add honeypot comment" (merged), <!-- pr-ref-link: allow -->
   which adds `server/api/webhook/github/_honeypot.ts`. Read 2026-08-02.

@@ -44,7 +44,7 @@ const rule = {
     },
     messages: {
       banned:
-        "`@deprecated` marker — the fleet deletes, it does not deprecate. Remove the code and its call sites in this change; there are no legacy fallbacks or back-compat aliases kept 'until consumers migrate'. If you are quoting an upstream API's own tag, append `// socket-lint: allow deprecated-marker`.",
+        "`@deprecated` marker — the fleet deletes, it does not deprecate. Remove the code and its call sites in this change; there are no legacy fallbacks or back-compat aliases kept 'until consumers migrate'. If you are quoting an upstream API's own tag, add `// socket-lint: allow deprecated-marker` on its own line above.",
     },
     schema: [],
   },

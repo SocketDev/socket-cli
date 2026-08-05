@@ -32,8 +32,12 @@ export function formatScopeNotes(scan: AttributionScan): string[] {
     )
   }
   if (scan.boundary?.kind === 'no-ancestor-tag') {
+    const { ref, tagCount, tagPattern } = scan.boundary
+    const shortfall = tagPattern
+      ? `${tagCount} tag(s) match the declared release.releaseLine.tagPattern \`${tagPattern}\` but none is in ${ref}'s history`
+      : `${tagCount} tag(s) exist but none is in ${ref}'s history`
     notes.push(
-      `[commits-have-no-ai-attribution] no release boundary: ${scan.boundary.tagCount} tag(s) exist but none is in ${scan.boundary.ref}'s history, so the whole branch was scanned.`,
+      `[commits-have-no-ai-attribution] no release boundary: ${shortfall}, so the whole branch was scanned.`,
     )
   }
   for (const finding of scan.localBranches) {
@@ -119,15 +123,28 @@ export function formatUnreleasedLine(
     '          cannot be told apart from one you can still fix.',
     `  Where:  ${repoRoot} — ${error.ref}`,
     `  Saw:    ${error.findingCount} AI-attribution finding(s), and none of the`,
-    `          repository's ${error.tagCount} tag(s) is in ${error.ref}'s history.`,
+    ...(error.tagPattern
+      ? [
+          `          ${error.tagCount} tag(s) matching the declared`,
+          `          release.releaseLine.tagPattern \`${error.tagPattern}\` is in ${error.ref}'s`,
+          '          history. The pattern is honored as declared: it is never',
+          '          widened back to every tag, because the tags it excludes are',
+          '          the build-asset tags it was written to keep out.',
+        ]
+      : [
+          `          repository's ${error.tagCount} tag(s) is in ${error.ref}'s history.`,
+        ]),
     '  Wanted: a release boundary reachable from the branch being scanned. The',
     '          newest tag by DATE is not a substitute — a repo can carry several',
     '          release lines at once, and the newest tag can belong to one that',
     '          never ships.',
-    '  Fix:    Two legal moves, both explicit:',
+    '  Fix:    Three legal moves, all explicit:',
     '          - Declare the line in .config/repo/socket-wheelhouse.json under',
     '            `release.releaseLine` — `branch` names the ref the customer',
     '            line lives on, `boundaryTag` names the boundary tag outright.',
+    '          - Or correct `release.releaseLine.tagPattern` so it matches the',
+    '            tags this line actually releases under, then push the missing',
+    '            release tag if there is none yet.',
     '          - Or re-run with --all to audit every ref with no boundary at',
     '            all, accepting that published history will be listed.',
     '',

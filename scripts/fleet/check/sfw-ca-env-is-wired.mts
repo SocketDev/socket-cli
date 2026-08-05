@@ -50,7 +50,6 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { getSocketWheelhouseBinDir } from '@socketsecurity/lib-stable/paths/socket'
@@ -74,6 +73,9 @@ import {
   windowsRealShimLines,
 } from '../setup/tools-sfw.mjs'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -280,9 +282,13 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the persistent sfw CA env pair is wired into every package-manager surface',
+  help: `Usage: node scripts/fleet/check/sfw-ca-env-is-wired.mts [flags]
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`sfw-ca-env-is-wired check failed: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -334,7 +334,17 @@ export function buildReleaseAndDocsSteps(): CheckStep[] {
     // regenerates the entry from the commits since that tag and fails on drift.
     // Catches the failure mode that shipped a CHANGELOG entry describing work that
     // landed after its tag. Published versions are historical and not re-checked.
-    () => run('node', ['scripts/fleet/check/changelog-is-commit-derived.mts']),
+    //
+    // RELEASE TIER, like its sibling version-is-not-ahead-of-published below,
+    // and for a sharper reason than cost: the release pipeline's preflight runs
+    // `check` BEFORE the bump, and only the bump regenerates this entry. As a
+    // bare step it gated the one stage that satisfies it, so a release
+    // deadlocked the moment any commit landed after its bump — with no way out,
+    // since a direct bump.mts is blocked by release-defers-to-script-guard and
+    // hand-editing CHANGELOG.md is blocked by this very check. Held to the
+    // release tier it still runs where it must: pre-push (`check --all
+    // --release`) and CI, both of which see the post-bump tree.
+    releaseStep(['scripts/fleet/check/changelog-is-commit-derived.mts']),
     // A PENDING release's package.json version must be at most ONE bump ahead of
     // the registry's latest-published version. A manifest pre-bumped further
     // skips the versions between (package.json pre-bumped to 1.4.3, then the

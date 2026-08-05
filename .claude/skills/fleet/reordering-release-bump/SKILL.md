@@ -38,7 +38,7 @@ See [`lib/reorder-bump.mts`](lib/reorder-bump.mts) for the 7-phase implementatio
 | --- | --------------- | ---------------------------------------------------------------------------------------------------- |
 | 1   | Pre-flight      | Resolve default branch (main → master fallback); `fetch --tags`; find the bump commit + its version. |
 | 2   | Verify          | Bump touches exactly `package.json` + `CHANGELOG.md` — else abort.                                    |
-| 3   | Backup          | Push `$ORIGIN_TIP:refs/heads/backup/pre-reorder-<ts>-<short>` before any destructive op.              |
+| 3   | Backup          | Push `$ORIGIN_TIP:refs/heads/backup-YYYYMMDD-HHMMSS` before any destructive op.                       |
 | 4   | Reorder         | In a throwaway worktree: `rebase --onto <bump>^ <bump> HEAD`, then `cherry-pick <bump>` to the tip.   |
 | 5   | Integrity       | `git diff <orig-tip> HEAD` must be EMPTY (HARD exit otherwise); tip subject must name the version.    |
 | 6   | Retag + push    | `git update-ref refs/tags/vX.Y.Z`; two `--force-with-lease` pushes (branch + tag).                    |

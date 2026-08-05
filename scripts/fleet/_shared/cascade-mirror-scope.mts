@@ -27,19 +27,36 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 // vendored floors already own. Enforced by
 // test/repo/unit/cascade-mirror-scope.test.mts in the wheelhouse.
 export const CASCADE_MIRROR_GLOBS: readonly string[] = [
+  // Subagent definitions.
   '.claude/agents/fleet/**',
+  // Slash commands.
   '.claude/commands/fleet/**',
+  // Hook payloads plus the dispatcher they run inside.
   '.claude/hooks/fleet/**',
+  // Skills.
   '.claude/skills/fleet/**',
+  // Lint, format, and lockstep wiring: oxlintrc, oxfmtrc, the oxlint plugins.
   '.config/fleet/**',
+  // Rolldown bundler configs.
   '.config/repo/rolldown/**',
+  // The vitest config `scripts/fleet/test.mts` runs every suite through.
   '.config/repo/vitest.config.mts',
+  // Ships with the config, never apart from it: the config imports it, so a
+  // fixer that rewrites one live copy and not the other breaks the bundle.
+  '.config/repo/vitest.settings.mts',
+  // Git hooks: commit-msg, pre-commit, post-commit.
   '.git-hooks/**',
+  // MCP server wiring.
   '.mcp.json',
+  // The `fleet.mjs` bootstrap entrypoint the cascade itself runs from.
   'scripts/repo/bootstrap/**',
+  // Fleet-facing agent documentation.
   'docs/agents.md/fleet/**',
+  // Every fleet script: check, fix, test, cascade, release.
   'scripts/fleet/**',
+  // Shared test helpers imported by member suites.
   'test/fleet/_shared/**',
+  // The vitest setup file the config's `setupFiles` points at.
   'test/fleet/scripts/**',
 ]
 

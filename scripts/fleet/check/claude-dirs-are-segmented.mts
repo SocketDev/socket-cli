@@ -35,6 +35,9 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -299,9 +302,14 @@ async function main(): Promise<void> {
   logger.log('[check-claude-dirs-are-segmented] Done.')
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that .claude/{agents,commands,hooks,skills}/ entries are segmented into fleet/ and repo/',
+  help: `Usage: node scripts/fleet/check/claude-dirs-are-segmented.mts [--fix]
+
+  --fix  move each dangling entry into fleet/ or repo/ and remove duplicates`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`[check-claude-dirs-are-segmented] error: ${e}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -142,8 +142,8 @@ export const ToolEntry = Type.Object(
     // walks it for every tool instead of each tool getting hand-written one.
     derived: Type.Optional(Type.Array(Type.String())),
     // Upstream source repo URL + its tag for a tool built from source rather
-    // than fetched as a release artifact (e.g. socket-btm's zig, built from
-    // the Codeberg mirror).
+    // than fetched as a release artifact (e.g. a zig toolchain built from an
+    // upstream mirror).
     source: Type.Optional(Type.String()),
     sourceTag: Type.Optional(Type.String()),
     // npm SRI (sha512-…) or single-artifact SRI (sha256-…).

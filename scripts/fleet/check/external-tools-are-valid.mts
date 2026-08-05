@@ -30,6 +30,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { collectIssues, ToolsConfig } from '../lib/external-tools-schema.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -120,6 +122,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every tool-data file validates against the canonical schema',
+  help: `Usage: node scripts/fleet/check/external-tools-are-valid.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

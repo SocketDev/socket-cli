@@ -113,6 +113,33 @@ Fix idea 💡: the concrete remediation.
 Closing verdict referencing item 1 _(short title)_.
 ```
 
+## Driving review bots by directive comment
+
+A review bot can always act on its OWN comments and PRs, even on a repo where
+every local credential is read-only or lacks write entirely (an external PR, a
+fork). Posting the bot's own directive comment is that lane — verified live on
+an external PR where `minimizeComment` returned FORBIDDEN for every local
+credential, and `@coderabbitai resolve` still resolved and collapsed
+CodeRabbit's own review threads.
+
+The permission model in one line: **our account might not have write on this
+repo; the bot always has write on its own output.** When a mutation
+(`resolveReviewThread`, `minimizeComment`) comes back FORBIDDEN, reach for the
+bot's directive comment instead of concluding the surface is stuck.
+
+The verified command table lives in
+`scripts/fleet/_shared/bot-directives.mts` (`directiveFor(botLogin, intent)`);
+`bot-comment-collapse-guard` imports it rather than hardcoding a command
+string. A bot with no verified command surface carries a `note` there instead
+of an invented command — never guess a bot's syntax from another bot's.
+
+| Bot | Verified commands | Source |
+| --- | --- | --- |
+| CodeRabbit (`coderabbitai[bot]`) | `@coderabbitai resolve`, `@coderabbitai review`, `@coderabbitai full review` | [docs.coderabbit.ai/guides/commands](https://docs.coderabbit.ai/guides/commands) |
+| Dependabot (`dependabot[bot]`) | `@dependabot rebase`, `recreate`, `merge`, `close`, `ignore this dependency` | [Dependabot pull request comment commands](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands) |
+| Renovate (`renovate[bot]`) | none — no `@mention` comment-command surface exists; control is the PR-body "rebase/retry" checkbox or a `rebase` label | [Updating and rebasing branches](https://docs.renovatebot.com/updating-rebasing/) |
+| GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | none — no comment-command surface is documented; request a review via the PR UI, the REST API, or `gh pr edit <PR> --add-reviewer copilot` | [Requesting a code review from Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/request-a-code-review/use-code-review) |
+
 ## Why
 
 These rules were extracted one correction at a time during live review sessions

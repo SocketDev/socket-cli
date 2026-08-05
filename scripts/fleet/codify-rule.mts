@@ -30,11 +30,13 @@ import process from 'node:process'
 import { AI_PROFILE } from '@socketsecurity/lib-stable/ai/profiles'
 import { spawnAiAgent } from '@socketsecurity/lib-stable/ai/spawn'
 import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -200,11 +202,19 @@ export async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'resolves a recorded memory lesson into a CLAUDE.md bullet plus its detail doc via the AI helper',
+  help: `Usage: node scripts/fleet/codify-rule.mts --memory <path/to/memory.md> [flags]
+
+  --memory <path>        the recorded memory file the agent works from (required)
+  --section fleet|repo   target CLAUDE.md section; inferred from frontmatter when omitted
+  --topic <kebab-name>   detail-doc topic slug; inferred from the memory name when omitted
+  --apply                write the edits (default is dry-run)`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the script.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

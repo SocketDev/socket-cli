@@ -57,7 +57,7 @@ import {
 import { slugFromRemoteUrl } from '../../../hooks/fleet/_shared/fleet-repos.mts'
 import { resolveDefaultBranch } from '../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../_shared/scripts/run-helpers.mts'
-import { formatBackupBranch } from '../../../../scripts/fleet/lib/backup-branch.mts'
+import { formatBackupBranch } from '../../../../scripts/fleet/backup-branches/naming.mts'
 import {
   checkNotShallowClone,
   checkSquashAllowed,

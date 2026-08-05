@@ -1,27 +1,34 @@
 /**
- * @file Canonical per-ecosystem soak-exclude lists. A dependency named here
- *   bypasses the `SOAK_DAYS` trust gate for its ecosystem — reserved for
- *   first-party, unpublishable, or deliberately-fresh deps. Every soak gate
- *   (cargo / go / brew) consults these, so an exclusion lives in ONE place.
- *   Mirrors the npm surface: `SOCKET_SCOPES` + pnpm-workspace
- *   `minimumReleaseAgeExclude`, where Socket-published scopes bypass the
- *   cooldown because they go through our own provenance pipeline. Same shape,
- *   other ecosystems. Every entry is dated so a stale bypass can't linger — the
- *   same discipline the npm soak-excludes carry (`# published | removable`),
- *   enforced by the gate that reads this file.
+ * @file Soak-exclude lists for the ecosystems whose package manager has NO
+ *   native publish-age gate: Go and Homebrew, whose gates
+ *   (`check/go-deps-are-soaked.mts`, `update/brew.mts`) read these lists.
+ *   Cargo is deliberately absent — see the note below. A dependency named here
+ *   bypasses the `SOAK_DAYS` trust gate for its ecosystem, reserved for
+ *   first-party, unpublishable, or deliberately-fresh deps. Every entry is
+ *   dated so a stale bypass can't linger, the same discipline the npm
+ *   soak-excludes carry (`# published | removable`), enforced by the gate that
+ *   reads this file.
  */
 
 export interface SoakExclude {
-  // The identifier as it appears in the manifest: a go module path, a crate
-  // name, or a brew formula/cask token.
+  // The identifier as it appears in the manifest: a go module path or a brew
+  // formula/cask token.
   readonly name: string
   // Why it bypasses soak, plus the date it became removable (YYYY-MM-DD) so the
   // exclusion doesn't outlive its reason.
   readonly reason: string
 }
 
-// Rust crates that bypass the cargo min-publish-age gate.
-export const CARGO_SOAK_EXCLUDES: readonly SoakExclude[] = []
+// There is deliberately NO cargo list here. Rust enforces soak natively with
+// nightly `-Zmin-publish-age` (RFC 3923), configured in `.cargo/config.toml`
+// via `[registry] global-min-publish-age` and `[resolver]
+// incompatible-publish-age = "deny"`. Cargo exposes no per-crate exemption
+// key; its own escape hatch is the lock, since the resolver admits a too-new
+// version only when `Cargo.lock` already pins it — which a one-off
+// `CARGO_RESOLVER_INCOMPATIBLE_PUBLISH_AGE=allow` update establishes. So a
+// cargo exemption is recorded as a TRACKED LOCK PIN beside the manifest
+// comment explaining it, never as an entry here. A list on this side could not
+// enforce anything: cargo does the gating and never consults it.
 
 // Go modules that bypass the go publish-age gate.
 export const GO_SOAK_EXCLUDES: readonly SoakExclude[] = []

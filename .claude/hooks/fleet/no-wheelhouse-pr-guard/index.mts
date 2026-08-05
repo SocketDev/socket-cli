@@ -184,6 +184,7 @@ export const hook = defineHook({
   bypassMode: 'manual',
   check,
   event: 'PreToolUse',
+  global: true,
   matcher: ['Bash'],
   triggers,
   type: 'guard',

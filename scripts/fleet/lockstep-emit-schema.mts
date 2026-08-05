@@ -6,8 +6,9 @@
  */
 
 import { isMainModule } from './_shared/is-main-module.mts'
-import { main } from './lockstep/emit-schema.mts'
+import { runMain } from './_shared/run-main.mts'
+import { main, SCRIPT_META } from './lockstep/emit-schema.mts'
 
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

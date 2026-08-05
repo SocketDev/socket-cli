@@ -36,7 +36,6 @@ import process from 'node:process'
 import { AI_PROFILE } from '@socketsecurity/lib-stable/ai/profiles'
 import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
 import { spawnAiAgent } from '@socketsecurity/lib-stable/ai/spawn'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -49,6 +48,8 @@ import {
 
 import type { CodifySurface } from './codify-guidance.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -266,9 +267,20 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'spawn a tier-matched AI agent to author one codification surface (hook, lint rule, check, or doc) with its test',
+  help: `Usage: node scripts/fleet/ai-codify/cli.mts --surface <surface> --discipline "<rule>" [flags]
+
+  --surface <surface>    the surface to author (required; from codify-guidance.mts)
+  --discipline "<rule>"  one-line statement of the rule to enforce (required)
+  --incident "<case>"    the motivating case, generic — no dates/SHAs
+  --memory <path>        memory file the agent uses as source-of-truth context
+  --name <kebab-name>    suggested name for the authored surface
+  --apply                perform the authoring spawn + verification (default: dry run)
+  --no-ai                skip entirely (also honored via SKIP_AI_CODIFY=1)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`ai-codify: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

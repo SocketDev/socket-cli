@@ -63,7 +63,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
@@ -78,6 +77,8 @@ import type {
 } from '../publish-infra/npm/provenance.mts'
 import { resolveNpmWorkspaceLayout } from '../publish-infra/npm/workspace.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { probeMembership } from '../_shared/fleet-membership.mts'
 import type { MembershipProbe } from '../_shared/fleet-membership.mts'
 
@@ -865,17 +866,18 @@ export async function main(): Promise<number> {
   })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'check that published versions have a tag at the attested commit',
+  help: `Usage: node scripts/fleet/check/release-tags-match-provenance.mts [flags]
+  --repo <path>   repo checkout to audit (default: this repo)
+  --version <v>   audit one specific version
+  --all           audit every version in the release era
+  --limit <n>     cap audited versions (default 5)
+  --quiet         suppress the success line`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
-    .then(exitCode => {
-      if (exitCode !== 0) {
-        process.exitCode = exitCode
-      }
-    })
-    .catch((e: unknown) => {
-      logger.error(`${CHECK_NAME} failed: ${errorMessage(e)}`)
-      process.exitCode = 1
-    })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

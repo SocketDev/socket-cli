@@ -9,12 +9,12 @@
  *
  *   Flow: verify the worktree is clean (land dirty files first via
  *   `land-work.mts --commit`) → capture ORIG → peel a bump tip if present →
- *   create a durable recovery ref → soft-reset to the base → commit each
- *   logical group by pathspec → cherry-pick the bump back → verify the
+ *   park ORIG on a canonical backup branch → soft-reset to the base → commit
+ *   each logical group by pathspec → cherry-pick the bump back → verify the
  *   final tree object is IDENTICAL to ORIG (hard-restores ORIG and fails loud
- *   on any mismatch). Nothing is pushed; the final report says whether a
- *   normal push is a fast-forward or a separately authorized lease force-push
- *   is required.
+ *   on any mismatch). The rewritten branch is never pushed; the final report
+ *   says whether a normal push is a fast-forward or a separately authorized
+ *   lease force-push is required.
  *
  *   Refuses outright when the range carries a Conventional-Commits breaking
  *   marker — a `!` before the subject's colon, or a `BREAKING CHANGE:` footer.
@@ -38,11 +38,25 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- sequential git plumbing; each step gates the next on exit status.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import {
+  backupRecoveryHint,
+  createPreRewriteBackup,
+} from './consolidate-commits/backup.mts'
+import {
+  findBreakingCommits,
+  findLessSpecificRegroups,
+  parseRangeCommits,
+  RANGE_LOG_FORMAT,
+} from './consolidate-commits/range.mts'
+import type { RangeCommit } from './consolidate-commits/range.mts'
 import { groupPaths } from './land-work.mts'
 import { commitMessage } from './land-work/message.mts'
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -51,6 +65,7 @@ let gitRoot = REPO_ROOT
 
 export interface GitResult {
   status: number
+  stderr: string
   stdout: string
 }
 
@@ -60,7 +75,11 @@ function git(args: readonly string[]): GitResult {
     stdio: ['ignore', 'pipe', 'pipe'],
     stdioString: true,
   })
-  return { status: r.status ?? 1, stdout: String(r.stdout ?? '').trim() }
+  return {
+    status: r.status ?? 1,
+    stderr: String(r.stderr ?? '').trim(),
+    stdout: String(r.stdout ?? '').trim(),
+  }
 }
 
 function gitOrDie(args: readonly string[], what: string): string {
@@ -132,148 +151,10 @@ export function classifyRewritePush(
 }
 
 /**
- * A local-only ref that keeps the exact pre-rewrite tip reachable.
- */
-export function recoveryRefForTip(tip: string): string {
-  return `refs/fleet/recovery/consolidate/${tip}`
-}
-
-/**
- * One commit in the range being regrouped.
- */
-export interface RangeCommit {
-  readonly body: string
-  readonly sha: string
-  readonly subject: string
-}
-
-// Conventional Commits marks a breaking change with a `!` immediately before
-// the colon: `feat(parse)!: …`. The scope is optional.
-const BREAKING_SUBJECT_RE = /^[a-z]+(?:\([^)]*\))?!:/
-// The footer form, at the start of a body line. Both spellings are canonical.
-const BREAKING_FOOTER_RE = /^BREAKING[ -]CHANGE:/m
-// `<type>[(scope)][!]: ` — the leading type token of a conventional subject.
-const CONVENTIONAL_SUBJECT_RE = /^([a-z]+)(?:\([^)]*\))?!?:/
-
-// Types that name WHAT changed for a consumer. The regroup's messages are
-// path-derived and land on `chore`/`refactor`, so an existing subject carrying
-// one of these describes the change more precisely than anything groupPaths
-// can synthesize.
-const SEMANTIC_TYPES: ReadonlySet<string> = new Set([
-  'feat',
-  'fix',
-  'perf',
-  'revert',
-  'security',
-])
-
-// ASCII unit/record separators: neither can appear in a git subject or body,
-// so they frame the fields with no escaping pass.
-const FIELD_SEP = '\u001f'
-const RECORD_SEP = '\u001e'
-
-/**
- * Parse `git log --format=%H%x1f%s%x1f%b%x1e` output into records.
- */
-export function parseRangeCommits(raw: string): RangeCommit[] {
-  const out: RangeCommit[] = []
-  const records = raw.split(RECORD_SEP)
-  for (let i = 0, { length } = records; i < length; i += 1) {
-    const record = records[i]!.trim()
-    if (!record) {
-      continue
-    }
-    const fields = record.split(FIELD_SEP)
-    const sha = fields[0] ?? ''
-    if (sha) {
-      out.push({ body: fields[2] ?? '', sha, subject: fields[1] ?? '' })
-    }
-  }
-  return out
-}
-
-/**
- * Whether a commit declares a semver-breaking change, by either Conventional
- * Commits marker: a `!` before the subject's colon, or a `BREAKING CHANGE:`
- * body footer.
- */
-export function isBreakingCommit(commit: {
-  body: string
-  subject: string
-}): boolean {
-  const c = { __proto__: null, ...commit } as { body: string; subject: string }
-  return BREAKING_SUBJECT_RE.test(c.subject) || BREAKING_FOOTER_RE.test(c.body)
-}
-
-/**
- * The commits in the range that declare a breaking change. Regrouping folds
- * commits by PATH, so a breaking commit's subject and its `!` marker are lost
- * into a generic path-derived message — the release tooling that reads those
- * markers to compute the next semver then silently downgrades a major.
- */
-export function findBreakingCommits(
-  commits: readonly RangeCommit[],
-): RangeCommit[] {
-  const out: RangeCommit[] = []
-  for (let i = 0, { length } = commits; i < length; i += 1) {
-    const commit = commits[i]!
-    if (isBreakingCommit(commit)) {
-      out.push(commit)
-    }
-  }
-  return out
-}
-
-/**
- * The conventional type token of a subject, or undefined when the subject is
- * not conventional.
- */
-export function conventionalCommitType(subject: string): string | undefined {
-  const m = CONVENTIONAL_SUBJECT_RE.exec(subject)
-  return m ? m[1] : undefined
-}
-
-/**
- * Commits whose EXISTING message is more specific than anything the regroup
- * would generate: the commit names a semantic type and no generated message
- * carries that same type, so the detail is dropped rather than restated.
- * Advisory — the operator decides whether the regroup is still worth it.
- */
-export function findLessSpecificRegroups(
-  commits: readonly RangeCommit[],
-  generatedSubjects: readonly string[],
-): RangeCommit[] {
-  const generatedTypes = new Set<string>()
-  for (let i = 0, { length } = generatedSubjects; i < length; i += 1) {
-    const type = conventionalCommitType(generatedSubjects[i]!)
-    if (type !== undefined) {
-      generatedTypes.add(type)
-    }
-  }
-  const out: RangeCommit[] = []
-  for (let i = 0, { length } = commits; i < length; i += 1) {
-    const commit = commits[i]!
-    const type = conventionalCommitType(commit.subject)
-    if (
-      type !== undefined &&
-      SEMANTIC_TYPES.has(type) &&
-      !generatedTypes.has(type)
-    ) {
-      out.push(commit)
-    }
-  }
-  return out
-}
-
-/**
  * Every commit in `base..tip`, newest first.
  */
 function readRangeCommits(base: string, tip: string): RangeCommit[] {
-  const r = git([
-    'log',
-    `--format=%H${FIELD_SEP}%s${FIELD_SEP}%b${RECORD_SEP}`,
-    `${base}..${tip}`,
-  ])
+  const r = git(['log', RANGE_LOG_FORMAT, `${base}..${tip}`])
   return r.status === 0 ? parseRangeCommits(r.stdout) : []
 }
 
@@ -455,12 +336,26 @@ function main(): void {
     return
   }
 
-  const recoveryRef = recoveryRefForTip(orig)
+  // The safety net comes BEFORE the first destructive command. The pre-rewrite
+  // tip goes onto a canonical backup branch on origin, so the whole
+  // consolidation stays undoable from any clone; a checkout with no origin gets
+  // the same branch locally instead. A push that fails means no safety net at
+  // all, so it aborts here rather than rewriting unprotected history.
+  const backupOutcome = createPreRewriteBackup({ exec: git, tip: orig })
+  if (!backupOutcome.ok) {
+    logger.fail(backupOutcome.error)
+    process.exitCode = 1
+    return
+  }
+  const { backup, warning } = backupOutcome
+  if (warning) {
+    logger.warn(warning)
+  }
+  logger.log(
+    `[consolidate-commits] backup: ${backup.ref} -> ${orig.slice(0, 12)} (${backup.destination}).`,
+  )
+
   try {
-    gitOrDie(
-      ['update-ref', '-m', 'consolidate-commits recovery', recoveryRef, orig],
-      'create recovery ref',
-    )
     // Materialize the WORK tree, then point HEAD at base keeping that tree.
     gitOrDie(['reset', '--hard', workTip], 'reset to work tip')
     gitOrDie(['reset', '--soft', base], 'soft reset to base')
@@ -512,11 +407,12 @@ function main(): void {
     }
   } catch (e) {
     // Restore the original history — the invariant is "never lose anything".
+    // The backup branch stays: a safety net is never torn down automatically,
+    // and `backup-branches.mts prune` is what retires a spent one.
     git(['cherry-pick', '--abort'])
     git(['reset', '--hard', orig])
-    git(['update-ref', '-d', recoveryRef])
     logger.fail(
-      `[consolidate-commits] rewrite failed (${errorMessage(e)}) — restored ${orig.slice(0, 12)}. History unchanged.`,
+      `[consolidate-commits] rewrite failed (${errorMessage(e)}) — restored ${orig.slice(0, 12)}. History unchanged; ${backup.ref} still holds it.`,
     )
     process.exitCode = 1
     return
@@ -538,11 +434,23 @@ function main(): void {
   logger.success(
     `[consolidate-commits] done: ${groups.length} logical commit(s)` +
       `${bumpTip ? ' + bump last' : ''}, tree byte-identical to ${orig.slice(0, 12)}. ` +
-      `${originalCommitLabel} replaced; recover the original history at ${recoveryRef}. ` +
+      `${originalCommitLabel} replaced; the original tip is parked at ${backup.ref} ` +
+      `(${backup.destination}) — recover with \`${backupRecoveryHint(backup)}\`. ` +
       `Push separately: ${pushGuidance}`,
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'regroups the commits since a base ref into logical commits, preserving a trailing bump commit',
+  help: `Usage: node scripts/fleet/consolidate-commits.mts [flags]
+
+  --repo <path>             operate on the repo at <path> instead of this one
+  --base <ref>              consolidate the range above <ref> (default: previous bump commit, else latest v tag)
+  --dry-run                 print the regroup plan without rewriting
+  --allow-off-lineage-base  accept a base on a force-push-replaced line of history (local-only lineages)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

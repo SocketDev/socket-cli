@@ -20,7 +20,6 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
 import {
@@ -38,6 +37,8 @@ import type {
 } from './update.mts'
 
 import { REPO_ROOT } from '../paths.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -322,17 +323,23 @@ export async function main(
   return 0
 }
 
-// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
-// soft: surface the reason via logger.error, set a non-zero exit code, never a
-// raw unhandled throw.
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'create a new external-tools entry (github-release or npm) with verified integrity',
+  help: `Usage: node scripts/fleet/external-tools/add.mts <name> [flags]
+  --repo <slug>            github owner/repo for a github-release tool
+  --npm <pkg>              npm package name for an npm tool
+  --version <v>            version to record (required)
+  --tag <t>                release tag when it differs from the version
+  --platform <key>=<asset> platform-key to asset filename (repeatable)
+  --release <kind>         release kind (default asset)
+  --binary-name <n>        binary name override
+  --description <d>        entry description
+  --target <file>          manifest file to write
+  --apply                  write the entry (default is a dry run)`,
+}
+
+// Guarded so importing this module, the unit test, doesn't run the CLI.
 if (import.meta.main) {
-  main().then(
-    code => {
-      process.exitCode = code
-    },
-    e => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(main, SCRIPT_META)
 }

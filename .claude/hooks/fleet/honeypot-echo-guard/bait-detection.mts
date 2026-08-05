@@ -16,7 +16,7 @@
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { normalizeForScan } from '../_shared/evasion-normalize.mts'
-import { findHoneypotTokens } from '../_shared/untrusted-instruction.mts'
+import { findHoneypotTokens } from '../_shared/untrusted/honeypot-token.mts'
 import {
   gitCanResolveObjects,
   isKnownGitCommit,

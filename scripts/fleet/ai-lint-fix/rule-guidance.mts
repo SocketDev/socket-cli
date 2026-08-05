@@ -257,7 +257,7 @@ export const RULE_GUIDANCE: Readonly<Record<string, string>> = {
   1. Read the whole regex. Identify its parts: anchors (\`^\`/\`$\`), character classes (\`[\\s,{]\`), groups (\`(?:…)\`), quantifiers (\`*\`/\`+\`/\`?\`/\`{n}\`), alternations (\`a|b\`), escapes (\`\\d\`, \`\\.\`).
   2. Write 1–6 short lines: for each meaningful part, "<the syntax> <what it matches>". Lead with the overall intent in one phrase.
   3. Place the comment ABOVE the regex line at the same indentation. Don't restate the variable name — explain the PATTERN.
-  4. Don't change the regex itself. If after reading it you judge it genuinely trivial/obvious, append \`// socket-lint: allow uncommented-regex\` on its line instead of a breakdown.
+  4. Don't change the regex itself. If after reading it you judge it genuinely trivial/obvious, add \`// socket-lint: allow uncommented-regex\` on its own line above instead of a breakdown.
 </process>
 
 <good-fix description="A property-key matcher, broken into boundary / name / terminator.">

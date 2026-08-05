@@ -30,7 +30,6 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
@@ -47,8 +46,10 @@ import { isMainModule } from '../_shared/is-main-module.mts'
 import { packAndInspect, readPackEntryText } from '../_shared/pack-inspect.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { withPrunedPackManifest } from '../publish-infra/npm/pack-manifest.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type { PrivatePathFinding } from '../../../.claude/hooks/fleet/_shared/private-paths.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -367,11 +368,14 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the packed tarball bytes carry no private path, denied domain, or credential shape',
+  help: `Usage: node scripts/fleet/check/pack-bytes-have-no-private-refs.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  // No top-level await (CJS bundle target): fail the process loud on an
-  // unexpected rejection instead.
-  main().catch((e: unknown) => {
-    logger.fail(`[pack-bytes-have-no-private-refs] ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -48,6 +48,9 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { NPM_REGISTRY } from '../constants/npm-registry.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { findWorkspacePackages } from './package-files-are-allowlisted.mts'
 
 const logger = getDefaultLogger()
@@ -376,9 +379,13 @@ function main(): void {
   process.exitCode = runCheck(repoRoot)
 }
 
-try {
-  main()
-} catch (e) {
-  logger.error(e)
-  process.exitCode = 1
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that publishable packages declare hardened publishConfig fields',
+  help: `Usage: node scripts/fleet/check/publish-config-is-hardened.mts [flags]
+  --json   machine-readable findings output`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
 }

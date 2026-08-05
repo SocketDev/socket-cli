@@ -48,6 +48,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 import {
   parseRepoFilter,
@@ -76,6 +77,7 @@ import type {
   SecurityPostureFinding,
 } from '../_shared/security-posture-law.mts'
 import type { GhAnswer } from '../_shared/security-posture-probe.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
 
 const logger = getDefaultLogger()
@@ -453,8 +455,16 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'audits every fleet repo GitHub security posture against the fleet posture law',
+  help: `Usage: node scripts/fleet/check/security-posture-matches-law.mts [flags]
+  --fix          apply the posture law to drifted repos
+  --repo <name>  limit the sweep to named repos (repeatable, comma-separable)`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

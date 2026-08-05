@@ -36,9 +36,6 @@ export const CANONICAL_PATTERNS: readonly string[] = [
   'actions/cache/save@*',
   'actions/cache@*',
   'actions/checkout@*',
-  // Consumer: the gh-aw weekly-update lock workflow's SOCKET_PR
-  // app-token wiring — every strict-allowlist repo mints its PR token
-  // through this action, and omitting it plan-fails the whole run.
   'actions/create-github-app-token@*',
   'actions/deploy-pages@*',
   'actions/download-artifact@*',
@@ -59,6 +56,14 @@ export const CANONICAL_PATTERNS: readonly string[] = [
 // check fails a declaration that goes stale — a pattern listed here that the
 // template tree now references, or one that is no longer canonical.
 export const EXTERNALLY_CONSUMED_PATTERNS: Readonly<Record<string, string>> = {
+  // gh-aw emits this minter into every member's compiled weekly-update lock, so
+  // the consumer is generated in member repos and never appears in this
+  // template tree. The three app-token composites PORT the action rather than
+  // `uses:` it, which is why the local scan finds nothing. Removing the pattern
+  // is what caused the 2026-07-21 plan-failure wave; an org-wide code search on
+  // 2026-08-03 found 27 live `uses:` sites across member workflows.
+  'actions/create-github-app-token@*':
+    'SocketDev/socket-cli .github/workflows/weekly-update.lock.yml',
   'actions/deploy-pages@*': 'SocketDev/meander .github/workflows/pages.yml',
   'actions/upload-pages-artifact@*':
     'SocketDev/meander .github/workflows/pages.yml',

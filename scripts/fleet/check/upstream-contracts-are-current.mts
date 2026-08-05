@@ -18,7 +18,6 @@
 
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -26,6 +25,9 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -158,14 +160,12 @@ export async function runCheck(repoRoot: string): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every pinned upstream reference still satisfies its repo-local upstream contract',
+  help: 'Usage: node scripts/fleet/check/upstream-contracts-are-current.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  runCheck(REPO_ROOT).then(
-    code => {
-      process.exitCode = code
-    },
-    (e: unknown) => {
-      logger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }

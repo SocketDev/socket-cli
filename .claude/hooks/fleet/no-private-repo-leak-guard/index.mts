@@ -202,6 +202,7 @@ export const hook = defineHook({
   bypass: ['private-leak'],
   check,
   event: 'PreToolUse',
+  global: true,
   matcher: ['Bash'],
   triggers,
   type: 'guard',

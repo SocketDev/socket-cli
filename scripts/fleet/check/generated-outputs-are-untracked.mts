@@ -53,6 +53,9 @@ import {
   REPO_ROOT,
 } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -170,11 +173,15 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'verifies no git-tracked file is a generated build output',
+  help: `Usage: node scripts/fleet/check/generated-outputs-are-untracked.mts [flags]
+
+  --quiet  suppress the success message`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`generated-outputs-are-untracked failed: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

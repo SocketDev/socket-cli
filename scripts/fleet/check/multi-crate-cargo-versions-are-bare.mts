@@ -26,6 +26,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from '../paths.mts'
 import { readPublishableCargoPackages } from '../publish-infra/cargo/shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -87,10 +90,22 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every publishable crate in a multi-crate cargo workspace stays at a bare X.Y.Z version',
+  help: `Usage: node scripts/fleet/check/multi-crate-cargo-versions-are-bare.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    // Fail-open: a crash must not block an otherwise-valid push.
-    process.exitCode = 0
-  })
+  runMain(
+    () =>
+      main().catch((e: unknown) => {
+        logger.error(e)
+        // Fail-open: a crash must not block an otherwise-valid push.
+        return 0
+      }),
+    SCRIPT_META,
+  )
 }

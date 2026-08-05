@@ -38,6 +38,7 @@ import { isMainModule } from './_shared/is-main-module.mts'
 import { localAssistEnabled, resolveOdaiBin, runOdai } from './_shared/odai.mts'
 import { REPO_ROOT } from './paths.mts'
 import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -374,6 +375,18 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'decide deterministically whether a red update branch is shippable and inside the allowlist',
+  help: `Usage: node scripts/fleet/get-green.mts [flags]
+  --verify            run setup + tests; exit 0 green, 1 red
+  --report            verify, then also print the changed-path classification (default)
+  --base <ref>        base ref to diff the branch against
+  --setup <cmd>       setup command to run
+  --test <cmd>        test command to run
+  --patterns <globs>  allowlist globs for the changed-path classification`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

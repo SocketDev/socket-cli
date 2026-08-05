@@ -43,6 +43,9 @@ import {
   REPO_ROOT,
 } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -296,11 +299,16 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that no catalog: pin resolves to a version npm marks deprecated',
+  help: `Usage: node scripts/fleet/check/catalog-pins-are-not-deprecated.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`catalog-pins-are-not-deprecated failed: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

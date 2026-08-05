@@ -28,6 +28,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
 
+import type { ScriptMeta } from './_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 // The gate, in order. `cover` is last because it is the slowest, full suite.
@@ -104,6 +106,12 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'sequences the full pre-push gate (update, install, fix, check, cover) and stops on the first red step',
+  help: 'Usage: node scripts/fleet/pre-push-gate.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

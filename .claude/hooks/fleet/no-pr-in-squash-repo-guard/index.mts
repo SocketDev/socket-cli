@@ -38,7 +38,13 @@
 
 import { isSquashHistoryRepo } from '../../../../.git-hooks/_shared/push-squash-history.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import {
+  ghExplicitRepoArg,
+  normalizeRepoSlug,
+  repoMatchesOrigin,
+} from '../_shared/gh-target-repo.mts'
 import { GH_VALUE_FLAGS, positionalArgs } from '../_shared/positional-args.mts'
+import { resolveProjectDir } from '../_shared/project-dir.mts'
 import { parseCommands } from '../_shared/shell-command.mts'
 
 const NAME = 'no-pr-in-squash-repo-guard'
@@ -60,10 +66,26 @@ export function isGhPrCreate(argv: readonly string[]): boolean {
   return words[0] === 'pr' && words[1] === 'create'
 }
 
-const check = bashGuard(command => {
+const check = bashGuard((command, payload) => {
   const commands = parseCommands(command)
-  const creating = commands.some(cmd => isGhPrCreate([cmd.binary, ...cmd.args]))
-  if (!creating || !isSquashHistoryRepo()) {
+  const creates = commands.filter(cmd =>
+    isGhPrCreate([cmd.binary, ...cmd.args]),
+  )
+  if (creates.length === 0 || !isSquashHistoryRepo()) {
+    return undefined
+  }
+  // `--repo`/`-R` re-points gh at a repo that may not be this checkout. A
+  // foreign target's landing conventions are its own — the LOCAL
+  // squash-history marker says nothing about it — so the guard only fires
+  // when every create in the command targets this checkout's own repo.
+  const cwd = resolveProjectDir(
+    typeof payload.cwd === 'string' ? payload.cwd : undefined,
+  )
+  const targetsOwnRepo = creates.some(cmd => {
+    const explicit = normalizeRepoSlug(ghExplicitRepoArg(cmd.args))
+    return !explicit || repoMatchesOrigin(explicit, cwd)
+  })
+  if (!targetsOwnRepo) {
     return undefined
   }
   return block(
@@ -96,8 +118,10 @@ const check = bashGuard(command => {
 })
 
 export const hook = defineHook({
+  // Framework-detected phrase: `bypassMode: 'manual'` here declared the
+  // phrase for the docs but left detection to a check that never looked, so
+  // the documented bypass could not actually open.
   bypass: ['pr-in-squash-repo'],
-  bypassMode: 'manual',
   bypassOptional: true,
   check,
   event: 'PreToolUse',

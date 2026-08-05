@@ -23,12 +23,14 @@ import process from 'node:process'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 export interface KimiUserConfigOptions extends EcosystemStepOptions {
   readonly kimiConfigPath?: string | undefined
@@ -268,14 +270,12 @@ export async function setupKimiUserConfig(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'bridges the fleet-canonical Claude permission rules into the Kimi Code user config',
+  help: 'Usage: node scripts/fleet/setup/kimi-user-config.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupKimiUserConfig().then(
-    result => {
-      process.exitCode = result.ok ? 0 : 1
-    },
-    (error: unknown) => {
-      process.stderr.write(`${errorMessage(error)}\n`)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupKimiUserConfig()).ok ? 0 : 1), SCRIPT_META)
 }

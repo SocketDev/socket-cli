@@ -171,10 +171,16 @@ export const check = editGuard((filePath, _content, payload) => {
     '  job. (`overrides:` pins a version but does NOT bypass minimumReleaseAge,',
     '  so it is not a soak escape hatch.)',
     '',
-    '  Last resort — to use it before the soak clears, add it (and any',
-    '  `@scope/*` platform binaries) here with a',
-    '  `# published: <date> | removable: <date + 7d>` annotation. That knowingly',
-    '  weakens the soak for those exact pins.',
+    '  An EXTERNAL TOOL (pnpm, oxlint, a GitHub-release binary) does not belong',
+    '  in this list at all. Bump it with',
+    '  `node scripts/repo/bump-tool.mts <tool> --soak-bypass`, which records a',
+    '  dated `soakBypass` block in external-tools.json that disarms itself after',
+    '  seven days instead of leaving a permanent entry here.',
+    '',
+    '  The `# published: <date> | removable: <date + 7d>` annotation that',
+    '  soak-exclude-date-guard enforces applies to the Socket scopes above. It',
+    '  does NOT get a third-party package past THIS guard, which rejects on',
+    '  scope before any annotation is read.',
   )
   return block(lines.join('\n'))
 })

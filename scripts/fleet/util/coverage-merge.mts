@@ -189,9 +189,61 @@ export function coveredCounts(entry: CoverageFileFinal | undefined): {
   return { branches, statements }
 }
 
+// The per-metric coverage rates of one entry, on its OWN maps — the tiers
+// segment the same file with different denominators (vitest-v8 vs c8), so
+// cross-tier comparison is only meaningful as a rate. An absent metric (no
+// functions in the file) reads as rate 1 so it never blocks a comparison.
+export function coverageRates(entry: CoverageFileFinal | undefined): {
+  branches: number
+  functions: number
+  statements: number
+} {
+  function rate(hits: readonly number[]): number {
+    if (hits.length === 0) {
+      return 1
+    }
+    let covered = 0
+    for (let i = 0, { length } = hits; i < length; i += 1) {
+      if (hits[i]! > 0) {
+        covered += 1
+      }
+    }
+    return covered / hits.length
+  }
+  const flatBranches: number[] = []
+  const branchArrs = Object.values(entry?.b ?? {})
+  for (let i = 0, { length } = branchArrs; i < length; i += 1) {
+    flatBranches.push(...branchArrs[i]!)
+  }
+  return {
+    branches: rate(flatBranches),
+    functions: rate(Object.values(entry?.f ?? {})),
+    statements: rate(Object.values(entry?.s ?? {})),
+  }
+}
+
+// True when `child`'s coverage rate is at least `inProcess`'s on EVERY metric
+// and strictly higher on at least one — the subprocess measurement supersedes
+// the in-process one without lowering any file-level ratio.
+function childDominates(
+  child: CoverageFileFinal,
+  inProcess: CoverageFileFinal | undefined,
+): boolean {
+  const c = coverageRates(child)
+  const p = coverageRates(inProcess)
+  return (
+    c.branches >= p.branches &&
+    c.functions >= p.functions &&
+    c.statements >= p.statements &&
+    (c.branches > p.branches ||
+      c.functions > p.functions ||
+      c.statements > p.statements)
+  )
+}
+
 /**
  * Fold the subprocess CHILDREN tier into the in-process (main/isolated) tiers.
- * Two cases, both of which only ever RAISE coverage:
+ * Three cases, none of which lowers any file-level ratio:
  *
  * 1. ABSENT in-process — a script entrypoint exercised only via spawn, which the
  *    vitest tiers never loaded, so it has no in-process entry. Gap-fill it
@@ -202,11 +254,15 @@ export function coveredCounts(entry: CoverageFileFinal | undefined): {
  *    coverage. vitest-v8 and c8 segment the same file's statements and branches
  *    INCOMPATIBLY (different id counts + statementMaps), so a per-id max-merge
  *    across the tiers is unsound — the children tier is the only truthful
- *    measurement. Replace the 0-entry wholesale. STRICTLY bounded to entries
- *    with 0 covered branches AND 0 covered statements in-process, so a
- *    partially-covered file is NEVER touched and the fold cannot lower any
- *    file's coverage. The children entry must itself cover something, else
- *    there is nothing to recover.
+ *    measurement. Replace the 0-entry wholesale. The children entry must itself
+ *    cover something, else there is nothing to recover.
+ * 3. LIGHTLY covered in-process, DOMINATED by the children measurement — a file
+ *    whose unit test imports a couple of pure helpers while its integration
+ *    suite exercises the whole script via spawn. The in-process entry pins the
+ *    file at the import's few branches; the children rate is higher on every
+ *    metric, so the subprocess measurement supersedes it wholesale
+ *    (consolidate-commits sat at 7/96 branches this way while its spawn suite
+ *    covered the run end to end).
  */
 export function foldChildrenTier(
   mainFinal: Record<string, CoverageFileFinal>,
@@ -230,19 +286,26 @@ export function foldChildrenTier(
     if (child.branches === 0 && child.statements === 0) {
       continue
     }
-    // Replace only a genuinely 0-executed in-process entry (loaded but never
-    // run in-process). Both maps are checked/replaced independently so a file
-    // present in both tiers converges on the same children entry (a later
-    // per-id merge of two identical entries is a no-op).
+    // Replace a genuinely 0-executed in-process entry (loaded but never run
+    // in-process), or one the children measurement dominates on every metric.
+    // Both maps are checked/replaced independently so a file present in both
+    // tiers converges on the same children entry (a later per-id merge of two
+    // identical entries is a no-op).
     if (inMain) {
       const c = coveredCounts(mainFinal[key])
-      if (c.branches === 0 && c.statements === 0) {
+      if (
+        (c.branches === 0 && c.statements === 0) ||
+        childDominates(childEntry, mainFinal[key])
+      ) {
         mainFinal[key] = childEntry
       }
     }
     if (inIso) {
       const c = coveredCounts(isolatedFinal[key])
-      if (c.branches === 0 && c.statements === 0) {
+      if (
+        (c.branches === 0 && c.statements === 0) ||
+        childDominates(childEntry, isolatedFinal[key])
+      ) {
         isolatedFinal[key] = childEntry
       }
     }

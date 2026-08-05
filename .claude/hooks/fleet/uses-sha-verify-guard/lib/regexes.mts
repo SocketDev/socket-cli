@@ -28,9 +28,12 @@ export const BARE_USES_RE_GLOBAL =
 // git accepts mixed-case SHAs.
 export const LONE_SHA_RE_GLOBAL = /\b(?<sha>[0-9a-f]{40})\b/gi
 
-// Match `# <name>-<version> sha256:<hex>` header.
+// Match `# <name>-<version>[ (<YYYY-MM-DD>)] sha256:<hex>` header. The
+// parenthesized committer date is an OPTIONAL field (gen/gitmodules-hash
+// derives + checks it); legacy dateless headers still match, and the sha
+// capture is unaffected by whether the date is present.
 export const GITMODULES_HEADER_RE =
-  /^#\s+[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])?-[^\s]+\s+sha256:(?<sha>[0-9a-f]+)/
+  /^#\s+[a-z0-9]+(?:[a-z0-9.-]*[a-z0-9])?-[^\s]+(?:\s+\(\d{4}-\d{2}-\d{2}\))?\s+sha256:(?<sha>[0-9a-f]+)/
 
 // Match `ref = <hex>` inside a submodule block.
 export const GITMODULES_REF_RE = /^\s*ref\s*=\s*(?<ref>[0-9a-f]+)\s*$/

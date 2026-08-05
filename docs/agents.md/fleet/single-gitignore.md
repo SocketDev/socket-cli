@@ -24,11 +24,35 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
   `node_modules/`, `*-vendored`) is upstream-owned, not fleet-managed — those are
   untracked-by-default anyway, so they never reach the tracked-tree scan.
 
+## A trailing slash misses a symlink
+
+`node_modules/` matches a **directory**. A symlink is a **file** to git, so that
+spelling does not cover a `node_modules` symlink at all — the link reads as an
+ordinary untracked file and a broad `git add` stages it. That happened: a
+cascade worktree symlinked `node_modules` at an absolute machine path so tests
+could run, `git add -A` swept the link into the commit, and in CI the dangling
+link made `mkdirSync(p, { recursive: true })` throw `ENOENT`, killing the
+pre-install bootstrap on a public repo.
+
+Write `**/node_modules` — no trailing slash, `**/`-anchored so it reaches every
+depth including the `template/base/` mirror. A bare unanchored `node_modules`
+works too (git matches an unanchored pattern at any depth). `/node_modules`
+covers only the root and misses a nested one. Keeping a redundant
+`node_modules/` line alongside a correct pattern is harmless.
+
 ## Enforcement
 
 - `.claude/hooks/fleet/no-nested-gitignore-guard/` (PreToolUse
   Write/Edit/MultiEdit) blocks CREATING a nested `.gitignore` in a fleet repo;
   bypass `Allow nested-gitignore bypass`.
+- `scripts/fleet/check/node-modules-symlink-is-ignored.mts` asserts the OUTCOME
+  rather than a blessed literal string: it seeds a throwaway repo with the
+  repo's own `.gitignore` bytes, plants a real `node_modules` symlink at the
+  root and one package deep, and asks `git check-ignore`. Report-only until the
+  fleet's trailing-slash spellings are fixed (`MODE` inside the check). The
+  edit-time layer above it is
+  `.claude/hooks/fleet/no-self-referential-symlink-guard/`, which blocks the
+  `git add` itself.
 - `scripts/fleet/check/gitignore-is-single-file.mts` is the commit-/CI-time
   belt: it scans `git ls-files '*.gitignore'` and fails on any tracked
   `.gitignore` that is not the repo root or a `template/<archetype>/` root.

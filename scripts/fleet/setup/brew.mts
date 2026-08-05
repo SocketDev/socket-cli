@@ -15,22 +15,20 @@
 import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
 import { BREW_TAP_PINS } from '../constants/brew-tap-pins.mts'
 import { brewfilePath } from '../update/brew-parse.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type { BrewTapPin } from '../constants/brew-tap-pins.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
   RunCommand,
 } from './ecosystems.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
-
-const mainLogger = getDefaultLogger()
 
 /**
  * The `brew tap` / `brew --repository` slug for a pin tap: `owner/repo` form
@@ -203,16 +201,12 @@ export async function setupBrew(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'installs the repo pinned Homebrew bundle locally at the soaked per-tap SHA pins',
+  help: 'Usage: pnpm run setup:brew',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupBrew().then(
-    result => {
-      if (!result.ok) {
-        process.exitCode = 1
-      }
-    },
-    (e: unknown) => {
-      mainLogger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupBrew()).ok ? 0 : 1), SCRIPT_META)
 }

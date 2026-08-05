@@ -71,7 +71,7 @@ Describe the bait rather than reproducing it.
 ## Detector library
 
 The by-shape twelve-hex-token detector lives in
-`_shared/untrusted-instruction.mts` (`findHoneypotTokens`) so a reporting path
+`_shared/untrusted/honeypot-token.mts` (`findHoneypotTokens`) so a reporting path
 can reuse it without importing a hook.
 
 ## Action

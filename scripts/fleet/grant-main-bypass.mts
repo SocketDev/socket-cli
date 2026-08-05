@@ -53,6 +53,7 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { FLEET_ROSTER_REL } from './_shared/fleet-membership.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import {
   MANAGED_RULESET_NAME,
   parseManagedRulesetId,
@@ -881,8 +882,18 @@ export async function main(): Promise<number> {
   })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "read, grant, or revoke a self force-push bypass on a fleet repo's main-protection ruleset",
+  help: `Usage: node scripts/fleet/grant-main-bypass.mts <repo> [flags]
+  --status  print the current bypass state (the default)
+  --grant   grant the authenticated gh account a temporary bypass (needs --yes)
+  --revoke  remove the bypass
+  --yes     confirm a --grant`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

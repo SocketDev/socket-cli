@@ -37,6 +37,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { fetchVersionTrustInfo } from '../publish-infra/npm/registry.mts'
 import type { RegistryVersionInfo } from '../publish-infra/npm/registry.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -44,7 +46,6 @@ async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     options: {
       all: { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       json: { default: false, type: 'boolean' },
       version: { type: 'string' },
     },
@@ -52,19 +53,11 @@ async function main(): Promise<void> {
     strict: false,
   })
 
-  if (values['help'] || positionals.length === 0) {
-    logger.log(
-      'Usage: node scripts/fleet/check/provenance-is-attested.mts <name> [options]',
+  if (positionals.length === 0) {
+    logger.fail(
+      'provenance-is-attested: missing the <name> positional. Run with --help for usage.',
     )
-    logger.log('')
-    logger.log('  --all              audit every published version')
-    logger.log('  --version <v>      audit a specific version')
-    logger.log('  --json             machine-readable output')
-    logger.log('')
-    logger.log(
-      'Without --all or --version, audits the most recent 10 versions.',
-    )
-    process.exitCode = values['help'] ? 0 : 1
+    process.exitCode = 1
     return
   }
 
@@ -189,9 +182,16 @@ export function compareSemverDesc(a: string, b: string): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'audit npm provenance and trusted-publisher status for a published package',
+  help: `Usage: node scripts/fleet/check/provenance-is-attested.mts <name> [flags]
+  --all           audit every published version
+  --version <v>   audit a specific version
+  --json          machine-readable output
+Without --all or --version, audits the most recent 10 versions.`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

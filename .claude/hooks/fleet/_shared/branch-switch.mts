@@ -168,7 +168,24 @@ export function isPrimaryCheckout(cwd: string): boolean {
 // possibly worktree, session cwd.
 function dashCDir(args: readonly string[]): string | undefined {
   const i = args.indexOf('-C')
-  return i >= 0 && i + 1 < args.length ? args[i + 1] : undefined
+  if (i < 0 || i + 1 >= args.length) {
+    return undefined
+  }
+  // An empty value means `-C` WAS present but its path did not survive parsing:
+  // `git -C $u checkout …`, where the shell parser cannot expand the variable.
+  // Report undefined so callers can tell that apart from "no -C given" via
+  // `hasDashC`. Conflating the two re-aims the guard at the session cwd, which
+  // is the primary checkout — the exact repo the `-C` was pointing away from.
+  const target = args[i + 1]
+  return target ? target : undefined
+}
+
+// True when the argv carries a `-C <path>` at all, whether or not the path
+// survived parsing. Paired with `dashCDir` so an unreadable path is
+// distinguishable from an absent one.
+export function hasDashC(args: readonly string[]): boolean {
+  const i = args.indexOf('-C')
+  return i >= 0 && i + 1 < args.length
 }
 
 // The ref a branch op moves HEAD to: the name after `-b/-B/-c/-C` for a create,
@@ -195,6 +212,9 @@ export function branchTarget(args: readonly string[]): string | undefined {
 export interface BranchOp {
   readonly kind: 'create' | 'switch'
   readonly dashC?: string | undefined
+  // `-C` was present but its path did not survive parsing (a shell variable).
+  // The op targets SOME other repo; which one is unknowable statically.
+  readonly dashCUnreadable?: boolean | undefined
   readonly target?: string | undefined
 }
 
@@ -211,9 +231,11 @@ export function firstBranchOp(command: string): BranchOp | undefined {
     if (kind) {
       const dashC = dashCDir(c.args)
       const target = branchTarget(c.args)
+      const dashCUnreadable = dashC === undefined && hasDashC(c.args)
       return {
         kind,
         ...(dashC === undefined ? {} : { dashC }),
+        ...(dashCUnreadable ? { dashCUnreadable } : {}),
         ...(target === undefined ? {} : { target }),
       }
     }
@@ -248,6 +270,16 @@ export function primaryBranchOp(
 ): PrimaryBranchOp | undefined {
   const op = firstBranchOp(command)
   if (!op) {
+    return undefined
+  }
+  // A `-C` whose path did not survive parsing (a shell variable) means the op
+  // aims at a repo we cannot name. Falling back to the session cwd here would
+  // judge the PRIMARY checkout — the one repo the `-C` was pointing away from —
+  // and block a legitimate elsewhere-op. The upstream-references flow is the
+  // case that bit: `git -C $u checkout --detach <pin>` against a vendored
+  // reference read as a primary branch switch. Passing an explicit `-C` is
+  // itself the statement that the primary is not the target.
+  if (op.dashCUnreadable) {
     return undefined
   }
   const baseCwd = actedOnPath(payload)

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * @file `check --all` gate: every `uses: <ref>@<40-hex-sha>` pin in a GitHub
  *   Actions workflow or composite action carries the canonical trailing
  *   `# <label> (YYYY-MM-DD)` staleness comment. The date is the cheapest
@@ -51,7 +51,10 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isNeverGated } from '../_shared/format-scope.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -236,6 +239,14 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every workflow/action SHA pin carries the canonical `# <label> (YYYY-MM-DD)` stamp',
+  help: `Usage: node scripts/fleet/check/workflow-sha-pins-are-stamped.mts [flags]
+
+  --quiet  suppress the clean-pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

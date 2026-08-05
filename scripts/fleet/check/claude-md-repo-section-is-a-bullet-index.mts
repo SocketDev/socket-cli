@@ -33,6 +33,8 @@ import process from 'node:process'
 import { repoRegionBounds } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import type { RepoRegionBounds } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 // The repo-specific section opens with this heading. Everything below it is
@@ -184,6 +186,12 @@ export function main(): void {
   process.exit(1)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the CLAUDE.md repo-specific section stays a flat bullet index',
+  help: 'Usage: node scripts/fleet/check/claude-md-repo-section-is-a-bullet-index.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

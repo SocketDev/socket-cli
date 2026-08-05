@@ -13,16 +13,15 @@
  *   this step informs loudly, it never fails repo setup.
  */
 
-import process from 'node:process'
-
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 export type ReferoMcpState =
   | 'absent'
@@ -133,14 +132,12 @@ export async function setupRefero(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'reports the Refero design-research MCP connector readiness and names the next action',
+  help: 'Usage: pnpm run setup:refero',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupRefero().then(
-    result => {
-      process.exitCode = result.ok ? 0 : 1
-    },
-    (e: unknown) => {
-      process.stderr.write(`${errorMessage(e)}\n`)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupRefero()).ok ? 0 : 1), SCRIPT_META)
 }

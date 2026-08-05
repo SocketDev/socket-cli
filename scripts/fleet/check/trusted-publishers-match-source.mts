@@ -31,13 +31,25 @@
  *   Exit: 0 clean or unauthenticated; 1 drift found.
  */
 
+import { readFileSync } from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
 import process from 'node:process'
 
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import {
+  loadRosterFromRepo,
+  publishesTo,
+  resolveRepoName,
+} from '../../../.claude/hooks/fleet/_shared/fleet-roster.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { runNpmWebAuth } from '../npm-web-auth.mts'
+import { REPO_ROOT } from '../paths.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -242,6 +254,7 @@ export async function expectedRepositoryFor(
       // A fleet repo's devEngines pins pnpm and npm refuses to run inside one,
       // so read from a neutral cwd.
       cwd: os.tmpdir(),
+      shell: WIN32,
       stdio: 'pipe',
       stdioString: true,
     })
@@ -251,14 +264,74 @@ export async function expectedRepositoryFor(
   }
 }
 
+/**
+ * True when this repo ships nothing to npm, so there is no trusted-publisher
+ * binding for it to have. Read from the roster's `publishes` list, the same
+ * source `committed-dist-is-current` gates on. An unreadable roster or an
+ * unresolvable repo name answers `false`: the caller then takes the normal
+ * path, which fails loudly rather than skipping on a guess.
+ */
+/**
+ * The npm name this repo publishes, read from its own manifest. Needed because
+ * the release tier registers this step once for EVERY member with no per-repo
+ * argument, so the check has to answer "which package is mine" itself rather
+ * than failing on a missing name. A private or nameless manifest publishes
+ * nothing and yields undefined.
+ */
+export function publishedNameFromManifest(
+  repoRoot: string,
+): string | undefined {
+  try {
+    const manifest = JSON.parse(
+      readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
+    ) as { name?: unknown | undefined; private?: unknown | undefined }
+    if (manifest.private === true || typeof manifest.name !== 'string') {
+      return undefined
+    }
+    return manifest.name
+  } catch {
+    return undefined
+  }
+}
+
+export function repoHasNoNpmChannel(repoRoot: string): boolean {
+  const roster = loadRosterFromRepo(repoRoot)
+  if (!roster) {
+    return false
+  }
+  const repoName = resolveRepoName(repoRoot)
+  if (!repoName) {
+    return false
+  }
+  return !publishesTo(roster, repoName, 'js')
+}
+
 export default async function main(): Promise<void> {
   const packages = process.argv.slice(2).filter(a => !a.startsWith('-'))
   if (!packages.length) {
-    logger.fail(
-      'no packages: pass the published names to check, e.g. @socketregistry/packageurl-js.',
-    )
-    process.exitCode = 1
-    return
+    // The release tier runs this step for every member. A member with no npm
+    // channel — a crate, a Go module, a GitHub Action consumed at a tag — has
+    // no packument and no binding, so "no names were passed" is the expected
+    // state there rather than a missing argument.
+    if (repoHasNoNpmChannel(REPO_ROOT)) {
+      logger.log(
+        '[trusted-publishers-match-source] SKIPPED — this repo publishes nothing to npm, so it has no trusted-publisher binding.',
+      )
+      return
+    }
+    // The repo publishes to npm but the caller named nothing, which is how
+    // the release tier always invokes this. Derive the name from the manifest
+    // rather than failing: the answer is unambiguous and sits on disk.
+    const own = publishedNameFromManifest(REPO_ROOT)
+    if (own) {
+      packages.push(own)
+    } else {
+      logger.fail(
+        'no packages: this repo publishes to npm, but its package.json names none. Pass the published name explicitly, e.g. @socketregistry/packageurl-js.',
+      )
+      process.exitCode = 1
+      return
+    }
   }
   let drifted = 0
   let skipped = 0
@@ -307,8 +380,14 @@ export default async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "checks each published package's npm trusted-publisher binding names the repo that publishes it",
+  help: 'Usage: node scripts/fleet/check/trusted-publishers-match-source.mts [<pkg>…]',
+}
+
 // Guarded: trust-sweep.mts imports `expectedRepositoryFor` from here, and a
 // bare call would run the whole check on import.
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

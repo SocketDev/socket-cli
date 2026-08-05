@@ -26,6 +26,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -137,6 +140,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks a file-doc header carrying markdown is a plain block comment, never JSDoc oxfmt would mangle',
+  help: `Usage: node scripts/fleet/check/markdown-doc-headers-are-plain.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

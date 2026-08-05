@@ -37,10 +37,11 @@ export const BuildFromSchema = Type.Union(
     Type.Literal('github-release'),
     Type.Literal('crates-registry'),
     Type.Literal('go-registry'),
+    Type.Literal('github-action'),
   ],
   {
     description:
-      'Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token).',
+      'Release source/target. `npm-registry` = published as an npm package. `github-release` = raw artifacts attached to a GitHub Release. `crates-registry` = published as a Rust crate to crates.io. `go-registry` = the Go module ecosystem — published by pushing a semver tag; proxy.golang.org fetches it, pkg.go.dev indexes it (no registry upload/token). `github-action` = consumed as `owner/repo@<tag>` straight from the git tree; like `go-registry` it publishes by pushing a tag with no registry upload, and unlike every other value the COMMITTED build output is the artifact a consumer runs, so it must be rebuilt in the same change as its sources.',
   },
 )
 
@@ -74,7 +75,7 @@ export const BuildSchema = Type.Object(
   },
   {
     description:
-      'How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos are native producers (socket-btm); `from: npm-registry` + non-`js` type wrap prebuilt native bits (socket-bin/socket-addon); `type: js` is a plain package; `from: crates-registry` + `type: rust` is a native Rust crate (crates.io provides integrity, so no release-checksums cascade).',
+      'How the repo is built + released. Drives the release-checksums file cascade + CI breadth. `from: github-release` repos build their own native artifacts and attach them to a GitHub Release; `from: npm-registry` + non-`js` type wrap prebuilt native bits; `type: js` is a plain package; `from: crates-registry` + `type: rust` is a native Rust crate (crates.io provides integrity, so no release-checksums cascade).',
     additionalProperties: false,
   },
 )

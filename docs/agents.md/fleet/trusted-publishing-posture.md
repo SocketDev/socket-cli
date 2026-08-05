@@ -17,8 +17,9 @@ pnpm's OIDC token exchange with npm returns 404 in every member:
 ```
 
 pnpm does not stop there. It falls through to whatever other credential the
-environment carries. `actions/setup-node` — which the fleet `setup` action runs
-with `registry-url: https://registry.npmjs.org` — writes
+environment carries. `actions/setup-node` — which the fleet `setup` action ran
+at the time with `registry-url: https://registry.npmjs.org`; the fleet has
+since ported Node setup natively and writes no `.npmrc` — wrote
 `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into the runner's
 `.npmrc`. So:
 

@@ -3,14 +3,14 @@
  *   `README.md`. Every fleet README — including the wheelhouse source itself —
  *   carries both follow badges directly under the title:
  *
- *     [![Follow @SocketSecurity](assets/fleet/badge-follow-x.svg)](https://twitter.com/SocketSecurity)
- *     [![Follow @socket.dev on Bluesky](assets/fleet/badge-follow-bluesky.svg)](https://bsky.app/profile/socket.dev)
+ *     [![Follow @SocketSecurity](assets/badge-follow-x.svg)](https://twitter.com/SocketSecurity)
+ *     [![Follow @socket.dev on Bluesky](assets/badge-follow-bluesky.svg)](https://bsky.app/profile/socket.dev)
  *
  *   These two badges are byte-identical fleet-canonical (not repo-contextual
  *   like the status badges), so unlike the section-skeleton rule this one does
  *   NOT exempt the wheelhouse source — the badges apply everywhere. Matched by
  *   the stable LINK target, not the badge image, so an image-host change (the
- *   retired shields.io URLs → the local assets/fleet/ SVGs) still counts.
+ *   retired shields.io URLs → the local assets/ SVGs) still counts.
  *   Fires only on the repo-root README (nested READMEs under `packages/`,
  *   `docs/`, etc. are scoped docs with their own shape). No autofix: badge
  *   placement is contextual, under the title, after any status badges.

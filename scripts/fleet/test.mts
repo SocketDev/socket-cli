@@ -47,6 +47,7 @@ import type { SpawnSyncOptions } from '@socketsecurity/lib-stable/process/spawn/
 
 import { hasLiveForeignActiveRun } from './_shared/active-run-marker.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { isScopeFlag, resolveScopeMode } from './_shared/scope-flags.mts'
 import {
   GENERATED_GLOBS,
@@ -71,6 +72,7 @@ import {
 } from './test-runner/scope-decisions.mts'
 
 import type { ParsedTestRunnerArgs } from './test-runner/cli-args.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -439,8 +441,21 @@ function main(): void {
   process.exitCode = runChanged()
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the vitest suite scoped to changed, staged, or all files via pnpm test',
+  help: `Usage: pnpm test [files...] [flags]
+
+  (no flags)             local-dev scope: vitest --changed vs HEAD
+  --staged               pre-commit scope: staged tests + mirror tests only
+  --all                  full suite; --shard=<index>/<count> partitions it
+  --lane fast|mid|slow   speed lane (default: fast)
+  --quiet, --silent      suppress progress output
+  [files...]             run the named test files directly`,
+}
+
 // Entrypoint-guarded so importing this module (e.g. a unit test of
 // buildRelatedArgs) doesn't kick off a vitest run.
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

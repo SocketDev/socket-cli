@@ -95,7 +95,10 @@ import { parseListBlock } from './lib/workspace-yaml.mts'
 import { brewfilePath, findManifestBrewSites } from './update/brew-parse.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -488,11 +491,19 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'diagnoses and optionally repairs fleet-member onboarding gaps that break pnpm install',
+  help: `Usage: node scripts/fleet/doctor.mts [flags]
+
+  --fix              apply the auto-fixable repairs (catalog entries, pin shadows, Brewfile, gh default repo)
+  --probe-git        also run the git probes (signatures, divergence, worktrees)
+  --probe-install    also probe for soak-window install failures
+  --probe-secrets    also run the pinned TruffleHog committed-tree secret scan
+  --root <path>      doctor the repo at <path> instead of this one
+  --await-quiescent  wait for the repo to settle before diagnosing a moving tree`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void (async () => {
-    await main()
-  })().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

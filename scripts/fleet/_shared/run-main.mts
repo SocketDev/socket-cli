@@ -8,10 +8,14 @@
  *   raw stack if `main()` throws. Enforced by
  *   `scripts/fleet/check/entry-scripts-are-fail-soft.mts` (a fleet CLI entry
  *   must fail soft — never hard-crash the user).
- *   It also refuses a bare `--` in argv before `main()` runs. That belongs here
- *   rather than in each script: it is a whole-argv property, every fleet entry
- *   has the same exposure, and one home means a new script inherits the
- *   protection instead of having to remember it.
+ *   It also owns the whole-argv concerns every entry shares, so a new script
+ *   inherits them instead of having to remember each: `--describe` prints the
+ *   script's one-line purpose, `-h`/`--help` prints its usage (both from the
+ *   {@link ScriptMeta} the entry passes, both BEFORE `main()` runs or any lock
+ *   is taken), and a bare `--` in argv is refused before `main()` runs.
+ *   Enforced by `scripts/fleet/check/entry-scripts-self-describe.mts` (every
+ *   entry script answers --describe and --help without running its side
+ *   effect).
  */
 
 import process from 'node:process'
@@ -64,6 +68,47 @@ type MainFn = () =>
   | Promise<number | undefined | void>
 
 /**
+ * A script's self-description, answered without running its side effect.
+ * `--describe` prints `describe` verbatim — one line, what the script does —
+ * so script inventories and agents can read purpose without opening the file.
+ * `-h`/`--help` prints `describe`, a blank line, then `help`, which opens
+ * with a `Usage:` line naming the sanctioned invocation and lists the flags
+ * `main()` actually parses.
+ */
+export interface ScriptMeta {
+  readonly describe: string
+  readonly help: string
+}
+
+/**
+ * The help request found on argv, if any: `--describe` wins over `-h`/`--help`
+ * when both are present (the narrower ask costs one line; printing both forms
+ * for a mixed argv helps no caller). Pure — exported for tests.
+ */
+export function helpRequest(
+  argv: readonly string[],
+): 'describe' | 'help' | undefined {
+  if (argv.includes('--describe')) {
+    return 'describe'
+  }
+  if (argv.includes('-h') || argv.includes('--help')) {
+    return 'help'
+  }
+  return undefined
+}
+
+/**
+ * The text a help request prints: the one-liner alone for `--describe`, or
+ * the one-liner + blank line + usage body for `--help`. Pure — exported for
+ * tests.
+ */
+export function helpText(kind: 'describe' | 'help', meta: ScriptMeta): string {
+  return kind === 'describe'
+    ? meta.describe
+    : `${meta.describe}\n\n${meta.help}`
+}
+
+/**
  * Run a script's `main()` FAIL-SOFT: set `process.exitCode` to its resolved
  * return (`?? 0`), and on ANY throw / rejection log the message (never a raw
  * stack) via the default logger and set `process.exitCode = 1`. Never rethrows,
@@ -77,8 +122,8 @@ type MainFn = () =>
  *   }
  *   ```
  */
-export function runMain(main: MainFn): void {
-  void runMainAsync(main)
+export function runMain(main: MainFn, meta?: ScriptMeta | undefined): void {
+  void runMainAsync(main, meta)
 }
 
 /**
@@ -89,8 +134,22 @@ export function runMain(main: MainFn): void {
  * tests can await the settled result; production entrypoints call the
  * fire-and-forget {@link runMain}.
  */
-export async function runMainAsync(main: MainFn): Promise<void> {
+export async function runMainAsync(
+  main: MainFn,
+  meta?: ScriptMeta | undefined,
+): Promise<void> {
   const argv = process.argv.slice(2)
+  if (meta) {
+    // Answered before the bare-`--` refusal, before any lock, before main():
+    // a help request must succeed even on an argv the script would refuse,
+    // and while another holder has the repo lock.
+    const request = helpRequest(argv)
+    if (request) {
+      logger.log(helpText(request, meta))
+      process.exitCode = 0
+      return
+    }
+  }
   if (hasBareDoubleDash(argv)) {
     // Refuse rather than guess. Silently dropping flags fails OPEN, which for a
     // destructive script means running live when a preview was requested.

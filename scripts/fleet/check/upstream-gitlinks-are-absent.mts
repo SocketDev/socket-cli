@@ -24,11 +24,13 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import {
   executeUntrackActions,
   formatUntrackAction,
   planUntrackActions,
 } from '../_shared/untrack-offenders.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { UntrackAction } from '../_shared/untrack-offenders.mts'
 
 const logger = getDefaultLogger()
@@ -135,11 +137,17 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks no upstream/ reference submodule is git-tracked as a gitlink',
+  help: `Usage: node scripts/fleet/check/upstream-gitlinks-are-absent.mts [flags]
+
+  --fix    drop each tracked gitlink from the index and re-run the detection
+  --quiet  suppress the clean-pass message`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`upstream-gitlinks-are-absent failed: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

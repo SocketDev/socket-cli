@@ -77,8 +77,10 @@ import {
 } from './release-pipeline/state.mts'
 import { renderRunRecap, renderStatus } from './release-pipeline/summary.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 import type { CliOptions } from './release-pipeline.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import type { PipelineState } from './release-pipeline/state.mts'
 import type { StageId } from './release-pipeline/stages.mts'
 
@@ -220,7 +222,6 @@ async function main(): Promise<void> {
     options: {
       approve: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       local: { default: false, type: 'boolean' },
       reconcile: { type: 'string' },
       reset: { default: false, type: 'boolean' },
@@ -231,10 +232,6 @@ async function main(): Promise<void> {
     allowPositionals: false,
     strict: false,
   })
-  if (values['help']) {
-    logger.log(USAGE)
-    return
-  }
   const file = statePath(REPO_ROOT)
   if (values['reset']) {
     resetState(file)
@@ -302,6 +299,12 @@ async function main(): Promise<void> {
   await runPublishPipeline(state, cli)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'stages a bumped version to the registry, runs the verify gate, and promotes + releases via --approve',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

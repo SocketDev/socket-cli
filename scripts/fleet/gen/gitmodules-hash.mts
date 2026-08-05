@@ -29,28 +29,36 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import zlib from 'node:zlib'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
 const USAGE = `gen/gitmodules-hash — set / generate / verify .gitmodules content-hash pins
 
 Usage:
-  gen/gitmodules-hash.mts --check [<.gitmodules>]   verify every block's sha256 (exit 1 on drift)
-  gen/gitmodules-hash.mts --write [<.gitmodules>]   rewrite stale / missing sha256 comments
+  gen/gitmodules-hash.mts --check [<.gitmodules>]   verify every block's sha256 + date (exit 1 on drift)
+  gen/gitmodules-hash.mts --write [<.gitmodules>]   rewrite stale / missing sha256 + date comments
   gen/gitmodules-hash.mts --set <name|path> <ref> [--label <text>] [<.gitmodules>]
-                                                    bump one submodule's ref AND its sha256
+                                                    bump one submodule's ref AND its sha256 + date
                                                     together (the only correct way to bump a
                                                     ref — uses-sha-verify-guard requires both)
 
-The hash is sha256 of https://codeload.github.com/<owner>/<repo>/tar.gz/<ref>
-for GitHub remotes, or the sha256 of \`git ls-tree -r <ref>\` (the materialized
-worktree's manifest) for non-GitHub remotes (e.g. *.googlesource.com).
+The header is \`# <name>-<version> (<YYYY-MM-DD>) sha256:<hex>\`. The hash is
+sha256 of https://codeload.github.com/<owner>/<repo>/tar.gz/<ref> for GitHub
+remotes, or the sha256 of \`git ls-tree -r <ref>\` (the materialized worktree's
+manifest) for non-GitHub remotes (e.g. *.googlesource.com). The parenthesized
+date is the pinned commit's committer date — a DERIVED + CHECKED field, so a
+ref bump that forgets to re-stamp it fails --check. The date field is optional
+and back-compatible: legacy headers without it still pass --check; --write /
+--set back-fill it.
 `
 
 export interface Block {
@@ -63,8 +71,13 @@ export interface Block {
   headerLine: number | undefined
   // The header comment's existing sha256, or undefined when absent.
   headerSha: string | undefined
-  // The `# <name>-<version>` prefix (everything before ` sha256:`), preserved
-  // verbatim on rewrite so the version label and any trailing notes survive.
+  // The header comment's existing DERIVED-and-CHECKED committer date in the
+  // parenthesized `(<YYYY-MM-DD>)` field, or undefined when the header predates
+  // the date field (legacy entries) / carries none.
+  headerDate: string | undefined
+  // The `# <name>-<version>` prefix (everything before the ` (<date>)` /
+  // ` sha256:` fields), preserved verbatim on rewrite so the version label
+  // survives.
   headerPrefix: string | undefined
   // owner/repo parsed from the GitHub `url =` line, else undefined.
   ownerRepo: string | undefined
@@ -75,6 +88,33 @@ export interface Block {
   // The submodule `path = <p>` value, else undefined (an alternate selector
   // for `--set`, since callers think in paths more than quoted names).
   path: string | undefined
+}
+
+// A `# <keyword>: <freetext>` block annotation (e.g. `# full-checkout: …`,
+// `# no-release-tag: …`, or any future `# vendored-patch: …`). Its first
+// whitespace-delimited token ends in a colon; a genuine
+// `# <name>-<version>[ (<date>)][ sha256:<hex>]` header's first token never
+// does (there a colon appears only in the `sha256:` SECOND token, after a
+// space). This structural test is the single source of truth for "is this
+// comment an annotation" — parseBlocks uses it to skip annotations while
+// hunting the header, and the writer uses it to refuse ever stamping a sha256
+// over one.
+export function isAnnotationComment(line: string): boolean {
+  // require-regex-comment: first comment token immediately followed by a colon.
+  return /^#\s*[^\s:]+:/.test(line)
+}
+
+// Render the canonical header line. The committer date is a DERIVED + CHECKED
+// field carried in parentheses — `# <name>-<version> (<YYYY-MM-DD>) sha256:…` —
+// which disambiguates it from date-shaped version tokens (those need no
+// parens). Omitted when no date could be derived, keeping the pre-date form
+// byte-stable for legacy entries whose upstream we cannot date.
+export function formatHeaderLine(
+  prefix: string,
+  date: string | undefined,
+  sha: string,
+): string {
+  return date ? `${prefix} (${date}) sha256:${sha}` : `${prefix} sha256:${sha}`
 }
 
 // Parse `.gitmodules` into blocks, retaining the header-comment line index so
@@ -89,32 +129,38 @@ export function parseBlocks(lines: string[]): Block[] {
     }
     let headerLine: number | undefined
     let headerSha: string | undefined
+    let headerDate: string | undefined
     let headerPrefix: string | undefined
     for (let j = i - 1; j >= 0; j -= 1) {
       const prev = lines[j]!
       if (prev.trim() === '' || /^\s*\[submodule\s+"/.test(prev)) {
         break
       }
-      // Documented block annotations — `# no-release-tag: <why>` and
-      // `# full-checkout: <why>` — are comments whose kebab-case keywords
-      // also satisfy the name-version grammar below, so without this skip
-      // an annotation sitting between the hash header and its block shadows
-      // the header and the block reads as "comment <none>". Skip them and
-      // keep scanning upward.
-      // require-regex-comment: a known block-annotation keyword at comment start.
-      if (/^#\s*(?:full-checkout|no-release-tag):/.test(prev)) {
+      // Documented block annotations — `# no-release-tag: <why>`,
+      // `# full-checkout: <why>`, and any future `# <keyword>: <why>` — are
+      // comments whose kebab-case keyword also satisfies the name-version
+      // grammar below, so without this skip an annotation sitting between the
+      // hash header and its block shadows the header (the block reads as
+      // "comment <none>", and a whole-file --write then stamps sha256 over the
+      // annotation, destroying the reason text). Skip them STRUCTURALLY — a
+      // genuine header's first token is `<name>-<version>` and never ends in a
+      // colon, whereas an annotation's does (`isAnnotationComment`) — and keep
+      // scanning upward.
+      if (isAnnotationComment(prev)) {
         continue
       }
-      // A `# <name>-<version>` comment line: captures (1) the `# name-…` prefix,
-      // (2) an optional `sha256:<hex>` stamp, (3) any trailing text.
+      // A `# <name>-<version>` comment line: captures (1) the `# name-…`
+      // prefix, (2) an optional parenthesized `(<YYYY-MM-DD>)` committer date,
+      // (3) an optional `sha256:<hex>` stamp, (4) any trailing text.
       const header =
-        /* socket-lint: allow uncommented-regex */ /^(#\s+[A-Za-z0-9][A-Za-z0-9.-]*-\S+?)(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
+        /* socket-lint: allow uncommented-regex */ /^(#\s+[A-Za-z0-9][A-Za-z0-9.-]*-\S+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
           prev,
         )
       if (header) {
         headerLine = j
         headerPrefix = header[1]
-        headerSha = header[2]
+        headerDate = header[2]
+        headerSha = header[3]
         break
       }
     }
@@ -152,6 +198,7 @@ export function parseBlocks(lines: string[]): Block[] {
       openLine: i,
       headerLine,
       headerSha,
+      headerDate,
       headerPrefix,
       ownerRepo,
       ref,
@@ -203,6 +250,95 @@ export async function archiveSha256(
   return crypto.createHash('sha256').update(res.body).digest('hex')
 }
 
+// Format a UNIX epoch (seconds) as a UTC `YYYY-MM-DD`. Both date sources — the
+// codeload tar mtime and `git log --format=%ct` — hand us an absolute epoch, so
+// converting BOTH here (in UTC, not the committer's local zone) guarantees the
+// archive path and the worktree path agree on the same date string for a given
+// commit.
+function epochToUtcDate(epochSeconds: number): string {
+  return new Date(epochSeconds * 1000).toISOString().slice(0, 10)
+}
+
+// Recover the archived commit's committer DATE from the codeload .tar.gz bytes
+// we already fetched for the sha256 — no extra request, no checkout (so it
+// works on a bare CI fetch). `git archive` (which GitHub codeload serves)
+// stamps every tar entry's mtime with the commit's committer date, so the
+// first ustar header's mtime octal field (offset 136, 12 bytes) IS that date.
+// Fail-open to undefined on any gunzip / parse error — a missing date must
+// never block the sha256 pin.
+export function archiveCommitDate(bytes: Buffer): string | undefined {
+  let tar: Buffer
+  try {
+    tar = zlib.gunzipSync(bytes)
+  } catch {
+    return undefined
+  }
+  if (tar.length < 512) {
+    return undefined
+  }
+  // ustar mtime field: octal digits, NUL/space-terminated, at offset 136.
+  const mtimeField = tar.subarray(136, 148).toString('ascii')
+  const octalMatch = /^\s*([0-7]+)/.exec(mtimeField)
+  if (!octalMatch) {
+    return undefined
+  }
+  const epoch = Number.parseInt(octalMatch[1]!, 8)
+  if (!Number.isFinite(epoch) || epoch <= 0) {
+    return undefined
+  }
+  return epochToUtcDate(epoch)
+}
+
+// Fetch the codeload archive ONCE and return both the content sha256 and the
+// derived committer date (from the same bytes — see archiveCommitDate). The
+// date is undefined when the archive can't be parsed as a git tarball, which
+// keeps a malformed / mocked body from turning into a hard failure.
+export async function archiveShaAndDate(
+  ownerRepo: string,
+  ref: string,
+): Promise<{ date: string | undefined; sha: string }> {
+  const url = `https://codeload.github.com/${ownerRepo}/tar.gz/${ref}`
+  const res = await httpRequest(url, { method: 'GET' })
+  if (!res.ok) {
+    throw new Error(
+      `codeload fetch failed for ${ownerRepo}@${ref}: HTTP ${res.status} ${res.statusText} — verify the ref is pushed and the repo is public`,
+    )
+  }
+  const body = res.body
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as string)
+  return {
+    date: archiveCommitDate(buf),
+    sha: crypto.createHash('sha256').update(body).digest('hex'),
+  }
+}
+
+// The committer DATE of `ref` from a MATERIALIZED worktree, via
+// `git log -1 --format=%ct` (committer date as a UNIX epoch). `%ct` — not the
+// zone-local `%cs` — so the conversion matches archiveCommitDate's UTC epoch
+// path exactly; a commit near midnight can't disagree by a day between the two
+// sources. Fail-open to undefined (no worktree / unknown ref / no git) — the
+// same posture as treeManifestSha256.
+export async function worktreeCommitDate(
+  worktreeDir: string,
+  ref: string,
+): Promise<string | undefined> {
+  try {
+    const result = (await spawn(
+      'git',
+      ['-C', worktreeDir, 'log', '-1', '--format=%ct', ref],
+      { stdio: 'pipe', stdioString: true },
+    )) as { stdout?: string | undefined }
+    const out = String(result?.stdout ?? '').trim()
+    const epoch = Number.parseInt(out, 10)
+    if (!Number.isFinite(epoch) || epoch <= 0) {
+      return undefined
+    }
+    return epochToUtcDate(epoch)
+  } catch {
+    return undefined
+  }
+}
+
 // SHA-256 of the `git ls-tree -r <ref>` manifest of a MATERIALIZED submodule
 // worktree. Every manifest line is `<mode> <type> <blob-sha>\t<path>`; the blob
 // SHAs are git's immutable content addresses and `ls-tree` output is
@@ -252,6 +388,11 @@ export function isMaterialized(worktreeDir: string): boolean {
 export interface Resolved {
   block: Block
   computed: string | undefined
+  // The derived committer date (`YYYY-MM-DD`) for the pinned ref, or undefined
+  // when it could not be derived (mocked/malformed archive, non-materialized
+  // worktree). A missing date is never a hard failure — it just means the date
+  // field is neither checked nor (re)written for that block this run.
+  computedDate: string | undefined
   skipped: string | undefined
 }
 
@@ -266,6 +407,7 @@ export async function resolveAll(
       out.push({
         block,
         computed: undefined,
+        computedDate: undefined,
         skipped: 'no `ref = <sha>` to hash',
       })
       continue
@@ -278,9 +420,14 @@ export async function resolveAll(
     if (block.ownerRepo) {
       try {
         logger.log(`fetching ${block.ownerRepo}@${block.ref.slice(0, 12)}…`)
+        const { date, sha } = await archiveShaAndDate(
+          block.ownerRepo,
+          block.ref,
+        )
         out.push({
           block,
-          computed: await archiveSha256(block.ownerRepo, block.ref),
+          computed: sha,
+          computedDate: date,
           skipped: undefined,
         })
         continue
@@ -292,6 +439,7 @@ export async function resolveAll(
           out.push({
             block,
             computed: undefined,
+            computedDate: undefined,
             skipped: `codeload 404 and worktree not materialized — cannot pin ${block.name}`,
           })
           continue
@@ -302,6 +450,7 @@ export async function resolveAll(
         out.push({
           block,
           computed: await treeManifestSha256(worktree, block.ref),
+          computedDate: await worktreeCommitDate(worktree, block.ref),
           skipped: undefined,
         })
         continue
@@ -314,6 +463,7 @@ export async function resolveAll(
       out.push({
         block,
         computed: undefined,
+        computedDate: undefined,
         skipped:
           'non-GitHub remote not materialized (worktree absent) — cannot verify tree manifest',
       })
@@ -322,10 +472,139 @@ export async function resolveAll(
     out.push({
       block,
       computed: await treeManifestSha256(worktree, block.ref),
+      computedDate: await worktreeCommitDate(worktree, block.ref),
       skipped: undefined,
     })
   }
   return out
+}
+
+// ── Pure decision cores for --check / --write ────────────────────────────────
+// Extracting these out of main() makes the WRITE path unit-testable without a
+// network round-trip (main() does the fetch + file I/O; these decide what the
+// bytes mean). It is also the belt to parseBlocks' braces: the writer here
+// NEVER touches a line unless it is a genuine header, so an annotation cannot be
+// clobbered even if a future parser change regressed.
+
+// A per-block --check verdict: `sha` (stale/missing hash) or `date` (a header
+// that carries a date whose derived value no longer matches — i.e. a ref bump
+// that forgot to re-stamp the date). An ABSENT header date is never drift, so
+// legacy entries keep passing until a --write/--set opts them into the field.
+export interface CheckIssue {
+  name: string
+  kind: 'date' | 'sha'
+  detail: string
+}
+
+export function planCheck(resolved: Resolved[]): {
+  issues: CheckIssue[]
+  skips: number
+  verified: number
+} {
+  const issues: CheckIssue[] = []
+  let skips = 0
+  let verified = 0
+  for (const { block, computed, computedDate, skipped } of resolved) {
+    if (skipped) {
+      skips += 1
+      continue
+    }
+    verified += 1
+    if (computed !== block.headerSha) {
+      issues.push({
+        name: block.name,
+        kind: 'sha',
+        detail: `sha256 ${block.headerSha ? 'stale' : 'missing'} — comment ${block.headerSha?.slice(0, 12) ?? '<none>'}…, archive ${computed?.slice(0, 12) ?? '<none>'}…`,
+      })
+      continue
+    }
+    if (
+      block.headerDate !== undefined &&
+      computedDate !== undefined &&
+      block.headerDate !== computedDate
+    ) {
+      issues.push({
+        name: block.name,
+        kind: 'date',
+        detail: `date stale — header (${block.headerDate}), commit (${computedDate}); the ref moved without re-stamping the date`,
+      })
+    }
+  }
+  return { issues, skips, verified }
+}
+
+export interface WritePlanEntry {
+  name: string
+  status: 'current' | 'no-header' | 'skipped' | 'written'
+  detail: string
+}
+
+export interface WritePlan {
+  entries: WritePlanEntry[]
+  errors: number
+  lines: string[]
+  skips: number
+  written: number
+}
+
+// Given the file `lines` and the resolved (sha + date) blocks, produce the
+// rewritten lines for --write. Touches ONLY the genuine sha256 header of each
+// drifted block — never an annotation, and never any other block's lines.
+// Back-fills the date onto a legacy entry (desired line gains `(<date>)`),
+// refreshes a stale sha/date, and leaves current lines byte-identical.
+export function planWrites(lines: string[], resolved: Resolved[]): WritePlan {
+  const out = lines.slice()
+  const entries: WritePlanEntry[] = []
+  let written = 0
+  let skips = 0
+  let errors = 0
+  for (const { block, computed, computedDate, skipped } of resolved) {
+    if (skipped) {
+      skips += 1
+      entries.push({ name: block.name, status: 'skipped', detail: skipped })
+      continue
+    }
+    if (
+      computed === undefined ||
+      block.headerLine === undefined ||
+      !block.headerPrefix
+    ) {
+      errors += 1
+      entries.push({
+        name: block.name,
+        status: 'no-header',
+        detail:
+          'no `# <name>-<version>` header comment to attach a sha256 to — add the comment first (gitmodules-comment-guard shape), then re-run',
+      })
+      continue
+    }
+    const current = out[block.headerLine]!
+    // Defense-in-depth: the parser already skips annotations, but never stamp a
+    // sha256 over a `# <keyword>: <reason>` line even if one somehow arrived
+    // here — that is the corruption this tool exists to avoid.
+    if (isAnnotationComment(current)) {
+      errors += 1
+      entries.push({
+        name: block.name,
+        status: 'no-header',
+        detail: `refusing to overwrite the annotation comment at line ${block.headerLine + 1} — the header resolved onto an annotation`,
+      })
+      continue
+    }
+    const desired = formatHeaderLine(block.headerPrefix, computedDate, computed)
+    if (current === desired) {
+      entries.push({ name: block.name, status: 'current', detail: '' })
+      continue
+    }
+    out[block.headerLine] = desired
+    written += 1
+    entries.push({
+      name: block.name,
+      status: 'written',
+      detail: `sha256 ${computed.slice(0, 12)}…${computedDate ? ` (${computedDate})` : ''}`,
+    })
+  }
+  return { entries, errors, lines: out, skips, written }
 }
 
 // Resolve the `.gitmodules` path argument, positional, after any flags, and
@@ -414,7 +693,9 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   const worktree = block.path
     ? path.join(path.dirname(gitmodulesPath), block.path)
     : undefined
-  const lsTreeOrFail = async (why: string): Promise<string> => {
+  const lsTreeOrFail = async (
+    why: string,
+  ): Promise<{ date: string | undefined; sha: string }> => {
     if (!worktree || !isMaterialized(worktree)) {
       logger.fail(
         `gen/gitmodules-hash --set: ${block.name} ${why} — its sha256 is then the git ls-tree manifest hash, which needs the submodule materialized at ${newRef.slice(0, 12)}…. Check it out first (git -C ${block.path ?? '<path>'} fetch + checkout ${newRef.slice(0, 12)}…), then re-run.`,
@@ -424,13 +705,17 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
     logger.log(
       `hashing ls-tree manifest of ${block.path}@${newRef.slice(0, 12)}…`,
     )
-    return treeManifestSha256(worktree, newRef)
+    return {
+      date: await worktreeCommitDate(worktree, newRef),
+      sha: await treeManifestSha256(worktree, newRef),
+    }
   }
   let sha: string
+  let date: string | undefined
   if (block.ownerRepo) {
     try {
       logger.log(`fetching ${block.ownerRepo}@${newRef.slice(0, 12)}…`)
-      sha = await archiveSha256(block.ownerRepo, newRef)
+      ;({ date, sha } = await archiveShaAndDate(block.ownerRepo, newRef))
     } catch (e) {
       if (!/HTTP 404/.test(errorMessage(e))) {
         throw e
@@ -438,15 +723,17 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
       logger.warn(
         `${block.name}: codeload 404; falling back to ls-tree manifest`,
       )
-      sha = await lsTreeOrFail(
+      ;({ date, sha } = await lsTreeOrFail(
         'is a GitHub remote whose codeload archive 404s (private / unreachable commit)',
-      )
+      ))
     }
   } else {
-    sha = await lsTreeOrFail('is a non-GitHub remote (no codeload archive)')
+    ;({ date, sha } = await lsTreeOrFail(
+      'is a non-GitHub remote (no codeload archive)',
+    ))
   }
   const prefix = label ? `# ${label}` : block.headerPrefix!
-  const headerText = `${prefix} sha256:${sha}`
+  const headerText = formatHeaderLine(prefix, date, sha)
 
   // Update existing lines in place; otherwise insert. Insert the ref line right
   // after the opening `[submodule …]` line, and the header comment right above
@@ -466,7 +753,7 @@ async function runSet(argv: string[], gitmodulesPath: string): Promise<void> {
   }
   await fs.writeFile(gitmodulesPath, lines.join(eol), 'utf8')
   logger.success(
-    `gen/gitmodules-hash: ${isNew ? 'provisioned' : 'set'} ${block.name} → ref ${newRef.slice(0, 12)}… sha256 ${sha.slice(0, 12)}….`,
+    `gen/gitmodules-hash: ${isNew ? 'provisioned' : 'set'} ${block.name} → ref ${newRef.slice(0, 12)}… sha256 ${sha.slice(0, 12)}…${date ? ` (${date})` : ''}.`,
   )
   process.exitCode = 0
 }
@@ -511,55 +798,72 @@ async function main(): Promise<void> {
   const blocks = parseBlocks(lines)
   const resolved = await resolveAll(blocks, path.dirname(gitmodulesPath))
 
-  let drift = 0
-  let skips = 0
-  for (const { block, computed, skipped } of resolved) {
+  for (const { block, skipped } of resolved) {
     if (skipped) {
       logger.warn(`${block.name}: skipped — ${skipped}`)
-      skips += 1
-      continue
-    }
-    if (computed === block.headerSha) {
-      continue
-    }
-    drift += 1
-    if (mode === '--check') {
-      logger.fail(
-        `${block.name}: sha256 ${block.headerSha ? 'stale' : 'missing'} — comment ${block.headerSha?.slice(0, 12) ?? '<none>'}…, archive ${computed!.slice(0, 12)}…`,
-      )
-    } else if (block.headerLine === undefined || !block.headerPrefix) {
-      logger.fail(
-        `${block.name}: no \`# <name>-<version>\` header comment to attach a sha256 to — add the comment first (gitmodules-comment-guard shape), then re-run`,
-      )
-    } else {
-      lines[block.headerLine] = `${block.headerPrefix} sha256:${computed}`
     }
   }
 
-  if (mode === '--write' && drift > 0) {
-    await fs.writeFile(gitmodulesPath, lines.join(eol), 'utf8')
+  if (mode === '--check') {
+    const { issues, skips, verified } = planCheck(resolved)
+    for (const issue of issues) {
+      logger.fail(`${issue.name}: ${issue.detail}`)
+    }
+    if (issues.length > 0) {
+      const shaCount = issues.filter(i => i.kind === 'sha').length
+      const dateCount = issues.length - shaCount
+      logger.fail(
+        `gen/gitmodules-hash: ${issues.length} drift(s) — ${shaCount} sha256, ${dateCount} date. Run \`--write\` to refresh.`,
+      )
+      process.exitCode = 1
+      return
+    }
     logger.success(
-      `gen/gitmodules-hash: wrote ${drift} sha256 pin(s)${skips ? `, ${skips} skipped` : ''}.`,
+      `gen/gitmodules-hash: all ${verified} pinned block(s) current${skips ? `, ${skips} skipped` : ''}.`,
     )
     process.exitCode = 0
     return
   }
-  if (mode === '--check' && drift > 0) {
+
+  // --write. planWrites touches only genuine headers; it never mutates an
+  // annotation, so the good pins persist even when a sibling block lacks a
+  // header to write to. Surface those with a non-zero exit so a drift can't be
+  // silently swallowed.
+  const plan = planWrites(lines, resolved)
+  for (const entry of plan.entries) {
+    if (entry.status === 'no-header') {
+      logger.fail(`${entry.name}: ${entry.detail}`)
+    }
+  }
+  if (plan.written > 0) {
+    await fs.writeFile(gitmodulesPath, plan.lines.join(eol), 'utf8')
+  }
+  if (plan.errors > 0) {
     logger.fail(
-      `gen/gitmodules-hash: ${drift} block(s) with a stale / missing sha256 — run \`--write\` to refresh.`,
+      `gen/gitmodules-hash: ${plan.errors} block(s) drifted with no header to attach a pin to — add the comment, then re-run.${plan.written ? ` (${plan.written} other pin(s) written.)` : ''}`,
     )
     process.exitCode = 1
     return
   }
+  if (plan.written > 0) {
+    logger.success(
+      `gen/gitmodules-hash: wrote ${plan.written} pin(s)${plan.skips ? `, ${plan.skips} skipped` : ''}.`,
+    )
+    process.exitCode = 0
+    return
+  }
   logger.success(
-    `gen/gitmodules-hash: all ${resolved.length - skips} pinned block(s) current${skips ? `, ${skips} skipped` : ''}.`,
+    `gen/gitmodules-hash: all ${plan.entries.length - plan.skips} pinned block(s) current${plan.skips ? `, ${plan.skips} skipped` : ''}.`,
   )
   process.exitCode = 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'set, generate, or verify the .gitmodules content-hash pin comments',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`gen/gitmodules-hash: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

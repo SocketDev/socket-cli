@@ -17,6 +17,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -70,6 +73,13 @@ export function main(): void {
   log('actionlint passed.', { quiet })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'runs actionlint over .github/workflows/*.{yml,yaml}',
+  help: `Usage: node scripts/fleet/lint-actions.mts [flags]
+
+  --quiet, --silent  suppress progress output`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

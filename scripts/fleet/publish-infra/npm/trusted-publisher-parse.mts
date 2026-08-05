@@ -10,6 +10,13 @@
  *   driver read the same page the same way.
  */
 
+import { Value } from '@sinclair/typebox/value'
+
+import {
+  OIDC_PERMISSION_ACTIONS,
+  OidcConnectionSchema,
+} from './access-context-schema.mts'
+import type { OidcConnection } from './access-context-schema.mts'
 import {
   isCloudflareChallenge,
   looksLikeHtmlBody,
@@ -52,6 +59,11 @@ export function classifyAccessPage(config: {
   if (cfg.status < 200 || cfg.status >= 400) {
     return 'error'
   }
+  // The page's own data wins over its rendered markers: `oidcConnections`
+  // carries the live configuration even when the summary markers are absent.
+  if (parseOidcConnection(body)) {
+    return 'configured'
+  }
   if (/id="github-repoInfo"/.test(body)) {
     return 'configured'
   }
@@ -87,6 +99,88 @@ export interface TrustedPublisherCurrent {
 }
 
 /**
+ * The access page's `window.__context__` payload carries the configured
+ * trusted publisher as DATA — `oidcConnections[]` with the repo, workflow,
+ * environment, and permission tokens — while the rendered markers this module
+ * also reads are a view of it. Reading the data is exact: a page whose markers
+ * are absent (a React shell, a restyled summary) still reports its real
+ * configuration, where marker-scraping alone reported "unconfigured" and a
+ * caller then planned a create over an existing row.
+ *
+ * Returns undefined when no connection is present, which is a genuinely
+ * unconfigured package. Pure — exported for tests.
+ */
+export function parseOidcConnection(
+  body: string,
+): TrustedPublisherCurrent | undefined {
+  const marker = body.indexOf('"oidcConnections"')
+  if (marker === -1) {
+    return undefined
+  }
+  const open = body.indexOf('[', marker)
+  if (open === -1) {
+    return undefined
+  }
+  // Walk to the matching bracket so a nested object never truncates the slice.
+  let depth = 0
+  let end = -1
+  for (let i = open, { length } = body; i < length; i += 1) {
+    const ch = body[i]
+    if (ch === '[') {
+      depth += 1
+    } else if (ch === ']') {
+      depth -= 1
+      if (depth === 0) {
+        end = i
+        break
+      }
+    }
+  }
+  if (end === -1) {
+    return undefined
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(body.slice(open, end + 1))
+  } catch {
+    return undefined
+  }
+  if (!Array.isArray(parsed)) {
+    return undefined
+  }
+  // Validated against the payload schema rather than duck-typed: a shape change
+  // then reads as "no connection" instead of a half-populated row that a caller
+  // would diff against and rewrite.
+  const connections = parsed.filter((c): c is OidcConnection =>
+    Value.Check(OidcConnectionSchema, c),
+  )
+  const live = connections.find(c => !c.deleted)
+  if (!live) {
+    return undefined
+  }
+  const { config } = live
+  const str = (v: unknown): string | undefined =>
+    typeof v === 'string' && v !== '' ? v : undefined
+  const permissions = live.permissions ?? []
+  const allowedActions: string[] = []
+  for (let i = 0, { length } = permissions; i < length; i += 1) {
+    const token = permissions[i]
+    const action =
+      typeof token === 'string' ? OIDC_PERMISSION_ACTIONS[token] : undefined
+    if (action && !allowedActions.includes(action)) {
+      allowedActions.push(action)
+    }
+  }
+  return {
+    allowedActions,
+    environmentName: str(config.environment_name),
+    repositoryName: str(config.repository_name),
+    repositoryOwner: str(config.repository_owner),
+    workflowFilename: str(config.workflow),
+  }
+}
+
+/**
  * Parse the configured trusted-publisher summary out of the access page:
  * repo (the `github-repoInfo` marker, `owner/name`), workflow filename,
  * environment name (marker or JSON fallback; absent/empty reads as
@@ -97,6 +191,14 @@ export interface TrustedPublisherCurrent {
 export function parseTrustedPublisherForm(
   html: string,
 ): TrustedPublisherCurrent | undefined {
+  // Data before markup: the payload is the page's own state, and it survives a
+  // restyle that would break every marker below. Anchored on the
+  // `oidcConnections` key, never on markup, chunk names, or integrity hashes —
+  // those carry content digests that rotate on every deploy.
+  const fromData = parseOidcConnection(html)
+  if (fromData) {
+    return fromData
+  }
   const repo = html.match(/id="github-repoInfo"[^>]*>([^<]+)</)
   const wf = html.match(/id="github-workflowName"[^>]*>([^<]+)</)
   if (!repo && !wf) {

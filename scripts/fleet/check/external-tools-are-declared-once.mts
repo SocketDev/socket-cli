@@ -30,11 +30,12 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -165,13 +166,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks fleet tools are declared in the fleet registry, not the per-repo one',
+  help: `Usage: node scripts/fleet/check/external-tools-are-declared-once.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    main()
-  } catch (e) {
-    logger.error(
-      `[check-external-tools-are-declared-once] failed: ${errorMessage(e)}`,
-    )
-    process.exitCode = 1
-  }
+  runMain(main, SCRIPT_META)
 }

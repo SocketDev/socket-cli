@@ -37,6 +37,8 @@ import process from 'node:process'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 // Default on-disk cache directory (repo-root-relative). Gitignored + treated as
@@ -360,6 +362,15 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'emit a token-cheap symbol skeleton for a file or directory instead of its full contents',
+  help: `Usage: node scripts/fleet/gen/repo-map.mts [flags] [<file|dir> ...]
+  --write      persist skeletons to the cache dir instead of printing
+  --changed    only process git-changed source files
+  --out <dir>  cache dir for --write (default .repo-map)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

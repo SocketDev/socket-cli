@@ -36,7 +36,10 @@ import { parsePorcelain } from './_shared/git-porcelain.mts'
 import { odaiSubjects, summarizeGroups } from './land-work/ai-summary.mts'
 import { commitMessage } from './land-work/message.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -459,13 +462,15 @@ export async function main(cwd: string = REPO_ROOT): Promise<number> {
   return failed === 0 ? 0 : 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'groups the dirty working tree into logical commits and lands them to local main',
+  help: `Usage: node scripts/fleet/land-work.mts [flags] [paths...]
+
+  --commit    land each group (default is a dry-run that prints the plan)
+  [paths...]  restrict landing to exactly these repo-relative paths`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().then(
-    code => {
-      process.exitCode = code
-    },
-    () => {
-      process.exitCode = 1
-    },
-  )
+  runMain(main, SCRIPT_META)
 }

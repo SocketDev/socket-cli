@@ -11,6 +11,9 @@
 import process from 'node:process'
 import { readFileSync } from 'node:fs'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F'
 
@@ -121,6 +124,15 @@ export function main(argv: readonly string[]): number {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'turns security finding counts into the A-F grade and HANDOFF envelope',
+  help: `Usage: node scripts/fleet/lib/security-report.mts <grade|handoff> --from <file.json>
+
+  grade --from <counts.json>     print the A-F grade for the finding counts
+  handoff --from <envelope.json> print the === HANDOFF === envelope`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

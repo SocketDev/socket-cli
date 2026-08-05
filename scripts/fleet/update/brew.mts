@@ -46,8 +46,10 @@ import {
 } from './brew-parse.mts'
 
 import type { BrewTool, BrewToolStatus } from './brew-parse.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 const logger = getDefaultLogger()
@@ -209,14 +211,17 @@ export async function main(argv: string[]): Promise<number> {
   return planMode(soakDays, root)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'enforces the Homebrew soak: plans formula ages, regenerates the Brewfile, or advances tap pins',
+  help: `Usage: node scripts/fleet/update/brew.mts --soak-days <n> [flags]
+
+  --soak-days <n>   soak window in days (required)
+  (no mode flag)    dry planner: report cleared/held/excluded/unresolved
+  --write-manifest  regenerate the repo-root Brewfile from CI brew install sites
+  --apply           advance every tap pin to the newest commit >= soak-days old`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(
-    code => {
-      process.exitCode = code
-    },
-    (e: unknown) => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

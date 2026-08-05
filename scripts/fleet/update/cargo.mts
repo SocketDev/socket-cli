@@ -24,7 +24,10 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { findOwnFiles } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -310,9 +313,18 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'drives cargo update per first-party Cargo.toml with the native min-publish-age soak gate',
+  help: `Usage: node scripts/fleet/update/cargo.mts --soak-days <n> [flags]
+
+  --soak-days <n>    soak window in days (required trust gate)
+  (no mode flag)     dry plan: print the cargo command + soak config per root
+  --apply            run cargo update per root through the soak config
+  --precise <spec>   pass a precise version spec through to cargo update
+  --workspace        pass --workspace through to cargo update`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -83,9 +83,11 @@ import {
   resolveTargetVersion,
 } from './socket-lib-cascade/target.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 import type { CliFlags } from './socket-lib-cascade/drive.mts'
 import type { RegistryReader } from './socket-lib-cascade/target.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -139,7 +141,6 @@ export async function main(
     args: cfg.args,
     options: {
       'dry-run': { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       reset: { default: false, type: 'boolean' },
       status: { default: false, type: 'boolean' },
       version: { type: 'string' },
@@ -147,10 +148,6 @@ export async function main(
     allowPositionals: false,
     strict: false,
   })
-  if (values['help']) {
-    logger.log(USAGE)
-    return
-  }
   const file = cfg.stateFile
   if (values['reset']) {
     resetState(file)
@@ -210,9 +207,12 @@ export async function main(
   await cfg.runCascade(setup.state, cli)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'drives the socket-lib downstream release cascade as resumable, receipt-producing stages',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

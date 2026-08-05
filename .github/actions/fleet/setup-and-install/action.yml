@@ -11,10 +11,9 @@ description: 'Aggregate: checkout + setup environment + install dependencies'
 #   - ./.github/actions/checkout
 #   - ./.github/actions/setup
 #     - ./.github/actions/debug
-#     - actions/setup-node@v6.4.0
 #   - ./.github/actions/cache-pnpm-store
-#     - actions/cache/restore@v6.1.0
-#   - actions/cache/save@v6.1.0 (explicit save after install; see the
+#     - scripts/fleet/cache/restore.mts (the fleet actions/cache port)
+#   - scripts/fleet/cache/save.mts (explicit save after install; see the
 #     "Save pnpm store" step below)
 #   - ./.github/actions/install
 
@@ -41,14 +40,6 @@ inputs:
     description: 'Node.js version to use'
     required: false
     default: '26.5.0'
-  scope:
-    description: 'npm registry scope for package authentication'
-    required: false
-    default: ''
-  registry-url:
-    description: 'npm registry URL'
-    required: false
-    default: 'https://registry.npmjs.org'
   socket-api-token:
     description: 'Socket API token — when provided, uses sfw-enterprise instead of sfw-free'
     required: false
@@ -98,14 +89,20 @@ runs:
         fetch-depth: ${{ inputs.checkout-fetch-depth }}
         ref: ${{ inputs.checkout-ref }}
         working-directory: ${{ inputs.working-directory }}
+        # Forwarded so a thin member's payload can hydrate immediately after
+        # THIS checkout — before "Install zizmor" and every other reader that
+        # runs ahead of the "Install dependencies" step below. Empty on a
+        # non-thin member (or one that hasn't provisioned the payload App),
+        # which the checkout action's own detect step reads as "no hydration
+        # needed" regardless.
+        payload-token-client-id: ${{ inputs.payload-token-client-id }}
+        payload-token-private-key: ${{ inputs.payload-token-private-key }}
 
     - name: Setup environment
       uses: ./.github/actions/fleet/setup
       with:
         debug: ${{ inputs.debug }}
         node-version: ${{ inputs.node-version }}
-        scope: ${{ inputs.scope }}
-        registry-url: ${{ inputs.registry-url }}
         socket-api-token: ${{ inputs.socket-api-token != '' && inputs.socket-api-token || inputs.socket-api-key }}
         working-directory: ${{ inputs.working-directory }}
 
@@ -214,19 +211,25 @@ runs:
         working-directory: ${{ inputs.working-directory }}
 
     - name: Save pnpm store
-      # Explicit save because actions/cache's post step cannot re-evaluate
-      # composite step outputs (run 30097714390: "Input required and not
+      # Explicit save because a composite has no post step to re-evaluate
+      # outputs at job end (run 30097714390: "Input required and not
       # supplied: path") — so cache-pnpm-store only restores and this step
-      # saves once the store is actually populated. `always()` keeps red
-      # runs seeding the store — a failed install still populated part of
-      # the closure, so reruns start warm. Skips on an exact-key hit (save
-      # would be a rejected no-op) and when the restore never ran (empty
-      # key, e.g. setup failed).
+      # saves once the store is actually populated, via the fleet cache save
+      # CLI (the actions/cache port; idempotent when another job already
+      # saved the key). `always()` keeps red runs seeding the store — a
+      # failed install still populated part of the closure, so reruns start
+      # warm. Skips on an exact-key hit (save would be a rejected no-op) and
+      # when the restore never ran (empty key, e.g. setup failed).
+      # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY are job env exported by
+      # cache-pnpm-store — read from env, never `${{ }}` inside the run body.
       if: always() && env.PNPM_STORE_CACHE_KEY != '' && env.PNPM_STORE_CACHE_HIT != 'true'
-      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: ${{ env.PNPM_STORE_PATH }}
-        key: ${{ env.PNPM_STORE_CACHE_KEY }}
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        node scripts/fleet/cache/save.mts \
+          --path "$PNPM_STORE_PATH" \
+          --key "$PNPM_STORE_CACHE_KEY"
 
     - name: Build oxlint plugin
       # oxlint-plugin.mjs is GENERATED (gitignored, never committed); tests that

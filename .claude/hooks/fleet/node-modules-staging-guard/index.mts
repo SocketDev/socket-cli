@@ -23,6 +23,9 @@
 // user turn. Use sparingly — legitimate force-stages of node_modules
 // are vanishingly rare.
 
+import { lstatSync } from 'node:fs'
+import path from 'node:path'
+
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 
 // Dispatcher pre-flight: a block requires a forbidden PATH arg, and every
@@ -30,11 +33,69 @@ import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 // a `node_modules` segment, or a hook/skill `package-lock.json` /
 // `pnpm-lock.yaml`. A command lacking all three can never block, so the
 // dispatcher skips importing this guard for it.
+// `git add` earns its place here even though it names no forbidden path: the
+// BROAD form (`-A` / `--all` / `.` / `:/`) stages whatever is in the tree,
+// including an untracked `node_modules` SYMLINK, and the command string
+// carries no substring the other triggers would match. That is the shape that
+// actually got a symlink committed three times in one session while this guard
+// sat unloaded.
 export const triggers: readonly string[] = [
+  'git add',
   'node_modules',
   'package-lock.json',
   'pnpm-lock.yaml',
 ]
+
+// A worktree gets `node_modules` as a SYMLINK to the primary checkout so the
+// fleet tooling resolves. Git sees a symlink as a FILE, so `node_modules/`
+// with a trailing slash in .gitignore misses it entirely and a broad add
+// stages the link. In CI the target is absent, so the dangling link throws
+// ENOENT and the install dies before anything runs.
+export function nodeModulesIsSymlink(dir: string): boolean {
+  try {
+    return lstatSync(path.join(dir, 'node_modules')).isSymbolicLink()
+  } catch {
+    return false
+  }
+}
+
+// A `cd` that a later `git add` would inherit. Breakdown for a junior reader:
+//   (?:^|&&|;|\n)   start of the command, or just after a chain separator
+//   \s*cd\s+        the `cd` itself
+//   (["']?)         an optional opening quote, captured so \1 can match it
+//   ([^\s"'&;|]+)   the directory: no whitespace, quotes, or chain separators
+//   \1              the same quote style it opened with, or nothing
+const CD_TARGET_RE = /(?:^|&&|;|\n)\s*cd\s+(["']?)([^\s"'&;|]+)\1/g
+
+/**
+ * Directories a command might stage from: every `cd` target in the command,
+ * plus the agent-provided project root when set. `process.cwd()` is
+ * deliberately NOT consulted — a hook may be invoked from any directory, so it
+ * would be a guess rather than an answer.
+ */
+export function candidateDirs(command: string): string[] {
+  const out: string[] = []
+  const projectDir = process.env['CLAUDE_PROJECT_DIR']
+  if (projectDir) {
+    out.push(projectDir)
+  }
+  for (const m of command.matchAll(CD_TARGET_RE)) {
+    const dir = m[2]
+    if (dir) {
+      out.push(dir)
+    }
+  }
+  return out
+}
+
+/**
+ * True when a segment is a BROAD `git add` — one that stages by traversal
+ * rather than by named path. `git add <explicit paths>` is not broad, because
+ * the caller has said exactly what they mean.
+ */
+export function isBroadGitAdd(rest: readonly string[]): boolean {
+  return rest.some(a => a === '--all' || a === '-A' || a === ':/' || a === '.')
+}
 
 // Tokenize the command on whitespace; split on `&&`/`||`/`;`/`|` so we
 // don't merge chained commands. The git invocation may be wrapped by
@@ -58,7 +119,7 @@ export function findGitAddForceInvocations(command: string): string[][] {
     }
     const rest = tokens.slice(j + 2)
     const hasForce = rest.some(arg => arg === '--force' || arg === '-f')
-    if (!hasForce) {
+    if (!hasForce && !isBroadGitAdd(rest)) {
       continue
     }
     out.push(rest)
@@ -109,8 +170,39 @@ export const check = bashGuard(command => {
       }
     }
   }
+  // A broad add names no path, so `blockedArgs` is empty and the force branch
+  // below never sees it. Judge it on the TREE instead: if a `node_modules`
+  // symlink is sitting in a directory this command could stage from, the add
+  // will take it.
   if (blockedArgs.length === 0) {
-    return undefined
+    const broad = forced.some(rest => isBroadGitAdd(rest))
+    if (!broad) {
+      return undefined
+    }
+    const dirs = candidateDirs(command).filter(nodeModulesIsSymlink)
+    if (dirs.length === 0) {
+      return undefined
+    }
+    return block(
+      [
+        '[node-modules-staging-guard] Blocked: broad `git add` with a node_modules SYMLINK present',
+        '',
+        '  Symlinked node_modules found in:',
+        ...dirs.map(d => `    ${d}`),
+        '',
+        '  A worktree gets this link so the fleet tooling resolves. Git sees a',
+        '  symlink as a FILE, so a `node_modules/` ignore rule (trailing slash,',
+        '  directory-only) misses it and the broad add stages the link. In CI',
+        '  the target does not exist, so the dangling link throws ENOENT and the',
+        '  install dies before a single check runs.',
+        '',
+        '  Do one of these instead:',
+        '    - stage explicit paths: git add <path> [<path>...]',
+        '    - or exclude it locally first, then re-run:',
+        '        echo node_modules >> "$(git rev-parse --git-dir)/info/exclude"',
+        '',
+      ].join('\n'),
+    )
   }
 
   return block(

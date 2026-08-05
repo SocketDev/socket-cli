@@ -189,6 +189,7 @@ export async function splitCommitsAtBoundary(
         findingCount: findings.length,
         ref: boundary.ref,
         tagCount: boundary.tagCount,
+        ...(boundary.tagPattern ? { tagPattern: boundary.tagPattern } : {}),
       })
     }
     return { commits: findings, frozen: [] }

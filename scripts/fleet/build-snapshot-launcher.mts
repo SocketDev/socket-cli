@@ -55,6 +55,8 @@ import process from 'node:process'
 
 import { DISPATCH_DIR } from './gen/hook-dispatch.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import {
   liftMirrorLockSync,
   writeThroughMirrorLock,
@@ -287,6 +289,16 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'C-compile the native per-platform launcher for the snapshot hook dispatcher and freeze its sidecars',
+  help: `Usage: node scripts/fleet/build-snapshot-launcher.mts [flags]
+
+  --print-build  show the per-platform Docker/CI build recipe instead of building
+
+Prerequisite: run build-hook-snapshot.mts first (this reads the blob it produced).`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

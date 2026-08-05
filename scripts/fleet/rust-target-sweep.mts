@@ -28,12 +28,14 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -187,9 +189,17 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'sweeps stale multi-GB cargo target/ dirs across checkouts, sparing actively rebuilt trees',
+  help: `Usage: node scripts/fleet/rust-target-sweep.mts [<dir>…] [flags]
+
+  --fleet          sweep the roster's sibling checkouts
+  --projects       sweep every Cargo.toml checkout under the projects root
+  --stale-days <N> the staleness window in days (default ${DEFAULT_STALE_DAYS})
+  --fix            delete the stale dirs (dry-run by default)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

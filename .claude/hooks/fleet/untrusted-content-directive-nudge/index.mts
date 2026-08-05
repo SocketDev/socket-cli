@@ -52,14 +52,12 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import { collectNestedStrings } from '../_shared/nested-strings.mts'
 import { readCommand } from '../_shared/payload.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
-import {
-  findEmbeddedAgentDirectives,
-  findHoneypotTokens,
-} from '../_shared/untrusted-instruction.mts'
+import { findEmbeddedAgentDirectives } from '../_shared/untrusted/directive-scan.mts'
+import { findHoneypotTokens } from '../_shared/untrusted/honeypot-token.mts'
 
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
-import type { UntrustedFinding } from '../_shared/untrusted-instruction.mts'
+import type { UntrustedFinding } from '../_shared/untrusted/directive-scan.mts'
 
 // Dispatcher pre-flight: the payload must name one of the fetching tools or
 // carry one of the reading binaries. Anything else cannot match.

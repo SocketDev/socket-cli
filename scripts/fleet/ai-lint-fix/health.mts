@@ -11,7 +11,14 @@
  *   `classifyAiFailure` turns a failed spawn's output into a named failure
  *   mode with a copy-paste remedy so the orchestrator can report loud and
  *   bail early instead of burning a 5-minute timeout per remaining file.
+ *   The no-op family (`createNoOpTracker`, `buildNoOpAbortMessage`,
+ *   `fileDigest`) covers the quietest failure of all: a spawn that exits 0
+ *   with findings to fix while a hook or permission block denies every Edit,
+ *   leaving the target byte-identical.
  */
+
+import crypto from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 import { discoverAiAgents } from '@socketsecurity/lib-stable/ai/discover'
 
@@ -21,6 +28,7 @@ import type { AiAgentName } from '@socketsecurity/lib-stable/ai/types'
 
 export type CliFailureKind =
   | 'launcher-broken'
+  | 'no-op'
   | 'silent-exit'
   | 'tool-policy'
   | 'workspace-trust'
@@ -59,6 +67,8 @@ const WORKSPACE_TRUST_RE = /do you trust|trust the files|workspace.?trust/i
 export const FAILURE_REMEDY: Readonly<Record<CliFailureKind, string>> = {
   'launcher-broken':
     'the claude launcher is installed but its native binary is not — run `claude install` on this machine, then re-run `pnpm run fix`.',
+  'no-op':
+    'the spawn completed without touching its target file — a repo hook or permission block is denying the Edit tool inside the headless session (incident shape: an inherited CODEX_COMPANION_SESSION_ID made codex-session-budget-guard treat every spawn as an over-budget companion). Read the captured spawn output below for the blocking message, fix that block, then re-run `pnpm run fix`.',
   'silent-exit':
     'the subprocess produced no output before exiting — the common cause is an interactive prompt (workspace trust) hanging until the timeout; open `claude` interactively once in this repo to record trust, then re-run `pnpm run fix`.',
   'tool-policy':
@@ -117,6 +127,117 @@ export function evaluateCliProbe(result: {
     result.stdout.split('\n')[0]?.trim() ||
     `exit ${result.exitCode}`
   return { detail, ok: false, reason: 'launcher-broken' }
+}
+
+/**
+ * Consecutive completed-but-zero-diff spawns that abort the batch. Mirrors the
+ * environmental-failure threshold: when two spawns in a row finish "cleanly"
+ * without touching their target, every remaining spawn is hitting the same
+ * wall (a hook denying Edit, a permission block) and each one burns real
+ * model spend for nothing.
+ */
+export const NO_OP_ABORT_THRESHOLD = 2
+
+/**
+ * Everything the abort block needs to name about a spawn that completed with
+ * findings but produced no diff: the exact invocation and its full output.
+ */
+export interface NoOpSpawnReceipt {
+  readonly argv: readonly string[]
+  readonly exitCode: number
+  readonly file: string
+  readonly findings: number
+  readonly stderr: string
+  readonly stdout: string
+}
+
+export interface NoOpTracker {
+  /**
+   * Register a spawn that actually changed its target file. Resets the streak.
+   */
+  recordEdit: () => void
+  /**
+   * Register a completed spawn with findings and a zero diff. Returns the
+   * current consecutive-no-op streak.
+   */
+  recordNoOp: (receipt: NoOpSpawnReceipt) => number
+  /**
+   * Receipts for the current streak, oldest first. Cleared on a real edit.
+   */
+  receipts: () => readonly NoOpSpawnReceipt[]
+}
+
+/**
+ * Track consecutive no-op spawns across a batch. A real edit resets the
+ * streak; `NO_OP_ABORT_THRESHOLD` consecutive no-ops mean the batch is
+ * structurally broken and the orchestrator aborts loud instead of completing
+ * a pass that fixed nothing.
+ */
+export function createNoOpTracker(): NoOpTracker {
+  let streakReceipts: NoOpSpawnReceipt[] = []
+  return {
+    recordEdit() {
+      streakReceipts = []
+    },
+    recordNoOp(receipt: NoOpSpawnReceipt): number {
+      streakReceipts.push(receipt)
+      return streakReceipts.length
+    },
+    receipts(): readonly NoOpSpawnReceipt[] {
+      return streakReceipts
+    },
+  }
+}
+
+function renderSpawnOutput(receipt: NoOpSpawnReceipt): string {
+  const out = receipt.stdout.trim()
+  const err = receipt.stderr.trim()
+  const lines = [
+    `    file: ${receipt.file} (${receipt.findings} findings, exit ${receipt.exitCode})`,
+    `    argv: ${receipt.argv.join(' ')}`,
+    `    stdout: ${out === '' ? '(empty)' : out.slice(0, 600)}`,
+  ]
+  if (err !== '') {
+    lines.push(`    stderr: ${err.slice(0, 600)}`)
+  }
+  return lines.join('\n')
+}
+
+/**
+ * Build the loud abort block for a no-op streak: What / Where / Saw vs.
+ * wanted / Fix, naming each captured spawn's argv and output so the operator
+ * sees the blocking message instead of a silent "completed" pass.
+ */
+export function buildNoOpAbortMessage(
+  receipts: readonly NoOpSpawnReceipt[],
+  remainingFiles: number,
+): string {
+  const shown = receipts.map(renderSpawnOutput).join('\n')
+  return [
+    `AI-fix aborting: ${receipts.length} consecutive no-op spawns.`,
+    '  What:   each spawn completed (exit 0) with findings to fix but left its target file byte-identical.',
+    `  Where:  ${receipts.map(r => r.file).join(', ')} (${remainingFiles} files unattempted).`,
+    '  Saw:    completed spawns with zero diff; wanted: an edited file or a non-zero exit.',
+    `  Fix:    ${FAILURE_REMEDY['no-op']}`,
+    '  Captured spawn output:',
+    shown,
+  ].join('\n')
+}
+
+/**
+ * Content digest of a spawn's target file, for the zero-diff check — a
+ * completed spawn whose target digest did not move is a no-op. Returns
+ * undefined when the file cannot be read (deleted counts as a change).
+ */
+export function fileDigest(filePath: string): string | undefined {
+  try {
+    return crypto
+      .createHash('sha256')
+      .update(readFileSync(filePath))
+      .digest('hex')
+  } catch {
+    return undefined
+  }
 }
 
 /**

@@ -22,11 +22,16 @@
  *   THE BOUNDARY IS RESOLVED OFFLINE, BY ANCESTRY. First a
  *   `release.releaseLine` declaration in `.config/repo/socket-wheelhouse.json`
  *   — `{ "branch": "<ref the customer line lives on>", "boundaryTag":
- *   "<tag>" }`, both optional, `boundaryTag` winning when both are present.
- *   Otherwise the newest tag that is an ANCESTOR of the ref being scanned.
- *   Never the newest tag by DATE: a repo can carry several independent release
- *   lines at once, and the newest tag can belong to one that never ships to
- *   customers.
+ *   "<tag>", "tagPattern": "<glob>" }`, all optional. Precedence:
+ *   `boundaryTag` names the answer outright and wins; `branch` picks the ref
+ *   the ancestry search walks; `tagPattern` (a `git tag --list` glob such as
+ *   `v*`) filters the candidate tags before the newest-ancestor pick, for a
+ *   repo that also pushes build-asset tags onto the scanned branch. A declared
+ *   pattern matching no ancestor tag fails loud rather than widening back to
+ *   every tag. Otherwise the newest tag that is an ANCESTOR of the ref being
+ *   scanned. Never the newest tag by DATE: a repo can carry several independent
+ *   release lines at once, and the newest tag can belong to one that never
+ *   ships to customers.
  *   IT FAILS LOUD RATHER THAN GUESS. No git, no repository, no commits, a
  *   shallow clone, a scan that resolves to 0 commits while HEAD exists, a
  *   declared release line git cannot resolve, or findings on a branch that no
@@ -41,7 +46,10 @@
  *   --verify-registry  additionally read the published `latest` (npm
  *   dist-tag, or crates.io for a Rust crate) and fail when
  *   it disagrees with the offline boundary. Opt-in: the
- *   default path never touches the network.
+ *   default path never touches the network. A member whose
+ *   roster `publishes` field names no registry channel has
+ *   no `latest` to compare, so the comparison is skipped on
+ *   one informational line and the run passes.
  */
 
 import process from 'node:process'
@@ -58,7 +66,10 @@ import {
   UnreleasedLineError,
 } from './commits-have-no-ai-attribution/commit-history.mts'
 import { readReleaseLineDeclaration } from './commits-have-no-ai-attribution/release-boundary.mts'
-import { verifyBoundaryAgainstRegistry } from './commits-have-no-ai-attribution/registry-boundary.mts'
+import {
+  isRegistryBoundarySkip,
+  verifyBoundaryAgainstRegistry,
+} from './commits-have-no-ai-attribution/registry-boundary.mts'
 import {
   formatCleanSummary,
   formatFindings,
@@ -67,6 +78,7 @@ import {
 } from './commits-have-no-ai-attribution/report.mts'
 import { scanForAiAttribution } from './commits-have-no-ai-attribution/scan.mts'
 
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { GitRunner } from './commits-have-no-ai-attribution/commit-history.mts'
 import type { ReleaseLineDeclaration } from './commits-have-no-ai-attribution/release-boundary.mts'
 import type { AttributionScan } from './commits-have-no-ai-attribution/scan.mts'
@@ -100,6 +112,12 @@ export async function reportRegistryAgreement(
   if (!verdict) {
     logger.info(
       '[commits-have-no-ai-attribution] --verify-registry: this repo publishes no npm package or crate, so there is nothing to verify.',
+    )
+    return 0
+  }
+  if (isRegistryBoundarySkip(verdict)) {
+    logger.info(
+      `[commits-have-no-ai-attribution] registry check skipped: ${verdict.reason}.`,
     )
     return 0
   }
@@ -192,6 +210,16 @@ export async function main(): Promise<number> {
   })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks commits and branches for AI-attribution trailers and agent branch prefixes',
+  help: `Usage: node scripts/fleet/check/commits-have-no-ai-attribution.mts [flags]
+
+  --all              scan every ref, ignoring the release boundary
+  --unpushed         scan only commits not yet on the default branch
+  --verify-registry  also verify the boundary against the published latest release`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

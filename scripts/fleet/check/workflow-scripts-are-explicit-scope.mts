@@ -23,10 +23,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -123,7 +126,12 @@ async function main(): Promise<void> {
   logger.success('workflow fleet-script invocations all name their scope.')
 }
 
-main().catch((e: unknown) => {
-  logger.error(`workflow-scripts-are-explicit-scope failed: ${errorMessage(e)}`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks CI workflow invocations of scope-mode fleet scripts name their scope explicitly',
+  help: 'Usage: node scripts/fleet/check/workflow-scripts-are-explicit-scope.mts',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

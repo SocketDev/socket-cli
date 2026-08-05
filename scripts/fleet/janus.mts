@@ -28,7 +28,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getSocketHomePath } from '@socketsecurity/lib-stable/paths/socket'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -140,9 +143,14 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'forwards argv to the shared SHA-verified janus binary in the wheelhouse dir',
+  help: `Usage: pnpm run janus -- <args>
+
+  All arguments are forwarded to the janus binary.`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -34,6 +34,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -278,9 +281,14 @@ async function main(): Promise<void> {
   process.exitCode = runCheck({ fix: process.argv.includes('--fix') })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies the gh CLI default repo for this checkout matches the origin remote',
+  help: `Usage: node scripts/fleet/check/gh-default-repo-matches-origin.mts [flags]
+
+  --fix  run gh repo set-default to point gh at origin`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

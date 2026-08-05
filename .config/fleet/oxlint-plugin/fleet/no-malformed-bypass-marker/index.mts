@@ -15,10 +15,19 @@
  *     silently fails to match the rule's bypass checker, so the rule still
  *     fires and the author is confused.
  *
- *   Report-only: the fix is to add the missing rule/reason/id, which only the
- *   author knows. Default `error`. This is the only enforcement surface for the
- *   marker grammar — oxlint consumes its own disable directives but never checks
- *   that they carry a reason. Bypass: `socket-lint: allow malformed-bypass-marker`.
+ *   Placement: a `socket-lint: allow` marker belongs on its OWN line directly
+ *   above the code it excuses — every enforcement surface (this plugin's
+ *   leading-comment walk, the Claude guards, the git-hook scanners) honors that
+ *   form, and it reads as a heading instead of trailing off the right edge. A
+ *   trailing marker is flagged with an autofix that hoists it; trailing stays
+ *   legal only when the line above already carries another marker (two waivers
+ *   for one line need both slots).
+ *
+ *   The grammar findings are report-only (the missing rule/reason/id is the
+ *   author's to supply); the placement finding is fixable. Default `error`.
+ *   This is the only enforcement surface for the marker grammar — oxlint
+ *   consumes its own disable directives but never checks that they carry a
+ *   reason. Bypass: `socket-lint: allow malformed-bypass-marker`.
  */
 
 import {
@@ -26,9 +35,10 @@ import {
   MAX_LEADING_COMMENT_LINES,
   SOCKET_LINT_ALLOW_PREFIX_RE,
   SOCKET_LINT_ALLOW_WELL_FORMED_RE,
+  SOCKET_LINT_MARKER_ONLY_LINE_RE,
   sourceTextOf,
 } from '../../lib/comment-markers.mts'
-import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
+import type { AstNode, RuleContext, RuleFixer } from '../../lib/rule-types.mts'
 
 // A per-site oxlint disable directive — the comment body starts with one of
 // these (anchored, so a prose mention of the directive is NOT a directive).
@@ -83,16 +93,55 @@ export function markerDistanceToCode(
   return Number.POSITIVE_INFINITY
 }
 
+/**
+ * The hoist fix for a trailing marker: one contiguous range replacement that
+ * rewrites `<indent><code> // socket-lint: allow <id>` into the marker line
+ * (same indent) followed by the code line, trailing spaces trimmed. Returns
+ * undefined when the comment's offsets are unavailable — no fix beats a
+ * corrupting one.
+ */
+function hoistTrailingMarkerFix(
+  sourceText: string,
+  comment: AstNode,
+): ((fixer: RuleFixer) => unknown) | undefined {
+  const cs = comment.range?.[0] ?? comment.start
+  const ce = comment.range?.[1] ?? comment.end
+  const startLine = comment.loc?.start?.line
+  if (
+    typeof cs !== 'number' ||
+    typeof ce !== 'number' ||
+    typeof startLine !== 'number' ||
+    startLine < 1
+  ) {
+    return undefined
+  }
+  const lineStart = sourceText.lastIndexOf('\n', cs - 1) + 1
+  const before = sourceText.slice(lineStart, cs)
+  // Only hoist when real code precedes the marker on this line — a marker
+  // already alone on its line has nothing to hoist.
+  if (before.trim() === '') {
+    return undefined
+  }
+  const indent = /^\s*/.exec(before)?.[0] ?? ''
+  const commentText = sourceText.slice(cs, ce)
+  const codePart = before.replace(/\s+$/, '')
+  return (fixer: RuleFixer) =>
+    fixer.replaceTextRange(
+      [lineStart, ce],
+      `${indent}${commentText}\n${codePart}`,
+    )
+}
+
 const rule = {
   meta: {
     type: 'problem',
     docs: {
       description:
-        'In-source bypass markers must match the canonical grammar — `oxlint-disable-next-line <rule> -- <reason>` and `socket-lint: allow <id>` — so a reviewer can see what is waived and why.',
+        'In-source bypass markers must match the canonical grammar — `oxlint-disable-next-line <rule> -- <reason>` and `socket-lint: allow <id>` — so a reviewer can see what is waived and why, and sit on their own line above the code they excuse.',
       category: 'Possible Errors',
       recommended: true,
     },
-    fixable: undefined,
+    fixable: 'code',
     messages: {
       missingDisableReason:
         'Malformed oxlint disable: `{{body}}`. Use `oxlint-disable-next-line <rule> -- <reason>` — name the rule(s) being disabled AND a `-- <reason>` so the waiver is justified.',
@@ -100,6 +149,8 @@ const rule = {
         'Malformed bypass marker: `{{body}}`. Use `socket-lint: allow <id>` — name the opt-out token; a bare `socket-lint: allow` never matches the rule’s bypass checker, so the rule still fires.',
       outOfRangeSocketLintAllow:
         'Out-of-range bypass marker: `{{body}}` sits {{distance}} lines above the code it should exempt, past the {{limit}}-line lookback, so no rule will ever see it and the error stays. Move the marker to within {{limit}} lines of the code (put a long justification ABOVE the marker line, not between it and the code).',
+      preferMarkerAbove:
+        'Trailing bypass marker: `{{body}}`. Put the marker on its own line ABOVE the code it excuses — every enforcement surface honors that placement, and it reads as a heading instead of trailing off the right edge. Trailing stays legal only when the line above already carries another marker.',
     },
     schema: [],
   },
@@ -127,6 +178,7 @@ const rule = {
           const body = raw.trim()
           let messageId: string | undefined
           let distance = ''
+          let fixFn: ((fixer: RuleFixer) => unknown) | undefined
           if (PERSITE_DISABLE_RE.test(body)) {
             if (!WELL_FORMED_DISABLE_RE.test(body)) {
               messageId = 'missingDisableReason'
@@ -147,6 +199,22 @@ const rule = {
               // keeps firing and the marker looks like it should have worked.
               messageId = 'outOfRangeSocketLintAllow'
               distance = String(markerDistanceToCode(sourceLines, c))
+            } else if (
+              hasSource &&
+              c.type === 'Line' &&
+              markerDistanceToCode(sourceLines, c) === 0
+            ) {
+              // Well-formed but TRAILING: the preferred placement is a
+              // marker-only line directly above the code — every enforcement
+              // surface honors it. Trailing stays legal only when the
+              // line above already carries another marker (the stacked case:
+              // two waivers for one line need both slots).
+              const ownIdx = (c.loc?.start?.line ?? 0) - 1
+              const above = ownIdx > 0 ? (sourceLines[ownIdx - 1] ?? '') : ''
+              if (!SOCKET_LINT_MARKER_ONLY_LINE_RE.test(above)) {
+                messageId = 'preferMarkerAbove'
+                fixFn = hoistTrailingMarkerFix(sourceText, c)
+              }
             }
           }
           if (!messageId) {
@@ -163,6 +231,7 @@ const rule = {
               distance,
               limit: String(MAX_LEADING_COMMENT_LINES),
             },
+            ...(fixFn ? { fix: fixFn } : {}),
           })
         }
       },

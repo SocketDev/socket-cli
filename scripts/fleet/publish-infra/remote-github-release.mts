@@ -21,9 +21,10 @@
 import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { runWorkflowDispatch } from './remote-dispatch.mts'
 import type { WorkflowDispatchSpec } from './remote-dispatch.mts'
 import { logger } from './shared.mts'
@@ -136,11 +137,21 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'dispatches the repo github-release.yml workflow so the release cut runs in CI',
+  help: `Usage: pnpm run remote:github:release [flags]
+
+  --release            cut the release for real (the dispatched CI run defaults to dry-run)
+  --tag <vX.Y.Z>       the already-pushed tag to release (required on manual dispatch)
+  --bundle-dry-run     exercise the wheelhouse bundle-build job instead of the orchestrator
+  --repo <owner/name>  dispatch another repo's workflow
+  --ref <branch|tag>   the ref to dispatch on
+  --dry-run            local preview of the gh command; nothing is dispatched`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the CLI.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

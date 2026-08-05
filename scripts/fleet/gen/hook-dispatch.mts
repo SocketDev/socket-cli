@@ -48,6 +48,8 @@ export {
   resolveHookBundleOut,
 } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 /**
@@ -343,11 +345,17 @@ function main(): void {
   if (existsSync(templateDispatch)) {
     // The template mirror is cascade-locked read-only in the wheelhouse just
     // like the live outputs above; lift the lock around each write.
-    const templateTable = path.join(templateDispatch, 'dispatch-table.mts')
-    writeThroughMirrorLock(
-      templateTable,
-      generateDispatchTableSource(FLEET_HOOKS_DIR),
-    )
+    // Mirror EVERY table variant (full / snapshot / excluded), not just the
+    // full one: the variants are generated + gitignored, so a clean CI checkout
+    // has none of them, and a static re-export of the excluded table (see
+    // _shared/excluded-entry.mts) then reads as an import the cascade never
+    // delivers. The live-output loop above already writes all three.
+    for (const [variant, outPath] of TABLE_OUTPUTS) {
+      writeThroughMirrorLock(
+        path.join(templateDispatch, path.basename(outPath)),
+        generateDispatchTableSource(FLEET_HOOKS_DIR, variant),
+      )
+    }
     const templateManifest = path.join(
       REPO_ROOT,
       'template/base/.claude/hooks/fleet/_shared/dispatch-manifest.json',
@@ -366,6 +374,13 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'generate the static hook dispatch table the rolldown hook bundle is built from',
+  help: `Usage: node scripts/fleet/gen/hook-dispatch.mts [flags]
+  --check  exit 2 when the on-disk table differs from freshly generated`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

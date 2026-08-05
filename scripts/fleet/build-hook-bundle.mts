@@ -32,6 +32,8 @@ import {
 import { REPO_ROOT } from './paths.mts'
 import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import {
   liftMirrorLockSync,
   writeThroughMirrorLock,
@@ -194,6 +196,14 @@ function main(): void {
   logger.log(`Built ${path.relative(REPO_ROOT, HOOK_BUNDLE_PATH)}.`)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'regenerate the hook dispatch table and rolldown-bundle the fleet hooks into _dist/fleet-pack.cjs',
+  help: `Usage: node scripts/fleet/build-hook-bundle.mts [flags]
+
+  --check  fail (exit 2) if the dispatch table is stale; does not rebuild`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

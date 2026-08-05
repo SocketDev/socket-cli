@@ -19,6 +19,9 @@ import {
   wireBridgeIntoShellRc,
 } from '../../../.claude/hooks/fleet/setup-security-tools/lib/operator-prompts.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // The two lines logged when an existing token is found via `source` (env var
 // or keychain) and the prompt is skipped.
@@ -69,6 +72,14 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'prompts for the Socket API token, persists it to the OS keychain, and wires the shell rc bridge',
+  help: `Usage: node scripts/fleet/setup/token.mts [flags]
+
+  --rotate  overwrite the persisted token even when one is already found`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

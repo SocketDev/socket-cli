@@ -27,10 +27,13 @@ import {
   fetchInPage,
   NPM_ORIGIN,
   openNpmBrowserSession,
-  pauseForChallenge,
+  runChallengeAware,
   sleep,
 } from './browser-session.mts'
-import type { NpmBrowserSessionOptions } from './browser-session.mts'
+import type {
+  ChallengeAwareStep,
+  NpmBrowserSessionOptions,
+} from './browser-session.mts'
 import {
   classifyStagedFetch,
   parseStagedPayload,
@@ -68,15 +71,17 @@ async function readStagedPayload(
 ): Promise<StagedPayload> {
   const opts = { __proto__: null, ...options } as NonNullable<typeof options>
   const url = `${NPM_ORIGIN}/settings/${encodeURIComponent(scope)}/staged-packages?format=json`
-  const started = Date.now()
-  let announced = false
   let raceAttempts = 0
-  for (;;) {
-    // eslint-disable-next-line no-await-in-loop -- serial poll: one live page, one challenge at a time.
+  // The challenge PAUSE + retry rhythm lives in runChallengeAware; this
+  // operation only classifies one fetch into done / challenge / a race retry.
+  const attempt = async (): Promise<ChallengeAwareStep<StagedPayload>> => {
     const last = await fetchInPage(page, url, 'application/json')
     const state = classifyStagedFetch({ body: last.body, status: last.status })
     if (state === 'ok') {
-      return parseStagedPayload(last.body, packageFilter)
+      return {
+        kind: 'done',
+        value: parseStagedPayload(last.body, packageFilter),
+      }
     }
     if (state === 'auth') {
       throw new Error(
@@ -88,25 +93,21 @@ async function readStagedPayload(
       // a destroyed execution context — retry it a couple of times, fast.
       if (last.status === 0 && raceAttempts < RACE_MAX_ATTEMPTS) {
         raceAttempts += 1
-        // eslint-disable-next-line no-await-in-loop -- serial short retry for a navigation race.
         await sleep(opts.raceRetryMs ?? RACE_RETRY_MS)
-        continue
+        return { kind: 'retry' }
       }
       throw new Error(
         `Staged-packages read failed (HTTP ${last.status}). Re-run and sign in.`,
       )
     }
-    // eslint-disable-next-line no-await-in-loop -- serial pause while the operator solves the challenge.
-    const pause = await pauseForChallenge(page, {
-      announced,
-      budgetMs: opts.challengeBudgetMs,
-      elapsedMs: Date.now() - started,
-      label: 'the staged-packages read',
-      pollMs: opts.challengePollMs,
-      url,
-    })
-    announced = pause.announced
+    return { kind: 'challenge' }
   }
+  return runChallengeAware(page, attempt, {
+    budgetMs: opts.challengeBudgetMs,
+    label: 'the staged-packages read',
+    pollMs: opts.challengePollMs,
+    url,
+  })
 }
 
 /**

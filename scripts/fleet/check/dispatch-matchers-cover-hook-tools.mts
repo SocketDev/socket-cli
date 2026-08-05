@@ -36,6 +36,8 @@ import { collectEligibleHooks } from '../_shared/dispatch-scan.mts'
 import { FLEET_HOOKS_DIR } from '../gen/hook-dispatch.mts'
 import { CLAUDE_SETTINGS_JSON, REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -269,6 +271,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks settings.json dispatcher matchers cover every tool the bundled hooks handle',
+  help: `Usage: node scripts/fleet/check/dispatch-matchers-cover-hook-tools.mts [flags]
+
+  --quiet  suppress the pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

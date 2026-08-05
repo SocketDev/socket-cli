@@ -46,7 +46,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { globSync } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -56,6 +55,10 @@ import {
   stringLiteral,
 } from './ai-spawns-have-paired-effort.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -338,11 +341,12 @@ async function main(): Promise<void> {
   logger.success('All Fable spawns have refusal-fallback wiring.')
 }
 
-void (async () => {
-  await main()
-})().catch((err: unknown) => {
-  logger.error(
-    `fable-spawns-have-opus-fallback: unexpected error — ${errorMessage(err)}`,
-  )
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies every claude-fable-5 spawn routes the Opus refusal fallback and sets no thinking budget',
+  help: 'Usage: node scripts/fleet/check/fable-spawns-have-opus-fallback.mts',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

@@ -17,11 +17,18 @@ import path from 'node:path'
 
 import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 
+import {
+  findRosterRepo,
+  loadRosterFromRepo,
+  normalizePublishTargets,
+  resolveRepoName,
+} from '../../../../.claude/hooks/fleet/_shared/fleet-roster.mts'
 import { loadSocketWheelhouseConfig } from '../../paths.mts'
 import { fetchPublishedVersionChecked } from '../../publish-infra/cargo/registry.mts'
 import { fetchLatestPublishedVersionChecked } from '../../publish-infra/npm/registry.mts'
 import { resolveNpmWorkspaceLayout } from '../../publish-infra/npm/workspace.mts'
 
+import type { FleetPublishTarget } from '../../../../.claude/hooks/fleet/_shared/fleet-roster.mts'
 import type { ReleaseBoundary } from './release-boundary.mts'
 
 /**
@@ -38,6 +45,27 @@ export interface RegistryTarget {
 }
 
 /**
+ * The release channels a `latest` read can actually see: an npm package
+ * (`js`) or a crates.io crate (`cargo`). A member shipping only through some
+ * other channel — signed binaries on a GitHub release, a marketplace
+ * extension, an action consumed straight from the git tree — has no published
+ * `latest` anywhere this check can read.
+ */
+export const REGISTRY_PUBLISH_TARGETS: readonly FleetPublishTarget[] = [
+  'cargo',
+  'js',
+]
+
+/**
+ * Why the registry comparison did not run. `reason` completes the sentence
+ * "registry check skipped: …".
+ */
+export interface RegistryBoundarySkip {
+  readonly reason: string
+  readonly skipped: true
+}
+
+/**
  * The verdict of comparing the offline boundary against the published
  * `latest`. `agrees: false` is the loud case the flag exists to surface.
  */
@@ -49,6 +77,24 @@ export interface RegistryBoundaryVerdict {
   readonly publishedLatest: string | undefined
   readonly reachable: boolean
   readonly registry: BoundaryRegistry
+}
+
+/**
+ * What a `--verify-registry` run has to report: either the comparison ran and
+ * produced a verdict, or the roster said there was nothing to compare.
+ */
+export type RegistryBoundaryOutcome =
+  | RegistryBoundarySkip
+  | RegistryBoundaryVerdict
+
+/**
+ * True when the outcome is a skip rather than a comparison, so the caller can
+ * print the reason and pass instead of reading a verdict that was never made.
+ */
+export function isRegistryBoundarySkip(
+  outcome: RegistryBoundaryOutcome,
+): outcome is RegistryBoundarySkip {
+  return 'skipped' in outcome
 }
 
 /**
@@ -154,14 +200,63 @@ export async function fetchPublishedLatest(
 }
 
 /**
- * Compare the offline boundary against the published `latest`. Returns
+ * Why the cascade roster says this repo has no registry release to compare
+ * against, or undefined when it has one. Each member declares its release
+ * channels in the roster's `publishes` field: `["none"]` ships nothing at all,
+ * and `["binary"]` ships signed executables on a GitHub release. Neither has an
+ * npm or crates.io `latest`, so asking whether the offline boundary matches one
+ * is a question with no answer, and failing the repo over it reports a release
+ * it never makes.
+ *
+ * A repo the roster does not list is NOT skipped. Being absent from the roster
+ * is not a declaration that nothing ships, so the config-driven comparison
+ * stands and the caller keeps its existing behaviour.
+ */
+export function resolveRegistrySkip(
+  repoRoot: string,
+): RegistryBoundarySkip | undefined {
+  const roster = loadRosterFromRepo(repoRoot)
+  if (!roster) {
+    return undefined
+  }
+  const repoName = resolveRepoName(repoRoot)
+  if (!repoName) {
+    return undefined
+  }
+  const entry = findRosterRepo(roster, repoName)
+  if (!entry) {
+    return undefined
+  }
+  const channels = normalizePublishTargets(entry.publishes)
+  if (!channels.length) {
+    return undefined
+  }
+  if (channels.some(channel => REGISTRY_PUBLISH_TARGETS.includes(channel))) {
+    return undefined
+  }
+  return {
+    reason: channels.includes('none')
+      ? `${repoName} publishes to no registry`
+      : `${repoName} publishes to ${channels.join(', ')} only, so there is no npm or crates.io latest to compare`,
+    skipped: true,
+  }
+}
+
+/**
+ * Compare the offline boundary against the published `latest`. The roster is
+ * consulted first: a member that publishes to no registry is skipped, with the
+ * reason, rather than measured against a `latest` it will never have. Returns
  * undefined when the repo publishes nothing to a registry, so the caller can
  * report "nothing to verify" rather than inventing a verdict.
  */
 export async function verifyBoundaryAgainstRegistry(
   repoRoot: string,
   boundary: ReleaseBoundary,
-): Promise<RegistryBoundaryVerdict | undefined> {
+): Promise<RegistryBoundaryOutcome | undefined> {
+  const skip = resolveRegistrySkip(repoRoot)
+  if (skip) {
+    return skip
+  }
   const target = resolveRegistryTarget(repoRoot)
   if (!target) {
     return undefined

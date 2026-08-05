@@ -35,6 +35,11 @@ import {
 } from './constants/taze-passes.mts'
 import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { catalogsForDowngradeCheck } from './lib/catalog-diff.mts'
+import {
+  applyCatalogPinFloor,
+  findSocketPinDowngrades,
+} from './lib/catalog-pin-floor.mts'
 import { applyStableAliasReconcile } from './lib/stable-alias.mts'
 import { collectPackumentFailures } from './lib/taze-output.mts'
 import { scanRepoForTelemetry } from './lib/telemetry-scan.mts'
@@ -226,6 +231,34 @@ async function main(): Promise<void> {
         const s = r.skipped[j]!
         logger.warn(
           `update: fleet-pin drift NOT mirrored to ${rel} — '${s.name}' live ${s.liveValue} vs canonical ${s.canonicalValue} (${s.reason}); reconcile via the cascade.`,
+        )
+      }
+    }
+  }
+
+  // Pass 2b — the pin floor, applied AFTER the fleet-pin lockstep above and
+  // BEFORE the alias reconcile below. The lockstep mirrors the canonical
+  // `.config/fleet/pnpm-workspace.fleet.yaml` into the live workspace, so a
+  // member whose copy predates the last Socket release names the OLDER version
+  // and the mirror pulls the live pin DOWN to match it — a repo correctly
+  // tracking 6.5.3 rolled back to 6.5.2 by a sync that believes it is
+  // restoring canonical truth. Restoring here, ahead of the reconcile, keeps
+  // the `-stable` aliases tracking the restored base rather than following it
+  // down. `socket-pins-are-never-lowered` still gates this and shares the same
+  // comparison — but a gate firing after the generator wrote the downgrade
+  // leaves an operator hand-fixing machine output, and that hand-fix is where
+  // a rollback gets committed by accident.
+  if (process.exitCode !== 1) {
+    const pair = await catalogsForDowngradeCheck()
+    if (pair) {
+      const reverted = applyCatalogPinFloor(
+        PNPM_WORKSPACE_YAML,
+        findSocketPinDowngrades(pair.committed, pair.proposed),
+      )
+      for (let i = 0, { length } = reverted; i < length; i += 1) {
+        const d = reverted[i]!
+        logger.warn(
+          `update: refused to lower '${d.name}' ${d.committed} → ${d.proposed}; restored ${d.committed}. A Socket pin never moves down — add a FLEET_CATALOG_HOLDS entry if the newer release is genuinely broken.`,
         )
       }
     }

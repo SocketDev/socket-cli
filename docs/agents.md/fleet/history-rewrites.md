@@ -175,17 +175,38 @@ origin, no force needed.
 ## What consolidation preserves
 
 The local `HEAD` at command start is the content source. The base ref chooses
-the parent lineage; it never replaces the local tree. Before changing `HEAD`,
-the script records the original tip under
-`refs/fleet/recovery/consolidate/<full-sha>`. This local-only ref keeps every
-original commit reachable even after reflog expiry. Recover or inspect it with
-`git log refs/fleet/recovery/consolidate/<full-sha>`.
+the parent lineage; it never replaces the local tree. Before the first
+destructive command, the script parks the original tip on the fleet's canonical
+backup branch — `refs/heads/backup-YYYYMMDD-HHMMSS`, the same
+`formatBackupBranch` name the squash flow uses — and pushes it to `origin`. That
+one name is what `backup-branches.mts prune` retires,
+`backup-branches.mts normalize` renames, and `bump.mts` scans at release time
+for parked, un-landed work, so a consolidation's safety net is visible to every
+tool that handles backups. Recover it with
+`git fetch origin backup-<ts> && git reset --hard FETCH_HEAD`.
+
+Three outcomes:
+
+- **Pushed to origin** — the normal case. The original history is recoverable
+  from any clone.
+- **Push failed** (auth, branch protection, network) — the consolidate ABORTS.
+  A rewrite with no recoverable backup is the outcome the mechanism exists to
+  prevent, so a failed push is a hard error, never a warning.
+- **No `origin` remote** — the backup is written as a LOCAL branch under the
+  same canonical name, and the run says so on its own line. The name stays
+  canonical, so the prune and normalize scripts still see a backup that never
+  left the machine.
+
+The backup is never torn down by the script. When the rewrite fails its own
+integrity check the script hard-restores the original tip AND leaves the backup
+standing; `backup-branches.mts prune` is what retires a spent one.
 
 Consolidation preserves the exact Git tree object, so every tracked path and
 byte stays the same. It intentionally replaces commit identities. The final
-message reports the original tip, recovery ref, old and new commit counts, and
-the push mode computed from ancestry: a normal push when `origin/<default>` is
-an ancestor of the new tip, otherwise a separately authorized lease force-push.
+message reports the original tip, the backup branch and its recovery command,
+old and new commit counts, and the push mode computed from ancestry: a normal
+push when `origin/<default>` is an ancestor of the new tip, otherwise a
+separately authorized lease force-push.
 
 ## Subagents: a worktree is not durable storage
 

@@ -19,6 +19,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { FLEET_ENV } from '../../../.claude/hooks/fleet/_shared/fleet-env.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -69,9 +72,12 @@ async function main(): Promise<void> {
 
 // Entrypoint-guarded so the test imports findUnsetFleetEnv without triggering
 // the process.env read (the check runs as a standalone `node` entrypoint).
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the fleet no-phone-home env knobs are set in the current environment',
+  help: 'Usage: node scripts/fleet/check/telemetry-env-is-disabled.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((error: unknown) => {
-    logger.fail('telemetry-env-is-disabled check failed:', error)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -30,6 +30,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -468,6 +471,17 @@ export function runCheck(repoRoot: string, fix = false): number {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "checks every publishable package's files: allowlist ships exactly the intended paths",
+  help: `Usage: node scripts/fleet/check/package-files-are-allowlisted.mts [flags]
+
+  --fix  write the derived files: allowlist into each offending package.json`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exit(runCheck(REPO_ROOT, process.argv.includes('--fix')))
+  runMain(
+    () => runCheck(REPO_ROOT, process.argv.includes('--fix')),
+    SCRIPT_META,
+  )
 }

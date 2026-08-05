@@ -36,6 +36,9 @@ import { coerceVersion } from '@socketsecurity/lib-stable/versions/parse'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -295,6 +298,15 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every fleet-managed tool resolved on PATH meets its pinned version floor',
+  help: `Usage: node scripts/fleet/check/path-tools-are-at-pinned-version.mts [flags]
+
+  --fix    brew-upgrade a below-floor Homebrew-provided tool, then re-check
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -39,6 +39,9 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -257,7 +260,8 @@ export function scanFile(filePath: string): PortabilityHit[] {
       file: rel,
       line,
       rule: 'cmd-shim',
-      snippet: 'pnpm/npm/npx/yarn spawn without a `shell:` option', // socket-lint: allow npx
+      // socket-lint: allow npx
+      snippet: 'pnpm/npm/npx/yarn spawn without a `shell:` option',
     })
   }
   for (const line of scanUrlPathname(raw)) {
@@ -341,7 +345,7 @@ export function scanRepo(repoRoot: string): PortabilityHit[] {
 // ever LOWER this number as sites are fixed; a count above it means NEW
 // windows-portability debt and fails the gate. (Count-ratchet chosen over a
 // per-site baseline for weight; the doc's classes make each fix mechanical.)
-export const BASELINE_FINDINGS = 54
+export const BASELINE_FINDINGS = 53
 
 async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
@@ -385,6 +389,12 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks source files for known windows-portability hazards',
+  help: `Usage: node scripts/fleet/check/source-is-windows-portable.mts [flags]
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

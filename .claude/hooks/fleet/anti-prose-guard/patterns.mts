@@ -55,6 +55,53 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     why: 'Em-dash chains read AI-generated. Break into separate sentences or use commas / parentheses.',
   },
   {
+    label: 'value inflation',
+    // Editorializing that one thing is worth more than another, or that an
+    // effort repaid itself. It grades the work instead of reporting it, and the
+    // comparison is always the writer's opinion dressed as a finding. State
+    // what was found and let the reader weigh it.
+    regex:
+      /\b(?:earned its keep|earns its keep|if nothing else|more valuable than|paid for itself|pays for itself|the real (?:prize|value|win)|worth more than)\b/i,
+    why: 'Value inflation grades the work instead of reporting it. Drop the comparison and state the finding plainly.',
+  },
+  {
+    label: 'truth intensifier',
+    // Asserting that THIS claim is the real one implies the neighbours are
+    // approximate. Measured over 3 months of transcripts: `genuinely` 36,970
+    // hits, `the actual <noun>` 46,359. Same defect as claiming one's own
+    // truthfulness, already banned above: a finding stands on its evidence or
+    // it does not. `the actual` is scoped to the crutch collocations, so a
+    // real measurement ("the actual byte count was 4,096") still passes.
+    regex:
+      /\b(?:genuinely|let me be clear|precisely the|the actual (?:behavior|behaviour|cause|defect|failure|issue|problem|reason|shape|state)|to be clear)\b/i,
+    why: 'Truth intensifiers claim reliability instead of showing it. Delete the word and let the evidence carry the sentence.',
+  },
+  {
+    label: 'significance marker',
+    // Ranking the content for the reader instead of reporting it. If a finding
+    // needs `crucially` to land, the finding is underwritten.
+    regex:
+      /\b(?:crucially|importantly|notably|the key insight|the whole point is|what matters here)\b/i,
+    why: 'Significance markers rank the content for the reader. State the finding; its weight should be self-evident.',
+  },
+  {
+    label: 'recycled jargon',
+    // House metaphors reached for in place of describing the mechanism. Each
+    // names a category instead of the specific thing that breaks. Measured:
+    // `load-bearing` 11,603 hits, `by construction` 3,509.
+    regex:
+      /\b(?:by construction|load-bearing|the (?:exact|failure|same) shape|the tell)\b/i,
+    why: 'Recycled jargon names a category instead of the mechanism. Say what specifically breaks, and how.',
+  },
+  {
+    label: 'contrast scaffolding',
+    // The banned "not X, it's Y" shape in another spelling: build a foil, then
+    // knock it down. Measured: `the real <noun>` ~12,600 hits. The value/win/
+    // prize spellings belong to value inflation above.
+    regex: /\bthe real (?:answer|issue|problem|question)\b/i,
+    why: 'Contrast scaffolding erects a foil to knock down. State the positive finding directly.',
+  },
+  {
     label: 'throat-clearing opener',
     regex:
       /^\s*(?:Here's the thing|I should note|It's worth noting|Let me)\b/im,

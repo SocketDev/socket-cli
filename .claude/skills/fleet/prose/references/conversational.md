@@ -80,6 +80,17 @@ Do not impose Summary / Changes / Testing headers on a PR a sentence describes. 
 
 These render on every GitHub prose surface (PR/issue bodies, comments, reviews, discussions, release notes). Reach for them when a body has a decision plus supporting evidence, alternatives, migration notes, or a multi-item plan. Keep a one-line or 1-3 sentence reply flat; do not hide a simple answer in a fold.
 
+### The big-PR body shape
+
+A body that has earned multiple folds follows one shape, settled on 2026-08-04 across several service-extraction and endpoint PRs:
+
+1. **Intro prose** — the problem, what this PR does about it, and what deliberately does not change for anyone. Full sentences a junior developer can follow; no Summary/Changes/Testing scaffolding headers.
+2. **A bolded status paragraph, not an "Actions needed" list.** One paragraph that leads with the ship reality (`**Not live yet.**`, `**Ships provisional.**`, `**Nothing changes until a workflow opts in.**`), carries what other people must do in prose, and points at the first fold for the detail. Never write a bullet like "Review — nothing is blocked on me"; the reviewer knows what reviewing is.
+3. **Folds grouped under `##` category headings, deployment first.** The reader deciding "can this merge, and what happens when it deploys" outranks the reader studying the design. Order: *Deployment & rollout* (or *Ship state*, *Release & rollout*) first, then *Design & behavior*, then *Branch history* when rebases need explaining, then *Validation* / *Testing & review* last.
+4. **Bot-owned tails stay untouched.** A `CURSOR_SUMMARY` block or similar at the bottom belongs to its bot; restructuring around it, never through it.
+
+The fold spacing, specific `<summary>` labels, and the one-alert rule below all still apply inside this shape.
+
 ### Collapsed sections
 
 Long supporting material folds under `<details>`; the verdict stays outside the fold. A reader sees the point first and opens the evidence only when they want it. The blank line after `</summary>` is required or the markdown inside will not render.

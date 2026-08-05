@@ -29,8 +29,8 @@ description: 'Restore the pnpm content-addressable store to skip cold downloads 
 #   stayed cold. Composite step outputs are invisible to post steps, but
 #   $GITHUB_ENV persists for the whole job, so this action exports
 #   PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY / PNPM_STORE_CACHE_HIT and
-#   `setup-and-install` runs an explicit actions/cache/save AFTER install —
-#   the point where the store is actually populated.
+#   `setup-and-install` runs the fleet save CLI (scripts/fleet/cache/save.mts)
+#   AFTER install — the point where the store is actually populated.
 #
 # CACHE INVALIDATION:
 #   - Key includes `hashFiles('**/pnpm-lock.yaml')` — a lockfile change (new
@@ -99,13 +99,31 @@ runs:
 
     - name: Restore pnpm store
       id: cache
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: ${{ env.PNPM_STORE_PATH }}
-        key: ${{ env.PNPM_STORE_CACHE_KEY }}
-        restore-keys: |
-          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-node${{ steps.store.outputs.major }}-
-          ${{ inputs.key-prefix }}-${{ inputs.cache-version }}-${{ runner.os }}-
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        KEY_PREFIX: ${{ inputs.key-prefix }}
+        CACHE_VERSION: ${{ inputs.cache-version }}
+        NODE_MAJOR: ${{ steps.store.outputs.major }}
+      run: |
+        set -euo pipefail
+        # The fleet cache restore CLI — the native port of the
+        # actions/cache/restore step over the @actions/cache package. It
+        # writes the same cache-hit / cache-matched-key step outputs the
+        # upstream action published, so the export step below and this
+        # action's cache-hit output read them unchanged. This step runs
+        # BEFORE pnpm install by design, so the CLI provisions its own
+        # @actions/cache client into RUNNER_TEMP when node_modules cannot
+        # resolve it yet (catalog-pinned version, see cache-cli.mts).
+        # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY are job env, exported by
+        # the resolve step above; the restore-key prefixes are composed
+        # from env — never a GitHub expression inside the run body (zizmor
+        # template-injection shape).
+        node scripts/fleet/cache/restore.mts \
+          --path "$PNPM_STORE_PATH" \
+          --key "$PNPM_STORE_CACHE_KEY" \
+          --restore-key "${KEY_PREFIX}-${CACHE_VERSION}-${RUNNER_OS}-node${NODE_MAJOR}-" \
+          --restore-key "${KEY_PREFIX}-${CACHE_VERSION}-${RUNNER_OS}-"
 
     - name: Export cache-hit for the save step
       shell: bash

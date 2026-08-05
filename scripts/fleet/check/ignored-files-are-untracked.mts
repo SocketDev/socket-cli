@@ -39,11 +39,13 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import {
   executeUntrackActions,
   formatUntrackAction,
   planUntrackActions,
 } from '../_shared/untrack-offenders.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { UntrackAction } from '../_shared/untrack-offenders.mts'
 
 const logger = getDefaultLogger()
@@ -163,11 +165,19 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies no git-tracked file is also matched by the repo .gitignore',
+  help: `Usage: node scripts/fleet/check/ignored-files-are-untracked.mts [flags]
+
+  --fix        apply a disposition (requires --untrack or --reinclude)
+  --untrack    with --fix, drop each offender from the index
+  --reinclude  with --fix, explain the manual ! re-include path
+  --quiet      suppress the success message`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`ignored-files-are-untracked failed: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

@@ -26,6 +26,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { SECRET_VALUE_PATTERNS } from '../../../.claude/hooks/fleet/_shared/token-patterns.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 
 const logger = getDefaultLogger()
@@ -135,6 +137,13 @@ function main(): void {
   })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'splice the credential-shape list into the gh-aw agent workflow prompts',
+  help: `Usage: node scripts/fleet/gen/aw-token-shapes.mts [flags]
+  --check  exit 1 when an embedded token-shape block is stale instead of writing`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -15,6 +15,8 @@
 // Informational; never blocks.
 
 import { AI_SLOP_PATTERNS } from '../_shared/ai-slop-patterns.mts'
+import { ensureAgentMemoryEntry } from '../_shared/agent-memory.mts'
+import type { AgentMemoryEntry } from '../_shared/agent-memory.mts'
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
@@ -239,6 +241,20 @@ const GROUPS: readonly ReminderGroup[] = [
   SELF_NARRATION,
 ]
 
+const CHAT_VOICE_MEMORY: AgentMemoryEntry = {
+  body: `Chat replies to the owner follow the same voice rules the outbound guards enforce on PR/issue/Linear text. Banned outright: honest / honestly / honesty ("One honesty note", "to be honest", "in all honesty"), frankly, "paper over", and hedge-label framings that name the act instead of stating the fact.
+
+**Why:** claiming honesty implies the rest is not; a hedge label buries the fact it introduces. The reply-prose-nudge Stop hook enforces this, but a nudge corrects one reply — this memory corrects the prior.
+
+**How to apply:** state the limitation plainly ("I could not verify X because Y") with no framing label. Related: [[feedback-jdalton-voice]].`,
+  description:
+    'Chat replies follow the same voice rules as outbound prose — no honesty framing, no AI-tell hedge labels',
+  indexHook:
+    'honest/honestly/honesty/frankly and hedge-label framings are banned in chat replies too, not just PR/issue text',
+  name: 'feedback-chat-reply-voice',
+  type: 'feedback',
+}
+
 export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
   // Turn-scoped read: a streamed reply spans MULTIPLE transcript entries;
   // the single-entry reader let mid-message prose (a banned honesty word in
@@ -265,12 +281,14 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
   if (blocks.length === 0) {
     return undefined
   }
+  ensureAgentMemoryEntry(CHAT_VOICE_MEMORY)
   return notify(blocks.join('\n'))
 }
 
 export const hook = defineHook({
   check,
   event: 'Stop',
+  global: true,
   type: 'nudge',
 })
 void runHook(hook, import.meta.url)

@@ -41,6 +41,8 @@ import {
   PARENTHETICAL_LEADIN_RE,
 } from '../../../.config/fleet/oxlint-plugin/lib/prose-parenthetical.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -238,6 +240,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that markdown prose keeps explanatory clauses out of parentheses',
+  help: `Usage: node scripts/fleet/check/prose-parenthetical-asides-are-absent.mts [paths...] [flags]
+  [paths...]   scope the scan to these files (default: the tracked markdown tree)
+  --quiet      suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

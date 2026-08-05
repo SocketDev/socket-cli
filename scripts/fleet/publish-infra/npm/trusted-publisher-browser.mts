@@ -17,30 +17,14 @@
  *   Fail-soft per package: one failure never aborts the batch; a summary
  *   prints at the end. The pure planners live in
  *   `trusted-publisher-parse.mts` + `trusted-publisher-plan.mts`; the
- *   page-level form I/O in `trusted-publisher-page.mts`.
- *   THE SIGN-IN AND CHALLENGE CONTRACT, taken from socket-registry's proven
- *   configurator (`scripts/npm/configure-staged-publishing-browser.mts`,
- *   which mass-configured npm package settings across that registry):
- *
- *   - NO login is ever scripted. The operator signs in ONCE in the headed window;
- *     the profile persists, so it is a per-machine step. No password, OTP, or
- *     cookie passes through this process.
- *   - The ONLY auth signal is npm's own `/-/whoami`, and the only auth failure
- *     reported is "signed out".
- *   - The launch shape is exactly that module's:
- *     `launchPersistentContext(profileDir, { channel, chromiumSandbox: true,
- *     headless, ignoreDefaultArgs: ['--enable-automation',
- *     '--use-mock-keychain'] })` — no args array, sandbox ON (playwright
- *     defaults it off and injects --no-sandbox, which current Chrome refuses
- *     outright), and exactly those two ignored defaults (navigator.webdriver
- *     bot signal off; a cookie store bare Chrome can share).
- *   - A human-verification challenge PAUSES the run for the operator with a
- *     visible elapsed/remaining countdown and is NEVER retried blindly: a retry
- *     ladder against a bot challenge earns a rate limit, which then masquerades
- *     as a broken session. Nothing is written while a challenge is outstanding.
- *     Usage: node scripts/fleet/publish-infra/npm/trusted-publisher-browser.mts
- *     read|apply [<pkg>…] [--socket-registry] [--drive] [--repo <owner/name>]
- *     [--profile-dir <dir>]
+ *   page-level form I/O in `trusted-publisher-page.mts`. The sign-in and
+ *   challenge contract — reuse the seeded session, PAUSE a human-verification
+ *   challenge for the operator instead of blind-retrying — is owned by
+ *   `browser-session.mts` (`runChallengeAware`); see
+ *   `docs/agents.md/fleet/npm-anti-bot-rhythm.md`.
+ *   Usage: node scripts/fleet/publish-infra/npm/trusted-publisher-browser.mts
+ *   read|apply [<pkg>…] [--socket-registry] [--drive] [--repo <owner/name>]
+ *   [--profile-dir <dir>]
  */
 
 import { promises as fs } from 'node:fs'
@@ -52,6 +36,8 @@ import type { Page } from 'playwright-core'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from '../../_shared/is-main-module.mts'
+import { runMain } from '../../_shared/run-main.mts'
+import type { ScriptMeta } from '../../_shared/run-main.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
 import { openNpmBrowserSession } from './browser-session.mts'
 import type {
@@ -59,14 +45,15 @@ import type {
   NpmBrowserSessionOptions,
 } from './browser-session.mts'
 import {
-  awaitVerifiedSave,
-  driveFormEdits,
+  accessUrl,
+  driveVerifiedSave,
   readTrustedPublisher,
 } from './trusted-publisher-page.mts'
 import {
   desiredTrustedPublisher,
   diffTrustedPublisher,
   formatApplySummary,
+  formatPartialSaveFailure,
   parseSocketRegistryManifest,
   renderPlannedEdits,
   renderReadTable,
@@ -91,24 +78,101 @@ export async function openTrustedPublisherSession(
 }
 
 /**
+ * Extract a repo's declared napi platform tokens from its parsed
+ * `socket-wheelhouse.json` value: `napi.platforms` as a non-empty array of
+ * strings, or undefined when the block is absent or malformed. These are the
+ * raw napi-rs target tokens (`darwin-arm64`, `linux-x64-gnu`) that tail a
+ * per-platform package name. Pure — exported for tests.
+ */
+export function napiPlatformsFromConfig(
+  configValue: unknown,
+): readonly string[] | undefined {
+  const napi = (
+    configValue as { napi?: unknown | undefined } | null | undefined
+  )?.napi as { platforms?: unknown | undefined } | undefined
+  const platforms = napi?.platforms
+  if (!Array.isArray(platforms)) {
+    return undefined
+  }
+  const tokens: string[] = []
+  for (let i = 0, { length } = platforms; i < length; i += 1) {
+    const token = platforms[i]
+    if (typeof token === 'string' && token) {
+      tokens.push(token)
+    }
+  }
+  return tokens.length ? tokens : undefined
+}
+
+/**
+ * Read a sibling checkout's declared napi platform tokens: the target repo's
+ * `.config/repo/socket-wheelhouse.json` `napi.platforms`, resolved at
+ * `../<repoName>` next to this checkout — the same sibling layout the
+ * `--socket-registry` expansion uses. Fail-soft: an unreachable checkout, an
+ * absent config, or a malformed body yields undefined, so a package whose repo
+ * cannot be read keeps the js workflow. `readFile` is injectable so tests drive
+ * it with no disk.
+ */
+export async function readSiblingNapiPlatforms(
+  repoName: string,
+  options?:
+    | { readFile?: ((file: string) => Promise<string>) | undefined }
+    | undefined,
+): Promise<readonly string[] | undefined> {
+  const { readFile = (file: string) => fs.readFile(file, 'utf8') } = {
+    __proto__: null,
+    ...options,
+  } as NonNullable<typeof options>
+  const configPath = path.resolve(
+    rootPath,
+    '..',
+    repoName,
+    '.config',
+    'repo',
+    'socket-wheelhouse.json',
+  )
+  let body: string
+  try {
+    body = await readFile(configPath)
+  } catch {
+    return undefined
+  }
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(body)
+  } catch {
+    return undefined
+  }
+  return napiPlatformsFromConfig(parsed)
+}
+
+/**
  * Plan (and with `drive`, perform + verify) one package's trusted-publisher
  * update. Never throws — every outcome is an ApplyResult so the batch keeps
- * moving.
+ * moving. `resolveNapiPlatforms` (when supplied) reads the derived repo's
+ * `napi.platforms` so a napi platform package targets the napi workflow; its
+ * absence keeps the js workflow.
  */
 export async function applyOne(
   page: Page,
   pkg: string,
-  config: { drive: boolean; repoOverride?: string | undefined },
+  config: {
+    drive: boolean
+    repoOverride?: string | undefined
+    resolveNapiPlatforms?:
+      | ((repoName: string) => Promise<readonly string[] | undefined>)
+      | undefined
+  },
 ): Promise<ApplyResult> {
   const cfg = { __proto__: null, ...config } as typeof config
   try {
     const { current, state } = await readTrustedPublisher(page, pkg)
-    const desired = desiredTrustedPublisher({
+    const provisional = desiredTrustedPublisher({
       current,
       pkg,
       repoOverride: cfg.repoOverride,
     })
-    if (!desired) {
+    if (!provisional) {
       return {
         detail:
           `${state} and no repo derivable — pass --repo <owner/name> ` +
@@ -117,6 +181,17 @@ export async function applyOne(
         status: 'skipped',
       }
     }
+    const napiPlatforms = cfg.resolveNapiPlatforms
+      ? await cfg.resolveNapiPlatforms(provisional.repositoryName)
+      : undefined
+    const desired = napiPlatforms?.length
+      ? (desiredTrustedPublisher({
+          current,
+          napiPlatforms,
+          pkg,
+          repoOverride: cfg.repoOverride,
+        }) ?? provisional)
+      : provisional
     const edits = diffTrustedPublisher({ current, desired })
     if (edits.length === 0) {
       logger.substep(`${pkg}: conforms — no edits`)
@@ -126,11 +201,13 @@ export async function applyOne(
       logger.log(`[dry-run] ${renderPlannedEdits(pkg, edits)}`)
       return { pkg, status: 'planned' }
     }
-    await driveFormEdits(page, pkg, desired)
-    const verify = await awaitVerifiedSave(page, pkg, desired)
-    if (!verify.ok) {
+    const saved = await driveVerifiedSave(page, pkg, desired)
+    if (!saved.ok) {
       return {
-        detail: `saved state did not verify: ${verify.mismatches.join('; ')}`,
+        detail: formatPartialSaveFailure({
+          mismatches: saved.mismatches,
+          url: accessUrl(pkg),
+        }),
         pkg,
         status: 'failed',
       }
@@ -312,12 +389,25 @@ export async function main(): Promise<void> {
       `npm trusted publishing — ${packages.length} package(s)` +
         `${args.drive ? ' [drive]' : ' [dry-run]'}`,
     )
+    const napiPlatformsCache = new Map<
+      string,
+      Promise<readonly string[] | undefined>
+    >()
+    const resolveNapiPlatforms = (repoName: string) => {
+      let pending = napiPlatformsCache.get(repoName)
+      if (!pending) {
+        pending = readSiblingNapiPlatforms(repoName)
+        napiPlatformsCache.set(repoName, pending)
+      }
+      return pending
+    }
     const results: ApplyResult[] = []
     for (let i = 0, { length } = packages; i < length; i += 1) {
       // eslint-disable-next-line no-await-in-loop -- serial per-package applies share one page session.
       const result = await applyOne(session.page, packages[i]!, {
         drive: args.drive,
         repoOverride: args.repo,
+        resolveNapiPlatforms,
       })
       if (result.status === 'failed' || result.status === 'skipped') {
         logger.error(`${result.pkg}: ${result.status} — ${result.detail}`)
@@ -334,11 +424,19 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'reads and mass-applies the canonical npm trusted-publisher config by driving the access page in a signed-in browser',
+  help: `${USAGE}
+
+  --socket-registry   expand the worklist to every published @socketregistry package
+  --drive             fill and save the form (apply is dry-run by default)
+  --repo <owner/name> override the repository the config binds to
+  --profile-dir <dir> use another browser profile directory`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not launch a browser.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

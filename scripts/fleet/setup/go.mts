@@ -10,20 +10,17 @@
  */
 
 import path from 'node:path'
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findGoModFiles } from '../update/go.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
-
-const mainLogger = getDefaultLogger()
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 /**
  * The skip reason for `setup:go`, or undefined when the step should run. Pure
@@ -84,16 +81,12 @@ export async function setupGo(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'downloads Go module dependencies through the committed go.mod/go.sum lock',
+  help: 'Usage: pnpm run setup:go',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupGo().then(
-    result => {
-      if (!result.ok) {
-        process.exitCode = 1
-      }
-    },
-    (e: unknown) => {
-      mainLogger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupGo()).ok ? 0 : 1), SCRIPT_META)
 }

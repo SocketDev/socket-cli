@@ -83,6 +83,9 @@ import {
 } from './publish-infra/release.mts'
 import { logger, rootPath } from './publish-infra/shared.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 export {
   ensureTagAndRelease,
@@ -131,7 +134,6 @@ async function main(): Promise<void> {
       'checkout-ref': { type: 'string' },
       direct: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       'no-reconcile': { default: false, type: 'boolean' },
       'no-release': { default: false, type: 'boolean' },
       'no-scan': { default: false, type: 'boolean' },
@@ -144,86 +146,6 @@ async function main(): Promise<void> {
     allowPositionals: false,
     strict: false,
   })
-
-  if (values['help']) {
-    logger.log(
-      'Usage: pnpm publish [--staged | --approve | --direct] [--dry-run] [--otp <code>] [--yes]',
-    )
-    logger.log('  (no mode → --staged, the default publish path)')
-    logger.log('')
-    logger.log(
-      '  --staged             CI: upload to npm staging via OIDC (recommended)',
-    )
-    logger.log('  --approve            local: multi-select + 2FA promote')
-    logger.log(
-      '  --direct             classic `pnpm publish` — public in one step,',
-    )
-    logger.log(
-      '                       no stage/approve. Escape hatch when the stage',
-    )
-    logger.log(
-      '                       endpoint is unreachable (errors if staging is',
-    )
-    logger.log('                       available — use --staged instead).')
-    logger.log('  --dry-run            simulate; no registry writes')
-    logger.log(
-      '  --otp <code>         pre-supply 2FA (skips OTP prompt on --approve)',
-    )
-    logger.log(
-      '  --yes                approve all staged non-interactively; with no',
-    )
-    logger.log(
-      '                       --otp, 2FA runs in the browser (web-OTP)',
-    )
-    logger.log(
-      '  --no-scan            skip the pre-approve Socket full-scan gate',
-    )
-    logger.log(
-      '  --no-release         with --approve: skip the tag + GitHub release',
-    )
-    logger.log(
-      '                       (the publish-pipeline release stage owns them)',
-    )
-    logger.log(
-      '  --no-reconcile       local: skip the once-published reconcile (rebase',
-    )
-    logger.log(
-      '                       our commits onto the newly-published base + ff-pull',
-    )
-    logger.log(
-      '                       origin main). Runs by DEFAULT after --approve',
-    )
-    logger.log(
-      '                       (fails loud on conflict); CI --staged never does.',
-    )
-    logger.log('  --tag <tag>          dist-tag for --staged (default: latest)')
-    logger.log(
-      '  --bump               CI: bump version + CHANGELOG, commit via the',
-    )
-    logger.log(
-      '                       release App (signed), then run the chosen mode',
-    )
-    logger.log(
-      '  --release-as <lvl>   force bump level major|minor|patch (with --bump)',
-    )
-    logger.log(
-      '  --backfill <ver>     CI: stage a never-published GAP version of prior',
-    )
-    logger.log(
-      '                       content. Bypasses the bump/changelog gate behind',
-    )
-    logger.log(
-      '                       hard guards; requires --checkout-ref + a',
-    )
-    logger.log(
-      '                       non-latest --tag. See publish-infra/npm/backfill.mts',
-    )
-    logger.log(
-      '  --checkout-ref <ref> the content ref a --backfill republishes',
-    )
-    process.exitCode = 0
-    return
-  }
 
   const modes = [values['staged'], values['approve'], values['direct']].filter(
     Boolean,
@@ -347,9 +269,41 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'publishes this package to npm via staged upload, local approve, or direct modes',
+  help: `Usage: pnpm publish [--staged | --approve | --direct] [--dry-run] [--otp <code>] [--yes]
+
+  (no mode → --staged, the default publish path)
+
+  --staged             CI: upload to npm staging via OIDC (recommended)
+  --approve            local: multi-select + 2FA promote
+  --direct             classic \`pnpm publish\` — public in one step,
+                       no stage/approve. Escape hatch when the stage
+                       endpoint is unreachable (errors if staging is
+                       available — use --staged instead).
+  --dry-run            simulate; no registry writes
+  --otp <code>         pre-supply 2FA (skips OTP prompt on --approve)
+  --yes                approve all staged non-interactively; with no
+                       --otp, 2FA runs in the browser (web-OTP)
+  --no-scan            skip the pre-approve Socket full-scan gate
+  --no-release         with --approve: skip the tag + GitHub release
+                       (the publish-pipeline release stage owns them)
+  --no-reconcile       local: skip the once-published reconcile (rebase
+                       our commits onto the newly-published base + ff-pull
+                       origin main). Runs by DEFAULT after --approve
+                       (fails loud on conflict); CI --staged never does.
+  --tag <tag>          dist-tag for --staged (default: latest)
+  --bump               CI: bump version + CHANGELOG, commit via the
+                       release App (signed), then run the chosen mode
+  --release-as <lvl>   force bump level major|minor|patch (with --bump)
+  --backfill <ver>     CI: stage a never-published GAP version of prior
+                       content. Bypasses the bump/changelog gate behind
+                       hard guards; requires --checkout-ref + a
+                       non-latest --tag. See publish-infra/npm/backfill.mts
+  --checkout-ref <ref> the content ref a --backfill republishes`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

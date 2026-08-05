@@ -29,6 +29,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { findWorkspacePackages } from './package-files-are-allowlisted.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -170,6 +172,11 @@ function main(): void {
   process.exit(runCheck(REPO_ROOT))
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'check that every publishable package declares a files field',
+  help: 'Usage: node scripts/fleet/check/published-packages-have-files-field.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

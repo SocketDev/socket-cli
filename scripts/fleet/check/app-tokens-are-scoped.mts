@@ -21,11 +21,14 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -173,13 +176,12 @@ export function runCheck(repoRoot: string): number {
   return 1
 }
 
-function main(): void {
-  process.exitCode = runCheck(REPO_ROOT)
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that every GitHub App token minter step scopes its PERMISSIONS',
+  help: 'Usage: node scripts/fleet/check/app-tokens-are-scoped.mts',
 }
 
-try {
-  main()
-} catch (e) {
-  logger.error(e)
-  process.exitCode = 1
+if (isMainModule(import.meta.url)) {
+  runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }

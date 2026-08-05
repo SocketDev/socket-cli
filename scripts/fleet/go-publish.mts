@@ -66,6 +66,8 @@ import {
 } from './publish-infra/shared.mts'
 import { findGoModFiles } from './update/go.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 import type { VerifyResult } from './publish-infra/go/shared.mts'
 
@@ -357,40 +359,12 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       apply: { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       module: { multiple: true, type: 'string' },
       version: { type: 'string' },
     },
     allowPositionals: false,
     strict: false,
   })
-
-  if (values['help']) {
-    logger.log('Usage: go-publish --version X.Y.Z [--module <dir>]… [--apply]')
-    logger.log(
-      '  (no --apply → dry-run, the default; nothing is tagged/pushed)',
-    )
-    logger.log('')
-    logger.log(
-      '  --version X.Y.Z   the release version to tag (vX.Y.Z; the tag IS',
-    )
-    logger.log('                    the artifact — Go has no registry upload)')
-    logger.log(
-      '  --module <dir>    repo-relative module dir(s) to publish; repeatable.',
-    )
-    logger.log(
-      '                    Default: every first-party go.mod (root → vX.Y.Z,',
-    )
-    logger.log('                    nested → <subdir>/vX.Y.Z)')
-    logger.log(
-      '  --apply           validate → tag + push → verify for real (PERMANENT:',
-    )
-    logger.log(
-      '                    a pushed+indexed tag has a FROZEN checksum)',
-    )
-    process.exitCode = 0
-    return
-  }
 
   const rawVersion =
     typeof values['version'] === 'string' ? values['version'] : undefined
@@ -430,11 +404,19 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'publish Go modules by validating, pushing the semver tag, and verifying the proxy serves it',
+  help: `Usage: node scripts/fleet/go-publish.mts --version X.Y.Z [flags]
+  --version X.Y.Z  the release version to tag (vX.Y.Z; the tag IS the artifact — Go has no registry upload)
+  --module <dir>   repo-relative module dir(s) to publish; repeatable.
+                   Default: every first-party go.mod (root → vX.Y.Z, nested → <subdir>/vX.Y.Z)
+  --apply          validate → tag + push → verify for real (PERMANENT: a pushed+indexed
+                   tag has a FROZEN checksum); without it the run is a dry run`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the CLI.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

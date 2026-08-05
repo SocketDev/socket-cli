@@ -125,7 +125,9 @@ export function npmAuthGate(repoPath: string, resumes: string): HumanGate {
     agentLane:
       `say "log me in" and I run \`${command}\` through its PTY — ` +
       'your browser opens for the OAuth + OTP, I wait.',
-    humanLane: `run \`${command}\` in your terminal — same flow, you drive.`,
+    humanLane:
+      `type \`! ${command}\` here — the bang prefix runs it in this session, ` +
+      'so its output lands in the conversation and I can read the result.',
     mind:
       'raw `npm login` dies without a TTY (legacy Username prompt EOFs) and ' +
       'bare `npm` fails in-repo (devEngines pins pnpm); the router carries ' +
@@ -175,7 +177,9 @@ export function approveGate(
     agentLane:
       'say "run the approve" and I run the same command through its PTY — ' +
       'the 2FA challenge opens in your browser, everything else is scripted.',
-    humanLane: `run \`cd ${repoPath} && ${approveCommand}\` — it prompts your 2FA.`,
+    humanLane:
+      `type \`! ${approveCommand}\` here, from ${repoPath} — the bang prefix ` +
+      'runs it in this session so I see the result; it prompts your 2FA.',
     mind:
       'staged entries are maintainer-visible only — pnpm and npm can hold ' +
       'DIFFERENT accounts, and a wrong or missing login reads as an empty ' +

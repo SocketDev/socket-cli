@@ -6,11 +6,11 @@
  *   during cascades and let fleet/repo ownership drift silently.
  */
 
-import process from 'node:process'
-
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
 import { REPO_ROOT } from '../paths.mts'
 
@@ -47,8 +47,11 @@ async function main(): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'check that no executable script sits loose at the scripts/ root',
+  help: 'Usage: node scripts/fleet/check/root-scripts-are-segregated.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  void main().then(code => {
-    process.exitCode = code
-  })
+  runMain(main, SCRIPT_META)
 }

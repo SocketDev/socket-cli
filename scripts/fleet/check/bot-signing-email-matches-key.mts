@@ -46,7 +46,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -191,6 +194,14 @@ async function main(): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that GPG-signing bot workflows use the bare socket-bot key-UID email',
+  help: `Usage: node scripts/fleet/check/bot-signing-email-matches-key.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

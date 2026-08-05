@@ -37,6 +37,9 @@ import { buildOxfmtArgs } from './_shared/format-scope.mts'
 import { nodeModulesBinPath, REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -366,6 +369,16 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'derives package.json devEngines/engines pins from external-tools.json',
+  help: `Usage: node scripts/fleet/sync-package-manager-pins.mts [flags]
+
+  (no flags)  rewrite package.json to match external-tools.json
+  --check     warn on a behind pin, exit non-zero only on real drift
+  --quiet     suppress the in-sync line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

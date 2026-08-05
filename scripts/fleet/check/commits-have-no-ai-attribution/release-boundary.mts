@@ -1,4 +1,4 @@
-/**
+/*
  * @file The release boundary for `commits-have-no-ai-attribution`: the commit
  *   at or below which the scanned branch's history is already published, so a
  *   finding there is frozen rather than actionable. Rewriting a published
@@ -11,7 +11,10 @@
  *      `.config/repo/socket-wheelhouse.json`. `boundaryTag` names the tag
  *      outright; `branch` names the ref the customer release line lives on, for
  *      a repo whose releases are cut somewhere other than the branch being
- *      scanned.
+ *      scanned; `tagPattern` is a glob naming which tags are release tags, for a
+ *      repo that also pushes build-asset tags onto the same branch. Precedence
+ *      is `boundaryTag`, then `branch`, then `tagPattern` filtering the
+ *      ancestry search below.
  *   2. Otherwise the newest tag that is an ANCESTOR of the ref being scanned, read
  *      with `git describe --tags --abbrev=0` and confirmed with `git merge-base
  *      --is-ancestor`. ANCESTRY, NEVER TAG RECENCY. A repo can carry several
@@ -33,8 +36,10 @@ import type { GitRunner } from './commit-history.mts'
 
 /**
  * A repo's declaration of where its customer release line lives, read from
- * `release.releaseLine` in `.config/repo/socket-wheelhouse.json`. Both fields
- * are optional; `boundaryTag` wins when both are present.
+ * `release.releaseLine` in `.config/repo/socket-wheelhouse.json`. Every field
+ * is optional. Precedence when several are present: `boundaryTag` wins
+ * outright, `branch` picks the ref the ancestry search walks, and `tagPattern`
+ * narrows which tags that search may return.
  */
 export interface ReleaseLineDeclaration {
   /**
@@ -48,6 +53,13 @@ export interface ReleaseLineDeclaration {
    * the ref being scanned.
    */
   readonly branch?: string | undefined
+  /**
+   * A `git tag --list` glob naming which tags are release tags, e.g. `v*`. Set
+   * it when the repo also pushes build-asset tags onto the scanned branch:
+   * those are newer, so an unfiltered ancestry pick lands on one of them. Only
+   * a tag matching the glob can become the boundary.
+   */
+  readonly tagPattern?: string | undefined
 }
 
 /**
@@ -64,24 +76,29 @@ export type ReleaseBoundary =
     }
   /**
    * The newest tag reachable from `of` (the scanned ref, or a declared branch).
+   * `tagPattern` is set when a declared glob narrowed the candidates.
    */
   | {
       readonly kind: 'ancestor-tag'
       readonly tag: string
       readonly commit: string
       readonly of: string
+      readonly tagPattern?: string | undefined
     }
   /**
    * The repository carries no tags: nothing has been released yet.
    */
   | { readonly kind: 'no-tags' }
   /**
-   * Tags exist, but none is in the scanned ref's history.
+   * Tags exist, but none is in the scanned ref's history. When `tagPattern` is
+   * set, `tagCount` counts only the tags matching that glob, and the shortfall
+   * is the declared pattern's rather than the repository's.
    */
   | {
       readonly kind: 'no-ancestor-tag'
       readonly ref: string
       readonly tagCount: number
+      readonly tagPattern?: string | undefined
     }
 
 /**
@@ -114,9 +131,11 @@ export function readReleaseLineDeclaration(
   }
   const boundaryTag = declared['boundaryTag']
   const branch = declared['branch']
+  const tagPattern = declared['tagPattern']
   const result: {
     boundaryTag?: string | undefined
     branch?: string | undefined
+    tagPattern?: string | undefined
   } = {}
   if (typeof boundaryTag === 'string' && boundaryTag.trim()) {
     result.boundaryTag = boundaryTag.trim()
@@ -124,7 +143,12 @@ export function readReleaseLineDeclaration(
   if (typeof branch === 'string' && branch.trim()) {
     result.branch = branch.trim()
   }
-  return result.boundaryTag || result.branch ? result : undefined
+  if (typeof tagPattern === 'string' && tagPattern.trim()) {
+    result.tagPattern = tagPattern.trim()
+  }
+  return result.boundaryTag || result.branch || result.tagPattern
+    ? result
+    : undefined
 }
 
 /**
@@ -141,23 +165,42 @@ export async function resolveCommitSha(
 }
 
 /**
- * How many tags the repository carries. Separates "nothing has been released
- * yet" from "released, but not on this line" — two states that need different
- * messages.
+ * How many non-blank lines a tag listing carries. Both tag counters print one
+ * tag per line, so the counting is shared rather than written twice.
  */
-export async function countTags(git: GitRunner): Promise<number> {
-  const res = await git(['for-each-ref', '--format=%(refname)', 'refs/tags'])
-  if (!res.ok) {
-    return 0
-  }
+export function countTagLines(stdout: string): number {
   let count = 0
-  const lines = res.stdout.split('\n')
+  const lines = stdout.split('\n')
   for (let i = 0, { length } = lines; i < length; i += 1) {
     if (lines[i]!.trim()) {
       count += 1
     }
   }
   return count
+}
+
+/**
+ * How many tags the repository carries. Separates "nothing has been released
+ * yet" from "released, but not on this line" — two states that need different
+ * messages.
+ */
+export async function countTags(git: GitRunner): Promise<number> {
+  const res = await git(['for-each-ref', '--format=%(refname)', 'refs/tags'])
+  return res.ok ? countTagLines(res.stdout) : 0
+}
+
+/**
+ * How many tags match a declared `tagPattern` glob, whether or not they are
+ * ancestors of anything. It is the honest denominator for a pattern that found
+ * no boundary: it tells "the repo tags releases differently than declared"
+ * (zero matches) apart from "matching releases exist, just not on this line".
+ */
+export async function countTagsMatchingPattern(
+  git: GitRunner,
+  tagPattern: string,
+): Promise<number> {
+  const res = await git(['tag', '--list', tagPattern])
+  return res.ok ? countTagLines(res.stdout) : 0
 }
 
 /**
@@ -210,7 +253,16 @@ export async function resolveReleaseBoundary(
     )
   }
   const describeRef = declaredBranch ?? scanRef
-  const described = await git(['describe', '--tags', '--abbrev=0', describeRef])
+  const declaredPattern = declaration?.tagPattern
+  // `--match` filters the candidates before describe picks among them, so a
+  // build-asset tag on the same branch can never win the newest-ancestor race.
+  const described = await git([
+    'describe',
+    '--tags',
+    '--abbrev=0',
+    ...(declaredPattern ? ['--match', declaredPattern] : []),
+    describeRef,
+  ])
   const tag = described.ok ? described.stdout.trim() : ''
   if (tag) {
     const commit = await resolveCommitSha(git, tag)
@@ -218,7 +270,24 @@ export async function resolveReleaseBoundary(
     // safety property explicit and catches an annotated tag whose peeled
     // commit is not what the describe output implied.
     if (commit && (await isAncestorCommit(git, commit, describeRef))) {
-      return { commit, kind: 'ancestor-tag', of: describeRef, tag }
+      return {
+        commit,
+        kind: 'ancestor-tag',
+        of: describeRef,
+        tag,
+        ...(declaredPattern ? { tagPattern: declaredPattern } : {}),
+      }
+    }
+  }
+  // A declared pattern that matched nothing never degrades into an unfiltered
+  // search: that would hand the boundary straight back to the asset tag the
+  // pattern was written to exclude. Report the shortfall as the pattern's.
+  if (declaredPattern) {
+    return {
+      kind: 'no-ancestor-tag',
+      ref: describeRef,
+      tagCount: await countTagsMatchingPattern(git, declaredPattern),
+      tagPattern: declaredPattern,
     }
   }
   const tagCount = await countTags(git)
@@ -285,13 +354,17 @@ export function describeReleaseBoundary(boundary: ReleaseBoundary): string {
       return `${boundary.tag} (declared in release.releaseLine.boundaryTag)`
     }
     case 'ancestor-tag': {
-      return `${boundary.tag} (newest tag reachable from ${boundary.of})`
+      return boundary.tagPattern
+        ? `${boundary.tag} (newest tag matching \`${boundary.tagPattern}\` reachable from ${boundary.of})`
+        : `${boundary.tag} (newest tag reachable from ${boundary.of})`
     }
     case 'no-tags': {
       return 'none — the repository carries no tags, so nothing is released yet'
     }
     case 'no-ancestor-tag': {
-      return `none — ${boundary.tagCount} tag(s) exist but none is in ${boundary.ref}'s history`
+      return boundary.tagPattern
+        ? `none — ${boundary.tagCount} tag(s) match the declared release.releaseLine.tagPattern \`${boundary.tagPattern}\` but none is in ${boundary.ref}'s history`
+        : `none — ${boundary.tagCount} tag(s) exist but none is in ${boundary.ref}'s history`
     }
   }
 }

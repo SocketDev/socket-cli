@@ -47,6 +47,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 import {
   parseRepoFilter,
@@ -567,8 +569,15 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'audit that fleet member version tags cannot be moved or deleted',
+  help: `Usage: node scripts/fleet/check/release-tags-are-immutable.mts [flags]
+  --fix           apply the fleet-tag-protection ruleset via gh
+  --repo <name>   audit only the named roster repo(s); repeatable, comma-separable`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

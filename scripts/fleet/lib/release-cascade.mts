@@ -90,6 +90,10 @@ export const RELEASE_CASCADE_GRAPH: Readonly<
     // release — the catalog pin alone never ships it. See the bundling helpers
     // below for the machine-checked form of this obligation.
     { kind: 'follow-up-release', repo: 'socket-sdk-js' },
+    // socket-packageurl-js devDepends on the published packageurl-js and
+    // bundles it into its own dist, so absorbing a new version still owes
+    // the repo its own follow-up release to ship those bytes.
+    { kind: 'follow-up-release', repo: 'socket-packageurl-js' },
   ],
   '@socketsecurity/lib': [
     {
@@ -106,7 +110,14 @@ export const RELEASE_CASCADE_GRAPH: Readonly<
     { kind: 'follow-up-release', repo: 'socket-packageurl-js' },
     { kind: 'follow-up-release', repo: 'socket-sdk-js' },
   ],
-  '@socketsecurity/sdk': [{ kind: 'catalog-pin', repos: [FLEET_CATALOG] }],
+  '@socketsecurity/sdk': [
+    { kind: 'catalog-pin', repos: [FLEET_CATALOG] },
+    // Both repos ship zero runtime dependencies and bundle the sdk from
+    // their devDependencies into dist, so an sdk bump changes their shipped
+    // bytes and each owes its own release — the catalog pin never ships it.
+    { kind: 'follow-up-release', repo: 'socket-packageurl-js' },
+    { kind: 'follow-up-release', repo: 'socket-sdk-js' },
+  ],
 }
 
 /**

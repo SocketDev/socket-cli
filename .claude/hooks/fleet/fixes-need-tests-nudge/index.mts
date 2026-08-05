@@ -179,6 +179,7 @@ export const check = bashGuard((command, payload) => {
 export const hook = defineHook({
   check,
   event: 'PreToolUse',
+  global: true,
   matcher: ['Bash'],
   scope: 'convention',
   type: 'nudge',

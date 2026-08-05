@@ -11,6 +11,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { isSpawnError } from '@socketsecurity/lib-stable/process/spawn/errors'
 
+import { cascadeMirrorOxlintIgnoreArgs } from '../_shared/cascade-mirror-scope.mts'
+import { oxlintIgnoreArgs, pickOxlintConfig } from '../_shared/lint-runners.mts'
+
 const logger = getDefaultLogger()
 
 export interface OxlintMessage {
@@ -107,21 +110,56 @@ export function shouldScanWholeTree(passthrough: readonly string[]): boolean {
   )
 }
 
-export async function runLintJson(
-  passthrough: readonly string[],
-): Promise<OxlintFile[]> {
-  // Run oxlint directly with --format=json. Bypass `pnpm run lint`
-  // because that wrapper formats for humans.
+/**
+ * Build the `pnpm exec oxlint` argument list for the JSON collection pass.
+ * Exported for tests: the collection scope must be provably identical to the
+ * lint verdict's.
+ *
+ * Scope contract: the AI batch is composed from EXACTLY the scope the lint
+ * verdict gates. That means the same picked config (`pickOxlintConfig`, the
+ * `.mts` factory when present) and the same re-emitted `ignorePatterns`
+ * (`oxlintIgnoreArgs` — oxlint roots a config's own ignorePatterns at the
+ * config's directory, so without the CLI re-emission the collection lints
+ * whole trees the verdict deliberately ignores, e.g. `**\/test/repo`). The
+ * incident shape this pins down: a 215-file AI batch built from findings the
+ * verdict never reports, invisible to `lint --all` and re-collected
+ * identically on every run.
+ *
+ * The cascade-mirror ignores are NOT optional here either. This step MUTATES
+ * what it reports on, so it takes the same exclusion a `--fix` invocation
+ * does: a live mirror is gated at its template source, and a member repo
+ * cannot legally edit one (no-fleet-fork-guard blocks the write). Without
+ * this the pass spawns a paid agent per mirror file, in every member of the
+ * roster, to produce a diff that can never land.
+ */
+export function buildLintJsonArgs(passthrough: readonly string[]): string[] {
+  const config = pickOxlintConfig()
   const args = [
     'exec',
     'oxlint',
     '--format=json',
-    '--config=.config/fleet/oxlintrc.json',
+    '-c',
+    config,
+    ...oxlintIgnoreArgs(config),
+    ...cascadeMirrorOxlintIgnoreArgs(),
+    // Exit 0 when every named file falls inside the ignore scope, matching
+    // the verdict's runFiles behavior — an all-ignored explicit scope is an
+    // empty batch, not an error.
+    '--no-error-on-unmatched-pattern',
     ...passthrough.filter(a => a !== '--all'),
   ]
   if (shouldScanWholeTree(passthrough)) {
     args.push('.')
   }
+  return args
+}
+
+export async function runLintJson(
+  passthrough: readonly string[],
+): Promise<OxlintFile[]> {
+  // Run oxlint directly with --format=json. Bypass `pnpm run lint`
+  // because that wrapper formats for humans.
+  const args = buildLintJsonArgs(passthrough)
   let stdout = ''
   try {
     const result = await spawn('pnpm', args, {

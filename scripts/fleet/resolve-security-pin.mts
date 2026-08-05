@@ -36,16 +36,15 @@
 import { readFileSync } from 'node:fs'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getMajorVersion } from '@socketsecurity/lib-stable/versions/parse'
 import {
   filterVersions,
   maxVersion,
 } from '@socketsecurity/lib-stable/versions/range'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
-const logger = getDefaultLogger()
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 // The 7-day malware soak (CLAUDE.md _Tooling_ § minimumReleaseAge). A patched
 // version younger than this is not yet a pin target — the skill records it as
@@ -229,11 +228,12 @@ export function main(argv: readonly string[]): number {
   return result.outcome === 'resolved' ? 0 : 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'resolves the exact soaked version a Dependabot security fix should pin to',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    process.exitCode = main(process.argv.slice(2))
-  } catch (e) {
-    logger.fail(`resolve-security-pin: ${errorMessage(e)}`)
-    process.exitCode = 1
-  }
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

@@ -88,7 +88,8 @@ const PROSE_VALUE_FLAGS: ReadonlySet<string> = new Set([
   '-m',
 ])
 // The inline `--flag=value` forms of the same prose flags.
-const PROSE_INLINE_FLAG_RE = /^--(?:body|message|notes|title)=/ // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const PROSE_INLINE_FLAG_RE = /^--(?:body|message|notes|title)=/
 
 // How many prior assistant turns to scan for a registry-read receipt.
 const RECEIPT_LOOKBACK_TURNS = 5

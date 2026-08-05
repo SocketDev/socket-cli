@@ -51,7 +51,8 @@ const TASK_PATTERNS: ReadonlyArray<{
     // Newline or line-start, comment marker, then a task/plan label keyword + colon.
     re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:note from (?:brief|plan|task)|plan|task)\s*:/i,
     stripPrefix:
-      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:note from (?:brief|plan|task)|plan|task)\s*:\s*/i, // socket-lint: allow uncommented-regex
+      // socket-lint: allow uncommented-regex
+      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:note from (?:brief|plan|task)|plan|task)\s*:\s*/i,
   },
   {
     // Newline or line-start, comment marker, then "per the X" or "as requested" phrase.
@@ -65,7 +66,8 @@ const TASK_PATTERNS: ReadonlyArray<{
     // Newline or line-start, comment marker, then a roadmap keyword + numeric/roman marker.
     re: /(^|\n)\s*(?:#|-|\*|\/\*|\/\/)\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripPrefix:
-      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
+      // socket-lint: allow uncommented-regex
+      /^(\s*(?:#|-|\*|\/\*|\/\/)\s*)(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
   },
 ]
 
@@ -124,7 +126,8 @@ const TASK_BODY_PATTERNS: ReadonlyArray<{
     // Body starts with a roadmap keyword followed by a numeric or roman-numeral marker.
     re: /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\b/i,
     stripBody:
-      /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i, // socket-lint: allow uncommented-regex
+      // socket-lint: allow uncommented-regex
+      /^\s*(?:iteration|milestone|phase|sprint|step|tier)\s+(?:[0-9]+[a-z]*|i{1,3}|iv|v|vi{0,3}|ix|x)\s*[:.-]?\s*/i,
   },
 ]
 

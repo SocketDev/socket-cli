@@ -39,6 +39,9 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -623,10 +626,6 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       case '--pretty':
         args.pretty = true
         break
-      case '--help':
-      case '-h':
-        args.help = true
-        break
       default:
         break
     }
@@ -648,7 +647,6 @@ function usageText(): string {
     '  --max-transitives <n> cap on emitted new-transitive entries',
     '  --max-chars <n>       hard cap on the compact JSON size',
     '  --pretty              pretty-print the JSON instead of one line',
-    '  -h, --help            show this help',
   ].join('\n')
 }
 
@@ -689,10 +687,6 @@ async function readDiffInput(args: CliArgs): Promise<string> {
 
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseCliArgs(argv)
-  if (args.help) {
-    logger.log(usageText())
-    return 0
-  }
   const diffText = await readDiffInput(args)
   if (diffText.trim() === '') {
     logger.error('diff-narrow: no diff on stdin and no --from ref given.')
@@ -711,14 +705,12 @@ export async function main(argv: readonly string[]): Promise<number> {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'narrows a dependency diff into a bounded JSON summary for the keyless classify-deps leg',
+  help: usageText(),
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(
-    code => {
-      process.exitCode = code
-    },
-    (e: unknown) => {
-      logger.error(`diff-narrow: ${String(e)}`)
-      process.exitCode = 1
-    },
-  )
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

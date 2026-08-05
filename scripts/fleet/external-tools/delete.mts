@@ -11,7 +11,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import type { EditableJsonInstance } from '@socketsecurity/lib/json/types'
 
@@ -22,6 +21,9 @@ import {
   resolveTargets,
 } from './_shared.mts'
 import type { ExternalToolsJson, Tool } from './update.mts'
+
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -120,17 +122,15 @@ export async function main(
   return 0
 }
 
-// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
-// soft: surface the reason via logger.error, set a non-zero exit code, never a
-// raw unhandled throw.
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'remove an external-tools entry from every manifest that carries it',
+  help: `Usage: node scripts/fleet/external-tools/delete.mts <name> [flags]
+  --target <file>  limit the removal to one manifest file
+  --apply          write the removal (default is a dry run)`,
+}
+
+// Guarded so importing this module, the unit test, doesn't run the CLI.
 if (import.meta.main) {
-  main().then(
-    code => {
-      process.exitCode = code
-    },
-    e => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(main, SCRIPT_META)
 }

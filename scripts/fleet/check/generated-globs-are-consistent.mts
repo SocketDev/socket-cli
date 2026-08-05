@@ -40,6 +40,9 @@ import {
 import { GENERATED_GLOBS } from '../constants/generated-globs.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -175,6 +178,14 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies the static ignore surfaces cover every GENERATED_GLOBS entry',
+  help: `Usage: node scripts/fleet/check/generated-globs-are-consistent.mts [flags]
+
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

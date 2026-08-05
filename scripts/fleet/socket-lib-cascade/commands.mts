@@ -27,7 +27,7 @@ export interface CommandSpec {
  * A command runner, injected so `runDeferred` is testable without a real
  * subprocess. Matches `runInherit`'s signature with its optional env param
  * dropped — one seam convention for spawn-touching fleet code, matching
- * `GitExec` in `prune-backup-branches.mts`.
+ * `GitExec` in `backup-branches/prune.mts`.
  */
 export type CommandRunner = (
   cmd: string,

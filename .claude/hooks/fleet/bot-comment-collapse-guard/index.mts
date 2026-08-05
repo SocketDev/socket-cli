@@ -290,6 +290,14 @@ export const check = (payload: ToolCallPayload): GuardResult | undefined => {
       continue
     }
     lines.push(`  ${pr.nameWithOwner}#${pr.number}:`)
+    lines.push(
+      `    Run: node scripts/fleet/collapse-bot-comments.mts ${pr.nameWithOwner} ${pr.number}`,
+    )
+    lines.push('    (resolves the threads, minimizes the bodies, and posts the')
+    lines.push(
+      "    bot's own directive as a FORBIDDEN fallback — no write access needed)",
+    )
+    lines.push('    Manual fallback, one surface at a time:')
     for (const violation of violations) {
       lines.push(
         `    - ${violation.kind} by ${violation.author} (${violation.id})`,
@@ -313,7 +321,7 @@ export const check = (payload: ToolCallPayload): GuardResult | undefined => {
       'Still expanded:',
       ...lines,
       '',
-      'Run the minimize command(s) above, then end the turn.',
+      'Run the `collapse-bot-comments.mts` command(s) above, then end the turn.',
       '',
       `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
     ].join('\n'),
@@ -325,6 +333,7 @@ export const hook = defineHook({
   bypassOptional: true,
   check,
   event: 'Stop',
+  global: true,
   scope: 'convention',
   type: 'guard',
 })

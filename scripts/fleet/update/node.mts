@@ -36,8 +36,11 @@ import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 import { requireSoakDays } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -319,14 +322,16 @@ export async function main(
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'advances the .node-version pin to the newest soak-cleared release of the same major line',
+  help: `Usage: node scripts/fleet/update/node.mts --soak-days <n> [flags]
+
+  --soak-days <n>  soak window in days (required trust gate)
+  (no mode flag)   dry plan: print the bump it would write, touching nothing
+  --apply          write the resolved version to .node-version`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(
-    code => {
-      process.exitCode = code
-    },
-    (e: unknown) => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

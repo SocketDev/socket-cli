@@ -34,7 +34,6 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
@@ -52,8 +51,10 @@ import {
 } from '../_shared/pack-structure.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { withPrunedPackManifest } from '../publish-infra/npm/pack-manifest.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type { DanglingLifecycleScript } from '../_shared/lifecycle-scripts.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // Re-exported for the isCoveredByFiles consumers/tests that import it from
 // this check — the implementation moved to _shared/pack-files.mts so the
@@ -289,11 +290,14 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the packed tarball ships only allowlisted, well-structured entries with runnable bins',
+  help: `Usage: node scripts/fleet/check/pack-contents-are-clean.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  // No top-level await (CJS bundle target): fail the process loud on an
-  // unexpected rejection instead.
-  main().catch((e: unknown) => {
-    logger.fail(`[pack-contents-are-clean] ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

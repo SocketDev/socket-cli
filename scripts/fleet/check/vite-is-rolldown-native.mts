@@ -29,6 +29,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { loadSocketWheelhouseConfig, PNPM_LOCK } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -144,6 +147,14 @@ export function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks pnpm-lock.yaml resolves rolldown-native vite 8.x with no esbuild in the tree',
+  help: `Usage: node scripts/fleet/check/vite-is-rolldown-native.mts [flags]
+
+  --quiet  suppress the clean-pass and tolerated-esbuild messages`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

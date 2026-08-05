@@ -34,7 +34,6 @@
 
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -51,6 +50,8 @@ import {
   exportEntriesOf,
 } from '../lib/exports-conditions.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -354,8 +355,11 @@ export async function runCheck(repoRoot: string): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'check that package exports maps and the public file surface agree',
+  help: 'Usage: node scripts/fleet/check/public-files-are-exported.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  void (async () => {
-    process.exit(await runCheck(REPO_ROOT))
-  })()
+  runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }

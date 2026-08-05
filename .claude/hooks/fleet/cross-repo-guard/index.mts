@@ -88,7 +88,7 @@ export function emitBlock(filePath: string, hits: Hit[]): string {
     lines.push(`  …and ${hits.length - 3} more.`)
   }
   lines.push(
-    '  Opt-out for one line (rare): append `// socket-lint: allow cross-repo`.',
+    '  Opt-out for one line (rare): add `// socket-lint: allow cross-repo` on its own line above it.',
   )
   return lines.join('\n')
 }

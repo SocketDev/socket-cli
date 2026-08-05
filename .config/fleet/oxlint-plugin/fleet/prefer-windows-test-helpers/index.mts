@@ -33,6 +33,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { markerOnlyLineAllows } from '../../lib/comment-markers.mts'
 import type { AstNode, RuleContext } from '../../lib/rule-types.mts'
 
 // Fleet helpers live under `test/fleet/_shared/lib/` (cascaded from
@@ -140,9 +141,17 @@ const rule = {
       return lines[idx] ?? ''
     }
 
+    function lineAbove(node: AstNode): string {
+      const idx = (node.loc?.start?.line ?? 1) - 2
+      return lines[idx] ?? ''
+    }
+
     return {
       CallExpression(node: AstNode) {
-        if (isLineMarkered(lineFor(node))) {
+        if (
+          isLineMarkered(lineFor(node)) ||
+          markerOnlyLineAllows(lineAbove(node), 'raw-windows-test')
+        ) {
           return
         }
         const callee = node.callee

@@ -74,6 +74,16 @@ GitHub auto-links `<owner>/<repo>#<num>` and `https://github.com/<owner>/<repo>/
 
 Bypass: `Allow external-issue-ref bypass` (enforced by `.claude/hooks/fleet/no-ext-issue-ref-guard/`).
 
+## Clickable PR/issue refs in reports and docs
+
+The rule above governs commit messages and PR bodies, where GitHub auto-links a bare `#N` against the current repo, so there a bare `#N` is already a working link and the danger is the reverse: a foreign `<owner>/<repo>#N` or full URL that backref-spams. Rendered Markdown docs and agent status reports are the opposite surface. GitHub only auto-links `#N` inside issues, PRs, and commits, so a bare `#7317` in a `.md` file or a terminal status report is **dead text**. Reference a PR or issue there as a clickable Markdown link.
+
+- Write `[#7317](https://github.com/PerryTS/perry/pull/7317)`, not a bare `#7317`.
+- Build it in code with the shared helper `githubRefLink(repoUrl, n, kind)` from `@socketsecurity/lib/links/github`. It returns `[#7317](…/pull/7317)` and degrades to a bare `#N` when the repo URL can't be parsed. For a CLI's own stdout, which is not Markdown, socket-cli's `githubRepoLink` emits an OSC-8 terminal hyperlink instead.
+- This does not change the rule above. In commit messages and PR bodies keep the bare same-repo `#N`, and never emit a raw `<owner>/<repo>#N` or full github URL there.
+
+Enforced by `scripts/fleet/check/pr-refs-in-docs-are-linked.mts` over tracked docs. Changelogs and fixtures are out of scope, since a fragment becomes Release notes where `#N` auto-links. Escape hatch: `<!-- pr-ref-link: allow -->` on the line, or `<!-- pr-ref-link: allow-file -->` anywhere in the file.
+
 ## Root README skeleton
 
 Every fleet member's root `README.md` opens with lead prose saying why the repo

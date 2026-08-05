@@ -29,6 +29,7 @@ import { BREW_TAP_PINS } from '../constants/brew-tap-pins.mts'
 import { SOAK_DAYS } from '../constants/soak.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import {
   brewfilePath,
   dedupeBrewTools,
@@ -38,6 +39,7 @@ import {
 } from '../update/brew.mts'
 
 import type { BrewTapPin } from '../constants/brew-tap-pins.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { BrewTool } from '../update/brew.mts'
 
 const DAY_MS = 86_400_000
@@ -210,9 +212,14 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that Homebrew installs resolve only to soaked, pinned tap versions',
+  help: `Usage: node scripts/fleet/check/brew-install-is-pinned.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

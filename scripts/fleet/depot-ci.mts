@@ -13,10 +13,12 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpJson } from '@socketsecurity/lib-stable/http-request'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 const BASE = 'https://api.depot.dev/depot.ci.v1.CIService'
@@ -242,9 +244,15 @@ export async function main(argv: readonly string[]): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'depot CI API client — lists fleet CI runs and prints failure diagnoses (needs DEPOT_TOKEN)',
+  help: `Usage: node scripts/fleet/depot-ci.mts <runs|diagnose> [flags]
+
+  runs [--repo <o/n>] [--status <s>] [--sha <x>] [--pr <n>] [--trigger <t>]  list recent runs
+  diagnose <run-id>                                                          print the failure diagnosis`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

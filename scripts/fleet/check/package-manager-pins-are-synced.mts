@@ -33,6 +33,9 @@ import {
 } from '../sync-package-manager-pins.mts'
 import type { PinDrift } from '../sync-package-manager-pins.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -107,6 +110,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "checks package.json's package-manager pins derive from external-tools.json",
+  help: `Usage: node scripts/fleet/check/package-manager-pins-are-synced.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

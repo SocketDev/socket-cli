@@ -34,6 +34,9 @@ import {
 } from './_shared/fleet-membership.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const SOAK_DAYS = 7
 
@@ -230,8 +233,18 @@ async function main(): Promise<void> {
   process.exit(0)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'adds a dated minimumReleaseAgeExclude entry so an install can bypass an uncleared 7-day soak',
+  help: `Usage: node scripts/fleet/soak-bypass.mts <pkg>@<version> [flags]
+
+  <pkg>@<version>     the package whose soak to bypass, e.g. compromise@14.15.1
+  --allow-non-member  audited escape hatch for a non-member repo root
+  --reason <why>      required with --allow-non-member`,
+}
+
 // Run only when invoked directly (CLI), not when imported by unit tests —
 // main() calls process.exit, which would tear down the test runner.
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

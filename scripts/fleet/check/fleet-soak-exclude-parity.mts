@@ -51,6 +51,9 @@ import {
 import { REPO_ROOT } from '../paths.mts'
 import { fetchPackagePublishDate } from '../registry-publish-date.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -466,9 +469,12 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies wheelhouse soak-exclude pins stay in parity with the cascade-canonical exclude list',
+  help: 'Usage: node scripts/fleet/check/fleet-soak-exclude-parity.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`[check-fleet-soak-exclude-parity] error: ${e}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

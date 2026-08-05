@@ -569,6 +569,7 @@ function ensureWritableTarget(target) {
   try {
     chmodSync(target, mode | 128)
   } catch {
+    /* c8 ignore start - chmod on a file this process owns only fails under root or an OS immutable flag (macOS chflags uchg), so a portable unit test cannot reach this fallback. */
     rm(target)
   }
 }

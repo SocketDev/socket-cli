@@ -42,7 +42,6 @@ import {
   statSync,
 } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -50,6 +49,9 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { loadManifestTree, resolveManifestRoot } from '../lockstep/manifest.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -401,6 +403,12 @@ export function runCheck(repoRoot: string): number {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks Rust/Go/C++ sources against the language-agnostic fleet socket/* doctrine',
+  help: 'Usage: node scripts/fleet/check/native-sources-are-doctrine-clean.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = runCheck(REPO_ROOT)
+  runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }

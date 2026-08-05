@@ -39,6 +39,9 @@ import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // The two soak/waiver list blocks this gate scans. Both carry `name@version`
 // exact-pin bullets with `# published: … | removable: …` annotations; they
@@ -353,6 +356,13 @@ function main(): void {
 // Run only when invoked directly (CLI / CI), not when imported by the unit
 // tests for `scan` / `removeStaleEntries` — `main()` calls `process.exit`,
 // which would tear down the test runner mid-suite.
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every soak-exclude pin entry carries published/removable date annotations',
+  help: `Usage: node scripts/fleet/check/soak-excludes-have-dates.mts [flags]
+  --fix  promote soaked (removable-date-passed) entries out of minimumReleaseAgeExclude`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

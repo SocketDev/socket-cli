@@ -87,7 +87,7 @@ export async function runPreflight(config: {
  * the coverage badge via gen/coverage-badge.mts. `check --all` (preflight)
  * only runs coverage-badge-is-current — a CHECK, not an UPDATE — so this stage
  * is where the badge actually refreshes; the refreshed
- * assets/repo/badges/coverage.svg is a modified tracked file the ci stage
+ * assets/coverage.svg is a modified tracked file the ci stage
  * commits surgically, so it rides ahead of the bump commit and ships with the
  * release. Skips (passes) when the repo declares no coverage script or its
  * README carries no coverage badge (the same opt-outs
@@ -167,7 +167,7 @@ export async function runCoverGate(config: {
     }
   }
   return {
-    detail: `\`pnpm run ${script}\` green + coverage badge refreshed (assets/repo/badges/coverage.svg; the ci stage commits any change before bump) + dist rebuilt plain (coverage taint cleared)`,
+    detail: `\`pnpm run ${script}\` green + coverage badge refreshed (assets/coverage.svg; the ci stage commits any change before bump) + dist rebuilt plain (coverage taint cleared)`,
     status: 'passed',
   }
 }

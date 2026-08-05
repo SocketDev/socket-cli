@@ -48,9 +48,12 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { parseGitHubSlug } from '../../_shared/github-raw-url.mts'
 import { isMainModule } from '../../_shared/is-main-module.mts'
+import { runMain } from '../../_shared/run-main.mts'
 import { logger, rootPath, runCapture } from '../shared.mts'
 import { cargoTokenProblem, resolveCratesToken } from './placeholder.mts'
 import { readPublishableCargoPackages } from './shared.mts'
+
+import type { ScriptMeta } from '../../_shared/run-main.mts'
 
 // The trusted-publisher collection endpoint. GET lists a crate's configs, POST
 // creates one; both take the API token in the `authorization` header and
@@ -892,11 +895,20 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'configures crates.io trusted publishing (GitHub Actions OIDC) for the workspace crates',
+  help: `Usage: node scripts/fleet/publish-infra/cargo/trusted-publisher.mts [<crate>…] [flags]
+
+  --apply               create the missing configs (dry-run by default)
+  --path <dir>          point the derivations at another checkout
+  --repo <owner/name>   override the GitHub slug a config is stored under
+  --workflow <file.yml> override the derived workflow filename
+  --environment <name>  override the derived CI environment`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the CLI.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

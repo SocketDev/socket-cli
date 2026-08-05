@@ -9,11 +9,12 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 export type PortableMcpServer =
   | {
@@ -141,15 +142,6 @@ function parseStringArray(value: unknown, field: string): string[] {
     throw new Error(`MCP server ${field} must be an array of strings`)
   }
   return [...value]
-}
-
-function runMain(): void {
-  try {
-    main()
-  } catch (error) {
-    process.stderr.write(`${errorMessage(error)}\n`)
-    process.exitCode = 1
-  }
 }
 
 function sortRecord<T>(record: Readonly<Record<string, T>>): Record<string, T> {
@@ -419,6 +411,14 @@ export function writeMcpClientConfigs(repoRoot: string): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'regenerates the Codex/OpenCode/Kimi MCP client configs from the canonical .mcp.json',
+  help: `Usage: node scripts/fleet/mcp-config.mts --write
+
+  --write  regenerate .codex/config.toml, opencode.json, and .kimi-code/mcp.json (required)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain()
+  runMain(main, SCRIPT_META)
 }

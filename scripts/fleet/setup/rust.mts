@@ -12,20 +12,17 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
-
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { findOwnCargoManifests } from '../update/cargo.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
-
-const mainLogger = getDefaultLogger()
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 /**
  * Extract the pinned toolchain channel from a `rust-toolchain.toml` body — the
@@ -226,16 +223,12 @@ export async function setupRust(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'provisions the pinned Rust toolchain and fetches crates against the committed Cargo.lock',
+  help: 'Usage: pnpm run setup:rust',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupRust().then(
-    result => {
-      if (!result.ok) {
-        process.exitCode = 1
-      }
-    },
-    (e: unknown) => {
-      mainLogger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupRust()).ok ? 0 : 1), SCRIPT_META)
 }

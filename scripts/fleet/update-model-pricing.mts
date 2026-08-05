@@ -46,8 +46,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { REPO_ROOT } from './paths.mts'
 
 import type { ModelPrice, PricingData } from './estimate-ai-cost.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -245,6 +247,20 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'reconciles model-pricing.json from freshly sourced per-model prices for one service',
+  help: `Usage: node scripts/fleet/update-model-pricing.mts [flags]
+
+  --service <id>     service to restamp (default: anthropic)
+  --prices <json>    per-model prices; stdin is read when omitted
+  --date YYYY-MM-DD  snapshot date (default: today)
+  --source <url>     override the service's pricingSource
+  --replace          rewrite the service's models block wholesale
+  --aliases <json>   replace the service's routing-alias map
+  --check            dry-run: report on-disk snapshots without writing`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

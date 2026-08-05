@@ -27,7 +27,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { REPO_ROOT } from '../paths.mts'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -129,9 +131,14 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "checks the published package's npmjs.com page is visible — detects a publish-time review hold",
+  help: `Usage: node scripts/fleet/check/npm-package-page-is-visible.mts [flags]
+
+  --quiet  silent on clean / nothing to probe`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

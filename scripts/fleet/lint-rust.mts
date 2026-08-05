@@ -26,7 +26,10 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { findWorkspaceManifests } from './_shared/cargo-workspaces.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -176,6 +179,14 @@ function main(): void {
   logger.info('lint-rust: clean.')
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs cargo clippy over every first-party cargo workspace in the tree',
+  help: `Usage: node scripts/fleet/lint-rust.mts [flags]
+
+  --fix  apply clippy's machine-applicable autofixes`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

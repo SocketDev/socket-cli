@@ -53,6 +53,8 @@ import {
 } from '../_shared/fleet-membership.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -357,6 +359,16 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'generate the flat cross-tool .agents/skills/ mirror from .claude/skills/',
+  help: `Usage: node scripts/fleet/gen/agents-skills-mirror.mts [flags]
+  --check             report drift without writing; exit 1 when stale
+  --only <names>      mirror only these tier-prefixed skills (also --only=<names>)
+  --allow-non-member  write into a non-roster repo root (requires --reason)
+  --reason <why>      audited reason for --allow-non-member`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

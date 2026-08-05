@@ -59,6 +59,9 @@ import { runDeterministicChain } from './weekly-update/deterministic-chain.mts'
 import { runOdaiDecisions } from './weekly-update/odai-decisions.mts'
 import { shedOutOfSurface } from './weekly-update/shed-out-of-surface.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 /**
  * The fleet soak window the decision leg reasons against — the same 7 days
@@ -407,6 +410,23 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the weekly dependency update: gate, deterministic chain, decision legs, tests, PR',
+  help: `Usage: node scripts/fleet/weekly-update.mts [flags]
+
+  --check-updates            standalone gate: exit 0 = updates, 1 = none
+  --shed-out-of-surface      revert out-of-surface changes into a shed commit
+  --no-agent                 skip the keyed agent fallback
+  --pr / --no-pr             open a PR on pass (--pr is opt-in)
+  --pr-base <branch>         PR base branch
+  --pr-title-prefix <text>   PR title prefix
+  --test-script <cmd>        test command (default: pnpm test)
+  --test-setup-script <cmd>  setup command (default: pnpm run build)
+  --update-model <model>     agent model (default: haiku)
+  --update-effort <effort>   agent effort (default: medium)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

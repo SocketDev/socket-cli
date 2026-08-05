@@ -29,8 +29,15 @@ node scripts/fleet/consolidate-commits.mts --base v6.0.9
 The script refuses a dirty worktree (land dirty files first:
 `node scripts/fleet/land-work.mts --commit`), verifies the final tree is
 byte-identical to the original tip, and hard-restores the original history on
-any failure. It never pushes: a rewritten branch needs a separately authorized
-lease force-push.
+any failure. The rewritten branch is never pushed: it needs a separately
+authorized lease force-push.
+
+The one thing it does push is the safety net. Before the first destructive
+command the pre-rewrite tip goes to `origin` as a canonical
+`backup-YYYYMMDD-HHMMSS` branch, the same shape `squashing-history` uses. A
+checkout with no origin gets that branch locally and a warning saying so; a
+push that FAILS aborts the run, because a rewrite with no recoverable backup is
+what the branch exists to prevent.
 
 ## Contract
 
@@ -39,4 +46,5 @@ lease force-push.
   means.
 - Bump-last invariant: a `chore: bump version to …` tip is peeled before
   grouping and cherry-picked back as the final commit.
-- Nothing is ever lost: byte-identical tree or full restore, no third state.
+- Nothing is ever lost: byte-identical tree or full restore, no third state,
+  and a canonical backup branch parked before either.

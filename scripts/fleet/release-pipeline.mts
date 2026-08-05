@@ -81,10 +81,12 @@ import {
   renderStatus,
 } from './release-pipeline/summary.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 import type { RunnerSeams, StageOutcome } from './release-pipeline/seams.mts'
 import type { RunStageId, StageId } from './release-pipeline/stages.mts'
 import type { PipelineState } from './release-pipeline/state.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -601,7 +603,6 @@ async function main(): Promise<void> {
       'ci-timeout': { default: '900', type: 'string' },
       'ci-wait': { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
-      help: { default: false, type: 'boolean' },
       'preflight-all': { default: false, type: 'boolean' },
       reset: { default: false, type: 'boolean' },
       status: { default: false, type: 'boolean' },
@@ -610,10 +611,6 @@ async function main(): Promise<void> {
     allowPositionals: false,
     strict: false,
   })
-  if (values['help']) {
-    logger.log(USAGE)
-    return
-  }
   const file = statePath(REPO_ROOT)
   if (values['reset']) {
     resetState(file)
@@ -688,9 +685,12 @@ async function main(): Promise<void> {
   await runPipeline(state, cli)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the resumable release-readiness chain through the bump commit (never stages, publishes, or cuts the release)',
+  help: USAGE,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

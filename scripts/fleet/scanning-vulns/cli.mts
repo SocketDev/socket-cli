@@ -43,6 +43,9 @@ import {
 } from './lib/collate.mts'
 import type { Finding, Score } from './lib/collate.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -187,6 +190,22 @@ export function main(argv: readonly string[]): number {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'collates, scores, and renders scanning-vulns findings into VULN-FINDINGS.json + .md',
+  help: `Usage: node scripts/fleet/scanning-vulns/cli.mts <collate|finalize> [flags]
+
+  collate:
+    --from <raw-findings.json>  the raw findings to collate
+    --target <dir>              the scanned tree; outputs are confined under it
+    --out-json <file>           override the interim findings output path
+  finalize:
+    --from <scored-findings.json>  the scored findings to finalize
+    --target <dir>                 the scanned tree; outputs are confined under it
+    --scanned-at <iso>             stamp the envelope's scan time
+    --no-score-applied             skip the score merge; envelope + render only`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

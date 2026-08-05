@@ -24,9 +24,12 @@ export interface FleetRepo {
   readonly optIns?: readonly string[] | undefined
   // GitHub org, when the member lives outside the home org (SocketDev).
   readonly owner?: string | undefined
-  // Release profile (selects the packager + which release workflow is enabled):
-  // 'js' | 'node' | 'binary' | 'custom' | 'none'. Unset = 'none' (advisory).
-  readonly publishes?: string | undefined
+  // Release channels — select the packagers and which release workflows are
+  // enabled. A LIST, because a member can ship to several at once: stuie goes
+  // to both npm and crates.io, sdxgen to both npm and GitHub release assets.
+  // Required and non-empty: `["none"]` has to be stated outright, so a member
+  // that does publish can never be read as one that does not.
+  readonly publishes: readonly FleetPublishTarget[]
 }
 
 export interface FleetRoster {
@@ -43,6 +46,29 @@ export const KNOWN_OPT_INS = ['squash-history'] as const
 
 export type FleetOptIn = (typeof KNOWN_OPT_INS)[number]
 
+// Every release channel a member may declare. Single source of truth for
+// `publishes`, so a new channel validates only after it is added here. Kept
+// sorted.
+//   - binary: signed executables attached to a GitHub release.
+//   - cargo: a crate on crates.io.
+//   - custom: a channel with its own publisher (an editor or browser
+//     extension marketplace).
+//   - github-action: consumed as `owner/repo@<tag>` straight from the git
+//     tree. Named for the channel rather than a bare `action`, which reads as
+//     any generic action.
+//   - js: an npm package.
+//   - none: nothing ships; the repo is consumed in place or internal only.
+export const KNOWN_PUBLISH_TARGETS = [
+  'binary',
+  'cargo',
+  'custom',
+  'github-action',
+  'js',
+  'none',
+] as const
+
+export type FleetPublishTarget = (typeof KNOWN_PUBLISH_TARGETS)[number]
+
 /**
  * Identify the canonical repo name for the checkout at `cwd`. Prefer the GitHub
  * remote slug (survives checkout-dir renames like `socket-cli-fix-foo`); fall
@@ -54,6 +80,21 @@ export function repoNameFromRemoteUrl(remote: string): string | undefined {
   const normalized = normalizePath(remote.trim())
   const m = /[/:](?<repo>[^/:]+?)(?:\.git)?$/.exec(normalized)
   return m?.groups?.['repo']
+}
+
+/**
+ * The GitHub org/owner segment from a git remote URL — the path component
+ * immediately before the repo segment `repoNameFromRemoteUrl` extracts.
+ * Handles both `git@github.com:Owner/repo.git` (ssh, `:` before the owner)
+ * and `https://github.com/Owner/repo.git` (https, `/` throughout). Splits on
+ * every `/` and `:` after stripping a trailing `.git`, the same separator
+ * handling as `repoNameFromRemoteUrl`; undefined when the remote has fewer
+ * than two path segments (no owner to extract).
+ */
+export function ownerFromRemoteUrl(remote: string): string | undefined {
+  const normalized = normalizePath(remote.trim()).replace(/\.git$/, '')
+  const segments = normalized.split(/[/:]/).filter(Boolean)
+  return segments.length >= 2 ? segments[segments.length - 2] : undefined
 }
 
 export function resolveRepoName(cwd: string): string | undefined {
@@ -96,6 +137,25 @@ export function loadRosterFromRepo(repoRoot: string): FleetRoster | undefined {
 }
 
 /**
+ * The roster entry for `repoName`, or undefined when the roster does not name
+ * it. Presence is an answer in its own right: a repo the roster never lists is
+ * not a member, which is a different fact from a member that declares
+ * `publishes: ["none"]`.
+ */
+export function findRosterRepo(
+  roster: FleetRoster,
+  repoName: string,
+): FleetRepo | undefined {
+  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
+    const repo = roster.repos[i]!
+    if (repo.name === repoName) {
+      return repo
+    }
+  }
+  return undefined
+}
+
+/**
  * True when `repoName` has opted into `optIn` in the roster.
  */
 export function isOptedIn(
@@ -103,13 +163,8 @@ export function isOptedIn(
   repoName: string,
   optIn: string,
 ): boolean {
-  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
-    const r = roster.repos[i]!
-    if (r.name === repoName) {
-      return (r.optIns ?? []).includes(optIn)
-    }
-  }
-  return false
+  const repo = findRosterRepo(roster, repoName)
+  return (repo?.optIns ?? []).includes(optIn)
 }
 
 /**
@@ -145,18 +200,118 @@ export function validateRosterOptIns(roster: FleetRoster): string[] {
 }
 
 /**
- * The release profile for `repoName` — `js` | `node` | `binary` | `custom` |
- * `none`. Selects the packager + which release workflow a repo enables.
- * Defaults to `none` when unset or the repo is absent.
+ * True when `value` is one of the KNOWN_PUBLISH_TARGETS channels.
  */
-export function publishProfile(roster: FleetRoster, repoName: string): string {
-  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
-    const r = roster.repos[i]!
-    if (r.name === repoName) {
-      return r.publishes ?? 'none'
+export function isKnownPublishTarget(
+  value: string,
+): value is FleetPublishTarget {
+  return (KNOWN_PUBLISH_TARGETS as readonly string[]).includes(value)
+}
+
+/**
+ * The publish channels a roster entry declares, read from parsed JSON rather
+ * than trusted from the type. Accepts the list every canonical entry carries
+ * and a lone string, which is how a single-channel member reads, and drops
+ * anything outside KNOWN_PUBLISH_TARGETS so an unknown value can never reach a
+ * caller as a channel. An empty result means "nothing readable was declared",
+ * which is a different answer from `['none']`.
+ *
+ * The strictness lives in `validateRosterPublishes`, which gates the roster
+ * this repo owns. A reader looking at some other checkout's copy has to cope
+ * with whatever is on disk there instead of throwing.
+ */
+export function normalizePublishTargets(
+  value: unknown,
+): readonly FleetPublishTarget[] {
+  const raw = typeof value === 'string' ? [value] : value
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  const targets: FleetPublishTarget[] = []
+  for (let i = 0, { length } = raw; i < length; i += 1) {
+    const entry: unknown = raw[i]
+    if (typeof entry === 'string' && isKnownPublishTarget(entry)) {
+      targets.push(entry)
     }
   }
-  return 'none'
+  return targets
+}
+
+/**
+ * Validate every member's `publishes` against KNOWN_PUBLISH_TARGETS. Returns
+ * one error string per member that omits it or names a channel outside the
+ * set.
+ *
+ * An omission is an error rather than a default, because the reader cannot
+ * tell "nothing ships" from "nobody filled this in" — and guessing `none` for
+ * the second case hides a member's real release channel from everything that
+ * derives behaviour from this field.
+ */
+export function validateRosterPublishes(roster: FleetRoster): string[] {
+  const errors: string[] = []
+  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
+    const repo = roster.repos[i]!
+    const declared: unknown = repo.publishes
+    if (!Array.isArray(declared) || declared.length === 0) {
+      errors.push(
+        `${repo.name}: missing "publishes" — declare a non-empty list drawn from ${KNOWN_PUBLISH_TARGETS.join(', ')} (use ["none"] when nothing ships).`,
+      )
+      continue
+    }
+    const seen = new Set<string>()
+    for (let j = 0, count = declared.length; j < count; j += 1) {
+      const target: unknown = declared[j]
+      if (typeof target !== 'string' || !isKnownPublishTarget(target)) {
+        errors.push(
+          `${repo.name}: unknown publish target "${String(target)}" — known targets are ${KNOWN_PUBLISH_TARGETS.join(', ')}.`,
+        )
+        continue
+      }
+      if (seen.has(target)) {
+        errors.push(`${repo.name}: duplicate publish target "${target}".`)
+      }
+      seen.add(target)
+    }
+    // `none` means nothing ships, so pairing it with a real channel states two
+    // contradictory things and leaves the reader no way to tell which is true.
+    if (seen.has('none') && seen.size > 1) {
+      errors.push(
+        `${repo.name}: "none" cannot be combined with another target — drop it, or make it the only entry.`,
+      )
+    }
+  }
+  return errors
+}
+
+/**
+ * The release channels for `repoName`, drawn from KNOWN_PUBLISH_TARGETS. They
+ * select the packagers and which release workflows a repo enables.
+ *
+ * Falls back to `['none']` only when the repo is absent from the roster — a
+ * present member always declares at least one, which
+ * `validateRosterPublishes` enforces. A present member whose declaration is
+ * unreadable yields an empty list, so a caller can tell "declared nothing
+ * ships" from "declared something this reader cannot make sense of".
+ */
+export function publishChannels(
+  roster: FleetRoster,
+  repoName: string,
+): readonly FleetPublishTarget[] {
+  const repo = findRosterRepo(roster, repoName)
+  return repo ? normalizePublishTargets(repo.publishes) : ['none']
+}
+
+/**
+ * True when `repoName` ships to `target`. The question nearly every caller
+ * actually has, and it reads the same whether the member has one channel or
+ * several.
+ */
+export function publishesTo(
+  roster: FleetRoster,
+  repoName: string,
+  target: FleetPublishTarget,
+): boolean {
+  return publishChannels(roster, repoName).includes(target)
 }
 
 /**
@@ -208,10 +363,5 @@ export function isThinMember(repoRoot: string): boolean {
   if (!name || name === 'socket-wheelhouse') {
     return false
   }
-  for (let i = 0, { length } = roster.repos; i < length; i += 1) {
-    if (roster.repos[i]!.name === name) {
-      return true
-    }
-  }
-  return false
+  return !!findRosterRepo(roster, name)
 }

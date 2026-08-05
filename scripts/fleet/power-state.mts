@@ -6,7 +6,7 @@
  *   priority order:
  *
  *   1. `node:smol-power` — when running inside a node-smol binary that ships the
- *      smol_power native binding, socket-btm's custom Node distribution. Pure
+ *      smol_power native binding, node-smol's custom Node distribution. Pure
  *      C++ syscalls, sub-millisecond.
  *   2. Shellout fallback — system Node doesn't have node:smol-power. Each platform
  *      has a different mechanism:
@@ -31,7 +31,7 @@ import process from 'node:process'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-// Probe for node:smol-power. Lives in socket-btm's node-smol binary
+// Probe for node:smol-power. Lives in the node-smol binary
 // — `isBuiltin()` returns true on those builds and false on system
 // Node, so we only attempt the dynamic import when the module is
 // actually available.

@@ -1,4 +1,4 @@
-/**
+/*
  * @file Reading commit history for `commits-have-no-ai-attribution`: the git
  *   runner, the record parser, and the three scopes a run can ask for.
  *
@@ -74,15 +74,30 @@ export class UnreleasedLineError extends AttributionScanError {
   readonly findingCount: number
   readonly ref: string
   readonly tagCount: number
+  /**
+   * The declared `release.releaseLine.tagPattern` glob when one narrowed the
+   * search, so the report can say the pattern matched nothing instead of
+   * blaming the repository's whole tag set.
+   */
+  readonly tagPattern: string | undefined
 
-  constructor(config: { findingCount: number; ref: string; tagCount: number }) {
+  constructor(config: {
+    findingCount: number
+    ref: string
+    tagCount: number
+    tagPattern?: string | undefined
+  }) {
     const cfg = { __proto__: null, ...config } as typeof config
+    const shortfall = cfg.tagPattern
+      ? `none of the ${cfg.tagCount} tag(s) matching the declared release.releaseLine.tagPattern \`${cfg.tagPattern}\``
+      : `none of the repository's ${cfg.tagCount} tag(s)`
     super(
-      `${cfg.ref} carries ${cfg.findingCount} AI-attribution finding(s), and none of the repository's ${cfg.tagCount} tag(s) is in its history, so the release boundary is undefined`,
+      `${cfg.ref} carries ${cfg.findingCount} AI-attribution finding(s), and ${shortfall} is in its history, so the release boundary is undefined`,
     )
     this.findingCount = cfg.findingCount
     this.ref = cfg.ref
     this.tagCount = cfg.tagCount
+    this.tagPattern = cfg.tagPattern
   }
 }
 
@@ -143,15 +158,45 @@ export function describeGitFailure(
 /**
  * Throw when the checkout is shallow. A truncated graph makes both "all
  * reachable history" and tag ancestry unreliable, and a boundary read off a
- * truncated graph would freeze the wrong span of commits.
+ * truncated graph would freeze the wrong span of commits. On a CI runner the
+ * shallow state is the bootstrap checkout's own depth-1 fetch, not an
+ * operator's choice, so the check self-heals there: one `git fetch
+ * --unshallow --tags` completes the graph, and only a still-shallow repo
+ * after that fetch throws. Off-runner the refusal stays loud and
+ * network-free — a dev box's shallow clone is the operator's to fix.
  */
-export async function assertNotShallowCheckout(git: GitRunner): Promise<void> {
+export async function assertNotShallowCheckout(
+  git: GitRunner,
+  env: Record<string, string | undefined> = process.env,
+): Promise<void> {
   const shallow = await git(['rev-parse', '--is-shallow-repository'])
-  if (shallow.ok && shallow.stdout.trim() === 'true') {
-    throw new AttributionScanError(
-      'this checkout is a shallow clone, so "all reachable history" would be a lie — fetch full history (e.g. `git fetch --unshallow`) or pass --unpushed to scan only the commits not yet on the default branch',
-    )
+  if (!shallow.ok || shallow.stdout.trim() !== 'true') {
+    return
   }
+  // When the self-heal runs and the checkout is STILL shallow, the reason the
+  // fetch gave is the whole diagnosis. Discarding it leaves CI reporting only
+  // "shallow clone", which is the symptom the heal was supposed to remove.
+  let healReport = ''
+  if (env['GITHUB_ACTIONS'] === 'true') {
+    const fetched = await git([
+      'fetch',
+      '--quiet',
+      '--unshallow',
+      '--tags',
+      'origin',
+    ])
+    const after = await git(['rev-parse', '--is-shallow-repository'])
+    if (after.ok && after.stdout.trim() !== 'true') {
+      return
+    }
+    healReport = fetched.ok
+      ? ' The CI self-heal fetch exited 0 yet the checkout is still shallow.'
+      : ` The CI self-heal fetch failed: ${fetched.error || 'git reported no error text'}.`
+  }
+  throw new AttributionScanError(
+    'this checkout is a shallow clone, so "all reachable history" would be a lie — fetch full history (e.g. `git fetch --unshallow`) or pass --unpushed to scan only the commits not yet on the default branch.' +
+      healReport,
+  )
 }
 
 /**

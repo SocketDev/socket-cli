@@ -27,7 +27,10 @@ import {
   pickConfig,
 } from './_shared/format-scope.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import { nodeModulesBinPath } from './paths.mts'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 
 // oxfmt is spawned from `node_modules/.bin` rather than through `pnpm exec`,
 // which would add the package manager's startup and a Socket Firewall
@@ -38,7 +41,7 @@ const OXFMT_BIN = nodeModulesBinPath('oxfmt')
 // directly via spawnSync (CVE-2024-27980 hardening); the shell wrapper resolves
 // it. On POSIX we keep direct invocation so no shell-quoting surface is
 // introduced.
-const useShell = process.platform === 'win32'
+const useShell = WIN32
 
 // The decision `main` reduces argv down to before it ever spawns oxfmt —
 // pure + exported so a test drives every argv shape without a subprocess.
@@ -130,6 +133,17 @@ function main(): void {
   process.exitCode = res.status ?? 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'format the working tree or the named files with oxfmt under the fleet ignore rules',
+  help: `Usage: node scripts/fleet/format.mts [flags] [<file> ...]
+  --check                    verify only; write nothing
+  --staged                   scope to staged files
+  --modified                 scope to working-tree-vs-HEAD files
+  --stdin-filepath=<name>    format stdin to stdout; the name selects the parser
+  <file> ...                 format exactly these files`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

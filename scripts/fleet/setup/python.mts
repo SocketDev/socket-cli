@@ -10,21 +10,19 @@
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { findOwnFiles } from '../update/_shared.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 import type {
   EcosystemStepOptions,
   EcosystemStepResult,
 } from './ecosystems.mts'
-
-const mainLogger = getDefaultLogger()
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 /**
  * True when a `pyproject.toml` body declares a `[tool.uv]` table (or any
@@ -121,16 +119,12 @@ export async function setupPython(
   return { ok: true, skipped: false }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'syncs uv project dependencies from the committed uv.lock without mutating it',
+  help: 'Usage: pnpm run setup:python',
+}
+
 if (isMainModule(import.meta.url)) {
-  setupPython().then(
-    result => {
-      if (!result.ok) {
-        process.exitCode = 1
-      }
-    },
-    (e: unknown) => {
-      mainLogger.error(e)
-      process.exitCode = 1
-    },
-  )
+  runMain(async () => ((await setupPython()).ok ? 0 : 1), SCRIPT_META)
 }

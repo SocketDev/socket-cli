@@ -27,6 +27,9 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -91,6 +94,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks vitest tuning lives in .config/repo/socket-wheelhouse.json, never an orphaned vitest.json',
+  help: `Usage: node scripts/fleet/check/vitest-config-is-consolidated.mts [flags]
+
+  --quiet  suppress the clean-pass message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

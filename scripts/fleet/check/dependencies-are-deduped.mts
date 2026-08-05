@@ -55,6 +55,8 @@ import process from 'node:process'
 
 import { FLEET_CATALOG_YAML, PNPM_LOCK } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // A `packages:` (or `snapshots:`) key: `'<name>@<version>':` where name may be
 // scoped (`@scope/pkg`). Indented exactly two spaces under the section header.
@@ -538,9 +540,15 @@ function main(): void {
   process.exit(failed ? 1 : 0)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the lockfile for cross-major duplicates and un-redirected hardened drop-ins',
+  help: 'Usage: node scripts/fleet/check/dependencies-are-deduped.mts',
+}
+
 // Run only when invoked directly (CLI / CI), not when imported by the unit
 // tests for `scan` — `main()` calls `process.exit`, which would tear down the
 // test runner mid-suite.
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -277,15 +277,15 @@ const QUEST_RE = new RegExp(
 //     `as of` is dropped from the verb list entirely, a data-currency stamp.
 //
 // DELIBERATELY DROPPED from Tier-1 (now block only via the Tier-2 co-occurrence
-// path): the bare parenthesised/bracketed `(#N)` / `[#N]` and the bare `PR #N` /
-// `see PR #N` arms. Real source proves those are NOT process narrative — they
-// are ENUMERATION ordinals (`devEngines.runtime (#1) → .node-version (#2)`),
-// UPSTREAM provenance citations (`Flag added in Node 9.6.0 (#14253)`, `(PR
-// #57038)`), and legitimate regression-guard / tracking cross-refs (`Regression
-// guard for greptile feedback on PR #36`). The motivating defects still block:
-// `Step 4 of the net perf quest (#5419)` via QUEST_RE and `Step 2 ([#5638])
-// replaced …` via STEP_SEQ_RE — neither relies on the bracketed-ref arm.
-const PROCESS_ISSUE_REF_RE =
+// path): the bare parenthesised/bracketed `(#N)` / `[#N]` and the bare `PR #N`
+// arms. Real source proves those are enumeration ordinals, upstream provenance
+// citations (`Flag added in Node 9.6.0 (#14253)`), and legitimate
+// regression-guard cross-refs. The motivating defects still block via QUEST_RE
+// (`Step 4 of the net perf quest (#5419)`) and STEP_SEQ_RE (`Step 2 ([#5638])
+// replaced …`) — neither relies on the bracketed-ref arm.
+// Exported so the docs-surface gate (check/pr-refs-in-docs-are-linked.mts)
+// reuses the SAME ref shape a commit-comment carries — one source, no drift.
+export const PROCESS_ISSUE_REF_RE =
   /\b(?:closes|fixes|resolves)\s+#\d+\b|\b(?:cherry[- ]?picked|follow[- ]?up to|reverts?)\s+#\d+\b|\b(?:added|fixed|introduced|landed|merged|resolved|shipped)\s+in\s+#\d+\b/i
 
 // Tier-2: a lone `#<N>` mention blocks ONLY when a STRONG, unambiguous process
@@ -295,11 +295,15 @@ const PROCESS_ISSUE_REF_RE =
 // count) — keeping only verbs that are overwhelmingly git/PR-process:
 // merged / landed / shipped / revert / rebase / squash / cherry-pick /
 // follow-up, plus the perf-qualified `quest`.
-const LONE_ISSUE_REF_RE = /#\d+\b/
+// Exported for the docs-surface gate; see PROCESS_ISSUE_REF_RE above.
+export const LONE_ISSUE_REF_RE = /#\d+\b/
 // Match git/PR process verbs: follow-up, merged, landed, shipped, reverts,
 // rebased, squashed, cherry-picked — the words that signal a commit message
 // is talking about its own change history rather than general prose.
-const PROCESS_WORD_RE =
+// Exported for the docs-surface gate (pr-refs-in-docs-are-linked.mts), which
+// reuses this Tier-2 co-occurrence so a lone `#N` flags there only when it flags
+// here — an ordinal like "the #10 tell" carries no process verb and is left be.
+export const PROCESS_WORD_RE =
   /\b(?:cherry[- ]?pick(?:ed)?|follow[- ]?up|landed|merged|rebase[ds]?|reverts?|shipped|squash(?:ed)?)\b/i
 
 // Upstream-provenance exemption for the Tier-2 lone-`#N` path: a `#N` whose line
@@ -316,7 +320,9 @@ const PROCESS_WORD_RE =
 // release-line arm requires a TWO-digit `\d\d.x` — Node's line is 18–26, so
 // `22.x` matches but a single-digit `2.x` (nub's own / another tool's release
 // line — `shipped #5 on the 2.x branch`) does NOT, and still blocks.
-const UPSTREAM_CONTEXT_RE = /\bnode\s+v?\d+\.\d+|\bnodejs\/node\b|\b\d\d\.x\b/i
+// Exported for the docs-surface gate; see PROCESS_ISSUE_REF_RE above.
+export const UPSTREAM_CONTEXT_RE =
+  /\bnode\s+v?\d+\.\d+|\bnodejs\/node\b|\b\d\d\.x\b/i
 
 // Returns the comment lines that carry a PR-process / quest / step-N
 // narrative. One hit per offending line; the `line` field is the raw source

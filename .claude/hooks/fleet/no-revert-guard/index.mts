@@ -425,8 +425,40 @@ export function matchNoVerify(command: string): string | undefined {
   return '--no-verify'
 }
 
+/**
+ * True when a git segment is aimed at an `upstream/` reference tree, either via
+ * `-C upstream/<name>` or an `upstream/…` pathspec.
+ */
+export function targetsUpstreamTree(args: readonly string[]): boolean {
+  const i = args.indexOf('-C')
+  if (i >= 0 && i + 1 < args.length && isUpstreamArg(args[i + 1])) {
+    return true
+  }
+  return args.some(a => !a.startsWith('-') && isUpstreamArg(a))
+}
+
+function isUpstreamArg(value: string | undefined): boolean {
+  if (!value) {
+    return false
+  }
+  const p = value.replaceAll('\\', '/')
+  return (
+    p === 'upstream' || p.startsWith('upstream/') || p.includes('/upstream/')
+  )
+}
+
 export function matchDestructiveGit(command: string): string | undefined {
   for (const c of commandsFor(command, 'git')) {
+    // Restoring a vendored upstream to its pinned ref is a REPAIR, not a
+    // revert. An `upstream/` tree is read-only and its whole value is being
+    // byte-identical to the `ref =` in `.gitmodules`, so discarding local
+    // edits there returns it to the only state it is allowed to hold. No
+    // authored work can be lost: upstream-is-read-only-guard blocks writing
+    // there in the first place, so anything found dirty got there by accident,
+    // which is exactly what this repair undoes.
+    if (targetsUpstreamTree(c.args)) {
+      continue
+    }
     for (const { rest, sub } of gitSubcommandReadings(c.args)) {
       const hit = destructiveShape(sub, rest)
       if (hit) {

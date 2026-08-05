@@ -47,8 +47,10 @@ import {
   selectRepos,
   unmatchedSelectorMessage,
 } from '../_shared/repo-filter.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -487,8 +489,17 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every fleet member default branch is protected by effective deletion and force-push rules',
+  help: `Usage: node scripts/fleet/check/main-branch-rules-are-enforced.mts [flags]
+
+  --fix           create the missing repository rules, then re-sweep
+  --repo <name>   limit the sweep to named members (repeatable, comma-separable)`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

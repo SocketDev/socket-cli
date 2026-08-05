@@ -138,7 +138,7 @@ const SIBLING_PATH_RES: readonly RegExp[] = [
 // The canonical social-follow badge block every fleet README carries under
 // the title, byte-identical fleet-canonical, not repo-contextual. Both must
 // be present. Matched by the stable LINK target, not the badge image, so an
-// image-host change (shields.io → the local assets/fleet/ SVGs) or reworded
+// image-host change (shields.io → the local assets/ SVGs) or reworded
 // alt-text still counts.
 const SOCIAL_BADGES: ReadonlyArray<{ name: string; signature: RegExp }> = [
   { name: 'Bluesky follow', signature: /bsky\.app\/profile\/socket\.dev/ },
@@ -147,6 +147,34 @@ const SOCIAL_BADGES: ReadonlyArray<{ name: string; signature: RegExp }> = [
     signature: /(?:twitter|x)\.com\/SocketSecurity/,
   },
 ]
+
+// A README carries EXACTLY ONE brand mark (owner directive, 2026-08-04): a
+// repo with its own combomark shows that at the top, and a repo without one
+// shows the fleet Socket combomark at the bottom. Both at once is duplicate
+// branding — the reader sees the same lockup twice and the page pays for it in
+// vertical space, which is what made the 420px footer read as oversized on
+// repos that already had a logo.
+//
+// Matched on the ASSET PATH, which is the stable part: `assets/`
+// is repo-owned, `assets/socket-combomark` is the fleet mark. Sizes and
+// alt text are free to change without touching this rule.
+const REPO_BRAND_MARK = /assets\/repo\/brand\/[^"')\s]*combomark/
+const FLEET_BRAND_MARK = /assets\/fleet\/socket-combomark/
+
+/**
+ * Which brand marks a README shows. BOTH present is the violation. Neither is
+ * left alone: a scoped or in-progress README may carry no logo yet, and
+ * demanding one would block edits this guard has no business blocking.
+ */
+export function brandMarksPresent(text: string): {
+  fleet: boolean
+  repo: boolean
+} {
+  return {
+    fleet: FLEET_BRAND_MARK.test(text),
+    repo: REPO_BRAND_MARK.test(text),
+  }
+}
 
 /**
  * Non-fleet opt-in check. A foreign repo, origin not in the fleet roster
@@ -272,6 +300,7 @@ export function computePostEditText(
 
 interface ShapeFinding {
   kind:
+    | 'duplicate-brand-mark'
     | 'missing-section'
     | 'missing-social-badges'
     | 'relative-sibling'
@@ -297,6 +326,18 @@ export function findShapeViolations(
       if (m && m.groups?.['heading']) {
         headings.push(m.groups['heading'])
       }
+    }
+    // Exactly one brand mark: the repo's own at the top, or the fleet
+    // combomark at the bottom.
+    const marks = brandMarksPresent(text)
+    if (marks.fleet && marks.repo) {
+      findings.push({
+        kind: 'duplicate-brand-mark',
+        detail:
+          'README shows BOTH the repo brand mark and the fleet Socket ' +
+          'combomark. A page carries exactly one: keep the repo mark at the ' +
+          'top and delete the fleet combomark block at the bottom.',
+      })
     }
     if (!hasLeadAnswer(text)) {
       findings.push({

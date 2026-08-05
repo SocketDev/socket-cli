@@ -48,6 +48,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { LINT_RULE_TEST_DIRS, REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const PLUGIN_DIR = path.join(REPO_ROOT, '.config', 'fleet', 'oxlint-plugin')
 // Each rule is its own dir under the cascaded `fleet/` tier (mirrors
@@ -91,11 +94,17 @@ const SOCKET_PREFIX = 'socket/'
 // `--check` comparison so the two never diverge. Routed through
 // `pnpm run format --stdin-filepath=<name>` — the package.json script owns
 // the binary + config; no bare oxfmt invocation. `filename` only tells the
-// parser which grammar to use (.mts vs .json); the file isn't read. Returns
-// the input unchanged on any failure, so a broken formatter degrades to the
-// prior (unformatted) behavior rather than crashing the sync.
-function formatViaOxfmt(source: string, filename: string): string {
-  const result = spawnSync(
+// parser which grammar to use (.mts vs .json); the file isn't read. On a
+// failed pipe it WARNS LOUD and returns the input unchanged: the sync still
+// completes, but the degrade is named — a silent fallback here once shipped
+// an unformatted oxlintrc.json that bounced every push on the format gate
+// until someone dug the cause out by hand.
+export function formatViaOxfmt(
+  source: string,
+  filename: string,
+  runner: typeof spawnSync = spawnSync,
+): string {
+  const result = runner(
     'pnpm',
     ['run', '--silent', 'format', `--stdin-filepath=${filename}`],
     { cwd: REPO_ROOT, input: source, encoding: 'utf8' },
@@ -112,6 +121,19 @@ function formatViaOxfmt(source: string, filename: string): string {
     .filter(line => !BANNER_LINE_RE.test(line))
     .join('\n')
   if (result.status !== 0 || !formatted) {
+    const saw =
+      result.status !== 0
+        ? `format pipe exited ${result.status}`
+        : 'format pipe produced no output'
+    process.stderr.write(
+      `[sync-oxlint-rules] WARNING: emitting UNFORMATTED ${filename}.\n` +
+        `  What: the format pipe failed, so the regenerated file skips oxfmt.\n` +
+        `  Where: pnpm run format --stdin-filepath=${filename}\n` +
+        `  Saw: ${saw}; wanted: formatted output on stdout.\n` +
+        `  Fix: run \`pnpm run format ${filename}\` by itself to see the real error,\n` +
+        `  then re-run this sync — an unformatted write bounces every push on the\n` +
+        `  format gate until regenerated through a working pipe.\n`,
+    )
     return source
   }
   // oxfmt's stdin mode omits the trailing newline that its file mode (and the
@@ -140,7 +162,7 @@ const DORMANT_RULES: Readonly<Record<string, string>> = Object.assign(
 /**
  * Kebab-case rule id → camelCase import identifier.
  */
-function toCamel(id: string): string {
+export function toCamel(id: string): string {
   return id.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase())
 }
 
@@ -148,7 +170,7 @@ function toCamel(id: string): string {
  * Every rule id under fleet/ (a rule = a dir holding index.mts; kebab-case, no
  * `_`-prefixed helper dirs), sorted.
  */
-function ruleIds(): string[] {
+export function ruleIds(): string[] {
   return (
     readdirSync(FLEET_RULES_DIR, { withFileTypes: true })
       .filter(
@@ -174,7 +196,7 @@ function ruleIds(): string[] {
  * are present but their tests live upstream — so only the wheelhouse (which
  * owns `template/base/`) asserts test presence; a member always returns [].
  */
-function rulesMissingTests(ids: readonly string[]): string[] {
+export function rulesMissingTests(ids: readonly string[]): string[] {
   if (!existsSync(path.join(REPO_ROOT, 'template', 'base'))) {
     return []
   }
@@ -192,7 +214,7 @@ function rulesMissingTests(ids: readonly string[]): string[] {
  * text, or the input unchanged if the regions can't be located (caller treats
  * an unchanged result as "no drift").
  */
-function rewriteIndex(source: string, ids: readonly string[]): string {
+export function rewriteIndex(source: string, ids: readonly string[]): string {
   // -- import run: the contiguous block of `import X from './fleet/<id>/index.mts'`
   // lines. Find first and last; replace the span between them (inclusive).
   const lines = source.split('\n')
@@ -505,7 +527,14 @@ function main(): number {
   return 0
 }
 
-const invokedDirectly = isMainModule(import.meta.url)
-if (invokedDirectly) {
-  process.exitCode = main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'derives oxlint plugin registration + oxlintrc activation from the rule dir inventory',
+  help: `Usage: node scripts/fleet/sync-oxlint-rules.mts [flags]
+
+  --check  exit non-zero if either generated file would change; no write`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
 }

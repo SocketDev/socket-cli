@@ -27,6 +27,9 @@ import {
 import type { PatchOutcome } from './lib/patch-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -83,6 +86,17 @@ export function main(argv: readonly string[]): number {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'parses tagged patch/review replies and renders PATCHES.md for the patching-findings engine',
+  help: `Usage: node scripts/fleet/patching-findings/cli.mts <subcommand> [flags]
+
+  parse-patch --from <reply.txt>   print the ParsedPatch JSON
+  parse-review --from <reply.txt>  print the ParsedReview JSON
+  report --from <outcomes.json> --findings <path> --repo <path> [--out <file>]
+                                   write PATCHES.md + print the summary`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

@@ -47,6 +47,8 @@ import { SOURCE_FILE_RE } from '../../../.git-hooks/_shared/file-scan.mts'
 import { isPurePlaceholder } from '../../../.git-hooks/_shared/personal-path.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -97,7 +99,8 @@ function isSelfExempt(relFile: string): boolean {
 // the pattern, not leaking a real path. Matched against the captured path's
 // owner segment.
 const PLACEHOLDER_MATCH_RE =
-  /(?:^|[/.])(?:socket-foo\b|Users\/(?:\.\.\.|me|x)(?:\/|$))/ // socket-lint: allow personal-path -- placeholder-token detector, not a real path.
+  // socket-lint: allow personal-path -- placeholder-token detector, not a real path.
+  /(?:^|[/.])(?:socket-foo\b|Users\/(?:\.\.\.|me|x)(?:\/|$))/
 
 function findingIsDocumentation(
   rawLine: string,
@@ -253,7 +256,7 @@ function main(): void {
       '  These leak internal fleet layout, operator-local notes, or a dev-box path into committed source.',
     )
     logger.error(
-      '  Remove the path from the comment (describe the constraint, not where a plan doc lives), or append `// socket-lint: allow private-path` on a line that must keep an illustrative example. See docs/agents.md/fleet/public-surface-hygiene.md.',
+      '  Remove the path from the comment (describe the constraint, not where a plan doc lives), or add `// socket-lint: allow private-path` on its own line above a line that must keep an illustrative example. See docs/agents.md/fleet/public-surface-hygiene.md.',
     )
     process.exitCode = 1
     return
@@ -265,6 +268,13 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that no tracked source comment carries an internal or private path',
+  help: `Usage: node scripts/fleet/check/private-paths-are-absent.mts [flags]
+  --quiet   suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

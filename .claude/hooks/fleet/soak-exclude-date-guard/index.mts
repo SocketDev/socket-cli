@@ -163,7 +163,7 @@ export const check = editGuard((filePath, content) => {
       `  # published: ${today} | removable: ${exampleRemovable}\n` +
       "  - 'pkg@1.2.3'\n" +
       '\n' +
-      'One-off override: append `# socket-lint: allow soak-exclude-no-date-annotation`\n' +
+      'One-off override: add `# socket-lint: allow soak-exclude-no-date-annotation` on its own line above\n' +
       'to the bullet line.\n',
   )
 })

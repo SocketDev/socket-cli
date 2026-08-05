@@ -110,10 +110,33 @@ export async function runVerifyStage(config: {
     e => e.name === pkg.name && e.version === cfg.targetVersion,
   )
   if (!entry) {
-    // Staged entries are maintainer-visible: a wrong-account login reads an
-    // empty list even when the stage succeeded, so the failure names WHO was
-    // looking, the wrong-user trap that cost a real debugging session.
-    // Seamed, like every other effect here — tests stub it.
+    // An empty stage list has TWO causes, and only one is a failure. The
+    // version may already be PUBLIC — a promote that happened out of band (the
+    // npm UI, or a workflow that approved on its own) drains the stage, so the
+    // absent entry means "already done", not "never staged". Ask the registry
+    // before failing.
+    //
+    // Getting this wrong strands the release: verify fails, so the `release`
+    // stage that cuts the tag + GitHub release never runs, and the version sits
+    // public with no tag. Both @socketsecurity/lib 6.1.0 and 6.5.3 landed that
+    // way. The tag-gap healer (`--reconcile`) cannot recover it either — it
+    // demands a byte-identical re-pack of a tarball CI built — so the only
+    // reliable fix is to not strand it here.
+    const dist = await seams.fetchRegistryDist(pkg.name)
+    if (dist[cfg.targetVersion]) {
+      return {
+        detail:
+          `registry truth: ${pkg.name}@${cfg.targetVersion} is already public — ` +
+          'the promote happened out of band, so the stage list is empty by ' +
+          'design. Receipt minted from the registry read; continuing to the ' +
+          'tag + GitHub release.',
+        status: 'passed',
+      }
+    }
+    // Genuinely unstaged. Staged entries are maintainer-visible: a wrong-account
+    // login reads an empty list even when the stage succeeded, so the failure
+    // names WHO was looking, the wrong-user trap that cost a real debugging
+    // session. Seamed, like every other effect here — tests stub it.
     const identity = await seams.identityFor(pkg.name)
     return {
       detail:

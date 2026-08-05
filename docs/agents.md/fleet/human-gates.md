@@ -55,3 +55,45 @@ Two traps the `Mind:` lines keep visible: **split identities**: pnpm's config to
 ## Relationship to bypass phrases
 
 A push-grant gate names the phrase for the human to type. The [bypass-phrases](bypass-phrases.md) table does the same. That is not laundering: the scanner matches transcript role provenance, so a phrase printed by an agent grants nothing — only the human typing it in a user turn does. What stays forbidden is asking another agent or session to produce the phrase.
+
+## Search for the script before raising the gate
+
+A gate is a claim that no code can do this. Verify that claim before making it.
+
+- **Grep the publish-infra surface first.** A step that looks like browser work
+  often has a driver already:
+  `scripts/fleet/publish-infra/npm/trust-sweep.mts` writes trusted-publisher
+  rows through `npm trust`'s registry endpoints,
+  `browser-session.mts` / `browser-sign-in.mts` carry the session, and
+  `npm-web-auth.mts` routes auth. Raising a "do this in the web UI" gate over
+  work one of these performs hands the operator a job the repo already
+  automated.
+- **Name the narrowest human step, not the whole task.** For the
+  trusted-publisher sweep the human part is one 2FA approval click with the
+  cooldown box ticked; the enumeration, the plan, the revoke-and-create, and the
+  `npm trust list` verification are all script work. A gate that says "add the
+  rows in the web UI" is wrong by an order of magnitude.
+- **A tool that cannot do the write is a different finding from a missing
+  script.** npm's bot management silently drops state-changing transactions from
+  a CDP-driven browser (132 of 132 saves lost, 2026-07-31), which is why the API
+  lane exists. Record that in the `Mind:` line so nobody re-tries the browser.
+
+Genuinely human-only, and the list is short: typing an authorization phrase,
+clicking a 2FA or environment approval, provisioning a credential or installing
+an App, and naming a release version.
+
+## Lane A runs from anywhere
+
+The command in lane A is pasted into an unknown shell, in an unknown directory.
+
+- **Never write a lane that assumes a working directory.** Prefer the flag that
+  removes the assumption: `gh` takes `--repo <owner>/<name>`, so
+  `gh workflow run npm-publish.yml --repo SocketDev/<repo> --ref main -f publish=true`
+  works from anywhere. When a script genuinely needs its repo root, give the
+  absolute path in the same line rather than a `cd` instruction on its own.
+- **One line, no placeholders to resolve.** Fill in the real repo, ref, and
+  input values. A lane the operator has to edit before running is a lane that
+  gets run wrong.
+- **Say what remains after the command.** A dispatch does not finish a release:
+  the environment stage still needs a browser approval. Put that in `Then:` so
+  the operator is not left believing the paste completed the task.

@@ -36,12 +36,15 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { SOAK_DAYS } from './constants/soak.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
 import {
   portedUpstreams,
   upstreamSubmoduleName,
 } from './_shared/action-port-map.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -75,11 +78,11 @@ export const VENDORED_ACTIONS: readonly string[] = [
 // `upstream/*` submodule names this script does NOT own, and must never prune.
 // Everything else under `upstream/` is an action pin it generates, so anything
 // outside the vendored union is a retired action whose block should go.
-// Empty today: every block in the fleet's `.gitmodules` is an action pin. The
-// anticipated first entries are the copyleft tests-only slices from
-// `_shared/copyleft-upstreams.mts`, which a different provisioning path writes
-// and whose slugs will never appear in the union.
-export const UNMANAGED_UPSTREAMS: readonly string[] = []
+// Library upstream references (pinned via `gen/gitmodules-hash --set` for a
+// port or a soaking dependency) belong here, as do the copyleft tests-only
+// slices from `_shared/copyleft-upstreams.mts`, which a different
+// provisioning path writes.
+export const UNMANAGED_UPSTREAMS: readonly string[] = ['upstream/chapter-tgz']
 
 const GITMODULES = path.join(REPO_ROOT, '.gitmodules')
 
@@ -500,6 +503,15 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'pins third-party GitHub Actions as upstream/ submodule references at their latest soaked release',
+  help: `Usage: node scripts/fleet/vendor-actions.mts [flags]
+
+  (no flags)  upsert .gitmodules to the latest soaked pins + stamp hashes
+  --check     exit 1 if any vendored action is behind its latest soaked release`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

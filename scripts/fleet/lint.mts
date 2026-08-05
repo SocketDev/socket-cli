@@ -37,6 +37,7 @@ import {
   describeHolder,
   fixerLockPath,
 } from './_shared/fixer-lock.mts'
+import { isCascadeMirrorPath } from './_shared/cascade-mirror-scope.mts'
 import {
   filterFormatIgnored,
   getModifiedFiles,
@@ -50,6 +51,10 @@ import {
 } from './_shared/scope-flags.mts'
 import type { ScopeMode } from './_shared/scope-flags.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 // Re-exported for existing consumers (test/repo/unit/lint.test.mts) — the
 // canonical definition lives in _shared/scope-flags.mts so fix.mts can reuse
@@ -66,7 +71,7 @@ const quiet = args.includes('--quiet') || args.includes('--silent')
 // On Windows, `pnpm` is a .cmd shim that Node refuses to exec directly via
 // spawnSync (CVE-2024-27980 hardening). The shell wrapper resolves the shim; on
 // POSIX we keep direct invocation so no shell-quoting surface is introduced.
-const useShell = process.platform === 'win32'
+const useShell = WIN32
 
 const LINTABLE_EXTS = new Set(['.cjs', '.cts', '.js', '.mjs', '.mts', '.ts'])
 
@@ -176,7 +181,13 @@ function lintFileSet(scopeLabel: string, files: string[]): void {
   // pre-commit gate on bytes the format run never owns. template/** is exempt
   // inside filterFormatIgnored, the wheelhouse canon stays gated.
   const extLintable = filterLintable(files)
-  const lintable = filterFormatIgnored(extLintable)
+  // The ignore file is a hand-kept list, so it drifts from CASCADE_MIRROR_GLOBS
+  // — socket-lib gated `.config/repo/vitest.config.mts`, a template-owned file
+  // no member may legally edit, because the ignore file had not caught up.
+  // Consult the glob set directly so the two cannot disagree.
+  const lintable = filterFormatIgnored(extLintable).filter(
+    f => !isCascadeMirrorPath(f),
+  )
   const ignoredCount = extLintable.length - lintable.length
   if (ignoredCount > 0) {
     log(
@@ -276,7 +287,19 @@ function runLint(): void {
   lintFileSet(mode, files)
 }
 
-const invokedDirectly = isMainModule(import.meta.url)
-if (invokedDirectly) {
-  main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'lints the chosen scope with oxlint + oxfmt (modified files by default)',
+  help: `Usage: pnpm run lint [flags] [files...]
+
+  [files...]           lint exactly these files (wins over every scope flag)
+  --modified, --changed  lint files modified vs HEAD (the default)
+  --staged             lint files in the git index (pre-commit path)
+  --all                lint the entire workspace
+  --fix                auto-fix issues
+  --quiet, --silent    suppress progress output`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
 }

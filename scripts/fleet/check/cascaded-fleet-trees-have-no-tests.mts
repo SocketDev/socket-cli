@@ -30,6 +30,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -132,4 +136,13 @@ function main(): void {
   process.exitCode = 2
 }
 
-main()
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks that the cascaded co-located trees ship no test files',
+  help: `Usage: node scripts/fleet/check/cascaded-fleet-trees-have-no-tests.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

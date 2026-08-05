@@ -24,8 +24,11 @@ import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import { findOwnFiles, requireSoakDays } from './_shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -470,14 +473,16 @@ export async function main(argv: string[]): Promise<number> {
   return hadViolation ? 1 : 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'plans soak-cleared go get updates per own go.mod without running the go toolchain',
+  help: `Usage: node scripts/fleet/update/go.mts --soak-days <n> [flags]
+
+  --soak-days <n>  soak window in days (required trust gate)
+  (no mode flag)   plan a go get module@<newest soak-cleared version> per module
+  --check          gate every own go.mod; exit non-zero on any under-soak dep`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(
-    code => {
-      process.exitCode = code
-    },
-    (e: unknown) => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

@@ -18,6 +18,9 @@ import { constants, zstdCompressSync } from 'node:zlib'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -95,6 +98,11 @@ export function main(args: readonly string[]): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: "zstd-compresses a fleet release payload with Node's built-in zstd",
+  help: 'Usage: node scripts/fleet/compress.mts <input> [output.zst]',
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

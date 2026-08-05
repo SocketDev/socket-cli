@@ -74,20 +74,26 @@ export const ReleaseLineSchema = Type.Object(
     branch: Type.Optional(
       Type.String({
         description:
-          'The ref the customer release line lives on, e.g. `origin/v1.x`. Set it only when releases are cut somewhere other than the branch being scanned — a repo may carry several independent release lines at once, and their divergence is the architecture rather than a defect. Consumers resolve the release boundary as the newest tag reachable from THIS ref instead of from the scanned ref.',
+          'The ref the customer release line lives on, e.g. `origin/v1.x`. Set it only when releases are cut somewhere other than the branch being scanned — a repo may carry several independent release lines at once, and their divergence is the architecture rather than a defect. Consumers resolve the release boundary as the newest tag reachable from THIS ref instead of from the scanned ref. Second in precedence: `boundaryTag` overrides it, and `tagPattern` filters the ancestry search it selects the ref for.',
       }),
     ),
     boundaryTag: Type.Optional(
       Type.String({
         description:
-          "The tag that IS the release boundary, e.g. `v1.1.152`. Overrides `branch`. Use it when the line's newest release is not the newest tag reachable from any ref — history at or below this tag is published and frozen, so scripts/fleet/check/commits-have-no-ai-attribution.mts reports findings there as frozen instead of actionable.",
+          "The tag that IS the release boundary, e.g. `v1.1.152`. First in precedence — it overrides `branch` and `tagPattern` alike, because it names the answer outright and leaves nothing to search. Use it when the line's newest release is not the newest tag reachable from any ref — history at or below this tag is published and frozen, so scripts/fleet/check/commits-have-no-ai-attribution.mts reports findings there as frozen instead of actionable.",
+      }),
+    ),
+    tagPattern: Type.Optional(
+      Type.String({
+        description:
+          'A `git tag --list` glob naming which tags are RELEASE tags, e.g. `v*`. Set it when the repo pushes tags that are not releases — build-asset and bundle tags such as `fleet-pack-<sha>` or `base-assets-<date>-<sha>` sit on the same branch and are newer, so an unfiltered newest-ancestor pick lands on one of them instead of the real release. The glob filters the candidate tags BEFORE the newest-ancestor pick, so only matching tags can become the boundary. Third in precedence: `boundaryTag` wins outright, `branch` chooses which ref the ancestry search walks, and this narrows what that search may return. Unlike a hand-pinned `boundaryTag` it does not go stale — the next release tag matching the glob becomes the boundary on its own. A declared pattern that matches no ancestor tag fails loud rather than falling back to unfiltered ancestry, since a silent fallback would reinstate the asset tag the pattern exists to exclude.',
       }),
     ),
   },
   {
     additionalProperties: false,
     description:
-      "Where this repo's customer release line lives, for gates that must tell published history from rewritable history. Resolved OFFLINE and by ANCESTRY: never by tag recency, since the newest tag by date can belong to a release line that never ships.",
+      "Where this repo's customer release line lives, for gates that must tell published history from rewritable history. Resolved OFFLINE and by ANCESTRY: never by tag recency, since the newest tag by date can belong to a release line that never ships. Precedence is `boundaryTag`, then `branch`, then `tagPattern` filtering the ancestry search, then unfiltered ancestry.",
   },
 )
 

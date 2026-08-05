@@ -122,7 +122,7 @@ export function formatBlockMessage(
   )
   out.push('  Env vars also work: `$HOME`, `${USER}`, `~/`.')
   out.push(
-    '  For a line that must keep the literal form, append `// socket-lint: allow personal-path`.',
+    '  For a line that must keep the literal form, add `// socket-lint: allow personal-path -- <reason>` on its own line above it.',
   )
   out.push('')
   return out.join('\n')

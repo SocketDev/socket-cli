@@ -20,6 +20,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -179,6 +182,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'pins every oxlintrc.json $schema URL to the oxc tag SHA matching the installed oxlint',
+  help: `Usage: node scripts/fleet/sync-oxlint-schema-pin.mts [flags]
+
+  --check  report drift and exit non-zero without writing (CI mode)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main()
+  runMain(main, SCRIPT_META)
 }

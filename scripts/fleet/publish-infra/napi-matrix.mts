@@ -14,12 +14,14 @@
 import process from 'node:process'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { loadSocketWheelhouseConfig } from '../paths.mts'
 import {
   isNapiTarget,
   NAPI_TARGETS,
   NAPI_TARGETS_DEFAULT,
 } from '../util/napi-targets.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { NapiNativeTarget, NapiTarget } from '../util/napi-targets.mts'
 
 // The fleet-default GitHub Actions runner for each native napi target. Every
@@ -157,6 +159,20 @@ function printMatrixCli(): void {
   process.stdout.write(JSON.stringify(matrix))
 }
 
-if (isMainModule(import.meta.url) && process.argv.includes('--print-matrix')) {
-  printMatrixCli()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'derives the canonical GitHub Actions build matrix for a repo napi addon target set',
+  help: `Usage: node scripts/fleet/publish-infra/napi-matrix.mts [flags]
+
+  --print-matrix  emit the repo matrix as single-line JSON for $GITHUB_OUTPUT`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(() => {
+    // Without `--print-matrix` the CLI stays a no-op: the module is imported
+    // for its pure helpers, and only the workflow's explicit flag emits JSON.
+    if (process.argv.includes('--print-matrix')) {
+      printMatrixCli()
+    }
+  }, SCRIPT_META)
 }

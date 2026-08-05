@@ -28,6 +28,9 @@ import {
 } from '../paths.mts'
 import { findStableAliasDesyncs } from '../lib/stable-alias.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -93,6 +96,12 @@ function main(): void {
   process.exitCode = runCheck()
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every -stable catalog alias tracks its base package version',
+  help: 'Usage: node scripts/fleet/check/stable-aliases-match-base.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

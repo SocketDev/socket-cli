@@ -51,6 +51,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { collectMarkdownFiles } from './prose-parenthetical-asides-are-absent.mts'
 
 const logger = getDefaultLogger()
@@ -63,18 +65,41 @@ export const EM_DASH_ALLOW_FILE = '<!-- prose-em-dash: allow-file -->'
 const EM_DASH_CHAIN_RE = / — [^\n]*? — /
 
 /**
+ * `value` with every `pattern` match replaced, repeated until the string stops
+ * changing. Pure.
+ *
+ * One sweep does not finish the job for a delimited construct, because deleting
+ * an inner match splices its neighbours into a fresh one. Stripping the comment
+ * from `a <!-<!-- z -->- b — c — d -->` leaves `a <!-- b — c — d -->`, a live
+ * comment whose dashes then read as prose and fail the gate. Each pass strictly
+ * shortens the string, so the loop always terminates.
+ */
+function replaceToFixedPoint(
+  value: string,
+  pattern: RegExp,
+  replacement: string,
+): string {
+  let out = value
+  let next = out.replace(pattern, replacement)
+  while (next !== out) {
+    out = next
+    next = out.replace(pattern, replacement)
+  }
+  return out
+}
+
+/**
  * The line reduced to its prose: inline code spans, HTML comments, and
  * dash-only table cells removed. A dash in any of those is not prose, so it
  * must not pair with a real one to form a chain. Pure.
  */
 export function toProse(line: string): string {
-  return (
-    line
-      .replace(/`[^`]*`/g, '')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      // A `| — |` cell is an empty-value placeholder in a table, not an aside.
-      .replace(/\|\s*—\s*(?=\||$)/g, '|')
-  )
+  // Inline code spans.
+  const noSpans = replaceToFixedPoint(line, /`[^`]*`/g, '')
+  // HTML comments, which carry machine markers rather than prose.
+  const noComments = replaceToFixedPoint(noSpans, /<!--[\s\S]*?-->/g, '')
+  // A `| — |` cell is an empty-value placeholder in a table, not an aside.
+  return replaceToFixedPoint(noComments, /\|\s*—\s*(?=\||$)/g, '|')
 }
 
 /**
@@ -305,6 +330,15 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that markdown prose never chains spaced em-dashes on one line',
+  help: `Usage: node scripts/fleet/check/prose-em-dash-chains-are-absent.mts [paths...] [flags]
+  [paths...]   scope the scan to these files (default: the tracked markdown tree)
+  --fix        rewrite fixable em-dash label separators in place
+  --quiet      suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

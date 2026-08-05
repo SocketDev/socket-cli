@@ -50,7 +50,6 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
@@ -69,6 +68,8 @@ import {
   resolveScopeMode,
 } from './_shared/scope-flags.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const WIN32 = process.platform === 'win32'
 const logger = getDefaultLogger()
@@ -150,6 +151,18 @@ export function shouldSkipCleanScope(
 export function shouldRunHeavyFixLegs(argv: readonly string[]): boolean {
   return resolveExplicitFiles(argv).length === 0
 }
+
+// Printed for -h/--help BEFORE any lock is taken, so the options stay
+// readable while another fixer holds the repo.
+export const FIX_USAGE = `Usage: pnpm run fix [--all | --staged] [<file> ...]
+
+Scope:
+  (none)      modified files (a clean tree fixes nothing; pass --all)
+  --all       the whole tree, plus the heavy legs (security scans, ai-lint-fix)
+  --staged    staged files only
+  <file> ...  exactly these files, lint/format autofix only
+
+Mutating runs hold the repo-scoped fixer lock; one fixer per tree at a time.`
 
 export async function main(
   argv: string[] = process.argv.slice(2),
@@ -328,13 +341,16 @@ async function runFixers(argv: string[]): Promise<void> {
   process.exitCode = verifyCode !== 0 ? verifyCode : doctorCode
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'auto-fix the scoped tree: lint --fix, security tools, fleet doctor, then the AI residue pass',
+  help: FIX_USAGE,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the script, and must not register real process
 // signal handlers.
 if (isMainModule(import.meta.url)) {
   installChildTeardown()
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

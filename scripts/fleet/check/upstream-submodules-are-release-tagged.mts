@@ -13,12 +13,14 @@
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -163,11 +165,12 @@ export function runCheck(repoRoot: string): number {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every upstream/ reference submodule pins a release tag, not a moving branch',
+  help: 'Usage: node scripts/fleet/check/upstream-submodules-are-release-tagged.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    process.exitCode = runCheck(REPO_ROOT)
-  } catch (e) {
-    logger.error(e)
-    process.exitCode = 1
-  }
+  runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }

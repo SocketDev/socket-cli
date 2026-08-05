@@ -4,7 +4,7 @@
  *   Reads the line-coverage total from
  *   `.cache/fleet/coverage/coverage-summary.json` (the vitest
  *   `json-summary` reporter), renders the optimized badge SVG to
- *   `assets/repo/badges/coverage.svg`, and migrates a README still carrying an
+ *   `assets/coverage.svg`, and migrates a README still carrying an
  *   older badge line — the retired shields.io badge, the legacy pre-badges/
  *   asset path, the `![]` markdown form, or a relative-src `<img>` — to the
  *   current dimensioned `<img>` at the asset's absolute raw-GitHub url (the
@@ -14,7 +14,7 @@
  *   it. `coverage-badge-is-current` (in `check --all`) fails the gate if the
  *   badge drifts from the coverage data, so this is the canonical way to fix
  *   it. Usage: node scripts/fleet/gen/coverage-badge.mts [--check], no flag
- *   write assets/repo/badges/coverage.svg (and README.md when migrating).
+ *   write assets/coverage.svg (and README.md when migrating).
  *   --check exit 1 if the badge WOULD change (dry-run; mirrors the check). Exit
  *   codes: 0 — badge written (or already current under --check); 1 — no
  *   coverage data (run `pnpm run cover` first), no badge in README, or (under
@@ -42,6 +42,8 @@ import {
 } from '../_shared/github-raw-url.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -126,7 +128,7 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
     )
   }
   logger.success(
-    `gen/coverage-badge: coverage badge set to ${Math.round(pct)}% (assets/repo/badges/coverage.svg).`,
+    `gen/coverage-badge: coverage badge set to ${Math.round(pct)}% (assets/coverage.svg).`,
   )
   return 0
 }
@@ -138,6 +140,13 @@ function main(): void {
   })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'regenerate the repo-local coverage badge from the latest coverage run',
+  help: `Usage: node scripts/fleet/gen/coverage-badge.mts [flags]
+  --check  exit 1 when the badge would change instead of writing`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

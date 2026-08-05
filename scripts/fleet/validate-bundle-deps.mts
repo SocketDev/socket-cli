@@ -20,6 +20,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -471,9 +474,12 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'validates that bundled vs external dependencies are correctly declared in package.json',
+  help: 'Usage: node scripts/fleet/validate-bundle-deps.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error('Unhandled error in main():', e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

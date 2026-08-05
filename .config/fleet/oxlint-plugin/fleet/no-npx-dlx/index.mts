@@ -31,12 +31,15 @@ const PATTERNS = [
   // before `pnpm` and `pnx ` is matched before `pnpm`. Each entry
   // is [match-prefix, replacement-prefix, label].
   ['pnpm dlx ', 'node_modules/.bin/', 'pnpm dlx'],
-  ['yarn dlx ', 'node_modules/.bin/', 'yarn dlx'], // socket-lint: allow npx
-  ['npx ', 'node_modules/.bin/', 'npx'], // socket-lint: allow npx
+  // socket-lint: allow npx
+  ['yarn dlx ', 'node_modules/.bin/', 'yarn dlx'],
+  // socket-lint: allow npx
+  ['npx ', 'node_modules/.bin/', 'npx'],
   ['pnx ', 'node_modules/.bin/', 'pnx'],
 ]
 
-const COMMENT_BYPASS_RE = /socket-lint:\s*allow\s+npx/ // socket-lint: allow npx
+// socket-lint: allow npx
+const COMMENT_BYPASS_RE = /socket-lint:\s*allow\s+npx/
 
 /**
  * @type {import('eslint').Rule.RuleModule}

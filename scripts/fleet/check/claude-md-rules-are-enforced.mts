@@ -45,7 +45,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {
@@ -61,6 +60,8 @@ import {
 import { REPO_ROOT } from '../paths.mts'
 import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -98,7 +99,8 @@ const SCRIPT_CITATION_RE = /scripts\/((?:fleet|repo)\/[A-Za-z0-9/_-]+\.mts)/g
 // `docs/agents.md/fleet/*.md` path. The two alternatives are sorted (`.claude`
 // before `docs`) per sort-regex-alternations.
 const DETAIL_LINK_RE =
-  /(?:[`'"]|\]\()((?:\.claude\/skills\/[A-Za-z0-9._/-]+\/SKILL\.md)|(?:docs\/agents\.md\/fleet\/[A-Za-z0-9._/-]+\.md))/g // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  /(?:[`'"]|\]\()((?:\.claude\/skills\/[A-Za-z0-9._/-]+\/SKILL\.md)|(?:docs\/agents\.md\/fleet\/[A-Za-z0-9._/-]+\.md))/g
 
 // Opt-out: `<!-- enforcement: <category> — <reason> -->`. <category> is a single
 // word from the allowed set; a separated <reason> must be present (category +
@@ -466,11 +468,12 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every hard CLAUDE.md fleet rule resolves to an executable enforcer',
+  help: 'Usage: node scripts/fleet/check/claude-md-rules-are-enforced.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(
-      `check-claude-md-rules-are-enforced failed: ${errorMessage(e)}`,
-    )
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

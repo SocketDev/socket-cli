@@ -22,6 +22,10 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 const WORKSPACE = 'pnpm-workspace.yaml'
 const LOCKFILE = 'pnpm-lock.yaml'
@@ -115,4 +119,12 @@ function main(): void {
   logger.log('All pnpm patch entries are justified.')
 }
 
-main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every pnpm patch entry is justified and resolves in the lockfile',
+  help: 'Usage: node scripts/fleet/check/dedup-patches-are-justified.mts',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

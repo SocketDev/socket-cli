@@ -22,6 +22,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { SOAK_DAYS, SOAK_MINUTES } from '../constants/soak.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -109,6 +112,13 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the soak window is one value across pnpm-workspace.yaml and .npmrc',
+  help: `Usage: node scripts/fleet/check/soak-time-is-consistent.mts [flags]
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -49,6 +49,10 @@ import path from 'node:path'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
+import {
+  normalizeRepoSlug,
+  repoMatchesOrigin,
+} from '../_shared/gh-target-repo.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
@@ -155,40 +159,6 @@ export function tagExists(ref: string, cwd: string): boolean {
   })
   /* c8 ignore next - remote exits 0 with empty stdout only in live-network git; in-process tests always see exit 128, no auth*/
   return !remote.error && remote.status === 0 && !!String(remote.stdout).trim()
-}
-
-/**
- * `OWNER/REPO` from any form `gh --repo` (or a git origin URL) carries:
- * `owner/repo`, `host/owner/repo`, `https://host/owner/repo[.git]`,
- * `git@host:owner/repo[.git]`. '' when no owner/repo pair is present.
- */
-export function normalizeRepoSlug(value: string): string {
-  let rest = value.trim()
-  const protoAt = rest.indexOf('://')
-  if (protoAt !== -1) {
-    rest = rest.slice(protoAt + 3)
-  }
-  // scp-like `host:owner/repo` — the colon plays the role of a slash.
-  rest = rest.replace(':', '/').replace(/\.git$/, '')
-  const parts = rest.split('/').filter(Boolean)
-  if (parts.length < 2) {
-    return ''
-  }
-  return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
-}
-
-// True when `repo` (an OWNER/REPO slug) is the same repo the checkout at
-// `cwd` tracks as origin. No origin, or an unreadable one, is "not the same".
-export function repoMatchesOrigin(repo: string, cwd: string): boolean {
-  const origin = spawnSync('git', ['remote', 'get-url', 'origin'], {
-    cwd,
-    stdio: 'pipe',
-  })
-  if (origin.error || origin.status !== 0) {
-    return false
-  }
-  const originSlug = normalizeRepoSlug(String(origin.stdout).trim())
-  return !!originSlug && originSlug.toLowerCase() === repo.toLowerCase()
 }
 
 export function formatBlock(d: ReleaseCreateDetection): string {

@@ -42,6 +42,8 @@ import {
 } from '../../../.claude/hooks/fleet/_shared/denied-domains.mts'
 import { isChangelogPath } from '../_shared/changelog-path.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -214,11 +216,12 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks no tracked file or egress grant carries a denied domain or IOC filename',
+  help: 'Usage: node scripts/fleet/check/denied-domains-are-absent.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    main()
-  } catch (e) {
-    logger.fail(`[check-denied-domains-are-absent] error: ${e}`)
-    process.exitCode = 1
-  }
+  runMain(main, SCRIPT_META)
 }

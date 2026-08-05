@@ -56,6 +56,7 @@ import {
 } from '../_shared/git-subcommand.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
+import { firstPositionalArg, isAliasTagName } from '../_shared/tag-shapes.mts'
 
 // Pre-flight skip hint: detection only fires when one of these appears in the
 // raw command. The manifest-edit vectors all name package.json, so that token
@@ -169,6 +170,15 @@ function positionalReleaseTag(
   return undefined
 }
 
+/**
+ * True when `arg` names a floating alias tag rather than a release tag.
+ * Re-exported from `_shared/tag-shapes.mts` so this guard and
+ * version-bump-order-guard classify a tag name the same way.
+ */
+export function isAliasTag(arg: string): boolean {
+  return isAliasTagName(arg)
+}
+
 // True when `arg` is a path whose basename is package.json.
 function isPackageJsonArg(arg: string): boolean {
   const normalized = normalizePath(arg)
@@ -244,6 +254,14 @@ function gitTagReason(command: string): string | undefined {
     const { rest, sub } = splitGitSubcommand(cmd.args)
     if (sub === 'tag') {
       if (rest.includes('-l') || rest.includes('--list')) {
+        continue
+      }
+      // The tag being WRITTEN is the first positional; a later one is only the
+      // commit-ish it points at. `git tag -f v1 v1.3.2` writes the alias `v1`
+      // and merely READS `v1.3.2`, so blocking on the source ref would refuse
+      // routine alias maintenance the release scripts do not own.
+      const written = firstPositionalArg(rest, TAG_VALUE_FLAGS)
+      if (written && isAliasTag(written)) {
         continue
       }
       const tag = positionalReleaseTag(rest, TAG_VALUE_FLAGS)

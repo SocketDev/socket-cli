@@ -38,7 +38,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -125,31 +128,39 @@ const AMBIGUOUS_MATCHERS = AMBIGUOUS_TERMS.map(compileTermMatcher)
 
 // Repo-OWNED source. A member's security primitives live under these roots.
 const SOURCE_PATH_RE =
-  /^(?:lib|packages\/[^/]+\/(?:lib|src)|scripts\/repo|src)\// // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  /^(?:lib|packages\/[^/]+\/(?:lib|src)|scripts\/repo|src)\//
 
 // Cascaded trees are authored in socket-wheelhouse and byte-copied into every
 // member, so a member sees the file without its callers. Scanning them would
 // fail 20 repos for one wheelhouse-owned export. The wheelhouse's canonical
 // `template/` copies are excluded for the mirror reason: their consumers are
 // the cascaded copies, not the template.
-const CASCADED_PATH_RE = /^(?:\.config\/fleet|scripts\/fleet|template)\// // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const CASCADED_PATH_RE = /^(?:\.config\/fleet|scripts\/fleet|template)\//
 
 // Test-shaped paths: never a consumer, never scanned for candidates.
 const TEST_PATH_RE =
-  /(?:^|\/)(?:__tests__|fixtures?|mocks?|tests?)\/|\.(?:bench|fuzz|spec|test)\./ // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  /(?:^|\/)(?:__tests__|fixtures?|mocks?|tests?)\/|\.(?:bench|fuzz|spec|test)\./
 
-const CODE_PATH_RE = /\.(?:cjs|cts|js|mjs|mts|ts)$/ // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const CODE_PATH_RE = /\.(?:cjs|cts|js|mjs|mts|ts)$/
 
 const DECLARATION_RE =
-  /^export\s+(?:async\s+)?(class|const|function|interface|let|type)\s+([A-Za-z_$][\w$]*)/ // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  /^export\s+(?:async\s+)?(class|const|function|interface|let|type)\s+([A-Za-z_$][\w$]*)/
 
 // `@unused <reason>` / `@security-disposition <reason>` — the reason must carry
 // real content, so a bare tag stays silent and still fails.
-const DISPOSITION_RE = /@(?:security-disposition|unused)[ \t]+(\S[^\n]{9,})/ // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const DISPOSITION_RE = /@(?:security-disposition|unused)[ \t]+(\S[^\n]{9,})/
 
-const SECURITY_TAG_RE = /@security\b/ // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const SECURITY_TAG_RE = /@security\b/
 
-const IDENTIFIER_RE = /[A-Za-z_$][\w$]*/g // socket-lint: allow uncommented-regex
+// socket-lint: allow uncommented-regex
+const IDENTIFIER_RE = /[A-Za-z_$][\w$]*/g
 
 export interface SecurityDeclaration {
   doc: string
@@ -493,6 +504,11 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks every security-annotated export has an in-repo caller',
+  help: 'Usage: node scripts/fleet/check/security-primitives-have-consumers.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

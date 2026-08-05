@@ -89,7 +89,7 @@ export function emitBlock(filePath: string, hits: Hit[]): string {
     out.push(`  …and ${hits.length - 3} more.`)
   }
   out.push(
-    '  Opt-out for one line (rare): append `// socket-lint: allow console` for a ' +
+    '  Opt-out for one line (rare): add `// socket-lint: allow console` on its own line above for a ' +
       '`console.*` call, or `// socket-lint: allow process-stdio` for a raw ' +
       '`process.std{out,err}.write` (the id must match the call kind).',
   )
@@ -219,7 +219,7 @@ export function emitDecorationBlock(
     out.push(`  …and ${decos.length - 3} more.`)
   }
   out.push(
-    '  Opt-out for one line (rare): append `// socket-lint: allow logger-decoration`.',
+    '  Opt-out for one line (rare): add `// socket-lint: allow logger-decoration` on its own line above.',
   )
   out.push('')
   return out.join('\n')

@@ -35,7 +35,9 @@ import {
   unregisterActiveRun,
 } from './_shared/active-run-marker.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
+import type { ScriptMeta } from './_shared/run-main.mts'
 import type { CoverThresholds } from './cover/discovery.mts'
 import {
   buildChildrenCoverageReport,
@@ -670,15 +672,23 @@ export async function main(): Promise<void> {
 // import inside a coverage-instrumented vitest worker starts a NESTED cover
 // run whose startup cleans the shared coverage/.tmp and ENOENTs the outer
 // run's v8 reports (four cover runs died this way on 2026-07-11).
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the coverage suite — builds with source maps, runs vitest with coverage, prints a summary',
+  help: `Usage: node scripts/fleet/cover.mts [flags]
+
+  --code-only  run only code coverage, skip type coverage
+  --type-only  run only type coverage
+  --summary    hide the detailed v8 table, show only the summary`,
+}
+
 if (isMainModule(import.meta.url)) {
-  reexecWithHeapHeadroom(fileURLToPath(import.meta.url))
-  registerActiveRun()
-  main()
-    .catch((e: unknown) => {
-      logger.error(`Coverage script failed: ${errorMessage(e)}`)
-      process.exitCode = 1
-    })
-    .finally(() => {
+  runMain(async () => {
+    reexecWithHeapHeadroom(fileURLToPath(import.meta.url))
+    registerActiveRun()
+    try {
+      await main()
+    } finally {
       unregisterActiveRun()
       // Remove this run's private scratch dir. With a fixed shared path the
       // next run's startup wipe reclaimed it; a per-run-unique dir has no next
@@ -686,5 +696,6 @@ if (isMainModule(import.meta.url)) {
       // COVERAGE_DIR (the persisted summary/final the badge + gate read) lives
       // elsewhere and is untouched.
       safeDeleteSync(COVERAGE_SCRATCH_DIR, { force: true, recursive: true })
-    })
+    }
+  }, SCRIPT_META)
 }

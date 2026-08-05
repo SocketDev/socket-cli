@@ -57,8 +57,10 @@ import {
   selectRepos,
   unmatchedSelectorMessage,
 } from '../_shared/repo-filter.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { fleetReposPath, parseFleetRepos } from './member-ci-fires-on-push.mts'
 import type { FleetRepo } from './member-ci-fires-on-push.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -484,8 +486,17 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "audits every fleet member's Actions workflow token for read-only default permissions and no PR approvals",
+  help: `Usage: node scripts/fleet/check/workflow-token-is-read-only.mts [flags]
+
+  --fix                    apply the read-only + no-approvals settings where safe
+  --repo <name>[,<name>…]  narrow the sweep to the named roster repos (repeatable)`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

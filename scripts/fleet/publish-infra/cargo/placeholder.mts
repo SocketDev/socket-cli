@@ -34,7 +34,10 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 import { isMainModule } from '../../_shared/is-main-module.mts'
+import { runMain } from '../../_shared/run-main.mts'
 import { logger, runInherit } from '../shared.mts'
+
+import type { ScriptMeta } from '../../_shared/run-main.mts'
 
 // The reservation version. Deliberately the lowest possible semver so the real
 // first release (any 0.0.1+ / 0.1.0) always supersedes it as the latest.
@@ -392,11 +395,17 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'publishes minimal 0.0.0 crates.io name reservations so OIDC trusted publishing can be configured',
+  help: `Usage: node scripts/fleet/publish-infra/cargo/placeholder.mts <name...> [flags]
+
+  <name...>  the crate names to reserve
+  --apply    perform the publish (default is a dry-run that prints the plan)`,
+}
+
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the CLI.
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

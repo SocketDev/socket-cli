@@ -63,6 +63,8 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -512,11 +514,12 @@ function main(): void {
   process.exitCode = runCheck(REPO_ROOT)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that the npm publish path composes the shared fleet primitives',
+  help: 'Usage: node scripts/fleet/check/publish-entrypoints-are-fleet-composed.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    main()
-  } catch (e) {
-    logger.error(e)
-    process.exitCode = 1
-  }
+  runMain(main, SCRIPT_META)
 }

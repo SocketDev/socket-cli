@@ -30,7 +30,8 @@ export const baseFleetCoverageConfig: CoverageOptions = {
     '**/virtual:*',
     'coverage/**',
     'test/**',
-    'packages/**',
+    // A workspace package's own test dir, which `test/**` (repo-rooted) misses.
+    '**/test/**',
     'perf/**',
     'dist/**',
     '**/dist/**',
@@ -45,6 +46,11 @@ export const baseFleetCoverageConfig: CoverageOptions = {
   ignoreClassMethods: ['constructor'],
   include: ['src/**/*.{ts,mts,cts}', '!src/external/**'],
   provider: 'v8',
+  // MONOREPO NOTE: `packages/**` is NOT excluded here. In a workspace repo it
+  // is source, not an artifact, and excluding it alongside dist/ and
+  // node_modules/ made a passing threshold describe a fraction of the tree.
+  // `resolveCoverageConfig()` widens `include` to the packages when the repo
+  // declares `repo.type: "mono"`. See MONO_PACKAGE_INCLUDE.
   // Reporters are CI-gated. `json` is always kept — the aggregate merge reads
   // coverage-final.json — as is the cheap `json-summary` (badge/threshold) and
   // the `text` console table. The EXPENSIVE artifact reporters (`html` writes
@@ -155,6 +161,65 @@ export function readRepoCoverageOverlay(
  * include, so a base exclude like `scripts/**` must be removable); and
  * `exclude.add` appends repo-specific excludes.
  */
+// The source dirs a workspace package keeps its implementation in. Scoped to
+// `src`/`lib` rather than `packages/**` so a package's own scripts, fixtures,
+// and generated output do not silently join the denominator.
+export const MONO_PACKAGE_INCLUDE: readonly string[] = [
+  'packages/*/src/**/*.{ts,mts,cts}',
+  'packages/*/lib/**/*.{ts,mts,cts}',
+]
+
+/**
+ * The repo layout declared in the same settings file the coverage overlay
+ * comes from. `mono` means the tree keeps most of its source under
+ * `packages/*`, so measuring only `src/**` would report a number about a
+ * fraction of the repo.
+ *
+ * Derived rather than hand-listed: the declaration already exists for other
+ * tooling, and a second place to say "this is a monorepo" is a second place to
+ * forget.
+ */
+export function readRepoLayout(
+  options?: { readonly settingsPath?: string | undefined } | undefined,
+): string | undefined {
+  const opts = { __proto__: null, ...options }
+  const files = opts.settingsPath ? [opts.settingsPath] : SETTINGS_FILES
+  for (let i = 0, { length } = files; i < length; i += 1) {
+    const file = files[i]!
+    if (!existsSync(file)) {
+      continue
+    }
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+        repo?: { type?: string | undefined } | undefined
+      }
+      return parsed?.repo?.type
+    } catch {
+      return undefined
+    }
+  }
+  return undefined
+}
+
+/**
+ * The include globs for a repo, widened to the workspace packages when the
+ * repo declares itself a monorepo. An explicit overlay `include` still wins —
+ * a repo that states its own scope means it.
+ */
+export function resolveCoverageInclude(
+  overlayInclude: readonly string[] | undefined,
+  layout: string | undefined,
+): string[] | undefined {
+  if (overlayInclude && overlayInclude.length > 0) {
+    return [...overlayInclude]
+  }
+  const base = baseFleetCoverageConfig.include
+  if (!base) {
+    return undefined
+  }
+  return layout === 'mono' ? [...base, ...MONO_PACKAGE_INCLUDE] : [...base]
+}
+
 export function resolveCoverageConfig(
   options?: { readonly settingsPath?: string | undefined } | undefined,
 ): CoverageOptions {
@@ -168,10 +233,10 @@ export function resolveCoverageConfig(
   ]
   // `include` spreads conditionally: exactOptionalPropertyTypes forbids an
   // explicit `include: undefined` on CoverageOptions.
-  const include =
-    overlay.include && overlay.include.length > 0
-      ? [...overlay.include]
-      : baseFleetCoverageConfig.include
+  const include = resolveCoverageInclude(
+    overlay.include,
+    readRepoLayout(options),
+  )
   return {
     ...baseFleetCoverageConfig,
     exclude,

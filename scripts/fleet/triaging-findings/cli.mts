@@ -33,6 +33,9 @@ import type { TriagedFinding, TriageEnvelope } from './lib/report.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { resolveRepoRoot } from '../_shared/git-mutex.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import {
   localAssistEnabled,
   resolveOdaiBin,
@@ -207,13 +210,17 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'normalizes raw finding records and assembles the sorted TRIAGE.json envelope',
+  help: `Usage: node scripts/fleet/triaging-findings/cli.mts <subcommand> [flags]
+
+  ingest --from <records.json> --source <label> [--out <f>]
+      normalize raw records, assign f001.. ids, wrap unlocatables
+  report --from <triaged.json> [--out-json <f>]
+      sort, summarize, and emit the TRIAGE.json envelope`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(
-    code => {
-      process.exitCode = code
-    },
-    () => {
-      process.exitCode = 1
-    },
-  )
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

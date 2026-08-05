@@ -13,7 +13,7 @@
  *        every workspace fleet key is present in the merged yaml.
  *   Fail LOUD on any mismatch.
  *
- *   Usage: node scripts/fleet/check/bundle-round-trips.mts
+ *   Usage: node scripts/fleet/check/bundle-is-installable.mts
  */
 
 import { existsSync } from 'node:fs'
@@ -24,6 +24,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -68,9 +71,12 @@ export async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that the fleet release bundle builds, installs, and verifies round-trip',
+  help: 'Usage: node scripts/fleet/check/bundle-is-installable.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`[bundle-round-trips] error: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

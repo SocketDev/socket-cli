@@ -8,8 +8,8 @@
  *   - Runtime validation at harness startup via
  *     `validateSchema(LockstepManifestSchema, ...)` from
  *     `@socketsecurity/lib-stable/validation/validate-schema` Byte-identical
- *     across sdxgen / socket-btm / socket-registry / socket-wheelhouse / stuie
- *     / ultrathink via sync-scaffolding.mts.
+ *     across sdxgen / socket-registry / socket-wheelhouse / stuie / ultrathink
+ *     via sync-scaffolding.mts.
  */
 
 import { Type } from '@sinclair/typebox'

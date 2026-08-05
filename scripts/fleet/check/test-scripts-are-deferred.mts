@@ -36,7 +36,10 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -166,6 +169,13 @@ async function main(): Promise<number> {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks every package.json test script defers to a .mts wrapper',
+  help: `Usage: node scripts/fleet/check/test-scripts-are-deferred.mts [flags]
+  --strict  fail (exit 1) on findings instead of warning
+  --quiet   suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

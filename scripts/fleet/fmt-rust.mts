@@ -18,6 +18,8 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { findWorkspaceManifests } from './_shared/cargo-workspaces.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
 
 const logger = getDefaultLogger()
@@ -78,6 +80,13 @@ function main(): void {
   logger.info('fmt-rust: clean.')
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "run cargo fmt over every cargo workspace in the tree under the fleet's rustfmt style",
+  help: `Usage: node scripts/fleet/fmt-rust.mts [flags]
+  --check  verify only; exit non-zero on formatting drift`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

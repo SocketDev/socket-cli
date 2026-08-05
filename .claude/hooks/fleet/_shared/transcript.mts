@@ -804,9 +804,35 @@ export function readPriorAssistantToolUses(
   transcriptPath: string | undefined,
   lookback: number,
 ): readonly ToolUseEvent[] {
-  const lines = readLines(transcriptPath)
+  const turns = readPriorAssistantTurnToolUses(transcriptPath, lookback)
   const out: ToolUseEvent[] = []
-  let assistantTurnsSeen = 0
+  for (let i = 0, { length } = turns; i < length; i += 1) {
+    const events = turns[i]!
+    for (let j = 0, { length: eventCount } = events; j < eventCount; j += 1) {
+      out.push(events[j]!)
+    }
+  }
+  return out
+}
+
+/**
+ * Same walk as `readPriorAssistantToolUses`, but keeps the turn boundaries: one
+ * inner array per prior assistant turn, newest first, and the most-recent turn
+ * skipped. A turn that made no tool calls contributes an empty inner array, so
+ * index 0 is always the immediately preceding turn. `lookback` caps how many
+ * prior assistant turns to walk. Returns an empty array if the transcript is
+ * missing or unreadable.
+ *
+ * Use this when the COUNT of tool uses inside one turn is the signal — e.g.
+ * parallel-spawn-nudge asking whether the previous turn spawned exactly one
+ * agent. The flattened sibling loses that boundary.
+ */
+export function readPriorAssistantTurnToolUses(
+  transcriptPath: string | undefined,
+  lookback: number,
+): ReadonlyArray<readonly ToolUseEvent[]> {
+  const lines = readLines(transcriptPath)
+  const out: Array<readonly ToolUseEvent[]> = []
   let skippedMostRecent = false
   for (let i = lines.length - 1; i >= 0; i -= 1) {
     let evt: unknown
@@ -823,12 +849,8 @@ export function readPriorAssistantToolUses(
       skippedMostRecent = true
       continue
     }
-    const events = extractToolUseBlocks(r.content)
-    for (let j = 0, { length } = events; j < length; j += 1) {
-      out.push(events[j]!)
-    }
-    assistantTurnsSeen += 1
-    if (assistantTurnsSeen >= lookback) {
+    out.push(extractToolUseBlocks(r.content))
+    if (out.length >= lookback) {
       break
     }
   }

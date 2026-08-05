@@ -29,6 +29,8 @@ import {
 } from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // A top-level `- ` bullet is a rule. The thin CLAUDE.md is a flat list — one
 // bullet per rule, each carrying its own enforcer citation / detail-doc link.
@@ -178,6 +180,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every CLAUDE.md section anchors to a hook, docs link, or advisory opt-out',
+  help: `Usage: node scripts/fleet/check/claude-md-rules-are-informative.mts [flags]
+
+  --score  print the informativeness score line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

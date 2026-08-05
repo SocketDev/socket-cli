@@ -21,11 +21,14 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { KNOWN_MODELS, TIER_ALIASES } from '../lib/known-models.mts'
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 const skillsDir = path.join(REPO_ROOT, '.claude', 'skills', 'fleet')
@@ -117,7 +120,12 @@ async function main(): Promise<void> {
   logger.success('Every mutating fleet skill declares a canonical model: tier.')
 }
 
-main().catch((e: unknown) => {
-  logger.error(`check-mutating-skills-have-model failed: ${errorMessage(e)}`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every tree-mutating fleet skill declares a canonical model: tier in its frontmatter',
+  help: 'Usage: node scripts/fleet/check/mutating-skills-have-model.mts',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

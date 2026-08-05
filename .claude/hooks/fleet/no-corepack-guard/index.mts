@@ -10,11 +10,14 @@
 // bootstrap locally, the SocketDev/socket-registry `setup` composite action in
 // CI) so the exact bytes are integrity-checked before they run. corepack
 // instead fetches a package manager from the npm registry at activation time,
-// outside that gate, and keys off a mutable `packageManager` field — a second,
-// un-pinned provisioning path that bypasses the fleet's supply-chain controls.
-// The `packageManager` field stays in package.json as a declared-version
-// RECORD (kept in lockstep with external-tools.json); this guard only blocks
-// the corepack COMMANDS that would activate it.
+// outside that gate, and keys off Corepack's own `packageManager` field — a
+// second, un-pinned provisioning path that bypasses the fleet's supply-chain
+// controls. Corepack and its `packageManager` field are retired fleet-wide
+// (docs/agents.md/fleet/tooling.md); `devEngines.packageManager` — a
+// major-bounded SemVer range derived from external-tools.json by
+// sync-package-manager-pins.mts — is the enforced pin instead, and pnpm
+// resolves it natively with no corepack activation. This guard blocks the
+// corepack COMMANDS outright; it has nothing to leave in place.
 //
 // Detection, AST-parsed via the shared shell-command helper, not a raw regex:
 // the command runs the `corepack` binary with an activating subcommand.
@@ -81,9 +84,9 @@ export function formatBlock(d: CorepackDetection): string {
       '    node scripts/fleet/setup/setup-tools.mjs   (local bootstrap)',
       '    # CI runs the same step via the socket-registry `setup` action',
       '',
-      '  The package.json `packageManager` field is a declared-version record',
-      '  kept in lockstep with external-tools.json; leave it in place, just',
-      '  do not invoke corepack to act on it.',
+      '  Corepack and its `packageManager` field are retired fleet-wide;',
+      '  package.json `devEngines.packageManager` is the enforced pin, kept',
+      '  in lockstep with external-tools.json — pnpm resolves it natively.',
     ].join('\n') + '\n'
   )
 }

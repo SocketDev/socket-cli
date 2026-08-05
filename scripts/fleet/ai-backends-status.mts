@@ -31,6 +31,8 @@ import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import { spawn } from '@socketsecurity/lib/process/spawn/child'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { resolveOdaiBin } from './_shared/odai.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -214,8 +216,15 @@ export async function main(argv: readonly string[]): Promise<number> {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'report which AI fallback backends (codex, fireworks, synthetic, anthropic, local) are reachable on this machine',
+  help: `Usage: node scripts/fleet/ai-backends-status.mts [flags]
+
+  --require <keys>  repeatable, comma-ok: fail (exit 1) when a named backend is not ready
+                    keys: codex | fireworks | synthetic | anthropic | local`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main(process.argv.slice(2)).then(code => {
-    process.exitCode = code
-  })
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

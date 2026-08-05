@@ -29,6 +29,9 @@ import { fetchPublishedVersion } from '../publish-infra/cargo/registry.mts'
 import { readPublishableCargoPackages } from '../publish-infra/cargo/shared.mts'
 import { fetchLatestPublishedVersion } from '../publish-infra/npm/registry.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -165,10 +168,20 @@ async function main(): Promise<void> {
   await checkCargo()
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the npm/cargo manifest version is at most one bump ahead of the published registry version',
+  help: 'Usage: node scripts/fleet/check/version-is-not-ahead-of-published.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    // Fail-open: a crash in the check must not block an otherwise-valid push.
-    process.exitCode = 0
-  })
+  runMain(async () => {
+    try {
+      await main()
+    } catch (e) {
+      logger.error(e)
+      // Fail-open: a crash in the check must not block an otherwise-valid push.
+      process.exitCode = 0
+    }
+  }, SCRIPT_META)
 }

@@ -16,11 +16,13 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -102,9 +104,12 @@ async function main(): Promise<void> {
   logger.success('every command→skill delegation resolves to a real skill.')
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every skill delegation in command prose names a skill that exists',
+  help: 'Usage: node scripts/fleet/check/skill-delegations-resolve.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`skill-delegations-resolve failed: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

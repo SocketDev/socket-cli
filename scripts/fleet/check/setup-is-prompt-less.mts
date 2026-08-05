@@ -43,6 +43,8 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import {
   CACHE_TTL_THRESHOLD_SECONDS,
   evaluateCommitGpgsign,
@@ -700,6 +702,12 @@ function main(): void {
   process.exit(summary.failed > 0 ? 1 : 0)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'audits the dev machine for prompt-less secret and signing setup',
+  help: `Usage: node scripts/fleet/check/setup-is-prompt-less.mts [flags]
+  --fix  apply the mechanical remediations (gpg-agent cache TTLs, pinentry-program, GPG_TTY export)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

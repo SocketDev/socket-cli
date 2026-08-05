@@ -57,6 +57,8 @@ import { runMain } from '../_shared/run-main.mts'
 import { TEMPLATE_PAYLOAD_DIRS } from '../_shared/template-payload-scope.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
+import type { ScriptMeta } from '../_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 // Flip once a repo's test tree is clean. See the header.
@@ -231,6 +233,13 @@ export async function main(): Promise<number> {
   return ENFORCING ? 1 : 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks tests of cascaded mirror sources import the canonical template/base copy',
+  help: `Usage: node scripts/fleet/check/tests-read-canonical-sources.mts [flags]
+  --fix  rewrite mirror imports to the canonical path`,
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }

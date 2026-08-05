@@ -102,22 +102,45 @@ jobs:
       # sfw and socket-cli read SOCKET_API_KEY from the org-wide secret.
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
-      # First step must be the third-party actions/checkout (GitHub fetches it
-      # independently) to populate the workspace so the LOCAL
-      # ./.github/actions/* composite resolves; setup-and-install re-checks-out
-      # at its own deeper default.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
-        with:
-          # Backfill checks out the content ref; empty = the dispatched ref.
-          ref: ${{ inputs.checkout-ref }}
-          fetch-depth: 1
-          # The bump derivation anchors on registry-latest + the last v-tag.
-          # On a first-publish repo the registry has nothing, so the tags are
-          # the only anchor — a tagless shallow checkout makes the engine
-          # derive from zero (0.1.0) and trip the half-applied-bump gate on
-          # historical CHANGELOG sections that describe shipped versions.
-          fetch-tags: true
-          persist-credentials: false
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # inline git-fetch shape so setup-and-install can re-check-out at its own
+      # deeper default. Two npm-publish specifics: a backfill fetches the
+      # checkout-ref content ref (empty = the dispatched ref), and the fetch
+      # carries --tags — the bump derivation anchors on registry-latest + the
+      # last v-tag, and on a first-publish repo the registry has nothing, so
+      # the tags are the only anchor; a tagless shallow fetch makes the engine
+      # derive from zero (0.1.0) and trip the half-applied-bump gate on
+      # historical CHANGELOG sections that describe shipped versions.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body —
+          # zizmor expression-injection). Token authorizes the fetch inline and
+          # is never persisted to .git/config.
+          CHECKOUT_REF: ${{ inputs.checkout-ref }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          # Backfill's content ref wins; otherwise the dispatched ref.
+          FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
+          FETCH_ARGS=(--prune --depth 1 origin "${FETCH_REF}")
+          # --tags stays on the fetch line itself so the
+          # version-derivation-jobs-have-tags gate can see it.
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch --tags "${FETCH_ARGS[@]}"
+          else
+            git fetch --tags "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
 
       # `latest` is what an untagged install of the package resolves to, so it belongs
       # to whichever branch carries the line customers actually consume. For
@@ -168,6 +191,15 @@ jobs:
           # version. Empty forwards as unset, so normal dispatches keep the
           # dispatched-ref re-checkout.
           checkout-ref: ${{ inputs.checkout-ref }}
+          # Thin members download the wheelhouse release bundle during
+          # `pnpm install`, and the mint is what authorizes that download.
+          # Both stay EMPTY on a member that has not provisioned the payload
+          # App, which skips the mint and leaves the fetch a no-op — the same
+          # state a non-thin member wants. Wiring them here is inert until the
+          # credentials exist, so a thin member becomes publishable by adding
+          # the var and secret rather than by editing this cascaded workflow.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       # Build dist/ before publishing — the staged-publish script imports the
       # package's own built output (`@socketsecurity/lib/stdio/prompts` self-
       # resolves to dist/), and `files` ships dist/, so the tarball needs it.
@@ -205,12 +237,6 @@ jobs:
           BACKFILL_VERSION: ${{ inputs.backfill-version }}
           CHECKOUT_REF: ${{ inputs.checkout-ref }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          # actions/setup-node (registry-url) exports a placeholder
-          # NODE_AUTH_TOKEN into every later step's env. The publish step runs
-          # tokenless: the trusted-publishing preflight refuses ANY set token,
-          # and with the variable empty a failed OIDC exchange interpolates an
-          # empty .npmrc credential and dies loud (E401) instead of masking.
-          NODE_AUTH_TOKEN: ''
           RELEASE_AS: ${{ inputs.release-as }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
         # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT

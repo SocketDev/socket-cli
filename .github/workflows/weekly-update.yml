@@ -117,17 +117,29 @@ jobs:
         id: odai
 
       # The runner: deterministic chain + on-device decisions + tests. The
-      # keyed fallback never engages in CI (no Claude CLI, no key). Commits
-      # land on a dated branch; the script refuses PR work itself on red
-      # tests and exits 1, failing this step loudly.
+      # keyed fallback never engages in CI (no Claude CLI, no key). The script
+      # refuses PR work itself on red tests and exits 1, failing this step
+      # loudly.
+      #
+      # ONE long-lived branch, rebuilt from origin/main every run. A dated
+      # branch per run meant a new PR per run: three were open at once, each
+      # going stale behind main, each needing its own review. Resetting the
+      # same branch onto main is a rebase by construction — the PR always shows
+      # "current main plus the updates available today", never a merge conflict
+      # and never a stack of near-duplicates. What each run DID is recorded in
+      # the PR body instead (see the dated <details> blocks below).
       - name: Run the weekly update
         shell: bash
         env:
+          # Env-var indirection: expanding the expression inside `run:` is the
+          # template-injection shape zizmor blocks.
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           ODAI_READY: ${{ steps.odai.outputs.ready }}
         run: |
           set -euo pipefail
           echo "on-device model ready: ${ODAI_READY}"
-          git checkout -b "weekly-update/$(date -u +%Y-%m-%d)"
+          git fetch --quiet origin "${DEFAULT_BRANCH}"
+          git checkout -B weekly-update "origin/${DEFAULT_BRANCH}"
           git config --local user.name 'socket-release-app[bot]'
           git config --local user.email 'socket-release-app[bot]@users.noreply.github.com'
           node scripts/fleet/weekly-update.mts
@@ -139,30 +151,111 @@ jobs:
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
+          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
 
-      - name: Push the branch and open the PR
+      - name: Push the branch and open or refresh the PR
         shell: bash
         env:
           GH_TOKEN: ${{ steps.release-app.outputs.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
+          BASE: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
-          BRANCH="$(git branch --show-current)"
-          if git diff --quiet origin/HEAD..HEAD 2>/dev/null && [ -z "$(git log --oneline FETCH_HEAD..HEAD)" ]; then
-            echo "no commits beyond the base — nothing to open."
+          BRANCH=weekly-update
+          DATE="$(date -u +%Y-%m-%d)"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Nothing to say: the branch is identical to base, so there is no
+          # update to offer. Close any stale PR rather than leaving an empty one.
+          if git diff --quiet "origin/${BASE}..HEAD"; then
+            echo "no diff against ${BASE} — nothing to update."
+            gh pr close "${BRANCH}" --repo "${REPOSITORY}" --delete-branch 2>/dev/null \
+              && echo "closed the now-empty PR." || true
             exit 0
           fi
+
+          # Force-with-lease: the branch is ours and is rebuilt from base each
+          # run, so a non-fast-forward push is EXPECTED. --force-with-lease
+          # still refuses if someone else pushed to it since our fetch.
           AUTH_B64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
           git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" \
-            push origin "HEAD:refs/heads/${BRANCH}"
-          gh pr create \
-            --repo "${REPOSITORY}" \
-            --head "${BRANCH}" \
-            --title "chore(deps): weekly dependency update ($(date -u +%Y-%m-%d))" \
-            --body "$(printf '## Weekly Update\n\nDeterministic chain + on-device decision receipts; see the run log for the receipts block.\n')" \
-            --label dependencies --label automation
+            push --force-with-lease origin "HEAD:refs/heads/${BRANCH}"
+
+          # Compose the body with the pure helper — never markdown surgery in
+          # bash. It folds this run into a dated <details>, newest first, and
+          # replaces any block already carrying today's date so a same-day
+          # re-run stays idempotent.
+          #
+          # The fold's payload is the DEPENDENCY DELTA. Commit subjects alone
+          # say nothing here: a dependency run squashes to one "chore(deps):
+          # update dependencies", so a reviewer opening the fold needs the table
+          # of what actually moved.
+          #
+          # pnpm-workspace.yaml is the file that matters. The fleet pins exact
+          # versions and routes most of them through pnpm's catalog protocol,
+          # so package.json reads `catalog:` on BOTH sides while the version it
+          # resolves to moves in the catalog. Diffing the manifest alone would
+          # render an empty table for exactly the updates this PR exists for.
+          git show "origin/${BASE}:package.json" > /tmp/pkg-before.json 2>/dev/null || : > /tmp/pkg-before.json
+          git show "HEAD:package.json" > /tmp/pkg-after.json 2>/dev/null || : > /tmp/pkg-after.json
+          git show "origin/${BASE}:pnpm-workspace.yaml" > /tmp/ws-before.yaml 2>/dev/null || : > /tmp/ws-before.yaml
+          git show "HEAD:pnpm-workspace.yaml" > /tmp/ws-after.yaml 2>/dev/null || : > /tmp/ws-after.yaml
+
+          mapfile -t LINES < <(git log --format="- %s" "origin/${BASE}..HEAD" | head -50)
+          LINE_ARGS=()
+          for l in "${LINES[@]}"; do LINE_ARGS+=(--line "$l"); done
+
+          BODY_ARGS=(
+            --base "${BASE}" --date "${DATE}" --run-url "${RUN_URL}"
+            --before-pkg /tmp/pkg-before.json --after-pkg /tmp/pkg-after.json
+            --before-workspace /tmp/ws-before.yaml
+            --after-workspace /tmp/ws-after.yaml
+          )
+
+          NUMBER="$(gh pr list --repo "${REPOSITORY}" --head "${BRANCH}" --state open --json number --jq ".[0].number // empty")"
+          if [ -z "${NUMBER}" ]; then
+            printf "" | node scripts/fleet/weekly-update/pr-body-cli.mts \
+              "${BODY_ARGS[@]}" "${LINE_ARGS[@]}" > /tmp/pr-body.md
+            gh pr create \
+              --repo "${REPOSITORY}" \
+              --head "${BRANCH}" \
+              --base "${BASE}" \
+              --title "chore(deps): rolling dependency update" \
+              --body-file /tmp/pr-body.md \
+              --label dependencies --label automation
+            NUMBER="$(gh pr list --repo "${REPOSITORY}" --head "${BRANCH}" --state open --json number --jq ".[0].number // empty")"
+          else
+            gh pr view "${NUMBER}" --repo "${REPOSITORY}" --json body --jq .body \
+              | node scripts/fleet/weekly-update/pr-body-cli.mts \
+                  "${BODY_ARGS[@]}" "${LINE_ARGS[@]}" > /tmp/pr-body.md
+            gh pr edit "${NUMBER}" --repo "${REPOSITORY}" --body-file /tmp/pr-body.md
+            echo "refreshed PR #${NUMBER} with the ${DATE} entry."
+          fi
+
+          # Adopt the pre-rolling PRs. Switching to one branch does not
+          # retroactively claim the PRs opened before the switch: they sit on
+          # per-run branches, some named by an agent rather than a format
+          # string, so --head cannot find them and they would simply pile up.
+          # Identity is the label pair this workflow applies plus a bot author,
+          # so a human's dependency PR is never touched.
+          gh pr list --repo "${REPOSITORY}" --state open \
+            --json number,headRefName,labels,author \
+            | node scripts/fleet/weekly-update/superseded-cli.mts --branch "${BRANCH}" \
+            | while read -r OLD; do
+                [ -n "${OLD}" ] || continue
+                [ "${OLD}" = "${NUMBER}" ] && continue
+                gh pr close "${OLD}" --repo "${REPOSITORY}" --delete-branch \
+                  --comment "Superseded by #${NUMBER}, the rolling dependency PR. Updates now land on one long-lived \`${BRANCH}\` branch, rebuilt from \`${BASE}\` each run, with every run recorded as a dated fold in that PR body." \
+                  && echo "closed superseded PR #${OLD}." || true
+              done
+
+          # Merge itself once required checks pass. Auto-merge is a no-op if the
+          # repo has it disabled, so this never hard-fails the run.
+          gh pr merge "${BRANCH}" --repo "${REPOSITORY}" --auto --squash 2>/dev/null \
+            && echo "auto-merge enabled." \
+            || echo "auto-merge unavailable (repo setting) — leaving for manual merge."
 
       # Red tests already failed the run step above; this dispatch step then
       # never runs. A follow-up wiring pass may dispatch get-green from the

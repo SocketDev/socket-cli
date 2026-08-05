@@ -4,9 +4,9 @@
 // AST / regex detectors so the commit-time and edit-time surfaces agree.
 
 import {
-  lineIsSuppressed,
   looksLikeDocumentation,
   splitLines,
+  suppressionCoversLine,
 } from './scan-core.mts'
 // Cross-repo matcher + helpers shared with the edit-time cross-repo-guard.
 import {
@@ -64,7 +64,7 @@ export function scanLoggerLeaks(text: string): LineHit[] {
     const rule = leak.fullCall.startsWith('process.')
       ? 'process-stdio'
       : 'console'
-    if (lineIsSuppressed(sourceLine, rule)) {
+    if (suppressionCoversLine(lines, leak.line - 1, rule)) {
       continue
     }
     byLine.set(leak.line, {

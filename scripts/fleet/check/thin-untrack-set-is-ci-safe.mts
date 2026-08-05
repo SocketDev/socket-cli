@@ -41,6 +41,9 @@ import {
   isAlwaysTrackedGitHubSurface,
 } from '../_shared/github-tracked-surface.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -167,10 +170,14 @@ export async function main(): Promise<void> {
 }
 
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the thin-distribution untrack set never removes a CI-critical GitHub path',
+  help: `Usage: node scripts/fleet/check/thin-untrack-set-is-ci-safe.mts [flags]
+  --quiet  suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(`thin-untrack-set-is-ci-safe failed: ${String(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

@@ -12,7 +12,8 @@
  *   catches one already committed, regardless of how it got staged. Flagged:
  *
  *   - a tracked symlink (git mode 120000) whose target resolves to its own path
- *     (`a/b → /abs/a/b`), OR
+ *     (`a/b → /abs/a/b`) or to an ancestor that contains it (`a/b/link → ..`,
+ *     which loops the same way one level up), OR
  *   - a tracked symlink whose target is an ABSOLUTE path inside this repo
  *     (machine-specific + loop-prone — a symlink into the repo should be
  *     relative), OR
@@ -21,7 +22,7 @@
  *     via _shared/untrack-offenders.mts) and RE-RUNS the detection — the
  *     re-check, not the executor, decides the exit. Exit: 0 clean / 1 a bad
  *     symlink is tracked (or residual after `--fix`). Detection is shared with
- *     the guard via _shared/self-referential-symlink.mts.
+ *     the guard via lib/self-referential-symlink.mts.
  */
 
 import path from 'node:path'

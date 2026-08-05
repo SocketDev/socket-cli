@@ -23,7 +23,6 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -34,6 +33,9 @@ import {
   sleep,
 } from './browser-session.mts'
 import { isMainModule } from '../../_shared/is-main-module.mts'
+import { runMain } from '../../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -157,9 +159,12 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'seeds the shared npm browser profile with a plain-Chrome human sign-in (no CDP)',
+  help: 'Usage: node scripts/fleet/publish-infra/npm/browser-sign-in.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

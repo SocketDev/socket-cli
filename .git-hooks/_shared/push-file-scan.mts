@@ -120,7 +120,8 @@ export const scanFilesInRange = (range: string): number => {
           '`/Users/<user>/...` (macOS), `/home/<user>/...` (Linux), or ' +
           '`C:\\Users\\<USERNAME>\\...` (Windows). Env vars also work ' +
           '(`$HOME`, `${USER}`). For documentation lines that need the ' +
-          `literal form, append the marker \`${socketLintMarkerFor(file, 'personal-path')}\`.`,
+          'literal form, put the marker ' +
+          `\`${socketLintMarkerFor(file, 'personal-path')}\` on its own line above it.`,
       )
       errors++
     }
@@ -213,10 +214,11 @@ export const scanFilesInRange = (range: string): number => {
         }
         logger.info(
           'Use `getDefaultLogger()` from `@socketsecurity/lib-stable/logger/default`. ' +
-            'For a deliberate raw write, append the per-line marker: ' +
-            '`// socket-lint: allow console` for `console.*`, or ' +
+            'For a deliberate raw write, put the marker on its own line above ' +
+            'the call: `// socket-lint: allow console` for `console.*`, or ' +
             '`// socket-lint: allow process-stdio` for `process.std{out,err}.write` ' +
-            '(the id must match the call kind — that is what `scanLoggerLeaks` keys on).',
+            '(the id must match the call kind — that is what `scanLoggerLeaks` keys on). ' +
+            'no-malformed-bypass-marker rejects the trailing form.',
         )
         errors++
       }

@@ -23,6 +23,8 @@ import { ToolsConfig } from '../lib/external-tools-schema.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -119,6 +121,13 @@ function main(): void {
   logger.success(`Wrote ${path.relative(REPO_ROOT, SCHEMA_PATH)}.`)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'generate the canonical external-tools JSON Schema from its TypeBox source',
+  help: `Usage: node scripts/fleet/external-tools/schema.mts [flags]
+  --check  exit 1 on drift instead of writing`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

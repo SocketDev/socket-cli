@@ -14,7 +14,7 @@
  *
  * 1. Pre-flight — resolve default branch, fetch --tags, find the bump + version
  * 2. Verify — bump touches exactly package.json + CHANGELOG.md
- * 3. Backup — push <orig-tip>:refs/heads/backup/pre-reorder-<ts>-<short>
+ * 3. Backup — push <orig-tip>:refs/heads/backup-YYYYMMDD-HHMMSS
  * 4. Reorder — rebase --onto <bump>^ <bump> HEAD; cherry-pick <bump> to tip
  * 5. Integrity — diff <orig-tip> HEAD must be EMPTY (HARD exit on mismatch);
  *    tip subject must name the bump version
@@ -35,6 +35,7 @@ import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { isError } from '@socketsecurity/lib/errors/predicates'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 
+import { formatBackupBranch } from '../../../../../scripts/fleet/backup-branches/naming.mts'
 import { resolveDefaultBranch } from '../../_shared/scripts/git-default-branch.mts'
 import { header, run, timestamp } from '../../_shared/scripts/run-helpers.mts'
 
@@ -171,10 +172,14 @@ async function main(): Promise<number> {
   await verifyBumpIsCleanBump(bump.sha, src)
   logger.success('bump touches only package.json + CHANGELOG.md')
 
-  // Phase 3 — timestamped backup of the current origin tip.
-  const ts = timestamp()
-  const shortTip = origTip.slice(0, 7)
-  const backup = `backup/pre-reorder-${ts}-${shortTip}`
+  // The safety net goes up BEFORE anything destructive runs. Its name comes
+  // from the tip's own commit date via `formatBackupBranch`, the fleet's one
+  // namer, so the prune, normalize, and release-time parked-work scans all
+  // recognize this ref as a backup.
+  const tipDate = (
+    await run('git', ['show', '-s', '--format=%cI', origTip], src)
+  ).stdout
+  const backup = formatBackupBranch(tipDate)
   if (apply) {
     logger.substep(`pushing remote backup ref: refs/heads/${backup}`)
     await run('git', ['push', 'origin', `${origTip}:refs/heads/${backup}`], src)

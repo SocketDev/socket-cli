@@ -19,7 +19,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib/logger/default'
 import type { EditableJsonInstance } from '@socketsecurity/lib/json/types'
 
@@ -31,6 +30,9 @@ import {
 } from './_shared.mts'
 import { hexToSri } from './update.mts'
 import type { ExternalToolsJson, PlatformEntry, Tool } from './update.mts'
+
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -269,17 +271,21 @@ export async function main(
   return anyProblem ? 1 : 0
 }
 
-// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
-// soft: surface the reason via logger.error, set a non-zero exit code, never a
-// raw unhandled throw.
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'set fields on an existing external-tools entry surgically across manifests',
+  help: `Usage: node scripts/fleet/external-tools/edit.mts <name> [flags]
+  --description <text>  set the human blurb
+  --note <text>         set the notes list (repeatable)
+  --version <v>         set the pinned version string
+  --platform <key>      platform whose integrity to set (with --integrity/--sha)
+  --integrity <sri>     SRI integrity for the named platform
+  --sha <hex>           raw sha-512 hex digest, converted to SRI
+  --target <file>       limit the edit to one manifest file
+  --apply               write the edit (default is a dry run)`,
+}
+
+// Guarded so importing this module, the unit test, doesn't run the CLI.
 if (import.meta.main) {
-  main().then(
-    code => {
-      process.exitCode = code
-    },
-    e => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(main, SCRIPT_META)
 }

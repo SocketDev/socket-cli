@@ -41,6 +41,9 @@ import { describeAnchor, lastReleaseTag } from '../lib/release-anchor.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { runCapture } from '../publish-infra/shared.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -266,10 +269,21 @@ function fail(message: string): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "checks that a pending release's CHANGELOG entry keeps every commit-derived bullet",
+  help: 'Usage: node scripts/fleet/check/changelog-is-commit-derived.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    // Fail-open: a crash in the check must not block an otherwise-valid push.
-    process.exitCode = 0
-  })
+  runMain(
+    () =>
+      main().catch((e: unknown) => {
+        logger.error(e)
+        // Fail-open: a crash in the check must not block an otherwise-valid
+        // push.
+        return 0
+      }),
+    SCRIPT_META,
+  )
 }

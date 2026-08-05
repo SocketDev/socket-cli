@@ -54,7 +54,6 @@ import {
   writeBinaryCacheMetadata,
 } from '@socketsecurity/lib-stable/dlx/binary-cache'
 import { generateCacheKey } from '@socketsecurity/lib-stable/dlx/cache'
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getGitHubToken } from '@socketsecurity/lib-stable/github/token'
 import { httpDownload } from '@socketsecurity/lib-stable/http-request/download'
@@ -69,6 +68,9 @@ import { SFW_CA_FILENAMES } from '../../.claude/hooks/fleet/_shared/sfw-ca.mts'
 import { REPO_ROOT } from './paths.mts'
 import { sfwFlavorFor, sfwRackDirName } from './setup/lib/bootstrap-common.mjs'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -177,7 +179,7 @@ const SUPPORTED_SRI_RE = /^sha(?:256|384|512)-[A-Za-z0-9+/]+={0,2}$/
  * sha256-only decoder threw on anything but sha256, stranding sfw at whatever
  * stale build was last installed and, with it, a proxy CA the client no longer
  * trusts — `tlsv1 alert unknown ca`). Single-source-of-truth schema:
- * socket-btm/scripts/fleet/build-infra/lib/external-tools-schema.json.
+ * scripts/fleet/build-infra/lib/external-tools-schema.json.
  */
 export function assertIntegrity(integrity: string): string {
   if (!SUPPORTED_SRI_RE.test(integrity)) {
@@ -535,9 +537,16 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'installs Socket Firewall (sfw) into the Socket _dlx cache with rack + PATH handles',
+  help: `Usage: pnpm run install:sfw [flags]
+
+  --enterprise  install the enterprise flavor (needs SOCKET_API_KEY or SOCKET_API_TOKEN plus GITHUB_TOKEN / GH_TOKEN)
+  --force       ignore the cache and redownload
+  --quiet       suppress the success summary`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.fail(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

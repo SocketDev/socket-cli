@@ -39,7 +39,9 @@ import {
 import { loadManifestTree, resolveManifestRoot } from './manifest.mts'
 import { emitHuman, summarize } from './report.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import type { Row } from './schema.mts'
 import type { Manifest, Report } from './types.mts'
 
@@ -143,9 +145,18 @@ export function main(): void {
   }
 }
 
+// Shared with the lockstep.mts entry shim, which fronts the same main().
+export const SCRIPT_META: ScriptMeta = {
+  describe:
+    'validates every lockstep.json row against its upstream or sibling ports',
+  help: `Usage: pnpm run lockstep [flags]
+
+  --json, --format=json  emit a single JSON object for CI tooling`,
+}
+
 // Direct execution (`node scripts/fleet/lockstep/cli.mts`) still runs the CLI;
 // importing this module no longer does — the lockstep.mts shim calls main()
 // explicitly under its own guard.
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

@@ -35,7 +35,10 @@ import {
 } from '../../.claude/hooks/fleet/_shared/active-edits-ledger.mts'
 import { isGenerated } from '../../.claude/hooks/fleet/_shared/landable.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { REPO_ROOT } from './paths.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -370,6 +373,14 @@ export function main(cwd: string = REPO_ROOT): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'classifies local unpushed commits and dirty files so own work is never blamed on a phantom session',
+  help: `Usage: node scripts/fleet/whose-work.mts [flags]
+
+  --json  emit the classification as JSON`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main()
+  runMain(main, SCRIPT_META)
 }

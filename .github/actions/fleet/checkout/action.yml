@@ -36,6 +36,23 @@ inputs:
     description: 'Subdirectory to check out into'
     required: false
     default: '.'
+  payload-token-client-id:
+    description: >-
+      Client ID of the GitHub App that mints the thin-distribution read-only
+      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
+      skips the mint: a non-thin member's payload is already present, so
+      "Detect thin fleet payload" below never asks for a token. A thin member
+      sets this so the early hydration below can authenticate the
+      `gh release download` fallback if the anonymous GHCR pull fails.
+    required: false
+    default: ''
+  payload-token-private-key:
+    description: >-
+      Private key of the payload-token GitHub App — pass
+      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
+      payload-token-client-id is set AND hydration is needed.
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -78,7 +95,16 @@ runs:
         FETCH_REF="${CHECKOUT_REF:-${TRIGGER_REF}}"
         # fetch-depth 0 = full history + tags; >0 = shallow, tag-free (CI speed).
         if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
-          FETCH_ARGS=(--prune --tags origin "${FETCH_REF}")
+          # Full history also fetches every branch's tracking ref: the
+          # commit-history checks resolve the DEFAULT branch, and a detached
+          # FETCH_HEAD-only workspace carries no origin/<branch> to resolve.
+          FETCH_ARGS=(--prune --tags origin "${FETCH_REF}" '+refs/heads/*:refs/remotes/origin/*')
+          # A job's first-step bootstrap fetches --depth 1, and a plain fetch
+          # never widens an existing shallow boundary — full history on an
+          # already-shallow workspace needs an explicit --unshallow.
+          if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+            FETCH_ARGS=(--unshallow "${FETCH_ARGS[@]}")
+          fi
         else
           FETCH_ARGS=(--no-tags --prune --depth "${CHECKOUT_FETCH_DEPTH}" origin "${FETCH_REF}")
         fi
@@ -90,6 +116,102 @@ runs:
           git fetch "${FETCH_ARGS[@]}"
         fi
         git checkout -q --detach FETCH_HEAD
+        # Record which branch is the default. A full-history workspace serves
+        # the commit-history checks, and their default-branch resolution reads
+        # origin/HEAD first; `remote add` never writes it (only clone does).
+        # `set-head --auto` queries the remote, so it needs the same
+        # non-persisting auth header the fetch carries — anonymous, it fails
+        # on a private repository and leaves origin/HEAD unset. A failure
+        # prints rather than dying: only the commit-history checks consume
+        # origin/HEAD, and they fail loud with their own What/Where/Fix.
+        if [ "${CHECKOUT_FETCH_DEPTH}" = "0" ]; then
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64:-}" remote set-head origin --auto \
+              || echo "::warning::set-head failed — origin/HEAD unset"
+          else
+            git remote set-head origin --auto \
+              || echo "::warning::set-head failed — origin/HEAD unset"
+          fi
+        fi
+
+    - name: Detect thin fleet payload
+      # A THIN member's whole scripts/fleet/** payload ships ONLY via the
+      # release bundle. Without the hydration below, it lands no earlier than
+      # `pnpm install`'s `prepare` lifecycle — several steps after this one —
+      # so every reader in between ("Install zizmor" below, SFW's own install
+      # manifest, and whichever reader turns out to be next) would fail
+      # against a tree that genuinely lacks it.
+      #
+      # Detect that state ONCE, from the two signals that together mean
+      # "thin member, not yet hydrated": the payload's own anchor file is
+      # missing, AND the dep-0 fetcher that can hydrate it is present — proof
+      # this member is wired for thin distribution at all. A non-thin member
+      # (payload already present) and a member carrying no fetcher (a
+      # packaging bug, caught by "Install zizmor"'s own hard-fail below) both
+      # read `needed=false`, so the mint + hydrate steps that follow no-op.
+      id: detect-hydration
+      shell: bash
+      env:
+        CHECKOUT_DEST: ${{ inputs.working-directory }}
+      run: |
+        set -euo pipefail
+        DEST="${CHECKOUT_DEST:-.}"
+        NEEDED=false
+        if [ ! -f "${DEST}/scripts/fleet/setup/external-tools.json" ] \
+          && [ -f "${DEST}/scripts/repo/bootstrap/fleet.mjs" ]; then
+          NEEDED=true
+        fi
+        echo "needed=${NEEDED}" >> "${GITHUB_OUTPUT}"
+
+    - name: Mint fleet payload read token
+      # Scoped contents:read mint for the hydration fetch below. Gated on
+      # BOTH hydration actually being needed AND the caller having provisioned
+      # the payload App credentials, so a non-thin checkout — most callers of
+      # this action — never mints a token it has no use for. Mirrors
+      # setup-and-install's own later mint (for the `pnpm install`-time
+      # fetch), scoped identically (contents:read on the wheelhouse repo
+      # alone) — see github-payload-app-token's own description.
+      id: payload-token
+      if: steps.detect-hydration.outputs.needed == 'true' && inputs.payload-token-client-id != ''
+      uses: ./.github/actions/fleet/github-payload-app-token
+      with:
+        client-id: ${{ inputs.payload-token-client-id }}
+        private-key: ${{ inputs.payload-token-private-key }}
+
+    - name: Hydrate thin fleet payload
+      # Materialize the release bundle right after checkout, before ANY
+      # reader — see "Detect thin fleet payload" above. The GHCR pull inside
+      # fleet.mjs is anonymous: the fleet-pack OCI artifact is published
+      # PUBLIC (github-release.yml's "Push fleet-pack to GHCR" step — "so
+      # members pull the bundle anonymously"), so the common case needs no
+      # token at all. The token minted above only backs the
+      # `gh release download` fallback fleet.mjs takes if GHCR itself is
+      # unreachable, since the wheelhouse GitHub Release lives in a private
+      # repo and an unauthenticated `gh` cannot read it.
+      if: steps.detect-hydration.outputs.needed == 'true'
+      shell: bash
+      env:
+        CHECKOUT_DEST: ${{ inputs.working-directory }}
+        GH_TOKEN: ${{ steps.payload-token.outputs.token }}
+      run: |
+        set -euo pipefail
+        DEST="${CHECKOUT_DEST:-.}"
+        cd "${DEST}"
+        if ! node scripts/repo/bootstrap/fleet.mjs; then
+          echo "::error title=fleet payload hydration failed::node scripts/repo/bootstrap/fleet.mjs exited non-zero"
+          {
+            echo "  What:   the thin fleet payload fetch failed on a fresh checkout."
+            echo "  Where:  ${DEST}/scripts/repo/bootstrap/fleet.mjs, called from checkout/action.yml."
+            echo "  Saw:    a non-zero exit — see this step's own output above for the reason"
+            echo "          (bundle.ref unpinned, GHCR pull AND the gh-release fallback both"
+            echo "          failed, or a bundle-verification mismatch)."
+            echo "  Fix:    confirm .config/repo/socket-wheelhouse.json carries a valid"
+            echo "          bundle.ref, that ghcr.io/socketdev/socket-wheelhouse/fleet-pack is"
+            echo "          reachable, and — if GHCR is down — that payload-token-client-id /"
+            echo "          payload-token-private-key are wired through to this action."
+          } >&2
+          exit 1
+        fi
 
     - name: Install zizmor
       # Auto-skip in matrix cells: zizmor has its own per-platform
@@ -108,6 +230,15 @@ runs:
         # The checkout action runs while the workspace may still contain only
         # the initial .github/ sparse checkout. Keep its pins beside the action.
         TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        # A THIN member's pin file used to be absent here — the payload only
+        # landed five steps later, during `pnpm install`'s `prepare` lifecycle
+        # — so this step soft-skipped rather than hard-failing on a state that
+        # was, at the time, correct. "Hydrate thin fleet payload" above now
+        # materializes the payload immediately after checkout, so by the time
+        # this step runs the pin file is either already present or the job
+        # already stopped there with its own What/Where/Saw/Fix. An absent
+        # pin file here is therefore always a genuine packaging bug — the
+        # hard failure below is the only branch left, no soft-skip.
         if [ ! -f "$TOOLS_FILE" ]; then
           echo "× fleet pin file not found at ${TOOLS_FILE} — this member is missing scripts/fleet/setup/external-tools.json; re-run the cascade." >&2
           echo "  This is a packaging bug in the fleet scaffolding, not a consumer issue. File a bug." >&2

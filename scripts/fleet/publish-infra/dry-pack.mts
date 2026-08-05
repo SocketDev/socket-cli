@@ -242,7 +242,7 @@ export function makeDryPackDir(): string {
 /**
  * Runs one command for a dry run. Injected so every path below is testable
  * without a registry, a toolchain, or a network — the house seam shape (see
- * `GitExec` in `../prune-backup-branches.mts`).
+ * `GitExec` in `../backup-branches/prune.mts`).
  */
 export type DryExec = (
   cmd: string,

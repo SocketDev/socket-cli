@@ -37,6 +37,9 @@ import { SOAK_DAYS } from '../constants/soak.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { findOwnCargoManifests } from '../update/cargo.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -194,6 +197,14 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks that the cargo min-publish-age soak config matches SOAK_DAYS and a Cargo.lock is tracked',
+  help: `Usage: node scripts/fleet/check/cargo-soak-config-is-current.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

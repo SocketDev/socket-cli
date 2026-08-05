@@ -37,6 +37,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { collectTrackedFiles } from '../_shared/tracked-globs.mts'
 
 const logger = getDefaultLogger()
@@ -236,6 +238,13 @@ async function main(): Promise<number> {
   return 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that release and publish package scripts carry convention names',
+  help: `Usage: node scripts/fleet/check/release-publish-scripts-are-conventionally-named.mts [flags]
+  --quiet   suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

@@ -29,6 +29,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // Source-code extensions to scan (TypeScript only — bundled .cjs/.mjs output
 // is vendored/generated and intentionally excluded; see git ls-files filter).
@@ -248,6 +251,14 @@ function main(): void {
   process.exit(1)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks committed source normalizes path-like variables before separator-sensitive operations',
+  help: `Usage: node scripts/fleet/check/paths-are-normalized-before-match.mts [flags]
+
+  --quiet  silent on clean`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -34,6 +34,18 @@ export const CANONICAL_ENVIRONMENT_NAME = 'npm-publish'
 export const CANONICAL_ALLOW_NPM_PUBLISH = true
 export const CANONICAL_ALLOW_NPM_STAGE_PUBLISH = true
 
+// Two workflows publish npm packages, so the desired workflow filename is not
+// one constant. A napi repo builds its native `.node` addons in a SEPARATE
+// workflow (`npm-publish-napi.yml`) and its per-platform packages —
+// `@owner/<name>-<napi-target>`, e.g. `@stuie/core-darwin-arm64` — publish from
+// THAT workflow; the js/meta packages still publish from `npm-publish.yml`. A
+// platform package's OIDC claim names its real workflow, so pointing it at the
+// js workflow makes npm reject the publish on a workflow-claim mismatch.
+// `desiredTrustedPublisher` picks `npm-publish-napi.yml` for a package whose
+// name ends with `-<platform>` for a platform in the repo's `napi.platforms`,
+// and `npm-publish.yml` for everything else.
+export const CANONICAL_NAPI_WORKFLOW_FILENAME = 'npm-publish-napi.yml'
+
 // The pre-rename legacy workflow filename still stored on stale fleet
 // configs (seen on @socketregistry/es-iterator-helpers, 2026-07-29). A config
 // naming it points npm's OIDC claim matching at a workflow that no longer
@@ -60,16 +72,43 @@ export interface TrustedPublisherDesired {
 }
 
 /**
+ * Whether `pkg` is a napi PLATFORM package: its name ends with `-<platform>`
+ * for some platform in `napiPlatforms` (the repo's `napi.platforms` tokens,
+ * napi-rs vocabulary — `darwin-arm64`, `linux-x64-gnu`, `win32-x64-msvc` — the
+ * same tokens that tail a per-platform package name, e.g.
+ * `@stuie/core-linux-x64-gnu`). The base/meta package (`@stuie/core`) and any
+ * js package are NOT platform packages. A near-miss on a shorter suffix does
+ * not count: `@stuie/core-darwin` against platform `darwin-arm64` is false,
+ * because `-darwin` is not the `-darwin-arm64` tail. Pure — exported for tests.
+ */
+export function isNapiPlatformPackage(
+  pkg: string,
+  napiPlatforms: readonly string[],
+): boolean {
+  for (let i = 0, { length } = napiPlatforms; i < length; i += 1) {
+    const platform = napiPlatforms[i]!
+    if (platform && pkg.endsWith(`-${platform}`)) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
  * The desired config for `pkg`, or undefined when no repo can be derived.
  * Repo resolution, in precedence order: the operator's `repoOverride`
  * (`owner/name`); the socket-registry monorepo for any `@socketregistry/*`
  * package; the package's own CURRENTLY configured repo (fleet packages
  * already point at their roster repo — only the workflow/environment/actions
- * went stale). Everything else is fixed by the canonical law consts. Pure —
- * exported for tests.
+ * went stale). The workflow filename is the js workflow
+ * (`npm-publish.yml`) for a js/meta package and the napi workflow
+ * (`npm-publish-napi.yml`) for a napi platform package, decided by
+ * `isNapiPlatformPackage` against the repo's `napiPlatforms`. Everything else
+ * is fixed by the canonical law consts. Pure — exported for tests.
  */
 export function desiredTrustedPublisher(config: {
   current?: TrustedPublisherCurrent | undefined
+  napiPlatforms?: readonly string[] | undefined
   pkg: string
   repoOverride?: string | undefined
 }): TrustedPublisherDesired | undefined {
@@ -92,13 +131,18 @@ export function desiredTrustedPublisher(config: {
   if (!owner || !name) {
     return undefined
   }
+  const napiPlatforms = cfg.napiPlatforms ?? []
+  const workflowFilename =
+    napiPlatforms.length && isNapiPlatformPackage(cfg.pkg, napiPlatforms)
+      ? CANONICAL_NAPI_WORKFLOW_FILENAME
+      : CANONICAL_WORKFLOW_FILENAME
   return {
     allowNpmPublish: CANONICAL_ALLOW_NPM_PUBLISH,
     allowNpmStagePublish: CANONICAL_ALLOW_NPM_STAGE_PUBLISH,
     environmentName: CANONICAL_ENVIRONMENT_NAME,
     repositoryName: name,
     repositoryOwner: owner,
-    workflowFilename: CANONICAL_WORKFLOW_FILENAME,
+    workflowFilename,
   }
 }
 
@@ -197,6 +241,25 @@ export function verifySavedState(config: {
     mismatches.push(`${e.field}: saved ${e.from}, wanted ${e.to}`)
   }
   return { mismatches, ok: mismatches.length === 0 }
+}
+
+/**
+ * The per-package failure detail after the save + its single fresh retry both
+ * failed to verify: it says the LIVE row may be partially saved (the save
+ * click landed, so some fields can already be live while others are not),
+ * names each mismatched field with its saved-vs-wanted values, and points at
+ * the page to hand-correct. Pure — exported for tests.
+ */
+export function formatPartialSaveFailure(config: {
+  mismatches: readonly string[]
+  url: string
+}): string {
+  const cfg = { __proto__: null, ...config } as typeof config
+  return (
+    'saved state did not verify after a fresh retry — the live row may be ' +
+    `PARTIALLY saved. Fields off desired: ${cfg.mismatches.join('; ')}. ` +
+    `Fix: open ${cfg.url} and correct those fields by hand.`
+  )
 }
 
 /**

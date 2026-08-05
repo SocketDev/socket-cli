@@ -102,7 +102,7 @@ export const check = editGuard((filePath, content) => {
       '\n  # semver-7.7.4\n  [submodule "packages/.../upstream/semver"]\n' +
       '\nThe slug should be a short name (no path); the version is\n' +
       'whatever the upstream tags (v25.9.0, 1.7.19, liburing-2.14, etc.).\n' +
-      '\nOne-off override: append `# socket-lint: allow gitmodules-no-comment`\n' +
+      '\nOne-off override: add `# socket-lint: allow gitmodules-no-comment` on its own line above\n' +
       'to the [submodule] line.\n',
   )
 })

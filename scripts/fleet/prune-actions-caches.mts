@@ -51,6 +51,8 @@ import { isMainModule } from './_shared/is-main-module.mts'
 import { resolveRepoSlug } from './prune-workflow-runs.mts'
 import { runMain } from './_shared/run-main.mts'
 
+import type { ScriptMeta } from './_shared/run-main.mts'
+
 const logger = getDefaultLogger()
 
 const BYTES_PER_GB = 1024 ** 3
@@ -398,27 +400,6 @@ export async function pruneRepoCaches(
   return result
 }
 
-function printHelp(): void {
-  logger.log('Usage: node scripts/fleet/prune-actions-caches.mts [options]')
-  logger.log('')
-  logger.log(
-    '  --all             prune every fleet roster repo (needs fleet-repos.json)',
-  )
-  logger.log('  --repo o/name     prune one repo (default: the current clone)')
-  logger.log(
-    `  --keep N          keep the newest N entries per key group (default ${KEEP_DEFAULT})`,
-  )
-  logger.log(
-    `  --max-bytes N     budget, plain bytes or a gb/mb suffix (default ${formatGb(MAX_BYTES_DEFAULT)})`,
-  )
-  logger.log(
-    `  --fresh-days N    never evict an entry accessed within N days (default ${FRESH_DAYS_DEFAULT})`,
-  )
-  logger.log(
-    '  --dry-run         report what would be deleted without deleting',
-  )
-}
-
 async function resolveTargetRepos(config: {
   all: boolean
   repo: string | undefined
@@ -464,17 +445,12 @@ async function main(): Promise<void> {
       all: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
       'fresh-days': { type: 'string' },
-      help: { default: false, type: 'boolean' },
       keep: { type: 'string' },
       'max-bytes': { type: 'string' },
       repo: { type: 'string' },
     },
     strict: false,
   })
-  if (values['help']) {
-    printHelp()
-    return
-  }
   const dryRun = !!values['dry-run']
   let keep = KEEP_DEFAULT
   const rawKeep =
@@ -579,8 +555,21 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'prunes GitHub Actions cache entries to keep a repo under the fleet cache budget',
+  help: `Usage: node scripts/fleet/prune-actions-caches.mts [options]
+
+  --all             prune every fleet roster repo (needs fleet-repos.json)
+  --repo o/name     prune one repo (default: the current clone)
+  --keep N          keep the newest N entries per key group (default ${KEEP_DEFAULT})
+  --max-bytes N     budget, plain bytes or a gb/mb suffix (default ${formatGb(MAX_BYTES_DEFAULT)})
+  --fresh-days N    never evict an entry accessed within N days (default ${FRESH_DAYS_DEFAULT})
+  --dry-run         report what would be deleted without deleting`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  runMain(main)
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

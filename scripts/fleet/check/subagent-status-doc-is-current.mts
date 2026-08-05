@@ -26,6 +26,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
 import { REPO_ROOT } from '../paths.mts'
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -144,4 +148,13 @@ function main(): void {
   process.exitCode = 1
 }
 
-main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the agent-delegation doc status table matches the SubagentStatus union',
+  help: `Usage: node scripts/fleet/check/subagent-status-doc-is-current.mts [flags]
+  --quiet  suppress the success message`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

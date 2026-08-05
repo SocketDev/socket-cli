@@ -27,7 +27,9 @@ import { runScan } from './lib/scan.mts'
 import { loadState, writeState } from './lib/state.mts'
 
 import type { GhRunner } from './lib/types.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -108,6 +110,16 @@ export function main(argv: readonly string[]): number {
   return runScanCommand({ configPath: parsed.configPath, quiet: parsed.quiet })
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'scans configured repos for team-owned open PRs/issues and watched review threads',
+  help: `Usage: node scripts/fleet/team-activity/cli.mts [scan] <config.json> [flags]
+
+  scan           the only implemented subcommand (default)
+  <config.json>  path to the team-activity config
+  --quiet        print only the headline unless the scan changed`,
+}
+
 if (isMainModule(import.meta.url)) {
-  process.exitCode = main(process.argv.slice(2))
+  runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }

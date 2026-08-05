@@ -17,6 +17,7 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { parseCanonicalMcpConfig, writeCodexAdapters } from '../mcp-config.mts'
 import { discoverRepoSetup } from '../_shared/repo-setup.mts'
+import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { setupBrew } from './brew.mts'
 import { setupDeveloperTools } from './developer-tools.mts'
@@ -28,6 +29,7 @@ import { setupRust } from './rust.mts'
 import { setupSfwCa } from './sfw-ca.mts'
 
 import type { EcosystemStepResult } from './ecosystems.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -197,9 +199,15 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'runs the full repo setup wizard: fleet steps in order, then repo-owned steps',
+  help: `Usage: pnpm setup-all [flags]
+
+  --rotate      re-prompt for and overwrite the persisted Socket API token
+  --skip-tools  skip the tools step (pnpm + sfw + bootstrap)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

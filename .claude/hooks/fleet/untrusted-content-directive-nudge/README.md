@@ -66,8 +66,9 @@ one product it knows about and miss the next one:
    own is never a finding — every diff carries those by the dozen.
 
 Each finding carries its line number and a clipped excerpt. The detector lives
-in `_shared/untrusted-instruction.mts` (`findEmbeddedAgentDirectives`,
-`findHoneypotTokens`) so a reporting path can reuse it without importing a hook.
+in `_shared/untrusted/` — `findEmbeddedAgentDirectives` in `directive-scan.mts`
+and `findHoneypotTokens` in `honeypot-token.mts` — so a reporting path can reuse
+it without importing a hook.
 
 Scanning runs three passes, the same layering `prompt-injection-guard` uses: per
 line on the raw text, per line on a `normalizeForScan` copy (invisible

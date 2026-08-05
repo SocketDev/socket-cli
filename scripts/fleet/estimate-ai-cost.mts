@@ -30,6 +30,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -330,6 +332,20 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'estimate the USD cost of an AI agent run from its model + token profile',
+  help: `Usage: node scripts/fleet/estimate-ai-cost.mts [flags]
+  --model <id>       model id to price (default claude-haiku-4-5)
+  --input <n>        input token count
+  --output <n>       output token count
+  --workload <name>  named token profile from WORKLOAD_PROFILES instead of --input/--output
+  --effort <level>   scale a workload's output tokens (low|medium|high|xhigh)
+  --batch            apply the batch discount multiplier
+  --cache-read <n>   input tokens billed at the cache-read rate
+  --json             print the estimate as JSON`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void main()
+  runMain(main, SCRIPT_META)
 }

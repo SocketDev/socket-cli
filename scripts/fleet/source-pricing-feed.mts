@@ -19,7 +19,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { loadPricing } from './estimate-ai-cost.mts'
@@ -27,7 +26,9 @@ import { run } from './researching-recency/cli.mts'
 
 import type { ServiceEntry } from './estimate-ai-cost.mts'
 import type { QueryPlan } from './researching-recency/lib/types.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -103,13 +104,16 @@ async function main(): Promise<void> {
   logger.log(envelope)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'mines the researching-recency feed for recent pricing announcements for one service',
+  help: `Usage: node scripts/fleet/source-pricing-feed.mts [flags]
+
+  --service <id>  service id from model-pricing.json (default: anthropic)
+  --depth <mode>  feed-engine depth (default: default)
+  --days <n>      lookback window in days (default: 120)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void (async () => {
-    try {
-      await main()
-    } catch (e) {
-      logger.error(`source-pricing-feed failed: ${errorMessage(e)}`)
-      process.exitCode = 1
-    }
-  })()
+  runMain(main, SCRIPT_META)
 }

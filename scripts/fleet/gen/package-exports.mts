@@ -21,7 +21,6 @@ import { builtinModules } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { glob } from '@socketsecurity/lib-stable/globs/match'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
@@ -33,6 +32,8 @@ import {
   resolveTypesPath,
 } from '../lib/exports-conditions.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -625,13 +626,12 @@ async function runGenerator(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "generate a package.json exports map from a publishable package's public file surface",
+  help: 'Usage: node scripts/fleet/gen/package-exports.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  void (async () => {
-    try {
-      await runGenerator()
-    } catch (e) {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    }
-  })()
+  runMain(runGenerator, SCRIPT_META)
 }

@@ -36,7 +36,6 @@
 
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -44,6 +43,8 @@ import { REPO_ROOT } from '../paths.mts'
 import { fetchRegistryReleaseState } from '../publish-infra/npm/registry.mts'
 import { resolveNpmWorkspaceLayout } from '../publish-infra/npm/workspace.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { formatReleaseGapFailure } from '../_shared/release-gap-recovery.mts'
 
 const logger = getDefaultLogger()
@@ -338,11 +339,15 @@ export async function main(): Promise<void> {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'check that every published npm version has its tag and GitHub release',
+  help: `Usage: node scripts/fleet/check/published-versions-have-releases.mts [flags]
+  --quiet   suppress the success line`,
+}
+
 /* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`published-versions-have-releases failed: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
 /* c8 ignore stop */

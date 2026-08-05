@@ -36,6 +36,9 @@ import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { TAZE_FAST_NPM_META_HOST } from '../../../.claude/hooks/fleet/_shared/denied-domains.mts'
 import { isChangelogPath } from '../_shared/changelog-path.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -277,11 +280,12 @@ function main(): void {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the taze single-registry posture — vetoed endpoint absent, pnpm patch intact',
+  help: 'Usage: node scripts/fleet/check/taze-is-single-registry.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  try {
-    main()
-  } catch (e) {
-    logger.fail(`[check-taze-is-single-registry] error: ${e}`)
-    process.exitCode = 1
-  }
+  runMain(main, SCRIPT_META)
 }

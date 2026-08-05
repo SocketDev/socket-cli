@@ -48,7 +48,10 @@
  *   - pnpm-env: EXTENDED_ENV, PNPM_VERSION, PLATFORM, ASSET, INTEGRITY, PNPM_BIN,
  *     PNPM_DIR → 0 or 6 export lines.
  *   - sfw-env: EXTENDED_ENV, SOCKET_API_TOKEN, SFW_BIN, SFW_FLAVOR, SFW_VERSION,
- *     PLATFORM, ASSET, INTEGRITY → 3-10 export lines.
+ *     PLATFORM, ASSET, INTEGRITY → 3-10 export lines. The pnpm BOOTSTRAP path —
+ *     taken only when TOOLS_FILE is absent (a thin member's payload has not
+ *     materialized yet) — is a separate decision core in the co-located
+ *     bootstrap-pnpm.mjs; see that file's header.
  */
 
 // oxlint-disable-next-line socket/prefer-async-spawn -- composite-action helper runs on the raw runner before setup-node; node_modules is unavailable and the jq.mjs probe is naturally sync.

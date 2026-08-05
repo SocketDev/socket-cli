@@ -33,6 +33,8 @@ import type { SoakBypass, Tool } from './update.mts'
 
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
 import { readSoakRules } from '../soak-rules.mts'
+import { runMain } from '../_shared/run-main.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -164,17 +166,15 @@ export async function main(
   return 0
 }
 
-// Guarded so importing this module, the unit test, doesn't run the CLI. Fail-
-// soft: surface the reason via logger.error, set a non-zero exit code, never a
-// raw unhandled throw.
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'drop cleared soakBypass blocks from external-tools manifest entries',
+  help: `Usage: node scripts/fleet/external-tools/prune.mts [flags]
+  --target <file>  limit the prune to one manifest file
+  --apply          write the prune (default is a dry run)`,
+}
+
+// Guarded so importing this module, the unit test, doesn't run the CLI.
 if (import.meta.main) {
-  main().then(
-    code => {
-      process.exitCode = code
-    },
-    e => {
-      logger.error(errorMessage(e))
-      process.exitCode = 1
-    },
-  )
+  runMain(main, SCRIPT_META)
 }

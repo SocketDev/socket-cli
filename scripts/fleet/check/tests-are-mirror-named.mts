@@ -38,6 +38,9 @@ import { REPO_ROOT } from '../paths.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -100,6 +103,21 @@ export function firstPartyImports(
     // A type-only import (`import type … from`, `export type … from`) is a
     // type dependency, not a unit under test — it never counts as a source.
     if (/^(?:export|import)\s+type\b/.test(m[0])) {
+      continue
+    }
+    // A `vi.mock(import('…'))` target is a MOCKED COLLABORATOR, replaced by
+    // the test rather than exercised by it, so it is not a unit under test
+    // either. Counting it made any test that mocks its dependencies read as
+    // multi-source, and the advice was to split it into files that would
+    // assert nothing. The bare-string form, `vi.mock('…')`, never matched this
+    // regex at all, so honoring only the import() form was inconsistent too.
+    // Bounded lookback: the call token sits immediately before the match.
+    if (
+      m[2] !== undefined &&
+      /\bvi\s*\.\s*(?:doMock|doUnmock|mock|unmock)\s*\(\s*$/.test(
+        content.slice(Math.max(0, m.index - 40), m.index),
+      )
+    ) {
       continue
     }
     const spec = m[1] ?? m[2]
@@ -310,6 +328,14 @@ function main(): number {
   return 0
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks every unit test file mirrors the one source it tests',
+  help: `Usage: node scripts/fleet/check/tests-are-mirror-named.mts [flags]
+  --strict  fail (exit 1) on violations not in the baseline
+  --update  rewrite the baseline down as legacy tests conform
+  --quiet   suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

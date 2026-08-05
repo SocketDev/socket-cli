@@ -254,7 +254,8 @@ export function cmdLoad(argv: readonly string[]): number {
     : '{"status": "absent"}'
   // Raw stdout, not logger: this is the resume protocol — the calling skill
   // parses this exact JSON back, so a logger prefix would corrupt it.
-  process.stdout.write(progressJson) // socket-lint: allow process-stdio -- machine-parsed JSON channel
+  // socket-lint: allow process-stdio -- machine-parsed JSON channel
+  process.stdout.write(progressJson)
   return 0
 }
 

@@ -26,16 +26,17 @@ import path from 'node:path'
 import process from 'node:process'
 import { setTimeout as sleep } from 'node:timers/promises'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // oxlint-disable-next-line socket/prefer-async-spawn -- recovery tool needs simple top-level-sync ps/lsof reads; the kill path is the only async part.
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
 import { parseCanonicalMcpConfig } from './mcp-config.mts'
 import { REPO_ROOT } from './paths.mts'
 
 import type { PortableMcpServers } from './mcp-config.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -351,7 +352,7 @@ async function killPids(pids: readonly number[]): Promise<number[]> {
   return survivors.filter(isAlive)
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const servers = parseCanonicalMcpConfig(
     readFileSync(path.join(REPO_ROOT, '.mcp.json'), 'utf8'),
   )
@@ -441,9 +442,14 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "kills this repo's stale .mcp.json stdio server trees and frees their ports",
+  help: `Usage: pnpm run mcp:reset [flags]
+
+  --dry-run  report the processes and ports that would be reclaimed without signalling`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch(error => {
-    logger.error(errorMessage(error))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

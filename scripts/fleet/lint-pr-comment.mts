@@ -17,6 +17,9 @@ import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from './_shared/is-main-module.mts'
+import { runMain } from './_shared/run-main.mts'
+
+import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -476,6 +479,15 @@ function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'validates a draft PR review comment against the fleet comment format',
+  help: `Usage: node scripts/fleet/lint-pr-comment.mts <draft.md> [flags]
+
+  <draft.md>  the draft comment file, or \`-\` to read stdin
+  --quiet     suppress the success message`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

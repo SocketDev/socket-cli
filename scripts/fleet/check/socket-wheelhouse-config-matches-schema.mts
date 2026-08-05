@@ -20,6 +20,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { loadSocketWheelhouseConfig, REPO_ROOT } from '../paths.mts'
 import { SocketWheelhouseConfigSchema } from '../socket-wheelhouse-schema.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -82,6 +85,13 @@ export function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'validates the per-repo socket-wheelhouse config against the fleet schema',
+  help: `Usage: node scripts/fleet/check/socket-wheelhouse-config-matches-schema.mts [flags]
+  --root <dir>  repo root to validate instead of this repo`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

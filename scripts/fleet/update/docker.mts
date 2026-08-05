@@ -33,6 +33,9 @@ import { findOwnFiles, requireSoakDays } from './_shared.mts'
 import { isUnquotedPosition } from './brew-parse.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -672,8 +675,16 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'repins Dockerfile FROM tags to the newest digest-pinned tag past the soak window',
+  help: `Usage: node scripts/fleet/update/docker.mts --soak-days <n> [flags]
+
+  --soak-days <n>  soak window in days (required trust gate)
+  --fix            write the planned repins (default: plan only)
+  --root <dir>     repo root to scan (default: this repo's root)`,
+}
+
 if (isMainModule(import.meta.url)) {
-  void (async (): Promise<void> => {
-    await main()
-  })()
+  runMain(main, SCRIPT_META)
 }

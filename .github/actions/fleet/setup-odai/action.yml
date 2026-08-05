@@ -88,16 +88,22 @@ runs:
     - name: Restore the on-device model cache
       id: model-cache
       if: ${{ steps.gate.outputs.enabled == 'true' }}
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: |
-          /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
-          /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
-          /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
-          /home/runner/.cache/odai/chrome-builtin/Local State
-        key: odai-nano-Linux-x64-restore-anchor
-        restore-keys: |
-          odai-nano-Linux-x64-
+      shell: bash
+      run: |
+        set -euo pipefail
+        # The fleet cache restore CLI (the actions/cache port). It writes the
+        # cache-matched-key step output the fill gate and readiness verdict
+        # below read. This action runs after setup-and-install in the fleet
+        # workflows, so the repo's node_modules resolves @actions/cache; on a
+        # bare job the CLI provisions its own client into RUNNER_TEMP
+        # (catalog-pinned, see scripts/fleet/cache/cache-cli.mts).
+        node scripts/fleet/cache/restore.mts \
+          --path '/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel' \
+          --path '/home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store' \
+          --path '/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel' \
+          --path '/home/runner/.cache/odai/chrome-builtin/Local State' \
+          --key odai-nano-Linux-x64-restore-anchor \
+          --restore-key odai-nano-Linux-x64-
 
     - name: Install the odai CLI
       if: ${{ steps.gate.outputs.enabled == 'true' }}
@@ -145,14 +151,21 @@ runs:
 
     - name: Save the filled model cache
       if: ${{ steps.fill.outputs.component-version != '' }}
-      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-      with:
-        path: |
-          /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
-          /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
-          /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
-          /home/runner/.cache/odai/chrome-builtin/Local State
-        key: odai-nano-Linux-x64-${{ steps.fill.outputs.component-version }}
+      shell: bash
+      env:
+        # Route the fill output through env, never `${{ }}` inside the run
+        # body — zizmor template-injection shape.
+        COMPONENT_VERSION: ${{ steps.fill.outputs.component-version }}
+      run: |
+        set -euo pipefail
+        # The fleet cache save CLI (the actions/cache port; idempotent when
+        # a parallel job already saved this component version).
+        node scripts/fleet/cache/save.mts \
+          --path '/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel' \
+          --path '/home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store' \
+          --path '/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel' \
+          --path '/home/runner/.cache/odai/chrome-builtin/Local State' \
+          --key "odai-nano-Linux-x64-${COMPONENT_VERSION}"
 
     # One readiness verdict, computed from what actually happened. Exports
     # the profile dir so consumer steps and the odai seam agree on the path.

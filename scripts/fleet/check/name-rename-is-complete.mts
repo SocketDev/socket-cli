@@ -34,6 +34,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -42,7 +45,8 @@ const logger = getDefaultLogger()
 // and surrounding backticks. The captured token is the PRIOR name whose
 // disappearance this gate verifies.
 const RENAMED_FROM_RE =
-  /renamed-from:\s*`?((?:socket\/)?[a-z][a-z0-9-]*(?:\.mts)?)`?/gi // socket-lint: allow uncommented-regex
+  // socket-lint: allow uncommented-regex
+  /renamed-from:\s*`?((?:socket\/)?[a-z][a-z0-9-]*(?:\.mts)?)`?/gi
 
 // Fleet surfaces a renamed name lives in (as a file) or is referenced from:
 // scripts/{fleet,repo}, the fleet hooks, the oxlint plugin, the fleet docs, and
@@ -240,6 +244,12 @@ function main(): void {
   process.exitCode = 1
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks every renamed-from marker names a prior fleet name that is fully gone',
+  help: 'Usage: node scripts/fleet/check/name-rename-is-complete.mts',
+}
+
 if (isMainModule(import.meta.url)) {
-  main()
+  runMain(main, SCRIPT_META)
 }

@@ -61,8 +61,8 @@ export function rawBaseUrl(slug: string, ref: string): string {
 
 /**
  * The absolute URL a COMMITTED README uses for a repo-relative asset path, e.g.
- * `SocketDev/socket-lib` + `assets/repo/badges/coverage.svg` →
- * `https://raw.githubusercontent.com/SocketDev/socket-lib/HEAD/assets/repo/badges/coverage.svg`.
+ * `SocketDev/socket-lib` + `assets/coverage.svg` →
+ * `https://raw.githubusercontent.com/SocketDev/socket-lib/HEAD/assets/coverage.svg`.
  */
 export function rawAssetUrl(slug: string, assetPath: string): string {
   return `${rawBaseUrl(slug, RAW_HEAD_REF)}${assetPath}`
