@@ -8,6 +8,9 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 
 ## Table of Contents
 
+<details>
+<summary><b>Full section list</b> — every heading and subheading in this document, in order</summary>
+
 - [Architecture Overview](#architecture-overview)
 - [Command Pattern Architecture](#command-pattern-architecture)
   - [Command Organization](#command-organization)
@@ -38,7 +41,12 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 - [Contributing](#contributing)
 - [Support](#support)
 
+</details>
+
 ## Architecture Overview
+
+<details>
+<summary><b>Component diagram</b> — entry points, command routing, and handler/output layering down to the API/registry/filesystem</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -80,6 +88,8 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
     └─────────┘        └─────────┘       └─────────┘
 ```
 
+</details>
+
 ## Command Pattern Architecture
 
 Commands use two patterns based on complexity:
@@ -111,6 +121,9 @@ Example: scan create command
 
 ### Command Organization
 
+<details>
+<summary><b>Full directory listing</b> — every command directory under src/commands/ with its purpose</summary>
+
 ```text
 src/commands/
 ├── scan/              Security scanning (11 subcommands)
@@ -139,9 +152,14 @@ src/commands/
 └── ... (25 more commands)
 ```
 
+</details>
+
 ## Socket Firewall Architecture
 
 Package manager wrapping uses Socket Firewall (sfw) for security scanning:
+
+<details>
+<summary><b>Firewall dispatch diagram</b> — spawn path through DLX, security scanning, and registry override, plus the feature list</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -178,9 +196,14 @@ Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ## Build System
 
 Multi-target build system supporting npm distribution and standalone executables:
+
+<details>
+<summary><b>Build pipeline</b> — esbuild source build, the SEA build steps, target list, and output artifacts</summary>
 
 ```text
 Build Pipeline
@@ -213,6 +236,8 @@ Build Artifacts
 └── dist/sea/socket-*          Platform-specific binaries
 ```
 
+</details>
+
 ### Build Commands
 
 ```bash
@@ -225,6 +250,9 @@ pnpm build:sea             # Build SEA binaries (all platforms)
 ## Update Mechanism
 
 Dual update system based on installation method:
+
+<details>
+<summary><b>Update paths</b> — the SEA-binary stub check and the npm/pnpm/yarn manager.mts check, side by side</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -251,7 +279,12 @@ Dual update system based on installation method:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 ## Utility Modules
+
+<details>
+<summary><b>Full directory listing</b> — every category under src/util/ with its purpose</summary>
 
 ```text
 src/util/
@@ -280,6 +313,8 @@ src/util/
 ├── validation/          Input validation
 └── yarn/                yarn-specific utilities
 ```
+
+</details>
 
 ## Core Concepts
 
@@ -475,6 +510,9 @@ Features:
 
 ### Command Modules (src/commands/)
 
+<details>
+<summary><b>Full command module list</b> — every directory under src/commands/ with what it wraps</summary>
+
 - `scan/` - Security scanning with 11 subcommands (create, report, reach, diff, view, list, delete, metadata, setup, github)
 - `organization/` - Organization management (dependencies, quota, policies)
 - `npm/npx/pnpm/yarn/` - JavaScript package manager wrappers with Socket Firewall
@@ -504,7 +542,12 @@ Features:
 - `json/` - JSON utilities
 - `oops/` - Error recovery
 
+</details>
+
 ### Utility Modules (src/util/)
+
+<details>
+<summary><b>Full module list</b> — every src/util/ file grouped by category, from API & Network through Validation</summary>
 
 #### API & Network
 
@@ -593,6 +636,8 @@ Features:
 
 - `validation/check-input.mts` - Input validation
 - `validation/filter-config.mts` - Config validation
+
+</details>
 
 ## Constants (src/constants/)
 

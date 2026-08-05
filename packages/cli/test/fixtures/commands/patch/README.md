@@ -47,6 +47,9 @@ Fixture demonstrating patches without vulnerability information. Used to test th
 
 All manifests follow the `PatchManifestSchema`:
 
+<details>
+<summary><b>Full schema shape</b> — required and optional fields for a patch manifest entry</summary>
+
 ```typescript
 {
   patches: {
@@ -75,6 +78,8 @@ All manifests follow the `PatchManifestSchema`:
   }
 }
 ```
+
+</details>
 
 ## Testing Different Scenarios
 
