@@ -88,9 +88,7 @@
     "test-ci": "run-s test:*",
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
-    "update": "run-p --aggregate-output update:**",
-    "update:deps": "taze",
-    "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
+    "update": "node scripts/update.mts"
   },
   "dependencies": {
     "@socketsecurity/socket-patch": "2.0.0",

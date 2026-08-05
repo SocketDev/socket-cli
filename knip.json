@@ -3,6 +3,7 @@
     ".config/*.{js,mjs}",
     "bin/*.js",
     "scripts/**/*.js",
+    "scripts/**/*.mts",
     "shadow-bin/**",
     "src/**/*.mts",
     "test/**/*.test.mts",
