@@ -406,6 +406,12 @@ jobs:
       # it installs the packed tarball into a throwaway consumer and runs
       # every executable the manifest declares. A tarball that installs but
       # cannot run is caught here, before any release marker exists.
+      # Registry pages render the README from the tarball, where relative
+      # assets/ refs 404. Pin them to the release tag once, before the three
+      # packs, so every variant ships absolute, immutable asset URLs.
+      - name: Pin README assets to the release tag
+        run: node .github/scripts/pin-readme-assets.mjs
+
       - name: Build and pack socket
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
