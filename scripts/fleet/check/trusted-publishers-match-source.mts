@@ -47,7 +47,7 @@ import {
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
 import { runNpmWebAuth } from '../npm-web-auth.mts'
-import { REPO_ROOT } from '../paths.mts'
+import { loadSocketWheelhouseConfig, REPO_ROOT } from '../paths.mts'
 
 import type { ScriptMeta } from '../_shared/run-main.mts'
 
@@ -264,13 +264,35 @@ export async function expectedRepositoryFor(
   }
 }
 
+// Where a repo whose root manifest cannot name its published package declares
+// the names instead. One member surface, per config-segregation.
+export const PUBLISHED_PACKAGES_CONFIG_KEY = 'release.publishedPackages'
+
 /**
- * True when this repo ships nothing to npm, so there is no trusted-publisher
- * binding for it to have. Read from the roster's `publishes` list, the same
- * source `committed-dist-is-current` gates on. An unreadable roster or an
- * unresolvable repo name answers `false`: the caller then takes the normal
- * path, which fails loudly rather than skipping on a guess.
+ * The npm names this repo declares it publishes, from
+ * `release.publishedPackages` in `.config/repo/socket-wheelhouse.json`. This is
+ * the answer for a monorepo whose root manifest is `private: true` and whose
+ * published artifact is assembled under a name no manifest on disk carries —
+ * there the manifest read below can only ever say "nothing". Empty when the
+ * config, the block, or the key is absent, or when the value is not a list of
+ * non-empty strings: a malformed entry falls through to the manifest rather
+ * than sending the check at a package name nobody wrote.
  */
+export function publishedNamesFromConfig(repoRoot: string): string[] {
+  const loaded = loadSocketWheelhouseConfig(repoRoot)
+  const release = loaded?.value['release']
+  if (typeof release !== 'object' || release === null) {
+    return []
+  }
+  const names = (release as Record<string, unknown>)['publishedPackages']
+  if (!Array.isArray(names)) {
+    return []
+  }
+  return names.filter(
+    (name): name is string => typeof name === 'string' && name.length > 0,
+  )
+}
+
 /**
  * The npm name this repo publishes, read from its own manifest. Needed because
  * the release tier registers this step once for EVERY member with no per-repo
@@ -294,6 +316,13 @@ export function publishedNameFromManifest(
   }
 }
 
+/**
+ * True when this repo ships nothing to npm, so there is no trusted-publisher
+ * binding for it to have. Read from the roster's `publishes` list, the same
+ * source `committed-dist-is-current` gates on. An unreadable roster or an
+ * unresolvable repo name answers `false`: the caller then takes the normal
+ * path, which fails loudly rather than skipping on a guess.
+ */
 export function repoHasNoNpmChannel(repoRoot: string): boolean {
   const roster = loadRosterFromRepo(repoRoot)
   if (!roster) {
@@ -320,14 +349,22 @@ export default async function main(): Promise<void> {
       return
     }
     // The repo publishes to npm but the caller named nothing, which is how
-    // the release tier always invokes this. Derive the name from the manifest
-    // rather than failing: the answer is unambiguous and sits on disk.
-    const own = publishedNameFromManifest(REPO_ROOT)
-    if (own) {
+    // the release tier always invokes this. Derive the names rather than
+    // failing. The declared list wins over the manifest: a monorepo that ships
+    // an assembled package states the truth in config, and its root manifest —
+    // private, and named for the workspace rather than the artifact — would
+    // otherwise answer nothing at all.
+    const declared = publishedNamesFromConfig(REPO_ROOT)
+    const own = declared.length
+      ? undefined
+      : publishedNameFromManifest(REPO_ROOT)
+    if (declared.length) {
+      packages.push(...declared)
+    } else if (own) {
       packages.push(own)
     } else {
       logger.fail(
-        'no packages: this repo publishes to npm, but its package.json names none. Pass the published name explicitly, e.g. @socketregistry/packageurl-js.',
+        `no packages: this repo publishes to npm, but its package.json names none. Pass the published name explicitly, e.g. @socketregistry/packageurl-js — or, for a monorepo whose root manifest is private and cannot name it, declare \`${PUBLISHED_PACKAGES_CONFIG_KEY}\` in .config/repo/socket-wheelhouse.json.`,
       )
       process.exitCode = 1
       return

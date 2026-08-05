@@ -100,6 +100,12 @@ export const ReleaseLineSchema = Type.Object(
 export const ReleaseSchema = Type.Object(
   {
     releaseLine: Type.Optional(ReleaseLineSchema),
+    publishedPackages: Type.Optional(
+      Type.Array(Type.String({ minLength: 1 }), {
+        description:
+          "The npm package names this repo publishes, for the repos where the root package.json cannot answer. A monorepo whose root manifest is `private: true` (or whose published artifact is assembled by a builder package under a name no manifest carries) has no on-disk name for a check to derive, so it declares the names here. Read by scripts/fleet/check/trusted-publishers-match-source.mts, which resolves the packages it audits as: explicit argv names, then this key, then the root manifest's own name. Leave it unset in the ordinary case where the root manifest already names the published package — a stale copy here would send the check at the wrong package's binding.",
+      }),
+    ),
     provenanceOrphanBaseline: Type.Optional(
       Type.Array(ProvenanceOrphanBaselineEntrySchema, {
         description:
