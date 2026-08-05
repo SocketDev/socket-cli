@@ -365,51 +365,29 @@ export function partitionByLedger(
   return { blocking, sanctioned }
 }
 
+// Inline up to this many paths per repo group; the rest collapse to "+N".
+const BLOCK_PATHS_SHOWN = 4
+
+function inlinePaths(dirty: readonly DirtyEntry[]): string {
+  const shown = dirty.slice(0, BLOCK_PATHS_SHOWN).map(e => e.path)
+  const extra = dirty.length - shown.length
+  return extra > 0 ? `${shown.join(', ')} +${extra}` : shown.join(', ')
+}
+
 export function formatBlock(
   primaryDirty: readonly DirtyEntry[],
   siblingDirt: readonly SiblingDirt[],
   sanctioned?: readonly SanctionedEntry[] | undefined,
 ): string {
-  let total = primaryDirty.length
-  for (const s of siblingDirt) {
-    total += s.dirty.length
-  }
+  const sanctionedTail =
+    sanctioned && sanctioned.length > 0
+      ? ` (+${sanctioned.length} owned by a live run, not blocking)`
+      : ''
   const lines = [
-    `🚨 dirty-worktree-stop-guard: ${total} uncommitted path(s) you authored — commit each (\`git commit -o <file>\`) or revert what you did not author, then stop (bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 dirty-worktree-stop-guard: commit (\`git commit -o <path>\`) or revert${sanctionedTail} — ${inlinePaths(primaryDirty)}${primaryDirty.length ? ' ' : ''}(bypass: user types "${BYPASS_PHRASE}")`,
   ]
-  const groups: Array<{ label: string; dirty: readonly DirtyEntry[] }> = []
-  if (primaryDirty.length) {
-    groups.push({ label: 'primary checkout', dirty: primaryDirty })
-  }
   for (const s of siblingDirt) {
-    groups.push({ label: `sibling repo ${s.root}`, dirty: s.dirty })
-  }
-  for (let i = 0, { length } = groups; i < length; i += 1) {
-    const g = groups[i]!
-    lines.push(`  ${g.label}:`)
-    const es = g.dirty.slice(0, 10)
-    for (let j = 0, { length: jlen } = es; j < jlen; j += 1) {
-      const e = es[j]!
-      lines.push(`    ${e.status} ${e.path}`)
-    }
-    if (g.dirty.length > 10) {
-      lines.push(`    ... and ${g.dirty.length - 10} more`)
-    }
-  }
-  if (sanctioned && sanctioned.length > 0) {
-    lines.push(
-      `  owned by live run — not blocking (${sanctioned.length} path(s)):`,
-    )
-    const ss = sanctioned.slice(0, 10)
-    for (let i = 0, { length } = ss; i < length; i += 1) {
-      const s = ss[i]!
-      lines.push(
-        `    ${s.entry.status} ${s.entry.path}  [actor: ${s.ownerActorId}]`,
-      )
-    }
-    if (sanctioned.length > 10) {
-      lines.push(`    ... and ${sanctioned.length - 10} more`)
-    }
+    lines.push(`   ${s.root}: ${inlinePaths(s.dirty)}`)
   }
   return lines.join('\n')
 }
