@@ -57,6 +57,9 @@ Don't confuse any of these with `SOCKET_CLI_API_TOKEN` (socket-cli's separate se
 The system clipboard and the screen are exfiltration surfaces. Two separate
 concerns:
 
+<details>
+<summary><b>Detail</b> — Our code</summary>
+
 **Our code.** A script or hook must never READ the clipboard (a `pbpaste` /
 `wl-paste` / `xclip -o` / `xsel` CLI) or emit an OSC-52 escape from source, or
 capture the screen (`screencapture` / `scrot` / `grim` / `import` /
@@ -83,6 +86,8 @@ key, read via `getGlobalConfig()`; a project-scoped or `settings.json` value is
 ignored). The `setup-claude-config` install step writes it and the
 `claude-config-is-hardened` check verifies it stays set. With it off, `ctrl+c`
 and `/copy` still copy; only auto-copy-on-select stops.
+
+</details>
 
 ## npm-family 2FA: browser auth, never `--otp`
 

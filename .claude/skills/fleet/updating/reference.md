@@ -132,6 +132,9 @@ fi
 
 ### Phase 10 — Report
 
+<details>
+<summary><b>Report template</b> — the "Update Complete" block: the updates-applied table, commits created, validation lines, and next steps for interactive vs CI mode</summary>
+
 ```
 ## Update Complete
 
@@ -161,6 +164,8 @@ fi
 2. CI will run full build/test validation
 3. Review PR when CI passes
 ```
+
+</details>
 
 ## Mode contracts
 

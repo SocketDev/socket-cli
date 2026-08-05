@@ -244,7 +244,7 @@ const GROUPS: readonly ReminderGroup[] = [
 const CHAT_VOICE_MEMORY: AgentMemoryEntry = {
   body: `Chat replies to the owner follow the same voice rules the outbound guards enforce on PR/issue/Linear text. Banned outright: honest / honestly / honesty ("One honesty note", "to be honest", "in all honesty"), frankly, "paper over", and hedge-label framings that name the act instead of stating the fact.
 
-**Why:** claiming honesty implies the rest is not; a hedge label buries the fact it introduces. The reply-prose-nudge Stop hook enforces this, but a nudge corrects one reply — this memory corrects the prior.
+**Why:** claiming honesty implies the rest is not; a hedge label buries the fact it introduces. anti-prose-guard BLOCKS turn-end on these (not reply-prose-nudge, which only whispers about the heuristics and never scanned the candor bans at all) — but a block corrects one reply, and this memory corrects the prior.
 
 **How to apply:** state the limitation plainly ("I could not verify X because Y") with no framing label. Related: [[feedback-jdalton-voice]].`,
   description:

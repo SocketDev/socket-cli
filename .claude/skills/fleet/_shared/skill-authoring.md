@@ -6,6 +6,9 @@ Conventions every fleet skill follows. Reference from new-skill scaffolds and fr
 
 A skill's `SKILL.md` is the **orchestrator**, not the encyclopedia. When a skill grows past ~300 lines or covers more than one phase / tool / domain, push the depth into siblings:
 
+<details>
+<summary><b>Detail</b> — the full table (7 rows)</summary>
+
 ```
 .claude/skills/
 ├── _shared/
@@ -40,6 +43,8 @@ What goes where:
 | `<skill>/run.mts`                     | Skill-specific executable runner. Inline prompts so prompts and code can't drift. Per CLAUDE.md _Tooling — Runners are `.mts`, not `.sh`_.                                                                                                                                               |
 | `_shared/<topic>.md`                  | Shared **prose** (variant-analysis discipline, compound-lessons workflow, multi-agent backends). Cross-skill load surface.                                                                                                                                                               |
 | `_shared/scripts/<helper>.mts`        | Shared **TypeScript** helpers imported by per-skill `run.mts` (default-branch resolution, report formatting, spawn wrappers). Internal automation — not a public library, hence `scripts/` not `lib/`. Use `@socketsecurity/lib/spawn` for subprocesses, never raw `node:child_process`. |
+
+</details>
 
 ## Auditor agents
 
@@ -130,6 +135,9 @@ The fleet standardizes on the **VoidZero tool suite** for JavaScript/TypeScript 
 
 We don't adopt Vite+ as a runtime dependency, but its **resolver pattern** is worth absorbing. Vite+ separates "where does this tool's binary live?" from "how do I dispatch the command?" via small per-tool resolver functions:
 
+<details>
+<summary><b>Detail</b> — Why the fleet should borrow this, Implemented</summary>
+
 ```ts
 // vite-plus/packages/cli/src/resolve-test.ts
 export async function test(): Promise<{
@@ -161,6 +169,8 @@ const result = await runResolved(resolveLinter({ mode: 'check' }), { cwd })
 ```
 
 The resolver gives us a clean migration path: when rolldown goes fleet-wide, we change `resolveBundler()` to return `['rolldown']` instead of `['esbuild']` — every per-repo `scripts/build.mts` that consults the resolver picks up the swap. Per-repo migration to consume the resolver lands repo-by-repo so we don't bundle bundler-swap risk into a 12-repo cascade.
+
+</details>
 
 ## References
 

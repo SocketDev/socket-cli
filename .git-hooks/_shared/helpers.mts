@@ -37,6 +37,7 @@ export {
   socketLintMarkerFor,
   splitLines,
   stripTemplateLayer,
+  suppressionCoversLine,
 } from './scan-core.mts'
 export type { LineHit } from './scan-core.mts'
 

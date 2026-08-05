@@ -38,6 +38,9 @@ gh api "repos/{owner}/{repo}/pulls/<PR#>/comments/<comment-id>/replies" \
 
 After replying, **resolve the thread**: the reply alone doesn't auto-resolve — resolution is a GraphQL mutation:
 
+<details>
+<summary><b>The two-step resolve mutation</b> — map a comment <code>databaseId</code> to its <code>PRRT_</code> thread node ID, then call <code>resolveReviewThread</code> on it</summary>
+
 ```bash
 # Step 1: get the thread node ID (PRRT_…) for a given comment databaseId.
 THREAD_ID=$(gh api graphql -f query='
@@ -63,6 +66,8 @@ mutation($threadId: ID!) {
   }
 }' -f threadId="$THREAD_ID"
 ```
+
+</details>
 
 ### When to resolve
 

@@ -19,6 +19,9 @@ lowest layer that owns that concern.
 
 ## Non-interactive command table
 
+<details>
+<summary><b>Agent-safe command table</b>: init, add, view, submit, push, sync, prune, rebase and its continue/abort, navigation, checkout, link, unstack, feedback</summary>
+
 | Goal | Agent-safe command |
 | --- | --- |
 | Create a stack's bottom layer | `gh stack init --base <trunk> <bottom>` |
@@ -39,6 +42,8 @@ lowest layer that owns that concern.
 | Remove local tracking only | `gh stack unstack --local` |
 | Open the feedback form | `gh stack feedback "<title>"` |
 
+</details>
+
 Never run these agent-side because they open a prompt or TUI:
 
 - `gh stack modify`
@@ -52,6 +57,9 @@ Never run these agent-side because they open a prompt or TUI:
 after showing the effect and receiving explicit approval.
 
 ## Create a stack
+
+<details>
+<summary><b>Full create sequence</b>: status and remote checks, <code>gh stack init</code>, then a commit per layer before <code>gh stack add</code> creates the next, ending in <code>submit --auto</code> and <code>view --json</code></summary>
 
 ```bash
 git status --short --branch
@@ -75,6 +83,8 @@ git commit -m "feat(example): add the UI layer"
 gh stack submit --auto --remote origin
 gh stack view --json
 ```
+
+</details>
 
 Pass multiple branches to `init` only when adopting an existing, already
 ordered branch chain. For new work, create and commit one layer before adding
@@ -157,6 +167,9 @@ force-push as conflict recovery.
 
 ## Preview feedback template
 
+<details>
+<summary><b>Report skeleton</b>: Summary, Expected, Actual, Reproduction, Environment, Recovery, with credentials never pasted in</summary>
+
 ```markdown
 ## Summary
 
@@ -188,6 +201,8 @@ What happened, including the exact sanitized error and exit code.
 
 Whether abort/continue restored the stack and any state that remained changed.
 ```
+
+</details>
 
 Search and post in GitHub's
 [gh-stack discussions](https://github.com/github/gh-stack/discussions), using

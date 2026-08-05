@@ -18,6 +18,9 @@ or changing a cascaded hook/rule.
   entries via the per-hook `hook.json` declaration. The fixer merges template +
   repo declarations so cascades don't clobber local hook wiring. See
   `cascade-preserve-repo-hook-wiring.md`.
+<details>
+<summary><b>The hooks/_shared helper modules</b>: fleet-repos, shell-command, transcript, foreign-paths, payload, hook-env, token-patterns, wheelhouse-root, stop-nudge, and the acorn-wasm ast bundle</summary>
+
 - **`hooks/_shared`** — helpers consumed by multiple Bash-tool hooks:
   - `fleet-repos.mts` — single source of fleet membership (the broad
     pushable/importable set, wider than the cascade roster). Shared by
@@ -61,6 +64,8 @@ or changing a cascaded hook/rule.
     JS/TS parsing (error-message-quality-nudge relies on `findThrowNew`). The
     `.wasm` blob + bindgen + sync wrapper must cascade as a unit.
 
+</details>
+
 ## Reminder family (Stop hooks)
 
 Stop hooks that emit informational stderr (never block) when the most-recent
@@ -80,6 +85,9 @@ enterprise-push-property-nudge.
 The bulk of the catalog is PreToolUse(Edit|Write|Bash) blockers and the few
 PostToolUse rewriters. Each names its event, what it blocks, and its bypass
 phrase (where one exists):
+
+<details>
+<summary><b>Guard roster, all 47 entries</b>: each blocker's lifecycle event, what it refuses, and its `Allow &lt;X&gt; bypass` phrase where one exists</summary>
 
 - **parallel-agent-edit-guard** — PreToolUse(Edit/Write/NotebookEdit) block on
   writing a foreign dirty file (another live agent is editing it).
@@ -189,6 +197,8 @@ phrase (where one exists):
   against publish/release workflows unless dry-run-verified.
 - **scan-label-in-commit-guard** — PreToolUse(Bash) refusing commit bodies with
   scan-report labels (B1/M9/H3/L4). Bypass: `Allow scan-label-in-commit bypass`.
+
+</details>
 
 ## CLAUDE.md offshoot references
 

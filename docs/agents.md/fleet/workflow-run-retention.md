@@ -90,6 +90,9 @@ across 43 entries and was continuously evicting itself.
 `scripts/fleet/prune-actions-caches.mts` keeps a repo clear of that cap in two
 passes:
 
+<details>
+<summary><b>Detail</b> — `node scripts/fleet/prune-actions-caches.mts`</summary>
+
 - **Per-group retention** — entries are grouped by key prefix (the cache key
   minus its trailing `hashFiles()` digest, so `Linux-cargo-a1b2c3d4` and
   `Linux-cargo-f6e5d4c3` are two generations of one logical cache). Keep the
@@ -121,6 +124,8 @@ node scripts/fleet/prune-actions-caches.mts
 node scripts/fleet/prune-actions-caches.mts --all
 node scripts/fleet/prune-actions-caches.mts --repo owner/name --max-bytes 4gb
 ```
+
+</details>
 
 ## Scheduled caller
 

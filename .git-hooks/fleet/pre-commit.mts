@@ -52,7 +52,9 @@ const main = (): number => {
   // the last line of defense against a wipe (a wedged pnpm test once staged the
   // whole .claude/ tree for deletion). Runs before the ACM-staged read because
   // a pure-deletion commit has zero ACM files. No bypass — a wipe is never
-  // intentional; finish/abort the operation that staged it. A surgical
+  // intentional; finish/abort the operation that staged it. Untracking ignored
+  // files (`git rm --cached`, path still on disk) is not a wipe and is
+  // excluded before the count, so it needs no bypass either. A surgical
   // `git commit --only <paths>` sees ONLY the named paths, never a foreign
   // deletion staged elsewhere in the working index — see
   // catastrophicDeletionReason's comment in _shared/helpers.mts for the
@@ -592,13 +594,20 @@ const main = (): number => {
   // changelog of how the code got here. The scanner is comment-text-only (a
   // process word inside a string / identifier never trips it) and confidently
   // blocks the sequence/quest/process-ref shapes; a lone `#N` cross-ref blocks
-  // only when it co-occurs with a process word. shouldSkipFile already exempts
-  // tests/fixtures, which legitimately quote these shapes. Per-line opt-out:
+  // only when it co-occurs with a process word.
+  //
+  // SOURCE-ONLY, via shouldSkipSourceScan. This scans COMMENTS, and markdown
+  // has none — its prose cites upstream PRs and issues as evidence, which is
+  // the opposite of leaking our own process. A competitive-research doc whose
+  // whole subject is another project's PR history tripped this on every
+  // citation. The exemption is the one file-scan.mts already documents:
+  // markdown, docs, JSON, and YAML reference these patterns legitimately.
+  // shouldSkipFile still exempts tests/fixtures. Per-line opt-out:
   // `// socket-lint: allow pr-process-comment`.
   logger.info('Checking comments for PR-process / step-N references…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
-    if (shouldSkipFile(file)) {
+    if (shouldSkipSourceScan(file)) {
       continue
     }
     const text = readFileForScan(file)

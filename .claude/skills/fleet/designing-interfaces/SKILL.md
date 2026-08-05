@@ -41,6 +41,9 @@ patterns from screens, and sequencing from flows when the task has multiple step
 - **Do not average references into a safe middle.** When references conflict, choose one
   dominant direction and preserve its sharp traits. Secondary references may add narrow
   details only.
+<details>
+<summary><b>The other eleven rules</b> — reject category reflexes twice, grid backgrounds only for grid products, do not change token meanings, respect imagery guidance, no generic design skill as a parallel authority, specific research output, no design from vibe memory, synthesize before implementation, a brief is not a build target, image generation only when it changes the outcome, validate after building</summary>
+
 - **Reject category reflexes twice.** First reject the default aesthetic implied by the
   product category. Then reject the predictable anti-default; choose a direction grounded
   in the brief and research instead.
@@ -72,6 +75,8 @@ patterns from screens, and sequencing from flows when the task has multiple step
 - **Validate after building visual work.** Compare the rendered implementation against
   the locked target/reference before handoff. Fix actionable design drift instead of
   treating research as sufficient.
+
+</details>
 
 ## Companion Skills
 
@@ -110,6 +115,9 @@ would materially change the result; otherwise make reasonable assumptions and pr
 
 Clarify:
 
+<details>
+<summary><b>Detail</b> — the full list (9 entries)</summary>
+
 - what is being designed
 - platform: web, iOS, or both
 - audience and technical level
@@ -133,6 +141,8 @@ Constraints: [CONSTRAINTS].
 Research needed: [styles/screens/flows].
 Path: [direct build / visual exploration / audit / asset generation].
 ```
+
+</details>
 
 ## Workflow Routing
 
@@ -226,6 +236,9 @@ For any visual design task, start here.
 
 Recommended loop:
 
+<details>
+<summary><b>Detail</b> — the full list (36 entries)</summary>
+
 1. Search 3-5 different visual angles.
 2. Include one broad aesthetic query.
 3. Include one domain/category query.
@@ -307,12 +320,17 @@ code windows, or geometric primitives only when they match the source style.
 For substantial visual exploration, generated mockups, bitmap assets, or post-build visual
 QA, follow [references/visual-workflow.md](references/visual-workflow.md).
 
+</details>
+
 ### 2. Research Screens For Product Details
 
 Use screens when you need to know what the interface should contain or how real products
 solve a specific UI problem.
 
 Good screen queries:
+
+<details>
+<summary><b>Detail</b> — the full list (21 entries)</summary>
 
 - pricing page annual monthly toggle
 - feature comparison table
@@ -344,6 +362,8 @@ Extract from screens:
 - states and edge cases
 - trust or conversion tactics
 - concrete details worth adapting
+
+</details>
 
 ### 3. Research Flows For Journey Logic
 

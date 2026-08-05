@@ -520,11 +520,79 @@ export function formatUnverifiedBlock(hit: PublishHit): string {
   )
 }
 
+// A CI dispatch of npm-publish.yml that lets the workflow do the version bump.
+// `bump` defaults to TRUE, so its ABSENCE is the dangerous case, not just an
+// explicit `bump=true`.
+const WORKFLOW_DISPATCH_RE = /\bgh\s+workflow\s+run\b/
+const NPM_PUBLISH_WORKFLOW_RE = /\bnpm-publish\.ya?ml\b/
+const PUBLISH_TRUE_RE = /\bpublish\s*=\s*true\b/
+const BUMP_FALSE_RE = /\bbump\s*=\s*false\b/
+
+/**
+ * True when `command` dispatches npm-publish.yml for a REAL publish while
+ * leaving the bump to CI.
+ *
+ * Why this is a separate detector from the local-publish ones: it looks
+ * sanctioned. It runs in CI, under OIDC, with provenance on — every signal the
+ * other rules check for is present. What it silently costs is the TAG. npm
+ * derives provenance from the run's GITHUB_SHA, which is fixed when the run
+ * starts, so a version bumped during that run is attested against the pre-bump
+ * commit and no tag can mark the tree that shipped.
+ *
+ * Narrow on purpose. A dry run (`publish=false`, the default) mints nothing and
+ * passes. An explicit `bump=false` is the pipeline's own dispatch shape and
+ * passes. Only a real publish that also bumps is refused.
+ */
+export function detectCiBumpDispatch(command: string): boolean {
+  if (!WORKFLOW_DISPATCH_RE.test(command)) {
+    return false
+  }
+  if (!NPM_PUBLISH_WORKFLOW_RE.test(command)) {
+    return false
+  }
+  if (!PUBLISH_TRUE_RE.test(command)) {
+    return false
+  }
+  return !BUMP_FALSE_RE.test(command)
+}
+
+/**
+ * The refusal shown for a bump-in-CI dispatch.
+ */
+export function formatCiBumpDispatchBlock(): string {
+  return [
+    'npm-publish.yml dispatched with the bump left to CI.',
+    '  Where: `gh workflow run npm-publish.yml` with publish=true and no bump=false.',
+    '  Saw:   the workflow would consume the version hint and commit the bump',
+    '         DURING the run; wanted the bump commit to already exist.',
+    "  Why:   npm derives provenance from the run's GITHUB_SHA, fixed when the",
+    '         run starts. A version bumped during the run is attested against the',
+    '         PRE-bump commit, so no tag can mark the tree that shipped. That is',
+    '         how @socketsecurity/lib 6.5.0, 6.5.1 and 6.6.0 each became a',
+    '         provenance orphan. Reordering inside one run cannot fix it.',
+    '  Fix:   release through the pipeline, which lands the bump FIRST and then',
+    '         dispatches with bump=false:',
+    '',
+    '           node scripts/fleet/publish-pipeline.mts',
+    '',
+    '         A preview is fine as-is: drop publish=true for a dry run. A',
+    '         deliberate no-tag release is fine too: pass -f bump=false and land',
+    '         the bump yourself first.',
+    '  See:   docs/agents.md/fleet/publish-provenance.md',
+  ].join('\n')
+}
+
 export const check = bashGuard((command, payload) => {
   const publishHits = detectPublishes(command)
   const stageHits = detectStagePublish(command)
   const cargoHits = detectCargoPublish(command)
   const scriptHits = detectDirectPublishScript(command)
+  // Checked before the hit-count early return: a workflow dispatch is not a
+  // local publish, so it produces no PublishHit and would otherwise fall
+  // straight through this guard.
+  if (detectCiBumpDispatch(command)) {
+    return block(formatCiBumpDispatchBlock())
+  }
   const hits = [...publishHits, ...stageHits, ...cargoHits, ...scriptHits]
   if (hits.length === 0) {
     return undefined

@@ -38,6 +38,9 @@ as a trailing comment OR on the line directly above the pin.
 Temporary local flamegraph or micro-bench pin — optimizer-off, host-tuned
 numbers — needs a sunset date:
 
+<details>
+<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+
 ```toml
 # microarch-pin: local-profiling | removable: 2026-12-31
 rustflags = ["-Ctarget-cpu=native"]
@@ -59,6 +62,8 @@ The temporary reason token is `local-profiling` or `bench` plus a `removable:`
 ISO date. The standing token is `controlled-target` or `build-matrix` followed
 by a dash and a justification. A bare pin fails; a `controlled-target -` marker
 with an empty justification fails.
+
+</details>
 
 ## Enforcement
 
@@ -93,6 +98,9 @@ Catto's box2d solver write-up at
 receipts where we have them. These are heuristics with a measure-first rule,
 not absolutes.
 
+<details>
+<summary><b>The five heuristics</b> — measure the autovectorization ceiling first, restructure the data instead of retrofitting intrinsics, one codebase behind a wide typedef, wider lanes saturate, SIMD selectively</summary>
+
 - **Measure the autovectorization ceiling first.** Element-wise byte and
   integer loops routinely hit it: stuie-cabi's per-frame buffer loops gained
   5-16x from structure-only rewrites — `slice::fill`, block `memcmp`,
@@ -117,6 +125,8 @@ not absolutes.
 - **SIMD selectively.** box2d kept collision detection scalar; only the
   math-dense solver went wide. Math density per byte moved decides where SIMD
   belongs.
+
+</details>
 
 Everything above is orthogonal to WHO CONTROLS THE TARGET: a distributed
 artifact still ships runtime dispatch, per the rule at the top of this page.

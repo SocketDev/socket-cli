@@ -31,6 +31,9 @@ foreign tool (e.g. converts plugins into ESLint rules) legitimately needs that
 tool installed to integration-test against. It declares the exemption
 explicitly in its `package.json`:
 
+<details>
+<summary><b>hostTestDeps contract</b> — the <code>package.json</code> declaration plus the three conditions the allowance requires: exact name match, <code>devDependencies</code>/<code>peerDependencies</code> only, and no package script invoking the binary</summary>
+
 ```json
 {
   "fleet": { "hostTestDeps": ["eslint"] }
@@ -51,6 +54,8 @@ Foreign **config files stay blocked unconditionally** — host APIs used in test
 (ESLint `RuleTester` / `Linter`, Babel programmatic transforms) need no config
 file. The contract + audit logic live in `_shared/foreign-linters.mts`, shared
 with the committed-state check.
+
+</details>
 
 ## Defense in depth
 

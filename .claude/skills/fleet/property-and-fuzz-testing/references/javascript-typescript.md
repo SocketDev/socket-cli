@@ -6,6 +6,9 @@ Runs standalone in vitest — no extra binding needed (`@fast-check/vitest`'s
 `it.prop` is optional sugar we don't take). Pinned in the MAIN catalog as
 `fast-check` (`catalog:`) — universal, pure JS, cheap.
 
+<details>
+<summary><b>Detail</b> — The five classical properties, Writing arbitraries, Never</summary>
+
 ```ts
 import fc from 'fast-check'
 import { expect, test } from 'vitest'
@@ -46,11 +49,16 @@ test('compareSemver is antisymmetric', () => {
 **Never** depend on `Math.random()` or the system clock inside a property —
 control randomness through the generator, and mock time (`vi.setSystemTime`).
 
+</details>
+
 ## Tier 2 — vitiate (crash · memory-safety · security)
 
 SWC-instrumented, coverage-guided, corpus + auto-minimized crash artifacts
 replayed as regression tests. The `prototypePollution` detector makes it a
 security fuzzer, not just a crash fuzzer.
+
+<details>
+<summary><b>Detail</b> — Runner, Fleet-pinned, Native addon caveat</summary>
 
 ```ts
 // test/<name>.fuzz.ts
@@ -138,6 +146,8 @@ so the CLI exit-code contract is a separate concern.
 sufficient for a C++/Rust addon — vitiate only sees crashes that surface as a
 JS abort, while a heap overflow / UAF in the native code corrupts silently.
 Fuzz the native code directly too (see [rust.md](rust.md) / [cpp.md](cpp.md)).
+
+</details>
 
 ## Tier 3 — hand-rolled seeded harness (dep-0)
 

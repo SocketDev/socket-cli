@@ -15,10 +15,12 @@
 // `git reset --mixed` to the prior good commit, worktree intact. A pre-commit
 // gate catches it before the bad commit exists.
 //
-// Detection: on a `git commit`, count staged deletions
-// (`git diff --cached --diff-filter=D --name-only`) and the tree's tracked
-// file count (`git ls-files`). Block when deletions ≥ DELETE_FLOOR or
-// deletions / max(tracked, 1) > DELETE_RATIO.
+// Detection: on a `git commit`, list staged deletions
+// (`git diff --cached --diff-filter=D --name-only`), set aside the benign
+// untrackings (see _shared/benign-untracking.mts — a path still on disk that
+// git ignores, the `git rm --cached` signature), and weigh only the remainder
+// against the tree's tracked file count (`git ls-files`). Block when those
+// deletions ≥ DELETE_FLOOR or deletions / max(tracked, 1) > DELETE_RATIO.
 //
 // Fails OPEN on any hook error (exit 0 + stderr note) — a guard bug must never
 // wedge commits.
@@ -34,8 +36,17 @@
 //     "tool_input": { "command": "..." },
 //     "transcript_path": "/.../session.jsonl" }
 
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import type { StagedDeletionSplit } from '../_shared/benign-untracking.mts'
+import {
+  describeBenignUntrackings,
+  ignoredAmong,
+  splitStagedDeletions,
+} from '../_shared/benign-untracking.mts'
 import { isGitCommit } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { isFleetSyncCommand } from '../_shared/shell-command.mts'
@@ -69,21 +80,42 @@ export function getRepoDir(): string {
 export { isGitCommit }
 
 /**
- * Count files staged for DELETION in the index (vs HEAD).
+ * Paths staged for DELETION in the index (vs HEAD).
  */
-export function countStagedDeletions(repoDir: string): number {
+export function stagedDeletionPaths(repoDir: string): string[] {
   const r = spawnSync(
     'git',
     ['diff', '--cached', '--diff-filter=D', '--name-only'],
     { cwd: repoDir, timeout: spawnTimeoutMs(5000) },
   )
   if (r.status !== 0) {
-    return 0
+    return []
   }
   return String(r.stdout)
     .split('\n')
     .map((s: string) => s.trim())
-    .filter(Boolean).length
+    .filter(Boolean)
+}
+
+/**
+ * Split staged deletions, setting aside the ones explained by untracking a
+ * still-present gitignored path. Only the remainder is wipe-shaped.
+ */
+export function splitDeletions(
+  repoDir: string,
+  paths: readonly string[],
+): StagedDeletionSplit {
+  const ignored = ignoredAmong(paths, stdin => {
+    const r = spawnSync('git', ['check-ignore', '--no-index', '--stdin'], {
+      cwd: repoDir,
+      input: stdin,
+      timeout: spawnTimeoutMs(5000),
+    })
+    return { status: r.status ?? undefined, stdout: String(r.stdout ?? '') }
+  })
+  return splitStagedDeletions(paths, ignored, relPath =>
+    existsSync(path.join(repoDir, relPath)),
+  )
 }
 
 /**
@@ -140,7 +172,14 @@ export const check = bashGuard((command, payload) => {
   }
 
   const repoDir = getRepoDir()
-  const deletions = countStagedDeletions(repoDir)
+  const staged = stagedDeletionPaths(repoDir)
+  if (staged.length === 0) {
+    return undefined
+  }
+  // Untracking ignored files (`git rm --cached`) stages a deletion per path
+  // and is routinely hundreds at once; only wipe-shaped deletions count.
+  const split = splitDeletions(repoDir, staged)
+  const deletions = split.clobberish.length
   if (deletions === 0) {
     return undefined
   }
@@ -149,6 +188,7 @@ export const check = bashGuard((command, payload) => {
   if (!reason) {
     return undefined
   }
+  const excused = describeBenignUntrackings(split)
 
   const transcriptPath = payload.transcript_path
   if (
@@ -163,6 +203,7 @@ export const check = bashGuard((command, payload) => {
       `[mass-delete-guard] Blocked: this commit would wipe most of the repo.`,
       '',
       `  ${reason}.`,
+      ...(excused ? ['', `  ${excused}`] : []),
       '',
       '  A commit that deletes this much is almost always a clobbered index',
       '  (a stray git read-tree, a commit fired against a near-empty or',

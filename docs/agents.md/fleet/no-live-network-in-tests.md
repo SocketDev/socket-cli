@@ -25,6 +25,9 @@ there.
 Disable real connections in `beforeEach`, stub each endpoint, restore in
 `afterEach`. The `registry-*.test.mts` suites are the canonical reference:
 
+<details>
+<summary><b>Detail</b> — `import nock`, `import`, `describe('cranExists',`</summary>
+
 ```ts
 import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -54,6 +57,8 @@ describe('cranExists', () => {
 A "does it dispatch to the right handler" routing test still needs a stub — the
 handler makes the call regardless of what you assert. Stub it with a catch-all
 (`nock(host).get(/.*/).reply(200, {})`) so the routing assertion runs offline.
+
+</details>
 
 ### rust — [`mockito`](https://docs.rs/mockito) / [`wiremock`](https://docs.rs/wiremock)
 

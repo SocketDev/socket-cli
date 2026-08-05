@@ -28,6 +28,10 @@ On a `Bash` tool call the guard:
    is a private repo, the post is internal conversation and passes. A target
    that cannot be resolved, such as a GraphQL call addressed only by node id,
    is treated as public — strict by default.
+
+<details>
+<summary><b>Steps 3 through 5</b> — the runtime-derived private-repo roster cached for 24h, the qualified plus bare two-tier match that decides a block, and failing closed when no roster loads</summary>
+
 3. Loads the repo rosters for the trusted owners (the targets' owners and
    the cwd origin's owner) via `gh repo list <owner> --json name,visibility`,
    cached at `~/.socket/_state/private-repo-roster.json` (0600, in a 0700
@@ -45,6 +49,8 @@ On a `Bash` tool call the guard:
    anyway, so a working `gh` is a fair precondition. A cached roster past
    its TTL counts as absent — certifying prose against a day-old view of the
    org is the failure this guard exists to prevent.
+
+</details>
 
 ## Layout
 

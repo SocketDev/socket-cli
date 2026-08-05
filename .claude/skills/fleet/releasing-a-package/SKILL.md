@@ -24,6 +24,9 @@ a botched stage upload is rescued server-side with `pnpm stage reject`.
 
 ## Flow
 
+<details>
+<summary><b>Six steps</b>: pre-bump wave, scripted <code>bump.mts</code>, push the bump, CI staged upload, human 2FA <code>--approve</code> then tag, provenance verify</summary>
+
 1. **Pre-bump wave.** Refresh every derived artifact so the bump commit is clean and the gate
    is green BEFORE the bump: build, coverage badge, lockfile. End on `pnpm run check --all`
    green. Detail + the full artifact list: [`version-bumps`](../../../../docs/agents.md/fleet/version-bumps.md).
@@ -52,6 +55,8 @@ a botched stage upload is rescued server-side with `pnpm stage reject`.
    is not published; never tag or cut a release for a version that is only staged.
 6. **Verify.** `node scripts/fleet/check/provenance-is-attested.mts <name>` — confirm the new
    version shows provenance ✓ and trustedPublisher ✓.
+
+</details>
 
 ## Human stops
 

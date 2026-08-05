@@ -127,6 +127,9 @@ combining a fixed set of NAMED things, positional destructuring bites: put the
 names in a different order than the calls and the values swap, with no error
 anywhere.
 
+<details>
+<summary><b>Detail</b> — the full table (5 rows)</summary>
+
 ```ts
 // Runs fine. config now holds the lockfile and lockfile holds the config.
 const [config, lockfile] = await Promise.all([readLockfile(), readConfig()])
@@ -162,6 +165,8 @@ Same rejection semantics as their positional cousins: `pAllKeyed` fail-fast
 with every value subscribed (no unhandled-rejection stragglers), and
 `pAllSettledKeyed` always resolves with `{ status, value | reason }` records.
 The result is a null-prototype object; own enumerable keys, symbols included.
+
+</details>
 
 ## `Safe` suffix
 

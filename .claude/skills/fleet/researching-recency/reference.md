@@ -11,6 +11,9 @@
 
 The model builds this and passes it via `--plan <path|json>`. The engine validates it (see `lib/plan.mts`) and rejects malformed plans with a fix-it message.
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```jsonc
 {
   "intent": "comparison",          // free-form hint: overview | comparison | howTo | …
@@ -37,6 +40,8 @@ The model builds this and passes it via `--plan <path|json>`. The engine validat
 ```
 
 A bare topic with no `--plan` gets a default single-subquery plan over every keyless source.
+
+</details>
 
 ### Scoping X to specific handles
 

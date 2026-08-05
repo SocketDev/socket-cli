@@ -90,6 +90,30 @@ denial-of-service on the reader. The guard blocks introducing these shapes:
 - **Entity / alias expansion bombs** — XML `<!ENTITY>` or YAML-alias shapes that
   explode on expansion (billion-laughs).
 
+### A shape only counts where it can mean what the rule assumes
+
+Two of those detectors read a POSITION, not a whole line, because the same
+characters carry the shape in one place and ordinary content in another
+(`.claude/hooks/fleet/prompt-injection-guard/scan-context.mts`):
+
+- **ReDoS runs against pattern positions only** — the body of a `/…/flags`
+  literal, the argument text of `RegExp(…)` or a regex method call, the value of
+  a `pattern` / `regex` config key, and, in a code file, a string literal that is
+  itself regex-shaped. A bolded version note in a markdown table cell, a version
+  range, a glob, and a semver caret are prose, and prose yields no positions.
+- **The megaline pair skips a generated / encoded artifact** — a build output, a
+  vendored tree, a minified bundle, a source map, and a lockfile hold long
+  unbroken lines because a generator emitted them that way, so their length is
+  that generator's business. The Zalgo, repeated-character, and
+  entity-expansion detectors stay unconditional: no file kind has a legitimate
+  reason to carry one.
+
+The same reasoning bounds the fake-role-tag detector: a role word bracketed
+inside a home-directory path placeholder (the form
+`personal-path-placeholders` mandates), a heading that continues past the word,
+and a label mid-sentence are not forged turn boundaries. A forged one sits at
+the start of its line.
+
 Thresholds sit well above anything authored by hand; legit minified bundles
 live in vendored / build-output trees that the before/after diff already treats
 as pre-existing, so this fires on newly hand-introduced bombs. To keep the
@@ -107,6 +131,9 @@ account**, because that is the cheap, repeatable shape of a
 social-engineering / supply-chain attempt.
 
 New-account fingerprint (any combination raises suspicion):
+
+<details>
+<summary><b>Detail</b> — the full list (8 entries)</summary>
 
 - a **high / recent numeric user id** (`gh api users/<login> --jq .id`) and a
   recent `created_at`;
@@ -129,6 +156,8 @@ Handling:
   genuine teammates to the allowlist instead).
 - Vet before trusting: the fix being _correct_ doesn't make the account
   trusted — evaluate the code, not the courtesy.
+
+</details>
 
 ## What it does NOT cover (and why)
 

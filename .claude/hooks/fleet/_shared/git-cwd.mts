@@ -38,16 +38,20 @@ function dashCValue(args: readonly string[]): string | undefined {
 }
 
 /**
- * Best-effort working directory for a `git` invocation inside `command`.
- * Scoped (`options.subcommand`): that invocation's own `-C`, else a leading
- * `cd`, else the hook's cwd. Unscoped: the first `-C` on any git invocation,
- * else a leading `cd`, else the hook's cwd. Values are tilde-expanded +
- * resolved — callers hand the result straight to filesystem probes.
+ * The directory a `git -C <dir>` inside `command` names, resolved against
+ * `cwd`, or undefined when no in-scope invocation carries one. Scoped
+ * (`options.subcommand`): only that invocation's own `-C` counts, so a
+ * `git -C <elsewhere> rev-parse` in a `$(…)` substitution is not borrowed.
+ * Unscoped: the first `-C` on any git invocation.
+ *
+ * Read this instead of `extractGitCwd` when the caller owns its own fallback —
+ * a guard whose no-`-C` answer is the tool call's acted-on path, which follows
+ * the LAST `cd` rather than the first.
  */
-export function extractGitCwd(
+export function extractGitDashCDir(
   command: string,
   options?: GitCwdOptions | undefined,
-): string {
+): string | undefined {
   const opts = { __proto__: null, ...options } as GitCwdOptions
   const { cwd, subcommand } = opts
   const gitInvocations = commandsFor(command, 'git')
@@ -60,19 +64,36 @@ export function extractGitCwd(
       const sub = gitSubcommand(c.args)
       if (sub !== undefined && wanted.includes(sub)) {
         const dir = dashCValue(c.args)
-        if (dir) {
-          return normalizeShellDir(dir, cwd)
-        }
-        break
+        return dir ? normalizeShellDir(dir, cwd) : undefined
       }
     }
-  } else {
-    for (const c of gitInvocations) {
-      const dir = dashCValue(c.args)
-      if (dir) {
-        return normalizeShellDir(dir, cwd)
-      }
+    return undefined
+  }
+  for (const c of gitInvocations) {
+    const dir = dashCValue(c.args)
+    if (dir) {
+      return normalizeShellDir(dir, cwd)
     }
+  }
+  return undefined
+}
+
+/**
+ * Best-effort working directory for a `git` invocation inside `command`.
+ * Scoped (`options.subcommand`): that invocation's own `-C`, else a leading
+ * `cd`, else the hook's cwd. Unscoped: the first `-C` on any git invocation,
+ * else a leading `cd`, else the hook's cwd. Values are tilde-expanded +
+ * resolved — callers hand the result straight to filesystem probes.
+ */
+export function extractGitCwd(
+  command: string,
+  options?: GitCwdOptions | undefined,
+): string {
+  const opts = { __proto__: null, ...options } as GitCwdOptions
+  const { cwd } = opts
+  const dashCDir = extractGitDashCDir(command, opts)
+  if (dashCDir !== undefined) {
+    return dashCDir
   }
   const cdDir = commandsFor(command, 'cd')[0]?.args[0]
   if (cdDir) {

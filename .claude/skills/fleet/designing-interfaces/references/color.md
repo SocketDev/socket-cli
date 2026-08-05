@@ -249,6 +249,9 @@ In dark UI, surfaces and layers communicate through:
 
 Browser-level settings that most developers miss:
 
+<details>
+<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+
 ```html
 <!-- In <head> — tells browser UI elements to use dark mode -->
 <meta name="color-scheme" content="light dark">
@@ -282,6 +285,8 @@ Browser-level settings that most developers miss:
 }
 ```
 
+</details>
+
 ---
 
 ## 6. Naming Tokens
@@ -305,6 +310,9 @@ Browser-level settings that most developers miss:
 ```
 
 ### Minimum Token Set
+
+<details>
+<summary><b>The <code>:root</code> block</b>: surface, text, border, primary and semantic custom properties with their default hex values</summary>
 
 ```css
 :root {
@@ -335,6 +343,8 @@ Browser-level settings that most developers miss:
   --danger: #ef4444;
 }
 ```
+
+</details>
 
 **Key:** Components should work from tokens, not hardcoded hex values.
 
@@ -482,6 +492,9 @@ Safe alternatives when you need an accent:
 
 Reference implementation with all tokens:
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```css
 :root {
   /* Neutrals (cool variant) */
@@ -570,3 +583,5 @@ Reference implementation with all tokens:
 ---
 
 *Color is restraint. Neutrals are 90% of the work. One accent, used purposefully, beats five competing for attention.*
+
+</details>

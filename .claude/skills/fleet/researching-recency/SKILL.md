@@ -23,6 +23,9 @@ Keyless (always run): **GitHub** (issues/PRs, via `gh auth token` or unauthentic
 
 Copy this checklist and track it:
 
+<details>
+<summary><b>Detail</b> — Step 1: Resolve, Step 2: Plan, Step 3: Web supplements, Step 4: Invoke, Step 5: Synthesize, Step 6: Emit</summary>
+
 ```
 - [ ] 1. Resolve the entity (GitHub repo/user, subreddits) if it's a named tool/person
 - [ ] 2. Build the query plan JSON (or use the bare-topic default)
@@ -52,6 +55,8 @@ Drop `--plan`/`--web-file` when you didn't build them. `--depth` is `quick` | `d
 
 **Step 6 — Emit.** Badge first line, your prose, footer last.
 
+</details>
+
 ## Output contract (LAWS)
 
 1. **First line is the badge**, verbatim from the engine: `📚 researching-recency v1 · synced <date>`.
@@ -63,6 +68,9 @@ Drop `--plan`/`--web-file` when you didn't build them. `--depth` is `quick` | `d
 7. **Hyphenate with ` - `**, not em-dashes: the prose guard blocks em-dash chains.
 
 ## Output shape
+
+<details>
+<summary><b>Worked example</b> — the badge line, <code>What I learned:</code> with bold-lead-in paragraphs and inline links, then the verbatim pass-through footer with per-source counts</summary>
 
 ```
 📚 researching-recency v1 · synced 2026-06-07
@@ -85,6 +93,8 @@ and [vite#22583](https://github.com/vitejs/vite/issues/22583)...
 Saved: .claude/reports/researching-recency/rolldown-raw.md
 <!-- END PASS-THROUGH FOOTER -->
 ```
+
+</details>
 
 ## Untrusted content
 

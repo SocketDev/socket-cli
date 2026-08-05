@@ -428,7 +428,7 @@ export function judgeSfwCaDelivery(input: {
         'the persistent CA is INERT — a wrapped child still receives a temp-dir CA.\n' +
         `  Where: ${sfwBin} in wrapper mode, run with SFW_CA_CERT_PATH=${certPath}.\n` +
         `  Saw: the child's SSL_CERT_FILE pointed at a throwaway temp-dir CA; wanted ${certPath}.\n` +
-        `  Fix: rack a firewall build that reads the persistent pair — \`pnpm run install:sfw -- --enterprise\` with a Socket API token in the keychain. Today ${SFW_CA_INERT_REASON}.`,
+        `  Fix: rack a firewall build that reads the persistent pair — \`pnpm run install:sfw --enterprise\` with a Socket API token in the keychain. Today ${SFW_CA_INERT_REASON}.`,
     }
   }
   return {

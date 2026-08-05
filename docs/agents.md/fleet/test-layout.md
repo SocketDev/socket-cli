@@ -40,6 +40,9 @@ All wheelhouse-only. The cascaded trees (`.claude/hooks/fleet`,
 Three rules about the CONTENT of an assertion. Each one exists because breaking
 it produced a false failure that cost real triage time.
 
+<details>
+<summary><b>The three rules</b>: assert the outcome not the prose, never re-implement the code under test, never scan source text as a test</summary>
+
 - **Assert the outcome, not the prose.** A guard's contract is its exit code
   (`0` allow / `2` block) and the state it changed. Matching a specific
   sentence out of its output couples the test to wording that is edited for
@@ -70,6 +73,8 @@ relies on Node's string default, and another demanded a block where a newly
 landed feature-branch squash mode deliberately allows a fresh commit. Both were
 correct source, stale test.
 
+</details>
+
 ## Isolation
 
 `no-live-network-in-tests.md` says run the suite as if the network is off. This
@@ -84,6 +89,9 @@ The three rules, and the measured cost of each. They are code —
 `scripts/fleet/_shared/test-isolation-law.mts` carries the clauses, the variable
 lists, and `TEST_ISOLATION_LAW_PROMPT` for agent briefs — so cite the module
 rather than restating it.
+
+<details>
+<summary><b>The three clauses and their measured cost</b>: availability probes leak too, scrub order is load-bearing, isolation must not disable the toolchain, plus the variables that outrank <code>HOME</code></summary>
 
 - **Availability probes leak too — isolate them, not just the installs.**
   `has_command("pnpm")` looks inert. Where `pnpm` is a corepack shim, `pnpm
@@ -116,7 +124,12 @@ from `GOPATH`/`GOMODCACHE`, and `COREPACK_HOME` holds the package managers
 corepack downloads. `ISOLATED_ENV_VARS` in the law module is the list, exported
 so an isolation helper's own self-tests can assert against it.
 
+</details>
+
 ## Enforcement (code-is-law)
+
+<details>
+<summary><b>Eight guards</b>: prefer-vitest-guard, no-vitest-double-dash-guard, no-test-in-scripts-guard, test-script-defers-guard, cascaded-fleet-trees-have-no-tests, the cascade manifest, test-env-scrub-order-guard, test-spawns-are-isolated</summary>
 
 - **Runner**: `prefer-vitest-guard` — tests are vitest, not `node:test`. Blocks
   a raw `node --test` on a src/repo test or a bare vitest binary call, and
@@ -147,3 +160,5 @@ so an isolation helper's own self-tests can assert against it.
   `check --all`) sweeps a repo's test tree for all three clauses and reports.
   Report-only while the native members catch up; `--fix` hoists a scrub call
   whose move is mechanical and refuses the rest.
+
+</details>

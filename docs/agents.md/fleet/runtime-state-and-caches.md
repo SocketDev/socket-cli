@@ -29,6 +29,9 @@ untracked, dirty file.)
     socket-lib exist, so it is strictly dep-0 —
     `.cache/fleet/socket-wheelhouse/` is its cacache-equivalent.
 
+<details>
+<summary><b>Three more rules</b>: why the store sits at the repo root and not under `node_modules/`, user-home vs per-checkout caches, and the duty to document invisible state</summary>
+
 - **The store sits at the repo root, never inside `node_modules/`.** A package
   `clean` and a `rm -rf node_modules` both delete the dependency tree, and a
   store underneath it goes with them — taking coverage reports, the hook bundle
@@ -50,6 +53,8 @@ untracked, dirty file.)
   stale, and impossible to audit. Every store must be named in "Known state
   stores" below with what it holds, where it lives, its TTL / invalidation, and
   how to inspect or clear it — and pointed at from a comment at the write site.
+
+</details>
 
 ## Known state stores
 

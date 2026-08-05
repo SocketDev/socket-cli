@@ -67,6 +67,9 @@ Portable SIMD is RUNTIME CPU DISPATCH: one binary detects the CPU at run time an
 AVX2/NEON when present, scalar/SSE2 otherwise. This is the only way a distributed SIMD path
 both goes fast on new CPUs and runs at all on old ones.
 
+<details>
+<summary><b>The five SIMD rules</b> — matching the microarch pin to who controls the target, the compare-and-reduce scan kernel, byte-identical correctness testing, why the optimizer will not autovectorize a data-dependent scan, and where the per-language mechanics live</summary>
+
 - **Match the microarch pin to who controls the target.** Anything distributed to CPUs you
   do NOT control must NOT pin above the minimum supported microarch: no `-C target-cpu=native`,
   no baseline `-C target-feature=+avx2`, no `GOAMD64=v2|v3|v4`, each bakes in the build
@@ -91,3 +94,5 @@ both goes fast on new CPUs and runs at all on old ones.
   [Go](../optimizing-go-performance/SKILL.md), and
   [C++](../optimizing-cpp-performance/SKILL.md); lexer/scan specifics in
   [parser performance](../optimizing-parser-performance/SKILL.md).
+
+</details>

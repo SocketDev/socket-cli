@@ -27,6 +27,9 @@ Invoke with `/fleet:patching-findings <findings-path> [--repo PATH] [--top N]
 
 **Arguments** (parse from `$ARGUMENTS`):
 
+<details>
+<summary><b>Argument reference</b> — findings path, <code>--repo</code>, <code>--top</code>, <code>--id</code>, <code>--dry-run</code>, <code>--fresh</code></summary>
+
 - findings path (first positional, required): `TRIAGE.json`,
   `VULN-FINDINGS.json`, or any JSON the triage ingest table recognizes.
 - `--repo PATH`: target codebase (default cwd). The skill applies edits here, so
@@ -36,6 +39,8 @@ Invoke with `/fleet:patching-findings <findings-path> [--repo PATH] [--top N]
 - `--dry-run`: run patch + review but do NOT apply or commit — print what would
   land. Use to preview before authorizing changes to the tree.
 - `--fresh`: ignore `./.patch-state/` checkpoint and start over.
+
+</details>
 
 **TRIAGE.json is the canonical input.** It is already verified, deduped, ranked,
 and owner-tagged. `VULN-FINDINGS.json` is accepted with a warning (`Warning:
@@ -146,6 +151,9 @@ finding under review.
 
 ### Patch agent prompt (assemble once, reuse per finding)
 
+<details>
+<summary><b>Patch agent prompt</b> — the read-only tool grant, the finding fields, the six-step procedure from root cause to regression test, and the five output tags it must emit</summary>
+
 ```
 You are conducting authorized defensive security work: write a candidate fix for
 ONE verified vulnerability finding in a codebase you have read-only access to.
@@ -205,6 +213,8 @@ positive), emit:
 <rationale>why no patch is appropriate</rationale>
 ```
 
+</details>
+
 Parse the five tagged blocks from each result with the engine (it tolerates
 fences and unescapes `&lt;`/`&gt;`/`&amp;` before using the diff):
 
@@ -233,6 +243,9 @@ in-scope by reading the source itself. This keeps injected instructions in findi
 prose from reaching both the author and the gate.
 
 ### Reviewer prompt (assemble once, reuse per diff)
+
+<details>
+<summary><b>Reviewer prompt</b> — the blind reviewer's read-only grant, the location plus category plus diff it sees, its four questions on scope, suppression, new surface, and style, and the exact ACCEPT/REJECT trailer</summary>
 
 ```
 You are reviewing a candidate security patch as a maintainer would. You have
@@ -271,6 +284,8 @@ ACCEPT requires: in-scope, root-cause fix, no new attack surface, style >= 5.
 Otherwise REJECT.
 ```
 
+</details>
+
 Parse the trailing block with the engine:
 
 ```bash
@@ -292,6 +307,9 @@ gate. Attach the parsed fields to each finding. Checkpoint `checkpoint.mts save
 For each finding with `status != "no_patch"` and `review == "ACCEPT"`, in severity
 order:
 
+<details>
+<summary><b>The four ordered steps</b> — Edit-tool apply, variant analysis for HIGH and CRITICAL, one surgical commit per finding, and the apply-failed fallback</summary>
+
 1. **Apply the diff with the Edit tool** against the real source under `--repo`.
    Translate each diff hunk into an exact Edit (or Write for a new test file).
    Don't shell out to `git apply`/`patch` — the Edit tool keeps the harness file-
@@ -308,6 +326,8 @@ order:
 4. If applying the diff fails (context drifted, file changed since the scan),
    re-read the cited code and either regenerate a fix (back to Phase 2 for that
    finding) or mark it `status: "apply_failed"` with the reason.
+
+</details>
 
 For `review == "REJECT"` findings: do NOT apply. Record the `review_reason`; these
 need a human or a fresh patch attempt.

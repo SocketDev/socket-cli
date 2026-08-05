@@ -20,6 +20,9 @@ collide across worktrees, so never operate on the same stack concurrently.
 
 Run every command and stop on the first failure:
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```bash
 git --version
 gh --version
@@ -49,6 +52,8 @@ git config rerere.enabled true
 Read [`reference.md`](reference.md) before the first stack operation in a
 session. Re-check `gh stack <command> --help` before using a destructive or
 unfamiliar command because the extension is still in preview.
+
+</details>
 
 ## 2. Design the stack before editing
 

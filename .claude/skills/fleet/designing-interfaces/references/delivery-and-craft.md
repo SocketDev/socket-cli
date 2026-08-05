@@ -14,6 +14,9 @@ the task is non-trivial.
 
 Suggested format:
 
+<details>
+<summary><b>Detail</b> — `Research summary:`, `Visual direction:`, `Product patterns:`</summary>
+
 ```text
 Research summary:
 - Styles reviewed: [count] across [directions]
@@ -45,10 +48,15 @@ Before implementation, convert research into a short decision ledger:
 If a major choice has no source, do not ship it as a design decision. Either research
 more, tie it to the user's constraints, or remove it.
 
+</details>
+
 ## Design Craft
 
 After research, execute like a senior product designer. Use the bundled references only
 when relevant; do not load every file by default.
+
+<details>
+<summary><b>Detail</b> — the full list (18 entries)</summary>
 
 - Typography: [references/typography.md](references/typography.md)
 - Color: [references/color.md](references/color.md)
@@ -79,6 +87,8 @@ Core craft rules:
 - Balance headings and short display text with `text-wrap: balance`; use `text-wrap: pretty`
   selectively for prose. Check key breakpoints for orphan words and awkward final lines.
 - Keep accessibility and responsive behavior in the design, not as a late pass.
+
+</details>
 
 ## Quality Gate
 

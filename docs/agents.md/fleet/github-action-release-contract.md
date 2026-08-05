@@ -66,6 +66,9 @@ The two checks gate on the roster: `publishesTo(roster, repoName,
 reason, never a silent no-op. Both carry an `ENFORCING` seam to flip once they
 have run clean against a real channel member.
 
+<details>
+<summary><b>How check-dist.yml behaves</b> — why it triggers on <code>build.from</code> rather than <code>build.type</code>, why it compares with <code>git status --porcelain</code> instead of <code>git diff</code>, and why it wants a local rebuild step beside it</summary>
+
 `check-dist.yml` is the authoritative gate and needs no seam — it either
 reproduces the committed bundle or it does not. It reaches only the members
 that have one, delivered by the `isGithubAction` CONDITIONAL_FILES trigger,
@@ -83,3 +86,5 @@ Pair it with a local rebuild step, the way `actions/setup-node` pairs
 `check-dist.yml` with a `pre-checkin` script running format, lint, build, and
 test together. When `dist/` is a tracked artifact, rebuilding it belongs in the
 commit ritual; CI is the backstop for when someone skips it.
+
+</details>

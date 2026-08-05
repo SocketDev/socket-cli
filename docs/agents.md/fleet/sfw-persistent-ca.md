@@ -48,6 +48,9 @@ Measured on both binaries with identical env:
   pair is never read, then overwrites it in the child env with the throwaway
   path. That is a build property, not an operator misconfiguration.
 
+<details>
+<summary><b>Two mechanisms, and why the verdict is INERT</b>: the enterprise-vs-free table for the env pair, the pending <code>sfw ca init/trust/path</code> default pair, and why <code>setup:sfw-ca</code> withholds the OS-trust command</summary>
+
 So there are **two mechanisms, and the env pair is not the load-bearing one**:
 
 | mechanism | honored by | status |
@@ -67,6 +70,8 @@ nothing at runtime, and this repo says so rather than reporting success.
 `setup:sfw-ca` probes what a wrapped child actually receives and prints an
 `INERT` verdict — withholding the OS-trust command, because trusting a root the
 proxy never signs with accomplishes nothing.
+
+</details>
 
 ## The mechanism
 
@@ -115,6 +120,9 @@ firewall's `getPersistentCaDir()` (`src/lib/cli/caPaths.ts`) resolves
 which every absolute path, shell fragment, and check message derives from, so
 an upstream rename is a one-line follow.
 
+<details>
+<summary><b>Coexisting with the <code>_wheelhouse</code> layout migration</b>: <code>LEGACY_SFW_DIR</code>, the two ways a rename collides, and the entry-by-entry <code>ensureWheelhouseLayout()</code> that skips <code>SFW_CA_FILENAMES</code></summary>
+
 That directory has two owners. It is also `LEGACY_SFW_DIR` in
 `scripts/fleet/install-sfw.mts`: on a machine that predates the `_wheelhouse`
 rename, `ensureWheelhouseLayout()` used to `renameSync` the whole thing to
@@ -136,6 +144,8 @@ what sfw reads. Picking the other side — keeping the CA under the wheelhouse
 umbrella and teaching sfw to find it — is not available: free mode never reads
 `SFW_CA_CERT_PATH` at all, so a pair anywhere but the default location is inert
 by construction.
+
+</details>
 
 ## Enforcement
 

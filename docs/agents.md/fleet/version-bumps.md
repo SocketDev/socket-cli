@@ -25,6 +25,9 @@ broken releases.
 
 Each command must finish clean before the next runs:
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```bash
 pnpm run update      # dependency drift
 pnpm i               # lockfile alignment
@@ -57,10 +60,15 @@ Then run the change through [agent-ci.dev](https://agent-ci.dev) (the
 `agent-ci` skill), the fleet's pre-merge agent CI. The bump proceeds only
 once agent-ci passes; until then there is no bump commit and no tag.
 
+</details>
+
 ### 2. CHANGELOG entry: public-facing only
 
 The new `## [X.Y.Z]` block describes what a downstream consumer needs
 to know to upgrade.
+
+<details>
+<summary><b>Detail</b> — Include, Exclude, No empty sections</summary>
 
 **Include:**
 
@@ -95,6 +103,8 @@ bypass `Allow changelog-empty-section bypass`.
 
 Source the raw list with `git log <prev-tag>..HEAD --pretty="%s"` and
 filter to consumer-visible commits only.
+
+</details>
 
 ### 3. The bump commit is the LAST commit on the release
 
@@ -210,6 +220,9 @@ mistaken for a fresh one.
 
 What the operator sees:
 
+<details>
+<summary><b>Detail</b> — the full table (4 rows)</summary>
+
 | State | Default | Output |
 | --- | --- | --- |
 | Placeholder, no `--release-as` | `0.1.0` | The detected state, why `0.1.0`, and that `--release-as` overrides |
@@ -223,6 +236,8 @@ blocks, and `--dry-run` prints the identical reasoning before anything is
 written. In placeholder state a level counts up from zero, so
 `--release-as minor` lands `0.1.0` rather than skipping past the `0.1.0` a
 `0.1.0-prerelease` manifest never shipped.
+
+</details>
 
 ## The bump happens exactly once
 
@@ -271,6 +286,9 @@ headings, exact-duplicate lines collapsed. Promotion then empties the
 `[Unreleased]` block — the fleet style creates the heading on demand, so
 squash-time accrual recreates it when the next entry lands.
 
+<details>
+<summary><b>What the check tolerates and why</b> — the derived-side-only verification, the bump-time warning for chore commits touching <code>src/</code>, and the sdk 4.0.2 undocumented-feature incident behind both</summary>
+
 `changelog-is-commit-derived` verifies the derived side only: every
 commit-derived bullet must be PRESENT in the pending section, and the
 anchor/range must be correct. Hand-written extras are tolerated — hand content
@@ -290,6 +308,8 @@ The feature's bullets were hand-written under `[Unreleased]`, its commits were
 chore-typed, and the then-strict commit-derived regeneration dropped the hand
 side at bump time. The union rule, the superset-tolerant check, and the
 warning close that hole from three directions.
+
+</details>
 
 ## Verify is auth-honest, and approve reconciles from registry truth
 

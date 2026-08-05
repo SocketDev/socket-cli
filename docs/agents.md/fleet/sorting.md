@@ -22,6 +22,9 @@ These are the exact semantics every `socket/sort-*` lint rule uses.
 
 ## Where to sort: code surfaces (lint-enforced)
 
+<details>
+<summary><b>Nine lint-enforced surfaces</b>: import specifiers, object-literal properties, method placement, array literals, <code>Set</code> args, regex alternations, string-equality disjunctions, boolean chains, TS string-literal unions</summary>
+
 - **Import specifiers**: named imports inside a single statement, e.g.
   `import { encrypt, randomDataKey, wrapKey } from './crypto.mts'`. `import type`
   follows the same rule. Statement _order_ (`node:` → external → local → types)
@@ -77,10 +80,15 @@ above. Enforced by
   discriminator where order encodes priority) append
   `// socket-lint: allow union-order`. _(Rule planned; see Roadmap.)_
 
+</details>
+
 ## Where to sort: non-code surfaces (hook-reminded, manual)
 
 oxlint only sees JS/TS, so these are caught by the `alpha-sort-nudge` hook on
 edit and by review, not by a lint rule.
+
+<details>
+<summary><b>Detail</b> — the full list (10 entries)</summary>
 
 - **JSON / JSONC** (`tsconfig.json`, `package.json`, `.oxlintrc.json`,
   `.config/*.json`): sort every object's keys alphanumerically.
@@ -109,6 +117,8 @@ edit and by review, not by a lint rule.
     State the reason in surrounding prose.
   - **NO ELLIPSIS.** Drop `"..."` / `"…"` from list endings. List every item
     alphabetically, or write "N items, see `<source>`". Never trail off.
+
+</details>
 
 ## Load-bearing order: verify before sorting
 

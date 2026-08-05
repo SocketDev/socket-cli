@@ -76,6 +76,9 @@ Run `tsc --noEmit` (with `noUnusedLocals` enabled in tsconfig). Each `TS6133: 'X
 
 ## Output shape
 
+<details>
+<summary><b>Report template</b> — one block per shape with its per-candidate fields and action line, closing on the LOC-plus-count total</summary>
+
 ```
 ### Deadcode Removal
 
@@ -102,6 +105,8 @@ Run `tsc --noEmit` (with `noUnusedLocals` enabled in tsconfig). Each `TS6133: 'X
 
 Total: shape-1 LOC × N + shape-2 LOC × N + N stale directives + N dead constants
 ```
+
+</details>
 
 ## Verification BEFORE acting
 

@@ -14,6 +14,9 @@ File naming: `plans/NNN-short-slug.md`, numbered in recommended execution order.
 
 ## Template
 
+<details>
+<summary><b>The full plan skeleton</b>: executor instructions and drift check, Status, Why this matters, Current state, Commands you will need, Suggested executor toolkit, Scope, Git workflow, Steps, Test plan, Done criteria, STOP conditions, Maintenance notes</summary>
+
 ```markdown
 # Plan NNN: <Imperative title — what will be true after this plan>
 
@@ -155,11 +158,16 @@ For the human/agent who owns this code after the change lands:
 - Any follow-up explicitly deferred out of this plan (and why).
 ```
 
+</details>
+
 ---
 
 ## Index file: `plans/README.md`
 
 Written once by the advisor after all plans, updated by executors:
+
+<details>
+<summary><b>The index skeleton</b>: the executor preamble, the execution-order table with its plan, priority, effort, depends-on and status columns, the TODO through REJECTED status values, dependency notes, and rejected findings</summary>
 
 ```markdown
 # Implementation Plans
@@ -185,6 +193,8 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) | REJE
 
 - <finding>: not worth doing because <one line>. (So nobody re-audits it.)
 ```
+
+</details>
 
 ## Quality bar — check before finishing each plan
 

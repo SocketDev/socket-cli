@@ -57,6 +57,9 @@ check is what the guards trust (not the branch name), the same sentinel clears
 the safety is unchanged. Unlike the default-branch flow it skips the roster opt-in / published-release
 gates: it rewrites only the named branch, never the repo's published default-branch history.
 
+<details>
+<summary><b>Mode selection and the 8 phases</b>: freeze-boundary resolution, local-canonical vs origin vs diverged, the origin-mode phase table, and what tail mode changes</summary>
+
 The runner first resolves the **freeze boundary**: the newest published-release commit (npm
 `gitHead` / crates.io `.cargo_vcs_info.json`, ancestor-verified against the tip being squashed). A
 repo that has never published (still `0.0.0` on every registry) has no boundary and squashes full-root
@@ -94,6 +97,8 @@ rewrites the release commit, and a runtime `assertBoundaryIntact()`
 check after the squash re-verifies the boundary still resolves to itself and is still an ancestor of
 the new tip before the push. `[Unreleased]` accrues only `boundary..tip`, never the whole root — the
 released commits below the boundary already carry their own version heading in CHANGELOG.md.
+
+</details>
 
 ## Why the runner is shaped the way it is
 

@@ -4,10 +4,15 @@
 // spawn against the current index.
 
 import { existsSync } from 'node:fs'
+import path from 'node:path'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { git, gitLines } from './git.mts'
+import {
+  ignoredAmong,
+  splitStagedDeletions,
+} from '../../.claude/hooks/fleet/_shared/benign-untracking.mts'
+import { git, gitLines, gitWithInput } from './git.mts'
 
 // Staged-path prefixes/suffixes that mean an oxlint-plugin rule's WIRING could
 // have changed: a rule file added/removed, the plugin index, or the oxlintrc
@@ -200,17 +205,25 @@ export function catastrophicDeletionFromCounts(
 }
 
 export function catastrophicDeletionReason(): string | undefined {
-  const deletions = gitLines(
-    'diff',
-    '--cached',
-    '--diff-filter=D',
-    '--name-only',
-  ).length
-  if (deletions === 0) {
+  const staged = gitLines('diff', '--cached', '--diff-filter=D', '--name-only')
+  if (staged.length === 0) {
+    return undefined
+  }
+  // Untracking ignored files (`git rm --cached`) stages a deletion per path
+  // and is routinely hundreds at once. Those are not a wipe — see
+  // .claude/hooks/fleet/_shared/benign-untracking.mts for the discriminator.
+  const ignored = ignoredAmong(staged, stdin =>
+    gitWithInput(['check-ignore', '--no-index', '--stdin'], stdin),
+  )
+  const toplevel = git('rev-parse', '--show-toplevel')
+  const { clobberish } = splitStagedDeletions(staged, ignored, relPath =>
+    existsSync(path.join(toplevel, relPath)),
+  )
+  if (clobberish.length === 0) {
     return undefined
   }
   const tracked = gitLines('ls-files').length
-  return catastrophicDeletionFromCounts(deletions, tracked)
+  return catastrophicDeletionFromCounts(clobberish.length, tracked)
 }
 
 // Markers git writes under $GIT_DIR while a merge / cherry-pick / revert is

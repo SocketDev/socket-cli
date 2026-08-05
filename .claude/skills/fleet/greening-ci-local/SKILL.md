@@ -48,6 +48,9 @@ paused) or a clean exit (green), dumps the paused-step log tail to a tmp file,
 JSON verdict on its final line. The retry loop, the budget, and the env-gap
 classification are all in the script — the **fix-authoring** stays yours.
 
+<details>
+<summary><b>The four-step loop</b> — invoking <code>run.mts</code> with <code>--workflow</code>/<code>--no-matrix</code>/<code>--budget-sec</code>, the JSON verdict fields, and what to do for each status: green, paused-code, paused-env-gap, error</summary>
+
 1. **Invoke the runner.** A single workflow (the common case for validating one
    release/build workflow):
    `node .claude/skills/fleet/greening-ci-local/run.mts --workflow
@@ -84,6 +87,8 @@ classification are all in the script — the **fix-authoring** stays yours.
      `/var/run/docker.sock` error means the daemon, not a workflow failure.
 4. **Loop** the runner until `status: "green"` (all non-skipped legs pass) or the
    budget expires.
+
+</details>
 
 ## Budgets
 

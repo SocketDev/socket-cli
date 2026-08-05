@@ -57,6 +57,9 @@ report. **Treat its structural claims as leads to verify, not facts to relay.** 
 audit agents reliably produce reports that mix real findings with overstatements and
 outright inversions — stated with the same confidence.
 
+<details>
+<summary><b>Detail</b> — How, The discriminator, Budget for it</summary>
+
 **What to spot-verify before relaying to the user or acting on it:**
 
 - **Counts** — "52 `-guard` hooks only advise", "TEST_FILE_RE in 6 rules", "17 hooks declare
@@ -97,6 +100,8 @@ only what you confirmed, plus an explicit "disproved / unverified" section for t
 not launder an agent's unchecked claim into your own voice.
 
 There are two delegation surfaces in this fleet. They look similar but are used differently.
+
+</details>
 
 ## Surface 1: CLI subprocess delegation (skills)
 
@@ -175,6 +180,9 @@ and had to be reverted.
 
 The shape that works for editing fan-outs:
 
+<details>
+<summary><b>Detail</b> — Worktree isolation vs same-checkout disjoint, Platform limit on the commit control</summary>
+
 - **The orchestrator owns every SHARED / cross-cutting file.** A file that more
   than one agent needs — a shared test runner, a config, a manifest, a generated
   index — is edited by YOU, once, BEFORE fanning out. Never hand a shared file to
@@ -244,6 +252,8 @@ reviewed):
   justification comment needs a paragraph is wrong code, reject it. Both
   counter the strongest drift agents show under volume.
 
+</details>
+
 ## When the surfaces overlap
 
 A skill that wants `codex` output should call the CLI (Surface 1) so the result lands in a structured report. A live conversation that wants Codex's opinion on the _current_ problem should use the subagent (Surface 2) so the result flows back into the conversation. Same model, different orchestration.
@@ -264,6 +274,9 @@ spec from the task store and had no way to.
 
 The pattern that works:
 
+<details>
+<summary><b>The four-part pattern</b> — inline the full <code>TaskGet</code> spec, report via structured output, keep task bookkeeping in the orchestrator, tell the agent it has no task tools, plus the <code>workflow-agent-task-tools-nudge</code> enforcement</summary>
+
 - **`TaskGet` the FULL description in the main loop first**, then inline it
   verbatim into the `agent()` prompt. The agent needs the whole spec in the
   prompt — it has no other way to see it.
@@ -279,6 +292,8 @@ tool) flags any Task-tool identifier in the script — a reminder, because a
 descriptive comment about the orchestrator's own bookkeeping is a legitimate
 (if rare) reason for the name to appear. The workflow author dismisses it or
 reworks the prompt.
+
+</details>
 
 ## Delegated fix-work standards
 

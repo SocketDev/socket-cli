@@ -37,6 +37,9 @@ any of them are known malware or have critical security alerts, and
 
 ## Flow diagram
 
+<details>
+<summary><b>ASCII flow</b> — stdin intake, dep diffing against <code>old_string</code>, PURL build, the <code>sdk.checkMalware</code> call with its two batching modes, and the three exits</summary>
+
 ```
 Claude wants to edit package.json
         │
@@ -59,6 +62,8 @@ Call sdk.checkMalware(components)
         ├── Low score              → warn, EXIT 0 (allowed)
         └── Clean                  → EXIT 0 (allowed)
 ```
+
+</details>
 
 ## Supported ecosystems
 

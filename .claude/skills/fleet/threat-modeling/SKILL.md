@@ -59,6 +59,9 @@ or a human-built PoC follow-up.
 
 Parse `$ARGUMENTS`:
 
+<details>
+<summary><b>Detail</b> — Context durability, Interview backbone</summary>
+
 | First token                | Route to                                                       |
 | -------------------------- | -------------------------------------------------------------- |
 | `interview`                | Read `interview.md` in this directory and follow it.           |
@@ -94,6 +97,8 @@ mid-session):
 | Q2 | What can go wrong? | section 4 threat rows (id, threat, actor, surface, asset) |
 | Q3 | What are we going to do about it? | section 4 impact/likelihood/status/controls; section 5; section 8 |
 | Q4 | Did we do a good job? | validate ranking, coverage check, section 6 open questions |
+
+</details>
 
 ### `bootstrap-then-interview` mode
 

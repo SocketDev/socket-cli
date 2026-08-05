@@ -360,9 +360,11 @@ export async function setupSkillSpector(): Promise<boolean> {
   return runSetupSkillSpector()
 }
 
+/* c8 ignore start - standalone entrypoint; only runs when executed directly, not when imported */
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   runSetupAll().catch((e: unknown) => {
     logger.error(errorMessage(e))
     process.exitCode = 1
   })
 }
+/* c8 ignore stop */

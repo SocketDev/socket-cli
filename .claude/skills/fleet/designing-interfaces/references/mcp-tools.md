@@ -21,6 +21,9 @@ visual polish.
 
 What results contain:
 
+<details>
+<summary><b>Detail</b> — the full list (14 entries)</summary>
+
 - style UUID
 - title
 - source URL
@@ -65,6 +68,8 @@ Current coverage:
 - Even for product UI, use styles to establish taste and visual language, then use
   screens/flows for product-specific logic.
 
+</details>
+
 ### `refero_get_style`
 
 Retrieve full design style references for one or more style UUIDs.
@@ -73,6 +78,9 @@ Use after `refero_search_styles` to turn promising style previews into actionabl
 material.
 
 What results may include:
+
+<details>
+<summary><b>Detail</b> — the full table (3 rows)</summary>
 
 - visual thesis / north star
 - colors and usage roles
@@ -103,6 +111,8 @@ How to use returned styles:
   intentional placeholder with art direction when the needed asset is unavailable.
 - Translate everything to the user's product, audience, and constraints.
 
+</details>
+
 ## Screens
 
 ### `refero_search_screens`
@@ -113,6 +123,9 @@ Use for concrete interface decisions: page structure, component choices, content
 hierarchy, copy, states, and product-specific patterns.
 
 Parameters:
+
+<details>
+<summary><b>Detail</b> — the full table (3 rows)</summary>
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
@@ -141,6 +154,8 @@ Search guidance:
   styles first.
 - Use `page` for search pagination. Do not pass `limit`, `image_size`, or
   `include_similar` to search tools.
+
+</details>
 
 ### `refero_get_screen`
 

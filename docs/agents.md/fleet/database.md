@@ -33,6 +33,9 @@ Generic, repo-agnostic: no table definitions, no repo-specific schema
 paths or database name. Copy verbatim; the only thing a repo supplies is
 its `DATABASE_URL`.
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```ts
 import { defineConfig } from 'drizzle-kit'
 
@@ -67,6 +70,8 @@ pnpm exec drizzle-kit migrate  --config .config/drizzle.config.mts
 
 Wire those as `db:generate` / `db:migrate` package scripts so callers
 never retype the `--config` path.
+
+</details>
 
 ## Driver wiring
 

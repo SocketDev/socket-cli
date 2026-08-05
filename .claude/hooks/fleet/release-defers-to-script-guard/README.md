@@ -30,6 +30,9 @@ the script already owns end to end.
 - read-only git - `status` / `log` / `diff` / `tag -l` / `show` — and every
   non-release command. Those match no rule.
 
+<details>
+<summary><b>How it decides</b>: the pure <code>decideReleaseGuard</code> function, AST command parsing, the CI and non-fleet stand-downs, the stable error code, the bypass phrase, and fail-open behavior</summary>
+
 **Pure decision:** `decideReleaseGuard(command)` returns `{ blocked, reason }`.
 It is exhaustively unit-tested without touching the filesystem. The wrapper adds
 the CI passthrough, the fleet-membership scope stand-down, and the bypass
@@ -53,3 +56,5 @@ false-fires.
 
 **Fails open** on parse / payload errors (exit 0) — a guard bug must not wedge
 every Bash call.
+
+</details>

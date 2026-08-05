@@ -42,6 +42,9 @@ The directory is **untracked by default** — same as `.claude/plans/`. The rule
 
 Each rule file is one transformation. Shape:
 
+<details>
+<summary><b>Detail</b> — `import`, `const Schema`, `type Schema`</summary>
+
 ```markdown
 # Rule: <short name>
 
@@ -76,6 +79,8 @@ PR #<N> in <repo> applied this rule to <path/to/file.ts>. The diff is the canoni
 ```
 
 The skill author writes the rule pack first, lands a reference PR by hand, then unleashes the autonomous loop on remaining target files using the reference as ground truth.
+
+</details>
 
 ### 2 + 3. The autonomous per-file loop: author a `Workflow`
 

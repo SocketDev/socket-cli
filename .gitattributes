@@ -120,6 +120,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/actions/fleet/checkout linguist-generated=true
 .github/actions/fleet/cleanup-git-signing linguist-generated=true
 .github/actions/fleet/debug linguist-generated=true
+.github/actions/fleet/expose-actions-runtime linguist-generated=true
 .github/actions/fleet/github-payload-app-token linguist-generated=true
 .github/actions/fleet/github-pr-app-token linguist-generated=true
 .github/actions/fleet/github-release linguist-generated=true

@@ -45,6 +45,9 @@ older lib versions).
 Pull the version + sha256 from `socket-registry/.config/repo/external-tools.json` <!-- docs-refs-ignore: cross-repo pointer into the socket-registry checkout -->
 (canonical fleet pin):
 
+<details>
+<summary><b>Detail</b> — `TOOLS=~/projects/socket-registry/.config/repo/external-tools.json`, `SFW_VERSION=$(node`, `PLATFORM=darwin-arm64`</summary>
+
 ```bash
 TOOLS=~/projects/socket-registry/.config/repo/external-tools.json
 SFW_VERSION=$(node -e "console.log(require('$TOOLS').sfw.version)")
@@ -67,10 +70,15 @@ chmod +x "$RACK/sfw"
 ln -sfn "$RACK/sfw" ~/.socket/_wheelhouse/bin/sfw
 ```
 
+</details>
+
 ### 3. Generate the shims
 
 The fleet bootstrap owns shim generation — one deterministic generator,
 no hand-saved script:
+
+<details>
+<summary><b>Detail</b> — `node scripts/fleet/setup/tools.mjs`</summary>
 
 ```bash
 node scripts/fleet/setup/tools.mjs
@@ -111,6 +119,8 @@ See the canonical CI version in
 under the "Create sfw shims" step. (An older per-machine rack at
 `~/.socket/sfw/shims` with its own `regenerate-shims.sh` may still exist
 on long-lived machines; it is legacy — prefer the fleet generator.)
+
+</details>
 
 ### 4. Add the shim dir to PATH
 

@@ -154,8 +154,9 @@ export function findAiScaffoldingPhrases(body: string): string[] {
   const hits: string[] = []
   for (let i = 0, { length } = ANTIPATTERN_CHECKS; i < length; i += 1) {
     const entry = ANTIPATTERN_CHECKS[i]!
-    if (entry.re.test(body)) {
-      hits.push(entry.label)
+    const match = entry.re.exec(body)
+    if (match) {
+      hits.push(`${entry.label} — matched “${match[0]}”`)
     }
   }
   return hits

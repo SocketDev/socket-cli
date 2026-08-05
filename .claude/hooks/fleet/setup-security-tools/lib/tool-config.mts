@@ -1,38 +1,22 @@
-// Tool config loaded from external-tools.json (self-contained). Lives in its
-// own file because installers.mts is at the 500-line soft cap — the schema +
-// manifest-loading + per-tool consts are one cohesive "what does the manifest
-// say" domain, separate from the installers that act on it.
+// Tool config loaded from external-tools.json. Lives in its own file because
+// installers.mts is at the 500-line soft cap — manifest-loading + the per-tool
+// consts are one cohesive "what does the manifest say" domain, separate from the
+// installers that act on it.
+//
+// The shape is checked by `checkToolsConfig`, an AHEAD-OF-TIME validator that
+// scripts/fleet/gen/hook-validators.mts generates from the fleet's canonical
+// `ToolsConfig` schema. A hook process is one per tool event, so compiling the
+// schema here would pay the TypeBox compiler's codegen on every run and amortize
+// it over this single check; the generated validator is a plain function call and
+// keeps TypeBox out of the hook bundle. The `Static` types come from that same
+// schema through a type-only import, which erases.
 
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { Type } from '@sinclair/typebox'
-
-import { parseSchema } from '@socketsecurity/lib-stable/schema/parse'
-
-const platformEntrySchema = Type.Object({
-  asset: Type.String(),
-  integrity: Type.String(),
-})
-
-const toolSchema = Type.Object({
-  description: Type.Optional(Type.String()),
-  version: Type.Optional(Type.String()),
-  versionDate: Type.Optional(Type.String()),
-  purl: Type.Optional(Type.String()),
-  integrity: Type.Optional(Type.String()),
-  repository: Type.Optional(Type.String()),
-  release: Type.Optional(Type.String()),
-  installDir: Type.Optional(Type.String()),
-  platforms: Type.Optional(Type.Record(Type.String(), platformEntrySchema)),
-  ecosystems: Type.Optional(Type.Array(Type.String())),
-})
-
-const configSchema = Type.Object({
-  description: Type.Optional(Type.String()),
-  tools: Type.Record(Type.String(), toolSchema),
-})
+import type { ToolsConfigType } from '../../../../../scripts/fleet/lib/external-tools-schema.mts'
+import { checkToolsConfig } from '../../_shared/generated-validators.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // external-tools.json lives one level up at the hook root
@@ -47,9 +31,21 @@ const configPath = (() => {
   }
   return path.join(__dirname, 'external-tools.json')
 })()
-const rawConfig = JSON.parse(readFileSync(configPath, 'utf8'))
+const rawConfig: unknown = JSON.parse(readFileSync(configPath, 'utf8'))
 
-export const config = parseSchema(configSchema, rawConfig)
+if (!checkToolsConfig(rawConfig)) {
+  throw new Error(
+    'setup-security-tools: external-tools.json does not match the ToolsConfig schema.\n' +
+      `  Where: ${configPath}\n` +
+      '  Saw:   a shape the generated ToolsConfig validator rejected — a renamed field,\n' +
+      '         a wrong nesting, or an unmodeled key.\n' +
+      '  Fix:   run `node scripts/fleet/check/external-tools-are-valid.mts` for the\n' +
+      '         path-listed violations, then fix the file (or the schema in\n' +
+      '         scripts/fleet/lib/external-tools-schema.mts).',
+  )
+}
+
+export const config = rawConfig as ToolsConfigType
 
 export const ACTIONLINT = config.tools['actionlint']!
 export const AGENTSHIELD = config.tools['agentshield']!

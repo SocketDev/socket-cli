@@ -35,6 +35,9 @@ The _shape_ is what the guard keys on, not any one library.
 Every Edit/Write, scanned line by line for injection _shape_ (only
 text the edit introduces; pre-existing matches aren't re-flagged):
 
+<details>
+<summary><b>Detail</b> — the full list (10 entries)</summary>
+
 - **Override directives** — "disregard / ignore / forget … previous /
   prior / above … instructions / prompts / context / rules".
 - **Agent-addressing imperatives** — "if you are an AI agent … you
@@ -54,11 +57,23 @@ Agent denial-of-service shapes:
   of stacked diacritics; token-heavy and crashes some layout engines.
 - **Pathological lines** — a very long line, especially one with no
   whitespace (minified megastring / base64 blob), that bloats context
-  and diffs.
+  and diffs. Skipped for a generated / encoded artifact — a build
+  output, a vendored tree, a minified bundle, a source map, a lockfile —
+  whose unbroken lines came out of a generator.
 - **Repeated-character token bombs** — one character repeated thousands
   of times.
 - **Catastrophic-backtracking (ReDoS) regex literals** — a quantified
-  group that is itself quantified, authored into source.
+  group that is itself quantified, in a position where the text is
+  plausibly a pattern: a `/…/flags` literal body, a `RegExp(…)` or
+  regex-method argument, a `pattern` / `regex` config value, or a
+  regex-shaped string literal in a code file. A quantifier in markdown
+  prose is prose (`scan-context.mts`). In a markdown file the positions
+  are read from a NORMALIZED line: `*`, `_`, `~` and the backtick are
+  formatting syntax and regex metacharacters at once, so raw markdown
+  lets a bolded `**(6+)**` note supply the trailing quantifier its
+  author never typed (`markdown-scan.mts`). A fenced block and an inline
+  code span keep their bytes and count as code, so a real pattern
+  written there still blocks.
 - **Entity / alias expansion bombs** — XML `<!ENTITY>` or YAML-alias
   shapes that explode on expansion (billion-laughs).
 
@@ -67,6 +82,8 @@ verbatim attack strings — a file listing those would itself trip this
 guard and would leak the very payloads it guards against. (The hook's
 own tests build every payload at runtime from fragments for the same
 reason — see `test/payloads.mts`.)
+
+</details>
 
 ## What it does NOT cover
 
@@ -80,7 +97,12 @@ proxy / `minify-mcp-out` hook that normalize tool-result payloads.
 
 This hook's own source and test files (matched by
 `/prompt-injection-guard/` in the path) are skipped, so it can name
-the patterns it detects.
+the patterns it detects. So is its own topic doc,
+`docs/agents.md/fleet/prompt-injection.md`, matched as that exact path:
+the threat model describes each detector by quoting the shape it
+matches, so every pattern appears there on purpose. No other doc
+inherits the exemption — a threat model written elsewhere needs the
+bypass phrase below.
 
 ## Bypass
 

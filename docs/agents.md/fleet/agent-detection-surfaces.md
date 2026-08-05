@@ -149,6 +149,9 @@ pointer was stale, and npm's `latest` came from a v1.x line the default branch
 had already left behind. Ancestry against the scanned ref cannot pick the dead
 line, because a tag outside the scanned ref's history is not a boundary for it.
 
+<details>
+<summary><b>Unresolvable states and scope flags</b> — the four boundary states from shallow clone to no reachable tag, plus what <code>--all</code>, <code>--unpushed</code>, and <code>--verify-registry</code> change and how branch findings are scoped</summary>
+
 Four unresolvable states, four behaviours, none of them a silent pass:
 
 | State | Behaviour |
@@ -168,6 +171,8 @@ the network.
 Branch findings follow the same "can anyone else see it" rule: only an
 `origin/` branch fails, while a local agent-prefixed branch is reported for
 information and left alone.
+
+</details>
 
 This is not about disguising who wrote the code. jdalton directs and reviews
 this work, and the repos say so through review history and signed commits. The

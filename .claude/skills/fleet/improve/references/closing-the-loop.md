@@ -20,6 +20,9 @@ Spawn **one** `general-purpose` subagent with `isolation: "worktree"`. Executor 
 
 The subagent prompt must contain:
 
+<details>
+<summary><b>Detail</b> — `STATUS: COMPLETE`, `STEPS: per`, `STOPPED BECAUSE:`</summary>
+
 1. **The full plan file text, inlined.** The worktree contains only committed files — if `plans/` is uncommitted, the executor can't read it. Never assume; always inline.
 2. The executor preamble:
 
@@ -44,6 +47,8 @@ STOPPED BECAUSE: (only if STOPPED) which STOP condition, what was observed
 FILES CHANGED: list
 NOTES: anything the reviewer should know (deviations, surprises, judgment calls)
 ```
+
+</details>
 
 ### Review — the advisor's real job here
 

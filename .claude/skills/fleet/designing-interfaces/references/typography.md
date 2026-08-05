@@ -483,6 +483,9 @@ font-size, or line-height instead of trusting CSS alone.
 
 Text containers must handle long content:
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```css
 /* Truncate single line */
 .truncate {
@@ -520,6 +523,8 @@ Text containers must handle long content:
   min-width: 0;
 }
 ```
+
+</details>
 
 ---
 
@@ -692,6 +697,9 @@ Clear hierarchy guides the eye. Test by squinting.
 
 Reference implementation with all tokens:
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```css
 :root {
   /* Font Families */
@@ -743,3 +751,5 @@ Reference implementation with all tokens:
 ---
 
 *Typography is the voice of your interface. Simple, consistent, intentional.*
+
+</details>

@@ -78,14 +78,6 @@ function isEnforcementSurface(rawPath: string): boolean {
   )
 }
 
-// The exact text a pattern matched, whitespace-collapsed and capped, so the
-// verdict quotes the offending span instead of lecturing doctrine.
-function matchedSpan(content: string, regex: RegExp): string {
-  const matched = content.match(regex)?.[0] ?? ''
-  const flat = matched.replaceAll(/\s+/g, ' ').trim()
-  return flat.length > 48 ? `${flat.slice(0, 45)}…` : flat
-}
-
 function isProseSurface(normalizedPath: string): boolean {
   if (isEnforcementSurface(normalizedPath)) {
     return false
@@ -132,7 +124,7 @@ export function findProseWriteVerdict(
       )
     ) {
       const evidence = implHits
-        .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
+        .map(hit => `${hit.label} "${hit.match}"`)
         .join('; ')
       return block(
         `🚨 anti-prose-guard: blocked ${rel} — implementation detail: ${evidence} — state the user-visible change instead (bypass response "${CHANGELOG_IMPL_BYPASS_PHRASE}")`,
@@ -147,9 +139,7 @@ export function findProseWriteVerdict(
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
-  const evidence = hits
-    .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
-    .join('; ')
+  const evidence = hits.map(hit => `${hit.label} "${hit.match}"`).join('; ')
   return block(
     `🚨 anti-prose-guard: blocked ${rel} — ${evidence} — rewrite the flagged span(s), then retry (bypass response "${BYPASS_PHRASE}")`,
   )
@@ -212,6 +202,18 @@ export const hook = defineHook({
   bypassOptional: true,
   check,
   event: ['PreToolUse', 'Stop'],
+  // MACHINE-WIDE. The Stop path judges the REPLY, which has no repo — a banned
+  // word is just as wrong answering from a foreign checkout, and that is what
+  // the `fleetOnly: true` on `checkDocWrite` (rather than a spec-level
+  // `scope: 'convention'`) was for: scope the file surface, leave the reply
+  // surface universal. That intent shipped unrealized. Without this flag the
+  // hook is only wired into repos carrying a cascaded `.claude/settings.json`,
+  // so every session in a non-fleet repo ran with the fleet's ONLY blocking
+  // prose guard absent — the honesty ban had zero coverage there, because the
+  // one globally-wired reply hook (`reply-prose-nudge`) does not carry the
+  // categorical tier. Enforced by
+  // `scripts/fleet/check/categorical-prose-bans-are-live.mts`.
+  global: true,
   // No `matcher`: a Stop payload has no tool, and a tool-filtered entry is
   // skipped outright for a tool-less payload (`hookHandlesTool`), which would
   // silently unwire the Stop surface. `editGuard` already returns undefined for

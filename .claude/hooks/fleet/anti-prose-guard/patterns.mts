@@ -19,6 +19,15 @@ export interface ProsePattern {
   readonly why: string
 }
 
+// A resolved match: the pattern plus the exact token that fired. Reporting
+// surfaces print the token so the verdict names what to delete instead of
+// reciting a variant list.
+export interface ProseHit {
+  readonly label: string
+  readonly match: string
+  readonly why: string
+}
+
 /**
  * The CATEGORICAL tier: patterns that are a VERDICT on any surface, never a
  * heuristic. Every other entry in `PROSE_PATTERNS` can over-fire on a
@@ -40,6 +49,40 @@ export const CATEGORICAL_PROSE_BANS: readonly ProsePattern[] = [
     // the honesty is assumed, not announced.
     regex: HONESTY_FRAMING_RE,
     why: HONESTY_WHY,
+  },
+  {
+    label: 'truth intensifier',
+    // Asserting that THIS claim is the real one implies the neighbours are
+    // approximate. Measured over 3 months of transcripts: `genuinely` 36,970
+    // hits, `the actual <noun>` 46,359. `the actual` is scoped to the crutch
+    // collocations, so a real measurement ("the actual byte count was 4,096")
+    // still passes.
+    //
+    // CATEGORICAL, not heuristic. Its own rationale always said "same defect as
+    // claiming one's own truthfulness, already banned above" while it sat in
+    // the tier BELOW that ban — so it gated doc writes and was never scanned on
+    // a reply, and `genuinely` shipped twice in one message arguing the fleet's
+    // own voice rules. Every branch is deletable filler: removing the word
+    // strengthens the sentence, which is the test for verdict-grade.
+    regex:
+      /\b(?:genuinely|let me be clear|precisely the|the actual (?:behavior|behaviour|cause|defect|failure|issue|problem|reason|shape|state)|to be clear)\b/i,
+    why: 'Truth intensifiers claim reliability instead of showing it. Delete the word and let the evidence carry the sentence.',
+  },
+  {
+    label: 'self-labeling frame',
+    // Announcing the REGISTER of what follows ("the honest version", "the short
+    // version") instead of just writing in it. The honesty spellings already
+    // fall to HONESTY_FRAMING_RE above; this catches the same move in its other
+    // adjectives, where the defect is identical — a label that grades the
+    // sentence it introduces, and implies the surrounding text is the unlabeled
+    // opposite. Scoped to the four register nouns so "the short list" (an
+    // ordinary use) does not fire. `real` is deliberately ABSENT: "the real
+    // answer" already belongs to the contrast-scaffolding row below, and
+    // repeating it here would both double-report and quietly promote that
+    // heuristic to blocking through the back door.
+    regex:
+      /\bthe\s+(?:blunt|candid|honest|plain|short|straight|unvarnished)\s+(?:answer|story|truth|version)\b/i,
+    why: 'A register label grades the sentence instead of writing it. Delete the label and state the thing.',
   },
 ]
 
@@ -63,18 +106,6 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
     regex:
       /\b(?:earned its keep|earns its keep|if nothing else|more valuable than|paid for itself|pays for itself|the real (?:prize|value|win)|worth more than)\b/i,
     why: 'Value inflation grades the work instead of reporting it. Drop the comparison and state the finding plainly.',
-  },
-  {
-    label: 'truth intensifier',
-    // Asserting that THIS claim is the real one implies the neighbours are
-    // approximate. Measured over 3 months of transcripts: `genuinely` 36,970
-    // hits, `the actual <noun>` 46,359. Same defect as claiming one's own
-    // truthfulness, already banned above: a finding stands on its evidence or
-    // it does not. `the actual` is scoped to the crutch collocations, so a
-    // real measurement ("the actual byte count was 4,096") still passes.
-    regex:
-      /\b(?:genuinely|let me be clear|precisely the|the actual (?:behavior|behaviour|cause|defect|failure|issue|problem|reason|shape|state)|to be clear)\b/i,
-    why: 'Truth intensifiers claim reliability instead of showing it. Delete the word and let the evidence carry the sentence.',
   },
   {
     label: 'significance marker',
@@ -138,12 +169,13 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
 export function matchProsePatterns(
   content: string,
   patterns: readonly ProsePattern[],
-): ProsePattern[] {
-  const hits: ProsePattern[] = []
+): ProseHit[] {
+  const hits: ProseHit[] = []
   for (let i = 0, { length } = patterns; i < length; i += 1) {
     const pattern = patterns[i]!
-    if (pattern.regex.test(content)) {
-      hits.push(pattern)
+    const match = pattern.regex.exec(content)
+    if (match) {
+      hits.push({ label: pattern.label, match: match[0], why: pattern.why })
     }
   }
   return hits
@@ -187,7 +219,7 @@ export function findCategoricalProseBanHits(content: string): ProseBanHit[] {
  * Scan `content` for prose antipatterns. Returns the matched patterns (empty
  * when clean).
  */
-export function findProseAntipatterns(content: string): ProsePattern[] {
+export function findProseAntipatterns(content: string): ProseHit[] {
   return matchProsePatterns(content, PROSE_PATTERNS)
 }
 
@@ -196,7 +228,7 @@ export function findProseAntipatterns(content: string): ProsePattern[] {
  * every over-firing heuristic left out. What the Stop surface runs against a
  * chat reply.
  */
-export function findCategoricalProseBans(content: string): ProsePattern[] {
+export function findCategoricalProseBans(content: string): ProseHit[] {
   return matchProsePatterns(content, CATEGORICAL_PROSE_BANS)
 }
 
@@ -243,6 +275,6 @@ export const CHANGELOG_IMPL_PATTERNS: readonly ProsePattern[] = [
  * Returns the matched patterns, empty when clean. Caller restricts this to
  * CHANGELOG.md writes.
  */
-export function findChangelogImplDetail(content: string): ProsePattern[] {
+export function findChangelogImplDetail(content: string): ProseHit[] {
   return matchProsePatterns(content, CHANGELOG_IMPL_PATTERNS)
 }

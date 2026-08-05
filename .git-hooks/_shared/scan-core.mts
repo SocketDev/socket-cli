@@ -59,6 +59,40 @@ export const splitLines = (text: string): string[] =>
 const SOCKET_LINT_MARKER_RE =
   /(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?/
 
+// The oxlint-shaped spelling of the same opt-out, so one comment form works
+// whichever enforcer owns the rule. oxlint disables a PLUGIN rule natively
+// (`oxlint-disable-line socket/<rule>`), but these scanners are not oxlint
+// rules — they read shell, YAML, and Markdown that oxlint never parses — so
+// nothing native can cover them. Rather than keep a second vocabulary for the
+// difference, the scanners accept oxlint's grammar and key off the rule name
+// the way every other linter does.
+//
+// oxlint's two directives map onto the two positions this file already has:
+// `-line` suppresses the line it sits on, `-next-line` the one below. Matching
+// that split exactly means a reader never has to remember which enforcer a
+// rule belongs to.
+const OXLINT_DISABLE_LINE_RE =
+  /(?:#|\/\*|\/\/)\s*oxlint-disable-line\s+socket\/([\w-]+)/
+
+/**
+ * The rule id an opt-out on `line` names, in either spelling. `matched` is
+ * false when the line carries no opt-out at all; `id` is undefined for the
+ * bare `socket-lint: allow` blanket form, which names no rule. Pure.
+ */
+export function lineMarkerId(line: string): {
+  id: string | undefined
+  matched: boolean
+} {
+  const oxlint = line.match(OXLINT_DISABLE_LINE_RE)
+  if (oxlint) {
+    return { id: oxlint[1], matched: true }
+  }
+  const legacy = line.match(SOCKET_LINT_MARKER_RE)
+  return legacy
+    ? { id: legacy[1], matched: true }
+    : { id: undefined, matched: false }
+}
+
 // File extensions whose natural comment syntax is `//` (C-family + cousins).
 // Anything else falls through to `#` (shell / YAML / TOML / Dockerfile /
 // Makefile / Python / Ruby / etc).
@@ -106,17 +140,17 @@ export function lineIsSuppressed(
   if (LEGACY_ZIZMOR_MARKER_RE.test(line)) {
     return true
   }
-  const m = line.match(SOCKET_LINT_MARKER_RE)
-  if (!m) {
+  const { id, matched } = lineMarkerId(line)
+  if (!matched) {
     return false
   }
   // No rule named on the marker → blanket allow.
-  if (!m[1]) {
+  if (!id) {
     return true
   }
   // Marker named a specific rule → suppress when the names match
   // directly OR through an alias.
-  return rule === undefined || aliasMatches(m[1], rule)
+  return rule === undefined || aliasMatches(id, rule)
 }
 
 // A line that is ONLY an opt-out marker comment — the marker right after the
@@ -126,6 +160,31 @@ export function lineIsSuppressed(
 // SOCKET_LINT_MARKER_ONLY_LINE_RE in .claude/hooks/fleet/_shared/markers.mts.
 const SOCKET_LINT_MARKER_ONLY_LINE_RE =
   /^\s*(?:#|\/\*|\/\/)\s*socket-lint:\s*allow(?:\s+([\w-]+))?(?:\s*\*\/|\s+--.*)?\s*$/
+
+// The oxlint-shaped spelling of the same own-line form. `-next-line` is
+// oxlint's own name for "covers the line below", which is exactly what this
+// position already meant.
+const OXLINT_DISABLE_NEXT_LINE_RE =
+  /^\s*(?:#|\/\*|\/\/)\s*oxlint-disable-next-line\s+socket\/([\w-]+)(?:\s*\*\/|\s+--.*)?\s*$/
+
+/**
+ * The rule id an own-line opt-out above a statement names, in either spelling,
+ * or undefined when the line is not an own-line opt-out. A bare
+ * `socket-lint: allow` returns a match with no id — the blanket form. Pure.
+ */
+export function ownLineMarkerId(line: string): {
+  id: string | undefined
+  matched: boolean
+} {
+  const oxlint = line.match(OXLINT_DISABLE_NEXT_LINE_RE)
+  if (oxlint) {
+    return { id: oxlint[1], matched: true }
+  }
+  const legacy = line.match(SOCKET_LINT_MARKER_ONLY_LINE_RE)
+  return legacy
+    ? { id: legacy[1], matched: true }
+    : { id: undefined, matched: false }
+}
 
 /**
  * True when `lines[index]` is suppressed for `rule` — by a marker on the line
@@ -142,15 +201,15 @@ export function suppressionCoversLine(
   if (index <= 0) {
     return false
   }
-  const m = (lines[index - 1] ?? '').match(SOCKET_LINT_MARKER_ONLY_LINE_RE)
-  if (!m) {
+  const { id, matched } = ownLineMarkerId(lines[index - 1] ?? '')
+  if (!matched) {
     return false
   }
   // Bare marker or no rule context → blanket allow, same as the inline form.
-  if (!m[1] || rule === undefined) {
+  if (!id || rule === undefined) {
     return true
   }
-  return aliasMatches(m[1], rule)
+  return aliasMatches(id, rule)
 }
 
 // Heuristic context flags: lines that look like "this is a doc example"

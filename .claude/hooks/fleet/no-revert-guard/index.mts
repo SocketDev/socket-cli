@@ -42,7 +42,7 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
-import { actedOnPath, isFleetTarget } from '../_shared/fleet-context.mts'
+import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { currentBranch, gitOut } from '../_shared/git-branch.mts'
 import {
   gitSubcommandReadings,
@@ -55,6 +55,7 @@ import { commandsFor, isFleetSyncCommand } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { operatorBypassPresent } from '../_shared/transcript.mts'
 import { matchHooksPathSkip } from './hooks-path.mts'
+import { resolveDestructiveGitRepoRoot } from './target-repo.mts'
 
 type RevertCheck = {
   // Canonical phrase the user must type to bypass.
@@ -198,6 +199,13 @@ const CHECKS: readonly RevertCheck[] = [
     // Any `git stash` (bare, or push/save/--keep-index/etc.) — but NOT
     // `git stash pop/drop/clear`, which the destructive-git check above
     // already owns, it's a different destruction surface.
+    //
+    // `list` and `show` are READ-ONLY: they print the stash entries or a
+    // stash's diff and touch neither the stash store nor the working tree.
+    // Blocking them stopped `git stash list` from answering "is anything
+    // stashed here?", which is a question worth asking BEFORE reaching for
+    // the bypass phrase. `apply` and `branch` stay blocked — they leave the
+    // stash intact but still mutate the working tree.
     matches: command =>
       commandsFor(command, 'git').some(c =>
         gitSubcommandReadings(c.args).some(({ rest, sub }) => {
@@ -205,7 +213,13 @@ const CHECKS: readonly RevertCheck[] = [
             return false
           }
           const action = rest[0]
-          return action !== 'clear' && action !== 'drop' && action !== 'pop'
+          return (
+            action !== 'clear' &&
+            action !== 'drop' &&
+            action !== 'list' &&
+            action !== 'pop' &&
+            action !== 'show'
+          )
         }),
       )
         ? 'git stash'
@@ -680,16 +694,16 @@ export const check = bashGuard((command, payload): GuardResult => {
   // a backup that isn't there. Runs first and fails open on any git-query
   // error (repoDir unresolvable, git unavailable, non-integer count) so a
   // hook bug never blocks — it just falls through to the existing checks.
+  // Every read runs in the repo the command TARGETS — a `git -C <dir>` reset
+  // rewrites THAT repo's history, so its commits, files, and backup refs are
+  // the ones the verdict and the message must name (`target-repo.mts`).
   const resetTarget = resetHardTarget(command)
   // Threaded to the later blockMessage() call so a RECOVERABLE reset-to-
   // origin, a backup exists, still names the exact commit/file count instead
   // of just the generic reconcile-forward steer.
   let resetLossFacts: ResetHardLossFacts | undefined
   if (resetTarget !== undefined) {
-    const repoDir = gitOut(actedOnPath(payload), [
-      'rev-parse',
-      '--show-toplevel',
-    ])
+    const repoDir = resolveDestructiveGitRepoRoot({ command, payload })
     resetLossFacts =
       repoDir !== undefined
         ? gatherResetHardLossFacts(repoDir, resetTarget)

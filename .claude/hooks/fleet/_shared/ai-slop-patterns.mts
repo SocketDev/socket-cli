@@ -83,11 +83,21 @@ export function findAiSlop(content: string): SlopPattern[] {
   return hits
 }
 
-// One import point for the full slop set: the honest matcher lives in its own
+// One import point for the full slop set: the candor matcher lives in its own
 // module, older, shared by more consumers, and is re-exported here.
+//
+// A RE-EXPORT IS NOT MEMBERSHIP. These names are not rows in
+// `AI_SLOP_PATTERNS`, so a consumer that spreads the table (reply-prose-nudge
+// does) gets the seven tells above and NONE of the candor ban. That read as
+// coverage and was not: the ban's only enforcement is anti-prose-guard's
+// `CATEGORICAL_PROSE_BANS`. Deliberate — the ban BLOCKS, and a nudge table
+// cannot block — but it is invisible at the import site, which is why it is
+// spelled out here. Adding a row to the table below extends every consumer;
+// adding an export here extends nobody.
 export {
   HONESTY_FRAMING_RE,
   HONESTY_LABEL,
   HONESTY_WHY,
+  honestyFramingMatch,
   matchesHonestyFraming,
 } from './honesty-framing.mts'

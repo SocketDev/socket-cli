@@ -45,6 +45,10 @@ verify against the repo, and apply the tracker mutations here.
    - **DELETE** — superseded, duplicate, stale, or parked-indefinitely with
      nothing left to preserve.
    - **KEEP** — genuinely distinct and still-wanted → leave pending.
+
+<details>
+<summary><b>Steps 4 through 7</b> — grouping umbrellas by real theme, folding before deleting because deletes are permanent, what <code>in_progress</code> is allowed to mean, and narrating the full fold map</summary>
+
 4. **Define umbrellas by theme, not by force.** Group only tasks that truly
    belong to one program. Common fleet themes: fleet-wide propagation waves; a
    release/publish campaign; a big pipeline/infra spec; a docs/ops program; an
@@ -60,6 +64,8 @@ verify against the repo, and apply the tracker mutations here.
 7. **Narrate the full fold-map.** Report `absorbed-id → survivor` for every merge
    and every delete so the operator can split anything back out. Because deletes
    are permanent, this map is the reversibility guarantee.
+
+</details>
 
 ## Guardrails
 

@@ -34,9 +34,9 @@
 // Bypass: `Allow prompt-injection bypass` typed verbatim in a recent
 // user turn.
 //
-// Self-exempt: this guard's own source + test files (so it can name
-// the patterns it detects) — same plugin-self-file pattern as the
-// token / private-name guards.
+// Self-exempt: this guard's own source + test files and its own topic
+// doc (so it can name and quote the patterns it detects) — same
+// plugin-self-file pattern as the token / private-name guards.
 //
 // Fails open on regex / parse errors.
 
@@ -50,11 +50,22 @@ import {
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
 import { isRepoTestHome } from '../_shared/repo-test-home.mts'
+import { findBombFindings } from './bombs.mts'
+import { clipSource, lineOfFirstWord } from './findings.mts'
+import type { Finding } from './findings.mts'
+import { isEncodedArtifactPath } from './scan-context.mts'
+
+export { findBombFindings } from './bombs.mts'
 
 // Files this guard owns — its own source + tests legitimately contain
 // injection-shaped strings (the patterns it detects, fixtures, this
 // doc). Normalize separators so Windows paths match too.
 const SELF_DIR_RE = /\/prompt-injection-guard\//
+
+// The guard's own topic doc: the threat model DESCRIBES each detector by
+// quoting the shape it matches, so every pattern here appears there by
+// design. Exact path, so no other doc inherits the exemption.
+const SELF_DOC_RE = /(?:^|\/)docs\/agents\.md\/fleet\/prompt-injection\.md$/
 
 // Cap the bytes we scan so a multi-MB vendored blob can't wedge the
 // hook. A real authored injection lands near the top; an attacker who
@@ -113,8 +124,14 @@ const INJECTION_PATTERNS: readonly Pattern[] = [
   {
     label: 'fake system/role tag injection ("</system>", "[INST]", "system:")',
     // Matches HTML-style role tags (</system>), bracket-style ([INST],[SYS]),
-    // markdown heading "# system", and "system prompt/note/message:" prefixes.
-    re: /(?:<\/?\s*(?:assistant|im_end|im_start|system|user)\b[^>]*>|\[\/?(?:INST|SYS|SYSTEM)\]|^\s*#{1,6}\s*system\b|\bsystem\s*(?:message|note|prompt)\s*:)/im,
+    // a markdown heading that is ONLY the word "system", and a leading
+    // "system prompt/note/message:" label. Three position brakes keep a role
+    // WORD from reading as a role TAG: a path separator on either side of the
+    // tag (`/Users/<user>/` is the fleet's own placeholder, not a forged turn
+    // boundary), a heading with further words after it (`## System
+    // requirements`), and a label mid-sentence ("reads a system prompt: never
+    // a user one"). A forged boundary sits at the start of its line.
+    re: /(?:(?<![\\/])<\/?\s*(?:assistant|im_end|im_start|system|user)\b[^>]*>(?![\\/])|\[\/?(?:INST|SYS|SYSTEM)\]|^\s*#{1,6}\s*system\s*:?\s*$|^[\s#*>-]*(?:\*|\/[*/])?\s*system\s*(?:message|note|prompt)\s*:)/im,
   },
   {
     label: 'agent-addressing imperative ("if you are an AI … you must/do not")',
@@ -172,19 +189,19 @@ export function blankShortStringLiterals(line: string): string {
 // File extensions where string-literal contents are code DATA, not prose.
 const CODE_EXT_RE = /\.(?:c|m)?[jt]sx?$/
 
+// Markdown file extensions. Markdown's emphasis delimiters are regex
+// metacharacters, so a pattern-shaped detector reads these files normalized —
+// `markdown-scan.mts` carries the reasoning.
+const MARKDOWN_EXT_RE = /\.(?:markdown|md|mdx)$/i
+
 // AI/agent-addressing vocabulary — escalates a hiding-mechanism finding
 // even when no full directive pattern matched on its own.
 const AGENT_VOCAB_RE =
   /\b(?:ai\s+agent|ai\s+assistant|automated\s+agent|coding\s+agent|disregard|ignore\s+(?:all\s+)?(?:previous|prior|the)|language\s+model|llm)\b/i
 
-interface Finding {
-  readonly label: string
-  readonly line: number
-  readonly source: string
-}
-
 export function isSelfFile(filePath: string): boolean {
-  return SELF_DIR_RE.test(normalizePath(filePath))
+  const normalized = normalizePath(filePath)
+  return SELF_DIR_RE.test(normalized) || SELF_DOC_RE.test(normalized)
 }
 
 function matchPatterns(
@@ -207,7 +224,16 @@ function matchPatterns(
 }
 
 export interface ScanOptions {
+  // True → the file is code, so a short string literal holds code DATA rather
+  // than prose, and a regex-shaped literal is a pattern position.
   codeFile?: boolean | undefined
+  // True → the file is a generated / vendored / encoded artifact, so its long
+  // unbroken lines are its generator's construction, not a context bomb.
+  encodedArtifact?: boolean | undefined
+  // True → the file is markdown, so the pattern-shaped scan reads lines whose
+  // emphasis delimiters are stripped, keeping formatting from synthesizing a
+  // pattern the author never wrote.
+  markdownFile?: boolean | undefined
 }
 
 // Walk the after-text and collect every injection-shape finding across
@@ -251,19 +277,23 @@ export function findInjectionFindings(
     ])
     for (const label of labels) {
       const tag = hidden ? ` [${hidden}]` : smuggle ? ' [obfuscated]' : ''
-      push({ label: `${label}${tag}`, line: i + 1, source: clip(raw.trim()) })
+      push({
+        label: `${label}${tag}`,
+        line: i + 1,
+        source: clipSource(raw.trim()),
+      })
     }
 
     if (hidden && labels.size === 0 && AGENT_VOCAB_RE.test(norm)) {
       push({
         line: i + 1,
         label: `${hidden} text addressing an AI/agent`,
-        source: clip(raw.trim()),
+        source: clipSource(raw.trim()),
       })
     }
 
     if (smuggle) {
-      push({ line: i + 1, label: smuggle, source: clip(raw.trim()) })
+      push({ line: i + 1, label: smuggle, source: clipSource(raw.trim()) })
     }
   }
 
@@ -279,128 +309,16 @@ export function findInjectionFindings(
       push({
         label: `${label} [multi-line]`,
         line: lineOfFirstWord(text, m[0]),
-        source: clip(m[0].trim()),
+        source: clipSource(m[0].trim()),
       })
     }
   }
 
-  for (const f of findBombFindings(text, rawLines)) {
+  for (const f of findBombFindings(text, rawLines, scanOpts)) {
     push(f)
   }
 
   return findings
-}
-
-// "AI bombs" — content engineered to lock up, hang, or exhaust an agent
-// that READS it (a denial-of-service on the reader, distinct from a
-// directive that hijacks it). Thresholds are set well above anything we
-// author by hand; legit minified bundles live in vendored / build-output
-// trees that the caller's before/after diff already treats as
-// pre-existing, so this fires on NEW hand-introduced bombs.
-
-// A base character carrying a long run of combining marks (Zalgo): token-
-// heavy, renders as an unreadable blob, crashes some layout engines.
-// oxlint-disable-next-line eslint/no-misleading-character-class -- the combining-mark ranges ARE the detector's subject; this class deliberately matches stacked combining diacritics, which is exactly what the rule flags as "misleading."
-const ZALGO_RE = /[̀-ͯ҃-҉᪰-᫿᷀-᷿⃐-⃿︠-︯]{8,}/
-
-// Nested-quantifier regex literals that backtrack catastrophically:
-// `(a+)+`, `(.*)*`, `(\d+)+$` and friends. Authored into source these are
-// a ReDoS waiting to hang whatever runs them.
-const REDOS_RE =
-  /\([^)]*[+*]\)[+*]|\((?:[^()]*\|[^()]*)\)[+*](?:[+*]|\{\d+,?\}?)/
-
-// XML / DTD entity-expansion ("billion laughs") and YAML alias-bomb
-// shapes: an entity / anchor that references another repeatedly.
-const ENTITY_BOMB_RE =
-  /<!ENTITY\s+\w+\s+(?:"[^"]*(?:&\w+;){2,}|'[^']*(?:&\w+;){2,})|(?:\*\w+\s+){10,}/
-
-const MAX_LINE_LEN = 50_000
-const MAX_LINE_NO_BREAK = 20_000
-const MAX_CHAR_RUN = 5000
-
-export function findBombFindings(text: string, rawLines: string[]): Finding[] {
-  const out: Finding[] = []
-  for (let i = 0; i < rawLines.length; i += 1) {
-    /* c8 ignore next - String.prototype.split always yields string elements; rawLines[i] is never undefined */
-    const raw = rawLines[i] ?? ''
-    const lineNo = i + 1
-
-    if (ZALGO_RE.test(raw)) {
-      out.push({
-        line: lineNo,
-        label: 'combining-mark (Zalgo) bomb — long run of stacked diacritics',
-        source: clip(raw.trim()),
-      })
-    }
-    if (raw.length >= MAX_LINE_NO_BREAK && !/\s/.test(raw)) {
-      out.push({
-        line: lineNo,
-        label: `pathological line — ${raw.length} chars with no whitespace (context/diff bomb)`,
-        source: clip(raw.trim()),
-      })
-    } else if (raw.length >= MAX_LINE_LEN) {
-      out.push({
-        line: lineNo,
-        label: `very long line — ${raw.length} chars (context bloat)`,
-        source: clip(raw.trim()),
-      })
-    }
-    // Matches any character repeated 5000+ times in a row (token/context bomb).
-    const runMatch = /(.)\1{4999,}/.exec(raw)
-    if (runMatch && runMatch[0].length >= MAX_CHAR_RUN) {
-      out.push({
-        line: lineNo,
-        /* c8 ignore next - capture group 1 is always a non-empty string when runMatch is truthy; ?? '' is a defensive fallback */
-        label: `repeated-character run — ${runMatch[0].length}× '${describeChar(runMatch[1] ?? '')}' (token bomb)`,
-        source: clip(raw.trim()),
-      })
-    }
-    if (REDOS_RE.test(raw)) {
-      out.push({
-        line: lineNo,
-        label: 'catastrophic-backtracking regex (ReDoS) literal',
-        source: clip(raw.trim()),
-      })
-    }
-  }
-  if (ENTITY_BOMB_RE.test(text)) {
-    out.push({
-      /* c8 ignore next - lineOfFirstWord returns ≥ 1 (it falls back to 1 when idx < 0); || 1 is unreachable */
-      line: lineOfFirstWord(text, '<!ENTITY') || 1,
-      label: 'entity/alias expansion bomb (billion-laughs shape)',
-      source: 'nested entity or YAML-alias expansion',
-    })
-  }
-  return out
-}
-
-function describeChar(ch: string): string {
-  /* c8 ignore next - codePointAt(0) only returns undefined for an empty string; ch is always a non-empty captured group */
-  const cp = ch.codePointAt(0) ?? 0
-  if (cp < 32 || (cp >= 127 && cp < 160)) {
-    return `\\u${cp.toString(16).padStart(4, '0')}`
-  }
-  return ch
-}
-
-// Best-effort: 1-based line in the original text where the first word
-// of `fragment` appears. Falls back to line 1.
-function lineOfFirstWord(text: string, fragment: string): number {
-  const firstWord = fragment.trim().split(/\s+/)[0]
-  /* c8 ignore start - fragment is always a non-empty string at every call site; empty-firstWord path is unreachable */
-  if (!firstWord) {
-    return 1
-  }
-  /* c8 ignore stop */
-  const idx = text.toLowerCase().indexOf(firstWord.toLowerCase())
-  if (idx < 0) {
-    return 1
-  }
-  return text.slice(0, idx).split('\n').length
-}
-
-function clip(s: string): string {
-  return s.length > 160 ? `${s.slice(0, 157)}...` : s
 }
 
 export const check = editGuard((filePath, content, payload) => {
@@ -421,7 +339,11 @@ export const check = editGuard((filePath, content, payload) => {
   // Only NEW findings — pre-existing injection text in the file (e.g.
   // an upstream we already vendored) isn't re-flagged on an unrelated
   // edit; only text this edit introduces.
-  const scanOpts = { codeFile: CODE_EXT_RE.test(filePath) }
+  const scanOpts = {
+    codeFile: CODE_EXT_RE.test(filePath),
+    encodedArtifact: isEncodedArtifactPath(filePath),
+    markdownFile: MARKDOWN_EXT_RE.test(filePath),
+  }
   const beforeKeys = new Set(
     findInjectionFindings(currentText, scanOpts).map(
       f => `${f.label}:${f.source}`,

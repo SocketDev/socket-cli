@@ -93,6 +93,9 @@ recommendation }`.
 
 ### Review brief (per focus-area agent)
 
+<details>
+<summary><b>The verbatim agent prompt</b> — target and trust boundary, the static-only reporting bar, the WHAT TO LOOK FOR list covering memory safety, injection, auth and crypto, the DO NOT REPORT false positives, and the severity scale</summary>
+
 ```
 You are conducting authorized static security review of source code. Your focus
 area: **{focus_area}**. Other agents cover other areas; duplication is wasted
@@ -161,6 +164,8 @@ If you find nothing reportable after a thorough read, return an empty findings
 list with a one-line note of what you covered.
 ```
 
+</details>
+
 ## Step 3 — Collate
 
 Collect the findings from all agents, write them to a scratch JSON file (a
@@ -186,6 +191,9 @@ is dropped** — this calibrates `confidence` so humans and `triaging-findings` 
 high-signal findings first. One `agent()` per finding (Workflow,
 `agentType: 'Explore'`), shallow: re-read and score, not a full reachability
 trace.
+
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
 
 ```
 You are giving ONE candidate security finding an independent confidence score.
@@ -221,6 +229,8 @@ engine overwrites each finding's `confidence` with the normalized score (1-10 �
 `severity` desc, `file`, `line`), reassigns `F-001..`, computes the summary
 (incl. `low_confidence` = confidence < 0.4), and writes **both** output files
 under `<target-dir>/`, then prints the Step-5 hand-back summary to stdout.
+
+</details>
 
 ## Step 4 — Output (written by the engine)
 

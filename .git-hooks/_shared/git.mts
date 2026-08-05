@@ -49,3 +49,18 @@ export const gitLines = (...args: string[]): string[] => {
   const out = gitOrThrow(...args)
   return out ? splitLines(out) : []
 }
+
+/**
+ * Run git with `stdin` piped in, returning the raw status and stdout.
+ *
+ * Unlike `git`/`gitOrThrow`, this surfaces the exit status instead of
+ * swallowing it or throwing — a query like `git check-ignore` uses its status
+ * as the ANSWER (0 = matched, 1 = no match), not as a failure.
+ */
+export function gitWithInput(
+  args: readonly string[],
+  stdin: string,
+): { status: number | undefined; stdout: string } {
+  const result = spawnSync('git', [...args], { encoding: 'utf8', input: stdin })
+  return { status: result.status ?? undefined, stdout: result.stdout ?? '' }
+}

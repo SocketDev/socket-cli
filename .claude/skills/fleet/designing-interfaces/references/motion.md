@@ -452,6 +452,9 @@ If you answered "no" to #1 or #5—remove the animation.
 
 Reference implementation:
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```css
 :root {
   /* ===== DURATIONS ===== */
@@ -498,6 +501,8 @@ Reference implementation:
   }
 }
 ```
+
+</details>
 
 ---
 

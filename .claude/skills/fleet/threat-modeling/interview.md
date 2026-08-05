@@ -93,6 +93,9 @@ thing someone could do?"** Capture each answer as a candidate threat row.
 When the owner stalls or stays vague, switch to structured prompts. Walk each
 entry point from section 3 through STRIDE:
 
+<details>
+<summary><b>Detail</b> — the full table (6 rows)</summary>
+
 | | Ask |
 | --- | --- |
 | **S**poofing | "Could someone pretend to be a user or service they're not, here?" |
@@ -119,6 +122,8 @@ the threat at the level where it survives a patch.
 
 If `--seed` was provided: walk the seed's section 4 table row by row and ask "Does
 this apply? Is the actor right?" Then "What's missing?"
+
+</details>
 
 ### Q3 — What are we going to do about it?
 

@@ -48,6 +48,9 @@ Each scan spawns a general-purpose subagent. Customize the templates below per r
 
 **Prompt template:**
 
+<details>
+<summary><b>Critical-bug prompt</b> — patterns for null/undefined access, unhandled promises, race conditions, type coercion, resource leaks, and prototype pollution, plus the finding output format and quality guidelines</summary>
+
 ```
 Your task is to perform a critical-bug scan on the codebase. Identify bugs that could cause crashes, data corruption, or security vulnerabilities.
 
@@ -136,6 +139,8 @@ Impact: [What happens if triggered]
 Scan systematically and report all critical bugs found. If no critical bugs are found, state that explicitly.
 ```
 
+</details>
+
 ---
 
 ### Logic scan agent
@@ -145,6 +150,9 @@ Scan systematically and report all critical bugs found. If no critical bugs are 
 **Scan targets**: source code files.
 
 **Prompt template:**
+
+<details>
+<summary><b>Logic-error prompt</b> — patterns for off-by-one bounds, weak type guards, edge cases such as empty input and unvalidated <code>parseInt</code>, and algorithm correctness in parsing, semver, paths, and dedup</summary>
 
 ```
 Your task is to detect logic errors in the codebase that could produce incorrect output. Focus on algorithm correctness, edge case handling, and data validation.
@@ -219,6 +227,8 @@ Impact: [What incorrect output is produced]
 Analyze systematically and report all logic errors found. If no errors are found, state that explicitly.
 ```
 
+</details>
+
 ---
 
 ### Cache scan agent
@@ -228,6 +238,9 @@ Analyze systematically and report all logic errors found. If no errors are found
 **Scan targets**: caching logic, if any. Skip the scan if the repo has no caching.
 
 **Prompt template:**
+
+<details>
+<summary><b>Caching prompt</b> — patterns for invalidation and version drift, cache-key sufficiency, corruption from partial writes, concurrency races on create/restore/cleanup, and edge cases such as empty files and oversize entries</summary>
 
 ```
 Your task is to analyze caching implementation for correctness, staleness bugs, and performance issues. Focus on cache corruption, invalidation failures, and race conditions.
@@ -304,6 +317,8 @@ Impact: [Observable effect]
 Analyze the caching implementation thoroughly and report all issues found. If the implementation is sound, state that explicitly.
 ```
 
+</details>
+
 ---
 
 ### Workflow scan agent
@@ -313,6 +328,9 @@ Analyze the caching implementation thoroughly and report all issues found. If th
 **Scan targets**: `scripts/`, `package.json`, `.git-hooks/`, `.github/workflows/`.
 
 **Prompt template:**
+
+<details>
+<summary><b>Workflow prompt</b> — patterns for cross-platform scripts, script error handling and exit codes, import conventions, <code>package.json</code> script chaining, git hooks, CI configuration, and the one-off package-runner anti-pattern</summary>
 
 ```
 Your task is to identify issues in the project's development workflows, build scripts, and CI configuration that could cause build failures, test flakiness, or poor developer experience.
@@ -404,6 +422,8 @@ Fix: [Specific change to resolve]
 Analyze workflow files systematically and report all issues found. If workflows are well-configured, state that explicitly.
 ```
 
+</details>
+
 ---
 
 ### Security scan agent (workflows)
@@ -413,6 +433,9 @@ Analyze workflow files systematically and report all issues found. If workflows 
 **Scan targets**: `.github/workflows/*.yml`.
 
 **Prompt template:**
+
+<details>
+<summary><b>zizmor prompt</b> — how to run and parse <code>zizmor .github/workflows/</code>, plus the template-injection, cache-poisoning, and credential-exposure patterns and the finding output format</summary>
 
 ```
 Your task is to run zizmor on GitHub Actions workflows to identify template injection, cache poisoning, and other workflow security issues.
@@ -471,6 +494,8 @@ Auto-fix: [Available / Not available]
 </quality_guidelines>
 ```
 
+</details>
+
 For a deeper workflow security pass (AgentShield + zizmor + grading), invoke the dedicated `scanning-security` skill instead of running this scan in isolation.
 
 ---
@@ -482,6 +507,9 @@ For a deeper workflow security pass (AgentShield + zizmor + grading), invoke the
 **Scan targets**: `README.md`, files under `docs/`, CLAUDE.md.
 
 **Prompt template:**
+
+<details>
+<summary><b>Documentation prompt</b> — the verify-against-code procedure plus patterns for package names, command examples, file paths, API docs, configuration, version information, and missing documentation</summary>
 
 ```
 Your task is to verify documentation accuracy by comparing documented behavior, examples, commands, and API descriptions against the actual codebase.
@@ -587,6 +615,8 @@ Impact: [Why this matters]
 </quality_guidelines>
 ```
 
+</details>
+
 ---
 
 <a id="severity-levels"></a>
@@ -620,6 +650,9 @@ Impact: [Why this matters]
 ## Report template
 
 Use this format for the Phase 8 report:
+
+<details>
+<summary><b>Report skeleton</b> — the full Phase 8 markdown: header counts, dependency updates, structural validation, the four severity sections, scan coverage, and recommendations</summary>
 
 ```markdown
 # Quality Scan Report
@@ -684,6 +717,8 @@ Use this format for the Phase 8 report:
 4. Low-priority items can be addressed during refactoring
 ```
 
+</details>
+
 ---
 
 <a id="edge-cases"></a>
@@ -732,6 +767,9 @@ The user can request specific scan types. Report only includes requested scan ty
 
 Report these final metrics when Phase 9 completes:
 
+<details>
+<summary><b>Completion block</b> — the printout: dependency updates, structural validation, cleanup, scans completed, findings by severity, files scanned, duration, then critical issues and next steps</summary>
+
 ```
 Quality Scan Complete
 ========================
@@ -753,3 +791,5 @@ Next Steps:
 3. Schedule medium/low issues appropriately
 4. Re-run scans after fixes to verify
 ```
+
+</details>

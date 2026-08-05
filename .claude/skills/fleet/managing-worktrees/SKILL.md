@@ -49,6 +49,9 @@ If `$TASK_NAME` collides with an existing branch, fail with the conflict. Never 
 
 For each open PR on the current GitHub repo, ensure a worktree exists at `../<repo>-pr-<num>/`. Idempotent: skip PRs whose worktree already exists.
 
+<details>
+<summary><b>Detail</b> — `gh auth`, `REPO_NAME=$(basename`, `gh pr`</summary>
+
 ```bash
 gh auth status >/dev/null  # fail loudly if not authenticated
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
@@ -72,6 +75,8 @@ git worktree list
 ```
 
 This is the multi-Claude review setup: each open PR gets its own checkout so a parallel session can take one without contention.
+
+</details>
 
 ### Mode 3: `prune`
 

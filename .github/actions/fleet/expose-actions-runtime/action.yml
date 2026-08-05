@@ -1,0 +1,11 @@
+name: expose-actions-runtime
+description: >-
+  Expose the runner-injected ACTIONS_RESULTS_URL + ACTIONS_RUNTIME_TOKEN to
+  later run steps. The runner injects these into JavaScript-action processes
+  only — a composite's `run:` steps never see them — so the fleet's
+  first-party cache client (scripts/fleet/cache/client.mts) cannot reach the
+  v2 cache service without this bridge. The token is masked before it lands
+  in the job env.
+runs:
+  using: node24
+  main: index.js

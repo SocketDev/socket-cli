@@ -39,6 +39,9 @@ checkout's `node_modules` symlinks (for example
 `node_modules/@socketsecurity/lib-stable`) are left pointing at the deleted
 directory:
 
+<details>
+<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+
 ```text
 node_modules/@socketsecurity/lib-stable -> ../../../<removed-worktree>/node_modules/.pnpm/...
 ```
@@ -63,6 +66,8 @@ CI=true pnpm i
 
 The `worktree-remove-relink-nudge` PostToolUse hook nudges this step after a
 `git worktree remove` / `git worktree prune`. It's a reminder, never a blocker.
+
+</details>
 
 ### Throwaway cherry-pick worktrees
 

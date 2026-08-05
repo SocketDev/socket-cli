@@ -58,6 +58,9 @@ between your reads or when starting the final repo-wide squash/push. The
 `parallel-agent-on-stop-nudge` reads the fleet roster and reinforces this rule
 in squash-opted repos.
 
+<details>
+<summary><b>Detail</b> — `git restore`</summary>
+
 **Land the dirty files BEFORE squashing.** A squash that runs over an
 uncommitted working tree either sweeps that work under another session's
 subject or strands it outside the collapse. Since history flattens anyway and
@@ -87,6 +90,8 @@ git restore --source=HEAD --staged --worktree -- <paths-you-did-not-mean-to-chan
 Nothing is held back and nothing is reverted. Do not stash, do not branch, do
 not wait for a quiet window. `stale-tree-clobber-guard` blocks the commit and
 prints exactly this fix (bypass: `Allow stale-tree bypass`).
+
+</details>
 
 ## Whose work is this? Own-work-first check
 
@@ -177,6 +182,9 @@ the source of truth; origin is where landed work is published. So `origin/main`
 being ahead of (or diverged from) local main is almost never a reason to touch
 local main.
 
+<details>
+<summary><b>Detail</b> — The banned reflex, Why origin looks ahead, When it IS a real divergence, Every reset stays additive / recoverable</summary>
+
 **The banned reflex.** Seeing `origin/main` ahead and concluding "origin is
 ahead, I'll sync / reset / revert / drop local to match it" is wrong. The
 capitulation that follows is the exact failure this rule exists to stop:
@@ -224,6 +232,8 @@ primary-checkout reset for exactly this reason.
 Enforced by `no-revert-guard` (blocks the rewind), `no-force-push-guard` (gates
 the forward reconcile), and `whose-work` (classifies author). A dedicated
 origin-ahead Stop nudge is tracked to surface this proactively.
+
+</details>
 
 ## Codex companions are quick checks, not long sessions
 

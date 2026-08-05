@@ -77,6 +77,9 @@ pip3 install black
 pipx install black==24.10.0
 ```
 
+<details>
+<summary><b>Two more cases</b>: pinning an unreleased package by git SHA, and the cross-platform setup-pipx installer for a machine that has no pipx yet</summary>
+
 For an unreleased package that only exists as a git SHA:
 
 ```bash
@@ -91,3 +94,5 @@ node .claude/hooks/fleet/setup-pipx/install.mts
 
 Cross-platform — mac / linux / windows. Picks the right pipx
 installer for the host (brew / apt / yum / apk / vanilla Python).
+
+</details>

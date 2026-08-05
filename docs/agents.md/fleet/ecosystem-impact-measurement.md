@@ -44,6 +44,9 @@ mutually-reinforcing strongly-connected component, not a tree hanging off
 prunable leaves. Consumer-side overriding cannot reach into a clique — only
 overriding its members can.
 
+<details>
+<summary><b>Detail</b> — Rule</summary>
+
 **Rule:** always report SURVIVING GATEWAYS alongside the cut percentage. A
 percentage on its own invites the wrong conclusion. When a target appears in
 its own surviving-gateway set, or shares a strongly-connected component with
@@ -55,6 +58,8 @@ induced by what SURVIVED the cut, every target carries an `inSurvivingClique`
 flag, and the rendered report prints the gateways and the clique verdict
 directly under each percentage. A clique whose members all left the tree is not
 reported — a dead cycle is not a reason to keep porting.
+
+</details>
 
 ## Trap 2: root sets must match to compare
 

@@ -56,6 +56,9 @@ Rule of thumb: rules and overrides → the repo factory config; ignores → eith
 
 `oxlint-disable-next-line <rule> -- <reason>` is correct when a single call site has a genuine, code-local justification that wouldn't apply to siblings. Stacking the same comment on adjacent lines is the failure mode.
 
+<details>
+<summary><b>Detail</b> — Wrong, Right (helper pattern), Right (sentinel-constant pattern), Why this matters, When per-call-site IS correct</summary>
+
 **Wrong**: three byte-identical disables on consecutive lines:
 
 ```ts
@@ -94,6 +97,8 @@ JSONStringify({
 **Why this matters:** stacked identical disables are visual noise that obscures the real signal (per-line disables exist to highlight _exceptional_ code). When the disable repeats verbatim, the exception isn't per-line. It's per-pattern, and the pattern deserves its own name.
 
 **When per-call-site IS correct:** the reasons differ, OR the disables sit on lines that aren't adjacent. Two disables 20 lines apart in the same file with the same rule + same reason is fine; what's banned is the consecutive stack on adjacent lines.
+
+</details>
 
 ## Zero scope is not a pass
 

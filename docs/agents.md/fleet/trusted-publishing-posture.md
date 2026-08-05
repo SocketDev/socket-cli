@@ -53,6 +53,9 @@ environment variable:
   It had drifted into four copies; two gated `--provenance` on `GITHUB_ACTIONS`
   alone, which npm answers with `E422 … repository visibility: "private"`.
 
+<details>
+<summary><b>The other eight rules</b> — repo-local orchestration, the <code>0.0.0</code> reservation carve-out, no reservation workflow, no attestation on the reservation, version read from the manifest, exit 0 is not proof, no env opt-out, token names only</summary>
+
 - **Orchestration stays repo-local.** Publish order, which commits get
   republished, how an approve batch refreshes its OTP across hundreds of
   packages — that is a member's own business, and socket-registry's ~131
@@ -94,6 +97,8 @@ environment variable:
 
 - **Token values never leave the module.** The posture reports variable NAMES
   only; a spec asserts no value reaches the emitted lines.
+
+</details>
 
 ## Enforcement
 

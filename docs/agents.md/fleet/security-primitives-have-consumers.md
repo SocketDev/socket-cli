@@ -42,6 +42,9 @@ signal, though: a tag only finds the primitives someone remembered to tag, and
 nobody had tagged any of the four above. The working signal is the prose these
 controls already carry, scored against two vocabularies.
 
+<details>
+<summary><b>Detail</b> — Named threats, Ambiguous terms</summary>
+
 **Named threats** (`NAMED_THREATS`) are terms like `ssrf`, `xss`, `csrf`,
 `path traversal`, `prototype pollution`, `shadow bin`, `cloud metadata`,
 `attacker`, `hostile`, `malicious`, `zip slip`. These appear in prose only when
@@ -75,6 +78,8 @@ Two term-matching details that cost real false positives:
   point.
 - `shadow bin(s)` closes on the right too, so it does not catch Socket's own
   "shadow binary" product feature.
+
+</details>
 
 ## Scope
 

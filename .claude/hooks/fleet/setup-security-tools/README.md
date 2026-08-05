@@ -109,14 +109,13 @@ Safe to run multiple times:
 
 ## Adopting in a new fleet repo
 
-The hook is self-contained but has three workspace dependencies. To
+The hook is self-contained but has two workspace dependencies. To
 add it to a new Socket repo:
 
 1. Copy `.claude/hooks/fleet/setup-security-tools/` and
    `.claude/commands/setup-security-tools.md`.
 2. Make sure the consumer repo's catalog (or `dependencies`) provides
-   `@socketsecurity/lib-stable`, `@socketregistry/packageurl-js-stable`, and
-   `@sinclair/typebox`.
+   `@socketsecurity/lib-stable` and `@socketregistry/packageurl-js-stable`.
 3. Make sure `.claude/hooks/` isn't gitignored — add
    `!/.claude/hooks/` to `.gitignore` if needed.
 4. Add a `setup` script to `package.json`:

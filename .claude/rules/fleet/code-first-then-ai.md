@@ -20,6 +20,9 @@ substitute for running (or fixing) the script.
   workflow socket-registry's own CI said was broken — shipping red CI fleet-wide
   for two weeks. The fix was a green-gate that fails loud on a red source.)
 
+<details>
+<summary><b>The remaining three rules</b> — AI only where the script cedes via <code>ai-lint-fix</code>, no hand-formatting around a failing codegen step per <code>no-direct-linter-guard</code>, no hand-editing a script-owned artifact such as <code>CHANGELOG.md</code> or the lockfile</summary>
+
 - **AI only where the script cedes.** `ai-lint-fix` runs `lint --fix` (deterministic
   oxlint autofix) first and spawns AI only for the custom `socket/*` rules oxlint
   can't autofix. That ordering, deterministic first and AI for the residue, is the
@@ -45,6 +48,8 @@ substitute for running (or fixing) the script.
   (and guarded: `changelog-is-commit-derived`, `dirty-lockfile-nudge`). If the
   script is wrong, **fix the script** — bypassing the guard to hand-edit is the
   anti-pattern this rule exists to stop.
+
+</details>
 
 ## Why
 

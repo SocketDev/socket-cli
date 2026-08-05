@@ -17,6 +17,9 @@ commit FREEZES (byte-identical forever — see
 is still throwaway in the sense below. The opt-in stays; a released repo does
 not drop back to ordinary permanent-history rules.
 
+<details>
+<summary><b>The relaxed cadence, rule by rule</b> — commit hygiene, messy commits, what still matters, how to identify a squash repo, which staging guards stand down, which destructive ops stay gated, pushing to origin main</summary>
+
 - **Don't over-invest in commit hygiene.** Skip the surgical one-commit-per-fix
   splitting, the carefully-worded Conventional-Commits bodies, and the
   logical-grouping agonizing. Land fast with a plain, reasonable message and
@@ -57,11 +60,16 @@ not drop back to ordinary permanent-history rules.
   the release commit changes WHAT gets rewritten, not whether a rewrite needs
   the ruleset exemption dance.
 
+</details>
+
 ## The server-side ref-protection block, and its temporary exemption
 
 Clearing the local guards leaves a second wall. Every fleet repo carries two
 repo-level protection rulesets, each created and converged by the one check
 script that owns its shape:
+
+<details>
+<summary><b>Detail</b> — the full list (8 entries)</summary>
 
 - `fleet-main-protection`, from
   `scripts/fleet/check/main-branch-rules-are-enforced.mts`: target `branch`,
@@ -120,6 +128,8 @@ node scripts/fleet/grant-ruleset-bypass.mts <repo> --revoke --tags
 - **Revoke when done.** Waiting for the next `--fix` run works, but leaves a
   live exemption sitting on the repo until then.
 
+</details>
+
 ## Strip attribution with the script, never a rebase dance
 
 When the pre-push gate reports "AI attribution found in commit messages", the
@@ -147,6 +157,9 @@ with no `-S`/`--gpg-sign`. Bypass slug: `history-rewrite`.
 Two defects, both silent, both fatal on a branch whose ruleset requires verified
 signatures:
 
+<details>
+<summary><b>The two defects in full</b> — signatures dropped on every re-created commit, and the original GIT_COMMITTER_* restored so even a re-signed rewrite fails verification</summary>
+
 - **Signatures are dropped.** `filter-branch` re-creates every commit, and a
   re-created commit is unsigned unless you ask for a signature. Nothing warns
   you; the next `commits-are-signed` check or the push itself is the first
@@ -156,6 +169,8 @@ signatures:
   each rewritten commit. So even re-signing with
   `--commit-filter 'git commit-tree -S "$@"'` fails GitHub verification: your
   signature disagrees with the restored committer field.
+
+</details>
 
 Two invariants hold for any rewrite:
 
@@ -210,6 +225,9 @@ tool that handles backups. Recover it with
 
 Three outcomes:
 
+<details>
+<summary><b>The three backup outcomes</b> — pushed to origin, push failed so the consolidate aborts, no origin remote so the backup stays local under the canonical name</summary>
+
 - **Pushed to origin** — the normal case. The original history is recoverable
   from any clone.
 - **Push failed** (auth, branch protection, network) — the consolidate ABORTS.
@@ -219,6 +237,8 @@ Three outcomes:
   same canonical name, and the run says so on its own line. The name stays
   canonical, so the prune and normalize scripts still see a backup that never
   left the machine.
+
+</details>
 
 The backup is never torn down by the script. When the rewrite fails its own
 integrity check the script hard-restores the original tip AND leaves the backup

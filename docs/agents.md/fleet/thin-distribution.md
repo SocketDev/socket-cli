@@ -94,6 +94,9 @@ in the mirror manifest) and the hybrid-spliced files the repo part-owns.
 A bundle update reaches a thin member as a true SYNC, and two different
 mechanisms prune what a new release dropped:
 
+<details>
+<summary><b>The two pruning mechanisms</b> — the per-workspace applied-files record and the blind spots it has, plus the durable tombstone list both installers delete after placement</summary>
+
 - **The applied-files record**: after placing the bundle,
   `pruneStaleFleetFiles()` (`scripts/repo/gen/bootstrap/src/install.mts`) deletes any file the
   LAST-applied manifest owned (the `applied-files` record under
@@ -113,6 +116,8 @@ mechanisms prune what a new release dropped:
   with no applied-files record. A move must ship its deletion: retire a path,
   add its tombstone in the same change. Belt on both legs: a tombstone the
   current bundle ships a file at/under is skipped, never applied.
+
+</details>
 
 The LAW joining the two (`fleetMirroredTombstones` in
 `scripts/repo/sync-scaffolding/manifest/identical-files.mts`): **never

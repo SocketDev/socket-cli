@@ -43,6 +43,9 @@ Treat every line that changed since the base ref as a candidate for a security r
 
 ## Output shape
 
+<details>
+<summary><b>Report skeleton</b> — the header counts plus two finding lists: findings introduced by the diff, and safety mechanisms the diff removed</summary>
+
 ```
 ### Differential Scan (base: <ref>)
 
@@ -66,6 +69,8 @@ Lines removed: D
   Was guarding: <what it protected>
   Action: confirm the protection is still enforced elsewhere, or restore it
 ```
+
+</details>
 
 ## When to run
 

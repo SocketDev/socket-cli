@@ -171,7 +171,8 @@ packages/socket/*.png
 /.claude/reports/
 # Release-only GENERATED hook-dispatch artifacts: all three dispatch-table
 # variants, the rolldown bundles, the native snapshot launcher + its frozen
-# sidecars, and the dispatch manifest. Rebuilt by
+# sidecars, the dispatch manifest, and the ahead-of-time TypeBox
+# validators. Rebuilt by
 # build-hook-bundle / build-hook-snapshot / setup:3-hook-snapshot, shipped in
 # the GitHub-release bundle, NEVER committed to the cascade. Unanchored (**/)
 # so each is ignored in BOTH the repo-root live copy AND the template/base/
@@ -193,6 +194,7 @@ packages/socket/*.png
 **/.claude/hooks/fleet/_shared/dispatch-table-snapshot.mts
 **/.claude/hooks/fleet/_shared/dispatch-table.mts
 **/.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs
+**/.claude/hooks/fleet/_shared/generated-validators.mts
 **/.claude/hooks/fleet/_shared/node.path
 **/.claude/hooks/fleet/_shared/snapshot-blob.path
 **/.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs

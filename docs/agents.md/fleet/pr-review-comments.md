@@ -53,6 +53,10 @@ the author.
   em-dash per sentence.
 - **Verified findings only.** Adversarially verify candidates first; refuted
   candidates never get posted. Cite file/function names as receipts.
+
+<details>
+<summary><b>The other seven rules</b> — attributing self-reports, never repeating a bot, spotting duplicate PRs, verifying reply provenance, no naming bikesheds, the <code>prose</code> skill pass, and comment-only with no approve or request-changes</summary>
+
 - **Attribute or verify a self-report; don't restate it as fact.** When a PR
   author or bot says "I ran X" / "my machine is on 1.15.7" / "N tests pass",
   that's their claim, not your finding. Verify the part you can read (the repo
@@ -85,6 +89,8 @@ the author.
   `gh pr review --request-changes`. A verdict (approve or request changes) is a
   human's to give — the agent leaves findings and flags the PR for the user.
   Enforced by `no-pr-review-verdict-guard`.
+
+</details>
 
 ## Skeleton
 

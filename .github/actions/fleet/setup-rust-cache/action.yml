@@ -81,6 +81,11 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # The runner injects the cache-service credentials into JS actions only;
+    # this bridge exposes them to the run: steps below so the first-party
+    # cache client can reach the v2 service.
+    - name: Expose the Actions runtime credentials
+      uses: ./.github/actions/fleet/expose-actions-runtime
     - name: Resolve rustc version for cache key
       id: rustc-version
       if: inputs.phase == 'restore'

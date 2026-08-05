@@ -72,51 +72,6 @@ than trusting the finding's prose.
 Read [procedure.md](references/procedure.md) for checkpointing, all six phases, scoring,
 and the output contract. Do not skip its no-network or no-target-execution constraints.
 
-## Handoff
-
-Send confirmed findings to [patching-findings](../patching-findings/SKILL.md).
-Context: {mode}; environment = {environment}; scoring = {scoring}; {votes}-vote verification.
-
-## Act on these
-```
-
-**Step 2 — per finding.** For each true_positive in severity order: Write the
-section to `./.triage-state/_chunk.tmp`, then `checkpoint.mts append ./TRIAGE.md
---from ./.triage-state/_chunk.tmp`. Section shape:
-
-```
-### [{severity}] {title}  ({id})
-`{file}:{line}` | {category} | claimed {claimed_severity} (alignment {alignment:+d}) | confidence {confidence}/10
-**Owner:** {owner_hint}
-**Verdict:** {verify_verdict}, votes {vote_breakdown}
-**Preconditions ({n}):** {bulleted}
-**Threat-model match:** {threat_match or "none"}
-**Why:** {rationale}
-**Reachability evidence:** {first_links}
-{if needs_manual_test: > Recommend a human build a PoC; static reasoning hit its limit.}
-```
-
-**Step 3 — footer.** Write the Dropped table to `_chunk.tmp`, then `checkpoint.mts
-append ./TRIAGE.md --from ./.triage-state/_chunk.tmp`:
-
-```
-## Dropped
-
-| id | title | file:line | why dropped |
-{false_positives: refute_reasons + exclusion_rule}
-{duplicates: "duplicate of {duplicate_of}"}
-{unlocatable: "no source location in input"}
-```
-
-**Checkpoint (final):** `checkpoint.mts done ./.triage-state 6`.
-
-### 6d. Terminal summary
-
-The `report` engine call (6a/6b) already prints the counts line, the
-HIGH/MEDIUM/LOW split, and the top HIGH title + owner to stdout — relay it. Add
-the top 3 refute reasons and "Wrote ./TRIAGE.md and ./TRIAGE.json". Keep it under
-~12 lines.
-
 ---
 
 ## Commit cadence

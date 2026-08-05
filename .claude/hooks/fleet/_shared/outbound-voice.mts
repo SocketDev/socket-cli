@@ -26,9 +26,9 @@
 
 import { AI_SLOP_PATTERNS } from './ai-slop-patterns.mts'
 import {
-  HONESTY_FRAMING_RE,
   HONESTY_LABEL,
   HONESTY_WHY,
+  honestyFramingMatch,
 } from './honesty-framing.mts'
 
 /**
@@ -129,6 +129,9 @@ export const VOICE_SLOP_RE: RegExp = new RegExp(
  */
 export interface VoiceSlopHit {
   readonly kind: VoiceSlopKind
+  // The exact token that fired, so reports name what to delete instead of
+  // reciting the pattern's variant list.
+  readonly match: string
   readonly term: string
   readonly why: string
 }
@@ -141,8 +144,14 @@ export function findVoiceSlop(text: string): VoiceSlopHit[] {
   const hits: VoiceSlopHit[] = []
   for (let i = 0, { length } = VOICE_SLOP_PATTERNS; i < length; i += 1) {
     const pattern = VOICE_SLOP_PATTERNS[i]!
-    if (pattern.regex.test(text)) {
-      hits.push({ kind: pattern.kind, term: pattern.term, why: pattern.why })
+    const match = pattern.regex.exec(text)
+    if (match) {
+      hits.push({
+        kind: pattern.kind,
+        match: match[0],
+        term: pattern.term,
+        why: pattern.why,
+      })
     }
   }
   return hits
@@ -173,12 +182,24 @@ export function findUncoveredProseSlop(text: string): VoiceSlopHit[] {
   const hits: VoiceSlopHit[] = []
   for (let i = 0, { length } = AI_SLOP_PATTERNS; i < length; i += 1) {
     const pattern = AI_SLOP_PATTERNS[i]!
-    if (pattern.regex.test(text)) {
-      hits.push({ kind: 'ai-tell', term: pattern.label, why: pattern.why })
+    const match = pattern.regex.exec(text)
+    if (match) {
+      hits.push({
+        kind: 'ai-tell',
+        match: match[0],
+        term: pattern.label,
+        why: pattern.why,
+      })
     }
   }
-  if (HONESTY_FRAMING_RE.test(text)) {
-    hits.push({ kind: 'banned-word', term: HONESTY_LABEL, why: HONESTY_WHY })
+  const honestyMatch = honestyFramingMatch(text)
+  if (honestyMatch !== undefined) {
+    hits.push({
+      kind: 'banned-word',
+      match: honestyMatch,
+      term: HONESTY_LABEL,
+      why: HONESTY_WHY,
+    })
   }
   return hits
 }

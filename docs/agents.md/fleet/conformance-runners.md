@@ -45,6 +45,9 @@ fleet utility reads it.
 
 Examples:
 
+<details>
+<summary><b>Detail</b> — `path`, `url`, `sparse-checkout`</summary>
+
 ```ini
 # .gitmodules
 [submodule "upstream/wpt"]
@@ -59,6 +62,8 @@ Examples:
 ```
 
 Requires git ≥ 2.27 (for `--filter` + `--sparse` on `git clone`).
+
+</details>
 
 ### 2. Runner: thin entry + modular guts
 
@@ -84,6 +89,9 @@ Avoid spawning a persisted `.mjs` _entry file_ inside the binary. If you ever mu
 ### 3. Integration vitest wrapper (auto-gate)
 
 A ~20-line `.test.mts` at `test/integration/<upstream>-<scope>.test.mts` that:
+
+<details>
+<summary><b>Detail</b> — `import path`, `import`, `const`</summary>
 
 1. Resolves the built binary (returns `undefined` if no build exists).
 2. Computes `skipIf` from that.
@@ -121,6 +129,8 @@ describe.skipIf(skipTests)('<upstream> <scope> conformance', () => {
 
 This is what brings the gate into `pnpm test`. Without it, the runner
 is a manual ritual the dev has to remember.
+
+</details>
 
 ### 4. Unit tests for the pure modules
 

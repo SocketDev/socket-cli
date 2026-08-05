@@ -41,6 +41,9 @@ When a parser ships in multiple implementations that must agree behaviorally (e.
 
 Three forms, three jobs:
 
+<details>
+<summary><b>Detail</b> — File-level provenance, Inline cross-references, Lock-step note</summary>
+
 **File-level provenance**: top-of-file `//!` doc comment that names where the canonical source lives. Ports state who they follow; canonical files state who follows them:
 
 ```rust
@@ -82,6 +85,8 @@ In a port (Go/C++/TS), the reference points up at Rust. In Rust (canonical), the
 
 The line `Lock-step with X` says "go look here"; the note `Lock-step note:` says "I already looked, and this is why I'm not matching shape-for-shape". Keep them distinct: a reviewer searching for missing lock-step refs filters by the former; a reviewer auditing _why_ this port diverges filters by the latter.
 
+</details>
+
 ## 6. Don't let lock-step references rot
 
 Paths in `Lock-step with X: <path>:<lines>` are claims about file layout that decay when ports get reorganized. A stale `Lock-step with Rust: crates/parser-stmt/src/...` reference after the `parser-stmt` crate directory is renamed is worse than no reference. It lies to the reader.
@@ -94,6 +99,9 @@ Two cheap defenses:
 ## 7. Lock-step header: byte-identical intent across the quadruplet
 
 Cross-references catch path rot. They don't catch _semantic_ drift, the case where the four impls quietly start disagreeing about what the file is _for_. The convention for that is a top-of-file **Lock-step header** block, byte-identical across every member of the quadruplet:
+
+<details>
+<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
 
 ```rust
 // BEGIN LOCK-STEP HEADER
@@ -132,6 +140,8 @@ Rules:
 - **No timestamps, no authors, no per-impl prose.** Anything that differs between impls goes _outside_ the header (in language-specific doc comments, `// PORT NOTE:` blocks, etc.). The header is the contract; divergence is contraband.
 
 The gate (`scripts/fleet/check/lock-step-headers-match.mts`, registered in the same per-repo opt-in `lock-step-refs.json` under `.config/repo/` as §5–6) walks the quadruplets named by each canonical-side header, extracts the `BEGIN LOCK-STEP HEADER` / `END LOCK-STEP HEADER` block from each peer, and fails CI on any byte-diff. When the canonical impl needs to revise the contract, every peer must update in the same commit.
+
+</details>
 
 ## Scope
 

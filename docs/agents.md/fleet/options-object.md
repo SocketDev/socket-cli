@@ -8,6 +8,9 @@ An options object names the flag: `foo(x, { dry: true })`.
 
 ## Canonical shape
 
+<details>
+<summary><b>The three-step <code>FooOptions</code> example</b>: dual <code>?: T | undefined</code> fields, an <code>options?</code> param with the same dual marker, and the null-prototype spread resolve</summary>
+
 ```ts
 // 1. Declare the interface with every field `?: T | undefined` — both
 //    the optional marker AND the explicit `| undefined`. This satisfies
@@ -34,6 +37,8 @@ export function foo(
   …
 }
 ```
+
+</details>
 
 ## Why `{ __proto__: null, ...options }`
 

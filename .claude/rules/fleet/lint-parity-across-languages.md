@@ -26,6 +26,9 @@ no linter can.
   `.go` / `.c*` / `.h*` by one fleet check-script, not three custom-lint
   frameworks. One scanner, all languages: DRY, and it can't drift between them.
 
+<details>
+<summary><b>The two carve-outs</b> — which JS-only oxlint rules stay unported, and why the Rust deny-set lives in each crate's Cargo.toml instead of clippy.toml</summary>
+
 - **Don't port JS-only rules.** The `vitest-*`, `no-default-export`,
   `no-namespace-import`, `no-promise-race`, `no-top-level-await`, ESM /
   dynamic-import, and `structured-clone` rules have no cross-language meaning —
@@ -42,6 +45,8 @@ no linter can.
   [lints.clippy]
   all = { level = "deny", priority = -1 }
   ```
+
+</details>
 
 ## Coverage: don't chase the tool's artifacts
 

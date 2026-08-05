@@ -61,6 +61,9 @@ out of Bash argv.
 
 State files in `./.threat-model-state/`:
 
+<details>
+<summary><b>Detail</b> — Start of run: resume check, End of every stage N, End of run</summary>
+
 - `progress.json` — single source of truth: `{"status": "running"|"complete",
   "stage_done": N}`. Resume decisions read ONLY this file.
 - `stageN.json` — data payload for stage N (schemas at the tail of each stage).
@@ -84,6 +87,8 @@ State files in `./.threat-model-state/`:
 **End of run.** After writing `<target-dir>/THREAT_MODEL.md`, Bash:
 `node .claude/skills/fleet/_shared/scripts/checkpoint.mts done ./.threat-model-state 5 --key stage`
 
+</details>
+
 ---
 
 ## Stage 1 — Research swarm
@@ -96,6 +101,9 @@ batch of `Task` calls. Each agent gets a narrow brief, the absolute path to
 
 Skip the swarm and run the briefs yourself sequentially if `<target-dir>` is
 small (<50 source files) or `--depth recon` is set.
+
+<details>
+<summary><b>Detail</b> — the full table (17 rows)</summary>
 
 | Agent | Brief | Returns |
 | --- | --- | --- |
@@ -131,12 +139,17 @@ Then `checkpoint.mts save ./.threat-model-state 1 swarm --key stage --from
 ./.threat-model-state/_chunk.tmp`. Skipped agents get an empty list/null. If the
 swarm ran inline, populate the same keys from your sequential passes.
 
+</details>
+
 ---
 
 ## Stage 2 — Synthesize
 
 Turn the swarm returns into `## 1-3` of the schema plus a vuln working table.
 This stage runs in the orchestrating agent; it's the join.
+
+<details>
+<summary><b>Detail</b> — Section 1: System context, Section 2: Assets, Section 3: Entry points & trust boundaries, Vuln working table, Checkpoint</summary>
 
 **Section 1: System context.** From the Docs reader's summary plus your own glance
 at the tree, write 1-2 paragraphs: what it is, language, rough size, who embeds or
@@ -167,6 +180,8 @@ working notes; it does **not** go into `THREAT_MODEL.md` verbatim. It becomes th
 
 Then `checkpoint.mts save ./.threat-model-state 2 synthesize --key stage --from
 ./.threat-model-state/_chunk.tmp`.
+
+</details>
 
 ---
 
@@ -224,6 +239,9 @@ Past vulnerabilities are biased toward what's already been found. For **every
 section 3 entry point that has no section 4 row yet**, walk STRIDE and add the
 plausible ones:
 
+<details>
+<summary><b>Detail</b> — the full table (6 rows)</summary>
+
 | | For this entry point, could an attacker… |
 | --- | --- |
 | Spoofing | …pretend to be a trusted source? |
@@ -256,6 +274,8 @@ out, with the reason.
 Then `checkpoint.mts save ./.threat-model-state 4 gap-fill --key stage --from
 ./.threat-model-state/_chunk.tmp`.
 
+</details>
+
 ---
 
 ## Stage 5 — Emit
@@ -275,6 +295,9 @@ These seed a later `/fleet:threat-modeling interview --seed THREAT_MODEL.md` pas
 Populate `## 8. Recommended mitigations` from the Stage-3c notes: one row per
 class-level mitigation, listing `threat_ids`, `closes_class` (yes/partial),
 `effort` (S/M/L). If two clusters share a control, emit one row with both ids.
+
+<details>
+<summary><b>Writing the file out</b> — chunked assembly in cwd via <code>checkpoint.mts append</code>, the single final Write to <code>&lt;target-dir&gt;/THREAT_MODEL.md</code>, the <code>## 7. Provenance</code> fields, and the closing <code>done</code> checkpoint</summary>
 
 Assemble the file **incrementally** in `./.threat-model-state/THREAT_MODEL.md`
 (one chunk per `## N.` section), then copy the assembled result to
@@ -303,6 +326,8 @@ Set `## 7. Provenance`:
 **Checkpoint (final):** Bash: `node
 .claude/skills/fleet/_shared/scripts/checkpoint.mts done ./.threat-model-state 5
 --key stage`.
+
+</details>
 
 Hand back to the user:
 

@@ -28,6 +28,9 @@ account for bundling, so an AI never squints at the map and concludes wrong.
 - editing the graph through the Edit/Write tools, running its code any other
   way, and every non-inspection command. Those match no rule.
 
+<details>
+<summary><b>Guard mechanics</b> — the pure <code>decideCascadeGraphGuard</code> decision, AST parsing via <code>commandsFor</code>, the CI and non-fleet stand-downs, the stable error code, the bypass phrase, and fail-open behavior</summary>
+
 **Pure decision:** `decideCascadeGraphGuard(command)` returns `{ blocked, reason }`.
 It is exhaustively unit-tested without touching the filesystem. The wrapper adds
 the CI passthrough, the fleet-membership scope stand-down, and the bypass phrase.
@@ -51,3 +54,5 @@ turn — for the genuine case of reading the graph file to edit it by hand.
 
 **Fails open** on parse / payload errors (exit 0) — a guard bug must not wedge
 every Bash call.
+
+</details>

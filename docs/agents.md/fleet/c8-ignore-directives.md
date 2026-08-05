@@ -35,6 +35,9 @@ Place `start` on the line **before** the construct, `stop` on the line **after**
 
 Any of these patterns:
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```ts
 // Multi-line catch body
 } catch (e) {
@@ -69,6 +72,8 @@ Convert each to:
 }
 /* c8 ignore stop */
 ```
+
+</details>
 
 ## Single-line uses are fine
 

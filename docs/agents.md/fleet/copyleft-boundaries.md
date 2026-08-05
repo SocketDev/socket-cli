@@ -173,6 +173,9 @@ still match on a contributor's Mac. `testPathPatterns` are the deliberate
 exception — `**/*_test.go` and `**/testdata/**` are depth-any *by design*,
 because a test corpus is spread through the tree.
 
+<details>
+<summary><b>Keeping the predicate and git in agreement</b>: <code>copyleftGlobToRegExp()</code> mirrors gitignore anchoring, the sparse allowlist compares verbatim, and cone-widening sparse-checkout commands are refused outright</summary>
+
 `copyleftGlobToRegExp()` mirrors these gitignore rules exactly — leading `/`
 anchors, a slash-less pattern floats — so the in-process predicate and git
 itself agree on what a pattern admits. That agreement is the point: when they
@@ -184,6 +187,8 @@ Widening that cone is itself blocked: `git sparse-checkout disable` and
 `reapply` are refused outright on a copyleft submodule, and `set` / `add` are
 refused for any pattern not on the allowlist. Once the cone is wide, every later
 read looks like an ordinary local file, so the cone is the real perimeter.
+
+</details>
 
 ## Enforcement
 

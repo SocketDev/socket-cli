@@ -42,6 +42,9 @@ The `kind` literal on each row is the dispatch key (`schema.mts:168-183`,
 dispatcher in `cli.mts:54-95`; an unknown kind is an error, never a silent
 skip):
 
+<details>
+<summary><b>The five kinds</b> — file-fork, version-pin, feature-parity, spec-conformance, lang-parity: what each row declares and what counts as drift</summary>
+
 - **`file-fork`** — a local file derived from an upstream file, with a
   mandatory non-empty `deviations` list ("zero deviations = don't fork,
   consume upstream directly" — `schema.mts:206-210`). Drift = upstream commits
@@ -82,6 +85,8 @@ skip):
   anti-patterns: every port must be `opt-out`, and a port flipping to
   `implemented` drifts as "rejected anti-pattern reintroduced"
   (`checks.mts:391-401`).
+
+</details>
 
 `checkCrossRowConsistency` (`checks.mts:417-467`) layers referential integrity
 on top of schema validation: ids unique per area (not globally), `upstream`
@@ -127,6 +132,9 @@ an upstream project, so its conformance gate reuses the upstream's OWN test
 suite instead of hand-porting it. Four rules, all mandatory — each proven in
 production by the stuie port, opentui to Rust at 170/170 upstream
 conformance:
+
+<details>
+<summary><b>The four rules</b> — drive the upstream suite through a shim, alias by on-disk overlay, run from an os.tmpdir() copy, and share module identity with the sandbox barrel</summary>
 
 1. **Drive the upstream suite through a shim; never rewrite it.** Expose the
    local port under the upstream's exact public API through an adapter — a
@@ -179,6 +187,8 @@ conformance:
    — never a parallel copy of the shims, which fails identity even when the
    exports match shape-for-shape.
 
+</details>
+
 Enforcement today is this doctrine plus the CLAUDE.md conformance bullet. A
 mechanical guard that flags a test-runner invocation whose path points inside
 an `upstream/` submodule without a tmp copy is future work: a robust check is
@@ -190,6 +200,9 @@ flaky gate.
 How a port fix lands once drift surfaces — a `version-pin` bump breaking the
 gate, a parity-floor breach, a red conformance suite. Same provenance as the
 harness rules above: each rule was validated in production by the stuie port.
+
+<details>
+<summary><b>The five rules</b> — upstream ground truth with file:line evidence, adversarial tests where upstream has none, an independent verify pass, hard time-boxes that revert and defer, and the measure-first policy for perf rewrites</summary>
 
 - **Upstream ground truth first.** Before fixing any gap, derive upstream's
   ACTUAL behavior from its sources with file:line evidence, then implement
@@ -223,6 +236,8 @@ harness rules above: each rule was validated in production by the stuie port.
   [`portable-microarch.md`](portable-microarch.md) — runtime dispatch for
   distributed targets, floor pins only for controlled ones.
 
+</details>
+
 ## Verbatim mirrors — the `@lockstep-mirror` exemption
 
 Some `file-fork` copies are **verbatim upstream mirrors**: kept byte-close to
@@ -238,6 +253,9 @@ That legitimately fights the fleet fidelity rules — `no-default-export`,
 
 A mirror declares itself with ONE header line in its leading comment block, the
 single-file analogue of the multi-file `BEGIN LOCK-STEP HEADER` block:
+
+<details>
+<summary><b>Detail</b> — the commands</summary>
 
 ```ts
 // @lockstep-mirror packages/core/src/lib/yoga.ts @ 0c8c4f7cff2927e3df63a9757a45eff9a343611c
@@ -275,11 +293,16 @@ missing its marker or its .prettierignore entry fails. It also re-asserts that
 a file-scope disable on a mirror names only exempt rules. So the exemption can't
 be pasted onto an arbitrary file and can't silently drift from the pin.
 
+</details>
+
 ## Pin the latest release — always
 
 Porting an upstream means the LATEST shipped release, not a stale or inherited
 pin. Before adding or changing a `version-pin` row or a `.gitmodules` submodule
 pin:
+
+<details>
+<summary><b>Detail</b> — Never add a port-completion marker</summary>
 
 1. `git fetch --tags` in the submodule so the local view is current.
 2. Pin the NEWEST release with `gen/gitmodules-hash.mts --set`, which writes
@@ -306,6 +329,8 @@ counting and reports drift UNKNOWN rather than a stale count. Motivating
 incident: an opentui pin at v0.1.99 — 211 commits and 3 minor releases behind
 v0.4.5 — against which ~31k lines were ported before the drift was noticed. The
 fleet-wide framing lives in [`drift-watch.md`](drift-watch.md).
+
+</details>
 
 ## Running it
 

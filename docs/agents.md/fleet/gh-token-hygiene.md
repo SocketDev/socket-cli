@@ -52,6 +52,9 @@ After this, every bypass-authorized refresh pops a Touch ID dialog. No password 
 
 > **MDM-managed machines (iru / Jamf / Mosyle / Kandji):** the osascript password-dialog fallback is typically blocked by org policy ("Process Blocked: osascript"). On these boxes Touch ID is the **only** working physical-presence path. The hook detects the block via a cheap headless probe and skips the dialog automatically (no toast spam); the error message points back to this Touch ID setup. If your Mac doesn't have Touch ID hardware AND your org blocks osascript, the workflow-scope path is effectively closed — flag that with IT or use a non-MDM machine for releases.
 
+<details>
+<summary><b>PAM deep dive</b> — the tee command line by line, why the control flag is sufficient rather than required or requisite, why not to edit /etc/pam.d/sudo directly, verifying with sudo -k then sudo -v, and undoing the change</summary>
+
 #### What the command does, line by line
 
 - **`sudo tee /etc/pam.d/sudo_local`**: writes to `/etc/pam.d/sudo_local`, which requires root privileges. `sudo tee` is the canonical pattern for "write a file as root from a normal shell". `tee` reads stdin and writes it to the file; `sudo` elevates `tee` so it can write into `/etc/pam.d/`. (Plain shell redirection `> /etc/pam.d/sudo_local` wouldn't work; the redirection happens in your unprivileged shell BEFORE sudo runs.) The very first `sudo` invocation here is the bootstrap one. Touch ID isn't configured yet, so this one prompts for your password the conventional way. Every sudo invocation after this point gets the Touch ID option.
@@ -102,6 +105,8 @@ sudo rm /etc/pam.d/sudo_local
 ```
 
 After this, sudo is back to its default (password only). The hook's auth flow will still work via the osascript password dialog path.
+
+</details>
 
 ## 3. 8-hour token age cap
 

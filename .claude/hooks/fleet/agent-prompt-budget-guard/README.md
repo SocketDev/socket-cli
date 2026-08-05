@@ -34,13 +34,22 @@ Fires only when **all** hold:
   inherits the original brief's budget),
 - the prompt is at least **500 words** (short one-shots pass through),
 - the prompt carries an **open-ended signal** (`audit`, `investigate`,
-  `research`, `sweep`, `end-to-end`, `root cause`, `wherever`, …), and
+  `research`, `sweep`, `end-to-end`, `root cause`, `wherever`, …),
+- that signal sits where the brief **instructs**: quoted and code spans are
+  blanked first, and a word that doubles as a fleet noun (`audit`, `catalog`,
+  `diagnose`, `explore`, `inventory`, `migrate`, `research`, `survey`, `sweep`,
+  `triage`) counts only in a verb position, so `pnpm audit`, `catalog.mts`,
+  `diagnoseStageConflict`, `--audit`, `audit-driven`, "the repo's audit", and
+  "sweep results" all read as prose (`signal-position.mts`), and
 - it is missing **both** a budget and a done-condition.
 
 ## Where the two thresholds come from
 
 Both were measured against 2,100 real spawns from 2026-07-01 to 2026-08-03
 rather than picked by feel.
+
+<details>
+<summary><b>Detail</b> — Bypass</summary>
 
 | Setting | First cut | Shipped | Why it moved |
 | --- | --- | --- | --- |
@@ -63,11 +72,18 @@ Detection is regex over prose — no shell binary appears in any pattern, so
 "N minutes" or "N tool calls", which are the natural spellings the doctrine
 asks us to accept.
 
-**Known false negative, chosen:** a long but tightly-scoped brief with no
+**Known false negatives, chosen:** a long but tightly-scoped brief with no
 open-ended verb passes. A false positive on every spawn would get this hook
 deleted within a day; the doc's own example of the failing shape is "Audit our
-cascade infrastructure".
+cascade infrastructure". An inflected form is a longer word than its signal, so
+"auditing every consumer" reads as prose the same way every signal's other
+inflections do, and a brief whose only open-ended words sit inside quotation
+marks passes, which is the price of reading a quoted incident title or a pasted
+upstream sentence as a citation. A quoted span never crosses a newline, so
+quoting cannot blank a whole brief.
 
 **Bypass:** `Allow agent-budget bypass` in a recent turn.
 
 Detail: [`agent-delegation`](../../../../docs/agents.md/fleet/agent-delegation.md).
+
+</details>

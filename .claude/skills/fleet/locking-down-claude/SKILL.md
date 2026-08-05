@@ -49,6 +49,9 @@ The official permission flow (1) hooks → (2) deny rules → (3) permission mod
 
 ## Recipe: read-only agent (audit, classify, summarize)
 
+<details>
+<summary><b>SDK form</b>: <code>query()</code> with <code>tools</code> and <code>allowedTools</code> at Read/Grep/Glob, the full deny list, and <code>permissionMode: 'dontAsk'</code></summary>
+
 ```ts
 import { query } from '@anthropic-ai/claude-agent-sdk'
 
@@ -71,6 +74,8 @@ query({
   },
 })
 ```
+
+</details>
 
 CLI form for workflow YAML / shell scripts:
 

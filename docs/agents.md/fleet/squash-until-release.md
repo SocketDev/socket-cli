@@ -65,6 +65,9 @@ The squash window is bounded by **two** events, and it closes at whichever comes
 first. The check enforces the release one. The other is going public, and it is
 worth understanding because it is what makes the flatten physically possible.
 
+<details>
+<summary><b>What makes the force-push possible</b> — the enterprise ruleset that rejects it, the two org custom properties that exempt a member, and the onboarding stage that sets them</summary>
+
 `squashing-history` finishes with `git push --force-with-lease` to the default
 branch. Enterprise-level rulesets apply to new SocketDev repos and are not
 repo-disableable — they require a PR and a passing "Audit GHA Workflows"
@@ -86,6 +89,8 @@ impermanence.
 > without `--skip-github`, which syncs the property seed right after the roster
 > write. A member registered with `--skip-github` still owes that sync — re-run
 > the stage.
+
+</details>
 
 So in practice: history is malleable while a member is **private and
 unreleased**. Anyone reaching for a squash after either transition is fighting

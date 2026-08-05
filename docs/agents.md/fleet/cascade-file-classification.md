@@ -55,6 +55,9 @@ config decides what's active.
 A fleet-managed region is delimited by HTML-element-like open/close markers; only
 the surrounding comment delimiter changes per file syntax.
 
+<details>
+<summary><b>Detail</b> — the full table (3 rows)</summary>
+
 | Comment style                                                                             | Open marker                  | Close marker                  |
 | ----------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- |
 | HTML (`CLAUDE.md`, `README.md`)                                                           | `<!-- <fleet-canonical> -->` | `<!-- </fleet-canonical> -->` |
@@ -83,3 +86,5 @@ the balance/malformed rule — so the grammar can't drift between consumers. Old
 markers (uppercase `FLEET-CANONICAL`, the reordered `#fleet-canonical-begin`)
 are matched leniently so a member repo migrates to the canonical form on its
 next cascade.
+
+</details>

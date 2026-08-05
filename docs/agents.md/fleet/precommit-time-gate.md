@@ -19,6 +19,10 @@ for `--no-verify`, which is worse than a slightly-looser gate.
   `PRECOMMIT_STEP_BUDGET_S` (≤ 10s) kills the whole group (TERM then KILL) and
   fails OPEN. A real lint/test FAILURE (clean non-zero before the budget) still
   BLOCKS the commit; only a budget-exceeding HANG is skipped.
+
+<details>
+<summary><b>The other three rules</b> — skipping the pnpm wrapper and its Socket Firewall shim cost, the <code>GATE INCOMPLETE</code> banner for a step that never gated, and the whole-tree net that lives at pre-push and CI</summary>
+
 - **Skip the package-manager wrapper.** `run_pkg_step_bounded <script>` reads the
   repo's `package.json` script body and, when it is exactly `node <path>`, runs
   that path directly under the repo-pinned node `_shared/resolve-node.sh` put on
@@ -38,6 +42,8 @@ for `--no-verify`, which is worse than a slightly-looser gate.
 - **The whole-tree net is elsewhere.** Correctness across the full workspace is
   the pre-push `--all` gate + CI, not the commit hook. Skipping a hung step at
   commit time is safe because the merge path re-runs everything.
+
+</details>
 
 ## Enforcement
 

@@ -4,21 +4,21 @@ PreToolUse Bash hook that blocks destructive git commands and hook bypasses unle
 
 ## What it blocks
 
-| Pattern                                                     | Bypass phrase             |
-| ----------------------------------------------------------- | ------------------------- |
-| `git checkout -- <files>` / `git checkout <ref> -- <files>` | `Allow revert bypass`     |
-| `git restore <files>` (without `--staged`)                  | `Allow revert bypass`     |
-| `git reset --hard`                                          | `Allow revert bypass`     |
-| `git stash drop` / `git stash pop` / `git stash clear`      | `Allow revert bypass`     |
-| `git clean -f` (and variants)                               | `Allow revert bypass`     |
-| `git rm -r{f,}`                                             | `Allow revert bypass`     |
-| `git stash` (bare / `push` / `save` / `--keep-index`)       | `Allow stash bypass`      |
-| `--no-verify`                                               | `Allow no-verify bypass`  |
-| `HUSKY=0 git …` / `export HUSKY=0`                          | `Allow no-verify bypass`  |
-| `-c core.hooksPath=<path>` / `--config-env=core.hooksPath=<VAR>` / `GIT_CONFIG_KEY_<i>=core.hooksPath`, on a subcommand that runs hooks | `Allow no-verify bypass`  |
-| `--no-gpg-sign` / `commit.gpgsign=false`                    | `Allow gpg bypass`        |
-| `SKIP_ASSET_DOWNLOAD=1`                                     | `Allow asset-download bypass` |
-| Bash file-write (`python -c '…write…'`, heredoc `> file`, `tee <file>`, `dd of=…`) | `Allow bash-write bypass` |
+| Pattern                                                                                                                                 | Bypass phrase                 |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `git checkout -- <files>` / `git checkout <ref> -- <files>`                                                                             | `Allow revert bypass`         |
+| `git restore <files>` (without `--staged`)                                                                                              | `Allow revert bypass`         |
+| `git reset --hard`                                                                                                                      | `Allow revert bypass`         |
+| `git stash drop` / `git stash pop` / `git stash clear`                                                                                  | `Allow revert bypass`         |
+| `git clean -f` (and variants)                                                                                                           | `Allow revert bypass`         |
+| `git rm -r{f,}`                                                                                                                         | `Allow revert bypass`         |
+| `git stash` (bare / `push` / `save` / `--keep-index`)                                                                                   | `Allow stash bypass`          |
+| `--no-verify`                                                                                                                           | `Allow no-verify bypass`      |
+| `HUSKY=0 git …` / `export HUSKY=0`                                                                                                      | `Allow no-verify bypass`      |
+| `-c core.hooksPath=<path>` / `--config-env=core.hooksPath=<VAR>` / `GIT_CONFIG_KEY_<i>=core.hooksPath`, on a subcommand that runs hooks | `Allow no-verify bypass`      |
+| `--no-gpg-sign` / `commit.gpgsign=false`                                                                                                | `Allow gpg bypass`            |
+| `SKIP_ASSET_DOWNLOAD=1`                                                                                                                 | `Allow asset-download bypass` |
+| Bash file-write (`python -c '…write…'`, heredoc `> file`, `tee <file>`, `dd of=…`)                                                      | `Allow bash-write bypass`     |
 
 The three hook-chain rows share one phrase because they are one decision with
 one outcome: the `.git-hooks/` chain does not run. The `core.hooksPath` rule
@@ -26,14 +26,26 @@ stands down when the command names another repository (`-C` / `--git-dir`
 outside the acting repo, or a `cd` out of the fleet), which is the hardening
 idiom `docs/agents.md/fleet/untrusted-cwd.md` mandates for a scanned checkout.
 
+## Which repository it reads
+
+A `git -C <dir>` points the command at another checkout, so the unconditional
+unbacked-reset gate gathers its facts THERE: the commits ahead of the reset
+target, the files only that HEAD carries, and the refs that would still hold
+them after the reset lands. Resolution order is the destructive invocation's own
+`-C`, then the tool call's acted-on path (which follows a `cd`), then the hook's
+project dir — `target-repo.mts`, over the one `-C` parser in
+`_shared/git-cwd.mts`. Reading the session's own checkout instead named this
+repo's HEAD as the at-risk commit and missed a backup branch that existed in the
+targeted repo.
+
 ## Inline sentinels (scoped auto-bypass)
 
 Two batch flows run the same blocked operations many times and would otherwise need a fresh typed phrase per command. Each marks intent with an inline `NAME=1` assignment (opt-in per command — no global env poisoning), scoped to exactly the operations that flow needs. Anything else carrying the sentinel falls through to the normal blocking checks.
 
-| Sentinel          | Flow                  | Allows only                                                                                                                                                |
-| ----------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FLEET_SYNC=1`    | wheelhouse cascade    | `git commit` whose message starts `chore(wheelhouse): cascade template@`; any `git push`                                                                   |
-| `SQUASH_HISTORY=1`| `squashing-history` skill | a single un-chained `git commit --amend -m "chore: initial commit"` (this guard); a single un-chained `git push --force`/`--force-with-lease` to a bare remote + one plain branch ref (`no-force-push-guard`) |
+| Sentinel           | Flow                      | Allows only                                                                                                                                                                                                   |
+| ------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FLEET_SYNC=1`     | wheelhouse cascade        | `git commit` whose message starts `chore(wheelhouse): cascade template@`; any `git push`                                                                                                                      |
+| `SQUASH_HISTORY=1` | `squashing-history` skill | a single un-chained `git commit --amend -m "chore: initial commit"` (this guard); a single un-chained `git push --force`/`--force-with-lease` to a bare remote + one plain branch ref (`no-force-push-guard`) |
 
 `SQUASH_HISTORY=1` is hardened against malicious bypass, a poisoned prompt riding the sentinel to clobber a remote or chain extra work: the shared `_shared/squash-sentinel.mts` parses the command and honors the sentinel **only** when the line is exactly one statically-resolved `git` segment — no `&&`/`;`/`|` chaining, no `$(…)` substitution, no `$VAR`/`eval` indirection, no extra inline env assignment, no refspec (`src:dst`) / `--mirror` / `--all` / `--delete` / `--no-verify` on the push.
 
@@ -61,6 +73,7 @@ The hook fails open on its own bugs (exit 0 + stderr log) so a bad deploy of the
 
 - `index.mts` — the hook itself
 - `hooks-path.mts` — the `core.hooksPath` detector, the git subcommands that consult it, and the foreign-repository carve-out
+- `target-repo.mts` — which repository a destructive command acts on, so every git read runs in the repo the command targets
 - `package.json` — declares the hook as a workspace package (taze sees it via `pnpm-workspace.yaml`'s `packages: ['.claude/hooks/*']`)
 - `tsconfig.json` — fleet-canonical TS config for hooks
 - `test/` — node:test runner specs (run via `pnpm exec --filter hook-no-revert-guard test` or `node --test test/*.test.mts`)

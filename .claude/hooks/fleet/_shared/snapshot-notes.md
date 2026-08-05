@@ -20,6 +20,9 @@ The 10 that previously could not freeze — 8 acorn-WASM guards + check-new-deps
 (SDK) + brew-supply-chain-guard (semver) — are now all snapshot-safe via lazy
 deferral of the module-eval native-handle captures:
 
+<details>
+<summary><b>The three deferrals</b> — acorn-WASM lazy bindgen + WASM path resolution, check-new-deps' dynamic SDK import plus the cacache stub, brew-supply-chain-guard's lazy-semver Proxy</summary>
+
 1. **8 acorn-WASM guards.** `_shared/ast/core.mts` no longer requires the
    vendored `acorn-bindgen.cjs` at module-eval — the require (hence the WASM
    instantiation) is DEFERRED to first parse. `acorn-bindgen.cjs` ALSO defers its
@@ -50,6 +53,8 @@ deferral of the module-eval native-handle captures:
    stubs `versions/_internal.js` with a lazy per-property forwarding `impl` Proxy
    (semver loads on first CALL, never on the boot path).
 
+</details>
+
 The lib-side AsyncLocalStorage deferral (`env/rewire.js` + `themes/context.js`)
 is a behavior-preserving in-memory transform applied by `lib-snapshot-fix.mts`
 (reads the store source, rewrites just the eager `new AsyncLocalStorage()` into a
@@ -63,6 +68,9 @@ SPINNER at module-eval. socket-lib commit **fb669ee8** made that spinner lazy.
 Probing the full 180-hook `--build-snapshot` proved fb669ee8 fixes ONE class but
 the lib pervasively captures OTHER native `[Foreign]` handles at module-eval that
 fb669ee8 did not touch. Full set found + deferred for the snapshot build:
+
+<details>
+<summary><b>The seven module-eval captures</b> — eager SPINNER, shared ABORTSIGNAL in 7 dist files, AsyncLocalStorage, SignalExit, the yocto-spinner factory, the stubbed spinner-color graph, and the styleText/tty/warning build-pass shims</summary>
 
 1. **eager default SPINNER** — `child.js`, `prompts.js` (the fb669ee8 class).
 2. **eager shared ABORTSIGNAL** — `const abortSignal = getAbortSignal()` at
@@ -83,6 +91,8 @@ fb669ee8 did not touch. Full set found + deferred for the snapshot build:
    `process.stdout` → materializes the stdout socket) + `node:tty`
    WriteStream.prototype.hasColors + process `warning` emission (each materializes
    a stdio stream → handle).
+
+</details>
 
 The lib-side deferrals (1–5) live in a fixed lib DIST OVERLAY served at build time
 by `.config/repo/rolldown/lib-snapshot-fix.mts` (the real path is the upstream lib
@@ -121,6 +131,9 @@ and the lazy bindgen reads `acorn.wasm` from `path.join(__dirname, 'acorn.wasm')
 
 The 66 then-excluded hooks split into three structural buckets:
 
+<details>
+<summary><b>Detail</b> — the full table (4 rows)</summary>
+
 | bucket | count | why excluded | now |
 | --- | --- | --- | --- |
 | eligible (bundled) | 124 | snapshot-clean module-eval graph | → 180 (A) |
@@ -156,6 +169,8 @@ What the two completed steps added vs the prior 97-hook state:
   deep-imports `sorts/natural`, which pulls `external/semver.js`, for
   `naturalCompare` only).
 
+</details>
+
 ## Irreducible exclusions: NONE — and where the permanent fixes belong
 
 There are no irreducible exclusions left. WebAssembly **can** be instantiated at
@@ -167,6 +182,9 @@ only USED inside function bodies, so moving the construction to first use is
 behavior-preserving and lets the module freeze. All 190 hooks now satisfy this.
 
 What stays a PROTOTYPE in this worktree vs the permanent home:
+
+<details>
+<summary><b>Prototype vs permanent home</b> — the acorn bindgen generator fix, the upstream lib deferrals for AsyncLocalStorage / semver / cacache, and why the SDK lazy import needs nothing upstream</summary>
 
 1. **acorn bindgen lazy-WASM** (`acorn-bindgen.cjs`) is a refresh-clobbered
    GENERATED artifact (per `paths.mts:VENDORED_ACORN_FILES`) — the worktree edit
@@ -186,6 +204,8 @@ What stays a PROTOTYPE in this worktree vs the permanent home:
    the SDK client + defer its inlined lib AsyncLocalStorage, but the dynamic
    import already fully defers the barrel, so no upstream change is required for
    the snapshot to work.
+
+</details>
 
 ## Build / boot / equivalence at full coverage
 
@@ -245,6 +265,9 @@ the launcher ~null-cost. Fail-open is total — a missing/blank sidecar, a vanis
 blob, or any error falls open to `node index.cjs <Event>`, the always-correct
 compile-cache path (same fail-open target `snapshot-loader.cjs` uses).
 
+<details>
+<summary><b>Fail-open coverage</b> — why falling open to <code>node index.cjs</code> now runs the complete 190-hook set, and what the retired hybrid's bundle-B gap used to cost</summary>
+
 **FAIL-OPEN COVERAGE — now FULL, the hybrid caveat is retired:** with all 190
 hooks in the single frozen bundle, `index.cjs` requires `fleet-pack.cjs` = **the same
 full 190-hook set** the snapshot freezes (both compile from `dispatch-table.mts`
@@ -254,6 +277,8 @@ via `dispatch-entry.mts` → `runDispatcherCli`). So a launcher fail-open to
 The launcher's fail-open target is fully equivalent to the fast path. (Confirmed:
 `snapshot blob == index.cjs == live _shared/dispatch.mts`, all 190 hooks, every
 fixture below, on Node 22 / 24 / 26.)
+
+</details>
 
 ### Launcher overhead (measured, macOS arm64, Node 24.12.0, hyperfine)
 
@@ -320,6 +345,9 @@ linux-arm64 1.31×, linux-x64 1.36×). But Claude Code invokes a fixed
 launcher binary is per-os/arch + per-runtime (built per machine, gitignored), so
 the wiring is TWO layers:
 
+<details>
+<summary><b>Detail</b> — WINDOWS</summary>
+
 1. **The cascaded, fleet-canonical baseline — `settings.json` → `node
    ".../index.cjs" <Event>`.** The V8 COMPILE-CACHE path. `index.cjs` requires
    `fleet-pack.cjs` = the COMPLETE 190-hook set (same `dispatch-table.mts` the
@@ -353,6 +381,8 @@ is CI-confirm-only. So the setup step builds the `.exe` but, by DEFAULT, LEAVES
 Windows on the compile-cache baseline; pass `--win-launcher` to wire the `.exe`
 once Windows CI confirms the win. Correctness is identical either way via
 fail-open.
+
+</details>
 
 ## Provisioning — local setup + the CI image-bake
 

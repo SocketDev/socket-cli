@@ -49,6 +49,9 @@ saying is the opposite of slop: it compresses a judgment into shared
 vocabulary. Lean Gen X / late-millennial: working-life and gaming idiom over
 corporate or internet-meme registers.
 
+<details>
+<summary><b>Detail</b> — the full list (8 entries)</summary>
+
 - **The idiom decorates a plain claim, never replaces it.** "The guard-event
   log is already earning its keep — it flagged two retry-suspects this week"
   works because the receipt is right there. An idiom with no fact behind it is
@@ -81,6 +84,8 @@ A working set, by register (grow it — the point is a voice, not a whitelist):
   up · speedrun · receipts (evidence — already doctrine) · living rent-free ·
   chef's kiss · big &lt;X&gt; energy · full-circle moment · on brand · vibe
   check (sparingly) · galaxy-brain (pejorative: over-clever)
+
+</details>
 
 ## Anti-patterns (both modes)
 

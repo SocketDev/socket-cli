@@ -361,7 +361,8 @@ function readAppliedFiles(dest) {
 function writeAppliedFiles(dest, files) {
   const p = path.join(dest, APPLIED_FILES_MARKER)
   mkdirSync(path.dirname(p), { recursive: true })
-  writeFileSync(p, `${files.map(normalizeBundlePath).toSorted().join('\n')}\n`)
+  const normalized = files.map(normalizeBundlePath).toSorted()
+  writeFileSync(p, `${normalized.join('\n')}\n`)
 }
 function writeAppliedRef(dest, ref) {
   const p = path.join(dest, APPLIED_MARKER)
@@ -1177,7 +1178,8 @@ function installSegments(segmentsDir, dest, manifest) {
   if (!segments || segments.length === 0) return
   for (const entry of segments) {
     const destName = segmentFileName(entry.path)
-    const fleetBlock = readFileSync(path.join(segmentsDir, destName), 'utf8')
+    const blockPath = path.join(segmentsDir, destName)
+    const fleetBlock = readFileSync(blockPath, 'utf8')
     const targetPath = path.join(dest, entry.path)
     const existing = existsSync(targetPath)
       ? readFileSync(targetPath, 'utf8')
@@ -1208,11 +1210,13 @@ function installSettingsSegment(segmentsDir, dest, manifest) {
   }
   const targetPath = path.join(dest, segment.path)
   try {
+    const fleetSettings = JSON.parse(readFileSync(sourcePath, 'utf8'))
+    const repoSettings = existsSync(targetPath)
+      ? JSON.parse(readFileSync(targetPath, 'utf8'))
+      : void 0
     const merged = mergeClaudeSettings({
-      fleetSettings: JSON.parse(readFileSync(sourcePath, 'utf8')),
-      repoSettings: existsSync(targetPath)
-        ? JSON.parse(readFileSync(targetPath, 'utf8'))
-        : void 0,
+      fleetSettings,
+      repoSettings,
     })
     mkdirSync(path.dirname(targetPath), { recursive: true })
     writeFileSync(targetPath, `${JSON.stringify(merged, void 0, 2)}\n`)
@@ -1245,14 +1249,12 @@ function installWorkspaceSegment(segmentsDir, dest, manifest) {
     ? readFileSync(targetPath, 'utf8')
     : ''
   try {
-    writeFileSync(
-      targetPath,
-      mergeWorkspaceYaml({
-        bundleFleetSections,
-        consumerYaml,
-        fleetKeys: ws.fleetKeys,
-      }),
-    )
+    const merged = mergeWorkspaceYaml({
+      bundleFleetSections,
+      consumerYaml,
+      fleetKeys: ws.fleetKeys,
+    })
+    writeFileSync(targetPath, merged)
   } catch (e) {
     logger$4.log(
       `install-fleet: pnpm-workspace.yaml merge failed — ${errorMessage(e)}. Nothing written.`,
@@ -1385,16 +1387,17 @@ function applyThinMode(config) {
     line => !priorBlockLines.includes(line),
   )
   const blockLines = [...priorBlockLines, ...untrackLines]
-  writeFileSync(
-    gitignorePath,
-    spliceFleetBlock({
-      commentStyle: 'hash',
-      fleetBlock: [beginMarker('hash'), ...blockLines, endMarker('hash')].join(
-        '\n',
-      ),
-      target: existing,
-    }),
-  )
+  const fleetBlock = [
+    beginMarker('hash'),
+    ...blockLines,
+    endMarker('hash'),
+  ].join('\n')
+  const updated = spliceFleetBlock({
+    commentStyle: 'hash',
+    fleetBlock,
+    target: existing,
+  })
+  writeFileSync(gitignorePath, updated)
   const rmTargets = ['.agents/', ...sortedRoots]
   if (rmTargets.length > 0)
     try {
@@ -1558,7 +1561,7 @@ function formatLockStepError(parts) {
   ].join('\n')
 }
 const NOTICE_STORE_REL = '.cache/fleet/socket-wheelhouse/update-notice.json'
-const TWENTY_FOUR_HOURS_MS = 1440 * 60 * 1e3
+const TWENTY_FOUR_HOURS_MS = 864e5
 const UPDATE_NOTIFIER_OPT_OUT_ENV = 'WHEELHOUSE_NO_UPDATE_NOTIFIER'
 function readNoticeStore(dest) {
   const p = path.join(dest, NOTICE_STORE_REL)
@@ -2277,15 +2280,16 @@ function runStatus(config) {
   }
   const pinnedTemplateSha = resolveReleaseTemplateSha(ref, repo)
   const newestRef = resolveNewestRef(repo)
+  const newestTemplateSha =
+    newestRef === void 0
+      ? void 0
+      : newestRef === ref
+        ? pinnedTemplateSha
+        : resolveReleaseTemplateSha(newestRef, repo)
   const state = resolveLockStepState({
     config: lockStepConfig,
     newestRef,
-    newestTemplateSha:
-      newestRef === void 0
-        ? void 0
-        : newestRef === ref
-          ? pinnedTemplateSha
-          : resolveReleaseTemplateSha(newestRef, repo),
+    newestTemplateSha,
     pinnedTemplateSha,
   })
   if (cfg.json) {

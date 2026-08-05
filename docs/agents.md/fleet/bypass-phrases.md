@@ -8,6 +8,9 @@ The phrase format is `Allow <X> bypass`. Case-insensitive; hyphens, spaces, and 
 
 The trailing `bypass` keyword is the **anti-false-positive anchor** — it keeps a bare `Allow <slug>` that appears in casual prose from silently disarming a guard. So it is **REQUIRED by default (strict)**:
 
+<details>
+<summary><b>Detail</b> — the full table (29 rows)</summary>
+
 - **SECURITY guards → strict (suffix REQUIRED).** Anything tracked/enforced by Socket.dev or Socket Firewall (soak / `minimumReleaseAge`, brew / package-manager supply chain), any security tool, exfil vector (clipboard, screenshot, non-fleet push/publish), edit-guard evasion (bash-write, sed-in-place), or destructive/irreversible op (force-push, revert, no-verify, gpg, workflow-dispatch). The full `Allow <slug> bypass` must be typed.
 - **LOW-RISK guards → the `bypass` keyword is OPTIONAL** (`Allow <slug>` ≡ `Allow <slug> bypass`). Only for guards whose worst case is benign (cosmetic / quality / process style) or genuinely backstopped — e.g. **pushing the protected default branch** (`push-protected-branch-guard`), where GitHub branch protection is the real final gate. A guard opts in with `bypassOptional: true` (`defineHook`), threaded through `phrasePattern`'s `optionalSuffix`.
 
@@ -44,6 +47,8 @@ The `force-with-lease <branch>` combo stays **strict** even on the otherwise-low
 | Reading the CONTENT of a copyleft upstream's implementation: a non-test `upstream/<repo>/…` Read, a `cat`-family reader, a line-printing `rg`/`grep`, `find … -exec`, a `gh api …/contents/…` or `curl`/`wget` of its source, a `git show`/`cat-file`/`archive` of a non-test blob, or a cone-widening `git sparse-checkout` (`no-copyleft-source-read`). Enumeration is always allowed and needs no bypass: `ls`/`tree`/`find`, `git ls-tree`, Glob, a directory Read, `rg -l`. Copyleft upstreams are RUN and OBSERVED via their own tests only; deriving from the implementation forces the upstream's license onto the consuming package. Reserved for a genuine license audit, never for building a derivation.                                                    | `Allow copyleft-source-read bypass`                                                        |
 | Adding a repo-specific path-glob into a fleet-canonical config (`overrides[].files` / `ignorePatterns` in `template/base/.config/fleet/oxlintrc.json` etc.) — a fleet glob must be universal (`**/`-anchored or a bare extension), so a one-repo tree like `packages/npm/**` is blocked (`no-repo-scope-in-fleet-config-guard`). For the rare path that genuinely applies fleet-wide but can't be `**/`-anchored.                                                                                          | `Allow repo-scope-in-fleet bypass`                                                         |
 | Staging a looping symlink (target resolves to its own path or to an ancestor that contains it), a symlink whose target is an absolute path inside the repo, or any `node_modules` path (`no-self-referential-symlink-guard`). A dangling or looping link that reaches a fresh clone breaks `pnpm install` with `ELOOP` and breaks CI bootstrap with `ENOENT`; an absolute in-repo target hardcodes one machine's layout. Reserved for a fixture that must track a loop on purpose.                                                                                          | `Allow self-referential-symlink bypass`                                                    |
+
+</details>
 
 ## Inline sentinels (scoped auto-bypass)
 

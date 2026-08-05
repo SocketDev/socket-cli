@@ -56,6 +56,9 @@ tools, enterprise SaaS, fintech, dashboards, or functional product UI without re
 **RULE: Do not use the calm editorial serif + earth-tone pattern unless the product context
 and Refero research justify it.**
 
+<details>
+<summary><b>Justifying the direction</b> — the four questions to answer first, the sharper alternatives to reach for instead, and the decorative one-word serif fingerprint to avoid</summary>
+
 Before using it, you must be able to explain:
 1. Why this product needs an editorial or literary voice.
 2. Why a serif display font communicates the brand better than a sans/system face.
@@ -73,6 +76,8 @@ This is now a common AI default. Use contrasting word treatment only when a stro
 reference uses it and the content role justifies it: quotation, editorial voice, title
 treatment, or a real brand/type-system rule. Otherwise create distinction through layout,
 scale, weight, media, interaction, or a source-backed color role.
+
+</details>
 
 Serif fonts and earthy palettes are not banned. Autopilot "calm editorial" is.
 
@@ -256,6 +261,9 @@ available and appropriate.
 
 Before shipping any design:
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```
 □ Accent color is NOT indigo/violet
 □ Cards are justified by interaction, not used as default containers
@@ -278,6 +286,8 @@ Before shipping any design:
 □ No generic patterns you can't justify
 □ You can explain WHY each design choice was made
 ```
+
+</details>
 
 ---
 

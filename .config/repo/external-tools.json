@@ -130,7 +130,7 @@
     },
     "zizmor": {
       "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
-      "version": "1.26.1",
+      "version": "1.28.0",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
       "notes": [
@@ -140,23 +140,23 @@
       "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-UfLPPdYejR8fvrFwr9Tos7LKFvqr7YcAHWZlAmeo7imYI/fIucYnCY6HeDyk2cbFUvDpQTdps6WQS1QpqCtTfQ=="
+          "integrity": "sha512-qErEbGBrRH6hwuJDTPio0VUKpV3gKT39eNFwLel7J1RqaucMC5yTilyoo0UdIa9ilxM5P5EocN+wuH8Gw90c7Q=="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-SCbcEzF/zy2qNuNaocLPIUC4Wuq5GnHt0iUFve3qx6bJyFdzU6pDFZkF64dojGC7M5gAcK/4acXGPx3YnMDy/g=="
+          "integrity": "sha512-hXXbUc6nELKsjUznvTq94dAv4qjeH74Gyj3/1ji+LJf2DWNbk82zc3qM5Y0ik8MkPwrQPC537ETtznTtPKNtQQ=="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-TkGvwt0zYdmiJ7LZmy6Bz9CdkqcuEpFKhXUK9m0MhSPxBx2gYBsrw6OxGSttMEQ3bvxdvyG6rqbnMgjyDZB1zA=="
+          "integrity": "sha512-OtTfOoCgBvs05J5fTuo2Kva0y+3j8f7DqlOpbugbd/k/EJRPJjXQpDcEClXn3ClDNXq597kqG3yOAekfidMYUQ=="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-zTMERMDd3JfaRX12klj2fhZGDyrXeLkVUY1QJkCv8RRmAa9uVuH88gHOnv4CQtC5hXS7FPRJzvCVOnw38gV83g=="
+          "integrity": "sha512-j+SaxjjzZpol8oGl+5yoXPijSLnLaZQd/hjQQfQmxAJpoRJsRITzo52iYOd5E7Gf8YmEt455QjzjPO5eVaC6YQ=="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-Pijh/CrrOAkZzLiTr2LTHdI8d6+5Ql6B+suY6fXVmL8UVa+4Q36hHL5K67iRFz03v/V/UcrY6+dfhnmot/xfww=="
+          "integrity": "sha512-YS/j35KOSOO32ZZSCeRgNFQmthYuGBb0hQ2puPimy9c0kSi3eYeINasLBuqEPzfqcoabxePZCG1byBMT4+dDbQ=="
         }
       }
     },

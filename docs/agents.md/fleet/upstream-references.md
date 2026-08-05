@@ -41,6 +41,9 @@ of the same SHA.
   shallow = true
 ```
 
+<details>
+<summary><b>Field by field</b>: `branch` + `shallow`, the release-tag pin policy, how `ref` and the sha256 header are provisioned together, and why no gitlink exists</summary>
+
 - `branch = <ref>` pins the ref the reference tracks; `shallow = true`
   keeps the fetch to that ref's tip depth. Together they are "shallow
   single-branch." A `sparse-checkout = <subpath>` field limits the materialized
@@ -65,6 +68,8 @@ sha256:<64hex>` header is the codeload-archive content hash of that ref. Both
   `pathspec 'upstream/<name>' did not match any file(s) known to git`. Use
   `git-partial-submodule.mts clone`, which reads the `ref` pin from `.gitmodules`
   and clones + detaches directly. See "Materializing one" below.
+
+</details>
 
 ## Ported actions: the port map + the lock-step rule
 
@@ -151,6 +156,9 @@ blocks the staging that would create one in the first place.
 
 ## Enforcement
 
+<details>
+<summary><b>Gate roster</b>: no-upstream-gitlink-guard, upstream-gitlinks-are-absent, ignored-files-are-untracked, shallow-single-branch, release-tagged, gitmodules-comment-guard, uses-sha-verify-guard, action-ports-are-lock-stepped, and vendor-actions --check</summary>
+
 - `no-upstream-gitlink-guard` (PreToolUse) blocks any Bash `git add` /
   `git submodule add` / `git update-index --add` that would stage a path under
   `upstream/` — the gitlink can never be committed. Bypass:
@@ -180,3 +188,5 @@ blocks the staging that would create one in the first place.
   pin is behind its latest soaked upstream release. Network-bound, so it runs
   on the weekly-update cadence, the gate and the deterministic chain, not in
   the offline `check --all` gate.
+
+</details>

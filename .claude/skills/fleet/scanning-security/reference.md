@@ -153,6 +153,9 @@ Trusted context fields (`github.run_id`, `github.sha`, `github.ref_name`) are zi
 
 When triaging findings, decide whether to treat a finding at default severity or promote / demote.
 
+<details>
+<summary><b>Detail</b> — the commands</summary>
+
 ```
  ┌─────────────────────────────────────────────────────────┐
  │ Does the finding expose a secret that's still valid?     │
@@ -186,6 +189,8 @@ Resulting severity caps the grade per `_shared/report-format.md`.
 ---
 
 <a id="fix-recipes"></a>
+
+</details>
 
 ## 5. Fix recipes
 

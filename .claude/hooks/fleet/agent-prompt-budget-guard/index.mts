@@ -37,7 +37,10 @@
 //     guard is silent unless the brief is BOTH long (>= MIN_BRIEF_WORDS) AND
 //     carries an open-ended signal. A short one-shot spawn never fires, and
 //     `SendMessage` (resuming an agent that already has its context and its
-//     original budget) is a different tool name and is never matched.
+//     original budget) is a different tool name and is never matched. A signal
+//     counts only where the brief INSTRUCTS: quoted and code spans are blanked
+//     first, and the words that double as fleet nouns must sit in a verb
+//     position. Both live in signal-position.mts.
 //
 // Detection is regex over PROSE, not over commands — no shell binary appears in
 // any pattern (no-hook-cmd-regex-guard matches command-structure regexes, which
@@ -57,6 +60,7 @@
 // Detail: docs/agents.md/fleet/agent-delegation.md.
 
 import { block, defineHook, runHook } from '../_shared/guard.mts'
+import { maskQuotedAndCodeSpans, usedAsVerb } from './signal-position.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
@@ -74,32 +78,48 @@ export const MIN_BRIEF_WORDS = 500
 // Lowercased substrings that mark a brief as OPEN-ENDED — work whose end is
 // discovered rather than stated. One of these PLUS MIN_BRIEF_WORDS is the
 // "expensive delegation" precondition; neither alone fires.
-const OPEN_ENDED_SIGNALS: readonly string[] = [
+export const OPEN_ENDED_SIGNALS: readonly string[] = [
   'across the codebase',
   'across the repo',
-  'audit',
-  'catalog',
   'comprehensive',
   'deep dive',
   'deep-dive',
-  'diagnose',
   'end-to-end',
   'exhaustive',
-  'explore',
   'figure out',
   'find out why',
-  'inventory',
   'investigate',
   'investigation',
-  'migrate',
-  'research',
   'root cause',
   'root-cause',
+  'whatever it takes',
+  'wherever',
+]
+
+// Signals that are ALSO ordinary fleet nouns, identifiers, or paths, so a
+// substring match harvests prose as a verdict. `catalog` is pnpm's `catalog:`
+// block, named in nearly every dependency brief; `audit` is the `pnpm audit`
+// command; `inventory`, `research`, `survey`, and `sweep` all read as nouns
+// too. `explore` and `migrate` name real code: `exploreTree`, a `migrate`
+// script, `scripts/repo/migrate/cli.mts`. Their descriptive forms "migrates"
+// and "migrated" carry no request at all. `triage` sits inside fleet hook names
+// such as `cascade-first-triage-nudge`, and `diagnose` opens a family of this
+// repo's own function names such as `diagnoseStageConflict`, so a brief naming
+// one is naming code rather than asking for an investigation. These match only
+// in a VERB position — the same discipline the command scanners use, where
+// anchoring at the command token is what keeps prose from parsing as a
+// command.
+export const AMBIGUOUS_OPEN_ENDED_SIGNALS: readonly string[] = [
+  'audit',
+  'catalog',
+  'diagnose',
+  'explore',
+  'inventory',
+  'migrate',
+  'research',
   'survey',
   'sweep',
   'triage',
-  'whatever it takes',
-  'wherever',
 ]
 
 // A stated ceiling on the work: wall-clock, tool calls, or response length.
@@ -212,16 +232,32 @@ function firstMatch(
  * The open-ended signal present in `prompt`, when the brief is ALSO long enough
  * to be a real delegation. `undefined` means "not the expensive shape" — a
  * short one-shot, or a long but tightly-scoped brief.
+ *
+ * The word floor is measured on the RAW prompt, because a brief's length is its
+ * cost however much of it is pasted context. The signal search runs on a copy
+ * with the quoted and code spans blanked, because a command inside a fence and
+ * a sentence inside quotation marks are material this brief cites, not work it
+ * is asking for.
  */
 export function openEndedSignal(prompt: string): string | undefined {
   const words = prompt.trim().split(/\s+/u).filter(Boolean)
   if (words.length < MIN_BRIEF_WORDS) {
     return undefined
   }
-  const lower = prompt.toLowerCase()
+  const lower = maskQuotedAndCodeSpans(prompt).toLowerCase()
   for (let i = 0, { length } = OPEN_ENDED_SIGNALS; i < length; i += 1) {
     const signal = OPEN_ENDED_SIGNALS[i]!
     if (lower.includes(signal)) {
+      return signal
+    }
+  }
+  for (
+    let i = 0, { length } = AMBIGUOUS_OPEN_ENDED_SIGNALS;
+    i < length;
+    i += 1
+  ) {
+    const signal = AMBIGUOUS_OPEN_ENDED_SIGNALS[i]!
+    if (usedAsVerb(lower, signal)) {
       return signal
     }
   }

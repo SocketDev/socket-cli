@@ -251,6 +251,7 @@
         "**/scripts/fleet/build-snapshot-launcher.mts",
         "**/scripts/fleet/fetch-fleet-pack.mts",
         "**/scripts/fleet/gen/hook-dispatch.mts",
+        "**/scripts/fleet/gen/hook-validators.mts",
         "**/scripts/fleet/lib/stable-alias.mts",
         "**/scripts/fleet/lockstep/emit-mirror-globs.mts",
         "**/scripts/fleet/sync-oxlint-rules.mts",

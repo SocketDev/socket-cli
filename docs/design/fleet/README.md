@@ -75,7 +75,8 @@ Switch themes by setting `data-theme` on `<html>`:
 document.documentElement.setAttribute('data-theme', 'dark')
 ```
 
-ASCII swatches showing the four themes side-by-side:
+<details>
+<summary><b>ASCII swatches</b>: the four themes side by side</summary>
 
 ```text
   light       dark        synthwave    system
@@ -85,6 +86,8 @@ ASCII swatches showing the four themes side-by-side:
   │ purp│     │ lav │     │ pink│      │     │
   └─────┘     └─────┘     └─────┘      └─────┘
 ```
+
+</details>
 
 If you don't set `data-theme`, you get `light`. If you set `data-theme="system"`,
 the user's OS preference picks light or dark.

@@ -28,6 +28,9 @@ fuzz/
 
 ### `fuzz/Cargo.toml` — the two non-obvious rules
 
+<details>
+<summary><b>The manifest</b> — an empty <code>[workspace]</code> table so a root build never sweeps the fuzzer in, plus an inverted <code>[profile.release]</code> that turns <code>debug-assertions</code> and <code>overflow-checks</code> back on</summary>
+
 ```toml
 [workspace]                       # EMPTY table → standalone workspace, so a
                                   # stray root `cargo build` never sweeps the
@@ -61,6 +64,8 @@ name = "<target>"
 path = "fuzz_targets/<target>.rs"
 test = false; doc = false; bench = false
 ```
+
+</details>
 
 ### A target
 

@@ -46,6 +46,9 @@ node scripts/fleet/lockstep/auto-bump.mts --plan --report /tmp/lockstep-report.j
 
 For each row in the **auto** list, in manifest declaration order:
 
+<details>
+<summary><b>Detail</b> — 3c. Check out + capture new SHA, 3d. Update lockstep.json + .gitmodules, 3e. Validate + commit</summary>
+
 **3a. Resolve the upstream submodule + fetch tags**
 
 ```bash
@@ -115,6 +118,8 @@ git commit -m "chore(deps): bump $UPSTREAM_ALIAS to $LATEST"
 
 Record the bumped row in the summary accumulator.
 
+</details>
+
 ### Phase 4 — Advisory composition
 
 For each row in **advisory**, accumulate a markdown line:
@@ -131,6 +136,9 @@ For each row in **advisory**, accumulate a markdown line:
 ### Phase 5 — Report + emit
 
 Final human-readable report to stdout:
+
+<details>
+<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
 
 ```
 ## updating-lockstep report
@@ -159,6 +167,8 @@ Findings: {auto_bumped: N, advisory: M}
 Summary: {one-line description}
 === END HANDOFF ===
 ```
+
+</details>
 
 ## Tag-stability filter
 

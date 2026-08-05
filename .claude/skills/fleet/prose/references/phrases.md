@@ -94,6 +94,9 @@ Kill all adverbs. No -ly words. No softeners, no intensifiers, no hedges.
 
 Specific offenders:
 
+<details>
+<summary><b>Detail</b> — the full list (22 entries)</summary>
+
 - "really"
 - "just"
 - "literally"
@@ -119,6 +122,8 @@ Also cut these filler phrases:
 - "When it comes to"
 - "In a world where"
 - "The reality is"
+
+</details>
 
 ## Meta-Commentary
 

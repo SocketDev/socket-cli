@@ -171,6 +171,7 @@
     "taze": "catalog:",
     "terminal-link": "catalog:",
     "trash": "catalog:",
+    "typebox": "catalog:",
     "typescript": "catalog:",
     "unplugin-purge-polyfills": "catalog:",
     "vitest": "catalog:",
@@ -204,7 +205,7 @@
   },
   "engines": {
     "node": ">=24",
-    "npm": ">=12.0.1",
+    "npm": ">=12.0.2",
     "pnpm": ">=11.0.5"
   },
   "allowScripts": {

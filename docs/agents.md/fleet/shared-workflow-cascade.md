@@ -62,6 +62,9 @@ The gh-aw-native test path is `gh aw trial`, which runs the workflow in a
 temporary private host repo and captures safe outputs there, leaving the source
 repo untouched:
 
+<details>
+<summary><b>Detail</b> — `gh aw`</summary>
+
 ```bash
 gh aw trial ./.github/workflows/weekly-update.md \
   --clone-repo SocketDev/socket-registry \
@@ -86,6 +89,8 @@ throwaway repo, so the agent step runs only against a `--host-repo` you
 pre-seed with `gh secret set`, or under `--engine copilot` (which uses the gh
 token). Validating the deterministic spine (compile + the `check-updates` gate)
 needs no key.
+
+</details>
 
 ## The orchestrator / worker pattern
 

@@ -30,6 +30,9 @@ jq '. | length' /tmp/dependabot-alerts.json
 
 ## Alert shape: the fields we use
 
+<details>
+<summary><b>One alert's JSON</b>: <code>dependency</code> package/scope/relationship, <code>security_advisory</code> ghsa_id and severity, <code>security_vulnerability</code> version range and <code>first_patched_version</code></summary>
+
 ```json
 {
   "number": 2,
@@ -53,6 +56,8 @@ jq '. | length' /tmp/dependabot-alerts.json
   "html_url": "https://github.com/SocketDev/<repo>/security/dependabot/2"
 }
 ```
+
+</details>
 
 Five fields drive classification: `dependency.relationship`,
 `dependency.scope`, `security_vulnerability.first_patched_version`,
@@ -109,6 +114,9 @@ pins EXACT versions everywhere (`uuid: 11.1.1`, never `^11.1.1`) —
 ranges let a non-frozen `pnpm install` slide to an un-soaked release,
 defeating both determinism and the malware soak. Resolve the pin like
 this:
+
+<details>
+<summary><b>Detail</b> — `import`, `const major`, `const inMajor`</summary>
 
 1. Take `first_patched_version` (e.g. `11.1.1`). Note its major (`11`).
 2. Keep only stable releases ≥ `first_patched_version` in that major
@@ -243,11 +251,16 @@ the pin in-major — crossing a major is the separate gated path below.
    Never cross a major silently — a BENIGN cross is auto-applied but
    always announced; a BREAKING cross always asks first.
 
+</details>
+
 ### Worked example — uuid, and why the classification is per-consumer
 
 `uuid` shows that "benign across majors" is **conditional**, not a
 blanket. The advisory (GHSA-w5hq-g745-h8pq) has THREE patched lines —
 the fix was backported, not landed only on latest:
+
+<details>
+<summary><b>Detail</b> — the full table (10 rows)</summary>
 
 | Vulnerable range      | First patched |
 | --------------------- | ------------- |
@@ -345,6 +358,8 @@ print(sorted(ok)[-1][1] if ok else 'NONE-IN-MAJOR-SOAKED')
 `NONE-IN-MAJOR-SOAKED` → either the only fix is in a higher major
 (human signoff) or the in-major fix is still soaking (AWAITING-SOAK).
 
+</details>
+
 ## Soak-gate interaction
 
 The `minimum-release-age-guard` hook blocks adding deps published <7
@@ -380,6 +395,9 @@ above each entry so the next reader knows why it's there and when it
 can be removed (CVE fixed upstream → consumer bumps → override is dead
 weight):
 
+<details>
+<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+
 ```yaml
 overrides:
   '@socketsecurity/lib': 'catalog:'
@@ -408,6 +426,8 @@ patched version. The CVE clears on the next Dependabot rescan
 > `updating` run — use `taze minor` so a stale override doesn't get
 > floated across a major. Re-audit overrides periodically and drop the
 > ones whose underlying CVE is resolved upstream.
+
+</details>
 
 ## Direct-fix shape
 
