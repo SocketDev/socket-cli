@@ -204,7 +204,7 @@ describe('util/fs/glob', () => {
   describe('ignorePatternToMinimatch', () => {
     it('returns special-cased patterns verbatim with negation prefix preserved', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(ignorePatternToMinimatch('')).toBe('')
       expect(ignorePatternToMinimatch('**')).toBe('**')
       expect(ignorePatternToMinimatch('/**')).toBe('/**')
@@ -213,25 +213,25 @@ describe('util/fs/glob', () => {
 
     it('prepends **/ for patterns without slashes', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(ignorePatternToMinimatch('node_modules')).toBe('**/node_modules')
     })
 
     it('strips leading slash and treats as project-rooted', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(ignorePatternToMinimatch('/dist')).toBe('dist')
     })
 
     it('appends /* for patterns ending in /**', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(ignorePatternToMinimatch('build/**')).toBe('build/**/*')
     })
 
     it('escapes brace + paren characters from gitignore-literal to minimatch-safe', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       // gitignore treats `{a,b}` as literal; minimatch treats it as expansion.
       // Escape so minimatch matches the literal string.
       expect(ignorePatternToMinimatch('src/{a,b}.js')).toContain('\\{')
@@ -240,7 +240,7 @@ describe('util/fs/glob', () => {
 
     it('passes negation prefix through', async () => {
       const { ignorePatternToMinimatch } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(ignorePatternToMinimatch('!keep.txt')).toBe('!**/keep.txt')
     })
   })
@@ -280,19 +280,19 @@ describe('util/fs/glob', () => {
   describe('stripTrailingSlashFromIgnorePattern', () => {
     it('strips the trailing slash fast-glob would choke on', async () => {
       const { stripTrailingSlashFromIgnorePattern } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(stripTrailingSlashFromIgnorePattern('**/dist/')).toBe('**/dist')
     })
 
     it('leaves a pattern without a trailing slash alone', async () => {
       const { stripTrailingSlashFromIgnorePattern } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(stripTrailingSlashFromIgnorePattern('**/dist')).toBe('**/dist')
     })
 
     it('leaves a lone slash alone', async () => {
       const { stripTrailingSlashFromIgnorePattern } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       expect(stripTrailingSlashFromIgnorePattern('/')).toBe('/')
     })
   })
@@ -300,7 +300,7 @@ describe('util/fs/glob', () => {
   describe('ignoreFileLinesToGlobPatterns', () => {
     it('skips blank and comment lines', async () => {
       const { ignoreFileLinesToGlobPatterns } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       const result = ignoreFileLinesToGlobPatterns(
         ['', '# comment', 'node_modules', ''],
         '/repo/.gitignore',
@@ -311,7 +311,7 @@ describe('util/fs/glob', () => {
 
     it('preserves negation patterns with relative path joined', async () => {
       const { ignoreFileLinesToGlobPatterns } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       const result = ignoreFileLinesToGlobPatterns(
         ['!keep'],
         '/repo/sub/.gitignore',
@@ -326,7 +326,7 @@ describe('util/fs/glob', () => {
   describe('ignoreFileToGlobPatterns', () => {
     it('splits on \\r?\\n and threads through ignoreFileLinesToGlobPatterns', async () => {
       const { ignoreFileToGlobPatterns } =
-        await import('../../../../src/util/fs/glob.mts')
+        await import('../../../../src/util/fs/glob-ignore.mts')
       const result = ignoreFileToGlobPatterns(
         '# comment\nnode_modules\r\ndist',
         '/repo/.gitignore',
