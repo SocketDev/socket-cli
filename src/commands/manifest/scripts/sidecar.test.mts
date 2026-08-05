@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { accumulateSidecar, serializeSidecar } from './sidecar.mts'
+import {
+  accumulateSidecar,
+  hasResolvedPathsSidecarEntries,
+  hasSidecarEntries,
+  mergeResolvedPathsSidecars,
+  serializeSidecar,
+} from './sidecar.mts'
 
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
 import type { SidecarAccumulator } from './sidecar.mts'
@@ -14,7 +20,7 @@ function emptyArtifactPaths(): ResolvedArtifactPaths {
   }
 }
 
-function mkRootFixture(target: string): {
+function mkComponentFixture(target: string): {
   facts: SocketFactsSbom
   paths: ResolvedArtifactPaths
 } {
@@ -38,7 +44,7 @@ function mkRootFixture(target: string): {
 }
 
 describe('compute-artifacts sidecar', () => {
-  it('emits the frozen ResolvedComponent[] contract', () => {
+  it('carries a component through with resolved targets/sources attached, keyed by its own facts file', () => {
     const facts: SocketFactsSbom = {
       components: [
         {
@@ -60,23 +66,29 @@ describe('compute-artifacts sidecar', () => {
     ])
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths)
+    accumulateSidecar(acc, facts, artifactPaths, '/root/.socket.facts.json')
     const resolved = serializeSidecar(acc)
 
-    expect(resolved).toEqual([
-      {
-        group: 'com.example',
-        name: 'lib',
-        version: 'da517db',
-        ext: 'jar',
-        classifier: null,
-        targets: ['/abs/lib.jar'],
-        sources: ['/abs/lib/src/main/java'],
+    expect(resolved).toEqual({
+      '/root/.socket.facts.json': {
+        projects: [],
+        components: [
+          {
+            type: 'maven',
+            namespace: 'com.example',
+            name: 'lib',
+            version: 'da517db',
+            qualifiers: { ext: 'jar' },
+            id: 'com.example:lib:jar:da517db',
+            targets: ['/abs/lib.jar'],
+            sources: ['/abs/lib/src/main/java'],
+          },
+        ],
       },
-    ])
+    })
   })
 
-  it('emits empty target/source arrays for a resolved-but-artifactless coord (pom/BOM)', () => {
+  it('emits explicit empty targets/sources for a resolved-but-artifactless coord (pom/BOM) - [] means resolved, not "not resolved"', () => {
     const facts: SocketFactsSbom = {
       components: [
         {
@@ -90,15 +102,39 @@ describe('compute-artifacts sidecar', () => {
       ],
     }
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, emptyArtifactPaths())
+    accumulateSidecar(
+      acc,
+      facts,
+      emptyArtifactPaths(),
+      '/root/.socket.facts.json',
+    )
     const resolved = serializeSidecar(acc)
 
-    expect(resolved).toHaveLength(1)
-    expect(resolved[0]!.targets).toEqual([])
-    expect(resolved[0]!.sources).toEqual([])
+    const entry = resolved['/root/.socket.facts.json']!.components[0]!
+    expect(entry.targets).toEqual([])
+    expect(entry.sources).toEqual([])
   })
 
-  it('preserves a classifier qualifier and defaults it to null when absent', () => {
+  it('leaves targets/sources undefined (not []) when the entry has no computable coordinate at all', () => {
+    const facts: SocketFactsSbom = {
+      components: [
+        { type: 'maven', namespace: '', name: '', id: 'degenerate' },
+      ],
+    }
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      facts,
+      emptyArtifactPaths(),
+      '/root/.socket.facts.json',
+    )
+    const entry =
+      serializeSidecar(acc)['/root/.socket.facts.json']!.components[0]!
+    expect(entry.targets).toBeUndefined()
+    expect(entry.sources).toBeUndefined()
+  })
+
+  it('preserves the original component fields (id, qualifiers) untouched', () => {
     const facts: SocketFactsSbom = {
       components: [
         {
@@ -108,15 +144,27 @@ describe('compute-artifacts sidecar', () => {
           version: '1',
           qualifiers: { ext: 'jar', classifier: 'sources' },
           id: 'g:a:jar:sources:1',
+          direct: true,
+          dependencies: ['x'],
         },
       ],
     }
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, emptyArtifactPaths())
-    expect(serializeSidecar(acc)[0]!.classifier).toBe('sources')
+    accumulateSidecar(
+      acc,
+      facts,
+      emptyArtifactPaths(),
+      '/root/.socket.facts.json',
+    )
+    const entry =
+      serializeSidecar(acc)['/root/.socket.facts.json']!.components[0]!
+    expect(entry.qualifiers?.['classifier']).toBe('sources')
+    expect(entry.id).toBe('g:a:jar:sources:1')
+    expect(entry.direct).toBe(true)
+    expect(entry.dependencies).toEqual(['x'])
   })
 
-  it('carries a first-party module (project, not a component) source/target roots', () => {
+  it('carries a first-party module (project, not a component) source/target roots, keyed by its own facts file', () => {
     const facts: SocketFactsSbom = {
       // The app module is a project but nothing depends on it, so it is absent
       // from components — its source roots must still reach the sidecar.
@@ -142,31 +190,134 @@ describe('compute-artifacts sidecar', () => {
     ])
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths)
+    accumulateSidecar(acc, facts, artifactPaths, '/root/app/.socket.facts.json')
     const resolved = serializeSidecar(acc)
 
-    expect(resolved).toEqual([
+    expect(resolved['/root/app/.socket.facts.json']!.components).toEqual([])
+    expect(resolved['/root/app/.socket.facts.json']!.projects).toEqual([
       {
-        group: 'com.example',
+        type: 'maven',
+        namespace: 'com.example',
         name: 'app',
         version: '1.0',
-        ext: '',
-        classifier: null,
+        subprojectDir: 'app',
+        dependencies: [],
+        resolvedAs: [],
         targets: ['/abs/app/build/classes'],
         sources: ['/abs/app/src/main/java'],
       },
     ])
   })
 
-  it('merges the same coordinate across build roots, unioning paths', () => {
+  it('does NOT reunion the same external coordinate across build roots - duplication across reactors is intentional', () => {
     const acc: SidecarAccumulator = new Map()
-    const a = mkRootFixture('/root-a/a.jar')
-    const b = mkRootFixture('/root-b/a.jar')
-    accumulateSidecar(acc, a.facts, a.paths)
-    accumulateSidecar(acc, b.facts, b.paths)
+    const a = mkComponentFixture('/root-a/a.jar')
+    const b = mkComponentFixture('/root-b/a.jar')
+    accumulateSidecar(acc, a.facts, a.paths, '/root-a/.socket.facts.json')
+    accumulateSidecar(acc, b.facts, b.paths, '/root-b/.socket.facts.json')
     const resolved = serializeSidecar(acc)
 
-    expect(resolved).toHaveLength(1)
-    expect(resolved[0]!.targets).toEqual(['/root-a/a.jar', '/root-b/a.jar'])
+    expect(
+      resolved['/root-a/.socket.facts.json']!.components[0]!.targets,
+    ).toEqual(['/root-a/a.jar'])
+    expect(
+      resolved['/root-b/.socket.facts.json']!.components[0]!.targets,
+    ).toEqual(['/root-b/a.jar'])
+  })
+
+  it('keeps first-party modules from two independent roots fully separate, even with the same purl identity', () => {
+    const sharedModuleFacts: SocketFactsSbom = {
+      components: [],
+      projects: [
+        {
+          type: 'maven',
+          namespace: 'com.example',
+          name: 'shared',
+          version: '1.0',
+          subprojectDir: '.',
+          dependencies: [],
+          resolvedAs: [],
+        },
+      ],
+    }
+    const pathsA = emptyArtifactPaths()
+    pathsA.sourcesByCoord.set('com.example:shared:1.0', [
+      '/root-a/src/main/java',
+    ])
+    const pathsB = emptyArtifactPaths()
+    pathsB.sourcesByCoord.set('com.example:shared:1.0', [
+      '/root-b/src/main/java',
+    ])
+
+    const acc: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      acc,
+      sharedModuleFacts,
+      pathsA,
+      '/root-a/.socket.facts.json',
+    )
+    accumulateSidecar(
+      acc,
+      sharedModuleFacts,
+      pathsB,
+      '/root-b/.socket.facts.json',
+    )
+    const resolved = serializeSidecar(acc)
+
+    expect(Object.keys(resolved)).toEqual([
+      '/root-a/.socket.facts.json',
+      '/root-b/.socket.facts.json',
+    ])
+    expect(
+      resolved['/root-a/.socket.facts.json']!.projects[0]!.sources,
+    ).toEqual(['/root-a/src/main/java'])
+    expect(
+      resolved['/root-b/.socket.facts.json']!.projects[0]!.sources,
+    ).toEqual(['/root-b/src/main/java'])
+  })
+
+  it('hasSidecarEntries reports empty until a facts file is accumulated', () => {
+    const acc: SidecarAccumulator = new Map()
+    expect(hasSidecarEntries(acc)).toBe(false)
+
+    accumulateSidecar(
+      acc,
+      { components: [] },
+      emptyArtifactPaths(),
+      '/root/.socket.facts.json',
+    )
+    expect(hasSidecarEntries(acc)).toBe(true)
+  })
+
+  it('mergeResolvedPathsSidecars unions distinct facts-file keys from two already-serialized sidecars', () => {
+    const accA: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      accA,
+      { components: [] },
+      emptyArtifactPaths(),
+      '/root-a/.socket.facts.json',
+    )
+    const sidecarA = serializeSidecar(accA)
+
+    const accB: SidecarAccumulator = new Map()
+    accumulateSidecar(
+      accB,
+      { components: [] },
+      emptyArtifactPaths(),
+      '/root-b/.socket.facts.json',
+    )
+    const sidecarB = serializeSidecar(accB)
+
+    const merged = mergeResolvedPathsSidecars(sidecarA, sidecarB)
+
+    expect(Object.keys(merged)).toEqual([
+      '/root-a/.socket.facts.json',
+      '/root-b/.socket.facts.json',
+    ])
+    expect(hasResolvedPathsSidecarEntries(merged)).toBe(true)
+  })
+
+  it('hasResolvedPathsSidecarEntries reports false for a wholly empty sidecar', () => {
+    expect(hasResolvedPathsSidecarEntries({})).toBe(false)
   })
 })

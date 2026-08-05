@@ -10,6 +10,7 @@ import {
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { runManifestFacts } from './run-manifest-facts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
+import { withTmpDir } from '../../utils/fs.mts'
 import {
   readOrDefaultSocketJson,
   readSocketJsonCascade,
@@ -17,6 +18,7 @@ import {
 import { projectIgnorePathsToReachExcludePaths } from '../scan/exclude-paths.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
+import type { SidecarAccumulator } from './scripts/sidecar.mts'
 import type { SocketJson } from '../../utils/socket-json.mts'
 
 export type RecursiveManifestOutcomeStatus =
@@ -83,84 +85,29 @@ function nearestDisabledRoot(
   return nearest
 }
 
-// A wrapper-preferred `bin` default is resolved per-root (`dir`, not `cwd`)
-// since a wrapper script only exists at the actual build root. Exported for
-// reuse by the recursive setup wizard's reactor-coverage pruning.
-export function resolveEcosystemConfig(
-  ecosystem: BuildTool,
-  dir: string,
-  sockJson: SocketJson,
-): EcosystemBuildConfig {
-  if (ecosystem === 'sbt') {
-    const config = sockJson.defaults?.manifest?.sbt
-    const bin = config?.bin ?? undefined
-    return {
-      bin: bin ?? 'sbt',
-      buildOpts: parseBuildToolOpts(config?.sbtOpts ?? undefined),
-      excludeConfigs: config?.excludeConfigs ?? '',
-      ignoreUnresolved: Boolean(config?.ignoreUnresolved),
-      includeConfigs: config?.includeConfigs ?? '',
-      javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(config?.disabled, config?.facts),
-    }
-  }
-  if (ecosystem === 'gradle') {
-    const config = sockJson.defaults?.manifest?.gradle
-    const bin = config?.bin ?? undefined
-    return {
-      bin: bin ? path.resolve(dir, bin) : resolveBuildToolBin('gradle', dir),
-      buildOpts: parseBuildToolOpts(config?.gradleOpts ?? undefined),
-      excludeConfigs: config?.excludeConfigs ?? '',
-      ignoreUnresolved: Boolean(config?.ignoreUnresolved),
-      includeConfigs: config?.includeConfigs ?? '',
-      javaHome: config?.javaHome ?? undefined,
-      skipReason: getSkipReason(config?.disabled, config?.facts),
-    }
-  }
-  const config = sockJson.defaults?.manifest?.maven
-  const bin = config?.bin ?? undefined
-  return {
-    bin: bin ?? resolveBuildToolBin('maven', dir),
-    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
-    excludeConfigs: config?.excludeConfigs ?? '',
-    ignoreUnresolved: Boolean(config?.ignoreUnresolved),
-    includeConfigs: config?.includeConfigs ?? '',
-    javaHome: config?.javaHome ?? undefined,
-    skipReason: getSkipReason(config?.disabled),
-  }
-}
-
-// Generates one .socket.facts.json per independent gradle/sbt/maven build
-// root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
-// own projects[].subprojectDir, not by pruning the whole discovered subtree,
-// so an unrelated nested project a reactor doesn't declare still gets its
-// own invocation. Fail-closed per ecosystem, not globally: a root whose
-// workspace layout can't be determined aborts only that ecosystem's own
-// remaining walk (marking its untried candidates 'aborted'), since coverage
-// is tracked per ecosystem and an unrelated one has nothing to lose from it.
-export async function generateRecursiveManifests({
-  cwd,
+async function runEcosystemCandidates({
+  candidatesByTool,
   excludePaths,
+  realCwd,
+  rootSockJson,
+  sbtTmpDir,
+  sidecarAcc,
   verbose,
+  withFiles,
 }: {
-  cwd: string
-  excludePaths?: string[] | undefined
+  candidatesByTool: Map<BuildTool, string[]>
+  excludePaths: string[] | undefined
+  realCwd: string
+  rootSockJson: SocketJson
+  // sbt only: a shared global base reused across every sbt root in this run,
+  // so sbt's own Scala-toolchain cache under <base>/boot survives between
+  // invocations instead of being reprovisioned per root. Undefined when no
+  // sbt root was discovered, matching runManifestFacts' own ephemeral default.
+  sbtTmpDir: string | undefined
+  sidecarAcc: SidecarAccumulator | undefined
   verbose: boolean
+  withFiles: boolean | undefined
 }): Promise<RecursiveManifestOutcome[]> {
-  const rootSockJson = readOrDefaultSocketJson(cwd)
-  // Candidate dirs come back realpath-resolved (findBuildToolCandidates); cwd
-  // must match or every boundary/relative-path comparison below breaks as
-  // soon as cwd contains a symlink (macOS /tmp -> /private/tmp, etc.).
-  const realCwd = await realpathOrResolved(cwd)
-  // A root-disabled ecosystem must still be scanned for - a nested socket.json
-  // may re-enable it - so the per-directory cascade below, not this scan, is
-  // what actually decides skip vs. include.
-  const candidatesByTool = await findBuildToolCandidates({
-    cwd,
-    excludePaths,
-    sockJson: withoutDisabledFlags(rootSockJson),
-  })
-
   const outcomes: RecursiveManifestOutcome[] = []
   for (const [ecosystem, dirs] of candidatesByTool) {
     const covered = new Set<string>()
@@ -216,7 +163,10 @@ export async function generateRecursiveManifests({
         ignoreUnresolved,
         includeConfigs,
         javaHome,
+        sidecarAcc,
+        tmpDir: ecosystem === 'sbt' ? sbtTmpDir : undefined,
         verbose,
+        withFiles,
       })
 
       if (result === null) {
@@ -252,10 +202,117 @@ export async function generateRecursiveManifests({
       })
     }
   }
+  return outcomes
+}
+
+// Generates one .socket.facts.json per independent gradle/sbt/maven build
+// root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
+// own projects[].subprojectDir, not by pruning the whole discovered subtree,
+// so an unrelated nested project a reactor doesn't declare still gets its
+// own invocation. Fail-closed per ecosystem, not globally: a root whose
+// workspace layout can't be determined aborts only that ecosystem's own
+// remaining walk (marking its untried candidates 'aborted'), since coverage
+// is tracked per ecosystem and an unrelated one has nothing to lose from it.
+export async function generateRecursiveManifests({
+  cwd,
+  excludePaths,
+  sidecarAcc,
+  verbose,
+  withFiles,
+}: {
+  cwd: string
+  excludePaths?: string[] | undefined
+  // Reachability path only: run build tools with files and fold resolved
+  // artifact paths into sidecarAcc, tagged with each root's own factsPath.
+  sidecarAcc?: SidecarAccumulator | undefined
+  verbose: boolean
+  withFiles?: boolean | undefined
+}): Promise<RecursiveManifestOutcome[]> {
+  const rootSockJson = readOrDefaultSocketJson(cwd)
+  // Candidate dirs come back realpath-resolved (findBuildToolCandidates); cwd
+  // must match or every boundary/relative-path comparison below breaks as
+  // soon as cwd contains a symlink (macOS /tmp -> /private/tmp, etc.).
+  const realCwd = await realpathOrResolved(cwd)
+  // A root-disabled ecosystem must still be scanned for - a nested socket.json
+  // may re-enable it - so the per-directory cascade below, not this scan, is
+  // what actually decides skip vs. include.
+  const candidatesByTool = await findBuildToolCandidates({
+    cwd,
+    excludePaths,
+    sockJson: withoutDisabledFlags(rootSockJson),
+  })
+
+  const runAll = (sbtTmpDir: string | undefined) =>
+    runEcosystemCandidates({
+      candidatesByTool,
+      excludePaths,
+      realCwd,
+      rootSockJson,
+      sbtTmpDir,
+      sidecarAcc,
+      verbose,
+      withFiles,
+    })
+
+  // A shared global base across every sbt root in this run lets sbt's own
+  // Scala-toolchain cache under <base>/boot survive between invocations
+  // instead of being reprovisioned per root (the plugin file is rewritten and
+  // records.tsv is fully overwritten - not appended - on every invocation, so
+  // reuse is safe). Skipped entirely when there's no sbt root to benefit.
+  const outcomes = candidatesByTool.get('sbt')?.length
+    ? await withTmpDir('socket-sbt-facts-shared-', runAll)
+    : await runAll(undefined)
 
   if (verbose) {
     logger.info(`Discovered ${outcomes.length} build-tool candidate(s).`)
   }
 
   return outcomes
+}
+
+// A wrapper-preferred `bin` default is resolved per-root (`dir`, not `cwd`)
+// since a wrapper script only exists at the actual build root. Exported for
+// reuse by the recursive setup wizard's reactor-coverage pruning.
+export function resolveEcosystemConfig(
+  ecosystem: BuildTool,
+  dir: string,
+  sockJson: SocketJson,
+): EcosystemBuildConfig {
+  if (ecosystem === 'sbt') {
+    const config = sockJson.defaults?.manifest?.sbt
+    const bin = config?.bin ?? undefined
+    return {
+      bin: bin ?? 'sbt',
+      buildOpts: parseBuildToolOpts(config?.sbtOpts ?? undefined),
+      excludeConfigs: config?.excludeConfigs ?? '',
+      ignoreUnresolved: Boolean(config?.ignoreUnresolved),
+      includeConfigs: config?.includeConfigs ?? '',
+      javaHome: config?.javaHome ?? undefined,
+      skipReason: getSkipReason(config?.disabled, config?.facts),
+    }
+  }
+  if (ecosystem === 'gradle') {
+    const config = sockJson.defaults?.manifest?.gradle
+    const bin = config?.bin ?? undefined
+    return {
+      bin: bin ? path.resolve(dir, bin) : resolveBuildToolBin('gradle', dir),
+      buildOpts: parseBuildToolOpts(config?.gradleOpts ?? undefined),
+      excludeConfigs: config?.excludeConfigs ?? '',
+      ignoreUnresolved: Boolean(config?.ignoreUnresolved),
+      includeConfigs: config?.includeConfigs ?? '',
+      javaHome: config?.javaHome ?? undefined,
+      skipReason: getSkipReason(config?.disabled, config?.facts),
+    }
+  }
+  const config = sockJson.defaults?.manifest?.maven
+  const bin = config?.bin ?? undefined
+  return {
+    bin: bin ?? resolveBuildToolBin('maven', dir),
+    buildOpts: parseBuildToolOpts(config?.mavenOpts ?? undefined),
+    excludeConfigs: config?.excludeConfigs ?? '',
+    ignoreUnresolved: Boolean(config?.ignoreUnresolved),
+    includeConfigs: config?.includeConfigs ?? '',
+    javaHome: config?.javaHome ?? undefined,
+    skipReason: getSkipReason(config?.disabled),
+  }
 }

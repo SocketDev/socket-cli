@@ -79,3 +79,14 @@ export async function withTmpDir<T>(
     await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
   }
 }
+
+// Symlink-resolved absolute path when the target exists (e.g. macOS symlinks
+// /tmp -> /private/tmp); falls back to a plain resolve so a not-yet-existing
+// path still gets a usable absolute value instead of throwing.
+export async function realpathOrResolved(target: string): Promise<string> {
+  try {
+    return await fs.realpath(target)
+  } catch {
+    return path.resolve(target)
+  }
+}

@@ -37,26 +37,36 @@ describe('records → assemble → sidecar', () => {
     expect(facts.metadata).not.toHaveProperty('schemaVersion')
 
     const acc: SidecarAccumulator = new Map()
-    accumulateSidecar(acc, facts, artifactPaths)
-    const byName = new Map(serializeSidecar(acc).map(r => [r.name, r]))
+    accumulateSidecar(acc, facts, artifactPaths, '/abs/.socket.facts.json')
+    const resolved = serializeSidecar(acc)
+    const bucket = resolved['/abs/.socket.facts.json']!
+    const byName = new Map(bucket.components.map(r => [r.name, r]))
 
     // First-party module: project-only (not a node), yet its source/output
-    // roots reach the sidecar.
-    expect(byName.get('app')).toEqual({
-      group: 'com.example',
-      name: 'app',
-      version: '1.0',
-      ext: '',
-      classifier: null,
-      targets: ['/abs/app/build/classes'],
-      sources: ['/abs/app/src/main/java'],
-    })
+    // roots reach the sidecar, keyed by its own facts file.
+    expect(bucket.projects).toEqual([
+      {
+        type: 'maven',
+        namespace: 'com.example',
+        name: 'app',
+        version: '1.0',
+        subprojectDir: '/abs/app',
+        dependencies: ['com.example:bom:2.0', 'com.example:lib:jar:1.0'],
+        resolvedAs: [],
+        targets: ['/abs/app/build/classes'],
+        sources: ['/abs/app/src/main/java'],
+      },
+    ])
 
-    // External dependency: jar target, no sources.
+    // External dependency: jar target, empty (not undefined) sources - it was
+    // resolved, it just has no first-party source roots.
     expect(byName.get('lib')?.targets).toEqual(['/abs/lib.jar'])
     expect(byName.get('lib')?.sources).toEqual([])
 
-    // Artifactless BOM: present with empty arrays (resolved, no artifact).
-    expect(byName.get('bom')).toMatchObject({ targets: [], sources: [] })
+    // Artifactless BOM: present with explicit empty arrays (resolved, no
+    // artifact) - [] means resolved-and-empty, not "not resolved".
+    const bom = byName.get('bom')
+    expect(bom?.targets).toEqual([])
+    expect(bom?.sources).toEqual([])
   })
 })

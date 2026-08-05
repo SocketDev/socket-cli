@@ -12,6 +12,7 @@ import { runManifestFacts } from './run-manifest-facts.mts'
 import { runManifestScript } from './scripts/run.mts'
 
 import type { ManifestRunResult } from './scripts/run.mts'
+import type { SidecarAccumulator } from './scripts/sidecar.mts'
 
 const ENV_VAR = 'SOCKET_TEST_JAVA_HOME'
 
@@ -95,5 +96,45 @@ describe('runManifestFacts - javaHome', () => {
     await runManifestFacts({ ...baseArgs, cwd })
     const opts = vi.mocked(runManifestScript).mock.calls[0]?.[1]
     expect(opts?.env).toBeUndefined()
+  })
+})
+
+describe('runManifestFacts - sidecar', () => {
+  let cwd = ''
+
+  beforeEach(async () => {
+    cwd = await fs.mkdtemp(path.join(tmpdir(), 'run-manifest-facts-'))
+    vi.mocked(runManifestScript).mockReset()
+    process.exitCode = undefined
+  })
+  afterEach(async () => {
+    await fs.rm(cwd, { recursive: true, force: true })
+    process.exitCode = undefined
+  })
+
+  it('tags a project entry with the symlink-resolved factsPath, not the raw cwd-joined one', async () => {
+    const result = okResult()
+    result.facts.projects = [
+      {
+        type: 'maven',
+        namespace: 'com.example',
+        name: 'app',
+        version: '1.0',
+        subprojectDir: '.',
+        dependencies: [],
+        resolvedAs: [],
+      },
+    ]
+    vi.mocked(runManifestScript).mockResolvedValue(result)
+
+    const sidecarAcc: SidecarAccumulator = new Map()
+    await runManifestFacts({ ...baseArgs, cwd, sidecarAcc, withFiles: true })
+
+    const expectedFactsFile = await fs.realpath(
+      path.join(cwd, '.socket.facts.json'),
+    )
+    expect([...sidecarAcc.keys()]).toEqual([expectedFactsFile])
+    const bucket = sidecarAcc.get(expectedFactsFile)
+    expect(bucket?.projects.find(m => m.name === 'app')).toBeDefined()
   })
 })

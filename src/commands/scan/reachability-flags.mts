@@ -9,7 +9,7 @@ export const reachabilityFlags: MeowFlags = {
     default: false,
     hidden: true,
     description:
-      'Internal: enables dynamic SBOM inference for full application reachability analysis. Passes --maven-use-only-root-socket-facts to Coana and implies --auto-manifest.',
+      'Internal: enables dynamic SBOM inference for full application reachability analysis. Recursively generates Socket facts for every independent gradle/sbt/maven build root, passes --maven-use-only-socket-facts to Coana, and implies --auto-manifest.',
   },
   reachVersion: {
     type: 'string',

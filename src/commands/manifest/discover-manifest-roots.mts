@@ -1,6 +1,6 @@
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import { realpathOrResolved } from '../../utils/fs.mts'
 import { globWithGitIgnore } from '../../utils/glob.mts'
 import { excludePathToScanIgnores } from '../scan/exclude-paths.mts'
 
@@ -55,13 +55,7 @@ export function withoutDisabledFlags(sockJson: SocketJson): SocketJson {
   } as SocketJson
 }
 
-export async function realpathOrResolved(dir: string): Promise<string> {
-  try {
-    return await fs.realpath(dir)
-  } catch {
-    return path.resolve(dir)
-  }
-}
+export { realpathOrResolved }
 
 function sortByDepthThenPath(dirs: readonly string[], cwd: string): string[] {
   return [...dirs].sort((a, b) => {

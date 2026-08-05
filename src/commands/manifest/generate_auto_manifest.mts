@@ -11,7 +11,7 @@ import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
 import { parseBuildToolOpts } from './parse-build-tool-opts.mts'
 import { resolveBuildToolBin } from './scripts/build-tool.mts'
-import { serializeSidecar } from './scripts/sidecar.mts'
+import { hasSidecarEntries, serializeSidecar } from './scripts/sidecar.mts'
 import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { InputError } from '../../utils/errors.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -263,6 +263,8 @@ export async function generateAutoManifest({
   return {
     generatedFiles,
     resolvedPathsSidecar:
-      sidecarAcc && sidecarAcc.size ? serializeSidecar(sidecarAcc) : undefined,
+      sidecarAcc && hasSidecarEntries(sidecarAcc)
+        ? serializeSidecar(sidecarAcc)
+        : undefined,
   }
 }
