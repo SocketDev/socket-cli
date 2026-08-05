@@ -63,7 +63,7 @@ export const check = editGuard((filePath, content, payload) => {
   for (let i = 0, { length } = offenders; i < length; i += 1) {
     lines.push(
       i === 0
-        ? `🚨 no-description-aside-guard: drop the trailing listy aside "(${offenders[i]})" from ${rel}'s description — fold detail into the sentence (bypass: user types "${BYPASS_PHRASE}")`
+        ? `🚨 no-description-aside-guard: drop the trailing listy aside "(${offenders[i]})" from ${rel}'s description — fold detail into the sentence (bypass response "${BYPASS_PHRASE}")`
         : `   "(${offenders[i]})"`,
     )
   }

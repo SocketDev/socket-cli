@@ -112,7 +112,7 @@ export const check = bashGuard((command, payload) => {
       }
       /* c8 ignore stop */
       return block(
-        `🚨 commit-message-format-guard: ${saw} — suggested fix: ${suggestion} (bypass: user types "${BYPASS_FORMAT}")`,
+        `🚨 commit-message-format-guard: ${saw} — suggested fix: ${suggestion} (bypass response "${BYPASS_FORMAT}")`,
       )
     }
     // Operator authorized this commit. Still fall through to AI check
@@ -126,7 +126,7 @@ export const check = bashGuard((command, payload) => {
       return undefined
     }
     return block(
-      `🚨 commit-message-format-guard: AI-attribution marker "${aiLabel}" — remove it; the fleet forbids AI attribution in commit messages and PR text (bypass: user types "${BYPASS_AI}")`,
+      `🚨 commit-message-format-guard: AI-attribution marker "${aiLabel}" — remove it; the fleet forbids AI attribution in commit messages and PR text (bypass response "${BYPASS_AI}")`,
     )
   }
 

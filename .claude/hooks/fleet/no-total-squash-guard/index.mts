@@ -155,7 +155,7 @@ export function matchTotalSquash(
 }
 
 export function blockMessage(match: TotalSquashMatch): string {
-  return `🚨 no-total-squash-guard: blocked force push to "${match.branch}" — replaces ${match.replaced} remote commits with ${match.added} — squash into logical groups instead, or use the squashing-history skill for a mirror squash (bypass: user types "${BYPASS_PHRASE}")`
+  return `🚨 no-total-squash-guard: blocked force push to "${match.branch}" — replaces ${match.replaced} remote commits with ${match.added} — squash into logical groups instead, or use the squashing-history skill for a mirror squash (bypass response "${BYPASS_PHRASE}")`
 }
 
 export const check = bashGuard((command, payload): GuardResult => {

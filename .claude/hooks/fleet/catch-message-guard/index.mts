@@ -317,7 +317,7 @@ export const check = editGuard((filePath, content, payload) => {
       .map(f => `line ${f.line} \`${f.source}\``)
       .join('; ')
     lines.push(
-      `🚨 catch-message-guard: blocked bare \`\${e.message}\` (prints "undefined" for a non-Error throw) — ${filePath}: ${sites} — use \`errorMessage(e)\` from @socketsecurity/lib/errors/message (bypass: user types "${BYPASS_PHRASE}", or append \`// ok: catch-message <reason>\` on the line)`,
+      `🚨 catch-message-guard: blocked bare \`\${e.message}\` (prints "undefined" for a non-Error throw) — ${filePath}: ${sites} — use \`errorMessage(e)\` from @socketsecurity/lib/errors/message (bypass response "${BYPASS_PHRASE}", or append \`// ok: catch-message <reason>\` on the line)`,
     )
   }
   if (hasBinding && !bindingBypassed) {
@@ -325,7 +325,7 @@ export const check = editGuard((filePath, content, payload) => {
       .map(f => `line ${f.line} \`catch (${f.binding})\``)
       .join('; ')
     lines.push(
-      `🚨 catch-message-guard: blocked non-\`e\` catch binding — ${filePath}: ${sites} — rename the binding to \`e\` (fleet convention) (bypass: user types "${BINDING_BYPASS_PHRASE}", or append \`// ok: catch-binding <reason>\` on the line)`,
+      `🚨 catch-message-guard: blocked non-\`e\` catch binding — ${filePath}: ${sites} — rename the binding to \`e\` (fleet convention) (bypass response "${BINDING_BYPASS_PHRASE}", or append \`// ok: catch-binding <reason>\` on the line)`,
     )
   }
   return block(lines.join('\n'))

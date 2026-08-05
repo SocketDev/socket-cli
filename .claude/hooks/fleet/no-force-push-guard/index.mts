@@ -127,7 +127,7 @@ export function blockMessage(
     ? 'no lease pinned'
     : 'already pinning --force-with-lease, still needs authorization'
   const lines: string[] = [
-    `🚨 no-force-push-guard: blocked "${match.matchedSubstring}" (${saw}) — use git fetch origin && git push --force-with-lease=<branch>:$(git rev-parse origin/<branch>) origin <branch> (bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 no-force-push-guard: blocked "${match.matchedSubstring}" (${saw}) — use git fetch origin && git push --force-with-lease=<branch>:$(git rev-parse origin/<branch>) origin <branch> (bypass response "${BYPASS_PHRASE}")`,
   ]
   if (opts.isSubagent) {
     lines.push(

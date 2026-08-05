@@ -189,7 +189,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 
   const first = aggregate[0]!
   const lines = [
-    `ℹ️ path-regex-normalize-nudge: ${first.pattern} — ${first.reason} (bypass: user types "${BYPASS_PHRASE}")`,
+    `ℹ️ path-regex-normalize-nudge: ${first.pattern} — ${first.reason} (bypass response "${BYPASS_PHRASE}")`,
   ]
   for (let i = 1, { length } = aggregate; i < length; i += 1) {
     const f = aggregate[i]!

@@ -135,7 +135,7 @@ export function findProseWriteVerdict(
         .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
         .join('; ')
       return block(
-        `🚨 anti-prose-guard: blocked ${rel} — implementation detail: ${evidence} — state the user-visible change instead (bypass: user types "${CHANGELOG_IMPL_BYPASS_PHRASE}")`,
+        `🚨 anti-prose-guard: blocked ${rel} — implementation detail: ${evidence} — state the user-visible change instead (bypass response "${CHANGELOG_IMPL_BYPASS_PHRASE}")`,
       )
     }
   }
@@ -151,7 +151,7 @@ export function findProseWriteVerdict(
     .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
     .join('; ')
   return block(
-    `🚨 anti-prose-guard: blocked ${rel} — ${evidence} — rewrite the flagged span(s), then retry (bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 anti-prose-guard: blocked ${rel} — ${evidence} — rewrite the flagged span(s), then retry (bypass response "${BYPASS_PHRASE}")`,
   )
 }
 

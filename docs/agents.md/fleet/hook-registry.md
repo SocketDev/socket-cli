@@ -19,8 +19,7 @@ TYPED — compose it via `verdictLine(kind, …)` from `_shared/verdict.mts`,
 never hand-typed: 🚨 `block` (a -guard refusal), ⚠️ `warn` (something is off
 now), ℹ️ `info` (plain status), 💡 `hint` (a tip; the default -nudge
 register) — the emoji-presentation forms, so severity reads in color at a
-glance. The bypass phrase is appended
-in parentheses when one exists (a second line only when the evidence
+glance. The bypass phrase is appended as `(bypass response "<phrase>")` (a second line only when the evidence
 genuinely will not fit). No doctrine lecture — the rule's
 reasoning lives in its `docs/agents.md` topic, and the harness renders
 Stop-hook output twice, so every extra line costs double. Exemplar:

@@ -151,7 +151,7 @@ export function buildBlockMessage(
   const sections = empty
     .map(({ line, name }) => `\`### ${name}\` (line ${line})`)
     .join(', ')
-  return `🚨 changelog-no-empty-guard: blocked ${filePath} — empty section(s) ${sections} — delete the empty heading(s) too (bypass: user types "${BYPASS_PHRASE}")`
+  return `🚨 changelog-no-empty-guard: blocked ${filePath} — empty section(s) ${sections} — delete the empty heading(s) too (bypass response "${BYPASS_PHRASE}")`
 }
 
 export function isChangelog(filePath: string | undefined): boolean {

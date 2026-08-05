@@ -184,7 +184,7 @@ export const check = bashGuard((command, payload) => {
   }
   const refList = [...dedup.values()].map(r => r.raw).join('", "')
   return block(
-    `🚨 no-ext-issue-ref-guard: external issue ref "${refList}" — GitHub backrefs the target; drop it or mask as [#<n>](https://github.com/<owner>/<repo>/issues/<n>) (bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 no-ext-issue-ref-guard: external issue ref "${refList}" — GitHub backrefs the target; drop it or mask as [#<n>](https://github.com/<owner>/<repo>/issues/<n>) (bypass response "${BYPASS_PHRASE}")`,
   )
 })
 

@@ -150,7 +150,7 @@ export function buildBlockMessage(
   findings: Finding[],
 ): string {
   const lines: string[] = [
-    `🚨 prefer-pipx-over-pip-guard: blocked \`pip install\` in ${context} — use \`pipx install <pkg>==<exact-version>\` (bootstrap: \`node .claude/hooks/fleet/setup-pipx/install.mts\`) (bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 prefer-pipx-over-pip-guard: blocked \`pip install\` in ${context} — use \`pipx install <pkg>==<exact-version>\` (bootstrap: \`node .claude/hooks/fleet/setup-pipx/install.mts\`) (bypass response "${BYPASS_PHRASE}")`,
   ]
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!

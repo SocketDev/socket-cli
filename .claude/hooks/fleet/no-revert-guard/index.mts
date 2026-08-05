@@ -534,7 +534,7 @@ export function blockMessage(
   return (
     `🚨 no-revert-guard: blocked "${matchedSubstring}" (${match.label}) in ` +
     `\`${command}\`${steer} ` +
-    `(bypass: user types "${match.bypassPhrase}" verbatim — a paraphrase does not count)`
+    `(bypass response "${match.bypassPhrase}" verbatim — a paraphrase does not count)`
   )
 }
 

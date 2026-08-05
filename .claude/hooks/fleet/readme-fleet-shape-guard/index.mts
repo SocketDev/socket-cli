@@ -491,7 +491,7 @@ export const check = editGuard((filePath, content, payload) => {
     `🚨 readme-fleet-shape-guard: blocked ${filePath} — ` +
       `${findings.map(f => f.detail).join('; ')} — skeleton: lead ` +
       `why-paragraph, then ${REQUIRED_SECTIONS.map(s => `## ${s}`).join(' / ')} ` +
-      `(bypass: user types "${BYPASS_PHRASE}")`,
+      `(bypass response "${BYPASS_PHRASE}")`,
   )
 })
 

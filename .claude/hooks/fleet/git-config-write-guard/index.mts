@@ -226,7 +226,7 @@ function buildBlockMessage(
     const evidence = `"${h.key} = ${h.value || '<unset value>'}"`
     lines.push(
       i === 0
-        ? `🚨 git-config-write-guard: blocked local git-config write ${evidence}${where} — use \`git config --global\` (or --worktree), or --unset to clean up (bypass: user types "${BYPASS_PHRASE}")`
+        ? `🚨 git-config-write-guard: blocked local git-config write ${evidence}${where} — use \`git config --global\` (or --worktree), or --unset to clean up (bypass response "${BYPASS_PHRASE}")`
         : `   ${evidence}`,
     )
   }

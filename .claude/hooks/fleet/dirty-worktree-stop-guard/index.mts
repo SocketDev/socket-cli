@@ -384,7 +384,7 @@ export function formatBlock(
       ? ` (+${sanctioned.length} owned by a live run, not blocking)`
       : ''
   const lines = [
-    `🚨 dirty-worktree-stop-guard: commit (\`git commit -o <path>\`) or revert${sanctionedTail} — ${inlinePaths(primaryDirty)}${primaryDirty.length ? ' ' : ''}(bypass: user types "${BYPASS_PHRASE}")`,
+    `🚨 dirty-worktree-stop-guard: commit (\`git commit -o <path>\`) or revert${sanctionedTail} — ${inlinePaths(primaryDirty)}${primaryDirty.length ? ' ' : ''}(bypass response "${BYPASS_PHRASE}")`,
   ]
   for (const s of siblingDirt) {
     lines.push(`   ${s.root}: ${inlinePaths(s.dirty)}`)
