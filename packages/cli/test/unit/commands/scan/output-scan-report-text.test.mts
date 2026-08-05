@@ -21,7 +21,7 @@ import type { ScanReport } from '../../../../src/commands/scan/generate-report.m
 // Matches any ANSI escape sequence, the codes that show up as literal noise
 // like "[32m" in a log viewer that does not interpret them.
 // oxlint-disable-next-line no-control-regex -- matching control characters is the point.
-const ANSI_PATTERN = /\[[0-9;]*m/
+const ANSI_PATTERN = /\u001B\[[0-9;]*m/
 
 function buildReport(config: {
   alerts: ScanReport['alerts']
