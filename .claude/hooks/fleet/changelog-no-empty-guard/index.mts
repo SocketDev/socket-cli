@@ -28,6 +28,7 @@ import {
   BYPASS_LOOKBACK_USER_TURNS,
   bypassPhrasePresent,
 } from '../_shared/transcript.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 const BYPASS_PHRASE = 'Allow changelog-empty-section bypass'
 
@@ -151,7 +152,11 @@ export function buildBlockMessage(
   const sections = empty
     .map(({ line, name }) => `\`### ${name}\` (line ${line})`)
     .join(', ')
-  return `🚨 changelog-no-empty-guard: blocked ${filePath} — empty section(s) ${sections} — delete the empty heading(s) too (bypass response "${BYPASS_PHRASE}")`
+  return verdictLine(
+    'block',
+    'changelog-no-empty-guard',
+    `blocked ${filePath} — empty section(s) ${sections} — delete the empty heading(s) too (bypass response "${BYPASS_PHRASE}")`,
+  )
 }
 
 export function isChangelog(filePath: string | undefined): boolean {

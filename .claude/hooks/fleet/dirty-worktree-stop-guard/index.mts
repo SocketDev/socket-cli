@@ -104,6 +104,7 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 const BYPASS_PHRASE = 'Allow dirty-worktree bypass'
@@ -384,10 +385,14 @@ export function formatBlock(
       ? ` (+${sanctioned.length} owned by a live run, not blocking)`
       : ''
   const lines = [
-    `🚨 dirty-worktree-stop-guard: commit (\`git commit -o <path>\`) or revert${sanctionedTail} — ${inlinePaths(primaryDirty)}${primaryDirty.length ? ' ' : ''}(bypass response "${BYPASS_PHRASE}")`,
+    verdictLine(
+      'block',
+      'dirty-worktree-stop-guard',
+      `commit (\`git commit -o <path>\`) or revert${sanctionedTail} — ${inlinePaths(primaryDirty)}${primaryDirty.length ? ' ' : ''}(bypass response "${BYPASS_PHRASE}")`,
+    ),
   ]
   for (const s of siblingDirt) {
-    lines.push(`   ${s.root}: ${inlinePaths(s.dirty)}`)
+    lines.push(verdictContinuation(`${s.root}: ${inlinePaths(s.dirty)}`))
   }
   return lines.join('\n')
 }

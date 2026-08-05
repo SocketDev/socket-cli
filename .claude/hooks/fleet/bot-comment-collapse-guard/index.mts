@@ -34,6 +34,7 @@ import {
   readLines,
   resolveRoleAndContent,
 } from '../_shared/transcript.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const BYPASS_PHRASE = 'Allow bot-collapse bypass'
@@ -300,7 +301,11 @@ export const check = (payload: ToolCallPayload): GuardResult | undefined => {
 
   return block(
     [
-      '🚨 bot-comment-collapse-guard: threads resolved but bot summaries still expanded — minimize them as RESOLVED via the command(s) below, then end the turn',
+      verdictLine(
+        'block',
+        'bot-comment-collapse-guard',
+        'threads resolved but bot summaries still expanded — minimize them as RESOLVED via the command(s) below, then end the turn',
+      ),
       ...lines,
     ].join('\n'),
   )

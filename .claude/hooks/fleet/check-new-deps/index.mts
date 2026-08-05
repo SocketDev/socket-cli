@@ -45,6 +45,7 @@ import type { BatchOutcome, CheckResult, Dep, HookInput } from './types.mts'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 const logger = getDefaultLogger()
 
@@ -339,11 +340,15 @@ export const check = editGuard(
     if (blocked.length > 0) {
       const first = blocked[0]!
       const lines = [
-        `🚨 check-new-deps: blocked ${blocked.length} dep(s) — Socket.dev flagged "${first.purl}" (${first.reason}); remove it`,
+        verdictLine(
+          'block',
+          'check-new-deps',
+          `blocked ${blocked.length} dep(s) — Socket.dev flagged "${first.purl}" (${first.reason}); remove it`,
+        ),
       ]
       for (let i = 1, { length } = blocked; i < length; i += 1) {
         const b = blocked[i]!
-        lines.push(`   "${b.purl}" (${b.reason})`)
+        lines.push(verdictContinuation(`"${b.purl}" (${b.reason})`))
       }
       return block(lines.join('\n'))
     }

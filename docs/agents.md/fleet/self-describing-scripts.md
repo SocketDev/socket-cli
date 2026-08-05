@@ -65,14 +65,24 @@ later:
 
 ## Enforcement
 
-`scripts/fleet/check/entry-scripts-self-describe.mts` scans every `.mts`
+`scripts/fleet/check/entry-scripts-are-self-describing.mts` scans every `.mts`
 under `scripts/fleet/` + `scripts/repo/` and flags:
 
 1. **no-run-main** — an entry-guarded script that never calls the shared
-   runner (a help request would run the side effect).
-2. **no-meta** — a `runMain(...)` call with no ScriptMeta second argument
-   (the runner has nothing to print). TypeScript enforces the meta's shape
+   runner, so a help request runs the side effect.
+2. **no-meta** — a `runMain(...)` call with no ScriptMeta second argument,
+   leaving the runner nothing to print. TypeScript enforces the meta's shape
    once it is passed.
+3. **runs-on-import** — a script that starts its own pipeline from a
+   top-level statement (`main()`, `void main()`, `await main()`,
+   `export const run = main().catch(…)`). Nothing gates on argv, so the work
+   is already done by the time a help request could be read, and importing
+   the module as a library runs it too. Defects 1 and 2 both need an entry
+   guard to inspect, so a file with no guard at all used to read as "a
+   library, out of scope" and pass: `node scripts/fleet/update.mts
+   --describe` ran a full taze update plus `pnpm install` and rewrote four
+   tracked files. Keep the work inside `main`, export it for the tests, and
+   end the file with the guard.
 
 The check runs in the standard `pnpm run check` path wiring beside
 `entry-scripts-are-fail-soft`.

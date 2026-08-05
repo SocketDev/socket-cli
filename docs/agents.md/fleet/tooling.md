@@ -284,14 +284,6 @@ The `--depth=1` (or `--depth 1`) plus `--single-branch` pair above isn't only a 
 
 Every entry in `.gitmodules` MUST set `shallow = true`. Every `git submodule update --init` call (postinstall.mts, CI, manual) MUST pass `--depth 1 --single-branch`. Upstream repos like yarnpkg/berry, oven-sh/bun, rust-lang/cargo are multi-GB with full history. We only ever need the pinned SHA's tree. A non-shallow init can take 30+ minutes and waste GB of disk on every fresh clone. There is no scenario where the fleet needs upstream submodule history.
 
-## `npm-run-all2` + `node --run` opt-in
-
-The fleet pins `npm-run-all2: 9.0.0` in the wheelhouse catalog. Every repo that depends on it MUST also declare the top-level `"npm-run-all2": { "nodeRun": true }` key in its own `package.json`. That key tells npm-run-all2 9.x to execute each script via `node --run` instead of the package manager CLI. `run-s build:*` and `run-p test:*` chains skip the per-script pnpm startup cost, which is non-trivial for N-script fan-outs. Inherited limitations from `node --run` (no `pre`/`post` lifecycle hooks; no `npm_*` env injection: `NODE_RUN_SCRIPT_NAME` + `NODE_RUN_PACKAGE_JSON_PATH` replace them; `node_modules/.bin` still on PATH) are acceptable for the fleet because none of our canonical scripts rely on those features. Enforced by `scripts/repo/sync-scaffolding/checks/package-npm-run-all2-noderun.mts`: `npm_run_all2_node_run_missing` findings auto-fix.
-
-## Backward compatibility (npm-run-all2)
-
-FORBIDDEN to maintain. Remove when encountered.
-
 ## `-stable` self-import in tooling
 
 A fleet repo that publishes `@socketsecurity/<X>` resolves the bare `@socketsecurity/<X>` specifier to its OWN local `src/`, the pnpm workspace link, which is work-in-progress and may be mid-edit or broken. Build scripts and git-hooks must run against a known-good PUBLISHED copy, so the fleet pins a `@socketsecurity/<X>-stable` catalog alias (`npm:@socketsecurity/<X>@<last-published>`). Tooling imports the `-stable` alias; only the package's own source consumers use the bare name.

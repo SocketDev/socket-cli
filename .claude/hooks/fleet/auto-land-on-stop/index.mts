@@ -47,6 +47,7 @@ import {
 } from '../_shared/parked-paths.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import { findWheelhouseRoot } from '../_shared/wheelhouse-root.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
@@ -168,7 +169,11 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     : allTouched
   if (touched.length === 0) {
     return notify(
-      `ℹ️ auto-land-on-stop: nothing landed — all ${held.length} touched path(s) parked by user hold; clear via node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>\n`,
+      verdictLine(
+        'info',
+        'auto-land-on-stop',
+        `nothing landed — all ${held.length} touched path(s) parked by user hold; clear via node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>\n`,
+      ),
     )
   }
   const stagedOnlyNote =
@@ -178,7 +183,13 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const byRoot = groupByRepo(touched, dir => gitToplevel(dir))
   if (byRoot.size === 0) {
     return stagedOnlyNote
-      ? notify(`ℹ️ auto-land-on-stop: nothing landed — ${stagedOnlyNote}\n`)
+      ? notify(
+          verdictLine(
+            'info',
+            'auto-land-on-stop',
+            `nothing landed — ${stagedOnlyNote}\n`,
+          ),
+        )
       : undefined
   }
   // Resolve land-work FLEET-FIRST, the session's own repo, then fall back to
@@ -202,11 +213,21 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   }
   if (landed.length === 0) {
     return stagedOnlyNote
-      ? notify(`ℹ️ auto-land-on-stop: nothing landed — ${stagedOnlyNote}\n`)
+      ? notify(
+          verdictLine(
+            'info',
+            'auto-land-on-stop',
+            `nothing landed — ${stagedOnlyNote}\n`,
+          ),
+        )
       : undefined
   }
   const lines = [
-    `ℹ️ auto-land-on-stop: landed this session's authored source in ${landed.length} repo(s): ${landed.join(', ')} — auto-lander commits (own-work only, gated), not a rival session`,
+    verdictLine(
+      'info',
+      'auto-land-on-stop',
+      `landed this session's authored source in ${landed.length} repo(s): ${landed.join(', ')} — auto-lander commits (own-work only, gated), not a rival session`,
+    ),
   ]
   if (held.length > 0) {
     lines.push(

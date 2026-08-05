@@ -36,6 +36,7 @@ import process from 'node:process'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 const DOC_LINK_RE = /docs\/agents\.md\/(?:fleet|repo)\//
 
@@ -129,7 +130,11 @@ export const check = editGuard((filePath, content, payload) => {
   }
   return block(
     [
-      '🚨 claude-md-rule-add-guard: a new CLAUDE.md rule needs a detail-doc link.',
+      verdictLine(
+        'block',
+        'claude-md-rule-add-guard',
+        'a new CLAUDE.md rule needs a detail-doc link.',
+      ),
       '',
       `  File:  ${filePath}`,
       '',

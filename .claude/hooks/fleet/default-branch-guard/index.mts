@@ -40,6 +40,7 @@ import {
   notify,
   runHook,
 } from '../_shared/guard.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 // Patterns we consider "script context", not interactive one-off:
 //
@@ -103,7 +104,11 @@ export const check = bashGuard((command, payload) => {
       .replaceAll(/\s+/g, ' ')
       .trim()
     return notify(
-      `💡 default-branch-guard: rename onto \`main\`/\`master\` "${renameEvidence}" fails while the target name already exists — free the name first (delete/relocate the existing branch), then rename the source; non-blocking, the rename proceeds\n`,
+      verdictLine(
+        'hint',
+        'default-branch-guard',
+        `rename onto \`main\`/\`master\` "${renameEvidence}" fails while the target name already exists — free the name first (delete/relocate the existing branch), then rename the source; non-blocking, the rename proceeds\n`,
+      ),
     )
   }
 
@@ -128,7 +133,11 @@ export const check = bashGuard((command, payload) => {
   void payload
 
   return block(
-    `🚨 default-branch-guard: hard-coded default branch in scripting context — ${hits.join('; ')} — resolve the base via \`git symbolic-ref refs/remotes/origin/HEAD\`, fallback main → master\n`,
+    verdictLine(
+      'block',
+      'default-branch-guard',
+      `hard-coded default branch in scripting context — ${hits.join('; ')} — resolve the base via \`git symbolic-ref refs/remotes/origin/HEAD\`, fallback main → master\n`,
+    ),
   )
 })
 

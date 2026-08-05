@@ -35,6 +35,7 @@ import { actedOnPath } from '../_shared/fleet-context.mts'
 import { bashGuard, defineHook, notify, runHook } from '../_shared/guard.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
@@ -136,7 +137,11 @@ export function formatReminder(lockfiles: readonly string[]): string {
     lockfiles.length === 1
       ? `\`${lockfiles[0]}\` is`
       : `${lockfiles.length} \`${LOCKFILE_NAME}\` files are`
-  return `💡 dirty-lockfile-nudge: ${which} dirty (a stale pair fails CI's \`--frozen-lockfile\`) — run \`pnpm i\` and commit the lockfile with your change; lockfile-only: \`git commit -o pnpm-lock.yaml --no-verify -m "chore: reconcile lockfile"\``
+  return verdictLine(
+    'warn',
+    'dirty-lockfile-nudge',
+    `${which} dirty (a stale pair fails CI's \`--frozen-lockfile\`) — run \`pnpm i\` and commit the lockfile with your change; lockfile-only: \`git commit -o pnpm-lock.yaml --no-verify -m "chore: reconcile lockfile"\``,
+  )
 }
 
 // Escalated reminder: the lockfile lost a workspace importer — a package/hook
@@ -147,7 +152,11 @@ export function formatReminder(lockfiles: readonly string[]): string {
 export function formatVanishedMemberWarning(
   removed: readonly string[],
 ): string {
-  return `💡 dirty-lockfile-nudge: WORKSPACE MEMBER VANISHED — \`${LOCKFILE_NAME}\` dropped importer(s) ${removed.join(', ')} — \`pnpm i\` will BLESS the removal, not restore it; if the dir should exist, restore it (and \`git add\` it) first, then \`pnpm i\``
+  return verdictLine(
+    'warn',
+    'dirty-lockfile-nudge',
+    `WORKSPACE MEMBER VANISHED — \`${LOCKFILE_NAME}\` dropped importer(s) ${removed.join(', ')} — \`pnpm i\` will BLESS the removal, not restore it; if the dir should exist, restore it (and \`git add\` it) first, then \`pnpm i\``,
+  )
 }
 
 export function getRepoDir(payload: ToolCallPayload): string | undefined {

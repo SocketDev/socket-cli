@@ -36,6 +36,7 @@ import {
   IOC_CITATION_MARKER,
 } from '../_shared/denied-domains.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 // The denylist's own surfaces — the only files that may carry the literals by
 // construction. Mirrors the commit-time check's EXEMPT_RE.
@@ -84,11 +85,17 @@ export const check = editGuard((filePath, content, _payload) => {
   }
   const surface = egress ? ' on an EGRESS surface (never exempt)' : ''
   const lines: string[] = [
-    `🚨 denied-domain-reference-guard: blocked fleet-DENIED reference in ${filePath}${surface} — drop it, or cite as an IOC in a docs/*.md carrying \`<!-- ${IOC_CITATION_MARKER} -->\``,
+    verdictLine(
+      'block',
+      'denied-domain-reference-guard',
+      `blocked fleet-DENIED reference in ${filePath}${surface} — drop it, or cite as an IOC in a docs/*.md carrying \`<!-- ${IOC_CITATION_MARKER} -->\``,
+    ),
   ]
   for (const hit of domainHits) {
     lines.push(
-      `   ✗ \`${hit.entry.host}\` — ${hit.entry.reason} (${hit.entry.source})`,
+      verdictContinuation(
+        `✗ \`${hit.entry.host}\` — ${hit.entry.reason} (${hit.entry.source})`,
+      ),
     )
   }
   for (const hit of filenameHits) {

@@ -73,6 +73,7 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 // 4-second total budget. Each probe subprocess is ~50-150 ms; with
 // ~80 hooks that's well under the SessionStart hook timeout.
@@ -453,7 +454,11 @@ export function check(payload: ToolCallPayload): GuardResult {
       // Already attempted this session and it didn't take — don't loop; point
       // at the manual command.
       return notify(
-        `🚨 broken-hook-detector: node_modules is gutted and auto-repair was already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
+        verdictLine(
+          'warn',
+          'broken-hook-detector',
+          `node_modules is gutted and auto-repair was already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
+        ),
       )
     }
     if (pnpmInstallRunning()) {
@@ -461,10 +466,16 @@ export function check(payload: ToolCallPayload): GuardResult {
       // that gutted things). Never run a second concurrently — that collision
       // is what causes the gutting.
       return notify(
-        `🚨 broken-hook-detector: node_modules looks gutted but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
+        verdictLine(
+          'warn',
+          'broken-hook-detector',
+          `node_modules looks gutted but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
+        ),
       )
     }
-    return notify(`🚨 broken-hook-detector: ${repairGutted(paths)}`)
+    return notify(
+      verdictLine('warn', 'broken-hook-detector', repairGutted(paths)),
+    )
     /* c8 ignore stop */
   }
 
@@ -475,15 +486,25 @@ export function check(payload: ToolCallPayload): GuardResult {
     /* c8 ignore start - repair/guard branches depend on live machine state + subprocess spawning; subprocess tests cover them */
     if (existsSync(paths.repairSentinel)) {
       return notify(
-        `🚨 broken-hook-detector: dangling @socketsecurity/lib-stable symlink (a removed git worktree orphaned it), auto-repair already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
+        verdictLine(
+          'warn',
+          'broken-hook-detector',
+          `dangling @socketsecurity/lib-stable symlink (a removed git worktree orphaned it), auto-repair already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
+        ),
       )
     }
     if (pnpmInstallRunning()) {
       return notify(
-        `🚨 broken-hook-detector: dangling @socketsecurity/lib-stable symlink but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
+        verdictLine(
+          'warn',
+          'broken-hook-detector',
+          `dangling @socketsecurity/lib-stable symlink but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
+        ),
       )
     }
-    return notify(`🚨 broken-hook-detector: ${repairGutted(paths)}`)
+    return notify(
+      verdictLine('warn', 'broken-hook-detector', repairGutted(paths)),
+    )
     /* c8 ignore stop */
   }
 
@@ -503,7 +524,11 @@ export function check(payload: ToolCallPayload): GuardResult {
     return undefined
   }
   return notify(
-    `🚨 broken-hook-detector: ${formatReport(failures, projectDir)}`,
+    verdictLine(
+      'warn',
+      'broken-hook-detector',
+      formatReport(failures, projectDir),
+    ),
   )
   /* c8 ignore stop */
 }

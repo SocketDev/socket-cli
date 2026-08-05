@@ -40,6 +40,7 @@
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { suppressionCoversLine } from '../_shared/markers.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 // CROSS_REPO_ANY_RE (built from the canonical FLEET_REPO_NAMES roster) is
 // imported from the gate-free cross-tree _shared/cross-repo.mts — the SAME
 // regex the commit-time scanCrossRepoPaths uses, so the two can't drift (was
@@ -75,14 +76,22 @@ export function emitBlock(filePath: string, hits: Hit[]): string {
     const h = hs[i]!
     if (i === 0) {
       lines.push(
-        `🚨 cross-repo-guard: cross-repo path "${h.matched.trim()}" at ${filePath}:${h.lineNumber} — import \`@socketsecurity/lib-stable/<subpath>\` (or registry-stable) instead; per-line opt-out: \`// socket-lint: allow cross-repo\` above it`,
+        verdictLine(
+          'block',
+          'cross-repo-guard',
+          `cross-repo path "${h.matched.trim()}" at ${filePath}:${h.lineNumber} — import \`@socketsecurity/lib-stable/<subpath>\` (or registry-stable) instead; per-line opt-out: \`// socket-lint: allow cross-repo\` above it`,
+        ),
       )
     } else {
-      lines.push(`   "${h.matched.trim()}" at ${filePath}:${h.lineNumber}`)
+      lines.push(
+        verdictContinuation(
+          `"${h.matched.trim()}" at ${filePath}:${h.lineNumber}`,
+        ),
+      )
     }
   }
   if (hits.length > 3) {
-    lines.push(`   …and ${hits.length - 3} more.`)
+    lines.push(verdictContinuation(`…and ${hits.length - 3} more.`))
   }
   return lines.join('\n')
 }

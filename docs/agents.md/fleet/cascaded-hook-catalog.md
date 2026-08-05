@@ -18,6 +18,7 @@ or changing a cascaded hook/rule.
   entries via the per-hook `hook.json` declaration. The fixer merges template +
   repo declarations so cascades don't clobber local hook wiring. See
   `cascade-preserve-repo-hook-wiring.md`.
+
 <details>
 <summary><b>The hooks/_shared helper modules</b>: fleet-repos, shell-command, transcript, foreign-paths, payload, hook-env, token-patterns, wheelhouse-root, stop-nudge, and the acorn-wasm ast bundle</summary>
 
@@ -131,9 +132,11 @@ phrase (where one exists):
 - **logger-guard** — PreToolUse(Edit|Write) refusing direct stream writes
   (`process.std{err,out}.write`, `console.*`) in source; suggests `getDefaultLogger()`.
 - **no-revert-guard** — PreToolUse(Bash) refusing destructive git
-  (checkout/restore/reset/stash/clean) + hook bypasses (--no-verify,
+  (checkout/clean/reset/restore/rm/stash) + hook bypasses (--no-verify,
   HUSKY=0, a redirected core.hooksPath, --no-gpg-sign) unless the canonical
-  `Allow <X> bypass` phrase is in a recent user turn.
+  `Allow <X> bypass` phrase is in a recent user turn. `git revert` is NOT
+  covered: it appends an inverse commit and loses no work, so the fleet
+  handles it with `prefer-rebase-over-revert-nudge` instead.
 - **no-force-push-guard** — PreToolUse(Bash) refusing a `git push` carrying
   any force flag (--force, -f, --force-with-lease, --force-if-includes)
   unless `Allow force-push bypass` (or a legacy alias) is in a recent user

@@ -38,6 +38,7 @@ import {
 } from '../_shared/commit-command.mts'
 import { bashGuard, block, defineHook, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 // Conventional Commits header validation lives in the cross-tree canonical home
 // .git-hooks/_shared/commit-format.mts so the commit-msg git-stage backstop
 // shares THIS code, the shared thing is the validation. That module is
@@ -112,7 +113,11 @@ export const check = bashGuard((command, payload) => {
       }
       /* c8 ignore stop */
       return block(
-        `🚨 commit-message-format-guard: ${saw} — suggested fix: ${suggestion} (bypass response "${BYPASS_FORMAT}")`,
+        verdictLine(
+          'block',
+          'commit-message-format-guard',
+          `${saw} — suggested fix: ${suggestion} (bypass response "${BYPASS_FORMAT}")`,
+        ),
       )
     }
     // Operator authorized this commit. Still fall through to AI check
@@ -126,7 +131,11 @@ export const check = bashGuard((command, payload) => {
       return undefined
     }
     return block(
-      `🚨 commit-message-format-guard: AI-attribution marker "${aiLabel}" — remove it; the fleet forbids AI attribution in commit messages and PR text (bypass response "${BYPASS_AI}")`,
+      verdictLine(
+        'block',
+        'commit-message-format-guard',
+        `AI-attribution marker "${aiLabel}" — remove it; the fleet forbids AI attribution in commit messages and PR text (bypass response "${BYPASS_AI}")`,
+      ),
     )
   }
 

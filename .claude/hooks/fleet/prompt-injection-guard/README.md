@@ -73,7 +73,11 @@ Agent denial-of-service shapes:
   lets a bolded `**(6+)**` note supply the trailing quantifier its
   author never typed (`markdown-scan.mts`). A fenced block and an inline
   code span keep their bytes and count as code, so a real pattern
-  written there still blocks.
+  written there still blocks. A code file reads a normalized line for
+  the same reason, over the regions that are prose rather than pattern
+  source: a comment body and a plain string literal (`code-scan.mts`).
+  A regex literal, a regex-shaped literal, and a regex constructor's
+  argument keep their bytes there, so real pattern source still blocks.
 - **Entity / alias expansion bombs** — XML `<!ENTITY>` or YAML-alias
   shapes that explode on expansion (billion-laughs).
 

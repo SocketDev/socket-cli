@@ -22,10 +22,18 @@
     // picture/source are load-bearing for the README's dark-mode logo
     // variants and reduced-motion GIF posters; div carries align="center"
     // on the footer mark (GitHub renders no CSS alternative).
+    // abbr/b/code are what the fleet's own prose doctrine MANDATES inside a
+    // <summary>: a severity circle wrapped in <abbr> hover text, the claim as a
+    // bold noun phrase, and inline <code> for identifiers. Leaving them out made
+    // every doc that followed the doctrine fail this rule, including the doc
+    // that defines it — see docs/agents.md/fleet/pr-review-comments.md.
     "MD033": {
       "allowed_elements": [
         "a",
+        "abbr",
+        "b",
         "br",
+        "code",
         "details",
         "div",
         "img",

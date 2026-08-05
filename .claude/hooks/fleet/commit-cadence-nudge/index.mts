@@ -24,6 +24,7 @@
 import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import { gitOut, resolveDefaultBranch } from '../_shared/git-branch.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 // A linked worktree has a distinct working-tree git dir from the common dir;
@@ -83,7 +84,7 @@ export const check = (): GuardResult => {
       `${ahead} commit(s) ahead of the target branch — gate before merging: pnpm run fix --all && pnpm run check --all && pnpm run test`,
     )
   }
-  return notify(`💡 commit-cadence-nudge: ${parts.join('; ')}`)
+  return notify(verdictLine('hint', 'commit-cadence-nudge', parts.join('; ')))
 }
 
 export const hook = defineHook({

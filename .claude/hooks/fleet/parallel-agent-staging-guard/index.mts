@@ -59,6 +59,7 @@
 //     "transcript_path": "/.../session.jsonl" }
 
 import { isSquashOptIn } from '../_shared/fleet-roster.mts'
+import { mutatesStash } from '../_shared/git-stash.mts'
 import {
   listForeignDirtyPaths,
   readSessionTouchedPaths,
@@ -107,8 +108,11 @@ export function detectGatedGitOp(command: string): string | undefined {
   ) {
     return 'git commit -a'
   }
-  // `git stash` (and `stash push`).
-  if (findInvocation(command, { binary: 'git', subcommand: 'stash' })) {
+  // `git stash` (and `stash push`), but NOT `list` / `show` — those print and
+  // change nothing, so they cannot sweep up another actor's work. The shared
+  // predicate keeps this in step with no-revert-guard, which had the same blind
+  // spot.
+  if (mutatesStash(command)) {
     return 'git stash'
   }
   // `git reset --hard`.

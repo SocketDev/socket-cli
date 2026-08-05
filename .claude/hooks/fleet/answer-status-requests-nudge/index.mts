@@ -44,6 +44,7 @@ import {
   readUserText,
   stripCodeFences,
 } from '../_shared/transcript.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 // Shapes the user might use to ask for a status update. Applied to
 // the most recent user turn ONLY.
@@ -169,11 +170,15 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 
   const userSnippet = recentUser.slice(0, 200).replace(/\s+/g, ' ').trim()
   const lines = [
-    `🚨 answer-status-requests-nudge: reply declined the status request "${userSnippet}${recentUser.length > 200 ? '…' : ''}" — run the check now and report`,
+    verdictLine(
+      'warn',
+      'answer-status-requests-nudge',
+      `reply declined the status request "${userSnippet}${recentUser.length > 200 ? '…' : ''}" — run the check now and report`,
+    ),
   ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    lines.push(`   • "${hit.label}" — …${hit.snippet}…`)
+    lines.push(verdictContinuation(`• "${hit.label}" — …${hit.snippet}…`))
   }
 
   return notify(lines.join('\n'))

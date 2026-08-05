@@ -26,11 +26,11 @@ catalog:
   '@socketregistry/packageurl-js': 1.5.2
   '@socketsecurity/lib': 6.6.0
   '@socketsecurity/registry': 2.0.5
-  '@socketsecurity/sdk': 4.1.3
+  '@socketsecurity/sdk': 4.1.4
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.6.0'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
-  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.3'
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.4'
   '@types/mdast': 4.0.4
   '@types/node': 26.1.2
   '@types/semver': 7.7.1
@@ -102,7 +102,6 @@ catalog:
   # candidates before simulating what a port actually cuts. Published
   # 2026-06-08, past the 7-day soak.
   'npm-high-impact': 1.13.0
-  'npm-run-all2': 9.0.2
   'oxfmt': 0.62.0
   'oxlint': 1.77.0
   # oxlint-tsgolint — tsgolint sidecar for oxlint --type-aware (same oxc release train).

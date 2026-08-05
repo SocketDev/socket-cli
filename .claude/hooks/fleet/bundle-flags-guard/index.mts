@@ -31,6 +31,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { resolveEditedText } from '../_shared/payload.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 // Bundler config filenames the hook scrutinizes. Match basename only;
 // `*.config.ts` style files live wherever the package author put them.
@@ -245,8 +246,12 @@ export const hook = defineHook({
       f => `\`${f.key}\`${f.line > 0 ? ` (line ${f.line})` : ''}: ${f.source}`,
     )
     const lines = [
-      `🚨 bundle-flags-guard: blocked ${details[0]!} in ${filePath} — set it to \`false\` or remove it (shipped bundles stay map-free + unminified)`,
-      ...details.slice(1).map(d => `   ${d}`),
+      verdictLine(
+        'block',
+        'bundle-flags-guard',
+        `blocked ${details[0]!} in ${filePath} — set it to \`false\` or remove it (shipped bundles stay map-free + unminified)`,
+      ),
+      ...details.slice(1).map(d => verdictContinuation(d)),
     ]
     return block(lines.join('\n'))
   }),

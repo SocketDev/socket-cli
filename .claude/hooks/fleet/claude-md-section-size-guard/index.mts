@@ -70,6 +70,7 @@ import process from 'node:process'
 
 import { extractFleetBlock, extractPerRepo } from '../_shared/fleet-markers.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 export { extractFleetBlock, extractPerRepo }
@@ -286,7 +287,11 @@ export const check = editGuard((filePath, content, payload) => {
       fleetBytes < preFleetBytes
     if (fleetBytes > fleetMax && !shrinksOverCapBlock) {
       return block(
-        `🚨 claude-md-section-size-guard: fleet block too large — ${fleetBytes} bytes, ${fleetBytes - fleetMax} over the ${fleetMax}-byte cap (75% of the 40 KB file limit) in ${filePath} — trim, never defer the rule: node scripts/fleet/trim-claude-md.mts --apply (a shrinking edit passes)`,
+        verdictLine(
+          'block',
+          'claude-md-section-size-guard',
+          `fleet block too large — ${fleetBytes} bytes, ${fleetBytes - fleetMax} over the ${fleetMax}-byte cap (75% of the 40 KB file limit) in ${filePath} — trim, never defer the rule: node scripts/fleet/trim-claude-md.mts --apply (a shrinking edit passes)`,
+        ),
       )
     }
   }
@@ -309,9 +314,11 @@ export const check = editGuard((filePath, content, payload) => {
   const lines: string[] = []
   for (let i = 0, { length } = tooLong; i < length; i += 1) {
     const t = tooLong[i]!
-    const prefix = i === 0 ? '🚨 claude-md-section-size-guard: ' : '   '
+    const body = `trim "${t.heading}" — ${t.bodyByteCount} bytes, over the ${maxBytes}-byte bullet cap; move the detail to docs/agents.md/fleet/<topic>.md`
     lines.push(
-      `${prefix}trim "${t.heading}" — ${t.bodyByteCount} bytes, over the ${maxBytes}-byte bullet cap; move the detail to docs/agents.md/fleet/<topic>.md`,
+      i === 0
+        ? verdictLine('block', 'claude-md-section-size-guard', body)
+        : verdictContinuation(body),
     )
   }
   return block(lines.join('\n'))

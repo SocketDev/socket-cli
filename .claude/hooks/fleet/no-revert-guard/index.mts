@@ -8,8 +8,10 @@
 // `Allow <X> bypass`, case-sensitive, exact match.
 //
 // The bypass-phrase contract:
-//   - Revert (git checkout/restore/reset/stash drop/stash pop/clean) →
-//       user must type "Allow revert bypass" in a recent user turn.
+//   - Work loss (git checkout/clean/reset --hard/restore/rm/stash
+//       drop|pop|clear) → user must type "Allow revert bypass" in a recent
+//       user turn. The covered shapes, the derived rule label, and why
+//       `git revert` is NOT one of them: `destructive-git-shapes.mts`.
 //   - Hook bypass (--no-verify, --no-gpg-sign) →
 //       user must type "Allow <X> bypass" where <X> matches the flag
 //       (e.g. "Allow no-verify bypass", "Allow gpg bypass").
@@ -44,6 +46,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { isFleetTarget } from '../_shared/fleet-context.mts'
 import { currentBranch, gitOut } from '../_shared/git-branch.mts'
+import { isReadOnlyStashAction } from '../_shared/git-stash.mts'
 import {
   gitSubcommandReadings,
   splitGitSubcommand,
@@ -54,6 +57,10 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 import { commandsFor, isFleetSyncCommand } from '../_shared/shell-command.mts'
 import { squashSentinelAllows } from '../_shared/squash-sentinel.mts'
 import { operatorBypassPresent } from '../_shared/transcript.mts'
+import {
+  DESTRUCTIVE_GIT_RULE_LABEL,
+  destructiveGitShape,
+} from './destructive-git-shapes.mts'
 import { matchHooksPathSkip } from './hooks-path.mts'
 import { resolveDestructiveGitRepoRoot } from './target-repo.mts'
 
@@ -119,7 +126,10 @@ export const triggers: readonly string[] = [
 const CHECKS: readonly RevertCheck[] = [
   {
     bypassPhrase: 'Allow revert bypass',
-    label: 'git revert (checkout/restore/reset/stash/clean)',
+    // Derived from the covered subcommand list, so the label can never name an
+    // operation the matcher misses (or miss one it covers) —
+    // `destructive-git-shapes.mts` also records why `git revert` is absent.
+    label: DESTRUCTIVE_GIT_RULE_LABEL,
     // Parser-based: inspect each real `git` command's args for a
     // destructive subcommand shape. Sees through chains / quotes so a
     // quoted "git reset --hard" in a commit message isn't a match.
@@ -212,13 +222,16 @@ const CHECKS: readonly RevertCheck[] = [
           if (sub !== 'stash') {
             return false
           }
-          const action = rest[0]
+          const action = rest.find(arg => !arg.startsWith('-'))
+          // `clear` / `drop` / `pop` belong to the destructive-git check above,
+          // a different destruction surface. `list` / `show` only print — the
+          // read-only set is shared with parallel-agent-staging-guard, which had
+          // the same blind spot, so the two cannot drift.
           return (
             action !== 'clear' &&
             action !== 'drop' &&
-            action !== 'list' &&
             action !== 'pop' &&
-            action !== 'show'
+            !isReadOnlyStashAction(action)
           )
         }),
       )
@@ -253,15 +266,6 @@ const CHECKS: readonly RevertCheck[] = [
   },
 ]
 
-// Destructive `git` subcommands the revert rule blocks. Operates on a
-// parsed git command's args (a1 = first arg = subcommand, rest = flags).
-// Mirrors the old regex's surface:
-//   checkout … -- <path> / checkout .   discards working-tree changes
-//   restore <path>         (but NOT `restore --staged`, which only unstages)
-//   reset --hard
-//   stash clear|drop|pop
-//   clean -f / --force / -xf / -df …
-//   rm -f / -rf
 // Match `--no-verify` anywhere in the command EXCEPT under `git rebase`.
 // Returns the offending substring for the block message, or `undefined`
 // when the flag is either absent or attached to an allowed subcommand.
@@ -474,55 +478,11 @@ export function matchDestructiveGit(command: string): string | undefined {
       continue
     }
     for (const { rest, sub } of gitSubcommandReadings(c.args)) {
-      const hit = destructiveShape(sub, rest)
+      const hit = destructiveGitShape(sub, rest)
       if (hit) {
         return hit
       }
     }
-  }
-  return undefined
-}
-
-// The destructive label for ONE reading of a git segment, or undefined.
-function destructiveShape(
-  sub: string | undefined,
-  rest: readonly string[],
-): string | undefined {
-  if (!sub) {
-    return undefined
-  }
-  // Both discard the working tree: `git checkout -- <path>` (explicit
-  // pathspec) and `git checkout .`, bare-dot pathspec. A pathspec-less
-  // `git checkout <branch>` is a SWITCH, not a discard — left to
-  // primary-checkout-branch-guard — so we key on `--` or a `.` arg.
-  if (sub === 'checkout' && (rest.includes('--') || rest.includes('.'))) {
-    return rest.includes('.') ? 'git checkout .' : 'git checkout -- <path>'
-  }
-  if (sub === 'restore' && !rest.includes('--staged')) {
-    return 'git restore'
-  }
-  if (sub === 'reset' && rest.includes('--hard')) {
-    return 'git reset --hard'
-  }
-  if (
-    sub === 'stash' &&
-    (rest[0] === 'clear' || rest[0] === 'drop' || rest[0] === 'pop')
-  ) {
-    return `git stash ${rest[0]}`
-  }
-  // Force flag in any form: short `-f`/`-xf`/`-df` (the `/^-[a-z]*f/`
-  // bundle) OR long `--force`. The long form slips the short-flag regex
-  // (`--force` has no `f` in the `-[a-z]*` run), so test it explicitly —
-  // `git clean --force -d` wipes untracked files just like `git clean -fd`.
-  // Dry-run (`-n`/`--dry-run`) carries no force flag, so it stays allowed.
-  if (
-    sub === 'clean' &&
-    rest.some(a => /^-[a-z]*f/.test(a) || a.startsWith('--force'))
-  ) {
-    return 'git clean -f'
-  }
-  if (sub === 'rm' && rest.some(a => /^-r?f?$/.test(a) && a.includes('f'))) {
-    return 'git rm -f'
   }
   return undefined
 }

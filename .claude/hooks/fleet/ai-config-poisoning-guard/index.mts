@@ -47,6 +47,7 @@ import {
   normalizeForScan,
 } from '../_shared/evasion-normalize.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 // AI-assistant config directories a worm targets for persistence /
 // repo-poisoning. Matched as a path segment at any depth.
@@ -190,7 +191,11 @@ export const hook = defineHook({
 
     return block(
       [
-        `🚨 ai-config-poisoning-guard: blocked a write to an AI-assistant config path`,
+        verdictLine(
+          'block',
+          'ai-config-poisoning-guard',
+          `blocked a write to an AI-assistant config path`,
+        ),
         `carrying a poisoning fingerprint.`,
         ``,
         `File:     ${path.basename(filePath)} (under a .claude/.cursor/.gemini/.vscode tree)`,

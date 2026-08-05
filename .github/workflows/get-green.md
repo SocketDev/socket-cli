@@ -147,6 +147,9 @@ vendor's key is still a key.
 
 <!-- BEGIN GENERATED token-shapes: scripts/fleet/gen/aw-token-shapes.mts -->
 
+<details>
+<summary><b>Detail</b> — the full list (25 entries)</summary>
+
 - AWS access key ID (AKIA)
 - Anthropic API key (sk-ant-)
 - DigitalOcean PAT (dop_v1_)
@@ -174,6 +177,8 @@ vendor's key is still a key.
 - private key (PEM block)
 
 <!-- END GENERATED token-shapes -->
+
+</details>
 
 ## Context
 
@@ -213,10 +218,15 @@ ${{ inputs.test-log }}
    and an agent that talked itself into "close enough" is exactly what the exit
    code exists to prevent.
 
-3. Open the pull request ONLY if step 2 exited 0. Use the `create_pull_request`
+<details>
+<summary><b>Step 3: open the PR only when step 2 exited 0</b> — the title format, and copying the paths outside the allowlist into the body so a reviewer sees them</summary>
+
+1. Open the pull request ONLY if step 2 exited 0. Use the `create_pull_request`
    safe output, title `${{ inputs.pr-title-prefix }} (<YYYY-MM-DD>)`, with a body
    noting the update and the fixes applied. The script prints any paths outside
    `${{ inputs.validate-file-patterns }}`; copy that list into the PR body so a
    reviewer sees what the fix touched beyond the manifests. If step 2 exited
    non-zero after your best effort, do NOT open a PR — leave the branch for human
    review and say what you tried.
+
+</details>

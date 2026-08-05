@@ -36,6 +36,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 const DEFAULT_CAP_BYTES = 40 * 1024
@@ -93,7 +94,11 @@ export function buildBlockMessage(
   fileBytes: number,
   capBytes: number,
 ): string {
-  return `🚨 claude-md-size-guard: CLAUDE.md too large — ${filePath} would be ${fileBytes} bytes, over the ${capBytes}-byte whole-file cap by ${fileBytes - capBytes} — move detail to docs/agents.md/fleet/<topic>.md and link it from the rule bullet\n`
+  return verdictLine(
+    'block',
+    'claude-md-size-guard',
+    `CLAUDE.md too large — ${filePath} would be ${fileBytes} bytes, over the ${capBytes}-byte whole-file cap by ${fileBytes - capBytes} — move detail to docs/agents.md/fleet/<topic>.md and link it from the rule bullet\n`,
+  )
 }
 
 export function getCap(): number {

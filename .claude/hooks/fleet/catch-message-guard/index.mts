@@ -27,6 +27,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { resolveEditedText } from '../_shared/payload.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
 import { bypassPhrasePresent } from '../_shared/transcript.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 const BYPASS_PHRASE = 'Allow catch-message bypass'
 const BINDING_BYPASS_PHRASE = 'Allow catch-binding-name bypass'
@@ -317,7 +318,11 @@ export const check = editGuard((filePath, content, payload) => {
       .map(f => `line ${f.line} \`${f.source}\``)
       .join('; ')
     lines.push(
-      `🚨 catch-message-guard: blocked bare \`\${e.message}\` (prints "undefined" for a non-Error throw) — ${filePath}: ${sites} — use \`errorMessage(e)\` from @socketsecurity/lib/errors/message (bypass response "${BYPASS_PHRASE}", or append \`// ok: catch-message <reason>\` on the line)`,
+      verdictLine(
+        'block',
+        'catch-message-guard',
+        `blocked bare \`\${e.message}\` (prints "undefined" for a non-Error throw) — ${filePath}: ${sites} — use \`errorMessage(e)\` from @socketsecurity/lib/errors/message (bypass response "${BYPASS_PHRASE}", or append \`// ok: catch-message <reason>\` on the line)`,
+      ),
     )
   }
   if (hasBinding && !bindingBypassed) {
@@ -325,7 +330,11 @@ export const check = editGuard((filePath, content, payload) => {
       .map(f => `line ${f.line} \`catch (${f.binding})\``)
       .join('; ')
     lines.push(
-      `🚨 catch-message-guard: blocked non-\`e\` catch binding — ${filePath}: ${sites} — rename the binding to \`e\` (fleet convention) (bypass response "${BINDING_BYPASS_PHRASE}", or append \`// ok: catch-binding <reason>\` on the line)`,
+      verdictLine(
+        'block',
+        'catch-message-guard',
+        `blocked non-\`e\` catch binding — ${filePath}: ${sites} — rename the binding to \`e\` (fleet convention) (bypass response "${BINDING_BYPASS_PHRASE}", or append \`// ok: catch-binding <reason>\` on the line)`,
+      ),
     )
   }
   return block(lines.join('\n'))

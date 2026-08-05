@@ -30,6 +30,7 @@ import {
 } from '../_shared/honesty-framing.mts'
 import { commandsFor } from '../_shared/shell-command.mts'
 import type { Command } from '../_shared/shell-command.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 // Fast pre-dispatch substrings — the dispatcher skips this hook unless one
 // appears in the raw payload.
@@ -252,8 +253,12 @@ export const check = bashGuard(command => {
     for (let j = 0, { length: ilen } = issues; j < ilen; j += 1) {
       lines.push(
         j === 0
-          ? `💡 convo-prose-nudge: rewrite the gh body through the prose skill (.claude/skills/fleet/prose, conversational mode) — ${issues[j]}`
-          : `   ${issues[j]}`,
+          ? verdictLine(
+              'warn',
+              'convo-prose-nudge',
+              `rewrite the gh body through the prose skill (.claude/skills/fleet/prose, conversational mode) — ${issues[j]}`,
+            )
+          : verdictContinuation(`${issues[j]}`),
       )
     }
     return notify(lines.join('\n'))

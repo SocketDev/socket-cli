@@ -76,7 +76,9 @@ export function collectDependencySpecMap(
   return out
 }
 
-function describeFindings(findings: readonly DependencySpecFinding[]): string {
+export function describeFindings(
+  findings: readonly DependencySpecFinding[],
+): string {
   return findings
     .map(finding => `${finding.field}.${finding.name} "${finding.value}"`)
     .join(', ')

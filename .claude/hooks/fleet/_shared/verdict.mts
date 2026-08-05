@@ -1,4 +1,4 @@
-/**
+/*
  * @file The typed hook-verdict line — ONE home for the severity glyphs so a
  *   hook composes its message by kind and the emoji can never drift by hand.
  *   Four kinds, matching the hook taxonomy (`hook-registry.md`) and

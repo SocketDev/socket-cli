@@ -36,6 +36,7 @@ import {
   readIdentityPolicy,
 } from '../../../../.git-hooks/_shared/git-identity.mts'
 import type { GitAuthor } from '../../../../.git-hooks/_shared/git-identity.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 
 export { isGitCommit }
@@ -134,7 +135,11 @@ export const check = bashGuard((command, payload) => {
     ? `git config user.email "${policy.canonical.email}"`
     : 'git config user.email "<you>@<domain>" && git config user.name "<Your Name>"'
   const lines = [
-    `🚨 commit-author-guard: blocked commit author "${who}" (${reason}) — fix: ${fix} (policy: .config/{repo,fleet}/git-authors.json)`,
+    verdictLine(
+      'block',
+      'commit-author-guard',
+      `blocked commit author "${who}" (${reason}) — fix: ${fix} (policy: .config/{repo,fleet}/git-authors.json)`,
+    ),
   ]
   const allowed: string[] = []
   if (policy.canonical.email) {

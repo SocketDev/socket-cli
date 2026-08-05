@@ -36,6 +36,7 @@ import {
   isRuleProseSurface,
 } from '../_shared/dated-citation.mts'
 import { block, defineHook, editGuard, runHook } from '../_shared/guard.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 // File-path fragments (normalized to `/`) that define or quote the pattern, so
 // the guard doesn't fire on its own machinery.
@@ -72,7 +73,11 @@ export const check = editGuard((filePath, content, payload) => {
   void payload
   const evidence = hits.map(hit => `${hit.label} "${hit.text}"`).join('; ')
   return block(
-    `🚨 dated-citation-guard: blocked ${filePath} — ${evidence} — rewrite the citation as a timeless example (drop the date / version delta / percentage / SHA)`,
+    verdictLine(
+      'block',
+      'dated-citation-guard',
+      `blocked ${filePath} — ${evidence} — rewrite the citation as a timeless example (drop the date / version delta / percentage / SHA)`,
+    ),
   )
 })
 

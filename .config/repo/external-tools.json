@@ -130,7 +130,7 @@
     },
     "zizmor": {
       "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
-      "version": "1.28.0",
+      "version": "1.29.0",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
       "notes": [
@@ -140,24 +140,29 @@
       "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-qErEbGBrRH6hwuJDTPio0VUKpV3gKT39eNFwLel7J1RqaucMC5yTilyoo0UdIa9ilxM5P5EocN+wuH8Gw90c7Q=="
+          "integrity": "sha512-lXyZ6VFPvuPZdn/j+ZKHNTrwDelq2mpGmZCNT8QEvpKxvg5v3cP+gLLTxoBo3q591UuPLpLpgQ29eMXu1FnSeg=="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-hXXbUc6nELKsjUznvTq94dAv4qjeH74Gyj3/1ji+LJf2DWNbk82zc3qM5Y0ik8MkPwrQPC537ETtznTtPKNtQQ=="
+          "integrity": "sha512-PTiTH43f43WY7yVjC0Mvigsh8XoQzDMH9/bcvhEVpl0i8nO7HBS47uvgolLh5McSCI9u8CKvCHqKm132ku3FuQ=="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-OtTfOoCgBvs05J5fTuo2Kva0y+3j8f7DqlOpbugbd/k/EJRPJjXQpDcEClXn3ClDNXq597kqG3yOAekfidMYUQ=="
+          "integrity": "sha512-VuBT1NwuQez9OSaucn3fkdvRmd0cRoLomozfnebDnQEtxNbcq+GJAVxeYusS0t3PTDNcC4oOBtEIh6AiyvZbLQ=="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-j+SaxjjzZpol8oGl+5yoXPijSLnLaZQd/hjQQfQmxAJpoRJsRITzo52iYOd5E7Gf8YmEt455QjzjPO5eVaC6YQ=="
+          "integrity": "sha512-+ud35oavU/AEGqKoNZVg8b/dwuFuKM/TfujGmXomnV3mScdhmavrkiNpx/9vUbQ+htk7eYfK2nRStzIVWA19KA=="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-YS/j35KOSOO32ZZSCeRgNFQmthYuGBb0hQ2puPimy9c0kSi3eYeINasLBuqEPzfqcoabxePZCG1byBMT4+dDbQ=="
+          "integrity": "sha512-r6YP+e2GsOklaxEf9JHrixkeR0NNkVAaMGcvwLxkt1JlYJpxFizH/LzhcsMmPSrLkELf6LNB2JL8hpDa5dBAww=="
         }
+      },
+      "soakBypass": {
+        "published": "2026-08-01",
+        "removable": "2026-08-08",
+        "version": "1.29.0"
       }
     },
     "sfw-free": {

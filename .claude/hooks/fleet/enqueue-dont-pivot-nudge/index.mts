@@ -37,6 +37,7 @@ import {
   readUserText,
   stripCodeFences,
 } from '../_shared/transcript.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 export const PIVOT_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
@@ -159,8 +160,12 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     const hit = hits[i]!
     lines.push(
       i === 0
-        ? `💡 enqueue-dont-pivot-nudge: pivot tell "…${hit.snippet}…" — TaskCreate the new ask, finish the current in-progress task first`
-        : `   "…${hit.snippet}…"`,
+        ? verdictLine(
+            'warn',
+            'enqueue-dont-pivot-nudge',
+            `pivot tell "…${hit.snippet}…" — TaskCreate the new ask, finish the current in-progress task first`,
+          )
+        : verdictContinuation(`"…${hit.snippet}…"`),
     )
   }
   return notify(lines.join('\n'))

@@ -25,6 +25,11 @@
 //     backticks or string literals stay editable), and the trees that
 //     legitimately define/teach the phrases are exempt (.claude/**,
 //     docs/agents.md/**, .config/fleet/**).
+//   - One further file-surface carve-out, for a vitest spec that ASSERTS a
+//     guard's deny message: inside a `*.test.*` / `*.spec.*` file under a
+//     test root, a regex literal filling a whole call argument
+//     (`assert.match(msg, /…/)`) is not an emitted phrase. Rationale + the
+//     limits of both halves: _shared/authorization-phrase-assertions.mts.
 //   - The phrase list/shape is shared with the detection side via
 //     _shared/authorization-phrases.mts, so the two guards can never drift.
 //   - Matching runs on a rendered-text normal form (_shared/evasion-
@@ -46,6 +51,10 @@
 
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import {
+  isVitestSpecPath,
+  stripPhraseAssertionRegexLiterals,
+} from '../_shared/authorization-phrase-assertions.mts'
 import { findAuthorizationPhrase } from '../_shared/authorization-phrases.mts'
 import { collapseIntraWordMarkup } from '../_shared/evasion-normalize.mts'
 import { block, defineHook, runHook } from '../_shared/guard.mts'
@@ -108,7 +117,20 @@ function isPhraseDocumentationPath(filePath: string): boolean {
   return EXEMPT_PATH_SEGMENTS.some(seg => normalized.includes(seg))
 }
 
-function teach(found: string, surface: string): GuardResult {
+/**
+ * Extra `Fix` lines, appended when the surface has a sanctioned form the
+ * generic advice does not cover.
+ */
+export interface TeachOptions {
+  readonly fixLines?: readonly string[] | undefined
+}
+
+function teach(
+  found: string,
+  surface: string,
+  options?: TeachOptions | undefined,
+): GuardResult {
+  const opts = { __proto__: null, ...options } as typeof options
   return block(
     [
       `[authorization-phrase-emission-guard] Blocked: this ${surface} carries`,
@@ -124,10 +146,20 @@ function teach(found: string, surface: string): GuardResult {
       '  REPORT BLOCKED to its human and stop.',
       '  If you are describing a guard: name the guard or the phrase SLUG',
       '  instead of spelling the phrase out.',
+      ...(opts?.fixLines ?? []),
       '',
     ].join('\n') + '\n',
   )
 }
+
+// The Fix lines a vitest spec gets: it is the one file surface with a
+// sanctioned way to carry a phrase, so the block has to name that form rather
+// than telling the author to stop asserting the message.
+const SPEC_FIX_LINES: readonly string[] = [
+  '  In a vitest spec, pin a guard message with a regex-literal assertion',
+  '  argument — `assert.match(msg, /…/)` — which this guard exempts. Prose,',
+  '  a comment, and a hoisted `const RE = /…/` are NOT exempt.',
+]
 
 export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
   const tool = payload?.tool_name
@@ -182,11 +214,21 @@ export const check = async (payload: ToolCallPayload): Promise<GuardResult> => {
     // an evasion into an exemption. collapseIntraWordMarkup only fires on a
     // split word, so a span wrapping a whole phrase still reaches the
     // strippers intact.
-    const found = findAuthorizationPhrase(
-      stripQuotedSpans(stripCodeFences(collapseIntraWordMarkup(content))),
+    let scanned = stripQuotedSpans(
+      stripCodeFences(collapseIntraWordMarkup(content)),
     )
+    // The spec carve-out runs LAST, on text whose quoted spans are already
+    // gone. That ordering is what keeps a quoted path (`'/tmp/x.mts'`) from
+    // ever reaching the regex-argument matcher.
+    const isSpec = isVitestSpecPath(filePath)
+    if (isSpec) {
+      scanned = stripPhraseAssertionRegexLiterals(scanned)
+    }
+    const found = findAuthorizationPhrase(scanned)
     return found
-      ? teach(found, `file write (${filePath ?? 'unknown path'})`)
+      ? teach(found, `file write (${filePath ?? 'unknown path'})`, {
+          fixLines: isSpec ? SPEC_FIX_LINES : undefined,
+        })
       : undefined
   }
   return undefined

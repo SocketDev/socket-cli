@@ -13,12 +13,15 @@
  *   In a markdown file the ReDoS detector reads NORMALIZED lines, because
  *   markdown's emphasis delimiters are themselves regex metacharacters and
  *   formatting can synthesize a pattern nobody wrote (`markdown-scan.mts` holds
- *   the reasoning).
+ *   the reasoning). A code file gets the same normalization over the regions
+ *   that are prose rather than pattern source — a comment body and a plain
+ *   string literal (`code-scan.mts` holds that reasoning).
  *
  *   The Zalgo, repeated-character, and entity-expansion detectors stay
  *   unconditional: no file kind has a legitimate reason to carry one.
  */
 
+import { normalizeCodeForPatternScan } from './code-scan.mts'
 import { clipSource, lineOfFirstWord } from './findings.mts'
 import type { Finding } from './findings.mts'
 import { normalizeMarkdownForPatternScan } from './markdown-scan.mts'
@@ -26,7 +29,9 @@ import { findRegexPatternCandidates } from './scan-context.mts'
 
 export interface BombScanOptions {
   // True → the file is code, widening the pattern positions the ReDoS detector
-  // reads, because a quoted string there may be a regex source.
+  // reads, because a quoted string there may be a regex source, and narrowing
+  // the text it reads them from: a comment body and a plain string literal are
+  // prose, so their emphasis delimiters are stripped first.
   codeFile?: boolean | undefined
   // True → the file is a generated / vendored / encoded artifact, so its long
   // unbroken lines are not a hand-authored context bomb.
@@ -68,9 +73,13 @@ export function findBombFindings(
   const opts = { __proto__: null, ...options } as BombScanOptions
   const patternOptions = { codeFile: opts.codeFile }
   const codePatternOptions = { codeFile: true }
-  const markdownLines =
-    opts.markdownFile === true
-      ? normalizeMarkdownForPatternScan(rawLines)
+  const markdownFile = opts.markdownFile === true
+  const markdownLines = markdownFile
+    ? normalizeMarkdownForPatternScan(rawLines)
+    : undefined
+  const codeLines =
+    !markdownFile && opts.codeFile === true
+      ? normalizeCodeForPatternScan(rawLines)
       : undefined
   const out: Finding[] = []
   for (let i = 0; i < rawLines.length; i += 1) {
@@ -110,11 +119,13 @@ export function findBombFindings(
         source: clipSource(raw.trim()),
       })
     }
-    // Markdown reads the normalized line, so a bolded `**(6+)**` note carries no
-    // synthetic quantifier; a code span or fence keeps its bytes and widens the
-    // positions, so a real pattern written there is still read as one.
+    // Markdown and code both read a normalized line, so a bolded `**(6+)**`
+    // note carries no synthetic quantifier. A markdown code span or fence keeps
+    // its bytes and widens the positions; a code file's regex literals,
+    // regex-shaped literals, and constructor arguments keep theirs. A real
+    // pattern written in any of them is still read as one.
     const markdownLine = markdownLines?.[i]
-    const patternText = markdownLine?.text ?? raw
+    const patternText = markdownLine?.text ?? codeLines?.[i] ?? raw
     const linePatternOptions =
       markdownLine?.code === true ? codePatternOptions : patternOptions
     for (const candidate of findRegexPatternCandidates(

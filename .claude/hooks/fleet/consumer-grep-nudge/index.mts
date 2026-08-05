@@ -27,6 +27,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
+import { verdictLine } from '../_shared/verdict.mts'
 
 // Dirs that signal "this repo has consumers outside the repo root."
 // Match the same set as the untracked-by-default rule.
@@ -140,7 +141,11 @@ export const check = editGuard((filePath, _content, payload) => {
   const more = tokens.length > 5 ? ` (+${tokens.length - 5} more)` : ''
   const dirList = dirs.map(d => `${d}/`).join(' ')
   return notify(
-    `💡 consumer-grep-nudge: deleting ${shown}${more} while ${dirList} may hold consumers — rg -nF '${tokens[0]}' ${dirList} before relying on the removal`,
+    verdictLine(
+      'hint',
+      'consumer-grep-nudge',
+      `deleting ${shown}${more} while ${dirList} may hold consumers — rg -nF '${tokens[0]}' ${dirList} before relying on the removal`,
+    ),
   )
 })
 

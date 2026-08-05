@@ -417,7 +417,7 @@ overrides:
   'mime-types@>=3': '3.0.2'
   'minimatch@>=3': '10.2.6'
   'minipass@>=4': '7.1.3'
-  'postcss@>=8': '8.5.24'
+  'postcss@>=8': '8.5.25'
   'safe-buffer': 'npm:@socketregistry/safe-buffer@1.0.9'
   'safer-buffer': 'npm:@socketregistry/safer-buffer@1.0.10'
   'semver@>=5.0.0 <7.6.0': '7.8.5'

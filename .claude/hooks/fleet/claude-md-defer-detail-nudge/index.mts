@@ -44,6 +44,7 @@ import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 
 import { extractFleetBlock } from '../_shared/fleet-markers.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 export { extractFleetBlock }
 
@@ -249,12 +250,18 @@ export function reminderMessage(
 ): string {
   const first = added[0]!
   const lines = [
-    `🚨 claude-md-defer-detail-nudge: new section "### ${first.heading}" (${first.bodyLineCount} body lines, no docs/ link) in ${filePath} — keep the rule inline, move the detail to docs/agents.md/{fleet,repo}/<topic>.md and link it`,
+    verdictLine(
+      'warn',
+      'claude-md-defer-detail-nudge',
+      `new section "### ${first.heading}" (${first.bodyLineCount} body lines, no docs/ link) in ${filePath} — keep the rule inline, move the detail to docs/agents.md/{fleet,repo}/<topic>.md and link it`,
+    ),
   ]
   for (let i = 1, { length } = added; i < length; i += 1) {
     const s = added[i]!
     lines.push(
-      `   "### ${s.heading}" (${s.bodyLineCount} body lines, no docs/ link)`,
+      verdictContinuation(
+        `"### ${s.heading}" (${s.bodyLineCount} body lines, no docs/ link)`,
+      ),
     )
   }
   return lines.join('\n')

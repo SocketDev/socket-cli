@@ -23,6 +23,7 @@ import path from 'node:path'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 
 import { defineHook, editGuard, notify, runHook } from '../_shared/guard.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 export interface SortFinding {
   surface: 'json' | 'yaml' | 'markdown' | 'bash'
@@ -195,11 +196,15 @@ function buildMessage(
 ): string {
   const first = findings[0]!
   const lines = [
-    `🚨 alpha-sort-nudge: ${path.basename(filePath)} (${first.surface}) ${first.hint} — sort sibling items naturally unless order is load-bearing (docs/agents.md/fleet/sorting.md)`,
+    verdictLine(
+      'warn',
+      'alpha-sort-nudge',
+      `${path.basename(filePath)} (${first.surface}) ${first.hint} — sort sibling items naturally unless order is load-bearing (docs/agents.md/fleet/sorting.md)`,
+    ),
   ]
   for (let i = 1, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`   • (${f.surface}) ${f.hint}`)
+    lines.push(verdictContinuation(`• (${f.surface}) ${f.hint}`))
   }
   return lines.join('\n')
 }

@@ -15,6 +15,12 @@
  *   itself regex-shaped. Markdown prose, a table cell, a `>=1.2 <2` range, a
  *   glob, and a semver caret produce no positions at all.
  *
+ *   A position says WHERE to look. Its caller decides WHAT text it looks at:
+ *   both a markdown file and a code file hand these functions a line whose
+ *   prose has had its markdown emphasis delimiters stripped, because formatting
+ *   is regex metacharacters too. `markdown-scan.mts` and `code-scan.mts` carry
+ *   that reasoning.
+ *
  *   The megaline detectors get the same treatment from the other end: a build
  *   output, a minified bundle, a source map, and a lockfile hold long unbroken
  *   lines because a generator emitted them that way, so their length is that
@@ -32,13 +38,19 @@ export interface PatternPositionOptions {
 }
 
 // A `/body/flags` regex literal. The leader class keeps `a/b` and a path like
-// `docs/agents.md/fleet/x.md` from opening a literal (a literal never starts
-// straight after a word character), and `(?![*/])` skips `//` line comments and
+// `docs/agents.md/fleet/x.md` from opening a literal — a literal never starts
+// straight after a word character — and `(?![*/])` skips `//` line comments and
 // `/*` block comments. The body allows `(`, `+`, and `*` — that IS the shape
 // being looked for — but never an unescaped `/`, and a bracket class is stepped
 // over whole so `[/]` doesn't close the literal early.
 const REGEX_LITERAL_RE =
   /(?:^|[\s!%&(*+,:;<=>?[^{|~])\/(?![*/])((?:\\.|\[(?:\\.|[^\n\\\]])*\]|[^\n\\/[])+)\/[dgimsuvy]*/g
+
+// The leader set above, on its own, for a reader that walks a line character by
+// character instead of matching it whole. `code-scan.mts` carves regex literals
+// out of a code file's comment prose and must agree with `REGEX_LITERAL_RE` on
+// where one begins; a unit test pins the two together over the ASCII range.
+const REGEX_LITERAL_LEADER_RE = /[\s!%&(*+,:;<=>?[^{|~]/
 
 // A regex constructor or a string-taking regex API, across the fleet's
 // languages: `RegExp(…)`, `Regex::new(…)` in Rust, `regexp.MustCompile(…)` in
@@ -71,6 +83,24 @@ const ENCODED_ARTIFACT_FILE_RE =
 // Longest argument-text window scanned for one call — a pattern long enough to
 // hide a nested quantifier past this is already a finding of its own kind.
 const MAX_ARG_SCAN = 400
+
+/**
+ * True when a `/` preceded by `before` opens a regex literal rather than
+ * dividing or sitting inside a path. `before` is the single character to the
+ * left, empty at line start.
+ */
+export function isRegexLiteralLeader(before: string): boolean {
+  return before === '' || REGEX_LITERAL_LEADER_RE.test(before)
+}
+
+/**
+ * True when `text` reads as regex SOURCE rather than as a sentence: anchored at
+ * either end, or carrying a group modifier or a regex escape class. `'^(a+)+$'`
+ * qualifies; `'**(6+)**'` does not.
+ */
+export function isRegexSourceShaped(text: string): boolean {
+  return REGEX_SOURCE_SHAPE_RE.test(text)
+}
 
 /**
  * The text between `line`'s paren at `openParenIndex` and its matching close
@@ -133,7 +163,7 @@ export function findRegexPatternCandidates(
   if (opts.codeFile === true) {
     for (const m of line.matchAll(STRING_LITERAL_RE)) {
       const body = m[2]!
-      if (REGEX_SOURCE_SHAPE_RE.test(body)) {
+      if (isRegexSourceShaped(body)) {
         out.push(body)
       }
     }

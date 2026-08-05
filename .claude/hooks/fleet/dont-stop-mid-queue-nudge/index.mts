@@ -33,6 +33,7 @@ import {
   readUserText,
   stripCodeFences,
 } from '../_shared/transcript.mts'
+import { verdictContinuation, verdictLine } from '../_shared/verdict.mts'
 
 const STOP_PATTERNS: ReadonlyArray<{ label: string; regex: RegExp }> = [
   {
@@ -215,8 +216,12 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   for (let i = 0, { length } = hits; i < length; i += 1) {
     lines.push(
       i === 0
-        ? `💡 dont-stop-mid-queue-nudge: stop/menu tell "…${hits[i]}…" — pick the next queue item and start it now`
-        : `   "…${hits[i]}…"`,
+        ? verdictLine(
+            'warn',
+            'dont-stop-mid-queue-nudge',
+            `stop/menu tell "…${hits[i]}…" — pick the next queue item and start it now`,
+          )
+        : verdictContinuation(`"…${hits[i]}…"`),
     )
   }
   return notify(lines.join('\n'))
