@@ -217,7 +217,8 @@ describe('commands/optimize/ls-by-agent', () => {
       const { parsableToQueryStdout } =
         await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
-        '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n', // socket-lint: allow personal-path
+        // socket-lint: allow personal-path -- test fixture with example paths
+        '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n',
       )
       expect(typeof result).toBe('string')
     })
