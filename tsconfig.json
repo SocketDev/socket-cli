@@ -1,6 +1,10 @@
 {
   "extends": "./.config/tsconfig.base.json",
-  "include": ["src/**/*.mts", "scripts/release/**/*.mts"],
+  "include": [
+    "src/**/*.mts",
+    "scripts/lib/**/*.mts",
+    "scripts/release/**/*.mts"
+  ],
   "exclude": [
     "src/**/*.test.mts",
     ".cache/**",
