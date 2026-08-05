@@ -223,7 +223,7 @@ export async function generateRecursiveManifests({
   cwd: string
   excludePaths?: string[] | undefined
   // Reachability path only: run build tools with files and fold resolved
-  // artifact paths into sidecarAcc, tagged with each root's own factsPath.
+  // artifact paths into sidecarAcc, keyed by each root's own factsPath.
   sidecarAcc?: SidecarAccumulator | undefined
   verbose: boolean
   withFiles?: boolean | undefined

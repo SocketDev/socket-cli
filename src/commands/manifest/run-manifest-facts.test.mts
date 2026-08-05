@@ -112,7 +112,7 @@ describe('runManifestFacts - sidecar', () => {
     process.exitCode = undefined
   })
 
-  it('tags a project entry with the symlink-resolved factsPath, not the raw cwd-joined one', async () => {
+  it('keys the sidecar by the symlink-resolved factsPath, not the raw cwd-joined one', async () => {
     const result = okResult()
     result.facts.projects = [
       {
