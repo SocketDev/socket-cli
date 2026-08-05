@@ -1,7 +1,7 @@
 /**
  * GitHub API error handling for Socket CLI. Converts GitHub REST/GraphQL
  * errors into user-friendly CResult failures with actionable messages, and
- * provides a retry wrapper for transient failures.
+ * hands transient failures to the fleet's shared `pRetry` for backoff.
  */
 import { GraphqlResponseError } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
@@ -9,10 +9,19 @@ import { RequestError } from '@octokit/request-error'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
+import { pRetry } from '@socketsecurity/lib-stable/promises/retry'
+import { resolveBaseDelayMs } from '@socketsecurity/lib-stable/releases/github-retry-config'
 
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type { CResult } from '../../types.mts'
+
+// Upper bound on any single backoff wait. Matches the shared
+// GITHUB_RETRY_CONFIG policy in @socketsecurity/lib.
+const MAX_RETRY_DELAY_MS = 10_000
+
+// How much each successive backoff wait grows.
+const RETRY_BACKOFF_FACTOR = 2
 
 // Canonical `message` values returned by `handleGitHubApiError` /
 // `handleGraphqlError`. Exported so callers can short-circuit on
@@ -243,52 +252,84 @@ export function isGraphqlRateLimitError(e: unknown): boolean {
 }
 
 /**
- * Execute a GitHub API call with retry logic for transient failures. Retries on
- * 5xx errors and network failures with exponential backoff.
+ * Whether another attempt could change the answer. A client error (4xx),
+ * rate limits included, is already settled — only 5xx and network-level
+ * failures are worth retrying.
+ */
+export function isRetryableGitHubError(e: unknown): boolean {
+  if (e instanceof RequestError) {
+    const { status } = e
+    return status < 400 || status >= 500
+  }
+  return true
+}
+
+/**
+ * Execute a GitHub API call, retrying transient failures through the fleet's
+ * shared `pRetry`.
+ *
+ * `maxRetries` counts total attempts, so `pRetry` gets one fewer retry on top
+ * of its initial one. The delay doubles from the base in
+ * `SOCKET_GITHUB_RETRY_BASE_DELAY_MS` (default 5s, the shared
+ * GITHUB_RETRY_CONFIG value) and is capped at 10s. That base is read live on
+ * every call, so a test or a CI job can set it to 0 and skip the real
+ * wallclock wait — `pRetry` sleeps through `node:timers/promises`, which
+ * `vi.useFakeTimers()` does not reliably intercept.
+ *
+ * Client errors stop the loop early rather than burning its budget, and the
+ * caller always sees the failure that actually ended the run.
  */
 export async function withGitHubRetry<T>(
   operation: () => Promise<T>,
   context: string,
   maxRetries = 3,
 ): Promise<CResult<T>> {
+  let attempt = 0
   let lastError: unknown
+  // Boxed so a resolved `undefined` is still recognizable as a success.
+  let outcome: { data: T } | undefined
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await operation()
-      return { ok: true, data: result }
-    } catch (e) {
-      lastError = e
-      debugNs(
-        'notice',
-        `GitHub API attempt ${attempt}/${maxRetries} failed for ${context}`,
-      )
-      debugDirNs('error', e)
-
-      // Don't retry on client errors (4xx) except rate limits.
-      if (e instanceof RequestError) {
-        const { status } = e
-        // Rate limits: return immediately with helpful message.
-        if (
-          status === 429 ||
-          (status === 403 && e.message.includes('rate limit'))
-        ) {
-          return handleGitHubApiError(e, context)
+  try {
+    await pRetry(
+      async () => {
+        attempt += 1
+        try {
+          outcome = { data: await operation() }
+        } catch (e) {
+          lastError = e
+          debugNs(
+            'notice',
+            `GitHub API attempt ${attempt}/${maxRetries} failed for ${context}`,
+          )
+          debugDirNs('error', e)
+          throw e
         }
-        // Don't retry other 4xx errors.
-        if (status >= 400 && status < 500) {
-          return handleGitHubApiError(e, context)
-        }
-      }
-
-      // Retry on 5xx or network errors.
-      if (attempt < maxRetries) {
-        const delay = Math.min(1000 * 2 ** (attempt - 1), 10_000)
-        debugNs('notice', `Retrying in ${delay}ms…`)
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-    }
+      },
+      {
+        backoffFactor: RETRY_BACKOFF_FACTOR,
+        baseDelayMs: resolveBaseDelayMs(),
+        maxDelayMs: MAX_RETRY_DELAY_MS,
+        onRetry(attemptNumber: number, e: unknown, delay: number) {
+          if (!isRetryableGitHubError(e)) {
+            // Stop now; another attempt cannot change the answer.
+            return false
+          }
+          debugNs(
+            'notice',
+            `Retrying ${context} in ${delay}ms (attempt ${attemptNumber})…`,
+          )
+          return undefined
+        },
+        onRetryCancelOnFalse: true,
+        retries: Math.max(0, maxRetries - 1),
+      },
+    )
+  } catch {
+    // `pRetry` rethrows the failure that ended the run; `lastError` already
+    // holds it, and it carries the classification handleGitHubApiError needs.
   }
 
-  return handleGitHubApiError(lastError, context)
+  return outcome
+    ? { ok: true, data: outcome.data }
+    : handleGitHubApiError(lastError, context)
 }

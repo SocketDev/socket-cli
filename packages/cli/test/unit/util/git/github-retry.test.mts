@@ -44,18 +44,31 @@ function createRequestError(
 }
 
 describe('withGitHubRetry', () => {
+  // The backoff sleeps through `node:timers/promises`, which
+  // `vi.useFakeTimers()` does not reliably intercept, so the fake-timer trick
+  // cannot make these tests fast. Zeroing the base delay through the env
+  // override can, and it exercises the override at the same time. The one test
+  // that cares about a specific delay sets the env itself.
+  const ENV_KEY = 'SOCKET_GITHUB_RETRY_BASE_DELAY_MS'
+  let savedBaseDelay: string | undefined
+
   beforeEach(() => {
-    vi.useFakeTimers()
+    savedBaseDelay = process.env[ENV_KEY]
+    process.env[ENV_KEY] = '0'
   })
 
   afterEach(() => {
-    vi.useRealTimers()
+    if (savedBaseDelay === undefined) {
+      delete process.env[ENV_KEY]
+    } else {
+      process.env[ENV_KEY] = savedBaseDelay
+    }
   })
 
   it('returns success on first attempt', async () => {
     const operation = vi.fn().mockResolvedValue({ data: 'test' })
-    const resultPromise = withGitHubRetry(operation, 'test operation')
-    const result = await resultPromise
+
+    const result = await withGitHubRetry(operation, 'test operation')
 
     expect(result.ok).toBe(true)
     if (result.ok) {
@@ -71,13 +84,7 @@ describe('withGitHubRetry', () => {
       .mockRejectedValueOnce(createRequestError(502, 'Bad Gateway'))
       .mockResolvedValue({ data: 'success' })
 
-    const resultPromise = withGitHubRetry(operation, 'retry test')
-
-    // Advance through retry delays.
-    await vi.advanceTimersByTimeAsync(1000) // First retry delay.
-    await vi.advanceTimersByTimeAsync(2000) // Second retry delay.
-
-    const result = await resultPromise
+    const result = await withGitHubRetry(operation, 'retry test')
 
     expect(result.ok).toBe(true)
     expect(operation).toHaveBeenCalledTimes(3)
@@ -91,7 +98,7 @@ describe('withGitHubRetry', () => {
     const result = await withGitHubRetry(operation, 'no retry test')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub resource not found')
+    expect(result.ok ? '' : result.message).toBe('GitHub resource not found')
     expect(operation).toHaveBeenCalledTimes(1)
   })
 
@@ -103,7 +110,7 @@ describe('withGitHubRetry', () => {
     const result = await withGitHubRetry(operation, 'rate limit test')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub rate limit exceeded')
+    expect(result.ok ? '' : result.message).toBe('GitHub rate limit exceeded')
     expect(operation).toHaveBeenCalledTimes(1)
   })
 
@@ -112,44 +119,11 @@ describe('withGitHubRetry', () => {
       .fn()
       .mockRejectedValue(createRequestError(500, 'Persistent server error'))
 
-    const resultPromise = withGitHubRetry(operation, 'exhaust retries', 3)
-
-    // Advance through all retry delays.
-    await vi.advanceTimersByTimeAsync(1000)
-    await vi.advanceTimersByTimeAsync(2000)
-
-    const result = await resultPromise
+    const result = await withGitHubRetry(operation, 'exhaust retries', 3)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub server error')
+    expect(result.ok ? '' : result.message).toBe('GitHub server error')
     expect(operation).toHaveBeenCalledTimes(3)
-  })
-
-  it('uses exponential backoff', async () => {
-    const operation = vi
-      .fn()
-      .mockRejectedValueOnce(createRequestError(500, 'Error'))
-      .mockRejectedValueOnce(createRequestError(500, 'Error'))
-      .mockRejectedValueOnce(createRequestError(500, 'Error'))
-      .mockResolvedValue({ data: 'success' })
-
-    const startTime = Date.now()
-    const resultPromise = withGitHubRetry(operation, 'backoff test', 4)
-
-    // First retry after 1s.
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(operation).toHaveBeenCalledTimes(2)
-
-    // Second retry after 2s.
-    await vi.advanceTimersByTimeAsync(2000)
-    expect(operation).toHaveBeenCalledTimes(3)
-
-    // Third retry after 4s.
-    await vi.advanceTimersByTimeAsync(4000)
-    expect(operation).toHaveBeenCalledTimes(4)
-
-    const result = await resultPromise
-    expect(result.ok).toBe(true)
   })
 
   it('respects custom max retries', async () => {
@@ -157,15 +131,7 @@ describe('withGitHubRetry', () => {
       .fn()
       .mockRejectedValue(createRequestError(500, 'Server Error'))
 
-    const resultPromise = withGitHubRetry(operation, 'custom retries', 5)
-
-    // Advance through 4 retry delays (5 attempts total).
-    await vi.advanceTimersByTimeAsync(1000)
-    await vi.advanceTimersByTimeAsync(2000)
-    await vi.advanceTimersByTimeAsync(4000)
-    await vi.advanceTimersByTimeAsync(8000)
-
-    const result = await resultPromise
+    const result = await withGitHubRetry(operation, 'custom retries', 5)
 
     expect(result.ok).toBe(false)
     expect(operation).toHaveBeenCalledTimes(5)
@@ -180,13 +146,41 @@ describe('withGitHubRetry', () => {
       .mockRejectedValueOnce(networkError)
       .mockResolvedValue({ data: 'recovered' })
 
-    const resultPromise = withGitHubRetry(operation, 'network retry')
-
-    await vi.advanceTimersByTimeAsync(1000)
-
-    const result = await resultPromise
+    const result = await withGitHubRetry(operation, 'network retry')
 
     expect(result.ok).toBe(true)
     expect(operation).toHaveBeenCalledTimes(2)
+  })
+
+  it('surfaces the failure that ended the run, not an earlier one', async () => {
+    const operation = vi
+      .fn()
+      .mockRejectedValueOnce(createRequestError(500, 'Server Error'))
+      .mockRejectedValue(createRequestError(404, 'Not Found'))
+
+    const result = await withGitHubRetry(operation, 'last failure wins')
+
+    expect(result.ok).toBe(false)
+    expect(result.ok ? '' : result.message).toBe('GitHub resource not found')
+    // The 404 on the second attempt is settled, so the third never runs.
+    expect(operation).toHaveBeenCalledTimes(2)
+  })
+
+  it('honors SOCKET_GITHUB_RETRY_BASE_DELAY_MS for the backoff delay', async () => {
+    process.env[ENV_KEY] = '40'
+    const operation = vi
+      .fn()
+      .mockRejectedValue(createRequestError(503, 'Service Unavailable'))
+
+    const started = Date.now()
+    const result = await withGitHubRetry(operation, 'env delay', 3)
+    const elapsed = Date.now() - started
+
+    expect(result.ok).toBe(false)
+    expect(operation).toHaveBeenCalledTimes(3)
+    // Two retries at a 40ms base with doubling means at least 40 + 80 ms of
+    // real waiting. A zeroed override finishes far below that, so this fails
+    // if the env var stops reaching the retry policy.
+    expect(elapsed).toBeGreaterThanOrEqual(120)
   })
 })

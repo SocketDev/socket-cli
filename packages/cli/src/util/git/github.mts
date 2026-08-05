@@ -57,6 +57,7 @@ export {
   handleGitHubApiError,
   handleGraphqlError,
   isGraphqlRateLimitError,
+  isRetryableGitHubError,
   withGitHubRetry,
 } from './github-errors.mts'
 
