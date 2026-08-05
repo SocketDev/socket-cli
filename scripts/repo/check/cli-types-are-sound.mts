@@ -12,12 +12,14 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../../fleet/paths.mts'
 import { isMainModule } from '../../fleet/_shared/is-main-module.mts'
+import { runMain } from '../../fleet/_shared/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -68,9 +70,14 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'checks the packages/cli source tree typechecks (tsc --noEmit against its own tsconfig)',
+  help: `Usage: node scripts/repo/check/cli-types-are-sound.mts [--quiet]
+
+  --quiet  suppress the success line`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(errorMessage(e))
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
