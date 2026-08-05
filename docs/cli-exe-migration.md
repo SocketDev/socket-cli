@@ -73,8 +73,8 @@ download path stays intact and npm keeps serving the frozen binaries.
 ## Phase 1 runbook
 
 Everything below the owner step is wired and proven in this tree: six of the
-eight tails — all but the win32 pair, see the constraint list — build from the
-mirrored base assets, pass their smokes, stamp through
+eight tails, all but the win32 pair named in the constraint list, build from
+the mirrored base assets, pass their smokes, stamp through
 `prepublish-cli-exe.mts`, and pass the naming-domain gate.
 
 ### Publish surface
@@ -96,7 +96,7 @@ family. The wired path is repo-owned instead:
 
 The cross-org `scripts/fleet/util/multi-package-publish.mts` stager is NOT
 this path: it exists for tails built in a different repo, and its
-source-allowlist schema — checked at bundle v1.0.11 — still admits only
+source-allowlist schema, checked at bundle v1.0.11, still admits only
 `@socketaddon`/`@socketbin` scopes and hyphen-terminated name prefixes. The
 cli.exe tails are built in-repo, so that surface is not on the Phase 1
 critical path.
