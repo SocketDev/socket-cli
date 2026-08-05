@@ -58,7 +58,7 @@ export function findUnsegmentedEntries(actionsDir: string): string[] {
   return violations.toSorted()
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const actionsDir = path.join(REPO_ROOT, '.github', 'actions')
   const violations = findUnsegmentedEntries(actionsDir)

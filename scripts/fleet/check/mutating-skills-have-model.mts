@@ -74,7 +74,7 @@ export function isCanonicalModel(value: string): boolean {
   return KNOWN_MODELS.has(value) || TIER_ALIASES.has(value)
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   if (!existsSync(skillsDir)) {
     logger.success('No fleet skills to check.')
     return

@@ -64,7 +64,7 @@ async function fnm(args: readonly string[]): Promise<boolean> {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   if (!(await fnm(['--version']))) {
     logger.fail(
       'What: fnm is not on PATH.\n' +

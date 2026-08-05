@@ -185,7 +185,7 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
-function main(): void {
+export function main(): void {
   const argv = process.argv.slice(2)
   const check = argv.includes('--check')
   const current = JSON.parse(readFileSync(pricingPath(), 'utf8')) as PricingData

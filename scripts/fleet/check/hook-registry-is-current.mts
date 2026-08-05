@@ -122,7 +122,7 @@ export function staleBullets(
   return flagged.sort()
 }
 
-function main(): void {
+export function main(): void {
   if (!existsSync(REGISTRY_PATH)) {
     logger.success('No hook-registry.md to check.')
     return

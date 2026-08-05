@@ -33,6 +33,7 @@ import {
 import type { EligibleHook } from '../_shared/dispatch-scan.mts'
 import { collectEligibleHooks } from '../_shared/dispatch-scan.mts'
 import { hasFleetHookSource } from '../_shared/fleet-source-present.mts'
+import { writeHookValidators } from './hook-validators.mts'
 
 const logger = getDefaultLogger()
 
@@ -268,7 +269,7 @@ export const TABLE_OUTPUTS: ReadonlyArray<readonly [TableVariant, string]> = [
   ['excluded', DISPATCH_TABLE_EXCLUDED_PATH],
 ]
 
-function main(): void {
+export function main(): void {
   // A bundle-only member has no per-hook SOURCE dirs — a regen over the absent
   // dirs renders EMPTY tables + manifest and overwrites the release-shipped
   // full ones (and --check would false-fail comparing empty-vs-shipped). The
@@ -331,6 +332,11 @@ function main(): void {
     DISPATCH_MANIFEST_PATH,
     generateDispatchManifestSource(FLEET_HOOKS_DIR),
   )
+  // The ahead-of-time TypeBox validators belong to the same generated set: a
+  // hook the bundle pulls in IMPORTS them, so a tree with tables but no
+  // validators does not type-check or bundle. This maker is the pure-JS,
+  // cross-platform regen CI runs after install, so it emits them too.
+  writeHookValidators()
   // Dogfood: the wheelhouse carries template/base/ a member does not. Mirror
   // the generated full table + manifest into the template so its CI readers +
   // the release-bundle walk find them — both are gitignored + never committed,
@@ -374,7 +380,7 @@ function main(): void {
   )
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'generate the static hook dispatch table the rolldown hook bundle is built from',
   help: `Usage: node scripts/fleet/gen/hook-dispatch.mts [flags]

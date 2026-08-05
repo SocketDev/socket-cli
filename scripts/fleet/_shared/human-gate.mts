@@ -24,6 +24,8 @@
 /**
  * A single human-only decision point in an otherwise scripted flow.
  */
+import { fillablePhrase } from './terminal-link.mts'
+
 export interface HumanGate {
   /**
    * Short scannable label, e.g. `npm auth`, `push grant`.
@@ -151,7 +153,11 @@ export function pushGrantGate(
   return {
     agentLaneUnavailable:
       'authorization phrases count only when a human types them in a user turn.',
-    humanLane: `type exactly: ${phrase}`,
+    // `fillablePhrase` makes the phrase a click-to-FILL hyperlink where the
+    // terminal renders OSC 8, and leaves it verbatim everywhere else. Clicking
+    // types it into the prompt; the operator's Enter still submits, which is
+    // what keeps role provenance meaningful. See _shared/terminal-link.mts.
+    humanLane: `type exactly: ${fillablePhrase(phrase)}`,
     mind:
       'the guard scans transcript role provenance — the phrase works typed ' +
       'here as a normal message, nothing to run.',

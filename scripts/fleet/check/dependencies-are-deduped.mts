@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /*
  * @file Commit-time dedup gate — the code-as-law surface the
- *   `deduping-dependencies` skill cites. Parses `pnpm-lock.yaml` and reports
- *   two avoidable shapes the dedup decision tree is meant to eliminate:
+ *   `deduping-dependencies` skill cites. Reads `pnpm-lock.yaml` through the
+ *   shared `_shared/pnpm-lockfile.mts` graph reader and reports two avoidable
+ *   shapes the dedup decision tree is meant to eliminate:
  *
  *   1. CROSS-MAJOR DUPLICATES — a package resolved at more than one distinct
  *      major version in the install tree. Each extra major is dead weight
@@ -45,8 +46,9 @@
  *
  *   - 0 — no missing `@socketregistry` redirect, and, rolldown repo, zero
  *     cross-major duplicates in the production closure.
- *   - 1 — a missing `@socketregistry` redirect, or a cross-major duplicate in
- *     the production closure of a rolldown repo.
+ *   - 1 — a missing `@socketregistry` redirect, a cross-major duplicate in the
+ *     production closure of a rolldown repo, or a lockfile that is present yet
+ *     unreadable, which is blindness rather than a clean tree.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -55,13 +57,16 @@ import process from 'node:process'
 
 import { FLEET_CATALOG_YAML, PNPM_LOCK } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  parsePnpmLockfileText,
+  readPnpmLockfile,
+} from '../_shared/pnpm-lockfile.mts'
+import type { PnpmLockfileGraph } from '../_shared/pnpm-lockfile.mts'
 import { runMain } from '../_shared/run-main.mts'
 import type { ScriptMeta } from '../_shared/run-main.mts'
 
-// A `packages:` (or `snapshots:`) key: `'<name>@<version>':` where name may be
-// scoped (`@scope/pkg`). Indented exactly two spaces under the section header.
-const PACKAGE_KEY_RE =
-  /^ {2}'?((?:@[^@/'\s]+\/)?[^@'\s]+)@([^'\s(]+)(?:\([^)]*\))*'?:\s*$/
+export { collectProductionClosure } from '../_shared/pnpm-lockfile.mts'
+
 // Every `@socketregistry/<name>` mention in a text — override values
 // (`npm:@socketregistry/x@1`), resolved package keys
 // (`'@socketregistry/x@1.0.0':`), importer specifiers, catalog entries. The
@@ -153,221 +158,6 @@ export function isSemverVersion(version: string): boolean {
   return /^\d/.test(version)
 }
 
-// Collect every `<name>@<version>` key under a top-level section (`packages:`
-// or `snapshots:`), returning name → set of distinct versions.
-function collectResolvedVersions(lines: string[]): Map<string, Set<string>> {
-  const byName = new Map<string, Set<string>>()
-  let inSection = false
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i] ?? ''
-    if (line === 'packages:' || line === 'snapshots:') {
-      inSection = true
-      continue
-    }
-    // A new unindented top-level key ends the section.
-    if (inSection && /^[A-Za-z_]/.test(line)) {
-      inSection = false
-      continue
-    }
-    if (!inSection) {
-      continue
-    }
-    const m = PACKAGE_KEY_RE.exec(line)
-    if (!m) {
-      continue
-    }
-    const name = m[1]!
-    const version = m[2]!
-    let versions = byName.get(name)
-    if (!versions) {
-      versions = new Set<string>()
-      byName.set(name, versions)
-    }
-    versions.add(version)
-  }
-  return byName
-}
-
-// A 4-space dependency-kind header inside an importer or a snapshot entry
-// (`dependencies:`, `devDependencies:`, `optionalDependencies:`, …) — shared
-// by both, since pnpm nests both shapes at the same two levels.
-const DEPENDENCY_KIND_RE = /^ {4}(?!\s)([A-Za-z]+):\s*$/
-// A 6-space `<name>:` importer dependency entry with no inline value — its
-// resolved version lives on the nested `version:` line below it.
-const IMPORTER_DEP_NAME_RE = /^ {6}(?!\s)'?([^'\n]+?)'?:\s*$/
-// The 8-space `version:` line under an importer dependency entry.
-const IMPORTER_DEP_VERSION_RE = /^ {8}(?!\s)version:\s*(.+)$/
-// A 2-space `<path>:` importer key with no inline value — the boundary
-// between one importer's dependency blocks and the next.
-const IMPORTER_KEY_RE = /^ {2}\S.*:\s*$/
-// A 6-space `<name>: <version>` snapshot child dependency — inline value.
-const SNAPSHOT_CHILD_RE = /^ {6}(?!\s)'?([^'\n]+?)'?:\s*(.+)$/
-
-// Strip a YAML scalar's surrounding single quotes, if present.
-function stripQuotes(value: string): string {
-  if (
-    value.length >= 2 &&
-    value[0] === "'" &&
-    value[value.length - 1] === "'"
-  ) {
-    return value.slice(1, -1)
-  }
-  return value
-}
-
-// Strip a peer-suffix parenthetical (`(peer@1.0.0)`, possibly repeated) from a
-// resolved version-field VALUE — the value-side counterpart of what
-// `PACKAGE_KEY_RE` already strips from a resolved package KEY.
-function stripPeerSuffix(value: string): string {
-  const index = value.indexOf('(')
-  return index === -1 ? value : value.slice(0, index)
-}
-
-// Reduce an importer/snapshot dependency's `<name>` plus its raw version-field
-// VALUE to the resolved root key `<name>@<version>`. A pnpm `npm:` alias
-// rewrites the VALUE to the redirect target's own `<realName>@<version>`
-// (e.g. `gopd:` resolving to `@socketregistry/gopd@1.0.7`) instead of a bare
-// version — detected by an `@` surviving the peer-suffix strip, since a bare
-// semver or URL version never contains one.
-function resolveRootKey(name: string, rawValue: string): string {
-  const base = stripPeerSuffix(stripQuotes(rawValue.trim()))
-  return base.includes('@') ? base : `${name}@${base}`
-}
-
-// Collect every importer's PRODUCTION dependency root — `dependencies:` and
-// `optionalDependencies:` entries only, never `devDependencies:` /
-// `peerDependencies:` / `configDependencies:` / `packageManagerDependencies:`.
-// These are the entry points a rolldown bundle can actually reach; anything
-// only rooted from a dev/peer/config block never ships in bundle bytes.
-function collectImporterProdRoots(lines: readonly string[]): Set<string> {
-  const roots = new Set<string>()
-  let inImporters = false
-  let inProdSection = false
-  let pendingName: string | undefined
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i] ?? ''
-    if (line === 'importers:') {
-      inImporters = true
-      continue
-    }
-    // A new unindented top-level key ends the section.
-    if (inImporters && /^[A-Za-z_]/.test(line)) {
-      inImporters = false
-      continue
-    }
-    if (!inImporters) {
-      continue
-    }
-    if (IMPORTER_KEY_RE.test(line)) {
-      inProdSection = false
-      pendingName = undefined
-      continue
-    }
-    const kindMatch = DEPENDENCY_KIND_RE.exec(line)
-    if (kindMatch) {
-      const kind = kindMatch[1]!
-      inProdSection = kind === 'dependencies' || kind === 'optionalDependencies'
-      pendingName = undefined
-      continue
-    }
-    if (!inProdSection) {
-      continue
-    }
-    if (pendingName) {
-      const versionMatch = IMPORTER_DEP_VERSION_RE.exec(line)
-      if (versionMatch) {
-        roots.add(resolveRootKey(pendingName, versionMatch[1]!))
-        pendingName = undefined
-        continue
-      }
-    }
-    const nameMatch = IMPORTER_DEP_NAME_RE.exec(line)
-    if (nameMatch) {
-      pendingName = nameMatch[1]!
-    }
-  }
-  return roots
-}
-
-// Build the snapshot dependency graph: resolved key → the resolved keys of
-// its `dependencies:` + `optionalDependencies:` children. `devDependencies:` /
-// `peerDependencies:` edges are excluded — a rolldown bundle only walks the
-// production edges pnpm actually installs.
-function collectSnapshotGraph(
-  lines: readonly string[],
-): Map<string, Set<string>> {
-  const graph = new Map<string, Set<string>>()
-  let inSection = false
-  let currentKey: string | undefined
-  let inProdSection = false
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i] ?? ''
-    if (line === 'snapshots:') {
-      inSection = true
-      continue
-    }
-    // A new unindented top-level key ends the section.
-    if (inSection && /^[A-Za-z_]/.test(line)) {
-      inSection = false
-      continue
-    }
-    if (!inSection) {
-      continue
-    }
-    const keyMatch = PACKAGE_KEY_RE.exec(line)
-    if (keyMatch) {
-      currentKey = `${keyMatch[1]}@${keyMatch[2]}`
-      if (!graph.has(currentKey)) {
-        graph.set(currentKey, new Set())
-      }
-      inProdSection = false
-      continue
-    }
-    if (!currentKey) {
-      continue
-    }
-    const kindMatch = DEPENDENCY_KIND_RE.exec(line)
-    if (kindMatch) {
-      const kind = kindMatch[1]!
-      inProdSection = kind === 'dependencies' || kind === 'optionalDependencies'
-      continue
-    }
-    if (!inProdSection) {
-      continue
-    }
-    const childMatch = SNAPSHOT_CHILD_RE.exec(line)
-    if (childMatch) {
-      graph.get(currentKey)!.add(resolveRootKey(childMatch[1]!, childMatch[2]!))
-    }
-  }
-  return graph
-}
-
-// The set of every `<name>@<version>` reachable from a PRODUCTION importer
-// root through the snapshot graph — what a rolldown bundle can actually pull
-// in. Dev/test/publish-only tooling (arborist, pacote, cacache, yargs, …) that
-// no importer's `dependencies:`/`optionalDependencies:` ever roots is
-// excluded, even when it resolves at multiple majors.
-export function collectProductionClosure(lines: string[]): Set<string> {
-  const graph = collectSnapshotGraph(lines)
-  const visited = new Set<string>()
-  const queue = [...collectImporterProdRoots(lines)]
-  while (queue.length > 0) {
-    const key = queue.pop()!
-    if (visited.has(key)) {
-      continue
-    }
-    visited.add(key)
-    const children = graph.get(key)
-    if (children) {
-      for (const child of children) {
-        queue.push(child)
-      }
-    }
-  }
-  return visited
-}
-
 // Decode a drop-in basename back to the upstream package name it hardens
 // (socket-registry's `scope__pkg` encoding for scoped upstreams).
 function upstreamNameOf(dropIn: string): string {
@@ -433,10 +223,15 @@ export function scan(
   text: string,
   options?: ScanOptions | undefined,
 ): ScanResult {
+  return scanLockfileGraph(parsePnpmLockfileText(text), options)
+}
+
+export function scanLockfileGraph(
+  graph: PnpmLockfileGraph,
+  options?: ScanOptions | undefined,
+): ScanResult {
   const opts = { __proto__: null, ...options } as ScanOptions
-  const lines = text.split('\n')
-  const byName = collectResolvedVersions(lines)
-  const closure = collectProductionClosure(lines)
+  const { productionClosure: closure, versionsByName: byName } = graph
 
   const duplicates = computeDuplicateFamilies(byName, () => true)
   const bundledDuplicates = computeDuplicateFamilies(byName, (name, version) =>
@@ -449,7 +244,10 @@ export function scan(
   // surviving bare package key IS the missing redirect (a version-pin
   // override keeps the bare resolution and so still flags; only the
   // npm:@socketregistry/... alias redirect clears it).
-  const universe = collectDropInUniverse([text, opts.fleetCatalogText ?? ''])
+  const universe = collectDropInUniverse([
+    graph.text,
+    opts.fleetCatalogText ?? '',
+  ])
   const unredirected: UnredirectedDropIn[] = []
   for (const dropIn of universe) {
     const name = upstreamNameOf(dropIn)
@@ -463,12 +261,24 @@ export function scan(
 }
 
 function main(): void {
-  let content: string
-  try {
-    content = readFileSync(PNPM_LOCK, 'utf8')
-  } catch {
-    // No pnpm-lock.yaml — not an installed workspace, nothing to check.
-    process.exit(0)
+  const read = readPnpmLockfile(PNPM_LOCK)
+  if (!read.ok) {
+    if (read.problem === 'absent') {
+      // No pnpm-lock.yaml — not an installed workspace, nothing to check.
+      process.exit(0)
+    }
+    // Blindness is not absence: a lockfile that cannot be read carries no
+    // verdict, so say so instead of reporting zero duplicates.
+    process.stderr.write(
+      `[check-dependencies-are-deduped] cannot read the lockfile — no dedup ` +
+        `verdict.\n` +
+        `  Where: ${PNPM_LOCK}\n` +
+        `  Saw vs wanted: ${read.problem} (${read.reason}); wanted a readable ` +
+        `pnpm-lock.yaml\n` +
+        `  Fix: run \`pnpm install\` to regenerate the lockfile, then re-run ` +
+        `this check.\n`,
+    )
+    process.exit(1)
   }
   let fleetCatalogText: string | undefined
   try {
@@ -478,9 +288,10 @@ function main(): void {
     // lockfile-learned drop-in universe still applies.
     fleetCatalogText = undefined
   }
-  const { bundledDuplicates, duplicates, unredirected } = scan(content, {
-    fleetCatalogText,
-  })
+  const { bundledDuplicates, duplicates, unredirected } = scanLockfileGraph(
+    read.graph,
+    { fleetCatalogText },
+  )
   // Auto-gated on rolldown, no opt-in: a repo that bundles with rolldown pays
   // real bytes for every duplicate major IN ITS PRODUCTION CLOSURE, so there
   // ANY such cross-major family is a hard failure — the bar is zero dups

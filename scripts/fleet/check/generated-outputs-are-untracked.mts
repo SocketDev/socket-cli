@@ -18,8 +18,9 @@
  *   `paths.mts` cascades; the gitignore-block source does not):
  *     - `_dist/` is EXCLUSIVELY build output: no tracked file may live under it.
  *     - the named generated files in mixed dirs (`_shared/dispatch-table*.mts`,
- *       `excluded-fleet-pack.cjs`, `_shared/dispatch-manifest.json`, the oxlint
- *       `.mjs`) may never be tracked.
+ *       `excluded-fleet-pack.cjs`, `_shared/dispatch-manifest.json`,
+ *       `_shared/generated-validators.mts`, the oxlint `.mjs`) may never be
+ *       tracked.
  *
  *   Bundle-placed generated outputs — fleet-pack.cjs, the dispatch table + manifest,
  *   the release manifest's `generatedPaths` — EXIST ON DISK in every member:
@@ -49,6 +50,7 @@ import {
   DISPATCH_TABLE_SNAPSHOT_PATH,
   DIST_DIR,
   EXCLUDED_BUNDLE_PATH,
+  HOOK_VALIDATORS_PATH,
   OXLINT_PLUGIN_BUNDLE_PATH,
   REPO_ROOT,
 } from '../paths.mts'
@@ -142,6 +144,7 @@ async function main(): Promise<void> {
       DISPATCH_TABLE_EXCLUDED_PATH,
       EXCLUDED_BUNDLE_PATH,
       DISPATCH_MANIFEST_PATH,
+      HOOK_VALIDATORS_PATH,
       OXLINT_PLUGIN_BUNDLE_PATH,
     ].map(outputTail),
     seedTails: SANCTIONED_TRACKED_SEEDS,

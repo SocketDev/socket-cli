@@ -62,7 +62,7 @@ export function findMissingDesignSkillLinks(
   return missing
 }
 
-function loadClusterSources(repoRoot: string): Record<string, string> {
+export function loadClusterSources(repoRoot: string): Record<string, string> {
   const skillsDir = path.join(repoRoot, '.claude/skills/fleet')
   return Object.fromEntries(
     DESIGN_SKILL_CLUSTER.map(name => {
@@ -72,7 +72,7 @@ function loadClusterSources(repoRoot: string): Record<string, string> {
   )
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const missing = findMissingDesignSkillLinks(loadClusterSources(REPO_ROOT))
   if (missing.length === 0) {
     logger.success('interface-design skill cluster is fully connected.')

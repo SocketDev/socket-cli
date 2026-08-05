@@ -429,7 +429,7 @@ export function scanRepo(repoRoot: string): EffortViolation[] {
   return out
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const violations = scanRepo(REPO_ROOT)
   if (violations.length) {
     logger.error(

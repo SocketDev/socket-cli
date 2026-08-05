@@ -39,13 +39,13 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-function trackedFiles(): string[] {
+export function trackedFiles(): string[] {
   const result = spawnSync('git', ['ls-files'], { stdio: 'pipe' })
   const out = typeof result.stdout === 'string' ? result.stdout : ''
   return out.split('\n').filter(Boolean)
 }
 
-function main(): void {
+export function main(): void {
   const failures: string[] = []
   for (const rel of trackedFiles()) {
     if (isVendoredUpstream(rel) || isTestFixture(rel)) {

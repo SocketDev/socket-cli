@@ -4,7 +4,7 @@
  *   the lock-step-ref-nudge hook's resolution config.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 // ---------------------------------------------------------------------------
 // AI block — keyless local AI opt-ins.

@@ -45,19 +45,13 @@ export interface Finding {
   snippet: string
 }
 
-// Files whose module-scope main() invocation is DELIBERATELY unguarded, each
-// documented in its own header:
-//   - update.mts is a self-executing library orchestrator — its exported
-//     `updateRun` promise is the module's public surface, awaited by
-//     test/repo/unit/update.test.mts across every scenario it exercises.
-//   - test-runner/run-vitest.mts is always spawned as its OWN process (see
-//     its header), never imported — the run() bridge in test.mts shells out
-//     to it with `node`, so `isMainModule` would always be true there anyway.
-// Wrapping either in isMainModule would either break the exported promise
-// contract or add a no-op guard; both are out of this check's scope.
+// Files whose module-scope main() invocation is DELIBERATELY unguarded:
+// test-runner/run-vitest.mts is always spawned as its OWN process (see its
+// header), never imported — the run() bridge in test.mts shells out to it
+// with `node`, so `isMainModule` would always be true there anyway, and the
+// argv it receives is vitest's, not this fleet's.
 const UNGUARDED_MAIN_ALLOWLIST = new Set<string>([
   'scripts/fleet/test-runner/run-vitest.mts',
-  'scripts/fleet/update.mts',
 ])
 
 // The entrypoint-guard openers a fleet script uses to run main() only when it
@@ -198,7 +192,7 @@ export function scan(repoRoot: string = REPO_ROOT): Finding[] {
   return findings
 }
 
-function main(): number {
+export function main(): number {
   const findings = scan()
   if (findings.length === 0) {
     logger.log('✔ every fleet/repo CLI entry is fail-soft')

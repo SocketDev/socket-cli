@@ -692,7 +692,7 @@ function runFix(paths: FixPaths): void {
   process.exit(summary.failed > 0 ? 1 : 0)
 }
 
-function main(): void {
+export function main(): void {
   if (process.argv.includes('--fix')) {
     runFix(resolveFixPaths(os.homedir()))
     return

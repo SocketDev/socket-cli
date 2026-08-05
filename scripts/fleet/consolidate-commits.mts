@@ -53,10 +53,9 @@ import { groupPaths } from './land-work.mts'
 import { commitMessage } from './land-work/message.mts'
 import { REPO_ROOT } from './paths.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
+import type { ScriptMeta } from './_shared/run-main.mts'
 import { runMain } from './_shared/run-main.mts'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-
-import type { ScriptMeta } from './_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -175,7 +174,7 @@ function isAncestor(ancestor: string, descendant: string): boolean {
   return git(['merge-base', '--is-ancestor', ancestor, descendant]).status === 0
 }
 
-function main(): void {
+export function main(): void {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -451,6 +450,8 @@ const SCRIPT_META: ScriptMeta = {
   --allow-off-lineage-base  accept a base on a force-push-replaced line of history (local-only lineages)`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

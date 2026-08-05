@@ -243,7 +243,7 @@ export async function validateFileSizes(
   return violations
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const violations = await validateFileSizes()
   if (violations.length === 0) {
     logger.success('All files are within the size cap')

@@ -437,14 +437,14 @@ export function lintPrReviewComment(body: string): CommentViolation[] {
   ].toSorted((a, b) => a.line - b.line)
 }
 
-function readInput(target: string): string {
+export function readInput(target: string): string {
   if (target === '-' || target === '--stdin') {
     return readFileSync(0, 'utf8')
   }
   return readFileSync(target, 'utf8')
 }
 
-function main(): void {
+export function main(): void {
   const args = process.argv.slice(2).filter(a => a !== '--quiet')
   const quiet = process.argv.includes('--quiet')
   const target = args[0]

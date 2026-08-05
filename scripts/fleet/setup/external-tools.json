@@ -82,13 +82,18 @@
       "notes": [
         "npm is platform-agnostic — ONE registry tarball (npm-<version>.tgz, pure JS run through node), so a single top-level integrity rather than a per-platform map. install-npm.mts downloads it via the socket-lib download helper, verifies `integrity` (the stored sha512, captured once at pin time + checked against the registry dist.integrity), then drives the DOWNLOADED `node bin/npm-cli.js install -gf` — never `npm install -g npm`, so there's no self-update path. Models npmjs.com/install.sh + the fleet supply-chain gate.",
         "Bootstrap order: node first (.node-version), then npm (this entry), then the Socket packages — all downloaded + installed through the socket-lib helpers.",
-        "12.0.0 published 2026-07-09, inside the 7-day minimumReleaseAge soak, so the bump rides a dated soakBypass (auto-disarms at `removable`). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
+        "12.0.2 published 2026-07-29, inside the 7-day minimumReleaseAge soak, so the bump rides the dated soakBypass below (it stops applying at `removable`, and `external-tools prune --apply` drops the block). update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and re-fetches integrity from the npm registry on a bump.",
         "npm carries the `min-release-age-exclude` .npmrc config — kept in lockstep with pnpm-workspace.yaml minimumReleaseAgeExclude."
       ],
       "description": "npm — pinned, SRI-verified registry tarball; installed without self-update",
       "repository": "npm:npm",
-      "version": "12.0.1",
-      "integrity": "sha512-L5T9i/YAQWQWqTS/xZxJkei/9zcu99hCeE4qi41IyBVV7mRQad3qc2JfuOktwmH+qwGI/V2rbCL+/UYxb1+RQA=="
+      "version": "12.0.2",
+      "soakBypass": {
+        "published": "2026-07-29",
+        "removable": "2026-08-05",
+        "version": "12.0.2"
+      },
+      "integrity": "sha512-uIXokLlBj6FpNUTQX1PmT5pz7BlIN9QlixX+zdaSNHsd0qUXsbDLr50xzY6Sw7cJVr0uzHKDOle0swmPW/p5Qw=="
     },
     "smithers": {
       "notes": [
@@ -214,7 +219,7 @@
     },
     "zizmor": {
       "description": "GitHub Actions security linter — audits .github/ for workflow-injection / credential-leak patterns.",
-      "version": "1.26.1",
+      "version": "1.29.0",
       "repository": "github:zizmorcore/zizmor",
       "release": "asset",
       "notes": [
@@ -224,24 +229,29 @@
       "platforms": {
         "darwin-arm64": {
           "asset": "zizmor-aarch64-apple-darwin.tar.gz",
-          "integrity": "sha512-UfLPPdYejR8fvrFwr9Tos7LKFvqr7YcAHWZlAmeo7imYI/fIucYnCY6HeDyk2cbFUvDpQTdps6WQS1QpqCtTfQ=="
+          "integrity": "sha512-lXyZ6VFPvuPZdn/j+ZKHNTrwDelq2mpGmZCNT8QEvpKxvg5v3cP+gLLTxoBo3q591UuPLpLpgQ29eMXu1FnSeg=="
         },
         "darwin-x64": {
           "asset": "zizmor-x86_64-apple-darwin.tar.gz",
-          "integrity": "sha512-SCbcEzF/zy2qNuNaocLPIUC4Wuq5GnHt0iUFve3qx6bJyFdzU6pDFZkF64dojGC7M5gAcK/4acXGPx3YnMDy/g=="
+          "integrity": "sha512-PTiTH43f43WY7yVjC0Mvigsh8XoQzDMH9/bcvhEVpl0i8nO7HBS47uvgolLh5McSCI9u8CKvCHqKm132ku3FuQ=="
         },
         "linux-arm64": {
           "asset": "zizmor-aarch64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-TkGvwt0zYdmiJ7LZmy6Bz9CdkqcuEpFKhXUK9m0MhSPxBx2gYBsrw6OxGSttMEQ3bvxdvyG6rqbnMgjyDZB1zA=="
+          "integrity": "sha512-VuBT1NwuQez9OSaucn3fkdvRmd0cRoLomozfnebDnQEtxNbcq+GJAVxeYusS0t3PTDNcC4oOBtEIh6AiyvZbLQ=="
         },
         "linux-x64": {
           "asset": "zizmor-x86_64-unknown-linux-gnu.tar.gz",
-          "integrity": "sha512-zTMERMDd3JfaRX12klj2fhZGDyrXeLkVUY1QJkCv8RRmAa9uVuH88gHOnv4CQtC5hXS7FPRJzvCVOnw38gV83g=="
+          "integrity": "sha512-+ud35oavU/AEGqKoNZVg8b/dwuFuKM/TfujGmXomnV3mScdhmavrkiNpx/9vUbQ+htk7eYfK2nRStzIVWA19KA=="
         },
         "win-x64": {
           "asset": "zizmor-x86_64-pc-windows-msvc.zip",
-          "integrity": "sha512-Pijh/CrrOAkZzLiTr2LTHdI8d6+5Ql6B+suY6fXVmL8UVa+4Q36hHL5K67iRFz03v/V/UcrY6+dfhnmot/xfww=="
+          "integrity": "sha512-r6YP+e2GsOklaxEf9JHrixkeR0NNkVAaMGcvwLxkt1JlYJpxFizH/LzhcsMmPSrLkELf6LNB2JL8hpDa5dBAww=="
         }
+      },
+      "soakBypass": {
+        "published": "2026-08-01",
+        "removable": "2026-08-08",
+        "version": "1.29.0"
       }
     },
     "sfw-free": {

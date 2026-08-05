@@ -40,6 +40,7 @@ import {
   FLEET_HOOKS_DIR,
   generateDispatchTableSource,
 } from './gen/hook-dispatch.mts'
+import { writeHookValidators } from './gen/hook-validators.mts'
 import {
   DISPATCH_TABLE_EXCLUDED_PATH,
   DISPATCH_TABLE_SNAPSHOT_PATH,
@@ -133,6 +134,9 @@ function main(): void {
     DISPATCH_TABLE_EXCLUDED_PATH,
     generateDispatchTableSource(FLEET_HOOKS_DIR, 'excluded'),
   )
+  // The ahead-of-time TypeBox validators refresh alongside the tables, so the
+  // snapshot freezes a hook graph that no longer carries the TypeBox compiler.
+  writeHookValidators()
 
   mkdirSync(DISPATCH_DIR, { recursive: true })
 

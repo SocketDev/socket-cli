@@ -73,10 +73,10 @@ export async function runCacheSave(
       )
       return 0
     }
-    logError(
-      `Cache save failed. Where: the cache service, key '${args.key}'. Saw: ${errorMessage(e)}; wanted a saved entry. Fix: re-run the job; if it persists, check GitHub Actions cache service status and that the paths exist on disk.`,
-    )
-    return 1
+    // A cache failure never fails the job — the next run rebuilds cold,
+    // matching the upstream action's warn-and-continue contract.
+    log(`⚠️ cache save skipped for key '${args.key}' — ${errorMessage(e)}`)
+    return 0
   }
   log(`Cache saved with key: ${args.key}`)
   return 0

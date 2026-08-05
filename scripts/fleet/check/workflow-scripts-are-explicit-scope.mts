@@ -89,7 +89,7 @@ function workflowFiles(dir: string): string[] {
     .map(f => path.join(dir, f))
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const dirs = [
     path.join(REPO_ROOT, '.github', 'workflows'),
     // The wheelhouse also gates the seed every member inherits.

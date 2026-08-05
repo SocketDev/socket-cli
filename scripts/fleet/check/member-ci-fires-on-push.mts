@@ -123,7 +123,7 @@ export function deadCiRepos(statuses: readonly RepoCiStatus[]): string[] {
 
 // True when `gh` is installed and authenticated — the precondition for the
 // workflow-run reads. A miss makes the audit skip cleanly, never fail.
-function ghAuthed(): boolean {
+export function ghAuthed(): boolean {
   // oxlint-disable-next-line socket/prefer-async-spawn -- main() is a sync CLI check; the auth probe must resolve inline before the sweep.
   const result = spawnSync('gh', ['auth', 'status'], { encoding: 'utf8' })
   return result.status === 0
@@ -132,7 +132,7 @@ function ghAuthed(): boolean {
 // Push-event run count of a repo's canonical `ci.yml` workflow, or undefined
 // when the query fails (no such workflow / network / auth). `--jq .total_count`
 // yields a bare integer.
-function ghPushRunCount(repo: FleetRepo): number | undefined {
+export function ghPushRunCount(repo: FleetRepo): number | undefined {
   // oxlint-disable-next-line socket/prefer-async-spawn -- main() is a sync CLI check; the sweep reads counts sequentially inline.
   const result = spawnSync(
     'gh',

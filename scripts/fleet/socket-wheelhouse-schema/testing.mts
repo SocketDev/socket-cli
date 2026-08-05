@@ -3,7 +3,7 @@
  *   per-repo overrides and the vitest tuning the canonical vitest config reads.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 import { COVER_RUNNERS } from '../cover/runner.mts'
 

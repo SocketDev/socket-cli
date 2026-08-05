@@ -106,7 +106,7 @@ function listDirNames(dir: string): Set<string> {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const claudeMdPath = path.join(REPO_ROOT, 'CLAUDE.md')
   if (!existsSync(claudeMdPath)) {
     logger.success('No CLAUDE.md to check.')

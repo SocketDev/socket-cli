@@ -112,7 +112,7 @@ export function fnmVersionsDir(
 }
 
 // Absolute node-binary path for a fnm version-dir entry.
-function fnmBinFor(versionsDir: string, entry: string): string {
+export function fnmBinFor(versionsDir: string, entry: string): string {
   return path.join(versionsDir, entry, 'installation', 'bin', 'node')
 }
 

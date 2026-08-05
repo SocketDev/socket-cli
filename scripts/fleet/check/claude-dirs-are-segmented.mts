@@ -231,7 +231,9 @@ export function findDanglingEntries(repoRoot: string): DanglingEntry[] {
  * `rehome-to-fleet` / `move-to-repo`. Operates on the filesystem; commit + push
  * is the caller's job.
  */
-async function applyFix(entries: readonly DanglingEntry[]): Promise<void> {
+export async function applyFix(
+  entries: readonly DanglingEntry[],
+): Promise<void> {
   for (const e of entries) {
     if (e.action === 'dup-of-fleet') {
       await safeDelete(e.src)
@@ -249,7 +251,7 @@ async function applyFix(entries: readonly DanglingEntry[]): Promise<void> {
   }
 }
 
-function formatReport(entries: readonly DanglingEntry[]): string {
+export function formatReport(entries: readonly DanglingEntry[]): string {
   if (entries.length === 0) {
     return ''
   }
@@ -284,7 +286,7 @@ function formatReport(entries: readonly DanglingEntry[]): string {
   return lines.join('\n')
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const fix = process.argv.includes('--fix')
   const entries = findDanglingEntries(REPO_ROOT)
   if (entries.length === 0) {

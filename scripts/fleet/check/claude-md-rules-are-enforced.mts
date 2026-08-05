@@ -99,7 +99,7 @@ const SCRIPT_CITATION_RE = /scripts\/((?:fleet|repo)\/[A-Za-z0-9/_-]+\.mts)/g
 // `docs/agents.md/fleet/*.md` path. The two alternatives are sorted (`.claude`
 // before `docs`) per sort-regex-alternations.
 const DETAIL_LINK_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /(?:[`'"]|\]\()((?:\.claude\/skills\/[A-Za-z0-9._/-]+\/SKILL\.md)|(?:docs\/agents\.md\/fleet\/[A-Za-z0-9._/-]+\.md))/g
 
 // Opt-out: `<!-- enforcement: <category> — <reason> -->`. <category> is a single
@@ -366,14 +366,14 @@ export function auditFile(
   return { findings, optOuts, checked: paras.length }
 }
 
-function loadInventory(repoRoot: string): EnforcerInventory {
+export function loadInventory(repoRoot: string): EnforcerInventory {
   const hookNames = collectHookEnforcers(repoRoot)
   const { socketRules, tsRules } = collectLintRules(repoRoot)
   const scriptPaths = collectScriptPaths(repoRoot)
   return { hookNames, socketRules, tsRules, scriptPaths }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const claudeMdPath = path.join(REPO_ROOT, 'CLAUDE.md')
   if (!existsSync(claudeMdPath)) {
     logger.success('No CLAUDE.md to check.')

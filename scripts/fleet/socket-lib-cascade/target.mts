@@ -90,6 +90,43 @@ export async function resolveTargetVersion(config: {
 }
 
 /**
+ * Whether socket-lib's own manifest sits AHEAD of the version being cascaded —
+ * an unreleased bump.
+ *
+ * The orchestrator deliberately targets an already-published version, because
+ * `pnpm run update` can only pull what npm serves. That is correct, and it is
+ * also how a whole train can propagate a STALE version: someone bumps the
+ * manifest and writes the changelog, the release never goes out, and every
+ * downstream repo then absorbs the older release while the newer one sits
+ * unpublished. Same failure the bump base guards against upstream — a manifest
+ * ahead of the registry is a release that did not happen.
+ *
+ * Advisory, never fatal: cascading the published version is still the right
+ * move when the newer one is not out yet. The run says so instead of looking
+ * like it covered work it never touched.
+ */
+export function manifestAheadWarning(config: {
+  manifestVersion: string | undefined
+  targetVersion: string
+}): string | undefined {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const manifest = cfg.manifestVersion?.trim()
+  if (!manifest || manifest === cfg.targetVersion) {
+    return undefined
+  }
+  return (
+    `${LIB_PKG} manifest is ${manifest}, but this cascade targets ` +
+    `${cfg.targetVersion}.\n` +
+    `  What:   the checkout carries a version the registry has not published.\n` +
+    `  Where:  socket-lib package.json vs the npm latest this run resolved.\n` +
+    `  Saw:    manifest ${manifest}, cascading ${cfg.targetVersion}. Every ` +
+    `downstream stage will absorb ${cfg.targetVersion}.\n` +
+    `  Fix:    release ${manifest} first, then re-run to cascade it — or ` +
+    `continue if propagating ${cfg.targetVersion} is intended.`
+  )
+}
+
+/**
  * What `ensureCascadeState` did, so the caller can report it without redoing
  * the reasoning.
  */

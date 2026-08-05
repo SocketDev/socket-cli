@@ -130,7 +130,7 @@ export async function findMismatches(
   return out
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const hooksDir = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
   const mismatches = await findMismatches(hooksDir)

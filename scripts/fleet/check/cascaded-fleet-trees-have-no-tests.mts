@@ -103,7 +103,7 @@ export function findCascadedTreeTests(repoRoot: string): string[] {
     .toSorted((a, b) => a.localeCompare(b))
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const offenders = findCascadedTreeTests(REPO_ROOT)
   if (!offenders.length) {

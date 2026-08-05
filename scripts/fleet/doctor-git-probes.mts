@@ -25,6 +25,7 @@ import {
 import {
   detectStrandedCascade,
   formatStrandedCascadeFinding,
+  strandedBailReason,
 } from './lib/doctor/stranded-cascade-gap.mts'
 
 // True when the repo at `cwd` is on the `squash-history` cadence — its roster
@@ -34,7 +35,7 @@ import {
 // intended state, not a defect. Resolves the repo name from the origin remote,
 // falling back to the directory name. Any read/parse error yields false (the
 // divergence probe then behaves as before).
-function isSquashHistoryRepo(cwd: string): boolean {
+export function isSquashHistoryRepo(cwd: string): boolean {
   const rosterPath = path.join(
     cwd,
     '.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
@@ -72,7 +73,7 @@ function isSquashHistoryRepo(cwd: string): boolean {
 }
 
 // Resolve the default branch name for git probes. Falls back to 'main'.
-function resolveDefaultBranch(cwd: string): string {
+export function resolveDefaultBranch(cwd: string): string {
   const r = spawnSync(
     'git',
     ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'],
@@ -214,19 +215,26 @@ export function runGitHygieneProbes(config: {
       ['log', '--format=%H\t%s', `origin/${defaultBranch}..HEAD`],
       { cwd, stdioString: true, timeout: 30_000 },
     )
-    const strandedCommits: string[] = []
+    const localAhead: string[] = []
     if (logSubjectR.status === 0 && typeof logSubjectR.stdout === 'string') {
       const logLines = logSubjectR.stdout.split('\n')
       for (let i = 0, { length } = logLines; i < length; i += 1) {
         const trimmed = logLines[i]!.trim()
-        if (
-          trimmed &&
-          /chore\(wheelhouse\): cascade template@[0-9a-f]+/.test(trimmed)
-        ) {
-          strandedCommits.push(trimmed)
+        if (trimmed) {
+          localAhead.push(trimmed)
         }
       }
     }
+    // Same rail cleanup-stranded's planner enforces: a non-cascade commit among
+    // the local-ahead set means the remedy (`reset --hard origin/<base>`) would
+    // destroy real work, so there is nothing to report. Without this the member
+    // path recommended that reset for a repo the real script refuses to touch.
+    const bailReason = strandedBailReason(localAhead)
+    const strandedCommits = bailReason
+      ? []
+      : localAhead.filter(entry =>
+          /chore\(wheelhouse\): cascade template@[0-9a-f]+/.test(entry),
+        )
     // Reuse the worktree output already collected for GAP 10.
     const strandedWorktrees: string[] =
       wtR.status === 0 && typeof wtR.stdout === 'string'

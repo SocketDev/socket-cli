@@ -62,13 +62,13 @@ const SKIP_DIRS = new Set([
   'vendor',
 ])
 
-type Config = {
+export type Config = {
   readonly roots: Readonly<Record<string, readonly string[]>>
   readonly scan: readonly string[]
   readonly extensions: readonly string[]
 }
 
-type Finding = {
+export type Finding = {
   readonly file: string
   readonly line: number
   readonly lang: string
@@ -83,7 +83,7 @@ type Finding = {
 const LOCK_STEP_RE =
   /Lock-step (?:from|with) (?<lang>[A-Za-z][A-Za-z0-9+#-]*): (?<refPath>[^\s:,]*[./][^\s:,]*)(?::(?:\d+(?:-\d+)?))?/g
 
-function loadConfig(repoRoot: string): Config | undefined {
+export function loadConfig(repoRoot: string): Config | undefined {
   const configPath = CONFIG_PATHS.find(rel =>
     existsSync(path.join(repoRoot, rel)),
   )
@@ -119,7 +119,7 @@ function loadConfig(repoRoot: string): Config | undefined {
   return obj as unknown as Config
 }
 
-function walk(dir: string, exts: readonly string[]): string[] {
+export function walk(dir: string, exts: readonly string[]): string[] {
   const out: string[] = []
   let entries: string[]
   try {
@@ -148,7 +148,7 @@ function walk(dir: string, exts: readonly string[]): string[] {
   return out
 }
 
-function resolveRef(
+export function resolveRef(
   config: Config,
   repoRoot: string,
   lang: string,
@@ -177,7 +177,7 @@ function resolveRef(
   return { found: false, knownLang: true }
 }
 
-function scanFile(
+export function scanFile(
   filePath: string,
   config: Config,
   repoRoot: string,
@@ -226,7 +226,7 @@ function scanFile(
   return findings
 }
 
-function formatFindings(
+export function formatFindings(
   findings: readonly Finding[],
   repoRoot: string,
 ): string {
@@ -257,7 +257,7 @@ function formatFindings(
   return lines.join('\n')
 }
 
-function main(): void {
+export function main(): void {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {

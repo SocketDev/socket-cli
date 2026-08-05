@@ -53,7 +53,7 @@ export interface GateResult {
   failed?: string | undefined
 }
 
-async function defaultRunStep(
+export async function defaultRunStep(
   cmd: string,
   args: readonly string[],
 ): Promise<number> {
@@ -89,7 +89,7 @@ export async function runGate(
   return { ok: true }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const result = await runGate()
   if (!result.ok) {
     logger.fail(

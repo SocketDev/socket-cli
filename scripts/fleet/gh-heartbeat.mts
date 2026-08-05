@@ -79,7 +79,7 @@ export function refreshGhHeartbeat(
   return { reason: `stamp refreshed (was ${age})`, stamped: true }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const result = refreshGhHeartbeat()
   if (!result.stamped) {

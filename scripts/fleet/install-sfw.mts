@@ -23,10 +23,10 @@
  *   `external-tools.json` under `tools.sfw-free` / `tools.sfw-enterprise`.
  *   That file is the single fleet source of truth — every consumer of
  *   external tooling reads the same entries. Usage: pnpm run install:sfw #
- *   free flavor pnpm run install:sfw -- --enterprise # requires
+ *   free flavor pnpm run install:sfw --enterprise # requires
  *   SOCKET_API_KEY (or SOCKET_API_TOKEN) plus GITHUB_TOKEN / GH_TOKEN
- *   pnpm run install:sfw -- --force # ignore cache, redownload pnpm run
- *   install:sfw -- --quiet.
+ *   pnpm run install:sfw --force # ignore cache, redownload pnpm run
+ *   install:sfw --quiet.
  *
  *   The enterprise asset lives in a private repo, so its download carries a
  *   GitHub bearer token exactly as the dep-0 setup/lib/install-tool.mjs does —
@@ -329,7 +329,7 @@ export function missingEnterpriseTokenError(config: {
     '  Fix:    export GITHUB_TOKEN="$(gh auth token)" locally, or in CI supply a\n' +
     `          token that can read ${repoSlug} (a workflow's own\n` +
     '          secrets.GITHUB_TOKEN only reaches its own repo), then re-run\n' +
-    '          `pnpm run install:sfw -- --enterprise`. Dropping --enterprise\n' +
+    '          `pnpm run install:sfw --enterprise`. Dropping --enterprise\n' +
     '          installs the free flavor from a public repo and needs no token.'
   )
 }

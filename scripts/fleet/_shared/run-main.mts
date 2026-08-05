@@ -7,15 +7,14 @@
  *   process.exitCode = await main() })()` entry pattern, which crashes with a
  *   raw stack if `main()` throws. Enforced by
  *   `scripts/fleet/check/entry-scripts-are-fail-soft.mts` (a fleet CLI entry
- *   must fail soft — never hard-crash the user).
- *   It also owns the whole-argv concerns every entry shares, so a new script
- *   inherits them instead of having to remember each: `--describe` prints the
- *   script's one-line purpose, `-h`/`--help` prints its usage (both from the
- *   {@link ScriptMeta} the entry passes, both BEFORE `main()` runs or any lock
- *   is taken), and a bare `--` in argv is refused before `main()` runs.
- *   Enforced by `scripts/fleet/check/entry-scripts-self-describe.mts` (every
- *   entry script answers --describe and --help without running its side
- *   effect).
+ *   must fail soft — never hard-crash the user). It also owns the whole-argv
+ *   concerns every entry shares, so a new script inherits them instead of
+ *   having to remember each: `--describe` prints the script's one-line purpose,
+ *   `-h`/`--help` prints its usage (both from the {@link ScriptMeta} the entry
+ *   passes, both BEFORE `main()` runs or any lock is taken), and a bare `--` in
+ *   argv is refused before `main()` runs. Enforced by
+ *   `scripts/fleet/check/entry-scripts-are-self-describing.mts` (every entry
+ *   script answers --describe and --help without running its side effect).
  */
 
 import process from 'node:process'

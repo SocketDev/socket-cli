@@ -129,7 +129,7 @@ export function readBundlePin(): BundlePin | undefined {
   }
 }
 
-function main(): void {
+export function main(): void {
   const pin = readBundlePin()
   if (pin === undefined) {
     note('release-and-cascade-are-paired: no bundle pin — vacuous pass.')

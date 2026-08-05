@@ -32,10 +32,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // the golden-fixture-naming-guard predicate.
 import { NATIVE_HANDLER_FILES } from '../../../.claude/hooks/fleet/_shared/native-handler-files.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import { runMain } from '../_shared/run-main.mts'
 import { REPO_ROOT } from '../paths.mts'
-
-import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // Re-exported so consumers + tests can read the native-handler set from the belt
 // scan too, the write-time guard remains its single owner.
@@ -228,7 +227,7 @@ function readFileSafe(abs: string): string | undefined {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   // Wheelhouse-only: a cascaded member ships this check but has no template/base
   // to walk (and no scripts/repo to import). Vacuous pass — same shape as
   // bundle-is-installable.mts.
@@ -345,6 +344,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/check/wheelhouse-controlled-files-are-classified.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

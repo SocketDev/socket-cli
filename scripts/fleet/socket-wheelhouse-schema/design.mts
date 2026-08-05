@@ -5,7 +5,7 @@
  *   verifies clear a minimum ratio.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 export const ContrastCheckSchema = Type.Object(
   {

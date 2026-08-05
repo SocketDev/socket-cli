@@ -19,9 +19,8 @@ import { gunzipSync } from 'node:zlib'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
 import { isMainModule } from './_shared/is-main-module.mts'
-import { runMain } from './_shared/run-main.mts'
-
 import type { ScriptMeta } from './_shared/run-main.mts'
+import { runMain } from './_shared/run-main.mts'
 
 const CRATES_IO_ORIGIN = 'https://crates.io'
 const MAX_REDIRECTS = 5
@@ -214,7 +213,7 @@ async function download(
   })
 }
 
-function parseCli(args: string[]): CliConfig {
+export function parseCli(args: string[]): CliConfig {
   let crate = ''
   let json = false
   let version: string | undefined
@@ -288,7 +287,7 @@ export async function resolveCrateReleaseSha(
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   try {
     const options = parseCli(process.argv.slice(2))
     const info = await crateReleaseInfo(options)
@@ -318,6 +317,8 @@ const SCRIPT_META: ScriptMeta = {
   --json             emit the full release info as JSON`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

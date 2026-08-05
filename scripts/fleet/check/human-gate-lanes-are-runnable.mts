@@ -127,7 +127,7 @@ export function findLaneDefects(repoRoot: string): string[] {
   return out.toSorted()
 }
 
-function main(): number {
+export function main(): number {
   const offenders = findLaneDefects(REPO_ROOT)
   if (offenders.length) {
     logger.fail(

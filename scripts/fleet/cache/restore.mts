@@ -72,10 +72,11 @@ export async function runCacheRestore(
       ...args.restoreKeys,
     ])
   } catch (e) {
-    logError(
-      `Cache restore failed. Where: the cache service, key '${args.key}'. Saw: ${errorMessage(e)}; wanted a restored entry or a clean miss. Fix: re-run the job; if it persists, check GitHub Actions cache service status and the job's ACTIONS_RESULTS_URL wiring.`,
-    )
-    return 1
+    // A cache failure never fails the job — the step reports a miss and the
+    // build proceeds cold, matching the upstream action's contract.
+    log(`⚠️ cache restore skipped for key '${args.key}' — ${errorMessage(e)}`)
+    appendOutput(composeRestoreOutputLines(args.key, undefined))
+    return 0
   }
   appendOutput(composeRestoreOutputLines(args.key, matchedKey))
   if (matchedKey === undefined) {

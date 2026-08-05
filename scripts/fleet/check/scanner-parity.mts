@@ -380,7 +380,7 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   // then `from '<source>'` — captures the quoted module specifier. Alternations
   // sorted (`\n` before `^`; `export` before `import`) per sort-regex-alternations.
   const importFromRe =
-    // socket-lint: allow uncommented-regex
+    // oxlint-disable-next-line socket/require-regex-comment -- described above
     /(?:\n|^)\s*(?:export\b[^;]*?|import\b[^;]*?)\bfrom\s*['"]([^'"]+)['"]/g
   let m: RegExpExecArray | null
   while ((m = importFromRe.exec(src)) !== null) {
@@ -391,7 +391,7 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   // Alternatives sorted by leading char (`(?:const…` < `class` < `function`)
   // per sort-regex-alternations; the name is read order-agnostically below.
   const declRe =
-    // socket-lint: allow uncommented-regex
+    // oxlint-disable-next-line socket/require-regex-comment -- described above
     /^(export\s+)?(?:async\s+)?(?:(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*[:=]|class\s+([A-Za-z_$][\w$]*)|function\s+([A-Za-z_$][\w$]*))/gm
   while ((m = declRe.exec(src)) !== null) {
     const name = m[2] ?? m[3] ?? m[4]
@@ -419,7 +419,7 @@ export function readFacts(file: string, tree: FileFacts['tree']): FileFacts {
   return facts
 }
 
-function main(): void {
+export function main(): void {
   // Parse every file in both trees once. A _shared module's fork-able surface is
   // its EXPORTED symbols, what a consumer can import; a re-fork is a consumer
   // re-declaring one of those exported names. A module's PRIVATE helper (e.g. a

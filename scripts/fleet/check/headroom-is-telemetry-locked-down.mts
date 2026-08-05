@@ -36,7 +36,7 @@ const HEADROOM_LIB = path.join(
   '.claude/hooks/fleet/setup-security-tools/lib/headroom.mts',
 )
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   if (!existsSync(HEADROOM_LIB)) {
     logger.log(
       'headroom-is-telemetry-locked-down: no headroom installer (n/a).',

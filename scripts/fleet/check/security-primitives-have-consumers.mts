@@ -118,7 +118,7 @@ export const AMBIGUOUS_TERMS: readonly string[] = [
  * Compile one term table entry. The leading `\b` stops a mid-word match
  * (`rce` inside "sources" once flagged a plain schema parser).
  */
-// socket-lint: allow uncommented-regex -- the source is a term table entry.
+// oxlint-disable-next-line socket/require-regex-comment -- the source is a term table entry.
 export function compileTermMatcher(term: string): RegExp {
   return new RegExp(`\\b${term}`, 'i')
 }
@@ -128,7 +128,7 @@ const AMBIGUOUS_MATCHERS = AMBIGUOUS_TERMS.map(compileTermMatcher)
 
 // Repo-OWNED source. A member's security primitives live under these roots.
 const SOURCE_PATH_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /^(?:lib|packages\/[^/]+\/(?:lib|src)|scripts\/repo|src)\//
 
 // Cascaded trees are authored in socket-wheelhouse and byte-copied into every
@@ -136,30 +136,30 @@ const SOURCE_PATH_RE =
 // fail 20 repos for one wheelhouse-owned export. The wheelhouse's canonical
 // `template/` copies are excluded for the mirror reason: their consumers are
 // the cascaded copies, not the template.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const CASCADED_PATH_RE = /^(?:\.config\/fleet|scripts\/fleet|template)\//
 
 // Test-shaped paths: never a consumer, never scanned for candidates.
 const TEST_PATH_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /(?:^|\/)(?:__tests__|fixtures?|mocks?|tests?)\/|\.(?:bench|fuzz|spec|test)\./
 
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- a source-file extension suffix
 const CODE_PATH_RE = /\.(?:cjs|cts|js|mjs|mts|ts)$/
 
 const DECLARATION_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- captures the kind and name of a top-level export
   /^export\s+(?:async\s+)?(class|const|function|interface|let|type)\s+([A-Za-z_$][\w$]*)/
 
 // `@unused <reason>` / `@security-disposition <reason>` — the reason must carry
 // real content, so a bare tag stays silent and still fails.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const DISPOSITION_RE = /@(?:security-disposition|unused)[ \t]+(\S[^\n]{9,})/
 
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- the bare @security doc tag
 const SECURITY_TAG_RE = /@security\b/
 
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- a JS identifier
 const IDENTIFIER_RE = /[A-Za-z_$][\w$]*/g
 
 export interface SecurityDeclaration {

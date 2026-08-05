@@ -60,7 +60,7 @@ export function parseEntries(text: string): SubmoduleEntry[] {
   }))
 }
 
-function main(): void {
+export function main(): void {
   const gitmodulesPath = path.join(REPO_ROOT, '.gitmodules')
   if (!existsSync(gitmodulesPath)) {
     if (!quiet) {

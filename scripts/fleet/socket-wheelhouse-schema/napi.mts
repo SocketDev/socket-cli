@@ -9,7 +9,7 @@
  *   the repo has no per-platform matrix build and uses the single-runner path.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 import { NAPI_TARGETS } from '../util/napi-targets.mts'
 

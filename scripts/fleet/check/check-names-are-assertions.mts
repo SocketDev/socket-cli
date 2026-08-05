@@ -220,7 +220,7 @@ export function scanCheckNames(repoRoot: string): NameViolation[] {
   return violations
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const violations = scanCheckNames(REPO_ROOT)
   if (violations.length) {

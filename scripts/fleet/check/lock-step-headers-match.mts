@@ -66,19 +66,19 @@ const SKIP_DIRS = new Set([
 const BEGIN_MARKER = 'BEGIN LOCK-STEP HEADER'
 const END_MARKER = 'END LOCK-STEP HEADER'
 
-type Config = {
+export type Config = {
   readonly roots: Readonly<Record<string, readonly string[]>>
   readonly scan: readonly string[]
   readonly extensions: readonly string[]
 }
 
-type HeaderBlock = {
+export type HeaderBlock = {
   readonly file: string
   readonly bodyLines: readonly string[]
   readonly withRefs: ReadonlyArray<{ lang: string; refPath: string }>
 }
 
-type Diff = {
+export type HeaderDiff = {
   readonly canonical: string
   readonly peer: string
   readonly lang: string
@@ -87,7 +87,7 @@ type Diff = {
   readonly reason: 'peer-missing-header' | 'body-mismatch' | 'peer-not-found'
 }
 
-function loadConfig(repoRoot: string): Config | undefined {
+export function loadConfig(repoRoot: string): Config | undefined {
   const configPath = CONFIG_PATHS.find(rel =>
     existsSync(path.join(repoRoot, rel)),
   )
@@ -99,7 +99,7 @@ function loadConfig(repoRoot: string): Config | undefined {
   return parsed
 }
 
-function walk(dir: string, exts: readonly string[]): string[] {
+export function walk(dir: string, exts: readonly string[]): string[] {
   const out: string[] = []
   let entries: string[]
   try {
@@ -133,7 +133,7 @@ function walk(dir: string, exts: readonly string[]): string[] {
 // between BEGIN and END, with the `// ` prefix stripped from each.
 // Each line in the returned `bodyLines` is the comment content WITHOUT
 // the `// ` prefix; an empty comment line (`//` alone) becomes `''`.
-function extractHeader(file: string): HeaderBlock | undefined {
+export function extractHeader(file: string): HeaderBlock | undefined {
   let content: string
   try {
     content = readFileSync(file, 'utf8')
@@ -189,7 +189,7 @@ function extractHeader(file: string): HeaderBlock | undefined {
 // comment line. Returns the content. Non-comment lines come back as
 // empty string — they shouldn't appear inside a BEGIN/END block, but
 // we tolerate them silently rather than failing on whitespace.
-function stripCommentPrefix(line: string): string {
+export function stripCommentPrefix(line: string): string {
   const trimmed = line.replace(/^\s*/, '')
   if (trimmed === '//') {
     return ''
@@ -203,7 +203,7 @@ function stripCommentPrefix(line: string): string {
   return ''
 }
 
-function resolveRefPath(
+export function resolveRefPath(
   config: Config,
   repoRoot: string,
   lang: string,
@@ -226,7 +226,7 @@ function resolveRefPath(
   return undefined
 }
 
-function bodyEqual(a: readonly string[], b: readonly string[]): boolean {
+export function bodyEqual(a: readonly string[], b: readonly string[]): boolean {
   if (a.length !== b.length) {
     return false
   }
@@ -238,7 +238,7 @@ function bodyEqual(a: readonly string[], b: readonly string[]): boolean {
   return true
 }
 
-function formatDiff(d: Diff, repoRoot: string): string {
+export function formatDiff(d: HeaderDiff, repoRoot: string): string {
   const out: string[] = []
   const rel = (p: string) => path.relative(repoRoot, p)
   out.push(
@@ -264,7 +264,7 @@ function formatDiff(d: Diff, repoRoot: string): string {
   return out.join('\n')
 }
 
-function main(): void {
+export function main(): void {
   const { values } = parseArgs({
     args: process.argv.slice(2),
     options: {
@@ -307,7 +307,7 @@ function main(): void {
   }
   // Build a map of canonical files (with at least one `Lock-step with`
   // ref) and check each peer they name.
-  const diffs: Diff[] = []
+  const diffs: HeaderDiff[] = []
   let canonicalCount = 0
   for (let i = 0, { length } = allFiles; i < length; i += 1) {
     const file = allFiles[i]!

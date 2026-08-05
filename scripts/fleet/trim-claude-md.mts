@@ -41,7 +41,7 @@ export function claudeMdFiles(repoRoot: string): string[] {
   ]
 }
 
-function reportFile(file: string): boolean {
+export function reportFile(file: string): boolean {
   if (!existsSync(file)) {
     return false
   }
@@ -66,7 +66,7 @@ function reportFile(file: string): boolean {
   return true
 }
 
-function main(): void {
+export function main(): void {
   const files = claudeMdFiles(REPO_ROOT)
   if (process.argv.includes('--apply')) {
     const results = applyClaudeMdTrim(files)

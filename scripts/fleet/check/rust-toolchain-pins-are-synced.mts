@@ -13,10 +13,16 @@
  *      NO separate updater-only nightly (`-Zmin-publish-age` is nightly-only).
  *      This check asserts every derived copy equals 1; `--fix` rewrites the
  *      drifted copies from the canonical channel. Fails the gate on drift,
- *      with What / Where / Saw-vs-wanted / Fix. No-ops when the repo has no
- *      Rust pin, a JS-only member has nothing to sync. Wired into the check
+ *      with What / Where / Saw-vs-wanted / Fix. Wired into the check
  *      gate + cascade (--fix). Usage: node
  *      scripts/fleet/check/rust-toolchain-pins-are-synced.mts [--fix]
+ *
+ *   Absence is judged, not waved through. A JS-only member owes no pin and
+ *   passes silently, but a repo that COMPILES Rust — `build.type: rust`, or a
+ *   non-empty `capabilities.cargo` in an otherwise-TypeScript repo — fails: with
+ *   no pin, cargo resolves whatever rustup defaults to. `repoCompilesRust` in
+ *   ../paths.mts is THE authority for that question, shared with the cascade's
+ *   `hasRust` conditional trigger so the two cannot disagree about who owes one.
  */
 
 import { existsSync, readFileSync } from 'node:fs'
@@ -26,7 +32,7 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { REPO_ROOT } from '../paths.mts'
+import { REPO_ROOT, repoCompilesRust } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
 import type { ScriptMeta } from '../_shared/run-main.mts'
@@ -82,6 +88,40 @@ export interface RunCheckOptions {
   fix?: boolean | undefined
 }
 
+/**
+ * The exit code for a repo carrying no `rust-toolchain.toml` at all. Silent 0
+ * for a JS-only member, which owes no pin; 1 with a fix path for a repo that
+ * compiles Rust, where the absence means cargo runs on whatever rustup defaults
+ * to. `--fix` cannot resolve this one: choosing a toolchain is a fleet
+ * decision, and the cascade materializes the pin from the canonical template
+ * once the repo's `hasRust` trigger is active.
+ */
+export function missingPinExitCode(repoRoot: string): number {
+  if (!repoCompilesRust(repoRoot)) {
+    return 0
+  }
+  logger.fail(
+    [
+      '[rust-toolchain-pins-are-synced] This repo compiles Rust but pins no toolchain.',
+      '',
+      `  Where: ${path.join(repoRoot, 'rust-toolchain.toml')} (absent)`,
+      '  Saw:    no pin, so cargo resolves whatever `rustup` defaults to.',
+      '  Wanted: the canonical fleet pin, which every Rust member shares.',
+      '',
+      '  Why it matters: an unpinned toolchain makes local and CI builds differ,',
+      '  silently ignores the #[cfg_attr(coverage_nightly, coverage(off))] markers',
+      '  the coverage lane depends on, and lets `cargo llvm-cov` stall on a',
+      '  component-install prompt.',
+      '',
+      '  Fix: run the cascade, which materializes rust-toolchain.toml from',
+      '  template/conditional/rust/ for any repo whose build.type is `rust` or',
+      '  that declares a non-empty capabilities.cargo, then `pnpm run setup:rust`.',
+      '',
+    ].join('\n'),
+  )
+  return 1
+}
+
 interface Drift {
   where: string
   saw: string
@@ -91,13 +131,16 @@ interface Drift {
 
 /**
  * Assert the derived Rust-pin copies (RUST_UPDATER_TOOLCHAIN in cargo.mts, and
- * in a member its root rust-toolchain.toml) match the canonical channel. The
- * canonical pin is `template/conditional/rust/rust-toolchain.toml` in the
- * wheelhouse (the fleet single source; the wheelhouse builds no Rust, so no
- * root copy exists there) and the cascaded `<repoRoot>/rust-toolchain.toml`
- * in a member. `options.fix` rewrites the drifted copies; otherwise a drift
- * fails the gate. Returns the intended exit code (0 = synced / no rust pin,
- * 1 = malformed canonical or drift in check mode).
+ * the root rust-toolchain.toml) match the canonical channel. The canonical pin
+ * is `template/conditional/rust/rust-toolchain.toml` in the wheelhouse (the
+ * fleet single source) and the cascaded `<repoRoot>/rust-toolchain.toml` in a
+ * member. A repo that compiles Rust owes a root copy either way, the wheelhouse
+ * included — it declares `capabilities.cargo`, so an absent root copy is itself
+ * a drift, resolved from the canonical text by the same `--fix`.
+ * `options.fix` rewrites the drifted copies; otherwise a drift fails the gate.
+ * Returns the intended exit code (0 = synced, or a JS-only repo owing no pin;
+ * 1 = malformed canonical, a missing pin in a Rust repo, or drift in check
+ * mode).
  */
 export function runCheck(
   repoRoot: string,
@@ -115,8 +158,12 @@ export function runCheck(
   const rootToml = path.join(repoRoot, 'rust-toolchain.toml')
   const canonicalPath = existsSync(templateToml) ? templateToml : rootToml
   if (!existsSync(canonicalPath)) {
-    // No Rust pin in this repo — nothing to sync, JS-only member.
-    return 0
+    // No pin anywhere. Silent for a JS-only member, which owes none — but a repo
+    // that COMPILES Rust and has no pin is the false-green this gate exists to
+    // stop: cargo falls back to whatever rustup defaults to, so the
+    // coverage(off) markers go unhonored and the toolchain differs between a
+    // developer's machine and CI.
+    return missingPinExitCode(repoRoot)
   }
   const canonical = parseRustChannel(readFileSync(canonicalPath, 'utf8'))
   if (!canonical) {
@@ -132,19 +179,35 @@ export function runCheck(
     return 1
   }
   const drifts: Drift[] = []
-  // Derived copy 1 (wheelhouse-only): a stray root copy. The wheelhouse
-  // builds no Rust — its pin lives ONLY in the conditional trigger dir, so a
-  // root copy is drift against the canonical.
-  if (canonicalPath === templateToml && existsSync(rootToml)) {
-    const content = readFileSync(rootToml, 'utf8')
-    const saw = parseRustChannel(content)
-    if (saw && saw !== canonical) {
-      drifts.push({
-        where: 'rust-toolchain.toml `channel` (root copy)',
-        saw,
-        next: withRustChannel(content, canonical),
-        path: rootToml,
-      })
+  // Derived copy 1 (wheelhouse-only): the root copy. Whether the wheelhouse owes
+  // one depends on whether IT compiles Rust — it declares
+  // `capabilities.cargo` for tools/chapter-bundle, so it does, and rustup
+  // discovers the pin by walking up from that workspace. A repo owing a root
+  // copy drifts two ways: the file is absent, or its channel differs. Both
+  // resolve from the canonical text, so both ride the same --fix.
+  if (canonicalPath === templateToml) {
+    const canonicalText = readFileSync(canonicalPath, 'utf8')
+    if (!existsSync(rootToml)) {
+      if (repoCompilesRust(repoRoot)) {
+        drifts.push({
+          where:
+            'rust-toolchain.toml (root copy) — absent, but this repo compiles Rust',
+          saw: 'no file',
+          next: canonicalText,
+          path: rootToml,
+        })
+      }
+    } else {
+      const content = readFileSync(rootToml, 'utf8')
+      const saw = parseRustChannel(content)
+      if (saw && saw !== canonical) {
+        drifts.push({
+          where: 'rust-toolchain.toml `channel` (root copy)',
+          saw,
+          next: withRustChannel(content, canonical),
+          path: rootToml,
+        })
+      }
     }
   }
   // Derived copy 2: the cargo soak updater's nightly. Template-first, matching

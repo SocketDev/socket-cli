@@ -47,8 +47,8 @@ import { SOURCE_FILE_RE } from '../../../.git-hooks/_shared/file-scan.mts'
 import { isPurePlaceholder } from '../../../.git-hooks/_shared/personal-path.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { runMain } from '../_shared/run-main.mts'
 import type { ScriptMeta } from '../_shared/run-main.mts'
+import { runMain } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -239,7 +239,7 @@ export function scanRepo(repoRoot: string): PrivatePathHit[] {
   return hits
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hits = scanRepo(REPO_ROOT)
   if (hits.length) {
@@ -275,6 +275,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet   suppress the success line`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

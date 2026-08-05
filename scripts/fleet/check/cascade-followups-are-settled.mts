@@ -155,7 +155,7 @@ export function readObligation(config: {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   if (!existsSync(path.join(REPO_ROOT, 'template', 'base'))) {
     note(
       'cascade-followups-are-settled: no template/base — a member checkout, vacuous pass. ' +
@@ -253,6 +253,7 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  suppress the per-obligation notes and the success line`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(
     () =>
@@ -266,3 +267,4 @@ if (isMainModule(import.meta.url)) {
     SCRIPT_META,
   )
 }
+/* c8 ignore stop */

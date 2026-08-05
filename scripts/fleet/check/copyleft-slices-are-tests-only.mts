@@ -266,7 +266,7 @@ export async function findCopyleftSliceViolations(
   return findings
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const findings = await findCopyleftSliceViolations(REPO_ROOT)
   if (findings.length === 0) {
     if (!process.argv.includes('--quiet')) {

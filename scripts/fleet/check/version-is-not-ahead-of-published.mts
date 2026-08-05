@@ -163,7 +163,7 @@ async function checkCargo(): Promise<void> {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   await checkNpm()
   await checkCargo()
 }

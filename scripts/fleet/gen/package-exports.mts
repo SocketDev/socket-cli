@@ -545,7 +545,7 @@ export interface ExportsConfigModule {
   readonly packageDir?: string | undefined
 }
 
-async function runGenerator(): Promise<void> {
+export async function runGenerator(): Promise<void> {
   // A package opts in by shipping `scripts/repo/package-exports.config.mts`
   // (resolved relative to REPO_ROOT, not process.cwd() — scripts may be invoked
   // from any directory) with a default export of `{ config, packageDir? }`.

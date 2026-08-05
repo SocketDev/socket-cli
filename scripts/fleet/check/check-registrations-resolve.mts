@@ -188,7 +188,7 @@ export function collectWiredChecks(
   return wired
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   // Each tree (the repo's own + template/base/'s seed) resolves its
   // registrations against itself.
   const copies = ['', 'template/base/'].flatMap(treePrefix =>

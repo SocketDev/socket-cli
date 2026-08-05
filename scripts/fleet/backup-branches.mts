@@ -5,14 +5,20 @@
  *   rewrites history. Everything that reads, renames, or retires them lives in
  *   `backup-branches/`, and this file is the only way to run any of it.
  *
+ *   Two lanes share this router. The BRANCH lane covers the safety-net refs; the
+ *   STASH lane covers `git stash`, which is shared by every session in a
+ *   checkout and which nothing else sweeps.
+ *
  *   Subcommands:
  *
  *   - `prune`     — retire spent safety nets, gated on retention AND a
  *                   unique-content veto. See `backup-branches/prune.mts`.
  *   - `normalize` — rename a repo's legacy recovery refs to the canonical
  *                   timestamp form. See `backup-branches/normalize.mts`.
+ *   - `stashes`   — archive every stash to a permanent ref, then drop only the
+ *                   ones proven superseded. See `backup-branches/stashes.mts`.
  *
- *   Usage: node scripts/fleet/backup-branches.mts <prune|normalize> [flags]
+ *   Usage: node scripts/fleet/backup-branches.mts <prune|normalize|stashes> [flags]
  *
  *   Naming itself is `backup-branches/naming.mts`, imported directly by the
  *   flows that CREATE a backup (squash, reorder, consolidate) and by the
@@ -27,11 +33,16 @@ import { runMain } from './_shared/run-main.mts'
 import type { ScriptMeta } from './_shared/run-main.mts'
 import { runNormalize } from './backup-branches/normalize.mts'
 import { runPrune } from './backup-branches/prune.mts'
+import { runStashes } from './backup-branches/stashes.mts'
 
 /**
  * The subcommands this router accepts, in help-text order.
  */
-export const BACKUP_BRANCH_SUBCOMMANDS = ['prune', 'normalize'] as const
+export const BACKUP_BRANCH_SUBCOMMANDS = [
+  'prune',
+  'normalize',
+  'stashes',
+] as const
 
 export type BackupBranchSubcommand = (typeof BACKUP_BRANCH_SUBCOMMANDS)[number]
 
@@ -79,6 +90,10 @@ export async function runBackupBranches(
     await runPrune(rest)
     return
   }
+  if (word === 'stashes') {
+    await runStashes(rest)
+    return
+  }
   await runNormalize(rest)
 }
 
@@ -88,14 +103,16 @@ export async function main(): Promise<void> {
 
 const SCRIPT_META: ScriptMeta = {
   describe:
-    'manage the fleet backup-YYYYMMDD-HHMMSS safety-net branches: prune spent ones, normalize legacy names',
-  help: `Usage: node scripts/fleet/backup-branches.mts <prune|normalize> [flags]
+    'manage the fleet parked-work safety nets: prune spent backup branches, normalize legacy names, sweep the shared git stash list',
+  help: `Usage: node scripts/fleet/backup-branches.mts <prune|normalize|stashes> [flags]
 
 Commands:
   prune      retire spent safety nets, gated on retention AND a unique-content veto
              --all | --repo <name> | --days <n> | --keep <n> | --local | --allow-pre-root | --dry-run
   normalize  rename a repo's legacy recovery refs to the canonical timestamp form
-             --repo <name> (required) | --fix`,
+             --repo <name> (required) | --fix
+  stashes    archive every stash to refs/stash-archive/*, drop only the superseded ones
+             --all | --repo <name> | --fix (dry run is the default)`,
 }
 
 if (isMainModule(import.meta.url)) {

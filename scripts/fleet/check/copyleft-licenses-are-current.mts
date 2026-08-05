@@ -231,7 +231,7 @@ export async function probeAllCopyleftLicenses(
   return results
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const token = await readSocketApiToken()
   if (!token) {

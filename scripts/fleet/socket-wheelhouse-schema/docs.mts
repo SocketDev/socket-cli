@@ -8,7 +8,7 @@
  *   consent from its presence would let a cascade overwrite it.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 export const DocsSchema = Type.Object(
   {

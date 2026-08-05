@@ -294,7 +294,7 @@ export function handleRequest(
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const rl = createInterface({ input: process.stdin })
   rl.on('line', line => {
     const trimmed = line.trim()
@@ -318,12 +318,14 @@ async function main(): Promise<void> {
   logger.info('[janus-multi-mcp] ready (stdio)')
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'serves a stdio MCP shim that routes Janus ticket tools across many repo queues',
   help: 'Usage: node scripts/fleet/janus-multi-mcp.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

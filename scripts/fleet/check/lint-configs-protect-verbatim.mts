@@ -101,7 +101,7 @@ export function findReexposedVerbatim(repoRoot: string): string[] {
   return offenders
 }
 
-function main(): number {
+export function main(): number {
   const offenders = findReexposedVerbatim(REPO_ROOT)
   if (offenders.length) {
     logger.fail(

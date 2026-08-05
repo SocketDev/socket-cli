@@ -154,7 +154,7 @@ export function spliceSoakEntry(
   return lines.join('\n')
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const spec = parseSpec(process.argv[2] ?? '')
   if (!spec) {
     process.stderr.write(

@@ -292,7 +292,7 @@ export async function odaiFailureSummary(
   return typeof summary === 'string' && summary !== '' ? summary : undefined
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       base: { type: 'string' },
@@ -387,6 +387,8 @@ const SCRIPT_META: ScriptMeta = {
   --patterns <globs>  allowlist globs for the changed-path classification`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

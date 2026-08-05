@@ -69,10 +69,22 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { REPO_ROOT } from './paths.mts'
-import { nowIso, readLatest, runCascade } from './socket-lib-cascade/drive.mts'
+import {
+  nowIso,
+  readLatest,
+  resolveProjectsDir,
+  runCascade,
+} from './socket-lib-cascade/drive.mts'
 import { renderStatus } from './socket-lib-cascade/render.mts'
-import { LIB_PKG, producedPackages } from './socket-lib-cascade/stages.mts'
+import {
+  LIB_PKG,
+  producedPackages,
+  siblingRepoDir,
+} from './socket-lib-cascade/stages.mts'
 import {
   loadState,
   resetState,
@@ -80,6 +92,7 @@ import {
 } from './socket-lib-cascade/state.mts'
 import {
   ensureCascadeState,
+  manifestAheadWarning,
   resolveTargetVersion,
 } from './socket-lib-cascade/target.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
@@ -126,6 +139,26 @@ export function defaultCascadeCliIo(): CascadeCliIo {
     readLatest,
     runCascade,
     stateFile: statePath(REPO_ROOT),
+  }
+}
+
+/**
+ * Socket-lib's own manifest version, or undefined when the checkout is absent
+ * or unreadable. Read here rather than inside the pure checker so the checker
+ * stays testable without a filesystem.
+ */
+export function readSocketLibManifestVersion(): string | undefined {
+  try {
+    const dir = siblingRepoDir(resolveProjectsDir(), 'socket-lib')
+    const raw = readFileSync(path.join(dir, 'package.json'), 'utf8')
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed === null || typeof parsed !== 'object') {
+      return undefined
+    }
+    const version: unknown = Reflect.get(parsed, 'version')
+    return typeof version === 'string' ? version : undefined
+  } catch {
+    return undefined
   }
 }
 
@@ -182,6 +215,13 @@ export async function main(
     return
   }
   const target = resolved.version
+  const ahead = manifestAheadWarning({
+    manifestVersion: readSocketLibManifestVersion(),
+    targetVersion: target,
+  })
+  if (ahead !== undefined) {
+    logger.warn(ahead)
+  }
   const setup = await ensureCascadeState({
     file,
     now: nowIso(),

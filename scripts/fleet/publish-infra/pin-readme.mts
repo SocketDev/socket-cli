@@ -49,7 +49,7 @@ export function pinReadmeAssets(readme: string, baseUrl: string): string {
 
 // A full git commit sha — the only thing we'll pin a raw URL to besides the
 // tag name itself.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const COMMIT_SHA_RE = /^[0-9a-f]{40}$/
 
 /**

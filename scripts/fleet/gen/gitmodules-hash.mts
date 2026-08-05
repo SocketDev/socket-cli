@@ -153,7 +153,7 @@ export function parseBlocks(lines: string[]): Block[] {
       // prefix, (2) an optional parenthesized `(<YYYY-MM-DD>)` committer date,
       // (3) an optional `sha256:<hex>` stamp, (4) any trailing text.
       const header =
-        /* socket-lint: allow uncommented-regex */ /^(#\s+[A-Za-z0-9][A-Za-z0-9.-]*-\S+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
+        /* oxlint-disable-next-line socket/require-regex-comment -- captures the ref, its optional date, and its optional sha256 stamp from a .gitmodules header comment */ /^(#\s+[A-Za-z0-9][A-Za-z0-9.-]*-\S+?)(?:\s+\((\d{4}-\d{2}-\d{2})\))?(?:\s+sha256:([0-9a-f]+))?(\s.*)?$/.exec(
           prev,
         )
       if (header) {
@@ -177,7 +177,7 @@ export function parseBlocks(lines: string[]): Block[] {
       // `owner/repo` (sans optional `.git`). Alternation sorted (`git@` before
       // `https`) per sort-regex-alternations.
       const urlMatch =
-        /* socket-lint: allow uncommented-regex */ /^\s*url\s*=\s*(?:git@github\.com:|https?:\/\/github\.com\/)([^/\s]+\/[^/\s]+?)(?:\.git)?\s*$/.exec(
+        /* oxlint-disable-next-line socket/require-regex-comment -- captures the owner/repo from a .gitmodules url line */ /^\s*url\s*=\s*(?:git@github\.com:|https?:\/\/github\.com\/)([^/\s]+\/[^/\s]+?)(?:\.git)?\s*$/.exec(
           next,
         )
       if (urlMatch) {

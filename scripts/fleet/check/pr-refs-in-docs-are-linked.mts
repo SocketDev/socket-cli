@@ -103,7 +103,7 @@ const CROSS_REPO_SHORTHAND_RE = /[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/
 // Global copies of the canonical scan-comments regexes, so `exec` can walk every
 // match on a line. Source and flags are reused verbatim — only `g` is added —
 // so the two surfaces stay in lock-step. `lastIndex` is reset before each use.
-function withGlobalFlag(flags: string): string {
+export function withGlobalFlag(flags: string): string {
   return flags.includes('g') ? flags : `${flags}g`
 }
 // Verb-framed refs (`fixes` / `landed in` + a `#` number). Tier-1: always real.
@@ -261,7 +261,7 @@ export function findUnlinkedRefs(repoRoot: string): string[] {
   return scanFilesForUnlinkedRefs(repoRoot, collectMarkdownFiles(repoRoot))
 }
 
-function main(): number {
+export function main(): number {
   // Non-flag args scope the scan to explicit paths; otherwise the whole tracked
   // markdown tree gates.
   const paths = process.argv.slice(2).filter(a => !a.startsWith('-'))

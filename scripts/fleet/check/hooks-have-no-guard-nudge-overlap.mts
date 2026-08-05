@@ -139,7 +139,7 @@ export function findOverlap(names: readonly string[]): OverlapReport {
   return { exactCollisions, prefixPairs }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hooksDir = path.join(REPO_ROOT, '.claude', 'hooks', 'fleet')
   const names = listHookNames(hooksDir)

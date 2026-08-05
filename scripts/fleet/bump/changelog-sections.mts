@@ -9,6 +9,7 @@
  */
 
 import {
+  changelogHeading,
   generateChangelogSection,
   promoteUnreleased,
   unionSections,
@@ -105,6 +106,47 @@ export function removeChangelogVersionSection(
     }
   }
   return [...lines.slice(0, start), ...lines.slice(end)].join('\n')
+}
+
+/**
+ * Extract an existing `## [<version>]` section: its body, the changelog with
+ * the section removed, and the date its heading carried (so a recompose
+ * preserves the original release date instead of restamping today). Returns
+ * undefined when the changelog has no section for `version`. Pure over its
+ * inputs — the same heading matcher removeChangelogVersionSection uses.
+ */
+export function extractVersionSection(
+  changelog: string,
+  version: string,
+):
+  | { changelog: string; date: string | undefined; section: string }
+  | undefined {
+  const lines = changelog.split('\n')
+  const start = lines.findIndex(line => {
+    if (!line.startsWith('## ')) {
+      return false
+    }
+    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
+    return (
+      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
+    )
+  })
+  if (start === -1) {
+    return undefined
+  }
+  let end = lines.length
+  for (let i = start + 1, { length } = lines; i < length; i += 1) {
+    if (lines[i]!.startsWith('## ')) {
+      end = i
+      break
+    }
+  }
+  const date = /-\s*(\d{4}-\d{2}-\d{2})\s*$/.exec(lines[start]!)?.[1]
+  return {
+    changelog: [...lines.slice(0, start), ...lines.slice(end)].join('\n'),
+    date,
+    section: lines.slice(start, end).join('\n').trimEnd(),
+  }
 }
 
 /**
@@ -208,18 +250,37 @@ export function composeReleaseSection(config: {
     repoUrl,
     version,
   })
-  const promoted = promoteUnreleased(changelog, versionHeading)
+  // An existing `## [<version>]` section is a third source, same standing as
+  // the [Unreleased] accrual: absorbed into the union (its date preserved on
+  // the heading) instead of ignored or duplicated. A hand-titled section that
+  // accrued before the bump — or a bump re-entered after a partial run — then
+  // merges with the derived entries rather than freezing them out.
+  const existing = extractVersionSection(changelog, version)
+  const heading =
+    existing?.date !== undefined
+      ? changelogHeading(version, existing.date, repoUrl)
+      : versionHeading
+  const withoutExisting = existing?.changelog ?? changelog
+  const derivedSection =
+    heading === versionHeading
+      ? derived
+      : generateChangelogSection({ commits, date, heading, repoUrl, version })
+  let section = derivedSection
+  if (existing) {
+    section = unionSections(heading, section, existing.section)
+  }
+  const promoted = promoteUnreleased(withoutExisting, heading)
   if (!promoted) {
     return {
-      baseChangelog: changelog,
+      baseChangelog: withoutExisting,
       promotedUnreleased: false,
-      section: derived,
+      section,
     }
   }
   return {
     baseChangelog: promoted.changelog,
     promotedUnreleased: true,
-    section: unionSections(versionHeading, derived, promoted.section),
+    section: unionSections(heading, section, promoted.section),
   }
 }
 

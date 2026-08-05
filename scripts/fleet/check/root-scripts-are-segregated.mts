@@ -22,7 +22,7 @@ export async function findLooseRootScripts(
   return await collectTrackedFiles(['scripts/*'], { cwd: repoRoot })
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const files = await findLooseRootScripts(REPO_ROOT)
   if (files.length === 0) {
     logger.success(

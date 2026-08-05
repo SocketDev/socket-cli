@@ -157,7 +157,7 @@ function readFileSafe(file: string): string {
   }
 }
 
-function main(): void {
+export function main(): void {
   const treeFiles = listWorkflowTreeFiles()
   if (treeFiles === undefined) {
     // git unavailable — vacuous, never a false-red on a non-git tree.

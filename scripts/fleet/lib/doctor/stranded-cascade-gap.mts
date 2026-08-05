@@ -35,7 +35,7 @@ export interface StrandedCascadeReport {
 // real cleanup-stranded output passes through the lib logger before reaching
 // this parser; stripping here keeps `saw` entries clean and makes the regexes
 // robust across logger format changes.
-function stripLoggerPrefix(line: string): string {
+export function stripLoggerPrefix(line: string): string {
   // Remove ANSI CSI sequences (e.g. \x1b[94m … \x1b[39m).
   // oxlint-disable-next-line prefer-regex-literals -- constructed for clarity
   const noAnsi = line.replace(/\x1b\[[0-9;]*m/g, '')
@@ -94,6 +94,40 @@ export function parseStrandedOutput(output: string): StrandedCascadeReport {
   }
 
   return { bailReason, strandedCommits, strandedWorktrees }
+}
+
+// A `chore(wheelhouse): cascade template@<sha>` subject, the only commit shape
+// cleanup-stranded will ever discard.
+const CASCADE_SUBJECT_RE = /chore\(wheelhouse\): cascade template@[0-9a-f]+/
+
+/**
+ * Why a set of local-ahead commits is NOT safe to treat as stranded, or
+ * undefined when it is.
+ *
+ * This is the rail cleanup-stranded's planner already enforces: it refuses to
+ * act the moment a non-cascade commit sits among the local-ahead set, because
+ * its remedy is `git reset --hard origin/<base>` and that would take the real
+ * work with it. A local cascade commit carrying other commits on top is
+ * UNPUSHED, not stranded, and the cure is a push.
+ *
+ * The doctor has to make the same call. Its member-repo path cannot shell to
+ * cleanup-stranded, which is wheelhouse-only, so it greps git log instead — and
+ * without this rail that grep reported a destructive fix for a repo the real
+ * script declines to touch. Two fleet surfaces disagreeing is bad; the one
+ * recommending `reset --hard` being the wrong one is worse.
+ */
+export function strandedBailReason(
+  localAheadSubjects: readonly string[],
+): string | undefined {
+  for (let i = 0, { length } = localAheadSubjects; i < length; i += 1) {
+    const entry = localAheadSubjects[i]!.trim()
+    if (!entry || CASCADE_SUBJECT_RE.test(entry)) {
+      continue
+    }
+    const sha = /^([0-9a-f]{7,40})\b/.exec(entry)?.[1]
+    return `non-cascade commit ${sha ? sha.slice(0, 12) : entry.slice(0, 40)} present locally — not safe to auto-clean`
+  }
+  return undefined
 }
 
 /**

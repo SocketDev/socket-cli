@@ -131,7 +131,7 @@ export function listMtsFiles(dir: string): string[] {
 export function extractImportSpecifiers(content: string): string[] {
   const specifiers: string[] = []
   const fromRe =
-    // socket-lint: allow uncommented-regex
+    // oxlint-disable-next-line socket/require-regex-comment -- captures the module specifier from an import/export … from clause
     /(?:^|\n)[ \t]*(?:export|import)\b[\s\w,{}*]*?\bfrom[ \t]*['"]([^'"]+)['"]/g
   let m: RegExpExecArray | null
   while ((m = fromRe.exec(content)) !== null) {
@@ -140,7 +140,7 @@ export function extractImportSpecifiers(content: string): string[] {
   // Bare side-effect import: `import '<spec>'` (no `from`). Anchored so the
   // first non-space token after `import` must be a quote, so it never
   // re-matches a `from`-form line already caught above.
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   const sideEffectRe = /(?:^|\n)[ \t]*import[ \t]*['"]([^'"]+)['"]/g
   while ((m = sideEffectRe.exec(content)) !== null) {
     specifiers.push(m[1]!)

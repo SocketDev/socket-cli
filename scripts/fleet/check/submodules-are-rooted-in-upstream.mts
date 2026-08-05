@@ -124,7 +124,7 @@ const SCRIPT_META: ScriptMeta = {
   --update-baseline  rewrite submoduleRoots.grandfathered in .config/repo/socket-wheelhouse.json to the current offender set`,
 }
 
-function main(): number {
+export function main(): number {
   if (process.argv.includes('--update-baseline')) {
     const written = updateBaseline()
     const location = findSocketWheelhouseConfig()

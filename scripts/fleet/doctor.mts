@@ -103,7 +103,7 @@ import type { ScriptMeta } from './_shared/run-main.mts'
 const logger = getDefaultLogger()
 
 // Print a finding in the canonical four-ingredient format.
-function printFinding(f: DoctorFinding, idx: number): void {
+export function printFinding(f: DoctorFinding, idx: number): void {
   logger.error('')
   logger.info(`Finding ${idx + 1}:`)
   logger.info(`  What:  ${f.what}`)
@@ -149,7 +149,7 @@ function discoverPackageJsonPaths(config: {
 // Read the fleet-pinned TruffleHog version from the security-tools config the
 // cascade ships into every member. Undefined when the config is absent (repo
 // not set up) or malformed.
-function readPinnedTrufflehogVersion(cwd: string): string | undefined {
+export function readPinnedTrufflehogVersion(cwd: string): string | undefined {
   const cfgPath = path.join(
     cwd,
     '.claude/hooks/fleet/setup-security-tools/external-tools.json',
@@ -206,7 +206,7 @@ export function resolveTrufflehogBinaries(): string[] {
 // (PATH then the dlx cache), accepts only the pinned --version, then scans the
 // repo's git tree. Fails LOUD, tool-missing finding, rather than silent-clean
 // when the pinned binary is unavailable or the wrong version.
-async function runSecretScan(cwd: string): Promise<DoctorFinding[]> {
+export async function runSecretScan(cwd: string): Promise<DoctorFinding[]> {
   const pinnedVersion = readPinnedTrufflehogVersion(cwd)
   if (!pinnedVersion) {
     return [formatToolMissingFinding()]
@@ -257,7 +257,7 @@ async function runSecretScan(cwd: string): Promise<DoctorFinding[]> {
   return formatSecretFindings(parseTruffleHogFindings(out))
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const doFix = argv.includes('--fix')
   const doProbeGit = argv.includes('--probe-git')

@@ -619,7 +619,7 @@ export async function primeOtpSession(
   return false
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const flags = parseTrustArgs(process.argv.slice(2))
   // The target checkout owns both the package list and the platform tokens, so
   // it is resolved once and both reads follow it.

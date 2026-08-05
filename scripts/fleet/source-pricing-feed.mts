@@ -70,12 +70,15 @@ export function buildPricingPlan(
   }
 }
 
-function flag(argv: readonly string[], name: string): string | undefined {
+export function flag(
+  argv: readonly string[],
+  name: string,
+): string | undefined {
   const i = argv.indexOf(name)
   return i !== -1 ? argv[i + 1] : undefined
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const serviceId = flag(argv, '--service') ?? 'anthropic'
   const pricing = loadPricing()

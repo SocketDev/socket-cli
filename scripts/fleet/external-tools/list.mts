@@ -82,3 +82,4 @@ const SCRIPT_META: ScriptMeta = {
 if (import.meta.main) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

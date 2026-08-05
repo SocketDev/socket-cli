@@ -479,9 +479,11 @@ const SCRIPT_META: ScriptMeta = {
   --fix  write the derived files: allowlist into each offending package.json`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(
     () => runCheck(REPO_ROOT, process.argv.includes('--fix')),
     SCRIPT_META,
   )
 }
+/* c8 ignore stop */

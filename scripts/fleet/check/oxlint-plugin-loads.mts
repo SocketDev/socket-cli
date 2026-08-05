@@ -45,7 +45,7 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const result = await assertPluginLoads(REPO_ROOT)
   if (result.status === 'no-plugin') {

@@ -316,7 +316,7 @@ export function expandManagedEntries(
   return out
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   // A cascaded member has no template/base and no scripts/repo — vacuous pass.
   if (!existsSync(TEMPLATE_BASE_DIR)) {

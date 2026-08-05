@@ -29,6 +29,7 @@ import {
   generateDispatchTableSource,
   HOOK_BUNDLE_PATH,
 } from './gen/hook-dispatch.mts'
+import { writeHookValidators } from './gen/hook-validators.mts'
 import { REPO_ROOT } from './paths.mts'
 import { hasFleetHookSource } from './_shared/fleet-source-present.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
@@ -133,6 +134,10 @@ function main(): void {
   // lock-step with the table so the two never drift (this is the dogfood path —
   // build-hook-bundle writes the table directly, not via gen/hook-dispatch).
   writeThroughMirrorLock(DISPATCH_MANIFEST_PATH, generatedManifest)
+  // The ahead-of-time TypeBox validators are the same class of artifact as the
+  // table — generated, gitignored, imported by a hook the bundle pulls in — so
+  // they refresh in the same step. rolldown resolves the import below.
+  writeHookValidators()
 
   // Dogfood: the wheelhouse carries template/base/ a member does not. Mirror
   // the generated table + manifest into the template so its CI readers + the

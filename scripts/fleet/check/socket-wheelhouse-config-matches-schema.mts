@@ -13,7 +13,7 @@
 
 import process from 'node:process'
 
-import { Value } from '@sinclair/typebox/value'
+import { Value } from 'typebox/value'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -32,7 +32,9 @@ export function collectSchemaErrors(value: unknown): readonly string[] {
   }
   const errors: string[] = []
   for (const error of Value.Errors(SocketWheelhouseConfigSchema, value)) {
-    errors.push(`${error.path || '/'}: ${error.message}`)
+    // `instancePath` is the JSON Pointer to the offending value; it is empty
+    // for a violation on the root object, which reads better as `/`.
+    errors.push(`${error.instancePath || '/'}: ${error.message}`)
   }
   return errors
 }

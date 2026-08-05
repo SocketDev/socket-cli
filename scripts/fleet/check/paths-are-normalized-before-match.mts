@@ -166,7 +166,7 @@ export function scan(filePath: string, rawText: string): PathFinding[] {
   return findings
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
 
   const lsResult = spawnSync(

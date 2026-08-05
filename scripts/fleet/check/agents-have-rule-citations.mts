@@ -52,7 +52,7 @@ export function agentsMissingCitation(
   return missing
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const agentsDir = path.join(REPO_ROOT, '.claude/agents/fleet')
   if (!existsSync(agentsDir)) {

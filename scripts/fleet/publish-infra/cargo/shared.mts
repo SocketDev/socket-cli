@@ -14,7 +14,15 @@ import { logApproveHandoff, rootPath, runCapture } from '../shared.mts'
 
 // The approve leg an operator runs after a cargo staging run. `cargo:publish`
 // is the channel-enforced script for every crates-registry member.
-export const CARGO_APPROVE_COMMAND = 'pnpm run cargo:publish -- --approve'
+// NO `--` before the flag. pnpm forwards a bare `--` through to the script, and
+// cargo-publish parses with `parseArgs`, which files everything after `--` under
+// the `'--'` key instead of parsing it: `--approve` lands in
+// `values['--']` and `values.approve` stays undefined.
+//
+// This one fails SILENTLY, unlike its npm twin. cargo-publish does not go
+// through `runMain`, so nothing refuses the bare `--` — the run simply proceeds
+// down the default staging path while the operator believes they approved.
+export const CARGO_APPROVE_COMMAND = 'pnpm run cargo:publish --approve'
 
 // Who owns the promotion, stated once so nobody reads cargo/approve.mts to find
 // out. It runs `cargo publish --locked` itself, then cuts the tag + release.

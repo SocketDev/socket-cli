@@ -297,6 +297,8 @@ const SCRIPT_META: ScriptMeta = {
   --release  include the release/CI-only checks (CI sets this implicitly)`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

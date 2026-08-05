@@ -1,4 +1,4 @@
-/**
+/*
  * @file Pick how to run a registry command that may hit a 2FA challenge.
  *   The problem: `pnpm stage approve` defers proof-of-presence to promote time,
  *   and the OTP prompt gates on `isTTY`. An agent, a cron, and `! <cmd>` in a

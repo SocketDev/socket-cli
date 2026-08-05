@@ -231,7 +231,7 @@ export function formatReleaseGapReport(config: {
  * Run a read-only command, returning its stdout or undefined when the command
  * is unavailable / exits non-zero, an unreachable source is un-checkable.
  */
-async function readCommandStdout(
+export async function readCommandStdout(
   cmd: string,
   args: string[],
 ): Promise<string | undefined> {

@@ -4,7 +4,7 @@
  *   derived settings, and GitHub-related fleet config.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 // ---------------------------------------------------------------------------
 // Workflows block — GitHub Actions opt-ins.

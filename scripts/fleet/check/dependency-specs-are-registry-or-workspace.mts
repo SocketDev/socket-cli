@@ -393,6 +393,11 @@ function reportWorkspacePins(violations: readonly SpecViolation[]): void {
 }
 
 async function main(): Promise<void> {
+  // Read the flag ONCE, before the first await. Reading `process.argv` in the
+  // async tail instead makes the answer depend on whether anything reassigned
+  // argv while the awaits were in flight, which is exactly what a caller that
+  // sets argv, invokes this, and restores it does.
+  const quiet = process.argv.includes('--quiet')
   const tracked = await listTrackedFiles()
   if (tracked === undefined) {
     // git unavailable — vacuous, never a false-green failure on a non-git tree.
@@ -437,7 +442,7 @@ async function main(): Promise<void> {
     violation => violation.kind === 'workspace-pin',
   )
   if (blocking.length === 0) {
-    if (!process.argv.includes('--quiet')) {
+    if (!quiet) {
       logger.success(
         'dependency-specs-are-registry-or-workspace: every dependency spec is a pin — `catalog:` (preferred), an exact registry version, or `workspace:<exact>`.',
       )

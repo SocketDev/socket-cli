@@ -14,7 +14,7 @@
  *   the source of truth for parity tracking.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 export const RepoSchema = Type.Object(
   {

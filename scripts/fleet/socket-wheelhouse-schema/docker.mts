@@ -5,7 +5,7 @@
  *   downstream `FROM` references.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 export const PrebakePinsGoSchema = Type.Object(
   {

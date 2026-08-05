@@ -42,7 +42,7 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { positionals, values } = parseArgs({
     options: {
       all: { default: false, type: 'boolean' },

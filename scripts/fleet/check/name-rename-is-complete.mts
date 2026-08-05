@@ -45,7 +45,7 @@ const logger = getDefaultLogger()
 // and surrounding backticks. The captured token is the PRIOR name whose
 // disappearance this gate verifies.
 const RENAMED_FROM_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /renamed-from:\s*`?((?:socket\/)?[a-z][a-z0-9-]*(?:\.mts)?)`?/gi
 
 // Fleet surfaces a renamed name lives in (as a file) or is referenced from:
@@ -221,7 +221,7 @@ export function findIncompleteRenames(
   return out
 }
 
-function main(): void {
+export function main(): void {
   const files = collectScanFiles(REPO_ROOT)
   const records = collectRenameRecords(files, REPO_ROOT)
   if (records.length === 0) {

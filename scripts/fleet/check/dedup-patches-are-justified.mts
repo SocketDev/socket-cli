@@ -30,14 +30,14 @@ const logger = getDefaultLogger()
 const WORKSPACE = 'pnpm-workspace.yaml'
 const LOCKFILE = 'pnpm-lock.yaml'
 
-function escapeRegExp(s: string): string {
+export function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 // Is `<pkg>@<ver>` a resolved package key in the lockfile? Package keys look
 // like `  'isexe@4.0.0':` or `  'isexe@4.0.0(peer@x)':`; a patch targets the
 // bare pkg@ver, so match that prefix optionally followed by a peer suffix.
-function resolvedInLockfile(spec: string): boolean {
+export function resolvedInLockfile(spec: string): boolean {
   if (!existsSync(LOCKFILE)) {
     return true
   }
@@ -46,7 +46,7 @@ function resolvedInLockfile(spec: string): boolean {
   return re.test(lock)
 }
 
-function main(): void {
+export function main(): void {
   if (!existsSync(WORKSPACE)) {
     return
   }

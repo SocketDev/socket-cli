@@ -21,7 +21,11 @@ import { resolveNpmWorkspaceLayout } from './workspace.mts'
 // so this resolves in exactly the repos that reach the staged message, and it
 // routes through publish-pipeline.mts — the entry verify-before-publish-guard
 // sanctions.
-export const NPM_APPROVE_COMMAND = 'pnpm run npm:publish -- --approve'
+// NO `--` before the flag. pnpm forwards a bare `--` through to the script,
+// whose argv parser truncates there, so every flag after it is silently dropped
+// and the run proceeds with defaults. This string is printed as the operator's
+// next step, so getting it wrong hands them a command that looks like it worked.
+export const NPM_APPROVE_COMMAND = 'pnpm run npm:publish --approve'
 
 // Who owns the promotion, stated once so nobody reads approve.mts to find out.
 // It runs `pnpm stage approve` against the registry itself (approve.mts's

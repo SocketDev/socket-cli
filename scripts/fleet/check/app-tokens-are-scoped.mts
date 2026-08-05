@@ -176,6 +176,10 @@ export function runCheck(repoRoot: string): number {
   return 1
 }
 
+export function main(): void {
+  process.exitCode = runCheck(REPO_ROOT)
+}
+
 const SCRIPT_META: ScriptMeta = {
   describe:
     'checks that every GitHub App token minter step scopes its PERMISSIONS',

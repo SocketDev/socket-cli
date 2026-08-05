@@ -274,11 +274,13 @@ export function readToolVersions(externalTools: Record<string, unknown>): {
   return { pnpmVersion, npmVersion }
 }
 
-function readJson(filePath: string): Record<string, unknown> {
+export function readJson(filePath: string): Record<string, unknown> {
   return JSON.parse(readFileSync(filePath, 'utf8')) as Record<string, unknown>
 }
 
-function readPnpmFloor(pkgJson: Record<string, unknown>): string | undefined {
+export function readPnpmFloor(
+  pkgJson: Record<string, unknown>,
+): string | undefined {
   const engines = pkgJson['engines']
   if (!engines || typeof engines !== 'object') {
     return undefined
@@ -291,7 +293,7 @@ function readPnpmFloor(pkgJson: Record<string, unknown>): string | undefined {
   return match?.[1]
 }
 
-function main(): number {
+export function main(): number {
   const checkOnly = process.argv.includes('--check')
   const quiet = process.argv.includes('--quiet')
   const extPath = path.join(

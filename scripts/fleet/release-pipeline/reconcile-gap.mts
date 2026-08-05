@@ -511,7 +511,7 @@ async function runFlipMode(version: string): Promise<void> {
   say(resolved.commit)
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const args = process.argv.slice(2)
   const flipAt = args.indexOf('--flip')
   if (flipAt !== -1) {

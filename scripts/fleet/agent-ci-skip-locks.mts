@@ -39,7 +39,7 @@ const TRIAL_HINT =
   'Exercise them with `gh aw trial <workflow>.md` against an isolated trial ' +
   'repo instead. See docs/agents.md/fleet/shared-workflow-cascade.md.'
 
-function logTrialHint(): void {
+export function logTrialHint(): void {
   logger.error(TRIAL_HINT)
 }
 

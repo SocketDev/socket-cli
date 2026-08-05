@@ -37,12 +37,15 @@ import {
 } from './dep-changes.mts'
 import { buildEntry, composePrBody } from './pr-body.mts'
 
-function flag(argv: readonly string[], name: string): string | undefined {
+export function flag(
+  argv: readonly string[],
+  name: string,
+): string | undefined {
   const i = argv.indexOf(name)
   return i === -1 ? undefined : argv[i + 1]
 }
 
-function flags(argv: readonly string[], name: string): string[] {
+export function flags(argv: readonly string[], name: string): string[] {
   const out: string[] = []
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === name && argv[i + 1] !== undefined) {
@@ -54,7 +57,7 @@ function flags(argv: readonly string[], name: string): string[] {
 
 // A file that is missing or unreadable reads as empty rather than throwing. A
 // body is more useful than a crashed step.
-function readOrEmpty(filepath: string | undefined): string {
+export function readOrEmpty(filepath: string | undefined): string {
   if (!filepath) {
     return ''
   }
@@ -65,7 +68,7 @@ function readOrEmpty(filepath: string | undefined): string {
   }
 }
 
-async function readStdin(): Promise<string> {
+export async function readStdin(): Promise<string> {
   if (process.stdin.isTTY) {
     return ''
   }
@@ -76,7 +79,7 @@ async function readStdin(): Promise<string> {
   return Buffer.concat(chunks).toString('utf8')
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const base = flag(argv, '--base') ?? 'main'
   const date = flag(argv, '--date') ?? new Date().toISOString().slice(0, 10)

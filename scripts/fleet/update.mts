@@ -33,8 +33,15 @@ import {
   TAZE_PASS_SOCKET_ARGS,
   TAZE_PASS_THIRD_PARTY_ARGS,
 } from './constants/taze-passes.mts'
-import { FLEET_CATALOG_YAML, PNPM_WORKSPACE_YAML, REPO_ROOT } from './paths.mts'
+import {
+  FLEET_CATALOG_YAML,
+  PNPM_WORKSPACE_YAML,
+  REPO_ROOT,
+  resolveOverridePinManifestPath,
+} from './paths.mts'
+import { isMainModule } from './_shared/is-main-module.mts'
 import { writeThroughMirrorLock } from './_shared/mirror-lock.mts'
+import { runMain } from './_shared/run-main.mts'
 import { catalogsForDowngradeCheck } from './lib/catalog-diff.mts'
 import {
   applyCatalogPinFloor,
@@ -57,6 +64,8 @@ import {
   runPatchPort,
 } from './update/patch-rekey.mts'
 
+import type { ScriptMeta } from './_shared/run-main.mts'
+
 // Canonical homes of the fleet-owned pins (wheelhouse-only; absent in member
 // repos, where the lockstep appliers skip them): the fleet catalog template
 // and the sync-scaffolding override-pin manifest.
@@ -68,14 +77,7 @@ const TEMPLATE_FLEET_CATALOG_YAML = path.join(
   'fleet',
   'pnpm-workspace.fleet.yaml',
 )
-const OVERRIDE_PIN_MANIFEST = path.join(
-  REPO_ROOT,
-  'scripts',
-  'repo',
-  'sync-scaffolding',
-  'manifest',
-  'catalog-overrides.mts',
-)
+const OVERRIDE_PIN_MANIFEST = resolveOverridePinManifestPath(REPO_ROOT)
 
 const logger = getDefaultLogger()
 
@@ -151,7 +153,13 @@ const steps: Step[] = [
   // regenerated, else the lockfile pins the alias to the stale build.
 ]
 
-async function main(): Promise<void> {
+/**
+ * Run every update pass in order. Exported so the unit specs drive the passes
+ * directly: importing this module must NOT start the pipeline, or `--describe`
+ * (and any library import) would run the whole taze + `pnpm install` wave
+ * before argv is ever read.
+ */
+export async function main(): Promise<void> {
   const uncheckedPackages = new Set<string>()
   for (let i = 0, { length } = steps; i < length; i += 1) {
     const step = steps[i]!
@@ -455,9 +463,24 @@ async function main(): Promise<void> {
   }
 }
 
-// The run's completion promise. The CLI process waits for it via the event
-// loop; the exit-gating tests await it so assertions run after every pass.
-export const updateRun = main().catch((e: unknown) => {
-  logger.error(e)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'update every dependency ecosystem: two soak-aware taze passes, the fleet-pin lockstep, a lockfile resync, the per-ecosystem soak plans, and a fail-closed telemetry scan',
+  help:
+    'Usage: pnpm run update\n' +
+    '\n' +
+    'Takes no flags. Runs, in order: taze pass 1 (third-party, soak-gated),\n' +
+    'taze pass 2 (Socket-owned scopes, no cooldown), the fleet-pin lockstep +\n' +
+    'pin floor, the `-stable` alias reconcile, `pnpm install`, the brew/cargo/\n' +
+    'docker/go/node soak plans (plan only), the telemetry scan, and the fleet\n' +
+    'scaffolding refresh.\n' +
+    '\n' +
+    'Apply one ecosystem plan with:\n' +
+    '  node scripts/fleet/update/<eco>.mts --soak-days N --apply',
+}
+
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}
+/* c8 ignore stop */

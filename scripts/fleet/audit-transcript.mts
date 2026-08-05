@@ -455,7 +455,7 @@ async function main(): Promise<void> {
   }
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'read-only forensic scan of a Claude Code transcript for security-sensitive tool use',
   help: `Usage: node scripts/fleet/audit-transcript.mts <transcript-path> [flags]

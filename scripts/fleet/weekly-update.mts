@@ -254,7 +254,7 @@ const UPDATING_PROMPT = `You are the fleet's weekly dependency-update agent, run
 
 Run the /updating umbrella skill ONLY for the advisory remainder that needs judgment: lockstep file-fork / feature-parity / spec-conformance / lang-parity rows, non-lockstep submodule bumps, vendored upstream action reference pins behind latest (run scripts/fleet/vendor-actions.mts to re-pin, re-review each ported composite against the upstream diff, then advance its portedAt in scripts/fleet/_shared/action-port-map.mts), open Dependabot security advisories, the coverage badge, model pricing, and GitHub settings drift. Work in CI mode: skip builds/tests during the update. Make atomic commits (one logical change per commit) so the PR history is reviewable. Do NOT push or open a PR — the runner handles that.`
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   // --check-updates: the deterministic gate as a standalone mode. Exits 0 when
   // there is actionable drift, 1 when there is not — so the
   // `weekly-update.md` check-updates job runs `weekly-update.mts --check-updates`

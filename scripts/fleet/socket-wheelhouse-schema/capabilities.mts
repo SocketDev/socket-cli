@@ -9,7 +9,7 @@
  *   `LANE_BY_CAPABILITY` in scripts/fleet/cover/lanes.mts.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 export const CapabilitiesSchema = Type.Object(
   {

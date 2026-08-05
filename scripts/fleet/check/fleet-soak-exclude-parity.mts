@@ -313,7 +313,7 @@ export async function mismatchedPublishDates(
   return mismatches
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   // Wheelhouse-only check. Fleet repos don't ship `EXPECTED_RELEASE_AGE_EXCLUDE`;
   // when the manifest file is absent, this check is a no-op so the canonical
   // `scripts/check.mts` step stays inert across the cascaded fleet.

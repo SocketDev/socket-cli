@@ -36,7 +36,7 @@ export const BADGE_HEIGHT = 20
 // README <img> pins so the row has no layout shift. Our renderer emits a bare
 // number; the capture is a lenient numeric run so a unit-suffixed width would
 // still yield its numeric lead.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const SVG_WIDTH_RE = /^<svg[^>]*\bwidth="([\d.]+)"/
 
 /**
@@ -99,7 +99,7 @@ export const BADGE_PLACEHOLDER = 'n/a'
 // carrying another repo's slug (a scaffolded copy) or an older ref still
 // matches, so the migrator rewrites it to this repo's HEAD url.
 const ABSOLUTE_IMG_BADGE_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /<img src="https:\/\/raw\.githubusercontent\.com\/[^"]+\/assets\/(?:repo\/badges\/)?coverage\.svg"[^>]*\/>/
 
 // The legacy relative-src <img>: the form that shipped before the url went
@@ -107,17 +107,17 @@ const ABSOLUTE_IMG_BADGE_RE =
 // migrate it. The optional `repo/badges/` segment matches the pre-flattening
 // asset path.
 const RELATIVE_IMG_BADGE_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /<img src="assets\/(?:repo\/badges\/)?coverage\.svg"[^>]*\/>/
 
 // The legacy markdown reference at the current or pre-flattening path, matched
 // only to migrate it to the <img> form.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const MARKDOWN_BADGE_RE =
   /!\[Coverage\]\(assets\/(?:repo\/badges\/)?coverage\.svg\)/
 
 // The legacy pre-badges/ asset path, matched only to migrate it.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const LEGACY_ASSET_BADGE_RE = /!\[Coverage\]\(assets\/repo\/coverage\.svg\)/
 
 // The percent-and-color tail of a retired shields.io coverage URL: the
@@ -143,7 +143,7 @@ const SHIELDS_IMG_BADGE_RE = new RegExp(
 
 // The `aria-label="coverage: <value>"` the renderer stamps on the SVG — the
 // machine-readable percent the check reads back.
-// socket-lint: allow uncommented-regex
+// oxlint-disable-next-line socket/require-regex-comment -- described above
 const SVG_LABEL_RE = /aria-label="coverage: (\d+%|n\/a)"/
 
 export type BadgeForm =
@@ -182,7 +182,7 @@ export function readmeBadgeForm(readme: string): BadgeForm | undefined {
 // forms above on purpose — its only job is telling "opted out" apart from
 // "carries a badge the recognizer can't see".
 const COVERAGE_BADGE_MARKER_RE =
-  // socket-lint: allow uncommented-regex
+  // oxlint-disable-next-line socket/require-regex-comment -- described above
   /!\[Coverage\]\(|<img\b[^>]*\balt="Coverage[^"]*"/i
 
 // True when the README carries a coverage-badge-looking line that

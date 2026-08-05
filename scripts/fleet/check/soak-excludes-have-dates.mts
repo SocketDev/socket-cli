@@ -23,13 +23,28 @@
  *     requiring a human re-audit (exit 1) — never auto-promoted, even under
  *     `--fix`.
  *
+ *   The gate also covers the OTHER soak-bypass surface: the per-tool
+ *   `soakBypass` blocks in every shipped `external-tools.json`. A tool bumped
+ *   inside its soak window carries `{ version, published, removable }` there for
+ *   the same reason a package carries the YAML annotation — so the bypass is
+ *   dated, auditable, and self-disarming. Two defects are reported: a block
+ *   whose `published`/`removable` dates are absent or malformed (blocking), and
+ *   a tool pinned to a version that is STILL inside its soak window with no
+ *   block at all (blocking — the npm 12.0.2 gap, adopted through
+ *   `bump-tool --soak-bypass` with nothing recording or disarming the bypass).
+ *   A cleared block is reported informationally, like a stale YAML entry;
+ *   `external-tools prune --apply` owns removing it. Freshness needs the
+ *   registry's publish date, so that pass FAILS OPEN: an unknown date is
+ *   skipped, never a red, and only npm-distributed (`repository: "npm:<name>"`)
+ *   tools are probed.
+ *
  *   The caller runs `pnpm install` after a promote to reconcile the lockfile.
  *   Exit codes:
  *
  *   - 0 — clean (no missing annotations; stale soak entries logged or, with
  *     --fix, promoted)
- *   - 1 — at least one missing annotation, unpinned entry, or stale trust
- *     waiver
+ *   - 1 — at least one missing annotation, unpinned entry, stale trust waiver,
+ *     or external-tools soak-bypass defect
  */
 
 import { readFileSync } from 'node:fs'
@@ -37,11 +52,15 @@ import process from 'node:process'
 
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
 import { PNPM_WORKSPACE_YAML } from '../paths.mts'
+import {
+  findExternalToolBypassDefects,
+  reportExternalToolFindings,
+} from './soak-excludes-have-dates/external-tools.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
-import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { runMain } from '../_shared/run-main.mts'
 
 import type { ScriptMeta } from '../_shared/run-main.mts'
+import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
 // The two soak/waiver list blocks this gate scans. Both carry `name@version`
 // exact-pin bullets with `# published: … | removable: …` annotations; they
@@ -225,7 +244,19 @@ export function removeStaleEntries(content: string, stale: Finding[]): string {
   return lines.join('\n')
 }
 
-function main(): void {
+export interface MainOptions {
+  // The external-tools manifests to scan. Defaults to every shipped
+  // external-tools.json; a test passes its own fixture set (or none) to stay
+  // hermetic.
+  externalToolManifestPaths?: readonly string[] | undefined
+  // Publish-date lookup, injected so a test never touches the registry.
+  fetchPublishDate?:
+    | ((name: string, version: string) => Promise<string | undefined>)
+    | undefined
+}
+
+export async function main(options?: MainOptions | undefined): Promise<void> {
+  const opts = { __proto__: null, ...options } as MainOptions
   let content: string
   try {
     content = readFileSync(PNPM_WORKSPACE_YAML, 'utf8')
@@ -253,6 +284,13 @@ function main(): void {
   const trustStale = findings.filter(
     f => f.kind === 'stale' && f.block === 'trustPolicyExclude',
   )
+
+  // The other soak-bypass surface: per-tool `soakBypass` blocks in the shipped
+  // external-tools.json manifests.
+  const toolFindings = await findExternalToolBypassDefects(todayISO, {
+    fetchPublishDate: opts.fetchPublishDate,
+    manifestPaths: opts.externalToolManifestPaths,
+  })
 
   if (soakStale.length > 0 && fix) {
     // Promote: the soak cleared, so the bypass is no longer needed.
@@ -312,6 +350,9 @@ function main(): void {
     )
   }
 
+  // Printed before the YAML exits below so one run surfaces both surfaces.
+  const toolBlocking = reportExternalToolFindings(toolFindings)
+
   if (missing.length > 0) {
     process.stderr.write(
       `[check-soak-excludes-have-dates] ${missing.length} missing soak-bypass ` +
@@ -350,12 +391,9 @@ function main(): void {
     process.exit(1)
   }
 
-  process.exit(0)
+  process.exit(toolBlocking ? 1 : 0)
 }
 
-// Run only when invoked directly (CLI / CI), not when imported by the unit
-// tests for `scan` / `removeStaleEntries` — `main()` calls `process.exit`,
-// which would tear down the test runner mid-suite.
 const SCRIPT_META: ScriptMeta = {
   describe:
     'checks every soak-exclude pin entry carries published/removable date annotations',
@@ -363,6 +401,9 @@ const SCRIPT_META: ScriptMeta = {
   --fix  promote soaked (removable-date-passed) entries out of minimumReleaseAgeExclude`,
 }
 
+// Run only when invoked directly (CLI / CI), not when imported by the unit
+// tests for `scan` / `removeStaleEntries` / `main` — `main()` calls
+// `process.exit`, which would tear down the test runner mid-suite.
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }

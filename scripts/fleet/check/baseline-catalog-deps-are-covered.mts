@@ -84,7 +84,7 @@ export function uncoveredBaselineDeps(
   return gaps.toSorted()
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   // Wheelhouse-only. Both modules live under scripts/repo/sync-scaffolding/,
   // which fleet repos don't carry — no-op there so the shared check.mts step is
   // inert across the cascaded fleet.

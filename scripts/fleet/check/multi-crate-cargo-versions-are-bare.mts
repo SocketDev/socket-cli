@@ -61,7 +61,7 @@ export function barePolicyViolations(
   return packages.filter(p => isPrereleaseHint(p.version))
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(path.join(REPO_ROOT, 'Cargo.toml'))) {
     return
@@ -90,7 +90,7 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'checks every publishable crate in a multi-crate cargo workspace stays at a bare X.Y.Z version',
   help: `Usage: node scripts/fleet/check/multi-crate-cargo-versions-are-bare.mts [flags]
@@ -98,6 +98,9 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  silent on clean`,
 }
 
+// The guard body's fail-open catch closure runs in-process through the
+// scripted entry seam in multi-crate-cargo-versions-are-bare-main.test.mts,
+// so no coverage marker is warranted here.
 if (isMainModule(import.meta.url)) {
   runMain(
     () =>

@@ -492,7 +492,7 @@ export function runWrite(): number {
   return 0
 }
 
-function main(): void {
+export function main(): void {
   try {
     process.exitCode = process.argv.includes('--check')
       ? runCheck()
@@ -503,7 +503,7 @@ function main(): void {
   }
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'pins third-party GitHub Actions as upstream/ submodule references at their latest soaked release',
   help: `Usage: node scripts/fleet/vendor-actions.mts [flags]

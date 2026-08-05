@@ -123,7 +123,7 @@ const useShell = process.platform === 'win32'
 const rerunArgvTail = process.argv.slice(2).join(' ')
 const rerunHint = rerunArgvTail ? `pnpm test ${rerunArgvTail}` : 'pnpm test'
 
-function log(msg: string): void {
+export function log(msg: string): void {
   if (!quiet) {
     logger.log(msg)
   }
@@ -141,7 +141,7 @@ const runVitest = createVitestRunner({
   warn: msg => logger.warn(msg),
 })
 
-function runWorkspaceTests(): number {
+export function runWorkspaceTests(): number {
   // `pnpm -r run` (recursive run, not the banned `pnpm exec`) invokes each
   // package's own test script, so every package runs under its configured env
   // wrapper / vitest config. `--if-present` skips packages lacking the script
@@ -177,7 +177,7 @@ function runWorkspaceTests(): number {
 // package manifests to disambiguate. Globs the manifests directly rather than
 // parsing `pnpm -r list --json` (whose stdout the Socket Firewall wrapper
 // prefixes with a banner, breaking JSON.parse and silently defeating the scan).
-function workspaceHasScript(script: string): boolean {
+export function workspaceHasScript(script: string): boolean {
   const manifests = globSync(['**/package.json'], {
     cwd: repoRoot,
     absolute: true,
@@ -204,7 +204,7 @@ function workspaceHasScript(script: string): boolean {
 // or hangs. In that layout every scope delegates to per-package `test:unit`;
 // the per-file related/changed filtering vitest would do at the root is the
 // optimization that breaks, and a per-package full run is the safe trade.
-function isDelegatedWorkspace(): boolean {
+export function isDelegatedWorkspace(): boolean {
   return shouldDelegateWorkspace(mode, {
     rootVitestConfigExists: existsSync(ROOT_VITEST_CONFIG),
     workspaceManifestExists: existsSync(ROOT_WORKSPACE_MANIFEST),
@@ -219,7 +219,7 @@ function isDelegatedWorkspace(): boolean {
 // for the no-root-config layout, extended to the root-config-present one.
 // Counts co-located `src/**` specs too, socket-webext's layout, so a repo
 // whose config includes them isn't misread as test-less.
-function totalTestFileCount(): number {
+export function totalTestFileCount(): number {
   return globSync(
     [
       `**/src/**/*.test.${TEST_EXTENSIONS}`,

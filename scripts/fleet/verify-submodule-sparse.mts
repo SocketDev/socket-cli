@@ -103,7 +103,7 @@ export function parseBlocks(text: string): SubmoduleBlock[] {
 
 // `--check`: every block with a sparse-checkout must declare a `verify =`
 // (a real command or `none`). A sparse pattern with no verify is unproven.
-function runCheck(blocks: SubmoduleBlock[]): number {
+export function runCheck(blocks: SubmoduleBlock[]): number {
   const gaps = blocks.filter(b => b.sparse && !b.verify)
   if (gaps.length === 0) {
     const declared = blocks.filter(b => b.verify).length
@@ -132,7 +132,7 @@ function runCheck(blocks: SubmoduleBlock[]): number {
 // Returns 0 on a green consumer, 1 otherwise. Leaves the submodule populated
 // caller's working tree; a fresh `git-partial-submodule.mts clone` is
 // idempotent and the repo's own checkout state is the operator's to manage.
-async function runOne(
+export async function runOne(
   block: SubmoduleBlock,
   repoRoot: string,
 ): Promise<number> {
@@ -183,7 +183,7 @@ async function runOne(
   return 0
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const argv = process.argv.slice(2)
   const mode = argv.find(
     a => a === '--check' || a === '--run' || a === '--run-all',

@@ -177,7 +177,7 @@ export function scanRepo(repoRoot: string): VagueThrow[] {
   return hits
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hits = scanRepo(REPO_ROOT)
   if (hits.length) {

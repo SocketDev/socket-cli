@@ -69,7 +69,7 @@ export function scanFile(relPath: string, text: string): Finding[] {
   return [{ file: relPath, runner }]
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const root = REPO_ROOT
   const commands = readDeclaredTestCommands(root).filter(
     c => c.runner === 'vitest',

@@ -3,7 +3,7 @@
  *   exemptions and the release / version-bump policy.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 // ---------------------------------------------------------------------------
 // pathsAllowlist — exemptions for the path-hygiene gate

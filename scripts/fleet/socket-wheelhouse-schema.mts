@@ -18,7 +18,7 @@
  *     sync-scaffolding's IDENTICAL_FILES.
  */
 
-import { Type } from '@sinclair/typebox'
+import { Type } from 'typebox'
 
 import {
   BuildSchema,
@@ -54,7 +54,7 @@ import {
   ViteSchema,
 } from './socket-wheelhouse-schema/tooling.mts'
 
-import type { Static } from '@sinclair/typebox'
+import type { Static } from 'typebox'
 
 // ---------------------------------------------------------------------------
 // Top-level config.

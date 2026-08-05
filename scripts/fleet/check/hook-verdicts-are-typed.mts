@@ -114,7 +114,7 @@ export function grandfatheredHooks(repoRoot: string = REPO_ROOT): string[] {
 export function scanHandTypedVerdicts(repoRoot: string = REPO_ROOT): Finding[] {
   const files = globSync(
     ['.claude/hooks/fleet/*/index.mts', '.claude/hooks/repo/*/index.mts'],
-    { absolute: false, cwd: repoRoot },
+    { absolute: false, cwd: repoRoot, ignore: ['**/node_modules/**'] },
   )
   const findings: Finding[] = []
   for (let i = 0, { length } = files; i < length; i += 1) {
@@ -163,7 +163,7 @@ const SCRIPT_META: ScriptMeta = {
   --update-baseline  rewrite typedVerdicts.grandfathered in .config/repo/socket-wheelhouse.json to the current offender set`,
 }
 
-function main(): number {
+export function main(): number {
   if (process.argv.includes('--update-baseline')) {
     const written = updateBaseline()
     const location = findSocketWheelhouseConfig()

@@ -16,6 +16,16 @@ const timestampFormatter = new Intl.DateTimeFormat('en-US', {
 
 export const BACKUP_BRANCH_RE = /^backup-\d{8}-\d{6}$/
 
+// Where an archived `git stash` entry gets its permanent ref. A ref is a GC
+// ROOT, so the stash commit and every tree it reaches survive `git gc` and
+// survive the entry leaving `git stash list`; the stash reflog is not a root and
+// gives neither guarantee.
+export const STASH_ARCHIVE_REF_PREFIX = 'refs/stash-archive/'
+
+// How much of the stash SHA the archive ref name carries. Long enough that a
+// prefix collision is not a practical concern, short enough to read.
+export const STASH_ARCHIVE_SHA_LENGTH = 12
+
 /**
  * Any fleet backup / recovery branch: the canonical `backup-YYYYMMDD-HHMMSS`,
  * its legacy `backup-<label>` siblings, and the `backup/<label>` recovery refs
@@ -98,14 +108,40 @@ export async function findBackupBranchesWithUnreleasedCommits(
 }
 
 /**
- * Render a GitHub commit timestamp as the fleet's stable backup-ref format.
+ * Render a commit timestamp as the fleet's stable `YYYYMMDD-HHMMSS` stamp, in
+ * the fleet timezone. The shared half of every recovery-ref name.
  */
-export function formatBackupBranch(isoDate: string): string {
+export function formatBackupTimestamp(isoDate: string): string {
   const date = new Date(isoDate)
   if (Number.isNaN(date.getTime())) {
     throw new Error(`Invalid ISO commit date: ${isoDate}`)
   }
   const parts = timestampFormatter.formatToParts(date)
   const byType = new Map(parts.map(part => [part.type, part.value]))
-  return `backup-${byType.get('year')}${byType.get('month')}${byType.get('day')}-${byType.get('hour')}${byType.get('minute')}${byType.get('second')}`
+  return `${byType.get('year')}${byType.get('month')}${byType.get('day')}-${byType.get('hour')}${byType.get('minute')}${byType.get('second')}`
+}
+
+/**
+ * Render a GitHub commit timestamp as the fleet's stable backup-ref format.
+ */
+export function formatBackupBranch(isoDate: string): string {
+  return `backup-${formatBackupTimestamp(isoDate)}`
+}
+
+/**
+ * The archive ref name for one stash commit.
+ *
+ * Keyed by the stash's own TIMESTAMP AND SHA, never by its `stash@{n}` index.
+ * An index is positional: dropping stash@{2} renumbers every entry behind it,
+ * so `refs/stash-archive/3` names a different commit tomorrow than it does
+ * today, and a second archiving pass would either overwrite a live archive or
+ * duplicate one. The SHA makes the name content-addressed, which is also what
+ * makes re-archiving idempotent — `findStashArchiveRef` looks the stash up by
+ * the commit its ref points at, so a ref written under any earlier naming still
+ * counts as archived. The timestamp leads so `git for-each-ref` lists the
+ * namespace in chronological order, matching `backup-YYYYMMDD-HHMMSS`.
+ */
+export function formatStashArchiveRef(isoDate: string, sha: string): string {
+  const stamp = formatBackupTimestamp(isoDate)
+  return `${STASH_ARCHIVE_REF_PREFIX}${stamp}-${sha.slice(0, STASH_ARCHIVE_SHA_LENGTH)}`
 }

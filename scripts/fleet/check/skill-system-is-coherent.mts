@@ -52,7 +52,7 @@ export function findSkillSystemDefects(
   return defects.toSorted()
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const root = path.join(REPO_ROOT, '.claude/skills/fleet')
   const names = readdirSync(root).filter(name => !name.startsWith('_'))
   const sources = Object.fromEntries(

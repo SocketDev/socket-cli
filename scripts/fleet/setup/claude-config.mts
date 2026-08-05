@@ -70,7 +70,7 @@ export function applyHardening(config: Record<string, unknown>): string[] {
   return changed
 }
 
-function main(): void {
+export function main(): void {
   const configPath = globalConfigPath()
   if (!existsSync(configPath)) {
     logger.log(

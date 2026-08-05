@@ -104,7 +104,7 @@ export function classifyHookBypass(
   return DEFINE_HOOK_RE.test(source) ? 'fail' : 'legacy'
 }
 
-function fleetHooksDir(repoRoot: string): string | undefined {
+export function fleetHooksDir(repoRoot: string): string | undefined {
   const authored = path.join(
     repoRoot,
     'template',
@@ -120,7 +120,7 @@ function fleetHooksDir(repoRoot: string): string | undefined {
   return existsSync(live) ? live : undefined
 }
 
-function main(): void {
+export function main(): void {
   const dir = fleetHooksDir(REPO_ROOT)
   if (!dir) {
     logger.info(

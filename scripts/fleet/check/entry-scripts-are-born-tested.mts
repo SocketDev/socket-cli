@@ -3,7 +3,7 @@
  *   (docs/agents.md/fleet/self-describing-scripts.md): a NEW repo-owned entry
  *   script is born with a unit test. Scans every `scripts/repo/**` `.mts`
  *   carrying a real top-level entry guard (the same parsed scope test
- *   `entry-scripts-self-describe` uses) and flags each one that has no
+ *   `entry-scripts-are-self-describing` uses) and flags each one that has no
  *   mirror-named `<name>.test.mts` anywhere under `test/` — unless the
  *   member's `.config/repo/socket-wheelhouse.json` grandfathers it under
  *   `bornTested.grandfathered`.
@@ -37,7 +37,7 @@ import {
 } from '../paths.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
-import { hasTopLevelEntryGuard } from './entry-scripts-self-describe.mts'
+import { hasTopLevelEntryGuard } from './entry-scripts-are-self-describing.mts'
 
 import type { ScriptMeta } from '../_shared/run-main.mts'
 
@@ -72,14 +72,19 @@ export function grandfatheredScripts(repoRoot: string = REPO_ROOT): string[] {
  */
 export function scanUntested(repoRoot: string = REPO_ROOT): Finding[] {
   const testNames = new Set(
-    globSync(['test/**/*.test.mts'], { absolute: false, cwd: repoRoot }).map(
-      f => path.basename(f),
-    ),
+    globSync(['test/**/*.test.mts'], {
+      absolute: false,
+      cwd: repoRoot,
+      // A workspace member's test tree can sit beside hundreds of installed
+      // packages — walking them OOMs the scan (socket-lib, 352 projects).
+      ignore: ['**/node_modules/**'],
+    }).map(f => path.basename(f)),
   )
   const findings: Finding[] = []
   const files = globSync(['scripts/repo/**/*.mts'], {
     absolute: false,
     cwd: repoRoot,
+    ignore: ['**/node_modules/**'],
   })
   for (let i = 0, { length } = files; i < length; i += 1) {
     const rel = files[i]!
@@ -130,7 +135,7 @@ const SCRIPT_META: ScriptMeta = {
   --update-baseline  rewrite bornTested.grandfathered in .config/repo/socket-wheelhouse.json to the current untested set`,
 }
 
-function main(): number {
+export function main(): number {
   if (process.argv.includes('--update-baseline')) {
     const written = updateBaseline()
     const location = findSocketWheelhouseConfig()

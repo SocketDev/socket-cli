@@ -122,7 +122,9 @@ export function parseLockstepReport(stdout: string): Report[] | undefined {
 // Fetch the stable + pre-release tag list for one submodule path (deterministic
 // git, not judgment). A fetch failure yields an empty list — the engine's tag
 // resolver then leaves the row advisory rather than throwing.
-async function fetchUpstreamTags(submodulePath: string): Promise<string[]> {
+export async function fetchUpstreamTags(
+  submodulePath: string,
+): Promise<string[]> {
   const abs = path.join(REPO_ROOT, submodulePath)
   if (!existsSync(abs)) {
     return []
@@ -140,7 +142,7 @@ async function fetchUpstreamTags(submodulePath: string): Promise<string[]> {
 
 // Map a lockstep report's drifting version-pin upstreams to their submodule
 // paths via the manifest's `upstreams` table, then to their fetched tag lists.
-async function tagsByUpstream(
+export async function tagsByUpstream(
   manifestPath: string,
   reports: readonly Report[],
 ): Promise<Record<string, string[]>> {

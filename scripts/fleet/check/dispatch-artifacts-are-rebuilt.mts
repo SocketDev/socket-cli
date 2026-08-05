@@ -436,7 +436,7 @@ export function scanDispatchArtifacts(config: {
   return { failures, present }
 }
 
-function main(): number {
+export function main(): number {
   const quiet = process.argv.includes('--quiet')
   // A bundle-only member has no per-hook SOURCE dirs, so a fresh regen would
   // render an EMPTY table and call the release-shipped bundle stale. The

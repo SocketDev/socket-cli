@@ -150,9 +150,24 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     // assumption. A lane the operator edits, or runs in their own terminal, is
     // a gate that strands the agent.
     () =>
+      run('node', ['scripts/fleet/check/human-gate-lanes-are-runnable.mts']),
+    // The fleet writes instructions to itself in HTML comments and separately
+    // hunts HTML comments as prompt-injection bait. This is what keeps the two
+    // systems from colliding: every sanctioned marker must read as inert to
+    // the directive scanner.
+    () =>
       run('node', [
-        'scripts/fleet/check/human-gate-lanes-are-runnable.mts',
+        'scripts/fleet/check/comment-markers-are-honeypot-inert.mts',
       ]),
+    // A `pnpm run <script> -- --flag` invocation leaks a literal `--` argument
+    // to the script on pnpm (unlike npm), so the bare separator is banned in
+    // scripts, workflows, and docs; spell `pnpm run <script> --flag`.
+    () =>
+      run('node', ['scripts/fleet/check/pnpm-run-flags-have-no-bare-dash.mts']),
+    // A tracked markdown doc keeps every long section folded in a <details>
+    // block so readers navigate instead of scroll; the folding fixer owns the
+    // rewrite and this gate keeps a new long section from landing unfolded.
+    () => run('node', ['scripts/fleet/check/long-doc-sections-are-folded.mts']),
     // Prose in tracked markdown must reference a PR/issue as a clickable
     // `[#N](url)` link, not a bare `#N` — dead text in a rendered .md or a
     // terminal report. Complements the anti-backref rule (bare `#N` is correct

@@ -297,7 +297,7 @@ export function scanFile(filePath: string): PortabilityHit[] {
   return hits
 }
 
-function walk(dir: string, out: string[]): void {
+export function walk(dir: string, out: string[]): void {
   let entries: string[]
   try {
     entries = readdirSync(dir)
@@ -347,7 +347,7 @@ export function scanRepo(repoRoot: string): PortabilityHit[] {
 // per-site baseline for weight; the doc's classes make each fix mechanical.)
 export const BASELINE_FINDINGS = 53
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const hits = scanRepo(REPO_ROOT)
   if (hits.length === 0) {
@@ -389,7 +389,7 @@ async function main(): Promise<void> {
   process.exitCode = 1
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe: 'checks source files for known windows-portability hazards',
   help: `Usage: node scripts/fleet/check/source-is-windows-portable.mts [flags]
   --quiet  suppress the success message`,

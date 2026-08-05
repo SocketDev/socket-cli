@@ -3,7 +3,7 @@
  *   whichever npm sits on PATH.
  *   WHY THIS EXISTS. The two disagree, and the gap is not cosmetic. A promote
  *   run against a Homebrew npm 11.17.0 while `.node-version` pinned Node 26.5.0
- *   used a binary BELOW the repo's own `engines.npm` floor of >=12.0.1 — the
+ *   used a binary BELOW the repo's own `engines.npm` floor of >=12.0.2 — the
  *   staging API surface (`npm stage approve|reject`) is exactly where that
  *   matters, because it is 2FA-gated and irreversible. The pinned Node bundles
  *   npm 12.0.1; PATH offered 11.17.0.

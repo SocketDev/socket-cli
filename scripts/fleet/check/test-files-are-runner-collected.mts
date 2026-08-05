@@ -170,7 +170,7 @@ export function sortCollectionFindings(
   )
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const root = REPO_ROOT
   const commands = readDeclaredTestCommands(root)
   const testFiles = listRepoTestFiles(root)
@@ -273,3 +273,4 @@ const SCRIPT_META: ScriptMeta = {
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

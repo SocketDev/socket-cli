@@ -282,7 +282,7 @@ export function scanMarkedFiles(rootDir: string): MarkedFile[] {
   return marked
 }
 
-function report(violations: readonly Violation[]): void {
+export function report(violations: readonly Violation[]): void {
   for (let i = 0, { length } = violations; i < length; i += 1) {
     const v = violations[i]!
     logger.error(`  ${v.file}`)
@@ -290,7 +290,7 @@ function report(violations: readonly Violation[]): void {
   }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const rootManifest = resolveManifestRoot(REPO_ROOT)
   const enrolled = existsSync(rootManifest)

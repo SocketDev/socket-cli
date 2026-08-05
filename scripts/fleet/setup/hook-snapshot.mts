@@ -92,7 +92,10 @@ function build(scriptRel: string, extraArgs: string[] = []): boolean {
   return r.status === 0
 }
 
-function wireSettings(make: (event: string) => string, label: string): boolean {
+export function wireSettings(
+  make: (event: string) => string,
+  label: string,
+): boolean {
   if (!existsSync(SETTINGS_PATH)) {
     logger.warn(`.claude/settings.json absent — skipping the ${label} wire.`)
     return false
@@ -122,7 +125,7 @@ function wireSettings(make: (event: string) => string, label: string): boolean {
   return true
 }
 
-function main(): void {
+export function main(): void {
   const argv = process.argv.slice(2)
   const noWire = argv.includes('--no-wire')
   const winLauncher = argv.includes('--win-launcher')

@@ -239,7 +239,7 @@ export async function probeCatalogPins(
   return verdicts
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const pins = collectCatalogPins([PNPM_WORKSPACE_YAML, FLEET_CATALOG_YAML])
   if (pins.length === 0) {

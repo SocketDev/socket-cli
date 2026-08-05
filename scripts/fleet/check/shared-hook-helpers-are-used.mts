@@ -189,7 +189,7 @@ export function findDeadExports(): DeadExport[] {
   return dead
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const dead = findDeadExports()
   if (dead.length === 0) {

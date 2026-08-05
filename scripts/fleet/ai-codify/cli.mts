@@ -183,7 +183,7 @@ export function buildCodifyPrompt(args: CodifyGapArgs): string {
  * than spawning our own agent — that script owns the CLAUDE.md byte budget +
  * defer-to-docs split. Requires a memory file, its source-of-truth input.
  */
-async function delegateToCodifyRule(
+export async function delegateToCodifyRule(
   args: CodifyGapArgs,
 ): Promise<{ exitCode: number }> {
   if (!args.memory) {
@@ -200,12 +200,12 @@ async function delegateToCodifyRule(
   return { exitCode: r.code ?? 1 }
 }
 
-async function hasClaudeCli(cwd: string): Promise<boolean> {
+export async function hasClaudeCli(cwd: string): Promise<boolean> {
   const discovered = await discoverAiAgents({ repoRoot: cwd })
   return 'claude' in discovered
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   if (args.noAi || process.env['SKIP_AI_CODIFY'] === '1') {
     return

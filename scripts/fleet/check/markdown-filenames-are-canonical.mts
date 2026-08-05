@@ -66,7 +66,7 @@ export function trackedMarkdownFiles(rootDir: string): string[] {
     .filter(Boolean)
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const violations = findViolations(trackedMarkdownFiles(REPO_ROOT), REPO_ROOT)
   if (violations.length === 0) {
     logger.success('All markdown filenames are canonical')

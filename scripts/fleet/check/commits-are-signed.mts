@@ -171,7 +171,7 @@ export async function runCheck(
   return 1
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   process.exitCode = await runCheck(REPO_ROOT)
 }
 

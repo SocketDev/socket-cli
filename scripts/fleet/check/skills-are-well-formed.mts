@@ -99,7 +99,7 @@ export function frontmatterValue(
     const m = new RegExp(`^${key}:[ \\t]*(.*)$`).exec(line)
     if (m) {
       // Strip one leading or trailing quote char, a YAML-style quoted scalar.
-      // socket-lint: allow uncommented-regex
+      // oxlint-disable-next-line socket/require-regex-comment -- described above
       return m[1]!.trim().replace(/^['"]|['"]$/g, '')
     }
   }
@@ -250,7 +250,7 @@ export function findSkillCatalogDefects(skillsRoot: string): SkillDefect[] {
   return defects
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const skillsRoot = path.join(REPO_ROOT, '.claude', 'skills')
   const defects = findSkillCatalogDefects(skillsRoot)

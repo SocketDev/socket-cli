@@ -62,7 +62,7 @@ export function templateDockerfilePath(repoDir: string): string | undefined {
   return existsSync(inTemplate) ? inTemplate : undefined
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const errors: string[] = []
 
   // 1. ci:local script shape, when declared.

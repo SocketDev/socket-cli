@@ -27,6 +27,7 @@ import path from 'node:path'
 import { isPlainObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isSpawnExitError } from '@socketsecurity/lib-stable/process/spawn/errors'
 
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import {
@@ -117,6 +118,25 @@ export interface NativeLanesOutcome {
  * its tool probe to report an explicit skip. Swallowing it into an exit code
  * here would erase the difference between "the toolchain is absent" and "the
  * toolchain ran and failed", the two outcomes a lane must keep apart.
+ *
+ * Keeping those two apart takes a catch, because `spawn` rejects for BOTH: a
+ * `SpawnError` carries `.code` as a NUMBER when the process ran and exited
+ * non-zero, and as `'ENOENT'` when the command was never found. Only the second
+ * is "absent", so the numeric case is converted back into an exit code and the
+ * rest rethrown. Without this, a failing Rust or Go suite escapes `lane.run` as
+ * an unhandled rejection and takes the whole coverage run down, instead of
+ * reporting a lane result carrying its real exit code — the third acceptance
+ * property every lane owes its caller.
+ *
+ * Stdin is CLOSED, never inherited or left as an open pipe. A native coverage
+ * tool may prompt: `cargo llvm-cov` asks `Proceed? [Y/n]` before running
+ * `rustup component add llvm-tools-preview` for the selected toolchain. On an
+ * open pipe nobody writes to, that read never returns and the lane hangs
+ * forever — not failing, so no timeout or non-zero exit ever surfaces it, while
+ * the run keeps holding its active-run marker and blocks vitest machine-wide.
+ * Closing stdin gives the prompt an immediate EOF, which every such tool reads
+ * as the default yes, so the lane proceeds unattended. stdout/stderr stay piped
+ * because the caller reads both off the result.
  */
 export const defaultLaneCommandRunner: LaneCommandRunner = async (
   cmd,
@@ -124,14 +144,29 @@ export const defaultLaneCommandRunner: LaneCommandRunner = async (
   config,
 ) => {
   const cfg = { __proto__: null, ...config } as typeof config
-  const result = await spawn(cmd, args, {
-    cwd: cfg.cwd,
-    ...(cfg.env ? { env: cfg.env } : {}),
-  })
-  return {
-    exitCode: result.code ?? 0,
-    stderr: String(result.stderr ?? ''),
-    stdout: String(result.stdout ?? ''),
+  try {
+    const result = await spawn(cmd, args, {
+      cwd: cfg.cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      ...(cfg.env ? { env: cfg.env } : {}),
+    })
+    return {
+      exitCode: result.code ?? 0,
+      stderr: String(result.stderr ?? ''),
+      stdout: String(result.stdout ?? ''),
+    }
+  } catch (e) {
+    // Ran and failed: hand the real exit status back so the lane can fold it
+    // into a LaneResult. A launch failure has a string `.code` and is NOT this,
+    // so it rethrows and the lane's probe reads it as the tool being absent.
+    if (isSpawnExitError(e)) {
+      return {
+        exitCode: e.code,
+        stderr: String(e.stderr ?? ''),
+        stdout: String(e.stdout ?? ''),
+      }
+    }
+    throw e
   }
 }
 

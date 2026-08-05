@@ -41,7 +41,7 @@ const HOOKS_DIR = '.git-hooks'
 // depth-independent — unlike a hardcoded `..` count, it survives the script
 // moving between directories (the 73c691d9 scripts-into-fleet/ refactor broke
 // the old count).
-function resolveRepoRoot(): string {
+export function resolveRepoRoot(): string {
   let cur = path.dirname(fileURLToPath(import.meta.url))
   const root = path.parse(cur).root
   while (cur && cur !== root) {
@@ -61,7 +61,7 @@ function resolveRepoRoot(): string {
 
 const REPO_ROOT = resolveRepoRoot()
 
-function main(): void {
+export function main(): void {
   if (!existsSync(path.join(REPO_ROOT, '.git'))) {
     return
   }

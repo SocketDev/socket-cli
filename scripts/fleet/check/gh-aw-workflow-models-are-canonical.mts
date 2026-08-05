@@ -47,7 +47,7 @@ export function declaredModel(frontmatter: string): string | undefined {
 }
 
 // Enumerate tracked gh-aw workflow markdown sources.
-function listAgenticMarkdown(): string[] {
+export function listAgenticMarkdown(): string[] {
   try {
     const r = spawnSync('git', ['ls-files', '*.github/workflows/*.md'], {
       stdio: 'pipe',
@@ -65,7 +65,7 @@ function listAgenticMarkdown(): string[] {
   }
 }
 
-function main(): void {
+export function main(): void {
   const mdFiles = listAgenticMarkdown()
   const problems: string[] = []
   let checked = 0

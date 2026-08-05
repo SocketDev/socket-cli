@@ -258,7 +258,7 @@ export function runBrewFix(violations: readonly FloorViolation[]): number {
   return unresolved
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const fix = process.argv.includes('--fix')
   const violations = findBelowFloor(pathToolPins(REPO_ROOT), pathToolVersion)

@@ -16,6 +16,17 @@
  *      the runner has nothing to print. The fix is passing a
  *      `ScriptMeta { describe, help }` second argument; TypeScript enforces
  *      the shape once it is passed.
+ *   3. runs-on-import — the file invokes its own pipeline from a TOP-LEVEL
+ *      statement (`main()`, `void main()`, `await main()`, `export const run
+ *      = main().catch(…)`), so merely loading the module starts the work.
+ *      Nothing gates on argv, so `--describe` and `--help` never get a turn:
+ *      `node scripts/fleet/update.mts --describe` ran a full taze update plus
+ *      `pnpm install`, rewriting four tracked files. Defects 1 and 2 both
+ *      assume an entry guard exists to inspect — a file with NO guard at all
+ *      read as "a library, out of scope" and passed. The fix is the same
+ *      shape as the others: keep the work inside `main`, export it for the
+ *      tests, and end the file with `if (isMainModule(import.meta.url)) {
+ *      runMain(main, SCRIPT_META) }`.
  *
  *   Detection is a real parse, not a regex: the fleet's WASM acorn parses the
  *   `.mts` source directly (`typescript: true`, via the hooks' shared
@@ -27,7 +38,7 @@
  *   guard `IfStatement`s cross into JS. This is the standard-things/esm
  *   `parseTopLevel` optimization, expressed as walker pruning.
  *
- *   Run standalone: `node scripts/fleet/check/entry-scripts-self-describe.mts`.
+ *   Run standalone: `node scripts/fleet/check/entry-scripts-are-self-describing.mts`.
  */
 
 import { readFileSync } from 'node:fs'
@@ -46,11 +57,17 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
+/**
+ * The self-describe defects, each with its own fix + operator message. See
+ * the file header for what each one means.
+ */
+export type SelfDescribeDefect = 'no-run-main' | 'no-meta' | 'runs-on-import'
+
 export interface Finding {
   // repo-root-relative path of the offending entry script.
   file: string
   // Which self-describe defect this is — each has its own fix + message.
-  kind: 'no-run-main' | 'no-meta'
+  kind: SelfDescribeDefect
 }
 
 // Files exempt from the call-site scan, all for ONE reason: they are
@@ -65,6 +82,15 @@ const SELF_DESCRIBE_ALLOWLIST = new Set<string>([
   'scripts/repo/bootstrap/prepare.mts',
   'scripts/repo/gen/bootstrap/prepare.mts',
   'scripts/repo/gen/bootstrap/src/fleet.mts',
+])
+
+// Exempt from the runs-on-import scan only: test-runner/run-vitest.mts is an
+// internal bridge test.mts spawns as its OWN process, never a user-facing
+// entry, and the argv it receives is VITEST's — intercepting `-h` there would
+// shadow vitest's own flag parsing. It carries the same documented exemption
+// in entry-scripts-are-fail-soft's UNGUARDED_MAIN_ALLOWLIST.
+const RUNS_ON_IMPORT_ALLOWLIST = new Set<string>([
+  'scripts/fleet/test-runner/run-vitest.mts',
 ])
 
 /**
@@ -87,6 +113,10 @@ export interface EstreeNode {
   readonly left?: EstreeNode | undefined
   readonly right?: EstreeNode | undefined
   readonly operator?: string | undefined
+  readonly declaration?: EstreeNode | undefined
+  readonly declarations?: readonly EstreeNode[] | undefined
+  readonly id?: EstreeNode | undefined
+  readonly init?: EstreeNode | undefined
 }
 
 /**
@@ -130,7 +160,7 @@ export function isEntryGuardCondition(node: EstreeNode): boolean {
  * The `runMain(...)` call inside one guard-body statement, unwrapping a
  * `void`-prefixed call; `undefined` when the statement is something else.
  */
-function runMainCallOf(stmt: EstreeNode): EstreeNode | undefined {
+export function runMainCallOf(stmt: EstreeNode): EstreeNode | undefined {
   if (stmt.type !== 'ExpressionStatement' || stmt.expression === undefined) {
     return undefined
   }
@@ -156,7 +186,7 @@ function runMainCallOf(stmt: EstreeNode): EstreeNode | undefined {
  * The verdict for one entry guard's `IfStatement`: `undefined` when its body
  * calls `runMain` with a meta argument, else which defect it carries.
  */
-function guardVerdict(
+export function guardVerdict(
   guard: EstreeNode,
 ): 'no-run-main' | 'no-meta' | undefined {
   const consequent = guard.consequent
@@ -173,6 +203,159 @@ function guardVerdict(
     }
   }
   return 'no-run-main'
+}
+
+// The name every fleet entry gives the function holding its work. The
+// runs-on-import scan needs it because a file with that defect has no
+// `runMain(<fn>, meta)` call to read the pipeline's name from.
+const PIPELINE_FN_NAME = 'main'
+
+/**
+ * The statement a top-level `export …` wraps, or the statement itself.
+ * `export const run = main()` and a bare `const run = main()` are the same
+ * defect, so the export wrapper is peeled before either is inspected.
+ */
+function unwrapExport(stmt: EstreeNode): EstreeNode {
+  return (stmt.type === 'ExportDefaultDeclaration' ||
+    stmt.type === 'ExportNamedDeclaration') &&
+    stmt.declaration !== undefined
+    ? stmt.declaration
+    : stmt
+}
+
+/**
+ * The call at the core of an expression, peeling the wrappers an entry uses
+ * to launch its pipeline: `void`, `await`, an optional chain, and a trailing
+ * `.catch(…)` / `.then(…)` handler. `main().catch(fn)` unwraps to `main()`.
+ * Pure — exported for tests.
+ */
+export function unwrapPipelineCall(
+  node: EstreeNode | undefined,
+): EstreeNode | undefined {
+  let current = node
+  for (;;) {
+    if (current === undefined) {
+      return undefined
+    }
+    if (
+      (current.type === 'UnaryExpression' && current.operator === 'void') ||
+      current.type === 'AwaitExpression'
+    ) {
+      current = current.argument
+      continue
+    }
+    if (current.type === 'ChainExpression') {
+      current = current.expression
+      continue
+    }
+    // `<call>.catch(fn)` / `<call>.then(fn)` — step onto the receiver.
+    if (
+      current.type === 'CallExpression' &&
+      current.callee?.type === 'MemberExpression'
+    ) {
+      current = current.callee.object
+      continue
+    }
+    return current
+  }
+}
+
+/**
+ * True when the expression invokes the module's own pipeline function by
+ * name. Pure — exported for tests.
+ */
+export function isPipelineInvocation(node: EstreeNode | undefined): boolean {
+  const call = unwrapPipelineCall(node)
+  return (
+    call?.type === 'CallExpression' &&
+    call.callee?.type === 'Identifier' &&
+    call.callee.name === PIPELINE_FN_NAME
+  )
+}
+
+/**
+ * True when a top-level statement DECLARES the pipeline — `function main()`
+ * or `const main = async () => …`. Only a file that owns a `main` can run it
+ * on import, so this gates the scan and keeps a library that merely calls
+ * some imported `main` out of scope.
+ */
+function declaresPipeline(stmt: EstreeNode): boolean {
+  if (stmt.type === 'FunctionDeclaration') {
+    return stmt.id?.name === PIPELINE_FN_NAME
+  }
+  if (stmt.type === 'VariableDeclaration') {
+    for (const decl of stmt.declarations ?? []) {
+      if (
+        decl.id?.name === PIPELINE_FN_NAME &&
+        (decl.init?.type === 'ArrowFunctionExpression' ||
+          decl.init?.type === 'FunctionExpression')
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * True when a top-level statement RUNS the pipeline — `main()`, `void
+ * main()`, `await main()`, or a declarator initialized from it
+ * (`export const updateRun = main().catch(…)`).
+ */
+function runsPipeline(stmt: EstreeNode): boolean {
+  if (stmt.type === 'ExpressionStatement') {
+    return isPipelineInvocation(stmt.expression)
+  }
+  if (stmt.type === 'VariableDeclaration') {
+    for (const decl of stmt.declarations ?? []) {
+      if (isPipelineInvocation(decl.init)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * True when the module's top-level statements both declare the pipeline and
+ * run it — the module starts its own work on import, before anything reads
+ * argv. A statement nested in an entry guard belongs to that `IfStatement`'s
+ * body, never to the Program body, so a compliant `if (isMainModule(…)) {
+ * runMain(main, META) }` can never reach this.
+ */
+function topLevelRunsPipeline(body: readonly EstreeNode[]): boolean {
+  let declared = false
+  let ran = false
+  for (const raw of body) {
+    const stmt = unwrapExport(raw)
+    if (declaresPipeline(stmt)) {
+      declared = true
+    }
+    if (runsPipeline(stmt)) {
+      ran = true
+    }
+  }
+  return declared && ran
+}
+
+/**
+ * True when loading `text` as a module would start its own pipeline. Its own
+ * walk, not a visitor added to the guard scan below: registering a visitor
+ * for a node type PRUNES that subtree in this walker, and there is no descend
+ * callback to opt back in — a `Program` visitor sharing the guard walk would
+ * silence every `IfStatement`. Pure — exported for tests.
+ */
+export function runsPipelineOnImport(text: string): boolean {
+  let found = false
+  walkRecursive(text, {
+    Program(node: AcornNode) {
+      const body = (node as unknown as EstreeNode).body
+      if (Array.isArray(body)) {
+        found = topLevelRunsPipeline(body)
+      }
+    },
+  })
+  return found
 }
 
 // The walker visitors that make the scan top-level: never calling the
@@ -206,17 +389,23 @@ export function hasTopLevelEntryGuard(text: string): boolean {
 }
 
 /**
- * Classify one script source: `undefined` when compliant or out of scope (no
- * entry guard — a library, an unparseable file, or a module merely quoting
- * the guard in prose), else the defect kind. Runs `walkRecursive` with
+ * Classify one script source: `undefined` when compliant or out of scope (a
+ * library that neither guards an entry nor runs its own pipeline, or an
+ * unparseable file), else the defect kind. Runs `walkRecursive` with
  * function/class subtrees pruned, per the fleet's top-level entry
  * convention; the parser reads the `.mts` source directly. Pure — exported
  * for tests.
  */
 export function classifyEntrySource(
   text: string,
-): 'no-run-main' | 'no-meta' | undefined {
-  const verdicts: Array<'no-run-main' | 'no-meta' | undefined> = []
+): SelfDescribeDefect | undefined {
+  // Running on import outranks the guard verdicts: a module that starts its
+  // work at load time never reaches argv, so nothing a guard does downstream
+  // can answer --describe.
+  if (runsPipelineOnImport(text)) {
+    return 'runs-on-import'
+  }
+  const verdicts: Array<SelfDescribeDefect | undefined> = []
   walkRecursive(text, {
     ArrowFunctionExpression: skipSubtree,
     ClassDeclaration: skipSubtree,
@@ -242,6 +431,7 @@ export function scan(repoRoot: string = REPO_ROOT): Finding[] {
   const files = globSync(['scripts/fleet/**/*.mts', 'scripts/repo/**/*.mts'], {
     absolute: false,
     cwd: repoRoot,
+    ignore: ['**/node_modules/**'],
   })
   const findings: Finding[] = []
   for (let i = 0, { length } = files; i < length; i += 1) {
@@ -257,6 +447,9 @@ export function scan(repoRoot: string = REPO_ROOT): Finding[] {
       continue
     }
     const kind = classifyEntrySource(text)
+    if (kind === 'runs-on-import' && RUNS_ON_IMPORT_ALLOWLIST.has(rel)) {
+      continue
+    }
     if (kind) {
       findings.push({ file: rel, kind })
     }
@@ -267,10 +460,10 @@ export function scan(repoRoot: string = REPO_ROOT): Finding[] {
 const SCRIPT_META: ScriptMeta = {
   describe:
     'checks every fleet/repo CLI entry script answers --describe and --help via runMain(main, meta)',
-  help: 'Usage: node scripts/fleet/check/entry-scripts-self-describe.mts',
+  help: 'Usage: node scripts/fleet/check/entry-scripts-are-self-describing.mts',
 }
 
-function main(): number {
+export function main(): number {
   const findings = scan()
   if (findings.length === 0) {
     logger.log('✔ every fleet/repo CLI entry self-describes')
@@ -278,9 +471,10 @@ function main(): number {
   }
   const noRunMain = findings.filter(f => f.kind === 'no-run-main')
   const noMeta = findings.filter(f => f.kind === 'no-meta')
+  const onImport = findings.filter(f => f.kind === 'runs-on-import')
   if (noRunMain.length > 0) {
     logger.error(
-      `entry-scripts-self-describe: ${noRunMain.length} entry script(s) never call the shared runner, so --describe/--help run the side effect instead of printing usage.`,
+      `entry-scripts-are-self-describing: ${noRunMain.length} entry script(s) never call the shared runner, so --describe/--help run the side effect instead of printing usage.`,
     )
     logger.error(
       '  Wrap the entry: `runMain(main, SCRIPT_META)` from scripts/fleet/_shared/run-main.mts.',
@@ -291,13 +485,30 @@ function main(): number {
   }
   if (noMeta.length > 0) {
     logger.error(
-      `entry-scripts-self-describe: ${noMeta.length} runMain call(s) pass no ScriptMeta, so the runner has nothing to print for --describe/--help.`,
+      `entry-scripts-are-self-describing: ${noMeta.length} runMain call(s) pass no ScriptMeta, so the runner has nothing to print for --describe/--help.`,
     )
     logger.error(
       '  Pass the second argument: `runMain(main, { describe, help })`.',
     )
     for (let i = 0, { length } = noMeta; i < length; i += 1) {
       logger.error(`  • ${noMeta[i]!.file}`)
+    }
+  }
+  if (onImport.length > 0) {
+    logger.error(
+      `entry-scripts-are-self-describing: ${onImport.length} entry script(s) start their work at module scope, so --describe/--help never get a turn.`,
+    )
+    logger.error(
+      '  Where: a top-level statement invoking main() — `main()`, `void main()`, `await main()`, or `export const run = main().catch(…)`.',
+    )
+    logger.error(
+      '  Saw: the pipeline running on import; wanted: nothing running until the entry guard does.',
+    )
+    logger.error(
+      '  Fix: export main, delete the module-scope invocation, and end the file with `if (isMainModule(import.meta.url)) { runMain(main, SCRIPT_META) }`.',
+    )
+    for (let i = 0, { length } = onImport; i < length; i += 1) {
+      logger.error(`  • ${onImport[i]!.file}`)
     }
   }
   return 1

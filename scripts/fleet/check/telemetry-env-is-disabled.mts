@@ -44,7 +44,7 @@ export function findUnsetFleetEnv(env: NodeJS.ProcessEnv): FleetEnvViolation[] {
   return violations
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const violations = findUnsetFleetEnv(process.env)
   if (violations.length === 0) {
     logger.success('Fleet no-phone-home env is set (FLEET_ENV).')

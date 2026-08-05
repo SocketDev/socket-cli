@@ -43,7 +43,7 @@ import { fetchPackageManifest } from '@socketsecurity/lib/packages/manifest'
 
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
-import { planGithubUpdate } from './github.mts'
+import { computeSoakBypass, planGithubUpdate } from './github.mts'
 
 import { REPO_ROOT } from '../paths.mts'
 import { isSoakExcluded, readSoakRules } from '../soak-rules.mts'
@@ -247,14 +247,16 @@ export async function fetchNpmVersionIntegrity(
 
 /**
  * Pick the newest npm version of `name` that's older than the soak window.
- * Returns the version string + integrity hash, or undefined if the registry has
- * no soak-cleared release, very new package.
+ * Returns the version string, its integrity hash, and the registry's publish
+ * timestamp for that version (the input `planNpmUpdate` dates a soak-bypass
+ * annotation from), or undefined if the registry has no soak-cleared release,
+ * very new package.
  */
 export function pickNewestSoakedNpm(
   name: string,
   soakMinutes: number,
   soakExclude: readonly string[],
-): { version: string; integrity: string } | undefined {
+): { version: string; integrity: string; publishedAt: string } | undefined {
   const meta = curlJson<NpmVersionMeta>(
     `https://registry.npmjs.org/${encodeURIComponent(name)}`,
   )
@@ -268,7 +270,11 @@ export function pickNewestSoakedNpm(
   const bypass =
     isSocketSourcedPackage(name) || isSoakExcluded(name, undefined, soakExclude)
   const cutoff = bypass ? Date.now() : Date.now() - soakMinutes * 60_000
-  const candidates: Array<{ version: string; publishedAt: number }> = []
+  const candidates: Array<{
+    version: string
+    publishedAt: number
+    publishedRaw: string
+  }> = []
   for (const [version, when] of Object.entries(meta.time)) {
     if (version === 'created' || version === 'modified') {
       continue
@@ -285,7 +291,7 @@ export function pickNewestSoakedNpm(
     if (/-/.test(version)) {
       continue
     }
-    candidates.push({ version, publishedAt: t })
+    candidates.push({ version, publishedAt: t, publishedRaw: when })
   }
   if (candidates.length === 0) {
     return undefined
@@ -299,6 +305,7 @@ export function pickNewestSoakedNpm(
   return {
     version: newest.version,
     integrity: versionMeta.dist.integrity,
+    publishedAt: newest.publishedRaw,
   }
 }
 
@@ -334,14 +341,37 @@ export function planNpmUpdate(
   if (!next || next.version === current) {
     return undefined
   }
+  const changes = [
+    `version: ${current} → ${next.version} (npm:${npmName})`,
+    `integrity: ${tool.integrity.slice(0, 24)}… → ${next.integrity.slice(0, 24)}…`,
+  ]
+  // Stamp / drop the inline soak-bypass, the same way planGithubUpdate does for
+  // a release-distributed tool. Reaching here with a still-soaking version means
+  // a bypass admitted it (`bump-tool --soak-bypass`, or a soakExclude entry), so
+  // record the dated annotation the install-time soak check honors until
+  // `removable` and `external-tools prune` drops once it clears; a version that
+  // has already soaked drops any stale block. Mutating the tool in place matches
+  // planGithubUpdate — the caller writes the manifest only under `--apply`.
+  const soakBypass = computeSoakBypass({
+    newVersion: next.version,
+    nowMs: Date.now(),
+    publishedAt: next.publishedAt,
+    soakMinutes,
+  })
+  if (soakBypass) {
+    tool.soakBypass = soakBypass
+    changes.push(
+      `soakBypass → ${next.version} (removable ${soakBypass.removable})`,
+    )
+  } else if (tool.soakBypass) {
+    delete tool.soakBypass
+    changes.push('soakBypass dropped (soak cleared)')
+  }
   return {
     name,
     oldVersion: current,
     newVersion: next.version,
-    changes: [
-      `version: ${current} → ${next.version} (npm:${npmName})`,
-      `integrity: ${tool.integrity.slice(0, 24)}… → ${next.integrity.slice(0, 24)}…`,
-    ],
+    changes,
   }
 }
 
@@ -457,10 +487,10 @@ export async function planAllUpdates(
 
 /**
  * Re-stamp each npm tool named in `updates` with its newest soak-cleared
- * version + integrity. planNpmUpdate is non-mutating (it only computes the
- * diff), so the write path re-derives here. Shared by the bulk updater's
- * apply step and the CRUD tool's `update` subcommand so the restamp logic
- * lives in one place.
+ * version + integrity. planNpmUpdate stamps only the `soakBypass` block, so
+ * the version + integrity pair is re-derived here. Shared by the bulk
+ * updater's apply step and the CRUD tool's `update` subcommand so the restamp
+ * logic lives in one place.
  */
 export function applyNpmRestamp(
   json: ExternalToolsJson,
@@ -553,8 +583,8 @@ export async function main(): Promise<number> {
     }
   }
   if (opts.apply && updates.length > 0) {
-    // Re-stamp npm-tool purl + integrity in place (planNpmUpdate doesn't
-    // mutate the tool object). GitHub tools were already rewritten by
+    // Re-stamp npm-tool version + integrity in place (planNpmUpdate stamps
+    // only the soakBypass block). GitHub tools were already rewritten by
     // planAllUpdates. A failed tool threw before mutating, so its entry keeps
     // its current valid pins and is written back unchanged.
     applyNpmRestamp(json, updates, soakMinutes, soakExclude)

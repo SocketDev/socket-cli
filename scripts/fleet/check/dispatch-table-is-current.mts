@@ -66,7 +66,7 @@ export function dispatchManifestIsCurrent(
   return onDisk === generated
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   // A bundle-only member has no per-hook SOURCE dirs — a fresh regen over the
   // (absent) hook dirs would compare an empty table against the shipped one.
