@@ -35,6 +35,7 @@ import {
 import { parseArgs, showHelp } from './build-steps/cli.mts'
 import { logger } from './build-steps/context.mts'
 import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
+import { isMainModule } from '../fleet/_shared/is-main-module.mts'
 
 export { parseArgs } from './build-steps/cli.mts'
 export { showHelp } from './build-steps/cli.mts'
@@ -75,10 +76,12 @@ async function main(): Promise<void> {
   await runSmartBuild(opts.force)
 }
 
-main().catch((e: unknown) => {
-  const message = errorMessage(e)
-  logger.error('')
-  logger.error(`${colors.red('✗')} Unexpected error: ${message}`)
-  logger.error('')
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    const message = errorMessage(e)
+    logger.error('')
+    logger.error(`${colors.red('✗')} Unexpected error: ${message}`)
+    logger.error('')
+    process.exitCode = 1
+  })
+}

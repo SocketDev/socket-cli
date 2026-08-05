@@ -15,6 +15,7 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
+import { isMainModule } from '../fleet/_shared/is-main-module.mts'
 import { REPO_ROOT } from '../fleet/paths.mts'
 
 const logger = getDefaultLogger()
@@ -260,7 +261,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((e: unknown) => {
-  logger.error(`Error: ${errorMessage(e)}`)
-  process.exitCode = 1
-})
+if (isMainModule(import.meta.url)) {
+  main().catch((e: unknown) => {
+    logger.error(`Error: ${errorMessage(e)}`)
+    process.exitCode = 1
+  })
+}
