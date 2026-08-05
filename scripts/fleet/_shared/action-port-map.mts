@@ -43,8 +43,9 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
 > = {
   // Socket-original helper scripts: SRI tool fetch/verify, jq.mjs, platform.mjs.
   _shared: [],
-  // Restore leg of the cache port: the fleet cache CLI over @actions/cache
-  // (scripts/fleet/cache/restore.mts) replaces `uses: actions/cache/restore`.
+  // Restore leg of the cache port: the fleet cache CLI over the first-party
+  // cache-service client (scripts/fleet/cache/restore.mts) replaces
+  // `uses: actions/cache/restore`.
   'cache-pnpm-store': [
     {
       portedAt: 'main',
@@ -98,8 +99,9 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
     { portedAt: 'v7.0.0', upstream: 'actions/setup-node' },
     { portedAt: 'v6.0.9', upstream: 'pnpm/action-setup' },
   ],
-  // Save leg of the cache port: the fleet cache CLI over @actions/cache
-  // (scripts/fleet/cache/save.mts) replaces `uses: actions/cache/save`.
+  // Save leg of the cache port: the fleet cache CLI over the first-party
+  // cache-service client (scripts/fleet/cache/save.mts) replaces
+  // `uses: actions/cache/save`.
   'setup-and-install': [
     {
       portedAt: 'main',
@@ -116,7 +118,7 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   ],
   // Provisions the keyless on-device AI CLI (@socketsecurity/odai) — the CLI
   // wrapping and cache keying are Socket-original, and the model-cache
-  // restore/save legs run the fleet cache CLIs (the @actions/cache port).
+  // restore/save legs run the fleet cache CLIs (the actions/cache port).
   'setup-odai': [
     {
       portedAt: 'main',
@@ -136,8 +138,9 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   // purpose is reading the implementation, which is the derivation the
   // copyleft boundary exists to prevent. Evolve this composite against the
   // fleet cache CLIs and its own behavior, never against that source. The
-  // cache engine itself IS a declared port: the fleet cache CLIs over
-  // @actions/cache (scripts/fleet/cache/) replace `uses: actions/cache`.
+  // cache engine itself IS a declared port: the fleet cache CLIs over the
+  // first-party cache-service client (scripts/fleet/cache/) replace
+  // `uses: actions/cache`.
   'setup-rust-cache': [
     {
       portedAt: 'main',

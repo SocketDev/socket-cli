@@ -117,16 +117,14 @@ export const hook = defineHook({
     }
     const lines: string[] = []
     if (swept.length > 0) {
-      lines.push(`[sweep-ds-store] swept ${swept.length} .DS_Store file(s):`)
-      for (let i = 0, { length } = swept; i < length; i += 1) {
-        lines.push(`  ${swept[i]!}`)
-      }
+      lines.push(
+        `🧹 sweep-ds-store: swept ${swept.length} .DS_Store file(s) — ${swept.join(', ')}`,
+      )
     }
     if (errors.length > 0) {
-      lines.push(`[sweep-ds-store] ${errors.length} delete error(s):`)
-      for (let i = 0, { length } = errors; i < length; i += 1) {
-        lines.push(`  ${errors[i]!}`)
-      }
+      lines.push(
+        `🧹 sweep-ds-store: ${errors.length} delete error(s) — ${errors.join('; ')}`,
+      )
     }
     return notify(lines.join(os.EOL))
   },

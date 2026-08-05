@@ -15,6 +15,7 @@ import {
 } from '../../publish-infra/remote-npm-publish.mts'
 import { headIsOnOrigin } from '../gate-runners.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
+import { isCommitSha } from '../staged-commit.mts'
 
 import type { RunnerSeams, StageOutcome } from '../seams.mts'
 
@@ -147,6 +148,38 @@ type ResolvedRunCapture = (
 ) => Promise<{ stdout: string; code: number }>
 
 /**
+ * The head sha a dispatched workflow run checked out — the commit the staged
+ * bytes were actually built from. Recorded on the stage-publish receipt so the
+ * release stage tags THAT commit instead of inferring it from the package.json
+ * version flip (see staged-commit.mts). Returns undefined when the run's head
+ * cannot be read; the caller records the honest "unknown" rather than
+ * substituting local HEAD, which is exactly the wrong-commit guess this whole
+ * record exists to stop.
+ */
+async function dispatchedRunHeadSha(
+  seams: { runCapture: ResolvedRunCapture },
+  runId: string,
+  cwd: string,
+): Promise<string | undefined> {
+  const view = await seams.runCapture(
+    'gh',
+    ['run', 'view', runId, '--json', 'headSha'],
+    cwd,
+  )
+  if (view.code !== 0) {
+    return undefined
+  }
+  try {
+    const parsed = JSON.parse(view.stdout || '{}') as {
+      headSha?: string | undefined
+    }
+    return isCommitSha(parsed.headSha) ? parsed.headSha : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Stage-publish, REMOTE-FIRST: dispatch the repo's npm-publish.yml workflow
  * (`gh workflow run` — the staged upload then runs in CI under the OIDC
  * trusted-publisher token, no local npm login) and WATCH the run to
@@ -258,8 +291,18 @@ export async function runStagePublish(config: {
       status: 'failed',
     }
   }
+  // The commit the STAGED BYTES came from is the run's head sha, not local
+  // HEAD and not the version-flip commit — CI staged from whatever the origin
+  // default branch pointed at when the dispatch landed.
+  const stagedSha = await dispatchedRunHeadSha(seams, runId, cfg.cwd)
   return {
-    detail: `staged to npm by ${NPM_PUBLISH_WORKFLOW} run ${runId} (tag ${cfg.distTag}); not public until --approve`,
+    detail:
+      `staged to npm by ${NPM_PUBLISH_WORKFLOW} run ${runId} (tag ${cfg.distTag}); not public until --approve; ` +
+      (stagedSha
+        ? `staged from commit ${stagedSha.slice(0, 12)} (the run's head)`
+        : `staged commit UNKNOWN — \`gh run view ${runId} --json headSha\` gave no usable sha, ` +
+          `so the release/reconcile paths fall back to the version-flip commit`),
+    stagedSha,
     status: 'passed',
   }
 }
@@ -271,7 +314,10 @@ export async function runStagePublish(config: {
  */
 async function runLocalStagePublish(
   cfg: { cwd: string; distTag: string; dryRun: boolean },
-  seams: { runInherit: (c: string, a: string[], d: string) => Promise<number> },
+  seams: {
+    runCapture: ResolvedRunCapture
+    runInherit: (c: string, a: string[], d: string) => Promise<number>
+  },
 ): Promise<StageOutcome> {
   const args = [
     'scripts/fleet/npm-publish.mts',
@@ -291,10 +337,27 @@ async function runLocalStagePublish(
       status: 'failed',
     }
   }
+  if (cfg.dryRun) {
+    return {
+      detail:
+        '[dry-run] pnpm stage publish validated pack + manifest, no upload (--local)',
+      status: 'passed',
+    }
+  }
+  // Local staging packs THIS working tree, so the staged bytes came from the
+  // commit HEAD points at right now — read it after the upload, not before, so
+  // the record names the tree that was actually packed.
+  const head = await seams.runCapture('git', ['rev-parse', 'HEAD'], cfg.cwd)
+  const sha = head.code === 0 ? head.stdout.trim() : ''
+  const stagedSha = isCommitSha(sha) ? sha : undefined
   return {
-    detail: cfg.dryRun
-      ? '[dry-run] pnpm stage publish validated pack + manifest, no upload (--local)'
-      : `staged to npm from this machine (--local, tag ${cfg.distTag}); not public until --approve`,
+    detail:
+      `staged to npm from this machine (--local, tag ${cfg.distTag}); not public until --approve; ` +
+      (stagedSha
+        ? `staged from commit ${stagedSha.slice(0, 12)} (local HEAD)`
+        : 'staged commit UNKNOWN — `git rev-parse HEAD` gave no usable sha, so the ' +
+          'release/reconcile paths fall back to the version-flip commit'),
+    stagedSha,
     status: 'passed',
   }
 }

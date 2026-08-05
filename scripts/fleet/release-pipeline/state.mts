@@ -51,6 +51,24 @@ export interface StageReceipt {
    * timing field existed — rendering tolerates that).
    */
   ms?: number | undefined
+  /**
+   * The npm stage id the VERIFY stage matched, so a later stage can address
+   * the staged upload itself (`pnpm stage download <stageId>`) instead of
+   * re-deriving it. Absent on receipts written before the field existed, and
+   * on the registry-truth paths, where the version is already public and no
+   * staged entry exists.
+   */
+  stageId?: string | undefined
+  /**
+   * The commit the STAGED BYTES were built from, recorded by stage-publish:
+   * local HEAD for `--local` staging, the dispatched workflow run's head sha
+   * for the default CI staging. The release stage tags this commit and the
+   * tag-gap healer compares against it, instead of inferring the content
+   * commit from the package.json version flip (see staged-commit.mts —
+   * two 2026-08-04 releases staged from tips PAST their flip commits).
+   * Absent on receipts written before the field existed.
+   */
+  stagedSha?: string | undefined
   status: ReceiptStatus
 }
 

@@ -212,34 +212,16 @@ export const hook = defineHook({
       return undefined
     }
 
-    const lines = [
-      `[pointer-comment-nudge] Pointer-only comment(s) detected in ${filePath}:`,
-      '',
-    ]
+    const lines: string[] = []
     for (let i = 0, { length } = hits; i < length; i += 1) {
       const h = hits[i]!
+      const evidence = `"${h.preview}${h.preview.length === 100 ? '…' : ''}" at ${filePath}:${h.lineNumber}`
       lines.push(
-        `  • line ${h.lineNumber}: "${h.preview}${h.preview.length === 100 ? '…' : ''}"`,
+        i === 0
+          ? `[pointer-comment-nudge] pointer-only comment ${evidence} — add the one-line why beside the pointer so a reader who never follows it still gets the claim`
+          : `   ${evidence}`,
       )
     }
-    lines.push('')
-    lines.push(
-      '  Per CLAUDE.md "Code style → Pointer comments": a pointer comment',
-    )
-    lines.push(
-      '  must carry a one-line claim explaining the decision, so a reader',
-    )
-    lines.push(
-      '  who never follows the pointer still walks away with the *why*.',
-    )
-    lines.push('')
-    lines.push('  Bad:')
-    lines.push('    // See the @fileoverview JSDoc above.')
-    lines.push('')
-    lines.push('  Good:')
-    lines.push('    // See the @fileoverview JSDoc above.')
-    lines.push("    // V8's existing hot path beats trampoline overhead here.")
-    lines.push('')
     return notify(lines.join('\n') + '\n')
   }),
   event: 'PreToolUse',

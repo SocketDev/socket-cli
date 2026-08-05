@@ -121,7 +121,7 @@ export function isGithubTool(t: Tool): t is GithubReleaseTool {
  * listed in `minimumReleaseAgeExclude` bypasses the soak here exactly as pnpm
  * bypasses it for npm installs — instead of only the `isSocketSourced` rule.
  */
-function readSoakPolicy(yamlPath: string): SoakRules {
+export function readSoakPolicy(yamlPath: string): SoakRules {
   return readSoakRules(yamlPath)
 }
 
@@ -490,7 +490,7 @@ interface CliOpts {
   verifyAssets: boolean
 }
 
-function parseArgs(): CliOpts {
+export function parseArgs(): CliOpts {
   let apply = false
   let externalToolsPath = path.join(
     REPO_ROOT,
@@ -520,7 +520,7 @@ function parseArgs(): CliOpts {
   return { apply, externalToolsPath, pnpmWorkspaceYaml, verifyAssets }
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const opts = parseArgs()
   const { exclude: soakExclude, minutes: soakMinutes } = readSoakPolicy(
     opts.pnpmWorkspaceYaml,

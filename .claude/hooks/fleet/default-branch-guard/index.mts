@@ -95,36 +95,31 @@ export const check = bashGuard((command, payload) => {
     (GH_RENAME_ENDPOINT_RE.test(command) &&
       GH_RENAME_NEW_NAME_DEFAULT_RE.test(command))
   ) {
+    const renameEvidence = (
+      command.match(RENAME_TO_DEFAULT_RE)?.[0] ??
+      command.match(GH_RENAME_ENDPOINT_RE)?.[0] ??
+      ''
+    )
+      .replaceAll(/\s+/g, ' ')
+      .trim()
     return notify(
-      [
-        "[default-branch-guard] Switching the default branch by renaming won't work while the target name already exists.",
-        '',
-        '  Renaming a branch to `main`/`master` (git branch -m / -M / --move, or the',
-        '  GitHub `.../branches/<src>/rename` API) FAILS if a branch by that name is',
-        '  already present. To switch the default from e.g. `probe` → `main`:',
-        '',
-        '    1. Make sure the branch you are KEEPING has the content you want.',
-        '    2. Delete or relocate the existing `main` first (git branch -D main, or',
-        '       delete the remote ref) so the name is free.',
-        '    3. THEN rename the source: git branch -m <src> main — it inherits default.',
-        '',
-        '  Non-blocking reminder — the rename proceeds.',
-      ].join('\n') + '\n',
+      `💡 default-branch-guard: rename onto \`main\`/\`master\` "${renameEvidence}" fails while the target name already exists — free the name first (delete/relocate the existing branch), then rename the source; non-blocking, the rename proceeds\n`,
     )
   }
 
   const hits: string[] = []
   for (let i = 0, { length } = SCRIPT_CONTEXT_PATTERNS; i < length; i += 1) {
     const pattern = SCRIPT_CONTEXT_PATTERNS[i]!
-    if (pattern.regex.test(command)) {
-      hits.push(pattern.label)
+    const matched = command.match(pattern.regex)?.[0]
+    if (matched !== undefined) {
+      hits.push(`${pattern.label} "${matched}"`)
     }
   }
-  if (SCRIPT_WRITE_RE.test(command) && TRIPLE_DOT_BRANCH_RE.test(command)) {
-    hits.push(
-      'writing a script file with `main..HEAD` / `master..HEAD` literal — ' +
-        'resolve BASE via `git symbolic-ref` instead',
-    )
+  if (SCRIPT_WRITE_RE.test(command)) {
+    const tripleDot = command.match(TRIPLE_DOT_BRANCH_RE)?.[0]
+    if (tripleDot !== undefined) {
+      hits.push(`"${tripleDot}" literal written into a script file`)
+    }
   }
   if (hits.length === 0) {
     return undefined
@@ -132,30 +127,9 @@ export const check = bashGuard((command, payload) => {
 
   void payload
 
-  const lines = [
-    '[default-branch-guard] Command hard-codes a default branch name in scripting context:',
-    '',
-  ]
-  for (let i = 0, { length } = hits; i < length; i += 1) {
-    lines.push(`  • ${hits[i]}`)
-  }
-  lines.push('')
-  lines.push(
-    '  Per CLAUDE.md "Default branch fallback", scripts must look up the',
+  return block(
+    `🚨 default-branch-guard: hard-coded default branch in scripting context — ${hits.join('; ')} — resolve the base via \`git symbolic-ref refs/remotes/origin/HEAD\`, fallback main → master\n`,
   )
-  lines.push("  remote's HEAD and fall back main → master, not hard-code one:")
-  lines.push('')
-  lines.push(
-    "    BASE=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')",
-  )
-  lines.push(
-    '    [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/main && BASE=main',
-  )
-  lines.push(
-    '    [ -z "$BASE" ] && git show-ref --verify --quiet refs/remotes/origin/master && BASE=master',
-  )
-  lines.push('    BASE="${BASE:-main}"')
-  return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({

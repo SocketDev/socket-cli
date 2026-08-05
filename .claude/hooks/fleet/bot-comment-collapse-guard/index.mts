@@ -16,8 +16,8 @@
 // later command, or resolved threads on a PR whose bot summaries were
 // already collapsed, passes without ceremony.
 //
-// Blocks the Stop while violations remain; the message carries the exact
-// `gh api graphql` minimizeComment command per surface. Fails open on gh /
+// Blocks the Stop while violations remain; the message carries the
+// `collapse-bot-comments.mts` command per PR. Fails open on gh /
 // network / parse errors (the guard enforces a hygiene contract, it must
 // never wedge a session over GitHub availability).
 //
@@ -289,21 +289,10 @@ export const check = (payload: ToolCallPayload): GuardResult | undefined => {
     if (violations === undefined || violations.length === 0) {
       continue
     }
-    lines.push(`  ${pr.nameWithOwner}#${pr.number}:`)
+    const surfaces = violations.map(v => `${v.kind} by ${v.author}`).join(', ')
     lines.push(
-      `    Run: node scripts/fleet/collapse-bot-comments.mts ${pr.nameWithOwner} ${pr.number}`,
+      `   ${pr.nameWithOwner}#${pr.number} (${surfaces}) — run: node scripts/fleet/collapse-bot-comments.mts ${pr.nameWithOwner} ${pr.number}`,
     )
-    lines.push('    (resolves the threads, minimizes the bodies, and posts the')
-    lines.push(
-      "    bot's own directive as a FORBIDDEN fallback — no write access needed)",
-    )
-    lines.push('    Manual fallback, one surface at a time:')
-    for (const violation of violations) {
-      lines.push(
-        `    - ${violation.kind} by ${violation.author} (${violation.id})`,
-      )
-      lines.push(`      ${buildMinimizeCommand(violation.id)}`)
-    }
   }
   if (lines.length === 0) {
     return undefined
@@ -311,19 +300,8 @@ export const check = (payload: ToolCallPayload): GuardResult | undefined => {
 
   return block(
     [
-      '🚨 bot-comment-collapse-guard: review threads were resolved this',
-      '   session, but bot review summaries/comments on the same PR(s) are',
-      '   still expanded.',
-      '',
-      '"Resolve the bot comments" means the full visual collapse: resolve',
-      "the threads AND minimize the bot's top-level bodies as RESOLVED.",
-      '',
-      'Still expanded:',
+      '🚨 bot-comment-collapse-guard: threads resolved but bot summaries still expanded — minimize them as RESOLVED via the command(s) below, then end the turn',
       ...lines,
-      '',
-      'Run the `collapse-bot-comments.mts` command(s) above, then end the turn.',
-      '',
-      `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
     ].join('\n'),
   )
 }

@@ -93,26 +93,14 @@ export const check = editGuard((filePath, content) => {
     return undefined
   }
   const rel = path.basename(filePath)
-  const lines: string[] = []
-  lines.push(
-    `[generic-export-name-nudge] ${rel} adds ${generic.length} single-generic-token export${generic.length === 1 ? '' : 's'}:`,
+  const shown = generic
+    .slice(0, 5)
+    .map(n => `"${n}"`)
+    .join(', ')
+  const more = generic.length > 5 ? ` (+${generic.length - 5} more)` : ''
+  return notify(
+    `💡 generic-export-name-nudge: ${rel} adds bare generic export ${shown}${more} — add a domain word so grep finds it (create → createStripeClient)`,
   )
-  const shown = Math.min(generic.length, 5)
-  for (let i = 0; i < shown; i += 1) {
-    lines.push(`  • ${generic[i]}`)
-  }
-  lines.push('')
-  lines.push(
-    'A one-word generic export is a grep-noise magnet for agents (one-word names',
-  )
-  lines.push(
-    'are ~61% unique vs ~96% for three-word). Qualify it with a domain word so a',
-  )
-  lines.push(
-    'future grep finds this symbol, not every unrelated `create`/`parse`/`get` —',
-  )
-  lines.push('e.g. `create` → `createStripeClient`.')
-  return notify(lines.join('\n'))
 })
 
 export const hook = defineHook({

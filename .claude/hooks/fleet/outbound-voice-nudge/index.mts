@@ -194,36 +194,14 @@ export function renderVoiceNudge(
   surface: string,
   hits: readonly VoiceSlopHit[],
 ): string {
-  const banned = hits.filter(h => h.kind === 'banned-word')
-  const tells = hits.filter(h => h.kind === 'ai-tell')
   const lines = [
-    '[outbound-voice-nudge]',
-    `Off-voice prose headed for ${surface}:`,
-    '',
+    `💡 outbound-voice-nudge: off-voice prose headed for ${surface} — rewrite point-first via .claude/skills/fleet/prose/SKILL.md`,
   ]
-  if (banned.length > 0) {
-    lines.push('BANNED — a match here is a verdict, not a heuristic:')
-    for (let i = 0, { length } = banned; i < length; i += 1) {
-      const hit = banned[i]!
-      lines.push(`  • ${hit.term} — ${hit.why}`)
-    }
-    lines.push('')
+  for (let i = 0, { length } = hits; i < length; i += 1) {
+    const hit = hits[i]!
+    const tag = hit.kind === 'banned-word' ? 'BANNED' : 'AI tell'
+    lines.push(`   "${hit.term}" [${tag}] — ${hit.why}`)
   }
-  if (tells.length > 0) {
-    lines.push('Reads machine-written:')
-    for (let i = 0, { length } = tells; i < length; i += 1) {
-      const hit = tells[i]!
-      lines.push(`  • ${hit.term} — ${hit.why}`)
-    }
-    lines.push('')
-  }
-  lines.push(
-    'Rewrite point-first and receipts-first: lead with the outcome, name the',
-    'evidence, drop the hedge-labels. The prose skill is the correction path:',
-    '  .claude/skills/fleet/prose/SKILL.md',
-    '  .claude/skills/fleet/prose/references/conversational.md',
-    '',
-  )
   return lines.join('\n')
 }
 
@@ -239,13 +217,11 @@ export const check = (
     const command = readCommand(payload)
     if (command) {
       prose = extractGhVoiceProse(command)
-      surface =
-        'a GitHub prose surface (PR/issue body or title, comment, review, ' +
-        'release notes, or gist)'
+      surface = 'GitHub'
     }
   } else if (typeof toolName === 'string' && toolName.startsWith('mcp__')) {
     prose = extractMcpVoiceProse(payload)
-    surface = 'an external prose surface (Linear, Notion, or Slack)'
+    surface = 'Linear/Notion/Slack'
     alreadyCovered = false
   }
   if (!prose) {

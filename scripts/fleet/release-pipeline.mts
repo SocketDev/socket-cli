@@ -53,11 +53,14 @@ import {
   runApproveStep,
   runBumpStage,
   runReleaseStage,
+  runScanStage,
   runStagePublish,
   runVerifyStage,
+  scanReceiptLicensesApprove,
   verifyAgainstRegistry,
 } from './release-pipeline/release-runners.mts'
 import { readPkg } from './release-pipeline/seams.mts'
+import { stagedShaFromReceipt } from './release-pipeline/staged-commit.mts'
 import {
   isReceiptCurrent,
   localGatesGreenAt,
@@ -126,6 +129,10 @@ export interface CliOptions {
   localPublish: boolean
   namedVersion: string | undefined
   preflightAll: boolean
+  // Publish pipeline --skip-scan: run the publish stages without the Socket
+  // scan of the staged tarball. The escape hatch is loud — the scan receipt
+  // records that the promoted bytes carry no scan evidence.
+  skipScan: boolean
   // Publish pipeline --yes: approve every eligible staged entry without the
   // interactive multi-select, and let the registry challenge drive the browser
   // web-OTP. The explicit opt-in that makes --approve runnable off a terminal.
@@ -160,6 +167,11 @@ export function persistOutcome(
     dryRun: cfg.dryRun,
     key: cfg.key,
     ms: cfg.ms,
+    // Evidence a later stage addresses by value, not by re-deriving it: the
+    // npm stage id the verify stage matched, and the commit the staged bytes
+    // were built from (see release-pipeline/staged-commit.mts).
+    stageId: outcome.stageId,
+    stagedSha: outcome.stagedSha,
     status: outcome.status,
   })
   saveState(statePath(REPO_ROOT), next)
@@ -213,6 +225,19 @@ export async function runStage(
         cwd,
         dryRun,
         releaseChecksums: state.releaseChecksums,
+        stagedSha: stagedShaFromReceipt(state.stages['stage-publish'], {
+          targetVersion,
+        }),
+        targetVersion,
+      })
+    case 'scan':
+      return await runScanStage({
+        cwd,
+        dryRun,
+        skipScan: cli.skipScan,
+        // The staged upload's own id, recorded by verify — scanning npm's
+        // bytes beats scanning a re-pack of them.
+        stageId: state.stages['verify']?.stageId,
         targetVersion,
       })
     case 'stage-publish':
@@ -411,6 +436,30 @@ export async function runApproveMode(
       'approve already satisfied by a current receipt — continuing into the release stage.',
     )
   } else {
+    // The scan gate, one link before the promote: the staged bytes may only be
+    // approved once something has INSPECTED them. Same shape as the release
+    // stage refusing without a passed approve — and, like that gate, it only
+    // guards a real promote: the registry-truth path above mints an approve
+    // receipt for an ALREADY-PUBLIC version, where there is nothing left to
+    // gate and stranding a tagless published version is the worse failure.
+    const scan = state_.stages['scan']
+    if (
+      !scanReceiptLicensesApprove(scan, { dryRun: cli.dryRun, targetVersion })
+    ) {
+      const saw = scan
+        ? `scan ${scan.status}${scan.dryRun ? ' [dry-run]' : ''} keyed at ${scan.key}`
+        : 'no scan receipt'
+      logger.fail(
+        `No scan receipt for ${targetVersion || '<no target version>'} — refusing to approve unscanned bytes.\n` +
+          `  Where: ${statePath(REPO_ROOT)}\n` +
+          `  Saw ${saw}; wanted a passed (or explicitly skipped) scan keyed at the target version.\n` +
+          `  Fix: run \`node scripts/fleet/publish-pipeline.mts\` — it stages, verifies, then scans; ` +
+          `re-run --approve after. To promote without scan evidence, re-run the pipeline with ` +
+          `--skip-scan (the receipt records that nothing inspected these bytes).`,
+      )
+      process.exitCode = 1
+      return
+    }
     logger.log('── stage: approve ──')
     const approveStartMs = Date.now()
     const outcome = await runApproveStep({
@@ -449,6 +498,10 @@ export async function runApproveMode(
     dryRun: cli.dryRun,
     releaseChecksums: state_.releaseChecksums,
     seams: opts.seams,
+    // Tag the commit the staged bytes came from, not whatever HEAD reads now.
+    stagedSha: stagedShaFromReceipt(state_.stages['stage-publish'], {
+      targetVersion,
+    }),
     targetVersion,
   })
   persist(state_, 'release', releaseOutcome, {
@@ -629,6 +682,9 @@ async function main(): Promise<void> {
     namedVersion:
       typeof values['version'] === 'string' ? values['version'] : undefined,
     preflightAll: !!values['preflight-all'],
+    // The release pipeline never stages or scans a package — the field exists
+    // to satisfy the shared CliOptions shape.
+    skipScan: false,
     // The release pipeline never promotes — runApproveStep is unreachable
     // here; the field exists to satisfy the shared CliOptions shape.
     yes: false,

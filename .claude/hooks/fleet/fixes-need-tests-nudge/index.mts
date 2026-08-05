@@ -35,9 +35,9 @@ import type { GuardResult } from '../_shared/guard.mts'
 import { resolveProjectDir } from '../_shared/project-dir.mts'
 import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 
-// Cap on how many source paths the reminder lists, so a large commit's message
-// stays readable; the overflow is summarized as a count.
-const MAX_LISTED_SOURCE = 10
+// Cap on how many source paths the reminder lists, so a large commit's
+// one-line message stays readable; the overflow is summarized as a count.
+const MAX_LISTED_SOURCE = 3
 
 /**
  * True when a path is a TEST file — a change here means tests WERE touched, so
@@ -119,26 +119,10 @@ export function reviewChangedPaths(paths: readonly string[]): GuardResult {
 }
 
 function buildMessage(source: readonly string[]): string {
-  const shown = source.slice(0, MAX_LISTED_SOURCE)
-  const lines = shown.map(p => `    - ${p}`)
-  const overflow = source.length - shown.length
-  if (overflow > 0) {
-    lines.push(`    ...and ${overflow} more`)
-  }
-  return [
-    '[fixes-need-tests-nudge] This commit changes source but adds no test',
-    '',
-    '  Source changed, with no matching test change:',
-    ...lines,
-    '',
-    '  A fix ships the unit test that covers the fixed behavior. If a layer',
-    "  isn't unit-testable, extract the pure logic and test that; otherwise",
-    '  state why in the PR.',
-    '',
-    '  Reminder-only; not a block. A docs/config/chore-only commit (no source',
-    '  files) is exempt, as is a cascade (FLEET_SYNC=1).',
-    '',
-  ].join('\n')
+  const shown = source.slice(0, MAX_LISTED_SOURCE).join(', ')
+  const overflow = source.length - MAX_LISTED_SOURCE
+  const more = overflow > 0 ? ` (+${overflow} more)` : ''
+  return `💡 fixes-need-tests-nudge: source changed with no test change "${shown}"${more} — ship the covering unit test (or extract + test the pure logic, or state why in the PR)`
 }
 
 /**

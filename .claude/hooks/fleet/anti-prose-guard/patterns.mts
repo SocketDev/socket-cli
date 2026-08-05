@@ -150,6 +150,40 @@ export function matchProsePatterns(
 }
 
 /**
+ * One categorical-ban hit with its evidence: the exact matched text and a
+ * short surrounding snippet, so a verdict can point at the offending words
+ * instead of lecturing doctrine.
+ */
+export interface ProseBanHit {
+  readonly label: string
+  readonly matched: string
+  readonly snippet: string
+}
+
+/**
+ * Scan `content` for the categorical bans and return each hit WITH its
+ * matched text + a one-line context snippet. The Stop verdict renders these
+ * tersely; the edit-time surfaces keep the fuller `why` from the pattern.
+ */
+export function findCategoricalProseBanHits(content: string): ProseBanHit[] {
+  const hits: ProseBanHit[] = []
+  for (let i = 0, { length } = CATEGORICAL_PROSE_BANS; i < length; i += 1) {
+    const pattern = CATEGORICAL_PROSE_BANS[i]!
+    const match = pattern.regex.exec(content)
+    if (match) {
+      const start = Math.max(0, match.index - 28)
+      const end = Math.min(content.length, match.index + match[0].length + 28)
+      hits.push({
+        label: pattern.label,
+        matched: match[0],
+        snippet: content.slice(start, end).replaceAll(/\s+/g, ' ').trim(),
+      })
+    }
+  }
+  return hits
+}
+
+/**
  * Scan `content` for prose antipatterns. Returns the matched patterns (empty
  * when clean).
  */

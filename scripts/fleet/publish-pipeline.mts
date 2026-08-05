@@ -36,8 +36,10 @@
  *   npm-publish.yml workflow so the staged upload runs in CI under OIDC —
  *   nothing public yet; `--local` is the explicit offline escape into a
  *   local `pnpm stage publish`) → verify (pre-approve integrity gate;
- *   stashes the release-asset checksums) → approve (explicit, never part of
- *   a run) → release (same invocation as approve, cut LAST).
+ *   stashes the release-asset checksums) → scan (the staged tarball goes off
+ *   to a Socket full scan; error-action alerts fail the run, `--skip-scan`
+ *   skips it loudly) → approve (explicit, never part of a run; REFUSES
+ *   without a scan receipt) → release (same invocation as approve, cut LAST).
  *
  *   Tag-gap healing: `--reconcile X.Y.Z` is the stateless registry-truth
  *   reconcile for a version that is already LIVE on the registry but missing
@@ -49,7 +51,7 @@
  *
  *   Usage: node scripts/fleet/publish-pipeline.mts [--dry-run] [--approve]
  *          [--status] [--reset] [--tag <dist-tag>] [--local]
- *          [--reconcile X.Y.Z]
+ *          [--reconcile X.Y.Z] [--skip-scan]
  */
 import process from 'node:process'
 
@@ -88,9 +90,10 @@ const logger = getDefaultLogger()
 
 const USAGE = `Usage: node scripts/fleet/publish-pipeline.mts [options]
 
-  (no flags)             stage-publish + verify the version the release
+  (no flags)             stage-publish + verify + scan the version the release
                          pipeline already bumped (refuses if none)
   --approve              SEPARATE explicit promote step (browser web-OTP 2FA);
+                         REFUSES without a scan receipt for the target version;
                          on success the SAME invocation continues into the
                          release stage (tag + immutable GH release, cut LAST
                          behind a registry-liveness gate)
@@ -105,6 +108,10 @@ const USAGE = `Usage: node scripts/fleet/publish-pipeline.mts [options]
                          Runs at the version's content commit; no staging, no
                          npm auth, no OTP — divergent bytes fail loud, never
                          force a tag
+  --skip-scan            run the publish stages WITHOUT the Socket scan of the
+                         staged tarball. The escape hatch, not a default: the
+                         scan receipt then records — loudly — that nothing
+                         inspected the bytes the approve promotes
   --status               print the receipt table and exit
   --reset                discard pipeline state and exit
   --tag <dist-tag>       npm dist-tag for the staged publish (default latest)
@@ -225,6 +232,7 @@ async function main(): Promise<void> {
       local: { default: false, type: 'boolean' },
       reconcile: { type: 'string' },
       reset: { default: false, type: 'boolean' },
+      'skip-scan': { default: false, type: 'boolean' },
       status: { default: false, type: 'boolean' },
       tag: { default: 'latest', type: 'string' },
       yes: { default: false, type: 'boolean' },
@@ -249,6 +257,7 @@ async function main(): Promise<void> {
     localPublish: !!values['local'],
     namedVersion: undefined,
     preflightAll: false,
+    skipScan: !!values['skip-scan'],
     yes: !!values['yes'],
   }
   const reconcileVersion =

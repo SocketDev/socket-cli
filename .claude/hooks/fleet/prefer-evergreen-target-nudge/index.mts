@@ -87,22 +87,14 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   if (findings.length === 0) {
     return undefined
   }
-  const lines = [
-    '[prefer-evergreen-target-nudge] Conservative build/lang target spotted:',
-    '',
-  ]
+  const lines: string[] = []
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  • saw ${f.saw}, prefer ${f.want}`)
+    const prefix = i === 0 ? '💡 prefer-evergreen-target-nudge: ' : '   '
+    lines.push(
+      `${prefix}saw "${f.saw}" — prefer ${f.want}; fleet default is evergreen`,
+    )
   }
-  lines.push('')
-  lines.push(
-    '  Fleet default is evergreen / latest-and-greatest. For an auto-updating',
-  )
-  lines.push(
-    '  runtime (Chrome extension, web, CI-pinned Node) pin the latest target,',
-  )
-  lines.push('  not a back-version.')
   return notify(lines.join('\n'))
 }
 

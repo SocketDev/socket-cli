@@ -79,6 +79,10 @@ import { spawnTimeoutMs } from '../_shared/spawn-timeout.mts'
 const PER_PROBE_TIMEOUT_MS = 1500
 const MAX_PROBES = 120
 
+// The one-shot manual recovery command every repair-path verdict points at.
+const MANUAL_REPAIR_COMMAND =
+  'rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install'
+
 // Every filesystem location this hook touches, derived from the project dir the
 // session acts on. Resolved at RUNTIME, see the header note on snapshot safety.
 export interface RepoPaths {
@@ -308,13 +312,10 @@ export function repairGutted(paths: RepoPaths): string {
   })
   const relinked = existsSync(path.join(paths.nodeModules, '@socketsecurity'))
   if (r.status === 0 && relinked) {
-    return 'node_modules was gutted (pnpm store intact, links missing, stale workspace-state marker). Auto-repaired: removed the stale marker(s) + `CI=true pnpm install` re-linked from the store. Hooks are healthy again.'
+    return 'node_modules was gutted — auto-repaired (removed stale markers, `CI=true pnpm install` re-linked from the store); hooks are healthy again'
   }
   // Install ran but didn't restore — surface the manual command, don't loop.
-  return (
-    'node_modules is gutted (pnpm store intact, links missing) and the auto-repair did not restore it. Run manually:\n' +
-    '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install'
-  )
+  return `node_modules is gutted and auto-repair did not restore it — run: ${MANUAL_REPAIR_COMMAND}`
 }
 /* c8 ignore stop */
 
@@ -419,20 +420,15 @@ export function formatReport(
       allMissing.add(p)
     }
   }
+  const installList = [...allMissing].toSorted().join(' ')
   const lines: string[] = []
   lines.push(
-    `${failures.length} hook${failures.length === 1 ? '' : 's'} failed to load due to missing packages:`,
+    `${failures.length} hook${failures.length === 1 ? '' : 's'} failed to load — fix: \`pnpm i ${installList}\` (a fleet-cascade dep may also need its catalog entry in pnpm-workspace.yaml)`,
   )
   for (const f of failures) {
     const relPath = path.relative(projectDir, f.hookPath)
-    lines.push(`  - ${relPath} → ${f.missingPackages.join(', ')}`)
+    lines.push(`   ${relPath} → ${f.missingPackages.join(', ')}`)
   }
-  const installList = [...allMissing].toSorted().join(' ')
-  lines.push('')
-  lines.push(`Fix: \`pnpm i ${installList}\``)
-  lines.push(
-    'If the dep is a fleet-canonical cascade, the catalog entry + soak-bypass may also need adding (see pnpm-workspace.yaml).',
-  )
   return lines.join('\n')
 }
 
@@ -457,8 +453,7 @@ export function check(payload: ToolCallPayload): GuardResult {
       // Already attempted this session and it didn't take — don't loop; point
       // at the manual command.
       return notify(
-        '[broken-hook-detector] node_modules is gutted and auto-repair was already attempted this session. Run manually:\n' +
-          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+        `🚨 broken-hook-detector: node_modules is gutted and auto-repair was already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
       )
     }
     if (pnpmInstallRunning()) {
@@ -466,11 +461,10 @@ export function check(payload: ToolCallPayload): GuardResult {
       // that gutted things). Never run a second concurrently — that collision
       // is what causes the gutting.
       return notify(
-        '[broken-hook-detector] node_modules looks gutted but a `pnpm install` is already running — not starting a second (collision risk). If it finishes without restoring, run:\n' +
-          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+        `🚨 broken-hook-detector: node_modules looks gutted but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
       )
     }
-    return notify(`[broken-hook-detector] ${repairGutted(paths)}`)
+    return notify(`🚨 broken-hook-detector: ${repairGutted(paths)}`)
     /* c8 ignore stop */
   }
 
@@ -481,17 +475,15 @@ export function check(payload: ToolCallPayload): GuardResult {
     /* c8 ignore start - repair/guard branches depend on live machine state + subprocess spawning; subprocess tests cover them */
     if (existsSync(paths.repairSentinel)) {
       return notify(
-        '[broken-hook-detector] node_modules has a dangling @socketsecurity/lib-stable symlink (a removed git worktree orphaned it) and auto-repair was already attempted this session. Run manually:\n' +
-          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+        `🚨 broken-hook-detector: dangling @socketsecurity/lib-stable symlink (a removed git worktree orphaned it), auto-repair already attempted this session — run: ${MANUAL_REPAIR_COMMAND}`,
       )
     }
     if (pnpmInstallRunning()) {
       return notify(
-        '[broken-hook-detector] node_modules has a dangling @socketsecurity/lib-stable symlink but a `pnpm install` is already running — not starting a second (collision risk). If it finishes without restoring, run:\n' +
-          '  rm node_modules/.pnpm-workspace-state-v1.json node_modules/.modules.yaml && CI=true pnpm install',
+        `🚨 broken-hook-detector: dangling @socketsecurity/lib-stable symlink but a \`pnpm install\` is already running (collision risk, not starting a second) — if it finishes without restoring, run: ${MANUAL_REPAIR_COMMAND}`,
       )
     }
-    return notify(`[broken-hook-detector] ${repairGutted(paths)}`)
+    return notify(`🚨 broken-hook-detector: ${repairGutted(paths)}`)
     /* c8 ignore stop */
   }
 
@@ -510,7 +502,9 @@ export function check(payload: ToolCallPayload): GuardResult {
   if (failures.length === 0) {
     return undefined
   }
-  return notify(`[broken-hook-detector] ${formatReport(failures, projectDir)}`)
+  return notify(
+    `🚨 broken-hook-detector: ${formatReport(failures, projectDir)}`,
+  )
   /* c8 ignore stop */
 }
 

@@ -378,54 +378,31 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   }
 
   const lines = [
-    '[compound-lessons-nudge] Repeat finding detected without rule promotion:',
-    '',
+    '[compound-lessons-nudge] repeat finding without rule promotion — codify it in CLAUDE.md / a hook / a skill, citing the case generically in a `**Why:**` line:',
   ]
   if (maxOccurrences >= RECURRENCE_THRESHOLD) {
     lines.push(
-      `  ⚠ This finding has now recurred across ${maxOccurrences} sessions ` +
-        '(learning ledger). This is exactly the "fix it twice → codify it"',
+      `   recurred across ${maxOccurrences} sessions (learning ledger) — promote it to a rule THIS turn, do not fix it again`,
     )
-    lines.push('  case — promote it to a rule THIS turn, do not fix it again.')
-    lines.push('')
   }
   for (let i = 0, { length } = proseHits; i < length; i += 1) {
     const hit = proseHits[i]!
-    lines.push(`  • prose: "${hit.label}" — …${hit.snippet}…`)
+    lines.push(`   • prose: "${hit.label}" — …${hit.snippet}…`)
   }
   for (let i = 0, { length } = editHits; i < length; i += 1) {
     const hit = editHits[i]!
-    lines.push(`  • repeat-edit: ${hit.path}`)
+    lines.push(`   • repeat-edit: ${hit.path}`)
   }
-  lines.push('')
-  lines.push('  CLAUDE.md "Compound lessons into rules": when the same kind of')
-  lines.push(
-    '  finding fires twice, promote it to a rule. Land it in CLAUDE.md,',
-  )
-  lines.push(
-    '  a `.claude/hooks/*` block, or a skill prompt — pick the lowest-',
-  )
-  lines.push('  friction surface. Cite the motivating case in a `**Why:**`')
-  lines.push('  line GENERICALLY, as a timeless example — not a dated incident')
-  lines.push('  log (no dates / version deltas / percentages / SHAs).')
-  lines.push('')
-  // If the rule is fleet-wide, not just this repo, it belongs in
-  // socket-wheelhouse/template/. Help the user find the right path
-  // — or fall back to the PR link if the wheelhouse isn't local.
   const wheelhouseMd = findWheelhouseClaudeMd(resolveProjectDir())
   /* c8 ignore start - both arms depend on resolveProjectDir(): truthy when run from the wheelhouse repo (always in CI/local), falsy when run from an unrelated dir — neither arm can be forced from in-process tests without process.chdir() */
   if (wheelhouseMd) {
-    lines.push(`  Fleet rule? Edit: ${wheelhouseMd}`)
-    lines.push(
-      '  (Then re-cascade via `socket-wheelhouse/scripts/sync-scaffolding.mts`.)',
-    )
+    lines.push(`   Fleet rule? Edit: ${wheelhouseMd}, then cascade`)
   } else {
-    lines.push('  Fleet rule? Wheelhouse not found locally. Open a PR at')
-    lines.push('    https://github.com/SocketDev/socket-wheelhouse')
-    lines.push('  editing `template/CLAUDE.md` (or `template/.claude/hooks/`).')
+    lines.push(
+      '   Fleet rule? PR to https://github.com/SocketDev/socket-wheelhouse (template/)',
+    )
   }
   /* c8 ignore stop */
-  lines.push('')
   return notify(lines.join('\n') + '\n')
 }
 

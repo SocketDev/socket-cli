@@ -107,10 +107,9 @@ export function checkEdition(): Finding[] {
       {
         kind: 'edition-mismatch',
         message:
-          'SOCKET_API_TOKEN is set but the SFW shim is the free build. ' +
-          'Run `node .claude/hooks/fleet/setup-security-tools/install.mts` to ' +
-          'switch to sfw-enterprise (org-aware malware scanning + private ' +
-          'package data).',
+          'SOCKET_API_TOKEN is set but the SFW shim is the free build — run ' +
+          '`node .claude/hooks/fleet/setup-security-tools/install.mts` to ' +
+          'switch to sfw-enterprise',
       },
     ]
   }
@@ -159,14 +158,10 @@ export async function checkShims(): Promise<Finding[]> {
     {
       kind: 'broken-shim',
       message:
-        `SFW shim${broken.length === 1 ? '' : 's'} point to a missing ` +
-        `target: ${broken.join(', ')}. The wrapped binary moved or was ` +
-        `evicted (rack rotation, dlx cleanup, version-manager upgrade). ` +
-        `Every command through ${broken.length === 1 ? 'that shim' : 'those shims'} ` +
-        `currently fails with "No such file or directory." Run ` +
-        `\`node scripts/fleet/setup/tools.mjs\` (or the interactive ` +
-        `\`node .claude/hooks/fleet/setup-security-tools/install.mts\`) to ` +
-        `rewrite the shims.`,
+        `SFW shim${broken.length === 1 ? '' : 's'} point${broken.length === 1 ? 's' : ''} ` +
+        `at a missing target "${broken.join(', ')}" (every command through ` +
+        `${broken.length === 1 ? 'that shim' : 'those shims'} fails ENOENT) — run ` +
+        `\`node scripts/fleet/setup/tools.mjs\` (or interactive install.mts) to rewrite`,
     },
   ]
 }
@@ -229,10 +224,9 @@ export async function checkToken401(
         {
           kind: 'token-401',
           message:
-            'Socket API returned 401 — the configured SOCKET_API_KEY ' +
-            'is invalid, expired, or lacks the required permissions. ' +
-            'Run `node .claude/hooks/fleet/setup-security-tools/install.mts ' +
-            '--rotate` to re-prompt and overwrite the keychain entry.',
+            'Socket API returned 401 (token invalid/expired) — run ' +
+            '`node .claude/hooks/fleet/setup-security-tools/install.mts ' +
+            '--rotate` to overwrite the keychain entry',
         },
       ]
     }
@@ -335,9 +329,10 @@ export const hook = defineHook({
     if (findings.length === 0) {
       return undefined
     }
-    const lines = ['[setup-security-tools] Health check:']
+    const lines: string[] = []
     for (let i = 0, { length } = findings; i < length; i += 1) {
-      lines.push(`  • ${findings[i]!.message}`)
+      const prefix = i === 0 ? 'ℹ setup-security-tools: ' : '   '
+      lines.push(`${prefix}${findings[i]!.message}`)
     }
     return notify(lines.join('\n'))
   },

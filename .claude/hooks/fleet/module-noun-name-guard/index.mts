@@ -153,28 +153,17 @@ export function classifyModulePath(absPath: string): Verdict {
   const domain = parts[parts.length - 1]!
   return {
     ok: false,
-    message: `${filename} is a verb-phrase (an action), not a domain noun. Fleet modules are concise NOUN names that group the related functions for a domain.`,
-    suggestion: `Add this function to an existing noun module (e.g. \`${domain}.ts\`), or name the file after its domain noun — not \`${lead}-…\`.`,
+    message: `${filename} is a verb-phrase (action "${lead}"), not a domain noun`,
+    suggestion: `add the function to an existing noun module (e.g. \`${domain}.ts\`), or name the file after its domain noun`,
   }
 }
 
 export function emitBlock(filePath: string, verdict: Verdict): string {
-  const lines: string[] = []
-  lines.push('[module-noun-name-guard] Blocked: verb-phrase module name.')
-  lines.push(`  File:       ${filePath}`)
-  if (verdict.message) {
-    lines.push(`  Issue:      ${verdict.message}`)
-  }
-  if (verdict.suggestion) {
-    lines.push(`  Suggestion: ${verdict.suggestion}`)
-  }
-  lines.push('')
-  lines.push('  Fleet module-naming convention:')
-  lines.push('    - A module is a NOUN naming a domain (manifest, tarball).')
-  lines.push('    - It GROUPS the related functions; not one method per file.')
-  lines.push('    - trimPublishManifest + createPackageJson both live in')
-  lines.push('      manifest.ts, reachable via one `exports` entry.')
-  return lines.join('\n') + '\n'
+  const issue = verdict.message ?? 'verb-phrase module name, not a domain noun'
+  const fix =
+    verdict.suggestion ??
+    'name the file after the domain noun its functions share'
+  return `🚨 module-noun-name-guard: blocked "${filePath}" — ${issue} — ${fix}`
 }
 
 export const check = editGuard((filePath, content, payload) => {

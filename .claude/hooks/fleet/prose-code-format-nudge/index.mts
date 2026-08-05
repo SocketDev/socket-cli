@@ -47,26 +47,12 @@ export const check = editGuard((filePath, content) => {
   if (!hits.length) {
     return undefined
   }
-  const lines = [
-    '[prose-code-format-nudge] bare known library/tool names in prose — ' +
-      'wrap each in backticks:',
-    '',
-    `  File: ${filePath}`,
-    '',
-  ]
-  for (let i = 0, { length } = hits; i < length; i += 1) {
-    const h = hits[i]!
-    lines.push(`  ${h.line}:${h.col}  ${h.name} -> \`${h.name}\``)
-  }
-  lines.push(
-    '',
-    '  Known software identifiers read as code, not prose — a code span keeps',
-    '  them unambiguous and consistent. Code-format only (no links). Advisory:',
-    '  widen EXTRA_NAMES in _shared/known-names.mts if a real name is missed,',
-    '  or add to AMBIGUOUS_DENYLIST if this is a false positive.',
-    '',
+  const spans = hits
+    .map(h => `${h.line}:${h.col} ${h.name} -> \`${h.name}\``)
+    .join(', ')
+  return notify(
+    `ℹ prose-code-format-nudge: bare software names in ${filePath} — ${spans} (false positive? add to AMBIGUOUS_DENYLIST in _shared/known-names.mts)\n`,
   )
-  return notify(lines.join('\n'))
 })
 
 export const hook = defineHook({

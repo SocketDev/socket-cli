@@ -183,31 +183,14 @@ export const check = bashGuard((command, payload: ToolCallPayload) => {
   if (hits.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '[scan-label-in-commit-guard] Blocked: scan-report-internal label in commit message.',
-  )
-  lines.push('')
+  const lines: string[] = [
+    '🚨 scan-label-in-commit-guard: blocked a scan-report label in the commit message — inline the actual finding text ("fix B5" means nothing outside the scan session)',
+  ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const h = hits[i]!
-    lines.push(`  Line ${h.line}: ${h.label} — "${h.snippet}"`)
+    lines.push(`   Line ${h.line}: ${h.label} — "${h.snippet}"`)
   }
-  lines.push('')
-  lines.push(
-    '  Labels like B1 / M9 / H3 / L4 come from /fleet:scanning-quality',
-  )
-  lines.push(
-    '  and /fleet:scanning-security reports. Scratch-pad IDs that mean',
-  )
-  lines.push('  nothing outside the original session — a future reader of')
-  lines.push('  `git log` who does not have the report cannot decode them.')
-  lines.push('')
-  lines.push('  Rewrite the message to inline the actual finding text:')
-  lines.push('    ✗ fix(http-request): B5 download truncation race')
-  lines.push(
-    '    ✓ fix(http-request/download): settle on fileStream finish, not res end',
-  )
-  return block(lines.join('\n') + '\n')
+  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

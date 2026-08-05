@@ -196,7 +196,7 @@ const LEAK_WARNING_PATTERNS: readonly RegExp[] = [
   /\bleaked into (?:the )?transcript\b/i,
   /\btoken (?:value )?(?:was )?(?:briefly )?visible (?:to me )?(?:at one point )?(?:in )?(?:the )?(?:context|tool output|transcript)\b/i,
   // Bright-red rotation banner shape the security-incident block uses.
-  /(?:⚠️|⚠|!)+\s*Rotate the token\b/i,
+  /(?:!|⚠|💡)+\s*Rotate the token\b/i,
   // "appears in transcript" / "in conversation transcript"
   /\b(?:appeared|exposed|present) in (?:the )?(?:conversation )?transcript\b/i,
   // "security incident notice" — used by my Token-Hygiene memory

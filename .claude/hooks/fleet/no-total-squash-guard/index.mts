@@ -155,40 +155,7 @@ export function matchTotalSquash(
 }
 
 export function blockMessage(match: TotalSquashMatch): string {
-  const lines: string[] = []
-  lines.push(
-    '[no-total-squash-guard] Blocked: this force push collapses history to ONE commit.',
-  )
-  lines.push(
-    `  Branch ${match.branch}: replaces ${match.replaced} remote commits with ${match.added}.`,
-  )
-  lines.push('')
-  lines.push('  "Consolidate" means reducing history LOGICALLY — group related')
-  lines.push('  commits (cascade waves, one feature, one refactor theme) and')
-  lines.push('  squash within each group — not collapsing everything into a')
-  lines.push('  single commit. A many-to-1 rewrite destroys the grouping that')
-  lines.push('  bisects, reverts, and release notes depend on.')
-  lines.push('')
-  lines.push('  Do this instead:')
-  lines.push('    1. Pick logical checkpoints in the original order')
-  lines.push('       (git log --reverse).')
-  lines.push('    2. Build one commit per group (interactive rebase, or a git')
-  lines.push('       commit-tree chain over the checkpoint trees for exact')
-  lines.push('       content).')
-  lines.push('    3. Verify the final tree matches the old tip before pushing:')
-  lines.push(
-    '       test "$(git rev-parse NEW^{tree})" = "$(git rev-parse OLD^{tree})"',
-  )
-  lines.push('')
-  lines.push('  For an intentional whole-branch mirror squash, use the')
-  lines.push('  squashing-history skill (its sentinel passes this guard after')
-  lines.push('  a byte-verified backup).')
-  lines.push('')
-  lines.push(
-    '  To proceed anyway, the user must type the EXACT phrase in a new message:',
-  )
-  lines.push(`    ${BYPASS_PHRASE}`)
-  return lines.join('\n')
+  return `🚨 no-total-squash-guard: blocked force push to "${match.branch}" — replaces ${match.replaced} remote commits with ${match.added} — squash into logical groups instead, or use the squashing-history skill for a mirror squash (bypass: user types "${BYPASS_PHRASE}")`
 }
 
 export const check = bashGuard((command, payload): GuardResult => {

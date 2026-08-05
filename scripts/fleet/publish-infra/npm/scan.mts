@@ -214,6 +214,58 @@ export interface PolicyFailingAlert {
 }
 
 /**
+ * Every alert the org security policy has an opinion about, split by the
+ * action that policy assigns it. `error` blocks a promotion; `warn` does not,
+ * but the publish pipeline's scan stage records the count so a clean-but-noisy
+ * artifact is visible in the receipt instead of rounding to "passed". Pure.
+ */
+export interface PolicyAlertSummary {
+  error: PolicyFailingAlert[]
+  /**
+   * Total alerts seen across every artifact, whatever the policy says about
+   * them — the denominator that makes "0 error, 0 warn" readable as "the scan
+   * evaluated N alerts", not "the scan saw nothing".
+   */
+  total: number
+  warn: PolicyFailingAlert[]
+}
+
+/**
+ * Pure policy evaluation: bucket every artifact alert by its org
+ * security-policy action. This is the report-level gate semantic — the org's
+ * own policy decides what blocks, not a hardcoded severity floor.
+ */
+export function summarizePolicyAlerts(
+  artifacts: ReadonlyArray<{
+    alerts?:
+      | ReadonlyArray<{ severity?: string | undefined; type: string }>
+      | undefined
+    name?: string | undefined
+    version?: string | undefined
+  }>,
+  policyRules: Readonly<Record<string, { action?: string | undefined }>>,
+): PolicyAlertSummary {
+  const summary: PolicyAlertSummary = { error: [], total: 0, warn: [] }
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const artifact = artifacts[i]!
+    const alerts = artifact.alerts ?? []
+    for (const alert of alerts) {
+      summary.total += 1
+      const action = policyRules[alert.type]?.action
+      if (action !== 'error' && action !== 'warn') {
+        continue
+      }
+      summary[action].push({
+        artifact: `${artifact.name ?? '<unnamed>'}@${artifact.version ?? '?'}`,
+        severity: alert.severity ?? 'unknown',
+        type: alert.type,
+      })
+    }
+  }
+  return summary
+}
+
+/**
  * Pure policy evaluation: collect every alert whose org security-policy
  * action is `error`. This is the report-level:error gate semantic — the org's
  * own policy decides what blocks, not a hardcoded severity floor.
@@ -228,21 +280,7 @@ export function collectPolicyFailingAlerts(
   }>,
   policyRules: Readonly<Record<string, { action?: string | undefined }>>,
 ): PolicyFailingAlert[] {
-  const failing: PolicyFailingAlert[] = []
-  for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const artifact = artifacts[i]!
-    const alerts = artifact.alerts ?? []
-    for (const alert of alerts) {
-      if (policyRules[alert.type]?.action === 'error') {
-        failing.push({
-          artifact: `${artifact.name ?? '<unnamed>'}@${artifact.version ?? '?'}`,
-          severity: alert.severity ?? 'unknown',
-          type: alert.type,
-        })
-      }
-    }
-  }
-  return failing
+  return summarizePolicyAlerts(artifacts, policyRules).error
 }
 
 // Full-scan payload shapes vary by endpoint version (a bare artifact array vs
@@ -336,6 +374,62 @@ export async function scanStagedEntry(
       }
     | undefined,
 ): Promise<boolean> {
+  return (await scanStagedEntryDetailed(entry, options)).ok
+}
+
+/**
+ * What one staged-entry scan concluded, with the evidence a receipt can
+ * record. `ok` carries the same verdict {@link scanStagedEntry} returns — the
+ * gate blocks on `error`-action alerts only — while `warnAlerts` and
+ * `artifactCount` keep the non-blocking findings visible instead of rounding a
+ * noisy-but-passing artifact down to a bare "passed". `detail` is a
+ * one-line human summary; `scanId` is the Socket full-scan id (absent when the
+ * run never got that far).
+ */
+export interface StagedScanVerdict {
+  artifactCount: number
+  detail: string
+  errorAlerts: PolicyFailingAlert[]
+  ok: boolean
+  scanId?: string | undefined
+  warnAlerts: PolicyFailingAlert[]
+}
+
+// A refusal verdict: the scan reached no conclusion about the bytes, which is
+// a FAILURE here, never a pass. `detail` is what the receipt records.
+function scanRefused(detail: string): StagedScanVerdict {
+  return {
+    artifactCount: 0,
+    detail,
+    errorAlerts: [],
+    ok: false,
+    warnAlerts: [],
+  }
+}
+
+/**
+ * {@link scanStagedEntry} with its evidence kept: identical gate semantics —
+ * only `error`-action alerts block — but the verdict carries the scan id, the
+ * artifact count, and the warn-action alerts so a pipeline stage can record
+ * WHAT the scan saw. Fails closed on every unreachable / unrecognized path,
+ * exactly as the boolean form does.
+ */
+export async function scanStagedEntryDetailed(
+  entry: {
+    name: string
+    version: string
+  },
+  options?:
+    | {
+        context?: SocketScanContext | undefined
+        packTarball?:
+          | ((name: string, version: string) => Promise<string | undefined>)
+          | undefined
+        runThreat?: typeof runLocalThreatScan | undefined
+        threatScan?: boolean | undefined
+      }
+    | undefined,
+): Promise<StagedScanVerdict> {
   const {
     context,
     packTarball = defaultPackTarball,
@@ -354,7 +448,9 @@ export async function scanStagedEntry(
   }
   const scanContext = context ?? (await preflightSocketScanAuth())
   if (!scanContext) {
-    return false
+    return scanRefused(
+      'Socket scan gate unavailable (no usable API token / org) — no verdict on these bytes',
+    )
   }
   const { orgSlug, sdk } = scanContext
   const { name, version } = entry
@@ -363,7 +459,9 @@ export async function scanStagedEntry(
     logger.fail(
       `Scan gate: could not pack ${name}@${version} locally; refusing to approve unscanned bytes.`,
     )
-    return false
+    return scanRefused(
+      `no tarball to scan for ${name}@${version} — every artifact source came up empty`,
+    )
   }
   const tmpRoot = os.tmpdir()
   try {
@@ -391,19 +489,25 @@ export async function scanStagedEntry(
           `Scan gate: archive full-scan create failed for ${name}@${version} ` +
             `(status ${created.status}${created.error ? `: ${String(created.error)}` : ''}).`,
         )
-        return false
+        return scanRefused(
+          `archive full-scan create failed for ${name}@${version} (status ${created.status})`,
+        )
       }
     } catch (e) {
       logger.fail(
         `Scan gate: archive full-scan create threw for ${name}@${version} (${errorMessage(e)}).`,
       )
-      return false
+      return scanRefused(
+        `archive full-scan create threw for ${name}@${version}: ${errorMessage(e)}`,
+      )
     }
     if (!scanId) {
       logger.fail(
         `Scan gate: archive full-scan create returned no scan id for ${name}@${version}; not approving.`,
       )
-      return false
+      return scanRefused(
+        `archive full-scan create returned no scan id for ${name}@${version}`,
+      )
     }
     let artifacts: FullScanArtifact[]
     let policyRules: SecurityPolicyRules
@@ -416,7 +520,9 @@ export async function scanStagedEntry(
         logger.fail(
           `Scan gate: could not read the scan or the org security policy for ${name}@${version}; not approving.`,
         )
-        return false
+        return scanRefused(
+          `could not read full scan ${scanId} or the org security policy for ${name}@${version}`,
+        )
       }
       // Fail closed on an unrecognized or empty scan/policy: an unknown
       // response shape (or the SDK's empty-body → `{}`) must never read as
@@ -429,7 +535,9 @@ export async function scanStagedEntry(
           `Scan gate: full scan for ${name}@${version} returned no recognizable ` +
             'artifacts; refusing to approve bytes the scan did not evaluate.',
         )
-        return false
+        return scanRefused(
+          `full scan ${scanId} returned no recognizable artifacts for ${name}@${version} — nothing was evaluated`,
+        )
       }
       const rules = extractSecurityPolicyRules(policy.data)
       if (!rules) {
@@ -437,7 +545,9 @@ export async function scanStagedEntry(
           `Scan gate: org security policy for ${name}@${version} was empty or ` +
             'unrecognized; refusing to approve without a policy to evaluate against.',
         )
-        return false
+        return scanRefused(
+          `the ${orgSlug} security policy was empty or unrecognized — no policy to evaluate ${name}@${version} against`,
+        )
       }
       artifacts = rawArtifacts
       policyRules = rules
@@ -445,9 +555,15 @@ export async function scanStagedEntry(
       logger.fail(
         `Scan gate: reading scan results threw for ${name}@${version} (${errorMessage(e)}).`,
       )
-      return false
+      return scanRefused(
+        `reading full scan ${scanId} threw for ${name}@${version}: ${errorMessage(e)}`,
+      )
     }
-    const failing = collectPolicyFailingAlerts(artifacts, policyRules)
+    const summary = summarizePolicyAlerts(artifacts, policyRules)
+    const seen =
+      `full scan ${scanId} (org ${orgSlug}): ${artifacts.length} artifact(s), ` +
+      `${summary.total} alert(s) — ${summary.error.length} error, ${summary.warn.length} warn`
+    const failing = summary.error
     if (failing.length > 0) {
       logger.fail(
         `Scan gate: ${failing.length} policy-failing alert(s) for ${name}@${version}; not approving.`,
@@ -456,7 +572,14 @@ export async function scanStagedEntry(
         const f = failing[i]!
         logger.fail(`  - ${f.type} (${f.severity}) in ${f.artifact}`)
       }
-      return false
+      return {
+        artifactCount: artifacts.length,
+        detail: `${seen}; blocking: ${failing.map(f => `${f.type} (${f.severity}) in ${f.artifact}`).join(', ')}`,
+        errorAlerts: failing,
+        ok: false,
+        scanId,
+        warnAlerts: summary.warn,
+      }
     }
     // Opt-in local code-threat leg: the dependency scan above cannot see the
     // package's OWN source, so when requested, extract the tarball and run the
@@ -466,10 +589,24 @@ export async function scanStagedEntry(
     if (threatScan) {
       const passed = await runThreatLeg(tarballPath, entry, runThreat)
       if (!passed) {
-        return false
+        return {
+          artifactCount: artifacts.length,
+          detail: `${seen}; the local code-threat leg refused ${name}@${version} (see the gate's log above)`,
+          errorAlerts: [],
+          ok: false,
+          scanId,
+          warnAlerts: summary.warn,
+        }
       }
     }
-    return true
+    return {
+      artifactCount: artifacts.length,
+      detail: seen,
+      errorAlerts: [],
+      ok: true,
+      scanId,
+      warnAlerts: summary.warn,
+    }
   } finally {
     // Clean the tarball when a packTarball provider downloaded it into a temp
     // dir (the registry-API `stage download` and the browser-read passback

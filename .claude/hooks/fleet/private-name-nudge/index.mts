@@ -35,30 +35,15 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const lines = [
-    '[private-name-nudge] This command writes to a public Git/GitHub surface.',
-    '  • Re-read the commit message / PR body / comment BEFORE it sends.',
-    '  • No private repo names. No internal project codenames. No unreleased',
-    '    product names. No internal-only tooling repos absent from the public',
-    '    org page. No customer/partner names.',
-    '  • Omit the reference entirely. Do not substitute a placeholder — the',
-    '    placeholder itself is a tell.',
-    '  • If you spot one, cancel and rewrite the text first.',
-  ]
   // Contributing OUTSIDE the fleet is the high-risk moment: a commit/PR/comment
   // on a third-party or public repo must not reveal that internal Socket repos
-  // or tooling (e.g. the scaffolding/source-of-truth repos, build toolchain,
-  // codenames) even exist. Escalate the reminder there.
-  if (!isFleetTarget(payload)) {
-    lines.push(
-      '',
-      '  ⚠ This target is OUTSIDE the fleet — a third-party / external repo.',
-      '    Internal Socket repo names, internal tooling, and codenames must not',
-      '    appear at all: their mere mention discloses non-public infrastructure.',
-      '    Reference only what is already public on the org page.',
-    )
-  }
-  return notify(lines.join('\n'))
+  // or tooling even exist. Escalate the reminder there.
+  const outside = isFleetTarget(payload)
+    ? ''
+    : ' ⚠ target is OUTSIDE the fleet — mention only what is already public on the org page'
+  return notify(
+    `ℹ private-name-nudge: this command posts to a public Git/GitHub surface — re-read it before it sends; omit private repo / internal codename / customer names entirely (no placeholders — a placeholder is itself a tell)${outside}`,
+  )
 })
 
 export const hook = defineHook({

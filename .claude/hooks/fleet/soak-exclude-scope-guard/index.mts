@@ -148,41 +148,10 @@ export const check = editGuard((filePath, _content, payload) => {
     return undefined
   }
 
-  const lines: string[] = [
-    '[soak-exclude-scope-guard] Blocked: non-Socket entry in minimumReleaseAgeExclude',
-    '',
-    `  File: ${filePath}`,
-    '',
-  ]
-  for (let i = 0, { length } = offending; i < length; i += 1) {
-    const o = offending[i]!
-    lines.push(`  • line ${o.line}: \`${o.entry}\``)
-  }
-  lines.push(
-    '',
-    '  `minimumReleaseAgeExclude:` is a security-policy bypass for Socket',
-    '  first-party scopes only:',
-    '',
-    `    ${[...ALLOWED_SCOPES].map(scope => `${scope}/*`).join(' ')}`,
-    '',
-    '  Adding a third-party package weakens the malware-protection soak gate.',
-    '',
-    '  Fix: wait for the package to clear the 7-day soak — the gate is doing its',
-    '  job. (`overrides:` pins a version but does NOT bypass minimumReleaseAge,',
-    '  so it is not a soak escape hatch.)',
-    '',
-    '  An EXTERNAL TOOL (pnpm, oxlint, a GitHub-release binary) does not belong',
-    '  in this list at all. Bump it with',
-    '  `node scripts/repo/bump-tool.mts <tool> --soak-bypass`, which records a',
-    '  dated `soakBypass` block in external-tools.json that disarms itself after',
-    '  seven days instead of leaving a permanent entry here.',
-    '',
-    '  The `# published: <date> | removable: <date + 7d>` annotation that',
-    '  soak-exclude-date-guard enforces applies to the Socket scopes above. It',
-    '  does NOT get a third-party package past THIS guard, which rejects on',
-    '  scope before any annotation is read.',
+  const listed = offending.map(o => `"${o.entry}" (line ${o.line})`).join(', ')
+  return block(
+    `🚨 soak-exclude-scope-guard: blocked non-Socket minimumReleaseAgeExclude entry ${listed} in ${filePath} — wait for the package to clear the 7-day soak; an external tool bumps via \`node scripts/repo/bump-tool.mts <tool> --soak-bypass\``,
   )
-  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

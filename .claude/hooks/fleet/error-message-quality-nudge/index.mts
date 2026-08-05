@@ -101,25 +101,14 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   }
 
   const lines = [
-    '[error-message-quality-nudge] Vague error messages found:',
-    '',
+    '💡 error-message-quality-nudge: vague error message(s) — rewrite per CLAUDE.md "Error messages" (What / Where / Saw vs. wanted / Fix; docs/agents.md/error-messages.md)',
   ]
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  • throw new ${f.errorClass}("${f.message}")`)
-    lines.push(`      Vague: ${f.label}`)
-    lines.push(`      ${f.hint}`)
-    lines.push('')
+    lines.push(
+      `  throw new ${f.errorClass}("${f.message}") — Vague: ${f.label} — ${f.hint}`,
+    )
   }
-  lines.push(
-    '  CLAUDE.md "Error messages": (1) What — the rule, not the fallout.',
-  )
-  lines.push(
-    '  (2) Where — exact file/line/key/field. (3) Saw vs. wanted — bad',
-  )
-  lines.push('  value + allowed shape. (4) Fix — one imperative action. Full')
-  lines.push('  guidance: docs/agents.md/error-messages.md.')
-  lines.push('')
   return notify(lines.join('\n') + '\n')
 }
 

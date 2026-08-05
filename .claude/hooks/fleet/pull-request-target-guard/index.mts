@@ -203,7 +203,7 @@ export function findUnsafeForkExecution(content: string): Finding[] {
       }
       findings.push({
         cmd: ep.cmd,
-        line: j + 1,
+        line: i + 1,
         snippet:
           bodyLine.trim().length > 90
             ? bodyLine.trim().slice(0, 87) + '…'
@@ -227,55 +227,14 @@ export const check = editGuard((filePath, content) => {
   if (findings.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '[pull-request-target-guard] Blocked: fork-execution in pull_request_target workflow.',
-  )
-  lines.push(`  File: ${path.basename(filePath)}`)
-  lines.push('')
-  lines.push('  Workflow combines all three high-risk patterns:')
-  lines.push(
-    '    1. on: pull_request_target  (runs in BASE repo context with secrets)',
-  )
-  lines.push(
-    '    2. actions/checkout with ref: ${{ github.event.pull_request.head.* }}',
-  )
-  lines.push('       (checks out the FORK code — attacker-controlled)')
-  lines.push('    3. Subsequent execute-fork-code step(s):')
+  const lines: string[] = [
+    `🚨 pull-request-target-guard: blocked ${path.basename(filePath)} — pull_request_target + checkout of pull_request.head.* + fork-code execution exfiltrates secrets — build under \`pull_request\` instead, gate the trigger on \`types: [labeled]\`, or drop the fork checkout`,
+  ]
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`         Line ${f.line} (${f.cmd}): ${f.snippet}`)
+    lines.push(`  line ${f.line} (${f.cmd}): ${f.snippet}`)
   }
-  lines.push('')
-  lines.push('  Why this is dangerous:')
-  lines.push(
-    '    The fork can declare a `prepare` / `postinstall` script (or a build',
-  )
-  lines.push(
-    "    step) that exfiltrates the base repo's secrets. Even `--ignore-scripts`",
-  )
-  lines.push(
-    '    only stops install-time execution — a build still runs fork code.',
-  )
-  lines.push('')
-  lines.push('  Safer patterns:')
-  lines.push(
-    '    a. Split: run build in `on: pull_request` (no secrets), publish an',
-  )
-  lines.push(
-    '       artifact, then a separate `workflow_run` consumes it and posts the',
-  )
-  lines.push('       comment with the privileged token.')
-  lines.push(
-    '    b. Gate the pull_request_target trigger on `labeled` so only maintainers',
-  )
-  lines.push('       can run it: `on: pull_request_target: types: [labeled]`.')
-  lines.push('    c. Never check out the fork in pull_request_target context.')
-  lines.push('')
-  lines.push(
-    '  Reference: https://bsky.app/profile/43081j.com/post/3mlnme43qnc2e',
-  )
-  return block(lines.join('\n') + '\n')
+  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

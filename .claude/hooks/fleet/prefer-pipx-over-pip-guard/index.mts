@@ -150,35 +150,12 @@ export function buildBlockMessage(
   findings: Finding[],
 ): string {
   const lines: string[] = [
-    '[prefer-pipx-over-pip-guard] Blocked: `pip install <pkg>` is not the fleet path',
-    '',
-    `  Context: ${context}`,
-    '',
+    `🚨 prefer-pipx-over-pip-guard: blocked \`pip install\` in ${context} — use \`pipx install <pkg>==<exact-version>\` (bootstrap: \`node .claude/hooks/fleet/setup-pipx/install.mts\`) (bypass: user types "${BYPASS_PHRASE}")`,
   ]
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  • line ${f.line}: pip install ${f.args || '<args>'}`)
+    lines.push(`  line ${f.line}: pip install ${f.args || '<args>'}`)
   }
-  lines.push(
-    '',
-    "  `pip install <pkg>` pollutes the host Python's site-packages",
-    '  and leaves the version floating. The fleet pins installs via',
-    '  pipx (one tool, one venv, one exact version):',
-    '',
-    '    pipx install <pkg>==<exact-version>          # PyPI release',
-    '    pipx install git+https://...@<sha>           # git-SHA pin',
-    '',
-    '  For a host without pipx:',
-    '    node .claude/hooks/fleet/setup-pipx/install.mts',
-    '',
-    '  Allowed (these pass without bypass):',
-    '    pip install pipx           # bootstrap pipx itself',
-    '    pip install -e .           # editable current project',
-    '    pip install -r <file>      # requirements file (already pinned)',
-    '',
-    `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-    '',
-  )
   return lines.join('\n')
 }
 

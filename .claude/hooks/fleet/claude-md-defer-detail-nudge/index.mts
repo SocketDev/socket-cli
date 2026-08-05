@@ -247,41 +247,16 @@ export function reminderMessage(
   filePath: string,
   added: readonly AddedSection[],
 ): string {
-  const lines: string[] = []
-  lines.push(
-    '[claude-md-defer-detail-nudge] CLAUDE.md is gaining detail without an external doc:',
-  )
-  lines.push('')
-  lines.push(`  File: ${filePath}`)
-  lines.push('')
-  for (let i = 0, { length } = added; i < length; i += 1) {
+  const first = added[0]!
+  const lines = [
+    `🚨 claude-md-defer-detail-nudge: new section "### ${first.heading}" (${first.bodyLineCount} body lines, no docs/ link) in ${filePath} — keep the rule inline, move the detail to docs/agents.md/{fleet,repo}/<topic>.md and link it`,
+  ]
+  for (let i = 1, { length } = added; i < length; i += 1) {
     const s = added[i]!
     lines.push(
-      `  ### ${s.heading} — ${s.bodyLineCount} body lines, no docs/ link`,
+      `   "### ${s.heading}" (${s.bodyLineCount} body lines, no docs/ link)`,
     )
   }
-  lines.push('')
-  lines.push('  CLAUDE.md is the fleet rulebook; long-form expansion goes in')
-  lines.push(
-    '  `docs/agents.md/fleet/<topic>.md` (or `docs/agents.md/repo/<topic>.md`',
-  )
-  lines.push(
-    '  for repo-specific detail). Keep the rule + one-line "Why:" inline,',
-  )
-  lines.push('  link to the expansion. Example:')
-  lines.push('')
-  lines.push(
-    '    🚨 Rule statement. **Why:** one-line incident. Bypass: `Allow X bypass`.',
-  )
-  lines.push(
-    '    Spec: [`docs/agents.md/fleet/<topic>.md`](docs/agents.md/fleet/<topic>.md)',
-  )
-  lines.push('    (`.claude/hooks/fleet/<name>/`).')
-  lines.push('')
-  lines.push(
-    '  This is a soft reminder — the edit proceeds. (The hard 8-line cap',
-  )
-  lines.push('  per section is enforced by `claude-md-section-size-guard`.)')
   return lines.join('\n')
 }
 

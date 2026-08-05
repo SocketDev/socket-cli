@@ -240,38 +240,21 @@ export const check = bashGuard(command => {
     if (hits.length === 0 && gfmHits.length === 0 && !suggestFold) {
       continue
     }
-    const lines = ['[convo-prose-nudge]']
-    if (hits.length > 0) {
-      lines.push(
-        'PR/issue body contains AI-scaffolding antipattern(s):',
-        ...hits.map(h => `  • ${h}`),
-        '',
-      )
-    }
-    if (gfmHits.length > 0) {
-      lines.push(
-        'GFM syntax problem(s) — these render wrong on GitHub:',
-        ...gfmHits.map(h => `  • ${h}`),
-        '',
-      )
-    }
+    // One line per finding; the fix (the prose skill) rides the first line.
+    const issues: string[] = [...hits, ...gfmHits]
     if (suggestFold) {
-      lines.push(
-        'Long body with no collapsed sections. Keep the verdict up top and',
-        'fold supporting material (benchmarks, logs, file lists) under',
-        '<details><summary>specific label</summary> — blank line after',
-        '</summary> so the markdown renders. Alerts (> [!NOTE] family), task',
-        'lists, and line-range permalinks are the other GitHub affordances.',
-        '',
+      issues.push(
+        'long body with no collapsed sections — fold supporting material under <details><summary>label</summary> (blank line after </summary>)',
       )
     }
-    lines.push(
-      'Rewrite the body through the prose skill (conversational mode) before',
-      'posting — lead with the point, cut the filler:',
-      '  .claude/skills/fleet/prose/SKILL.md',
-      '  .claude/skills/fleet/prose/references/conversational.md',
-      '',
-    )
+    const lines: string[] = []
+    for (let j = 0, { length: ilen } = issues; j < ilen; j += 1) {
+      lines.push(
+        j === 0
+          ? `💡 convo-prose-nudge: rewrite the gh body through the prose skill (.claude/skills/fleet/prose, conversational mode) — ${issues[j]}`
+          : `   ${issues[j]}`,
+      )
+    }
     return notify(lines.join('\n'))
   }
   return undefined

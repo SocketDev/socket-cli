@@ -11,6 +11,30 @@ Companion to the `### Hook registry` section in `CLAUDE.md`. Full enforcement li
 - **`.github/actions/{fleet,repo}/<name>/`** — the same fleet-vs-repo split applies to composite GitHub Actions. `scripts/fleet/check/actions-are-segmented.mts` fails the `check --all` gate when an action directory sits directly under `.github/actions/` with no `fleet/`/`repo/` segment.
 - **Naming convention**: a hook suffixed `-guard` BLOCKS the tool call (exits non-zero); a hook suffixed `-nudge` only NOTIFIES and never blocks. The suffix is load-bearing: it tells a reader the hook's severity without opening its source.
 
+## Guard output is terse — less is more
+
+A hook verdict targets ONE line per hit:
+`<glyph> <hook-name>: <action> "<matched evidence>" — <fix>`. The glyph is
+TYPED — compose it via `verdictLine(kind, …)` from `_shared/verdict.mts`,
+never hand-typed: 🚨 `block` (a -guard refusal), ⚠️ `warn` (something is off
+now), ℹ️ `info` (plain status), 💡 `hint` (a tip; the default -nudge
+register) — the emoji-presentation forms, so severity reads in color at a
+glance. The bypass phrase is appended
+in parentheses when one exists (a second line only when the evidence
+genuinely will not fit). No doctrine lecture — the rule's
+reasoning lives in its `docs/agents.md` topic, and the harness renders
+Stop-hook output twice, so every extra line costs double. Exemplar:
+`anti-prose-guard`'s Stop verdict —
+`🚨 anti-prose-guard: delete "honestly" — …the sentence it appeared in…`.
+
+Two surfaces are exempt from terseness, on purpose:
+
+- **Human gates** keep the full 🖐 block — the copy-pasteable lane text IS the
+  point (`human-gates.md`).
+- **Script error reports** keep the four-ingredient What / Where / Saw vs.
+  wanted / Fix shape (`error-messages.md`) — a script failure is read cold,
+  a guard verdict is read beside the text it just blocked.
+
 ## Currently enforced (fleet)
 
 The fleet hooks each cite their own trigger + bypass surface in their `README.md`. They are:
@@ -59,6 +83,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-copyleft-source-read` — PreToolUse Bash/Grep/Read/WebFetch: blocks every route to a copyleft upstream's IMPLEMENTATION CONTENT. A copyleft project may be RUN as a tool and OBSERVED through its own tests, but reading or deriving from its source makes the consuming package a derivative work and forces its license. Structure is NOT content: `ls`/`tree`/`find`, `git ls-tree`/`ls-files`, `gh api …/git/trees/…`, Glob, a directory Read, and `rg -l`/`--files-with-matches`/`--count` all pass, because paths and names are fact, not expression. Blocks a Read of a non-test file, a `cat`/`head`/`tail`/`less`/`strings` reader, a line-printing `rg`/`grep` or a Grep with `output_mode: content`, `find … -exec`, `gh api …/contents/…` for a non-test path, a `curl`/`wget` of a raw blob / file view / whole-tree archive, a `git show`/`cat-file`/`archive` of a non-test blob, and a `git sparse-checkout` that widens the cone past the tests allowlist. Roster + matcher: `_shared/copyleft-upstreams.mts`, whose metadata globs are root-anchored so a `--no-cone` cone cannot admit nested implementation. Belts: `copyleft-slices-are-tests-only.mts` + `copyleft-licenses-are-current.mts`. Bypass `Allow copyleft-source-read bypass`.
 - `cross-repo-guard` — PreToolUse Edit/Write, blocks a hardcoded cross-repo path reference (`../<sibling-repo>/`) that breaks in CI / fresh clones; use `@socketsecurity/lib-stable/<subpath>` imports instead. One-line opt-out `// socket-lint: allow cross-repo`.
 - `dated-citation-guard` — PreToolUse Edit/Write: blocks adding a dated-incident citation (a specific date/SHA/percentage) to fleet rule prose (CLAUDE.md, `docs/agents.md/fleet`, `SKILL.md`, hook `README.md`); the motivating case must read as a generic, timeless example.
+- `denied-domain-reference-guard` — PreToolUse Edit/Write: blocks landing a fleet-DENIED domain or denied filename IOC into any file (shared denylist `_shared/denied-domains.mts`, same source as `scripts/fleet/check/denied-domains-are-absent.mts`); IOC citation is allowed only in a `docs/**.md` carrying the marker comment, never on an egress surface. Bypass `Allow denied-domain bypass`.
 - `default-branch-guard` — PreToolUse(Bash) hook: blocks a scripted Bash command that hard-codes `main`/`master` as the default branch instead of resolving via `git symbolic-ref refs/remotes/origin/HEAD`. Bypass `Allow default-branch bypass`.
 - `defer-to-script-nudge` — PreToolUse Edit/Write, non-blocking. Nudges when an edited skill/command markdown embeds a large fenced code block with no reference to a backing `scripts/**.mts` script it should defer to.
 - `dirty-worktree-stop-guard` — Stop-time: BLOCKS ending a turn with a dirty PRIMARY checkout (uncommitted/untracked/staged-but-uncommitted). Escapes: clean tree, a linked git worktree (defer via `git commit --no-verify` there), or `Allow dirty-worktree bypass`. Once-per-turn (suppressed when `stop_hook_active`); fail-open.
@@ -107,7 +132,7 @@ The fleet hooks each cite their own trigger + bypass surface in their `README.md
 - `no-branch-reuse-nudge` - PreToolUse(git commit Bash) hook, non-blocking. Reminds against committing onto a non-default branch that already has a remote upstream — cut a fresh branch per logical change instead of reusing a shared one.
 - `no-cascade-transient-git-guard` — blocks cascade commits on a cherry-pick/detached/rebase HEAD
 - `no-clipboard-access-guard` - PreToolUse Bash + Edit/Write: blocks clipboard READS + source-embedded OSC-52 escapes; explicit writes are allowed. Two surfaces: a clipboard READ CLI in a Bash command (`pbpaste`, `wl-paste`, `xclip -o`, `xsel` default-output), AST-parsed via the fleet shell parser — write-only tools (`pbcopy`/`wl-copy`/`clip`) and a writing `xclip`/`xsel -i` pass; or source that emits an OSC-52 clipboard escape (`ESC ]52;`). Reading is a cross-process exfil surface; putting data onto the clipboard is a deliberate operator action. Bypass `Allow clipboard-access bypass`
-- `no-description-aside-guard` — PreToolUse Edit/Write: blocks a `package.json`/`Cargo.toml` write whose `description` field ends with a listy parenthetical aside (a comma/` + `/` / `/` and `-joined list, or 5+ words). <!-- prose-parens: allow --> Shares its detector (`.claude/hooks/fleet/_shared/trailing-aside.mts`) with `anti-prose-guard`'s heading check. Bypass `Allow description-aside bypass`
+- `no-description-aside-guard` — PreToolUse Edit/Write: blocks a `package.json`/`Cargo.toml` write whose `description` field ends with a listy parenthetical aside (a comma/`+`/`/`/`and`-joined list, or 5+ words). <!-- prose-parens: allow --> Shares its detector (`.claude/hooks/fleet/_shared/trailing-aside.mts`) with `anti-prose-guard`'s heading check. Bypass `Allow description-aside bypass`
 - `no-designated-ignore-guard` — PreToolUse Edit/Write: blocks ADDING an ignore marker (`socket-lint: allow <id>` or an oxlint-disable naming the rule) for a designated fix-only rule; first designee `socket/max-comment-block-lines`: shorten the block or move depth into `docs/agents.md/**`, and a JSDoc doc block already gets the doubled doc budget. Additive detection: retained markers pass, only new ones block. The oxlint plugin subtrees and the guard's own files are exempt. Bypass `Allow designated-ignore bypass`.
 - `no-direct-linter-guard` — PreToolUse Bash: blocks invoking a linter/formatter binary directly (`oxlint`/`oxfmt`/`eslint`/`prettier`/`biome`/`dprint`/`rustfmt`/`gofmt`, the `node_modules/.bin/` path form, and `cargo fmt`/`cargo clippy` subcommands), matched on basename via AST parse. The fleet runs lint/format only through the script wrappers (`pnpm run lint`/`fix`/`check`/`format`, `scripts/fleet/*`), which own the `-c .config/fleet/…` flag plus ignore set. A bare formatter is configless (corrupts files) and unscoped (reformats vendored `upstream/`). Bypass `Allow direct-linter bypass`
 - `no-disable-lint-rule-guard` — PreToolUse Edit/Write: blocks adding an off/warn entry for an oxlint or ESLint rule to a config file; use a per-site disable-next-line comment instead. Bypass `Allow disable-lint-rule bypass`.

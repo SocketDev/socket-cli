@@ -181,6 +181,31 @@ function guardVerdict(
 function skipSubtree(): void {}
 
 /**
+ * True when the source carries a real top-level entry guard — the scope test
+ * this check and its siblings (entry-scripts-are-born-tested) share, so
+ * "what counts as an entry script" is decided in exactly one place. Same
+ * pruned walk as {@link classifyEntrySource}. Pure — exported for tests and
+ * sibling checks.
+ */
+export function hasTopLevelEntryGuard(text: string): boolean {
+  let found = false
+  walkRecursive(text, {
+    ArrowFunctionExpression: skipSubtree,
+    ClassDeclaration: skipSubtree,
+    ClassExpression: skipSubtree,
+    FunctionDeclaration: skipSubtree,
+    FunctionExpression: skipSubtree,
+    IfStatement(node: AcornNode) {
+      const guard = node as unknown as EstreeNode
+      if (guard.test !== undefined && isEntryGuardCondition(guard.test)) {
+        found = true
+      }
+    },
+  })
+  return found
+}
+
+/**
  * Classify one script source: `undefined` when compliant or out of scope (no
  * entry guard — a library, an unparseable file, or a module merely quoting
  * the guard in prose), else the defect kind. Runs `walkRecursive` with

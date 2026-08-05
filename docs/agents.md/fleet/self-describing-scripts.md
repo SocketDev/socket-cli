@@ -43,6 +43,26 @@ if (isMainModule(import.meta.url)) {
 - A genuinely incompatible entry goes on the check's documented allowlist with
   a reason, never silently skipped.
 
+## The new-script contract
+
+Every NEW `.mts` script — onboarding steps, a skill's or hook's backing
+script, a codified check — is born meeting all four of these, not retrofitted
+later:
+
+1. **Self-describes through the shared runner.** The entry is
+   `runMain(main, SCRIPT_META)`; `--describe` and `-h`/`--help` answer before
+   any side effect.
+2. **Has a unit test.** Mirror-named under `test/repo/unit/`, exercising the
+   exported pure functions; `entry-scripts-are-born-tested` enforces this for
+   repo-owned entries (pre-contract scripts ride its script-owned
+   `--update-baseline` ratchet).
+3. **One path, one reference.** Every filesystem path is constructed exactly
+   once in the package's own `paths.mts` and imported from there — never
+   respelled inline (`path-hygiene`).
+4. **The script IS the law.** A discipline lives in the runnable `.mts` (plus
+   its check/hook registration), never only in prose or a skill's markdown
+   (`code-is-law`); skills and commands stay thin wrappers over it.
+
 ## Enforcement
 
 `scripts/fleet/check/entry-scripts-self-describe.mts` scans every `.mts`

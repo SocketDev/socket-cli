@@ -375,7 +375,7 @@ export function formatBlock(
     total += s.dirty.length
   }
   const lines = [
-    `[dirty-worktree-stop-guard] Turn ended with ${total} uncommitted path(s) you authored:`,
+    `🚨 dirty-worktree-stop-guard: ${total} uncommitted path(s) you authored — commit each (\`git commit -o <file>\`) or revert what you did not author, then stop (bypass: user types "${BYPASS_PHRASE}")`,
   ]
   const groups: Array<{ label: string; dirty: readonly DirtyEntry[] }> = []
   if (primaryDirty.length) {
@@ -398,7 +398,6 @@ export function formatBlock(
   }
   if (sanctioned && sanctioned.length > 0) {
     lines.push(
-      '',
       `  owned by live run — not blocking (${sanctioned.length} path(s)):`,
     )
     const ss = sanctioned.slice(0, 10)
@@ -412,19 +411,6 @@ export function formatBlock(
       lines.push(`    ... and ${sanctioned.length - 10} more`)
     }
   }
-  lines.push(
-    '',
-    'Fleet rule: commit as you go — "done" means committed, in EVERY repo the',
-    'turn touched (sibling repos too, fleet or not). Resolve before stopping:',
-    '  • Commit the dirty paths in each repo (surgical: `git commit -o <file>`).',
-    '  • Revert paths you did not author this session.',
-    '  • Genuinely cannot commit yet (mid-refactor, waiting on user)? Say so',
-    `    explicitly, OR type \`${BYPASS_PHRASE}\` to end the turn dirty.`,
-    '  • Stacking WIP to defer the gates? Do it in a linked git worktree',
-    '    (`git commit --no-verify` there).',
-    '',
-    'See CLAUDE.md → "Don\'t leave the worktree dirty" + docs/agents.md/fleet/worktree-hygiene.md.',
-  )
   return lines.join('\n')
 }
 

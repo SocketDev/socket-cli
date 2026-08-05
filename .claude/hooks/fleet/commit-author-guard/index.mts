@@ -127,39 +127,32 @@ export const check = bashGuard((command, payload) => {
   }
 
   const who = `${effective.name ?? '(unset)'} <${effective.email ?? '(unset)'}>`
+  const reason = denied
+    ? 'a placeholder/sandbox identity'
+    : 'not the allowed identity'
+  const fix = policy.canonical.email
+    ? `git config user.email "${policy.canonical.email}"`
+    : 'git config user.email "<you>@<domain>" && git config user.name "<Your Name>"'
   const lines = [
-    denied
-      ? `[commit-author-guard] Commit author is a placeholder/sandbox identity: ${who}`
-      : `[commit-author-guard] Commit author does not match the allowed identity: ${who}`,
-    '',
+    `🚨 commit-author-guard: blocked commit author "${who}" (${reason}) — fix: ${fix} (policy: .config/{repo,fleet}/git-authors.json)`,
   ]
+  const allowed: string[] = []
   if (policy.canonical.email) {
-    lines.push(
-      `  Canonical author : ${policy.canonical.name ?? '(unset)'} <${policy.canonical.email}>`,
+    allowed.push(
+      `canonical ${policy.canonical.name ?? '(unset)'} <${policy.canonical.email}>`,
     )
   }
   if (policy.aliases.length > 0) {
-    lines.push('  Allowed aliases  :')
-    for (let i = 0, { length } = policy.aliases; i < length; i += 1) {
-      const a = policy.aliases[i]!
-      lines.push(`    - ${a.name ?? '(any)'} <${a.email ?? '(any)'}>`)
-    }
+    allowed.push(
+      `aliases ${policy.aliases
+        .map(a => `${a.name ?? '(any)'} <${a.email ?? '(any)'}>`)
+        .join(', ')}`,
+    )
   }
-  lines.push('')
-  lines.push('  Set a real identity before committing:')
-  lines.push('    git config user.email "<you>@<domain>"')
-  lines.push('    git config user.name "<Your Name>"')
-  lines.push('')
-  lines.push(
-    '  Allowed authors: .config/repo/git-authors.json (per-repo) overriding',
-  )
-  lines.push(
-    '  .config/fleet/git-authors.json (cascaded). The fleet denylist of',
-  )
-  lines.push(
-    '  placeholder identities (test@example.com, Test, …) is never allowed.',
-  )
-  return block(lines.join('\n') + '\n')
+  if (allowed.length > 0) {
+    lines.push(`   allowed: ${allowed.join('; ')}`)
+  }
+  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

@@ -6,6 +6,21 @@ an action or tool the fleet inlines rather than consumes as a live dependency.
 It lives at the top level under `upstream/<name>`, fetched shallow, single-branch,
 and (where only a slice is referenced) sparse.
 
+## `upstream/<name>` at the repo root is the ONLY submodule home
+
+No submodule ever lives anywhere else — not `packages/<pkg>/upstream/<name>`,
+not a test-fixtures tree, not a bespoke `submodules/` directory. One home
+makes a reference's role unmistakable — the path itself says "this is
+upstream code we pin" — keeps the ignore + gitlink rules a single path
+test, and lets conformance runners, port maps, and the cascade all resolve
+references the same way. An upstream test suite (test262, WPT, a spec
+suite) is still an upstream reference: it lands at `upstream/<name>` with a
+`sparse-checkout` narrowing it to the exercised subtree, and the
+`.gitmodules` header comment records what consumes it. Enforced by
+`scripts/fleet/check/submodules-are-rooted-in-upstream.mts`; pre-law nests
+ride its script-owned `submoduleRoots.grandfathered` ratchet
+(`--update-baseline`) until migrated.
+
 ## `.gitmodules` is the sole record — never a gitlink
 
 `upstream/` is **always git-ignored** (the fleet-wide `**/upstream/` rule) and is
@@ -38,9 +53,9 @@ of the same SHA.
   (`main`) — and then the block MUST carry a `# no-release-tag: <reason>`
   annotation. Enforced by `upstream-submodules-are-release-tagged`.
 - `ref = <40hex>` is the exact commit of record, and the `# <name>-<version>
-  sha256:<64hex>` header is the codeload-archive content hash of that ref. Both
+sha256:<64hex>` header is the codeload-archive content hash of that ref. Both
   are provisioned together by `scripts/fleet/gen/gitmodules-hash.mts --set
-  <name|path> <ref> --label <name>-<version>` — never hand-edit `ref` alone
+<name|path> <ref> --label <name>-<version>` — never hand-edit `ref` alone
   (`uses-sha-verify-guard` blocks it, because the archive hash can't be recomputed
   at edit time).
 - There is **no gitlink**: `git ls-files --stage upstream/` must show no `160000`

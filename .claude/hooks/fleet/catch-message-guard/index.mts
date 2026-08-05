@@ -313,70 +313,19 @@ export const check = editGuard((filePath, content, payload) => {
 
   const lines: string[] = []
   if (hasMessage && !messageBypassed) {
+    const sites = newMessageFindings
+      .map(f => `line ${f.line} \`${f.source}\``)
+      .join('; ')
     lines.push(
-      '[catch-message-guard] Blocked: bare `${e.message}` in catch block',
-      '',
-      `  File: ${filePath}`,
-      '',
-    )
-    for (let i = 0, { length } = newMessageFindings; i < length; i += 1) {
-      const f = newMessageFindings[i]!
-      lines.push(`  • line ${f.line}: ${f.source}`)
-    }
-    lines.push(
-      '',
-      '  Bare `${e.message}` prints "undefined" when the caught value',
-      '  isn\'t an Error (e.g. `throw "string"`, `throw 42`, non-Error rejections).',
-      '',
-      '  Fix in workspace packages:',
-      '    import { errorMessage } from "@socketsecurity/lib/errors/message"',
-      '    ...',
-      '    } catch (e) {',
-      '      logger.error(`Something failed: ${errorMessage(e)}`)',
-      '    }',
-      '',
-      '  Fix in root scripts/*.mts and CJS *.js (no workspace imports):',
-      '    } catch (e) {',
-      '      const msg = e instanceof Error ? e.message : String(e)',
-      '      logger.error(`Something failed: ${msg}`)',
-      '    }',
-      '',
-      `  Bypass: type "${BYPASS_PHRASE}" in a new message, then retry.`,
-      '  Per-line bypass: append "// ok: catch-message <reason>" on the line.',
-      '',
+      `🚨 catch-message-guard: blocked bare \`\${e.message}\` (prints "undefined" for a non-Error throw) — ${filePath}: ${sites} — use \`errorMessage(e)\` from @socketsecurity/lib/errors/message (bypass: user types "${BYPASS_PHRASE}", or append \`// ok: catch-message <reason>\` on the line)`,
     )
   }
   if (hasBinding && !bindingBypassed) {
-    if (lines.length > 0) {
-      lines.push('')
-    }
+    const sites = newBindingFindings
+      .map(f => `line ${f.line} \`catch (${f.binding})\``)
+      .join('; ')
     lines.push(
-      '[catch-message-guard] Blocked: catch binding should be `e`',
-      '',
-      `  File: ${filePath}`,
-      '',
-    )
-    for (let i = 0, { length } = newBindingFindings; i < length; i += 1) {
-      const f = newBindingFindings[i]!
-      lines.push(
-        `  • line ${f.line}: \`catch (${f.binding})\` — use \`e\` instead`,
-      )
-    }
-    lines.push(
-      '',
-      '  Fleet convention: catch bindings are named `e`. Other names',
-      '  (`err`, `error`, `error_`) drift over time and break the',
-      '  copy-paste recipe in `Allow catch-message bypass` reports.',
-      '',
-      '  Fix: rename the binding to `e`:',
-      '',
-      '    } catch (e) {',
-      '      logger.error(`got: ${errorMessage(e)}`)',
-      '    }',
-      '',
-      `  Bypass: type "${BINDING_BYPASS_PHRASE}" in a new message.`,
-      '  Per-line bypass: append "// ok: catch-binding <reason>" on the line.',
-      '',
+      `🚨 catch-message-guard: blocked non-\`e\` catch binding — ${filePath}: ${sites} — rename the binding to \`e\` (fleet convention) (bypass: user types "${BINDING_BYPASS_PHRASE}", or append \`// ok: catch-binding <reason>\` on the line)`,
     )
   }
   return block(lines.join('\n'))

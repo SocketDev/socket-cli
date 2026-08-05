@@ -46,26 +46,11 @@ export function isWorktreeRemoveOrPrune(command: string): boolean {
 }
 
 export function formatReminder(): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('🔗 worktree-remove-relink-nudge')
-  lines.push('')
-  lines.push('You removed/pruned a git worktree. pnpm may have relinked the')
-  lines.push("shared store into it, so the MAIN checkout's `node_modules`")
-  lines.push('symlinks (e.g. `@socketsecurity/lib-stable`) can now dangle —')
-  lines.push('every lib-importing hook would then fail with')
-  lines.push('`ERR_MODULE_NOT_FOUND`.')
-  lines.push('')
-  lines.push('Run in the main checkout (under the pinned Node):')
-  lines.push('  pnpm i')
-  lines.push('')
-  lines.push('If pnpm wants to purge node_modules but there is no TTY')
-  lines.push(
-    '(`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`), prefix `CI=true`:',
+  return (
+    '🔗 worktree-remove-relink-nudge: worktree removed/pruned — run `pnpm i` ' +
+    'in the MAIN checkout to relink node_modules before hooks die with ' +
+    'ERR_MODULE_NOT_FOUND (no-TTY purge prompt: `CI=true pnpm i`).'
   )
-  lines.push('  CI=true pnpm i')
-  lines.push('')
-  return lines.join('\n')
 }
 
 export const check = bashGuard((command, _payload) => {

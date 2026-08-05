@@ -543,7 +543,7 @@ const cliGit: GitRunner = {
   },
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const fix = process.argv.includes('--fix')
   let units: Map<string, Unit>

@@ -28,17 +28,23 @@
  *     published version missing its tag — not just latest — ratcheted to
  *     versions above the newest existing tag), and emit `has-gap` / `gaps` /
  *     `status` GitHub outputs.
- *   - `--flip <version>`: resolve the version's CONTENT COMMIT — the bump
- *     commit where package.json flipped to that version — via the anchor
- *     logic bump.mts exports (findVersionFlipCommit; dynamic import, needs
- *     node_modules). Emits a `flip` output; a missing flip commit fails LOUD:
- *     the reconcile job must never guess a commit to tag.
+ *   - `--flip <version>`: resolve the version's CONTENT COMMIT. FIRST choice
+ *     is the commit the publish pipeline RECORDED at staging time (the
+ *     stage-publish receipt in the local pipeline state — see
+ *     staged-commit.mts); the version-flip commit (findVersionFlipCommit;
+ *     dynamic import, needs node_modules) is the fallback for the normal CI
+ *     case, where a fresh checkout carries no pipeline state. The flip commit
+ *     is an INFERENCE — it holds only when nothing landed between the bump and
+ *     the staging run — and on 2026-08-04 two releases staged from tips past
+ *     it, which is why the recorded commit wins when there is one. Emits a
+ *     `flip` output; no resolvable commit fails LOUD: the reconcile job must
+ *     never guess a commit to tag.
  *
  *   Usage: node scripts/fleet/release-pipeline/reconcile-gap.mts [--flip X.Y.Z]
  */
 
 import { execFile } from 'node:child_process'
-import { appendFileSync, existsSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -47,6 +53,10 @@ import { promisify } from 'node:util'
 import { NPM_REGISTRY_URL } from '../constants/npm-registry.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { resolveGapSubject } from './reconcile-gap-subject.mts'
+import {
+  stagedShaFromStateText,
+  STATE_FILE_RELATIVE_PATH,
+} from './staged-commit.mts'
 
 const execFileP = promisify(execFile)
 
@@ -396,25 +406,109 @@ export async function runGapMode(repoRoot: string): Promise<void> {
   )
 }
 
+/**
+ * Which commit a version's content lives at, and how that was decided.
+ * `recorded` = the publish pipeline's own staging record (a FACT about the
+ * bytes); `flip` = the package.json version-flip commit (an INFERENCE that
+ * holds only when nothing landed between the bump and the staging run);
+ * `none` = neither resolved, which is a loud failure, never a guess.
+ */
+export interface FlipResolution {
+  commit?: string | undefined
+  // Why the fallback happened, when it did — logged so a recorded-but-
+  // unreachable sha never disappears silently.
+  detail?: string | undefined
+  source: 'flip' | 'none' | 'recorded'
+}
+
+/**
+ * Resolve a version's content commit, preferring the RECORDED staged commit
+ * over the inferred version flip. Every edge is injected (state text, commit
+ * reachability, the flip lookup) so the preference order is unit-tested with
+ * no fs, git, or node_modules. Pure decision logic — exported for tests.
+ */
+export async function resolveFlipCommit(
+  version: string,
+  config: {
+    commitExists: (sha: string) => Promise<boolean>
+    flipCommit: (version: string) => Promise<string | undefined>
+    readState: () => string | undefined
+  },
+): Promise<FlipResolution> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const raw = cfg.readState()
+  const recorded = raw
+    ? stagedShaFromStateText(raw, { targetVersion: version })
+    : undefined
+  let detail: string | undefined
+  if (recorded) {
+    if (await cfg.commitExists(recorded)) {
+      return { commit: recorded, source: 'recorded' }
+    }
+    // The healer tags only commits it can see. A recorded sha this checkout
+    // cannot resolve is reported and stepped over, never emitted.
+    detail =
+      `recorded staged commit ${recorded} for ${version} is not in this checkout — ` +
+      'falling back to the version-flip commit'
+  }
+  const flip = await cfg.flipCommit(version)
+  return flip
+    ? { commit: flip, detail, source: 'flip' }
+    : { detail, source: 'none' }
+}
+
+// Read the local pipeline state file, or undefined when it is absent or
+// unreadable. In CI that is the NORMAL case: the state lives under `.cache/`,
+// never the tracked tree, so a fresh reconcile checkout has none.
+function readPipelineStateText(): string | undefined {
+  const statePath = path.join(REPO_ROOT, STATE_FILE_RELATIVE_PATH)
+  if (!existsSync(statePath)) {
+    return undefined
+  }
+  try {
+    return readFileSync(statePath, 'utf8')
+  } catch {
+    return undefined
+  }
+}
+
 async function runFlipMode(version: string): Promise<void> {
-  // Dynamic import: bump.mts pulls workspace deps, which exist only after
-  // the reconcile job's setup-and-install — never on the gap job's bare
-  // checkout.
-  const { findVersionFlipCommit } = await import('../bump.mts')
-  const flip = await findVersionFlipCommit(version, REPO_ROOT)
-  if (!flip) {
+  const resolved = await resolveFlipCommit(version, {
+    commitExists: async sha => {
+      try {
+        await execFileP('git', ['cat-file', '-e', `${sha}^{commit}`], {
+          cwd: REPO_ROOT,
+        })
+        return true
+      } catch {
+        return false
+      }
+    },
+    flipCommit: async v => {
+      // Dynamic import: bump.mts pulls workspace deps, which exist only after
+      // the reconcile job's setup-and-install — never on the gap job's bare
+      // checkout.
+      const { findVersionFlipCommit } = await import('../bump.mts')
+      return await findVersionFlipCommit(v, REPO_ROOT)
+    },
+    readState: readPipelineStateText,
+  })
+  if (resolved.detail) {
+    say(resolved.detail)
+  }
+  if (!resolved.commit) {
     fail(
       `no content commit found for ${version}.\n` +
-        `  Where: git log -S over the workspace's version-source manifest from HEAD — the bump commit that flipped version to ${version}.\n` +
-        `  Saw: no reachable commit whose version-source manifest reads ${version} while its parent does not.\n` +
+        `  Where: the publish pipeline's staged-commit record, then git log -S over the workspace's version-source manifest from HEAD — the bump commit that flipped version to ${version}.\n` +
+        `  Saw: no recorded staged commit reachable here, and no commit whose version-source manifest reads ${version} while its parent does not.\n` +
         `  Fix: history rewrite or squash removed the bump commit — reconcile this version by hand ` +
         `at the exact published content; the healer never guesses a commit to tag.`,
     )
     process.exitCode = 1
     return
   }
-  emitOutput('flip', flip)
-  say(flip)
+  emitOutput('flip', resolved.commit)
+  say(resolved.commit)
 }
 
 async function main(): Promise<void> {

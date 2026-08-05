@@ -22,6 +22,7 @@ import {
   stdoutIsFileBacked,
 } from '../../publish-infra/shared.mts'
 import { readPkg, resolveSeams } from '../seams.mts'
+import { isCommitSha } from '../staged-commit.mts'
 
 import type { RunnerSeams, StageOutcome } from '../seams.mts'
 import type { ReleaseChecksums, StageReceipt } from '../state.mts'
@@ -223,6 +224,13 @@ async function prepareStashedAssets(config: {
  * is created WITH them in one shot. Idempotent: an existing tag/release is
  * left untouched. Verifies the release exists afterwards (`gh release view`
  * — read the published state, don't assume).
+ *
+ * `stagedSha` is the commit the STAGED BYTES were built from, recorded by the
+ * stage-publish stage. When it is present and resolvable in this checkout the
+ * tag lands on THAT commit; otherwise the tag keeps its historical HEAD
+ * placement. The tag must mark the content that shipped — two 2026-08-04
+ * releases staged from tips past their version-flip commits, and the tags had
+ * to be re-cut by hand (see staged-commit.mts).
  */
 export async function runReleaseStage(config: {
   approveReceipt: StageReceipt | undefined
@@ -230,6 +238,7 @@ export async function runReleaseStage(config: {
   dryRun: boolean
   releaseChecksums?: ReleaseChecksums | undefined
   seams?: RunnerSeams | undefined
+  stagedSha?: string | undefined
   targetVersion: string
 }): Promise<StageOutcome> {
   const cfg = { __proto__: null, ...config } as typeof config
@@ -279,10 +288,26 @@ export async function runReleaseStage(config: {
       status: 'failed',
     }
   }
+  // Which commit the tag marks: the recorded staged commit when the record
+  // exists AND this checkout can resolve it, else the historical HEAD
+  // placement. An unresolvable record is reported, never substituted with a
+  // guess — and never a reason to strand a release whose publish already
+  // landed.
+  const stagedCommit = await resolveStagedCommit({
+    cwd: cfg.cwd,
+    runCapture: seams.runCapture,
+    stagedSha: cfg.stagedSha,
+  })
   // Prepare the assets BEFORE creating the release (one-shot draft → upload →
   // undraft), from the verify-time checksum stash when it matches this
   // version; without a stash ensureTagAndRelease falls back to its own pack.
-  let ensureOptions: { packAssets: () => Promise<string[]> } | undefined
+  const ensureOptions: {
+    commit?: string | undefined
+    packAssets?: (() => Promise<string[]>) | undefined
+  } = {}
+  if (stagedCommit.commit) {
+    ensureOptions.commit = stagedCommit.commit
+  }
   if (cfg.releaseChecksums?.version === cfg.targetVersion) {
     const prepared = await prepareStashedAssets({
       checksums: cfg.releaseChecksums,
@@ -294,11 +319,13 @@ export async function runReleaseStage(config: {
       return { detail: prepared.error, status: 'failed' }
     }
     const { assets } = prepared
-    ensureOptions = { packAssets: () => Promise.resolve(assets) }
+    ensureOptions.packAssets = () => Promise.resolve(assets)
   }
   const ensured = await seams.ensureRelease(
     { name: pkg.name, version: pkg.version },
-    ensureOptions,
+    ensureOptions.commit === undefined && ensureOptions.packAssets === undefined
+      ? undefined
+      : ensureOptions,
   )
   if (ensured === false) {
     return {
@@ -330,7 +357,49 @@ export async function runReleaseStage(config: {
     }
   }
   return {
-    detail: `tag ${tagName} + immutable GH release present (gh release view), cut after the live registry publish`,
+    detail:
+      `tag ${tagName} + immutable GH release present (gh release view), cut after the live registry publish; ` +
+      stagedCommit.detail,
     status: 'passed',
+  }
+}
+
+/**
+ * Resolve which commit the tag should mark. Returns the commit to tag (absent
+ * = keep the historical HEAD placement) plus the receipt line explaining the
+ * choice, so `--status` says which commit a tag marks and WHY.
+ */
+async function resolveStagedCommit(config: {
+  cwd: string
+  runCapture: (
+    cmd: string,
+    args: string[],
+    cwd: string,
+  ) => Promise<{ stdout: string; code: number }>
+  stagedSha?: string | undefined
+}): Promise<{ commit?: string | undefined; detail: string }> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (!isCommitSha(cfg.stagedSha)) {
+    return {
+      detail:
+        'tagged at HEAD (the stage-publish receipt records no staged commit — ' +
+        'an older receipt, or a staging run whose head sha could not be read)',
+    }
+  }
+  const exists = await cfg.runCapture(
+    'git',
+    ['cat-file', '-e', `${cfg.stagedSha}^{commit}`],
+    cfg.cwd,
+  )
+  if (exists.code !== 0) {
+    return {
+      detail:
+        `tagged at HEAD — the recorded staged commit ${cfg.stagedSha.slice(0, 12)} is NOT in this ` +
+        'checkout (fetch it and re-run to move the tag onto the staged content)',
+    }
+  }
+  return {
+    commit: cfg.stagedSha,
+    detail: `tagged at the RECORDED staged commit ${cfg.stagedSha.slice(0, 12)}, the commit the staged bytes were built from`,
   }
 }

@@ -122,61 +122,18 @@ export function blockMessage(
   const opts = { __proto__: null, ...options } as {
     isSubagent?: boolean | undefined
   }
-  const lines: string[] = []
-  lines.push('[no-force-push-guard] Blocked: git push carries a force flag.')
+  void command
+  const saw = match.bare
+    ? 'no lease pinned'
+    : 'already pinning --force-with-lease, still needs authorization'
+  const lines: string[] = [
+    `🚨 no-force-push-guard: blocked "${match.matchedSubstring}" (${saw}) — use git fetch origin && git push --force-with-lease=<branch>:$(git rev-parse origin/<branch>) origin <branch> (bypass: user types "${BYPASS_PHRASE}")`,
+  ]
   if (opts.isSubagent) {
-    lines.push('')
-    lines.push('  A SUBAGENT cannot force-push, phrase or no phrase. The')
-    lines.push("  operator's grant authorizes the turn they typed it in, not a")
-    lines.push('  delegate reaching a different repo later in the session.')
-    lines.push('  End your turn naming this guard in your FINAL TEXT (that is')
-    lines.push('  what reaches the orchestrator — you cannot SendMessage it);')
-    lines.push('  the orchestrator runs the op itself.')
+    lines.push(
+      '   subagent: no phrase authorizes you — end the turn naming this guard in your FINAL text; the orchestrator runs the push itself.',
+    )
   }
-  lines.push(`  Match:   ${match.matchedSubstring}`)
-  lines.push(`  Command: ${command}`)
-  lines.push('')
-  if (match.bare) {
-    lines.push(
-      '  Saw a force push with no lease pinned to an expected remote sha —',
-    )
-    lines.push(
-      '  it can silently clobber commits someone else pushed since your',
-    )
-    lines.push('  last fetch.')
-  } else {
-    lines.push(
-      '  Saw a force push already pinning --force-with-lease to an expected',
-    )
-    lines.push(
-      '  sha, the right instinct. It still needs the same authorization as',
-    )
-    lines.push('  a bare force.')
-  }
-  lines.push('')
-  lines.push('  Fleet default (refuses if the remote moved since fetch):')
-  lines.push(
-    '    git fetch origin && git push --force-with-lease=<branch>:$(git rev-parse origin/<branch>) origin <branch>',
-  )
-  lines.push('')
-  lines.push(
-    '  To proceed, the user must type the EXACT phrase in a new message:',
-  )
-  lines.push(`    ${BYPASS_PHRASE}`)
-  lines.push('')
-  lines.push(
-    '  (Legacy aliases also accepted: "Allow force-with-lease bypass",',
-  )
-  lines.push('  "Allow force-push-hard bypass" — one phrase covers both')
-  lines.push('  the bare form and the lease form.)')
-  lines.push('')
-  lines.push(
-    '  The phrase is case-insensitive but every word must appear, in order.',
-  )
-  lines.push(
-    '  Inferring intent from a paraphrase ("go ahead", "force it") does NOT',
-  )
-  lines.push('  count.')
   return lines.join('\n')
 }
 

@@ -49,24 +49,11 @@ import { defineHook, notify, runHook } from '../_shared/guard.mts'
 import type { GuardResult } from '../_shared/guard.mts'
 import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveRepoRoot } from '../_shared/repo-root.mts'
-import { WAITING_DISCIPLINE_GUIDANCE } from '../_shared/waiting-discipline.mts'
 
 // First and second (escalated) age tiers, in minutes. Named constants are the
 // single source for the age math and the warn-once bookkeeping.
 export const LONGRUN_MINUTES = 5
 export const LONGRUN_ESCALATE_MINUTES = 10
-
-// Domain triage for a thrashing task, appended to every nudge. Lint/format
-// failures have an AUTOFIXER — rerunning a hand-edit loop against them is the
-// classic thrash shape, and the fix is mechanical: autofix, then re-run the
-// linter. Exported so the behavioral tests pin the guidance, not its wording
-// drift sites.
-export const AUTOFIX_FIRST_GUIDANCE: readonly string[] = [
-  'If the failing step is LINT or FORMAT and the toolchain has an autofixer:',
-  '  - FIRST move is the autofixer over the affected files — `pnpm run fix` or the tool’s `--fix`.',
-  '  - verification is re-running the linter; its exit code is the proof.',
-  '  - plant-probes and per-finding hand-verification are for semantic domains with no autofixer.',
-]
 
 const MS_PER_MINUTE = 60_000
 
@@ -274,38 +261,21 @@ export function mergeSeen(
  * The nudge text naming each over-threshold task and its age. Pure.
  */
 export function formatLongrunNudge(warned: readonly WarnDecision[]): string {
-  const lines: string[] = ['']
-  lines.push(
-    `[long-running-task-nudge] ${warned.length} background task(s) running past threshold:`,
-  )
-  lines.push('')
-  for (const decision of warned) {
+  const lines: string[] = []
+  for (let i = 0, { length } = warned; i < length; i += 1) {
+    const decision = warned[i]!
     const label = decision.label ? ` "${decision.label}"` : ''
     const minutes = Math.floor(decision.ageMs / MS_PER_MINUTE)
     const escalated =
-      decision.tier >= LONGRUN_ESCALATE_MINUTES ? ' — ESCALATED' : ''
+      decision.tier >= LONGRUN_ESCALATE_MINUTES ? ' ESCALATED' : ''
+    const prefix =
+      i === 0
+        ? '💡 long-running-task-nudge: verify progress (TaskGet/transcript growth) or TaskStop + root-cause; lint/format thrash → autofixer (`pnpm run fix`) first — '
+        : '   '
     lines.push(
-      `  ${decision.kind} ${decision.id}${label} — ${minutes}min${escalated}`,
+      `${prefix}${decision.kind} ${decision.id}${label} — ${minutes}min${escalated}`,
     )
   }
-  lines.push('')
-  lines.push('Verify each is PROGRESSING, not thrashing:')
-  lines.push(
-    '  - transcript still growing, result count rising, or phase advancing.',
-  )
-  lines.push(
-    '  - use TaskGet or read the transcript to confirm forward motion.',
-  )
-  lines.push(
-    'If a task is stuck, repeating the same failed step with no new output:',
-  )
-  lines.push(
-    '  - TaskStop it, then research the real root cause before relaunching.',
-  )
-  lines.push(...AUTOFIX_FIRST_GUIDANCE)
-  lines.push(...WAITING_DISCIPLINE_GUIDANCE)
-  lines.push('Do not let it grind for an hour before intervening.')
-  lines.push('')
   return lines.join('\n')
 }
 

@@ -169,20 +169,12 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 
   const userSnippet = recentUser.slice(0, 200).replace(/\s+/g, ' ').trim()
   const lines = [
-    '[answer-status-requests-nudge] User asked for a status update; assistant declined with rate-limiting excuse:',
-    '',
-    `  User: "${userSnippet}${recentUser.length > 200 ? '…' : ''}"`,
-    '',
-    '  Decline phrases detected in assistant turn:',
+    `🚨 answer-status-requests-nudge: reply declined the status request "${userSnippet}${recentUser.length > 200 ? '…' : ''}" — run the check now and report`,
   ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    lines.push(`    • "${hit.label}" — …${hit.snippet}…`)
+    lines.push(`   • "${hit.label}" — …${hit.snippet}…`)
   }
-  lines.push('')
-  lines.push(
-    '  When the user explicitly asks for a status update, RUN the check and report. "Too soon" / "skipping" / "polling is wasted" are gatekeeping — the user already decided the check is worth it. The auto-notification policy (for background tasks the harness tracks) is YOUR optimization, not theirs.',
-  )
 
   return notify(lines.join('\n'))
 }

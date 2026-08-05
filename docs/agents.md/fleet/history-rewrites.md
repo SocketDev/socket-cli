@@ -57,45 +57,68 @@ not drop back to ordinary permanent-history rules.
   the release commit changes WHAT gets rewritten, not whether a rewrite needs
   the ruleset exemption dance.
 
-## The server-side force-push block, and its temporary exemption
+## The server-side ref-protection block, and its temporary exemption
 
-Clearing the local guards leaves a second wall. Every fleet repo carries a
-repo-level ruleset named `fleet-main-protection`, created and converged by
-`scripts/fleet/check/main-branch-rules-are-enforced.mts`: `deletion` +
-`non_fast_forward` on `~DEFAULT_BRANCH`, with **zero bypass actors**. GitHub
-therefore rejects a force-push to the default branch even after
-`no-force-push-guard` has stood aside. A squash-history flatten, a lease-force
-reconcile, and an amend-and-push all hit it.
+Clearing the local guards leaves a second wall. Every fleet repo carries two
+repo-level protection rulesets, each created and converged by the one check
+script that owns its shape:
 
-The exemption is a temporary self-grant, and it runs through a script:
+- `fleet-main-protection`, from
+  `scripts/fleet/check/main-branch-rules-are-enforced.mts`: target `branch`,
+  `~DEFAULT_BRANCH`, rules `deletion` + `non_fast_forward`.
+- `fleet-tag-protection`, from
+  `scripts/fleet/check/release-tags-are-immutable.mts`: target `tag`,
+  `refs/tags/v*`, rules `deletion` + `non_fast_forward`.
+
+Both carry **zero bypass actors**, so GitHub rejects a force-push to the default
+branch and a delete of any `v*` tag even after `no-force-push-guard` has stood
+aside. `current_user_can_bypass` reads `never` for a repo admin too. A
+squash-history flatten, a lease-force reconcile, and an amend-and-push hit the
+branch ruleset; deleting a loose alias tag such as `v1` hits the tag ruleset.
+Deleting that alias is the sanctioned remedy for a floating tag, because a
+mutable `v*` ref lets the bytes behind a consumer's pin change underneath them.
+
+The exemption is a temporary self-grant, and it runs through one script:
 
 ```bash
-# Who can force-push this repo right now? (read-only, the default)
-node scripts/fleet/grant-main-bypass.mts <repo>
+# Who can bypass the branch ruleset right now? (read-only, the default)
+node scripts/fleet/grant-ruleset-bypass.mts <repo>
 
 # Exempt yourself, push, then hand the exemption back.
-node scripts/fleet/grant-main-bypass.mts <repo> --grant --yes
-node scripts/fleet/grant-main-bypass.mts <repo> --revoke
+node scripts/fleet/grant-ruleset-bypass.mts <repo> --grant --yes
+node scripts/fleet/grant-ruleset-bypass.mts <repo> --revoke
+
+# The same three moves against the tag ruleset, to delete a v1 alias tag.
+node scripts/fleet/grant-ruleset-bypass.mts <repo> --tags
+node scripts/fleet/grant-ruleset-bypass.mts <repo> --grant --yes --tags
+node scripts/fleet/grant-ruleset-bypass.mts <repo> --revoke --tags
 ```
 
-- **Never hand-run `gh api` against the ruleset.** A hand-written full body
+- **The ruleset is a flag, and the default never moved.** No flag, or the
+  explicit `--branch`, selects `fleet-main-protection`; `--tags` selects
+  `fleet-tag-protection`. Both identities come from
+  `scripts/fleet/_shared/managed-ruleset-identity.mts`, which reads each
+  ruleset's name, target, ref includes, and owning `--fix` command off the check
+  script that owns it. A third managed ruleset is one more table entry.
+- **Never hand-run `gh api` against a ruleset.** A hand-written full body
   silently rewrites whatever it omits — that is how a PUT meant to add one
   bypass actor drops `non_fast_forward` for everyone. The script reads the
   ruleset, replaces only `bypass_actors`, writes it back, then re-reads and
   fails loud if any rule type disappeared.
-- **The grant is self-expiring, by construction.** The canonical ruleset body
-  (`rulesetPayload()`) has no `bypass_actors` field at all, so the next
-  `main-branch-rules-are-enforced --fix` wipes every grant. GitHub also logs a
+- **The grant expires on the next `--fix` run.** The canonical body each check
+  writes has no `bypass_actors` field at all, so the owning check's next `--fix`
+  wipes every grant on its ruleset. GitHub also logs a
   `Bypassed rule violations` entry on each use. Nothing here is durable, and
   the script prints both facts on every grant.
 - **It is reflexive only.** There is no `--user` flag: the actor is always the
   authenticated `gh` account, so the tool can exempt the person running it and
   nobody else. `--grant` additionally requires `--yes`.
-- **It never creates the ruleset.** An absent `fleet-main-protection` is a hard
-  stop pointing at `main-branch-rules-are-enforced --fix`; one script owns that
-  ruleset's shape, and a second definition would drift from it.
+- **It never creates a ruleset, and never writes the wrong one.** An absent
+  managed ruleset is a hard stop pointing at the owning `--fix` command. A
+  ruleset whose live target disagrees with the selected identity is refused
+  before any write, so a `--tags` run cannot land on a branch ruleset.
 - **Revoke when done.** Waiting for the next `--fix` run works, but leaves a
-  live force-push exemption sitting on the repo until then.
+  live exemption sitting on the repo until then.
 
 ## Strip attribution with the script, never a rebase dance
 

@@ -128,34 +128,16 @@ export const check = editGuard((filePath, content) => {
   if (findings.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '🚨 no-private-path-in-source-guard: blocked a private/internal path in a source comment.',
-  )
-  lines.push(`  File: ${filePath}`)
-  lines.push('')
-  for (let i = 0, { length } = findings; i < length; i += 1) {
+  const first = findings[0]!
+  const lines: string[] = [
+    `🚨 no-private-path-in-source-guard: blocked ${describePrivatePathKind(first.kind)} "${first.match}" in a comment (line ${first.line} of ${filePath}) — remove the path; describe the constraint, not where a note lives`,
+  ]
+  for (let i = 1, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  Line ${f.line} — ${describePrivatePathKind(f.kind)}:`)
-    lines.push(`    Saw:   ${f.snippet}`)
-    lines.push(`    Match: ${f.match}`)
-    lines.push('')
+    lines.push(
+      `   also line ${f.line}: ${describePrivatePathKind(f.kind)} "${f.match}"`,
+    )
   }
-  lines.push(
-    '  These references leak internal fleet layout, operator-local working',
-  )
-  lines.push(
-    '  notes, or a dev-box checkout path into committed (often public) source.',
-  )
-  lines.push('')
-  lines.push(
-    '  Fix: remove the path from the comment. If you need to explain a',
-  )
-  lines.push(
-    '  decision, describe the constraint — not where a plan doc lives.',
-  )
-  lines.push('')
-  lines.push('  Background: docs/agents.md/fleet/public-surface-hygiene.md')
   return block(lines.join('\n') + '\n')
 })
 

@@ -132,46 +132,16 @@ export const check = editGuard((filePath, _content, payload) => {
     return undefined
   }
 
-  const lines: string[] = []
-  lines.push(
-    '[consumer-grep-nudge] removed tokens — grep upstream consumers before relying on the change:',
+  const tokens = [...removed.values()].flat()
+  const shown = tokens
+    .slice(0, 5)
+    .map(t => `"${t}"`)
+    .join(', ')
+  const more = tokens.length > 5 ? ` (+${tokens.length - 5} more)` : ''
+  const dirList = dirs.map(d => `${d}/`).join(' ')
+  return notify(
+    `💡 consumer-grep-nudge: deleting ${shown}${more} while ${dirList} may hold consumers — rg -nF '${tokens[0]}' ${dirList} before relying on the removal`,
   )
-  lines.push('')
-  for (const [name, tokens] of removed) {
-    lines.push(
-      `  ${name}: ${tokens
-        .slice(0, 5)
-        .map(t => `\`${t}\``)
-        .join(
-          ', ',
-        )}${tokens.length > 5 ? `  (+${tokens.length - 5} more)` : ''}`,
-    )
-  }
-  lines.push('')
-  lines.push('  Repo has consumer-bearing subtree(s):')
-  for (let i = 0, { length } = dirs; i < length; i += 1) {
-    const d = dirs[i]!
-    lines.push(`    ${d}/`)
-  }
-  lines.push('')
-  lines.push(
-    '  Past incident: agent stripped a CSS class because repo-root grep',
-  )
-  lines.push('  found 0 hits; an upstream bundle hydrated from it and the page')
-  lines.push('  went blank. Grep every consumer subtree before continuing:')
-  lines.push('')
-  for (let i = 0, { length } = dirs; i < length; i += 1) {
-    const d = dirs[i]!
-    /* c8 ignore next - removed.size > 0 guarantees flat()[0] is defined; ?? arm is unreachable */
-    lines.push(
-      `    rg -nF '${[...removed.values()].flat()[0] ?? '<token>'}' ${d}/`,
-    )
-  }
-  lines.push('')
-  lines.push('  Reminder-only; not a block.')
-  lines.push('')
-
-  return notify(lines.join('\n'))
 })
 
 export const hook = defineHook({

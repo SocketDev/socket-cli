@@ -250,6 +250,11 @@ async function defaultPackAssets(pkg: {
  * provided it is called to produce the asset file paths (the cargo tier passes
  * a packer that returns `[cratePath, checksumsPath]`); when omitted the exact
  * `pnpm pack` behavior is kept, so the npm path is unchanged.
+ *
+ * `options.commit` names the commit the tag must mark — the commit the
+ * PUBLISHED bytes were built from, which the publish pipeline records at
+ * staging time. Omitted, the tag lands on HEAD as it always has. It only ever
+ * moves a tag that does not exist yet; an existing tag is still left untouched.
  */
 export async function ensureTagAndRelease(
   pkg: {
@@ -258,11 +263,13 @@ export async function ensureTagAndRelease(
   },
   options?:
     | {
+        commit?: string | undefined
         packAssets?: (() => Promise<string[]>) | undefined
       }
     | undefined,
 ): Promise<boolean> {
   const opts = { __proto__: null, ...options } as {
+    commit?: string | undefined
     packAssets?: (() => Promise<string[]>) | undefined
   }
   const tagName = `v${pkg.version}`
@@ -272,13 +279,21 @@ export async function ensureTagAndRelease(
     rootPath,
   )
   if (tagCheck.code !== 0) {
-    const created = await runCapture('git', ['tag', tagName], rootPath)
+    // Tag the recorded content commit when the caller named one; otherwise
+    // HEAD, the historical behavior. `git tag <name> <commit-ish>` is the same
+    // call with one more argument — no separate code path to drift.
+    const tagArgs = opts.commit ? [tagName, opts.commit] : [tagName]
+    const created = await runCapture('git', ['tag', ...tagArgs], rootPath)
     if (created.code !== 0) {
-      logger.fail(`could not create tag ${tagName}`)
+      logger.fail(
+        `could not create tag ${tagName}${opts.commit ? ` at ${opts.commit}` : ''}`,
+      )
       process.exitCode = 1
       return false
     }
-    logger.log(`Created tag ${tagName}.`)
+    logger.log(
+      `Created tag ${tagName}${opts.commit ? ` at ${opts.commit.slice(0, 12)} (the staged content commit)` : ''}.`,
+    )
   }
   // A non-zero push is tolerated ONLY when the remote already carries the tag
   // (a parallel/earlier push). Any other push failure is fatal here: an

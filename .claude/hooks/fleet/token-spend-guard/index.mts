@@ -130,43 +130,22 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const lines = [
-    '[token-spend-guard] Mechanical command on a premium setting.',
-    '',
-  ]
+  const dimensions: string[] = []
   if (flagModel) {
-    lines.push(
-      `  model  : ${model} — premium. Mechanical work runs fine on a`,
-      '           cheap/fast model. Switch: /model sonnet  (or haiku).',
-      '           Keep it for this task: type "Allow model bypass".',
+    dimensions.push(
+      `model "${model}" (drop: /model sonnet, keep: user types "Allow model bypass")`,
     )
   }
   if (flagEffort) {
-    lines.push(
-      `  effort : ${effort} — premium. Drop it: /effort low  (or medium).`,
-      '           Keep it for this task: type "Allow effort bypass".',
+    dimensions.push(
+      `effort "${effort}" (drop: /effort low, keep: user types "Allow effort bypass")`,
     )
   }
-  lines.push(
-    '',
-    '  Mechanical = cascades, lint-autofix sweeps, rename/path migrations.',
-    '  Reserve premium model + high effort for design, hard debugging,',
-    '  security review.',
-    '',
-    '  Cheapest path — DELEGATE the mechanical step to a cheaper tier instead',
-    '  of downgrading your whole session: spawn a subagent at a low tier to run',
-    "  it (the Agent tool with model: 'haiku', or `spawnAiAgent` from",
-    '  @socketsecurity/lib with a low AI_PROFILE). The subagent runs the command',
-    '  cheap + returns; your premium session keeps its context for the real work.',
-    '',
-    '  Report-back contract: a foreground Agent call returns the child’s final',
-    '  text as YOUR tool result; a background delegate re-invokes you when it',
-    '  completes. A delegate can NEVER SendMessage you (you are not addressable',
-    '  to it) — do not instruct it to, and never end your turn waiting on a',
-    '  delegate’s message.',
-    '',
+  return block(
+    `🚨 token-spend-guard: mechanical command on premium ` +
+      `${dimensions.join(' + ')} — delegate it to a cheap subagent ` +
+      "(Agent tool, model: 'haiku') or drop the setting.",
   )
-  return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({

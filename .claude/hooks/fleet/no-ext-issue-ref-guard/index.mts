@@ -182,32 +182,10 @@ export const check = bashGuard((command, payload) => {
       dedup.set(r.raw, r)
     }
   }
-  const lines: string[] = [
-    '🚨 no-ext-issue-ref-guard: blocked commit/PR/issue message ' +
-      'referencing a non-SocketDev GitHub issue or PR.',
-    '',
-    'Why this matters: GitHub auto-links these tokens and posts an',
-    "'added N commits that reference this issue' event back to the",
-    'target. A fleet cascade of N commits = N pings to the maintainer.',
-    '',
-    'Refs found:',
-  ]
-  for (const r of dedup.values()) {
-    lines.push(`  - ${r.raw}`)
-  }
-  lines.push('')
-  lines.push('Fix one of:')
-  lines.push('  • Remove the ref from the commit message. Move it to')
-  lines.push('    the PR description prose, which does NOT backref.')
-  lines.push('  • Rewrite to masked-link form (does NOT auto-link):')
-  lines.push('      [#1203](https://github.com/owner/repo/issues/1203)')
-  lines.push('  • If the ref IS to a SocketDev-owned repo, write it as')
-  lines.push('    `SocketDev/<repo>#<num>` (case-insensitive).')
-  lines.push('')
-  lines.push(
-    `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
+  const refList = [...dedup.values()].map(r => r.raw).join('", "')
+  return block(
+    `🚨 no-ext-issue-ref-guard: external issue ref "${refList}" — GitHub backrefs the target; drop it or mask as [#<n>](https://github.com/<owner>/<repo>/issues/<n>) (bypass: user types "${BYPASS_PHRASE}")`,
   )
-  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

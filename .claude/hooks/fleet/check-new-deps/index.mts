@@ -337,10 +337,13 @@ export const check = editGuard(
     })
 
     if (blocked.length > 0) {
-      const lines = [`Socket: blocked ${blocked.length} dep(s):`]
-      for (let i = 0, { length } = blocked; i < length; i += 1) {
+      const first = blocked[0]!
+      const lines = [
+        `🚨 check-new-deps: blocked ${blocked.length} dep(s) — Socket.dev flagged "${first.purl}" (${first.reason}); remove it`,
+      ]
+      for (let i = 1, { length } = blocked; i < length; i += 1) {
         const b = blocked[i]!
-        lines.push(`  ${b.purl}: ${b.reason}`)
+        lines.push(`   "${b.purl}" (${b.reason})`)
       }
       return block(lines.join('\n'))
     }

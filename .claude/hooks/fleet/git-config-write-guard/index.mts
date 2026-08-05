@@ -218,33 +218,18 @@ function buildBlockMessage(
   hits: readonly BannedHit[],
   filePath?: string | undefined,
 ): string {
+  // One line per banned key; the fix and bypass ride the first line.
+  const where = source === 'edit' && filePath ? ` in ${filePath}` : ''
   const lines: string[] = []
-  lines.push(
-    '[git-config-write-guard] Blocked: write to banned local git config key.',
-  )
-  lines.push('')
-  if (source === 'edit' && filePath) {
-    lines.push(`  Path: ${filePath}`)
-    lines.push('')
-  }
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const h = hits[i]!
-    lines.push(`  ${h.key.padEnd(20)} = ${h.value || '<unset value>'}`)
+    const evidence = `"${h.key} = ${h.value || '<unset value>'}"`
+    lines.push(
+      i === 0
+        ? `🚨 git-config-write-guard: blocked local git-config write ${evidence}${where} — use \`git config --global\` (or --worktree), or --unset to clean up (bypass: user types "${BYPASS_PHRASE}")`
+        : `   ${evidence}`,
+    )
   }
-  lines.push('')
-  lines.push('  These keys are identity / signing / topology — they belong in')
-  lines.push('  the GLOBAL git config (`git config --global <key> <value>`),')
-  lines.push("  not a fleet repo's local `.git/config`. Past incident: a stray")
-  lines.push('  `bare = true` in a local config bricked a repo for 3+ turns.')
-  lines.push('')
-  lines.push('  Fix:')
-  lines.push('    1. Use --global instead: `git config --global user.email …`')
-  lines.push('    2. Or scope to a worktree: `git config --worktree …`')
-  lines.push('    3. Or, if cleaning up corruption, use `git config --unset`')
-  lines.push('       to REMOVE the existing local override (allowed).')
-  lines.push('')
-  lines.push(`  Bypass: type "${BYPASS_PHRASE}" in your next message.`)
-  lines.push('  Full spec: docs/agents.md/fleet/git-config-write-guard.md')
   return lines.join('\n') + '\n'
 }
 
@@ -414,18 +399,14 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
   if (findings.length === 0) {
     return
   }
+  // One line per finding, naming the repo, the corrupt key, and whether the
+  // probe already fixed it.
   const lines: string[] = []
-  lines.push(
-    '[git-config-write-guard] Corruption detected in fleet repo local git configs:',
-  )
-  lines.push('')
   // A placeholder identity is auto-unset ONLY when a global identity exists
   // to fall back to. Probe once, it's the same global config for every repo.
   const globalIdentityExists = hasGlobalIdentity()
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  ${f.repo}`)
-    lines.push(`    ${f.configPath}`)
     const restoredBare =
       f.issues.includes(BARE_ISSUE) && restoreBareToFalse(f.configPath)
     // Auto-unset a placeholder local identity when a global one underneath
@@ -439,7 +420,7 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
     /* c8 ignore stop */
     for (let j = 0, jl = f.issues.length; j < jl; j += 1) {
       const issue = f.issues[j]!
-      let suffix = ''
+      let suffix = ' — unset manually (`git config --unset <key>`)'
       if (issue === BARE_ISSUE && restoredBare) {
         suffix = ' — AUTO-RESTORED to non-bare'
       } else if (issue === PLACEHOLDER_IDENTITY_ISSUE) {
@@ -448,16 +429,11 @@ function emitSessionStartReport(findings: readonly CorruptionFinding[]): void {
           ? ' — AUTO-UNSET (signed global identity now wins)'
           : ' — no global identity to fall back to; unset manually'
       }
-      lines.push(`      - ${issue}${suffix}`)
+      lines.push(
+        `🚨 git-config-write-guard: ${f.repo} ${f.configPath} — ${issue}${suffix}`,
+      )
     }
-    lines.push('')
   }
-  lines.push('  core.bare = true and a placeholder local identity (with a')
-  lines.push('  global fallback) are reverted automatically. Remaining')
-  lines.push('  findings need manual cleanup: edit `.git/config` or')
-  lines.push('  `git config --unset <key>`.')
-  lines.push('')
-  lines.push('  Spec: docs/agents.md/fleet/git-config-write-guard.md')
   // Stdout is the channel Claude Code surfaces at SessionStart.
   process.stdout.write(lines.join('\n') + '\n')
 }

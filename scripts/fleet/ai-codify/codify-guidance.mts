@@ -136,9 +136,10 @@ export const SURFACE_GUIDANCE: Readonly<Record<CodifySurface, string>> = {
 <conventions>
   - Name the file as an ASSERTION (\`<thing>-is-<property>.mts\`, e.g. \`hook-dirs-are-not-husks.mts\`) — the check-names-are-assertions gate enforces this.
   - Mirror an existing check's shape (read scripts/fleet/check/hook-dirs-are-not-husks.mts as the canonical template): a header comment (what / why / what fails / usage), pure exported scan functions (\`scanForX(repoRoot): Hit[]\`), a \`main()\` that logs hits + sets \`process.exitCode = 1\` on findings, a \`SCRIPT_META\` (describe + help — the entry-scripts-self-describe gate enforces it), and the entrypoint guard \`if (isMainModule(import.meta.url)) { runMain(main, SCRIPT_META) }\`.
-  - Import REPO_ROOT from '../paths.mts'; logger from '@socketsecurity/lib-stable/logger/default'.
+  - Import REPO_ROOT from '../paths.mts'; logger from '@socketsecurity/lib-stable/logger/default'. Every other filesystem path the check needs also comes from paths.mts — one path, one reference (docs/agents.md/fleet/path-hygiene.md); never respell a path inline.
   - Register it in scripts/fleet/check.mts as \`() => run('node', ['scripts/fleet/check/<name>.mts'])\` with a 2-4 line comment naming the discipline + the motivating incident generically (no dates/SHAs — the dated-citation rule).
-  - If the check has non-trivial pure logic, write a vitest test at test/repo/unit/check/<name>.test.mts (a dead-export fixture that fails + a clean one that passes) and run it with \`pnpm test test/repo/unit/check/<name>.test.mts\`. Fleet-script tests cascade in lock-step; see docs/agents.md/fleet/test-layout.md.
+  - Write a vitest test at test/repo/unit/check/<name>.test.mts (a dead-export fixture that fails + a clean one that passes) exercising the exported pure functions, and run it with \`pnpm test test/repo/unit/check/<name>.test.mts\` — a new script is born tested (the scripts-have-unit-tests gate tracks the gap list). Fleet-script tests cascade in lock-step; see docs/agents.md/fleet/test-layout.md.
+  - The full new-script contract lives in docs/agents.md/fleet/self-describing-scripts.md: self-describe via runMain(main, SCRIPT_META), unit test, one-path-one-reference, and the .mts itself is the enforcement.
 </conventions>`,
   'hook-guard': `Author a new BLOCKING hook at .claude/hooks/{fleet,repo}/<name>-guard/ (a -guard BLOCKS; if it only nudges, use hook-nudge instead — never both for one concern).
 

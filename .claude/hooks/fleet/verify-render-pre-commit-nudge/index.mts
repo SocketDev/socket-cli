@@ -200,37 +200,18 @@ export const check = bashGuard((command, payload) => {
     return undefined
   }
 
-  const lines: string[] = []
-  lines.push('[verify-render-pre-commit-nudge] About to commit UI/render files')
-  lines.push('')
-  lines.push('  UI files staged:')
-  const fList = uiStaged.slice(0, 5)
-  for (let i = 0, { length } = fList; i < length; i += 1) {
-    const f = fList[i]!
-    lines.push(`    ${f}`)
-  }
-  if (uiStaged.length > 5) {
-    lines.push(`    (+${uiStaged.length - 5} more)`)
-  }
-  lines.push('')
-  /* c8 ignore start - buildCommand is always defined when buildIndex >= 0; they are set together in analyzeTranscript */
-  if (buildCommand) {
-    lines.push(`  Recent build: ${buildCommand.slice(0, 80)}`)
-  }
-  /* c8 ignore stop */
-  lines.push('  No user verification signal since the build ran.')
-  lines.push('')
-  lines.push(
-    '  Past pattern: committing UI changes before verifying the rebuilt',
+  const shown = uiStaged.slice(0, 5)
+  const fileEvidence =
+    uiStaged.length > shown.length
+      ? `${shown.join(', ')} +${uiStaged.length - shown.length} more`
+      : shown.join(', ')
+  /* c8 ignore next - buildCommand is always defined when buildIndex >= 0; they are set together in analyzeTranscript */
+  const buildEvidence = buildCommand ? buildCommand.slice(0, 80) : 'the build'
+  return notify(
+    `ℹ verify-render-pre-commit-nudge: committing UI files "${fileEvidence}" ` +
+      `with no user verification since \`${buildEvidence}\` — open the ` +
+      'rendered output and confirm it before committing (reminder only).',
   )
-  lines.push(
-    '  output produces wasted commits. Open the rendered artifact, confirm',
-  )
-  lines.push('  it looks correct, then commit.')
-  lines.push('')
-  lines.push('  Reminder-only; not a block.')
-  lines.push('')
-  return notify(lines.join('\n'))
 })
 
 export const hook = defineHook({

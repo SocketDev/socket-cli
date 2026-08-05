@@ -56,27 +56,11 @@ export function isGitPush(command: string): boolean {
 }
 
 export function formatReminder(): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ post-push-ci-monitor-nudge')
-  lines.push('')
-  lines.push('The push is NOT done until CI is green. Monitor the runs you')
-  lines.push('just triggered and drive them to green:')
-  lines.push('')
-  lines.push('  gh run watch')
-  lines.push('  gh run list --limit 5')
-  lines.push('')
-  lines.push('A red post-push CI is fleet-wide breakage — members cascade from')
-  lines.push('origin/main, so a broken main breaks every repo downstream. Do')
-  lines.push('not walk away from a red run: fix-forward to green.')
-  lines.push('')
-  lines.push(
-    'The full pre-push gate (`pnpm run update`, `pnpm i`, `fix --all`,',
+  return (
+    'ℹ post-push-ci-monitor-nudge: pushed — not done until CI is green; run ' +
+    '`gh run watch` (or `gh run list --limit 5`) and fix-forward any red run ' +
+    '(a red origin/main is fleet-wide breakage).'
   )
-  lines.push('`check --all`, `cover`, all tests green) should already have run')
-  lines.push('before this push — if it did not, that is what just broke CI.')
-  lines.push('')
-  return lines.join('\n')
 }
 
 export const check = bashGuard(command =>

@@ -141,31 +141,17 @@ export function computePostEditText(
 }
 
 /**
- * Build the block message naming each empty section + the bypass phrase. Same
- * text the hook previously wrote to stderr, the runner appends the newline.
+ * Build the one-line block verdict naming each empty section + the bypass
+ * phrase. The runner appends the newline.
  */
 export function buildBlockMessage(
   filePath: string,
   empty: Array<{ line: number; name: string }>,
 ): string {
-  const lines: string[] = []
-  lines.push('[changelog-no-empty-guard] Blocked: empty CHANGELOG section(s).')
-  lines.push(`  File: ${filePath}`)
-  lines.push('')
-  for (const { line, name } of empty) {
-    lines.push(`  Line ${line}: \`### ${name}\` has no bullets.`)
-  }
-  lines.push('')
-  lines.push('  Per docs/agents.md/fleet/version-bumps.md §2, the CHANGELOG')
-  lines.push('  is public/customer-facing only. When the filter leaves a')
-  lines.push('  Keep-a-Changelog section empty, delete the heading too — a')
-  lines.push('  reader scanning the release should not have to disambiguate')
-  lines.push(
-    '  "section intentionally empty" from "section forgot its content."',
-  )
-  lines.push('')
-  lines.push(`  Bypass: type \`${BYPASS_PHRASE}\` in a recent message.`)
-  return lines.join('\n')
+  const sections = empty
+    .map(({ line, name }) => `\`### ${name}\` (line ${line})`)
+    .join(', ')
+  return `🚨 changelog-no-empty-guard: blocked ${filePath} — empty section(s) ${sections} — delete the empty heading(s) too (bypass: user types "${BYPASS_PHRASE}")`
 }
 
 export function isChangelog(filePath: string | undefined): boolean {

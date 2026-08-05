@@ -42,32 +42,10 @@ export function formatReminder(
   email: string,
   { globalFallbackExists }: { globalFallbackExists: boolean },
 ): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ git-identity-drift-nudge')
-  lines.push('')
-  lines.push(`Your effective git author email is a placeholder: \`${email}\`.`)
-  lines.push(
-    'GitHub rejects a signed push from it (`required_signatures`): the',
-  )
-  lines.push("signature can't verify against a key tied to that address.")
-  lines.push('')
-  if (globalFallbackExists) {
-    lines.push(
-      'Fix: drop the local override so your signed global identity wins:',
-    )
-    lines.push('  git config --local --unset user.email')
-    lines.push('  git config --local --unset user.name')
-  } else {
-    lines.push('Fix: set your real identity globally (not in the repo):')
-    lines.push('  git config --global user.email "<you>@<domain>"')
-    lines.push('  git config --global user.name "<Your Name>"')
-  }
-  lines.push('')
-  lines.push('Then re-author any commits already made this turn (e.g.')
-  lines.push('`git commit --amend --reset-author --no-edit`) before pushing.')
-  lines.push('')
-  return lines.join('\n')
+  const fix = globalFallbackExists
+    ? 'git config --local --unset user.email && git config --local --unset user.name'
+    : 'git config --global user.email "<you>@<domain>" && git config --global user.name "<Your Name>"'
+  return `💡 git-identity-drift-nudge: placeholder git author "${email}" fails GitHub required_signatures — ${fix}, then \`git commit --amend --reset-author --no-edit\` before pushing`
 }
 
 // The pure decision: should the reminder fire, given the resolved email?

@@ -89,31 +89,14 @@ export const check = editGuard((filePath, content) => {
   if (findings.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '🚨 no-file-oxlint-disable-guard: blocked Edit/Write — file-scope `oxlint-disable` is forbidden.',
-  )
-  lines.push('')
-  /* c8 ignore next - editGuard guarantees filePath is non-empty before calling here */
-  lines.push(`File:  ${filePath || '<unknown>'}`)
-  lines.push('')
-  for (let i = 0, { length } = findings; i < length; i += 1) {
+  const first = findings[0]!
+  const lines: string[] = [
+    `🚨 no-file-oxlint-disable-guard: blocked file-scope disable "${first.text}" (Line ${first.line}) — Fix: \`oxlint-disable-next-line <rule> -- <reason>\` on the specific line that needs it`,
+  ]
+  for (let i = 1, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
-    lines.push(`  Line ${f.line}: ${f.text}`)
+    lines.push(`   also Line ${f.line}: "${f.text}"`)
   }
-  lines.push('')
-  lines.push(
-    'Fix: move each disable to `oxlint-disable-next-line <rule> -- <reason>`',
-  )
-  lines.push(
-    '     on the specific line that needs it. Each exemption must carry its own',
-  )
-  lines.push('     justification next to the code it covers.')
-  lines.push('')
-  lines.push(
-    "If the entire file legitimately can't comply, the file needs a refactor",
-  )
-  lines.push('— not a blanket exemption.')
   return block(lines.join('\n') + '\n')
 })
 

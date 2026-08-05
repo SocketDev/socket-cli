@@ -123,26 +123,13 @@ export const check = (payload: ToolCallPayload): GuardResult => {
       maxOccurrences = n
     }
   }
-  const lines = [
-    '[uncodified-lesson-nudge] Recorded a durable lesson with no code enforcer:',
-    '',
-    ...flagged.map(f => `  • ${f}`),
-    '',
-  ]
-  if (maxOccurrences >= RECURRENCE_THRESHOLD) {
-    lines.push(
-      `  ⚠ This lesson has been recorded uncodified across ${maxOccurrences} ` +
-        'sessions (learning ledger) — stop deferring, codify it THIS turn.',
-    )
-    lines.push('')
-  }
-  lines.push(
-    '  Memory alone does not enforce ("code is law"). Turn this into an',
-    '  executable enforcer — run `/codifying-disciplines` (scans memory →',
-    '  proposes a hook / lint rule / check + agents.md doc), or for a single',
-    '  rule `node scripts/fleet/codify-rule.mts --memory <path> --apply`.',
+  const recurrence =
+    maxOccurrences >= RECURRENCE_THRESHOLD
+      ? ` (uncodified across ${maxOccurrences} sessions — codify THIS turn)`
+      : ''
+  return notify(
+    `ℹ uncodified-lesson-nudge: lesson with no code enforcer "${flagged.join(', ')}" — run /codifying-disciplines or \`node scripts/fleet/codify-rule.mts --memory <path> --apply\`${recurrence}\n`,
   )
-  return notify(lines.join('\n') + '\n')
 }
 
 export const hook = defineHook({

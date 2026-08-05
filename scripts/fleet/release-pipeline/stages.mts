@@ -33,11 +33,14 @@ export const RELEASE_STAGE_ORDER = [
  * the version the RELEASE pipeline bumped. `approve` is deliberately NOT
  * here: promoting a staged package to public stays a separate, explicit
  * `--approve` invocation, never part of a `run`. The full publish order is
- * stage-publish → verify → approve → release: after a successful approve the
- * SAME invocation continues into the release stage, so one promote command
- * yields the tag + GH release behind the confirmed publish.
+ * stage-publish → verify → scan → approve → release: verify proves the staged
+ * bytes are this tree's, scan sends those bytes off to be INSPECTED and
+ * records the verdict, and only then is a human asked to promote — after a
+ * successful approve the SAME invocation continues into the release stage, so
+ * one promote command yields the tag + GH release behind the confirmed
+ * publish.
  */
-export const PUBLISH_STAGE_ORDER = ['stage-publish', 'verify'] as const
+export const PUBLISH_STAGE_ORDER = ['stage-publish', 'verify', 'scan'] as const
 
 /**
  * Both pipelines' run stages — the union used for shared receipt and
@@ -137,6 +140,7 @@ export const STAGE_DESCRIPTIONS: Readonly<Record<StageId, string>> = {
     'pnpm run update → pnpm i → fix → check (changed-file scope; --preflight-all for full-tree)',
   release:
     'git tag vX.Y.Z + immutable GH release (draft → upload → undraft), cut LAST — refuses without a passed approve + registry liveness',
+  scan: 'Socket full scan of the STAGED tarball, before anyone is asked to promote (error-action alerts fail; --skip-scan skips it loudly)',
   'stage-publish':
     'dispatch + watch npm-publish.yml (CI stages to npm under OIDC; nothing public yet; requires a bump receipt; --local stages from this machine)',
   verify:

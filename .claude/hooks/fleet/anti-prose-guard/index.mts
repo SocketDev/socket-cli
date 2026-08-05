@@ -29,7 +29,7 @@ import path from 'node:path'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
-  findCategoricalProseBans,
+  findCategoricalProseBanHits,
   findChangelogImplDetail,
   findProseAntipatterns,
 } from './patterns.mts'
@@ -78,6 +78,14 @@ function isEnforcementSurface(rawPath: string): boolean {
   )
 }
 
+// The exact text a pattern matched, whitespace-collapsed and capped, so the
+// verdict quotes the offending span instead of lecturing doctrine.
+function matchedSpan(content: string, regex: RegExp): string {
+  const matched = content.match(regex)?.[0] ?? ''
+  const flat = matched.replaceAll(/\s+/g, ' ').trim()
+  return flat.length > 48 ? `${flat.slice(0, 45)}…` : flat
+}
+
 function isProseSurface(normalizedPath: string): boolean {
   if (isEnforcementSurface(normalizedPath)) {
     return false
@@ -123,23 +131,12 @@ export function findProseWriteVerdict(
         CHANGELOG_IMPL_BYPASS_PHRASE,
       )
     ) {
-      const lines: string[] = [
-        `🚨 anti-prose-guard: blocked CHANGELOG write to ${rel} — implementation detail.`,
-        '',
-      ]
-      for (let i = 0, { length } = implHits; i < length; i += 1) {
-        const hit = implHits[i]!
-        lines.push(`  ✗ ${hit.label}: ${hit.why}`)
-      }
-      lines.push(
-        '',
-        'A CHANGELOG entry states the user-visible behavior change only — the',
-        'API or commands a reader can now use, or what stopped breaking. Drop',
-        'dependency bumps, version deltas, and internal mechanism names.',
-        '',
-        `Bypass (rare): the user types "${CHANGELOG_IMPL_BYPASS_PHRASE}" verbatim.`,
+      const evidence = implHits
+        .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
+        .join('; ')
+      return block(
+        `🚨 anti-prose-guard: blocked ${rel} — implementation detail: ${evidence} — state the user-visible change instead (bypass: user types "${CHANGELOG_IMPL_BYPASS_PHRASE}")`,
       )
-      return block(lines.join('\n'))
     }
   }
 
@@ -150,20 +147,12 @@ export function findProseWriteVerdict(
   if (bypassPhrasePresent(payload.transcript_path, BYPASS_PHRASE)) {
     return undefined
   }
-  const lines: string[] = [`🚨 anti-prose-guard: blocked write to ${rel}.`, '']
-  for (let i = 0, { length } = hits; i < length; i += 1) {
-    const hit = hits[i]!
-    lines.push(`  ✗ ${hit.label}: ${hit.why}`)
-  }
-  lines.push(
-    '',
-    'Per CLAUDE.md "Prose authoring": run human-facing prose through the `prose`',
-    'skill (.claude/skills/fleet/prose/SKILL.md) before it lands. Rewrite the',
-    'flagged spans, then retry the edit.',
-    '',
-    `Bypass (rare): the user types "${BYPASS_PHRASE}" verbatim.`,
+  const evidence = hits
+    .map(hit => `${hit.label} "${matchedSpan(content, hit.regex)}"`)
+    .join('; ')
+  return block(
+    `🚨 anti-prose-guard: blocked ${rel} — ${evidence} — rewrite the flagged span(s), then retry (bypass: user types "${BYPASS_PHRASE}")`,
   )
-  return block(lines.join('\n'))
 }
 
 // `fleetOnly` replaces the spec-level `scope: 'convention'`: it gates the
@@ -186,23 +175,20 @@ export function findReplyProseVerdict(payload: ToolCallPayload): GuardResult {
   if (!rawText) {
     return undefined
   }
-  const hits = findCategoricalProseBans(stripCodeFences(rawText))
+  const hits = findCategoricalProseBanHits(stripCodeFences(rawText))
   if (!hits.length) {
     return undefined
   }
-  const lines: string[] = [
-    '🚨 anti-prose-guard: blocked turn-end — banned prose in the reply.',
-    '',
-  ]
+  // Terse on purpose: the human already saw the draft, and the harness
+  // renders this verdict twice — the quoted word IS the whole instruction,
+  // one line per hit, no label, no lecture (doctrine stays on the edit-time
+  // surfaces).
+  const lines: string[] = []
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    lines.push(`  ✗ ${hit.label}: ${hit.why}`)
+    const prefix = i === 0 ? '🚨 anti-prose-guard: ' : '   '
+    lines.push(`${prefix}delete "${hit.matched}" — …${hit.snippet}…`)
   }
-  lines.push(
-    '',
-    'Rewrite the reply without the banned framing — this match is a verdict, not',
-    'a heuristic. There is no bypass; delete the word.',
-  )
   // Blocks even mid-retry of another Stop guard. Degrading to a notice there
   // opened a real hole: a reply rewritten to satisfy a DIFFERENT guard can
   // introduce the banned framing, and on that retry this one only whispered,

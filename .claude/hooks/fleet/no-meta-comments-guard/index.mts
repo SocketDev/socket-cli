@@ -284,24 +284,13 @@ export const check = editGuard(
     }
 
     const lines: string[] = []
-    lines.push('[no-meta-comments-guard] Blocked: meta-comment(s) in source.')
-    lines.push(`  File: ${filePath}`)
-    lines.push('')
     for (let i = 0, { length } = findings; i < length; i += 1) {
       const f = findings[i]!
-      lines.push(`  Line ${f.line} (${f.kind}):`)
-      lines.push(`    Saw:     ${f.snippet}`)
-      lines.push(`    Suggest: ${f.suggestion}`)
-      lines.push('')
+      const prefix = i === 0 ? '🚨 no-meta-comments-guard: ' : '   '
+      lines.push(
+        `${prefix}${f.kind === 'task' ? 'rewrite' : 'delete'} line ${f.line} (${f.kind}) "${f.snippet}" — ${f.suggestion}`,
+      )
     }
-    lines.push('  Per CLAUDE.md "Code style → Comments": comments describe the')
-    lines.push('  CONSTRAINT or the hidden invariant. Development context')
-    lines.push(
-      '  (the plan, the task, the user request, removed code) lives in',
-    )
-    lines.push('  commit messages and PR descriptions, not source comments.')
-    lines.push('')
-    lines.push('  Rewrite or delete the comment, then retry the Edit/Write.')
     return block(lines.join('\n') + '\n')
   },
   { fleetOnly: true },

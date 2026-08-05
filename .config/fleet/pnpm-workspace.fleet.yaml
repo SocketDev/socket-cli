@@ -15,10 +15,6 @@
 # name in FLEET_CANONICAL_CATALOG_NAMES (scripts/repo/sync-scaffolding/manifest.mts).
 # loadExpectedCatalogEntries() reads versions from this file + merges the purpose.
 catalog:
-  # @actions/cache — the GitHub Actions cache-service client behind the fleet
-  # cache CLIs (scripts/fleet/cache/{restore,save}.mts), the native port of
-  # the actions/cache restore/save steps. Soaked (6.2.0 published 2026-07-13).
-  '@actions/cache': 6.2.0
   '@redwoodjs/agent-ci': 0.17.1
   'dtu-github-actions': 0.17.1
   '@shadscan/cli': 0.7.0

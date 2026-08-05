@@ -50,28 +50,12 @@ export const check = editGuard((filePath, content) => {
   if (!FOLDER_OPEN_RE.test(text)) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '[vscode-folder-open-task-guard] Blocked: a VS Code task set to run on folder open.',
+  return block(
+    `🚨 vscode-folder-open-task-guard: blocked '"runOn": "folderOpen"' in ` +
+      `${path.basename(filePath)} — auto-run on folder open is a drive-by ` +
+      'RCE vector; remove the folderOpen auto-run and run the task manually ' +
+      '(Tasks: Run Task).',
   )
-  lines.push(`  File: ${path.basename(filePath)}`)
-  lines.push('')
-  lines.push(
-    '  `"runOptions": { "runOn": "folderOpen" }` runs the task the moment',
-  )
-  lines.push(
-    '  the folder opens in VS Code — zero clicks, before any review. It is a',
-  )
-  lines.push(
-    '  known drive-by / supply-chain RCE vector (malicious dependency, PR, or',
-  )
-  lines.push('  poisoned cascade) and a common infostealer dropper.')
-  lines.push('')
-  lines.push('  Fix: remove the folderOpen auto-run. Run the task manually')
-  lines.push(
-    '  (Tasks: Run Task) or on an explicit event — never on folder open.',
-  )
-  return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({

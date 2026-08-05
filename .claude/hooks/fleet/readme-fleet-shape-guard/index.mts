@@ -334,18 +334,16 @@ export function findShapeViolations(
       findings.push({
         kind: 'duplicate-brand-mark',
         detail:
-          'README shows BOTH the repo brand mark and the fleet Socket ' +
-          'combomark. A page carries exactly one: keep the repo mark at the ' +
-          'top and delete the fleet combomark block at the bottom.',
+          'both the repo brand mark and the fleet Socket combomark present ' +
+          '(keep the repo mark, delete the fleet combomark block)',
       })
     }
     if (!hasLeadAnswer(text)) {
       findings.push({
         kind: 'missing-section',
         detail:
-          `README does not say why the repo exists before its first "##". ` +
-          `Add a lead paragraph directly under the title and badges (the ` +
-          `legacy "## ${LEAD_SECTION}" heading is deprecated — jump into it).`,
+          'no lead "why the repo exists" paragraph before the first "##" ' +
+          '(add it directly under the title and badges)',
       })
     }
     let cursor = 0
@@ -383,7 +381,7 @@ export function findShapeViolations(
     if (WHEELHOUSE_LEAK_RE.test(line)) {
       findings.push({
         kind: 'wheelhouse-leak',
-        detail: `Line ${i + 1} mentions socket-wheelhouse: ${line.trim().slice(0, 120)}`,
+        detail: `line ${i + 1} mentions socket-wheelhouse: "${line.trim().slice(0, 80)}"`,
       })
       break
     }
@@ -402,7 +400,7 @@ export function findShapeViolations(
     if (matched) {
       findings.push({
         kind: 'relative-sibling',
-        detail: `Line ${i + 1} invokes a sibling-relative path: ${line.trim().slice(0, 120)}`,
+        detail: `line ${i + 1} invokes a sibling-relative path: "${line.trim().slice(0, 80)}"`,
       })
       break
     }
@@ -414,7 +412,7 @@ export function findShapeViolations(
       if (!badge.signature.test(text)) {
         findings.push({
           kind: 'missing-social-badges',
-          detail: `Missing the canonical "${badge.name}" badge (every fleet README carries both the X / Twitter and Bluesky follow badges under the title)`,
+          detail: `missing the canonical "${badge.name}" badge`,
         })
       }
     }
@@ -489,38 +487,12 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  const lines: string[] = [
-    `🚨 readme-fleet-shape-guard: blocked Edit/Write of root README.md.`,
-    ``,
-    `File: ${filePath}`,
-    ``,
-    `Violations:`,
-  ]
-  for (let i = 0, { length } = findings; i < length; i += 1) {
-    lines.push(`  - ${findings[i]!.detail}`)
-  }
-  lines.push(``)
-  lines.push(
-    `Per the fleet "Canonical README" rule (CLAUDE.md → Canonical README),`,
+  return block(
+    `🚨 readme-fleet-shape-guard: blocked ${filePath} — ` +
+      `${findings.map(f => f.detail).join('; ')} — skeleton: lead ` +
+      `why-paragraph, then ${REQUIRED_SECTIONS.map(s => `## ${s}`).join(' / ')} ` +
+      `(bypass: user types "${BYPASS_PHRASE}")`,
   )
-  lines.push(`root README.md must follow the skeleton at:`)
-  lines.push(`  socket-wheelhouse/template/README.md`)
-  lines.push(``)
-  lines.push(
-    `Open with why the repo exists: a lead paragraph directly under the`,
-  )
-  lines.push(
-    `title and badges (no "## ${LEAD_SECTION}" heading). Then, in order:`,
-  )
-  for (let i = 0, { length } = REQUIRED_SECTIONS; i < length; i += 1) {
-    lines.push(`  ${i + 1}. ## ${REQUIRED_SECTIONS[i]}`)
-  }
-  lines.push(``)
-  lines.push(
-    `One-shot bypass (rare): user types "${BYPASS_PHRASE}" verbatim in a recent message.`,
-  )
-  lines.push(``)
-  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({

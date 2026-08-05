@@ -126,54 +126,10 @@ export function formatBlock(
   d: NpmAuthDetection,
   scopedPkg: string | undefined,
 ): string {
-  const lines = [
-    `[npm-2fa-needs-pty-guard] Blocked: bare \`npm ${d.operation}\` needs the PTY web-auth wrapper.`,
-    '',
-    `  What:  \`npm ${d.operation}\` requires 2FA, which needs npm's browser`,
-    '         web-auth flow.',
-    '  Where: this agent Bash channel is not a TTY, so npm errors EOTP instead',
-    '         of opening the browser, and the harness masks the auth URL as',
-    '         auth/cli/*** so it cannot be relayed from displayed output.',
-    `  Saw:   a raw \`npm ${d.operation}\` with no --otp and not the wrapper.`,
-  ]
   if (d.operation === 'publish' && scopedPkg) {
-    lines.push(
-      '',
-      `  Fix:   ${scopedPkg} is a fleet package — do NOT publish locally.`,
-      '         Fleet releases go through the STAGED web-UI flow: stage via the',
-      '         publish pipeline, then promote in the npmjs.com web UI. See',
-      '         docs/agents.md/fleet/npm-2fa-web-auth.md.',
-    )
-  } else {
-    lines.push(
-      '',
-      '  Fix:   re-run under the wrapper, which runs the auth under a PTY and',
-      '         auto-opens the auth URL read from the raw stream:',
-      '',
-      `           node scripts/fleet/npm-web-auth.mts ${d.operation} <args...>`,
-    )
-    if (d.operation === 'adduser' || d.operation === 'login') {
-      lines.push(
-        '',
-        `         For ${d.operation} the wrapper drives \`pnpm login\` (web auth)`,
-        '         rather than npm, and runs it from a scratch dir. Both details',
-        '         matter: every fleet package.json pins pnpm via `devEngines`,',
-        '         so a bare `npm login` inside any fleet repo dies',
-        '         EBADDEVENGINES before it reaches auth at all — the failure',
-        '         looks like an npm bug and is really the cwd.',
-        '',
-        '         Running it yourself in a real terminal works too, but it must',
-        '         be outside a fleet repo for the same reason:',
-        '',
-        '           cd /tmp && pnpm login --auth-type=web',
-        '',
-        "         Heads up: pnpm 11 keeps its web-login token in pnpm's own",
-        '         config while bare npm keeps reading ~/.npmrc, so a green',
-        '         `pnpm login` can still leave `npm whoami` unauthenticated.',
-      )
-    }
+    return `🚨 npm-2fa-needs-pty-guard: blocked "npm publish" — ${scopedPkg} releases via the STAGED web-UI flow (stage in the pipeline, promote on npmjs.com), never a local publish; see docs/agents.md/fleet/npm-2fa-web-auth.md\n`
   }
-  return lines.join('\n') + '\n'
+  return `🚨 npm-2fa-needs-pty-guard: blocked "npm ${d.operation}" (2FA needs a browser; this channel has no TTY, so npm errors EOTP) — run \`node scripts/fleet/npm-web-auth.mts ${d.operation} <args...>\`\n`
 }
 
 export const check = bashGuard(command => {

@@ -76,63 +76,10 @@ export function collectDependencySpecMap(
   return out
 }
 
-const LOCAL_PATH_FIX_LINES: readonly string[] = [
-  '  A `link:`/`file:` spec is a PUBLISHING GAP wearing a dependency’s',
-  '  clothes. The install resolves to whatever sits at that path on the',
-  '  machine running it, and to NOTHING on a fresh clone — CI, a new',
-  '  contributor, a release runner. Treat it as release work, not cleanup.',
-  '',
-  '  Fix — in priority order:',
-  '    1. PUBLISH THE PACKAGE, THEN GO THROUGH THE CATALOG. Reserve the',
-  '       name and wire trusted publishing:',
-  '         node scripts/fleet/publish-infra/npm/placeholder.mts',
-  '         node scripts/fleet/publish-infra/cargo/placeholder.mts',
-  '         node scripts/fleet/publish-infra/cargo/trusted-publisher.mts',
-  '       Add the published version to the fleet catalog',
-  '       (`.config/fleet/pnpm-workspace.fleet.yaml`), then depend on it',
-  '       as `"pkg": "catalog:"`. `catalog:` is the PREFERRED fleet form:',
-  '       it pins hard, and one central bump upgrades every repo at once.',
-  '    2. Exact published version — `"pkg": "1.2.3"`. Use when the package',
-  '       does not belong in the fleet-wide catalog; it costs a manifest',
-  '       bump per release.',
-  '    3. FALLBACK, in-repo package that genuinely cannot be published —',
-  '       `"pkg": "workspace:1.2.3"` (exact, not `workspace:*`) and list',
-  '       its directory under `packages:` in `pnpm-workspace.yaml`. This is',
-  '       the last resort, NOT the recommended destination: every sibling',
-  '       release forces a manifest bump in each dependent.',
-  '    4. Generated per-platform output a `packages:` glob swept in (the',
-  '       decmpfs shape: `napi/decmpfs/npm/<triple>/` build artifacts) —',
-  '       NARROW THE GLOB so it stops matching generated dirs, then',
-  '       regenerate the lockfile. Those packages resolve from the',
-  '       registry and the publish engine finds them by convention.',
-]
-
-const WORKSPACE_RANGE_FIX_LINES: readonly string[] = [
-  '  A range lets the resolved sibling version drift with whatever tree the',
-  '  install runs against, and pnpm expands it at publish time into a range',
-  '  every consumer inherits.',
-  '',
-  '  Fix — in priority order:',
-  '    1. `"pkg": "catalog:"` — PREFERRED. Publish the sibling if it is not',
-  '       published yet, add it to the fleet catalog',
-  '       (`.config/fleet/pnpm-workspace.fleet.yaml`), and depend on it',
-  '       through the catalog. One central bump upgrades every repo.',
-  '    2. `"pkg": "1.2.3"` — the sibling’s exact published version, when it',
-  '       does not belong in the fleet-wide catalog.',
-  '    3. `"pkg": "workspace:1.2.3"` — FALLBACK only, for a sibling that',
-  '       genuinely cannot be published. Legal, but it buys a manifest bump',
-  '       in every dependent on each sibling release.',
-]
-
-function describeFindings(
-  findings: readonly DependencySpecFinding[],
-): string[] {
-  const lines: string[] = []
-  for (let i = 0, { length } = findings; i < length; i += 1) {
-    const finding = findings[i]!
-    lines.push(`  • ${finding.field}.${finding.name}: "${finding.value}"`)
-  }
-  return lines
+function describeFindings(findings: readonly DependencySpecFinding[]): string {
+  return findings
+    .map(finding => `${finding.field}.${finding.name} "${finding.value}"`)
+    .join(', ')
 }
 
 export const check = editGuard((filePath, _content, payload) => {
@@ -164,46 +111,22 @@ export const check = editGuard((filePath, _content, payload) => {
   }
 
   const localPath = added.filter(finding => finding.kind === 'local-path')
-  const workspaceRange = added.filter(
-    finding => finding.kind === 'workspace-range',
-  )
 
-  const headline =
+  // Priority order among the pinned forms: `catalog:` (one central bump)
+  // > exact `1.2.3` > `workspace:1.2.3` as the last resort.
+  const reason =
     localPath.length > 0
-      ? '[link-protocol-dep-guard] Blocked: this dependency is UNPUBLISHED — publish it'
-      : '[link-protocol-dep-guard] Blocked: unpinned `workspace:` range in package.json'
-  const lines: string[] = [headline, '', `  File: ${filePath}`, '']
-
-  if (localPath.length > 0) {
-    lines.push(...describeFindings(localPath))
-    lines.push(
-      '',
-      '  Saw:    a `link:`/`file:` spec — this dependency resolves to a',
-      '          local path, so the package it points at is NOT published.',
-      '  Wanted: a published package reached through the fleet catalog —',
-      '          `catalog:` first, an exact registry version (`"1.2.3"`)',
-      '          second, `workspace:1.2.3` only as a fallback for a package',
-      '          that genuinely cannot be published.',
-      '',
-      ...LOCAL_PATH_FIX_LINES,
-    )
-  }
-
-  if (workspaceRange.length > 0) {
-    if (localPath.length > 0) {
-      lines.push('')
-    }
-    lines.push(...describeFindings(workspaceRange))
-    lines.push(
-      '',
-      '  Saw:    a `workspace:` RANGE — `*`, `^`, or `~` floats the version.',
-      '  Wanted: `catalog:` — the preferred fleet form for a pinned sibling.',
-      '',
-      ...WORKSPACE_RANGE_FIX_LINES,
-    )
-  }
-
-  return block(lines.join('\n'))
+      ? 'a `link:`/`file:` spec means the package is UNPUBLISHED — publish it ' +
+        '(node scripts/fleet/publish-infra/npm/placeholder.mts), then pin via ' +
+        '`catalog:` (preferred) > exact "1.2.3" > `workspace:1.2.3` (last ' +
+        'resort); a generated dir swept by a `packages:` glob instead needs ' +
+        'the glob narrowed'
+      : 'a `workspace:` RANGE floats — pin via `catalog:` (preferred) > ' +
+        'exact "1.2.3" > `workspace:1.2.3` (last resort)'
+  return block(
+    `🚨 link-protocol-dep-guard: blocked ${describeFindings(added)} in ` +
+      `${filePath} — ${reason}.`,
+  )
 })
 
 export const hook = defineHook({

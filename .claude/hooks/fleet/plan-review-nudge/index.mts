@@ -78,9 +78,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     const afterPlan = text.slice(planMatch.index, planMatch.index + 800)
     if (!NUMBERED_LIST_RE.test(afterPlan)) {
       hits.push(
-        'plan announced but no numbered list within 800 chars — ' +
-          'per "Plan review before approval", list steps numerically, ' +
-          "name files you'll touch, name rules you'll honor",
+        `plan announced ("${planMatch[0]}") with no numbered list — number the steps, name the files and rules`,
       )
     }
   }
@@ -89,7 +87,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   // fleet-shared scan runs on rawText, not the code-fence-stripped
   // copy — paths like `template/CLAUDE.md` are usually quoted in
   // backticks and would be stripped otherwise.
-  if (FLEET_SHARED_RE.test(rawText) && !SECOND_OPINION_RE.test(text)) {
+  const sharedMatch = FLEET_SHARED_RE.exec(rawText)
+  if (sharedMatch && !SECOND_OPINION_RE.test(text)) {
     // Only fire if it really looks like a plan (rather than just a
     // mention of a fleet path in passing). Check both the raw text
     // which keeps the I'll context, and the stripped text.
@@ -98,9 +97,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
       /\b(?:I will|I'?ll|I'm going to)\b/i.test(rawText)
     ) {
       hits.push(
-        'plan touches fleet-shared resources (CLAUDE.md / .claude/hooks/ / ' +
-          '_shared/) but does not invite a second-opinion pass — per ' +
-          'CLAUDE.md "Plan review before approval", invite review before code',
+        `plan touches fleet-shared resource "${sharedMatch[0]}" without a second-opinion invite — invite review before code`,
       )
     }
   }
@@ -112,18 +109,15 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const looksLikePlan =
     PLAN_PHRASE_RE.test(text) ||
     /\b(?:I will|I'?ll|I'm going to|plan(?:ning)? to)\b/i.test(rawText)
+  const nameMatch = NAME_OR_SCHEMA_RE.exec(text)
   if (
     looksLikePlan &&
-    NAME_OR_SCHEMA_RE.test(text) &&
+    nameMatch &&
     MULTI_SURFACE_RE.test(text) &&
     !SHAPE_SETTLED_RE.test(text)
   ) {
     hits.push(
-      'plan introduces/renames a name or schema shape that will land across ' +
-        'multiple files / the cascade, but does not settle the FINAL shape ' +
-        'first — per CLAUDE.md "Plan review before approval", decide the name/' +
-        'field shape in the plan (or ask the user) before the commit fan-out; ' +
-        'renaming a cascaded name is expensive (see "Compound lessons").',
+      `plan spreads a name or schema shape ("${nameMatch[0]}") across multiple surfaces without settling the FINAL shape — decide it in the plan (or ask the user) before the fan-out`,
     )
   }
 
@@ -131,15 +125,11 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     return undefined
   }
 
-  const lines = ['[plan-review-nudge] Plan structure check:', '']
+  const lines: string[] = []
   for (let i = 0, { length } = hits; i < length; i += 1) {
-    lines.push(`  • ${hits[i]}`)
+    const prefix = i === 0 ? 'ℹ️ plan-review-nudge: ' : '   '
+    lines.push(`${prefix}${hits[i]}`)
   }
-  lines.push('')
-  lines.push(
-    '  See CLAUDE.md "Plan review before approval" — the plan itself is a deliverable.',
-  )
-  lines.push('')
   return notify(lines.join('\n'))
 }
 

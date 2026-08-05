@@ -365,18 +365,14 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     if (violations.length === 0) {
       continue
     }
-    lines.push(`  ${ref.owner}/${ref.repo}#${ref.number}:`)
     for (let vi = 0, vlen = violations.length; vi < vlen; vi += 1) {
       const violation = violations[vi]!
       const kind = violation.isBot ? 'bot' : 'human'
       const where = violation.path ? ` (${violation.path})` : ''
+      const snippet = violation.snippet ? ` "${violation.snippet}"` : ''
       lines.push(
-        `    - unanswered ${kind} thread by ${violation.reviewer}${where}`,
+        `   ✗ ${ref.owner}/${ref.repo}#${ref.number} ${kind} ${violation.reviewer}${where}${snippet} → ${buildReplyCommand(violation.id)}`,
       )
-      if (violation.snippet) {
-        lines.push(`        "${violation.snippet}"`)
-      }
-      lines.push(`      ${buildReplyCommand(violation.id)}`)
     }
   }
   if (lines.length === 0) {
@@ -385,19 +381,8 @@ export const check = (payload: ToolCallPayload): GuardResult => {
 
   return block(
     [
-      '🚨 unaddressed-review-feedback-guard: this session opened or pushed a',
-      '   PR that still carries review feedback nobody replied to.',
-      '',
-      'Responding to review feedback is part of the PR cycle: reply to each',
-      'thread with a fix or an evidence-backed explanation, THEN resolve +',
-      'minimize it (that is bot-comment-collapse-guard).',
-      '',
-      'Un-replied review threads:',
+      '🚨 unaddressed-review-feedback-guard: un-replied review feedback on a PR this session drove — reply to each thread (a fix or an evidence-backed explanation), then resolve + minimize',
       ...lines,
-      '',
-      'Reply to the thread(s) above, then end the turn.',
-      '',
-      `Bypass (the user must type verbatim in a recent turn): \`${BYPASS_PHRASE}\``,
     ].join('\n'),
   )
 }

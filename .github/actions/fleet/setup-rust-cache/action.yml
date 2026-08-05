@@ -15,7 +15,8 @@ name: 'Setup Rust Cache'
 description: |
   Cache the cargo registry, git index, and one or more target/ directories
   via the fleet cache CLIs (scripts/fleet/cache/{restore,save}.mts — the
-  native port of the actions/cache steps over the @actions/cache package).
+  native port of the actions/cache steps over the first-party cache-service
+  client in scripts/fleet/cache/client.mts).
   Replaces the third-party `Swatinem/rust-cache` action so the consumer's
   GH Actions allowlist doesn't need `Swatinem/rust-cache@*`, and no
   third-party cache action at all.
@@ -175,10 +176,10 @@ runs:
         RESTORE_KEY: ${{ steps.paths.outputs.restore-key }}
       run: |
         set -euo pipefail
-        # The fleet cache restore CLI (the actions/cache port). Rust-only
-        # jobs never run pnpm install, so the CLI provisions its own
-        # @actions/cache client into RUNNER_TEMP (catalog-pinned version,
-        # see scripts/fleet/cache/cache-cli.mts). Paths arrive one per line;
+        # The fleet cache restore CLI (the actions/cache port, first-party
+        # client). Rust-only jobs never run pnpm install; the client's one
+        # package dependency, @socketsecurity/lib-stable, arrives via the
+        # dep-0 bootstrap the fleet setup composite runs. Paths arrive one per line;
         # repeat --path per entry. Env-routed, never a GitHub expression
         # inside the run body (zizmor template-injection shape).
         ARGS=(--key "$CACHE_KEY" --restore-key "$RESTORE_KEY")

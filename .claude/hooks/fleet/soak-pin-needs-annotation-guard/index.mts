@@ -89,30 +89,13 @@ export const check = editGuard((filePath, _content, payload) => {
   if (missing.length === 0) {
     return undefined
   }
-  const lines: string[] = [
-    '[soak-pin-needs-annotation-guard] Blocked: soak-exclude pin without a date annotation',
-    '',
-    `  File: ${filePath}`,
-    '',
-  ]
-  for (const pin of missing) {
-    lines.push(`  • \`${pin}\``)
-  }
-  lines.push(
-    '',
-    '  A version-pinned EXPECTED_RELEASE_AGE_EXCLUDE entry needs a',
-    '  { published, removable } annotation in release-age-annotations.mts, or the',
-    '  manifest throws at load time and the cascade crashes mid-run.',
-    '',
-    '  Fix: add to scripts/repo/sync-scaffolding/manifest/release-age-annotations.mts',
-    '  (removable = published + 7 days), then re-add the pin:',
-  )
-  for (const pin of missing) {
+  const lines: string[] = []
+  for (let i = 0, { length } = missing; i < length; i += 1) {
+    const prefix = i === 0 ? '🚨 soak-pin-needs-annotation-guard: ' : '   '
     lines.push(
-      `    '${pin}': { published: '<YYYY-MM-DD>', removable: '<+7d>' },`,
+      `${prefix}blocked soak-exclude pin "${missing[i]!}" — first add \`'${missing[i]!}': { published: '<YYYY-MM-DD>', removable: '<+7d>' }\` to release-age-annotations.mts (or the manifest throws at load)`,
     )
   }
-  lines.push('')
   return block(lines.join('\n'))
 })
 

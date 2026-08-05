@@ -34,30 +34,8 @@ export function extractFilterName(command: string): string | undefined {
 }
 
 export function formatNudge(command: string): string {
-  const filterName = extractFilterName(command)
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ pnpm-filter-zero-match-nudge')
-  lines.push('')
-  if (filterName) {
-    lines.push(
-      `\`--filter ${filterName}\` matched zero workspace packages — pnpm exited 0 as a silent no-op.`,
-    )
-    lines.push('')
-    lines.push('The command did not run in any package. Verify the name:')
-    lines.push('')
-    lines.push(`  pnpm ls --filter ${filterName} --depth -1`)
-  } else {
-    lines.push(
-      '`--filter <name>` matched zero workspace packages — pnpm exited 0 as a silent no-op.',
-    )
-    lines.push('')
-    lines.push(
-      'The command did not run in any package. Verify the filter name with `pnpm ls --filter <name> --depth -1`.',
-    )
-  }
-  lines.push('')
-  return lines.join('\n')
+  const filterName = extractFilterName(command) ?? '<name>'
+  return `ℹ️ pnpm-filter-zero-match-nudge: \`--filter ${filterName}\` matched zero workspace packages (pnpm exited 0, silent no-op) — verify the name with \`pnpm ls --filter ${filterName} --depth -1\``
 }
 
 export const check = bashGuard((command, payload) => {

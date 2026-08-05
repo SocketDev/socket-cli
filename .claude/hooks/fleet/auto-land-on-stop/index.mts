@@ -168,25 +168,17 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     : allTouched
   if (touched.length === 0) {
     return notify(
-      `[auto-land-on-stop] nothing landed — all ${held.length} touched path(s) ` +
-        'are parked by user hold. Clear via ' +
-        'node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>.\n',
+      `ℹ️ auto-land-on-stop: nothing landed — all ${held.length} touched path(s) parked by user hold; clear via node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>\n`,
     )
   }
   const stagedOnlyNote =
     stagedOnly.length > 0
-      ? [
-          `Staged-but-not-authored (NOT landed — this session only git-add'ed them;`,
-          'a peer or human wrote the content, so they need their own commit):',
-          ...stagedOnly.slice(0, 8).map(p => `  ${p}`),
-        ]
-      : []
+      ? `staged-but-not-authored (NOT landed — a peer wrote the content; it needs its own commit): ${stagedOnly.slice(0, 8).join(', ')}`
+      : ''
   const byRoot = groupByRepo(touched, dir => gitToplevel(dir))
   if (byRoot.size === 0) {
-    return stagedOnlyNote.length
-      ? notify(
-          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
-        )
+    return stagedOnlyNote
+      ? notify(`ℹ️ auto-land-on-stop: nothing landed — ${stagedOnlyNote}\n`)
       : undefined
   }
   // Resolve land-work FLEET-FIRST, the session's own repo, then fall back to
@@ -209,25 +201,21 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     }
   }
   if (landed.length === 0) {
-    return stagedOnlyNote.length
-      ? notify(
-          `[auto-land-on-stop] nothing landed.\n${stagedOnlyNote.join('\n')}\n`,
-        )
+    return stagedOnlyNote
+      ? notify(`ℹ️ auto-land-on-stop: nothing landed — ${stagedOnlyNote}\n`)
       : undefined
   }
   const lines = [
-    `[auto-land-on-stop] landed this session's authored source in ${landed.length} repo(s):`,
-    ...landed.map(r => `  ${r}`),
-    'These are auto-lander commits (own-work only, surgical, gated). A session',
-    'that sees them should recognize the auto-lander, not investigate a rival.',
+    `ℹ️ auto-land-on-stop: landed this session's authored source in ${landed.length} repo(s): ${landed.join(', ')} — auto-lander commits (own-work only, gated), not a rival session`,
   ]
   if (held.length > 0) {
     lines.push(
-      `Held (parked by user, NOT landed): ${held.length} path(s) — clear via`,
-      '  node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>',
+      `  held (parked by user, NOT landed): ${held.length} path(s) — clear via node .claude/hooks/fleet/auto-land-on-stop/hold.mts --clear <path…>`,
     )
   }
-  lines.push(...stagedOnlyNote)
+  if (stagedOnlyNote) {
+    lines.push(`  ${stagedOnlyNote}`)
+  }
   return notify(`${lines.join('\n')}\n`)
 }
 

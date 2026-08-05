@@ -458,39 +458,25 @@ export function detectCopyleftBashRead(
 }
 
 /**
- * The block message: What / Where / Saw vs. wanted / Fix, naming the SPDX id,
- * the tests-only rule, and the permissive alternative when one is recorded.
+ * The block message: one verdict line naming the route, the target, and the
+ * SPDX id, plus one evidence line carrying the tests-only cone recipe (and the
+ * permissive alternative when one is recorded).
  */
 export function formatCopyleftBlock(detection: CopyleftBlock): string {
   const { finding, how } = detection
   const { upstream } = finding
   const slug = `${upstream.owner}/${upstream.repo}`
-  const where =
+  const target =
     finding.path === ''
-      ? `  Where: ${how} covering the whole \`${slug}\` tree.`
-      : `  Where: ${how} targeting \`${finding.path}\` in \`${slug}\`.`
+      ? `the whole \`${slug}\` tree`
+      : `\`${finding.path}\` in \`${slug}\``
+  const alt = upstream.permissiveAlternative
+    ? `; permissive alternative: ${upstream.permissiveAlternative}`
+    : ''
   const lines = [
-    `[no-copyleft-source-read] Blocked: reading ${slug} implementation, ${upstream.spdx}.`,
-    '',
-    `  What:  ${slug} is ${upstream.spdx} copyleft. Reading, copying, or`,
-    '         deriving from its implementation makes the consuming package a',
-    '         derivative work and forces that license onto it.',
-    where,
-    '  Wanted: run it as a tool and observe it through its OWN tests —',
-    `         ${upstream.testPathPatterns.join(', ')} — and nothing else.`,
-    '  Fix:   derive from a permissively licensed source instead, and keep the',
-    '         submodule cone tests-only:',
-    `           ${copyleftSparseRecipe(upstream)}`,
-    '         Enumerating the tree is FINE — structure is fact, not expression.',
-    '         Use `ls` / `tree` / `find`, `git ls-tree`, Glob, a directory Read,',
-    '         or `rg -l` when you need to know what is there.',
+    `🚨 no-copyleft-source-read: blocked ${how} of ${target} — ${slug} is ${upstream.spdx}; run it as a tool and observe it through its OWN tests only (${upstream.testPathPatterns.join(', ')})${alt} (docs/agents.md/fleet/copyleft-boundaries.md)`,
+    `   enumeration is fine (\`ls\` / \`tree\` / \`git ls-tree\` / Glob / \`rg -l\`); tests-only cone: ${copyleftSparseRecipe(upstream)}`,
   ]
-  if (upstream.permissiveAlternative) {
-    lines.push(
-      `         Recorded permissive alternative: ${upstream.permissiveAlternative}.`,
-    )
-  }
-  lines.push('         See docs/agents.md/fleet/copyleft-boundaries.md.')
   return `${lines.join('\n')}\n`
 }
 

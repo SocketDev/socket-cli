@@ -81,10 +81,6 @@ export function findAiAttribution(message: string): string | undefined {
   return undefined
 }
 
-function blockMessage(reason: string, body: string): string {
-  return `[commit-message-format-guard] ${reason}\n\n${body}\n`
-}
-
 export const check = bashGuard((command, payload) => {
   if (!isGitCommit(command)) {
     return undefined
@@ -103,38 +99,20 @@ export const check = bashGuard((command, payload) => {
   if (header.kind !== 'ok') {
     if (!bypassPhrasePresent(payload.transcript_path, BYPASS_FORMAT)) {
       const suggestion = suggestReplacement(header)
-      const lines: string[] = []
+      let saw = ''
       if (header.kind === 'no-type') {
-        lines.push(`  Missing Conventional Commits header in: "${header.line}"`)
+        saw = `missing Conventional Commits header in "${header.line}"`
       } else if (header.kind === 'bad-type') {
-        lines.push(
-          `  Unknown type "${header.type}" in: "${header.line}"`,
-          `  Allowed types: ${ALLOWED_TYPES.join(', ')}`,
-        )
+        saw = `unknown type "${header.type}" in "${header.line}" (allowed: ${ALLOWED_TYPES.join(', ')})`
       } else if (header.kind === 'uppercase-type') {
-        lines.push(
-          `  Type must be lowercase. Got "${header.type}" in: "${header.line}"`,
-        )
+        saw = `type must be lowercase, got "${header.type}" in "${header.line}"`
         /* c8 ignore start - HeaderCheck union is exhausted by prior arms; false branch of this else-if is unreachable */
       } else if (header.kind === 'empty-description') {
-        lines.push(`  Empty description after "${header.type}:" header.`)
+        saw = `empty description after "${header.type}:" in "${header.line}"`
       }
       /* c8 ignore stop */
-      lines.push('')
-      lines.push(`  Required format: <type>[(scope)][!]: <description>`)
-      lines.push(`  Allowed types  : ${ALLOWED_TYPES.join(', ')}`)
-      lines.push(
-        `  Spec           : https://www.conventionalcommits.org/en/v1.0.0/`,
-      )
-      lines.push('')
-      lines.push(`  Suggested fix  : ${suggestion}`)
-      lines.push('')
-      lines.push(`  Bypass: type "${BYPASS_FORMAT}" in a recent message.`)
       return block(
-        blockMessage(
-          'Commit message does not match Conventional Commits 1.0.',
-          lines.join('\n'),
-        ),
+        `🚨 commit-message-format-guard: ${saw} — suggested fix: ${suggestion} (bypass: user types "${BYPASS_FORMAT}")`,
       )
     }
     // Operator authorized this commit. Still fall through to AI check
@@ -147,27 +125,8 @@ export const check = bashGuard((command, payload) => {
     if (bypassPhrasePresent(payload.transcript_path, BYPASS_AI)) {
       return undefined
     }
-    const lines: string[] = []
-    lines.push(`  AI-attribution marker found: ${aiLabel}`)
-    lines.push('')
-    lines.push('  The fleet forbids AI attribution in commit messages and PR')
-    lines.push('  descriptions. Remove the offending line(s) and retry.')
-    lines.push('')
-    lines.push('  Patterns blocked:')
-    lines.push('    - "Generated with Claude" / "Generated with Anthropic"')
-    lines.push('    - "Co-Authored-By: Claude"')
-    lines.push('    - Robot emoji (🤖) tag lines')
-    lines.push('    - <noreply@anthropic.com> footer')
-    lines.push('    - "Claude-Session:" trailer / claude.ai/code/session_ URL')
-    lines.push('')
-    lines.push(`  Bypass (rare): type "${BYPASS_AI}" in a recent message.`)
-    lines.push('  Use only when a commit legitimately documents the strings')
-    lines.push('  (e.g. CLAUDE.md edits that quote them as examples).')
     return block(
-      blockMessage(
-        'AI-attribution markers are forbidden in commit messages.',
-        lines.join('\n'),
-      ),
+      `🚨 commit-message-format-guard: AI-attribution marker "${aiLabel}" — remove it; the fleet forbids AI attribution in commit messages and PR text (bypass: user types "${BYPASS_AI}")`,
     )
   }
 

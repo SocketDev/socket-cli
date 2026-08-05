@@ -26,7 +26,12 @@ import {
   isAlreadyPublished,
 } from '../publish-infra/npm/registry.mts'
 import {
+  preflightSocketScanAuth,
+  scanStagedEntryDetailed,
+} from '../publish-infra/npm/scan.mts'
+import {
   compareExtractedTarballs,
+  defaultDownloadStagedTarball,
   defaultPackTarball,
   verifyStagedEntryRouted,
 } from '../publish-infra/npm/staged.mts'
@@ -36,7 +41,12 @@ import {
   runPtyPumped,
 } from '../publish-infra/shared.mts'
 
+import type {
+  SocketScanContext,
+  StagedScanVerdict,
+} from '../publish-infra/npm/scan.mts'
 import type { StageListEntry } from '../publish-infra/npm/shared.mts'
+import type { TarballProvider } from '../publish-infra/npm/staged.mts'
 import type { ReceiptStatus, ReleaseChecksums } from './state.mts'
 
 /**
@@ -58,6 +68,16 @@ export interface RegistryDistInfo {
 export interface StageOutcome {
   detail: string
   releaseChecksums?: ReleaseChecksums | undefined
+  /**
+   * The npm stage id a passing verify matched — persisted onto the receipt so
+   * the scan stage can address the staged upload directly.
+   */
+  stageId?: string | undefined
+  /**
+   * The commit the staged bytes were built from — persisted onto the
+   * stage-publish receipt (see staged-commit.mts).
+   */
+  stagedSha?: string | undefined
   status: ReceiptStatus
 }
 
@@ -75,11 +95,20 @@ export interface RunnerSeams {
   downloadRegistryTarball?:
     | ((name: string, version: string) => Promise<string | undefined>)
     | undefined
+  // The staged upload's own bytes, by stage id (`pnpm stage download`) — the
+  // scan stage's first-choice artifact source, so the scan inspects exactly
+  // what npm has staged rather than a local re-pack of it.
+  downloadStagedTarball?:
+    | ((stageId: string) => Promise<string | undefined>)
+    | undefined
   ensureRelease?:
     | ((
         pkg: { name: string; version: string },
         options?:
-          | { packAssets?: (() => Promise<string[]>) | undefined }
+          | {
+              commit?: string | undefined
+              packAssets?: (() => Promise<string[]>) | undefined
+            }
           | undefined,
       ) => Promise<boolean | void>)
     | undefined
@@ -120,6 +149,22 @@ export interface RunnerSeams {
         env?: NodeJS.ProcessEnv | undefined,
       ) => Promise<number>)
     | undefined
+  // The scan stage's one-shot Socket auth preflight (token + org). Returns
+  // undefined when no usable token/org resolves — the stage records that as
+  // "no evidence", never as a pass.
+  scanAuth?: (() => Promise<SocketScanContext | undefined>) | undefined
+  // The scan stage's per-entry Socket full scan, verdict + evidence.
+  scanEntry?:
+    | ((
+        entry: { name: string; version: string },
+        options?:
+          | {
+              context?: SocketScanContext | undefined
+              packTarball?: TarballProvider | undefined
+            }
+          | undefined,
+      ) => Promise<StagedScanVerdict>)
+    | undefined
   sleep?: ((ms: number) => Promise<void>) | undefined
   verifyEntry?: ((entry: StageListEntry) => Promise<boolean>) | undefined
 }
@@ -133,10 +178,14 @@ export interface ResolvedSeams {
     name: string,
     version: string,
   ) => Promise<string | undefined>
+  downloadStagedTarball: (stageId: string) => Promise<string | undefined>
   ensureRelease: (
     pkg: { name: string; version: string },
     options?:
-      | { packAssets?: (() => Promise<string[]>) | undefined }
+      | {
+          commit?: string | undefined
+          packAssets?: (() => Promise<string[]>) | undefined
+        }
       | undefined,
   ) => Promise<boolean | void>
   fetchRegistryDist: (name: string) => Promise<Record<string, RegistryDistInfo>>
@@ -161,6 +210,16 @@ export interface ResolvedSeams {
     cwd: string,
     env?: NodeJS.ProcessEnv | undefined,
   ) => Promise<number>
+  scanAuth: () => Promise<SocketScanContext | undefined>
+  scanEntry: (
+    entry: { name: string; version: string },
+    options?:
+      | {
+          context?: SocketScanContext | undefined
+          packTarball?: TarballProvider | undefined
+        }
+      | undefined,
+  ) => Promise<StagedScanVerdict>
   sleep: (ms: number) => Promise<void>
   verifyEntry: (entry: StageListEntry) => Promise<boolean>
 }
@@ -218,6 +277,8 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
       s.compareTarballContents ?? compareExtractedTarballs,
     downloadRegistryTarball:
       s.downloadRegistryTarball ?? defaultDownloadRegistryTarball,
+    downloadStagedTarball:
+      s.downloadStagedTarball ?? defaultDownloadStagedTarball,
     ensureRelease: s.ensureRelease ?? ensureTagAndRelease,
     fetchRegistryDist: s.fetchRegistryDist ?? defaultFetchRegistryDist,
     identityFor: s.identityFor ?? npmIdentityFor,
@@ -228,6 +289,8 @@ export function resolveSeams(seams: RunnerSeams | undefined): ResolvedSeams {
     runCapture: s.runCapture ?? runCapture,
     runInherit: s.runInherit ?? runInherit,
     runPtyPumped: s.runPtyPumped ?? runPtyPumped,
+    scanAuth: s.scanAuth ?? (() => preflightSocketScanAuth()),
+    scanEntry: s.scanEntry ?? scanStagedEntryDetailed,
     sleep: s.sleep ?? defaultSleep,
     verifyEntry: s.verifyEntry ?? verifyStagedEntryRouted,
   }

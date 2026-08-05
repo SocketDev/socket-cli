@@ -286,29 +286,7 @@ export const check = editGuard((filePath, content, payload) => {
       fleetBytes < preFleetBytes
     if (fleetBytes > fleetMax && !shrinksOverCapBlock) {
       return block(
-        [
-          '🚨 claude-md-section-size-guard: fleet block too large.',
-          '',
-          `File:        ${filePath}`,
-          `Fleet block: ${fleetBytes} bytes — over the ${fleetMax}-byte cap`,
-          `             (75% of the 40 KB whole-file limit) by ${fleetBytes - fleetMax}.`,
-          '',
-          '  The fleet block ships byte-identical to every socket-* repo and must',
-          "  leave room for each repo's own section under the 40 KB total. Trim a",
-          '  rule bullet to its 1-line invariant and move detail to its',
-          '  docs/agents.md/fleet/<topic>.md page.',
-          '',
-          '  DOCTRINE: a full block is a TRIM signal, never a DEFER signal. When',
-          '  promoting a rule, free room by trimming an existing bullet’s inline',
-          '  detail into its doc — do NOT hold up (defer / down-scope) the new rule',
-          '  because the block is at cap. Trimming an over-cap block is exempt',
-          '  from this guard, so the trim + the promotion can land together.',
-          '',
-          '  Deterministic trim: `node scripts/fleet/trim-claude-md.mts --apply`',
-          '  (also auto-runs in `pnpm run fix`) drops the last `; `-clause of the',
-          '  fattest doc-linked bullet until the block fits — its detail already',
-          '  lives in the linked doc.',
-        ].join('\n'),
+        `🚨 claude-md-section-size-guard: fleet block too large — ${fleetBytes} bytes, ${fleetBytes - fleetMax} over the ${fleetMax}-byte cap (75% of the 40 KB file limit) in ${filePath} — trim, never defer the rule: node scripts/fleet/trim-claude-md.mts --apply (a shrinking edit passes)`,
       )
     }
   }
@@ -327,59 +305,15 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
 
-  const lines: string[] = []
-  lines.push(
-    `🚨 claude-md-section-size-guard: blocked Edit/Write — CLAUDE.md section(s) exceed cap.`,
-  )
-  lines.push(``)
-  lines.push(`File:           ${filePath}`)
   void maxLines
-  lines.push(`Cap:            ${maxBytes} bytes per rule bullet`)
-  lines.push(``)
+  const lines: string[] = []
   for (let i = 0, { length } = tooLong; i < length; i += 1) {
     const t = tooLong[i]!
-    const reasons: string[] = []
-    /* c8 ignore start - overLines is always false and overBytes is always true; findTooLongSections only sets overBytes */
-    if (t.overLines) {
-      reasons.push(
-        `${t.bodyLineCount} lines (${t.bodyLineCount - maxLines} over)`,
-      )
-    }
-    /* c8 ignore stop */
-    /* c8 ignore next - overBytes is always true; findTooLongSections only pushes findings with overBytes:true */
-    if (t.overBytes) {
-      reasons.push(
-        `${t.bodyByteCount} bytes (${t.bodyByteCount - maxBytes} over)`,
-      )
-    }
-    lines.push(`  - ${t.heading} — ${reasons.join(', ')}`)
+    const prefix = i === 0 ? '🚨 claude-md-section-size-guard: ' : '   '
+    lines.push(
+      `${prefix}trim "${t.heading}" — ${t.bodyByteCount} bytes, over the ${maxBytes}-byte bullet cap; move the detail to docs/agents.md/fleet/<topic>.md`,
+    )
   }
-  lines.push(``)
-  lines.push(`Why this cap exists:`)
-  lines.push(`  The fleet block ships byte-identical to every socket-* repo`)
-  lines.push(
-    `  (12+ repos at last count). Every line is N copies of in-context`,
-  )
-  lines.push(`  cost. Long sections are also harder to skim — the fleet block`)
-  lines.push(`  is a reference card, not a tutorial.`)
-  lines.push(``)
-  lines.push(`Fix:`)
-  lines.push(`  1. Pick the smallest faithful summary (1-2 sentences) of the`)
-  lines.push(`     section's rule.`)
-  lines.push(
-    `  2. Move the long-form content (rationale, examples, edge cases)`,
-  )
-  lines.push(`     into a new doc: docs/agents.md/fleet/<topic>.md (cascaded`)
-  lines.push(`     via socket-wheelhouse — add the path to the sync manifest).`)
-  lines.push(`  3. Replace the section body with the summary plus a markdown`)
-  lines.push(`     link to the new doc:`)
-  lines.push(
-    `         Full rationale in [\`docs/agents.md/fleet/<topic>.md\`].`,
-  )
-  lines.push(``)
-  lines.push(`Override (rare; per-edit): set CLAUDE_MD_FLEET_SECTION_MAX_LINES`)
-  lines.push(`in the environment before the edit.`)
-  lines.push(``)
   return block(lines.join('\n'))
 })
 

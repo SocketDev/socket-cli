@@ -111,25 +111,12 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   }
 
   const lines = [
-    '[variant-analysis-nudge] High/Critical severity flagged without follow-up search:',
-    '',
+    '🚨 variant-analysis-nudge: High/Critical finding with no variant search this turn — search same file, siblings, cross-package before closing it (CLAUDE.md "Variant analysis on every High/Critical finding")',
   ]
   for (let i = 0, { length } = severityHits; i < length; i += 1) {
     const hit = severityHits[i]!
-    lines.push(`  • ${hit.term}: …${hit.snippet}…`)
+    lines.push(`  ${hit.term}: …${hit.snippet}…`)
   }
-  lines.push('')
-  lines.push('  CLAUDE.md "Variant analysis on every High/Critical finding":')
-  lines.push(
-    '  Bugs cluster — same mental model, same antipattern. Three searches',
-  )
-  lines.push(
-    '  before closing a High/Critical finding: same file, sibling files,',
-  )
-  lines.push(
-    '  cross-package. The hook saw no Grep/Glob/Read/Agent in this turn.',
-  )
-  lines.push('')
   return notify(lines.join('\n'))
 }
 

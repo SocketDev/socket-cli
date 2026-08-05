@@ -244,10 +244,10 @@ Common causes:
    current actors, take a temporary self-exemption, push, then hand it back:
 
    ```bash
-   node scripts/fleet/grant-main-bypass.mts <repo>
-   node scripts/fleet/grant-main-bypass.mts <repo> --grant --yes
+   node scripts/fleet/grant-ruleset-bypass.mts <repo>
+   node scripts/fleet/grant-ruleset-bypass.mts <repo> --grant --yes
    # re-run the push, then:
-   node scripts/fleet/grant-main-bypass.mts <repo> --revoke
+   node scripts/fleet/grant-ruleset-bypass.mts <repo> --revoke
    ```
 
    Never patch the ruleset by hand — a full-body `gh api` write drops the rules

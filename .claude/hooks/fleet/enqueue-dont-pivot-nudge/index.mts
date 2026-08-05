@@ -152,44 +152,17 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     return undefined
   }
 
-  const lines = [
-    '[enqueue-dont-pivot-nudge] Assistant turn signals a focus-PIVOT to a newly-mentioned topic without user authorization:',
-    '',
-  ]
+  // One line per hit: the quoted snippet is the evidence, the fix rides the
+  // first line. Doctrine lives in the hook README, not here.
+  const lines: string[] = []
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const hit = hits[i]!
-    lines.push(`  • "${hit.label}" — …${hit.snippet}…`)
+    lines.push(
+      i === 0
+        ? `💡 enqueue-dont-pivot-nudge: pivot tell "…${hit.snippet}…" — TaskCreate the new ask, finish the current in-progress task first`
+        : `   "…${hit.snippet}…"`,
+    )
   }
-  lines.push('')
-  lines.push(
-    '  ⚠  Action for the NEXT turn: do NOT abandon your in-progress work.',
-  )
-  lines.push(
-    '      If the user just handed you a NEW ask, TaskCreate it (enqueue)',
-  )
-  lines.push(
-    '      and FINISH the current in-progress task first, THEN pick it up.',
-  )
-  lines.push('')
-  lines.push(
-    '  Why: a new instruction mid-queue is usually an ADD, not a redirect. The',
-  )
-  lines.push(
-    '  user wants new asks queued, not chased — constantly refocusing drops',
-  )
-  lines.push('  half-done work and re-litigates the task already in flight.')
-  lines.push('')
-  lines.push(
-    '  Legitimate pivots: the user explicitly said "stop," "drop that," "do',
-  )
-  lines.push(
-    '  this now/first," "urgent," "switch to X," "before you continue,"',
-  )
-  lines.push(
-    '  "interrupt your todos," or similar — or the new ask genuinely BLOCKS',
-  )
-  lines.push('  the current one (name why). Otherwise: enqueue and keep going.')
-  lines.push('')
   return notify(lines.join('\n'))
 }
 

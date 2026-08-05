@@ -185,44 +185,19 @@ export function formatReminder(
   slug: string | undefined,
   escapes: readonly EscapeProperty[],
 ): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('🚨 enterprise-push-nudge')
-  lines.push('')
-  lines.push('The `git push` was rejected by the Socket enterprise ruleset on')
-  lines.push('refs/heads/main. Each violated rule has its own custom-property')
-  lines.push('escape hatch — set the value to the LITERAL string `"true"`')
-  lines.push('(not `true`, not `True`):')
+  const where = slug
+    ? ` at https://github.com/${slug}/settings/properties`
+    : ' via the repo custom properties'
+  const lines: string[] = [
+    `🚨 enterprise-push-nudge: git push rejected by the enterprise ruleset — set each property below to the LITERAL string "true"${where}, retry \`git push origin main\`, then flip any \`temporarily-*\` property back to "false" (docs/agents.md/fleet/push-policy.md)`,
+  ]
   for (let i = 0, { length } = escapes; i < length; i += 1) {
     const e = escapes[i]!
-    lines.push('')
-    lines.push(`  - ${e.rule}`)
-    lines.push(`      → set \`${e.name}\` = "true"`)
-    if (slug) {
-      lines.push(
-        `      current value: ${e.value === undefined ? '<unset or unreadable via gh api>' : `"${e.value}"`}`,
-      )
-    }
+    const current = slug
+      ? ` (current value: ${e.value === undefined ? '<unset or unreadable via gh api>' : `"${e.value}"`})`
+      : ''
+    lines.push(`  ${e.rule} → \`${e.name}\` = "true"${current}`)
   }
-  if (slug) {
-    lines.push('')
-    lines.push(`Repo: ${slug}`)
-    lines.push(`  GitHub UI: https://github.com/${slug}/settings/properties`)
-  }
-  lines.push('')
-  lines.push('After flipping the propert(ies):')
-  lines.push('  git push origin main')
-  lines.push('')
-  lines.push(
-    'Flip a `temporarily-*` property back to "false" once the remediation',
-  )
-  lines.push('window closes (re-engages the ruleset).')
-  lines.push('')
-  lines.push(
-    'Full rationale: docs/agents.md/fleet/push-policy.md (Enterprise-ruleset',
-  )
-  lines.push('escape hatch section).')
-  lines.push('')
   return lines.join('\n')
 }
 

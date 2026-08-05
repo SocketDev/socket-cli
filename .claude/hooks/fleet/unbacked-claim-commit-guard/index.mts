@@ -86,19 +86,14 @@ export const check = bashGuard((command, payload) => {
   if (!unbacked.length) {
     return undefined
   }
-  const lines = [
-    '[unbacked-claim-commit-guard] Blocked: landing a commit/push with an',
-    'unverified success claim in this turn:',
-    '',
-  ]
+  const lines: string[] = []
   for (let i = 0, { length } = unbacked; i < length; i += 1) {
     const u = unbacked[i]!
-    lines.push(`  • "${u.label}" — ${u.hint}`)
+    const prefix = i === 0 ? '🚨 unbacked-claim-commit-guard: ' : '   '
+    lines.push(
+      `${prefix}blocked commit/push on unverified claim "${u.label}" — ${u.hint}`,
+    )
   }
-  lines.push('')
-  lines.push('  Run the command that backs the claim (and let its output show)')
-  lines.push('  before committing, or qualify the statement. Verify before you')
-  lines.push('  claim — and before you land.')
   return block(lines.join('\n'))
 })
 

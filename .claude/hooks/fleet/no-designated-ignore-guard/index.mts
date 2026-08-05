@@ -196,23 +196,13 @@ export async function check(payload: ToolCallPayload): Promise<GuardResult> {
     return undefined
   }
   const lines: string[] = []
-  lines.push(
-    '🚨 no-designated-ignore-guard: blocked Edit/Write — this rule is designated fix-only; ignore markers for it are never added.',
-  )
-  lines.push('')
-  lines.push(`File:  ${filePath}`)
-  lines.push('')
   for (let i = 0, { length } = findings; i < length; i += 1) {
     const f = findings[i]!
+    const prefix = i === 0 ? '🚨 no-designated-ignore-guard: ' : '   '
     lines.push(
-      `  ${f.rule.ruleId} (allow id: ${f.rule.allowId}) — ${f.added} marker(s) added.`,
+      `${prefix}blocked +${f.added} ignore marker(s) for fix-only rule ${f.rule.ruleId} in ${filePath} (existing markers stay) — Fix: ${f.rule.fix}`,
     )
-    lines.push(`  Fix: ${f.rule.fix}`)
-    lines.push('')
   }
-  lines.push(
-    'Existing markers in the file are grandfathered; only additions are blocked.',
-  )
   return block(lines.join('\n') + '\n')
 }
 

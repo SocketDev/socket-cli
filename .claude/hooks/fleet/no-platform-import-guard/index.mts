@@ -92,30 +92,16 @@ export const check = editGuard((filePath, content) => {
     return undefined
   }
 
+  // One line per violation; the fix rides the first line.
   const lines: string[] = []
-  lines.push(
-    '[no-platform-import-guard] Blocked: platform-specific http-request import.',
-  )
-  lines.push('')
-  lines.push(
-    '  The fleet routes HTTP through the platform-agnostic entry point.',
-  )
-  lines.push(
-    '  Importing /node or /browser directly bypasses the bundler\'s "browser"',
-  )
-  lines.push('  condition and hard-codes the platform.')
-  lines.push('')
-  for (const v of violations) {
-    lines.push(`  Line ${v.line}: ${v.match}`)
+  for (let i = 0, { length } = violations; i < length; i += 1) {
+    const v = violations[i]!
+    lines.push(
+      i === 0
+        ? `🚨 no-platform-import-guard: blocked platform-specific import — Line ${v.line}: ${v.match} — import from the module dir (no /node|/browser suffix), or precede the line with // no-platform-http-import: <reason>`
+        : `   Line ${v.line}: ${v.match}`,
+    )
   }
-  lines.push('')
-  lines.push('  Fix: import from the directory (no suffix):')
-  lines.push("    import { httpJson } from '../http-request'")
-  lines.push('')
-  lines.push(
-    '  If this file genuinely runs on one platform only, add before the import:',
-  )
-  lines.push('    // no-platform-http-import: <reason>')
   return block(lines.join('\n'))
 })
 

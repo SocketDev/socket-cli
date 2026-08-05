@@ -22,6 +22,11 @@
  */
 
 import { readFileSync } from 'node:fs'
+
+import { isMainModule } from '../_shared/is-main-module.mts'
+import { runMain } from '../_shared/run-main.mts'
+
+import type { ScriptMeta } from '../_shared/run-main.mts'
 import process from 'node:process'
 
 import {
@@ -107,4 +112,21 @@ async function main(): Promise<void> {
   )
 }
 
-void main()
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    "composes the rolling dependency PR's refreshed body from the previous body on stdin",
+  help: `Usage: printf '%s' "$BODY" | node scripts/fleet/weekly-update/pr-body-cli.mts [flags]
+
+  --base <branch>          diff base (default main)
+  --date <YYYY-MM-DD>      run date (default today)
+  --run-url <url>          workflow run link
+  --before-pkg <file>      package.json snapshot before the update
+  --before-workspace <file>  pnpm-workspace.yaml snapshot before
+  --after-pkg <file>       package.json snapshot after
+  --after-workspace <file>   pnpm-workspace.yaml snapshot after
+  --line <text>            commit subject line; repeatable`,
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

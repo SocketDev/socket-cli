@@ -58,23 +58,7 @@ export function cargoTargetOf(
 }
 
 export function formatSweepNudge(targetDir: string): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ rust-target-sweep-nudge')
-  lines.push('')
-  lines.push(`\`${targetDir}\` exists — cargo build dirs are the quiet disk`)
-  lines.push('killers (a 2026-07-31 sweep recovered ~100 GB of stale ones).')
-  lines.push('Everything in target/ is regenerable, so when the work here is')
-  lines.push('done, run the janitor:')
-  lines.push('')
-  lines.push('  node scripts/fleet/rust-target-sweep.mts . --fix')
-  lines.push('')
-  lines.push('It only deletes target/ dirs idle past the staleness window')
-  lines.push('(default 7 days), so an actively rebuilt tree is left alone.')
-  lines.push('Wider passes: `--fleet` (roster checkouts) or `--projects`')
-  lines.push('(every Cargo.toml sibling, which catches non-fleet Rust repos).')
-  lines.push('')
-  return lines.join('\n')
+  return `ℹ rust-target-sweep-nudge: \`${targetDir}\` exists — when done here run \`node scripts/fleet/rust-target-sweep.mts . --fix\` (deletes only past the staleness window; wider: \`--fleet\` / \`--projects\`)\n`
 }
 
 export function getRepoDir(payload: ToolCallPayload): string | undefined {

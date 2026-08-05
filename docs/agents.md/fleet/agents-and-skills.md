@@ -61,6 +61,13 @@ invoke that script. `.claude/hooks/fleet/defer-to-script-nudge/`
 leaves a fenced code block over 12 lines with no reference to a backing
 `scripts/**.mts` file.
 
+A NEW backing script is born meeting the new-script contract
+(`docs/agents.md/fleet/self-describing-scripts.md`): it self-describes via
+`runMain(main, SCRIPT_META)` (`--describe` / `-h`/`--help` answer before any
+side effect), carries a mirror-named unit test, builds every path once in the
+package's `paths.mts`, and is itself the enforcement — the skill markdown
+stays a thin wrapper.
+
 ## `updating` umbrella + `updating-*` siblings
 
 `updating` is the canonical fleet umbrella that runs `pnpm run update` then discovers and runs every `updating-*` sibling skill the host repo registers. The umbrella is fleet-shared; the siblings are per-repo (or partial: `updating-lockstep` lives in every repo with `lockstep.json`). To add a new repo-specific update step, drop a new `.claude/skills/updating-<domain>/SKILL.md` and the umbrella picks it up automatically. No edits to `updating` itself.

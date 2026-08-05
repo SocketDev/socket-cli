@@ -42,29 +42,11 @@ import { classifyMarkdownPath } from '../_shared/markdown-path.mts'
 import type { Verdict } from '../_shared/markdown-path.mts'
 
 export function emitBlock(filePath: string, verdict: Verdict): string {
-  const lines: string[] = []
-  lines.push('[markdown-filename-guard] Blocked: non-canonical doc filename.')
-  lines.push(`  File:       ${filePath}`)
-  if (verdict.message) {
-    lines.push(`  Issue:      ${verdict.message}`)
-  }
-  if (verdict.suggestion) {
-    lines.push(`  Suggestion: ${verdict.suggestion}`)
-  }
-  lines.push('')
-  lines.push('  Fleet doc-filename rules:')
-  lines.push('    - README.md / LICENSE — allowed anywhere.')
-  lines.push(
-    '    - SCREAMING_CASE allowlist (AUTHORS, CHANGELOG, CLAUDE, CONTRIBUTING,',
-  )
-  lines.push(
-    '      GOVERNANCE, MAINTAINERS, NOTICE, README, SECURITY, SUPPORT, …) —',
-  )
-  lines.push('      allowed at root / docs/ / .claude/ (top level only).')
-  lines.push(
-    '    - Everything else: lowercase-with-hyphens, in docs/ or .claude/.',
-  )
-  return lines.join('\n') + '\n'
+  const issue =
+    verdict.message ??
+    'doc filenames are lowercase-with-hyphens under docs/ or .claude/ (README.md / LICENSE anywhere; the SCREAMING_CASE allowlist at root, docs/, .claude/, or a package root).'
+  const fix = verdict.suggestion ? ` Rename to ${verdict.suggestion}.` : ''
+  return `🚨 markdown-filename-guard: blocked non-canonical doc filename "${filePath}" — ${issue}${fix}\n`
 }
 
 export const check = editGuard((filePath, content, payload) => {

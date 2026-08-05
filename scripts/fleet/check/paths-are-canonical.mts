@@ -78,7 +78,7 @@ const args = parseArgs({
 
 const ALLOWLIST = loadAllowlist(REPO_ROOT)
 
-const main = (): number => {
+export const main = (): number => {
   // Scan code files (Rule A + B).
   for (const rel of walk(
     REPO_ROOT,

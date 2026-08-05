@@ -31,7 +31,6 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import type { DeniedDomain } from '../_shared/denied-domains.mts'
 import {
-  describeDeniedEntry,
   findDeniedDomainsInText,
   findDeniedFilenamesInText,
   IOC_CITATION_MARKER,
@@ -83,31 +82,20 @@ export const check = editGuard((filePath, content, _payload) => {
   if (domainHits.length === 0 && filenameHits.length === 0) {
     return undefined
   }
+  const surface = egress ? ' on an EGRESS surface (never exempt)' : ''
   const lines: string[] = [
-    '[denied-domain-reference-guard] Blocked: this edit lands a fleet-DENIED ' +
-      (egress ? 'domain on an EGRESS surface.' : 'domain reference.'),
-    '',
-    `  File: ${filePath}`,
-    '',
+    `🚨 denied-domain-reference-guard: blocked fleet-DENIED reference in ${filePath}${surface} — drop it, or cite as an IOC in a docs/*.md carrying \`<!-- ${IOC_CITATION_MARKER} -->\``,
   ]
   for (const hit of domainHits) {
-    lines.push(`  ${describeDeniedEntry(hit.entry)}`, '')
+    lines.push(
+      `   ✗ \`${hit.entry.host}\` — ${hit.entry.reason} (${hit.entry.source})`,
+    )
   }
   for (const hit of filenameHits) {
     lines.push(
-      `  \`${hit.entry.name}\` — denied filename IOC, ${hit.entry.dateAdded}: ` +
-        hit.entry.reason,
-      `  Source: ${hit.entry.source}`,
-      '',
+      `   ✗ \`${hit.entry.name}\` — denied filename IOC: ${hit.entry.reason} (${hit.entry.source})`,
     )
   }
-  lines.push(
-    '  Fix: drop the reference. To cite it as an IOC, put it in a markdown',
-    '  doc under docs/ carrying the marker comment',
-    `  \`<!-- ${IOC_CITATION_MARKER} -->\`. An egress surface — a workflow,`,
-    '  a gh-aw lock, an egress allowlist — is never exempt.',
-    '',
-  )
   return block(lines.join('\n'))
 })
 

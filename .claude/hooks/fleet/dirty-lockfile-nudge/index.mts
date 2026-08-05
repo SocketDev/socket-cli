@@ -132,47 +132,11 @@ export function removedImporterPaths(diff: string): string[] {
 }
 
 export function formatReminder(lockfiles: readonly string[]): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ dirty-lockfile-nudge')
-  lines.push('')
   const which =
     lockfiles.length === 1
       ? `\`${lockfiles[0]}\` is`
       : `${lockfiles.length} \`${LOCKFILE_NAME}\` files are`
-  lines.push(`${which} dirty in the working tree.`)
-  lines.push('')
-  lines.push("A stale lockfile fails CI's `pnpm install --frozen-lockfile` — a")
-  lines.push('local-passes / CI-fails trap. Reconcile it before landing:')
-  lines.push('')
-  lines.push('  pnpm i')
-  lines.push('')
-  lines.push(
-    'then commit the regenerated lockfile alongside your change. Do NOT',
-  )
-  lines.push('hand-edit the lockfile or commit the stale pair.')
-  lines.push('')
-  lines.push(
-    'Do not disown it ("not mine / already dirty at session start") — a',
-  )
-  lines.push(
-    '`pnpm i` or a pre-commit reconciled it, not the user. If `pnpm i` leaves',
-  )
-  lines.push(
-    'ONLY the lockfile changed (manifests untouched), it is already up to date:',
-  )
-  lines.push('commit it alone and move on with')
-  lines.push('')
-  lines.push(
-    '  git commit -o pnpm-lock.yaml --no-verify -m "chore: reconcile lockfile"',
-  )
-  lines.push('')
-  lines.push('The lockfile-only `-o … --no-verify` reconcile is sanctioned by')
-  lines.push(
-    'no-revert-guard — `-o` keeps it lockfile-only, so nothing else rides in.',
-  )
-  lines.push('')
-  return lines.join('\n')
+  return `💡 dirty-lockfile-nudge: ${which} dirty (a stale pair fails CI's \`--frozen-lockfile\`) — run \`pnpm i\` and commit the lockfile with your change; lockfile-only: \`git commit -o pnpm-lock.yaml --no-verify -m "chore: reconcile lockfile"\``
 }
 
 // Escalated reminder: the lockfile lost a workspace importer — a package/hook
@@ -183,24 +147,7 @@ export function formatReminder(lockfiles: readonly string[]): string {
 export function formatVanishedMemberWarning(
   removed: readonly string[],
 ): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('⚠ dirty-lockfile-nudge — WORKSPACE MEMBER VANISHED')
-  lines.push('')
-  lines.push(
-    `\`${LOCKFILE_NAME}\` dropped ${removed.length} workspace importer(s):`,
-  )
-  for (let i = 0, { length } = removed; i < length; i += 1) {
-    lines.push(`  - ${removed[i]}`)
-  }
-  lines.push('')
-  lines.push('A workspace package/hook directory is gone. `pnpm i` will BLESS')
-  lines.push('the removal, NOT restore it. Before reconciling, confirm the dir')
-  lines.push('SHOULD be gone — if it is a tracked template hook the cascade')
-  lines.push('orphan-removed from live, restore it (and `git add` it) first,')
-  lines.push('THEN run `pnpm i` to reconcile the lockfile.')
-  lines.push('')
-  return lines.join('\n')
+  return `💡 dirty-lockfile-nudge: WORKSPACE MEMBER VANISHED — \`${LOCKFILE_NAME}\` dropped importer(s) ${removed.join(', ')} — \`pnpm i\` will BLESS the removal, not restore it; if the dir should exist, restore it (and \`git add\` it) first, then \`pnpm i\``
 }
 
 export function getRepoDir(payload: ToolCallPayload): string | undefined {

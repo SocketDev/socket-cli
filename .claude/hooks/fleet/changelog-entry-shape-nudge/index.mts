@@ -56,22 +56,12 @@ export const check = editGuard((filePath, content) => {
   const rel = path.basename(filePath)
   const lines: string[] = []
   lines.push(
-    `[changelog-entry-shape-nudge] ${missing.length} CHANGELOG entr${missing.length === 1 ? 'y' : 'ies'} in ${rel} link no agents.md doc:`,
+    `[changelog-entry-shape-nudge] ${missing.length} CHANGELOG entr${missing.length === 1 ? 'y' : 'ies'} in ${rel} link no agents.md doc — shape: \`- <change> ([\`topic\`](docs/agents.md/fleet/<topic>.md))\``,
   )
   const shown = Math.min(missing.length, 5)
   for (let i = 0; i < shown; i += 1) {
-    lines.push(`  • ${missing[i]}`)
+    lines.push(`   • ${missing[i]}`)
   }
-  lines.push('')
-  lines.push(
-    'A CHANGELOG entry is a one-line bullet linking the detail to an agents.md',
-  )
-  lines.push(
-    'doc — `- <change> ([`topic`](docs/agents.md/fleet/<topic>.md))`. Put the',
-  )
-  lines.push(
-    'rationale + mechanism in the doc; keep the changelog a scannable index.',
-  )
   return notify(lines.join('\n'))
 })
 

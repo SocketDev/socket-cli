@@ -120,37 +120,18 @@ export function formatReminder(
   kind: DangleKind,
   pkg: string | undefined,
 ): string {
-  const lines: string[] = []
-  lines.push('')
-  lines.push('ℹ stale-node-modules-nudge')
-  lines.push('')
   if (kind === 'purge-abort') {
-    lines.push(
-      '`pnpm install` aborted: it wants to purge a stale modules dir but has',
+    return (
+      'ℹ stale-node-modules-nudge: pnpm relink aborted ' +
+      '(ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) — rerun as ' +
+      `\`${HEADLESS_RELINK}\` in the MAIN checkout.`
     )
-    lines.push(
-      'no TTY to confirm (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY). This is',
-    )
-    lines.push('the same worktree-removal dangle — the relink just needs the')
-    lines.push('non-interactive purge flag.')
-  } else {
-    lines.push(
-      `That \`Cannot find package\`${pkg ? ` (${pkg})` : ''} is almost always`,
-    )
-    lines.push(
-      "a dangling pnpm symlink: pnpm relinked the main checkout's node_modules",
-    )
-    lines.push('into a worktree that was since removed/pruned.')
   }
-  lines.push('')
-  lines.push('Fix (headless-safe — works in the `!`-channel / CI, no TTY):')
-  lines.push(`  ${HEADLESS_RELINK}`)
-  lines.push('')
-  lines.push('Run it in the MAIN checkout, then retry. Do NOT bypass the')
-  lines.push('failing hook with --no-verify — the break is transient, not a')
-  lines.push('reason to ship around the gate.')
-  lines.push('')
-  return lines.join('\n')
+  return (
+    `ℹ stale-node-modules-nudge: \`Cannot find package\`${pkg ? ` (${pkg})` : ''} ` +
+    'is a dangling pnpm worktree symlink — run ' +
+    `\`${HEADLESS_RELINK}\` in the MAIN checkout, then retry (never --no-verify).`
+  )
 }
 
 // Read the Bash `tool_response` off the PostToolUse payload. Not part of the

@@ -136,33 +136,12 @@ export const check = editGuard((filePath, content, _payload) => {
   if (hits.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push('[no-token-in-dotenv-guard] Blocked: token-bearing key in dotenv.')
-  lines.push(`  File: ${filePath}`)
-  lines.push('')
-  for (let i = 0, { length } = hits; i < length; i += 1) {
-    const h = hits[i]!
-    lines.push(`  Line ${h.line}: ${h.snippet}`)
-    lines.push(`    Key:   ${h.key}`)
-  }
-  lines.push('')
-  lines.push('  Dotfiles leak — .env / .env.local accidentally get committed,')
-  lines.push('  read by every dev tool that walks the project dir, swept by')
-  lines.push("  log-scraper / file-indexer / backup clients. Tokens don't")
-  lines.push('  belong here.')
-  lines.push('')
-  lines.push('  Right places to store a Socket API token:')
-  lines.push(
-    '    - OS keychain (canonical): run `node .claude/hooks/' +
-      'setup-security-tools/install.mts` — it prompts securely and persists',
+  const evidence = hits.map(h => `${h.key} (line ${h.line})`).join(', ')
+  return block(
+    `🚨 no-token-in-dotenv-guard: blocked ${filePath} — token key ` +
+      `${evidence}; store it in the OS keychain (node .claude/hooks/` +
+      'setup-security-tools/install.mts) or a CI secret, never a dotenv.',
   )
-  lines.push(
-    '      to macOS Keychain / Linux libsecret / Windows CredentialManager.',
-  )
-  lines.push(
-    '    - CI env: set as a secret in your CI provider, not in a file.',
-  )
-  return block(lines.join('\n') + '\n')
 })
 
 export const hook = defineHook({

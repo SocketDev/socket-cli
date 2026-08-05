@@ -108,13 +108,14 @@ runs:
       run: |
         set -euo pipefail
         # The fleet cache restore CLI — the native port of the
-        # actions/cache/restore step over the @actions/cache package. It
-        # writes the same cache-hit / cache-matched-key step outputs the
-        # upstream action published, so the export step below and this
-        # action's cache-hit output read them unchanged. This step runs
-        # BEFORE pnpm install by design, so the CLI provisions its own
-        # @actions/cache client into RUNNER_TEMP when node_modules cannot
-        # resolve it yet (catalog-pinned version, see cache-cli.mts).
+        # actions/cache/restore step over the first-party cache-service
+        # client (scripts/fleet/cache/client.mts). It writes the same
+        # cache-hit / cache-matched-key step outputs the upstream action
+        # published, so the export step below and this action's cache-hit
+        # output read them unchanged. This step runs BEFORE pnpm install by
+        # design; the client's one package dependency,
+        # @socketsecurity/lib-stable, arrives via the dep-0 bootstrap the
+        # fleet setup composite runs first.
         # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY are job env, exported by
         # the resolve step above; the restore-key prefixes are composed
         # from env — never a GitHub expression inside the run body (zizmor

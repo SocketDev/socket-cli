@@ -403,33 +403,16 @@ export function evaluateLockstep(
 }
 
 export function formatBlock(violations: readonly PinViolation[]): string {
-  const lines: string[] = [
-    `[latest-release-pin-guard] Blocked: a pin is being set to a STALE release, not the newest.`,
-    '',
-  ]
+  // One line per stale pin; the fix rides the first line.
+  const lines: string[] = []
   for (let i = 0, { length } = violations; i < length; i += 1) {
     const v = violations[i]!
     lines.push(
-      `  ${v.name}: pinned at ${v.pinned}, but ${v.newest} has shipped.`,
+      i === 0
+        ? `🚨 latest-release-pin-guard: stale pin "${v.name} at ${v.pinned}" — ${v.newest} has shipped; \`git fetch --tags\` and pin ${v.newest} (gen/gitmodules-hash.mts --set / lockstep version-pin row, docs/agents.md/fleet/lockstep.md)`
+        : `   "${v.name} at ${v.pinned}" — ${v.newest} has shipped`,
     )
   }
-  lines.push('')
-  lines.push(
-    '  Porting an upstream means the LATEST shipped release — always. Pinning a',
-  )
-  lines.push(
-    '  stale or inherited release ports against code that is already behind; the',
-  )
-  lines.push(
-    '  opentui incident lost ~31k lines to a pin 3 minor releases old.',
-  )
-  lines.push('')
-  lines.push('  Fix: `git fetch --tags`, then pin the newest release above —')
-  lines.push(
-    '  `gen/gitmodules-hash.mts --set` for .gitmodules, the version-pin row for',
-  )
-  lines.push('  lockstep.json. See docs/agents.md/fleet/lockstep.md and')
-  lines.push('  docs/agents.md/fleet/drift-watch.md.')
   return lines.join('\n') + '\n'
 }
 

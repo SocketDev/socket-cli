@@ -187,24 +187,14 @@ export const check = (payload: ToolCallPayload): GuardResult => {
     return undefined
   }
 
+  const first = aggregate[0]!
   const lines = [
-    '[path-regex-normalize-nudge] Regex matching path separators inline:',
-    '',
+    `ℹ️ path-regex-normalize-nudge: ${first.pattern} — ${first.reason} (bypass: user types "${BYPASS_PHRASE}")`,
   ]
-  for (let i = 0, { length } = aggregate; i < length; i += 1) {
+  for (let i = 1, { length } = aggregate; i < length; i += 1) {
     const f = aggregate[i]!
-    lines.push(`  • ${f.pattern}`)
-    lines.push(`      ${f.reason}`)
-    lines.push('')
+    lines.push(`   also ${f.pattern} — ${f.reason}`)
   }
-  lines.push(
-    "  Use `import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'`,",
-  )
-  lines.push(
-    '  then write a single-separator regex against `normalizePath(input)`.',
-  )
-  lines.push(`  Bypass: type "${BYPASS_PHRASE}" verbatim in a recent message.`)
-  lines.push('')
   return notify(lines.join('\n'))
 }
 

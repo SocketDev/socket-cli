@@ -275,7 +275,7 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const escalate = foreignDirty.length > 0
 
   const banner = escalate
-    ? '⚠️  PARALLEL AGENT SUSPECTED — files you READ this session have vanished from disk:'
+    ? '💡  PARALLEL AGENT SUSPECTED — files you READ this session have vanished from disk:'
     : '[parallel-agent-removal-nudge] files this session previously read have vanished from disk:'
   let message = `${banner}\n`
   const shown = vanished.slice(0, 10)

@@ -185,6 +185,10 @@ export async function runVerifyStage(config: {
       tarballName,
       version: cfg.targetVersion,
     },
+    // The scan stage addresses the staged upload by this id (`pnpm stage
+    // download <stageId>`), so it inspects npm's own bytes rather than a
+    // re-pack of them.
+    stageId: entry.stageId,
     status: 'passed',
   }
 }

@@ -58,21 +58,15 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
   const rel = path.basename(filePath)
-  const lines: string[] = [
-    `🚨 no-description-aside-guard: blocked write to ${rel}.`,
-    '',
-  ]
+  // One line per offending description; the fix and bypass ride the first line.
+  const lines: string[] = []
   for (let i = 0, { length } = offenders; i < length; i += 1) {
-    lines.push(`  ✗ description ends with a listy aside: (${offenders[i]})`)
+    lines.push(
+      i === 0
+        ? `🚨 no-description-aside-guard: drop the trailing listy aside "(${offenders[i]})" from ${rel}'s description — fold detail into the sentence (bypass: user types "${BYPASS_PHRASE}")`
+        : `   "(${offenders[i]})"`,
+    )
   }
-  lines.push(
-    '',
-    'A manifest description states the thing plainly. Drop the trailing',
-    'parenthetical that re-lists what the line already says; fold detail that',
-    'matters into the sentence.',
-    '',
-    `Bypass (rare): the user types "${BYPASS_PHRASE}" verbatim.`,
-  )
   return block(lines.join('\n'))
 })
 

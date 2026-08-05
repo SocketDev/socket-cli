@@ -156,7 +156,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
         'scripts/fleet/check/submodules-are-sparse-or-annotated.mts',
         '--quiet',
       ]),
-    // Every top-level `upstream/<name>` reference submodule is shallow
+
+    // A submodule reference lives at the repo-root upstream/<name> home and
+    // nowhere else; pre-law nests ride the script-owned submoduleRoots
+    // ratchet.
+    () =>
+      run('node', [
+        'scripts/fleet/check/submodules-are-rooted-in-upstream.mts',
+      ]), // Every top-level `upstream/<name>` reference submodule is shallow
     // single-branch (`shallow = true` + `branch = <ref>`) so a clone pulls only
     // the tracked branch tip, not full history. Complements the sparse gate
     // above, which owns nested subtree-consumed submodules. See
@@ -507,6 +514,14 @@ export function buildPathsAndSupplyChainSteps(): CheckStep[] {
     // so --describe and -h/--help print purpose/usage instead of running the
     // script's side effect.
     () => run('node', ['scripts/fleet/check/entry-scripts-self-describe.mts']),
+    // A NEW repo-owned entry script is born with a mirror-named unit test;
+    // pre-contract scripts ride the script-owned bornTested ratchet.
+    () =>
+      run('node', ['scripts/fleet/check/entry-scripts-are-born-tested.mts']),
+    // A hook composes its severity glyph via _shared/verdict.mts (typed
+    // 🚨/⚠️/ℹ️/💡, never hand-typed); pre-law hooks ride the typedVerdicts
+    // ratchet.
+    () => run('node', ['scripts/fleet/check/hook-verdicts-are-typed.mts']),
     // No committed dependency spec resolves through a local filesystem path
     // the repo does not carry: a hand-written `link:`/`file:` spec in a
     // package.json dependency block, or a pnpm-GENERATED lockfile `link:`

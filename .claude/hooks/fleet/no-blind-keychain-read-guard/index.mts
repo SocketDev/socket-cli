@@ -166,38 +166,14 @@ export function keychainReadMessage(
   if (hits.length === 0) {
     return undefined
   }
-  const lines: string[] = []
-  lines.push(
-    '[no-blind-keychain-read-guard] Blocked: direct keychain READ from Bash.',
-  )
-  lines.push('')
+  const lines: string[] = [
+    '🚨 no-blind-keychain-read-guard: blocked a keychain READ (each one costs a UI auth prompt) — use $SOCKET_API_TOKEN/$SOCKET_API_KEY env or findApiToken(); writes/deletes stay allowed',
+  ]
   for (let i = 0, { length } = hits; i < length; i += 1) {
     const h = hits[i]!
-    lines.push(`  ${h.platform.padEnd(15)} ${h.tool}`)
-    lines.push(`    Saw: ${h.snippet}`)
+    lines.push(`   ${h.platform} ${h.tool} — ${h.snippet}`)
   }
-  lines.push('')
-  lines.push('  Reading the keychain via the platform CLI surfaces a UI auth')
-  lines.push("  prompt on the user's screen — and the prompt fires once per")
-  lines.push('  call. A hook chain that reads three times costs three prompts.')
-  lines.push('')
-  lines.push('  The token is almost certainly already available without a')
-  lines.push('  keychain read:')
-  lines.push('')
-  lines.push('    - In-process: call findApiToken() from setup-security-tools/')
-  lines.push('      lib/api-token.mts. It returns the module-cached value from')
-  lines.push('      the first call onward, then env, then keychain.')
-  lines.push('')
-  lines.push('    - From Bash: read process.env.SOCKET_API_KEY or')
-  lines.push(
-    '      process.env.SOCKET_API_TOKEN. The wheelhouse shell-rc bridge',
-  )
-  lines.push('      exports both for every new shell session.')
-  lines.push('')
-  lines.push('  Writes / deletes (security add-generic-password / secret-tool')
-  lines.push('  store / New-StoredCredential / etc.) are allowed — they only')
-  lines.push('  happen during operator-driven setup / rotation.')
-  return lines.join('\n') + '\n'
+  return lines.join('\n')
 }
 
 // The block logic. Blocks when a keychain read is found; allows (returns

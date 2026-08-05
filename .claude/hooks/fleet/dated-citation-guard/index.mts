@@ -70,25 +70,10 @@ export const check = editGuard((filePath, content, payload) => {
     return undefined
   }
   void payload
-  const lines = [
-    `[dated-citation-guard] Blocked: dated-incident citation(s) in rule prose — ${filePath}:`,
-    '',
-  ]
-  for (let i = 0, { length } = hits; i < length; i += 1) {
-    const hit = hits[i]!
-    lines.push(`  • ${hit.label}: ${hit.text}`)
-  }
-  lines.push('')
-  lines.push(
-    '  CLAUDE.md "Compound lessons into rules": cite the motivating case',
+  const evidence = hits.map(hit => `${hit.label} "${hit.text}"`).join('; ')
+  return block(
+    `🚨 dated-citation-guard: blocked ${filePath} — ${evidence} — rewrite the citation as a timeless example (drop the date / version delta / percentage / SHA)`,
   )
-  lines.push('  GENERICALLY, as a timeless example — not a dated log. Drop the')
-  lines.push('  date / version delta / percentage / SHA; keep the shape of the')
-  lines.push('  problem the rule prevents. Example:')
-  lines.push('    ✗ "**Why:** <date> pnpm <x> vs <y> broke the cascade"')
-  lines.push('    ✓ "**Why:** a stale pnpm on PATH fails the version check and')
-  lines.push('       aborts the cascade install"')
-  return block(lines.join('\n'))
 })
 
 export const hook = defineHook({
