@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.10.3`.
+
 ### Fixed
 - Declared `form-data` as a dependency, so a fresh install no longer throws `Cannot find module 'form-data'` on its first upload.
 
