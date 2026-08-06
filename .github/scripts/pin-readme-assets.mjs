@@ -16,6 +16,8 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
 import { fromMarkdown } from 'mdast-util-from-markdown'
+import { gfmFromMarkdown } from 'mdast-util-gfm'
+import { gfm } from 'micromark-extension-gfm'
 import { parseFragment } from 'parse5'
 
 const RELATIVE_PREFIX = 'assets/'
@@ -131,7 +133,14 @@ function walkParse5(node, visit) {
   }
 }
 
-walkMdast(fromMarkdown(readme))
+// Parse with the GFM extensions so the tree matches how GitHub and npm
+// actually render the README (tables, footnotes, strikethrough, task lists).
+walkMdast(
+  fromMarkdown(readme, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
+  }),
+)
 
 let pinned = readme
 for (const offset of [...new Set(insertAt)].sort((a, b) => b - a)) {

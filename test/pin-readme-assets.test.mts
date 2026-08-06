@@ -190,6 +190,24 @@ describe('pin-readme-assets', () => {
     )
   })
 
+  it('pins refs inside GFM tables and footnotes', () => {
+    const dir = stageWorkspace({
+      readme:
+        '| Logo | Name |\n' +
+        '| --- | --- |\n' +
+        '| ![logo](assets/logo.png) | Socket |\n' +
+        '\n' +
+        'See the screenshot.[^shot]\n' +
+        '\n' +
+        '[^shot]: ![shot](assets/shot.png)\n',
+    })
+    const { status } = runPin(dir)
+    expect(status).toBe(0)
+    const pinned = readmeIn(dir)
+    expect(pinned).toContain(`| ![logo](${base}assets/logo.png) | Socket |`)
+    expect(pinned).toContain(`[^shot]: ![shot](${base}assets/shot.png)`)
+  })
+
   it('pins every ref form in one pass and reports the base', () => {
     const dir = stageWorkspace({
       readme:
