@@ -22,11 +22,10 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    // Only meaningful alongside the hidden --dynamic-sbom-inference below; kept hidden too.
+    // Only meaningful alongside --dynamic-sbom-inference below.
     excludePaths: {
       type: 'string',
       isMultiple: true,
-      hidden: true,
       description:
         'Build roots matching these glob patterns (and everything beneath them) are marked disabled. Patterns are anchored micromatch globs matched relative to CWD: `legacy` matches only `<cwd>/legacy`; use `**/legacy` to match at any depth. Negation patterns (`!path`) are not supported. Accepts a comma-separated value or multiple flags.',
     },
@@ -36,7 +35,6 @@ const config: CliCommandConfig = {
     },
     dynamicSbomInference: {
       type: 'boolean',
-      hidden: true,
       description:
         'Recursively scans for every gradle/sbt/maven build root beneath CWD first, so the CWD config step only asks about ecosystems actually found somewhere in the tree. A build root matching --exclude-paths is bulk-disabled with no prompt, applied unconditionally; eligible build roots found afterward can be configured individually',
     },

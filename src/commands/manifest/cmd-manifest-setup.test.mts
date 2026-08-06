@@ -24,6 +24,8 @@ describe('socket manifest setup', async () => {
 
           Options
             --default-on-read-error  If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!
+            --dynamic-sbom-inference  Recursively scans for every gradle/sbt/maven build root beneath CWD first, so the CWD config step only asks about ecosystems actually found somewhere in the tree. A build root matching --exclude-paths is bulk-disabled with no prompt, applied unconditionally; eligible build roots found afterward can be configured individually
+            --exclude-paths     Build roots matching these glob patterns (and everything beneath them) are marked disabled. Patterns are anchored micromatch globs matched relative to CWD: \`legacy\` matches only \`<cwd>/legacy\`; use \`**/legacy\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
 
           This command will try to detect all supported ecosystems in given CWD. Then
           it starts a configurator where you can setup default values for certain flags

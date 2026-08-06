@@ -8,7 +8,7 @@ export const reachabilityFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     description:
-      'Enables dynamic SBOM inference for full application reachability analysis. Recursively generates a Socket facts SBOM for every independent Gradle, sbt, and Maven build root, and implies --auto-manifest. For Gradle, sbt, and Maven, only dependencies present in these generated Socket facts SBOM files are used for analysis; other ecosystems are analyzed as normal.',
+      'Enables per-project, per-subproject/module/workspace reachability analysis for Gradle, sbt, and Maven, instead of the default coarse-grained analysis where everything is treated as one synthetic root. Recursively discovers every independent build root and generates a Socket facts SBOM for each (implies --auto-manifest). Applies to reachability analysis only: for Gradle, sbt, and Maven, only dependencies present in these generated Socket facts SBOM files are considered reachable; the scan itself still detects all dependencies as normal, and other ecosystems are unaffected.',
   },
   reachVersion: {
     type: 'string',
