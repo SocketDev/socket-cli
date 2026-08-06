@@ -327,4 +327,52 @@ describe('promoteChangelog', () => {
     expect(promoted.source).toBe('derived')
     expect(promoted.changelog).not.toContain('[Unreleased]')
   })
+
+  it('promotes a block whose code fence contains a ## line intact', () => {
+    const changelog = [
+      preamble,
+      '## [Unreleased]',
+      '',
+      '### Changed',
+      '- The changelog format now looks like:',
+      '',
+      '```md',
+      '## [9.9.9](https://example.com) - 2020-01-01',
+      '```',
+      '',
+      '## [1.1.153](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.153) - 2026-08-04',
+      '',
+      '### Changed',
+      '- Updated the Coana CLI.',
+      '',
+    ].join('\n')
+    const promoted = promoteChangelog({ changelog, derivedSection, heading })
+    expect(promoted.source).toBe('unreleased')
+    expect(promoted.section).toContain(
+      '```md\n## [9.9.9](https://example.com) - 2020-01-01\n```',
+    )
+    expect(promoted.changelog).not.toContain('[Unreleased]')
+    expect(promoted.changelog).toContain('- Updated the Coana CLI.')
+  })
+
+  it('treats a bullet lookalike inside a code fence as no entries', () => {
+    const changelog = [
+      preamble,
+      '## [Unreleased]',
+      '',
+      '```sh',
+      '- not a bullet, just shell output',
+      '```',
+      '',
+      '## [1.1.153](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.153) - 2026-08-04',
+      '',
+      '### Changed',
+      '- Updated the Coana CLI.',
+      '',
+    ].join('\n')
+    const promoted = promoteChangelog({ changelog, derivedSection, heading })
+    expect(promoted.source).toBe('derived')
+    expect(promoted.section).toBe(derivedSection)
+    expect(promoted.changelog).not.toContain('[Unreleased]')
+  })
 })

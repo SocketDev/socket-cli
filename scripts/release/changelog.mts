@@ -12,9 +12,55 @@
  *   silently replaced by a raw commit subject.
  */
 
+import { fromMarkdown } from 'mdast-util-from-markdown'
+import { gfmFromMarkdown } from 'mdast-util-gfm'
+import { gfm } from 'micromark-extension-gfm'
+
 import type { ConventionalCommit } from './version.mts'
+import type { Nodes, Root } from 'mdast'
 
 export const UNRELEASED_HEADING = '## [Unreleased]'
+
+/**
+ * Parse markdown the way GitHub renders it (GFM) into a position-tracked
+ * mdast tree. Structure questions — where a heading is, whether a block has
+ * bullets — are answered from this tree, never by scanning raw lines: a `## `
+ * or `- ` inside a fenced code block is content, not structure.
+ */
+function parseMarkdown(source: string): Root {
+  return fromMarkdown(source, {
+    extensions: [gfm()],
+    mdastExtensions: [gfmFromMarkdown()],
+  })
+}
+
+/**
+ * 0-based line indexes of the document's level-2 (`## `) headings, from
+ * parser-reported positions.
+ */
+function h2LineIndexes(source: string): number[] {
+  const indexes: number[] = []
+  for (const node of parseMarkdown(source).children) {
+    if (
+      node.type === 'heading' &&
+      node.depth === 2 &&
+      node.position?.start.line !== undefined
+    ) {
+      indexes.push(node.position.start.line - 1)
+    }
+  }
+  return indexes
+}
+
+function hasListItem(node: Nodes): boolean {
+  if (node.type === 'listItem') {
+    return true
+  }
+  if ('children' in node) {
+    return node.children.some(hasListItem)
+  }
+  return false
+}
 
 // User-visible commit types → the Keep a Changelog section each lands under. A
 // type absent from this map is internal churn and never reaches the changelog,
@@ -148,11 +194,12 @@ export function generateChangelogSection(
 }
 
 /**
- * True when a rendered section carries at least one `- ` bullet, as opposed to
- * a bare heading with nothing under it.
+ * True when a rendered section carries at least one real list item, as
+ * opposed to a bare heading with nothing under it. Parsed, not pattern
+ * matched: a `- ` line inside a fenced code block is not an entry.
  */
 export function sectionHasEntries(section: string): boolean {
-  return section.split('\n').some(line => /^\s*-\s/u.test(line))
+  return parseMarkdown(section).children.some(hasListItem)
 }
 
 /**
@@ -166,17 +213,15 @@ export function unreleasedRange(
   lines: readonly string[],
 ): { end: number; start: number } | undefined {
   const wanted = UNRELEASED_HEADING.toLowerCase()
-  const start = lines.findIndex(line => line.trim().toLowerCase() === wanted)
-  if (start === -1) {
+  const headings = h2LineIndexes(lines.join('\n'))
+  const at = headings.findIndex(
+    index => lines[index]!.trim().toLowerCase() === wanted,
+  )
+  if (at === -1) {
     return undefined
   }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
+  const start = headings[at]!
+  const end = at + 1 < headings.length ? headings[at + 1]! : lines.length
   return { end, start }
 }
 
@@ -220,7 +265,7 @@ export function promoteChangelog(
       source = 'unreleased'
     }
   }
-  const insertAt = remaining.findIndex(line => line.startsWith('## '))
+  const insertAt = h2LineIndexes(remaining.join('\n'))[0] ?? -1
   const head = insertAt === -1 ? remaining : remaining.slice(0, insertAt)
   const tail = insertAt === -1 ? [] : remaining.slice(insertAt)
   const changelog = `${[...head, section, '', ...tail].join('\n').trimEnd()}\n`
