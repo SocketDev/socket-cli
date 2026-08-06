@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+- Updated the Coana CLI to v `15.10.5`.
+
+### Fixed
+- Declared `form-data` as a dependency, so a fresh install no longer throws `Cannot find module 'form-data'` on its first upload.
+
+## [1.1.153](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.153) - 2026-08-04
+
+### Changed
+- Updated the Coana CLI to v `15.10.2`.
+
 ## [1.1.152](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.152) - 2026-08-03
 
 ### Changed

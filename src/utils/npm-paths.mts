@@ -37,6 +37,39 @@ function findBinNextToNode(binName: string): string | undefined {
   return undefined
 }
 
+const JS_ENTRY_EXTENSIONS = new Set(['.cjs', '.js', '.mjs'])
+
+/**
+ * Resolve a package manager bin path to a JavaScript entry `node` can run.
+ *
+ * Some version managers ship `npm` as a shell script instead of the usual shim
+ * that points at npm's JavaScript entry. mise writes a bash wrapper so it can
+ * run `mise reshim` after a global install. resolveBinPathSync only recognizes
+ * npm's own shim, by the `NPM_CLI_JS=` assignment inside it, and passes anything
+ * else through untouched, so the wrapper reaches us unchanged. We then hand it
+ * to `node` as the main module and the shell syntax throws a SyntaxError before
+ * npm ever starts (issue #946).
+ *
+ * When the resolved path is not JavaScript, fall back to the CLI entry inside
+ * npm's install directory, which findNpmDirPathSync already knows how to locate
+ * for this layout. A path we cannot map keeps its current value, so an
+ * unrecognized layout behaves exactly as it does today.
+ */
+export function resolveBinPathToJsEntry(
+  binPath: string,
+  cliEntryName: string,
+): string {
+  if (JS_ENTRY_EXTENSIONS.has(path.extname(binPath).toLowerCase())) {
+    return binPath
+  }
+  const npmDirPath = findNpmDirPathSync(binPath)
+  if (!npmDirPath) {
+    return binPath
+  }
+  const jsEntryPath = path.join(npmDirPath, 'bin', cliEntryName)
+  return existsSync(jsEntryPath) ? jsEntryPath : binPath
+}
+
 let _npmBinPath: string | undefined
 export function getNpmBinPath(): string {
   if (_npmBinPath === undefined) {
@@ -54,11 +87,15 @@ function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
     // First try to find npm next to the node binary to avoid picking up
     // a project-local npm from node_modules/.bin on PATH.
     const npmNextToNode = findBinNextToNode(NPM)
-    if (npmNextToNode) {
-      _npmBinPathDetails = { name: NPM, path: npmNextToNode, shadowed: false }
-    } else {
-      _npmBinPathDetails = findBinPathDetailsSync(NPM)
-    }
+    const details = npmNextToNode
+      ? { name: NPM, path: npmNextToNode, shadowed: false }
+      : findBinPathDetailsSync(NPM)
+    _npmBinPathDetails = details.path
+      ? {
+          ...details,
+          path: resolveBinPathToJsEntry(details.path, 'npm-cli.js'),
+        }
+      : details
   }
   return _npmBinPathDetails
 }
@@ -125,11 +162,15 @@ function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
     // standalone npx package which bundles npm@5.1.0, incompatible
     // with Node 22+).
     const npxNextToNode = findBinNextToNode('npx')
-    if (npxNextToNode) {
-      _npxBinPathDetails = { name: 'npx', path: npxNextToNode, shadowed: false }
-    } else {
-      _npxBinPathDetails = findBinPathDetailsSync('npx')
-    }
+    const details = npxNextToNode
+      ? { name: 'npx', path: npxNextToNode, shadowed: false }
+      : findBinPathDetailsSync('npx')
+    _npxBinPathDetails = details.path
+      ? {
+          ...details,
+          path: resolveBinPathToJsEntry(details.path, 'npx-cli.js'),
+        }
+      : details
   }
   return _npxBinPathDetails
 }

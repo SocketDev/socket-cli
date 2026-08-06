@@ -19,10 +19,12 @@ You are a **Principal Software Engineer** responsible for:
 - **Build types**: `npm run build:dist:types`
 - **Test**: `npm run test` (runs check + all tests)
 - **Test unit only**: `npm run test:unit` or `pnpm test:unit`
-- **Lint**: `npm run check:lint` (uses eslint)
-- **Type check**: `npm run check:tsc` (uses tsgo)
-- **Check all**: `npm run check` (lint + typecheck)
-- **Fix linting**: `npm run lint:fix`
+- **Lint**: `pnpm run lint` (oxlint + biome + eslint over the files you changed; add `--all` for the whole workspace)
+- **Type check**: `pnpm run check:tsc` (tsgo, both projects)
+- **Check all**: `pnpm run check` (lint + type check, aggregated; every step runs and the summary names what failed)
+- **Fix linting**: `pnpm run fix` (the autofix lane of the same three linters `check` runs)
+- **🚨 A scoped run over 0 files is NOT a pass** — `lint`/`fix`/`check` say so out loud. Only `--all` is a whole-workspace verdict.
+- **Self-describing scripts**: every entry under `scripts/` answers `--describe` and `--help` before it does anything, via `runMain(main, SCRIPT_META)` from `scripts/lib/run-main.mts`. Do not read argv or start work at module scope — a `--describe` that reaches `main()` runs the side effect.
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Testing Best Practices - CRITICAL: NO -- FOR FILE PATHS
@@ -60,7 +62,7 @@ You are a **Principal Software Engineer** responsible for:
 - **Install dependencies**: `pnpm install`
 - **Add dependency**: `pnpm add <package>`
 - **Add dev dependency**: `pnpm add -D <package>`
-- **Update dependencies**: `pnpm update`
+- **Update dependencies**: `pnpm run update` (three ordered passes: soak-gated third party, Socket scopes, then the lockfile). `pnpm run update --dry-run` previews without writing. Note that bare `pnpm update` is pnpm's own command, not this script.
 - **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
 - **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 
@@ -143,6 +145,28 @@ Each command follows a consistent pattern:
 - Custom patches applied to dependencies via `custompatch`
 - Overrides specified in package.json for enhanced alternatives
 
+## Releasing
+
+Never hand-write a version bump on `v1.x`. The `Publish to npm registry`
+workflow derives it:
+
+- Write user-facing notes under the changelog's `## [Unreleased]` section as
+  the work lands. The release promotes that block verbatim under the new
+  version heading. If nothing accrued, the release falls back to a section
+  derived from the Conventional Commits in range.
+- Dispatch the workflow with `dry-run: true` (the default) to see which
+  version it would ship. It writes nothing.
+- Dispatch with `dry-run: false` to release. `scripts/release/bump.mts` picks
+  the version, writes `package.json` + `CHANGELOG.md`, and commits them via
+  the release App onto a throwaway `npm-publish-v<X.Y.Z>` branch. `v1.x` is
+  fast-forwarded to that commit only after all three packages are staged.
+- The level is patch by default and minor when a `feat:` is in range. A major
+  is never derived — a breaking commit stops the bump until someone passes
+  `release-as: major`.
+- A staged release that is never approved BURNS its version. The base is the
+  highest release tag reachable from `v1.x`, so the burned number is skipped
+  automatically; there is nothing to remember and nothing to clean up.
+
 ## Changelog Management
 
 When updating the changelog (`CHANGELOG.md`):
@@ -150,6 +174,7 @@ When updating the changelog (`CHANGELOG.md`):
 - Use the format: `## [version](https://github.com/SocketDev/socket-cli/releases/tag/vversion) - date`
 - Example: `## [1.0.80](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.80) - 2025-07-29`
 - This allows users to click version numbers to view the corresponding GitHub release
+- Add new entries under `## [Unreleased]`, never under a released version heading
 
 ### Keep a Changelog Compliance
 Follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:

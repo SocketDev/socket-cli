@@ -21,11 +21,13 @@
  * Repository Information:
  * - detectDefaultBranch: Find default branch (main/master/develop/etc)
  * - getBaseBranch: Determine base branch (respects GitHub Actions env)
+ * - getCiBranch: Branch name a GitHub Actions run is on
  * - getRepoInfo: Extract owner/repo from git remote URL
  * - gitBranch: Get current branch or commit hash
  */
 
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { envAsString } from '@socketsecurity/registry/lib/env'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -75,6 +77,32 @@ export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // GitHub and GitLab default to branch name "main"
   // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
   return 'main'
+}
+
+/**
+ * The branch a GitHub Actions workflow run is on, or undefined when the
+ * environment does not identify one. Read straight from process.env because
+ * GITHUB_HEAD_REF is not part of the constants.ENV snapshot.
+ */
+export function getCiBranch(): string | undefined {
+  // The head branch of a pull request, only set for pull_request and
+  // pull_request_target events. Checked first because GITHUB_REF_NAME is
+  // '<pr_number>/merge' on those events, which is not a branch name.
+  // https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
+  const githubHeadRef = envAsString(process.env['GITHUB_HEAD_REF'])
+  if (githubHeadRef) {
+    return githubHeadRef
+  }
+  // The pushed ref. GITHUB_REF_TYPE tells branches and tags apart, and a tag
+  // is not a branch name.
+  const githubRefName = envAsString(process.env['GITHUB_REF_NAME'])
+  if (
+    envAsString(process.env['GITHUB_REF_TYPE']) === 'branch' &&
+    githubRefName
+  ) {
+    return githubRefName
+  }
+  return undefined
 }
 
 export type RepoInfo = {
@@ -132,6 +160,14 @@ export async function gitBranch(
   } catch (e) {
     // Expected in detached HEAD state, fallback to rev-parse.
     debugDir('inspect', { message: 'In detached HEAD state', error: e })
+  }
+  // Detached HEAD is the normal state in CI checkouts (actions/checkout),
+  // where the commit-SHA fallback below would mislabel the scan's branch — a
+  // SHA can never match the repo's default branch, so scans vanish from the
+  // Main/PR tabs. Prefer the branch the CI run says it is on.
+  const ciBranch = getCiBranch()
+  if (ciBranch) {
+    return ciBranch
   }
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.

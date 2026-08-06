@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "1.1.153-prerelease",
+  "version": "1.1.153",
   "description": "CLI for Socket.dev",
   "contentPolicy": {
     "class": "dual-use"
@@ -42,9 +42,11 @@
     "build:maven-extension": "bash src/commands/manifest/scripts/maven-extension/build-jar.sh",
     "build:sea": "node src/sea/build-sea.mts",
     "build:sea:internal:bootstrap": "rollup -c .config/rollup.sea.config.mjs",
-    "check": "pnpm check:lint && pnpm check:tsc",
+    "check": "node scripts/check.mts",
     "check:lint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives .",
-    "check:tsc": "tsgo",
+    "check:tsc": "run-s check:tsc:*",
+    "check:tsc:src": "tsgo",
+    "check:tsc:scripts": "tsgo --project tsconfig.scripts.json",
     "check-ci": "pnpm check:lint",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
@@ -55,10 +57,11 @@
     "clean:dist:types": "del-cli 'dist/types'",
     "clean:external": "del-cli 'external'",
     "clean:node_modules": "del-cli '**/node_modules'",
-    "fix": "pnpm lint:fix",
+    "fix": "node scripts/lint.mts --fix",
     "knip:dependencies": "knip --dependencies",
     "knip:exports": "knip --include exports,duplicates",
-    "lint": "dotenvx -q run -f .env.local -- oxlint -c=.oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json .",
+    "lint": "node scripts/lint.mts",
+    "lint:oxlint": "dotenvx -q run -f .env.local -- oxlint -c=.oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json .",
     "lint:dist:fix": "run-s -c lint:dist:fix:*",
     "lint:dist:fix:oxlint": "dotenvx -q run -f .env.dist -- oxlint -c=.oxlintrc.json --ignore-path=.oxlintignore --tsconfig=tsconfig.json --silent --fix ./dist | dev-null",
     "lint:dist:fix:biome": "dotenvx -q run -f .env.dist -- biome format --log-level=none --fix ./dist | dev-null",
@@ -77,7 +80,7 @@
     "bs": "dotenvx -q run -f .env.local -- pnpm build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "e2e-tests": "dotenvx -q run -f .env.test -- vitest run --config vitest.e2e.config.mts",
-    "test": "run-s check test:*",
+    "test": "pnpm run check --all && run-s test:*",
     "test:prepare": "dotenvx -q run -f .env.test -- pnpm build && del-cli 'test/**/node_modules'",
     "test:unit": "dotenvx -q run -f .env.test -- vitest run",
     "test:unit:update": "dotenvx -q run -f .env.test -- vitest run --update",
@@ -85,12 +88,11 @@
     "test-ci": "run-s test:*",
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
-    "update": "run-p --aggregate-output update:**",
-    "update:deps": "taze",
-    "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
+    "update": "node scripts/update.mts"
   },
   "dependencies": {
-    "@socketsecurity/socket-patch": "2.0.0"
+    "@socketsecurity/socket-patch": "2.0.0",
+    "form-data": "4.0.6"
   },
   "devDependencies": {
     "@babel/core": "7.29.6",
@@ -132,6 +134,7 @@
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
     "@types/js-yaml": "4.0.9",
+    "@types/mdast": "4.0.4",
     "@types/micromatch": "4.0.9",
     "@types/mock-fs": "4.13.4",
     "@types/node": "24.3.1",
@@ -167,7 +170,10 @@
     "knip": "5.63.1",
     "lint-staged": "16.1.6",
     "magic-string": "0.30.19",
+    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-gfm": "3.1.0",
     "meow": "13.2.0",
+    "micromark-extension-gfm": "3.0.0",
     "micromatch": "4.0.8",
     "mock-fs": "5.5.0",
     "nock": "14.0.10",
@@ -175,6 +181,7 @@
     "npm-run-all2": "8.0.4",
     "open": "10.2.0",
     "oxlint": "1.15.0",
+    "parse5": "8.0.1",
     "pony-cause": "2.1.11",
     "postject": "1.0.0-alpha.6",
     "rollup": "4.50.1",
@@ -205,8 +212,6 @@
     "shadow-bin/**",
     "CHANGELOG.md",
     "DISCLOSURE",
-    "logo-dark.png",
-    "logo-light.png",
     "requirements.json",
     "translations.json"
   ],

@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import process from 'node:process'
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   GITHUB_ERR_ABUSE_DETECTION,
@@ -54,7 +56,11 @@ describe('classifyGitHubResponse', () => {
     const result = classifyGitHubResponse(
       403,
       new Headers({ 'x-ratelimit-remaining': '0' }),
-      '{"message":"API rate limit exceeded"}',
+      // A body that says nothing about throttling, so this case proves the
+      // HEADER detector fired. With a body that also says "rate limit" the
+      // two detectors cover for each other and deleting either one leaves
+      // this test green.
+      '{"message":"Forbidden"}',
       ctx,
     )
     expect(result?.ok).toBe(false)
@@ -158,8 +164,25 @@ describe('isGitHubBlockingError', () => {
 })
 
 describe('githubApiRequest', () => {
+  // The retry backoff sleeps through `node:timers/promises`, which
+  // `vi.useFakeTimers()` does not reliably intercept, so the fake-timer trick
+  // cannot make these tests fast. Zeroing the base delay through the env
+  // override can, and it exercises the override at the same time. Each test
+  // that cares about a specific delay sets the env itself.
+  const ENV_KEY = 'SOCKET_GITHUB_RETRY_BASE_DELAY_MS'
+  let savedBaseDelay: string | undefined
+
+  beforeEach(() => {
+    savedBaseDelay = process.env[ENV_KEY]
+    process.env[ENV_KEY] = '0'
+  })
+
   afterEach(() => {
-    vi.useRealTimers()
+    if (savedBaseDelay === undefined) {
+      delete process.env[ENV_KEY]
+    } else {
+      process.env[ENV_KEY] = savedBaseDelay
+    }
   })
 
   it('returns the response and body text on success', async () => {
@@ -211,23 +234,23 @@ describe('githubApiRequest', () => {
   })
 
   it('waits and retries once on a short rate-limit window, then succeeds', async () => {
-    vi.useFakeTimers()
     const fake = fakeFetch([
       {
+        // `retry-after: 0` keeps the test quick. The branch under test is
+        // "the reset window is short enough to wait out", not the length of
+        // the wait itself.
         status: 403,
-        headers: { 'x-ratelimit-remaining': '0', 'retry-after': '1' },
+        headers: { 'x-ratelimit-remaining': '0', 'retry-after': '0' },
         body: '{"message":"API rate limit exceeded"}',
       },
       { status: 200, body: '{"recovered":true}' },
     ])
-    const promise = githubApiRequest(
+    const result = await githubApiRequest(
       'https://api.github.com/x',
       {},
       'x',
       fake.fetchImpl,
     )
-    await vi.runAllTimersAsync()
-    const result = await promise
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.bodyText).toBe('{"recovered":true}')
@@ -235,20 +258,73 @@ describe('githubApiRequest', () => {
     expect(fake.calls()).toBe(2)
   })
 
-  it('retries transient 5xx with bounded backoff, then surfaces a server error', async () => {
-    vi.useFakeTimers()
-    const fake = fakeFetch([{ status: 503, body: 'unavailable' }])
-    const promise = githubApiRequest(
+  it('waits out the reset window only once, then surfaces the rate limit', async () => {
+    const fake = fakeFetch([
+      {
+        status: 403,
+        headers: { 'x-ratelimit-remaining': '0', 'retry-after': '0' },
+        body: '{"message":"API rate limit exceeded"}',
+      },
+    ])
+    const result = await githubApiRequest(
       'https://api.github.com/x',
       {},
       'x',
       fake.fetchImpl,
     )
-    await vi.runAllTimersAsync()
-    const result = await promise
+    expect(result.ok ? '' : result.message).toBe(GITHUB_ERR_RATE_LIMIT)
+    // The first response buys one wait-and-retry. The second identical
+    // response is surfaced rather than waited on again.
+    expect(fake.calls()).toBe(2)
+  })
+
+  it('retries transient 5xx with bounded backoff, then surfaces a server error', async () => {
+    const fake = fakeFetch([{ status: 503, body: 'unavailable' }])
+    const result = await githubApiRequest(
+      'https://api.github.com/x',
+      {},
+      'x',
+      fake.fetchImpl,
+    )
     expect(result.ok).toBe(false)
     expect(result.ok ? '' : result.message).toBe('GitHub server error')
     // Initial attempt + 2 retries = 3 total.
     expect(fake.calls()).toBe(3)
+  })
+
+  it('retries a network-level failure, then surfaces it', async () => {
+    let calls = 0
+    const result = await githubApiRequest(
+      'https://api.github.com/x',
+      {},
+      'x',
+      () => {
+        calls += 1
+        return Promise.reject(new Error('ECONNRESET'))
+      },
+    )
+    expect(result.ok ? '' : result.message).toBe(
+      'Network error connecting to GitHub',
+    )
+    expect(calls).toBe(3)
+  })
+
+  it('honors SOCKET_GITHUB_RETRY_BASE_DELAY_MS for the backoff delay', async () => {
+    process.env[ENV_KEY] = '40'
+    const fake = fakeFetch([{ status: 503, body: 'unavailable' }])
+    const started = Date.now()
+    const result = await githubApiRequest(
+      'https://api.github.com/x',
+      {},
+      'x',
+      fake.fetchImpl,
+    )
+    const elapsed = Date.now() - started
+    expect(result.ok).toBe(false)
+    expect(fake.calls()).toBe(3)
+    // Two retries at a 40ms base with doubling means at least 40 + 80 ms of
+    // real waiting. A zeroed override finishes far below that, so this fails
+    // if the env var stops reaching the retry policy.
+    expect(elapsed).toBeGreaterThanOrEqual(120)
   })
 })

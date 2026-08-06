@@ -12,7 +12,7 @@ Those fallback branches never execute on modern Gradle, so without a test on *ol
 could silently rot. This smoke test exercises them.
 
 ## What it does
-`smoke-test.sh <path-to-gradle>` generates a tiny **local** Maven repo (`make-localrepo.sh` — two
+`smoke-test.sh <path-to-gradle>` generates a tiny **local** Maven repo (`../make-stub-repo.sh` — two
 transitive-free artifacts, a prod `demo.lib:foo` and a test `demo.test:bar`), runs the init script's
 `socketFacts` task against `project/` **fully offline**, and asserts the emitted RECORDS (the script's
 only output — the TS assembler that turns records into `.socket.facts.json` is covered by

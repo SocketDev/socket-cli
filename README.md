@@ -1,18 +1,21 @@
 # Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
-[![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
+[![Follow @SocketSecurity](assets/fleet/badge-follow-x.svg)](https://twitter.com/SocketSecurity)
+[![Follow @socket.dev on Bluesky](assets/fleet/badge-follow-bluesky.svg)](https://bsky.app/profile/socket.dev)
 
-CLI for [Socket.dev] security analysis
+CLI for [Socket.dev](https://socket.dev) — scan dependencies, audit packages, apply security patches, and gate installs from your terminal or CI. This is the 1.x line of the published `socket` package on npm.
 
-## Usage
+## Install
 
 ```bash
 npm install -g socket
 socket --help
 ```
 
-## Commands
+## Usage
+
+### Commands
 
 - `socket npm [args...]` and `socket npx [args...]` - Wraps npm/npx with Socket security scanning
 
@@ -24,7 +27,7 @@ socket --help
 
 - `socket patch <command>` - Apply, manage, and rollback Socket security patches for vulnerable dependencies
 
-### Patch subcommands
+#### Patch subcommands
 
 | Command | Description |
 |---------|-------------|
@@ -54,13 +57,13 @@ socket patch setup --yes
 
 Free patches work without authentication. For paid patches, set `SOCKET_CLI_API_TOKEN` and `SOCKET_CLI_ORG_SLUG`.
 
-## Aliases
+### Aliases
 
 All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - Alias for `socket scan create --report` (creates report and exits with error if unhealthy)
 
-## Reachability analysis
+### Reachability analysis
 
 Socket reachability analysis comes in three forms:
 
@@ -68,14 +71,14 @@ Socket reachability analysis comes in three forms:
 - **Precomputed reachability** (formerly Tier 2): Determines whether vulnerable code in transitive dependencies is reachable through your direct dependencies, using precomputed static analysis of dependency chains (no access to your application code required). In the CLI this is the fallback used when full application reachability cannot complete (see the `--reach-continue-on-*` flags).
 - **Dependency reachability** (formerly Tier 3): Package-level filtering that detects which dependencies are actually used, so CVEs in unused/dead dependencies can be filtered out.
 
-## Flags
+### Flags
 
-### Output flags
+#### Output flags
 
 - `--json` - Output as JSON
 - `--markdown` - Output as Markdown
 
-### Other flags
+#### Other flags
 
 - `--dry-run` - Run without uploading
 - `--debug` - Show debug output
@@ -84,12 +87,12 @@ Socket reachability analysis comes in three forms:
 - `--max-semi-space-size` - Set Node.js heap size
 - `--version` - Show version
 
-## Configuration files
+### Configuration files
 
 Socket CLI reads [`socket.yml`](https://docs.socket.dev/docs/socket-yml) configuration files.
 Supports version 2 format with `projectIgnorePaths` for excluding files from reports.
 
-## Environment variables
+### Environment variables
 
 - `SOCKET_CLI_API_TOKEN` - Socket API token
 - `SOCKET_CLI_CONFIG` - JSON configuration object
@@ -103,11 +106,17 @@ Supports version 2 format with `projectIgnorePaths` for excluding files from rep
 - `SOCKET_CLI_ACCEPT_RISKS` - Accept npm/npx risks
 - `SOCKET_CLI_VIEW_ALL_RISKS` - Show all npm/npx risks
 
-## Contributing
+### See also
+
+- [Socket API Reference](https://docs.socket.dev/reference)
+- [Socket GitHub App](https://github.com/apps/socket-security)
+- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js)
+
+## Development
 
 Run locally:
 
-```
+```bash
 npm install
 npm run build
 npm exec socket
@@ -122,19 +131,15 @@ npm exec socket
 - `SOCKET_CLI_DEBUG` - Enable debug logging
 - `DEBUG` - Enable [`debug`](https://socket.dev/npm/package/debug) package logging
 
-## See also
+## License
 
-- [Socket API Reference](https://docs.socket.dev/reference)
-- [Socket GitHub App](https://github.com/apps/socket-security)
-- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js)
-
-[Socket.dev]: https://socket.dev/
+MIT
 
 <br/>
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="logo-light.png">
-    <img width="324" height="108" alt="Socket Logo" src="logo-light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/fleet/socket-combomark-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/fleet/socket-combomark-light.svg">
+    <img width="324" height="104" alt="Socket" src="assets/fleet/socket-combomark-light.svg">
   </picture>
 </div>

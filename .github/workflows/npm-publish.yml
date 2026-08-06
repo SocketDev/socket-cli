@@ -3,31 +3,50 @@ name: Publish to npm registry
 # Release process for the v1.x line — three packages from one source
 # (socket, @socketsecurity/cli, @socketsecurity/cli-with-sentry):
 #
-#   1. Between releases the tree carries the next-version hint
-#      (`X.Y.Z-prerelease` in package.json) and user-facing notes accrue
-#      under the CHANGELOG's `## [Unreleased]` section.
-#   2. The release bump strips the hint to X.Y.Z and promotes [Unreleased]
-#      to the `## [X.Y.Z]` heading — never a hand-coded version.
-#   3. Dispatch this workflow with dry-run=true (the default): the `verify`
-#      job builds, packs, and smoke-tests all three variants — uploads
-#      nothing, marks nothing, and needs no publish credential.
-#   4. Dispatch with dry-run=false + dist-tag=latest. This branch is the line
+#   1. Between releases nobody touches the version. package.json keeps the
+#      last released number and user-facing notes accrue under the
+#      CHANGELOG's `## [Unreleased]` section as they land.
+#   2. Dispatch this workflow with dry-run=true (the default): the `verify`
+#      job derives and PRINTS the version it would ship, then builds, packs,
+#      and smoke-tests all three variants. It uploads nothing, marks nothing,
+#      writes nothing, and needs no publish credential.
+#   3. Dispatch with dry-run=false + dist-tag=latest. This branch is the line
 #      customers consume, so it owns `latest`; the guard below refuses that
 #      tag from anywhere else, and the default branch (the 2.x prerelease
-#      line) publishes under next/beta/canary/rc. `verify` runs again and
-#      hands its three tarballs to `publish`, which cuts the v<X.Y.Z> tag +
-#      the immutable GitHub release — both belong to the `socket` package,
-#      exactly one of each per run — then STAGES those exact tarballs.
-#   5. A human promotes each staged upload (`pnpm stage approve` with web
+#      line) publishes under next/beta/canary/rc.
+#   4. `verify` now BUMPS in-run: scripts/release/bump.mts derives the next
+#      version from the commits since the last release, writes package.json +
+#      CHANGELOG.md, and commits the pair via the release App onto a throwaway
+#      `npm-publish-v<X.Y.Z>` branch. No hand `chore(release):` commit ever
+#      lands on v1.x, and the release line is not touched until the run is
+#      proven.
+#   5. `publish` cuts the v<X.Y.Z> tag + the immutable GitHub release — both
+#      belong to the `socket` package, exactly one of each per run — then
+#      STAGES those exact tarballs.
+#   6. A human promotes each staged upload (`pnpm stage approve` with web
 #      2FA, or the npm web UI); nothing is public until then.
-#   6. A stage rejected after the markers BURNS the version: the next
-#      release is a patch bump, and the burned number is never re-published.
+#   7. `land` fast-forwards v1.x to the bump commit once staging succeeded,
+#      and DELETES the throwaway branch when anything failed — so a failed run
+#      leaves the release line exactly as it found it.
 #
-# TWO JOBS, ONE CREDENTIAL BOUNDARY. `verify` has no environment and no OIDC
-# token, so nothing it runs — install scripts, build tooling, actions — can
-# reach a publish credential. `publish` holds the credential and does almost
-# nothing: no checkout, no install, no build. It publishes the exact bytes
-# `verify` packed and proved, so what shipped is what was tested.
+# BURN RULE. A stage rejected after the markers burns the version: the next
+# release is the next patch, and the burned number is never re-published. That
+# is not a convention anyone has to remember — the bump anchors its base on the
+# release tags reachable from this branch, so a burned `v1.1.154` moves the base
+# to 1.1.154 even while npm still serves 1.1.153, and the next run derives
+# 1.1.155.
+#
+# THE VERSION DECISION IS THE COMMITS'. Patch by default; a `feat:` in range
+# makes it minor. A MAJOR is never derived — a breaking commit stops the bump
+# and asks a human to pass release-as.
+#
+# THREE JOBS, ONE CREDENTIAL BOUNDARY. `verify` binds no environment and mints
+# no OIDC token, so nothing it runs — install scripts, build tooling, actions —
+# can reach a publish credential. The release App token it does hold is a
+# contents:write GIT credential, never a registry one, so the registry boundary
+# is untouched. `publish` holds the registry credential and does almost nothing:
+# no checkout, no install, no build. It publishes the exact bytes `verify`
+# packed and proved, so what shipped is what was tested.
 
 on:
   workflow_dispatch:
@@ -42,6 +61,21 @@ on:
         required: false
         default: true
         type: boolean
+      bump:
+        description: 'Derive the version + CHANGELOG in-run and commit them via the release App. Leave on. Turning it off publishes whatever version the tree already carries, which is only ever right for re-running a run whose bump commit already landed.'
+        required: false
+        default: true
+        type: boolean
+      release-as:
+        description: 'Force the bump level instead of deriving it from the commits. MAJOR is never derived — a breaking change stops the bump until a human picks major here.'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - major
+          - minor
+          - patch
       debug:
         description: 'Enable debug output'
         required: false
@@ -73,6 +107,9 @@ jobs:
 
     outputs:
       artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      # Empty on a dry run or a bump=false dispatch, which is what the `land`
+      # job keys off: no branch means there is nothing to land or discard.
+      release-branch: ${{ steps.bump.outputs.release-branch }}
       sha: ${{ steps.release-meta.outputs.sha }}
       version: ${{ steps.release-meta.outputs.version }}
 
@@ -103,27 +140,16 @@ jobs:
           fi
           echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
+      # Full history + tags, both load-bearing for the bump. The base version is
+      # the highest release tag REACHABLE from this branch, which is what makes a
+      # burned number move the base forward; a shallow, tagless clone would hide
+      # the burned tag and re-derive a number that is already spent. The history
+      # is what the commit range since that tag is read from.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
         with:
+          fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
-
-      # A version carrying a prerelease suffix is the committed NEXT-version
-      # hint (X.Y.Z-prerelease — the release tooling consumes it), not a
-      # releasable artifact: the bump that strips the hint and promotes the
-      # CHANGELOG's [Unreleased] section must land first. Fail closed so a
-      # dispatch on a hint-carrying tree can never reach the registry.
-      - name: Refuse a real publish on a prerelease-hint version
-        if: ${{ inputs.dry-run == false }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          case "$VERSION" in
-            *-*)
-              echo "package.json version is '$VERSION' — a prerelease-hint version, not a releasable one." >&2
-              echo "Wanted: a bare X.Y.Z (run the release bump: strip the hint, promote [Unreleased])." >&2
-              exit 1
-              ;;
-          esac
-          echo "Version $VERSION is release-shaped."
 
       - name: Install pnpm
         shell: bash
@@ -299,6 +325,62 @@ jobs:
       - name: Install dependencies
         run: pnpm install --loglevel error
 
+      # The release App signs the bump commit through the GitHub API, so the
+      # workflow's own GITHUB_TOKEN stays contents: read for the whole run. The
+      # mint is contents:write and nothing more — it moves branch refs, it does
+      # not touch the registry. A dry run and a bump=false dispatch both skip it,
+      # since neither writes a commit.
+      - name: Mint release App token
+        if: ${{ inputs.dry-run == false && inputs.bump }}
+        id: release-app
+        env:
+          APP_PRIVATE_KEY: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          OWNER: ${{ github.repository_owner }}
+          PERMISSIONS: '{"contents":"write"}'
+        run: node scripts/release/mint-app-token.mjs
+
+      # Derive the version from the commits since the last release, write
+      # package.json + CHANGELOG.md, and commit the pair via the release App onto
+      # a throwaway npm-publish-v<version> branch — NOT v1.x. The checkout resets
+      # to that commit, so everything built and packed below comes from the exact
+      # commit the release will be tagged at. The `land` job fast-forwards v1.x to
+      # it only once staging succeeded.
+      #
+      # A dry run derives and PRINTS the version, then stops: nothing is written,
+      # no branch is opened, and the packs below carry the tree's current version.
+      # That keeps a dry run free of side effects while still answering the one
+      # question worth asking before a release — which number is next.
+      - name: Bump version and changelog
+        if: ${{ inputs.bump }}
+        id: bump
+        env:
+          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+          RELEASE_AS: ${{ inputs.release-as }}
+        run: |
+          node scripts/release/bump.mts \
+            ${RELEASE_AS:+--release-as "$RELEASE_AS"} \
+            ${{ inputs.dry-run && '--dry-run' || '' }}
+
+      # Whatever produced the version — the bump above, or the tree itself on a
+      # bump=false dispatch — it must be a bare X.Y.Z before anything reaches the
+      # registry. A prerelease-suffixed version is a work-in-progress marker, not
+      # a releasable one, so fail closed rather than publish it.
+      - name: Refuse a publish on a non-release version
+        if: ${{ inputs.dry-run == false }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in
+            *-*)
+              echo "::error::package.json version is '$VERSION' — a prerelease version, not a releasable one." >&2
+              echo "::error::Where: the tree this run will pack, after the bump stage." >&2
+              echo "::error::Saw: a prerelease suffix; wanted a bare X.Y.Z." >&2
+              echo "::error::Fix: land a release-shaped version on v1.x, then re-dispatch." >&2
+              exit 1
+              ;;
+          esac
+          echo "Version $VERSION is release-shaped."
+
       # Compile the Maven manifest extension jar so the dist build bundles it
       # into dist/manifest-scripts (the jar is never committed; it ships only in
       # the published package). Invoke build-jar.sh directly, NOT via `pnpm run`:
@@ -324,6 +406,12 @@ jobs:
       # it installs the packed tarball into a throwaway consumer and runs
       # every executable the manifest declares. A tarball that installs but
       # cannot run is caught here, before any release marker exists.
+      # Registry pages render the README from the tarball, where relative
+      # assets/ refs 404. Pin them to the release tag once, before the three
+      # packs, so every variant ships absolute, immutable asset URLs.
+      - name: Pin README assets to the release tag
+        run: node .github/scripts/pin-readme-assets.mjs
+
       - name: Build and pack socket
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
@@ -365,14 +453,20 @@ jobs:
       # the commit are read once here and handed to the publish job. The
       # publish job never checks the repo out — it only needs these two
       # strings plus the tarballs.
+      #
+      # The SHA comes from HEAD, not github.sha: the bump reset the checkout to
+      # the commit it created on the throwaway branch, and github.sha still names
+      # the pre-bump dispatch commit. Tagging that one would mark a commit whose
+      # package.json carries the PREVIOUS version.
       - name: Resolve release metadata
         id: release-meta
         run: |
           git checkout -- package.json
           VERSION=$(node -p "require('./package.json').version")
+          SHA=$(git rev-parse HEAD)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
-          echo "Release subject: socket@$VERSION at $GITHUB_SHA"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Release subject: socket@$VERSION at $SHA"
 
       # Refuse a version the registry already carries, BEFORE the markers are
       # cut. A re-dispatch of an already-shipped or burned number otherwise
@@ -565,3 +659,60 @@ jobs:
               --tag "$NPM_DIST_TAG"
           done
           echo "All three packages staged. Promote each with: pnpm stage approve <id>"
+
+  # Decide what happens to the bump. This is the ONLY job that writes to v1.x,
+  # and it runs after everything that could fail has either succeeded or not.
+  #
+  #   The run staged all three packages -> fast-forward v1.x to the bump commit,
+  #     then delete the throwaway branch.
+  #   Anything else -> delete the throwaway branch and leave v1.x untouched, so
+  #     a failed run costs nothing but the burned version number.
+  #
+  # The fast-forward preserves the App's exact signed SHA — the SHA the release
+  # tag already points at — which a merge or squash would rewrite. It is a ref
+  # PATCH, not a pull request: a fresh bump branch has no protected-branch rules
+  # to satisfy, so a PR route would park the release behind checks it can never
+  # pass, and there is nothing to review in a machine-generated bump anyway.
+  #
+  # `always()` is what makes the discard leg reachable — this has to run when
+  # `publish` failed, not only when it succeeded. The release-branch guard keeps
+  # it a no-op for dry runs and bump=false dispatches, which never open a branch.
+  land:
+    name: Land the bump
+    needs: [verify, publish]
+    if: ${{ always() && needs.verify.outputs.release-branch != '' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      # promote.mts is the only thing needed from the tree, and it is identical
+      # on the dispatch ref and the bump commit, so the plain checkout is enough.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-20)
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 25.9.0
+
+      - name: Mint release App token
+        id: release-app
+        env:
+          APP_PRIVATE_KEY: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
+          CLIENT_ID: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          OWNER: ${{ github.repository_owner }}
+          PERMISSIONS: '{"contents":"write"}'
+        run: node scripts/release/mint-app-token.mjs
+
+      - name: Land or discard the bump
+        env:
+          BRANCH: ${{ needs.verify.outputs.release-branch }}
+          RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+          SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          node scripts/release/promote.mts \
+            --branch "$BRANCH" \
+            --sha "$SHA" \
+            ${{ needs.publish.result != 'success' && '--discard' || '' }}
