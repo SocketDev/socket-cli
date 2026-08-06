@@ -122,6 +122,74 @@ describe('pin-readme-assets', () => {
     expect(stdout).toContain('no relative assets/ refs to pin')
   })
 
+  it('pins a reference-style definition', () => {
+    const dir = stageWorkspace({
+      readme: '![banner][banner-ref]\n\n[banner-ref]: assets/banner.png\n',
+    })
+    const { status } = runPin(dir)
+    expect(status).toBe(0)
+    expect(readmeIn(dir)).toBe(
+      `![banner][banner-ref]\n\n[banner-ref]: ${base}assets/banner.png\n`,
+    )
+  })
+
+  it('pins refs inside blockquotes and list items', () => {
+    const dir = stageWorkspace({
+      readme:
+        '> ![quoted](assets/quoted.png)\n' +
+        '\n' +
+        '- [download](assets/file.pdf)\n',
+    })
+    runPin(dir)
+    expect(readmeIn(dir)).toBe(
+      `> ![quoted](${base}assets/quoted.png)\n` +
+        '\n' +
+        `- [download](${base}assets/file.pdf)\n`,
+    )
+  })
+
+  it('leaves assets/ refs inside fenced code blocks alone', () => {
+    const readme =
+      '```md\n' +
+      '![example](assets/example.png)\n' +
+      '<img src="assets/example.png">\n' +
+      '```\n'
+    const dir = stageWorkspace({ readme })
+    const { status, stdout } = runPin(dir)
+    expect(status).toBe(0)
+    expect(readmeIn(dir)).toBe(readme)
+    expect(stdout).toContain('no relative assets/ refs to pin')
+  })
+
+  it('leaves assets/ refs inside inline code spans alone', () => {
+    const readme = 'Point refs like `](assets/x.png)` at the release tag.\n'
+    const dir = stageWorkspace({ readme })
+    const { status, stdout } = runPin(dir)
+    expect(status).toBe(0)
+    expect(readmeIn(dir)).toBe(readme)
+    expect(stdout).toContain('no relative assets/ refs to pin')
+  })
+
+  it('pins real refs while leaving code-block lookalikes alone', () => {
+    const dir = stageWorkspace({
+      readme:
+        '![banner](assets/banner.png)\n' +
+        '\n' +
+        '```html\n' +
+        '<img src="assets/banner.png">\n' +
+        '```\n',
+    })
+    const { status } = runPin(dir)
+    expect(status).toBe(0)
+    expect(readmeIn(dir)).toBe(
+      `![banner](${base}assets/banner.png)\n` +
+        '\n' +
+        '```html\n' +
+        '<img src="assets/banner.png">\n' +
+        '```\n',
+    )
+  })
+
   it('pins every ref form in one pass and reports the base', () => {
     const dir = stageWorkspace({
       readme:
