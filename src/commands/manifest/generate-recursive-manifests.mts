@@ -192,7 +192,20 @@ async function runEcosystemCandidates({
         ),
       )
       for (const subprojectDir of resolvedSubprojectDirs) {
-        covered.add(subprojectDir)
+        // Only a genuinely nested member (a descendant of this reactor's own
+        // directory) has no independent existence worth its own standalone
+        // analysis. A subprojectDir that escapes this reactor's own tree (a
+        // sibling, e.g. Maven's `<module>../shared-lib</module>` or Gradle's
+        // relocated projectDir) is independently locatable and potentially
+        // independently consumed or published - its own un-mediated
+        // resolution (e.g. a dependency version this reactor's own
+        // dependency management happens to override) is a distinct,
+        // meaningful data point, not a redundant one. Never suppress its own
+        // build-root invocation, regardless of which reactor(s) also
+        // incorporate it or the order candidates happen to be discovered in.
+        if (subprojectDir.startsWith(`${dir}${path.sep}`)) {
+          covered.add(subprojectDir)
+        }
       }
       outcomes.push({
         dir,
@@ -209,7 +222,10 @@ async function runEcosystemCandidates({
 // root under `cwd`. Coverage is tracked per ecosystem via the facts SBOM's
 // own projects[].subprojectDir, not by pruning the whole discovered subtree,
 // so an unrelated nested project a reactor doesn't declare still gets its
-// own invocation. Fail-closed per ecosystem, not globally: a root whose
+// own invocation - and only a properly nested subprojectDir counts as
+// coverage at all; one that escapes its declaring reactor's own directory
+// still gets its own independent invocation too (see the covered.add call
+// below). Fail-closed per ecosystem, not globally: a root whose
 // workspace layout can't be determined aborts only that ecosystem's own
 // remaining walk (marking its untried candidates 'aborted'), since coverage
 // is tracked per ecosystem and an unrelated one has nothing to lose from it.

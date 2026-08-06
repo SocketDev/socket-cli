@@ -106,6 +106,67 @@ describe('generateRecursiveManifests', () => {
     )
   })
 
+  it.each([
+    // Escaping references must get their own independent invocation
+    // regardless of where they happen to sort alphabetically relative to the
+    // reactor that declares them - before ('aaa-shared-lib') and after
+    // ('zzz-shared-lib') both have to behave identically.
+    ['aaa-shared-lib'],
+    ['zzz-shared-lib'],
+  ])(
+    'never suppresses a sibling subprojectDir that escapes its declaring reactor (name: %s)',
+    async sharedLibName => {
+      const outer = await fs.realpath(
+        await fs.mkdtemp(path.join(tmpdir(), 'escaping-subproject-')),
+      )
+      const reactorA = path.join(outer, 'reactor-a')
+      const sharedLib = path.join(outer, sharedLibName)
+      try {
+        await fs.mkdir(reactorA, { recursive: true })
+        await fs.mkdir(sharedLib, { recursive: true })
+        await fs.writeFile(path.join(reactorA, 'pom.xml'), '<project/>')
+        await fs.writeFile(path.join(sharedLib, 'pom.xml'), '<project/>')
+
+        vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => {
+          if (cwd === reactorA) {
+            return {
+              factsPath: path.join(cwd, '.socket.facts.json'),
+              projects: [
+                {
+                  type: 'maven',
+                  name: 'shared-lib',
+                  subprojectDir: `../${sharedLibName}`,
+                  dependencies: [],
+                  resolvedAs: [],
+                },
+              ],
+            }
+          }
+          return {
+            factsPath: path.join(cwd, '.socket.facts.json'),
+            projects: [],
+          }
+        })
+
+        const outcomes = await generateRecursiveManifests({
+          cwd: outer,
+          verbose: false,
+        })
+
+        const byDir = new Map(outcomes.map(o => [o.dir, o.status]))
+        expect(byDir.get(reactorA)).toBe('generated')
+        expect(byDir.get(sharedLib)).toBe('generated')
+        expect(
+          vi
+            .mocked(runManifestFacts)
+            .mock.calls.some(([opts]) => opts.cwd === sharedLib),
+        ).toBe(true)
+      } finally {
+        await fs.rm(outer, { recursive: true, force: true })
+      }
+    },
+  )
+
   it("runs both ecosystems unconditionally at a dual-marker directory (matches auto's existing behavior)", async () => {
     vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
       factsPath: path.join(cwd, '.socket.facts.json'),
