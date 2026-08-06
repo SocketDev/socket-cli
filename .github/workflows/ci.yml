@@ -421,7 +421,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        node-version: [20, 22, 24]
+        # Node 20 reached end-of-life 2026-03-24; test supported majors only.
+        node-version: [22, 24]
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
