@@ -7,12 +7,15 @@
 # top-level `jobs:` key). See scripts/repo/sync-scaffolding/checks/workflow-fleet-block.mts.
 name: ⚡ CI
 
+# PUSH, never pull_request. The fleet takes no outside contributions and
+# lands on main directly, so a pull_request trigger adds no coverage a push
+# trigger does not already give — and it is the fragile half: GitHub has
+# narrowed pull_request defaults for security, and a silently non-firing
+# trigger reads as a green repo with no CI at all.
 on:
   push:
     branches: [main]
     tags: ['*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
