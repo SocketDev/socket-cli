@@ -30,21 +30,148 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { parseFragment } from 'parse5'
+
 import { runCapture } from './shared.mts'
 import { parseGitHubSlug, rawBaseUrl } from '../_shared/github-raw-url.mts'
+import { parseMarkdownGfm } from '../_shared/markdown-ast.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 
+import type { Definition, Image, Link, Nodes } from 'mdast'
+
+// The relative-ref sentinel: only urls/attribute values with this exact
+// leading path are pinned; absolute refs never start with it, which is also
+// what makes the rewrite idempotent.
+const RELATIVE_PREFIX = 'assets/'
+const PINNED_ATTRS = new Set(['src', 'srcset'])
+
+interface Parse5AttrLocation {
+  endOffset: number
+  startOffset: number
+}
+
+interface Parse5Node {
+  attrs?: Array<{ name: string; value: string }>
+  childNodes?: Parse5Node[]
+  content?: Parse5Node
+  sourceCodeLocation?: {
+    attrs?: Record<string, Parse5AttrLocation>
+  } | null
+}
+
+/** Visit every element (attrs-bearing node) in a parse5 tree, templates included. */
+function walkParse5(node: Parse5Node, visit: (element: Parse5Node) => void): void {
+  if (Array.isArray(node.attrs)) {
+    visit(node)
+  }
+  if (node.content) {
+    walkParse5(node.content, visit)
+  }
+  if (Array.isArray(node.childNodes)) {
+    for (const child of node.childNodes) {
+      walkParse5(child, visit)
+    }
+  }
+}
+
 /**
- * Rewrite the README's RELATIVE `assets/…` refs (both `<img src="assets/…">`
- * and markdown `](assets/…)`) to absolute `${baseUrl}assets/…`. Absolute refs
- * (the socket.dev badge, any https link) are untouched — only the leading
- * `assets/` sentinel is matched. Idempotent: an already-absolute ref has no
- * leading `assets/` to match. Pure.
+ * An image, link, or definition node carries its destination in `url` and its
+ * own span in `position`. The destination is the last occurrence of that url
+ * inside the span (label text precedes it), so the insertion point derives
+ * from the node position rather than a scan of the document.
+ */
+function markdownUrlOffset(
+  readme: string,
+  node: Definition | Image | Link,
+): number | undefined {
+  const start = node.position?.start?.offset
+  const end = node.position?.end?.offset
+  if (start === undefined || end === undefined) {
+    return undefined
+  }
+  const urlAt = readme.slice(start, end).lastIndexOf(node.url)
+  return urlAt === -1 ? undefined : start + urlAt
+}
+
+/**
+ * Byte offsets of relative `src`/`srcset` attribute values inside an mdast
+ * `html` node's source slice, from parse5's per-attribute source locations.
+ */
+function htmlAttrOffsets(html: string, nodeStart: number): number[] {
+  const offsets: number[] = []
+  const fragment = parseFragment(html, { sourceCodeLocationInfo: true })
+  walkParse5(fragment as Parse5Node, element => {
+    const attrLocations = element.sourceCodeLocation?.attrs
+    if (!attrLocations || !element.attrs) {
+      return
+    }
+    for (const attr of element.attrs) {
+      if (
+        !PINNED_ATTRS.has(attr.name) ||
+        !attr.value.startsWith(RELATIVE_PREFIX)
+      ) {
+        continue
+      }
+      const location = attrLocations[attr.name]
+      if (!location) {
+        continue
+      }
+      const attrText = html.slice(location.startOffset, location.endOffset)
+      const valueAt = attrText.indexOf(attr.value, attr.name.length)
+      if (valueAt === -1) {
+        continue
+      }
+      offsets.push(nodeStart + location.startOffset + valueAt)
+    }
+  })
+  return offsets
+}
+
+/**
+ * Rewrite the README's RELATIVE `assets/…` refs (markdown images/links/
+ * definitions and raw-HTML `src`/`srcset` attributes) to absolute
+ * `${baseUrl}assets/…`. Absolute refs (the socket.dev badge, any https link)
+ * are untouched, and the rewrite is idempotent — an already-absolute ref has
+ * no leading `assets/` to pin. Parsed, not pattern-matched: the README goes
+ * through a position-tracked GFM mdast parse and each edit lands on a
+ * parser-reported byte offset, so an `assets/` lookalike inside a fenced code
+ * block or inline code span is content and stays as written; raw HTML arrives
+ * as mdast `html` nodes whose source slices go through parse5 with source
+ * locations on, so only real attribute values are touched. No serializer
+ * round-trip — untouched bytes stay byte-identical. Pure.
  */
 export function pinReadmeAssets(readme: string, baseUrl: string): string {
-  return readme
-    .replaceAll('src="assets/', `src="${baseUrl}assets/`)
-    .replaceAll('](assets/', `](${baseUrl}assets/`)
+  const insertAt: number[] = []
+  const visit = (node: Nodes): void => {
+    if (
+      (node.type === 'image' ||
+        node.type === 'link' ||
+        node.type === 'definition') &&
+      node.url.startsWith(RELATIVE_PREFIX)
+    ) {
+      const offset = markdownUrlOffset(readme, node)
+      if (offset !== undefined) {
+        insertAt.push(offset)
+      }
+    } else if (node.type === 'html') {
+      const start = node.position?.start?.offset
+      const end = node.position?.end?.offset
+      if (start !== undefined && end !== undefined) {
+        insertAt.push(...htmlAttrOffsets(readme.slice(start, end), start))
+      }
+    }
+    if ('children' in node) {
+      for (const child of node.children) {
+        visit(child)
+      }
+    }
+  }
+  visit(parseMarkdownGfm(readme))
+  let pinned = readme
+  for (const offset of [...new Set(insertAt)].sort((a, b) => b - a)) {
+    pinned = pinned.slice(0, offset) + baseUrl + pinned.slice(offset)
+  }
+  return pinned
 }
 
 // A full git commit sha — the only thing we'll pin a raw URL to besides the

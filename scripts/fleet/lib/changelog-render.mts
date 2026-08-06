@@ -6,6 +6,8 @@
  *   contract; `changelog.mts` imports these internally.
  */
 
+import { h2LineIndexes } from '../_shared/markdown-ast.mts'
+
 import type { ConventionalCommit } from './changelog.mts'
 
 // User-visible commit types → the Keep a Changelog section each lands under.
@@ -71,18 +73,20 @@ export function unreleasedRange(
   // generated, and `[unreleased]` / `[UNRELEASED]` mean the same section. An
   // exact match silently skipped those and promoted nothing, so the accrued
   // entries stayed behind while the release cut an empty section.
+  //
+  // Headings come from the parsed tree, not a line scan, so a `## ` line
+  // inside a fenced code block is content and can neither be the heading nor
+  // truncate the block.
   const wanted = unreleasedHeading.trim().toLowerCase()
-  const start = lines.findIndex(l => l.trim().toLowerCase() === wanted)
-  if (start === -1) {
+  const headings = h2LineIndexes(lines.join('\n'))
+  const at = headings.findIndex(
+    index => lines[index]!.trim().toLowerCase() === wanted,
+  )
+  if (at === -1) {
     return undefined
   }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
+  const start = headings[at]!
+  const end = at + 1 < headings.length ? headings[at + 1]! : lines.length
   return { end, start }
 }
 
