@@ -204,7 +204,17 @@ describe('entry scripts', () => {
     'scripts/release/promote.mts',
   ]
 
-  it.each(entries)(
+  // Bare `node <entry>.mts` needs native type stripping, which landed in
+  // Node 22.6 (`process.features.typescript` reports 'strip' or 'transform'
+  // there and is undefined before it). These entries are maintainer tooling
+  // that targets the repo's pinned dev Node; the older CI matrix lanes cover
+  // the built product, not this tooling, so the spawn assertions skip where
+  // the runtime cannot execute .mts at all.
+  // The experimental flag is the capability being probed; undefined is false.
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  const canRunMts = Boolean(process.features.typescript)
+
+  it.skipIf(!canRunMts).each(entries)(
     '%s answers --describe without touching the tree',
     entryPath => {
       const before = spawnSync('git', ['status', '--porcelain'], {
@@ -219,8 +229,10 @@ describe('entry scripts', () => {
         cwd: rootPath,
         encoding: 'utf8',
       }).stdout
-      expect(result.status).toBe(0)
-      expect(result.stdout.trim().length).toBeGreaterThan(0)
+      // Surface the spawned stderr on failure so an environmental break
+      // (missing runtime capability, bad PATH) explains itself.
+      expect(result.status, result.stderr).toBe(0)
+      expect(result.stdout.trim().length, result.stderr).toBeGreaterThan(0)
       expect(result.stdout.trim().split('\n')).toHaveLength(1)
       expect(after).toBe(before)
     },
