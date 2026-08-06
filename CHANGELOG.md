@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `socket scan create`/`socket scan reach --dynamic-sbom-inference` recursively discovers every independent Gradle, sbt, and Maven build root and generates a Socket facts SBOM for each, enabling full application reachability analysis across multi-module JVM monorepos. For Gradle, sbt, and Maven, only dependencies present in these generated Socket facts SBOM files are used for analysis; other ecosystems are analyzed as normal.
+
 ### Changed
-- Updated the Coana CLI to v `15.10.5`.
+- Updated the Coana CLI to v `15.10.8`.
 
 ### Fixed
 - Declared `form-data` as a dependency, so a fresh install no longer throws `Cannot find module 'form-data'` on its first upload.
