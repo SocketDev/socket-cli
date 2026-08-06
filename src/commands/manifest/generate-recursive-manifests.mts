@@ -216,12 +216,23 @@ async function runEcosystemCandidates({
 export async function generateRecursiveManifests({
   cwd,
   excludePaths,
+  sbtTmpDir,
   sidecarAcc,
   verbose,
   withFiles,
 }: {
   cwd: string
   excludePaths?: string[] | undefined
+  // Reachability path only: caller-supplied directory to use as sbt's shared
+  // global base across every sbt root in this run. sbt provisions the Scala
+  // toolchain under `<base>/boot`, which withFiles' artifactPaths point into,
+  // so when the caller intends to consume those paths after this call
+  // returns (e.g. reachability analysis), it must supply a directory that
+  // outlives this call and delete it once it's done - mirrors
+  // ManifestScriptOptions.tmpDir one level up. Unset ⇒ an ephemeral shared
+  // dir is allocated and cleaned up before this call returns, matching
+  // runManifestFacts' own withFiles-less default.
+  sbtTmpDir?: string | undefined
   // Reachability path only: run build tools with files and fold resolved
   // artifact paths into sidecarAcc, keyed by each root's own factsPath.
   sidecarAcc?: SidecarAccumulator | undefined
@@ -242,13 +253,13 @@ export async function generateRecursiveManifests({
     sockJson: withoutDisabledFlags(rootSockJson),
   })
 
-  const runAll = (sbtTmpDir: string | undefined) =>
+  const runAll = (resolvedSbtTmpDir: string | undefined) =>
     runEcosystemCandidates({
       candidatesByTool,
       excludePaths,
       realCwd,
       rootSockJson,
-      sbtTmpDir,
+      sbtTmpDir: resolvedSbtTmpDir,
       sidecarAcc,
       verbose,
       withFiles,
@@ -258,10 +269,14 @@ export async function generateRecursiveManifests({
   // Scala-toolchain cache under <base>/boot survive between invocations
   // instead of being reprovisioned per root (the plugin file is rewritten and
   // records.tsv is fully overwritten - not appended - on every invocation, so
-  // reuse is safe). Skipped entirely when there's no sbt root to benefit.
-  const outcomes = candidatesByTool.get('sbt')?.length
-    ? await withTmpDir('socket-sbt-facts-shared-', runAll)
-    : await runAll(undefined)
+  // reuse is safe). A caller-supplied sbtTmpDir is reused as-is (the caller
+  // owns its lifetime); otherwise one is allocated and cleaned up here, but
+  // only when there's an sbt root to benefit from sharing it at all.
+  const outcomes = sbtTmpDir
+    ? await runAll(sbtTmpDir)
+    : candidatesByTool.get('sbt')?.length
+      ? await withTmpDir('socket-sbt-facts-shared-', runAll)
+      : await runAll(undefined)
 
   if (verbose) {
     logger.info(`Discovered ${outcomes.length} build-tool candidate(s).`)

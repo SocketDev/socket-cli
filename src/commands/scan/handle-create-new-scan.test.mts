@@ -201,7 +201,11 @@ describe('handleCreateNewScan excludePaths', () => {
     await handleCreateNewScan(config)
 
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
-      expect.objectContaining({ cwd: '/repo', withFiles: false }),
+      expect.objectContaining({
+        cwd: '/repo',
+        sbtTmpDir: undefined,
+        withFiles: false,
+      }),
     )
     expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -225,6 +229,27 @@ describe('handleCreateNewScan excludePaths', () => {
         cwd: '/repo',
       },
     )
+  })
+
+  it('aborts instead of silently uploading a partial scan when a recursive build root fails', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/service-a',
+        ecosystem: 'maven',
+        factsPath: '/repo/service-a/.socket.facts.json',
+        status: 'generated',
+      },
+      { dir: '/repo/service-b', ecosystem: 'maven', status: 'failed' },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await expect(handleCreateNewScan(config)).rejects.toThrow(
+      /one or more independent build roots failed/i,
+    )
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
   })
 
   it('accumulates a sidecar across recursively discovered build roots and forwards it to reachability analysis', async () => {
@@ -264,7 +289,10 @@ describe('handleCreateNewScan excludePaths', () => {
     await handleCreateNewScan(config)
 
     expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
-      expect.objectContaining({ withFiles: true }),
+      expect.objectContaining({
+        sbtTmpDir: expect.any(String),
+        withFiles: true,
+      }),
     )
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
       expect.objectContaining({

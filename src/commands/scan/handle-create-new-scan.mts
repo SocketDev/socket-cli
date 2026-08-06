@@ -18,6 +18,7 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { compressSocketFactsForUpload } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
+import { InputError } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -176,10 +177,23 @@ export async function handleCreateNewScan({
         const outcomes = await generateRecursiveManifests({
           cwd,
           excludePaths: reach.excludePaths,
+          // sbt's Scala toolchain lives under its shared global base;
+          // withFiles' resolved paths point into it, so when reachability
+          // will consume them afterward, reuse manifestTmpDir (kept alive
+          // until reach finishes below) instead of letting this call clean
+          // its own ephemeral base up before reach ever reads those paths.
+          sbtTmpDir: reach.runReachabilityAnalysis ? manifestTmpDir : undefined,
           sidecarAcc,
           verbose: false,
           withFiles: reach.runReachabilityAnalysis,
         })
+        // Fail loud rather than silently upload a partial multi-root scan:
+        // matches handleManifestDynamicSbomInference's own check.
+        if (outcomes.some(o => o.status === 'failed')) {
+          throw new InputError(
+            'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+          )
+        }
         const generatedFactsPaths = outcomes
           .filter(o => o.status === 'generated')
           .map(o => o.factsPath!)

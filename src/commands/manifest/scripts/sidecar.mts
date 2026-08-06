@@ -10,7 +10,7 @@ import type {
 
 export type SidecarComponentEntry = SocketFactsSbomComponent & {
   // Classpath entries (jars, or a sibling first-party project's own build
-  // output dirs when this dependency edge resolves to one - REA-687). `[]`
+  // output dirs when this dependency edge resolves to one). `[]`
   // means resolution was attempted and found nothing (e.g. a pom/BOM);
   // undefined means resolution couldn't be attempted at all (see attachPaths).
   targets?: string[] | undefined
