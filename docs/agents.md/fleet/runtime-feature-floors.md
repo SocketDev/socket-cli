@@ -3,7 +3,7 @@
 The `socket/no-runtime-features-below-engine-floor` lint rule blocks modern
 runtime built-ins in repos whose `engines.node` floor predates the Node major
 that first shipped them. Below that floor the feature throws
-`TypeError: … is not a function` at runtime — a hazard a type-checker targeting
+`TypeError: … is not a function` at runtime - a hazard a type-checker targeting
 a newer lib won't catch. The rule is engine-aware: it reads `engines.node` from
 the nearest `package.json` and fires per feature only when the floor is below
 that feature's major. Repos with no `engines` field are treated as evergreen
@@ -44,13 +44,13 @@ won't false-fire.
 
 The mapping was looked up from, and should be re-verified against:
 
-- **MDN browser-compat data** — each feature's "Browser compatibility" table
+- **MDN browser-compat data** - each feature's "Browser compatibility" table
   has a `deno`/`nodejs` row with the first supporting Node version, e.g.
   `developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fromAsync`.
-- **Node.js release announcements** — `nodejs.org/en/blog/announcements` note
+- **Node.js release announcements** - `nodejs.org/en/blog/announcements` note
   the bundled V8 version per major; the V8 version that ships a feature pins the
   Node major.
-- **node.green** — per-feature Node support matrix, used as a cross-check.
+- **node.green** - per-feature Node support matrix, used as a cross-check.
 
 ## When to re-check
 

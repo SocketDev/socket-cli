@@ -206,7 +206,7 @@ export function scanHookMains(
   return { hits, scanned }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const { hits, scanned } = scanHookMains(REPO_ROOT)
   if (hits.length) {

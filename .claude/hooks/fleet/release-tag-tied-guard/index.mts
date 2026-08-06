@@ -265,7 +265,7 @@ export interface GuardProbes {
 
 // Tag existence on a repo that is NOT the invoking checkout: ask GitHub
 // itself, with gh's own auth. Exit 0 iff the tag ref exists there.
-function defaultRepoTagLive(repo: string, ref: string): boolean {
+export function defaultRepoTagLive(repo: string, ref: string): boolean {
   if (!repo || !ref) {
     return false
   }
@@ -277,7 +277,7 @@ function defaultRepoTagLive(repo: string, ref: string): boolean {
   return !probe.error && probe.status === 0
 }
 
-function defaultNpmVersionLive(
+export function defaultNpmVersionLive(
   name: string,
   version: string,
   cwd: string,
@@ -289,7 +289,10 @@ function defaultNpmVersionLive(
   return !view.error && view.status === 0 && !!String(view.stdout).trim()
 }
 
-function defaultCrateVersionLive(name: string, version: string): boolean {
+export function defaultCrateVersionLive(
+  name: string,
+  version: string,
+): boolean {
   const fetch = spawnSync(
     'curl',
     ['-fsS', `https://index.crates.io/${cratesIndexPath(name)}`],

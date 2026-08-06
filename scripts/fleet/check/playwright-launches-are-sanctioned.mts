@@ -393,6 +393,8 @@ const SCRIPT_META: ScriptMeta = {
 
 // Entrypoint-guarded so importing this module for a unit test of its pure
 // scanner does not run the scan.
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

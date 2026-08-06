@@ -210,7 +210,7 @@ export function applyHoists(
   return applied
 }
 
-function main(): void {
+export function main(): void {
   const fix = process.argv.includes('--fix')
   const quiet = process.argv.includes('--quiet')
   const reports = scanTestTree(REPO_ROOT)

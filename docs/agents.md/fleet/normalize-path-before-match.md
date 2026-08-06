@@ -10,9 +10,9 @@ across darwin/linux (`/`) and win32 (`\`) and is a latent cross-platform bug.
 
 Prove normalization in scope before:
 
-- **Regex match/exec/test/replace on a path variable** — `re.test(filePath)` where
+- **Regex match/exec/test/replace on a path variable** - `re.test(filePath)` where
   `filePath` isn't already assigned from `normalizePath()` or `toUnixPath()`.
-- **String separator ops** — `.split('/')`, `.startsWith('/')`, `.endsWith('/')`,
+- **String separator ops** - `.split('/')`, `.startsWith('/')`, `.endsWith('/')`,
   `.includes('/')` on a path-like variable.
 
 "Proven normalized" means there is an assignment `const filePath =
@@ -49,6 +49,6 @@ A variable is considered path-like when its name matches:
 | Path$ | File$ | Dir$
 ```
 
-This is deliberately conservative — short one-letter names (`p`, `f`) are not
+This is deliberately conservative - short one-letter names (`p`, `f`) are not
 caught. Use `normalizePath` at the input boundary and carry the result into
 downstream code.

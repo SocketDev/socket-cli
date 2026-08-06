@@ -6,7 +6,7 @@ Keep the **wire-in point**, the seam where a future capability slots in, present
 
 ## Why
 
-A deleted extension point forces every future change to re-discover and re-thread the same plumbing through all call sites — the cost compounds with each layer that must be reopened.
+A deleted extension point forces every future change to re-discover and re-thread the same plumbing through all call sites - the cost compounds with each layer that must be reopened.
 
 A hard-wired-on capability that nobody consumes is live attack surface. Every unconditional side-effect is a manipulation point that can be targeted before there is a consumer to justify the exposure. Note: that includes an emitted env var, an unconditional network call, or an always-on credential check.
 
@@ -22,10 +22,10 @@ Gating the behavior off by default removes it as active surface while keeping th
 
 **Layered resolvers:** name the seam explicitly so future layers slot between existing steps without call-site churn. A credential resolver with a named seam between the env check and the keychain read lets a future layer insert there without touching callers.
 
-**Note:** gating behavior off is not weakening a trust gate — it removes surface while preserving the mechanism. These are distinct operations.
+**Note:** gating behavior off is not weakening a trust gate - it removes surface while preserving the mechanism. These are distinct operations.
 
 ## Enforcement
 
-No automated enforcer today — this is a design-time discipline. Apply during code review, plan review (see `.claude/hooks/fleet/plan-review-nudge/`), and threat modeling.
+No automated enforcer today - this is a design-time discipline. Apply during code review, plan review (see `.claude/hooks/fleet/plan-review-nudge/`), and threat modeling.
 
 Related: [`code-style.md`](code-style.md), [`prompt-injection.md`](prompt-injection.md), [`token-hygiene.md`](token-hygiene.md).

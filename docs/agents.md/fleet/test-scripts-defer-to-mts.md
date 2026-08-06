@@ -51,8 +51,8 @@ Once a repo's backlog clears, its own `check.mts` step can pass `--strict`.
 
 ## Enforcement
 
-- `scripts/fleet/check/test-scripts-are-deferred.mts` — fleet-wide scan of
+- `scripts/fleet/check/test-scripts-are-deferred.mts` - fleet-wide scan of
   every `package.json`'s `test*` scripts; report-only by default, `--strict`
   fails on any raw-runner script outside the hook/lint-rule tier.
-- `.claude/hooks/fleet/test-script-defers-guard/` — PreToolUse edit-time twin:
+- `.claude/hooks/fleet/test-script-defers-guard/` - PreToolUse edit-time twin:
   blocks introducing a NEW raw-runner test script in a package.json.

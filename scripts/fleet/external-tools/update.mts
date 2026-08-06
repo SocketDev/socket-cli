@@ -1,37 +1,32 @@
 /* max-file-lines: orchestration — soak-clear → fetch-latest → rewrite pipeline for both tool entry shapes; the phases share the soak-policy + entry-shape state. */
 /**
- * @file Bump external-tools.json entries to their latest soak- cleared release.
- *   "Soak-cleared" = published more than `minimumReleaseAge` minutes ago, where
- *   `minimumReleaseAge` is read from `pnpm-workspace.yaml`. Mirrors the soak
- *   time pnpm uses for npm catalog entries — same policy, different
- *   distribution channel (npm vs GitHub releases vs npm tarball integrity
- *   hash). Two entry shapes:
- *
- *   1. npm-based (purl + integrity) { purl: 'pkg:npm/ecc-agentshield@1.4.0',
- *      integrity: 'sha512-...' } → query npm registry, pick newest published >=
- *      soak time ago, → rewrite purl version + integrity.
- *   2. github-release-based (repository + version + platforms per platform-arch).
- *      The `repository: 'github:owner/repo'` shape → query GitHub releases API,
- *      pick newest published >= soak time ago, → rewrite version + platforms
- *      (URL implicit from `${repo}/releases/download/${version}/${asset}`,
- *      integrity recomputed from the asset bytes as an SRI `sha512-<base64>`
- *      string). Default mode is dry-run: prints the proposed diff but doesn't
- *      write. `--apply` flushes changes. Idempotent — re-running on an already-
- *      up-to-date file is a no-op. Reads soak time from wheelhouse's own
- *      pnpm-workspace.yaml. Other repos that have their own external-tools.json
- *      via the setup-security-tools cascade, inherit the same window because
- *      the file is byte-cascaded; running this script against a downstream repo
- *      would use that repo's pnpm-workspace.yaml soak time. Invoked as: node
- *      scripts/update-external-tools.mts [--apply] [--target <path>] Where
- *      <path> is a directory containing an external-tools.json + a
- *      pnpm-workspace.yaml. Defaults to the wheelhouse template's
- *      setup-security-tools/external-tools.json + the wheelhouse's
- *      pnpm-workspace.yaml.
+ * @file Bump external-tools.json entries to their newest soak-cleared release.
+ *   "Soak-cleared" means published longer ago than `minimumReleaseAge` minutes,
+ *   read from the repo's own `pnpm-workspace.yaml`. That mirrors the soak pnpm
+ *   applies to npm catalog entries — same policy, a different distribution
+ *   channel. Integrity is always recomputed from the bytes actually downloaded,
+ *   never transcribed from a publisher-declared hash. A pin only ever moves
+ *   FORWARD; see `isForwardBump` for the two downgrades that invariant stops.
+ *   Both entry shapes are keyed by `repository`. A GitHub release asset carries
+ *   `release: 'asset'`, `repository: 'github:owner/repo'`, `version`, and a
+ *   `platforms` map holding each platform's asset name and integrity; the
+ *   releases API picks the highest soak-cleared semver tag, then every platform
+ *   asset is downloaded and re-hashed into an SRI `sha512-<base64>`. An npm
+ *   registry tarball carries no `release`, plus `repository: 'npm:<name>'`,
+ *   `version`, and ONE top-level `integrity`; the registry packument picks the
+ *   newest soak-cleared version and its `dist.integrity`. A tool bumped while
+ *   still inside its soak window carries a dated `soakBypass` block of
+ *   `version`, `published`, and `removable`. A bump that has cleared the window
+ *   drops any stale block, and `external-tools/prune.mts` owns retiring a block
+ *   whose window has since closed. Dry-run is the DEFAULT: the plan prints and
+ *   nothing is written. `--apply` flushes. Idempotent — re-running against an
+ *   up-to-date manifest is a no-op. Every shipped manifest is swept unless
+ *   `--target <file>` narrows it to one, matching the sibling list / show /
+ *   edit / prune / delete verbs.
  */
 
 import crypto from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import path from 'node:path'
 
 // Fleet convention (socket/prefer-async-spawn): use the lib's
 // spawnSync, not node:child_process. Drop `encoding:` from options —
@@ -40,12 +35,16 @@ import path from 'node:path'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { fetchPackageManifest } from '@socketsecurity/lib/packages/manifest'
+import { gt } from '@socketsecurity/lib-stable/versions/compare'
+import { coerceVersion } from '@socketsecurity/lib-stable/versions/parse'
+import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
 import { isSocketSourcedPackage } from '../constants/socket-scopes.mts'
+import { relPath, requireValue, resolveTargets } from './_shared.mts'
 import { computeSoakBypass, planGithubUpdate } from './github.mts'
 
-import { REPO_ROOT } from '../paths.mts'
+import { PNPM_WORKSPACE_YAML, REPO_ROOT } from '../paths.mts'
 import { isSoakExcluded, readSoakRules } from '../soak-rules.mts'
 import type { SoakRules } from '../soak-rules.mts'
 import { runMain } from '../_shared/run-main.mts'
@@ -246,11 +245,18 @@ export async function fetchNpmVersionIntegrity(
 }
 
 /**
- * Pick the newest npm version of `name` that's older than the soak window.
- * Returns the version string, its integrity hash, and the registry's publish
- * timestamp for that version (the input `planNpmUpdate` dates a soak-bypass
- * annotation from), or undefined if the registry has no soak-cleared release,
- * very new package.
+ * Pick the HIGHEST-SEMVER npm version of `name` that has cleared the soak
+ * window. Returns the version string, its integrity hash, and the registry's
+ * publish timestamp for that version. `planNpmUpdate` dates a soak-bypass
+ * annotation from that timestamp. Returns undefined when the registry has no
+ * soak-cleared release at all, which is the case for a package published within
+ * the window.
+ *
+ * Highest semver, NOT newest by publish date — the same rule
+ * `pickNewestSoakedRelease` applies to GitHub releases. Maintainers ship
+ * old-line patches after newer majors. Note: npm published 10.9.9 on
+ * 2026-07-29, well after 12.0.1, so newest-by-date picks the back-line patch
+ * and drives a MAJOR downgrade.
  */
 export function pickNewestSoakedNpm(
   name: string,
@@ -296,8 +302,11 @@ export function pickNewestSoakedNpm(
   if (candidates.length === 0) {
     return undefined
   }
-  candidates.sort((a, b) => b.publishedAt - a.publishedAt)
-  const newest = candidates[0]!
+  const highest = maxVersion(candidates.map(c => c.version))
+  const newest = candidates.find(c => c.version === highest)
+  if (!newest) {
+    return undefined
+  }
   const versionMeta = meta.versions[newest.version]
   if (!versionMeta?.dist?.integrity) {
     return undefined
@@ -307,6 +316,30 @@ export function pickNewestSoakedNpm(
     integrity: versionMeta.dist.integrity,
     publishedAt: newest.publishedRaw,
   }
+}
+
+/**
+ * Is `next` strictly newer than `current`? The updater only ever moves a pin
+ * FORWARD — a proposal that is equal or lower is not an update.
+ *
+ * This is the invariant that stops two real downgrades the soak logic alone
+ * cannot see: an old-line npm patch published after a newer major, and a pin
+ * that deliberately rode a `soakBypass` ahead of the newest soak-cleared
+ * release (zizmor 1.29.0 pinned while only 1.28.0 had cleared). Rolling either
+ * back would violate the fleet's "a pin never moves down" rule. Leading `v` is
+ * stripped so a `v`-prefixed GitHub tag compares against a bare pin.
+ */
+export function isForwardBump(current: string, next: string): boolean {
+  // TOTAL, never throws: a pin or tag that is not clean semver (`kani-0.67.0`)
+  // would make a bare `gt()` throw `Invalid Version` and abort that tool's plan.
+  // Coerce both sides, and when either side cannot be coerced the direction is
+  // unknowable — hold rather than risk writing a downgrade.
+  const a = coerceVersion(current)
+  const b = coerceVersion(next)
+  if (!a || !b) {
+    return false
+  }
+  return gt(b, a) === true
 }
 
 export interface ToolUpdate {
@@ -338,7 +371,10 @@ export function planNpmUpdate(
     ? [npmName, ...soakExclude]
     : soakExclude
   const next = pickNewestSoakedNpm(npmName, soakMinutes, npmExclude)
-  if (!next || next.version === current) {
+  // Forward-only: an equal or LOWER newest-soaked version is not an update. A
+  // pin ahead of the newest soak-cleared release (one that rode a soakBypass)
+  // must be left alone, never rolled back.
+  if (!next || !isForwardBump(current, next.version)) {
     return undefined
   }
   const changes = [
@@ -513,67 +549,94 @@ export function applyNpmRestamp(
   }
 }
 
-interface CliOpts {
+// Every member is resolved by parseArgs, so this is a required `config` rather
+// than an optional options bag.
+export interface UpdateCliConfig {
   apply: boolean
-  externalToolsPath: string
-  pnpmWorkspaceYaml: string
+  // Absolute manifest paths to sweep. Defaults to every shipped
+  // external-tools.json; `--target <file>` narrows it to one.
+  targets: string[]
   verifyAssets: boolean
 }
 
-export function parseArgs(): CliOpts {
+/**
+ * Parse the updater's flags. `--target` names a manifest FILE, the same
+ * contract every sibling verb uses — the soak policy is read from the repo's
+ * own `pnpm-workspace.yaml`, so a manifest no longer has to sit beside one. The
+ * previous directory-based contract made
+ * `scripts/fleet/setup/external-tools.json` unreachable (no
+ * `pnpm-workspace.yaml` in that directory), which is how `fff` sat at a version
+ * two releases behind its newest soak-cleared release.
+ */
+export function parseArgs(
+  argv: readonly string[] = process.argv.slice(2),
+): UpdateCliConfig {
   let apply = false
-  let externalToolsPath = path.join(
-    REPO_ROOT,
-    'template/base/.claude/hooks/fleet/setup-security-tools/external-tools.json',
-  )
-  let pnpmWorkspaceYaml = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+  let target: string | undefined
   let verifyAssets = false
-  const argv = process.argv.slice(2)
-  for (let i = 0; i < argv.length; i += 1) {
+  for (let i = 0, { length } = argv; i < length; i += 1) {
     const a = argv[i]!
     if (a === '--apply') {
       apply = true
     } else if (a === '--verify-assets') {
       verifyAssets = true
     } else if (a === '--target') {
-      const next = argv[i + 1]
-      if (!next) {
-        throw new Error('--target requires a directory path')
-      }
-      externalToolsPath = path.join(next, 'external-tools.json')
-      pnpmWorkspaceYaml = path.join(next, 'pnpm-workspace.yaml')
+      target = requireValue(argv as string[], i, '--target')
       i += 1
     } else {
       throw new Error(`Unknown argument: ${a}`)
     }
   }
-  return { apply, externalToolsPath, pnpmWorkspaceYaml, verifyAssets }
+  return { apply, targets: resolveTargets({ target }), verifyAssets }
 }
 
-export async function main(): Promise<number> {
-  const opts = parseArgs()
-  const { exclude: soakExclude, minutes: soakMinutes } = readSoakPolicy(
-    opts.pnpmWorkspaceYaml,
-  )
-  process.stdout.write(
-    `Soak time: ${soakMinutes} minutes (${(soakMinutes / 60 / 24).toFixed(1)} days)\n`,
-  )
-  process.stdout.write(`External-tools file: ${opts.externalToolsPath}\n`)
-  const json = JSON.parse(
-    readFileSync(opts.externalToolsPath, 'utf8'),
-  ) as ExternalToolsJson
-  // Per-tool-isolated planning: one tool's throw (the codedb asset-fetch abort)
-  // is caught + recorded, the rest still get planned.
+export interface ManifestSweepResult {
+  failures: ToolFailure[]
+  updates: ToolUpdate[]
+}
+
+/**
+ * Plan (and under `--apply`, write) one manifest. Returns the manifest's
+ * updates + isolated failures so the caller can aggregate across every manifest
+ * and derive one exit code.
+ */
+export async function sweepManifest(
+  manifestPath: string,
+  soakMinutes: number,
+  soakExclude: readonly string[],
+  options?:
+    | { apply?: boolean | undefined; verifyAssets?: boolean | undefined }
+    | undefined,
+): Promise<ManifestSweepResult> {
+  const { apply = false, verifyAssets = false } = {
+    __proto__: null,
+    ...options,
+  } as { apply?: boolean | undefined; verifyAssets?: boolean | undefined }
+  let json: ExternalToolsJson
+  try {
+    json = JSON.parse(readFileSync(manifestPath, 'utf8')) as ExternalToolsJson
+  } catch (e) {
+    // Manifest validity is `check-external-tools-are-valid`'s gate; an
+    // unreadable file here is reported as this manifest's failure, never a
+    // silent skip and never an abort of the remaining manifests.
+    return {
+      failures: [{ name: relPath(manifestPath), error: errorMessage(e) }],
+      updates: [],
+    }
+  }
+  process.stdout.write(`\n--- ${relPath(manifestPath)}\n`)
+  // Per-tool-isolated planning: one tool's throw (a failed asset fetch) is
+  // caught + recorded, the rest still get planned.
   const { failures, updates } = await planAllUpdates(
     json.tools,
     soakMinutes,
     soakExclude,
-    { verifyAssets: opts.verifyAssets },
+    { verifyAssets },
   )
   if (updates.length === 0) {
-    process.stdout.write('All tools current.\n')
+    process.stdout.write('  All tools current.\n')
   } else {
-    process.stdout.write(`\nProposed updates (${updates.length}):\n`)
+    process.stdout.write(`  Proposed updates (${updates.length}):\n`)
     for (let i = 0, { length } = updates; i < length; i += 1) {
       const u = updates[i]!
       process.stdout.write(`\n  ${u.name}:\n`)
@@ -582,36 +645,62 @@ export async function main(): Promise<number> {
       }
     }
   }
-  if (opts.apply && updates.length > 0) {
+  if (apply && updates.length > 0) {
     // Re-stamp npm-tool version + integrity in place (planNpmUpdate stamps
     // only the soakBypass block). GitHub tools were already rewritten by
     // planAllUpdates. A failed tool threw before mutating, so its entry keeps
     // its current valid pins and is written back unchanged.
     applyNpmRestamp(json, updates, soakMinutes, soakExclude)
-    writeThroughMirrorLock(
-      opts.externalToolsPath,
-      JSON.stringify(json, null, 2) + '\n',
+    writeThroughMirrorLock(manifestPath, JSON.stringify(json, null, 2) + '\n')
+    process.stdout.write(`  Wrote ${relPath(manifestPath)}\n`)
+  }
+  return { failures, updates }
+}
+
+export async function main(
+  argv: readonly string[] = process.argv.slice(2),
+): Promise<number> {
+  const opts = parseArgs(argv)
+  // ONE soak policy for the whole sweep, read from the repo's own workspace file
+  // rather than a sibling of each manifest.
+  const { exclude: soakExclude, minutes: soakMinutes } =
+    readSoakPolicy(PNPM_WORKSPACE_YAML)
+  process.stdout.write(
+    `Soak time: ${soakMinutes} minutes (${(soakMinutes / 60 / 24).toFixed(1)} days)\n`,
+  )
+  if (opts.targets.length === 0) {
+    process.stdout.write('No external-tools.json manifests found.\n')
+    return 1
+  }
+  process.stdout.write(`Manifests: ${opts.targets.length}\n`)
+  const failures: ToolFailure[] = []
+  let updateCount = 0
+  for (let i = 0, { length } = opts.targets; i < length; i += 1) {
+    const result = await sweepManifest(
+      opts.targets[i]!,
+      soakMinutes,
+      soakExclude,
+      { apply: opts.apply, verifyAssets: opts.verifyAssets },
     )
-    process.stdout.write(`\nWrote ${opts.externalToolsPath}\n`)
+    updateCount += result.updates.length
+    failures.push(...result.failures)
+  }
+  if (opts.apply && updateCount > 0) {
     // external-tools.json is the single source for the pnpm/npm version pins —
-    // propagate the new versions to the target repo's package.json
-    // (packageManager + engines) so they are never hand-maintained. Runs in the
-    // target root so a cross-repo bump syncs that repo's package.json.
-    const targetRoot = path.resolve(
-      path.dirname(opts.externalToolsPath),
-      '../../..',
-    )
+    // propagate the new versions to package.json (devEngines + engines) so they
+    // are never hand-maintained. Runs once, at the repo root, after every
+    // manifest has been written.
     const syncResult = spawnSync(
       'node',
       ['scripts/fleet/sync-package-manager-pins.mts'],
-      { cwd: targetRoot, stdio: 'inherit' },
+      { cwd: REPO_ROOT, stdio: 'inherit' },
     )
     if (syncResult.status !== 0) {
       process.stdout.write(
         'Warning: package-manager pin sync did not complete cleanly — run `node scripts/fleet/sync-package-manager-pins.mts`.\n',
       )
     }
-  } else if (!opts.apply && updates.length > 0) {
+  } else if (!opts.apply && updateCount > 0) {
     process.stdout.write(`\nDry run. Pass --apply to write changes.\n`)
   }
   // Summarize the isolated failures + exit non-zero so CI still notices, WITHOUT
@@ -631,16 +720,15 @@ export async function main(): Promise<number> {
 
 const SCRIPT_META: ScriptMeta = {
   describe:
-    'bump external-tools.json entries to their latest soak-cleared release',
+    'bump external-tools.json entries to their newest soak-cleared release',
   help: `Usage: node scripts/fleet/external-tools/update.mts [flags]
   --apply          write the planned changes (default is a dry run)
   --verify-assets  re-download each asset to surface SHA drift on the current pin (slower)
-  --target <dir>   directory holding external-tools.json + pnpm-workspace.yaml`,
+  --target <file>  limit the sweep to one manifest file (default: every shipped manifest)`,
 }
 
-// Only invoke main() when run directly (e.g. `node update-external-tools.mts`),
-// not when imported by the vitest test that exercises `shouldSkipGithubFetch`.
-// Without this guard, an import would walk external-tools.json + hit the
+// Only invoke main() when run directly, not when imported by the vitest specs.
+// Without this guard, an import would walk every external-tools.json + hit the
 // network during the test process.
 if (import.meta.main) {
   runMain(main, SCRIPT_META)

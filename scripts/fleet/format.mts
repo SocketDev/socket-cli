@@ -106,7 +106,7 @@ export function resolveFormatPlan(
   return { kind: 'run', args: buildOxfmtArgs({ check, files }) }
 }
 
-function main(): void {
+export function main(): void {
   const argv = process.argv.slice(2)
   const plan = resolveFormatPlan(argv)
 

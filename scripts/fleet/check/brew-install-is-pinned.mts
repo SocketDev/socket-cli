@@ -170,7 +170,7 @@ export function findBrewPinningViolations(
   return failures
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(brewfilePath(REPO_ROOT))) {
     if (!quiet) {

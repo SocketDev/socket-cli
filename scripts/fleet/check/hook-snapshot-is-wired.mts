@@ -124,7 +124,7 @@ export function isFreshSnapshotCheckout(config: {
   )
 }
 
-function main(): number {
+export function main(): number {
   // Member without the snapshot infra: nothing to verify (the fast path isn't
   // shipped here — the portable compile-cache baseline is the only dispatch
   // path). Keeps the check from red-lighting a bare member checkout.
@@ -248,6 +248,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/check/hook-snapshot-is-wired.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

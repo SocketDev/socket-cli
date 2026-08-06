@@ -52,7 +52,7 @@ export function hardeningViolations(
   return out
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const configPath = globalConfigPath()
   if (!existsSync(configPath)) {

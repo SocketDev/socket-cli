@@ -17,16 +17,16 @@ release, or a pnpm pin.
 
 ## Cascade scope is never a hazard to warn about
 
-A fleet cascade that touches many repos and hundreds of files is the normal, safe, expected shape. The template is the source of truth and `sync-scaffolding` is the authority; a wide sweep means the fleet had drifted that far. Do NOT pause, ask, or warn because a `--all --fix` run reports a large repo count or finding count. Run it. A cascade is one atomic unit of update, not churn — see [`cascade-is-a-unit.md`](cascade-is-a-unit.md).
+A fleet cascade that touches many repos and hundreds of files is the normal, safe, expected shape. The template is the source of truth and `sync-scaffolding` is the authority; a wide sweep means the fleet had drifted that far. Do NOT pause, ask, or warn because a `--all --fix` run reports a large repo count or finding count. Run it. A cascade is one atomic unit of update, not churn. See [`cascade-is-a-unit.md`](cascade-is-a-unit.md).
 
-The recovery model is symmetric. If a cascade over-applies or applies a stale value, the fix is another cascade. There is no irreversible-action risk to gate on here, so the "confirm before hard-to-reverse outward-facing actions" instinct does not fire for cascades — they are idempotent and self-correcting. Pre-existing drift in a target repo riding along in the cascade commit is part of the design. Surface a finding only when a cascade **can't apply** (lockfile reject, soak window, broken hook): bump the blocker or defer and report.
+The recovery model is symmetric. If a cascade over-applies or applies a stale value, the fix is another cascade. There is no irreversible-action risk to gate on here, so the "confirm before hard-to-reverse outward-facing actions" instinct does not fire for cascades, because they are idempotent and self-correcting. Pre-existing drift in a target repo riding along in the cascade commit is part of the design. Surface a finding only when a cascade **can't apply** (lockfile reject, soak window, broken hook): bump the blocker or defer and report.
 
-**Why:** a session once ran the full `--all --fix` cascade and stopped to warn that a wide sweep across many repos with hundreds of findings was a "large blast radius." The operator corrected: fleet cascades are safe and known; a too-broad sweep is fixed by another cascade — do not warn, run it.
+**Why:** a session once ran the full `--all --fix` cascade and stopped to warn that a wide sweep across many repos with hundreds of findings was a "large blast radius." The operator corrected: fleet cascades are safe and known; a too-broad sweep is fixed by another cascade. Do not warn, run it.
 
 ## Where drift commonly hides
 
 - **`.config/repo/external-tools.json`** (read by the local install/check
-  surface — `install-sfw`, `path-tools-are-at-pinned-version`; the inlined
+  surface, `install-sfw` and `path-tools-are-at-pinned-version`; the inlined
   `.github/actions/fleet/*` composites read their bundled `_shared/` copy):
   tool versions plus per-platform sha256s. Bumped by the tool-pin cascade
   (`scripts/repo/cascade-fleet.mts`), never hand-edited; a hand-diverged copy
@@ -43,13 +43,13 @@ The recovery model is symmetric. If a cascade over-applies or applies a stale va
 ## Workflows and composites are inlined (no cross-repo reusables)
 
 Fleet CI runs entirely from files committed in each member repo. The
-fleet-canonical `ci.yml` header states the contract: "Fleet CI runs check +
-test using the LOCAL composite actions under `.github/actions/` (inlined — no
-cross-repo reusable, no `uses:@sha` for first-party)"
+fleet-canonical `ci.yml` header states the contract: Fleet CI runs check +
+test using the LOCAL composite actions under `.github/actions/`, inlined, with no
+cross-repo reusable and no `uses:@sha` for first-party
 (`template/presets/.github/workflows/ci.yml`, header comment). Composite actions cascade
 per-subdir under `.github/actions/fleet/<name>/` with local `uses: ./` refs;
 workflow files cascade whole (`prune-workflow-runs.yml`, `npm-publish.yml`,
-the gh-aw `.md`/`.lock.yml` pairs — see the mirror entries in
+the gh-aw `.md`/`.lock.yml` pairs; see the mirror entries in
 `scripts/repo/sync-scaffolding/manifest/bundle.json`). SHA pins remain only on
 THIRD-party actions (`actions/checkout@<sha> # v6.0.2 (YYYY-MM-DD)`), and those
 pins are cascade-owned: a bumped `uses:@sha` keeps its `# <tag> (YYYY-MM-DD)`
@@ -58,12 +58,12 @@ comment (`uses-sha-verify-guard` + `workflow-uses-comment-guard`), and the gh-aw
 `scripts/fleet/sync-gh-aw-action-pins.mts`.
 
 <details>
-<summary><b>Two platform constraints behind the model</b> — workflow files must sit flat in <code>.github/workflows/</code>, and cross-repo reusables stay an exception: branch-outranks-tag refs, <code>secrets: inherit</code>, no zizmor/actionlint audit</summary>
+<summary><b>Two platform constraints behind the model</b>: workflow files must sit flat in <code>.github/workflows/</code>, and cross-repo reusables stay an exception: branch-outranks-tag refs, <code>secrets: inherit</code>, no zizmor/actionlint audit</summary>
 
 Two platform constraints shape this model (verified against GitHub docs,
 2026-07):
 
-- Workflow files must sit FLAT in `.github/workflows/` — a subdirectory split
+- Workflow files must sit FLAT in `.github/workflows/`. A subdirectory split
   (`workflows/fleet/`) is silently invisible to Actions, so fleet/repo
   segmentation for workflows is by whole-file ownership in the mirror
   manifest, not by path.
@@ -82,12 +82,12 @@ member ([`thin-distribution.md`](thin-distribution.md)).
 ## Internal action-pin staleness: the implicit data edge
 
 A composite action reads its data dependencies at runtime via
-`${GITHUB_ACTION_PATH}/../…` — e.g. `setup` reads `external-tools.json` and
+`${GITHUB_ACTION_PATH}/../…`, e.g. `setup` reads `external-tools.json` and
 `.github/actions/fleet/_shared/`. There is no `uses:` line for that edge, so a SHA pin to
 `setup` silently captures `external-tools.json` AS IT WAS at that SHA. The
-DEEPEST pin in a chain therefore decides tool versions, not the entrypoint — and
+DEEPEST pin in a chain therefore decides tool versions, not the entrypoint, and
 a content change to the data file leaves every older pin stale with nothing to
-flag it. This broke fleet CI once — a pinned pnpm version went stale behind the
+flag it. This broke fleet CI once: a pinned pnpm version went stale behind the
 edge.
 
 `scripts/fleet/check/action-pins-are-current.mts` closes the gap. The CLOSURE of
@@ -95,9 +95,9 @@ a pinned unit = its own files ∪ each transitive internal `uses:` dep's closure
 its declared `# cascade-data-deps:` paths. A pin `(file, dep, sha)` is **STALE**
 when `git rev-list --count <sha>..<base>` over the closure paths is non-zero,
 **UNREACHABLE** when `<sha>` is not an ancestor of the base. The check is
-producer-internal — it only classifies a pin whose `repo` is the repo it runs in
+producer-internal: it only classifies a pin whose `repo` is the repo it runs in
 (so consumers and the wheelhouse no-op; consumer-side repinning is the
-wheelhouse tool-pin cascade orchestrator's job — `scripts/repo/pipeline.mts`
+wheelhouse tool-pin cascade orchestrator's job, `scripts/repo/pipeline.mts`
 Stage 4 Propagate). Self-enforcing: every escaping read it
 detects in an action MUST be covered by a `# cascade-data-deps:` declaration, so
 a new data edge cannot be added without the staleness analysis seeing it. Run
@@ -144,8 +144,8 @@ sync-scaffolding tool produces this body automatically when run with
 
 The drift rule generalizes from "two repos pin different versions" to every
 build and language target choice: default to the latest the runtime supports,
-not a conservative back-version. For an auto-updating runtime — a Chrome
-extension, the web, a CI-pinned Node — the `tsconfig` `target`/`lib` should be
+not a conservative back-version. For an auto-updating runtime such as a Chrome
+extension, the web, or a CI-pinned Node, the `tsconfig` `target`/`lib` should be
 `ESNext`, `engines.node` the current floor, `browserslist` `defaults` or `last
 N versions`, and dependency floors the latest practical. A back-versioned
 target downlevels or untypes modern syntax for no benefit. The motivating case
@@ -153,8 +153,8 @@ was a `tsconfig` bumped only to `ES2023` to satisfy one method, where the
 runtime was evergreen and `ESNext` was the right answer.
 
 `.claude/hooks/fleet/prefer-evergreen-target-nudge/` is a Stop nudge (never
-blocks, exit 0) that flags a conservative `target`/`lib` — an `ES<year>` below
-the current floor — introduced in the last assistant turn and points at
+blocks, exit 0) that flags a conservative `target`/`lib` (any `ES<year>` below
+the current floor) introduced in the last assistant turn and points at
 `ESNext`. JSON config (tsconfig, package.json, browserslist) is not lintable by
 oxlint, so the nudge is the only enforcement surface for the principle. Bypass:
 type `Allow evergreen-target bypass` in a recent message.
@@ -166,7 +166,7 @@ means the LATEST shipped release. Before adding or changing a `.gitmodules`
 submodule pin or a `lockstep.json` `version-pin` row, `git fetch --tags` and pin
 the NEWEST release; never port against a stale or inherited pin, and never trust
 a drift count from a clone that hasn't fetched tags. A shallow or never-fetched
-clone silently reports a falsely-low number — the opentui incident pinned
+clone silently reports a falsely-low number. The opentui incident pinned
 v0.1.99, 211 commits and 3 minor releases behind v0.4.5, and ~31k lines were
 ported against it before the drift surfaced.
 
@@ -191,23 +191,23 @@ across roughly seven repos before the aliases were reconciled back.
 
 The rule: fix the package that regressed, upstream, and let the fleet stay on
 the latest. If the newer release is genuinely unusable, the sanctioned move is a
-`FLEET_CATALOG_HOLDS` entry in `scripts/fleet/constants/catalog-holds.mts` —
+`FLEET_CATALOG_HOLDS` entry in `scripts/fleet/constants/catalog-holds.mts`,
 naming `heldAt`, the `reason`, and the `releaseWhen` condition that lifts it.
 `scripts/fleet/update/fleet-pins.mts` already refuses to ratchet past a hold,
 and the gate below honors one. A hold also only takes effect once
 `scripts/fleet` has cascaded, because the updater reads the synced live copy,
-not `template/` — apply the hold and cascade in the same wave or the next
+not `template/`. Apply the hold and cascade in the same wave or the next
 update run will ratchet straight past it.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/drift-check-nudge/` — nags after edits to known-drift surfaces.
-- `.claude/hooks/fleet/prefer-evergreen-target-nudge/` — flags a conservative `target`/`lib`.
-- `.claude/hooks/fleet/gitmodules-comment-guard/` — enforces `.gitmodules` `# name-version` annotations.
-- `.claude/hooks/fleet/uses-sha-verify-guard/` — enforces the `# <tag> (YYYY-MM-DD)` comment on a bumped third-party `uses:@sha`.
-- `.claude/hooks/fleet/workflow-uses-comment-guard/` — enforces the same comment shape at write time in workflow/composite files.
-- `.claude/hooks/fleet/latest-release-pin-guard/` — blocks a pin set to an older release than the remote's newest tag.
-- `scripts/fleet/check/socket-pins-are-never-lowered.mts` — fails when a Socket-published catalog pin is below its committed value with no `FLEET_CATALOG_HOLDS` entry behind it.
+- `.claude/hooks/fleet/drift-check-nudge/` - nags after edits to known-drift surfaces.
+- `.claude/hooks/fleet/prefer-evergreen-target-nudge/` - flags a conservative `target`/`lib`.
+- `.claude/hooks/fleet/gitmodules-comment-guard/` - enforces `.gitmodules` `# name-version` annotations.
+- `.claude/hooks/fleet/uses-sha-verify-guard/` - enforces the `# <tag> (YYYY-MM-DD)` comment on a bumped third-party `uses:@sha`.
+- `.claude/hooks/fleet/workflow-uses-comment-guard/` - enforces the same comment shape at write time in workflow/composite files.
+- `.claude/hooks/fleet/latest-release-pin-guard/` - blocks a pin set to an older release than the remote's newest tag.
+- `scripts/fleet/check/socket-pins-are-never-lowered.mts` - fails when a Socket-published catalog pin is below its committed value with no `FLEET_CATALOG_HOLDS` entry behind it.
 
 ## See also
 

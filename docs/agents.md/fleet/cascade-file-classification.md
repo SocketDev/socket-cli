@@ -1,4 +1,4 @@
-# Cascade file classification — bundled vs hybrid
+# Cascade file classification - bundled vs hybrid
 
 Every fleet repo's files fall into exactly one of three cascade classes. Knowing
 which class a file is in tells you **where to edit it** and **how it reaches
@@ -7,7 +7,7 @@ member repos**.
 ## 1. Bundled (byte-identical, full-file mirror)
 
 Repo-agnostic files copied verbatim. Edit only in `template/base/...`; they
-mirror to every member unchanged. The whole content is fleet-owned — repo-local
+mirror to every member unchanged. The whole content is fleet-owned - repo-local
 content must live OUTSIDE these trees (e.g. the `.claude/hooks/repo/**` carve-out).
 These ship in the **release bundle** (`make-release-bundle.mts`), not per-file
 cascade.
@@ -40,7 +40,7 @@ ownership boundary.
 | `tsconfig.json`, `tsconfig.check.json`     | `tsconfig-shape`                                                                | must `extends` the fleet base                                           | `rootDir`, include/exclude, repo knobs                                                          |
 | `.github/workflows/ci.yml`                 | `workflow-fleet-block` (+ `-pnpm`, `-sha-pinning`, `-uses-comment`)             | the `<fleet-canonical>` header block                                    | repo matrix/jobs                                                                                |
 | `.gitmodules`                              | `gitmodules-hygiene`                                                            | `# name-version` comment format                                         | submodule entries                                                                               |
-| `.node-version` ↔ `package.json` `engines` | `node-version-sync`                                                             | the synced version value                                                | —                                                                                               |
+| `.node-version` ↔ `package.json` `engines` | `node-version-sync`                                                             | the synced version value                                                | -                                                                                               |
 
 ## 3. Conditional / optional (marker-gated, feature flags)
 
@@ -56,7 +56,7 @@ A fleet-managed region is delimited by HTML-element-like open/close markers; onl
 the surrounding comment delimiter changes per file syntax.
 
 <details>
-<summary><b>Detail</b> — the full table (3 rows)</summary>
+<summary><b>Detail</b> - the full table (3 rows)</summary>
 
 | Comment style                                                                             | Open marker                  | Close marker                  |
 | ----------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------- |
@@ -68,21 +68,21 @@ The legacy `BEGIN`/`END` keyword form (`# BEGIN <fleet-canonical>` / `# END </fl
 is still parsed by the detector for backward compatibility during the fleet-wide migration,
 but new markers are emitted without the redundant keywords.
 
-- **Tag** — a hyphenated kebab name (`fleet-canonical`). Distinct regions use
+- **Tag** - a hyphenated kebab name (`fleet-canonical`). Distinct regions use
   distinct tags; same-tag blocks may **nest**, like HTML elements.
-- **Attributes** — the open tag may carry HTML-style attributes
+- **Attributes** - the open tag may carry HTML-style attributes
   (`<fleet-canonical id="standards" managed>`), including bare boolean attrs.
-  They are PARSED but not yet consumed — a disabled seam, wired in, gated off.
-- **Nested + balanced** — blocks nest and must be balanced; overlap, an unclosed
+  They are PARSED but not yet consumed - a disabled seam, wired in, gated off.
+- **Nested + balanced** - blocks nest and must be balanced; overlap, an unclosed
   open, or an orphan close is **malformed → rejected** (never auto-fixed).
 - **JSON** carries the marker as a sentinel that reuses the same text: a
   `#`-prefixed string element in an array, or a `"// …"` key in an object
   (both conventionally inert).
 
 Every matcher/fixer parses these markers through the single shared primitive
-[`.claude/hooks/fleet/_shared/named-blocks.mts`](../../../.claude/hooks/fleet/_shared/named-blocks.mts)
-— html5parser tokenizes each tag's name + attributes, and a stack walk enforces
-the balance/malformed rule — so the grammar can't drift between consumers. Old
+[`.claude/hooks/fleet/_shared/named-blocks.mts`](../../../.claude/hooks/fleet/_shared/named-blocks.mts) -
+html5parser tokenizes each tag's name + attributes, and a stack walk enforces
+the balance/malformed rule - so the grammar can't drift between consumers. Old
 markers (uppercase `FLEET-CANONICAL`, the reordered `#fleet-canonical-begin`)
 are matched leniently so a member repo migrates to the canonical form on its
 next cascade.

@@ -63,7 +63,7 @@ export function classifyPageVisibility(observed: {
   return 'unreadable'
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const pkg = JSON.parse(
     readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),

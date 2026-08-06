@@ -6,7 +6,7 @@ The CLAUDE.md `### Token hygiene` section is the headline rule plus the canonica
 
 Never emit the raw value of any secret to tool output, commits, comments, or replies. The `.claude/hooks/fleet/token-guard/` `PreToolUse` hook blocks the deterministic patterns (literal token shapes, env dumps, `.env*` reads, unfiltered `curl -H "Authorization:"`, sensitive-name commands without redaction). When the hook blocks a command, rewrite. Don't bypass.
 
-A Write/Edit whose content carries a secret VALUE shape (`AKIA…`, `ghp_…`, `sktsec_…`, a JWT, a PEM key) is blocked at edit time — the twin of the commit-time scan (`.claude/hooks/fleet/secret-content-guard/`; bypass `Allow secret-content bypass`).
+A Write/Edit whose content carries a secret VALUE shape (`AKIA…`, `ghp_…`, `sktsec_…`, a JWT, a PEM key) is blocked at edit time - the twin of the commit-time scan (`.claude/hooks/fleet/secret-content-guard/`; bypass `Allow secret-content bypass`).
 
 Behavior the hook can't catch: redact `token` / `jwt` / `access_token` / `refresh_token` / `api_key` / `secret` / `password` / `authorization` fields when citing API responses. Show key _names_ only when displaying `.env.local`. If a user pastes a secret, treat it as compromised and ask them to rotate.
 
@@ -58,7 +58,7 @@ The system clipboard and the screen are exfiltration surfaces. Two separate
 concerns:
 
 <details>
-<summary><b>Detail</b> — Our code</summary>
+<summary><b>Detail</b> - Our code</summary>
 
 **Our code.** A script or hook must never READ the clipboard (a `pbpaste` /
 `wl-paste` / `xclip -o` / `xsel` CLI) or emit an OSC-52 escape from source, or
@@ -91,11 +91,11 @@ and `/copy` still copy; only auto-copy-on-select stops.
 
 ## npm-family 2FA: browser auth, never `--otp`
 
-npm-family auth commands (`npm` / `pnpm` / `yarn` publish, login, access, dist-tag, unpublish, deprecate, owner) prompt for the 2FA one-time code. **Never pass it as a flag** — `npm publish --otp=123456` (or `--otp 123456`) writes the one-time code into:
+npm-family auth commands (`npm` / `pnpm` / `yarn` publish, login, access, dist-tag, unpublish, deprecate, owner) prompt for the 2FA one-time code. **Never pass it as a flag** - `npm publish --otp=123456` (or `--otp 123456`) writes the one-time code into:
 
 - **shell history** (`~/.zsh_history`, `~/.bash_history`),
-- **the process list** — `ps` shows full argv to any local user,
-- **CI logs** — the command line is echoed.
+- **the process list** - `ps` shows full argv to any local user,
+- **CI logs** - the command line is echoed.
 
 A one-time code in any of those is a leaked secret. It is also a worse UX than the browser flow.
 
@@ -105,11 +105,11 @@ A one-time code in any of those is a leaked secret. It is also a worse UX than t
 npm publish --access public --auth-type=web
 ```
 
-npm opens the browser to approve the publish + 2FA — no code touches the command line.
+npm opens the browser to approve the publish + 2FA - no code touches the command line.
 
 **CI (non-interactive): a granular automation token.** Authenticate with a granular npm automation token exposed via the `NODE_AUTH_TOKEN` env var (set from a secret), never `--otp`.
 
-The `no-npm-otp-flag-guard` PreToolUse hook blocks any `npm`/`pnpm`/`yarn` command carrying an `--otp` flag (in either `--otp=<code>` or `--otp <code>` form); bypass with `Allow npm-otp-flag bypass` for a genuine operator-driven need (effectively never). The CLAUDE.md bullet is also doctrine: the assistant must never _suggest_ `--otp` in prose — recommend `--auth-type=web` instead.
+The `no-npm-otp-flag-guard` PreToolUse hook blocks any `npm`/`pnpm`/`yarn` command carrying an `--otp` flag (in either `--otp=<code>` or `--otp <code>` form); bypass with `Allow npm-otp-flag bypass` for a genuine operator-driven need (effectively never). The CLAUDE.md bullet is also doctrine: the assistant must never _suggest_ `--otp` in prose - recommend `--auth-type=web` instead.
 
 ## Cross-repo path references
 

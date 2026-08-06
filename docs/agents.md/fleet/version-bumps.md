@@ -6,13 +6,13 @@ Companion to the `### Version bumps` rule in `template/base/CLAUDE.md`. The inli
 
 The USER names the target version (`vX.Y.Z`) or the release level
 (patch/minor/major). An agent never invents or derives that decision on its
-own — `bump.mts --dry-run` is always open (it only prints the evidence), but
+own. `bump.mts --dry-run` is always open (it only prints the evidence), but
 a WRITE run needs the user's naming first. `bump-defers-to-release-guard`
 (PreToolUse) blocks a non-dry-run `bump.mts` invocation and a bare
 `npm|pnpm|yarn version <arg>` write, and requires `Allow release-bump bypass`
 after the version has been named; a major bump additionally requires
 `Allow major-bump bypass`. In CI, major happens only when a human manually
-selects it on the release workflow's dispatch form — `bump.mts` itself never
+selects it on the release workflow's dispatch form. `bump.mts` itself never
 derives major from commit types.
 
 ## The sequence (order matters)
@@ -26,7 +26,7 @@ broken releases.
 Each command must finish clean before the next runs:
 
 <details>
-<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+<summary><b>Detail</b>: the worked steps (2 snippets)</summary>
 
 ```bash
 pnpm run update      # dependency drift
@@ -51,7 +51,7 @@ The badge is generated from the coverage run, so it drifts whenever coverage
 moves. `coverage-badge-is-current` (in `check --all`) fails the gate when the
 README badge disagrees with the coverage data, and `version-bump-order-guard`
 refuses the bump commit unless `coverage-summary.json` is newer than the latest
-`src/` change — proof `cover` ran on the code being released, not a stale run.
+`src/` change: proof `cover` ran on the code being released, not a stale run.
 
 If any step surfaces failures, fix them before continuing. Don't bump
 a broken tree.
@@ -68,7 +68,7 @@ The new `## [X.Y.Z]` block describes what a downstream consumer needs
 to know to upgrade.
 
 <details>
-<summary><b>Detail</b> — Include, Exclude, No empty sections</summary>
+<summary><b>Detail</b>: Include, Exclude, No empty sections</summary>
 
 **Include:**
 
@@ -94,7 +94,7 @@ Use [Keep-a-Changelog](https://keepachangelog.com/) sections (Added /
 Changed / Removed / Renamed / Fixed / Performance / Migration).
 
 **No empty sections.** If the public-facing-only filter leaves a section
-with zero bullets, delete the heading too — don't leave `### Changed`
+with zero bullets, delete the heading too. Don't leave `### Changed`
 followed by a blank line and the next heading. A reader scanning the
 release for "what changed" should not have to disambiguate "section
 intentionally empty" from "section forgot its content." Enforced
@@ -119,18 +119,18 @@ The bump commit must sit on a **green tree**. `version-bump-order-guard`
 runs the fast pre-release gate (`pnpm run lint --all` + `pnpm audit`) when
 it sees a `git commit -m "chore: bump version to X.Y.Z"`, and blocks the
 commit if either fails. The gate runs at the commit as well as the tag, so
-a bump cannot land atop accumulated lint debt that CI then rejects on push
-— a bump once shipped over 100+ lint errors and failed CI after the commit.
+a bump cannot land atop accumulated lint debt that CI then rejects on push.
+A bump once shipped over 100+ lint errors and failed CI after the commit.
 To skip the gate but keep the ordering check, set
 `SOCKET_VERSION_BUMP_SKIP_GATE=1`; to bypass the whole guard, type
 `Allow version-bump-order bypass`.
 
-### 4. Tag + GitHub release come LAST — after the registry publish
+### 4. Tag + GitHub release come LAST, after the registry publish
 
 Never create or push `vX.Y.Z` before the version is live on its registry.
 The tag + immutable GH release are the FINAL markers of a release: a STAGED
 npm package is not published (staging may never be approved), and a release
-cut early can mark a version that never shipped — an immutable release even
+cut early can mark a version that never shipped. An immutable release even
 422-rejects its own late asset uploads. The approve flow owns them:
 `publish-pipeline.mts --approve` (or `npm-publish.mts --approve` /
 `cargo-publish.mts --approve` out-of-band) promotes, waits for the registry
@@ -139,16 +139,16 @@ at the bump commit. The `version-bump-order-guard` hook enforces the
 bump-before-tag ordering at commit time; the github-release workflow refuses
 to cut for a version the registry can't resolve.
 
-### 5. Publish through the pipeline — never by hand, never a raw dispatch
+### 5. Publish through the pipeline, never by hand, never a raw dispatch
 
 The pipeline is the ONE sanctioned publisher. Its stage-publish leg
 dispatches the `npm-publish.yml` workflow itself and watches the run, so the
-staged upload happens in CI under OIDC — no local npm login, no local OTP.
+staged upload happens in CI under OIDC: no local npm login, no local OTP.
 `publish-pipeline.mts --local` is the explicit offline escape for humans.
 Agents must not publish locally (`npm publish`, `pnpm stage publish`,
-`cargo publish`, a direct `npm-publish.mts` run — blocked by
+`cargo publish`, a direct `npm-publish.mts` run, blocked by
 `verify-before-publish-guard`) and must not hand-dispatch publish workflows
-(`gh workflow run` — blocked by `release-workflow-guard`). The human-owned
+(`gh workflow run`, blocked by `release-workflow-guard`). The human-owned
 step remains `publish-pipeline.mts --approve`: the 2FA promote, then the
 tag + immutable GH release cut LAST behind registry liveness.
 
@@ -163,7 +163,7 @@ and then fast-forwards the default branch to that exact commit
 Opening a PR for the bump is a defect, not a workflow. A PR needs branch
 protection to be satisfied before anything merges, so the bump sits behind
 review requirements, status checks, and an auto-merge queue that a
-freshly-created branch cannot satisfy — `enablePullRequestAutoMerge` fails with
+freshly-created branch cannot satisfy: `enablePullRequestAutoMerge` fails with
 `Pull request Branch does not have required protected branch rules`, the run
 dies, and the publish never happens. The version is already decided by the
 committed hint and the content is machine-generated, so there is nothing for a
@@ -173,7 +173,7 @@ reviewer to approve.
 command that opens a PR whose head branch is bump-shaped
 (`npm-publish-v1.2.3`, `release-v1.2.3`, `bump-1.2.3`, anything carrying
 `version-bump`) or whose title is bump-shaped (`chore: bump version to 1.2.3`,
-`chore(release): 1.2.3`, any `bump version` phrasing) — `gh pr create` in every
+`chore(release): 1.2.3`, any `bump version` phrasing): `gh pr create` in every
 flag spelling, `gh api …/pulls`, and a raw REST `POST /repos/*/pulls`. A normal
 feature PR (`feat/foo`, `fix: thing`) is untouched. Bypass with
 `Allow version-bump-pr bypass`.
@@ -183,8 +183,8 @@ push-bypass allowlist, so the fast-forward needs no PR and no human hand-land.
 
 ## The bump base is the last PUBLISHED version, never the manifest
 
-`bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`
-— the max of the registry's `dist-tags.latest` and the last `vX.Y.Z` tag —
+`bump.mts` (and the cargo bump) compute the next version from `resolveBumpBase`,
+the max of the registry's `dist-tags.latest` and the last `vX.Y.Z` tag,
 NEVER from `package.json`/`Cargo.toml`. A manifest can sit ahead of what
 actually published, and bumping off an ahead manifest silently SKIPS a
 version. Note: that's a hand pre-bump, or a stale `X.Y.Z-prerelease` hint. For
@@ -202,14 +202,14 @@ never trip it.
 A package that has never shipped still carries the placeholder version its
 scaffolding wrote: `0.0.0`, or a `X.Y.Z-prerelease` such as the
 `0.1.0-prerelease` an envrypt-shaped workspace keeps in its root `Cargo.toml`
-`[workspace.package]`. Its first real release is **`0.1.0`** — not a
+`[workspace.package]`. Its first real release is **`0.1.0`**, not a
 commit-derived bump, and not `1.0.0`. `@socketsecurity/facts` sat at `0.0.0`
 and shipped `0.1.0`; `@socketsecurity/scan-patterns` follows the same path.
 
 The commit-type heuristic cannot answer in that state. With no released base,
 the whole history is in range, so a single `feat!` asks for a major, an
 all-`fix` stream asks for `0.0.1`, and an all-`chore` stream asks for nothing
-at all — three wrong answers for one first cut.
+at all: three wrong answers for one first cut.
 
 `decidePlaceholderRelease` in `scripts/fleet/bump/placeholder-release.mts` owns
 the decision. It is pure over three facts `bump.mts` collects: whether the
@@ -221,14 +221,14 @@ mistaken for a fresh one.
 What the operator sees:
 
 <details>
-<summary><b>Detail</b> — the full table (4 rows)</summary>
+<summary><b>Detail</b>: the full table (4 rows)</summary>
 
 | State | Default | Output |
 | --- | --- | --- |
 | Placeholder, no `--release-as` | `0.1.0` | The detected state, why `0.1.0`, and that `--release-as` overrides |
 | Placeholder, `--release-as <level\|X.Y.Z>` | the named version | The named version is honored over the `0.1.0` default |
 | Placeholder, named version below `0.1.0` | the named version | A loud warning that a placeholder conventionally starts at `0.1.0`, then it proceeds |
-| Already released | unchanged | Nothing — the commit-derived path is untouched |
+| Already released | unchanged | Nothing, since the commit-derived path is untouched |
 
 The version stays the OWNER's decision: this moves the DEFAULT only. An
 explicit `--release-as` always wins, a sub-`0.1.0` choice warns but never
@@ -245,7 +245,7 @@ written. In placeholder state a level counts up from zero, so
 runs it exactly once. Two guards enforce that:
 
 - the publish pipeline's stage-publish leg dispatches `npm-publish.yml` with
-  `bump: false` — its own bump stage already landed the bump commit, so the
+  `bump: false`. Its own bump stage already landed the bump commit, so the
   workflow's CI bump step is skipped. Manual dispatches keep the default
   `bump: true` hint-consuming flow; `remote:npm:publish --no-bump` is the
   manual opt-out.
@@ -259,11 +259,11 @@ runs it exactly once. Two guards enforce that:
 ## The changelog range anchors to the released version, never an older tag
 
 `deriveReleaseCommits` in `bump.mts` is the ONE derivation both the bump and
-the `changelog-is-commit-derived` check run — same base, same anchor, same
-commit stream — so generation and verification cannot disagree. Its range
+the `changelog-is-commit-derived` check run: same base, same anchor, same
+commit stream. Generation and verification cannot disagree. Its range
 anchor resolves through a strict chain: the previous release's own
 `v<version>` tag when it exists on HEAD's lineage; else the commit that
-flipped `package.json` to that version — the release's bump commit; else the
+flipped `package.json` to that version, the release's bump commit; else the
 registry's publish timestamp for that version as a `--since` bound. A
 previous release no link can anchor stops the bump loud, and the drift check
 skips. The chain never falls back to an OLDER tag: socket-lib 6.2.2's
@@ -274,7 +274,7 @@ v6.2.1 tag silently widened the range to v6.2.0.
 
 Derivation only sees typed commits: feat / fix / perf / revert reach the
 CHANGELOG; chore / style / test / docs / ci / build / refactor never do. Work
-that ships under an invisible type still needs documenting — write its bullets
+that ships under an invisible type still needs documenting: write its bullets
 by hand under `## [Unreleased]` as the work lands. That section is the ONE
 home for hand-written release notes; hand-editing a version section directly
 is still drift.
@@ -283,23 +283,23 @@ At bump time `composeReleaseSection` in `bump.mts` builds the release section
 from BOTH sources: the commit-derived bullets unioned with the hand-written
 `[Unreleased]` bullets, merged under their matching Added / Changed / Fixed
 headings, exact-duplicate lines collapsed. Promotion then empties the
-`[Unreleased]` block — the fleet style creates the heading on demand, so
+`[Unreleased]` block. The fleet style creates the heading on demand, so
 squash-time accrual recreates it when the next entry lands.
 
 <details>
-<summary><b>What the check tolerates and why</b> — the derived-side-only verification, the bump-time warning for chore commits touching <code>src/</code>, and the sdk 4.0.2 undocumented-feature incident behind both</summary>
+<summary><b>What the check tolerates and why</b>: the derived-side-only verification, the bump-time warning for chore commits touching <code>src/</code>, and the sdk 4.0.2 undocumented-feature incident behind both</summary>
 
 `changelog-is-commit-derived` verifies the derived side only: every
 commit-derived bullet must be PRESENT in the pending section, and the
-anchor/range must be correct. Hand-written extras are tolerated — hand content
-is human-owned — and a present `[Unreleased]` section is never a finding.
+anchor/range must be correct. Hand-written extras are tolerated, since hand
+content is human-owned, and a present `[Unreleased]` section is never a finding.
 Losing derived content stays red.
 
 The safety net is a bump-time WARNING, never a red: commits since the anchor
 that touch `src/` but are typed chore / style / test are invisible to
 derivation, so the bump names them and asks you to add `[Unreleased]` bullets
 or retype the commits if they carry user-facing work. The same text lands in
-the CI job summary when the bump runs there. It cannot fail the bump — a
+the CI job summary when the bump runs there. It cannot fail the bump: a
 chore commit touching `src/` is often genuinely internal, and over-absolute
 rules get enforced and block real work.
 
@@ -314,38 +314,38 @@ warning close that hole from three directions.
 ## Verify is auth-honest, and approve reconciles from registry truth
 
 `pnpm stage list` 401s without npm auth and its failure output parses as an
-EMPTY list. The verify stage treats that as auth unavailable — a `blocked`
-receipt carrying the `npm whoami` evidence — never as a failed verify with
+EMPTY list. The verify stage treats that as auth unavailable, a `blocked`
+receipt carrying the `npm whoami` evidence, never as a failed verify with
 "0 staged entries"; the 6.2.1 run recorded exactly that false negative and
 stranded the pipeline with no path to the tag + GH release. When the target
 version is ALREADY live on the registry, verify and `--approve` recover from
 registry truth instead: re-pack at the bump commit, compare against the
 packument `dist` digests with the extracted-contents fallback, mint the
 verify + approve receipts from that evidence, and continue into the normal
-release stage — so the tag + immutable GH release still cut behind the
+release stage, so the tag + immutable GH release still cut behind the
 confirmed publish. Divergent bytes refuse loudly; registry truth is
 evidence, never a rubber stamp.
 
 ## Backfill: republish a skipped GAP version
 
-WHY: a version can end up skipped — 1.4.3 between a live 1.4.2 and 1.4.4 —
+WHY: a version can end up skipped (1.4.3 between a live 1.4.2 and 1.4.4),
 and the normal path can't fill it: the bump gate anchors to registry latest
 and refuses anything at-or-below it, and a historical branch can't be
 dispatched because `workflow_dispatch` needs `npm-publish.yml` on the
 dispatched ref. Backfill is the sanctioned gap-fill: dispatch
-`npm-publish.yml` from MAIN — the workflow definition always exists there —
+`npm-publish.yml` from MAIN, where the workflow definition always exists,
 with `backfill-version` naming the gap and `checkout-ref` naming the content
 commit. The bump/changelog gate is bypassed; hard guards in
 `scripts/fleet/publish-infra/npm/backfill.mts` replace it, each refusing
 loud:
 
-1. the version is absent from the registry `time` map — never published,
+1. the version is absent from the registry `time` map: never published,
    never published-then-unpublished; an unreadable map fails closed;
-2. the version is LOWER than registry latest — gap-fill only, never a
+2. the version is LOWER than registry latest: gap-fill only, never a
    forward bump-gate bypass;
-3. the dist-tag is explicitly non-`latest` — the latest pointer never moves;
-4. `checkout-ref` is set — the content ref is never implied;
-5. the checked-out `package.json` version equals `backfill-version` — the
+3. the dist-tag is explicitly non-`latest`: the latest pointer never moves;
+4. `checkout-ref` is set: the content ref is never implied;
+5. the checked-out `package.json` version equals `backfill-version`: the
    content commit declares itself.
 
 The publish then runs the normal staged path: stage in CI, verify + promote

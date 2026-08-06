@@ -1,6 +1,9 @@
 /**
- * @file Zero-dep bootstrap installer for smithers (smithers-orchestrator) — an
- *   AI agent-workflow orchestrator. npm-registry tarball (pure JS run via
+ * @file Zero-dep bootstrap installer for smithers (npm `smthrs`) — an
+ *   AI agent-workflow orchestrator. The npm package renamed from
+ *   `smithers-orchestrator`; the BINARY is still `smithers`, so the tool key,
+ *   the shim, and this file keep that name and only `repository` moved.
+ *   npm-registry tarball (pure JS run via
  *   node), the same shape as npm itself: a SINGLE top-level integrity.
  *   Downloaded + SRI-verified + extracted by lib/install-tool.mjs into
  *   rack/smithers/<v>; a bin/smithers shim runs the package's bin entry
@@ -35,7 +38,23 @@ export function installSmithers() {
   const entry = path.join(pkgDir, 'src', 'bin', 'smithers.js')
   const shimPath = path.join(BIN_DIR, binName)
   if (!existsSync(entry)) {
-    const tarUrl = `https://registry.npmjs.org/smithers-orchestrator/-/smithers-orchestrator-${version}.tgz`
+    // The npm package name comes from the declaration's `repository` (`npm:<name>`),
+    // never a second hardcoded copy: the project renamed from
+    // `smithers-orchestrator` to `smthrs`, and a hardcoded URL here would have
+    // kept fetching the retired name after the pin moved. A scoped name's
+    // tarball path repeats only the basename, so split that off.
+    const repository = jq('smithers', 'repository') || ''
+    const pkgName = repository.startsWith('npm:')
+      ? repository.slice('npm:'.length)
+      : repository
+    if (!pkgName) {
+      warn(
+        '× smithers has no npm: repository in external-tools.json — skipping',
+      )
+      return undefined
+    }
+    const tarName = pkgName.slice(pkgName.lastIndexOf('/') + 1)
+    const tarUrl = `https://registry.npmjs.org/${pkgName}/-/${tarName}-${version}.tgz`
     log(`Installing smithers@${version} → ${destDir}`)
     if (!installTool(tarUrl, integrity, destDir)) {
       warn('× smithers download/verify failed — skipping shim')

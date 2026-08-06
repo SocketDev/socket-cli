@@ -2,7 +2,7 @@
  * @file GitHub-release path of the external-tools updater: fetch the newest
  *   soak-cleared GitHub release for a tool, run the pnpm npm-preflight skip
  *   optimization, and plan the version + per-platform-integrity rewrite. Split
- *   out of `update-external-tools.mts` so the npm path + orchestration stay in
+ *   out of `update.mts` so the npm path + orchestration stay in
  *   the main file; the leaf network/SRI helpers (curlJson / curlSha512 /
  *   hexToSri / fetchNpmLatestVersion) and shared types are imported from it
  *   (function-import cycle; nothing runs at module load, so ESM resolves it).
@@ -21,6 +21,7 @@ import {
   fetchNpmLatestVersion,
   fetchNpmVersionIntegrity,
   hexToSri,
+  isForwardBump,
 } from './update.mts'
 import type {
   GithubReleaseTool,
@@ -180,6 +181,24 @@ export function shouldSkipGithubFetch(
   return (compare(npmLatest, current) ?? 0) <= 0
 }
 
+/**
+ * Normalize a GitHub release tag into the version string a manifest stores,
+ * preserving the pin's own `v` convention. Upstreams tag three ways the fleet
+ * already pins against: bare `0.12.0`, `v`-prefixed `v1.15.0`, and
+ * name-prefixed `kani-0.67.0`. Coercing covers all three, so a name-prefixed
+ * tag no longer lands in `version` verbatim — which previously turned an
+ * already-current kani into a `0.67.0` → `kani-0.67.0` "bump" and derived
+ * `kani-kani-0.67.0-…` asset names that cannot resolve. Falls back to a
+ * leading-`v` strip when the tag cannot be coerced at all.
+ */
+export function releaseTagToVersion(
+  tag: string,
+  currentVersion: string,
+): string {
+  const bare = coerceVersion(tag) ?? tag.replace(/^v/, '')
+  return currentVersion.startsWith('v') ? `v${bare}` : bare
+}
+
 export interface PlanGithubUpdateOptions {
   // When true, download + checksum-verify every platform asset before
   // proposing the bump (slower; off by default for the cheap-check path).
@@ -273,18 +292,23 @@ export async function planGithubUpdate(
   if (!newest) {
     return undefined
   }
-  // Match the existing version field's format: pnpm pins are unprefixed
-  // ("11.8.0") while its GitHub tags carry a leading "v" (v11.9.0) — strip to
-  // match. A tool whose version field already carries "v" keeps it. The raw
-  // `tag` is always used for GitHub download URLs.
+  // The raw `tag` is always used for GitHub download URLs; `newVersion` is what
+  // the manifest stores, so it must match the pin's own format.
   const tag = newest.tag_name
-  const newVersion = current.startsWith('v') ? tag : tag.replace(/^v/, '')
+  const newVersion = releaseTagToVersion(tag, current)
   const slug = tool.repository.slice('github:'.length)
   // npm-tarball asset shape: pnpm's darwin-x64 ships `pnpm-<version>.tgz` (the
   // SEA binary was dropped upstream), whose name embeds the version and whose
   // integrity comes from the npm registry — NOT the GitHub release. This is the
   // github-release-vs-npm gap that forced pnpm hand-bumps.
   const npmTarballAsset = `${name}-${current}.tgz`
+  // Forward-only: the newest SOAK-CLEARED release can sit BELOW the current pin
+  // when that pin deliberately rode a soakBypass (zizmor pinned 1.29.0 while only
+  // 1.28.0 had cleared). Proposing the cleared release would roll the pin
+  // backward, which the fleet's "a pin never moves down" rule forbids. Leave it.
+  if (newVersion !== current && !isForwardBump(current, newVersion)) {
+    return undefined
+  }
   if (newVersion === current) {
     if (!verifyAssets) {
       return undefined

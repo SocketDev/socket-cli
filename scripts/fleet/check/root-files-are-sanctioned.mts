@@ -103,6 +103,10 @@ export const SANCTIONED_ROOT_NAMES: ReadonlySet<string> = new Set([
   'README.md',
   'rust-toolchain.toml',
   'rustfmt.toml',
+  // Published JSON Schemas served at their raw-GitHub urls — cli-describe
+  // manifests stamp schemas/cli-describe.schema.json as their $schema, so the
+  // path is a public contract. Only the wheelhouse tracks it today.
+  'schemas',
   'scripts',
   'SECURITY.md',
   'socket.yml',
@@ -198,7 +202,7 @@ export async function trackedTopLevelNames(
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const names = await trackedTopLevelNames(REPO_ROOT)
   if (names === undefined) {
     // git unavailable — vacuous, never a false-red failure on a non-git tree.

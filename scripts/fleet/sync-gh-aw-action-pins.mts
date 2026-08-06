@@ -368,7 +368,7 @@ export function sweepUndeclaredEmissions(mdFiles: readonly string[]): string[] {
   return undeclared
 }
 
-function main(): void {
+export function main(): void {
   const { quiet } = parseSyncArgs(process.argv.slice(2))
 
   const mdFiles = listTrackedMarkdown()
@@ -493,6 +493,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  suppress the clean-state line`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -9,12 +9,12 @@ exploit.
 
 | Layer        | SDK option                  | CLI flag                    | What it does |
 | ------------ | ---------------------------- | ---------------------------- | ------------- |
-| Definition   | `tools`                       | `--tools`                     | Base set the model is told about. Anything not listed is invisible — no `tool_use` block possible. |
+| Definition   | `tools`                       | `--tools`                     | Base set the model is told about. Anything not listed is invisible - no `tool_use` block possible. |
 | Auto-approve | `allowedTools`                | `--allowedTools`               | Listed tools run without invoking `canUseTool`. |
 | Deny         | `disallowedTools`             | `--disallowedTools`            | Wins even against `bypassPermissions`. Defense in depth. |
 | Mode         | `permissionMode: 'dontAsk'`   | `--permission-mode dontAsk`     | Unmatched tools are denied outright instead of falling through to a missing `canUseTool`. |
 
-`permissionMode` must be `dontAsk`, `acceptEdits`, or `plan` — never
+`permissionMode` must be `dontAsk`, `acceptEdits`, or `plan` - never
 `default` (falls through to a missing `canUseTool`, undefined behavior) and
 never `bypassPermissions` (skips every check).
 
@@ -39,7 +39,7 @@ const { exitCode, stdout } = await spawnAiAgent({
 })
 ```
 
-`AI_PROFILE` tiers run least to most capable — pick the narrowest one that
+`AI_PROFILE` tiers run least to most capable - pick the narrowest one that
 works: `.read` (Read/Grep/Glob/WebFetch/WebSearch, no Edit/Write/Bash),
 `.edit` (adds Edit, still no Write/Bash), `.create` (adds Write/MultiEdit,
 still no Bash), `.full` (adds Bash allowlisted to git/pnpm/node). Every
@@ -48,7 +48,7 @@ sub-agent.
 
 ## Why
 
-A tool not in `tools` cannot be requested at all — that is the strongest
+A tool not in `tools` cannot be requested at all - that is the strongest
 guarantee. `allowedTools` / `disallowedTools` only shape which requests get
 auto-approved or auto-denied; they say nothing about availability.
 `permissionMode: 'default'` leaves the fifth step of the permission chain

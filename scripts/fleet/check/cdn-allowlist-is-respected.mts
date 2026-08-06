@@ -42,7 +42,7 @@ const SCAN_GLOBS = [
   '*.Dockerfile',
 ]
 
-function trackedFiles(): string[] {
+export function trackedFiles(): string[] {
   const args = ['ls-files', '--', ...SCAN_GLOBS]
   const result = spawnSync('git', args, { stdio: 'pipe' })
   if (result.status !== 0) {

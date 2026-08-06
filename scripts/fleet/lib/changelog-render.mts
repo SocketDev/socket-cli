@@ -6,7 +6,7 @@
  *   contract; `changelog.mts` imports these internally.
  */
 
-import { h2LineIndexes } from '../_shared/markdown-ast.mts'
+import { headingLines } from './markdown-ast.mts'
 
 import type { ConventionalCommit } from './changelog.mts'
 
@@ -64,6 +64,10 @@ export function renderBullet(commit: ConventionalCommit): string {
  * (heading at `start`, `end` at the next `## ` heading or EOF), or undefined
  * when there is no `[Unreleased]` heading. One scanner, shared by
  * promote+merge.
+ *
+ * Which lines ARE `## ` headings comes from the parsed GFM tree, so a `## `
+ * line inside a fenced code block — a changelog bullet that quotes changelog
+ * markup — can no longer cut the accrued block short and strand its entries.
  */
 export function unreleasedRange(
   lines: readonly string[],
@@ -73,21 +77,16 @@ export function unreleasedRange(
   // generated, and `[unreleased]` / `[UNRELEASED]` mean the same section. An
   // exact match silently skipped those and promoted nothing, so the accrued
   // entries stayed behind while the release cut an empty section.
-  //
-  // Headings come from the parsed tree, not a line scan, so a `## ` line
-  // inside a fenced code block is content and can neither be the heading nor
-  // truncate the block.
   const wanted = unreleasedHeading.trim().toLowerCase()
-  const headings = h2LineIndexes(lines.join('\n'))
+  const headings = headingLines(lines.join('\n'), 2)
   const at = headings.findIndex(
-    index => lines[index]!.trim().toLowerCase() === wanted,
+    line => lines[line]?.trim().toLowerCase() === wanted,
   )
   if (at === -1) {
     return undefined
   }
-  const start = headings[at]!
-  const end = at + 1 < headings.length ? headings[at + 1]! : lines.length
-  return { end, start }
+  const next = headings[at + 1]
+  return { end: next ?? lines.length, start: headings[at]! }
 }
 
 /**

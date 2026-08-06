@@ -8,7 +8,7 @@ model in [`drift-watch.md`](drift-watch.md).
 ## The model: per-repo copies, cascaded byte-identical
 
 Every gh-aw workflow is authored ONCE in the wheelhouse template and cascaded
-whole to every member — each repo runs its own scheduled copy. There is no
+whole to every member - each repo runs its own scheduled copy. There is no
 cross-repo reusable and no delegator pinned to another repo's SHA
 (`template/base/.github/workflows/weekly-update.md` lines 2-5 state the contract).
 The unit that cascades is a pair plus a shared lock:
@@ -21,8 +21,8 @@ The unit that cascades is a pair plus a shared lock:
    GitHub Actions workflow (`<name>.lock.yml`) plus a pinned
    `.github/aw/actions-lock.json`. The three are one unit: edit the `.md`,
    recompile, commit all three together. `gh-aw-locks-are-current` guards the
-   `.md` ↔ `.lock.yml` sync on both stamped hashes — `body_hash` and
-   `frontmatter_hash` — so a frontmatter-only edit without a recompile goes
+   `.md` ↔ `.lock.yml` sync on both stamped hashes - `body_hash` and
+   `frontmatter_hash` - so a frontmatter-only edit without a recompile goes
    red too. `gh-aw-emissions-are-declared` keeps the compile surface closed:
    a gh-aw-generated workflow file with no declared `.md` source and no
    `SANCTIONED_GHAW_EMISSIONS` entry is an undeclared compiler side-emission,
@@ -37,9 +37,9 @@ from the template is drift.
 ## Local delegation only
 
 Where a workflow needs a stable `workflow_call` entry point, the delegator is
-a LOCAL file in the same repo — e.g. `get-green.yml` runs
+a LOCAL file in the same repo - e.g. `get-green.yml` runs
 `uses: ./.github/workflows/get-green.lock.yml`. Every `uses:` in the chain is a
-`./` ref that resolves inside the repo the run executes in — auditable by
+`./` ref that resolves inside the repo the run executes in - auditable by
 zizmor/actionlint at rest, no cross-repo SHA to keep in step.
 
 ## Comment-stamp exemption
@@ -63,7 +63,7 @@ temporary private host repo and captures safe outputs there, leaving the source
 repo untouched:
 
 <details>
-<summary><b>Detail</b> — `gh aw`</summary>
+<summary><b>Detail</b> - `gh aw`</summary>
 
 ```bash
 gh aw trial ./.github/workflows/weekly-update.md \
@@ -96,7 +96,7 @@ needs no key.
 
 `weekly-update` (haiku, the update agent) dispatches `get-green` (sonnet,
 the escalation worker) via `safe-outputs.dispatch-workflow` on a test failure.
-The dispatch target is a workflow BASENAME resolved in the same repo — rename
+The dispatch target is a workflow BASENAME resolved in the same repo - rename
 `get-green` and the `.md` frontmatter must move in lockstep. gh-aw is one
 engine + model per workflow, so a two-model escalation is two workflows. This
 same dispatch pattern is the substrate the fleet's planned multi-agent harness
@@ -104,17 +104,17 @@ builds on.
 
 ## Issue suggestions are convenience-tier
 
-gh-aw's issue-intent metadata — `issue-intent: true` on a mutation safe
+gh-aw's issue-intent metadata - `issue-intent: true` on a mutation safe
 output, available from gh-aw v0.82.13 and surfaced by GitHub's
-agent-automation controls for issues — lets agent issue mutations such as
+agent-automation controls for issues - lets agent issue mutations such as
 close, label, assign, and type changes land as suggestions with a confidence
 and rationale, batch-approvable from the issue's approval panel. Treat that
 layer as UX, not a trust boundary: GitHub documents the approvals as a
 workflow convenience with no server-side enforcement, so the fleet's hard
-guards — authorization phrases, publish gates, and the compiled `network:`
-egress allowlist — remain the security controls. Enabling `issue-intent` on a
+guards - authorization phrases, publish gates, and the compiled `network:`
+egress allowlist - remain the security controls. Enabling `issue-intent` on a
 safe output changes how a mutation is reviewed, never what an agent may reach
 or publish. Issue CREATION stays direct either way: a failure report must not
-need approval to exist. Repo-admin confidence thresholds — which confidence
-tiers auto-apply — are a per-repo owner console setting, not something the
+need approval to exist. Repo-admin confidence thresholds - which confidence
+tiers auto-apply - are a per-repo owner console setting, not something the
 cascade can ship.

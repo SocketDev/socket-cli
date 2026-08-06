@@ -124,6 +124,10 @@ jobs:
           # Full history + tags: the content-commit search walks package.json
           # history, and the release stage checks the existing v* tags.
           checkout-fetch-depth: '0'
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       # The version's content commit: the bump commit where package.json
       # flipped to it. A missing flip commit fails LOUDLY — the healer never
       # guesses a commit to tag.

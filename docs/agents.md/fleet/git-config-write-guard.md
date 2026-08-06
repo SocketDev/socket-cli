@@ -9,8 +9,8 @@ These keys must never appear in a fleet repo's local `.git/config`:
 | Key               | Why it's banned                                                                                                                                                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `core.bare`       | `bare = true` turns the work tree into a bare repo. Every `git status` / `git commit` / `git rev-parse --is-inside-work-tree` then fails with "must be run in a work tree". The repo becomes unusable until manually cleaned up. |
-| `user.email`      | Overrides the global identity. Commits sign with the global GPG key but author with the local email — GitHub rejects the push for "Found N violations: `<sha>`" verified-signature check.                                        |
-| `user.name`       | Same shape — the commit author won't match the global GitHub identity.                                                                                                                                                           |
+| `user.email`      | Overrides the global identity. Commits sign with the global GPG key but author with the local email - GitHub rejects the push for "Found N violations: `<sha>`" verified-signature check.                                        |
+| `user.name`       | Same shape - the commit author won't match the global GitHub identity.                                                                                                                                                           |
 | `user.signingkey` | Pinning a key locally drifts from the canonical global key. If the local key is wrong (or stale after rotation), every commit is unsigned to GitHub.                                                                             |
 | `commit.gpgsign`  | Disabling signing locally bypasses the fleet rule. Pre-commit hook catches it for `main`/`master` but the local config has clobbered the global preference.                                                                      |
 
@@ -18,7 +18,7 @@ These keys must never appear in a fleet repo's local `.git/config`:
 
 `PreToolUse(Bash + Edit/Write)` blocker triggered by either path:
 
-1. **Bash** — `git config <key> <value>` (no `--global` / `--system` / `--worktree` qualifier) that touches a banned key:
+1. **Bash** - `git config <key> <value>` (no `--global` / `--system` / `--worktree` qualifier) that touches a banned key:
 
    ```bash
    git config core.bare true
@@ -26,9 +26,9 @@ These keys must never appear in a fleet repo's local `.git/config`:
    git config commit.gpgsign false
    ```
 
-2. **Edit / Write** — direct writes to `.git/config` (any path matching `**/.git/config`) where the new content contains one of the banned `[section] key = value` shapes.
+2. **Edit / Write** - direct writes to `.git/config` (any path matching `**/.git/config`) where the new content contains one of the banned `[section] key = value` shapes.
 
-`git config --global <key>` is **always allowed** — global config is the canonical home for identity / signing settings.
+`git config --global <key>` is **always allowed** - global config is the canonical home for identity / signing settings.
 
 ## Bypass
 
@@ -49,7 +49,7 @@ Same hook runs at SessionStart and walks fleet repos under `~/projects/` looking
 - `[user] name = Test User`
 - Local `commit.gpgsign = false`
 
-Findings are reported at SessionStart (informational, never blocks). `core.bare = true` is the one exception to "no auto-fix": it is unset automatically (`git config -f <path> --unset core.bare`) because it is always wrong for a non-bare fleet checkout and breaks every `git` command on that `.git/` for any session — there is no legitimate reason to keep it, so restoring it needs no human judgment. The identity/signing findings (test-fixture email, `Test User`, `commit.gpgsign = false`) stay operator-driven: edit `.git/config` manually, or `git config --unset <key>` per finding.
+Findings are reported at SessionStart (informational, never blocks). `core.bare = true` is the one exception to "no auto-fix": it is unset automatically (`git config -f <path> --unset core.bare`) because it is always wrong for a non-bare fleet checkout and breaks every `git` command on that `.git/` for any session - there is no legitimate reason to keep it, so restoring it needs no human judgment. The identity/signing findings (test-fixture email, `Test User`, `commit.gpgsign = false`) stay operator-driven: edit `.git/config` manually, or `git config --unset <key>` per finding.
 
 ## Why this exists
 
@@ -62,7 +62,7 @@ The blast radius is high: a single bad config write knocks out an entire repo fo
 The SessionStart auto-unset is a backstop. The leak is prevented at the source by neutralizing the inherited git env in tests, so a fixture's `git init` / `git config` can never escape. The single source of truth is `.git-hooks/_shared/isolate-git-env.mts`:
 
 - vitest loads it via `test/fleet/scripts/setup.mts`, calling `isolateGitEnv({ pinConfigToNull: true })` (strip discovery vars + pin the config files).
-- `node --test` git-fixture suites do NOT load the vitest setup, so each side-effect imports the module at the top: `import '<…>/.git-hooks/_shared/isolate-git-env.mts'`. The default strips the `GIT_*` discovery vars (which is what stops the escape), leaving each fixture free to scope its own `GIT_CONFIG_GLOBAL` per-spawn — the signing-gate tests need that.
+- `node --test` git-fixture suites do NOT load the vitest setup, so each side-effect imports the module at the top: `import '<…>/.git-hooks/_shared/isolate-git-env.mts'`. The default strips the `GIT_*` discovery vars (which is what stops the escape), leaving each fixture free to scope its own `GIT_CONFIG_GLOBAL` per-spawn - the signing-gate tests need that.
 
 `no-unisolated-git-fixture-guard` blocks authoring a git-fixture test without that import (or an equivalent scrub).
 
@@ -72,10 +72,10 @@ A related fleet-breaker: a `node_modules` symlink whose target is the repo's own
 
 ## Companion rules
 
-- [`docs/agents.md/fleet/commit-signing.md`](commit-signing.md) — the signing topology this guards
-- [`docs/agents.md/fleet/parallel-claude-sessions.md`](parallel-claude-sessions.md) — broader parallel-agent hygiene
-- `.claude/hooks/fleet/no-revert-guard/` — bypass-phrase pattern this hook reuses
-- `.claude/hooks/fleet/git-identity-drift-nudge/` — Stop-time companion: catches a
+- [`docs/agents.md/fleet/commit-signing.md`](commit-signing.md) - the signing topology this guards
+- [`docs/agents.md/fleet/parallel-claude-sessions.md`](parallel-claude-sessions.md) - broader parallel-agent hygiene
+- `.claude/hooks/fleet/no-revert-guard/` - bypass-phrase pattern this hook reuses
+- `.claude/hooks/fleet/git-identity-drift-nudge/` - Stop-time companion: catches a
   placeholder `user.email` (`*@example.com`, `agent-ci@…`, an RFC-2606 reserved
   domain) set OUTSIDE the tool channel this guard watches, such as an
   agent-CI container entrypoint writing it directly to `.git/config`. This

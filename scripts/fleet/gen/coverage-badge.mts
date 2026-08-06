@@ -133,7 +133,7 @@ export function makeCoverageBadge(config: MakeCoverageBadgeConfig): number {
   return 0
 }
 
-function main(): void {
+export function main(): void {
   process.exitCode = makeCoverageBadge({
     check: process.argv.includes('--check'),
     repoRoot: REPO_ROOT,

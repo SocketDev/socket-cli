@@ -43,7 +43,7 @@ nobody had tagged any of the four above. The working signal is the prose these
 controls already carry, scored against two vocabularies.
 
 <details>
-<summary><b>Detail</b> — Named threats, Ambiguous terms</summary>
+<summary><b>Detail</b> - Named threats, Ambiguous terms</summary>
 
 **Named threats** (`NAMED_THREATS`) are terms like `ssrf`, `xss`, `csrf`,
 `path traversal`, `prototype pollution`, `shadow bin`, `cloud metadata`,
@@ -123,4 +123,4 @@ source-file count it scanned, never a green checkmark. A repo may genuinely
 ship no security primitive, or the scan may have missed its source roots, and
 those two states must not look alike from the terminal. Same discipline as
 `scripts/fleet/lint.mts`, where a scope resolving to zero files reports
-"0 files checked — this is NOT a pass" instead of "Lint passed".
+"0 files checked - this is NOT a pass" instead of "Lint passed".

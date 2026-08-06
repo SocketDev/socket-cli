@@ -134,7 +134,7 @@ export function collectWorkflowFiles(repoDir: string): string[] {
   return [...byName.values()].toSorted()
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const repoDir = REPO_DIR
   const files = collectWorkflowFiles(repoDir)
   const violations: WorkflowEnvViolation[] = []

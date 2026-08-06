@@ -158,7 +158,7 @@ export async function scanRepo(
   return findings
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const quiet = process.argv.includes('--quiet')
   const findings = await scanRepo(REPO_ROOT)
   if (!findings.length) {

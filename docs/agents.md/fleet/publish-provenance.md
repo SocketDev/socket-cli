@@ -19,7 +19,7 @@ The bump commit is created DURING the run, so it cannot be the run's
 the tree that actually shipped is a commit the attestation never names.
 
 <details>
-<summary><b>What it looks like when it bites</b> — the 6.6.0 case, end to end</summary>
+<summary><b>What it looks like when it bites</b> - the 6.6.0 case, end to end</summary>
 
 - npm attested `32435898`, whose `package.json` read `6.6.0-prerelease`.
 - The shipped bump commit was `55f971b7`, reading `6.6.0`.
@@ -27,7 +27,7 @@ the tree that actually shipped is a commit the attestation never names.
   tag can mark both commits, and tagging the attested one would tag a tree that
   was never published.
 - The reconcile healer cannot repair it either. It resolves the flip commit,
-  checks it out, re-packs, and the bytes diverge from the registry — because
+  checks it out, re-packs, and the bytes diverge from the registry - because
   the published bytes came from a build the attestation attributes elsewhere.
 - The check calls this a HUMAN DECISION and refuses to guess, which is correct:
   it will not tag a commit nobody has confirmed against the published bytes.
@@ -60,7 +60,7 @@ hint-consuming route, which exists deliberately and runs the bump exactly once
 across the chain.
 
 <details>
-<summary><b>How 6.6.0 orphaned</b> — a worked example of picking the wrong route</summary>
+<summary><b>How 6.6.0 orphaned</b> - a worked example of picking the wrong route</summary>
 
 It was published with `gh workflow run npm-publish.yml -f publish=true -f
 bump=true`. That is the manual route. The run's `head_sha` was `32435898`,
@@ -78,7 +78,7 @@ mistake was reaching for it instead of the pipeline for a real release.
 dispatch so provenance lands on the shipped commit. Reach for a manual
 `bump=true` dispatch only when a release does not need a tag to mark it.
 
-If a release has already gone out the manual way, it cannot be repaired —
+If a release has already gone out the manual way, it cannot be repaired -
 attestations are immutable. Baseline it in
 `release.provenanceOrphanBaseline` with the reason, which is what 6.5.0, 6.5.1
 and 6.6.0 carry. Baselining does not weaken the gate: a version absent from

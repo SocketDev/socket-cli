@@ -26,11 +26,48 @@ provenance pipeline) bypass the window via dated excludes, mirroring
 | go            | go.mod + go.sum                                      | none native, so an external gate reads the GOPROXY publish time                                                                                                                    | `scripts/fleet/check/go-deps-are-soaked.mts` fails on an under-soak require                                                                                                                                                            |
 | brew          | generated `Brewfile` + `scripts/fleet/constants/brew-tap-pins.mts` | one dated tap SHA at least SOAK_DAYS old per tap; every formula version at that SHA is definitionally soaked                                                                       | `scripts/fleet/check/brew-install-is-pinned.mts` (offline): Brewfile sync, pin age, no bare installs. Brewfile presence = enrollment; unenrolled repos never redden                                                                    |
 | docker images | Dockerfile FROM digests                              | `scripts/fleet/update/docker.mts` repins only to tags older than the window                                                                                                                      | `FROM image:tag@sha256:...` pins; prebake gate below                                                                                                                                                                     |
+| ruby          | Gemfile + Gemfile.lock                               | Bundler `--cooldown <n>`, native as of RubyGems/Bundler 4.0.18 (2026-08-05). Exclusion keys on gem name + version and ignores platform. `--cooldown 0` disables it, which the resolver suggests as a failure hint | NOT YET WIRED - no fleet repo ships a Gemfile today. See "Wiring Ruby" below before the first one lands                                                                                                                   |
 
 Every gate no-ops on ecosystem absence (no own go.mod / Cargo.toml /
 Brewfile), so the fleet-wide cascade never reddens a repo that lacks the
 ecosystem. Vendored trees (`upstream/`, `vendor/`, `third_party/`, `deps/`,
 `*-bundled`, `*-vendored`) are never "own" manifests (`scripts/fleet/update/_shared.mts`).
+
+## Wiring Ruby
+
+No fleet repo ships a Gemfile yet, so this is the shape the first one takes
+rather than something already running. Ruby joins as a NATIVE-mechanism
+ecosystem, the uv shape rather than the go shape: Bundler enforces the window
+itself, so the fleet passes the number in and gates parity instead of writing
+its own publish-time reader.
+
+<details>
+<summary><b>The three-piece wiring</b> - the ruby update lane, the config-parity check, and the receipts to collect before it lands</summary>
+
+1. `scripts/fleet/update/ruby.mts`, the lane and the only pin-mover, alongside
+   the cargo and docker lanes. It runs `bundle lock --cooldown <SOAK_DAYS>` so
+   the resolver never selects a gem inside the window, and it owns
+   `Gemfile.lock` the way `update/cargo.mts` owns `Cargo.lock`.
+2. `scripts/fleet/check/ruby-soak-config-is-current.mts`, asserting the repo's
+   `bundle config` carries the same window every other surface uses. Same
+   parity discipline as `soak-time-is-consistent.mts`: SOAK_DAYS is written
+   once and every surface derives from it.
+3. Enrollment is Gemfile presence, matching how Brewfile presence enrolls brew.
+   A repo with no Gemfile never reddens.
+
+Two things need a receipt before that lands. The unit `--cooldown` takes is not
+stated in the 4.0.18 release post or PR #9725 - read it off `bundle-lock(1)` or
+the implementation, and do not assume days because uv and pnpm disagree on
+units already. And confirm whether a `bundle config` key or `BUNDLE_` variable
+sets it, since a flag passed only on the command line is unenforceable for a
+developer running bare `bundle install`; that gap is what the check exists to
+close.
+
+The sfw shims already route `gem` and `bundler` through the firewall in
+wrapper mode (sfw-enterprise), so the install surface is covered. The soak
+window is the missing half.
+
+</details>
 
 ## The three install surfaces (one manifest set)
 
@@ -63,7 +100,7 @@ consulted by every gate. npm keeps its existing surfaces (`SOCKET_SCOPES`,
 pnpm `minimumReleaseAgeExclude` with `# published | removable` annotations).
 
 Socket-owned scopes (`@socketregistry/*`, `@socketsecurity/*`) are blanket
-soak-exempt via `.npmrc` `min-release-age-exclude[]` — first-party artifacts
+soak-exempt via `.npmrc` `min-release-age-exclude[]` - first-party artifacts
 Socket itself publishes, so a same-day bump is NEVER a soak violation and needs
 no dated annotation (unlike a third-party emergency exclude). The soak defends
 against third-party supply-chain attacks; there is no external attacker on a
@@ -82,7 +119,7 @@ because echo-hint strings once became "installed tools".
 ## Rust toolchain
 
 Rust's soak needs cargo's `minimum-release-age`, which only stable cargo lacks
-today — so the fleet Rust toolchain is pinned to a nightly (`nightly-2026-07-12`
+today - so the fleet Rust toolchain is pinned to a nightly (`nightly-2026-07-12`
 at time of writing) in `rust-toolchain.toml` (the canonical pin), held until a
 stable release ships that support. The CLAUDE.md bullet states only the
 invariant ("Rust pins the toolchain nightly"); the exact nightly and its

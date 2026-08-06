@@ -96,7 +96,7 @@ export async function findGoSoakViolations(
   return violations
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const violations = await findGoSoakViolations(
     REPO_ROOT,
@@ -138,6 +138,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  suppress the success message`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

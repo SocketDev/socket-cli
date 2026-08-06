@@ -14,15 +14,15 @@ guaranteed floor.
 Portable by default via runtime dispatch; pin only to a floor your deployment
 guarantees.
 
-- **Distributed to CPUs you do NOT control** — published npm natives,
-  downloadable CLIs, release artifacts — do NOT pin above the minimum supported
+- **Distributed to CPUs you do NOT control** - published npm natives,
+  downloadable CLIs, release artifacts - do NOT pin above the minimum supported
   microarch. `-C target-cpu=native`, a baseline `-C target-feature=+avx2`-style
   ISA pin, a raised `GOAMD64=v2|v3|v4`, or a baseline `-march` each bakes in the
   build host ISA and SIGILLs on older CPUs. Use `is_x86_feature_detected!` /
   `golang.org/x/sys/cpu` runtime dispatch, `std::simd`, the `wide` crate, or the
   SIMD-accelerated `memchr` family so one binary lights up AVX2/NEON when
   present. Portable, non-microarch features like `+crt-static` are fine.
-- **Controlled target — pinning is legitimate and a real win.** A homogeneous
+- **Controlled target - pinning is legitimate and a real win.** A homogeneous
   datacenter fleet, a container constrained to known hardware, a per-microarch
   build matrix that emits one artifact per ISA level with a loader that selects
   at install or run time, or a local build where build host == run host. Pin to
@@ -35,11 +35,11 @@ The gate reads two annotation shapes, mirroring the soak-exclude convention: a
 temporary pin carries a removable date, standing trust does not. Put the marker
 as a trailing comment OR on the line directly above the pin.
 
-Temporary local flamegraph or micro-bench pin — optimizer-off, host-tuned
-numbers — needs a sunset date:
+Temporary local flamegraph or micro-bench pin - optimizer-off, host-tuned
+numbers - needs a sunset date:
 
 <details>
-<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+<summary><b>Detail</b> - the worked steps (3 snippets)</summary>
 
 ```toml
 # microarch-pin: local-profiling | removable: 2026-12-31
@@ -68,9 +68,9 @@ with an empty justification fails.
 ## Enforcement
 
 - `build-microarch-is-portable` (`scripts/fleet/check/`) scans build-config
-  surfaces — `.cargo/config*.toml` + `config.repo.toml`, CI workflows
+  surfaces - `.cargo/config*.toml` + `config.repo.toml`, CI workflows
   (`.github/workflows/*.{yml,yaml}` RUSTFLAGS/GOAMD64 env), `mise.toml` /
-  `**/mise/config.toml`, `Justfile`/`Makefile`, and `.cargo/*.sh` build scripts —
+  `**/mise/config.toml`, `Justfile`/`Makefile`, and `.cargo/*.sh` build scripts -
   and fails on an un-annotated microarch pin or a standing marker with an empty
   justification. Prose that merely DISCUSSES the pin (`.md`, `.mts`) is out of
   scope. The pure detectors ship a self-test under
@@ -78,13 +78,13 @@ with an empty justification fails.
 
 ## Why
 
-The payoff of portable SIMD is real — the acorn-lang Go lexer work measured
+The payoff of portable SIMD is real - the acorn-lang Go lexer work measured
 1.5-2.4x end-to-end throughput on string/template-dense JS and ~16x on isolated
-micro-scans, allocation-neutral — and for a distributed artifact it comes from
+micro-scans, allocation-neutral - and for a distributed artifact it comes from
 runtime dispatch, not a compile-time microarch pin. A distributed pinned build
 trades that portability for a number that only holds on the build host, then
-crashes for a user on an older CPU. When you control the target — a homogeneous
-fleet or a per-ISA build matrix — pinning to the guaranteed floor is a real win
+crashes for a user on an older CPU. When you control the target - a homogeneous
+fleet or a per-ISA build matrix - pinning to the guaranteed floor is a real win
 and legitimate. See the language mechanics in
 [optimizing-rust-performance](../../../.claude/skills/fleet/optimizing-rust-performance/SKILL.md),
 [optimizing-go-performance](../../../.claude/skills/fleet/optimizing-go-performance/SKILL.md),
@@ -99,12 +99,12 @@ receipts where we have them. These are heuristics with a measure-first rule,
 not absolutes.
 
 <details>
-<summary><b>The five heuristics</b> — measure the autovectorization ceiling first, restructure the data instead of retrofitting intrinsics, one codebase behind a wide typedef, wider lanes saturate, SIMD selectively</summary>
+<summary><b>The five heuristics</b> - measure the autovectorization ceiling first, restructure the data instead of retrofitting intrinsics, one codebase behind a wide typedef, wider lanes saturate, SIMD selectively</summary>
 
 - **Measure the autovectorization ceiling first.** Element-wise byte and
   integer loops routinely hit it: stuie-cabi's per-frame buffer loops gained
-  5-16x from structure-only rewrites — `slice::fill`, block `memcmp`,
-  `copy_from_slice` — with zero intrinsics, stuie commit `b3e23ac`. Structured
+  5-16x from structure-only rewrites - `slice::fill`, block `memcmp`,
+  `copy_from_slice` - with zero intrinsics, stuie commit `b3e23ac`. Structured
   float math does not: box2d's scalar solver shared the exact SoA layout with
   the SIMD path and still ran ~2x slower than hand-written SSE2, 524 vs 982
   FPS on a 7950X. Bench the structural rewrite first; reach for wide types
@@ -117,7 +117,7 @@ not absolutes.
   pays gather/scatter on every iteration.
 - **One codebase, a wide typedef.** box2d's `FloatW` typedefs to
   `__m128`/`__m256`/NEON/scalar-struct behind one gather/scatter boundary.
-  Portability is a thin width abstraction — and that code shape is what makes
+  Portability is a thin width abstraction - and that code shape is what makes
   the runtime dispatch required by the pinning rule above cheap.
 - **Wider lanes saturate.** AVX2 beat SSE2 by ~14% despite 2x the lane width,
   1117 vs 982 FPS, because gather/scatter and memory traffic dominate. Quote

@@ -1,4 +1,4 @@
-# Release pins are canonical — aliases never persist
+# Release pins are canonical - aliases never persist
 
 An alias (`latest`, `main`, `head`, `stable`, `newest`, a range like `^`/`~`/`*`)
 is a **user-input convenience only**. Resolve it to its exact canonical form at
@@ -7,10 +7,10 @@ persisted pin stores **only exact canonical values**.
 
 ## The canonical forms
 
-- `bundle.ref` — an exact `fleet-pack-<hex>` release tag
+- `bundle.ref` - an exact `fleet-pack-<hex>` release tag
   (`fleet-pack-a1b2c3d`), the content-addressed template-SHA stamp. No
   semver, no range, no `latest`/`main`/`stable`/`newest` alias.
-- `bundle.cascadeSha` — a bare 40-hex git SHA (lowercase, no `v` prefix, no
+- `bundle.cascadeSha` - a bare 40-hex git SHA (lowercase, no `v` prefix, no
   range, no alias). A manifest's `templateSha` is the same shape.
 - No pin stores **both** an alias and its canonical form. Any field beside `ref`
   and `cascadeSha` in a `bundle` block is an alias that leaked into storage.
@@ -19,23 +19,23 @@ persisted pin stores **only exact canonical values**.
 
 Two layers, deliberately paired (code-is-law):
 
-- **Write time** — `scripts/repo/gen/bootstrap/src/lockstep.mts` (`validateRef` /
+- **Write time** - `scripts/repo/gen/bootstrap/src/lockstep.mts` (`validateRef` /
   `validateCascadeSha`, the dep-0 fetcher) and
   the cascade stamper's config module (`validateBundleBlock`, in the
   template source's `scripts/repo/sync-scaffolding/`) reject a
   fuzzy/ranged/aliased pin
   as it is written. The stamper writes exactly `{ ref, cascadeSha }` and refuses
   to invent a ref (see `fix-bundle-pin.mts`).
-- **Belt** — `scripts/fleet/check/release-pins-are-canonical.mts` re-asserts the
+- **Belt** - `scripts/fleet/check/release-pins-are-canonical.mts` re-asserts the
   invariant over the **committed** tree: the effective
   `.config/repo/socket-wheelhouse.json` `bundle` block and any git-tracked
   `release-bundle-manifest.json`. This catches a pin hand-edited past the write
   gate, or a member config that predates it. It does not relax or duplicate the
-  write-time shape check — it re-asserts it, and additionally names `stable` and
+  write-time shape check - it re-asserts it, and additionally names `stable` and
   `newest`, the two alias tokens this discipline calls out, and flags an alias
   stored beside a canonical value.
 
-The check runs on every `check --all` — a pure local read. It is a vacuous pass
+The check runs on every `check --all` - a pure local read. It is a vacuous pass
 where nothing is pinned, such as the wheelhouse producer or a non-thin member,
 and never false-greens.
 
@@ -59,7 +59,7 @@ Both are unit-tested in `test/repo/unit/release-pins-are-canonical.test.mts`.
 
 ## See also
 
-- [`thin-distribution.md`](thin-distribution.md) — the bundle-pin + lock-step
+- [`thin-distribution.md`](thin-distribution.md) - the bundle-pin + lock-step
   invariant this canonicality rule protects.
-- [`lockstep.md`](lockstep.md) — the separate upstream-drift harness (same word,
+- [`lockstep.md`](lockstep.md) - the separate upstream-drift harness (same word,
   different subsystem).

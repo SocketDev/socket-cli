@@ -23,11 +23,11 @@ remote: - Changes must be made through a pull request.
 
 These two rules sit ABOVE per-repo admin permission. Repository-level admins cannot bypass them. Only members of the ruleset's explicit `bypass_actors` list can push around them.
 
-The ruleset can reject a push with EITHER of two rules, and each has its OWN custom-property escape hatch. A push that trips both needs both properties — setting only one leaves the other rule blocking: this is what left a direct push blocked until the second property was added.
+The ruleset can reject a push with EITHER of two rules, and each has its OWN custom-property escape hatch. A push that trips both needs both properties - setting only one leaves the other rule blocking: this is what left a direct push blocked until the second property was added.
 
 ### How it works
 
-**Rule 1 — "Changes must be made through a pull request".** Two repo custom properties gate the cascade's review-skip path:
+**Rule 1 - "Changes must be made through a pull request".** Two repo custom properties gate the cascade's review-skip path:
 
 - `doesnt-touch-customers`: permanent. Customer-facing surface is zero. Direct push doesn't risk surprising a customer.
 - `temporarily-doesnt-touch-customers`: short-lived. Same as above but signals an in-flight remediation window.
@@ -43,8 +43,8 @@ The `enterprise-push-nudge` hook reads whichever rule(s) the push tripped and su
 ### Operator flow when push is blocked
 
 1. Push fails with the enterprise-ruleset error pattern above.
-2. The `enterprise-push-nudge` Stop-hook surfaces the bypass mechanism inline — the property matching each rule the push tripped.
-3. Operator goes to `https://github.com/SocketDev/<repo>/settings/properties` and flips the surfaced propert(ies) to `true` — `temporarily-doesnt-touch-customers` for the PR rule, `disable-github-actions-security` for the required-workflow rule.
+2. The `enterprise-push-nudge` Stop-hook surfaces the bypass mechanism inline - the property matching each rule the push tripped.
+3. Operator goes to `https://github.com/SocketDev/<repo>/settings/properties` and flips the surfaced propert(ies) to `true` - `temporarily-doesnt-touch-customers` for the PR rule, `disable-github-actions-security` for the required-workflow rule.
 4. Re-run `git push origin main`. It succeeds.
 5. After the in-flight remediation window closes, operator flips `temporarily-doesnt-touch-customers` back to `false` (re-engaging the ruleset).
 

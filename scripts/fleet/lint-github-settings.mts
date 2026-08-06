@@ -229,7 +229,7 @@ export function printReport(
     `  • Single-push branch+tag update limit = 5: ${settingsUrl} → General → Pushes\n`,
   )
   process.stdout.write(
-    `  • Required Actions secrets present (ANTHROPIC_API_KEY, SOCKET_API_TOKEN): ${settingsUrl}/secrets/actions\n`,
+    `  • Required Actions secrets present (SOCKET_API_TOKEN_FOR_CLI_AND_SFW): ${settingsUrl}/secrets/actions\n`,
   )
 }
 

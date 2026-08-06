@@ -5,8 +5,8 @@
 //
 // PreToolUse (Write/Edit): blocks a write to a human-facing prose surface
 // (CHANGELOG.md, docs/**/*.md, README.md) whose content carries an AI-writing
-// antipattern — throat-clearing openers, "not X, it's Y" contrasts, em-dash
-// chains, vague hedging adverbs. The fleet rule (CLAUDE.md "Prose authoring",
+// antipattern — throat-clearing openers, "not X, it's Y" contrasts, any
+// em-dash, vague hedging adverbs. The fleet rule (CLAUDE.md "Prose authoring",
 // .claude/skills/fleet/prose/SKILL.md): run human-facing prose through the
 // prose skill before it lands. This is the hard gate — it supersedes the old
 // prose-antipattern-nudge Stop hook (a reminder fires after the write and
@@ -145,13 +145,25 @@ export function findProseWriteVerdict(
     return undefined
   }
   const evidence = hits.map(hit => `${hit.label} "${hit.match}"`).join('; ')
-  return block(
+  // Each pattern carries the replacement to write; without it the verdict says
+  // a span is banned and leaves the author guessing. Sibling hooks (stop-nudge,
+  // outbound-voice) already render theirs, so the shape matches. A row with no
+  // `why` contributes no line rather than an empty one.
+  const lines = [
     verdictLine(
       'block',
       'anti-prose-guard',
       `blocked ${rel} — ${evidence} — rewrite the flagged span(s), then retry (bypass response "${BYPASS_PHRASE}")`,
     ),
-  )
+  ]
+  const seen = new Set<string>()
+  for (const hit of hits) {
+    if (hit.why && !seen.has(hit.why)) {
+      seen.add(hit.why)
+      lines.push(verdictContinuation(hit.why))
+    }
+  }
+  return block(lines.join('\n'))
 }
 
 // `fleetOnly` replaces the spec-level `scope: 'convention'`: it gates the

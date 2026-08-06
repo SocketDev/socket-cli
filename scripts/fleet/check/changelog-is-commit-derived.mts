@@ -37,6 +37,7 @@ import {
   repoBaseUrl,
   versionHintFrom,
 } from '../lib/changelog.mts'
+import { documentHeadings, documentListItems } from '../lib/markdown-ast.mts'
 import { describeAnchor, lastReleaseTag } from '../lib/release-anchor.mts'
 import { REPO_ROOT } from '../paths.mts'
 import { runCapture } from '../publish-infra/shared.mts'
@@ -63,23 +64,21 @@ const UNRELEASED_HEADING_RE = /^##\s+\[?unreleased\]?\s*$/i
 /**
  * The first `## …` version section of the CHANGELOG (heading through the line
  * before the next `## `), skipping an `## [Unreleased]` block, or `undefined`
- * when the file has no version sections.
+ * when the file has no version sections. Boundaries come from the parsed GFM
+ * tree, so a `## ` inside a fenced code sample can no longer truncate the
+ * section this check compares against the derived one.
  */
 export function topChangelogSection(changelog: string): string | undefined {
   const lines = changelog.split('\n')
-  const start = lines.findIndex(
-    l => l.startsWith('## ') && !UNRELEASED_HEADING_RE.test(l.trim()),
+  const headings = documentHeadings(changelog).filter(h => h.depth === 2)
+  const at = headings.findIndex(
+    h => !UNRELEASED_HEADING_RE.test(lines[h.line]!.trim()),
   )
-  if (start === -1) {
+  if (at === -1) {
     return undefined
   }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
+  const start = headings[at]!.line
+  const end = headings[at + 1]?.line ?? lines.length
   return lines.slice(start, end).join('\n').trim()
 }
 
@@ -104,16 +103,18 @@ export async function releaseTagExists(version: string): Promise<boolean> {
 }
 
 /**
- * The trimmed `- …` bullet lines in a section, as a normalized set.
+ * The `- …` bullets of a section, as a normalized set. Entries come from the
+ * parsed list items, so a `- ` line inside a fenced code sample — a bullet that
+ * QUOTES changelog markup — is no longer counted as an entry of the section.
+ *
+ * Each item is keyed by its FIRST line, the same key the line scanner produced:
+ * the derived side always emits single-line bullets, so keying a hand-wrapped
+ * bullet by its whole slice would report drift that isn't there.
  */
 export function bulletSet(section: string): Set<string> {
   const out = new Set<string>()
-  const lines = section.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]!.trimEnd()
-    if (line.startsWith('- ')) {
-      out.add(line.trim())
-    }
+  for (const item of documentListItems(section)) {
+    out.add(item.split('\n')[0]!.trim())
   }
   return out
 }

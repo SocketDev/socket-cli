@@ -136,7 +136,7 @@ export function findLegacyCopy(repoRoot: string): string | undefined {
   return existsSync(legacy) ? legacy : undefined
 }
 
-function main(): number {
+export function main(): number {
   const quiet = process.argv.includes('--quiet')
   const memberPath = path.join(REPO_ROOT, TOOLS_FILE)
   const setupActionPresent = existsSync(path.join(REPO_ROOT, SETUP_ACTION))

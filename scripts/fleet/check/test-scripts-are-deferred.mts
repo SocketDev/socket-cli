@@ -135,7 +135,7 @@ export async function scanRepo(repoRoot: string): Promise<TestScriptFinding[]> {
   return findings
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const strict = process.argv.includes('--strict')
   const quiet = process.argv.includes('--quiet')
   const findings = await scanRepo(REPO_ROOT)

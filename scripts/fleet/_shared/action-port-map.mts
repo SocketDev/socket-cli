@@ -64,13 +64,13 @@ export const COMPOSITE_ACTION_PORTS: Readonly<
   ],
   // Socket-original DEBUG/SOCKET_DEBUG normalizer.
   debug: [],
-  // Same minter port as github-pr-app-token, narrower contents:read scope for
-  // the thin-member payload fetch.
   // Socket-origin: a 35-line zero-dep bridge exposing the runner-injected
   // ACTIONS_RESULTS_URL/ACTIONS_RUNTIME_TOKEN to composite run steps for the
   // first-party cache client. Written in-house; crazy-max/ghaction-github-runtime
   // is prior art for the technique but no code was ported from it.
   'expose-actions-runtime': [],
+  // Same minter port as github-pr-app-token, narrower contents:read scope for
+  // the thin-member payload fetch.
   'github-payload-app-token': [
     { portedAt: 'v3.2.0', upstream: 'actions/create-github-app-token' },
   ],

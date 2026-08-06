@@ -235,7 +235,7 @@ export function writeNodeVersion(root: string, version: string): void {
  * history. Never touches api.github.com directly (hook-blocked) and never adds
  * nodejs.org to an allowlist.
  */
-async function fetchNodeReleasesViaGhApi(): Promise<NodeRelease[]> {
+export async function fetchNodeReleasesViaGhApi(): Promise<NodeRelease[]> {
   const result = await spawn(
     'gh',
     ['api', 'repos/nodejs/node/releases?per_page=100'],
@@ -262,6 +262,20 @@ async function fetchNodeReleasesViaGhApi(): Promise<NodeRelease[]> {
     )
   }
   return parseNodeReleases(parsed as readonly RawNodeRelease[])
+}
+
+/**
+ * The exact version named by `--soak-bypass <x.y.z>`, or undefined when the
+ * flag is absent. Value-required: a bare flag is reported as absent and the
+ * caller's index lookup then fails loud on the unpublished "version". Pure —
+ * exported for tests.
+ */
+export function soakBypassVersion(argv: readonly string[]): string | undefined {
+  const at = argv.indexOf('--soak-bypass')
+  if (at === -1) {
+    return undefined
+  }
+  return argv[at + 1]
 }
 
 /**
@@ -292,6 +306,44 @@ export async function main(
     return 1
   }
   const releases = await fetchReleases()
+  const bypassVersion = soakBypassVersion(argv)
+  if (bypassVersion) {
+    // The dated-waiver escape, same rationale as an external-tools
+    // `soakBypass` entry: nodejs.org release assets come from a known
+    // publisher, the soak targets registry typosquats and malicious
+    // freshpubs, and the OPERATOR names the exact version — this flag never
+    // picks one. Still same-major, still a real published release.
+    const release = releases.find(r => r.version === bypassVersion)
+    if (!release) {
+      logger.error(
+        'update/node: --soak-bypass names an unpublished version\n' +
+          `  Where: the ${getMajorVersion(current)}.x release index.\n` +
+          `  Saw: ${bypassVersion}; wanted a version the index lists.\n` +
+          '  Fix: name an exact published release, e.g. --soak-bypass 26.7.0.',
+      )
+      return 1
+    }
+    if (getMajorVersion(bypassVersion) !== getMajorVersion(current)) {
+      logger.error(
+        'update/node: --soak-bypass crosses the major line\n' +
+          `  Where: ${NODE_VERSION_FILE} pins ${current}.\n` +
+          `  Saw: ${bypassVersion}; wanted ${getMajorVersion(current)}.x.\n` +
+          '  Fix: major bumps are a deliberate migration, not a pin advance.',
+      )
+      return 1
+    }
+    if (!apply) {
+      logger.info(
+        `update/node: would bump ${current} -> ${bypassVersion} (soak WAIVED by --soak-bypass). Re-run with --apply to write ${NODE_VERSION_FILE}.`,
+      )
+      return 0
+    }
+    writeNodeVersion(root, bypassVersion)
+    logger.success(
+      `update/node: wrote ${bypassVersion} to ${NODE_VERSION_FILE} (was ${current}; soak waived by --soak-bypass, operator-named).`,
+    )
+    return 0
+  }
   const plan = planNodeBump({ current, now: new Date(), releases, soakDays })
 
   logger.info(
@@ -327,11 +379,16 @@ const SCRIPT_META: ScriptMeta = {
     'advances the .node-version pin to the newest soak-cleared release of the same major line',
   help: `Usage: node scripts/fleet/update/node.mts --soak-days <n> [flags]
 
-  --soak-days <n>  soak window in days (required trust gate)
-  (no mode flag)   dry plan: print the bump it would write, touching nothing
-  --apply          write the resolved version to .node-version`,
+  --soak-days <n>       soak window in days (required trust gate)
+  (no mode flag)        dry plan: print the bump it would write, touching nothing
+  --apply               write the resolved version to .node-version
+  --soak-bypass <x.y.z> waive the soak for one OPERATOR-NAMED same-major
+                        release (nodejs.org is a known publisher; the soak
+                        targets registry typosquats) — never picks a version`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -337,3 +337,46 @@ export const OIDC_PERMISSION_ACTIONS: Readonly<Record<string, string>> = {
   publish: 'npm publish',
   stagePublish: 'npm stage publish',
 }
+
+/**
+ * A grant token reduced to its letters, lowercased, so a snake / camel / kebab
+ * / spaced spelling difference never reads as a different token.
+ */
+export function normalizePermissionToken(token: string): string {
+  return token.toLowerCase().replace(/[^a-z]/g, '')
+}
+
+// Every grant spelling npm has been observed to hand back, keyed by its
+// NORMALIZED form so `stage-publish`, `stagePublish`, `npm stage publish`, and
+// `stagedPublish` are one entry rather than four. An entry costs nothing and a
+// missing one is expensive: an unrecognized grant used to drop out of the action
+// set, so a package still carrying the direct-publish grant under a spelling
+// this table did not know read as already narrowed and got skipped.
+const NORMALIZED_OIDC_PERMISSION_ACTIONS: Readonly<Record<string, string>> = {
+  createpackageversion: 'npm publish',
+  createstagedpackage: 'npm stage publish',
+  npmpublish: 'npm publish',
+  npmstagepublish: 'npm stage publish',
+  publish: 'npm publish',
+  publishstaged: 'npm stage publish',
+  stagedpublish: 'npm stage publish',
+  stagepublish: 'npm stage publish',
+}
+
+/**
+ * The rendered action one of npm's grant tokens means, or `undefined` when the
+ * token is one nothing here recognizes.
+ *
+ * The exact map is tried first — it is the observed payload contract — and the
+ * normalized table catches every other spelling of the same two grants. An
+ * `undefined` result is a real answer the caller must SURFACE: a live audit hit
+ * a 13-character token nobody could identify, and because the reader dropped
+ * what it could not map, the package rendered as a clean stage-only grant.
+ */
+export function resolveOidcPermissionAction(token: string): string | undefined {
+  const exact = OIDC_PERMISSION_ACTIONS[token]
+  if (exact) {
+    return exact
+  }
+  return NORMALIZED_OIDC_PERMISSION_ACTIONS[normalizePermissionToken(token)]
+}

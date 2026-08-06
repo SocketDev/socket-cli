@@ -1,6 +1,6 @@
 # gh token hygiene
 
-GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/`: the 8h age cap, keychain check, and workflow-scope gate all live in this hook — `auth-rotation-nudge` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault.
+GitHub CLI auth tokens are the highest-blast-radius credential most developers carry. The Nx Console supply-chain compromise (May 2026) exfiltrated `~/.config/gh/hosts.yml` and used the token against the GitHub API within 74 seconds of malware execution. Three layered defenses, all enforced by `.claude/hooks/fleet/gh-token-hygiene-guard/`: the 8h age cap, keychain check, and workflow-scope gate all live in this hook - `auth-rotation-nudge` handles non-gh CLIs like npm/pnpm/gcloud/docker/vault.
 
 ## 1. Keychain storage only
 
@@ -50,10 +50,10 @@ EOF
 
 After this, every bypass-authorized refresh pops a Touch ID dialog. No password typing.
 
-> **MDM-managed machines (iru / Jamf / Mosyle / Kandji):** the osascript password-dialog fallback is typically blocked by org policy ("Process Blocked: osascript"). On these boxes Touch ID is the **only** working physical-presence path. The hook detects the block via a cheap headless probe and skips the dialog automatically (no toast spam); the error message points back to this Touch ID setup. If your Mac doesn't have Touch ID hardware AND your org blocks osascript, the workflow-scope path is effectively closed — flag that with IT or use a non-MDM machine for releases.
+> **MDM-managed machines (iru / Jamf / Mosyle / Kandji):** the osascript password-dialog fallback is typically blocked by org policy ("Process Blocked: osascript"). On these boxes Touch ID is the **only** working physical-presence path. The hook detects the block via a cheap headless probe and skips the dialog automatically (no toast spam); the error message points back to this Touch ID setup. If your Mac doesn't have Touch ID hardware AND your org blocks osascript, the workflow-scope path is effectively closed - flag that with IT or use a non-MDM machine for releases.
 
 <details>
-<summary><b>PAM deep dive</b> — the tee command line by line, why the control flag is sufficient rather than required or requisite, why not to edit /etc/pam.d/sudo directly, verifying with sudo -k then sudo -v, and undoing the change</summary>
+<summary><b>PAM deep dive</b> - the tee command line by line, why the control flag is sufficient rather than required or requisite, why not to edit /etc/pam.d/sudo directly, verifying with sudo -k then sudo -v, and undoing the change</summary>
 
 #### What the command does, line by line
 
@@ -95,7 +95,7 @@ sudo -v
 If you see the Touch ID dialog, you're good. If you see a password prompt instead, either:
 
 - Touch ID isn't enrolled on this Mac: check System Settings → Touch ID & Password
-- You're on a Mac without Touch ID hardware: use the password fallback — the hook handles this automatically
+- You're on a Mac without Touch ID hardware: use the password fallback - the hook handles this automatically
 - The file path or content is wrong: re-run the `sudo tee` command and double-check
 
 #### Undoing it
@@ -132,7 +132,7 @@ Local timestamp tracking is advisory. A malicious process can backdate the file.
 2. Audit recent activity: <https://github.com/settings/security-log>
 3. Check repo audit logs for unauthorized pushes / workflow dispatches / PRs.
 4. If anything looks wrong: rotate every repo's deploy keys, deploy tokens, and CI secrets accessible from the affected token's scope.
-5. Re-issue gh token with keychain storage + minimal scopes (`gh auth logout && gh auth login` — keychain is the default; then trim scopes via `gh auth refresh -h github.com -r workflow,admin:public_key,admin:repo_hook`).
+5. Re-issue gh token with keychain storage + minimal scopes (`gh auth logout && gh auth login` - keychain is the default; then trim scopes via `gh auth refresh -h github.com -r workflow,admin:public_key,admin:repo_hook`).
 6. File an incident note in the relevant repo's SECURITY log.
 
 ## Operational defaults
@@ -140,9 +140,9 @@ Local timestamp tracking is advisory. A malicious process can backdate the file.
 - `~/.claude/gh-token-issued-at`: local timestamp stamped by the hook when the user runs `gh auth login` or `gh auth refresh`. The 8h age check reads this.
 - `~/.claude/gh-workflow-grant`: presence marker for an unconsumed workflow-dispatch authorization. Created when a bypass-authorized + auth-passed `gh auth refresh -s workflow` runs; deleted as soon as the first dispatch is let through.
 
-## Refresh recovery — when the hook didn't see your refresh
+## Refresh recovery - when the hook didn't see your refresh
 
-The hook stamps `~/.claude/gh-token-issued-at` from a `PreToolUse` event — meaning it only sees `gh auth refresh` invocations that pass through Claude's tool layer. If you ran `gh auth refresh` in a side terminal (e.g. via the `<bash-input>` pasteback flow), the hook didn't see it and the stamp file stays at its prior age, so the next gh tool call gets the >8h block.
+The hook stamps `~/.claude/gh-token-issued-at` from a `PreToolUse` event - meaning it only sees `gh auth refresh` invocations that pass through Claude's tool layer. If you ran `gh auth refresh` in a side terminal (e.g. via the `<bash-input>` pasteback flow), the hook didn't see it and the stamp file stays at its prior age, so the next gh tool call gets the >8h block.
 
 Three recovery paths, ordered from cleanest to most surgical:
 
@@ -156,7 +156,7 @@ Three recovery paths, ordered from cleanest to most surgical:
    Writes a fresh `Date.now()` to the stamp file. Use this when you've already done `gh auth refresh` externally and don't want to re-run it.
 3. **Auto-correction of malformed values.** If the stamp file contains a value less than `1577836800000` (2020-01-01 in ms), the hook treats it as malformed on the next read, re-stamps, and proceeds. For example, this happens if you accidentally wrote POSIX seconds via `date "+%s" > ~/.claude/gh-token-issued-at`. No manual intervention required; the malformed-value branch is there as a safety net for cases like the seconds-vs-ms confusion.
 
-The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access — at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
+The stamp file is purely an in-process record of "when did the hook last see a refresh"; the actual token security lives in the OS keychain. A wrong stamp value can't escalate access - at worst it temporarily locks the user out of gh tool calls until they reauth or re-stamp.
 
 No escape hatches. The hook is failsafe-deny on all invariants. The OS-auth path (Touch ID + osascript + dscl, called via absolute `/usr/bin/` paths to defeat PATH-hijack) is intentionally unreachable in unit tests; the auth path is exercised by manual smoke-testing when the hook ships.
 
@@ -173,6 +173,6 @@ node scripts/fleet/gh-heartbeat.mts --quiet
 ```
 
 The refresh is probe-gated: it runs `gh api user` and only stamps on a
-successful authenticated response. A dead token is never stamped fresh — the
+successful authenticated response. A dead token is never stamped fresh - the
 script exits 1 with the re-auth instruction instead, so the loop's failure mode
 is a loud early exit rather than a masked expiry.

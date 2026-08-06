@@ -256,7 +256,7 @@ export async function scanRepo(
   return findings
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const quiet = process.argv.includes('--quiet')
   const findings = await scanRepo(REPO_ROOT)
   if (!findings.length) {
@@ -306,6 +306,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet   suppress the success line`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

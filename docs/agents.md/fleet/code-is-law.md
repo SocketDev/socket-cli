@@ -36,4 +36,4 @@ The enforcers are themselves fleet code and obey every fleet rule:
 ## A documented-but-uncodified rule is itself a gap
 
 The failure mode this rule exists to catch: a `🚨` line lands in CLAUDE.md, everyone nods, and nothing changes because no code fires when the rule is broken. If a discipline is worth a 🚨, it is worth an enforcer. When no enforceable surface exists today, say so in the rule and the detail doc. That happens when the violation isn't visible to any tool, or when the check needs off-machine state. Don't leave the reader assuming an enforcer exists. Otherwise, codify it.
-<!-- enforcement: human-review — this paragraph describes the enforcement model itself (when a rule has no codeable surface); the 🚨 here is meta-prose, not a discipline with its own enforcer -->
+<!-- enforcement: human-review - this paragraph describes the enforcement model itself (when a rule has no codeable surface); the 🚨 here is meta-prose, not a discipline with its own enforcer -->

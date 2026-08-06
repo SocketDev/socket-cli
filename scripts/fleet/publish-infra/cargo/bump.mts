@@ -31,6 +31,7 @@ import {
   versionHintFrom,
 } from '../../lib/changelog.mts'
 import { commitViaGithubApi } from '../../lib/commit-via-github-api.mts'
+import { headingLines } from '../../lib/markdown-ast.mts'
 import {
   deriveReleaseCommits,
   describeAnchor,
@@ -215,7 +216,7 @@ export function insertChangelogSection(
   section: string,
 ): string {
   const lines = existing.split('\n')
-  const firstHeading = lines.findIndex(l => l.startsWith('## '))
+  const firstHeading = headingLines(existing, 2)[0] ?? -1
   if (firstHeading === -1) {
     return `${existing.replace(/\s*$/, '')}\n\n${section}\n`
   }

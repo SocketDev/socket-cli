@@ -49,7 +49,7 @@ Now every consumer derives from the JSON:
 ## Membership resolution: origin remote, not location
 
 Fleet tooling writes ONLY into roster members. Membership is not "lives under
-`~/projects`" — it is the destination repo's `origin` remote resolved against the
+`~/projects`" - it is the destination repo's `origin` remote resolved against the
 roster JSON. A repo cloned to an unusual path is still a member if its `origin`
 matches an entry; a repo sitting under `~/projects` that isn't in the roster is
 not a member no matter where it's checked out. Resolving by remote instead of
@@ -65,8 +65,8 @@ left to keep in agreement.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/no-fleet-scope-in-non-member-guard/` — blocks fleet
+- `.claude/hooks/fleet/no-fleet-scope-in-non-member-guard/` - blocks fleet
   tooling from writing into a repo whose `origin` remote doesn't resolve
   against the roster.
-- `scripts/fleet/_shared/fleet-membership.mts` — the shared membership resolver
+- `scripts/fleet/_shared/fleet-membership.mts` - the shared membership resolver
   every fleet script and hook imports, so membership is decided in one place.

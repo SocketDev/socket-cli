@@ -18,7 +18,7 @@ Pairs with _Don't leave the worktree dirty_ and _Smallest chunks, land ASAP_. Ca
 
 Keep a PR small. A rule of thumb is under ~200 changed lines overall. Large refactors and new features won't always fit, so decompose a large changeset into separately reviewable commits split along logical boundaries: modules, packages, whatever maps cleanly to the work. Agents are good at this. Tell one to break a change into small commits right before opening the PR. GitHub stacked PRs, currently in preview, are another option that keeps each link small and review sharp.
 
-The fleet direct-pushes to main, so it realizes this doctrine primarily as small commits landed fast — the `commit-cadence-nudge` + land-fast cadence above. A PR happens only on push-rejection or for external / cross-repo work. On that rare PR path, `small-pr-nudge` enforces the size ceiling. It fires on `gh pr create`, computes the three-dot diff (`git diff --shortstat <base>...HEAD`), and reminds you to decompose or stack when the change exceeds ~200 lines. Reminder-only, never a block; it fails open when the diff can't be computed.
+The fleet direct-pushes to main, so it realizes this doctrine primarily as small commits landed fast - the `commit-cadence-nudge` + land-fast cadence above. A PR happens only on push-rejection or for external / cross-repo work. On that rare PR path, `small-pr-nudge` enforces the size ceiling. It fires on `gh pr create`, computes the three-dot diff (`git diff --shortstat <base>...HEAD`), and reminds you to decompose or stack when the change exceeds ~200 lines. Reminder-only, never a block; it fails open when the diff can't be computed.
 
 ## Never open a PR from the default branch
 
@@ -91,7 +91,7 @@ A commit subject also can't be a content-free placeholder: `no-placeholder-commi
 
 ## Non-fleet repos: push and PR/issue/release creation need explicit confirmation
 
-Pushing to, or opening a PR/issue/release against, a repo outside the fleet roster is a different risk than doing the same inside a fleet member: there's no fleet git-side pre-push hook installed there, and a posted PR/issue/release goes out under the user's own `gh` identity where closing it doesn't fully un-publish it. `no-non-fleet-push-guard` blocks `git push` (resolved via `-C`/leading `cd`/cwd, same priority order both hooks share) when the target repo isn't in the fleet roster. `non-fleet-pr-issue-ask-guard` blocks `gh pr create` / `gh issue create` / `gh release create` against a non-fleet repo. Neither is lifted by a batched "do all N tasks" directive or captured plan text — each needs its own per-action confirmation.
+Pushing to, or opening a PR/issue/release against, a repo outside the fleet roster is a different risk than doing the same inside a fleet member: there's no fleet git-side pre-push hook installed there, and a posted PR/issue/release goes out under the user's own `gh` identity where closing it doesn't fully un-publish it. `no-non-fleet-push-guard` blocks `git push` (resolved via `-C`/leading `cd`/cwd, same priority order both hooks share) when the target repo isn't in the fleet roster. `non-fleet-pr-issue-ask-guard` blocks `gh pr create` / `gh issue create` / `gh release create` against a non-fleet repo. Neither is lifted by a batched "do all N tasks" directive or captured plan text - each needs its own per-action confirmation.
 
 ## Bypass phrases
 

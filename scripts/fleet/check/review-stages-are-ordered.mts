@@ -80,7 +80,7 @@ export function orderViolations(roles: readonly string[]): string[] {
   })
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(RUNNER)) {
     process.exitCode = 0

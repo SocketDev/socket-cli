@@ -1,17 +1,23 @@
 /**
- * @file Telemetry / phone-home scanner for the fleet's dependency +
- *   external-tool surface. Detects when a dependency we pull in (npm / PyPI /
+ * @file NAME arm of the telemetry / phone-home scan for the fleet's dependency
+ *   + external-tool surface. Detects when a dependency we pull in (npm / PyPI /
  *   cargo) or an external tool ships a known telemetry / analytics SDK. Run on
  *   every software update (scripts/fleet/update.mts) and as a `check --all`
- *   gate (check/deps-are-telemetry-reviewed.mts), fail-closed: a telemetry SDK
+ *   gate (check/telemetry-deps-are-reviewed.mts), fail-closed: a telemetry SDK
  *   that is NOT in REVIEWED_TELEMETRY (i.e. one ADDED by an update or a new
  *   tool) fails, forcing a human review + an explicit accept-with-reason. This
- *   is name-based detection (high-signal SDK package names), not deep static
- *   analysis — it catches the common case (a dep adds Sentry/PostHog/Segment/…)
- *   cheaply and deterministically. Per-tool runtime telemetry that isn't a
- *   third-party SDK (e.g. headroom's own beacon) is handled by that tool's
- *   lockdown (see headroom-is-telemetry-locked-down.mts). The sfw CDN allowlist
- *   is the runtime backstop regardless.
+ *   arm matches high-signal SDK package NAMES against lockfiles + tool
+ *   manifests — cheap, deterministic, and it names the offending package
+ *   precisely. Its structural blind spot: a package that inlines its analytics
+ *   client into its own shipped bundle puts no analytics NAME in any lockfile,
+ *   so this arm passes it clean. lib/telemetry-payload-scan.mts is the BYTE /
+ *   value-shape arm that reads installed payloads for ingest hostnames and
+ *   public-key prefixes instead of names, and the gate runs both. Neither arm
+ *   replaces the other: names catch an un-bundled SDK precisely, bytes catch
+ *   the bundled residue. Per-tool runtime telemetry that isn't a third-party
+ *   SDK (e.g. headroom's own beacon) is handled by that tool's lockdown (see
+ *   headroom-is-telemetry-locked-down.mts). The sfw CDN allowlist is the
+ *   runtime backstop regardless.
  */
 
 import { existsSync, readFileSync } from 'node:fs'

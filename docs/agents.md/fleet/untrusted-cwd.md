@@ -69,7 +69,7 @@ time. A single helper module is the only way the tool spawns git, so the set
 cannot drift between call sites.
 
 <details>
-<summary><b>The seven flags every git spawn carries</b> — stripped <code>GIT_*</code> vars, <code>GIT_TERMINAL_PROMPT=0</code>, empty <code>core.hooksPath</code> and <code>credential.helper</code>, both <code>protocol.allow</code> keys, <code>--end-of-options</code>, clone by exact SHA</summary>
+<summary><b>The seven flags every git spawn carries</b> - stripped <code>GIT_*</code> vars, <code>GIT_TERMINAL_PROMPT=0</code>, empty <code>core.hooksPath</code> and <code>credential.helper</code>, both <code>protocol.allow</code> keys, <code>--end-of-options</code>, clone by exact SHA</summary>
 
 - **Strip every `GIT_*` variable** from the child environment. `GIT_DIR`,
   `GIT_INDEX_FILE`, `GIT_CONFIG_*`, `GIT_SSH_COMMAND`, `GIT_ASKPASS`, and
@@ -114,7 +114,7 @@ file must never:
 Three follow-through rules make the opt-in real:
 
 <details>
-<summary><b>Making the opt-in real</b> — containment as resolve plus realpath compared against the root, gating the ignition flag rather than the last door, and never searching above the project for config</summary>
+<summary><b>Making the opt-in real</b> - containment as resolve plus realpath compared against the root, gating the ignition flag rather than the last door, and never searching above the project for config</summary>
 
 - **Containment is resolve + realpath + compare against the root.**
   `path.join(root, value)` does NOT contain a path, so `../../../etc/passwd`

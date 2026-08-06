@@ -90,6 +90,8 @@ const SCRIPT_META: ScriptMeta = {
   --key <key>    the cache key to save under`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(() => runCacheSave(process.argv.slice(2)), SCRIPT_META)
 }
+/* c8 ignore stop */

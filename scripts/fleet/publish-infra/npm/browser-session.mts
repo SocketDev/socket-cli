@@ -44,8 +44,9 @@
  *     "login does not persist". The only auth failure reported is "signed
  *     out".
  *   - A human-verification challenge is PAUSED for the operator, never
- *     retried on a ladder; {@link runChallengeAware} owns that rhythm for
- *     every consumer. See `docs/agents.md/fleet/npm-anti-bot-rhythm.md`.
+ *     retried on a ladder, and the pause waits IN PLACE — it never navigates
+ *     the page it is waiting on; {@link runChallengeAware} owns that rhythm
+ *     for every consumer. See `docs/agents.md/fleet/npm-anti-bot-rhythm.md`.
  *     `scripts/fleet/check/playwright-launches-are-sanctioned.mts` enforces the
  *     launch rules across the tree, so a new tool cannot re-derive its own.
  */
@@ -62,6 +63,7 @@ import type { BrowserContext, Page } from 'playwright-core'
 
 import { clearChallengeGate, tickChallengeGate } from './challenge-gate.mts'
 import type { ChallengePauseUx } from './challenge-gate.mts'
+import { REPO_ROOT } from '../../paths.mts'
 import { logger } from '../shared.mts'
 
 export {
@@ -193,6 +195,27 @@ export async function optIntoChallengeCooldown(page: Page): Promise<void> {
 }
 
 /**
+ * The challenge holding screen's source: the Socket sign-in-styled band
+ * (`.config/fleet/playwright/challenge-screen.js`, generated beside the agent
+ * banner) that dresses the vendor challenge page while a pause holds — dark
+ * backdrop, the shield bouncing, "the agent is waiting" copy. A missing or
+ * unreadable asset returns undefined so the pause degrades to the bare vendor
+ * page rather than throwing.
+ */
+export async function readChallengeScreenSource(
+  filePath = path.join(
+    REPO_ROOT,
+    '.config',
+    'fleet',
+    'playwright',
+    'challenge-screen.js',
+  ),
+): Promise<string | undefined> {
+  const source = await fs.readFile(filePath, 'utf8').catch(() => '')
+  return source === '' ? undefined : source
+}
+
+/**
  * One tick of the challenge PAUSE, shared by every consumer's read loop. The
  * operator UX lives in `challenge-gate.mts` and is tracked per page + URL, so
  * it survives re-entry from a fresh {@link runChallengeAware} call: ONE 🖐
@@ -205,6 +228,14 @@ export async function optIntoChallengeCooldown(page: Page): Promise<void> {
  * caller therefore never needs a retry ladder. `announced` reports what the
  * CALLING loop has printed; the cross-call tracker is authoritative, which is
  * what stops a re-entered loop from re-announcing the same pause.
+ *
+ * The pause waits IN PLACE: it reads the page and never navigates it. A
+ * re-navigation on a fresh pause closed the trusted-publisher form the write
+ * lane had just opened, and the reload loop is itself the traffic shape npm's
+ * bot management answers with a challenge — settings page → form opens →
+ * reload → challenge → pause → reload, once per lap, observed live burning a
+ * full budget without progressing. The operation the caller re-attempts owns
+ * its own navigation, so nothing here needs to.
  */
 export async function pauseForChallenge(
   page: Page,
@@ -215,6 +246,9 @@ export async function pauseForChallenge(
     label: string
     pollMs?: number | undefined
     rerunHint?: string | undefined
+    // The holding-screen asset to inject; tests point it at a fixture. The
+    // default is the cascaded live-mirror copy.
+    screenPath?: string | undefined
     url: string
     ux?: ChallengePauseUx | undefined
   },
@@ -232,11 +266,31 @@ export async function pauseForChallenge(
     throw new Error(tick.expiredMessage)
   }
   if (tick.freshPause) {
-    await page.goto(cfg.url, { waitUntil: 'domcontentloaded' }).catch(() => {})
+    // Bring the window forward, and nothing else. Fronting gets the
+    // operator's attention while the page keeps whatever state the operation
+    // left on it.
     await page.bringToFront().catch(() => {})
   }
   await optIntoChallengeCooldown(page)
-  await sleep(cfg.pollMs ?? CHALLENGE_POLL_MS)
+  // Dress the wait on every tick: the challenge page can swap its body
+  // between polls, the screen dedupes itself in-page, and an injection
+  // failure must never break the pause the operator is mid-way through.
+  // The poll sleep is SCHEDULED before the screen read: the read is real fs
+  // I/O, and a fake-timers caller that advances the clock right after this
+  // call must find the timer already registered or the tick never resolves.
+  const slept = sleep(cfg.pollMs ?? CHALLENGE_POLL_MS)
+  const screen = await readChallengeScreenSource(cfg.screenPath)
+  if (screen !== undefined) {
+    // Injected through the FRAME, not page.evaluate: runtime-identical (same
+    // CSP-exempt CDP evaluate), but off the surface consumers script — a
+    // queue-driven page.evaluate double must not have its sequence eaten by a
+    // pause tick. try/catch, not .catch(): a surface without mainFrame throws
+    // SYNCHRONOUSLY, and the injection must never break the pause either way.
+    try {
+      await page.mainFrame().evaluate(screen)
+    } catch {}
+  }
+  await slept
   return { announced: true }
 }
 
@@ -529,6 +583,20 @@ export async function openNpmBrowserSession(
         ignoreDefaultArgs: ['--enable-automation', '--use-mock-keychain'],
       }))
   const context = await doLaunch({ headless, profileDir })
+  // The fleet agent-banner: the same corner ribbon the Playwright MCP injects,
+  // so a human glancing at THIS window can also tell it is agent-driven.
+  // Fail-open — a checkout without the cascaded asset still gets a working
+  // session, just an unmarked one.
+  const bannerPath = path.join(
+    REPO_ROOT,
+    '.config',
+    'fleet',
+    'playwright',
+    'agent-banner.js',
+  )
+  if (existsSync(bannerPath) && typeof context.addInitScript === 'function') {
+    await context.addInitScript({ path: bannerPath }).catch(() => undefined)
+  }
   try {
     const page = context.pages()[0] ?? (await context.newPage())
     const user = scope || (await waitForNpmSignIn(page, profileDir))

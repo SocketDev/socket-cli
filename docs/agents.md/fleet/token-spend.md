@@ -6,7 +6,7 @@ The `token-spend-guard` hook nudges when a mechanical command runs on a premium 
 
 ## The effort dial
 
-Effort and model are separate dials. The effort dial (`low`/`medium`/`high`/`xhigh`/`max`) sets how much the model is willing to spend, not how capable it is. Thinking is adaptive: below `max` the model ignores budget it does not need, so wall-clock barely moves across `low`→`xhigh` on a task that does not warrant the spend. `max` is the only level that forces full spend, and that extra spend buys re-verification, not better answers — on a benchmark where every level returned correct results, the higher levels spent their seconds double-checking work the lower levels had already gotten right.
+Effort and model are separate dials. The effort dial (`low`/`medium`/`high`/`xhigh`/`max`) sets how much the model is willing to spend, not how capable it is. Thinking is adaptive: below `max` the model ignores budget it does not need, so wall-clock barely moves across `low`→`xhigh` on a task that does not warrant the spend. `max` is the only level that forces full spend, and that extra spend buys re-verification, not better answers - on a benchmark where every level returned correct results, the higher levels spent their seconds double-checking work the lower levels had already gotten right.
 
 So default to `high` for judgment work and reserve `max` as a rare exception for when you specifically want the model to audit its own answer, a risky migration, a correctness-critical patch. Routine and mechanical work stays at `low`/`medium`. Picking `max` to chase correctness is the common mistake. It buys you a second pass over the same answer, not a better one.
 
@@ -30,7 +30,7 @@ An edit under `template/` is a fleet-canonical source. It has no effect on this 
 
 This is a token-spend concern, not only a correctness one, because the cheap way to satisfy it is a small deterministic sync command, not a fresh AI pass re-deriving what changed. Two nudges plus one guard cover it:
 
-- `.claude/hooks/fleet/agents-skills-mirror-nudge/` — reminds when an agent/skill definition under `template/` has no matching cascade.
-- `.claude/hooks/fleet/dogfood-cascade-nudge/` — reminds after a `template/` edit with no same-turn `sync-scaffolding` run.
-- `.claude/hooks/fleet/token-spend-guard/` — the model/effort dial covered above, so the cascade itself runs at floor cost.
-- `scripts/fleet/check/ai-spawns-have-paired-effort.mts` — the audit gate, run by `check --all`.
+- `.claude/hooks/fleet/agents-skills-mirror-nudge/` - reminds when an agent/skill definition under `template/` has no matching cascade.
+- `.claude/hooks/fleet/dogfood-cascade-nudge/` - reminds after a `template/` edit with no same-turn `sync-scaffolding` run.
+- `.claude/hooks/fleet/token-spend-guard/` - the model/effort dial covered above, so the cascade itself runs at floor cost.
+- `scripts/fleet/check/ai-spawns-have-paired-effort.mts` - the audit gate, run by `check --all`.

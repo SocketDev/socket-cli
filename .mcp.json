@@ -19,13 +19,15 @@
       "command": "node",
       "args": ["scripts/fleet/janus-multi-mcp.mts"]
     },
-    "linear": {
-      "type": "http",
-      "url": "https://mcp.linear.app/mcp"
-    },
-    "notion": {
-      "type": "http",
-      "url": "https://mcp.notion.com/mcp"
+    "playwright": {
+      "command": "pnpm",
+      "args": [
+        "exec",
+        "playwright-mcp",
+        "--isolated",
+        "--init-script",
+        ".config/fleet/playwright/agent-banner.js"
+      ]
     },
     "refero": {
       "type": "http",

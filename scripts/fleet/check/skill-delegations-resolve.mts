@@ -60,7 +60,7 @@ export function existingSkillNames(repoRoot: string): Set<string> {
 }
 
 // Command markdown files under .claude/commands/**.
-function commandFiles(repoRoot: string): string[] {
+export function commandFiles(repoRoot: string): string[] {
   const out: string[] = []
   const walk = (dir: string): void => {
     if (!existsSync(dir)) {
@@ -79,7 +79,7 @@ function commandFiles(repoRoot: string): string[] {
   return out
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const skills = existingSkillNames(REPO_ROOT)
   const errors: string[] = []
   for (const file of commandFiles(REPO_ROOT)) {

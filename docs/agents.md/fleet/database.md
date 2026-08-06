@@ -34,7 +34,7 @@ paths or database name. Copy verbatim; the only thing a repo supplies is
 its `DATABASE_URL`.
 
 <details>
-<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+<summary><b>Detail</b> - the worked steps (2 snippets)</summary>
 
 ```ts
 import { defineConfig } from 'drizzle-kit'
@@ -116,7 +116,7 @@ Drizzle covers the database boundary (table shape, query types). For validating 
 
 ## When NOT to add a database
 
-Most fleet repos are libraries, parsers, or CLIs with no persistent state; they need no database at all. Don't add Drizzle/Postgres speculatively. The stack applies only when a repo genuinely persists relational state — a service, a registry API, an events store. A cache or a flat-file index is not a database need.
+Most fleet repos are libraries, parsers, or CLIs with no persistent state; they need no database at all. Don't add Drizzle/Postgres speculatively. The stack applies only when a repo genuinely persists relational state - a service, a registry API, an events store. A cache or a flat-file index is not a database need.
 
 ## Reference implementation
 

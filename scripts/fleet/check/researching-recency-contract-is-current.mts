@@ -57,7 +57,7 @@ export function checkContract(skillText: string | undefined): ContractResult {
   return { missing, skillFound: true }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(SKILL_PATH)) {
     if (!quiet) {

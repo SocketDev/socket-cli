@@ -92,7 +92,7 @@ export function detectUpstreamGitlinkStage(
   return { command: undefined, detected: false, path: undefined }
 }
 
-function formatBlock(detection: UpstreamGitlinkDetection): string {
+export function formatBlock(detection: UpstreamGitlinkDetection): string {
   return (
     [
       `[no-upstream-gitlink-guard] Blocked: \`${detection.command}\` would stage \`${detection.path}\` under upstream/.`,

@@ -8,7 +8,7 @@ A real incident drove this rule: a fleet repo ended up with 4 stranded local cas
 
 The wheelhouse cascade runs `scripts/repo/cleanup-stranded.mts --target <repo>` against each fleet repo **before** creating that wave's `chore/wheelhouse-<sha>` worktree. Default mode is **fix**:
 
-- Stranded commits are removed. The **preferred** remedy is a surgical `git rebase -i origin/<base>` that drops exactly the superseded commit(s) and replays every other local-ahead commit unchanged — see "Surgical drop" below. The whole-branch `git reset --hard origin/<base>` is the **fallback**, used only for a non-squash-history repo, where resetting to origin can't discard anything canonical.
+- Stranded commits are removed. The **preferred** remedy is a surgical `git rebase -i origin/<base>` that drops exactly the superseded commit(s) and replays every other local-ahead commit unchanged - see "Surgical drop" below. The whole-branch `git reset --hard origin/<base>` is the **fallback**, used only for a non-squash-history repo, where resetting to origin can't discard anything canonical.
 - Stranded worktrees are removed via `git worktree remove --force` followed by `git branch -D chore/wheelhouse-<sha>`.
 
 Pass `--dry-run` to report without acting. Pass `--all` instead of `--target <path>` to sweep every fleet repo from `fleet-repos.json`.
@@ -17,7 +17,7 @@ Pass `--dry-run` to report without acting. Pass `--all` instead of `--target <pa
 
 🚨 **A repo carries at most one in-flight cascade at a time.** When a new cascade wave starts, meaning a fresh `chore(wheelhouse): cascade template@<sha>` is being prepared, any pre-existing local-only cascade commits get discarded, not stacked on top of.
 
-The shape this rule prevents: a repo accumulates `chore(wheelhouse): cascade template@A`, then `@B`, then `@C` locally without any of them landing on origin. Each successive wave is a strict superset of the prior (template is monotonic on the relevant paths), so layering 3 unpushed cascade commits buys nothing over discarding A + B + landing C. The layered state is also hostile to merge resolution when origin diverges — a parallel session lands its own `@D` to origin. Every conflict has to be resolved against 3 cascade commits instead of 1.
+The shape this rule prevents: a repo accumulates `chore(wheelhouse): cascade template@A`, then `@B`, then `@C` locally without any of them landing on origin. Each successive wave is a strict superset of the prior (template is monotonic on the relevant paths), so layering 3 unpushed cascade commits buys nothing over discarding A + B + landing C. The layered state is also hostile to merge resolution when origin diverges - a parallel session lands its own `@D` to origin. Every conflict has to be resolved against 3 cascade commits instead of 1.
 
 Same supersession check as below, but the comparison is **`local-commit-N` vs `local-commit-N+1`**. When wave N+1 is being prepared, wave N's local-only commit must already have a strict-ancestor relationship to N+1's template SHA. If it does, the common case where template moves forward, N gets discarded as part of N+1's setup. If it doesn't, the script bails because something unusual is going on.
 
@@ -51,7 +51,7 @@ A repo carrying the `squash-history` roster opt-in (`fleet-repos.json`) has a **
 `cleanup-stranded.mts` detects the opt-in via `isSquashOptIn` and, for such a repo, runs every local-ahead cascade commit through the same four safety rails and splits the result:
 
 - **`supersededDrops`**: a commit that passes all four rails is provably disposable. It is cleared via a surgical, non-interactive `git rebase -i origin/<base>`. A generated `GIT_SEQUENCE_EDITOR` script deletes exactly the `pick` lines for the target set from the rebase todo, so every OTHER local-ahead commit (including held ones) replays unchanged. On conflict the rebase is aborted and the repo is left exactly as found; a conflict means the target set was wrong and needs a human, never an auto-resolution attempt. The same TOCTOU guard as the reset path re-reads HEAD immediately before the rewrite and bails if it moved since the plan snapshot.
-- **`squashHeldCommits`**: a commit that fails a rail may be canonical work. It is surfaced (logged "held — squash-history cadence") and never touched.
+- **`squashHeldCommits`**: a commit that fails a rail may be canonical work. It is surfaced (logged "held - squash-history cadence") and never touched.
 
 Worktree cleanup falls through either way; worktrees are disposable scratch in any cadence. This mirrors the "local main is canonical, reconcile forward" rule the divergence hooks enforce: reconciling forward past a superseded commit, not carrying it forever.
 

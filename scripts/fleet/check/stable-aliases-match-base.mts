@@ -92,7 +92,7 @@ export function runCheck(): number {
   return 1
 }
 
-function main(): void {
+export function main(): void {
   process.exitCode = runCheck()
 }
 

@@ -65,6 +65,10 @@ jobs:
       - uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
 
       # The runner script IS the gate: exit 0 = actionable drift, 1 = no-op.
       - name: Run the check-updates gate
@@ -110,6 +114,10 @@ jobs:
       - uses: ./.github/actions/fleet/setup-and-install
         with:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
 
       # Provision the on-device model (fail-open: ready=false just means the
       # decision leg clean-skips and the run stays deterministic-only).

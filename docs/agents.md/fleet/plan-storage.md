@@ -61,7 +61,7 @@ Do NOT:
 
 Plans capture state: what we're about to do, what we've ruled out, what the LOC estimates are. State decays the moment a commit lands. A plan tracked in git rots into "this file describes what main looked like 4 months ago" lies that future-you trusts. Keeping plans local-only forces the work to live in:
 
-- The **code** — the actual implementation is the source of truth.
+- The **code** - the actual implementation is the source of truth.
 - **Commit messages** (capture the why at the moment the change ships).
 - **CHANGELOG** (capture the consumer-visible diff at release time).
 
@@ -124,7 +124,7 @@ A plan that reads as one flowing paragraph with no numbered structure has skippe
 
 ## Enforcement
 
-- `.claude/hooks/fleet/plan-location-guard/` — blocks writing a plan doc outside `<repo-root>/.claude/plans/<name>.md`.
-- `.claude/hooks/fleet/report-location-guard/` — blocks writing a report doc outside `<repo-root>/.claude/reports/<name>.md`.
-- `.claude/hooks/fleet/no-registry-mutation-in-repo-script-nudge/` — steers a one-off registry mutation script into `/tmp`, never a committed path, since that class of script is neither a plan nor a report.
-- `.claude/hooks/fleet/plan-review-nudge/` — flags a prose-only "here's the plan" announcement with no numbered-step structure within roughly 20 lines.
+- `.claude/hooks/fleet/plan-location-guard/` - blocks writing a plan doc outside `<repo-root>/.claude/plans/<name>.md`.
+- `.claude/hooks/fleet/report-location-guard/` - blocks writing a report doc outside `<repo-root>/.claude/reports/<name>.md`.
+- `.claude/hooks/fleet/no-registry-mutation-in-repo-script-nudge/` - steers a one-off registry mutation script into `/tmp`, never a committed path, since that class of script is neither a plan nor a report.
+- `.claude/hooks/fleet/plan-review-nudge/` - flags a prose-only "here's the plan" announcement with no numbered-step structure within roughly 20 lines.

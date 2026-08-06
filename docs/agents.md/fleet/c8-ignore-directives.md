@@ -36,7 +36,7 @@ Place `start` on the line **before** the construct, `stop` on the line **after**
 Any of these patterns:
 
 <details>
-<summary><b>Detail</b> — the worked steps (2 snippets)</summary>
+<summary><b>Detail</b> - the worked steps (2 snippets)</summary>
 
 ```ts
 // Multi-line catch body

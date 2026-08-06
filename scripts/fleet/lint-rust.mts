@@ -27,6 +27,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { findWorkspaceManifests } from './_shared/cargo-workspaces.mts'
 import { isMainModule } from './_shared/is-main-module.mts'
 import { runMain } from './_shared/run-main.mts'
+import { CARGO_FIXIT_VERSION } from './_shared/rust-tool-pins.mts'
 import { REPO_ROOT } from './paths.mts'
 
 import type { ScriptMeta } from './_shared/run-main.mts'
@@ -64,6 +65,37 @@ export function buildCargoClippyArgs(
     '-D',
     'warnings',
   ]
+}
+
+/**
+ * The `cargo fixit` argv for one workspace manifest — the drop-in, much
+ * faster replacement for `cargo clippy --fix` (crate-ci/cargo-fixit; it
+ * skips the full re-check compile between fix rounds). Same coverage flags
+ * as {@link buildCargoClippyArgs}'s fix mode; the pinned install lives in
+ * `setup/rust.mts` via `_shared/rust-tool-pins.mts`. Pure + exported for
+ * tests.
+ */
+export function buildCargoFixitArgs(manifest: string): string[] {
+  return [
+    'fixit',
+    '--clippy',
+    '--workspace',
+    '--all-targets',
+    '--manifest-path',
+    manifest,
+    '--allow-dirty',
+    '--allow-staged',
+  ]
+}
+
+/**
+ * Whether the `cargo fixit` subcommand answers on this machine. A probe, not
+ * a gate: a repo without the tool still fixes through clippy's own `--fix`,
+ * one `pnpm run setup:rust` slower.
+ */
+export function cargoFixitAvailable(): boolean {
+  const probe = spawnSync('cargo', ['fixit', '--version'], { stdio: 'pipe' })
+  return probe.status === 0
 }
 
 /**
@@ -136,7 +168,7 @@ export function buildPinnedSpawn(
   }
 }
 
-function main(): void {
+export function main(): void {
   const repoRoot = REPO_ROOT
   const manifests = findWorkspaceManifests(repoRoot)
   if (!manifests.length) {
@@ -144,15 +176,21 @@ function main(): void {
     return
   }
   let failed = false
+  // A fix run prefers cargo-fixit (pinned at CARGO_FIXIT_VERSION by
+  // setup:rust) — the drop-in replacement that skips the re-check compile
+  // between fix rounds — and falls back to clippy's own --fix without it.
+  const useFixit = fix && cargoFixitAvailable()
   for (let i = 0, { length } = manifests; i < length; i += 1) {
     const manifest = manifests[i]!
     const manifestDir = path.dirname(manifest)
     const spawnPlan = buildPinnedSpawn(
       manifestDir,
-      buildCargoClippyArgs(manifest, { fix }),
+      useFixit
+        ? buildCargoFixitArgs(manifest)
+        : buildCargoClippyArgs(manifest, { fix }),
     )
     logger.info(
-      `lint-rust: cargo clippy --workspace (${path.relative(repoRoot, manifest)})${
+      `lint-rust: cargo ${useFixit ? `fixit --clippy (cargo-fixit@${CARGO_FIXIT_VERSION})` : 'clippy'} --workspace (${path.relative(repoRoot, manifest)})${
         spawnPlan.pinned ? '' : ' [UNPINNED — no rust-toolchain.toml channel]'
       }`,
     )

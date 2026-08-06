@@ -15,6 +15,12 @@
 # name in FLEET_CANONICAL_CATALOG_NAMES (scripts/repo/sync-scaffolding/manifest.mts).
 # loadExpectedCatalogEntries() reads versions from this file + merges the purpose.
 catalog:
+  # Playwright MCP server — agent-driven browsing with the fleet agent-banner
+  # init script (see .config/fleet/playwright/). The dep declaration is
+  # fleet-canonical, so this pin has to be too: without it a member cascades
+  # `"@playwright/mcp": "catalog:"` into its package.json and every install
+  # dies on ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC.
+  '@playwright/mcp': 0.0.78
   '@redwoodjs/agent-ci': 0.17.1
   'dtu-github-actions': 0.17.1
   '@shadscan/cli': 0.7.0
@@ -24,11 +30,11 @@ catalog:
   # imports the scoped name.
   'typebox': 1.3.10
   '@socketregistry/packageurl-js': 1.5.2
-  '@socketsecurity/lib': 6.6.0
+  '@socketsecurity/lib': 6.7.0
   '@socketsecurity/registry': 2.0.5
   '@socketsecurity/sdk': 4.1.4
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.6.0'
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.7.0'
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
   '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.4'
   '@types/mdast': 4.0.4
@@ -72,7 +78,11 @@ catalog:
   'magic-string': 1.1.0
   'markdownlint-cli2': 0.23.2
   'mdast-util-from-markdown': 2.0.3
+  'mdast-util-gfm': 3.1.0
+  'mdast-util-to-markdown': 2.1.2
   'micromark': 4.0.2
+  'micromark-extension-gfm': 3.0.0
+  'parse5': 8.0.1
   # minimatch — pinned so the default-export patch has a version to ride, and
   # so the `minimatch@>=3` override has one target. v10's ESM build ships named
   # exports only; the patch restores the default on both builds. Members had
@@ -111,7 +121,7 @@ catalog:
   # agent can SEE it). Browser binary via `node_modules/.bin/playwright install chromium`.
   'playwright-core': 1.62.0
   # portless — stable HTTPS `.localhost` URLs for local page tests and rendered UI checks.
-  'portless': 0.15.4
+  'portless': 0.15.5
   'regjsparser': 0.13.2
   'semver': 7.8.5
   'shell-quote': 1.10.0
@@ -148,7 +158,7 @@ catalogOptional:
   # changes the crash exit code 1→77 (timeout→70) — pin -error_exitcode /
   # -timeout_exitcode in the runner. See .claude/skills/fleet/property-and-fuzz-testing.
   '@vitiate/core': 0.3.1
-  'vite': 8.1.5
+  'vite': 8.2.0
   'vitiate': 0.3.1
 
 # Soak-window bypasses — a dependency the fleet adopts before its -day

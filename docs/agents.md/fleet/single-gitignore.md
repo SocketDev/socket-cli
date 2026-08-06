@@ -1,7 +1,7 @@
 # One `.gitignore` per repo
 
 Every fleet repo keeps its ignore rules in a SINGLE `.gitignore` at the repo
-root — never a nested per-directory `.gitignore`. The wheelhouse additionally
+root - never a nested per-directory `.gitignore`. The wheelhouse additionally
 carries the `template/base/.gitignore` archetype-root copy that seeds it.
 
 ## The rule
@@ -17,24 +17,24 @@ carries the `template/base/.gitignore` archetype-root copy that seeds it.
   any depth, including the `template/base/` mirror, so nesting buys nothing.
 - **Scoped ignores use `**/` anchoring, not nesting.** To ignore a generated
   artifact deep in the tree (e.g. the `_shared/` build output), add a
-  `**/<path>` line to the root block — it matches the live copy AND the
+  `**/<path>` line to the root block - it matches the live copy AND the
   `template/base/` mirror in one line.
 - **Vendored / untracked-by-default trees are exempt.** A `.gitignore` inside a
   vendored dir (`vendor/`, `third_party/`, `external/`, `upstream/`, `deps/…`,
-  `node_modules/`, `*-vendored`) is upstream-owned, not fleet-managed — those are
+  `node_modules/`, `*-vendored`) is upstream-owned, not fleet-managed - those are
   untracked-by-default anyway, so they never reach the tracked-tree scan.
 
 ## A trailing slash misses a symlink
 
 `node_modules/` matches a **directory**. A symlink is a **file** to git, so that
-spelling does not cover a `node_modules` symlink at all — the link reads as an
+spelling does not cover a `node_modules` symlink at all - the link reads as an
 ordinary untracked file and a broad `git add` stages it. That happened: a
 cascade worktree symlinked `node_modules` at an absolute machine path so tests
 could run, `git add -A` swept the link into the commit, and in CI the dangling
 link made `mkdirSync(p, { recursive: true })` throw `ENOENT`, killing the
 pre-install bootstrap on a public repo.
 
-Write `**/node_modules` — no trailing slash, `**/`-anchored so it reaches every
+Write `**/node_modules` - no trailing slash, `**/`-anchored so it reaches every
 depth including the `template/base/` mirror. A bare unanchored `node_modules`
 works too (git matches an unanchored pattern at any depth). `/node_modules`
 covers only the root and misses a nested one. Keeping a redundant

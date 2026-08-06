@@ -25,7 +25,7 @@ prediction of what npm will send.
 - **Hash-pin binary assets.** Images and prebuilt blobs are compared against a
   blessed SHA-256, so a swapped binary fails the gate.
 
-Derive the allowlist from the tree — a `readdir` over the module list, or the
+Derive the allowlist from the tree: a `readdir` over the module list, or the
 `files` contract itself. A hand-maintained duplicate of the source layout rots
 the first time a module is added.
 

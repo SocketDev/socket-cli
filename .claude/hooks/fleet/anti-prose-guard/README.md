@@ -11,7 +11,7 @@ The fleet's one blocking prose guard, on both surfaces prose lands on.
 
 CLAUDE.md's "Prose authoring" rule: human-facing prose runs through the `prose`
 skill before it lands. The skill strips throat-clearing openers, "not X, it's Y"
-contrasts, em-dash chains, and vague hedging adverbs. This guard enforces it as a
+contrasts, every em-dash, and vague hedging adverbs. This guard enforces it as a
 hard block at write time — it supersedes the old `prose-antipattern-nudge`
 Stop hook (a reminder fires after the write and is ignorable; a PreToolUse block
 stops the bad prose from landing). Fleet convention: `-guard` blocks, `-nudge`
@@ -19,12 +19,12 @@ nudges — one surface per concern, never both.
 
 ## What it catches
 
-| Pattern                  | Why it's flagged                                              |
-| ------------------------ | ------------------------------------------------------------- |
-| em-dash chain (2+ spans) | Reads AI-generated. Break into sentences or use commas.       |
-| throat-clearing opener   | "Here's the thing" / "Let me" / "It's worth noting" preamble. |
-| "not X, it's Y" contrast | An AI-prose reversal tic. State the point directly.           |
-| hedging adverb           | basically / essentially / fundamentally / simply / just.      |
+| Pattern                  | Why it's flagged                                                        |
+| ------------------------ | ----------------------------------------------------------------------- |
+| em-dash (any, not a chain) | Reads AI-generated, even one. Replace it with a plain hyphen, same spacing. Code spans and fenced blocks are exempt. |
+| throat-clearing opener   | "Here's the thing" / "Let me" / "It's worth noting" preamble.           |
+| "not X, it's Y" contrast | An AI-prose reversal tic. State the point directly.                     |
+| hedging adverb           | basically / essentially / fundamentally / simply / just.                |
 
 ## The two tiers
 

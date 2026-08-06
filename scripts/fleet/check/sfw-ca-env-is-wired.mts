@@ -199,7 +199,7 @@ export function findSourceWiringFailures(): string[] {
   return failures
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const failures = findSourceWiringFailures()
   const skips: string[] = []

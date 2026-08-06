@@ -12,7 +12,7 @@ These directories and files cascade fleet-wide. They are **not** repo-local:
 - `.claude/skills/fleet/_shared/`: shared skill helpers
 - `CLAUDE.md` fleet block (between the `<fleet-canonical>` markers)
 - `docs/agents.md/fleet/`: fleet-canonical CLAUDE.md offshoot references (applies to every socket-\* repo)
-- `docs/agents.md/fleet/`: docs about the wheelhouse cascade mechanism itself — this file lives here
+- `docs/agents.md/fleet/`: docs about the wheelhouse cascade mechanism itself - this file lives here
 - Downstream repos may add their own `docs/agents.md/<repo>/` subdirectory for repo-specific docs. Those are NOT fleet-canonical.
 - Anything else listed in the sync manifest
 
@@ -57,7 +57,7 @@ Companion behavior to the no-fork rule: **don't read, grep, or debug wheelhouse-
 This matters because:
 
 1. The downstream copy may already be a few cascade-steps behind the wheelhouse. Reading it gives stale information.
-2. A "verify the bypass landed" loop in downstream is double work - once to read the file, once to act on it — when the wheelhouse already has the answer.
+2. A "verify the bypass landed" loop in downstream is double work - once to read the file, once to act on it - when the wheelhouse already has the answer.
 3. Per-session re-derivation of "what does this canonical file do?" burns tokens for zero net learning vs. just trusting that the wheelhouse + the cascade are correct.
 
 When the user says "the wheelhouse has X," X is true. Act on it without verification.
@@ -97,13 +97,13 @@ CLAUDE.md is whole-file capped at 40 KB (enforced by `claude-md-size-guard`). Th
 
 When a downstream repo's combined CLAUDE.md size approaches (or exceeds) 40 KB, trim **the repo-owned sections**, not the canonical block:
 
-1. **Postamble first** — move detail to `docs/agents.md/repo/<topic>.md`. The CLAUDE.md `🏗️ Project-Specific` section should keep the headline invariants + a one-line reference to the docs file, not the full detail.
-2. **Preamble next** — if it's grown to multi-paragraph prose explaining the fleet/repo split, compact to a one-paragraph summary. The canonical block speaks for itself; the preamble doesn't need to.
+1. **Postamble first** - move detail to `docs/agents.md/repo/<topic>.md`. The CLAUDE.md `🏗️ Project-Specific` section should keep the headline invariants + a one-line reference to the docs file, not the full detail.
+2. **Preamble next** - if it's grown to multi-paragraph prose explaining the fleet/repo split, compact to a one-paragraph summary. The canonical block speaks for itself; the preamble doesn't need to.
 3. **Never trim the canonical block in a downstream repo.** That's a fleet-fork; the cascade will revert it next run, or worse, the cascade-splice mechanism will refuse to apply.
 
 ### Why trimming the repo-owned parts is not a fork
 
-A "fork" creates **divergence between the downstream's canonical copy and the wheelhouse's version of the same canonical content**. Trimming a downstream's `🏗️ Project-Specific` section doesn't fork anything — that content NEVER existed in the wheelhouse template's canonical block. Each repo's postamble is unique to that repo.
+A "fork" creates **divergence between the downstream's canonical copy and the wheelhouse's version of the same canonical content**. Trimming a downstream's `🏗️ Project-Specific` section doesn't fork anything - that content NEVER existed in the wheelhouse template's canonical block. Each repo's postamble is unique to that repo.
 
 The cascade's `extractFleetBlock` + `spliceFleetBlock` only touches the content between the `<fleet-canonical>` markers. Preamble + postamble pass through untouched. So a postamble trim is a local edit to local content, not a divergence from the shared canon.
 
@@ -115,11 +115,11 @@ The cascade's `extractFleetBlock` + `spliceFleetBlock` only touches the content 
 | Canonical block | Replaced with wheelhouse template's canonical block |
 | Postamble (after `</fleet-canonical>`) | Passes through untouched |
 
-So if the cascade pushes a downstream CLAUDE.md back over 40 KB, the fix is to trim the downstream's preamble or postamble — never the canonical block. The cascade preserves what you've trimmed there.
+So if the cascade pushes a downstream CLAUDE.md back over 40 KB, the fix is to trim the downstream's preamble or postamble - never the canonical block. The cascade preserves what you've trimmed there.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/cascade-first-triage-nudge/` — nudges toward re-cascading a member instead of hand-patching a "missing" canonical artifact.
-- `.claude/hooks/fleet/no-fleet-fork-guard/` — blocks a local edit to a fleet-canonical file outside `template/...`.
-- `.claude/hooks/fleet/no-repo-scope-in-fleet-config-guard/` — blocks a one-repo path-scope glob added into a fleet-canonical config.
-- `scripts/repo/sync-scaffolding/fixers/mirror-mode.mts` — the fixer that re-applies the canonical byte-copy on cascade.
+- `.claude/hooks/fleet/cascade-first-triage-nudge/` - nudges toward re-cascading a member instead of hand-patching a "missing" canonical artifact.
+- `.claude/hooks/fleet/no-fleet-fork-guard/` - blocks a local edit to a fleet-canonical file outside `template/...`.
+- `.claude/hooks/fleet/no-repo-scope-in-fleet-config-guard/` - blocks a one-repo path-scope glob added into a fleet-canonical config.
+- `scripts/repo/sync-scaffolding/fixers/mirror-mode.mts` - the fixer that re-applies the canonical byte-copy on cascade.

@@ -16,6 +16,7 @@ import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { sleep } from '@socketsecurity/lib-stable/promises/timers'
 
 import { createTagRef } from '../lib/github-git-refs.mts'
+import { documentHeadings } from '../lib/markdown-ast.mts'
 import { formatReleaseGapFailure } from '../_shared/release-gap-recovery.mts'
 import { resolveReleaseSubject } from '../_shared/release-subject.mts'
 import { writeThroughMirrorLock } from '../_shared/mirror-lock.mts'
@@ -41,26 +42,21 @@ export function extractChangelogSection(
   }
   const text = readFileSync(changelogPath, 'utf8')
   const lines = text.split('\n')
-  // Heading shapes seen across the fleet: `## 1.2.3`, `## [1.2.3]`,
-  // `## v1.2.3`, each optionally followed by a date.
-  const isVersionHeading = (line: string): boolean => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return rest.startsWith(version)
-  }
-  const start = lines.findIndex(isVersionHeading)
-  if (start === -1) {
+  // Which lines are `## ` headings comes from the parsed GFM tree, never a
+  // `startsWith('## ')` scan: a release body that quotes changelog markup in a
+  // fenced block used to end at the fence, so the release notes were truncated.
+  const headings = documentHeadings(text).filter(h => h.depth === 2)
+  // Heading shapes seen across the fleet: `1.2.3`, `[1.2.3]`, `v1.2.3`, each
+  // optionally followed by a date. Read from the heading's TEXT, so a
+  // link-style heading's URL can never be mistaken for the version.
+  const at = headings.findIndex(h =>
+    h.text.trim().replace(/^\[/, '').replace(/^v/, '').startsWith(version),
+  )
+  if (at === -1) {
     return `Release ${version}.`
   }
-  let end = lines.length
-  for (let i = start + 1; i < lines.length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
+  const start = headings[at]!.line
+  const end = headings[at + 1]?.line ?? lines.length
   const body = lines
     .slice(start + 1, end)
     .join('\n')

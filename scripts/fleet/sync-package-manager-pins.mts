@@ -9,7 +9,7 @@
  *   `devEngines.packageManager` (SemVer range + `onFail: error`) manages the
  *   version. `engines.node` is left untouched (a
  *   separate floor owned by the node-version rule). Run it after a bump
- *   (update-external-tools.mts calls it; `pnpm run update` runs it) to
+ *   (external-tools/update.mts --apply calls it; `pnpm run update` runs it) to
  *   propagate; the package-manager-pins-are-synced check gates drift in CI.
  *
  *   Drift is DIRECTIONAL. When a pin trails a newer external-tools.json (a

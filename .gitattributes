@@ -96,6 +96,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .config/fleet/oxlint-plugin/package.json linguist-generated=true
 .config/fleet/oxlint.config.mts linguist-generated=true
 .config/fleet/oxlintrc.json linguist-generated=true
+.config/fleet/playwright linguist-generated=true
 .config/fleet/pnpm-workspace.fleet.yaml linguist-generated=true
 .config/fleet/rolldown/hook-bundle-excluded.config.mts linguist-generated=true
 .config/fleet/rolldown/hook-bundle-snapshot.config.mts linguist-generated=true

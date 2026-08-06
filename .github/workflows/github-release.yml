@@ -64,6 +64,11 @@ jobs:
           persist-credentials: false
       - name: Checkout
         uses: ./.github/actions/fleet/checkout
+        with:
+          # Authorizes a thin member's bundle hydration right after checkout.
+          # Both stay empty on a member with no payload App, skipping the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       # The resolved tag is the single input every later step trusts — it
       # feeds the registry-liveness gate as TAG and names the release cut, so
       # wrong resolution here silently bypasses the publish-before-release

@@ -109,7 +109,7 @@ export function generateCodexAdapters(): boolean {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { rotate, skipTools } = parseSetupArgs(process.argv.slice(2))
 
   const results: Array<[string, boolean]> = []
@@ -199,7 +199,7 @@ async function main(): Promise<void> {
   }
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'runs the full repo setup wizard: fleet steps in order, then repo-owned steps',
   help: `Usage: pnpm setup-all [flags]

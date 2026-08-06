@@ -98,7 +98,7 @@ export function scanRepo(repoRoot: string): FileIssue[] {
   return issues
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const issues = scanRepo(REPO_ROOT)
   if (issues.length) {

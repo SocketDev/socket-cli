@@ -13,8 +13,8 @@
 import { Value } from '@sinclair/typebox/value'
 
 import {
-  OIDC_PERMISSION_ACTIONS,
   OidcConnectionSchema,
+  resolveOidcPermissionAction,
 } from './access-context-schema.mts'
 import type { OidcConnection } from './access-context-schema.mts'
 import {
@@ -24,12 +24,15 @@ import {
 
 // Coarse outcome of a GET of `/package/<pkg>/access`. `challenge` exists for
 // the Cloudflare interstitial (a 200 HTML page that is NOT the access page);
-// `configured`/`unconfigured` are the two readable outcomes.
+// `step-up` is npm's own /escalate wall demanding a fresh authenticator code
+// before it will serve the page; `configured`/`unconfigured` are the two
+// readable outcomes.
 export type AccessPageState =
   | 'auth'
   | 'challenge'
   | 'configured'
   | 'error'
+  | 'step-up'
   | 'unconfigured'
 
 /**
@@ -55,6 +58,17 @@ export function classifyAccessPage(config: {
   }
   if (/sign in to npm/i.test(body) && !/Trusted [Pp]ublish/.test(body)) {
     return 'auth'
+  }
+  // npm's 2FA step-up: the session IS signed in, but npm serves its /escalate
+  // wall instead of the access page (observed 2026-08-06: the payload carries
+  // escalateType + action:"/escalate" + the originalUrl it is guarding, and
+  // NO oidcConnections — so before this branch, a live configured row read as
+  // "unconfigured" and a caller would plan a create over it).
+  if (
+    /\\?"escalateType\\?"\s*:/.test(body) &&
+    /\\?"action\\?"\s*:\s*\\?"\/escalate\\?"/.test(body)
+  ) {
+    return 'step-up'
   }
   if (cfg.status < 200 || cfg.status >= 400) {
     return 'error'
@@ -88,13 +102,17 @@ export function classifyAccessPage(config: {
 /**
  * The Trusted Publisher form's CURRENT values as read off the access page.
  * `allowedActions` holds the rendered permission strings (`npm publish`,
- * `npm stage publish`) in page order.
+ * `npm stage publish`) in page order. `unmappedPermissions` holds the grant
+ * tokens npm sent that nothing maps — kept BY NAME rather than dropped, so a
+ * grant this reader does not understand is something the operator sees instead
+ * of a package that quietly reads as narrowed.
  */
 export interface TrustedPublisherCurrent {
   allowedActions: string[]
   environmentName: string | undefined
   repositoryName: string | undefined
   repositoryOwner: string | undefined
+  unmappedPermissions: string[]
   workflowFilename: string | undefined
 }
 
@@ -163,11 +181,22 @@ export function parseOidcConnection(
     typeof v === 'string' && v !== '' ? v : undefined
   const permissions = live.permissions ?? []
   const allowedActions: string[] = []
+  const unmappedPermissions: string[] = []
   for (let i = 0, { length } = permissions; i < length; i += 1) {
     const token = permissions[i]
-    const action =
-      typeof token === 'string' ? OIDC_PERMISSION_ACTIONS[token] : undefined
-    if (action && !allowedActions.includes(action)) {
+    if (typeof token !== 'string' || token === '') {
+      continue
+    }
+    const action = resolveOidcPermissionAction(token)
+    // A token nothing maps is kept by NAME. Dropping it was how a package
+    // holding an unrecognized grant rendered as stage-only and got skipped.
+    if (!action) {
+      if (!unmappedPermissions.includes(token)) {
+        unmappedPermissions.push(token)
+      }
+      continue
+    }
+    if (!allowedActions.includes(action)) {
       allowedActions.push(action)
     }
   }
@@ -176,6 +205,7 @@ export function parseOidcConnection(
     environmentName: str(config.environment_name),
     repositoryName: str(config.repository_name),
     repositoryOwner: str(config.repository_owner),
+    unmappedPermissions,
     workflowFilename: str(config.workflow),
   }
 }
@@ -221,6 +251,9 @@ export function parseTrustedPublisherForm(
       slashIdx === -1
         ? repoInfo || undefined
         : repoInfo.slice(0, slashIdx) || undefined,
+    // The rendered chips carry no grant tokens — only the two action strings
+    // the extractor already recognizes — so this path has nothing to report.
+    unmappedPermissions: [],
     workflowFilename: (wf?.[1] ?? '').trim() || undefined,
   }
 }
@@ -287,6 +320,12 @@ export function allowsAction(
       return true
     }
     if (action === 'publish' && !isStage && /\bnpm\s+publish\b/.test(a)) {
+      return true
+    }
+    // npm's raw grant token for the plain-publish action: `createPackage`.
+    // Without this mapping the grant reads as unknown and a row that must
+    // LOSE plain publish looks clean.
+    if (action === 'publish' && /\bcreatepackage\b/.test(a)) {
       return true
     }
   }

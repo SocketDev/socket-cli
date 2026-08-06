@@ -105,7 +105,7 @@ export function diffStatusSets(documented: ReadonlySet<string>): {
   return { extra, missing }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   if (!existsSync(DELEGATION_DOC)) {
     // No delegation doc in this repo — nothing to keep in sync.

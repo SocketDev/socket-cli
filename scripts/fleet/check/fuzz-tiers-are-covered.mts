@@ -354,7 +354,7 @@ export function detectRustFuzz(root: string): boolean {
   return hasProptest
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const surfaces = detectFuzzTierSurfaces(REPO_ROOT)
   const gaps = findFuzzTierGaps(surfaces)

@@ -278,7 +278,7 @@ export function runCheck(
   return 1
 }
 
-function main(): void {
+export function main(): void {
   const { values } = parseArgs({
     options: { fix: { default: false, type: 'boolean' } },
     strict: false,

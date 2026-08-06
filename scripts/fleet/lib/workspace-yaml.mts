@@ -37,7 +37,15 @@ export function parseCatalogBlock(
     if (!inBlock) {
       continue
     }
-    if (ln === '' || (ln.length > 0 && !/^\s/.test(ln))) {
+    // The block ends at the next top-level KEY only. A blank line does NOT end
+    // it: these blocks legitimately group entries with blank lines between
+    // them, and stopping at the first one silently drops everything below —
+    // the parse returns a short map with no error. ultrathink's `yaml` pin sat
+    // 200 lines past the first blank, so the catalog gap reported it as having
+    // no entry at all and the pre-push gate blocked on a pin that was right
+    // there. An unindented COMMENT is not a key either; that same too-early
+    // boundary is what produced the duplicated `overrides:` splice.
+    if (ln.length > 0 && !/^\s/.test(ln) && !ln.trimStart().startsWith('#')) {
       break
     }
     const m =
@@ -81,7 +89,15 @@ export function parseListBlock(
     if (!inBlock) {
       continue
     }
-    if (ln === '' || (ln.length > 0 && !/^\s/.test(ln))) {
+    // The block ends at the next top-level KEY only. A blank line does NOT end
+    // it: these blocks legitimately group entries with blank lines between
+    // them, and stopping at the first one silently drops everything below —
+    // the parse returns a short map with no error. ultrathink's `yaml` pin sat
+    // 200 lines past the first blank, so the catalog gap reported it as having
+    // no entry at all and the pre-push gate blocked on a pin that was right
+    // there. An unindented COMMENT is not a key either; that same too-early
+    // boundary is what produced the duplicated `overrides:` splice.
+    if (ln.length > 0 && !/^\s/.test(ln) && !ln.trimStart().startsWith('#')) {
       break
     }
     const trimmed = ln.trim()
@@ -173,7 +189,15 @@ export function spliceCatalogEntry(
     if (ln === undefined) {
       break
     }
-    if (ln === '' || (ln.length > 0 && !/^\s/.test(ln))) {
+    // The block ends at the next top-level KEY only. A blank line does NOT end
+    // it: these blocks legitimately group entries with blank lines between
+    // them, and stopping at the first one silently drops everything below —
+    // the parse returns a short map with no error. ultrathink's `yaml` pin sat
+    // 200 lines past the first blank, so the catalog gap reported it as having
+    // no entry at all and the pre-push gate blocked on a pin that was right
+    // there. An unindented COMMENT is not a key either; that same too-early
+    // boundary is what produced the duplicated `overrides:` splice.
+    if (ln.length > 0 && !/^\s/.test(ln) && !ln.trimStart().startsWith('#')) {
       break
     }
     end += 1

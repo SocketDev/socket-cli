@@ -1,6 +1,6 @@
 # `pull_request_target` is privileged
 
-`pull_request_target` runs in the BASE repo's context with the BASE repo's secrets — that's the threat model. Two combinations are forbidden:
+`pull_request_target` runs in the BASE repo's context with the BASE repo's secrets - that's the threat model. Two combinations are forbidden:
 
 1. **Checkout fork code + execute it.** `actions/checkout` of `${{ github.event.pull_request.head.* }}` followed by any step that runs the checked-out code (`pnpm i`, `npm i`, `pnpm build`, `cargo build`, `make`, `node scripts/*`, etc.) gives the fork's PR author arbitrary code execution in a privileged context. They can exfil the workflow's secrets via the runner.
 2. **Even without execution, fork content can shape the workflow.** A fork's `package.json` `scripts.preinstall` or a fork-modified `.npmrc` runs during `pnpm i`. Treat all fork-supplied files as untrusted input.
@@ -29,7 +29,7 @@ If you genuinely need `pull_request_target` semantics (e.g. to access a secret-d
     persist-credentials: false
 ```
 
-The exception is a workflow that commits, pushes, or tags: it NEEDS the persisted token for the later `git push`, so it must NOT set `persist-credentials: false` — stripping it fails the push with an auth error that looks unrelated (see [`public-surface-hygiene`](public-surface-hygiene.md)). The two halves are one rule: default to `persist-credentials: false`, keep it persisted only on the workflows that push.
+The exception is a workflow that commits, pushes, or tags: it NEEDS the persisted token for the later `git push`, so it must NOT set `persist-credentials: false` - stripping it fails the push with an auth error that looks unrelated (see [`public-surface-hygiene`](public-surface-hygiene.md)). The two halves are one rule: default to `persist-credentials: false`, keep it persisted only on the workflows that push.
 
 ## Enforcement
 

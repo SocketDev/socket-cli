@@ -53,6 +53,10 @@ const TARGET_SIGNATURES: ReadonlyArray<{
   readonly target: ReleasePublishTarget
   readonly expectedName: string
   readonly patterns: readonly RegExp[]
+  // Additional sanctioned `<target>:<verb>` names for MODE invocations of the
+  // same orchestrator body — spelled as their own scripts by design, never a
+  // convention violation.
+  readonly modeNames?: readonly string[] | undefined
 }> = [
   {
     target: 'github',
@@ -65,6 +69,11 @@ const TARGET_SIGNATURES: ReadonlyArray<{
     expectedName: 'npm:publish',
     // require-regex-comment: a body invoking publish-pipeline.mts or npm-publish.mts.
     patterns: [/\bpublish-pipeline\.mts\b/, /\bnpm-publish\.mts\b/],
+    // The promote and queue-view modes are deliberately their own scripts:
+    // `npm:publish -- --approve` hides the irreversible promote behind one
+    // droppable dash (a bare `npm:publish` silently re-stages instead), and
+    // `npm:staged` shows the queue before anyone approves it.
+    modeNames: ['npm:approve', 'npm:staged'],
   },
   {
     target: 'cargo',
@@ -154,8 +163,12 @@ export function classifyReleasePublishScript(
     // oxlint-disable-next-line socket/prefer-undefined-over-null -- external API contract: the unit test suite asserts strict equality against this exact `null` return value
     return null
   }
-  const { expectedName, target } = matched[0]!
-  return { expectedName, ok: scriptName === expectedName, target }
+  const { expectedName, modeNames, target } = matched[0]!
+  return {
+    expectedName,
+    ok: scriptName === expectedName || (modeNames ?? []).includes(scriptName),
+    target,
+  }
 }
 
 export interface ConventionFinding {
@@ -205,7 +218,7 @@ export async function scanRepo(repoRoot: string): Promise<ConventionFinding[]> {
   return findings
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   const quiet = process.argv.includes('--quiet')
   const findings = await scanRepo(REPO_ROOT)
   if (!findings.length) {
@@ -245,6 +258,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet   suppress the success line`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

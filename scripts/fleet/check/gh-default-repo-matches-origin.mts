@@ -277,7 +277,7 @@ export function runCheck(
   return 1
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   process.exitCode = runCheck({ fix: process.argv.includes('--fix') })
 }
 
@@ -289,6 +289,8 @@ const SCRIPT_META: ScriptMeta = {
   --fix  run gh repo set-default to point gh at origin`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -90,7 +90,7 @@ async function trackedFiles(): Promise<string[]> {
     .filter(Boolean)
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const hits: BareDashHit[] = []
   const files = await trackedFiles()
   for (let i = 0, { length } = files; i < length; i += 1) {
@@ -143,6 +143,8 @@ const SCRIPT_META: ScriptMeta = {
   help: `Usage: node scripts/fleet/check/pnpm-run-flags-have-no-bare-dash.mts`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

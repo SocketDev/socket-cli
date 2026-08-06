@@ -26,8 +26,8 @@
       "notes": [
         "pnpm publishes 7 platform-native binaries: linux-{x64,arm64}{,-musl}, darwin-arm64, win-{x64,arm64}. Verified against v11.8.0 (2026-06-18).",
         "linux-*-musl tarballs are first-class assets with distinct integrity from the glibc tarballs — the binaries are linked against different libcs and only the matching one runs on its target. Don't 'simplify' by pointing musl keys at the glibc asset.",
-        "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. update-external-tools.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
-        "v11.8.0 had all 8 platforms re-hashed (GitHub assets as sha512 SRIs + darwin-x64 from the npm registry's dist.integrity). It published 2026-06-18, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. update-external-tools.mts won't auto-pick a still-soaking release, so this was a hand-bump; drop the cleared soakBypass on the next routine bump."
+        "darwin-x64 is the odd one out: upstream dropped the SEA binary in 11.0.5 because of nodejs/node#62893 (upstream LIEF/Mach-O bug that the Node team has declined to fix). Intel Mac instead installs the npm-registry JS tarball (`pnpm-<version>.tgz`) + runs it through system Node. external-tools/update.mts recognizes the `<pkg>-<version>.tgz` asset shape and fetches its integrity from the npm registry rather than the GitHub release.",
+        "v11.8.0 had all 8 platforms re-hashed (GitHub assets as sha512 SRIs + darwin-x64 from the npm registry's dist.integrity). It published 2026-06-18, inside the 7-day minimumReleaseAge soak, so the bump rode a dated `soakBypass` entry (auto-disarms at `removable`) — pnpm releases are GitHub-asset distributions from a known publisher; the soak targets npm typosquats / malicious freshpubs. external-tools/update.mts won't auto-pick a still-soaking release, so this was a hand-bump; drop the cleared soakBypass on the next routine bump."
       ],
       "description": "Fast, disk space efficient package manager",
       "repository": "github:pnpm/pnpm",
@@ -97,7 +97,7 @@
     },
     "uv": {
       "notes": [
-        "uv (Astral) — the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx — the fleet 'uv for projects' rule). update-external-tools.mts re-hashes the GitHub release assets on a bump.",
+        "uv (Astral) — the fleet's Python project tool. Installed in the bootstrap (release-asset, SRI-verified per platform, like janus/codedb) so a hash-locked uv install is available BEFORE the security-tools step that needs it (SkillSpector installs via a uv project + uv.lock, no pipx — the fleet 'uv for projects' rule). external-tools/update.mts re-hashes the GitHub release assets on a bump.",
         "0.11.21 published 2026-06-11; the GitHub release is a known-publisher binary distribution (the soak targets npm freshpub typosquats), past its 7-day window now — no soakBypass needed. Pinned bare; the installer prepends no v (uv tags have no v prefix)."
       ],
       "description": "uv — Astral Python package/project manager (pinned, SRI-verified)",

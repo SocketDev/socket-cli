@@ -419,7 +419,7 @@ export function formatBlock(violations: readonly PinViolation[]): string {
 // The real tag lister: query the remote directly, so a not-yet-cloned submodule
 // still resolves. NETWORK spawn — a fixed timeout, never platform-scaled (see
 // _shared/spawn-timeout.mts). Any failure returns [] and the guard fails open.
-function listRemoteTags(url: string): RemoteTag[] {
+export function listRemoteTags(url: string): RemoteTag[] {
   try {
     const result = spawnSync('git', ['ls-remote', '--tags', url], {
       stdio: ['ignore', 'pipe', 'ignore'],

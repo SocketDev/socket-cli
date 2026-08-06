@@ -31,7 +31,12 @@ import type {
 
 export const CANONICAL_WORKFLOW_FILENAME = 'npm-publish.yml'
 export const CANONICAL_ENVIRONMENT_NAME = 'npm-publish'
-export const CANONICAL_ALLOW_NPM_PUBLISH = true
+// Staged-only: direct `npm publish` stays UNCHECKED on every trusted
+// publisher, so the only path to a public version is a staged publish
+// promoted by a human. The approve/promote step is an account action by the
+// approver, not an OIDC workflow action, so the workflow never needs the
+// plain-publish grant.
+export const CANONICAL_ALLOW_NPM_PUBLISH = false
 export const CANONICAL_ALLOW_NPM_STAGE_PUBLISH = true
 
 // Two workflows publish npm packages, so the desired workflow filename is not
@@ -45,6 +50,15 @@ export const CANONICAL_ALLOW_NPM_STAGE_PUBLISH = true
 // name ends with `-<platform>` for a platform in the repo's `napi.platforms`,
 // and `npm-publish.yml` for everything else.
 export const CANONICAL_NAPI_WORKFLOW_FILENAME = 'npm-publish-napi.yml'
+
+// A third workflow, for the same reason as the napi one. The drop-in family
+// under `@socketregistry/*` is staged by socket-registry's own
+// `npm-publish-packages.yml`, not by the repo's `npm-publish.yml`, which
+// publishes the `@socketsecurity/registry` package itself. npm matches the OIDC
+// claim on the workflow filename, so a family package bound to the wrong one
+// gets a 401 at stage time with nothing in the message naming the cause
+// (observed 2026-08-05 across nine packages).
+export const CANONICAL_FAMILY_WORKFLOW_FILENAME = 'npm-publish-packages.yml'
 
 // The pre-rename legacy workflow filename still stored on stale fleet
 // configs (seen on @socketregistry/es-iterator-helpers, 2026-07-29). A config
@@ -132,10 +146,12 @@ export function desiredTrustedPublisher(config: {
     return undefined
   }
   const napiPlatforms = cfg.napiPlatforms ?? []
-  const workflowFilename =
-    napiPlatforms.length && isNapiPlatformPackage(cfg.pkg, napiPlatforms)
-      ? CANONICAL_NAPI_WORKFLOW_FILENAME
-      : CANONICAL_WORKFLOW_FILENAME
+  let workflowFilename = CANONICAL_WORKFLOW_FILENAME
+  if (napiPlatforms.length && isNapiPlatformPackage(cfg.pkg, napiPlatforms)) {
+    workflowFilename = CANONICAL_NAPI_WORKFLOW_FILENAME
+  } else if (cfg.pkg.startsWith(SOCKET_REGISTRY_SCOPE)) {
+    workflowFilename = CANONICAL_FAMILY_WORKFLOW_FILENAME
+  }
   return {
     allowNpmPublish: CANONICAL_ALLOW_NPM_PUBLISH,
     allowNpmStagePublish: CANONICAL_ALLOW_NPM_STAGE_PUBLISH,
@@ -326,9 +342,44 @@ export interface AccessReadRow {
   state: AccessPageState
 }
 
+/**
+ * The allowed-action cell for one read row, with any grant token npm sent that
+ * nothing maps NAMED beside the recognized actions.
+ *
+ * An unmapped token is never folded into a count or dropped. A live audit found
+ * a package carrying a 13-character grant token nobody could identify, and
+ * because the reader discarded what it could not map, the row rendered as a
+ * clean stage-only grant — the one shape that is allowed to be skipped. Pure —
+ * exported for tests.
+ */
+export function describeReadActions(
+  current: TrustedPublisherCurrent | undefined,
+): string {
+  const actions = current?.allowedActions ?? []
+  const unmapped = current?.unmappedPermissions ?? []
+  const parts: string[] = []
+  if (actions.length) {
+    parts.push(actions.join(' + '))
+  }
+  if (unmapped.length) {
+    parts.push(`unmapped: ${unmapped.join(', ')}`)
+  }
+  return parts.length ? parts.join(' | ') : '-'
+}
+
 // The read-mode verdict for one row: conforming, stale (with the stale form
-// fields named), or the non-configured state.
+// fields named), or the non-configured state. An unmapped grant token is
+// appended by name to whatever the verdict is, because a row carrying a grant
+// nobody can read is not a row anyone should act on unexamined.
 function readVerdict(row: AccessReadRow): string {
+  const base = readStateVerdict(row)
+  const unmapped = row.current?.unmappedPermissions ?? []
+  return unmapped.length
+    ? `${base}; unmapped grant: ${unmapped.join(', ')}`
+    : base
+}
+
+function readStateVerdict(row: AccessReadRow): string {
   if (row.state !== 'configured') {
     return row.detail ? `${row.state}: ${row.detail}` : row.state
   }
@@ -376,7 +427,7 @@ export function renderReadTable(rows: readonly AccessReadRow[]): string {
       repo,
       c?.workflowFilename ?? '-',
       c?.environmentName ?? '(empty)',
-      c?.allowedActions.length ? c.allowedActions.join(' + ') : '-',
+      describeReadActions(c),
       readVerdict(row),
     ])
   }

@@ -1,6 +1,6 @@
 # Agents & skills
 
-The CLAUDE.md `### Agents & skills` section names the entry-point skills. This file is the full taxonomy and the cross-fleet runner. Before authoring a new skill, read [`writing-skills-well.md`](writing-skills-well.md) — the fleet skill-authoring doctrine (script-first/AI-residue steps, completion criteria, leading words, no-op pruning).
+The CLAUDE.md `### Agents & skills` section names the entry-point skills. This file is the full taxonomy and the cross-fleet runner. Before authoring a new skill, read [`writing-skills-well.md`](writing-skills-well.md), the fleet skill-authoring doctrine (script-first/AI-residue steps, completion criteria, leading words, no-op pruning).
 
 ## Naming & namespace
 
@@ -28,7 +28,7 @@ named successor:
 
 - `/fleet:scanning-security`: AgentShield + zizmor audit
 - `/fleet:scanning-quality`: quality assessment plus explicit maintenance/report mutations
-- `/fleet:looping-quality`: loop driver over `scanning-quality` — scan, fix, re-scan until clean or 5 iterations (interactive; makes commits)
+- `/fleet:looping-quality`: loop driver over `scanning-quality` that scans, fixes, and re-scans until clean or 5 iterations (interactive; makes commits)
 
 The **code-security loop** is four chained skills, each leg resumable (see [`security-stack.md`](security-stack.md) Layer 6 for the full contract):
 
@@ -65,7 +65,7 @@ A NEW backing script is born meeting the new-script contract
 (`docs/agents.md/fleet/self-describing-scripts.md`): it self-describes via
 `runMain(main, SCRIPT_META)` (`--describe` / `-h`/`--help` answer before any
 side effect), carries a mirror-named unit test, builds every path once in the
-package's `paths.mts`, and is itself the enforcement — the skill markdown
+package's `paths.mts`, and is itself the enforcement: the skill markdown
 stays a thin wrapper.
 
 ## `updating` umbrella + `updating-*` siblings

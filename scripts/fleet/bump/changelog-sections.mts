@@ -6,6 +6,13 @@
  *   Split out of bump.mts, which was past the 1000-line hard cap. These are
  *   pure string transforms over CHANGELOG text — no filesystem, no git — which
  *   is why they carry the bulk of the step's existing test coverage.
+ *
+ *   Section boundaries come from a parsed GFM tree (lib/markdown-ast.mts), not
+ *   from `line.startsWith('## ')`: a changelog that documents its own markup in
+ *   a fenced block used to split there, so the entries after the fence were
+ *   filed under a phantom version and dropped by the next remove/extract. Edits
+ *   are still applied as slices of the ORIGINAL text at the parser's line
+ *   positions — nothing is re-serialized, so untouched bytes never churn.
  */
 
 import {
@@ -14,8 +21,60 @@ import {
   promoteUnreleased,
   unionSections,
 } from '../lib/changelog.mts'
+import { documentHeadings, headingLines } from '../lib/markdown-ast.mts'
 
 import type { ConventionalCommit } from '../lib/changelog.mts'
+import type { MarkdownHeading } from '../lib/markdown-ast.mts'
+
+// The version a `## ` heading names, read from the heading's TEXT: an optional
+// `[` (link-style heading whose label is the version) and an optional `v`, then
+// three dot-separated numbers plus an optional `-prerelease` tail. Anchored, so
+// only a heading's own version matches.
+const HEADING_VERSION_RE = /^\[?v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/
+
+/**
+ * The document's `## ` headings, newest first — the section boundaries every
+ * helper here slices on.
+ */
+function versionHeadings(changelog: string): MarkdownHeading[] {
+  return documentHeadings(changelog).filter(heading => heading.depth === 2)
+}
+
+/**
+ * True when a `## ` heading's text names exactly `version`. Matches the heading
+ * shapes seen across the fleet — `1.2.3`, `[1.2.3]`, `v1.2.3`, each optionally
+ * followed by a date — and requires the version to END there, so a 6.2.1 probe
+ * cannot match a 6.2.10 heading.
+ */
+function headingNamesVersion(text: string, version: string): boolean {
+  const rest = text.trim().replace(/^\[/, '').replace(/^v/, '')
+  return rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
+}
+
+/**
+ * The `[start, end)` line range of `version`'s section — its heading through
+ * the line before the next `## ` heading, or EOF — plus that heading's text, or
+ * undefined when the changelog has no section for `version`. One range finder,
+ * shared by remove + extract so they can never disagree on a boundary.
+ */
+function versionSectionRange(
+  changelog: string,
+  version: string,
+): { end: number; headingText: string; start: number } | undefined {
+  const headings = versionHeadings(changelog)
+  const at = headings.findIndex(heading =>
+    headingNamesVersion(heading.text, version),
+  )
+  if (at === -1) {
+    return undefined
+  }
+  const next = headings[at + 1]
+  return {
+    end: next ? next.line : changelog.split('\n').length,
+    headingText: headings[at]!.text,
+    start: headings[at]!.line,
+  }
+}
 
 /**
  * Replace the root `"version"` field in package.json text, preserving the
@@ -40,15 +99,9 @@ export function changelogHasVersionSection(
   changelog: string,
   version: string,
 ): boolean {
-  return changelog.split('\n').some(line => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return (
-      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
-    )
-  })
+  return versionHeadings(changelog).some(heading =>
+    headingNamesVersion(heading.text, version),
+  )
 }
 
 /**
@@ -57,18 +110,8 @@ export function changelogHasVersionSection(
  */
 export function changelogVersionSections(changelog: string): string[] {
   const found: string[] = []
-  const lines = changelog.split('\n')
-  for (let i = 0, { length } = lines; i < length; i += 1) {
-    const line = lines[i]!
-    if (!line.startsWith('## ')) {
-      continue
-    }
-    // `## ` then an optional `[`, link-style heading, and optional `v`, then
-    // the captured version: three dot-separated numbers plus an optional
-    // `-prerelease` tail. Anchored, so only a heading's own version matches.
-    const version = /^##\s+\[?v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/.exec(
-      line,
-    )?.[1]
+  for (const heading of versionHeadings(changelog)) {
+    const version = HEADING_VERSION_RE.exec(heading.text)?.[1]
     if (version) {
       found.push(version)
     }
@@ -85,27 +128,12 @@ export function removeChangelogVersionSection(
   changelog: string,
   version: string,
 ): string {
-  const lines = changelog.split('\n')
-  const start = lines.findIndex(line => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return (
-      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
-    )
-  })
-  if (start === -1) {
+  const range = versionSectionRange(changelog, version)
+  if (!range) {
     return changelog
   }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
-  return [...lines.slice(0, start), ...lines.slice(end)].join('\n')
+  const lines = changelog.split('\n')
+  return [...lines.slice(0, range.start), ...lines.slice(range.end)].join('\n')
 }
 
 /**
@@ -121,31 +149,18 @@ export function extractVersionSection(
 ):
   | { changelog: string; date: string | undefined; section: string }
   | undefined {
-  const lines = changelog.split('\n')
-  const start = lines.findIndex(line => {
-    if (!line.startsWith('## ')) {
-      return false
-    }
-    const rest = line.slice(3).trim().replace(/^\[/, '').replace(/^v/, '')
-    return (
-      rest.startsWith(version) && !/^[0-9.]/.test(rest.slice(version.length))
-    )
-  })
-  if (start === -1) {
+  const range = versionSectionRange(changelog, version)
+  if (!range) {
     return undefined
   }
-  let end = lines.length
-  for (let i = start + 1, { length } = lines; i < length; i += 1) {
-    if (lines[i]!.startsWith('## ')) {
-      end = i
-      break
-    }
-  }
-  const date = /-\s*(\d{4}-\d{2}-\d{2})\s*$/.exec(lines[start]!)?.[1]
+  const lines = changelog.split('\n')
+  const date = /-\s*(\d{4}-\d{2}-\d{2})\s*$/.exec(range.headingText)?.[1]
   return {
-    changelog: [...lines.slice(0, start), ...lines.slice(end)].join('\n'),
+    changelog: [...lines.slice(0, range.start), ...lines.slice(range.end)].join(
+      '\n',
+    ),
     date,
-    section: lines.slice(start, end).join('\n').trimEnd(),
+    section: lines.slice(range.start, range.end).join('\n').trimEnd(),
   }
 }
 
@@ -189,11 +204,9 @@ export function insertChangelogSection(
   existing: string,
   section: string,
 ): string {
-  const sectionHeading = section
-    .split('\n')
-    .find(line => line.startsWith('## '))
+  const sectionHeading = versionHeadings(section)[0]
   const sectionVersion = sectionHeading
-    ? /^##\s+\[?v?(\d+\.\d+\.\d+)/.exec(sectionHeading)?.[1]
+    ? HEADING_VERSION_RE.exec(sectionHeading.text)?.[1]
     : undefined
   if (
     sectionVersion !== undefined &&
@@ -202,7 +215,7 @@ export function insertChangelogSection(
     return existing
   }
   const lines = existing.split('\n')
-  const firstHeading = lines.findIndex(l => l.startsWith('## '))
+  const firstHeading = headingLines(existing, 2)[0] ?? -1
   if (firstHeading === -1) {
     return `${existing.replace(/\s*$/, '')}\n\n${section}\n`
   }

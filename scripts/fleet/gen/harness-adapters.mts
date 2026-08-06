@@ -159,7 +159,7 @@ export function findDrift(repoRoot: string): string[] {
   return drift
 }
 
-function main(): void {
+export function main(): void {
   const checkOnly = process.argv.includes('--check')
   if (!existsSync(path.join(REPO_ROOT, RULES_FILE))) {
     logger.log(`[gen/harness-adapters] no ${RULES_FILE} — nothing to adapt.`)

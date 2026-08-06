@@ -44,7 +44,7 @@ export function buildCargoFmtArgs(
   ]
 }
 
-function main(): void {
+export function main(): void {
   const repoRoot = REPO_ROOT
   const manifests = findWorkspaceManifests(repoRoot)
   if (!manifests.length) {

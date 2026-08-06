@@ -6,7 +6,7 @@ The CLAUDE.md `### Code style` section is the short list of heaviest invariants.
 
 Default to none. Write one only when the WHY is non-obvious to a senior engineer. **When you do write a comment, the audience is a junior dev**: explain the constraint, the hidden invariant, the "why this and not the obvious thing." Don't label it ("for junior devs:", "intuition:", etc.). Write in that voice. No teacher-tone, no condescension, no flattering the reader.
 
-A task/plan/removed-code comment (`// Plan:`, `// As requested`, `// removed X`) never belongs in the file — it narrates process, not behavior. Enforced by `.claude/hooks/fleet/no-meta-comments-guard/`.
+A task/plan/removed-code comment (`// Plan:`, `// As requested`, `// removed X`) never belongs in the file - it narrates process, not behavior. Enforced by `.claude/hooks/fleet/no-meta-comments-guard/`.
 
 ## Completion
 
@@ -26,7 +26,7 @@ Never call `process.chdir()`. It mutates global process state, so concurrent wor
 
 ## Imports
 
-No dynamic `await import()`. `node:fs` is the canonical fs source. One import per file: `import { existsSync, promises as fs } from 'node:fs'`. Sync APIs may be cherry-picked (`existsSync`, `copyFileSync`, `readFileSync`, etc.). Async APIs MUST go through the `promises as fs` namespace. Never cherry-pick from `node:fs/promises` (`import { rename } from 'node:fs/promises'` is forbidden; use `fs.rename(...)` instead). Rationale: a single canonical handle for async fs keeps the call sites uniform across the fleet and avoids two imports for what's logically one module. `path` / `os` / `crypto` use default imports. `node:url` is cherry-picked like `node:fs` (`import { fileURLToPath, pathToFileURL } from 'node:url'`) — callers use those symbols directly and `url.fileURLToPath(...)` reads worse than the named form.
+No dynamic `await import()`. `node:fs` is the canonical fs source. One import per file: `import { existsSync, promises as fs } from 'node:fs'`. Sync APIs may be cherry-picked (`existsSync`, `copyFileSync`, `readFileSync`, etc.). Async APIs MUST go through the `promises as fs` namespace. Never cherry-pick from `node:fs/promises` (`import { rename } from 'node:fs/promises'` is forbidden; use `fs.rename(...)` instead). Rationale: a single canonical handle for async fs keeps the call sites uniform across the fleet and avoids two imports for what's logically one module. `path` / `os` / `crypto` use default imports. `node:url` is cherry-picked like `node:fs` (`import { fileURLToPath, pathToFileURL } from 'node:url'`) - callers use those symbols directly and `url.fileURLToPath(...)` reads worse than the named form.
 
 Named imports only; no `import * as ns from '…'`. A namespace import pulls a module's whole surface under one binding. That hides the used names from grep and "find references", defeats per-name dead-code analysis and tree-shaking, and composes poorly with the named-export convention. An `import * as lib` reads as "uses everything", so the fleet API-usage audit can't tell which exports are live. Replace it with `import { a, b } from '…'`. The `socket/no-namespace-import` oxlint rule enforces this report-only: rewriting a namespace import to named imports needs the set of members the file reads, which the rule does not infer for you. Exempt: test files (mocking a whole module with `import * as mod` plus `vi.spyOn(mod, …)` is the canonical spy pattern and has no named equivalent), and bare or `node:` builtins (idiomatic, not a fleet-surface concern).
 
@@ -102,7 +102,7 @@ In user-facing text (string / template / comment), a trailing ellipsis is the si
 
 ## Binary resolution: `node_modules/.bin`, not global `which`
 
-Don't shell out to `which` / `command -v` / `where` to locate a project binary — those search the GLOBAL PATH. Fleet binaries are linked into `node_modules/.bin` by `pnpm install`; a global lookup returns nothing on a normal checkout (so the caller silently degrades) or, worse, finds a different-version binary and runs against the wrong engine. Resolve the installed package instead: `require.resolve('<pkg>/package.json')` → read its `bin` field → `resolveBinaryPath()` from `@socketsecurity/lib-stable/dlx/binary-resolution` for the platform `.cmd`/`.ps1` wrapper. (`@socketsecurity/lib-stable/bin/which`'s `whichSync` is the right tool when you genuinely need a PATH search, e.g. the user's system `git`.) Enforced by the `socket/no-which-for-local-bin` oxlint rule. Bypass for a genuine global lookup: `// socket-lint: allow which-lookup`.
+Don't shell out to `which` / `command -v` / `where` to locate a project binary - those search the GLOBAL PATH. Fleet binaries are linked into `node_modules/.bin` by `pnpm install`; a global lookup returns nothing on a normal checkout (so the caller silently degrades) or, worse, finds a different-version binary and runs against the wrong engine. Resolve the installed package instead: `require.resolve('<pkg>/package.json')` → read its `bin` field → `resolveBinaryPath()` from `@socketsecurity/lib-stable/dlx/binary-resolution` for the platform `.cmd`/`.ps1` wrapper. (`@socketsecurity/lib-stable/bin/which`'s `whichSync` is the right tool when you genuinely need a PATH search, e.g. the user's system `git`.) Enforced by the `socket/no-which-for-local-bin` oxlint rule. Bypass for a genuine global lookup: `// socket-lint: allow which-lookup`.
 
 ## Comments: cross-port Lock-step
 
@@ -118,7 +118,7 @@ Never re-race a pool that survives across iterations (the handlers stack). See `
 
 ## Prefer `Promise.allSettled` for order-independent batches
 
-When you `await Promise.all([...])` and DISCARD the resolved array, the await is its own statement. The only thing `Promise.all` does that `Promise.allSettled` doesn't is abort the whole batch on the first rejection, leaving the sibling promises' rejections unhandled. For order-independent concurrent work prefer `Promise.allSettled(...)` so one failure doesn't abandon the rest (then `.filter(Boolean)` / inspect the settled results). Keep `Promise.all` when you consume the positional result (`const [a, b] = await Promise.all(...)`) or genuinely want fail-fast — for the latter, mark it: `// oxlint-disable-next-line socket/prefer-all-settled -- fail-fast: <reason>`. Enforced by `socket/prefer-all-settled` (report-only; the fix changes error semantics, so it's the author's call).
+When you `await Promise.all([...])` and DISCARD the resolved array, the await is its own statement. The only thing `Promise.all` does that `Promise.allSettled` doesn't is abort the whole batch on the first rejection, leaving the sibling promises' rejections unhandled. For order-independent concurrent work prefer `Promise.allSettled(...)` so one failure doesn't abandon the rest (then `.filter(Boolean)` / inspect the settled results). Keep `Promise.all` when you consume the positional result (`const [a, b] = await Promise.all(...)`) or genuinely want fail-fast - for the latter, mark it: `// oxlint-disable-next-line socket/prefer-all-settled -- fail-fast: <reason>`. Enforced by `socket/prefer-all-settled` (report-only; the fix changes error semantics, so it's the author's call).
 
 ## Prefer the keyed combinators for named values
 
@@ -128,7 +128,7 @@ names in a different order than the calls and the values swap, with no error
 anywhere.
 
 <details>
-<summary><b>Detail</b> — the full table (5 rows)</summary>
+<summary><b>Detail</b> - the full table (5 rows)</summary>
 
 ```ts
 // Runs fine. config now holds the lockfile and lockfile holds the config.
@@ -181,5 +181,5 @@ Feature-detect, then require. From outside socket-btm (socket-lib, socket-cli, a
 A coding agent (and a hurried human) navigates by grep/ripgrep, not a dependency graph or language server, and pays roughly 10 tokens per line it reads. So how code is *named* and *typed* is what makes it findable or noise. Three rules:
 
 - **An exported name carries a domain word.** A single generic token (`create`, `parse`, `get`, `handle`, `diff`) is a grep-noise magnet. In one audit `create` matched 1585 times across 459 files, versus 43 across 19 for `createStripeClient`. One-word names are about 61% unique, two-word about 88%, three-word about 96%, so every export should carry a domain word. Enforced by `socket/exported-name-has-domain-word` plus the edit-time `generic-export-name-nudge`; the shared denylist and the sanctioned-convention exemptions (`check`, `main`, `run`, …) live in `.config/fleet/oxlint-plugin/lib/generic-name-tokens.mts`.
-- **The definition line is the one line the agent is guaranteed to read.** Put the orienting one-liner at the `@file` header or directly above the export — the fleet already does this. If code deliberately does not do something a reader expects, say so at the definition where they will search, not in a distant note.
+- **The definition line is the one line the agent is guaranteed to read.** Put the orienting one-liner at the `@file` header or directly above the export - the fleet already does this. If code deliberately does not do something a reader expects, say so at the definition where they will search, not in a distant note.
 - **Types are documentation.** A typed signature answers "what flows through here?" without reading the body, and every `any` forces an implementation read (already `error` fleet-wide). Branded ID types (`UserId` instead of a bare `string`) let the compiler name the mistake, so the fix is one turn instead of a debugging session.

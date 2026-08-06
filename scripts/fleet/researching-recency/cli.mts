@@ -187,7 +187,7 @@ export async function run(argv: readonly string[]): Promise<string> {
   return output
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   try {
     const output = await run(process.argv.slice(2))
     logger.log(output)
@@ -197,6 +197,7 @@ async function main(): Promise<void> {
   }
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (process.argv[1]?.endsWith('cli.mts')) {
   // Async IIFE: await inside (no top-level await — CJS bundle target), promise
   // still awaited so a rejection isn't silently floated. main() sets exitCode.
@@ -204,3 +205,4 @@ if (process.argv[1]?.endsWith('cli.mts')) {
     await main()
   })()
 }
+/* c8 ignore stop */

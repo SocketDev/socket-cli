@@ -134,11 +134,13 @@ async function main(): Promise<void> {
       'checkout-ref': { type: 'string' },
       direct: { default: false, type: 'boolean' },
       'dry-run': { default: false, type: 'boolean' },
-      'no-reconcile': { default: false, type: 'boolean' },
-      'no-release': { default: false, type: 'boolean' },
-      'no-scan': { default: false, type: 'boolean' },
       otp: { type: 'string' },
+      // The parser rewrites `--no-X` into `X: false`, so the negatable flags
+      // are declared by their positive names and read the same way.
+      reconcile: { default: true, type: 'boolean' },
+      release: { default: true, type: 'boolean' },
       'release-as': { type: 'string' },
+      scan: { default: true, type: 'boolean' },
       staged: { default: false, type: 'boolean' },
       tag: { default: 'latest', type: 'string' },
       yes: { default: false, type: 'boolean' },
@@ -172,7 +174,7 @@ async function main(): Promise<void> {
   // forgotten and local main drifts from the release). Gated OFF in CI:
   // `--staged` runs on a clean OIDC checkout and must never touch git.
   // `--no-reconcile` is the deliberate local opt-out.
-  const reconcile = !getCI() && !values['no-reconcile']
+  const reconcile = !getCI() && values['reconcile'] !== false
   const workflowNudge = releaseWorkflowNudge({ ci: getCI(), dryRun, mode })
   if (workflowNudge) {
     logger.warn(workflowNudge)
@@ -227,9 +229,9 @@ async function main(): Promise<void> {
     } else {
       await runApprove({
         dryRun,
-        noScan: !!values['no-scan'],
+        noScan: values['scan'] === false,
         otpFromFlag,
-        skipRelease: !!values['no-release'],
+        skipRelease: values['release'] === false,
         yes: !!values['yes'],
       })
       // Reconcile ONCE PUBLISHED: approve just made the version public and the

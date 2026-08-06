@@ -117,7 +117,7 @@ export function scanRouting(text: string, file: string): RoutingViolation[] {
   return out
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const files = globSync([...SCAN_GLOBS], {
     cwd: REPO_ROOT,

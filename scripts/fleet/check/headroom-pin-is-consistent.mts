@@ -88,7 +88,7 @@ export function readLockVersion(text: string): string | undefined {
   return undefined
 }
 
-function main(): number {
+export function main(): number {
   // Vacuous pass when the project isn't present, downstream repo without it.
   if (!existsSync(PYPROJECT)) {
     logger.log('headroom-pin-is-consistent: no headroom uv project (n/a).')

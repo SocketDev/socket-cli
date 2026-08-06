@@ -224,7 +224,7 @@ export async function runPublishPipeline(
   logger.log(renderRunRecap(state_, { ranStages: ran }))
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       approve: { default: false, type: 'boolean' },
@@ -314,6 +314,8 @@ const SCRIPT_META: ScriptMeta = {
   help: USAGE,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

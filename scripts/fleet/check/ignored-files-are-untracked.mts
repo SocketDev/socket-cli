@@ -101,7 +101,7 @@ async function detectOffenders(): Promise<string[] | undefined> {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const fix = process.argv.includes('--fix')
   const untrack = process.argv.includes('--untrack')
   const reinclude = process.argv.includes('--reinclude')

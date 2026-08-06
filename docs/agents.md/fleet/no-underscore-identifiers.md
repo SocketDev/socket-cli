@@ -4,11 +4,11 @@
 
 Never prefix a function, variable, type, or export name with `_` to signal
 privacy or "internal use." An `_internal/` directory name is the one allowed
-exception — it marks a module-private directory, not an identifier.
+exception - it marks a module-private directory, not an identifier.
 
 ## Why
 
-An underscore prefix is a convention, not a boundary — nothing stops another
+An underscore prefix is a convention, not a boundary - nothing stops another
 file from importing `_helper` anyway, so the marker lies about the guarantee it
 claims to give. Privacy in the fleet comes from one of two real mechanisms:
 
@@ -20,7 +20,7 @@ claims to give. Privacy in the fleet comes from one of two real mechanisms:
 A leading underscore also collides with the fleet's export-everything
 discipline (see [`export-and-no-any.md`](export-and-no-any.md)): every
 top-level `src/` symbol is exported, so an underscore-prefixed "private"
-export is a contradiction in terms — either it's exported and reachable, or
+export is a contradiction in terms - either it's exported and reachable, or
 it isn't exported and needs no naming trick to hide it.
 
 ## How to apply
@@ -32,7 +32,7 @@ it isn't exported and needs no naming trick to hide it.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/no-underscore-ident-guard/` — PreToolUse Edit/Write:
+- `.claude/hooks/fleet/no-underscore-ident-guard/` - PreToolUse Edit/Write:
   blocks introducing a new underscore-prefixed identifier (function, variable,
   type, or export). The `_internal/` directory name itself is allowed.
 

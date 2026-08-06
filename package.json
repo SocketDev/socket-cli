@@ -72,7 +72,15 @@
     "type": "node node_modules/typescript/bin/tsc --noEmit -p .config/fleet/tsconfig.check.json",
     "update": "node scripts/fleet/update.mts",
     "weekly-update": "node scripts/fleet/weekly-update.mts",
-    "weekly-update:ci": "gh workflow run weekly-update.lock.yml"
+    "weekly-update:ci": "gh workflow run weekly-update.lock.yml",
+    "strip:ai-tags": "node scripts/fleet/strip-ai-tags.mts",
+    "npm:approve": "node scripts/fleet/publish-pipeline.mts --approve",
+    "npm:auth": "node scripts/fleet/npm-web-auth.mts",
+    "npm:staged": "node scripts/fleet/publish-pipeline.mts --status",
+    "hide-comments": "node scripts/fleet/hide-comments.mts",
+    "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
+    "soak:bypass": "node scripts/fleet/soak-bypass.mts",
+    "npm:trust": "node scripts/fleet/publish-infra/npm/trust.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -92,6 +100,7 @@
     "@octokit/request-error": "catalog:",
     "@octokit/rest": "catalog:",
     "@octokit/types": "catalog:",
+    "@playwright/mcp": "catalog:",
     "@pnpm/dependency-path": "catalog:",
     "@pnpm/lockfile.detect-dep-types": "catalog:",
     "@pnpm/lockfile.fs": "catalog:",
@@ -146,6 +155,7 @@
     "markdownlint-cli2": "catalog:",
     "mdast-util-from-markdown": "catalog:",
     "mdast-util-gfm": "catalog:",
+    "mdast-util-to-markdown": "catalog:",
     "micromark": "catalog:",
     "micromark-extension-gfm": "catalog:",
     "micromatch": "catalog:",

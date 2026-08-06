@@ -75,8 +75,10 @@ export async function checkAgentCiSkipLocksIsGuarded(): Promise<number> {
   return 0
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (process.argv[1]?.endsWith('agent-ci-skip-locks-is-guarded.mts')) {
   void (async () => {
     process.exitCode = await checkAgentCiSkipLocksIsGuarded()
   })()
 }
+/* c8 ignore stop */

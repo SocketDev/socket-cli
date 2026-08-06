@@ -342,7 +342,7 @@ export function scanHookDir(hooksDir: string): HookScanResult {
   return { errors, hooksDirExists: true, scanned: files.length }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const result = scanHookDir(GIT_HOOKS_DIR)
 

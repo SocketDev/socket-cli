@@ -166,7 +166,7 @@ export function scanFile(file: string, content: string): string[] {
   return findings
 }
 
-function trackedFiles(cwd: string): string[] {
+export function trackedFiles(cwd: string): string[] {
   const result = spawnSync('git', ['ls-files', '-z'], { cwd, stdio: 'pipe' })
   if (result.status !== 0) {
     return []
@@ -176,7 +176,7 @@ function trackedFiles(cwd: string): string[] {
     .filter(Boolean)
 }
 
-function main(): void {
+export function main(): void {
   // Implicit working directory: like taze-is-single-registry, this check
   // reads repo-relative paths from wherever the check runner invoked it — the
   // repo root in every runner; the e2e tests spawn it from a fixture dir.

@@ -127,7 +127,7 @@ export function audit(text: string): AuditResult {
   return { findings, totalSections, enforcedSections }
 }
 
-function main(): void {
+export function main(): void {
   const mdPath = path.join(REPO_ROOT, 'CLAUDE.md')
   if (!existsSync(mdPath)) {
     // No CLAUDE.md — nothing to audit, exit clean.

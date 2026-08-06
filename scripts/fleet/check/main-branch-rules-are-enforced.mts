@@ -21,7 +21,7 @@
  *   THE LAW IS THE FIX: `--fix` manages exactly ONE repo-level ruleset named
  *   `fleet-main-protection` targeting `~DEFAULT_BRANCH`, containing exactly
  *   the rules the law prescribes for that repo. If a ruleset with that name
- *   exists it is PATCHed to the canonical shape and enforcement:active; if
+ *   exists it is PUT to the canonical shape and enforcement:active; if
  *   missing it is POSTed. No OTHER ruleset is ever touched — org rulesets,
  *   socket-cli's disabled `default branch` ruleset, and its `e2e tests must
  *   pass` ruleset are all out of scope. After fixing, the check re-reads the
@@ -41,6 +41,12 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  hasRepositoryAdminBypass,
+  parseRulesetSnapshot,
+  REPOSITORY_ADMIN_BYPASS,
+} from '../grant-ruleset-bypass/ruleset-model.mts'
+import type { BypassActor } from '../grant-ruleset-bypass/ruleset-model.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
 import {
   parseRepoFilter,
@@ -209,6 +215,30 @@ export function branchRuleFindings(
 }
 
 /**
+ * The finding name for a managed ruleset that exists without the standing
+ * Repository-admin always-allow bypass. Remediated by the same converge as a
+ * missing rule type: the canonical payload carries the bypass.
+ */
+export const ADMIN_BYPASS_RULE = 'repository-admin-bypass'
+
+/**
+ * The admin-bypass finding for one repo, judged on the MANAGED ruleset's
+ * bypass actors: present-but-missing-the-admin-entry is the finding; an
+ * undefined actor list (no managed ruleset, or an unreadable read) yields
+ * none — the rule-type findings own the absent-ruleset case, and unreadable
+ * reads are never findings. Pure; exported for tests.
+ */
+export function adminBypassFinding(
+  repo: FleetRepo,
+  actors: readonly BypassActor[] | undefined,
+): RuleFinding | undefined {
+  if (actors === undefined || hasRepositoryAdminBypass(actors)) {
+    return undefined
+  }
+  return { repo: repo.name, owner: repo.owner, rule: ADMIN_BYPASS_RULE }
+}
+
+/**
  * The remediations the law prescribes for a finding set: one action per
  * affected repo, carrying that repo's FULL canonical rule set (not just the
  * missing rule — the managed ruleset is declarative, so a repo missing only
@@ -248,6 +278,7 @@ export function rulesetPayload(rules: readonly string[]): {
   readonly name: string
   readonly target: string
   readonly enforcement: string
+  readonly bypass_actors: readonly BypassActor[]
   readonly conditions: {
     readonly ref_name: {
       readonly include: readonly string[]
@@ -264,6 +295,9 @@ export function rulesetPayload(rules: readonly string[]): {
     name: MANAGED_RULESET_NAME,
     target: 'branch',
     enforcement: 'active',
+    // The standing Repository-admin always-allow exemption: an admin locked
+    // out of a repo they administer has no sanctioned path to fix the lockout.
+    bypass_actors: [REPOSITORY_ADMIN_BYPASS],
     conditions: {
       ref_name: { include: ['~DEFAULT_BRANCH'], exclude: [] },
     },
@@ -369,10 +403,13 @@ function applyFix(fix: FixAction): boolean {
   const written =
     managedId === 'absent'
       ? gh(['api', '-X', 'POST', base, '--input', '-'], body)
-      : gh(['api', '-X', 'PATCH', `${base}/${managedId}`, '--input', '-'], body)
+      : // PUT, never PATCH: GitHub's repository-ruleset update endpoint only
+        // routes PUT — a PATCH answers 404, which read as "converge failed"
+        // on every update until the admin-bypass sweep exposed it.
+        gh(['api', '-X', 'PUT', `${base}/${managedId}`, '--input', '-'], body)
   if (written === undefined) {
     logger.warn(
-      `  ${fix.repo}: ${managedId === 'absent' ? 'POST' : 'PATCH'} of ${MANAGED_RULESET_NAME} failed`,
+      `  ${fix.repo}: ${managedId === 'absent' ? 'POST' : 'PUT'} of ${MANAGED_RULESET_NAME} failed`,
     )
     return false
   }
@@ -380,6 +417,31 @@ function applyFix(fix: FixAction): boolean {
     `  ${fix.repo}: ${MANAGED_RULESET_NAME} ${managedId === 'absent' ? 'created' : 'converged'} — active, rules: ${fix.rules.join(', ')}`,
   )
   return true
+}
+
+// The MANAGED ruleset's bypass actors for one repo, or undefined when there
+// is no managed ruleset or the read fails (rule-type findings own the absent
+// case; unreadable reads are never findings).
+function ghManagedBypassActors(
+  repo: FleetRepo,
+): readonly BypassActor[] | undefined {
+  const base = `repos/${repo.owner}/${repo.name}/rulesets`
+  const listing = gh([
+    'api',
+    base,
+    '--jq',
+    '[.[] | {id: .id, name: .name, source_type: .source_type}]',
+  ])
+  const managedId =
+    listing === undefined ? undefined : parseManagedRulesetId(listing)
+  if (managedId === undefined || managedId === 'absent') {
+    return undefined
+  }
+  const detail = gh(['api', `${base}/${managedId}`])
+  if (detail === undefined) {
+    return undefined
+  }
+  return parseRulesetSnapshot(detail)?.bypassActors
 }
 
 function sweep(
@@ -396,6 +458,10 @@ function sweep(
         ghEffectiveRuleTypes(repo),
       ),
     )
+    const bypassGap = adminBypassFinding(repo, ghManagedBypassActors(repo))
+    if (bypassGap) {
+      findings.push(bypassGap)
+    }
   }
   return findings
 }
@@ -481,7 +547,9 @@ export function main(): void {
     logger.warn(
       f.rule === RULE_DELETION
         ? `  ${f.repo}: no effective deletion rule — main can be deleted by anyone with push access`
-        : `  ${f.repo}: no effective non_fast_forward rule — main accepts force-push (repo has no ${SQUASH_HISTORY_OPT_IN} opt-in)`,
+        : f.rule === ADMIN_BYPASS_RULE
+          ? `  ${f.repo}: ${MANAGED_RULESET_NAME} lacks the Repository-admin always-allow bypass — a locked-out admin has no sanctioned unlock path`
+          : `  ${f.repo}: no effective non_fast_forward rule — main accepts force-push (repo has no ${SQUASH_HISTORY_OPT_IN} opt-in)`,
     )
   }
   if (MODE === 'strict') {

@@ -108,7 +108,7 @@ export function findNativeTestGaps(workflowsDir: string): NativeTestGap[] {
   return gaps.toSorted((a, b) => a.file.localeCompare(b.file))
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const workflowsDir = path.join(REPO_ROOT, '.github', 'workflows')
   const gaps = findNativeTestGaps(workflowsDir)

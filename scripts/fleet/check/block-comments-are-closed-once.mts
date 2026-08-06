@@ -209,7 +209,7 @@ export function findEarlyClosedBlockCommentsInTree(
   return out
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const findings = findEarlyClosedBlockCommentsInTree(REPO_ROOT)
   if (findings.length === 0) {

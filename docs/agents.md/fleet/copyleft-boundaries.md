@@ -23,7 +23,7 @@ anyone remembering it.
 blob shas, and counts carry no copyright, so enumerating a copyleft upstream is
 always allowed. Only reading the bytes is blocked.
 
-This is not a convenience carve-out — it is load-bearing. The first cut of this
+This is not a convenience carve-out - it is load-bearing. The first cut of this
 guard blocked listing too, and the immediate casualty was the guard's own data:
 a roster entry's `testPathPatterns` could not be checked against the upstream's
 real test corpus, because checking meant listing. The entry shipped unverified.
@@ -60,7 +60,7 @@ not at information-theoretic purity.**
 Copyleft licenses attach to derived works, not to users. Running an AGPL tool
 leaves the caller unaffected. Copying its detection table into a package, or
 writing a new table *from* that table, makes the package a work derived from
-AGPL source — and the AGPL then governs the package's own distribution terms.
+AGPL source - and the AGPL then governs the package's own distribution terms.
 For a published library that is not a licensing footnote, it is a
 relicensing event forced on every downstream consumer.
 
@@ -86,7 +86,7 @@ Each entry records:
 | Field | Meaning |
 | --- | --- |
 | `owner` / `repo` | The GitHub slug; `repo` is also the `upstream/<repo>` submodule dir. |
-| `spdx` | The **pinned expectation** — the license the guard enforces against. |
+| `spdx` | The **pinned expectation** - the license the guard enforces against. |
 | `purl` | Versionless package URL, the identity Socket's license data is keyed by. |
 | `verifiedVersion` | The version at which `spdx` was last confirmed. |
 | `testPathPatterns` | The observable slice. Keep it tight. |
@@ -99,7 +99,7 @@ Each entry records:
    against Socket's license data for the purl. Never record a license from
    memory or from a package-index summary.
 2. **Resolve the exact purl.** Confirm it actually returns an artifact before
-   recording it — a purl that resolves to nothing makes the watchdog silently
+   recording it - a purl that resolves to nothing makes the watchdog silently
    vacuous. Go modules keep their major-version suffix and a `v`-prefixed
    version: `pkg:golang/github.com/<owner>/<repo>/v3@v3.96.0`.
 3. **Write the narrowest `testPathPatterns` that cover the suite.** Too broad
@@ -117,15 +117,15 @@ changes license under a pin is the failure mode that poisons a derivation months
 after the fact.
 
 `copyleft-licenses-are-current.mts` is the standing watchdog. It reads Socket's
-`LicenseDetails` for each entry's purl — `spdxDisj` in disjunctive normal form,
-with a `match_strength` confidence and an `errorData` field — at two versions:
+`LicenseDetails` for each entry's purl - `spdxDisj` in disjunctive normal form,
+with a `match_strength` confidence and an `errorData` field - at two versions:
 the recorded `verifiedVersion` as a regression anchor, and the upstream's newest
 GitHub release tag as the drift probe, so a relicense surfaces the day it ships
 rather than whenever someone next bumps a pin.
 
 It is **offline-safe by contract**. No token, no network, an API error, an
 unresolved purl, an empty payload, a `match_strength` below the floor, or a
-non-empty `errorData` all yield UNVERIFIED — a loud notice, exit 0. It never
+non-empty `errorData` all yield UNVERIFIED - a loud notice, exit 0. It never
 fails closed on connectivity and never reports a silent pass as if it had
 verified something. Only a confident reading that disagrees with the pin fails
 the gate, and the failure names both values. It runs on the release/CI tier via
@@ -147,14 +147,14 @@ git -C upstream/<repo> sparse-checkout set --no-cone \
 ```
 
 `copyleftSparseRecipe()` generates this line from the roster entry, and both the
-guard's Fix line and the belt's remediation print that generated string — the
+guard's Fix line and the belt's remediation print that generated string - the
 command an operator is handed is provably the command the matcher accepts.
 
 ### Root-anchor every metadata glob
 
 **A metadata pattern carries a leading `/`. Always.** `--no-cone` patterns use
 gitignore semantics, where a pattern with no slash in it matches at **any
-depth** — and on a case-insensitive filesystem, the macOS and Windows default,
+depth** - and on a case-insensitive filesystem, the macOS and Windows default,
 it also matches any casing. Those two facts compose into a live leak:
 
 | Pattern | Intent | What it actually admitted |
@@ -170,14 +170,14 @@ detector files, the anchored cone checks out neither.
 Read that table before writing a new roster entry. Anything meant to be
 root-only must be anchored; a pattern that looks obviously-safe on Linux can
 still match on a contributor's Mac. `testPathPatterns` are the deliberate
-exception — `**/*_test.go` and `**/testdata/**` are depth-any *by design*,
+exception - `**/*_test.go` and `**/testdata/**` are depth-any *by design*,
 because a test corpus is spread through the tree.
 
 <details>
 <summary><b>Keeping the predicate and git in agreement</b>: <code>copyleftGlobToRegExp()</code> mirrors gitignore anchoring, the sparse allowlist compares verbatim, and cone-widening sparse-checkout commands are refused outright</summary>
 
-`copyleftGlobToRegExp()` mirrors these gitignore rules exactly — leading `/`
-anchors, a slash-less pattern floats — so the in-process predicate and git
+`copyleftGlobToRegExp()` mirrors these gitignore rules exactly - leading `/`
+anchors, a slash-less pattern floats - so the in-process predicate and git
 itself agree on what a pattern admits. That agreement is the point: when they
 diverge, the predicate calls a path unobservable while git cheerfully writes it
 to disk. The sparse allowlist likewise compares **verbatim**, so `README*` is
@@ -192,7 +192,7 @@ read looks like an ordinary local file, so the cone is the real perimeter.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/no-copyleft-source-read/` — PreToolUse. Blocks CONTENT
+- `.claude/hooks/fleet/no-copyleft-source-read/` - PreToolUse. Blocks CONTENT
   only, per the table above: a Read of an off-allowlist `upstream/<repo>/…`
   file, a `cat`-family reader, a line-printing `rg`/`grep` or a Grep with
   `output_mode: content`, `find … -exec`, `gh api …/contents/…` for a non-test
@@ -200,9 +200,9 @@ read looks like an ordinary local file, so the cone is the real perimeter.
   show`/`cat-file`/`archive` of a non-test blob, a cone-widening `git
   sparse-checkout`, and a WebFetch of the same URLs. Enumeration passes.
   Bypass: `Allow copyleft-source-read bypass`.
-- `scripts/fleet/check/copyleft-slices-are-tests-only.mts` — commit-time belt.
+- `scripts/fleet/check/copyleft-slices-are-tests-only.mts` - commit-time belt.
   Per copyleft submodule present: no non-test sparse pattern, no materialized
   non-test file, no tracked file citing it as a derivation source. Vacuous pass
   when the repo pins no copyleft upstream.
-- `scripts/fleet/check/copyleft-licenses-are-current.mts` — release/CI-tier
+- `scripts/fleet/check/copyleft-licenses-are-current.mts` - release/CI-tier
   license watchdog described above.

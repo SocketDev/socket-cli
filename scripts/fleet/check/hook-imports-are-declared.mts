@@ -340,7 +340,7 @@ export function readHookFiles(
   return files
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const declaredNames = readDeclaredPackageNames(PACKAGE_JSON)
   const files = readHookFiles(REPO_ROOT, HOOK_TREES)

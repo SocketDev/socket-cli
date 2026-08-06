@@ -18,10 +18,10 @@ Finish a code change → **commit it**. Don't end a turn with uncommitted edits,
 - **"Shared" = has a remote upstream.** Only then cut a new branch. A local-only branch is yours to keep committing to.
 - **Never `git checkout` / `git switch` to another branch to "start the next chunk."** Switching branches:
   - discards uncommitted working-tree edits (they don't follow you if they conflict), and
-  - **reverts commits that live only on the branch you left** — the new branch doesn't have them, so your files snap back to that branch's state.
-- **To move a commit between branches, `git cherry-pick` it** — never switch away from work in progress and hope it follows.
+  - **reverts commits that live only on the branch you left**: the new branch doesn't have them, so your files snap back to that branch's state.
+- **To move a commit between branches, `git cherry-pick` it.** Never switch away from work in progress and hope it follows.
 
-Example: mid-queue on a multi-fix branch, `git checkout <default>` to "branch the next fix off the default" reverts the first fix's already-committed source changes, that fix lives only on the abandoned branch, and leaves the working tree on a branch missing it. To move a commit, `cherry-pick` it onto the target — never leave the branch holding the queue.
+Example: mid-queue on a multi-fix branch, `git checkout <default>` to "branch the next fix off the default" reverts the first fix's already-committed source changes, that fix lives only on the abandoned branch, and leaves the working tree on a branch missing it. To move a commit, `cherry-pick` it onto the target. Never leave the branch holding the queue.
 
 ## The principle
 
@@ -40,7 +40,7 @@ checkout's `node_modules` symlinks (for example
 directory:
 
 <details>
-<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+<summary><b>Detail</b>: the worked steps (3 snippets)</summary>
 
 ```text
 node_modules/@socketsecurity/lib-stable -> ../../../<removed-worktree>/node_modules/.pnpm/...
@@ -52,7 +52,7 @@ Every fleet hook that imports a lib subpath then dies at module resolution:
 Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@socketsecurity/lib-stable'
 ```
 
-The fix is `pnpm install` in the **main** checkout — it rebuilds the links from
+The fix is `pnpm install` in the **main** checkout: it rebuilds the links from
 the lockfile, restoring the symlink to the local store (`../.pnpm/...`). Run it
 under the pinned Node (see the Node-version rule).
 
@@ -73,13 +73,13 @@ The `worktree-remove-relink-nudge` PostToolUse hook nudges this step after a
 
 A common safe pattern is a throwaway worktree off `origin/<default>` to
 cherry-pick + push a single commit (when local `main` has diverged). After
-`git worktree remove`-ing it, run `pnpm i` in the main checkout to relink — the
+`git worktree remove`-ing it, run `pnpm i` in the main checkout to relink. The
 cherry-pick worktree's pnpm install is what stole the link.
 
 ### Periodic fleet-wide tidy
 
 `managing-worktrees` Mode 3 prunes spent worktrees in the _current_ repo. The
-`tidying-worktrees` skill is the fleet-wide, no-prompt sweep — it iterates the
+`tidying-worktrees` skill is the fleet-wide, no-prompt sweep: it iterates the
 canonical roster (`cascading-fleet/lib/fleet-repos.txt`) and removes only
 provably-spent worktrees across every repo. Engine:
 `.claude/skills/fleet/tidying-worktrees/lib/tidy-worktrees.mts`.
@@ -87,7 +87,7 @@ provably-spent worktrees across every repo. Engine:
 Both share one removability predicate (`decideWorktree`): remove ONLY when the
 tree is clean AND either (a) the branch is fully merged into `origin/<base>`, or
 (b) the branch is gone from the remote AND the worktree is **not ahead** of the
-base. The ahead-of-base guard is load-bearing — a workflow's local-only
+base. The ahead-of-base guard keeps unpushed work safe: a workflow's local-only
 isolation worktree (`.claude/worktrees/wf_*`) reads as "branch gone from remote"
 yet may carry unpushed commits, so pruning on remote-state alone would lose
 work. Dirty or ahead-of-base worktrees are always kept.
@@ -120,12 +120,12 @@ For background care, drive it on a loop: `/loop 6h /fleet:tidying-worktrees
 
 ## Enforcement
 
-- `.claude/hooks/fleet/commit-cadence-nudge/` — reminds to commit each logical step inside a worktree and pass the pre-merge gate before landing.
-- `.claude/hooks/fleet/dirty-worktree-stop-guard/` — blocks ending a turn with an uncommitted, untracked, or staged-but-uncommitted primary checkout.
-- `.claude/hooks/fleet/land-fast-nudge/` — fires when the default branch has diverged from origin and points at the `managing-worktrees land` engine.
-- `.claude/hooks/fleet/no-branch-reuse-nudge/` — reminds against committing onto a non-default branch that already has a remote upstream.
-- `.claude/hooks/fleet/no-orphaned-staging/` — blocks ending a turn with staged-but-uncommitted hunks.
-- `.claude/hooks/fleet/node-modules-staging-guard/` — blocks `git add -f` on `node_modules` / `package-lock.json` paths under `.claude/hooks/*/` or `.claude/skills/*/`.
-- `.claude/hooks/fleet/stale-node-modules-nudge/` — nudges a headless-safe `pnpm install` when `node_modules` looks stale after a worktree operation.
-- `.claude/hooks/fleet/unpushed-main-nudge/` — nags to push when local `main` is ahead of origin.
-- `.claude/hooks/fleet/worktree-remove-relink-nudge/` — nudges `pnpm i` after `git worktree remove` / `git worktree prune` to fix dangled `node_modules` links.
+- `.claude/hooks/fleet/commit-cadence-nudge/` - reminds to commit each logical step inside a worktree and pass the pre-merge gate before landing.
+- `.claude/hooks/fleet/dirty-worktree-stop-guard/` - blocks ending a turn with an uncommitted, untracked, or staged-but-uncommitted primary checkout.
+- `.claude/hooks/fleet/land-fast-nudge/` - fires when the default branch has diverged from origin and points at the `managing-worktrees land` engine.
+- `.claude/hooks/fleet/no-branch-reuse-nudge/` - reminds against committing onto a non-default branch that already has a remote upstream.
+- `.claude/hooks/fleet/no-orphaned-staging/` - blocks ending a turn with staged-but-uncommitted hunks.
+- `.claude/hooks/fleet/node-modules-staging-guard/` - blocks `git add -f` on `node_modules` / `package-lock.json` paths under `.claude/hooks/*/` or `.claude/skills/*/`.
+- `.claude/hooks/fleet/stale-node-modules-nudge/` - nudges a headless-safe `pnpm install` when `node_modules` looks stale after a worktree operation.
+- `.claude/hooks/fleet/unpushed-main-nudge/` - nags to push when local `main` is ahead of origin.
+- `.claude/hooks/fleet/worktree-remove-relink-nudge/` - nudges `pnpm i` after `git worktree remove` / `git worktree prune` to fix dangled `node_modules` links.

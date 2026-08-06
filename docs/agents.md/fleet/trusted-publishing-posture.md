@@ -17,9 +17,9 @@ pnpm's OIDC token exchange with npm returns 404 in every member:
 ```
 
 pnpm does not stop there. It falls through to whatever other credential the
-environment carries. `actions/setup-node` — which the fleet `setup` action ran
+environment carries. `actions/setup-node` - which the fleet `setup` action ran
 at the time with `registry-url: https://registry.npmjs.org`; the fleet has
-since ported Node setup natively and writes no `.npmrc` — wrote
+since ported Node setup natively and writes no `.npmrc` - wrote
 `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into the runner's
 `.npmrc`. So:
 
@@ -38,7 +38,7 @@ Three lines, and they are enforced on the publish SHAPE, never on an
 environment variable:
 
 - **From CI: trusted publishing only.** A publish carrying `NODE_AUTH_TOKEN` /
-  `NPM_AUTH_TOKEN` / `NPM_TOKEN` is refused — no exceptions, regardless of
+  `NPM_AUTH_TOKEN` / `NPM_TOKEN` is refused - no exceptions, regardless of
   version or mode. No npm token ever reaches CI.
 - **Locally: a `direct` publish is permitted only at exactly `0.0.0`,** the name
   reservation. Any other direct publish is refused, anywhere.
@@ -54,30 +54,30 @@ environment variable:
   alone, which npm answers with `E422 … repository visibility: "private"`.
 
 <details>
-<summary><b>The other eight rules</b> — repo-local orchestration, the <code>0.0.0</code> reservation carve-out, no reservation workflow, no attestation on the reservation, version read from the manifest, exit 0 is not proof, no env opt-out, token names only</summary>
+<summary><b>The other eight rules</b> - repo-local orchestration, the <code>0.0.0</code> reservation carve-out, no reservation workflow, no attestation on the reservation, version read from the manifest, exit 0 is not proof, no env opt-out, token names only</summary>
 
 - **Orchestration stays repo-local.** Publish order, which commits get
   republished, how an approve batch refreshes its OTP across hundreds of
-  packages — that is a member's own business, and socket-registry's ~131
+  packages - that is a member's own business, and socket-registry's ~131
   override packages are the legitimate custom case. Only the upload is shared.
 
 - **The carve-out is the chicken-and-egg, and nothing else.** npm can only
   configure a trusted publisher for a name that ALREADY EXISTS on the registry.
   A brand-new package therefore has no way to bootstrap OIDC, which is why
   `placeholder.mts` publishes a minimal `0.0.0` reservation to claim the name
-  first — the constraint is documented in that script's own header. Read it
+  first - the constraint is documented in that script's own header. Read it
   before proposing a CI-based first publish; that idea does not survive the
   constraint.
 
 - **The reservation is local-only, and there is no workflow for it.** Nothing in
   `template/base/.github/workflows/` reserves a name today, so nothing needs
-  removing — the tree already matches the policy, and the gate below keeps it
+  removing - the tree already matches the policy, and the gate below keeps it
   that way. `placeholder.mts` refuses to run under a CI runner at its own entry
   point, with the four-ingredient message, and the auth posture refuses the same
   shape again at the upload as a backstop.
 
 - **No attestation on the reservation.** Its artifact is a `package.json` plus a
-  one-line README behind `files: []`, so attesting it would protect nothing —
+  one-line README behind `files: []`, so attesting it would protect nothing -
   and buying that attestation would mean holding a publish token in CI, which is
   the one thing this policy forbids.
 
@@ -109,7 +109,7 @@ release check tier) runs three passes:
    to `scripts/fleet/`, or to a repo-local orchestrator whose import graph
    reaches `scripts/fleet/publish-infra/`.
 2. No file outside `scripts/fleet/` builds an npm upload invocation. Comments
-   are stripped before the scan, and only argv shapes count — a script that
+   are stripped before the scan, and only argv shapes count - a script that
    *describes* the publish flow is not one running it.
 3. No workflow invokes `placeholder.mts`. A reservation wired into CI is a
    policy violation checked in; this catches it at commit time rather than at
@@ -118,7 +118,7 @@ release check tier) runs three passes:
 ## The 404 points at the registration, not at pnpm
 
 pnpm and the npm CLI request the **same** exchange path,
-`-/npm/v1/oidc/token/exchange/package/<escapedName>` — verified by grepping both
+`-/npm/v1/oidc/token/exchange/package/<escapedName>` - verified by grepping both
 dists. So the fleet-wide 404 is not pnpm endpoint drift and not a pnpm-version
 problem: npm is refusing the exchange for the package, which points at the
 trusted-publisher registration not matching the claims the run presents

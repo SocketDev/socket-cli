@@ -176,7 +176,7 @@ export function findPackedManifestDanglers(
   )
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const manifestPath = path.join(REPO_ROOT, 'package.json')
   const pkg = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
@@ -298,6 +298,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  silent on clean`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -260,7 +260,7 @@ export function scanLockfileGraph(
   return { bundledDuplicates, duplicates, unredirected }
 }
 
-function main(): void {
+export function main(): void {
   const read = readPnpmLockfile(PNPM_LOCK)
   if (!read.ok) {
     if (read.problem === 'absent') {

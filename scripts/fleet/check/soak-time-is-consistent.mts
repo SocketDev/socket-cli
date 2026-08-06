@@ -78,7 +78,7 @@ export function findSoakInconsistencies(config: SoakSurfaces): string[] {
   return out
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const pnpmPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
   const npmrcPath = path.join(REPO_ROOT, '.npmrc')

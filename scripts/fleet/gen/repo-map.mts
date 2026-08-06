@@ -294,7 +294,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return { changed, outDir, roots, write }
 }
 
-function main(): void {
+export function main(): void {
   const { changed, outDir, roots, write } = parseArgs(process.argv.slice(2))
   const repoRoot = REPO_ROOT
 
@@ -362,7 +362,7 @@ function main(): void {
   )
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'emit a token-cheap symbol skeleton for a file or directory instead of its full contents',
   help: `Usage: node scripts/fleet/gen/repo-map.mts [flags] [<file|dir> ...]

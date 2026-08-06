@@ -90,7 +90,7 @@ export function scanHookDirs(repoRoot: string): HuskHit[] {
   return hits
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hits = scanHookDirs(REPO_ROOT)
   if (hits.length) {

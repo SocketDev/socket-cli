@@ -141,7 +141,7 @@ export function findDiscrepancies(
   return out
 }
 
-function main(): void {
+export function main(): void {
   // A bundle-only member has no per-hook SOURCE dirs to scan for isFleetTarget
   // imports — the classification is validated at the source repo.
   if (!hasFleetHookSource(REPO_ROOT)) {

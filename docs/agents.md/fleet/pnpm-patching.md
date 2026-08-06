@@ -2,7 +2,7 @@
 
 Forcing a duplicated package to its newest (ESM) major maximizes dedup and bundle quality: one copy, tree-shakeable. But a **non-format API break** across the collapse range blocks the force. A bundler resolves CJS↔ESM module format; it never repairs an API contract: a removed method, a changed signature, callback→promise. When that is the only thing between you and a single forced version, a **pnpm patch** restores the old surface onto the new version so the force is safe. Patch-for-compat turns a `do-not-collapse` or `scoped` verdict into a clean unscoped collapse.
 
-Keep the two concerns separate. The **override** (or the update) handles the dependency *requirement* — it collapses the tree to one version. The **patch** handles the *API contract* that the major change broke. The patch is not about the version; it is about the contract. A contract patch is equally valid whether the version arrived via an override-force, a security bump, or natural resolution.
+Keep the two concerns separate. The **override** (or the update) handles the dependency *requirement* - it collapses the tree to one version. The **patch** handles the *API contract* that the major change broke. The patch is not about the version; it is about the contract. A contract patch is equally valid whether the version arrived via an override-force, a security bump, or natural resolution.
 
 This is the third dedup lever (after `@socketregistry` redirects and plain version overrides) in the [`deduping-dependencies`](../../../.claude/skills/fleet/deduping-dependencies/SKILL.md) skill.
 
@@ -40,7 +40,7 @@ A pnpm patch is opaque, a diff against minified vendor code, and high-trust (it 
 
 1. **Rationale annotation**: a `# dedup: <why>` comment on or above the entry, naming the API break it shims and the consumer that needs it (generic, no dated log per the dated-citation rule). An undocumented patch reads as a backdoor.
 2. **Patch file exists** at the referenced path.
-3. **Applicable**: the patched `<pkg>@<ver>` is actually resolved in `pnpm-lock.yaml`. A patch targets a contract on a *real* version; a patch for a version nothing resolves to is dead weight. This is deliberately **not** "has a corresponding force" — the patch fixes the contract, the version requirement is the override's job. They are orthogonal.
+3. **Applicable**: the patched `<pkg>@<ver>` is actually resolved in `pnpm-lock.yaml`. A patch targets a contract on a *real* version; a patch for a version nothing resolves to is dead weight. This is deliberately **not** "has a corresponding force" - the patch fixes the contract, the version requirement is the override's job. They are orthogonal.
 
 The check fails the build on any unannotated, dangling, or inapplicable patch. It reads `pnpm-workspace.yaml` + `pnpm-lock.yaml` (both per-repo), so it cascades and runs identically in every fleet repo.
 

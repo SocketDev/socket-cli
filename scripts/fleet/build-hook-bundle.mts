@@ -90,7 +90,7 @@ export function classifyBundleBuild(config: {
   return { ok: true }
 }
 
-function main(): void {
+export function main(): void {
   // A bundle-only member has no hook source to bundle — a rebuild here would
   // replace the release-shipped fleet-pack.cjs with an EMPTY one, silently
   // disabling every fleet hook (index.cjs fails open). Built at the source repo.

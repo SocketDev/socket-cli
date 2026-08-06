@@ -142,7 +142,7 @@ export function scanRepo(repoRoot: string): DatedCitationFinding[] {
   return findings
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const findings = scanRepo(REPO_ROOT)
   if (findings.length) {

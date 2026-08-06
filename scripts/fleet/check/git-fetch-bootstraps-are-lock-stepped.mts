@@ -266,7 +266,7 @@ export function runCheck(repoRoot: string): number {
   return 1
 }
 
-function main(): void {
+export function main(): void {
   process.exitCode = runCheck(REPO_ROOT)
 }
 

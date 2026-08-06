@@ -1,7 +1,7 @@
 # Default branch resolution
 
 Fleet repos are mostly on `main`, but legacy or vendored repos still use
-`master`. A script that hard-codes one name silently no-ops on the other —
+`master`. A script that hard-codes one name silently no-ops on the other -
 it runs, exits 0, and never touches the branch it meant to.
 
 ## The rule
@@ -26,7 +26,7 @@ pattern anywhere a default branch name is needed:
 ## Why
 
 A script that assumes `main` breaks silently on any repo still using
-`master` — no error, only the wrong branch or an empty diff. The
+`master` - no error, only the wrong branch or an empty diff. The
 `git symbolic-ref` lookup reads the truth from the remote instead of
 guessing, so the same script works across every fleet repo regardless of
 its default branch name.

@@ -215,7 +215,7 @@ export function collectBuildConfigFiles(repoRoot: string): string[] {
     .filter(isBuildConfigPath)
 }
 
-function describe(kind: MicroarchPinKind): string {
+export function describe(kind: MicroarchPinKind): string {
   switch (kind) {
     case 'go-goamd64':
       return 'Go GOAMD64 v2/v3/v4 pin — ship a v1 default binary + x/sys/cpu runtime dispatch'
@@ -228,7 +228,7 @@ function describe(kind: MicroarchPinKind): string {
   }
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const files = collectBuildConfigFiles(REPO_ROOT)
   const pins: MicroarchPin[] = []

@@ -57,7 +57,7 @@ const FORBIDDEN_HOST = TAZE_FAST_NPM_META_HOST
 const EXEMPT_RE =
   /(?:^|\/)(?:scripts\/fleet\/check\/taze-is-single-registry\.mts|taze-is-single-registry\.test\.mts|patches\/taze@[^/]+\.patch|\.claude\/hooks\/fleet\/_shared\/denied-domains\.mts)$/
 
-function trackedFiles(cwd: string): string[] {
+export function trackedFiles(cwd: string): string[] {
   const result = spawnSync('git', ['ls-files', '-z'], { cwd, stdio: 'pipe' })
   if (result.status !== 0) {
     return []
@@ -189,7 +189,7 @@ export function checkParityTarget(cwd: string, target: ParityTarget): string[] {
   return findings
 }
 
-function main(): void {
+export function main(): void {
   // Implicit working directory: like dedup-patches-are-justified, this check
   // reads repo-relative paths from wherever the check runner invoked it (the
   // repo root in every runner; the e2e tests spawn it from a fixture dir).

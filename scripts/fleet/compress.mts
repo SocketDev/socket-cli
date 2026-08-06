@@ -103,6 +103,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/compress.mts <input> [output.zst]',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(() => main(process.argv.slice(2)), SCRIPT_META)
 }
+/* c8 ignore stop */

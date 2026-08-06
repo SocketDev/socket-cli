@@ -172,7 +172,10 @@ export function formatCommittedDistStaleFinding(
 
 // The last commit to touch `dir` in this repo, or `undefined` when git has no
 // history for it (missing dir, or a killed/errored spawn).
-function lastCommitTouching(repoRoot: string, dir: string): string | undefined {
+export function lastCommitTouching(
+  repoRoot: string,
+  dir: string,
+): string | undefined {
   const result = spawnSync('git', ['log', '-1', '--format=%H', '--', dir], {
     cwd: repoRoot,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -188,7 +191,7 @@ function lastCommitTouching(repoRoot: string, dir: string): string | undefined {
 // Exit status of `git merge-base --is-ancestor <srcCommit> <distCommit>`, raw
 // (0/1/other) so `isAncestorFromExitStatus` is the single place that turns it
 // into the tri-state the decision function expects.
-function mergeBaseIsAncestorStatus(
+export function mergeBaseIsAncestorStatus(
   repoRoot: string,
   srcCommit: string,
   distCommit: string,

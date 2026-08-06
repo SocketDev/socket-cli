@@ -92,12 +92,23 @@ A working set, by register (grow it — the point is a voice, not a whitelist):
 Blocked by `anti-prose-guard` on doc writes; flagged by
 `convo-prose-nudge` on `gh pr/issue` commands:
 
+<details>
+<summary><b>The banned patterns</b> - throat-clearers, closing filler, hedge-stacking, em-dashes, contrast pairs, self-vouching framing, and the AI-slop tells</summary>
+
 - Throat-clearers: "I've gone ahead and…", "Let me…", "In this PR, I…",
   "I took a look and…"
 - Closing filler: "Let me know if you have any questions!", "Hope this helps!",
   trailing summary restating the opening.
 - Hedge-stacking: "essentially", "fundamentally", "simply", "just", "basically".
-- Em-dash chains (more than one per sentence).
+- Em-dashes, every one of them. Not "no chains", none at all: one U+2014 on an
+  outbound surface already reads as an agent tell. The fix is mechanical, so it
+  stays reviewable: replace the em-dash with a plain hyphen and leave the
+  spacing alone, so ` — ` becomes ` - `. A dash inside a code span or a fenced
+  block is exempt, because there it is quoted code rather than prose. Gated by
+  `scripts/fleet/check/prose-em-dashes-are-absent.mts`, whose `--fix` applies
+  the swap and whose burn-down list in
+  `scripts/fleet/constants/prose-em-dash-burn-down.json` names the files still
+  owed the rewrite and only ever shrinks.
 - "not X, it's Y" contrast pairs — state the positive directly.
 - Honesty framing: the bare word ("honest", "honestly", "honesty"), "in all
   honesty", "to be honest", "if I'm honest", "Frankly," — just state the claim.
@@ -112,6 +123,8 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
   fixes lives in the prose skill's `.claude/skills/fleet/prose/references/phrases.md`; run human-facing
   prose through it.
 
+</details>
+
 ## Operating doctrine
 
 - **Decide fast; state the reason + reversal condition.** Don't survey options.
@@ -122,10 +135,13 @@ Blocked by `anti-prose-guard` on doc writes; flagged by
 - **Four rules govern the inside of a fold** — `scripts/fleet/_shared/pr-body-law.mts`
   states them as data (`PR_BODY_LAW`, `PR_BODY_LAW_PROMPT`) and `prBodySmells()`
   reports the shapes advisorily:
-  - **The summary carries the claim.** Short bold noun phrase, em dash, specific
-    finding, so the reader decides whether to expand without expanding.
-    `What changed` fails; `The change — one home per case, plus the vars that
-    outrank it` passes.
+  - **The summary carries the claim.** Short bold noun phrase, a spaced plain
+    dash, specific finding, so the reader decides whether to expand without
+    expanding. `What changed` fails; `The change - one home per case, plus the
+    vars that outrank it` passes. The separator is ` - ` and nothing else, the
+    one spelling the corpus converges on: a colon reads as a label and an
+    em dash is banned outright by the rule above. `CLAIM_SEPARATOR_RE` still
+    accepts the older spellings on read, so nothing already written breaks.
   - **Open with the takeaway, then support it.** Lead-with-the-point, one level
     down. A fold opening on a list or a code fence leaves the reader to assemble
     the point.

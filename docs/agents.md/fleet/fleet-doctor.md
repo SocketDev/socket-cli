@@ -1,32 +1,32 @@
 # fleet-doctor
 
-`scripts/fleet/doctor.mts` — a cascade-resident health check that diagnoses and
+`scripts/fleet/doctor.mts` - a cascade-resident health check that diagnoses and
 repairs onboarding gaps that break `pnpm install` in a fleet member but that the
 sync-scaffolding cascade does not catch.
 
 ## Gap classes
 
-### Gap 1 — catalog-reference-without-entry (auto-fixable)
+### Gap 1 - catalog-reference-without-entry (auto-fixable)
 
 A workspace package.json declares `"<dep>": "catalog:"` (or
 `"catalog:<named>"`) without a matching entry in the repo's
 `pnpm-workspace.yaml` `catalog:` block. pnpm rejects the install with
 `ERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPEC`.
 
-Root cause: some catalog names are optional fleet names — version-locked only
+Root cause: some catalog names are optional fleet names - version-locked only
 when the dep is present, never injected by the cascade. A repo can therefore
 carry the dependency reference without the catalog entry.
 
 Auto-fix: the doctor resolves the version from the cascaded fleet catalog
-(`pnpm-workspace.fleet.yaml`) — its `catalog:` block (fleet-canonical names)
-and `catalogOptional:` block (optional names like `rolldown` and `vite`) — and
+(`pnpm-workspace.fleet.yaml`) - its `catalog:` block (fleet-canonical names)
+and `catalogOptional:` block (optional names like `rolldown` and `vite`) - and
 splices the entry into `pnpm-workspace.yaml` sorted, using `spliceCatalogEntry`.
 
 If the dep is not a known fleet catalog name, or the ref targets a named
 catalog, the doctor reports the gap with the exact fix the operator must apply.
 It never guesses a version.
 
-### Gap 2 — soak-window install failure (report-only)
+### Gap 2 - soak-window install failure (report-only)
 
 After catalog gaps are fixed, `pnpm install` can still fail with
 `ERR_PNPM_NO_MATURE_MATCHING_VERSION` when a (transitive) dep resolves within
@@ -45,11 +45,11 @@ doctor never auto-applies soak excludes.
 
 ## Version source
 
-`pnpm-workspace.fleet.yaml` — cascaded byte-identical from the wheelhouse to
+`pnpm-workspace.fleet.yaml` - cascaded byte-identical from the wheelhouse to
 every fleet member. Two blocks:
 
-- `catalog:` — fleet-canonical names (present in every repo).
-- `catalogOptional:` — optional names (`rolldown`, `vite`); version-locked when
+- `catalog:` - fleet-canonical names (present in every repo).
+- `catalogOptional:` - optional names (`rolldown`, `vite`); version-locked when
   present, never injected by the cascade.
 
 `loadOptionalCatalogEntries()` in `scripts/repo/sync-scaffolding/manifest/catalog.mts`

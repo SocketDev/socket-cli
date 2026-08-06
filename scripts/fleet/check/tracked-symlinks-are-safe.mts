@@ -47,7 +47,9 @@ const logger = getDefaultLogger()
 // symlink; its blob content is the link target. Read the tree (HEAD/index) so
 // the check works even when the working copy has replaced the symlink with a
 // real dir, exactly the post-untrack state.
-function trackedSymlinks(repoRoot: string): Array<{ p: string; oid: string }> {
+export function trackedSymlinks(
+  repoRoot: string,
+): Array<{ p: string; oid: string }> {
   const r = spawnSync('git', ['ls-files', '--stage'], {
     cwd: repoRoot,
     stdioString: true,
@@ -73,7 +75,7 @@ function trackedSymlinks(repoRoot: string): Array<{ p: string; oid: string }> {
 }
 
 // Read a symlink blob's target text from the object store, not the worktree.
-function readLinkTarget(repoRoot: string, oid: string): string {
+export function readLinkTarget(repoRoot: string, oid: string): string {
   const r = spawnSync('git', ['cat-file', '-p', oid], {
     cwd: repoRoot,
     stdioString: true,
@@ -91,7 +93,7 @@ export function planFix(offenderPaths: readonly string[]): UntrackAction[] {
 }
 
 // Run the detection over the current index state.
-function detectOffenders(repoRoot: string): BadSymlink[] {
+export function detectOffenders(repoRoot: string): BadSymlink[] {
   const bad: BadSymlink[] = []
   const links = trackedSymlinks(repoRoot)
   for (let i = 0, { length } = links; i < length; i += 1) {
@@ -105,7 +107,7 @@ function detectOffenders(repoRoot: string): BadSymlink[] {
   return bad
 }
 
-function main(): void {
+export function main(): void {
   const repoRoot = REPO_ROOT
   const fix = process.argv.includes('--fix')
   let bad = detectOffenders(repoRoot)

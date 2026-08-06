@@ -477,7 +477,7 @@ ${context.oldPatchText}
  * Read the ported target files from the temp edit dir. Missing files are
  * skipped — the verifier treats an absent intended change as unmet.
  */
-function readPortedFiles(
+export function readPortedFiles(
   tempDir: string,
   relPaths: readonly string[],
 ): Map<string, string> {

@@ -353,6 +353,8 @@ const SCRIPT_META: ScriptMeta = {
   checks [<n> ...]         poll to conclusion, report reds`,
 }
 
+/* c8 ignore start - entrypoint guard; only runs when node executes this file as the process entry, never under the in-process test runner */
 if (isMainModule(import.meta.url)) {
   runMain(() => runPrCare(process.argv.slice(2)), SCRIPT_META)
 }
+/* c8 ignore stop */

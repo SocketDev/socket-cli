@@ -74,6 +74,11 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
       - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       - name: Prune workflow runs
         env:
           GH_TOKEN: ${{ github.token }}

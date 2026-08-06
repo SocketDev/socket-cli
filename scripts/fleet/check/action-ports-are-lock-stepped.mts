@@ -243,6 +243,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/check/action-ports-are-lock-stepped.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(() => runCheck(REPO_ROOT), SCRIPT_META)
 }
+/* c8 ignore stop */

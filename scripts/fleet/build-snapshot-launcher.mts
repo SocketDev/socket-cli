@@ -203,7 +203,7 @@ export function planLauncherAction(
 /**
  * Host C-compile of the right source for this os/arch.
  */
-function buildHostLauncher(): boolean {
+export function buildHostLauncher(): boolean {
   const isWin = process.platform === 'win32'
   const src = isWin ? WIN_SRC : POSIX_SRC
   const outBin = path.join(
@@ -239,7 +239,7 @@ function buildHostLauncher(): boolean {
 /**
  * Freeze node.path + snapshot-blob.path next to the launcher.
  */
-function writeSidecars(): void {
+export function writeSidecars(): void {
   const sourceHash = crypto
     .createHash('sha256')
     .update(readFileSync(SNAPSHOT_BUNDLE))
@@ -264,7 +264,7 @@ function writeSidecars(): void {
   )
 }
 
-function main(): void {
+export function main(): void {
   const action = planLauncherAction(process.argv, {
     bundleExists: existsSync(SNAPSHOT_BUNDLE),
   })
@@ -299,6 +299,8 @@ const SCRIPT_META: ScriptMeta = {
 Prerequisite: run build-hook-snapshot.mts first (this reads the blob it produced).`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

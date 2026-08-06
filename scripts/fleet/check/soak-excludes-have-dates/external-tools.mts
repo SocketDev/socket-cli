@@ -12,7 +12,9 @@
  *   the dates. Three defects, mirroring the YAML side's vocabulary:
  *
  *   - `missing` — a block whose `published`/`removable` dates are absent or
- *     malformed. Blocking: an undated bypass never disarms.
+ *     malformed, OR whose `version` names a release the entry no longer pins.
+ *     Blocking: an undated bypass never disarms, and a mismatched one would
+ *     otherwise mask a still-soaking pin from the `unbypassed` probe below.
  *   - `stale` — a block whose window has closed. Informational, exactly like a
  *     stale YAML bullet; `external-tools prune --apply` owns the removal.
  *   - `unbypassed` — a pin whose version is STILL inside its soak window with no
@@ -115,10 +117,30 @@ export function scanExternalToolBypasses(
       const version =
         typeof entry['version'] === 'string' ? entry['version'] : ''
       const bypass = entry['soakBypass'] as
-        | { published?: unknown | undefined; removable?: unknown | undefined }
+        | {
+            published?: unknown | undefined
+            removable?: unknown | undefined
+            version?: unknown | undefined
+          }
         | undefined
       if (bypass) {
-        const { published, removable } = bypass
+        const { published, removable, version: bypassVersion } = bypass
+        // A block naming a version the entry no longer pins is not a bypass for
+        // THIS pin. Report it as malformed (blocking) rather than letting the
+        // `bypass` branch below swallow the entry — otherwise a still-soaking pin
+        // carrying a leftover block evades the `unbypassed` probe entirely.
+        if (
+          typeof bypassVersion !== 'string' ||
+          (version !== '' && bypassVersion !== version)
+        ) {
+          findings.push({
+            kind: 'missing',
+            manifest: manifest.path,
+            tool,
+            version,
+          })
+          continue
+        }
         if (
           typeof published !== 'string' ||
           !ISO_DATE_RE.test(published) ||
@@ -289,16 +311,20 @@ export function reportExternalToolFindings(
 
   if (missing.length > 0) {
     process.stderr.write(
-      `[check-soak-excludes-have-dates] ${missing.length} external-tools ` +
-        `soakBypass block${missing.length === 1 ? '' : 's'} missing dates:\n`,
+      `[check-soak-excludes-have-dates] ${missing.length} malformed external-tools ` +
+        `soakBypass block${missing.length === 1 ? '' : 's'} ` +
+        `(missing/invalid dates, or a version the entry no longer pins):\n`,
     )
     for (let i = 0, { length } = missing; i < length; i += 1) {
       const f = missing[i]!
       process.stderr.write(`  ${f.manifest}: ${f.tool}@${f.version}\n`)
     }
     process.stderr.write(
-      `\nA soakBypass block carries both ISO dates, so the bypass disarms itself:\n` +
+      `\nA soakBypass block names the pinned version and carries both ISO dates, so\n` +
+        `the bypass applies to a known release and disarms itself:\n` +
         `  "soakBypass": { "published": "<YYYY-MM-DD>", "removable": "<YYYY-MM-DD>", "version": "<x.y.z>" }\n` +
+        `\nA block left behind by a moved pin is obsolete — drop it with:\n` +
+        `  node scripts/fleet/external-tools/prune.mts --apply\n` +
         `\nReference: docs/agents.md/fleet/tooling.md "Soak time".\n\n`,
     )
   }

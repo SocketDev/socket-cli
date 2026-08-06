@@ -28,7 +28,7 @@
  *   THE LAW IS THE FIX: `--fix` manages exactly ONE repo-level ruleset named
  *   `fleet-tag-protection` (target tag, enforcement active, include
  *   `refs/tags/v*`, rules deletion + non_fast_forward). If a ruleset with
- *   that name exists it is PATCHed to the canonical shape; if missing it is
+ *   that name exists it is PUT to the canonical shape; if missing it is
  *   POSTed. No OTHER ruleset is ever touched — org rulesets and the sibling
  *   `fleet-main-protection` branch ruleset are out of scope. After fixing,
  *   the check re-sweeps so success is measured from GitHub's answer, never
@@ -47,6 +47,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { isMainModule } from '../_shared/is-main-module.mts'
+import {
+  hasRepositoryAdminBypass,
+  REPOSITORY_ADMIN_BYPASS,
+} from '../grant-ruleset-bypass/ruleset-model.mts'
+import type { BypassActor } from '../grant-ruleset-bypass/ruleset-model.mts'
 import { runMain } from '../_shared/run-main.mts'
 import type { ScriptMeta } from '../_shared/run-main.mts'
 import { OWNS_RELOCATED_TESTS, REPO_ROOT } from '../paths.mts'
@@ -132,6 +137,10 @@ export interface TagRulesetDetail {
   readonly enforcement: string
   readonly include: readonly string[]
   readonly ruleTypes: readonly string[]
+  // The ruleset's name ('' when the payload carries none) and bypass actors —
+  // the admin-bypass law judges the MANAGED ruleset by name.
+  readonly name: string
+  readonly bypassActors: readonly BypassActor[]
 }
 
 /**
@@ -194,9 +203,32 @@ export function parseRulesetDetail(json: string): TagRulesetDetail | undefined {
     enforcement?: unknown | undefined
     conditions?: unknown | undefined
     rules?: unknown | undefined
+    name?: unknown | undefined
+    bypass_actors?: unknown | undefined
   }
   if (typeof obj.target !== 'string' || typeof obj.enforcement !== 'string') {
     return undefined
+  }
+  const bypassActors: BypassActor[] = []
+  if (Array.isArray(obj.bypass_actors)) {
+    for (let i = 0, { length } = obj.bypass_actors; i < length; i += 1) {
+      const a = obj.bypass_actors[i] as {
+        actor_id?: unknown | undefined
+        actor_type?: unknown | undefined
+        bypass_mode?: unknown | undefined
+      }
+      if (
+        typeof a?.actor_id === 'number' &&
+        typeof a?.actor_type === 'string' &&
+        typeof a?.bypass_mode === 'string'
+      ) {
+        bypassActors.push({
+          actor_id: a.actor_id,
+          actor_type: a.actor_type,
+          bypass_mode: a.bypass_mode,
+        })
+      }
+    }
   }
   const includeRaw = (
     obj.conditions as
@@ -226,6 +258,8 @@ export function parseRulesetDetail(json: string): TagRulesetDetail | undefined {
     enforcement: obj.enforcement,
     include,
     ruleTypes,
+    name: typeof obj.name === 'string' ? obj.name : '',
+    bypassActors,
   }
 }
 
@@ -294,6 +328,30 @@ export function tagRuleFindings(
 }
 
 /**
+ * The finding name for a managed tag ruleset that exists without the
+ * standing Repository-admin always-allow bypass. Remediated by the same
+ * converge as a missing rule type: the canonical payload carries the bypass.
+ */
+export const ADMIN_BYPASS_RULE = 'repository-admin-bypass'
+
+/**
+ * The admin-bypass finding for one repo, judged on the MANAGED ruleset by
+ * name: present-but-missing-the-admin-entry is the finding. No managed
+ * ruleset (the rule-type findings own that case) or an unreadable read
+ * yields none. Pure; exported for tests.
+ */
+export function tagAdminBypassFinding(
+  repo: FleetRepo,
+  rulesets: readonly TagRulesetDetail[] | undefined,
+): RuleFinding | undefined {
+  const managed = rulesets?.find(rs => rs.name === MANAGED_RULESET_NAME)
+  if (!managed || hasRepositoryAdminBypass(managed.bypassActors)) {
+    return undefined
+  }
+  return { repo: repo.name, owner: repo.owner, rule: ADMIN_BYPASS_RULE }
+}
+
+/**
  * The remediations the law prescribes for a finding set: one action per
  * affected repo. The managed ruleset is declarative and identical
  * everywhere, so a repo missing only one rule still converges to the full
@@ -325,6 +383,7 @@ export function rulesetPayload(): {
   readonly name: string
   readonly target: string
   readonly enforcement: string
+  readonly bypass_actors: readonly BypassActor[]
   readonly conditions: {
     readonly ref_name: {
       readonly include: readonly string[]
@@ -341,6 +400,9 @@ export function rulesetPayload(): {
     name: MANAGED_RULESET_NAME,
     target: 'tag',
     enforcement: 'active',
+    // The standing Repository-admin always-allow exemption: an admin locked
+    // out of a repo they administer has no sanctioned path to fix the lockout.
+    bypass_actors: [REPOSITORY_ADMIN_BYPASS],
     conditions: {
       ref_name: { include: [VERSION_TAG_INCLUDE], exclude: [] },
     },
@@ -461,10 +523,13 @@ function applyFix(fix: FixAction): boolean {
   const written =
     managedId === 'absent'
       ? gh(['api', '-X', 'POST', base, '--input', '-'], body)
-      : gh(['api', '-X', 'PATCH', `${base}/${managedId}`, '--input', '-'], body)
+      : // PUT, never PATCH: GitHub's repository-ruleset update endpoint only
+        // routes PUT — a PATCH answers 404, which read as "converge failed"
+        // on every update until the admin-bypass sweep exposed it.
+        gh(['api', '-X', 'PUT', `${base}/${managedId}`, '--input', '-'], body)
   if (written === undefined) {
     logger.warn(
-      `  ${fix.repo}: ${managedId === 'absent' ? 'POST' : 'PATCH'} of ${MANAGED_RULESET_NAME} failed`,
+      `  ${fix.repo}: ${managedId === 'absent' ? 'POST' : 'PUT'} of ${MANAGED_RULESET_NAME} failed`,
     )
     return false
   }
@@ -478,7 +543,12 @@ function sweep(repos: readonly FleetRepo[]): RuleFinding[] {
   const findings: RuleFinding[] = []
   for (let i = 0, { length } = repos; i < length; i += 1) {
     const repo = repos[i]!
-    findings.push(...tagRuleFindings(repo, ghTagRulesetDetails(repo)))
+    const details = ghTagRulesetDetails(repo)
+    findings.push(...tagRuleFindings(repo, details))
+    const bypassGap = tagAdminBypassFinding(repo, details)
+    if (bypassGap) {
+      findings.push(bypassGap)
+    }
   }
   return findings
 }
@@ -561,7 +631,9 @@ export function main(): void {
     logger.warn(
       f.rule === RULE_DELETION
         ? `  ${f.repo}: no active tag ruleset enforces deletion on ${VERSION_TAG_INCLUDE} — release tags can be deleted`
-        : `  ${f.repo}: no active tag ruleset enforces non_fast_forward on ${VERSION_TAG_INCLUDE} — release tags can be moved to a different commit`,
+        : f.rule === ADMIN_BYPASS_RULE
+          ? `  ${f.repo}: ${MANAGED_RULESET_NAME} lacks the Repository-admin always-allow bypass — a locked-out admin has no sanctioned unlock path`
+          : `  ${f.repo}: no active tag ruleset enforces non_fast_forward on ${VERSION_TAG_INCLUDE} — release tags can be moved to a different commit`,
     )
   }
   if (MODE === 'strict') {

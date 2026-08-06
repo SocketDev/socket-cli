@@ -355,7 +355,7 @@ export async function runGoPublish(
   return results
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       apply: { default: false, type: 'boolean' },
@@ -417,6 +417,8 @@ const SCRIPT_META: ScriptMeta = {
 
 // Entrypoint-guarded: importing this module (unit tests of its exported
 // helpers) must not execute the CLI.
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

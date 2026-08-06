@@ -1,11 +1,11 @@
 # Runtime state & caches
 
-Code that writes per-checkout or runtime metadata — applied-ref markers, fetch
-state, memoized lookups, downloaded artifacts — must be deliberate. Scattered,
+Code that writes per-checkout or runtime metadata - applied-ref markers, fetch
+state, memoized lookups, downloaded artifacts - must be deliberate. Scattered,
 undocumented, or repo-tracked state turns into drift, dirty worktrees, and
 invisible behavior nobody can audit. (Not hypothetical: the bootstrap fetcher's
-applied-ref marker first lived at `.config/fleet/.bundle-applied` — inside the <!-- docs-refs-ignore: retired legacy marker path -->
-tracked tree — so every thin consumer that ran the fetcher carried it as an
+applied-ref marker first lived at `.config/fleet/.bundle-applied` - inside the <!-- docs-refs-ignore: retired legacy marker path -->
+tracked tree - so every thin consumer that ran the fetcher carried it as an
 untracked, dirty file.)
 
 ## The rules
@@ -22,11 +22,11 @@ untracked, dirty file.)
     (fetched artifacts, expensive memoized lookups).
   - **dep-0 (can't import socket-lib) → `<repo root>/.cache/{fleet,repo}/<name>/`.**
     Gitignored by the fleet block's `**/.cache/` glob and reachable with only a
-    path (walk to the git toplevel). The segment is the WRITING code's tier —
-    cascaded fleet code writes under `fleet/`, repo-owned code under `repo/` —
+    path (walk to the git toplevel). The segment is the WRITING code's tier -
+    cascaded fleet code writes under `fleet/`, repo-owned code under `repo/` -
     mirroring `.claude/hooks/{fleet,repo}`. The bootstrap fetcher
     (`scripts/repo/bootstrap/fleet.mjs`) runs at `prepare`, BEFORE the payload +
-    socket-lib exist, so it is strictly dep-0 —
+    socket-lib exist, so it is strictly dep-0 -
     `.cache/fleet/socket-wheelhouse/` is its cacache-equivalent.
 
 <details>
@@ -34,7 +34,7 @@ untracked, dirty file.)
 
 - **The store sits at the repo root, never inside `node_modules/`.** A package
   `clean` and a `rm -rf node_modules` both delete the dependency tree, and a
-  store underneath it goes with them — taking coverage reports, the hook bundle
+  store underneath it goes with them - taking coverage reports, the hook bundle
   cache, and the active-edits ledger that live hook processes are mid-write on.
   That is not hypothetical: a member's `clean` recursively removed the store and
   died on `ENOTEMPTY` because concurrent hooks were writing into it. Scope a
@@ -48,23 +48,23 @@ untracked, dirty file.)
   repo-root `.cache/` is per-CHECKOUT. Never resolve one to the other.
 
 - **Call out invisible state LOUDLY.** cacache and `.cache` are
-  harder to SEE — they are not files in the repo. That invisibility is the
+  harder to SEE - they are not files in the repo. That invisibility is the
   hazard, not a feature: undocumented cache state is forgotten, surprising when
   stale, and impossible to audit. Every store must be named in "Known state
   stores" below with what it holds, where it lives, its TTL / invalidation, and
-  how to inspect or clear it — and pointed at from a comment at the write site.
+  how to inspect or clear it - and pointed at from a comment at the write site.
 
 </details>
 
 ## Known state stores
 
-- **`bundle.ref`** (`.config/repo/socket-wheelhouse.json`) — a CUSTOM pin (not a
+- **`bundle.ref`** (`.config/repo/socket-wheelhouse.json`) - a CUSTOM pin (not a
   standard field): the wheelhouse bundle ref (`fleet-pack-<sha>`) a thin consumer
   fetches. The fleet's equivalent of a payload lockfile pin; the version decision
-  lives in exactly one auditable place. This one IS tracked — it's config, not
+  lives in exactly one auditable place. This one IS tracked - it's config, not
   runtime state.
 - **`.cache/fleet/socket-wheelhouse/bundle-applied`** (dep-0 fetcher
-  cache) — the bootstrap fetcher records the `bundle.ref` it last applied so
+  cache) - the bootstrap fetcher records the `bundle.ref` it last applied so
   `scripts/repo/bootstrap/fleet.mjs --if-current` skips a redundant warm fetch in local dev. A
   fresh clone / CI has no `.cache`, so the fetch runs. Inspect:
   `cat .cache/fleet/socket-wheelhouse/bundle-applied`; clear: delete it (or
@@ -74,4 +74,4 @@ untracked, dirty file.)
 
 ## Enforcement
 
-No automated hook or lint rule catches a stray write into the tracked tree today — that would need filesystem-write instrumentation this fleet doesn't have, meaning a VFS shim or an `fs` wrapper. The `socket/prefer-repo-root-dot-cache` oxlint rule catches the narrower "store lives under `node_modules/`" mistake at edit time. The rest of this rule is a design-review discipline: when adding a new state store, name it in "Known state stores" above and pick one of the two homes.
+No automated hook or lint rule catches a stray write into the tracked tree today - that would need filesystem-write instrumentation this fleet doesn't have, meaning a VFS shim or an `fs` wrapper. The `socket/prefer-repo-root-dot-cache` oxlint rule catches the narrower "store lives under `node_modules/`" mistake at edit time. The rest of this rule is a design-review discipline: when adding a new state store, name it in "Known state stores" above and pick one of the two homes.

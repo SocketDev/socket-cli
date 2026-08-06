@@ -1,4 +1,4 @@
-# Dot-naming — domain from the target suffix
+# Dot-naming: domain from the target suffix
 
 Every published per-platform artifact carries a **dotted name** whose target
 segment says what kind of artifact it is:
@@ -10,29 +10,29 @@ blurred into one convention.
 
 Ratified 2026-07-04 as the binary-vs-napi split; generalized 2026-07-13 to the
 dotted two-axis scheme (`.lang` + `.target`) so multi-implementation families
-— a Rust addon, a C++ addon, and a wasm fallback of the same package — never
-collide.
+never collide: a Rust addon, a C++ addon, and a wasm fallback of the same
+package each carry a distinct name.
 
 ## The grammar
 
 `@<owner>/<name>[.<lang>].<target>[-<platform>]`
 
-- **`<name>`** — the logical package. `@<owner>/<name>` alone is a
+- **`<name>`** - the logical package. `@<owner>/<name>` alone is a
   **meta-selector**: it loads a default family (native, then wasm fallback); it
   is not itself an implementation.
-- **`<lang>`** (optional) — implementation source: `rs` (Rust), `cpp` (C++),
+- **`<lang>`** (optional) - implementation source: `rs` (Rust), `cpp` (C++),
   `go` (Go), `ts` (TypeScript). Omitted for a single-implementation package;
   `@<owner>/<name>.<lang>` (no target) is that family's loader.
-- **`<target>`** — build-artifact kind, the **domain signal**:
-  - **`node`** — native NAPI addon (payload `<name>.node`). Platform tail follows
+- **`<target>`** - build-artifact kind, the **domain signal**:
+  - **`node`** - native NAPI addon (payload `<name>.node`). Platform tail follows
     **napi-rs** naming: `platform-arch[-abi]`, `-gnu`/`-musl` on linux and
     `-msvc` on windows explicit, darwin bare. Default matrix is 5 targets, the
     wasm fallback covers the rest: `darwin-arm64`, `darwin-x64`,
     `linux-arm64-gnu`, `linux-x64-gnu`, `win32-x64-msvc`. Canonical set:
     `scripts/fleet/util/napi-targets.mts`.
-  - **`wasm`** — portable WebAssembly. No platform tail; one artifact runs
+  - **`wasm`** - portable WebAssembly. No platform tail; one artifact runs
     everywhere.
-  - **`exe`** — standalone executable (payload at `bin/<name>`). Platform tail
+  - **`exe`** - standalone executable (payload at `bin/<name>`). Platform tail
     follows pnpm **pack-app** naming: `<os>-<arch>[-musl]`, glibc unsuffixed, no
     toolchain segment. 8 targets, an executable has no fallback: `darwin-arm64`,
     `darwin-x64`, `linux-arm64`, `linux-arm64-musl`, `linux-x64`,

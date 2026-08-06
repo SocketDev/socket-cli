@@ -41,10 +41,10 @@ Two hooks make the worktree requirement structural rather than advisory. `primar
 
 Parallel-session-cautious is the **default**, not a special mode. Tread, touch, and commit only the smallest set needed:
 
-1. **Stage surgically.** `git add <specific-file>`. Never `-A` / `.` — that sweeps another session's unstaged edits into your index. The `overeager-staging-guard` hook blocks broad adds at edit time.
-2. **Commit surgically.** `git commit -o <your-file> [<your-file> …]` (or `git commit … -- <paths>`). The `-o` / pathspec form commits **only** the named paths regardless of what else is staged — so even if a parallel session staged files into the shared index, they can't ride into your commit. A bare `git commit` whose index holds files this session didn't touch is **blocked** (steered to `-o`); bypass `Allow index-sweep bypass` only when you genuinely mean to commit the whole index.
+1. **Stage surgically.** `git add <specific-file>`. Never `-A` / `.`, which sweeps another session's unstaged edits into your index. The `overeager-staging-guard` hook blocks broad adds at edit time.
+2. **Commit surgically.** `git commit -o <your-file> [<your-file> …]` (or `git commit … -- <paths>`). The `-o` / pathspec form commits **only** the named paths regardless of what else is staged, so even if a parallel session staged files into the shared index, they can't ride into your commit. A bare `git commit` whose index holds files this session didn't touch is **blocked** (steered to `-o`); bypass `Allow index-sweep bypass` only when you genuinely mean to commit the whole index.
 
-Both halves matter: surgical `git add` keeps your index clean, surgical `git commit -o` is the backstop for when the index is already polluted (another agent staged concurrently, a hook auto-staged, a prior sweep). Under heavy contention the index is rarely yours alone — naming paths at commit time is the only reliable isolation.
+Both halves matter: surgical `git add` keeps your index clean, surgical `git commit -o` is the backstop for when the index is already polluted (another agent staged concurrently, a hook auto-staged, a prior sweep). Under heavy contention the index is rarely yours alone. Naming paths at commit time is the only reliable isolation.
 
 The wheelhouse cascade is the documented exception: it commits the whole index in a fresh worktree off `origin/main`, opted in via the `FLEET_SYNC=1` sentinel.
 
@@ -59,7 +59,7 @@ between your reads or when starting the final repo-wide squash/push. The
 in squash-opted repos.
 
 <details>
-<summary><b>Detail</b> — `git restore`</summary>
+<summary><b>Detail</b>: `git restore`</summary>
 
 **Land the dirty files BEFORE squashing.** A squash that runs over an
 uncommitted working tree either sweeps that work under another session's
@@ -72,7 +72,7 @@ Never the reverse.
 landings.** The corollary of the above is that a long-held tree is the hazard,
 not the remedy. A session that keeps a tree open while other sessions land goes
 stale for files it never touched, and then commits its own older copy of them
-on top — silently reverting work it never meant to look at. This happened three
+on top, silently reverting work it never meant to look at. This happened three
 times on 2026-07-30 (`688e1408f`, `e987c0a95`, `6e6c296f0`), twice to the same
 one-line pnpm-store fix. Retreating into a private worktree makes it worse, not
 better: an isolated tree is a tree that diverges longer. Land immediately,
@@ -119,25 +119,25 @@ Every session runs the same hooks, and the fleet biases toward landing to local 
 
 Cross-repo imports go through `@socketsecurity/lib/...` and `@socketregistry/...` (workspace exports). Path-based imports (`../<sibling-repo>/...`) break in CI, in fresh clones, and on CI agents without the sibling checked out. The `cross-repo-guard` hook blocks these at edit time.
 
-## Active-edits ledger — coordinating concurrent actors
+## Active-edits ledger: coordinating concurrent actors
 
-The ledger is a per-actor JSON file under `.cache/fleet/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)` — the transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
+The ledger is a per-actor JSON file under `.cache/fleet/socket-active-edits/<actorId>.json` (dep-0, never tracked). Actor ID = `sha256(transcript_path).slice(0,16)`. The transcript path discriminates actors because each subagent / workflow-agent gets its own JSONL while the main session has a different one.
 
 Three hooks build on it:
 
 - **`active-edits-ledger`** (PostToolUse, Edit|Write|NotebookEdit): records the written path into the current actor's ledger file. Never blocks; exit 0 on every code path.
 - **`live-edit-collision-guard`** (PreToolUse, Edit|Write|NotebookEdit): blocks when the target path appears in a DIFFERENT live actor's ledger with a write within the 5-minute collision window. The block message names the other actor, states the seconds since its last write, and lists the three sanctioned moves below.
-- **`dirty-worktree-stop-guard`** (Stop): paths owned by a live foreign actor are SANCTIONED — listed separately and excluded from the blocking set (slice 3). If every dirty path is sanctioned, the guard exits clean.
+- **`dirty-worktree-stop-guard`** (Stop): paths owned by a live foreign actor are SANCTIONED, listed separately and excluded from the blocking set (slice 3). If every dirty path is sanctioned, the guard exits clean.
 
 ### Stop-edit-resume protocol
 
 When `live-edit-collision-guard` fires, the three moves in priority order:
 
 1. **Stop the other run.** Use `TaskStop` on the blocking actor. Once it lands its changes, resume your edit.
-2. **Queue the edit.** Work on a different file now; revisit this one after the other run completes. The completion notification re-invokes your session — no open-ended "I'll wait and monitor" promise needed.
+2. **Queue the edit.** Work on a different file now; revisit this one after the other run completes. The completion notification re-invokes your session. No open-ended "I'll wait and monitor" promise needed.
 3. **Bypass.** If the other run is already finished or abandoned and the ledger is stale, the user types `Allow live-edit-collision bypass` verbatim.
 
-The excuse-detector (slice 4) gates on ledger presence: when a live foreign actor exists, open-ended wait promises ("I'll watch to completion", "wait and see", "land whatever it leaves") are converted into a protocol reminder — converge now, arm a Monitor, or hand off via a `.claude/plans/` doc.
+The excuse-detector (slice 4) gates on ledger presence: when a live foreign actor exists, open-ended wait promises ("I'll watch to completion", "wait and see", "land whatever it leaves") are converted into a protocol reminder: converge now, arm a Monitor, or hand off via a `.claude/plans/` doc.
 
 ## Never overwrite a file another session is editing
 
@@ -149,7 +149,7 @@ A plain `Edit` / `Write` to a file another session has dirty silently clobbers t
 
 Stash, add-all, checkout-branch, reset-hard, and revert-other-session's-file are the common shapes. The rule is general. If you can't explain why the command only affects files your session owns, don't run it.
 
-## Pre-commit index races — retry, don't `--no-verify`
+## Pre-commit index races: retry, don't `--no-verify`
 
 When two sessions share one `.git/`, a `git commit` can fail in pre-commit because the *other* session's git op holds the index lock or left a half-written object. The signatures:
 
@@ -157,7 +157,7 @@ When two sessions share one `.git/`, a `git commit` can fail in pre-commit becau
 - `error: bad object` / `fatal: unable to read tree`
 - `fatal: cannot lock ref` / `unable to write new index file`
 
-This is **not** a failure in your change — it's contention on the shared `.git/`. When another session's pre-commit holds the index lock on a half-written object, your commit fails reproducibly even though your tree is clean. The wrong reflex is `git commit --no-verify`: it skips the **entire** validation chain (format, lint, tests, signing), so a real defect in your own change ships unseen too.
+This is **not** a failure in your change. It's contention on the shared `.git/`. When another session's pre-commit holds the index lock on a half-written object, your commit fails reproducibly even though your tree is clean. The wrong reflex is `git commit --no-verify`: it skips the **entire** validation chain (format, lint, tests, signing), so a real defect in your own change ships unseen too.
 
 The right recovery, in order:
 
@@ -171,7 +171,7 @@ The right recovery, in order:
    rm -f "$TMP_IDX"
    ```
 
-3. **Only then**, if pre-commit is genuinely broken (not racing) AND you've verified the tree green independently (`git write-tree` clean, tests pass, oxfmt clean), `--no-verify` is the last resort — and it still needs the `Allow no-verify bypass` phrase.
+3. **Only then**, if pre-commit is genuinely broken (not racing) AND you've verified the tree green independently (`git write-tree` clean, tests pass, oxfmt clean), `--no-verify` is the last resort, and it still needs the `Allow no-verify bypass` phrase.
 
 Nudged by `.claude/hooks/fleet/pre-commit-race-nudge/` on any `git commit --no-verify` (cascade `FLEET_SYNC=1` commits exempt).
 
@@ -183,7 +183,7 @@ being ahead of (or diverged from) local main is almost never a reason to touch
 local main.
 
 <details>
-<summary><b>Detail</b> — The banned reflex, Why origin looks ahead, When it IS a real divergence, Every reset stays additive / recoverable</summary>
+<summary><b>Detail</b>: The banned reflex, Why origin looks ahead, When it IS a real divergence, Every reset stays additive / recoverable</summary>
 
 **The banned reflex.** Seeing `origin/main` ahead and concluding "origin is
 ahead, I'll sync / reset / revert / drop local to match it" is wrong. The
@@ -238,9 +238,9 @@ origin-ahead Stop nudge is tracked to surface this proactively.
 ## Codex companions are quick checks, not long sessions
 
 A Codex companion session (identified by a FOREIGN
-`CODEX_COMPANION_SESSION_ID` — one that does not appear in the session's own
+`CODEX_COMPANION_SESSION_ID`, one that does not appear in the session's own
 transcript path; the codex plugin exports every session's OWN id, which marks
-nothing) exists for a quick second opinion — a diagnosis pass, a small
+nothing) exists for a quick second opinion: a diagnosis pass, a small
 verification. It is NOT a peer long-running session: a runaway multi-hour
 companion once looped `land-work.mts`/`cover.mts` for 8+ hours, monopolizing the
 shared checkout's test gate and index while mis-attributing its dirty files to
@@ -255,12 +255,12 @@ typing `Allow codex-long-session bypass`.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/no-revert-guard/` — blocks the forbidden-in-the-primary-checkout commands and the origin-ahead rewind.
-- `.claude/hooks/fleet/unpushed-main-nudge/` — nudges when local main sits unpushed ahead of origin.
-- `.claude/hooks/fleet/active-edits-ledger/` — records every actor's writes into a per-actor ledger.
-- `.claude/hooks/fleet/live-edit-collision-guard/` — blocks an edit whose target appears in a different live actor's ledger within the 5-minute window.
-- `.claude/hooks/fleet/primary-checkout-branch-guard/` — blocks a branch checkout/switch in the primary checkout.
-- `.claude/hooks/fleet/primary-checkout-on-default-stop-guard/` — blocks turn-end when the primary checkout drifted off its default branch.
-- `.claude/hooks/fleet/codex-session-budget-guard/` — blocks a Codex companion session past its 1-minute budget.
-- `.claude/hooks/fleet/auto-land-on-stop/` — lands this session's own-work source into signed logical commits at turn-end.
-- `.claude/hooks/fleet/stale-tree-clobber-guard/` — blocks a commit whose staged content for a path is older than HEAD, and teaches the land-forward restore.
+- `.claude/hooks/fleet/no-revert-guard/` - blocks the forbidden-in-the-primary-checkout commands and the origin-ahead rewind.
+- `.claude/hooks/fleet/unpushed-main-nudge/` - nudges when local main sits unpushed ahead of origin.
+- `.claude/hooks/fleet/active-edits-ledger/` - records every actor's writes into a per-actor ledger.
+- `.claude/hooks/fleet/live-edit-collision-guard/` - blocks an edit whose target appears in a different live actor's ledger within the 5-minute window.
+- `.claude/hooks/fleet/primary-checkout-branch-guard/` - blocks a branch checkout/switch in the primary checkout.
+- `.claude/hooks/fleet/primary-checkout-on-default-stop-guard/` - blocks turn-end when the primary checkout drifted off its default branch.
+- `.claude/hooks/fleet/codex-session-budget-guard/` - blocks a Codex companion session past its 1-minute budget.
+- `.claude/hooks/fleet/auto-land-on-stop/` - lands this session's own-work source into signed logical commits at turn-end.
+- `.claude/hooks/fleet/stale-tree-clobber-guard/` - blocks a commit whose staged content for a path is older than HEAD, and teaches the land-forward restore.

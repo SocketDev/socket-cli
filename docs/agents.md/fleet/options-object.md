@@ -2,7 +2,7 @@
 
 Use an options object instead of boolean (or other positional) parameters.
 A boolean positional forces callers to write `foo(x, true)` where the
-`true` is silent and meaningless at the call site — the
+`true` is silent and meaningless at the call site - the
 [boolean-trap](https://ariya.io/2011/08/hall-of-api-shame-boolean-trap).
 An options object names the flag: `foo(x, { dry: true })`.
 
@@ -43,7 +43,7 @@ export function foo(
 ## Why `{ __proto__: null, ...options }`
 
 A spread onto a plain `{}` copies the option properties but keeps
-`Object.prototype` in the chain — so a prototype-poisoning attack can
+`Object.prototype` in the chain - so a prototype-poisoning attack can
 supply a `dry` getter via `Object.prototype.dry`. The null-prototype
 spread breaks that chain: the resulting object has no prototype, so
 every property access hits only the own properties (the caller's

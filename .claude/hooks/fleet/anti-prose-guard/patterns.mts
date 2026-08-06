@@ -12,8 +12,18 @@ import {
   HONESTY_WHY,
 } from '../_shared/honesty-framing.mts'
 import { HEADING_LISTY_ASIDE_RE } from '../_shared/trailing-aside.mts'
+import { stripAllCodeSpans } from '../_shared/transcript.mts'
 
 export interface ProsePattern {
+  // Scan a copy with fenced blocks and EVERY inline span removed, so a
+  // character quoted as CODE never fires. Opt-in per pattern, because the
+  // default must not exempt inline spans: wrapping a banned phrase in
+  // backticks is the cheap dodge the Stop surface exists to close. It is set
+  // only where the banned character is legitimately part of quoted code, which
+  // today is the em-dash: `_shared/verdict.mts` documents the verdict line the
+  // hooks actually emit, dash included, inside a code span, and "fixing" that
+  // dash would change hook OUTPUT rather than prose.
+  readonly codeExempt?: boolean | undefined
   readonly label: string
   readonly regex: RegExp
   readonly why: string
@@ -91,11 +101,15 @@ export const PROSE_PATTERNS: readonly ProsePattern[] = [
   // surface scans this tier ALONE, because only these are verdict-grade.
   ...CATEGORICAL_PROSE_BANS,
   {
-    label: 'em-dash chain',
-    // Two or more ` — ` spaced-em-dash spans in the same paragraph. A single
-    // em-dash is fine; a chain is the AI-prose tell.
-    regex: / — [^\n]*? — /,
-    why: 'Em-dash chains read AI-generated. Break into separate sentences or use commas / parentheses.',
+    codeExempt: true,
+    label: 'em-dash',
+    // ANY U+2014, not merely a chain. The rule tightened on 2026-08-05: on an
+    // outbound GitHub surface one em-dash already reads as an agent tell, and
+    // allowing a single dash left every doc one edit away from a chain. The
+    // gate-time twin is scripts/fleet/check/prose-em-dashes-are-absent.mts,
+    // which carries the corpus burn-down list.
+    regex: /—/,
+    why: 'An em-dash reads AI-generated, even one. Replace it with a plain hyphen and keep the spacing: ` — ` becomes ` - `.',
   },
   {
     label: 'value inflation',
@@ -171,9 +185,17 @@ export function matchProsePatterns(
   patterns: readonly ProsePattern[],
 ): ProseHit[] {
   const hits: ProseHit[] = []
+  // Built once, and only when a `codeExempt` pattern is actually reached, so
+  // the common all-prose table costs nothing.
+  let prose: string | undefined
   for (let i = 0, { length } = patterns; i < length; i += 1) {
     const pattern = patterns[i]!
-    const match = pattern.regex.exec(content)
+    let subject = content
+    if (pattern.codeExempt) {
+      prose ??= stripAllCodeSpans(content)
+      subject = prose
+    }
+    const match = pattern.regex.exec(subject)
     if (match) {
       hits.push({ label: pattern.label, match: match[0], why: pattern.why })
     }

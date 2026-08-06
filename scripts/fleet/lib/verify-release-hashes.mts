@@ -232,7 +232,7 @@ function buildMismatchMessage(
  * only after it is approved/public. The pre-approve gate injects its own
  * fetcher backed by `pnpm stage list --json`.
  */
-async function defaultFetchRegistryDigest(
+export async function defaultFetchRegistryDigest(
   name: string,
   version: string,
 ): Promise<HashSource> {
@@ -245,7 +245,7 @@ async function defaultFetchRegistryDigest(
   }
 }
 
-async function defaultFetchGitHubAssetDigest(
+export async function defaultFetchGitHubAssetDigest(
   config: GitHubAssetDigestConfig,
 ): Promise<HashSource> {
   const cfg = { __proto__: null, ...config } as GitHubAssetDigestConfig

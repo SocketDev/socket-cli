@@ -6,10 +6,10 @@ Companion to the `## Error Messages` section of `CLAUDE.md`. That section holds 
 
 Every message needs, in order:
 
-1. **What** — the rule that was broken.
-2. **Where** — the exact file, line, key, field, or CLI flag.
-3. **Saw vs. wanted** — the bad value and the allowed shape or set.
-4. **Fix** — one concrete action, in imperative voice.
+1. **What** - the rule that was broken.
+2. **Where** - the exact file, line, key, field, or CLI flag.
+3. **Saw vs. wanted** - the bad value and the allowed shape or set.
+4. **Fix** - one concrete action, in imperative voice.
 
 ## Library API errors (terse)
 
@@ -118,7 +118,7 @@ Cross-realm-safe. Uses the native ES2025 `Error.isError` when the engine ships i
 
 ### `isErrnoException(value)`: replaces `'code' in err` guards
 
-Narrows to `NodeJS.ErrnoException` — an Error with a string `code` set by libuv/syscalls like `ENOENT`, `EACCES`, `EBUSY`, `EPERM`. Builds on `isError`, so it's also cross-realm-safe. It checks that `code` is a string. A branded Error without a real errno code returns `false`.
+Narrows to `NodeJS.ErrnoException` - an Error with a string `code` set by libuv/syscalls like `ENOENT`, `EACCES`, `EBUSY`, `EPERM`. Builds on `isError`, so it's also cross-realm-safe. It checks that `code` is a string. A branded Error without a real errno code returns `false`.
 
 - ✗ `if (e && typeof e === 'object' && 'code' in e && e.code === 'ENOENT') { … }`
 - ✓ `if (isErrnoException(e) && e.code === 'ENOENT') { … }`

@@ -42,7 +42,7 @@ When a parser ships in multiple implementations that must agree behaviorally (e.
 Three forms, three jobs:
 
 <details>
-<summary><b>Detail</b> — File-level provenance, Inline cross-references, Lock-step note</summary>
+<summary><b>Detail</b> - File-level provenance, Inline cross-references, Lock-step note</summary>
 
 **File-level provenance**: top-of-file `//!` doc comment that names where the canonical source lives. Ports state who they follow; canonical files state who follows them:
 
@@ -101,7 +101,7 @@ Two cheap defenses:
 Cross-references catch path rot. They don't catch _semantic_ drift, the case where the four impls quietly start disagreeing about what the file is _for_. The convention for that is a top-of-file **Lock-step header** block, byte-identical across every member of the quadruplet:
 
 <details>
-<summary><b>Detail</b> — the worked steps (3 snippets)</summary>
+<summary><b>Detail</b> - the worked steps (3 snippets)</summary>
 
 ```rust
 // BEGIN LOCK-STEP HEADER
@@ -160,13 +160,13 @@ It does NOT apply to:
 
 Default rules apply for those. The exception buys verbosity only when the verbosity is load-bearing (cross-impl alignment).
 
-File-doc uses `@file`, never `@fileoverview` (socket/no-fileoverview-prefer-file) — a doc generator reading `@fileoverview` while the fleet writes `@file` produced empty API descriptions.
+File-doc uses `@file`, never `@fileoverview` (socket/no-fileoverview-prefer-file) - a doc generator reading `@fileoverview` while the fleet writes `@file` produced empty API descriptions.
 
 ## State the present, never the removed past
 
 A comment describes what the code does NOW. It never narrates what was removed,
-replaced, or deprecated — the dead past is noise the reader never needs. It also
-never describes the code by what it is NOT, lacks, or is unlike — no "not a
+replaced, or deprecated - the dead past is noise the reader never needs. It also
+never describes the code by what it is NOT, lacks, or is unlike - no "not a
 fork", "inspired by X", "unlike Y", "we don't include Z". State the positive:
 what the code does, not what it declines to do or resemble.
 
@@ -181,7 +181,7 @@ Banned shapes (`no-removal-comment-nudge` flags them on Edit/MultiEdit):
   the import/call that replaces it), never orphaned where code was deleted.
 
 When told to remove something or stop using it, purge it and write the result as
-if it never existed — don't augment the wording to acknowledge it. The
+if it never existed - don't augment the wording to acknowledge it. The
 distinctive multi-word phrases keep the nudge from firing on ordinary prose
 ("no longer than 80 chars", "the value replaced in the map"). git log carries
 the history.

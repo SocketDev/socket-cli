@@ -22,7 +22,7 @@ Agent calls run on someone else's clock. A model that decides to "think harder" 
 - **Picking the budget:** sanity checks should answer in ~2 minutes; second-implementation passes in ~5; deep rescue work in ~15. Pick the smallest budget that's likely to succeed and let the orchestrator surface a "timed out" failure cleanly. A skipped verdict (with the agent's name and the timeout you used) is more useful than a 20-minute wait that ends in a long, unstructured answer.
 - **Failure handling:** treat a timeout as a no-op signal, not an error. The main session continues with its own judgment and reports "asked Codex, no response within budget". The user can re-invoke with a longer budget if the question needs it.
 
-## Don't chain long agents back-to-back — the blocked wall-clock compounds
+## Don't chain long agents back-to-back: the blocked wall-clock compounds
 
 Each `Agent(...)` call BLOCKS the main session until that sub-agent finishes. A per-agent timeout caps one agent; it does nothing about serializing several. Five back-to-back agents at 10–14 minutes each park the conversation for an hour, even though every one of them was "bounded." To the operator that hour is dead wall-clock on a turn that looks stuck.
 
@@ -55,20 +55,20 @@ Bad sanity-check prompts:
 A subagent that you fan out to audit/search/review returns a confident, specific, fluent
 report. **Treat its structural claims as leads to verify, not facts to relay.** Fan-out
 audit agents reliably produce reports that mix real findings with overstatements and
-outright inversions — stated with the same confidence.
+outright inversions, all stated with the same confidence.
 
 <details>
-<summary><b>Detail</b> — How, The discriminator, Budget for it</summary>
+<summary><b>Detail</b>: How, The discriminator, Budget for it</summary>
 
 **What to spot-verify before relaying to the user or acting on it:**
 
-- **Counts** — "52 `-guard` hooks only advise", "TEST_FILE_RE in 6 rules", "17 hooks declare
+- **Counts** - "52 `-guard` hooks only advise", "TEST_FILE_RE in 6 rules", "17 hooks declare
   their own type". A count is one `grep -c` away from ground truth.
-- **File / item lists** — the agent names specific files as having property X. Sample 2–3
+- **File / item lists** - the agent names specific files as having property X. Sample 2–3
   and check; if the sample is wrong, distrust the whole list.
-- **Behavior / exit-code / config assertions** — "this guard exits 0 not 2", "this rule is
+- **Behavior / exit-code / config assertions** - "this guard exits 0 not 2", "this rule is
   type-dependent", "X is cascaded downstream". Read the file / run the command.
-- **Negative claims** — "no skill declares effort", "nothing references this". Easiest to
+- **Negative claims** - "no skill declares effort", "nothing references this". Easiest to
   state, easy to be wrong; one search confirms or kills it.
 
 **How:** re-derive the load-bearing claim from the source. `grep`/read the cited files, run
@@ -83,11 +83,11 @@ pointer to check, not evidence.
 'exit(2)'` killed it.
 - **2026-06-03, wheelhouse-segment audit:** an agent flagged 5 hooks/skills as wheelhouse-only
   and movable to `repo/`. Hand-verification (does the dependency exist downstream?) cut it to
-  2 — and those 2 turned out to stay too (data-sharing / dispatch-reach). Net real moves: 0.
+  2, and those 2 turned out to stay too (data-sharing / dispatch-reach). Net real moves: 0.
 - Same session, an agent listed "~17 hooks declare their own `ToolInput` type"; the three
   sampled declared none.
 
-**The discriminator** — what makes a claim worth the verification round-trip: it's _cheap to
+**The discriminator.** What makes a claim worth the verification round-trip: it's _cheap to
 verify_ (one grep/read) and _expensive to fabricate correctly_ (the agent had to actually
 read each file to get the count right, and often didn't). High-confidence + high-specificity
 
@@ -95,7 +95,7 @@ read each file to get the count right, and often didn't). High-confidence + high
   round-trip; precise falsifiable claims are.
 
 **Budget for it.** When you fan out N audit agents, budget the verification pass as part of
-the work — it's not optional polish. The synthesized report you hand the user should contain
+the work. It is not optional polish. The synthesized report you hand the user should contain
 only what you confirmed, plus an explicit "disproved / unverified" section for the rest. Do
 not launder an agent's unchecked claim into your own voice.
 
@@ -126,7 +126,7 @@ When the _current_ Claude session wants to hand off a single task to another mod
 - **About to do 20+ similar small operations** → `delegate` with a cheap model. Keep the main context clean.
 - **Want a sanity check on a non-trivial design or diff** → `/codex:adversarial-review` (slash command) _or_ `delegate` to a different family, depending on which perspective is more useful.
 - **Big codebase question that'll burn context** → `Explore`.
-- **Have a findings report to apply** → `fix` (fleet agent): runs the deterministic fixers (`pnpm run fix`/`format`/the finding's named script) first, then AI-patches the residue one finding at a time, verifying + committing each. The mutating counterpart to the read-only `code-reviewer` — review finds, `fix` applies. Kept separate so a wrong fix for a misdiagnosed finding can't ride in on a review pass.
+- **Have a findings report to apply** → `fix` (fleet agent): runs the deterministic fixers (`pnpm run fix`/`format`/the finding's named script) first, then AI-patches the residue one finding at a time, verifying + committing each. The mutating counterpart to the read-only `code-reviewer`: review finds, `fix` applies. Kept separate so a wrong fix for a misdiagnosed finding can't ride in on a review pass.
 - **Building a multi-pass workflow** → don't use `Agent(...)` ad hoc; write a skill that uses Surface 1.
 
 ## Subagent return contract
@@ -140,7 +140,7 @@ A delegated subagent ends in one of four terminal states. Orchestrators route on
 | `needs-context`      | Lacks information it cannot obtain itself.                | `redispatch` with the missing context added (a fresh attempt). |
 | `blocked`            | Cannot proceed without a decision only the user can make. | `escalate` to the user and stop.                               |
 
-Two rules fall out of the contract. Never force the same model to retry an unchanged prompt on a non-`done` state: `needs-context` means change the input, `blocked` means hand off. And never silently swallow a `done-with-concerns` — the concern is the point of having a distinct state from `done`.
+Two rules fall out of the contract. Never force the same model to retry an unchanged prompt on a non-`done` state: `needs-context` means change the input, `blocked` means hand off. And never silently swallow a `done-with-concerns`. The concern is the point of having a distinct state from `done`.
 
 ## Report-back transport: a delegate can never SendMessage its parent
 
@@ -154,9 +154,9 @@ The status contract above rides on a fixed transport, and only three shapes exis
 
 ## A hook block inside a subagent is a lead, not a diagnosis
 
-When a spawned subagent trips a PreToolUse hook, it reports the block **verbatim** — quotes the `[<guard-name>] …` line the hook emitted, sets `blocked` (or `needs-context` when the cause is a missing env knob), and stops. It does not diagnose the block, attribute it to a "bug" or "incomplete fix", or guess which guard fired and why. Every block message already names its own guard; the interpretation is the orchestrator's job, and the orchestrator owes it the same verify-before-trust it owes any subagent claim: reproduce the block itself before acting on it.
+When a spawned subagent trips a PreToolUse hook, it reports the block **verbatim**: quotes the `[<guard-name>] …` line the hook emitted, sets `blocked` (or `needs-context` when the cause is a missing env knob), and stops. It does not diagnose the block, attribute it to a "bug" or "incomplete fix", or guess which guard fired and why. Every block message already names its own guard; the interpretation is the orchestrator's job, and the orchestrator owes it the same verify-before-trust it owes any subagent claim: reproduce the block itself before acting on it.
 
-A subagent's confident-but-wrong block diagnosis is expensive. It costs the orchestrator a full verify cycle and can send it editing a guard that was never broken. In one case a subagent reported `node --test … blocked` and invented a shell-quote `2>&1` tokenizer bug; neither reproduced. The only real block was an unrelated package-manager auto-update guard firing because the off-knob was absent from the subagent's env. So every spawn prompt carries the rule explicitly: on a hook block, quote it verbatim and stop — do not diagnose.
+A subagent's confident-but-wrong block diagnosis is expensive. It costs the orchestrator a full verify cycle and can send it editing a guard that was never broken. In one case a subagent reported `node --test … blocked` and invented a shell-quote `2>&1` tokenizer bug; neither reproduced. The only real block was an unrelated package-manager auto-update guard firing because the off-knob was absent from the subagent's env. So every spawn prompt carries the rule explicitly: on a hook block, quote it verbatim and stop; do not diagnose.
 
 ## Transformation subagents preserve source verbatim; verify content, not counts
 
@@ -169,29 +169,29 @@ Encode both in the spawn prompt: preserve every citation, name, and link verbati
 ## Fanning out EDITING subagents: isolate, scope to one unit, collect deliberately
 
 Fanning out subagents to READ is low-risk; fanning them out to EDIT shared
-files is where a sweep goes off the rails. A broad edit fan-out — several files
-per agent, all working the live tree — fails two ways at once: an agent reaches
+files is where a sweep goes off the rails. A broad edit fan-out (several files
+per agent, all working the live tree) fails two ways at once: an agent reaches
 for a tree-wide `--fix`/formatter to "just clear the lint" and rewrites files it
 was never assigned, and concurrent agents race on the same working tree. In one
 sweep over fleet-canonical `template/` files, agents told to "edit only your
-assigned files" produced an 84-file, ~2,800-line diff (assigned: 30) — a broad
+assigned files" produced an 84-file, ~2,800-line diff (assigned: 30). A broad
 `oxlint --fix` had blown every scope boundary. The whole run was unreviewable
 and had to be reverted.
 
 The shape that works for editing fan-outs:
 
 <details>
-<summary><b>Detail</b> — Worktree isolation vs same-checkout disjoint, Platform limit on the commit control</summary>
+<summary><b>Detail</b>: Worktree isolation vs same-checkout disjoint, Platform limit on the commit control</summary>
 
 - **The orchestrator owns every SHARED / cross-cutting file.** A file that more
-  than one agent needs — a shared test runner, a config, a manifest, a generated
-  index — is edited by YOU, once, BEFORE fanning out. Never hand a shared file to
+  than one agent needs (shared test runner, config, manifest, generated
+  index) is edited by YOU, once, BEFORE fanning out. Never hand a shared file to
   one agent: it forces every other agent to wait on it (serialization), and if
   two agents edit it in one checkout they clobber each other. Make the shared
   change idempotent and land it first; then each agent branches/works from a tree
   that already has it. (The mistake this prevents: spawning an agent into the
   primary checkout to edit the shared `<style>` conformance runner while three
-  port agents also needed it — the fan-out could not start until that one agent
+  port agents also needed it. The fan-out could not start until that one agent
   finished. The fix was to edit the runner in the orchestrator turn, then fan
   out over the disjoint per-language dirs.)
 - **One unit per agent.** Scope each agent to a single file (or a small disjoint
@@ -201,9 +201,9 @@ The shape that works for editing fan-outs:
   a broad `--fix`) is confined to that agent's throwaway checkout. This is the
   one case worth the worktree cost.
 - **Hard-forbid broad autofixers in the prompt.** No `--fix`/`--write`/formatter,
-  no `pnpm run lint/fix/format` — only read-only inspection. That single command
+  no `pnpm run lint/fix/format`, only read-only inspection. That single command
   is what blows scope; ban it explicitly.
-- **Collect deliberately — worktree edits do NOT auto-merge.** After the run, copy
+- **Collect deliberately.** Worktree edits do NOT auto-merge. After the run, copy
   each agent's assigned file(s) out of its worktree into the main tree yourself,
   verifying the worktree changed ONLY those files (strays stay isolated and are
   simply not collected). This collection step IS the scope gate.
@@ -214,19 +214,19 @@ The shape that works for editing fan-outs:
   never a regression.
 
 The validated version of the failed sweep above: one worktree-isolated agent per
-file, broad fixers banned, collect-and-verify in main — scope held (0 strays),
+file, broad fixers banned, collect-and-verify in main. Scope held (0 strays),
 quality held (named-capture conversions, options-object refactors with in-file
 call-site updates), full suite green. Companion hook: `parallel-agent-spawn-nudge`.
 
 **Worktree isolation vs same-checkout disjoint.** `isolation: 'worktree'` is the
 safe default when slices are file-level or an agent might reach past its scope.
-When the slices are COARSE and cleanly disjoint — a whole language dir per agent —
-same-checkout fan-out is viable and skips the per-worktree `pnpm install` cost —
+When the slices are COARSE and cleanly disjoint (one whole language dir per agent),
+same-checkout fan-out is viable and skips the per-worktree `pnpm install` cost,
 but only under all three guards: (a) the orchestrator owns the shared files
 (above), (b) each agent is hard-forbidden broad `--fix`/`format`/`check`
 repo-wide (it would see and rewrite siblings' in-flight work), (c) agents leave
 work UNCOMMITTED and report a touched-file list, and the orchestrator lands each
-by path — no agent runs `git commit` (one reviewer between work and main; no
+by path. No agent runs `git commit` (one reviewer between work and main; no
 `.git/index.lock` race).
 
 **Platform limit on the commit control.** `no-subagent-commit-guard` blocks an
@@ -258,14 +258,14 @@ reviewed):
 
 A skill that wants `codex` output should call the CLI (Surface 1) so the result lands in a structured report. A live conversation that wants Codex's opinion on the _current_ problem should use the subagent (Surface 2) so the result flows back into the conversation. Same model, different orchestration.
 
-## Workflow agents have no Task tools — inline the spec
+## Workflow agents have no Task tools: inline the spec
 
 A `Workflow` script's `agent()` subagents (and the workflow script body itself)
-reach **none** of the session task tools — `TaskGet`, `TaskUpdate`, `TaskList`,
+reach **none** of the session task tools: `TaskGet`, `TaskUpdate`, `TaskList`,
 `TaskCreate`, `TaskOutput`, `TaskStop`. The task store belongs to the main
 session harness; a workflow subagent only gets the standard tools plus MCP via
 `ToolSearch`. A prompt that tells an agent to "`TaskGet` your spec" sends it in
-blind — it can't read the task, so it either guesses or burns its turn searching
+blind: it can't read the task, so it either guesses or burns its turn searching
 for a tool that isn't there.
 
 This is not hypothetical: on the 2026-07-04 overnight run, 3 of 5 socket-lib
@@ -275,20 +275,20 @@ spec from the task store and had no way to.
 The pattern that works:
 
 <details>
-<summary><b>The four-part pattern</b> — inline the full <code>TaskGet</code> spec, report via structured output, keep task bookkeeping in the orchestrator, tell the agent it has no task tools, plus the <code>workflow-agent-task-tools-nudge</code> enforcement</summary>
+<summary><b>The four-part pattern</b>: inline the full <code>TaskGet</code> spec, report via structured output, keep task bookkeeping in the orchestrator, tell the agent it has no task tools, plus the <code>workflow-agent-task-tools-nudge</code> enforcement</summary>
 
 - **`TaskGet` the FULL description in the main loop first**, then inline it
   verbatim into the `agent()` prompt. The agent needs the whole spec in the
-  prompt — it has no other way to see it.
+  prompt. It has no other way to see it.
 - **Agents report via structured output** (`schema:`), never by calling
   `TaskUpdate`.
-- **The orchestrator does all task bookkeeping** — `TaskUpdate` status after the
+- **The orchestrator does all task bookkeeping**: `TaskUpdate` status after the
   harvest, in the main session, from the agent's returned result.
 - **Tell the agent explicitly it has no task tools** so it doesn't waste a turn
   hunting for `TaskGet` via `ToolSearch`.
 
 Enforcement: `workflow-agent-task-tools-nudge` (PreToolUse on the `Workflow`
-tool) flags any Task-tool identifier in the script — a reminder, because a
+tool) flags any Task-tool identifier in the script. It is a reminder, because a
 descriptive comment about the orchestrator's own bookkeeping is a legitimate
 (if rare) reason for the name to appear. The workflow author dismisses it or
 reworks the prompt.
@@ -301,7 +301,7 @@ Work handed to a subagent, or done in a delegated session, meets the same bar as
 
 1. **Every code fix ships unit tests.** A fix commits the unit test that covers the fixed behavior. When a layer is not unit-testable, extract the pure logic into a testable function and cover that instead; if even that is impractical, state why in the PR. Enforcer: `fixes-need-tests-nudge` reminds at `git commit` when the staged change set touches authored source but includes no test-file change (`.claude/hooks/fleet/fixes-need-tests-nudge/`).
 
-2. **PR descriptions read at a junior-developer level.** Write full sentences that plainly say what changed and why, and fold long detail into a collapsed `<details>` block. This is guidance-only: prose reading level cannot be gated deterministically. The adjacent concern of AI-tell prose (em-dash chains, throat-clearing, hedging) in committed markdown is covered by `anti-prose-guard` (`.claude/hooks/fleet/anti-prose-guard/`).
+2. **PR descriptions read at a junior-developer level.** Write full sentences that plainly say what changed and why, and fold long detail into a collapsed `<details>` block. This is guidance-only: prose reading level cannot be gated deterministically. The adjacent concern of AI-tell prose (any em-dash, throat-clearing, hedging) in committed markdown is covered by `anti-prose-guard` (`.claude/hooks/fleet/anti-prose-guard/`).
 
 3. **Respond to all review feedback, bot and human, and collapse bot comments when resolving.** Resolving bot feedback means the full visual collapse: resolve the review threads AND minimize the bot's top-level summaries as `RESOLVED`. Enforcer: `bot-comment-collapse-guard` blocks ending a turn while a PR whose threads this session resolved still carries un-minimized bot surfaces (`.claude/hooks/fleet/bot-comment-collapse-guard/`).
 
@@ -322,4 +322,4 @@ Four hooks reinforce different slices of this discipline:
 
 ## Compatibility note
 
-Codex is fleet-wide — the `codex` CLI is a fleet plugin. OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.
+Codex is fleet-wide: the `codex` CLI is a fleet plugin. OpenCode and the `delegate` subagent are **per-developer**: they require local setup outside the repo. Skills that automate work across the fleet must not assume `delegate` exists; humans driving Claude in their own checkout can use it freely.

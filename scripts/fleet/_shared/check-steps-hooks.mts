@@ -135,16 +135,17 @@ export function buildHookAndDocSteps(forwardedArgs: string[]): CheckStep[] {
     () =>
       run('node', ['scripts/fleet/check/markdown-doc-headers-are-plain.mts']),
     // Prose in tracked markdown must not tuck an explanatory clause into a
-    // parenthetical appositive aside — rewrite with a comma, colon, or em-dash.
+    // parenthetical appositive aside. Rewrite with a comma or a colon; the
+    // em-dash is no longer a legal rewrite, its own gate flags every one.
     () =>
       run('node', [
         'scripts/fleet/check/prose-parenthetical-asides-are-absent.mts',
       ]),
-    // Prose in tracked markdown must not chain spaced em-dashes. Two dashes make
-    // an X - aside - rest sentence, which reads AI-generated. Gate-time twin of
-    // the anti-prose-guard em-dash-chain pattern.
-    () =>
-      run('node', ['scripts/fleet/check/prose-em-dash-chains-are-absent.mts']),
+    // Prose in tracked markdown carries NO em-dash, not merely no chain. One
+    // dash on an outbound GitHub surface already reads as an agent tell.
+    // Gate-time twin of the anti-prose-guard em-dash pattern; the remaining
+    // backlog burns down through constants/prose-em-dash-burn-down.json.
+    () => run('node', ['scripts/fleet/check/prose-em-dashes-are-absent.mts']),
     // A human-gate lane A must be pasteable as-is: a `! <cmd>` that runs in
     // the session so its output is readable, with no working-directory
     // assumption. A lane the operator edits, or runs in their own terminal, is

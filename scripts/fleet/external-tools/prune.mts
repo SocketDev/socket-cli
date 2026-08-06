@@ -1,21 +1,27 @@
 #!/usr/bin/env node
-/**
- * @file `external-tools prune` — drop stale `soakBypass` blocks from tool
+/*
+ * @file `external-tools prune` — drop obsolete `soakBypass` blocks from tool
  *   entries. A freshly-bumped pin that published inside the `minimumReleaseAge`
  *   soak carries a dated `soakBypass` ({ version, published, removable }) so
- *   the install-time soak check waives it until the window clears; once the
- *   release has soaked long enough the block is dead weight and should be
- *   dropped. This verb finds those cleared blocks and removes them — the
- *   manifest-side twin of the pnpm-workspace.yaml soak-exclude cleanup, and the
- *   counterpart to `soak-bypass.mts` (which ADDS the workspace entry).
- *   Staleness is decided against the LIVE soak policy: the `minimumReleaseAge`
- *   minutes are read from pnpm-workspace.yaml via ../soak-rules.mts, so a
- *   policy change re-scopes what counts as cleared (falling back to the
- *   baked-in `removable` date when a block has no parseable `published`).
- *   Multi-manifest like the other read/mutate verbs; dry-run by default,
- *   `--apply` writes through EditableJson so surviving keys keep their order.
- *   Usage: node scripts/fleet/external-tools/prune.mts [--target <file>]
- *   [--apply]
+ *   the install-time soak check waives it until the window clears. A block goes
+ *   obsolete two ways, and this verb removes both:
+ *
+ *   - soak-cleared — the window closed, so the pin would be admitted anyway and
+ *     the block is dead weight. Decided against the LIVE soak policy: the
+ *     `minimumReleaseAge` minutes come from pnpm-workspace.yaml via
+ *     ../soak-rules.mts, so a policy change re-scopes what counts as cleared
+ *     (falling back to the baked-in `removable` date when a block has no
+ *     parseable `published`).
+ *   - version-mismatch — the block names a version the entry no longer pins, so
+ *     it waives the soak for a release nobody audited AND masks a still-soaking
+ *     pin from the `soak-excludes-have-dates` gate, which reads "has a
+ *     soakBypass" as "accounted for". A block still inside its window AND
+ *     matching the pin is left untouched. This is the manifest-side twin of the
+ *     pnpm-workspace.yaml soak-exclude cleanup, and the counterpart to
+ *     `soak-bypass.mts`, which ADDS the workspace entry. Multi-manifest like
+ *     the other read/mutate verbs; dry-run by default, and `--apply` writes
+ *     through EditableJson so surviving keys keep their order. Usage: node
+ *     scripts/fleet/external-tools/prune.mts [--target <file>] [--apply]
  */
 
 import process from 'node:process'
@@ -78,15 +84,36 @@ export function isSoakBypassStale(
   return Number.isFinite(removableMs) ? removableMs <= now : false
 }
 
+/**
+ * Does a `soakBypass` block still describe the version actually pinned? A block
+ * left behind by a pin that has since moved waives the soak for a release it
+ * was never written for — and, because every soak surface treats "has a
+ * soakBypass" as "this bypass is accounted for", it also MASKS a still-soaking
+ * pin from the `soak-excludes-have-dates` gate. So a mismatched block is
+ * obsolete on sight, independent of its dates.
+ */
+export function isSoakBypassVersionMismatched(
+  bypass: SoakBypass,
+  pinnedVersion: string | undefined,
+): boolean {
+  return typeof pinnedVersion === 'string' && bypass.version !== pinnedVersion
+}
+
+export type PruneReason = 'soak-cleared' | 'version-mismatch'
+
 interface PrunedTool {
   name: string
   bypass: SoakBypass
+  reason: PruneReason
   updated: Tool
 }
 
 /**
- * The tools in one manifest whose `soakBypass` has cleared, each paired with
- * the entry rewritten to drop that block, key order otherwise preserved.
+ * The tools in one manifest whose `soakBypass` is obsolete, each paired with
+ * the entry rewritten to drop that block, key order otherwise preserved. Two
+ * ways a block goes obsolete: its soak window closed (the pin cleared the soak
+ * on its own), or it names a version the entry no longer pins. A block still
+ * inside its window AND matching the pin is left untouched.
  */
 export function planManifestPrune(
   tools: Readonly<Record<string, Tool>>,
@@ -99,12 +126,29 @@ export function planManifestPrune(
     const [name, tool] = entries[i]!
     const record = tool as unknown as Record<string, unknown>
     const bypass = record['soakBypass'] as SoakBypass | undefined
-    if (!bypass || !isSoakBypassStale(bypass, soakMinutes, now)) {
+    if (!bypass) {
+      continue
+    }
+    const pinnedVersion =
+      typeof record['version'] === 'string'
+        ? (record['version'] as string)
+        : undefined
+    // Version mismatch is checked FIRST: a block naming a version the entry no
+    // longer pins is obsolete whatever its dates say.
+    const reason: PruneReason | undefined = isSoakBypassVersionMismatched(
+      bypass,
+      pinnedVersion,
+    )
+      ? 'version-mismatch'
+      : isSoakBypassStale(bypass, soakMinutes, now)
+        ? 'soak-cleared'
+        : undefined
+    if (!reason) {
       continue
     }
     const updated = { ...record }
     delete updated['soakBypass']
-    out.push({ name, bypass, updated: updated as unknown as Tool })
+    out.push({ name, bypass, reason, updated: updated as unknown as Tool })
   }
   return out
 }
@@ -144,10 +188,12 @@ export async function main(
     )
     const nextTools = { ...editable.content.tools }
     for (let j = 0, { length: rows } = pruned; j < rows; j += 1) {
-      const { bypass, name, updated } = pruned[j]!
-      process.stdout.write(
-        `  ${name}: soakBypass cleared (version ${bypass.version}, removable ${bypass.removable})\n`,
-      )
+      const { bypass, name, reason, updated } = pruned[j]!
+      const detail =
+        reason === 'version-mismatch'
+          ? `names ${bypass.version}, entry pins ${(updated as unknown as Record<string, unknown>)['version'] ?? '(none)'}`
+          : `soak cleared (removable ${bypass.removable})`
+      process.stdout.write(`  ${name}: soakBypass ${reason} — ${detail}\n`)
       nextTools[name] = updated
     }
     if (opts.apply) {
@@ -157,7 +203,7 @@ export async function main(
     }
   }
   if (!anyPruned) {
-    process.stdout.write('No stale soakBypass entries to prune.\n')
+    process.stdout.write('No obsolete soakBypass entries to prune.\n')
     return 0
   }
   if (!opts.apply) {
@@ -168,7 +214,7 @@ export async function main(
 
 const SCRIPT_META: ScriptMeta = {
   describe:
-    'drop cleared soakBypass blocks from external-tools manifest entries',
+    'drop obsolete soakBypass blocks (soak cleared, or naming a version the entry no longer pins) from external-tools manifest entries',
   help: `Usage: node scripts/fleet/external-tools/prune.mts [flags]
   --target <file>  limit the prune to one manifest file
   --apply          write the prune (default is a dry run)`,

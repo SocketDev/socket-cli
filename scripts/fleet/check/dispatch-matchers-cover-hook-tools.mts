@@ -210,7 +210,7 @@ export function diagnoseDispatcherCoverage(
   return findings
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   let settings: SettingsShape
   try {

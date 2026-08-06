@@ -1664,6 +1664,53 @@ function assertLockStep(config) {
   )
   return false
 }
+const ERR_BUNDLE_BEHIND_LOCAL = 'ERR_WHEELHOUSE_BUNDLE_BEHIND_LOCAL_TEMPLATE'
+/**
+ * True when a sibling wheelhouse checkout exists AND its HEAD is strictly
+ * DESCENDED from the bundle's template SHA — the bundle is a frozen snapshot
+ * of an older template, so unpacking it would roll the member backwards.
+ *
+ * `assertLockStep` only proves the bundle matches its own pin, which is a
+ * self-consistency check. It cannot see that the pin itself went stale. On a
+ * machine that also cascades from a local template, the two writers disagree
+ * and whichever runs last wins: the cascade writes current content, then
+ * `update`'s bundle pass restores the older snapshot over it. That reverted a
+ * Socket catalog pin, dropped fleet rules out of CLAUDE.md, and reintroduced a
+ * duplicated overrides block that broke `pnpm install` — each time reported as
+ * a successful update.
+ *
+ * Returns false when there is no local wheelhouse (a thin member, or CI),
+ * where the bundle IS the only source of truth and applying it is correct.
+ * Any git failure also returns false: this guard refuses a provably stale
+ * bundle, and never blocks on a question it could not answer.
+ */
+function isBundleBehindLocalTemplate(config) {
+  const { dest, manifestTemplateSha } = {
+    __proto__: null,
+    ...config,
+  }
+  if (!manifestTemplateSha) return false
+  const wheelhouse = path.join(dest, '..', 'socket-wheelhouse')
+  if (!existsSync(path.join(wheelhouse, '.git'))) return false
+  try {
+    execFileSync(
+      'git',
+      ['merge-base', '--is-ancestor', manifestTemplateSha, 'HEAD'],
+      {
+        cwd: wheelhouse,
+        stdio: 'ignore',
+      },
+    )
+    return (
+      execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: wheelhouse,
+        encoding: 'utf8',
+      }).trim() !== manifestTemplateSha
+    )
+  } catch {
+    return false
+  }
+}
 /**
  * Resolve the NEWEST `fleet-pack-<hex>` release tag via `gh release list`.
  * Returns the latest tag, or undefined when none / offline. The list is
@@ -2407,6 +2454,17 @@ async function installFleet(config) {
         )
         return 1
       }
+      if (
+        isBundleBehindLocalTemplate({
+          dest,
+          manifestTemplateSha: manifest.templateSha,
+        })
+      ) {
+        logger.error(
+          `install-fleet: ${ERR_BUNDLE_BEHIND_LOCAL} — ${sourceRef} carries template ${manifest.templateSha}, which the sibling socket-wheelhouse checkout has already moved past. Applying it would revert this repo to an older snapshot. Nothing written.\n  Fix: cascade from the local template instead —\n    node scripts/repo/sync-scaffolding/cli.mts --target ${dest} --fix\n  Or repin bundle.ref/cascadeSha in .config/repo/socket-wheelhouse.json to a release cut from the current template.`,
+        )
+        return 1
+      }
     }
     const fileCount = Object.keys(manifest.files).length
     const segmentCount =
@@ -2470,6 +2528,7 @@ if (isMainModule()) {
 
 //#endregion
 export {
+  ERR_BUNDLE_BEHIND_LOCAL,
   ERR_LOCKSTEP_MISMATCH,
   FLEET_STATUS_SCRIPT,
   GHCR_HOST,
@@ -2504,6 +2563,7 @@ export {
   installSegments,
   installSettingsSegment,
   installWorkspaceSegment,
+  isBundleBehindLocalTemplate,
   isMainModule,
   legacyBeginMarker,
   legacyEndMarker,

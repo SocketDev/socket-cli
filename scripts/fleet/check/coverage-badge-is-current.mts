@@ -147,7 +147,7 @@ export function checkCoverageBadgeIsCurrent(
   return 0
 }
 
-function main(): void {
+export function main(): void {
   process.exitCode = checkCoverageBadgeIsCurrent({
     quiet: process.argv.includes('--quiet'),
     repoRoot: REPO_ROOT,

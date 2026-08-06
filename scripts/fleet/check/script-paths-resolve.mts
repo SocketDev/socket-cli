@@ -247,7 +247,7 @@ export async function scanRepo(repoRoot: string): Promise<PathHit[]> {
   return hits
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const hits = await scanRepo(REPO_ROOT)
   if (hits.length) {

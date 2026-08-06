@@ -130,7 +130,7 @@ export function generateAwTokenShapes(config: {
   return 0
 }
 
-function main(): void {
+export function main(): void {
   process.exitCode = generateAwTokenShapes({
     check: process.argv.includes('--check'),
     repoRoot: REPO_ROOT,

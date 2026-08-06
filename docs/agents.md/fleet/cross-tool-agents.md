@@ -17,7 +17,7 @@ platform-aware.
 | **Permissions**            | `.claude/settings.json`             | Codex config                  | OpenCode config                                   | `~/.kimi-code/config.toml`             | no (per-tool config)                                 |
 | **Memory** (agent-written) | `~/.claude/projects/<slug>/memory/` | none                          | none                                              | none                                   | n/a (only Claude has it)                             |
 
-## Instructions — `AGENTS.md → CLAUDE.md`
+## Instructions - `AGENTS.md → CLAUDE.md`
 
 `AGENTS.md` is the tool-agnostic instructions file Codex + OpenCode read natively.
 CLAUDE.md stays the **real, primary** file (the cascade composite-injects the
@@ -32,7 +32,7 @@ fleet block, and hundreds of references key off its path). `AGENTS.md` is a
   `tracked-symlinks-are-safe` (relative, same-dir, not
   self-referential/absolute/node_modules).
 
-## Skills — the `.agents/skills/` flat mirror
+## Skills - the `.agents/skills/` flat mirror
 
 Codex + OpenCode discover skills **one level deep** (`<root>/<name>/SKILL.md`), so
 the fleet's segmented `.claude/skills/{fleet,repo}/<name>/` is invisible to them.
@@ -50,7 +50,7 @@ Codex/OpenCode gate tools at the agent/config level, not per-skill, so a mirrore
 skill runs with whatever the Codex/OpenCode session allows. Mirroring all skills
 is the chosen policy; tool-gating is the operator's agent config.
 
-## Memory — only Claude self-writes it
+## Memory - only Claude self-writes it
 
 Claude Code maintains an **agent-written** memory store at
 `~/.claude/projects/<cwd-slug>/memory/*.md` (plus a `MEMORY.md` index), discovered
@@ -61,7 +61,7 @@ self-written memory**: each session starts fresh from the human-authored
 (via the CLAUDE.md symlink). When a durable Claude memory is worth sharing across
 tools, codify it into CLAUDE.md and every tool sees it through AGENTS.md.
 
-## Kimi Code CLI — generated MCP + user config
+## Kimi Code CLI - generated MCP + user config
 
 Kimi Code CLI has no project-level instructions file; it reads user-owned config
 from `~/.kimi-code/config.toml` and project-local MCP servers from
@@ -85,7 +85,7 @@ Kimi ships in the release bundle as generated files only (no symlinks). The
 bootstrap installer (`scripts/repo/bootstrap/fleet.mjs --update`) and `pnpm install` prepare
 step keep the project-local `.kimi-code/mcp.json` and user config current.
 
-## Detection + paths — `@socketsecurity/lib/ai/agent-context`
+## Detection + paths - `@socketsecurity/lib/ai/agent-context`
 
 Hooks receive **no agent id in their stdin payload**; the running agent is
 identified by the **environment** it injects. Two helpers:

@@ -4,7 +4,7 @@ Two kinds of Actions storage grow without bound and are swept by one weekly
 workflow: **run history** and **cache**.
 
 GitHub keeps every Actions run forever by default. Across the fleet that grows
-into thousands of stale runs per repo — slow run lists, noisy API pagination,
+into thousands of stale runs per repo - slow run lists, noisy API pagination,
 and run groups for workflows that no longer exist. A scheduled prune keeps the
 history bounded.
 
@@ -16,7 +16,7 @@ all. See [Cache retention](#cache-retention) below.
 `scripts/fleet/prune-workflow-runs.mts` classifies every run group and prunes
 accordingly:
 
-- **Purged** — the workflow's path or display name matches a purge pattern
+- **Purged** - the workflow's path or display name matches a purge pattern
   (built-in: `dynamic/dependabot/`, `gh-audit-*`; extend per-invocation with
   `--purge <glob>`) → every run is removed, even when the source file is on
   the default branch.
@@ -37,22 +37,22 @@ run listings still converge.
 A wrong answer to "is this workflow's source on the default branch?" dooms
 live runs, so every read aborts loud instead of guessing: a failed repo read
 (no default branch), a failed workflow/run listing, or a non-404 contents
-error (rate limit, network) marks the repo failed and exits non-zero — only
+error (rate limit, network) marks the repo failed and exits non-zero - only
 an explicit HTTP 404 counts as absent.
 
 ## Rate limits
 
 Run deletes hit GitHub's **secondary** rate limit (separate from the primary
-quota) — a tight delete loop gets 403-throttled and stalls. The script paces
+quota) - a tight delete loop gets 403-throttled and stalls. The script paces
 each delete (`PACE_MS`) and, on a throttle response, backs off exponentially
 (`INITIAL_BACKOFF_MS` → `MAX_BACKOFF_MS`) and retries the same run. In `--all`
 mode a few repos are pruned concurrently (`CONCURRENCY`), all sharing the one
 token's budget.
 
-A **refused** delete (HTTP 409 — the run is still in progress) is retried
+A **refused** delete (HTTP 409 - the run is still in progress) is retried
 within the same sweep: a refusals-only round waits `REFUSED_RETRY_DELAY_MS`
-for those runs to finish, then re-lists and retries — the wait doubles each
-consecutive dry round (3m, 6m, …) — up to `REFUSED_RETRIES` such rounds
+for those runs to finish, then re-lists and retries - the wait doubles each
+consecutive dry round (3m, 6m, …) - up to `REFUSED_RETRIES` such rounds
 before leaving the remainder to the weekly cadence.
 
 ## Running it
@@ -91,9 +91,9 @@ across 43 entries and was continuously evicting itself.
 passes:
 
 <details>
-<summary><b>Detail</b> — `node scripts/fleet/prune-actions-caches.mts`</summary>
+<summary><b>Detail</b> - `node scripts/fleet/prune-actions-caches.mts`</summary>
 
-- **Per-group retention** — entries are grouped by key prefix (the cache key
+- **Per-group retention** - entries are grouped by key prefix (the cache key
   minus its trailing `hashFiles()` digest, so `Linux-cargo-a1b2c3d4` and
   `Linux-cargo-f6e5d4c3` are two generations of one logical cache). Keep the
   newest `--keep N` per group (default 2); the generations behind them can never
@@ -101,7 +101,7 @@ passes:
   version or a platform rather than a digest keeps that segment and stays its
   own group, so `pnpm-store-v1-macOS-node26` never evicts
   `pnpm-store-v1-Linux-node26`.
-- **Budget enforcement** — if the survivors still exceed `--max-bytes` (default
+- **Budget enforcement** - if the survivors still exceed `--max-bytes` (default
   8 GB, deliberate headroom under the 10 GB ceiling because caches are written
   continuously while the sweep runs weekly), evict the least-recently-accessed
   of them until they fit.
@@ -137,5 +137,5 @@ deliberately tri-plicated and lock-step checked. The cache step carries
 `if: always()`, so a failed run sweep still lets the cache sweep reclaim. The job
 grants `actions: write` + `contents: read` and runs via the fleet
 `setup-and-install` action. Both scripts and the workflow are cascaded
-byte-identical across the fleet — edit the `template/base/` copies and
+byte-identical across the fleet - edit the `template/base/` copies and
 re-cascade.

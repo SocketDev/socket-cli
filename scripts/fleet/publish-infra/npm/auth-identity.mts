@@ -214,7 +214,7 @@ export async function ensureNpmIdentity(pkg: string): Promise<boolean> {
   return true
 }
 
-async function runCli(): Promise<void> {
+export async function runCli(): Promise<void> {
   const pkg = process.argv[2]
   if (!pkg) {
     logger.fail(

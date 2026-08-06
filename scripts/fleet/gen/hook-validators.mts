@@ -301,7 +301,7 @@ export function writeHookValidators(): void {
   }
 }
 
-function main(): void {
+export function main(): void {
   if (!hasFleetHookSource(REPO_ROOT)) {
     logger.log(
       '[gen/hook-validators] no fleet hook source (bundle-only) — validators ship via the release bundle.',
@@ -316,7 +316,7 @@ function main(): void {
   )
 }
 
-const SCRIPT_META: ScriptMeta = {
+export const SCRIPT_META: ScriptMeta = {
   describe:
     'generates the ahead-of-time TypeBox validators the fleet hook graph checks its data files with',
   help: 'Usage: node scripts/fleet/gen/hook-validators.mts',

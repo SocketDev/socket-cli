@@ -87,7 +87,7 @@ export function summarizeCandidateStatuses(
     .join(', ')
 }
 
-async function main(): Promise<number> {
+export async function main(): Promise<number> {
   let failed = false
   for (
     let a = 0, { length: adapterCount } = ECOSYSTEM_ADAPTERS;
@@ -154,6 +154,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/analyze-range-consolidation/cli.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

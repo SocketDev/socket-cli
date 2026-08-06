@@ -18,7 +18,7 @@ the author.
   - 🟠 `Significant: should be addressed`
   - 🟡 `Moderate/minor: worth addressing`
   - 🟢 `Verified fine / informational`
-- **Sections sorted most-severe first** — 🔴, then 🟠, 🟡, and 🟢 last.
+- **Sections sorted most-severe first** - 🔴, then 🟠, 🟡, and 🟢 last.
   Numbered titles follow the sorted order (1, 2, 3, …). Verified-fine notes
   become a trailing 🟢 section, not intro prose.
 - **Numeric references carry their title.** "item 1" / "finding 3" is always
@@ -27,19 +27,19 @@ the author.
 - **No intra-comment links or anchors.** GitHub cannot open (or scroll to) a
   fragment inside a collapsed `<details>`, so fold-out links are dead on
   arrival. Findings live in their `<details>` blocks; there is no intro
-  enumeration linking to them — the severity circles carry the map, and
+  enumeration linking to them - the severity circles carry the map, and
   numeric references stay plain `item N _(title)_`.
 - **Fold-out bodies are indented.** The body of every `<details>` block is
   wrapped in `<blockquote>` (opened on the line after `</summary>`, closed on
   the line before `</details>`) so the expanded content renders indented
   under its summary instead of flush with it.
-- **Suggested remediations are labeled `Fix idea 💡:`** — always with the bulb.
+- **Suggested remediations are labeled `Fix idea 💡:`** - always with the bulb.
 - **Smaller-items bullets carry their own circles.** Inside the trailing
   "Smaller items" fold, each bullet starts with its own `<abbr>`-wrapped
   circle, and the fold's summary circle matches the most severe bullet inside.
-  A smaller item is never 🔴 — anything critical is promoted to its own
+  A smaller item is never 🔴 - anything critical is promoted to its own
   section.
-- **No AI attribution** — this is a GitHub prose surface; the fleet-wide ban
+- **No AI attribution** - this is a GitHub prose surface; the fleet-wide ban
   applies.
 
 ## Judgment rules (author-checked, not mechanically validatable)
@@ -49,19 +49,19 @@ the author.
   abbreviations (`getServerSideProps`, not SSP), and replace jargon with what
   actually happens ("the loop never converges" → "every re-scan re-processes
   them for nothing").
-- **Complete, easy sentences.** No fragments, no arrow chains, at most one
-  em-dash per sentence.
+- **Complete, easy sentences.** No fragments, no arrow chains, no em-dash at
+  all.
 - **Verified findings only.** Adversarially verify candidates first; refuted
   candidates never get posted. Cite file/function names as receipts.
 
 <details>
-<summary><b>The other seven rules</b> — attributing self-reports, never repeating a bot, spotting duplicate PRs, verifying reply provenance, no naming bikesheds, the <code>prose</code> skill pass, and comment-only with no approve or request-changes</summary>
+<summary><b>The other seven rules</b> - attributing self-reports, never repeating a bot, spotting duplicate PRs, verifying reply provenance, no naming bikesheds, the <code>prose</code> skill pass, and comment-only with no approve or request-changes</summary>
 
 - **Attribute or verify a self-report; don't restate it as fact.** When a PR
   author or bot says "I ran X" / "my machine is on 1.15.7" / "N tests pass",
   that's their claim, not your finding. Verify the part you can read (the repo
   pin, the diff, a tool call) and attribute the part you can't ("you mentioned
-  your local is 1.15.7") — a checkable half doesn't verify the unverifiable
+  your local is 1.15.7") - a checkable half doesn't verify the unverifiable
   half. Applies especially to "check his work" replies.
 - **Never repeat a bot's feedback.** Before posting, fetch the PR's existing
   reviews and inline comments (Cursor Bugbot, Copilot, github-actions) and drop
@@ -70,7 +70,7 @@ the author.
   Linear ref) for an already-open PR doing the same thing; report duplicates to
   the requester rather than reviewing both blind.
 - **Verify provenance before replying.** A reply quoting someone else's
-  comment or review belongs to THAT thread — engage only when the comment
+  comment or review belongs to THAT thread - engage only when the comment
   addresses the user's own comments or asks the user directly.
   `scan-pr-activity.mts` labels every surfaced reply with the author's role
   (PR author / team / other) and attributes leading quoted text to its
@@ -79,15 +79,15 @@ the author.
   the user explicitly asks for a naming opinion.
 - **Run every reply through the `prose` skill (conversational mode) so it does
   not read as AI.** The skill strips the tells that make text sound
-  machine-written — throat-clearers, emphasis crutches, adverb/hedge stacking,
-  business jargon, meta-commentary, em-dash chains, and false-contrast
+  machine-written - throat-clearers, emphasis crutches, adverb/hedge stacking,
+  business jargon, meta-commentary, every em-dash, and false-contrast
   reversals (`.claude/skills/fleet/prose/references/phrases.md`, `structures.md`); `anti-prose-guard` and
   `convo-prose-nudge` enforce them. Junior-dev level and complete sentences are
   part of that same pass, not a separate voice.
-- **Comment only — never approve, never request-changes/reject.** Post with
+- **Comment only - never approve, never request-changes/reject.** Post with
   `gh pr comment` or `gh pr review --comment`; never `gh pr review --approve` or
   `gh pr review --request-changes`. A verdict (approve or request changes) is a
-  human's to give — the agent leaves findings and flags the PR for the user.
+  human's to give - the agent leaves findings and flags the PR for the user.
   Enforced by `no-pr-review-verdict-guard`.
 
 </details>
@@ -123,7 +123,7 @@ Closing verdict referencing item 1 _(short title)_.
 
 A review bot can always act on its OWN comments and PRs, even on a repo where
 every local credential is read-only or lacks write entirely (an external PR, a
-fork). Posting the bot's own directive comment is that lane — verified live on
+fork). Posting the bot's own directive comment is that lane - verified live on
 an external PR where `minimizeComment` returned FORBIDDEN for every local
 credential, and `@coderabbitai resolve` still resolved and collapsed
 CodeRabbit's own review threads.
@@ -137,14 +137,14 @@ The verified command table lives in
 `scripts/fleet/_shared/bot-directives.mts` (`directiveFor(botLogin, intent)`);
 `bot-comment-collapse-guard` imports it rather than hardcoding a command
 string. A bot with no verified command surface carries a `note` there instead
-of an invented command — never guess a bot's syntax from another bot's.
+of an invented command - never guess a bot's syntax from another bot's.
 
 | Bot | Verified commands | Source |
 | --- | --- | --- |
 | CodeRabbit (`coderabbitai[bot]`) | `@coderabbitai resolve`, `@coderabbitai review`, `@coderabbitai full review` | [docs.coderabbit.ai/guides/commands](https://docs.coderabbit.ai/guides/commands) |
 | Dependabot (`dependabot[bot]`) | `@dependabot rebase`, `recreate`, `merge`, `close`, `ignore this dependency` | [Dependabot pull request comment commands](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-pull-request-comment-commands) |
-| Renovate (`renovate[bot]`) | none — no `@mention` comment-command surface exists; control is the PR-body "rebase/retry" checkbox or a `rebase` label | [Updating and rebasing branches](https://docs.renovatebot.com/updating-rebasing/) |
-| GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | none — no comment-command surface is documented; request a review via the PR UI, the REST API, or `gh pr edit <PR> --add-reviewer copilot` | [Requesting a code review from Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/request-a-code-review/use-code-review) |
+| Renovate (`renovate[bot]`) | none - no `@mention` comment-command surface exists; control is the PR-body "rebase/retry" checkbox or a `rebase` label | [Updating and rebasing branches](https://docs.renovatebot.com/updating-rebasing/) |
+| GitHub Copilot code review (`copilot-pull-request-reviewer[bot]`) | none - no comment-command surface is documented; request a review via the PR UI, the REST API, or `gh pr edit <PR> --add-reviewer copilot` | [Requesting a code review from Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/request-a-code-review/use-code-review) |
 
 ## Why
 

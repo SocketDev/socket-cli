@@ -87,7 +87,7 @@ export function isBundleStale(config: {
   return cfg.sourceMtime > cfg.bundleMtime
 }
 
-function main(): void {
+export function main(): void {
   const checkOnly = process.argv.includes('--check')
   if (checkOnly) {
     const bundleMtime = existsSync(OXLINT_PLUGIN_BUNDLE_PATH)

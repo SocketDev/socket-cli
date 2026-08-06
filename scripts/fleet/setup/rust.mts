@@ -14,6 +14,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { findOwnCargoManifests } from '../update/cargo.mts'
+import { CARGO_FIXIT_VERSION } from '../_shared/rust-tool-pins.mts'
 import { resolveEcosystemOptions, skipResult } from './ecosystems.mts'
 import { isMainModule } from '../_shared/is-main-module.mts'
 import { runMain } from '../_shared/run-main.mts'
@@ -199,6 +200,31 @@ export async function setupRust(
         reason: `toolchain ${channel} install failed`,
         skipped: false,
       }
+    }
+  }
+  // cargo-fixit, the pinned clippy-fix accelerator lint-rust.mts prefers.
+  // Idempotent: skip when the pinned version already answers. No release
+  // binaries exist upstream, so this is the one cargo-install tool; the
+  // exact-version `--locked` install is the supply-chain control (pin
+  // rationale: _shared/rust-tool-pins.mts).
+  const fixitProbe = await runCommand('cargo', ['fixit', '--version'], {
+    silent: true,
+  })
+  if (
+    fixitProbe.exitCode !== 0 ||
+    !fixitProbe.stdout.includes(CARGO_FIXIT_VERSION)
+  ) {
+    logger.log(`setup:rust — cargo install cargo-fixit@${CARGO_FIXIT_VERSION}`)
+    const fixitInstall = await runCommand('cargo', [
+      'install',
+      `cargo-fixit@${CARGO_FIXIT_VERSION}`,
+      '--locked',
+      '--force',
+    ])
+    if (fixitInstall.exitCode !== 0) {
+      logger.warn(
+        `setup:rust: cargo-fixit@${CARGO_FIXIT_VERSION} did not install (exit ${fixitInstall.exitCode}); lint-rust --fix falls back to clippy --fix.`,
+      )
     }
   }
   for (const manifest of manifests) {

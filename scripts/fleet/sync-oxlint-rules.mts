@@ -404,7 +404,7 @@ interface ReconcileResult {
 // read-only by mirror-mode) is never written directly — the template write is
 // the canonical edit and the next cascade propagates it, so a drifted live
 // copy just reports drift for the cascade to fix.
-function reconcileGenerated(config: {
+export function reconcileGenerated(config: {
   readonly cascadeOwned?: boolean | undefined
   readonly filePath: string
   readonly ids: readonly string[]
@@ -439,7 +439,7 @@ function reconcileGenerated(config: {
   return { drifted: true, problem: undefined }
 }
 
-function main(): number {
+export function main(): number {
   const check = process.argv.includes('--check')
   const ids = ruleIds()
 
@@ -535,6 +535,8 @@ const SCRIPT_META: ScriptMeta = {
   --check  exit non-zero if either generated file would change; no write`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

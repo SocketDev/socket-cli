@@ -136,7 +136,7 @@ export function scanHooks(repoRoot: string): KillSwitchHit[] {
   return hits
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hits = scanHooks(REPO_ROOT)
   if (hits.length) {

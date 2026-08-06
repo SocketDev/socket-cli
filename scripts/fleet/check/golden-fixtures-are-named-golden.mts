@@ -59,7 +59,7 @@ export function trackedExpectedJsonFiles(rootDir: string): string[] {
     .filter(Boolean)
 }
 
-function main(): void {
+export function main(): void {
   const violations = findViolations(trackedExpectedJsonFiles(REPO_ROOT))
   if (violations.length === 0) {
     logger.success('All golden fixtures are named *.golden.json')

@@ -316,7 +316,7 @@ interface PackageJson {
 /**
  * Read and parse package.json.
  */
-async function readPackageJson(): Promise<PackageJson> {
+export async function readPackageJson(): Promise<PackageJson> {
   const packageJsonPath = path.join(rootPath, 'package.json')
   const content = await fs.readFile(packageJsonPath, 'utf8')
   try {
@@ -351,7 +351,7 @@ interface ValidationResult {
 /**
  * Validate bundle dependencies.
  */
-async function validateBundleDeps(): Promise<ValidationResult> {
+export async function validateBundleDeps(): Promise<ValidationResult> {
   const distPath = path.join(rootPath, 'dist')
   const pkg = await readPackageJson()
 
@@ -432,7 +432,7 @@ async function validateBundleDeps(): Promise<ValidationResult> {
   return { violations, warnings }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   try {
     const { violations, warnings } = await validateBundleDeps()
 
@@ -480,6 +480,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/validate-bundle-deps.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

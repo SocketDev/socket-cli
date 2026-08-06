@@ -1,7 +1,7 @@
 # npm 2FA web-auth from an agent shell
 
-npm's account-mutating operations — `publish`, `login`, `deprecate`, `owner`,
-`access`, `unpublish` — require 2FA. On a real terminal npm runs a browser
+npm's account-mutating operations - `publish`, `login`, `deprecate`, `owner`,
+`access`, `unpublish` - require 2FA. On a real terminal npm runs a browser
 web-auth flow: it prints
 
 ```text
@@ -31,8 +31,8 @@ node scripts/fleet/npm-web-auth.mts <publish|login|deprecate|owner|access|...> [
 
 The wrapper:
 
-- Runs npm under a pseudo-terminal — `script -q /dev/null npm ...` on macOS/BSD,
-  `script -q -c '<cmd>' /dev/null` on Linux — so npm believes it has a TTY and
+- Runs npm under a pseudo-terminal - `script -q /dev/null npm ...` on macOS/BSD,
+  `script -q -c '<cmd>' /dev/null` on Linux - so npm believes it has a TTY and
   performs its native open-and-poll web flow, staying alive until the human
   authenticates.
 - Streams npm's output straight through to the caller AND watches the **raw**
@@ -56,7 +56,7 @@ checkbox before clicking Authenticate:
 > Do not challenge npm publish, npm trust operations from IP address
 > `<current IP>` for the next 5 minutes
 
-Match it by the **label prefix** (`Do not challenge npm publish`) — the label
+Match it by the **label prefix** (`Do not challenge npm publish`) - the label
 embeds the machine's current IP, so a selector keyed on the full text (or a
 hard-coded IP) breaks on the next network change and would bake a private
 address into committed automation. Checking it suppresses repeat 2FA
@@ -78,4 +78,4 @@ For a scoped `@socketsecurity/*` package do **not** publish locally at all. Flee
 releases go through the STAGED web-UI flow: stage via the publish pipeline, then
 promote the staged version in the npmjs.com web UI. The PTY wrapper is for the
 interactive-auth mechanic of `login`/`deprecate`/`owner`/`access` and for
-non-fleet or placeholder publishes — not for shipping a fleet package.
+non-fleet or placeholder publishes - not for shipping a fleet package.

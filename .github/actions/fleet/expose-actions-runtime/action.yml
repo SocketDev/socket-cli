@@ -8,4 +8,9 @@ description: >-
   in the job env.
 runs:
   using: node24
-  main: index.js
+  # `.cjs`, not `.js`: this source is CommonJS (`require`), and a member whose
+  # package.json sets `"type": "module"` makes Node parse a bare `.js` as ESM —
+  # the action then dies at load with "require is not defined in ES module
+  # scope" before any step runs. The explicit extension pins the parse goal
+  # regardless of the consuming repo's type field.
+  main: index.cjs

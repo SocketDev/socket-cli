@@ -9,6 +9,18 @@
  *   parsing / diffing live in `trusted-publisher-parse.mts` +
  *   `trusted-publisher-plan.mts`; the session + CLI live in
  *   `trusted-publisher-browser.mts`.
+ *   The WRITE path is driven IN PLACE, and that is a bug fix rather than a
+ *   preference. It used to re-navigate on every attempt, and the challenge
+ *   pause it reached used to reload the URL on a fresh pause. On a live run
+ *   the two together looped: access page → the form opens → a reload CLOSES
+ *   it → a challenge appears → pause → reload, with "form opened via
+ *   edit-button" printing once per lap. The reloads were not only discarding
+ *   the work, they were causing it — a rapid reload loop is the traffic shape
+ *   npm's bot management answers with an interstitial, so each lap earned the
+ *   next. So after the ONE navigation that opens the access page, nothing here
+ *   navigates: the form opens once, fills, and saves with no readiness
+ *   question in between, and a genuine challenge mid-form is waited out where
+ *   the page is, then the form is reopened exactly once.
  */
 
 import type { Page } from 'playwright-core'
@@ -17,10 +29,12 @@ import { logger } from '../shared.mts'
 import {
   NPM_ORIGIN,
   optIntoChallengeCooldown,
+  pauseForChallenge,
   runChallengeAware,
   sleep,
 } from './browser-session.mts'
 import type { ChallengeAwareStep } from './browser-session.mts'
+import { clearChallengeGate } from './challenge-gate.mts'
 import {
   classifyAccessPage,
   parseTrustedPublisherForm,
@@ -145,6 +159,21 @@ export async function readTrustedPublisher(
           `Saw: npm answered HTTP ${last.status} — the session is signed out or lacks access to this package.`,
           'Wanted: the signed-in access page carrying the trusted-publisher block.',
           'Fix: sign in to npm in the Chrome window, then re-run.',
+        ].join('\n'),
+      )
+    }
+    if (state === 'step-up') {
+      // The session IS signed in; npm wants a fresh authenticator code before
+      // it will serve this page. Reported loudly because before this state
+      // existed the escalate wall read as "unconfigured" and a caller would
+      // plan a create over a live row.
+      throw new Error(
+        [
+          `What: ${pkg}'s access page is behind npm's 2FA step-up, so its trusted-publisher state is unknown.`,
+          `Where: ${url}`,
+          "Saw: npm's /escalate payload (escalateType + originalUrl) instead of the access page.",
+          'Wanted: the access page carrying the trusted-publisher block.',
+          'Fix: open the URL above in the signed-in Chrome window, enter the authenticator code, then re-run.',
         ].join('\n'),
       )
     }
@@ -311,14 +340,63 @@ export async function ensureFormOpen(page: Page): Promise<FormRevealPath> {
   return revealPath ?? 'form-already-open'
 }
 
+// One classification of the access page from a fetch in the page's OWN world.
+// Every readiness question the write path asks goes through here, so no caller
+// can reach for a navigation to answer one.
+async function currentAccessState(
+  page: Page,
+  pkg: string,
+): Promise<{ state: AccessPageState; status: number }> {
+  const res = await fetchAccessPage(page, pkg)
+  return {
+    state: classifyAccessPage({ body: res.body, status: res.status }),
+    status: res.status,
+  }
+}
+
 // Whether a fresh in-page read of the access page classifies as a
 // human-verification challenge — the write path's gate: while this is true,
 // nothing is filled and nothing is saved.
 async function liveChallengePresent(page: Page, pkg: string): Promise<boolean> {
-  const res = await fetchAccessPage(page, pkg)
-  return (
-    classifyAccessPage({ body: res.body, status: res.status }) === 'challenge'
-  )
+  return (await currentAccessState(page, pkg)).state === 'challenge'
+}
+
+// Wait a live challenge out WHERE THE PAGE IS and answer with the state that
+// ended it. The shared `pauseForChallenge` is the whole operator UX (one 🖐
+// gate block, one desktop ping, one elapsed anchor, the budget) and it waits
+// in place, so the wait composes it instead of re-deriving one — what this
+// loop adds is only the re-classification that ends the wait, which is a page
+// READ and never a navigation. Bounded by the pause budget, which throws its
+// own timeout block once spent: a pause, never a retry ladder.
+async function waitOutChallengeInPlace(
+  page: Page,
+  pkg: string,
+  config: {
+    budgetMs: number | undefined
+    pollMs: number | undefined
+    startedMs: number
+    url: string
+  },
+): Promise<{ state: AccessPageState; status: number }> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  let announced = false
+  for (;;) {
+    // eslint-disable-next-line no-await-in-loop -- serial pause while the operator solves the challenge.
+    const pause = await pauseForChallenge(page, {
+      announced,
+      budgetMs: cfg.budgetMs,
+      elapsedMs: Date.now() - cfg.startedMs,
+      label: pkg,
+      pollMs: cfg.pollMs,
+      url: cfg.url,
+    })
+    announced = pause.announced
+    // eslint-disable-next-line no-await-in-loop -- serial: one classification per pause tick.
+    const current = await currentAccessState(page, pkg)
+    if (current.state !== 'challenge') {
+      return current
+    }
+  }
 }
 
 // One complete fill of the open form from `desired` — always the FULL field
@@ -361,19 +439,21 @@ async function fillWholeForm(
 }
 
 /**
- * Drive the form to `desired` and click Save — atomically with respect to
- * human-verification challenges. The whole navigate → classify → open →
- * fill → save sequence is ONE attempt inside {@link runChallengeAware}:
- * the page is classified BEFORE any form interaction and the run pauses on a
- * challenge instead of writing through it; a challenge surfacing mid-fill
- * abandons that half-done pass, and the next attempt re-navigates, re-reads
- * the form fresh, and re-fills from scratch — a half-filled interaction is
- * never resumed; and the save click is gated by a final classification, so
- * nothing is written while a challenge is outstanding (see
- * `docs/agents.md/fleet/npm-anti-bot-rhythm.md`). Selector failures without
- * a challenge on screen throw; the caller renders the What/Where/Saw/Fix and
- * fails soft for the package. The timings are injectable so tests run in
- * milliseconds.
+ * Drive the form to `desired` and click Save, IN PLACE: open once → fill →
+ * save, with no navigation and no readiness question between opening the form
+ * and clicking Save.
+ *
+ * The page is navigated exactly once, at the top, and classified exactly once,
+ * before the form is opened — a challenge there is waited out where the page
+ * is, so nothing is filled or saved through one (see
+ * `docs/agents.md/fleet/npm-anti-bot-rhythm.md`). From `ensureFormOpen`
+ * onwards the page is asked nothing: every question is a chance to hand
+ * control to a pause that reloads, and a reload closes the form this pass just
+ * opened. If the open, the fill, or the save throws while a genuine challenge
+ * is on screen, that challenge is waited out in place and the form is reopened
+ * exactly once. Any other failure — and a second interrupted pass — throws;
+ * the caller renders the What/Where/Saw/Fix and fails soft for the package.
+ * The timings are injectable so tests run in milliseconds.
  */
 export async function driveFormEdits(
   page: Page,
@@ -383,69 +463,83 @@ export async function driveFormEdits(
 ): Promise<void> {
   const opts = { __proto__: null, ...options } as NonNullable<typeof options>
   const url = accessUrl(pkg)
-  const attempt = async (): Promise<ChallengeAwareStep<undefined>> => {
-    // Fresh navigation on every attempt: after a challenge clears, the page
-    // reloads and any earlier fills are gone, so the only safe resume point
-    // is the top of the sequence.
-    await page.goto(url, { waitUntil: 'domcontentloaded' })
-    await optIntoChallengeCooldown(page)
-    const before = await fetchAccessPage(page, pkg)
-    const state = classifyAccessPage({
-      body: before.body,
-      status: before.status,
-    })
-    if (state === 'challenge') {
-      return { kind: 'challenge' }
-    }
-    if (state === 'auth' || state === 'error') {
-      throw new Error(
-        [
-          `What: ${pkg}'s access page could not be read, so the form was not touched.`,
-          `Where: ${url}`,
-          `Saw: the page classified as ${state} (HTTP ${before.status}).`,
-          'Wanted: the signed-in access page carrying the trusted-publisher block.',
-          state === 'auth'
-            ? 'Fix: sign in to npm in the Chrome window, then re-run.'
-            : 'Fix: open the URL above in the signed-in Chrome window and confirm it loads, then re-run.',
-        ].join('\n'),
-      )
-    }
+  const startedMs = Date.now()
+  const waitConfig = {
+    budgetMs: opts.challengeBudgetMs,
+    pollMs: opts.challengePollMs,
+    startedMs,
+    url,
+  }
+  // THE one navigation of the whole save. Everything below happens where the
+  // page already is.
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
+  await optIntoChallengeCooldown(page)
+  // The only readiness classification of the write path, and it happens before
+  // the form exists on screen.
+  let current = await currentAccessState(page, pkg)
+  if (current.state === 'challenge') {
+    current = await waitOutChallengeInPlace(page, pkg, waitConfig)
+  }
+  if (current.state === 'auth' || current.state === 'error') {
+    throw new Error(
+      [
+        `What: ${pkg}'s access page could not be read, so the form was not touched.`,
+        `Where: ${url}`,
+        `Saw: the page classified as ${current.state} (HTTP ${current.status}).`,
+        'Wanted: the signed-in access page carrying the trusted-publisher block.',
+        current.state === 'auth'
+          ? 'Fix: sign in to npm in the Chrome window, then re-run.'
+          : 'Fix: open the URL above in the signed-in Chrome window and confirm it loads, then re-run.',
+      ].join('\n'),
+    )
+  }
+  const maxFormAttempts = 2
+  for (let attempt = 1; attempt <= maxFormAttempts; attempt += 1) {
     try {
+      // eslint-disable-next-line no-await-in-loop -- at most two serial passes: the form and its single reopen.
       const revealPath = await ensureFormOpen(page)
       logger.substep(`${pkg}: trusted-publisher form opened via ${revealPath}`)
+      // Nothing between here and the click asks the page a question. A
+      // challenge that lands mid-fill surfaces as a locator failure below,
+      // which is where it is handled.
+      // eslint-disable-next-line no-await-in-loop -- serial: one live form at a time.
       await fillWholeForm(page, desired)
+      // eslint-disable-next-line no-await-in-loop -- serial: one live form at a time.
+      await page
+        .getByRole('button', { name: /save changes|save|update|set up/i })
+        .first()
+        .click({ timeout: 10_000 })
+      // eslint-disable-next-line no-await-in-loop -- one await on the way out: a live pause is marked cleared before the save returns.
+      await clearChallengeGate(page, { pkg, url })
+      return
     } catch (e) {
-      // A selector failure with a challenge now on screen is the challenge's
-      // doing, not the form's: abandon this pass, pause, restart from
-      // navigation.
-      if (await liveChallengePresent(page, pkg)) {
-        return { kind: 'challenge' }
+      // A failure with no challenge on screen is the form's own, and a second
+      // interrupted pass is out of reopens: both are the caller's to report.
+      if (
+        attempt >= maxFormAttempts ||
+        // eslint-disable-next-line no-await-in-loop -- serial: the page is asked once, only on failure.
+        !(await liveChallengePresent(page, pkg))
+      ) {
+        throw e
       }
-      throw e
+      logger.warn(
+        `${pkg}: a human-verification challenge interrupted the form. Waiting it out in place, then reopening the form once.`,
+      )
+      // eslint-disable-next-line no-await-in-loop -- serial pause while the operator solves the challenge.
+      await waitOutChallengeInPlace(page, pkg, waitConfig)
     }
-    // The last gate before the only write: a challenge that interjected
-    // during the fill means this pass must not save.
-    if (await liveChallengePresent(page, pkg)) {
-      return { kind: 'challenge' }
-    }
-    const save = page
-      .getByRole('button', { name: /save changes|save|update|set up/i })
-      .first()
-    await save.click({ timeout: 10_000 })
-    return { kind: 'done', value: undefined }
   }
-  await runChallengeAware(page, attempt, {
-    budgetMs: opts.challengeBudgetMs,
-    label: pkg,
-    pollMs: opts.challengePollMs,
-    url,
-  })
 }
 
 /**
  * Poll the RE-READ until the saved state matches desired or the budget
- * elapses — the operator may be answering a 2FA challenge in the window, so
- * the cooldown opt-in keeps getting ticked between polls. The timings are
+ * elapses. The re-read is the same in-page fetch the classification uses, so
+ * the verify NEVER navigates and never re-enters the challenge pause — the
+ * form the save just wrote stays exactly where it is. A page that reads as
+ * anything but configured (a challenge, an auth bounce, an unreadable
+ * response) counts as not-yet-verified, never as verified, and the poll keeps
+ * asking; a challenge is announced once so the operator knows to clear it. The
+ * cooldown opt-in keeps getting ticked between polls. The timings are
  * injectable so tests run in milliseconds.
  */
 export async function awaitVerifiedSave(
@@ -457,6 +551,7 @@ export async function awaitVerifiedSave(
   const opts = { __proto__: null, ...options } as NonNullable<typeof options>
   const verifyPollMs = opts.verifyPollMs ?? SAVE_VERIFY_POLL_MS
   const deadline = Date.now() + (opts.verifyTimeoutMs ?? SAVE_VERIFY_TIMEOUT_MS)
+  let announcedChallenge = false
   let verify: { mismatches: string[]; ok: boolean } = {
     mismatches: ['not yet re-read'],
     ok: false,
@@ -464,18 +559,17 @@ export async function awaitVerifiedSave(
   for (;;) {
     // eslint-disable-next-line no-await-in-loop -- serial poll while npm settles/2FA completes.
     await optIntoChallengeCooldown(page)
-    let reread: TrustedPublisherCurrent | undefined
-    try {
-      // eslint-disable-next-line no-await-in-loop -- serial poll while npm settles/2FA completes.
-      reread = (
-        await readTrustedPublisher(page, pkg, {
-          challengeBudgetMs: opts.challengeBudgetMs,
-          challengePollMs: opts.challengePollMs,
-        })
-      ).current
-    } catch {
-      reread = undefined
+    // eslint-disable-next-line no-await-in-loop -- serial poll while npm settles/2FA completes.
+    const res = await fetchAccessPage(page, pkg)
+    const state = classifyAccessPage({ body: res.body, status: res.status })
+    if (state === 'challenge' && !announcedChallenge) {
+      announcedChallenge = true
+      logger.warn(
+        `${pkg}: human verification is on screen while the save is being verified. Solve it in the Chrome window — the re-read keeps polling in place.`,
+      )
     }
+    const reread: TrustedPublisherCurrent | undefined =
+      state === 'configured' ? parseTrustedPublisherForm(res.body) : undefined
     verify = verifySavedState({ desired, reread })
     if (verify.ok || Date.now() >= deadline) {
       return verify
@@ -486,14 +580,14 @@ export async function awaitVerifiedSave(
 }
 
 /**
- * The full save contract for one package: navigate → read → fill → save via
- * {@link driveFormEdits}, then the re-read verify as the arbiter. On a verify
- * failure the WHOLE sequence retries exactly once from a fresh page — the
- * observed partial-save shape (a challenge mid-fill leaving some fields
- * unwritten) is recoverable by one clean pass, while anything persistent
- * fails with the mismatched fields named. Never a loop: one retry, only
- * after a verify failure, and every challenge inside either pass pauses
- * through the shared rhythm.
+ * The full save contract for one package: {@link driveFormEdits} drives the
+ * form in place, then the in-place re-read verify arbitrates it. On a verify
+ * failure the WHOLE sequence retries exactly once — the observed partial-save
+ * shape (a challenge mid-fill leaving some fields unwritten) is recoverable by
+ * one clean pass, while anything persistent fails with the mismatched fields
+ * named. The retry's navigation is the only one either pass makes, and it
+ * happens at the TOP of the pass, before any form is open: between opening the
+ * form and verifying the save, neither pass navigates.
  */
 export async function driveVerifiedSave(
   page: Page,
@@ -516,7 +610,7 @@ export async function driveVerifiedSave(
     }
     if (attempt < maxAttempts) {
       logger.warn(
-        `${pkg}: saved state did not verify (${verify.mismatches.join('; ')}) — retrying the whole navigate/read/fill/save once from a fresh page.`,
+        `${pkg}: saved state did not verify (${verify.mismatches.join('; ')}) — retrying the whole open/fill/save/verify once from a fresh page load.`,
       )
     }
   }

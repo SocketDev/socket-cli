@@ -178,7 +178,7 @@ export function findSlugCollisions(
   return collisions.toSorted((a, b) => a.slug.localeCompare(b.slug))
 }
 
-function main(): number {
+export function main(): number {
   const quiet = process.argv.includes('--quiet')
   const reportsRoot = path.join(REPO_ROOT, CLAUDE_DIR, REPORTS_DIR)
   const files = collectReportFiles(reportsRoot)
@@ -239,6 +239,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  suppress the clean-pass message`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

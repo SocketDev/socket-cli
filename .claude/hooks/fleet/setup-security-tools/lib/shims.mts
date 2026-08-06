@@ -92,7 +92,7 @@ export function stableTargetFor(target: string): string | undefined {
 /**
  * The `…/_dlx/<hash>` root of a dlx target, the whole dir to mirror.
  */
-function dlxRootOf(target: string): string | undefined {
+export function dlxRootOf(target: string): string | undefined {
   const norm = normalizePath(target)
   const at = norm.indexOf(DLX_SEGMENT)
   if (at === -1) {

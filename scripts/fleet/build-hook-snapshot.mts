@@ -107,7 +107,7 @@ export function classifySpawnOutcome(config: {
   return { ok: exitStatus === 0 && outputExists }
 }
 
-function main(): void {
+export function main(): void {
   // A bundle-only member has no hook source — regenerating the table variants
   // + snapshot bundles over absent dirs would emit empty artifacts. Built at
   // the source repo; the per-machine snapshot re-primes only where source ships.

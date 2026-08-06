@@ -31,7 +31,7 @@
  *      [--apply]
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -45,6 +45,10 @@ import { isMainModule } from '../../_shared/is-main-module.mts'
 import { runMain } from '../../_shared/run-main.mts'
 import { REPO_ROOT } from '../../paths.mts'
 import { buildPtyInvocation, runCapture } from '../shared.mts'
+import {
+  COOLDOWN_OPTIN_SELECTOR,
+  openNpmBrowserSession,
+} from './browser-session.mts'
 import { resolvePinnedNpm } from './pinned-npm.mts'
 import { desiredTrustedPublisher } from './trusted-publisher-plan.mts'
 import type { TrustedPublisherDesired } from './trusted-publisher-plan.mts'
@@ -175,9 +179,131 @@ export function resolveTargetRepoRoot(repo: string | undefined): string {
 }
 
 /**
+ * The `owner/name` of a GitHub repo named by a package.json `repository`
+ * value — the string form, the `github:owner/name` shortcut, or the object
+ * form's `url` — or undefined for anything that names no GitHub repo. Pure —
+ * exported for tests.
+ */
+export function repoFromRepositoryValue(value: unknown): string | undefined {
+  const url =
+    typeof value === 'string'
+      ? value
+      : value && typeof value === 'object'
+        ? (value as { url?: unknown | undefined }).url
+        : undefined
+  if (typeof url !== 'string' || !url) {
+    return undefined
+  }
+  // npm's `github:owner/repo` shorthand: the literal prefix, the owner up to
+  // the slash, the repo lazily so a trailing `#branch` stays out of it, and an
+  // optional `#branch` discarded.
+  // `github:` shortcut — capture owner, then name up to an optional `#ref`.
+  const shortcut = /^github:([^/]+)\/([^/#]+?)(?:#.*)?$/.exec(url)
+  if (shortcut) {
+    return `${shortcut[1]}/${shortcut[2]}`
+  }
+  // A full GitHub URL in any of its shapes. `[/:]` covers both https and the
+  // scp-style git@ form, the owner runs to the next slash, the repo is lazy so
+  // an optional `.git` suffix and any `/`, `#`, or `?` tail drop off rather
+  // than landing in the name.
+  const hosted =
+    /github\.com[/:]([^/]+)\/([^/#?]+?)(?:\.git)?(?:[/#?].*)?$/i.exec(url)
+  return hosted ? `${hosted[1]}/${hosted[2]}` : undefined
+}
+
+/**
+ * Derive `owner/name` for `pkg` from the registry packument's `repository`
+ * field. A fresh name reservation ships no repository metadata, so undefined
+ * here is common and simply falls through to the sibling-checkout scan.
+ */
+export async function deriveRepoFromRegistry(
+  npmPath: string,
+  pkg: string,
+  neutralCwd: string,
+): Promise<string | undefined> {
+  const run = await runCapture(
+    npmPath,
+    ['view', pkg, 'repository', '--json'],
+    neutralCwd,
+  ).catch(() => undefined)
+  const body = run?.stdout.trim()
+  if (!body) {
+    return undefined
+  }
+  try {
+    return repoFromRepositoryValue(JSON.parse(body))
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Derive `owner/name` for `pkg` from the sibling checkouts beside this repo —
+ * the layout every fleet member shares (`~/projects/<name>`). A sibling whose
+ * root manifest names `pkg` answers with its own `repository` field, falling
+ * back to its `origin` remote. This is what resolves a FRESH reservation whose
+ * packument carries nothing yet. Pure over the filesystem — exported for
+ * tests.
+ */
+export function deriveRepoFromSiblings(
+  pkg: string,
+  projectsDir: string,
+): string | undefined {
+  let entries: string[]
+  try {
+    entries = readdirSync(projectsDir)
+  } catch {
+    return undefined
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const dir = path.join(projectsDir, entries[i]!)
+    const manifestPath = path.join(dir, 'package.json')
+    if (!existsSync(manifestPath)) {
+      continue
+    }
+    let manifest: {
+      name?: unknown | undefined
+      repository?: unknown | undefined
+    }
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
+        // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+        name?: unknown | undefined
+        // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+        repository?: unknown | undefined
+      }
+    } catch {
+      continue
+    }
+    if (manifest.name !== pkg) {
+      continue
+    }
+    const fromManifest = repoFromRepositoryValue(manifest.repository)
+    if (fromManifest) {
+      return fromManifest
+    }
+    const gitConfigPath = path.join(dir, '.git', 'config')
+    if (existsSync(gitConfigPath)) {
+      try {
+        const urlLine = /^\s*url\s*=\s*(.+)$/m.exec(
+          readFileSync(gitConfigPath, 'utf8'),
+        )
+        const fromRemote = repoFromRepositoryValue(urlLine?.[1]?.trim())
+        if (fromRemote) {
+          return fromRemote
+        }
+      } catch {
+        // A malformed .git/config answers nothing; the scan continues.
+      }
+    }
+  }
+  return undefined
+}
+
+/**
  * Every package name a repo publishes: its workspace packages, including the
  * generated napi platform packages, or the single package a non-workspace repo
- * ships. This is what makes the bare `pnpm run trust --apply` complete — an
+ * ships. This is what makes the bare `pnpm run npm:trust --apply` complete — an
  * operator naming nine packages by hand is nine chances to miss one, and a
  * missed platform package fails its publish at release time, not here.
  */
@@ -216,8 +342,10 @@ export function buildTrustWriteArgs(
     `${desired.repositoryOwner}/${desired.repositoryName}`,
     '--environment',
     desired.environmentName,
-    '--allow-publish',
-    '--allow-stage-publish',
+    // Each grant flag rides only when the law wants that action — the write
+    // is a full upsert of the row, so an omitted flag CLEARS the grant.
+    ...(desired.allowNpmPublish ? ['--allow-publish'] : []),
+    ...(desired.allowNpmStagePublish ? ['--allow-stage-publish'] : []),
     '--yes',
   ]
 }
@@ -371,41 +499,173 @@ export async function runTrustWriteInteractive(
   args: readonly string[],
   neutralCwd: string,
 ): Promise<number> {
-  const pty = buildPtyInvocation(process.platform, npmPath, [...args])
-  const command = pty?.command ?? npmPath
-  const commandArgs = pty ? [...pty.args] : [...args]
-  const child = spawn(command, commandArgs, {
-    cwd: neutralCwd,
-    shell: WIN32,
-    stdio: ['pipe', 'pipe', 'pipe'],
-  })
-  let seen = ''
-  let answered = false
-  let opened = false
-  const onChunk = (chunk: Buffer): void => {
-    seen += chunk.toString('utf8')
-    process.stdout.write(chunk)
-    if (!answered && /press enter/i.test(seen)) {
-      answered = true
-      child.process.stdin?.write('\n')
-    }
-    if (!opened) {
-      const url = urlAfterMarker(seen, 'auth/cli/')
-      if (url) {
-        opened = true
-        void runCaptureBoth('open', [url], neutralCwd).catch(() => undefined)
+  const runOnce = async (
+    command: string,
+    commandArgs: string[],
+  ): Promise<{ code: number; seen: string }> => {
+    const child = spawn(command, commandArgs, {
+      cwd: neutralCwd,
+      shell: WIN32,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+    let seen = ''
+    let answered = false
+    let opened = false
+    const onChunk = (chunk: Buffer): void => {
+      seen += chunk.toString('utf8')
+      process.stdout.write(chunk)
+      if (!answered && /press enter/i.test(seen)) {
+        answered = true
+        child.process.stdin?.write('\n')
+      }
+      if (!opened) {
+        const url = urlAfterMarker(seen, 'auth/cli/')
+        if (url) {
+          opened = true
+          void openApprovalUrl(url, neutralCwd).catch(() => undefined)
+        }
       }
     }
-  }
-  child.process.stdout?.on('data', onChunk)
-  child.process.stderr?.on('data', onChunk)
-  const code = await new Promise<number>(resolve => {
-    child.process.on('close', (exitCode: number | null) => {
-      resolve(exitCode ?? 1)
+    child.process.stdout?.on('data', onChunk)
+    child.process.stderr?.on('data', onChunk)
+    const code = await new Promise<number>(resolve => {
+      child.process.on('close', (exitCode: number | null) => {
+        resolve(exitCode ?? 1)
+      })
     })
-  })
-  void child.catch(() => undefined)
-  return code
+    void child.catch(() => undefined)
+    return { code, seen }
+  }
+  const pty = buildPtyInvocation(process.platform, npmPath, [...args])
+  const attempt = await runOnce(
+    pty?.command ?? npmPath,
+    pty ? [...pty.args] : [...args],
+  )
+  if (!pty || !isPtyAllocationFailure(attempt.seen, attempt.code)) {
+    return attempt.code
+  }
+  // script(1) refused the pseudo-terminal (socket/pipe stdio — an agent
+  // session or a captured run) and npm never executed. expect(1) allocates
+  // its own PTY pair without needing a controlling terminal, so npm takes its
+  // INTERACTIVE OTP path: it prints a REAL approval URL (the non-interactive
+  // EOTP refusal masks them to `***`) and polls for the approval itself. The
+  // onChunk handler above opens that URL in the operator's browser.
+  if (existsSync(EXPECT_PATH)) {
+    logger.info(
+      'script(1) refused a PTY here (no TTY); driving the write through ' +
+        'expect(1) instead.',
+    )
+    const viaExpect = await runOnce(EXPECT_PATH, [
+      '-c',
+      buildExpectPtyScript(npmPath, [...args]),
+    ])
+    if (!isPtyAllocationFailure(viaExpect.seen, viaExpect.code)) {
+      return viaExpect.code
+    }
+  }
+  // Last resort — a plain spawn. npm may refuse a non-interactive WRITE with
+  // EOTP even inside a primed session, so an EOTP refusal here drives the
+  // same browser-approval loop the priming step uses — open the approval URL,
+  // poll npm's done endpoint, then run the write once more against the
+  // elevated session.
+  logger.info(
+    'PTY allocation failed here (no TTY); retrying the write with a plain spawn.',
+  )
+  const plain = await runOnce(npmPath, [...args])
+  if (plain.code === 0 || !isOtpRequired(plain.seen)) {
+    return plain.code
+  }
+  const challenge = parseOtpChallenge(plain.seen)
+  if (!challenge) {
+    return plain.code
+  }
+  logger.info(
+    'npm wants a fresh browser approval for this write — opening the ' +
+      'approval page and waiting.',
+  )
+  await openApprovalUrl(challenge.authUrl, neutralCwd)
+  const deadline = Date.now() + OTP_APPROVAL_BUDGET_MS
+  let approved = false
+  while (Date.now() < deadline) {
+    // eslint-disable-next-line no-await-in-loop -- serial: one operator, one approval.
+    if (await isApprovalComplete(challenge.doneUrl, npmPath, neutralCwd)) {
+      approved = true
+      break
+    }
+    // eslint-disable-next-line no-await-in-loop -- paced poll, not a retry ladder.
+    await sleep(OTP_POLL_MS)
+  }
+  if (!approved) {
+    return plain.code
+  }
+  logger.success('approval received — repeating the write.')
+  const retried = await runOnce(npmPath, [...args])
+  return retried.code
+}
+
+/**
+ * Where macOS and most Linuxes keep expect(1). Checked with existsSync rather
+ * than PATH lookup so a missing expect falls through to the plain-spawn
+ * ladder instead of a spawn ENOENT.
+ */
+export const EXPECT_PATH = '/usr/bin/expect'
+
+/**
+ * A Tcl word for `value`: bare when it is plain command-argument text,
+ * brace-quoted otherwise. Backslashes and braces are escaped so the value
+ * survives brace-quoting verbatim. Pure — exported for tests.
+ */
+export function tclWord(value: string): string {
+  if (/^[\w!%+,./:=@^-]+$/.test(value)) {
+    return value
+  }
+  // Escape the three characters Tcl still interprets inside {braces}.
+  return `{${value.replace(/[\\{}]/g, '\\$&')}}`
+}
+
+/**
+ * The expect(1) program that runs `cmd args…` on a fresh PTY, answers npm's
+ * `Press ENTER to open in the browser` prompt, and exits with the child's
+ * exit code. expect allocates the PTY itself, so this works from a session
+ * whose stdio is a socket or pipe — exactly where script(1) refuses. Pure —
+ * exported for tests.
+ */
+export function buildExpectPtyScript(
+  cmd: string,
+  args: readonly string[],
+): string {
+  const words = [cmd, ...args].map(tclWord).join(' ')
+  return [
+    'set timeout -1',
+    `spawn -noecho ${words}`,
+    'expect {',
+    '  -nocase -re {press enter} { send "\\r"; exp_continue }',
+    '  eof',
+    '}',
+    'catch wait result',
+    'exit [lindex $result 3]',
+  ].join('\n')
+}
+
+/**
+ * Whether a PTY-wrapped run died in `script(1)` ITSELF — the pseudo-terminal
+ * was never allocated and the wrapped command never ran. BSD script prints
+ * `tcgetattr/ioctl: Operation not supported ...` when its stdio is a socket or
+ * pipe (agent sessions, captured runs) and exits nonzero with no other
+ * output. Pure — exported for tests.
+ */
+export function isPtyAllocationFailure(output: string, code: number): boolean {
+  if (code === 0) {
+    return false
+  }
+  const trimmed = output.trim()
+  if (!/(?:ioctl|openpty|tcgetattr|tcsetattr)/i.test(trimmed)) {
+    return false
+  }
+  // Everything script(1) printed is its own failure line(s); npm output —
+  // an EOTP refusal, a usage error — means the command DID run and the
+  // failure is npm's to report, not the wrapper's.
+  return !/npm/i.test(trimmed.replace(/^script:.*$/gm, ''))
 }
 
 export interface OtpChallenge {
@@ -560,6 +820,118 @@ export async function isApprovalComplete(
 }
 
 /**
+ * The slice of the sanctioned browser session the approval flow needs: a page
+ * that can land on a URL, and a close. Structural on purpose, so a unit test
+ * hands in a plain object instead of a playwright Page. `locator` is optional
+ * — present on a real page, absent on a minimal fake — and gates the
+ * cooldown opt-in tick.
+ */
+export interface ApprovalBrowserSession {
+  close: () => Promise<void>
+  page: {
+    goto: (url: string) => Promise<unknown>
+    locator?:
+      | ((selector: string) => {
+          first: () => {
+            // A REQUIRED options bag: the one caller always passes a timeout,
+            // and an optional `timeout?: number | undefined` here would ask
+            // playwright's real check() to accept an explicit undefined,
+            // which exactOptionalPropertyTypes forbids — breaking the real
+            // page's assignability to this structural shape.
+            check: (options: { timeout: number }) => Promise<void>
+          }
+        })
+      | undefined
+  }
+}
+
+/**
+ * Tick npm's challenge-cooldown opt-in when the approval page offers it, so a
+ * batch of trust operations rides ONE challenge for the next five minutes.
+ * Fail-soft and fire-and-forget: an absent checkbox, a hydration race, or a
+ * minimal test page all no-op.
+ */
+export async function tickCooldownOptIn(
+  page: ApprovalBrowserSession['page'],
+): Promise<void> {
+  if (typeof page.locator !== 'function') {
+    return
+  }
+  try {
+    await page.locator(COOLDOWN_OPTIN_SELECTOR).first().check({ timeout: 4000 })
+    logger.info(
+      'ticked the npm challenge-cooldown opt-in — publish/trust operations ' +
+        'skip re-challenge for 5 minutes.',
+    )
+  } catch {
+    // The opt-in is a convenience, never load-bearing.
+  }
+}
+
+// The one approval-browser session a run holds, launched lazily on the first
+// approval URL and reused for every later one, so a batch's approvals land in
+// ONE window.
+let approvalSession: ApprovalBrowserSession | undefined
+
+/**
+ * The injectable seam for the durable-profile launch, resolved to the real
+ * sanctioned opener in production. A unit test swaps the property for a
+ * scripted opener — plain assignment, no module mocking — so the approval
+ * flow is testable without a browser.
+ */
+export const approvalSeams: {
+  openSession: (options: { scope: string }) => Promise<ApprovalBrowserSession>
+} = { openSession: openNpmBrowserSession }
+
+/**
+ * Open `url` where the operator can actually approve it. npm approval pages
+ * only count when the viewing browser is signed in as the PUBLISH account,
+ * and that session lives in the durable staged-browser profile — the
+ * operator's default browser routinely is not (observed 2026-08-05: two runs
+ * expired their approval budget on a page the default browser could not
+ * approve). So: the sanctioned durable-profile session first, the default
+ * browser as the fallback when that profile is held by another Chrome or
+ * fails to launch.
+ */
+export async function openApprovalUrl(
+  url: string,
+  neutralCwd: string,
+): Promise<void> {
+  if (!approvalSession) {
+    // `scope` skips the sign-in wait: the approval PAGE is the destination,
+    // and an operator who does need to sign in does it right there.
+    approvalSession = await approvalSeams
+      .openSession({ scope: 'otp-approval' })
+      .catch(() => undefined)
+  }
+  if (approvalSession) {
+    const landed = await approvalSession.page
+      .goto(url)
+      .then(() => true)
+      .catch(() => false)
+    if (landed) {
+      // Concurrent with the operator's approval; the checkbox may hydrate
+      // after load, and the check's own actionability wait covers that.
+      void tickCooldownOptIn(approvalSession.page)
+      return
+    }
+  }
+  await runCapture('open', [url], neutralCwd).catch(() => undefined)
+}
+
+/**
+ * Close the approval window once the run is done with approvals. Safe to call
+ * when none was ever opened.
+ */
+export async function closeApprovalSession(): Promise<void> {
+  const session = approvalSession
+  approvalSession = undefined
+  if (session) {
+    await session.close().catch(() => undefined)
+  }
+}
+
+/**
  * Authenticate once before any read or write, so nine account operations cost
  * one approval — npm elevates the session for about five minutes.
  *
@@ -603,9 +975,7 @@ export async function primeOtpSession(
   )
   // Open the page for the operator rather than printing a URL they would have
   // to copy: a redirected or piped run makes a printed URL unreachable.
-  await runCapture('open', [challenge.authUrl], neutralCwd).catch(
-    () => undefined,
-  )
+  await openApprovalUrl(challenge.authUrl, neutralCwd)
   const deadline = Date.now() + OTP_APPROVAL_BUDGET_MS
   while (Date.now() < deadline) {
     // eslint-disable-next-line no-await-in-loop -- serial: one operator, one approval.
@@ -620,6 +990,17 @@ export async function primeOtpSession(
 }
 
 export async function main(): Promise<void> {
+  try {
+    await runTrust()
+  } finally {
+    // The approval window holds the durable profile's singleton lock; leaving
+    // it open would make the NEXT run's approval fall back to the default
+    // browser — the exact failure the window exists to prevent.
+    await closeApprovalSession()
+  }
+}
+
+async function runTrust(): Promise<void> {
   const flags = parseTrustArgs(process.argv.slice(2))
   // The target checkout owns both the package list and the platform tokens, so
   // it is resolved once and both reads follow it.
@@ -636,7 +1017,7 @@ export async function main(): Promise<void> {
         `  Where: ${targetRepoRoot}\n` +
         '  Saw:   no package arguments and no publishable manifest in the repo.\n' +
         '  Fix:   name the packages explicitly, or run from a repo that publishes — ' +
-        'pnpm run trust [@scope/pkg…] [--repo owner/name] [--apply]',
+        'pnpm run npm:trust [@scope/pkg…] [--repo owner/name] [--apply]',
     )
     process.exitCode = 1
     return
@@ -692,17 +1073,35 @@ export async function main(): Promise<void> {
   const plans: TrustPlan[] = []
   for (let p = 0, { length } = packages; p < length; p += 1) {
     const pkg = packages[p]!
-    const desired = desiredTrustedPublisher({
+    let desired = desiredTrustedPublisher({
       napiPlatforms,
       pkg,
       repoOverride: flags.repo,
     })
     if (!desired) {
+      // No --repo and no rule matched the name. Two more contexts can answer:
+      // the registry packument's `repository` field, then the sibling
+      // checkouts (a FRESH reservation's packument carries nothing yet).
+      // eslint-disable-next-line no-await-in-loop -- sequential by design: npm rate-limits account reads.
+      const derived =
+        (await deriveRepoFromRegistry(npmPath, pkg, neutralCwd)) ??
+        deriveRepoFromSiblings(pkg, path.dirname(REPO_ROOT))
+      if (derived) {
+        logger.info(`${pkg}: repository ${derived} (derived)`)
+        desired = desiredTrustedPublisher({
+          napiPlatforms: readNapiPlatforms(resolveTargetRepoRoot(derived)),
+          pkg,
+          repoOverride: derived,
+        })
+      }
+    }
+    if (!desired) {
       logger.fail(
         `cannot derive a repository for ${pkg}.\n` +
           '  What:  a trusted publisher names the GitHub repo that may publish.\n' +
           `  Where: ${pkg}\n` +
-          '  Saw:   no --repo and no repo derivable from the package name.\n' +
+          '  Saw:   no --repo, the registry packument names no GitHub repository, ' +
+          'and no sibling checkout publishes this name.\n' +
           '  Fix:   pass --repo <owner/name>.',
       )
       process.exitCode = 1

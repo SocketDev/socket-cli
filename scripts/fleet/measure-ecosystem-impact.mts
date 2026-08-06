@@ -563,6 +563,8 @@ const SCRIPT_META: ScriptMeta = {
   help: impactHelpText(),
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

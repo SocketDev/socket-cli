@@ -138,7 +138,7 @@ export function parseCleanArgs(argv: readonly string[]): CleanArgs {
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const { dryRun, options, quiet } = parseCleanArgs(process.argv.slice(2))
   const plan = resolveCleanPlan(REPO_ROOT, options)
 
@@ -178,6 +178,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet         suppress the summary`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

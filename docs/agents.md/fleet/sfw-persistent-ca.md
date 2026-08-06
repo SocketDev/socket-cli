@@ -3,7 +3,7 @@
 Companion to the Socket Firewall CA rule in `template/base/CLAUDE.md`. Policy:
 **the fleet's sfw CA is a stable per-user file, never a per-invocation
 throwaway.** A throwaway CA cannot be added to an OS trust store, and every
-client that carries its own TLS stack verifies against that store — so an
+client that carries its own TLS stack verifies against that store, so an
 ephemeral CA breaks them all while Node clients keep working and hide the bug.
 
 ## Why an ephemeral CA breaks non-Node clients
@@ -15,7 +15,7 @@ fails.
 `getCaKeyPair()` (firewall `src/lib/cli/cliCaKeyPair.ts`) adopts an existing CA
 only when `SFW_CA_CERT_PATH` **and** `SFW_CA_KEY_PATH` are both set **and** both
 files exist. Miss any of those four conditions and it calls
-`generateCaKeyPair(tmpdir)` — a brand-new CA in a brand-new temp directory, per
+`generateCaKeyPair(tmpdir)`, a brand-new CA in a brand-new temp directory, per
 invocation. Two consecutive runs land in two different `sfw-XXXXXX/` dirs.
 
 sfw then injects the right env into the wrapped child: `SSL_CERT_FILE`,
@@ -24,7 +24,7 @@ sfw then injects the right env into the wrapped child: `SSL_CERT_FILE`,
 setup look healthy:
 
 - **Node clients keep working.** Node reads `NODE_EXTRA_CA_CERTS` at startup and
-  appends the file to its bundled root set. A fresh path every run is fine —
+  appends the file to its bundled root set. A fresh path every run is fine:
   the var is fresh too.
 - **Clients with their own TLS stack do not.** pnpm's tarball fetcher is Rust
   (`pacquet_tarball::fetch_tarball`, rustls); it does not consult
@@ -34,15 +34,15 @@ setup look healthy:
 
 The failure is intermittent in the worst way: a cached install never downloads a
 tarball, so it never touches TLS for that package. The break shows up only on a
-**new** dependency download — a cache miss, a fresh checkout, a bumped version.
+**new** dependency download: a cache miss, a fresh checkout, a bumped version.
 
 ## Status: the env wiring is correct and currently INERT
 
 Measured on both binaries with identical env:
 
-- **sfw-enterprise honors `SFW_CA_CERT_PATH`** — the wrapped child receives the
+- **sfw-enterprise honors `SFW_CA_CERT_PATH`**: the wrapped child receives the
   path that was exported.
-- **sfw-free ignores it** — the child receives
+- **sfw-free ignores it**: the child receives
   `/var/folders/.../T/sfw-<random>/socketFirewallCa.crt`. Its entrypoint calls
   `getCaKeyPair(tmpdir, false, {})` with an EMPTY external config, so the env
   pair is never read, then overwrites it in the child env with the throwaway
@@ -59,7 +59,7 @@ So there are **two mechanisms, and the env pair is not the load-bearing one**:
 | a persistent pair at the location the build reads by default | both, once shipped | the load-bearing path; pending upstream |
 
 The pending firewall change (`sfw ca init/trust/path`) gives free mode a
-persistent DEFAULT pair — `resolveExistingCaKeyPair` prefers the env pair when
+persistent DEFAULT pair: `resolveExistingCaKeyPair` prefers the env pair when
 both files exist and otherwise falls back to `getPersistentCaPaths()`, today
 `~/.socket/sfw/ca.{crt,key}`. It does **not** teach free mode to read
 `SFW_CA_*` from the environment; that gap survives the change. On a machine
@@ -68,7 +68,7 @@ running the free build, exporting the env pair will stay inert before and after.
 Until such a build is racked, generating and trusting a persistent CA changes
 nothing at runtime, and this repo says so rather than reporting success.
 `setup:sfw-ca` probes what a wrapped child actually receives and prints an
-`INERT` verdict — withholding the OS-trust command, because trusting a root the
+`INERT` verdict, withholding the OS-trust command, because trusting a root the
 proxy never signs with accomplishes nothing.
 
 </details>
@@ -81,7 +81,7 @@ One stable pair, generated once, trusted once:
    through openssl, with the same subject and extensions the firewall's own
    generator uses (`CN=Socket Security CA, O=Socket Security`,
    `basicConstraints critical CA:TRUE`, `keyUsage critical keyCertSign`). Key
-   `0600`, cert `0644`, directory `0700`. Idempotent — a second run regenerates
+   `0600`, cert `0644`, directory `0700`. Idempotent: a second run regenerates
    nothing and re-reports the trust verdict. `--force` is the only way to
    replace an existing pair.
 2. The step **prints** the OS trust command and stops. Installing a root CA
@@ -91,7 +91,7 @@ One stable pair, generated once, trusted once:
 3. Every surface that hands an environment to a package manager exports the
    pair, guarded on the files existing:
    - the wrapper generator `scripts/fleet/setup/tools-sfw.mjs`, which writes
-     `~/.socket/_wheelhouse/bin/*` — the wrappers PATH resolves,
+     `~/.socket/_wheelhouse/bin/*`, the wrappers that PATH resolves,
    - the shell-rc bridge
      `.claude/hooks/fleet/setup-security-tools/lib/shell-rc-bridge.mts`, which
      covers a tool invoked outside a wrapper.
@@ -105,7 +105,7 @@ that never runs `setup:sfw-ca` is left as it was.
 `FLEET_ENV` (`.claude/hooks/fleet/_shared/fleet-env.mts`) is the no-phone-home
 posture: static values, universal across every surface, and **required in every
 workflow `env:`** by `workflow-envs-have-full-fleet-env`. The CA pair is neither
-static nor universal — the value is a per-user path and CI has no CA at all.
+static nor universal: the value is a per-user path and CI has no CA at all.
 Adding it there would force a knob into CI that can never be satisfied. It ships
 as its own list in `.claude/hooks/fleet/_shared/sfw-ca.mts`, which keeps the CA
 wiring and the CI telemetry gates independently correct.
@@ -116,7 +116,7 @@ The pair only does anything if it sits where the build looks for it. The
 firewall's `getPersistentCaDir()` (`src/lib/cli/caPaths.ts`) resolves
 `~/.socket/sfw`, and `getPersistentCaPaths()` names the halves `ca.crt` /
 `ca.key`. Both values live in this repo as `SFW_CA_HOME_RELATIVE_DIR` and
-`SFW_CA_BASENAME` in `.claude/hooks/fleet/_shared/sfw-ca.mts` — one string each,
+`SFW_CA_BASENAME` in `.claude/hooks/fleet/_shared/sfw-ca.mts`, one string each,
 which every absolute path, shell fragment, and check message derives from, so
 an upstream rename is a one-line follow.
 
@@ -126,22 +126,22 @@ an upstream rename is a one-line follow.
 That directory has two owners. It is also `LEGACY_SFW_DIR` in
 `scripts/fleet/install-sfw.mts`: on a machine that predates the `_wheelhouse`
 rename, `ensureWheelhouseLayout()` used to `renameSync` the whole thing to
-`~/.socket/_wheelhouse`. Left alone that collides two ways — a migration would
+`~/.socket/_wheelhouse`. Left alone that collides two ways: a migration would
 carry `ca.{crt,key}` out from under both the build and the OS trust entry, and
 on a machine that never had a legacy install the mere act of creating the CA dir
 would fake a migration into being.
 
 They coexist, with the layout function made CA-aware rather than the CA moved:
 
-- `legacySfwPayloadEntries()` is the payload the migration owns — everything in
+- `legacySfwPayloadEntries()` is the payload the migration owns: everything in
   `~/.socket/sfw` except `SFW_CA_FILENAMES`.
 - `ensureWheelhouseLayout()` moves that payload **entry by entry** into
   `~/.socket/_wheelhouse` instead of renaming the directory, and skips the
   migration entirely when the only thing there is the CA.
 
 So `~/.socket/sfw` survives the migration holding exactly the pair, which is
-what sfw reads. Picking the other side — keeping the CA under the wheelhouse
-umbrella and teaching sfw to find it — is not available: free mode never reads
+what sfw reads. The other side, keeping the CA under the wheelhouse umbrella
+and teaching sfw to find it, is not available: free mode never reads
 `SFW_CA_CERT_PATH` at all, so a pair anywhere but the default location is inert
 by construction.
 
@@ -156,14 +156,14 @@ legs:
   block is byte-identical to `sfwCaPosixExportLines()` /
   `sfwCaWindowsExportLines()`, on POSIX, on Windows, and in the shell-rc block.
   It also asserts the HOME-relative path the shell fragment hardcodes still
-  agrees with the absolute path `getSfwCaDir()` resolves — the one place the two
+  agrees with the absolute path `getSfwCaDir()` resolves, the one place the two
   derivations could drift.
 - **Machine (this box).** Every real-tool wrapper in
   `~/.socket/_wheelhouse/bin` must carry the exports; one generated before the
   wiring landed is stale and silently unprotected. Regenerate with
   `node scripts/fleet/setup/tools.mjs`.
 
-Absent wrappers or an absent CA pair are a **loud skip**, never a pass — CI has
+Absent wrappers or an absent CA pair are a **loud skip**, never a pass: CI has
 neither, and a green line for a leg that did not run is the false-green this
 repo's checks exist to prevent.
 

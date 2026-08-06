@@ -153,7 +153,7 @@ export function hasTrackedCargoLock(repoRoot: string): boolean {
   return String(result.stdout ?? '').trim().length > 0
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const hasOwnCargoToml = findOwnCargoManifests(REPO_ROOT).length > 0
 

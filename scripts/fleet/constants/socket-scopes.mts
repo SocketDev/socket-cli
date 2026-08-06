@@ -2,7 +2,7 @@
  * @file Socket-owned package scope patterns that bypass the fleet's soak /
  *   maturity windows. The cooldown (7-day soak on npm `minimumReleaseAge`,
  *   matching `maturityPeriod` on taze, matching GitHub-release soak in
- *   update-external-tools) exists to catch compromised upstream packages before
+ *   external-tools/update.mts) exists to catch compromised upstream packages before
  *   adoption. Socket-published packages go through our own provenance pipeline
  *   (OIDC trusted publisher, sigstore attestations, manual approve gate) so we
  *   trust them to ship fresh. Fleet-tier (cascaded) so both wheelhouse-only

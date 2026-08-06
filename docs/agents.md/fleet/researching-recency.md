@@ -8,7 +8,7 @@ A README reflects the maintainer's intent; a training cutoff reflects last year.
 
 ## Architecture
 
-Two halves, by design — the Anthropic Agent-Skills best-practices split:
+Two halves, by design - the Anthropic Agent-Skills best-practices split:
 
 - **Deterministic engine** (`scripts/fleet/researching-recency/`): the math that must be repeatable. Parallel fetch, freshness + engagement scoring, near-duplicate collapse, reciprocal-rank fusion, and rendering the evidence envelope. Pure, unit-tested, no model in the loop.
 - **Model-driven synthesis** (the `SKILL.md` contract): the judgment. Resolving the entity, building the query plan, clustering the evidence into themes, and writing the cited prose. The engine drops the LLM reranker the upstream uses, and the model recovers that judgment at synthesis time.

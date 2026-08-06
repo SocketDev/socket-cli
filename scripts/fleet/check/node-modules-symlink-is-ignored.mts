@@ -161,7 +161,7 @@ export function findNodeModulesSymlinkGaps(repoRoot: string): GitignoreGap[] {
   return gaps
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const gaps = findNodeModulesSymlinkGaps(REPO_ROOT)
   if (!gaps.length) {

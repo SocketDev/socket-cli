@@ -312,7 +312,7 @@ export function formatPackLeakReport(
   return lines.join('\n')
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const quiet = process.argv.includes('--quiet')
   const pkg = JSON.parse(
     readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'),
@@ -376,6 +376,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  silent on clean`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

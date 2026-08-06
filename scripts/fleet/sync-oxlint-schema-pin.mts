@@ -107,7 +107,7 @@ export function planSchemaPin(
   return { current, kind: 'drift', next: expected }
 }
 
-function main(): number {
+export function main(): number {
   const check = process.argv.includes('--check')
 
   const version = installedOxlintVersion(REPO_ROOT)
@@ -190,6 +190,8 @@ const SCRIPT_META: ScriptMeta = {
   --check  report drift and exit non-zero without writing (CI mode)`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

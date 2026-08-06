@@ -24,13 +24,13 @@ Conventions:
 
 | Name              | Enforcer                           | Effect                                                                                                                                                                                                                                                                                                |
 | ----------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workflow-shadow` | `scripts/fleet/lint-github-settings.mts` | Suppress the "Local workflow shadows a shared one" finding for the file. Document `<reason>` (e.g. "CLI-specific multi-package publish; does not fit generic shared shape"). Marker must appear as a `#`-comment line in the workflow YAML body — typically near the top, alongside the `name:` line. |
+| `workflow-shadow` | `scripts/fleet/lint-github-settings.mts` | Suppress the "Local workflow shadows a shared one" finding for the file. Document `<reason>` (e.g. "CLI-specific multi-package publish; does not fit generic shared shape"). Marker must appear as a `#`-comment line in the workflow YAML body - typically near the top, alongside the `name:` line. |
 
 ## When to add a new marker
 
 When a new audit / custom lint needs an opt-out mechanism:
 
-1. Pick a `<name>` (kebab-case, rule-scoped — e.g. `provenance-no-attestation`, not just `attestation`).
+1. Pick a `<name>` (kebab-case, rule-scoped - e.g. `provenance-no-attestation`, not just `attestation`).
 2. Implement the marker check in the audit (regex pattern: `^[ \t]*[#/]+\s*socket-bypass:\s*<name>\b`).
 3. Add a row to the table above with the enforcer + effect.
 

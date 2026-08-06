@@ -102,7 +102,29 @@ network:
     - api.anthropic.com
 
 steps:
+  # A dispatched update branch can vanish before this run starts — the weekly
+  # flow merges it or closes it as superseded (both delete the branch). A
+  # vanished branch means there is nothing left to get green, so probe first
+  # (read-only — the agent job's token cannot write, so no `gh run cancel`
+  # here) and skip the checkout instead of letting it hard-fail and page a
+  # human with a failure issue (socket-cli#1478 was exactly that race). The
+  # marker file short-circuits the agent prompt below.
+  - name: Probe the update branch
+    id: update-branch
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BRANCH: ${{ inputs.branch }}
+    run: |
+      if gh api "repos/${GITHUB_REPOSITORY}/branches/${BRANCH}" --jq .name >/dev/null 2>&1; then
+        echo "exists=true" >> "$GITHUB_OUTPUT"
+        exit 0
+      fi
+      echo "exists=false" >> "$GITHUB_OUTPUT"
+      mkdir -p /tmp/gh-aw-state
+      touch /tmp/gh-aw-state/update-branch-missing
+      echo "::notice::update branch '${BRANCH}' no longer exists — it merged or was superseded, so there is nothing to get green."
   - uses: actions/checkout@v5.0.0
+    if: steps.update-branch.outputs.exists == 'true'
     with:
       ref: ${{ inputs.branch }}
       fetch-depth: '0'
@@ -119,6 +141,14 @@ safe-outputs:
 
 A weekly dependency update was applied on branch `${{ inputs.branch }}`, but the
 build/tests are failing. Fix the failures so the update can ship.
+
+## A vanished branch is a finished job
+
+Check FIRST: if the file `/tmp/gh-aw-state/update-branch-missing` exists, the
+update branch was merged or deleted as superseded after this run was
+dispatched, and the workspace holds no checkout. There is nothing to fix —
+emit no safe outputs, change nothing, and end your run immediately with a
+one-line note that the branch resolved itself.
 
 ## Never write a credential into a report
 

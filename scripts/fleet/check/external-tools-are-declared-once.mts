@@ -134,7 +134,7 @@ export function findDuplicateTools(
   return findings
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const registries = REGISTRY_PATHS.map(p => ({
     path: p,
@@ -174,6 +174,8 @@ const SCRIPT_META: ScriptMeta = {
   --quiet  suppress the pass message`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -342,7 +342,7 @@ export function scanRules(
   return gaps
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const gaps = [
     ...scanHooks(REPO_ROOT),

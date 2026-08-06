@@ -1,6 +1,6 @@
 # Inclusive language reference
 
-The fleet uses precise, neutral terms over historical metaphors that imply hierarchy or exclusion. The substitutes are not euphemisms — they're more _accurate_ (a list of allowed values genuinely is an "allowlist"; "whitelist" is a metaphor that hides what the list does).
+The fleet uses precise, neutral terms over historical metaphors that imply hierarchy or exclusion. The substitutes are not euphemisms - they're more _accurate_ (a list of allowed values genuinely is an "allowlist"; "whitelist" is a metaphor that hides what the list does).
 
 ## Substitution table
 
@@ -31,4 +31,4 @@ The legacy term must remain only when changing it would break something external
 
 ## When to fix
 
-When you encounter a legacy term during unrelated work, fix it inline — don't defer.
+When you encounter a legacy term during unrelated work, fix it inline - don't defer.

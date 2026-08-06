@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Claude Code PostToolUse hook — long-running-task-nudge.
 //
-// Catches a background Workflow run or background Agent that grinds on one
-// task without progress. A single background run once ground on one hard task
+// Catches a background Workflow run, Agent, or Bash task that grinds without
+// visible progress. A single background run once ground on one hard task
 // for about an hour — a huge transcript, many failed iterations — before the
 // orchestrator noticed. This surfaces the run after a modest threshold so the
 // orchestrator verifies it is progressing and, if stuck, TaskStops it and
@@ -15,13 +15,20 @@
 // task, the nudge lands at its next tool call, not at the exact threshold. That
 // is on goal — the point is to prompt a progress check the next time it acts.
 //
-// Discovery: two on-disk sources derived from the payload transcript_path.
+// Discovery: three on-disk sources.
 //   1. Workflow runs at <session>/workflows/wf_*.json — runId, status, and
 //      startTime in epoch ms. Terminal status ends a run; anything else runs.
 //   2. Agents at <session>/subagents/agent-*.jsonl — no status field, so an
 //      agent runs while its transcript mtime is fresh within the live window;
 //      age is now minus the transcript ctime.
-// Paths anchor on os.homedir() + transcript_path, never a hardcoded temp path.
+//   3. Bash tasks at <tmp>/claude-<uid>/<cwd-slug>/<session>/tasks/<id>.output,
+//      rooted off the cwd rather than the transcript. Nothing on disk marks one
+//      finished, so SILENCE is the measure: age is now minus the output mtime,
+//      bounded above by BASH_TASK_STALE_CEILING_MS so finished tasks in a long
+//      session's dir stay quiet. Symlinked entries are Agent tasks, already
+//      counted by arm 2, and are skipped rather than double-reported.
+// Paths anchor on os.homedir(), transcript_path, and the payload cwd; the one
+// hardcoded root is the harness's own tmp dir, injectable for tests.
 //
 // Idempotent: warns once per task per threshold crossing. A fail-open JSON
 // store maps each task id to the highest tier warned; a task re-warns only when
@@ -40,6 +47,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
   CHILD_LIVE_WINDOW_MS,
@@ -51,11 +59,22 @@ import type { ToolCallPayload } from '../_shared/payload.mts'
 import { resolveRepoRoot } from '../_shared/repo-root.mts'
 
 // First and second (escalated) age tiers, in minutes. Named constants are the
-// single source for the age math and the warn-once bookkeeping.
-export const LONGRUN_MINUTES = 5
-export const LONGRUN_ESCALATE_MINUTES = 10
+// single source for the age math and the warn-once bookkeeping. Two minutes is
+// deliberately impatient: the cost of an early "go look" is one cheap check,
+// and the cost of a late one is measured in the whole silent stretch. A gate
+// run once sat unexamined for nineteen minutes on the reasoning that a
+// multi-language coverage lane is quiet while it works — true, and still no
+// reason to have waited that long to confirm it.
+export const LONGRUN_MINUTES = 2
+export const LONGRUN_ESCALATE_MINUTES = 5
 
 const MS_PER_MINUTE = 60_000
+
+// Past this much silence a background Bash task is history, not a live
+// concern: the orchestrator either handled it or the session moved on. Without
+// the ceiling, every finished task in a long session's tasks dir would nudge
+// on the next tool call.
+export const BASH_TASK_STALE_CEILING_MS = 30 * MS_PER_MINUTE
 
 // Store for warn-once state: .cache/<name>, dep-0 runtime state,
 // never tracked. Falls back to the OS temp dir.
@@ -95,12 +114,22 @@ export interface AgentRecord {
 }
 
 /**
+ * One background Bash task, narrowed from its `<id>.output` file. Its mtime is
+ * the only progress signal there is: nothing on disk distinguishes a finished
+ * task from a running one, so SILENCE is what gets measured.
+ */
+export interface BashTaskRecord {
+  readonly id: string
+  readonly mtimeMs: number
+}
+
+/**
  * A running background task with its computed age.
  */
 export interface RunningTask {
   readonly ageMs: number
   readonly id: string
-  readonly kind: 'agent' | 'workflow'
+  readonly kind: 'agent' | 'bash' | 'workflow'
   readonly label?: string | undefined
 }
 
@@ -110,7 +139,7 @@ export interface RunningTask {
 export interface WarnDecision {
   readonly ageMs: number
   readonly id: string
-  readonly kind: 'agent' | 'workflow'
+  readonly kind: 'agent' | 'bash' | 'workflow'
   readonly label?: string | undefined
   readonly tier: number
 }
@@ -183,13 +212,27 @@ export function tierFor(ageMs: number): number {
  */
 export function runningTaskAges(config: {
   agents: readonly AgentRecord[]
+  bashTasks?: readonly BashTaskRecord[] | undefined
   liveWindowMs?: number | undefined
   now: number
+  staleCeilingMs?: number | undefined
   workflows: readonly WorkflowRecord[]
 }): RunningTask[] {
   const cfg = { __proto__: null, ...config } as typeof config
   const liveWindowMs = cfg.liveWindowMs ?? CHILD_LIVE_WINDOW_MS
+  const staleCeilingMs = cfg.staleCeilingMs ?? BASH_TASK_STALE_CEILING_MS
   const out: RunningTask[] = []
+  for (const task of cfg.bashTasks ?? []) {
+    // A Bash task's age IS its silence, so a run that redirects its output to
+    // a log never touches this file and reads as silent for its whole
+    // duration. That is the intended reading: output you cannot see is
+    // progress you have not verified.
+    const ageMs = cfg.now - task.mtimeMs
+    if (ageMs < 0 || ageMs > staleCeilingMs) {
+      continue
+    }
+    out.push({ ageMs, id: task.id, kind: 'bash' })
+  }
   for (const wf of cfg.workflows) {
     if (typeof wf.startTime !== 'number' || isTerminalStatus(wf.status)) {
       continue
@@ -272,8 +315,11 @@ export function formatLongrunNudge(warned: readonly WarnDecision[]): string {
       i === 0
         ? '💡 long-running-task-nudge: verify progress (TaskGet/transcript growth) or TaskStop + root-cause; lint/format thrash → autofixer (`pnpm run fix`) first — '
         : '   '
+    // A Bash task's age is silence, not runtime, and the two call for
+    // different checks — read the log or `ps` the process, not TaskGet.
+    const measure = decision.kind === 'bash' ? 'min silent' : 'min'
     lines.push(
-      `${prefix}${decision.kind} ${decision.id}${label} — ${minutes}min${escalated}`,
+      `${prefix}${decision.kind} ${decision.id}${label} — ${minutes}${measure}${escalated}`,
     )
   }
   return lines.join('\n')
@@ -301,8 +347,66 @@ export function resolveSeenStoreDir(projectDir: string | undefined): string {
   )
 }
 
+/**
+ * The background-Bash tasks dir for a session:
+ * `<tmpRoot>/claude-<uid>/<cwd with separators as dashes>/<session>/tasks`.
+ * This lives under a different root than the transcript, so it is derived from
+ * the cwd and the session id rather than from the transcript path. Returns
+ * `undefined` when either input is missing. Pure.
+ */
+export function deriveBackgroundTasksDir(config: {
+  cwd: string | undefined
+  session: string | undefined
+  tmpRoot?: string | undefined
+  uid: number | undefined
+}): string | undefined {
+  const cfg = { __proto__: null, ...config } as typeof config
+  if (!cfg.cwd || !cfg.session || cfg.uid === undefined) {
+    return undefined
+  }
+  const slug = normalizePath(cfg.cwd).replaceAll('/', '-')
+  return path.join(
+    cfg.tmpRoot ?? '/tmp',
+    `claude-${cfg.uid}`,
+    slug,
+    cfg.session,
+    'tasks',
+  )
+}
+
+// Read the `<id>.output` files under a tasks dir with their mtime. SYMLINKS
+// ARE SKIPPED: an Agent task is symlinked to its subagent transcript and is
+// already counted by the agent arm, so following one would double-report it.
+// Fail-open.
+function readBashTaskRecords(tasksDir: string): BashTaskRecord[] {
+  try {
+    if (!existsSync(tasksDir)) {
+      return []
+    }
+    const out: BashTaskRecord[] = []
+    for (const entry of readdirSync(tasksDir, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith('.output')) {
+        continue
+      }
+      try {
+        // oxlint-disable-next-line socket/prefer-exists-sync -- statSync for mtime, not existence; we need the modification timestamp
+        const stat = statSync(path.join(tasksDir, entry.name))
+        out.push({
+          id: entry.name.slice(0, -'.output'.length),
+          mtimeMs: stat.mtimeMs,
+        })
+      } catch {
+        // Fail-open per file.
+      }
+    }
+    return out
+  } catch {
+    return []
+  }
+}
+
 // The narrowed description from an agent's meta companion, or undefined.
-function readAgentDescription(
+export function readAgentDescription(
   subagentsDir: string,
   id: string,
 ): string | undefined {
@@ -416,7 +520,7 @@ function readSeenStore(filePath: string): SeenStore {
 }
 
 // Flush the warn-once store. Fail-open — a broken store must not block a call.
-function writeSeenStore(filePath: string, store: SeenStore): void {
+export function writeSeenStore(filePath: string, store: SeenStore): void {
   try {
     mkdirSync(path.dirname(filePath), { recursive: true })
     writeFileSync(filePath, JSON.stringify(store), 'utf8')
@@ -426,7 +530,7 @@ function writeSeenStore(filePath: string, store: SeenStore): void {
 }
 
 // Expire session stores past the TTL to bound store growth. Fail-open.
-function sweepStaleSeenStores(
+export function sweepStaleSeenStores(
   storeDir: string,
   config: { now: number; ttlMs: number },
 ): void {
@@ -459,12 +563,22 @@ export const check = (payload: ToolCallPayload): GuardResult => {
   const session = sessionIdFromTranscript(transcriptPath)
   const workflowsDir = deriveWorkflowsDir(transcriptPath)
   const subagentsDir = deriveSubagentsDir(transcriptPath)
-  if (!session || (!workflowsDir && !subagentsDir)) {
+  const tasksDir = deriveBackgroundTasksDir({
+    // The tasks dir is slugged from the directory the session was launched in.
+    // The payload carries it; CLAUDE_PROJECT_DIR is the agent-provided
+    // fallback. Never process.cwd() — a hook runs from wherever it was
+    // invoked, which would slug a different (and wrong) path.
+    cwd: payload?.cwd || process.env['CLAUDE_PROJECT_DIR'] || undefined,
+    session,
+    uid: typeof process.getuid === 'function' ? process.getuid() : undefined,
+  })
+  if (!session || (!workflowsDir && !subagentsDir && !tasksDir)) {
     return undefined
   }
   const now = Date.now()
   const running = runningTaskAges({
     agents: subagentsDir ? readAgentRecords(subagentsDir) : [],
+    bashTasks: tasksDir ? readBashTaskRecords(tasksDir) : [],
     now,
     workflows: workflowsDir ? readWorkflowRecords(workflowsDir) : [],
   })

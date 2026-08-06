@@ -75,7 +75,7 @@ export function serializeSchema(schema: Record<string, unknown>): string {
   return `${JSON.stringify(schema, null, 2)}\n`
 }
 
-function main(): void {
+export function main(): void {
   const generated = buildExternalToolsSchema()
   if (process.argv.includes('--check')) {
     let current: unknown

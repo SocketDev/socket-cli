@@ -306,7 +306,7 @@ export function findMirrorDrift(
   return drift
 }
 
-function main(): void {
+export function main(): void {
   const checkOnly = process.argv.includes('--check')
   if (!existsSync(CLAUDE_SKILLS_DIR)) {
     logger.log(

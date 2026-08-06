@@ -151,7 +151,7 @@ export async function seedNpmSignIn(
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const user = await seedNpmSignIn()
   logger.success(
     `signed in as ${user} — the shared profile now carries the session, ` +

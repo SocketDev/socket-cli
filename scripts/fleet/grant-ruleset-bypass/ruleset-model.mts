@@ -41,6 +41,40 @@ export interface BypassActor {
 }
 
 /**
+ * The `RepositoryRole` bypass-actor kind, and GitHub's fixed id for the
+ * Repository admin role within it (maintain = 2, write = 4, admin = 5).
+ */
+export const ACTOR_TYPE_REPOSITORY_ROLE = 'RepositoryRole'
+export const REPOSITORY_ROLE_ADMIN_ID = 5
+
+/**
+ * The STANDING fleet bypass every managed ruleset carries: Repository admin,
+ * always allowed. Unlike the temporary per-user grants this tool manages, the
+ * admin-role exemption is part of the canonical ruleset shape — an admin
+ * locked out of the repo they administer has no sanctioned path to fix the
+ * lockout itself.
+ */
+export const REPOSITORY_ADMIN_BYPASS: BypassActor = {
+  actor_id: REPOSITORY_ROLE_ADMIN_ID,
+  actor_type: ACTOR_TYPE_REPOSITORY_ROLE,
+  bypass_mode: BYPASS_MODE_ALWAYS,
+}
+
+/**
+ * Whether `actors` carries the standing Repository-admin always-allow entry.
+ */
+export function hasRepositoryAdminBypass(
+  actors: readonly BypassActor[],
+): boolean {
+  return actors.some(
+    a =>
+      a.actor_type === ACTOR_TYPE_REPOSITORY_ROLE &&
+      a.actor_id === REPOSITORY_ROLE_ADMIN_ID &&
+      a.bypass_mode === BYPASS_MODE_ALWAYS,
+  )
+}
+
+/**
  * The fields of a ruleset this tool round-trips. `conditions` and `rules` are
  * held as opaque parsed JSON and written back verbatim.
  */

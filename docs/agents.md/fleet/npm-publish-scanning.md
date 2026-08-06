@@ -8,7 +8,7 @@ A HELD package is live on the registry and invisible on the website at the same 
 
 **The rule: judge publish state from BOTH surfaces.** Registry (`npm view <pkg> dist-tags` + a tarball probe) answers "installable?"; the website page answers "visible?". Registry-yes + page-withheld is a review hold, not a failed publish.
 
-**The page half is NOT scriptable anonymously.** npmjs.com bot-filters non-browser clients: a curl of a definitely-visible package (`@socketsecurity/lib`, probed 2026-07-31) answers the SAME 403 a held page would, browser user-agent or not — so a scripted probe can never distinguish "held" from "healthy", in either direction. A check built on that probe was added and retired the same day. Verify page state in a real browser, either the operator's or the sanctioned browser session, and treat any scripted 403 from npmjs.com as "no evidence", never as a verdict.
+**The page half is NOT scriptable anonymously.** npmjs.com bot-filters non-browser clients: a curl of a definitely-visible package (`@socketsecurity/lib`, probed 2026-07-31) answers the SAME 403 a held page would, browser user-agent or not - so a scripted probe can never distinguish "held" from "healthy", in either direction. A check built on that probe was added and retired the same day. Verify page state in a real browser, either the operator's or the sanctioned browser session, and treat any scripted 403 from npmjs.com as "no evidence", never as a verdict.
 
 ## What clears a hold, what prevents one
 

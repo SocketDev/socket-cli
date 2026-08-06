@@ -56,8 +56,9 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 // Plain stderr/stdout output — no @socketsecurity/lib-stable dependency so
 // the gate is self-contained and works in socket-lib itself (which
-// would otherwise import itself).
-const logger = {
+// would otherwise import itself). Exported so the unit suite can drive each
+// output arm directly.
+export const logger = {
   error: (msg: string) => process.stderr.write(msg + '\n'),
   log: (msg: string) => process.stdout.write(msg + '\n'),
   step: (msg: string) => process.stdout.write(`→ ${msg}\n`),

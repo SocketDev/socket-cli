@@ -27,7 +27,7 @@ import type { ScriptMeta } from '../_shared/run-main.mts'
 
 const logger = getDefaultLogger()
 
-function main(): void {
+export function main(): void {
   const issues = findMcpClientConfigIssues(REPO_ROOT)
   if (issues.length === 0) {
     logger.success(
@@ -114,6 +114,8 @@ const SCRIPT_META: ScriptMeta = {
   help: 'Usage: node scripts/fleet/check/mcp-client-configs-are-current.mts',
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

@@ -188,7 +188,7 @@ interface CargoUpdateCliConfig {
   readonly workspace: boolean
 }
 
-function parseCliArgs(argv: readonly string[]): CargoUpdateCliConfig {
+export function parseCliArgs(argv: readonly string[]): CargoUpdateCliConfig {
   let apply = false
   let precise: string | undefined
   let soakDays: number | undefined
@@ -214,7 +214,7 @@ function parseCliArgs(argv: readonly string[]): CargoUpdateCliConfig {
   return { apply, precise, soakDays, workspace }
 }
 
-async function runCargoUpdate(
+export async function runCargoUpdate(
   args: string[],
   configPath: string,
   manifest: string,
@@ -247,7 +247,7 @@ async function runCargoUpdate(
   }
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const root = REPO_ROOT
   const { apply, precise, soakDays, workspace } = parseCliArgs(
     process.argv.slice(2),
@@ -325,6 +325,8 @@ const SCRIPT_META: ScriptMeta = {
   --workspace        pass --workspace through to cargo update`,
 }
 
+/* c8 ignore start - entrypoint guard; exercised via subprocess */
 if (isMainModule(import.meta.url)) {
   runMain(main, SCRIPT_META)
 }
+/* c8 ignore stop */

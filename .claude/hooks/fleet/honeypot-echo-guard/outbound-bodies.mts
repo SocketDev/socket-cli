@@ -60,9 +60,18 @@ const API_FIELD_FLAGS: ReadonlySet<string> = new Set([
 ])
 
 // MCP tools that publish a comment or a chat message to an external thread.
+//
+// Both prefixes for every provider. The same upstream service reaches a session
+// two ways: as a claude.ai connector (`mcp__claude_ai_<Name>__…`) or as a
+// project server declared in `.mcp.json` (`mcp__<name>__…`). A project entry
+// SHADOWS the connector when both name the same URL, so which prefix arrives
+// depends on the checkout's .mcp.json rather than on anything the guard sees.
+// Listing one prefix per provider would blind this guard the moment that file
+// changed.
 const MCP_COMMENT_TOOLS: ReadonlySet<string> = new Set([
   'mcp__claude_ai_Linear__save_comment',
   'mcp__claude_ai_Linear__save_diff_comment',
+  'mcp__claude_ai_Notion__notion-create-comment',
   'mcp__linear__save_comment',
   'mcp__linear__save_diff_comment',
   'mcp__notion__notion-create-comment',

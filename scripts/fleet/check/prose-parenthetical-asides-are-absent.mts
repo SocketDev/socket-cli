@@ -2,10 +2,11 @@
 /*
  * @file `check --all` gate: prose in tracked markdown must not tuck an
  *   explanatory CLAUSE into a parenthetical aside. Why: the fleet owner wants
- *   direct prose — an aside like "the layout engine (the yoga-open-tui Rust
+ *   direct prose. An aside like "the layout engine (the yoga-open-tui Rust
  *   crate exposed via napi)" reads as noise and should be rewritten with a
- *   comma, colon, or em-dash: "the layout engine: the yoga-open-tui Rust crate
- *   exposed via napi".
+ *   comma or a colon: "the layout engine: the yoga-open-tui Rust crate exposed
+ *   via napi". The em-dash is NOT a legal rewrite; the
+ *   `prose-em-dashes-are-absent` sibling flags every one.
  *
  *   What counts as an ASIDE, not a legit paren. A top-level `(...)` group is
  *   flagged only when its inner text reads like a natural-language clause:
@@ -209,7 +210,7 @@ export function findProseAsides(repoRoot: string): string[] {
   return scanFiles(repoRoot, collectMarkdownFiles(repoRoot))
 }
 
-function main(): number {
+export function main(): number {
   // Non-flag args scope the scan to explicit paths, self-check a batch;
   // otherwise the whole tracked markdown tree gates.
   const paths = process.argv.slice(2).filter(a => !a.startsWith('-'))
@@ -224,8 +225,9 @@ function main(): number {
       logger.error(`  ✗ ${offenders[i]!}`)
     }
     logger.error(
-      '  Rewrite each aside into the sentence with a comma, colon, or em-dash.',
+      '  Rewrite each aside into the sentence with a comma or a colon. Never an',
     )
+    logger.error('  em-dash: prose-em-dashes-are-absent flags every one.')
     logger.error(
       `  Keep one intentional aside with a trailing '${ALLOW_LINE}'.`,
     )

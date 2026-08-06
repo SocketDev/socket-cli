@@ -76,7 +76,7 @@
     {
       "name": "socket-facts",
       "owner": "SocketDev",
-      "description": "Generation of .socket.facts.json and the wire contracts around it",
+      "description": "Socket facts generation — build-tool emitters and the .socket.facts.json contract, shared by socket-cli and Coana",
       "optIns": ["squash-history"],
       "publishes": ["js"]
     },

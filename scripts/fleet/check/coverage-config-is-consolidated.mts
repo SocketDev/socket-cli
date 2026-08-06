@@ -79,7 +79,7 @@ export function describeOrphanedCoverageConfig(
   ].join('\n')
 }
 
-function main(): void {
+export function main(): void {
   const quiet = process.argv.includes('--quiet')
   const orphan = findOrphanedCoverageConfig(REPO_ROOT)
   if (orphan) {

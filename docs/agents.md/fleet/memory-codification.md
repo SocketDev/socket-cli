@@ -26,7 +26,7 @@ are exempt. They hold no rule to enforce.
 
 - **Save-moment:** `memory-codify-nudge` (PostToolUse hook) fires the instant a
   memory-store file is written. It is unconditional on the write: a memory
-  steers one agent, a guard steers them all — when the memory encodes a rule,
+  steers one agent, a guard steers them all - when the memory encodes a rule,
   correction, or convention, codify it now, while the context is loaded.
 - **Turn-end:** `uncodified-lesson-nudge` (Stop hook) fires when a turn writes
   a feedback/project memory with an enforceable shape and no enforcer citation.
@@ -41,7 +41,7 @@ are exempt. They hold no rule to enforce.
 ## The recurrence ledger
 
 Both `uncodified-lesson-nudge` and `compound-lessons-nudge` are transcript-scoped
-in isolation — they see only the current session, so the same trap surfacing in a
+in isolation - they see only the current session, so the same trap surfacing in a
 DIFFERENT session next week reads as a fresh one-off. `.claude/hooks/fleet/_shared/learning-ledger.mts`
 adds the missing cross-session memory: a deterministic, local-only recurrence
 counter.
@@ -49,16 +49,16 @@ counter.
 - **What it records.** A normalized key per surfaced finding / uncodified lesson,
   the distinct sessions it appeared in, and an occurrence count. Near-duplicate
   keys collapse (`isSimilarLearning`: substring + length-ratio, no embeddings, no
-  LLM). A repeat WITHIN one session does not inflate the count — only a new
-  session does — so re-firing on repeated stops is a no-op.
+  LLM). A repeat WITHIN one session does not inflate the count - only a new
+  session does - so re-firing on repeated stops is a no-op.
 - **What it changes.** When a finding's cross-session count reaches
   `RECURRENCE_THRESHOLD` (2), the nudge escalates from "consider codifying" to
-  "this recurred across N sessions — codify it THIS turn." The nudge fires on
+  "this recurred across N sessions - codify it THIS turn." The nudge fires on
   evidence rather than prose.
-- **Where it lives.** `.cache/fleet/socket-learning-ledger/` — dep-0
+- **Where it lives.** `.cache/fleet/socket-learning-ledger/` - dep-0
   runtime state, never tracked, OS-temp fallback, fail-open (a broken ledger
   yields 0 and the base nudge still fires). No network, no telemetry, no LLM at
-  any point — detection is regex + counters.
+  any point - detection is regex + counters.
 - **Provenance.** The mechanism is the fleet-compatible half of Caliber
   (`../ai-setup`): its `occurrences` counter, string dedup, correction-phrase
   heuristic, and typed-bullet taxonomy. Caliber's LLM distillation, PostHog
@@ -76,10 +76,10 @@ answerable from evidence instead of memory.
 
 ## Enforcement
 
-- `.claude/hooks/fleet/compound-lessons-nudge/` — flags a lesson that has recurred across sessions per the recurrence ledger, escalating the nudge to "codify it this turn."
-- `.claude/hooks/fleet/dated-citation-guard/` — blocks a memory or doc citation that names a hook/script path without a matching enforcement disposition.
-- `.claude/hooks/fleet/memory-codify-nudge/` — save-moment nudge (see "The three surfaces" above).
-- `.claude/hooks/fleet/memory-enforcement-stamp-guard/` — blocks writing a codifiable memory entry (`feedback` / `project`) whose frontmatter has no `enforcement:` line, or whose value isn't one of `<ref>`, `deferred #<task>`, or the `n/a` form with a stated reason.
-- `.claude/hooks/fleet/new-hook-claude-md-guard/` — blocks landing a new hook with no matching CLAUDE.md bullet; the other direction of this rule, since a hook with no rule pointing at it is as orphaned as a rule with no hook.
-- `.claude/hooks/fleet/uncodified-lesson-nudge/` — turn-end nudge (see "The three surfaces" above).
-- `scripts/fleet/check/memories-are-codified.mts` — the audit described above, run by `check --all`.
+- `.claude/hooks/fleet/compound-lessons-nudge/` - flags a lesson that has recurred across sessions per the recurrence ledger, escalating the nudge to "codify it this turn."
+- `.claude/hooks/fleet/dated-citation-guard/` - blocks a memory or doc citation that names a hook/script path without a matching enforcement disposition.
+- `.claude/hooks/fleet/memory-codify-nudge/` - save-moment nudge (see "The three surfaces" above).
+- `.claude/hooks/fleet/memory-enforcement-stamp-guard/` - blocks writing a codifiable memory entry (`feedback` / `project`) whose frontmatter has no `enforcement:` line, or whose value isn't one of `<ref>`, `deferred #<task>`, or the `n/a` form with a stated reason.
+- `.claude/hooks/fleet/new-hook-claude-md-guard/` - blocks landing a new hook with no matching CLAUDE.md bullet; the other direction of this rule, since a hook with no rule pointing at it is as orphaned as a rule with no hook.
+- `.claude/hooks/fleet/uncodified-lesson-nudge/` - turn-end nudge (see "The three surfaces" above).
+- `scripts/fleet/check/memories-are-codified.mts` - the audit described above, run by `check --all`.

@@ -28,7 +28,7 @@ packages/<pkg>/
 
 ### 1. Sparse submodule
 
-The upstream test suite lives at the repo-root `upstream/<name>/` — the
+The upstream test suite lives at the repo-root `upstream/<name>/` - the
 ONLY submodule home (`upstream-references.md`), so the path itself says
 "this is upstream code we pin". Whether a reference is build-time (a
 ported implementation source) or test-time (a spec suite) is recorded in
@@ -46,7 +46,7 @@ fleet utility reads it.
 Examples:
 
 <details>
-<summary><b>Detail</b> — `path`, `url`, `sparse-checkout`</summary>
+<summary><b>Detail</b> - `path`, `url`, `sparse-checkout`</summary>
 
 ```ini
 # .gitmodules
@@ -91,7 +91,7 @@ Avoid spawning a persisted `.mjs` _entry file_ inside the binary. If you ever mu
 A ~20-line `.test.mts` at `test/integration/<upstream>-<scope>.test.mts` that:
 
 <details>
-<summary><b>Detail</b> — `import path`, `import`, `const`</summary>
+<summary><b>Detail</b> - `import path`, `import`, `const`</summary>
 
 1. Resolves the built binary (returns `undefined` if no build exists).
 2. Computes `skipIf` from that.

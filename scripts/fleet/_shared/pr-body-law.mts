@@ -16,9 +16,14 @@
  *   The law, and why each clause exists:
  *
  *   - A summary carries the CLAIM. `What changed` gives a reader nothing to
- *     decide on; `The change — one home per case, plus the vars that outrank
+ *     decide on; `The change - one home per case, plus the vars that outrank
  *     it` lets them skip the fold and still know the outcome. The shape that
- *     worked: short bold noun phrase, em dash, specific claim.
+ *     worked: short bold noun phrase, a spaced plain dash, specific claim.
+ *     The separator was written as an em dash until 2026-08-05, when
+ *     `prose-em-dashes-are-absent` banned that character outright; prescribing
+ *     it here would have made every compliant PR body fail the other gate.
+ *     `CLAIM_SEPARATOR_RE` still ACCEPTS an em dash, en dash, or colon so
+ *     bodies written under the old shape keep validating.
  *   - A fold OPENS with its takeaway, then supports it. Conclusion first,
  *     evidence second — the lead-with-the-point rule the doctrine already
  *     applies at the top level, applied one level down. A fold that opens on a
@@ -143,7 +148,7 @@ export const MIN_STATUS_LABELS = 2
 export const PR_BODY_LAW: readonly PrBodyLawEntry[] = Object.freeze([
   Object.freeze({
     id: 'informative-summary' as PrBodyRuleId,
-    rule: 'A `<summary>` states the finding, never a label: a short bold noun phrase, an em dash, then the specific claim. The reader decides whether to expand without expanding.',
+    rule: 'A `<summary>` states the finding, never a label: a short bold noun phrase, a spaced plain dash, then the specific claim. The reader decides whether to expand without expanding.',
   }),
   Object.freeze({
     id: 'takeaway-first' as PrBodyRuleId,
@@ -168,13 +173,21 @@ export const PR_BODY_LAW_PROMPT = [
   ...PR_BODY_LAW.map(entry => `- ${entry.rule}`),
 ].join('\n')
 
-// A summary separator: em dash, en dash, spaced hyphen, or a colon.
+// A summary separator on READ: a spaced plain dash (what the law now
+// prescribes), or an em dash, en dash, or colon, which older bodies used.
+// Reading stays permissive so a body written before the em-dash ban still
+// validates; only the prescription changed.
 const CLAIM_SEPARATOR_RE = /\s+[—–]\s+|\s+-\s+|:\s+/
 const DETAILS_RE = /<details\b[^>]*>([\s\S]*?)<\/details>/gi
 const FENCE_RE = /^\s{0,3}(?:```|~~~)/
 const LEAD_BOLD_RE = /^\*\*[^*]+\*\*/
 const LEAD_CODE_RE = /^`[^`]+`/
-const LEAD_TERM_RE = /^[^\s—–:]{1,40}\s*[—–:]\s/
+// A `term - description` list-item lead. The spaced-hyphen arm is written
+// separately (`\s-`) rather than folded into the character class, so a term
+// that CONTAINS hyphens (`no-fork-guard - blocks a live edit`) still reads as
+// one term. Without it, the registry-line shape the em-dash ban produces would
+// classify as plain prose and the parallel-items table nudge would go quiet.
+const LEAD_TERM_RE = /^[^\s—–:]{1,40}(?:\s*[—–:]|\s-)\s/
 // One markdown list item: up to 3 spaces of indent, a bullet (`-`, `*`, `+`)
 // or an ordered marker (`1.` / `1)`), a space, then the captured text, which
 // must start with a non-space so a bare bullet does not match.
@@ -325,7 +338,7 @@ export function prBodySmells(body: string): PrBodySmell[] {
     if (isGenericSummary(fold.summary)) {
       smells.push({
         detail:
-          'the summary names a topic, so the reader must expand it to learn anything — use a short bold noun phrase, an em dash, then the specific claim',
+          'the summary names a topic, so the reader must expand it to learn anything - use a short bold noun phrase, a spaced plain dash, then the specific claim',
         rule: 'informative-summary',
         where,
       })

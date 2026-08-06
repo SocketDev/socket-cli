@@ -600,6 +600,30 @@ declare function assertLockStep(config: {
   readonly manifestTemplateSha: string;
   readonly ref: string;
 }): boolean;
+declare const ERR_BUNDLE_BEHIND_LOCAL = "ERR_WHEELHOUSE_BUNDLE_BEHIND_LOCAL_TEMPLATE";
+/**
+ * True when a sibling wheelhouse checkout exists AND its HEAD is strictly
+ * DESCENDED from the bundle's template SHA — the bundle is a frozen snapshot
+ * of an older template, so unpacking it would roll the member backwards.
+ *
+ * `assertLockStep` only proves the bundle matches its own pin, which is a
+ * self-consistency check. It cannot see that the pin itself went stale. On a
+ * machine that also cascades from a local template, the two writers disagree
+ * and whichever runs last wins: the cascade writes current content, then
+ * `update`'s bundle pass restores the older snapshot over it. That reverted a
+ * Socket catalog pin, dropped fleet rules out of CLAUDE.md, and reintroduced a
+ * duplicated overrides block that broke `pnpm install` — each time reported as
+ * a successful update.
+ *
+ * Returns false when there is no local wheelhouse (a thin member, or CI),
+ * where the bundle IS the only source of truth and applying it is correct.
+ * Any git failure also returns false: this guard refuses a provably stale
+ * bundle, and never blocks on a question it could not answer.
+ */
+declare function isBundleBehindLocalTemplate(config: {
+  readonly dest: string;
+  readonly manifestTemplateSha: string;
+}): boolean;
 /**
  * Resolve the NEWEST `fleet-pack-<hex>` release tag via `gh release list`.
  * Returns the latest tag, or undefined when none / offline. The list is
@@ -713,4 +737,4 @@ declare function runStatus(config: InstallConfig): number;
 declare function installFleet(config: InstallConfig): Promise<number>;
 declare function isMainModule(): boolean;
 //#endregion
-export { AuthChallenge, BundleConfig, BundleFetchFn, BundleManifest, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FetchedBundle, FetchedFiles, FleetCommentStyle, FleetFileManifest, GHCR_HOST, GhcrHttpGetFn, GhcrHttpOptions, GhcrHttpResponse, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MANIFEST_ACCEPT, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, OciLayer, OciManifest, PREPARE_FETCH, PullBundleConfig, RefValidation, SETTINGS_CANDIDATES, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, extractFleetBlockLines, extractManifestFromTarball, fetchBlob, fetchBundleSource, fetchOciManifest, firstHeader, formatLockStepError, formatUpdateNotice, getGhcrToken, ghReleaseFetchBundle, ghcrBundleRepo, ghcrFetchBundle, ghcrTokenUrl, httpGet, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isMainModule, legacyBeginMarker, legacyEndMarker, legacyTagBeginMarker, legacyTagEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseWwwAuthenticate, parseYamlEntryChunks, parseYamlKeyBlocks, pickBundleLayer, printStatusReport, pruneStaleFleetFiles, pullFleetBundleTarball, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, sha256Hex, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, tokenFromBody, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };
+export { AuthChallenge, BundleConfig, BundleFetchFn, BundleManifest, ERR_BUNDLE_BEHIND_LOCAL, ERR_LOCKSTEP_MISMATCH, FLEET_STATUS_SCRIPT, FetchedBundle, FetchedFiles, FleetCommentStyle, FleetFileManifest, GHCR_HOST, GhcrHttpGetFn, GhcrHttpOptions, GhcrHttpResponse, InstallConfig, LockStepConfig, LockStepErrorParts, LockStepInputs, LockStepState, LockStepStateName, MANIFEST_ACCEPT, MergeWorkspaceConfig, NoticeDecisionInputs, NoticeStore, OciLayer, OciManifest, PREPARE_FETCH, PullBundleConfig, RefValidation, SETTINGS_CANDIDATES, SYNC_FLEET_SCRIPT, SegmentEntry, SettingsSegmentEntry, SpliceConfig, TarExtractConfig, ThinConfig, UPDATE_NOTIFIER_OPT_OUT_ENV, WorkspaceSegmentEntry, YamlEntryChunk, applyMovedPaths, applyThinMode, assertLockStep, beginMarker, computeSha256, endMarker, errorMessage, extractFleetBlockLines, extractManifestFromTarball, fetchBlob, fetchBundleSource, fetchOciManifest, firstHeader, formatLockStepError, formatUpdateNotice, getGhcrToken, ghReleaseFetchBundle, ghcrBundleRepo, ghcrFetchBundle, ghcrTokenUrl, httpGet, installFiles, installFleet, installSegments, installSettingsSegment, installWorkspaceSegment, isBundleBehindLocalTemplate, isMainModule, legacyBeginMarker, legacyEndMarker, legacyTagBeginMarker, legacyTagEndMarker, lockStepExitCode, maybeShowUpdateNotice, mergeWorkspaceYaml, mergeYamlKeyBlock, normalizeBundlePath, normalizeManifestEntryPath, parseArgs, parseWwwAuthenticate, parseYamlEntryChunks, parseYamlKeyBlocks, pickBundleLayer, printStatusReport, pruneStaleFleetFiles, pullFleetBundleTarball, readAppliedFiles, readAppliedRef, readBundleConfig, readBundleRef, readManifest, readNoticeStore, removeTombstonedPaths, resolveLockStepState, resolveNewestRef, resolveReleaseTemplateSha, resolveRepoRoot, resolveSettingsPath, run, runStatus, segmentFileName, sha256Hex, shouldShowNotice, spliceFleetBlock, statusJson, tarExecutable, tarExtractArgs, thinIgnoreEntries, tokenFromBody, untrackGeneratedOutputs, validateBundleBlock, validateCascadeSha, validateRef, verifyBundleFiles, verifySegments, wirePackageJson, writeAppliedFiles, writeAppliedRef, writeNoticeStore };

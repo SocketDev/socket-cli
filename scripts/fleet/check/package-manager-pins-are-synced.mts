@@ -70,7 +70,7 @@ export function findPinDrift(repoRoot: string): PinDrift[] {
   return applyPins(pkg, derivePins(pnpmVersion, npmVersion, { pnpmFloor }))
 }
 
-function main(): number {
+export function main(): number {
   const drift = findPinDrift(REPO_ROOT)
   const driftClass = classifyPinDrift(drift)
   if (driftClass === 'behind') {

@@ -183,7 +183,7 @@ export function parseRulesetBypassArgs(
 // The default `gh` seam. A JSON body is written to a temp file and passed via
 // `gh api --input <file>`: the lib spawn does not wire the child's stdin, so
 // `--input -` reads nothing. `{body}` in `args` is replaced with that path.
-async function runGh(
+export async function runGh(
   args: readonly string[],
   body?: string | undefined,
 ): Promise<GhResult> {

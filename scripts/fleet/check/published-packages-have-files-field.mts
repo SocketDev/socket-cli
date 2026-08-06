@@ -168,7 +168,7 @@ export function runCheck(repoRoot: string): number {
   return isStrict ? 1 : 0
 }
 
-function main(): void {
+export function main(): void {
   process.exit(runCheck(REPO_ROOT))
 }
 
