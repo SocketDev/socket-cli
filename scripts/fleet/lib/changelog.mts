@@ -19,6 +19,7 @@
 import { parseVersion } from '@socketsecurity/lib-stable/versions/parse'
 import { maxVersion } from '@socketsecurity/lib-stable/versions/range'
 
+import { h2LineIndexes, hasListItem, parseMarkdownGfm } from '../_shared/markdown-ast.mts'
 import {
   renderBullet,
   renderSectionMap,
@@ -312,7 +313,9 @@ export const UNRELEASED_HEADING = '## [Unreleased]'
  * supplies an explicit empty-changelog entry.
  */
 export function sectionHasEntries(section: string): boolean {
-  return section.split('\n').some(line => /^\s*-\s/u.test(line))
+  // Parsed, not pattern-matched: a `- ` lookalike inside a fenced code block
+  // is code, not an entry, and must not satisfy the empty-changelog guard.
+  return parseMarkdownGfm(section).children.some(hasListItem)
 }
 
 /**
@@ -418,7 +421,9 @@ export function mergeUnreleased(
   let after: string[]
   let existingBody = ''
   if (!range) {
-    const firstVersion = lines.findIndex(l => l.startsWith('## '))
+    // First real `## ` heading from the parsed tree — a `## ` line inside a
+    // fenced code block is content, not an insertion point.
+    const firstVersion = h2LineIndexes(changelog)[0] ?? -1
     if (firstVersion === -1) {
       before = lines
       after = []
