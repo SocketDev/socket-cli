@@ -266,6 +266,42 @@ describe('markWorkspaceCoverage', () => {
     )
   })
 
+  it('does not mark a sibling subprojectDir that escapes the candidate directory as covered', async () => {
+    vi.mocked(enumerateWorkspaces).mockResolvedValue({
+      projects: [
+        {
+          type: 'maven',
+          name: 'moduleA',
+          subprojectDir: 'moduleA',
+          dependencies: [],
+          resolvedAs: [],
+        },
+        {
+          type: 'maven',
+          name: 'shared-lib',
+          subprojectDir: '../shared-lib',
+          dependencies: [],
+          resolvedAs: [],
+        },
+      ],
+    })
+    const coveredByEcosystem = new Map<BuildTool, Set<string>>()
+
+    await markWorkspaceCoverage({
+      candidate: { dir: reactor, ecosystem: 'maven' },
+      coveredByEcosystem,
+      cwd,
+      rootSockJson: emptySockJson(),
+    })
+
+    expect(coveredByEcosystem.get('maven')).toEqual(
+      new Set([reactor, `${reactor}/moduleA`]),
+    )
+    expect(coveredByEcosystem.get('maven')?.has(`${cwd}/shared-lib`)).toBe(
+      false,
+    )
+  })
+
   it('does not enumerate, and marks nothing covered, for a disabled candidate', async () => {
     vi.mocked(readSocketJsonCascade).mockReturnValue({
       version: 1,

@@ -192,12 +192,14 @@ export async function discoverBuildRoots({
 // Enumerates one build root's declared workspace members (see
 // enumerate-workspaces.mts) and folds them into `coveredByEcosystem`, so a
 // later candidate matching one is recognized as a reactor member rather than
-// independent. Called per-candidate right after its own prompt, not as a
-// bulk pass, so the build invocation never blocks candidates that don't need
-// it. A disabled candidate is skipped (no point invoking an off build tool);
-// otherwise this fails closed, same reasoning as generateRecursiveManifests -
-// if enumeration fails there's no way to tell covered from independent, so
-// the caller aborts rather than guess.
+// independent - only a properly nested subprojectDir counts as coverage at
+// all; one that escapes this candidate's own directory still gets its own
+// entry (see the set.add call below). Called per-candidate right after its
+// own prompt, not as a bulk pass, so the build invocation never blocks
+// candidates that don't need it. A disabled candidate is skipped (no point
+// invoking an off build tool); otherwise this fails closed, same reasoning
+// as generateRecursiveManifests - if enumeration fails there's no way to
+// tell covered from independent, so the caller aborts rather than guess.
 export async function markWorkspaceCoverage({
   candidate,
   coveredByEcosystem,
@@ -251,7 +253,15 @@ export async function markWorkspaceCoverage({
     ),
   )
   for (const subprojectDir of resolvedSubprojectDirs) {
-    set.add(subprojectDir)
+    // Only a genuinely nested member (a descendant of this candidate's own
+    // directory) should be skipped as covered by it. A subprojectDir that
+    // escapes this candidate's own tree (a sibling, e.g. Maven's
+    // `<module>../shared-lib</module>` or Gradle's relocated projectDir) is
+    // independently locatable and worth its own socket.json entry - never
+    // mark it covered, regardless of which candidate(s) also incorporate it.
+    if (subprojectDir.startsWith(`${candidate.dir}${path.sep}`)) {
+      set.add(subprojectDir)
+    }
   }
   coveredByEcosystem.set(candidate.ecosystem, set)
   return { ok: true, data: undefined }
