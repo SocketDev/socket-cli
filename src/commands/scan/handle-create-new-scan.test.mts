@@ -252,6 +252,19 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
   })
 
+  it('aborts when --dynamic-sbom-inference finds no Gradle/sbt/Maven build root', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await expect(handleCreateNewScan(config)).rejects.toThrow(
+      /No Gradle, sbt, or Maven build root was found/,
+    )
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+  })
+
   it('accumulates a sidecar across recursively discovered build roots and forwards it to reachability analysis', async () => {
     mockGenerateRecursiveManifests.mockImplementationOnce(
       async ({ sidecarAcc }) => {

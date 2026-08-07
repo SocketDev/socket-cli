@@ -224,6 +224,83 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
   })
 })
 
+describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () => {
+  let scanCwd: string
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetchOrganization.mockResolvedValue({
+      ok: true,
+      data: { organizations: {} },
+    })
+    mockHasEnterpriseOrgPlan.mockReturnValue(true)
+    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reamvomsf-'))
+  })
+
+  afterEach(() => {
+    rmSync(scanCwd, { force: true, recursive: true })
+  })
+
+  it('never passes --maven-use-only-socket-facts without a sidecar, even with dynamicSbomInference on (e.g. no JVM build root found)', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      reachabilityOptions: {
+        ...makeReachabilityOptions(),
+        dynamicSbomInference: true,
+      },
+      resolvedPathsSidecar: undefined,
+      target: scanCwd,
+    })
+
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    expect(args).not.toContain('--maven-use-only-socket-facts')
+    expect(args).not.toContain('--compute-artifacts-sidecar')
+  })
+
+  it('passes --maven-use-only-socket-facts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      reachabilityOptions: {
+        ...makeReachabilityOptions(),
+        dynamicSbomInference: true,
+      },
+      resolvedPathsSidecar: {
+        '/repo/reactor/.socket.facts.json': {
+          components: [],
+          projects: [],
+        },
+      },
+      target: scanCwd,
+    })
+
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--compute-artifacts-sidecar')
+  })
+
+  it('never passes --maven-use-only-socket-facts when dynamicSbomInference is off, even if a sidecar happens to be present', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      reachabilityOptions: {
+        ...makeReachabilityOptions(),
+        dynamicSbomInference: false,
+      },
+      resolvedPathsSidecar: {
+        '/repo/reactor/.socket.facts.json': {
+          components: [],
+          projects: [],
+        },
+      },
+      target: scanCwd,
+    })
+
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    expect(args).not.toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--compute-artifacts-sidecar')
+  })
+})
+
 describe('performReachabilityAnalysis stdio routing by output kind', () => {
   let scanCwd: string
 

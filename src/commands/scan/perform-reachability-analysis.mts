@@ -256,7 +256,10 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    ...(reachabilityOptions.dynamicSbomInference
+    // Coana rejects --maven-use-only-socket-facts without a sidecar to back
+    // it, so this also requires sidecarPath: a target with no Gradle/sbt/
+    // Maven build root never generates one, even with dynamicSbomInference on.
+    ...(reachabilityOptions.dynamicSbomInference && sidecarPath
       ? ['--maven-use-only-socket-facts']
       : []),
     ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),

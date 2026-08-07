@@ -197,11 +197,19 @@ export async function handleCreateNewScan({
         const generatedFactsPaths = outcomes
           .filter(o => o.status === 'generated')
           .map(o => o.factsPath!)
-        if (generatedFactsPaths.length) {
-          scanTargets = Array.from(
-            new Set([...scanTargets, ...generatedFactsPaths]),
+        if (!generatedFactsPaths.length) {
+          throw new InputError(
+            [
+              'No Gradle, sbt, or Maven build root was found.',
+              '',
+              '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
+              '- Make sure to run it from the correct dir (use --cwd to target another dir).',
+            ].join('\n'),
           )
         }
+        scanTargets = Array.from(
+          new Set([...scanTargets, ...generatedFactsPaths]),
+        )
         if (sidecarAcc && hasSidecarEntries(sidecarAcc)) {
           resolvedPathsSidecar = serializeSidecar(sidecarAcc)
         }
