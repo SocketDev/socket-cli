@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.155](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.155) - 2026-08-07
 
 ### Added
 - `socket scan create --reach --dynamic-sbom-inference` splits full application reachability analysis per project/module for Gradle, sbt, and Maven monorepos, using a Socket facts SBOM generated directly by each package manager for every build root, instead of one synthetic root.
