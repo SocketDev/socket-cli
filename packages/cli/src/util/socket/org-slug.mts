@@ -8,7 +8,10 @@ import { getConfigValueOrUndef } from '../config.mts'
 import { webLink } from '../terminal/link.mjs'
 const logger = getDefaultLogger()
 
-// oxlint-disable-next-line socket/no-boolean-trap-param -- exported call sites span a dozen command modules + a dedicated test suite, outside this fix's scope; an options-object migration needs every call site updated together.
+// exported call sites span a dozen command modules + a dedicated test suite,
+// outside this fix's scope; an options-object migration needs every call site
+// updated together.
+// oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
 export async function determineOrgSlug(
   orgFlag: string,
   interactive: boolean,

@@ -20,7 +20,8 @@ import type { ScanReport } from '../../../../src/commands/scan/generate-report.m
 
 // Matches any ANSI escape sequence, the codes that show up as literal noise
 // like "[32m" in a log viewer that does not interpret them.
-// oxlint-disable-next-line no-control-regex -- matching control characters is the point.
+// matching control characters is the point.
+// oxlint-disable-next-line no-control-regex -- control chars intended
 const ANSI_PATTERN = /\u001B\[[0-9;]*m/
 
 function buildReport(config: {
@@ -76,7 +77,8 @@ describe('toPlainTextReport', () => {
     )
 
     // Everything outside printable ASCII plus newline.
-    // oxlint-disable-next-line no-control-regex -- asserting the absence of control characters.
+    // asserting the absence of control characters.
+    // oxlint-disable-next-line no-control-regex -- control chars intended
     expect(text).not.toMatch(/[^\n\x20-\x7E]/)
   })
 

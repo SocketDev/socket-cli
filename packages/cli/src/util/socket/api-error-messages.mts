@@ -1,5 +1,7 @@
+// user-facing API error strings; emojis are part of the message-template
+// contract.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- user-facing API error strings; emojis are part of the message-template contract. */
+/* oxlint-disable socket/no-status-emoji -- emoji is the contract */
 
 /**
  * User-facing error messages + permission-requirements logging for Socket API

@@ -128,7 +128,9 @@ const unicodePropertyMap = {
  */
 export function escapeForStringLiteral(str: string) {
   return (
-    // oxlint-disable-next-line socket/prefer-normalize-path -- escapes a backslash for a JS string literal, not a path separator rewrite.
+    // escapes a backslash for a JS string literal, not a path separator
+    // rewrite.
+    // oxlint-disable-next-line socket/prefer-normalize-path -- not a path
     str
       // Backslash must be doubled.
       .replace(/\\/g, '\\\\')
@@ -166,7 +168,7 @@ export function transformRegexPattern(pattern: string) {
     // Replace \p{Property} with [replacement].
     transformed = transformed.replace(
       new RegExp(`\\\\p\\{${escapedProp}\\}`, 'g'),
-      `[${replacement}]`,
+      () => `[${replacement}]`,
     )
   }
 
@@ -245,7 +247,7 @@ export function transformUnicodePropertyEscapes(content: string) {
           const escapedProp = prop.replace(/[\\{}]/g, '\\$&')
           newPattern = newPattern.replace(
             new RegExp(`\\\\p\\{${escapedProp}\\}`, 'g'),
-            `[${replacement}]`,
+            () => `[${replacement}]`,
           )
         }
 

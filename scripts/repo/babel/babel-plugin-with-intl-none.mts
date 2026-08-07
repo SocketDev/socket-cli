@@ -427,7 +427,7 @@ export default function babelPluginWithIntlNone({
             if (pattern.includes(unicode)) {
               pattern = pattern.replace(
                 new RegExp(unicode.replace(/[\\{}]/g, '\\$&'), 'g'),
-                basic,
+                () => basic,
               )
               transformed = true
             }

@@ -63,7 +63,8 @@ export async function runStage(
   })
 
   if (!shouldProceed) {
-    // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks the cache-hit state.
+    // substep takes its own indent prefix; ✓ marks the cache-hit state.
+    // oxlint-disable-next-line socket/no-status-emoji -- emoji is the contract
     stageLogger.substep(`✓ ${stage.name} up-to-date (cached)`)
     return
   }

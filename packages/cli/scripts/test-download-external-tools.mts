@@ -3,8 +3,9 @@
  * Downloads Trivy, TruffleHog, and OpenGrep for the current platform.
  */
 
-// oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: fs.stat() reads .size, not existence; per-call would produce many redundant disables.
-// oxlint-disable socket/prefer-exists-sync -- fs.stat() calls read .size for download size reporting; not existence checks.
+// fs.stat() calls read .size for download size reporting; not existence checks.
+/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: fs.stat() reads .size, not existence; per-call would produce many redundant disables. */
+/* oxlint-disable socket/prefer-exists-sync -- size reads */
 
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'

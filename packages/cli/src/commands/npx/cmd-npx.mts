@@ -8,7 +8,6 @@ import { NPX } from '@socketsecurity/lib-stable/constants/agents'
 
 import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 
-// socket-lint: allow npx -- matches the 'npx' constant/command name
 export const cmdNpx = defineHandoffCommand({
   name: NPX,
   description: 'Run pnpm exec with Socket Firewall security',

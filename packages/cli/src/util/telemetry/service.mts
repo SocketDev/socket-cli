@@ -134,7 +134,10 @@ export function withTimeout<T>(
   timeoutMessage: string,
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout | undefined
-  // oxlint-disable-next-line socket/no-promise-race -- finalizer race: the .finally() arm clears the timeout the moment the promise settles, so the losing Promise resolves to undefined and is GC'd. No handler-list leak.
+  // finalizer race: the .finally() arm clears the timeout the moment the
+  // promise settles, so the losing Promise resolves to undefined and is GC'd.
+  // No handler-list leak.
+  // oxlint-disable-next-line socket/no-promise-race -- losing arm is GC-safe
   return Promise.race([
     promise.finally(() => {
       if (timeoutId) {

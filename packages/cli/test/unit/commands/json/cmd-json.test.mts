@@ -1,5 +1,7 @@
+// "test" is a fixture username in mocked cwd / path test inputs; not a real
+// personal path.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/personal-path-placeholders -- "test" is a fixture username in mocked cwd / path test inputs; not a real personal path. */
+/* oxlint-disable socket/personal-path-placeholders -- fixture usernames */
 /**
  * Unit tests for json command.
  *

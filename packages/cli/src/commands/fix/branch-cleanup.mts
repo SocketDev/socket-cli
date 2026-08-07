@@ -20,12 +20,12 @@ const logger = getDefaultLogger()
  * Clean up branches in catch block after unexpected error. Safe to delete both
  * remote and local since no PR was created.
  */
-// socket-lint: allow boolean-trap -- collapsing remoteBranchExists into an
-// options object would change the call sites in coana-fix.mts, which is out
-// of scope for this fix batch.
+// Collapsing remoteBranchExists into an options object would change the call
+// sites in coana-fix.mts, which is out of scope for this fix batch.
 export async function cleanupErrorBranches(
   branch: string,
   cwd: string,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   remoteBranchExists: boolean,
 ): Promise<void> {
   // Clean up remote branch if it exists, push may have succeeded before error.

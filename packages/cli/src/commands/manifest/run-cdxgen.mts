@@ -1,5 +1,9 @@
+// CLI output formatting: multi-line user-facing messages where embedded \n
+// produces the intended layout. Splitting into logger.log("") + logger.log(...)
+// pairs is the canonical rewrite but doesnt preserve the visual flow for these
+// specific outputs.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-logger-newline-literal -- CLI output formatting: multi-line user-facing messages where embedded \n produces the intended layout. Splitting into logger.log("") + logger.log(...) pairs is the canonical rewrite but doesnt preserve the visual flow for these specific outputs. */
+/* oxlint-disable socket/no-logger-newline-literal -- intended layout */
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
@@ -24,7 +28,8 @@ import type { DlxOptions, DlxSpawnResult } from '../../util/dlx/spawn.mjs'
 
 const logger = getDefaultLogger()
 
-// oxlint-disable-next-line socket/sort-set-args -- alphabetical; NPM and PNPM constants sit at their alphabetical positions.
+// alphabetical; NPM and PNPM constants sit at their alphabetical positions.
+// oxlint-disable-next-line socket/sort-set-args -- no enforced literal order
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',

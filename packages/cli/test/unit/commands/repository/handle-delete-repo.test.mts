@@ -39,7 +39,9 @@ vi.mock(
 )
 
 const { handleDeleteRepo } =
-  // oxlint-disable-next-line socket/no-top-level-await -- vitest test module, never CJS-bundled; the static-import rewrite is blocked by the prompt-injection-guard false-positive on this filename.
+  // vitest test module, never CJS-bundled; the static-import rewrite is blocked
+  // by the prompt-injection-guard false-positive on this filename.
+  // oxlint-disable-next-line socket/no-top-level-await -- vitest test module
   await import('../../../../src/commands/repository/handle-delete-repo.mts')
 
 describe('handleDeleteRepo', () => {

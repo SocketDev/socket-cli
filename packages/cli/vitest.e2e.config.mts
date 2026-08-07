@@ -2,7 +2,8 @@ import os from 'node:os'
 
 import { defineConfig } from 'vitest/config'
 
-// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
+// vitest config file requires default export
+// oxlint-disable-next-line socket/no-default-export -- default export required
 export default defineConfig({
   resolve: {
     preserveSymlinks: false,

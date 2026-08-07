@@ -86,7 +86,8 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
 
   // Check if tar.gz already exists and is valid.
   if (existsSync(tarGzPath)) {
-    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size for cache validation, not an existence check.
+    // reads .size for cache validation, not an existence check.
+    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size
     const stats = await fs.stat(tarGzPath)
 
     // Validate cached file is not empty or suspiciously small (> 1KB).
@@ -177,7 +178,8 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     throw new Error('Failed to create external-tools tar.gz')
   }
 
-  // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size for the packaged-size log line, not an existence check.
+  // reads .size for the packaged-size log line, not an existence check.
+  // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size
   const tarStats = await fs.stat(tarGzPath)
   logger.success(
     `External-tools packaged: ${(tarStats.size / 1024 / 1024).toFixed(2)} MB`,

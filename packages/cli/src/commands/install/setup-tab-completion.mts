@@ -128,9 +128,10 @@ export function updateInstalledTabCompletionScript(
 
   // When installing set the current package.json version.
   // Later, we can call _socket_completion_version to get the installed version.
+  const versionHash = getCliVersionHash()
   writeFileSync(
     targetPath,
-    content.data.replaceAll('%SOCKET_VERSION_TOKEN%', getCliVersionHash()),
+    content.data.replaceAll('%SOCKET_VERSION_TOKEN%', () => versionHash),
     'utf8',
   )
 

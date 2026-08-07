@@ -1,4 +1,6 @@
-// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+// lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at
+// build so no runtime dep leaks.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- bundled
 import semver from 'semver'
 
 import type { SemVer } from 'semver'

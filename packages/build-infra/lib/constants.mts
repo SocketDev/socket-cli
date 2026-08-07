@@ -83,7 +83,9 @@ for (const [name, generator] of Object.entries(CHECKPOINT_CHAINS)) {
 /**
  * Resolve the build mode from CLI flags, env, or CI autodetect.
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (validate → resolve → consume); alphabetizing scatters the build-config lifecycle.
+// grouped by phase (validate → resolve → consume); alphabetizing scatters the
+// build-config lifecycle.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase
 export function getBuildMode(
   args?: string[] | Set<string> | undefined,
 ): string {

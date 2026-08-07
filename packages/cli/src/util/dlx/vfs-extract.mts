@@ -388,7 +388,8 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
         : `/snapshot/${tool}`
       const binaryPath = await processWithSmol.smol.mount(vfsBinaryPath)
 
-      // oxlint-disable-next-line socket/no-status-emoji -- TUI / custom output formatter; emoji is part of the visual contract.
+      // TUI / custom output formatter; emoji is part of the visual contract.
+      // oxlint-disable-next-line socket/no-status-emoji -- visual contract
       logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
 
       extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath

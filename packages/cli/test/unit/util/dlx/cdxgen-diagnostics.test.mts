@@ -145,7 +145,8 @@ describe('message shape', () => {
 
   it('emits no ANSI escape codes, so a CI log stays clean', () => {
     for (let i = 0, { length } = messages; i < length; i += 1) {
-      // oxlint-disable-next-line no-control-regex -- matching escapes is the point.
+      // matching escapes is the point.
+      // oxlint-disable-next-line no-control-regex -- control chars intended
       expect(messages[i]!).not.toMatch(/\[[0-9;]*m/)
     }
   })

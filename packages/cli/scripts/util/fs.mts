@@ -11,7 +11,9 @@ import path from 'node:path'
  */
 function findUpSync(name, config) {
   const cfg = { __proto__: null, ...config }
-  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- caller-overridable default; callers always pass a script-anchored cwd or accept the cwd they invoke from.
+  // Caller-overridable default; callers always pass a script-anchored cwd or
+  // accept the cwd of their invocation.
+  // oxlint-disable-next-line socket/no-process-cwd-in-scripts-hooks -- default
   const { cwd = process.cwd() } = cfg
   let { onlyDirectories = false, onlyFiles = true } = cfg
   if (onlyDirectories) {

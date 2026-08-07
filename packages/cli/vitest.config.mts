@@ -217,7 +217,8 @@ const normalConfig = defineConfig({
 // supervisor (which spawns a coverage-guided child process sharing an SWC
 // coverage shmem) and trip "shmem attach failed"; a stripped config avoids it.
 // `pnpm test` never sets VITIATE_FUZZ, so it uses normalConfig unchanged.
-// oxlint-disable-next-line socket/no-default-export -- vitest config file requires default export
+// vitest config file requires default export
+// oxlint-disable-next-line socket/no-default-export -- default export required
 export default FUZZING
   ? defineConfig({
       plugins: [

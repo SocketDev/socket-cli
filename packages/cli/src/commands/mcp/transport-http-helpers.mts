@@ -94,12 +94,13 @@ export function getProtectedResourceMetadataUrl(baseUrl: URL): string {
   return new URL(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, baseUrl).href
 }
 
-// socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in transport-http.mts + transport-http-helpers.test.mts,
-// out of scope for this pass.
+// Collapsing into an options object would change call sites in
+// transport-http.mts + transport-http-helpers.test.mts, out of scope for this
+// pass.
 export function getRequestBaseUrl(
   req: IncomingMessage,
   fallbackPort: number,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   trustProxy: boolean,
 ): URL {
   const forwardedProto = trustProxy

@@ -211,7 +211,9 @@ export function parsePlatformTarget(
  *
  * @returns {boolean} True if valid platform target.
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
+// grouped by phase (parse → validate → resolve → format); alphabetizing would
+// scatter the parse-validate-resolve flow.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase
 export function isPlatformTarget(target: string) {
   return PLATFORM_TARGETS.includes(target)
 }
@@ -226,7 +228,9 @@ export function isPlatformTarget(target: string) {
  * @returns {(typeof PLATFORM_CONFIGS)[number] | undefined} Full platform config
  *   or undefined.
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
+// grouped by phase (parse → validate → resolve → format); alphabetizing would
+// scatter the parse-validate-resolve flow.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase
 export function getPlatformConfig(target: string) {
   return PLATFORM_CONFIGS.find(
     c =>
@@ -245,7 +249,9 @@ export function getPlatformConfig(target: string) {
  *
  * @returns {string} Target string (e.g., "linux-x64-musl").
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
+// grouped by phase (parse → validate → resolve → format); alphabetizing would
+// scatter the parse-validate-resolve flow.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase
 export function formatPlatformTarget(
   platform: string,
   arch: string,
@@ -279,7 +285,9 @@ export interface PlatformArgs {
  *
  * @returns {PlatformArgs} Parsed platform arguments.
  */
-// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase (parse → validate → resolve → format); alphabetizing would scatter the parse-validate-resolve flow.
+// grouped by phase (parse → validate → resolve → format); alphabetizing would
+// scatter the parse-validate-resolve flow.
+// oxlint-disable-next-line socket/sort-source-methods -- grouped by phase
 export function parsePlatformArgs(args: string[]): PlatformArgs {
   const result: PlatformArgs = {
     arch: undefined,

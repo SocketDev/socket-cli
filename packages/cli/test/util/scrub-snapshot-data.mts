@@ -182,9 +182,10 @@ export function scrubSnapshotData(
     )
   }
 
-  // Phase 8: Custom patterns.
+  // Custom patterns: the replacement is inserted verbatim, so `$` tokens in
+  // it are not re-interpreted.
   for (const { pattern, replacement } of custom) {
-    scrubbed = scrubbed.replace(pattern, replacement)
+    scrubbed = scrubbed.replace(pattern, () => replacement)
   }
 
   return scrubbed

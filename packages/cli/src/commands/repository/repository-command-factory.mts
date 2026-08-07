@@ -88,7 +88,7 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
               'Force override the organization slug, overrides the default org from config',
             type: 'string',
           },
-          ...(spec.extraFlags || {}),
+          ...spec.extraFlags,
         },
         help: (command, helpConfig) => `
     Usage

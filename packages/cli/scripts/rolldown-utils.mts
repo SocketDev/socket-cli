@@ -98,7 +98,7 @@ export function applyEnvVarReplacement(
   for (const { 0: key, 1: value } of Object.entries(envVars)) {
     const dq = new RegExp(`(\\w+\\.)+env\\["${key}"\\]`, 'g')
     const sq = new RegExp(`(\\w+\\.)+env\\['${key}'\\]`, 'g')
-    next = next.replace(dq, value).replace(sq, value)
+    next = next.replace(dq, () => value).replace(sq, () => value)
   }
   return next
 }

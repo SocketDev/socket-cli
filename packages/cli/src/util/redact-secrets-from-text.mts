@@ -31,9 +31,10 @@ export type SecretRedactionPattern = {
    */
   re: RegExp
   /**
-   * Replacement text, may reference capture groups.
+   * Replacer receiving the regex's named capture groups (empty when the
+   * pattern captures nothing); its return is inserted verbatim.
    */
-  replace: string
+  replace: (groups: Readonly<Record<string, string>>) => string
 }
 
 export const SECRET_REDACTION_PATTERNS: readonly SecretRedactionPattern[] = [
@@ -47,26 +48,26 @@ export const SECRET_REDACTION_PATTERNS: readonly SecretRedactionPattern[] = [
     // redacted string would append another placeholder. It tracks
     // SECRET_REDACTION_PLACEHOLDER, which a unit test pins.
     name: 'credential-assignment',
-    re: /(\b[A-Za-z0-9_-]{0,64}(?:api[_-]?key|access[_-]?key(?:[_-]?id)?|token|secret|credential|signature|sig|password|passwd)\b(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)(?!\[redacted\])[^\s"',;}&\\\]]+/giu,
-    replace: `$1${SECRET_REDACTION_PLACEHOLDER}`,
+    re: /(?<prefix>\b[A-Za-z0-9_-]{0,64}(?:api[_-]?key|access[_-]?key(?:[_-]?id)?|token|secret|credential|signature|sig|password|passwd)\b(?:\\?["'])?\s*[:=]\s*(?:\\?["'])?)(?!\[redacted\])[^\s"',;}&\\\]]+/giu,
+    replace: groups => `${groups['prefix']}${SECRET_REDACTION_PLACEHOLDER}`,
   },
   {
     // OpenAI-style keys: `sk-…` and `sk-proj-…`.
     name: 'openai-secret-key',
     re: /sk-(?:proj-)?[A-Za-z0-9_*=-]{8,}/gu,
-    replace: SECRET_REDACTION_PLACEHOLDER,
+    replace: () => SECRET_REDACTION_PLACEHOLDER,
   },
   {
     // GitHub personal access, OAuth, server, user, and refresh tokens.
     name: 'github-token',
     re: /(?:gh[pousr]_|github_pat_)[A-Za-z0-9_-]{8,}/giu,
-    replace: SECRET_REDACTION_PLACEHOLDER,
+    replace: () => SECRET_REDACTION_PLACEHOLDER,
   },
   {
     // npm granular and legacy automation tokens.
     name: 'npm-token',
     re: /npm_[A-Za-z0-9_-]{8,}/giu,
-    replace: SECRET_REDACTION_PLACEHOLDER,
+    replace: () => SECRET_REDACTION_PLACEHOLDER,
   },
   {
     // Socket API tokens. `TOKEN_PREFIX` in constants/socket.mts is `sktsec_`;
@@ -74,7 +75,7 @@ export const SECRET_REDACTION_PATTERNS: readonly SecretRedactionPattern[] = [
     // fail while handling a module-load error.
     name: 'socket-api-token',
     re: /sktsec_[A-Za-z0-9_-]{8,}/giu,
-    replace: SECRET_REDACTION_PLACEHOLDER,
+    replace: () => SECRET_REDACTION_PLACEHOLDER,
   },
   {
     // `Authorization: Bearer <blob>` and the Basic/Token schemes, including the
@@ -84,22 +85,23 @@ export const SECRET_REDACTION_PATTERNS: readonly SecretRedactionPattern[] = [
     // required" survives while base64, hex, and JWT-shaped credentials still
     // match.
     name: 'auth-scheme-header',
-    re: /(^|%20|[^A-Za-z0-9_])(Basic|Bearer|Token)((?:%20|\+|\s)\s*)(?=[A-Za-z]*[0-9.%_~+/*=-])[A-Za-z0-9.%_~+/*=-]{8,}/giu,
-    replace: `$1$2$3${SECRET_REDACTION_PLACEHOLDER}`,
+    re: /(?<lead>^|%20|[^A-Za-z0-9_])(?<scheme>Basic|Bearer|Token)(?<sep>(?:%20|\+|\s)\s*)(?=[A-Za-z]*[0-9.%_~+/*=-])[A-Za-z0-9.%_~+/*=-]{8,}/giu,
+    replace: groups =>
+      `${groups['lead']}${groups['scheme']}${groups['sep']}${SECRET_REDACTION_PLACEHOLDER}`,
   },
   {
     // URL userinfo: `https://user:pass@host` → `https://[redacted]@host`.
     name: 'url-userinfo',
-    re: /((?:git\+ssh|https?|ssh):\/\/)[^\s/@]+@/giu,
-    replace: `$1${SECRET_REDACTION_PLACEHOLDER}@`,
+    re: /(?<proto>(?:git\+ssh|https?|ssh):\/\/)[^\s/@]+@/giu,
+    replace: groups => `${groups['proto']}${SECRET_REDACTION_PLACEHOLDER}@`,
   },
   {
     // Secret-bearing URL query parameters where any of `?`, `&`, or `=` may be
     // percent-encoded (`%3F`, `%26`, `%3D`) — the case the assignment shape
     // above cannot see because there is no literal `=`.
     name: 'url-query-secret',
-    re: /((?:%26|%3F|[?&])(?:(?!%26|%3D|%3F)[A-Za-z0-9_.%[\]-]){0,64}(?:api(?:%2D|%5F|[_-])?key|access(?:%2D|%5F|[_-])?key(?:(?:%2D|%5F|[_-])?id)?|token|secret|credential|signature|sig|password|passwd)(?:%5D|\])?(?:%3D|=))(?!\[redacted\])(?:(?!%26)[^&\s])+/giu,
-    replace: `$1${SECRET_REDACTION_PLACEHOLDER}`,
+    re: /(?<param>(?:%26|%3F|[?&])(?:(?!%26|%3D|%3F)[A-Za-z0-9_.%[\]-]){0,64}(?:api(?:%2D|%5F|[_-])?key|access(?:%2D|%5F|[_-])?key(?:(?:%2D|%5F|[_-])?id)?|token|secret|credential|signature|sig|password|passwd)(?:%5D|\])?(?:%3D|=))(?!\[redacted\])(?:(?!%26)[^&\s])+/giu,
+    replace: groups => `${groups['param']}${SECRET_REDACTION_PLACEHOLDER}`,
   },
 ]
 
@@ -115,7 +117,18 @@ export const SECRET_REDACTION_PATTERNS: readonly SecretRedactionPattern[] = [
 export function redactSecretsFromText(text: string): string {
   let result = text
   for (const { re, replace } of SECRET_REDACTION_PATTERNS) {
-    result = result.replaceAll(re, replace)
+    result = result.replaceAll(
+      re,
+      (
+        ...args: ReadonlyArray<
+          Readonly<Record<string, string>> | number | string | undefined
+        >
+      ) => {
+        const tail = args.at(-1)
+        const groups = typeof tail === 'object' && tail !== null ? tail : {}
+        return replace(groups)
+      },
+    )
   }
   return result
 }

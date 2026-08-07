@@ -141,9 +141,12 @@ export async function isRunnableFile(
   const opts = { __proto__: null, ...options } as TrustedExecutableOptions
   const { windows = WIN32 } = opts
   try {
-    // oxlint-disable-next-line socket/prefer-exists-sync -- probes the exec bit (X_OK); existsSync cannot express a permission check.
+    // probes the exec bit (X_OK); existsSync cannot express a permission check.
+    // oxlint-disable-next-line socket/prefer-exists-sync -- probes X_OK
     await fs.access(target, windows ? fsConstants.F_OK : fsConstants.X_OK)
-    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() metadata to reject directories and devices, not existence.
+    // reads .isFile() metadata to reject directories and devices, not
+    // existence.
+    // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size
     const stats = await fs.stat(target)
     return stats.isFile()
   } catch {

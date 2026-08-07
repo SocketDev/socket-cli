@@ -1,5 +1,7 @@
+// "jdalton" / "testuser" are fixture inputs exercising the snapshot scrubber's
+// path/username detection; the rule under test SHOULD scrub these.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/personal-path-placeholders -- "jdalton" / "testuser" are fixture inputs exercising the snapshot scrubber's path/username detection; the rule under test SHOULD scrub these. */
+/* oxlint-disable socket/personal-path-placeholders -- fixture usernames */
 import { describe, expect, it } from 'vitest'
 
 import { scrubSnapshotData, toSnapshotString } from './scrub-snapshot-data.mts'

@@ -16,7 +16,8 @@ import { defineConfig } from 'oxlint'
 
 import { config } from '../fleet/oxlint.config.mts'
 
-// oxlint-disable-next-line socket/no-default-export -- oxlint loads the config from this module's default export.
+// oxlint loads the config from this module's default export.
+// oxlint-disable-next-line socket/no-default-export -- default export required
 export default defineConfig(
   config({
     // Burn-down state (2026-07-24): await-thenable, no-base-to-string,

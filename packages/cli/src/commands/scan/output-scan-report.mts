@@ -227,11 +227,12 @@ export async function outputScanReport(
   }
 }
 
-// socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
-// which is out of scope for this pass.
+// Collapsing into an options object would change call sites in
+// test/unit/commands/scan/output-scan-report.test.mts, which is out of scope
+// for this pass.
 export function toJsonReport(
   report: ScanReport,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   includeLicensePolicy?: boolean | undefined,
 ): string {
   const obj = mapToObject(report.alerts)
@@ -248,11 +249,12 @@ export function toJsonReport(
   })
 }
 
-// socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in test/unit/commands/scan/output-scan-report.test.mts,
-// which is out of scope for this pass.
+// Collapsing into an options object would change call sites in
+// test/unit/commands/scan/output-scan-report.test.mts, which is out of scope
+// for this pass.
 export function toMarkdownReport(
   report: ScanReport,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   includeLicensePolicy?: boolean | undefined,
 ): string {
   const reportLevel = report.options.reportLevel
@@ -332,10 +334,11 @@ ${
  * output readable when a log is piped to a file, replayed without a TTY, or
  * ingested by a log aggregator.
  */
-// socket-lint: allow boolean-trap -- matches the toJsonReport / toMarkdownReport
-// signatures this sits beside; changing one alone would split the trio.
+// Matches the toJsonReport / toMarkdownReport signatures this sits beside;
+// changing one alone would split the trio.
 export function toPlainTextReport(
   report: ScanReport,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- signature trio
   includeLicensePolicy?: boolean | undefined,
 ): string {
   const { reportLevel } = report.options

@@ -7,7 +7,10 @@ import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
 
-// oxlint-disable-next-line socket/no-boolean-trap-param -- exported call sites span handle-manifest-conda.mts and its test suite, outside this fix's scope; an options-object migration needs those call sites updated together.
+// exported call sites span handle-manifest-conda.mts and its test suite,
+// outside this fix's scope; an options-object migration needs those call sites
+// updated together.
+// oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
 export async function convertCondaToRequirements(
   filename: string,
   cwd: string,

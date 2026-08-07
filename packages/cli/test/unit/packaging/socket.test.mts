@@ -93,7 +93,8 @@ describe('socket bootstrap loader', () => {
 
     afterAll(async () => {
       for (let i = 0, { length } = tempDirs; i < length; i += 1) {
-        // eslint-disable-next-line no-await-in-loop -- sequential teardown of a handful of dirs.
+        // sequential teardown of a handful of dirs.
+        // eslint-disable-next-line no-await-in-loop -- sequential teardown
         await safeDelete(tempDirs[i])
       }
     })

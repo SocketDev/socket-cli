@@ -831,7 +831,6 @@ describe('meow-with-subcommands', () => {
         logout: stub('logout'),
         manifest: stub('manifest'),
         npm: stub('npm'),
-        // socket-lint: allow npx -- canonical subcommand name in help bucketing test
         npx: stub('npx'),
         nuget: stub('nuget'),
         optimize: stub('optimize'),

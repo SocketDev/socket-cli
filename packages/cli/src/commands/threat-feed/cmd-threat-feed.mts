@@ -25,7 +25,9 @@ const logger = getDefaultLogger()
 
 export const CMD_NAME = 'threat-feed'
 
-// oxlint-disable-next-line socket/sort-set-args -- alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget' which would be its sort position if inlined.
+// alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget'
+// which would be its sort position if inlined.
+// oxlint-disable-next-line socket/sort-set-args -- no enforced literal order
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([
@@ -225,7 +227,9 @@ export async function run(
     return false
   })
 
-  // oxlint-disable-next-line socket/sort-set-args -- elements are runtime variables, not literals, so there is no comparable sort order to enforce.
+  // elements are runtime variables, not literals, so there is no comparable
+  // sort order to enforce.
+  // oxlint-disable-next-line socket/sort-set-args -- no enforced literal order
   const haves = new Set([ecoFilter, versionFilter, typeFilter])
   cli.input.some(str => {
     if (!haves.has(str)) {

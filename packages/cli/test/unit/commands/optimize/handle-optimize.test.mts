@@ -1,4 +1,6 @@
-// socket-lint: allow bare-semver -- the mock must mirror EnvDetails.agentVersion, a semver SemVer instance; the lib versions helpers are string-based.
+// The mock must mirror EnvDetails.agentVersion, a semver SemVer instance;
+// the lib versions helpers are string-based.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- SemVer
 import { SemVer } from 'semver'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 

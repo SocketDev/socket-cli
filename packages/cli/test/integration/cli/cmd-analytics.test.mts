@@ -19,7 +19,9 @@
  * - src/commands/analytics/output-analytics.mts - Output formatting.
  */
 
-// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is a devDep in tests so no runtime dep leaks.
+// lib-stable 6.0.9 doesn't publish ./external/semver; semver is a devDep in
+// tests so no runtime dep leaks.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- devDep
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 

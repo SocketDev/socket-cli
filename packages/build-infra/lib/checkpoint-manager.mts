@@ -195,7 +195,8 @@ export async function createCheckpoint(
   await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
 
   const relRoot = packageRoot ? path.relative(packageRoot, file) : file
-  // oxlint-disable-next-line socket/no-status-emoji -- substep takes its own indent prefix; ✓ marks completion.
+  // substep takes its own indent prefix; ✓ marks completion.
+  // oxlint-disable-next-line socket/no-status-emoji -- emoji is the contract
   logger.substep(`✓ Checkpoint ${name} written (${relRoot})`)
 }
 

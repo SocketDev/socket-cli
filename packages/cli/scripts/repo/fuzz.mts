@@ -32,7 +32,8 @@ const vitestBin = existsSync(localBin)
   ? localBin
   : path.join(repoRoot, 'node_modules', '.bin', binName)
 
-// oxlint-disable-next-line socket/prefer-async-spawn -- sync CLI runner, exits with the child's code
+// sync CLI runner, exits with the child's code
+// oxlint-disable-next-line socket/prefer-async-spawn -- sync CLI runner
 const result = spawnSync(vitestBin, ['run', ...process.argv.slice(2)], {
   __proto__: null,
   cwd: cliDir,

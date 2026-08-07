@@ -51,7 +51,8 @@ export async function runWithToolsMode(platform, toolPaths) {
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
       assets[`external-tools/${toolName}`] = toolPath
-      // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size for size reporting, not an existence check.
+      // reads .size for size reporting, not an existence check.
+      // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size
       const stats = statSync(toolPath)
       logger.log(
         `  Including ${toolName}: ${(stats.size / 1024 / 1024).toFixed(2)} MB`,

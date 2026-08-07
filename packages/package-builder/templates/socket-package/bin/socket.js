@@ -153,16 +153,17 @@ function main() {
     stdio: 'inherit',
   })
 
-  // socket-lint: allow bare-spawn-access -- `spawn` here is node:child_process's
-  // native spawn, required directly above, which returns a bare ChildProcess;
-  // it is not the fleet `@socketsecurity/lib` spawn wrapper this rule guards.
+  // `spawn` here is node:child_process's native spawn, required directly
+  // above, which returns a bare ChildProcess; it is not the fleet
+  // `@socketsecurity/lib` spawn wrapper this rule guards.
+  // oxlint-disable-next-line socket/no-bare-spawn-childproc-access -- native spawn
   child.on('error', err => {
     fail(`Failed to start Socket CLI: ${err.message}`)
     process.exit(1)
   })
 
-  // socket-lint: allow bare-spawn-access -- same native node:child_process
-  // ChildProcess as above.
+  // Same native node:child_process ChildProcess as above.
+  // oxlint-disable-next-line socket/no-bare-spawn-childproc-access -- native spawn
   child.on('exit', (code, signal) => {
     if (signal) {
       process.exit(1)

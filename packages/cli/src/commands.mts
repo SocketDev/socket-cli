@@ -106,9 +106,10 @@ export const rootCommands = {
  */
 export type RootCommandBucket = 'main' | 'api' | 'tools' | 'config'
 
+// Grouped by help-display bucket (main/api/tools/config), not alphabetical.
 export const rootCommandBuckets: Readonly<
   Partial<Record<keyof typeof rootCommands, RootCommandBucket>>
-  // socket-lint: allow object-property-order -- grouped by help-display bucket (main/api/tools/config), not alphabetical.
+  // oxlint-disable-next-line socket/sort-object-literal-properties -- buckets
 > = {
   // Main commands — the "hero" actions surfaced first in `socket --help`.
   fix: 'main',

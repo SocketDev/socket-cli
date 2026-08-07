@@ -39,7 +39,8 @@ export async function displayToolInfo(toolPaths) {
   let totalToolSize = 0
   for (const [toolName, toolPath] of Object.entries(toolPaths)) {
     if (existsSync(toolPath)) {
-      // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size for size reporting, not an existence check.
+      // reads .size for size reporting, not an existence check.
+      // oxlint-disable-next-line socket/prefer-exists-sync -- reads .size
       const stats = await fs.stat(toolPath)
       const sizeMB = stats.size / 1024 / 1024
       totalToolSize += stats.size

@@ -1,5 +1,6 @@
+// TUI / custom output formatter; emojis are part of the visual contract.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-status-emoji -- TUI / custom output formatter; emojis are part of the visual contract. */
+/* oxlint-disable socket/no-status-emoji -- emoji is the contract */
 
 import colors from 'yoctocolors-cjs'
 

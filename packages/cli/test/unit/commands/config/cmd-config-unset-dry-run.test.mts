@@ -152,7 +152,6 @@ describe('cmd-config-unset', () => {
         )
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          // socket-lint: allow personal-path -- test fixture
           '/test/home/.config/socket/config.json',
           'unset config value for "defaultOrg"',
           ['Remove "defaultOrg" from config'],
@@ -166,7 +165,6 @@ describe('cmd-config-unset', () => {
         await cmdConfigUnset.run(['apiToken', '--dry-run'], importMeta, context)
 
         expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
-          // socket-lint: allow personal-path -- test fixture
           '/custom/home/.config/socket/config.json',
           'unset config value for "apiToken"',
           ['Remove "apiToken" from config'],

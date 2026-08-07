@@ -173,16 +173,16 @@ export function debugApiResponse(
 /**
  * Debug configuration loading.
  */
-// socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in src/util/config.mts and test/unit/util/debug.test.mts,
-// which are out of scope for this pass.
+// Collapsing into an options object would change call sites in
+// src/util/config.mts and test/unit/util/debug.test.mts, which are out of
+// scope for this pass.
 export function debugConfig(
   source: string,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   found: boolean,
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // Fleet optional-explicit-undefined convention: the explicit | undefined on
+  // an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- convention
   error?: unknown | undefined,
 ): void {
   if (error) {
@@ -205,10 +205,9 @@ export function debugConfig(
 export function debugFileOp(
   operation: 'read' | 'write' | 'delete' | 'create',
   filepath: string,
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
-  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- fleet optional-explicit-undefined convention: the explicit | undefined on an optional is intentional, not redundant.
+  // Fleet optional-explicit-undefined convention: the explicit | undefined on
+  // an optional is intentional, not redundant.
+  // oxlint-disable-next-line typescript/no-redundant-type-constituents -- convention
   error?: unknown | undefined,
 ): void {
   if (error) {
@@ -227,11 +226,12 @@ export function debugFileOp(
 /**
  * Debug git operations. Only logs important git operations, not every command.
  */
-// socket-lint: allow boolean-trap -- collapsing into an options object would
-// change call sites in src/util/git/operations.mts and
-// test/unit/util/debug.test.mts, which are out of scope for this pass.
+// Collapsing into an options object would change call sites in
+// src/util/git/operations.mts and test/unit/util/debug.test.mts, which are
+// out of scope for this pass.
 export function debugGit(
   operation: string,
+  // oxlint-disable-next-line socket/no-boolean-trap-param -- out of scope
   success: boolean,
   details?: Record<string, unknown> | undefined,
 ): void {
