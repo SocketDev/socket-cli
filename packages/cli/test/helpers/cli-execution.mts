@@ -296,7 +296,6 @@ export async function executeCliInScratch(
         USERPROFILE: scratchHome,
         // XDG base-directory spec.
         XDG_CONFIG_HOME: path.join(scratchHome, '.config'),
-        // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- per-test scratch HOME isolation: the cache must sit under the sandboxed HOME, not the repo root, so tests don't write to the real ~/.cache.
         XDG_CACHE_HOME: path.join(scratchHome, '.cache'),
         XDG_DATA_HOME: path.join(scratchHome, '.local', 'share'),
         XDG_STATE_HOME: path.join(scratchHome, '.local', 'state'),
@@ -358,7 +357,6 @@ export async function withScratchHome<T>(fn: () => Promise<T>): Promise<T> {
     process.env['HOME'] = scratchHome
     process.env['USERPROFILE'] = scratchHome
     process.env['XDG_CONFIG_HOME'] = path.join(scratchHome, '.config')
-    // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- per-test scratch HOME isolation: the cache must sit under the sandboxed HOME, not the repo root, so tests don't write to the real ~/.cache.
     process.env['XDG_CACHE_HOME'] = path.join(scratchHome, '.cache')
     process.env['XDG_DATA_HOME'] = path.join(scratchHome, '.local', 'share')
     process.env['XDG_STATE_HOME'] = path.join(scratchHome, '.local', 'state')

@@ -95,7 +95,6 @@ function findCacheDirs(): CacheDirInfo[] {
       if (pkg === undefined) {
         continue
       }
-      // oxlint-disable-next-line socket/prefer-node-modules-dot-cache -- cleans each package's EXISTING packages/<pkg>/.cache dir.
       const cacheDir = path.join(packagesDir, pkg, '.cache')
       try {
         statSync(cacheDir)
