@@ -11,7 +11,7 @@ import {
   mergeUnreleased,
   promoteUnreleased,
   sectionHasEntries,
-} from '../../scripts/fleet/lib/changelog.mts'
+} from '../../../scripts/fleet/lib/changelog.mts'
 
 const preamble = [
   '# Changelog',

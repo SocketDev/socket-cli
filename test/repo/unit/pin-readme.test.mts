@@ -9,16 +9,16 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { pinReadmeAssets } from '../../scripts/fleet/publish-infra/pin-readme.mts'
+import { pinReadmeAssets } from '../../../scripts/fleet/publish-infra/pin-readme.mts'
 
 const base =
   'https://raw.githubusercontent.com/SocketDev/socket-cli/0123456789abcdef0123456789abcdef01234567/'
 
 describe('pinReadmeAssets', () => {
   it('pins a relative img src', () => {
-    expect(pinReadmeAssets('<img src="assets/logo.png" alt="logo">\n', base)).toBe(
-      `<img src="${base}assets/logo.png" alt="logo">\n`,
-    )
+    expect(
+      pinReadmeAssets('<img src="assets/logo.png" alt="logo">\n', base),
+    ).toBe(`<img src="${base}assets/logo.png" alt="logo">\n`)
   })
 
   it('pins a relative srcset', () => {
