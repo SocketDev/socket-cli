@@ -1322,19 +1322,6 @@ importers:
         specifier: 'catalog:'
         version: 26.1.2
 
-  .claude/hooks/fleet/concurrent-cargo-build-guard:
-    dependencies:
-      '@socketsecurity/lib-stable':
-        specifier: npm:@socketsecurity/lib@6.7.0
-        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
-      shell-quote:
-        specifier: 1.10.0
-        version: 1.10.0
-    devDependencies:
-      '@types/node':
-        specifier: 'catalog:'
-        version: 26.1.2
-
   .claude/hooks/fleet/consumer-grep-nudge:
     devDependencies:
       '@types/node':
