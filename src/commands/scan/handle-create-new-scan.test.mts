@@ -252,6 +252,33 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
   })
 
+  it('aborts when --dynamic-sbom-inference finds no Gradle/sbt/Maven build root', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await expect(handleCreateNewScan(config)).rejects.toThrow(
+      /No Gradle, sbt, or Maven build root was found/,
+    )
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+  })
+
+  it('does not abort when build roots were found but none generated facts (empty/skippedDisabled), unlike genuinely finding none', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      { dir: '/repo/service-a', ecosystem: 'maven', status: 'empty' },
+      { dir: '/repo/service-b', ecosystem: 'maven', status: 'skippedDisabled' },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockGetPackageFilesForScan).toHaveBeenCalled()
+  })
+
   it('accumulates a sidecar across recursively discovered build roots and forwards it to reachability analysis', async () => {
     mockGenerateRecursiveManifests.mockImplementationOnce(
       async ({ sidecarAcc }) => {

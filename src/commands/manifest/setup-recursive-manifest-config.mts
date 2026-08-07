@@ -749,6 +749,20 @@ export async function setupRecursiveManifestConfig(
     )
   } else {
     logger.log(`No gradle/maven/sbt build roots found beneath ${cwd}.`)
+    // Distinct from "found some, but --exclude-paths excluded them all" -
+    // that's a deliberate choice and setup still proceeds normally below.
+    // Zero build roots anywhere means --dynamic-sbom-inference doesn't apply
+    // to this target at all, so fail rather than silently do nothing.
+    const hasAnyBuildRoot = ROOT_ECOSYSTEMS.some(
+      ecosystem => (fullByTool.get(ecosystem)?.length ?? 0) > 0,
+    )
+    if (!hasAnyBuildRoot) {
+      return {
+        ok: false,
+        code: 1,
+        message: `No Gradle, sbt, or Maven build root was found beneath ${cwd}.`,
+      }
+    }
   }
   logger.log('')
 

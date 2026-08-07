@@ -187,6 +187,19 @@ export async function handleCreateNewScan({
           verbose: false,
           withFiles: reach.runReachabilityAnalysis,
         })
+        // No candidates discovered at all (distinct from candidates that were
+        // found but produced no generated facts - empty/skippedDisabled are
+        // already warned about elsewhere and are not this kind of mistake).
+        if (!outcomes.length) {
+          throw new InputError(
+            [
+              'No Gradle, sbt, or Maven build root was found.',
+              '',
+              '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
+              '- Make sure to run it from the correct dir (use --cwd to target another dir).',
+            ].join('\n'),
+          )
+        }
         // Fail loud rather than silently upload a partial multi-root scan:
         // matches handleManifestDynamicSbomInference's own check.
         if (outcomes.some(o => o.status === 'failed')) {
@@ -197,11 +210,9 @@ export async function handleCreateNewScan({
         const generatedFactsPaths = outcomes
           .filter(o => o.status === 'generated')
           .map(o => o.factsPath!)
-        if (generatedFactsPaths.length) {
-          scanTargets = Array.from(
-            new Set([...scanTargets, ...generatedFactsPaths]),
-          )
-        }
+        scanTargets = Array.from(
+          new Set([...scanTargets, ...generatedFactsPaths]),
+        )
         if (sidecarAcc && hasSidecarEntries(sidecarAcc)) {
           resolvedPathsSidecar = serializeSidecar(sidecarAcc)
         }
