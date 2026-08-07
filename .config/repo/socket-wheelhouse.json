@@ -2,6 +2,10 @@
   "$schema": "./socket-wheelhouse-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
+  "bundle": {
+    "ref": "fleet-pack-1e0fb3551ebcf541535e02b08ce452bfb482ed44",
+    "cascadeSha": "1e0fb3551ebcf541535e02b08ce452bfb482ed44"
+  },
   "repo": {
     "type": "mono"
   },

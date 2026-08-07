@@ -54,7 +54,9 @@
  *     bootstrap-pnpm.mjs; see that file's header.
  */
 
-// oxlint-disable-next-line socket/prefer-async-spawn -- composite-action helper runs on the raw runner before setup-node; node_modules is unavailable and the jq.mjs probe is naturally sync.
+// composite-action helper runs on the raw runner before setup-node;
+// node_modules is unavailable and the jq.mjs probe is naturally sync.
+// oxlint-disable-next-line socket/prefer-async-spawn -- sync jq probe
 import { spawnSync } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import process from 'node:process'

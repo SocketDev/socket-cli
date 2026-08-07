@@ -175,7 +175,9 @@ export function sriFromShasums(shasumsText, asset) {
 // Fetch a nodejs.org dist resource as text, failing loud with the URL — the
 // two callers (release index, SHASUMS256.txt) share the error shape.
 async function fetchDistText(url) {
-  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- pre-install composite-action helper; @socketsecurity/lib-stable is not on disk yet, only built-in fetch is available.
+  // pre-install composite-action helper; @socketsecurity/lib-stable is not on
+  // disk yet, only built-in fetch is available.
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- fetch only
   const res = await fetch(url, { redirect: 'follow' })
   if (!res.ok) {
     process.stderr.write(

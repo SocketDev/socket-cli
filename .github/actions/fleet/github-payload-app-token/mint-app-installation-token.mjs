@@ -316,8 +316,11 @@ if (
     try {
       await main()
     } catch (e) {
-      // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- dep-0: this .mjs uses only node: builtins and runs in CI BEFORE `pnpm install`, so it cannot import errorMessage() from the external @socketsecurity/lib.
-      die(e instanceof Error ? e.message : String(e))
+      // dep-0: this .mjs uses only node: builtins and runs in CI BEFORE
+      // `pnpm install`, so it cannot import errorMessage() from the external
+      // @socketsecurity/lib. The disable trails the line because both rule
+      // names cannot fit an 80-column standalone directive line.
+      die(e instanceof Error ? e.message : String(e)) // oxlint-disable-line socket/prefer-error-message, socket/prefer-error-message-helper -- dep-0
     }
   })()
 }

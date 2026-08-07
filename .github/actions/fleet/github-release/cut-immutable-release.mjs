@@ -28,7 +28,9 @@
  *     github-release-app-token's mint-app-installation-token.mjs.
  */
 
-// oxlint-disable-next-line socket/prefer-async-spawn -- composite-action script runs on the raw runner before any install; node_modules is unavailable and the 3-step gh pipeline is naturally sync.
+// composite-action script runs on the raw runner before any install;
+// node_modules is unavailable and the 3-step gh pipeline is naturally sync.
+// oxlint-disable-next-line socket/prefer-async-spawn -- sync gh pipeline
 import { spawnSync } from 'node:child_process'
 import { existsSync, realpathSync } from 'node:fs'
 import process from 'node:process'

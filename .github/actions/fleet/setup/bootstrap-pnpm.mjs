@@ -201,7 +201,9 @@ function printLines(lines) {
 // IS unit-tested.
 async function fetchNpmDist(pkgName, version) {
   const url = npmVersionManifestUrl(pkgName, version)
-  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- pre-install composite-action helper; @socketsecurity/lib-stable is not on disk yet, only built-in fetch is available.
+  // pre-install composite-action helper; @socketsecurity/lib-stable is not on
+  // disk yet, only built-in fetch is available.
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- fetch only
   const res = await fetch(url, { redirect: 'follow' })
   if (!res.ok) {
     process.stderr.write(
@@ -232,7 +234,9 @@ async function fetchNpmDist(pkgName, version) {
 // directly, whose data-shaping (resolveHighestSatisfying) IS unit-tested.
 async function fetchNpmPackument(pkgName) {
   const url = npmPackumentUrl(pkgName)
-  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- pre-install composite-action helper; @socketsecurity/lib-stable is not on disk yet, only built-in fetch is available.
+  // pre-install composite-action helper; @socketsecurity/lib-stable is not on
+  // disk yet, only built-in fetch is available.
+  // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- fetch only
   const res = await fetch(url, {
     headers: { Accept: 'application/vnd.npm.install-v1+json' },
     redirect: 'follow',

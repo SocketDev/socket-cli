@@ -12,7 +12,7 @@ description: 'Install pnpm dependencies and provision agentshield (sfw shims are
 inputs:
   fleet-payload-token:
     description: >-
-      Read-only GitHub token the thin-distribution bootstrap fetch uses to
+      Read-only GitHub token the fleet-pack-distribution bootstrap fetch uses to
       download the fleet release bundle from the private wheelhouse. Empty for a
       non-thin member (whose `prepare` fetch no-ops, needing no token). Mapped to
       GH_TOKEN on the install step ONLY — `pnpm install` fires the `prepare`

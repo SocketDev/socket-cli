@@ -23,7 +23,9 @@ const arch = archMap[process.arch]
 const platform = platformMap[process.platform]
 
 if (!arch || !platform) {
-  // oxlint-disable-next-line socket/no-console-prefer-logger -- composite-action helper runs on the raw runner before setup-node; @socketsecurity/lib-stable not installed yet.
+  // composite-action helper runs on the raw runner before setup-node;
+  // @socketsecurity/lib-stable not installed yet.
+  // oxlint-disable-next-line socket/no-console-prefer-logger -- no lib yet
   console.error(`× unsupported runner: ${process.platform}-${process.arch}`)
   process.exit(1)
 }
@@ -54,5 +56,7 @@ if (platform === 'linux') {
   }
 }
 
-// oxlint-disable-next-line socket/no-console-prefer-logger -- composite-action helper runs on the raw runner before setup-node; the action's stdout IS the contract (consumed via `id: detect` output).
+// composite-action helper runs on the raw runner before setup-node; the
+// action's stdout IS the contract (consumed via `id: detect` output).
+// oxlint-disable-next-line socket/no-console-prefer-logger -- stdout contract
 console.log(`${platform}-${arch}${suffix}`)

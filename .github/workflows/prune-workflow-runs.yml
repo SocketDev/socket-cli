@@ -75,6 +75,11 @@ jobs:
           git checkout -q --detach FETCH_HEAD
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # The org secret is the single source for both SOCKET_API_TOKEN and
+          # SOCKET_API_KEY; the setup action exports the value under both names.
+          # Every sibling workflow supplies it either here or as job env — this
+          # one did neither, so its install ran the firewall unauthenticated.
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}

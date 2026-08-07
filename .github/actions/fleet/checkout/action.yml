@@ -38,7 +38,7 @@ inputs:
     default: '.'
   payload-token-client-id:
     description: >-
-      Client ID of the GitHub App that mints the thin-distribution read-only
+      Client ID of the GitHub App that mints the fleet-pack-distribution read-only
       payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
       skips the mint: a non-thin member's payload is already present, so
       "Detect thin fleet payload" below never asks for a token. A thin member

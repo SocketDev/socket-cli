@@ -1,0 +1,149 @@
+name: 🟢 Get Green
+
+# PLAIN workflow — no gh-aw, no ANTHROPIC_API_KEY. This was a gh-aw agentic
+# workflow whose multi-turn fix step ran on a per-repo Claude key; that key is
+# retired fleet-wide (see RETIRED_SECRETS in
+# scripts/fleet/check/actions-secrets-are-declared.mts), so the escalation runs
+# keyless now, exactly like the weekly-update workflow that dispatches it.
+#
+# What replaced the agent, in order (`.claude/rules/fleet/code-first-then-ai.md`):
+#
+#   1. The DETERMINISTIC fixer. scripts/fleet/get-green.mts runs setup + tests
+#      and, on red, runs `pnpm run fix` — oxlint autofix, the formatter, the
+#      doctor's mechanical repairs — then re-tests. Post-update breakage is
+#      usually mechanical, and this clears it with a reproducible result and no
+#      model at all.
+#   2. The ON-DEVICE model, for diagnosis only. What survives the fixer gets an
+#      odai `summarize` digest of the red log tails appended to the report. The
+#      odai seam deliberately admits the summary and decision families and NOT
+#      code repair — its `patch` task stays bench-gated — so this names the
+#      failure rather than guessing at an edit.
+#   3. A HUMAN, for anything left. A logic break is reported with its digest,
+#      not attempted. Losing agentic repair is the trade: mechanical breakage
+#      still self-heals, and a real break now fails loudly with a diagnosis
+#      instead of consuming a multi-turn budget to maybe fix itself.
+#
+# The script owns the verdict, never this workflow: `--report` exits non-zero
+# on a red branch, so the PR step cannot run on an agent's (or a step's)
+# say-so.
+
+on:
+  # Dispatched by weekly-update when tests go red after an update. A plain
+  # workflow receives workflow_dispatch identically to the gh-aw one it
+  # replaced, so the caller did not change.
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'The update branch with the failing changes to fix'
+        required: true
+        type: string
+      build-log:
+        description: 'Last 100 lines of the failing build output'
+        required: false
+        type: string
+        default: ''
+      test-log:
+        description: 'Last 100 lines of the failing test output'
+        required: false
+        type: string
+        default: ''
+      pr-base:
+        description: 'Base branch for the PR'
+        required: false
+        type: string
+        default: 'main'
+      pr-title-prefix:
+        description: 'PR title prefix'
+        required: false
+        type: string
+        default: 'chore(deps): weekly dependency update'
+      test-setup-script:
+        description: 'Command to run before tests'
+        required: false
+        type: string
+        default: 'pnpm run build'
+      test-script:
+        # --all is explicit on purpose. `pnpm test` defaults to the MODIFIED
+        # scope, and a fresh CI checkout has no modified files, so the run would
+        # resolve to zero targets and report a green branch without testing
+        # anything. That is the one verdict this workflow exists to produce.
+        description: 'Command that must pass for the branch to be green'
+        required: false
+        type: string
+        default: 'pnpm test --all'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: get-green-${{ inputs.branch }}
+  cancel-in-progress: false
+
+jobs:
+  get-green:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+    steps:
+      - name: Checkout the failing branch
+        uses: ./.github/actions/fleet/checkout
+        with:
+          ref: ${{ inputs.branch }}
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+
+      # Provision the on-device model. Fail-open by contract: ready=false only
+      # means the digest is skipped and the run stays deterministic-only, which
+      # is a weaker report, never a wrong verdict.
+      - uses: ./.github/actions/fleet/setup-odai
+        id: odai
+
+      # The whole ladder. Exits 0 only when the branch is green AFTER the
+      # deterministic fixer, so every later step is gated on a real pass.
+      - name: Fix what is mechanical, then report
+        id: report
+        shell: bash
+        env:
+          # Env-var indirection: expanding an input inside `run:` is the
+          # template-injection shape zizmor blocks.
+          BASE_REF: ${{ inputs.pr-base }}
+          ODAI_READY: ${{ steps.odai.outputs.ready }}
+          TEST_SCRIPT: ${{ inputs.test-script }}
+          TEST_SETUP_SCRIPT: ${{ inputs.test-setup-script }}
+        run: |
+          set -euo pipefail
+          echo "on-device model ready: ${ODAI_READY}"
+          node scripts/fleet/get-green.mts --report \
+            --base "${BASE_REF}" \
+            --setup "${TEST_SETUP_SCRIPT}" \
+            --test "${TEST_SCRIPT}"
+
+      # Only reached when the step above exited 0. Whatever the fixer changed
+      # is committed here; a run that fixed nothing has an empty diff and
+      # commits nothing.
+      - name: Commit the mechanical fixes
+        shell: bash
+        env:
+          BRANCH: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "no mechanical fixes to commit — the branch was already green."
+            exit 0
+          fi
+          git add -A
+          git -c user.name='socket-bot' \
+              -c user.email='socket-bot@users.noreply.github.com' \
+              commit -m 'fix(deps): apply the deterministic autofixer after the update'
+          git push origin "HEAD:${BRANCH}"
