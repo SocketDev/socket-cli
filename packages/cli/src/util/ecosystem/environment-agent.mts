@@ -14,7 +14,7 @@ import {
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
 import semver from 'semver'
 
 import { getNpmExecPath, getPnpmExecPath } from '../../constants/agents.mts'
