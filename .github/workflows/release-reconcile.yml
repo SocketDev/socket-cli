@@ -80,6 +80,30 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+      # A THIN member does not track scripts/fleet/, so reconcile-gap.mts below
+      # does not exist yet on a fresh checkout — the job died with
+      # `Cannot find module .../reconcile-gap.mts`. Hydration normally rides the
+      # fleet/checkout composite, and this job deliberately does not use it (see
+      # the no-install note below), so the payload has to be materialized here.
+      #
+      # The dep-0 fetcher is node-builtins-only, which keeps this job's
+      # no-install property intact. It pulls the bundle anonymously from the
+      # public GHCR artifact, so no token is needed and none is minted.
+      - name: Detect thin fleet payload
+        id: detect-hydration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f scripts/fleet/setup/external-tools.json ] \
+            && [ -f scripts/repo/bootstrap/fleet.mjs ]; then
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Hydrate thin fleet payload
+        if: steps.detect-hydration.outputs.needed == 'true'
+        shell: bash
+        run: node scripts/repo/bootstrap/fleet.mjs
       # Deliberately NO setup-and-install: reconcile-gap.mts is dependency-free
       # by design (node builtins only) so the cron's common no-gap path runs on
       # the runner's preinstalled Node — modern runner images strip .mts types
