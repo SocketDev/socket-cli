@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
     dynamicSbomInference: {
       type: 'boolean',
       description:
-        'Recursively scans for every gradle/sbt/maven build root beneath CWD first, so the CWD config step only asks about ecosystems actually found somewhere in the tree. A build root matching --exclude-paths is bulk-disabled with no prompt, applied unconditionally; eligible build roots found afterward can be configured individually',
+        'Generates dynamic SBOMs via the Gradle/sbt/Maven package manager tools for more accurate results than static resolution. Scans every build root under CWD first, so the configurator only asks about ecosystems actually found; --exclude-paths matches are bulk-disabled, others configured individually.',
     },
   },
   help: (command, config) => `

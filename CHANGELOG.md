@@ -7,8 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- `socket scan create --reach --dynamic-sbom-inference` splits full application reachability analysis by project and subproject/module/workspace for Gradle, sbt, and Maven monorepos, instead of coarsely analyzing everything together as one synthetic root. It recursively discovers every independent build root and generates a Socket facts SBOM for each. This applies to reachability analysis only: the scan's own dependency detection is unaffected, and other ecosystems are unaffected too.
-- `socket manifest setup --dynamic-sbom-inference` extends the interactive `socket.json` configurator to walk every independent Gradle, sbt, and Maven build root in your project, so each can be configured individually.
+- `socket scan create --reach --dynamic-sbom-inference` splits full application reachability analysis per project/module for Gradle, sbt, and Maven monorepos, using a Socket facts SBOM generated directly by each package manager for every build root, instead of one synthetic root.
+- `socket manifest setup --dynamic-sbom-inference` extends the interactive `socket.json` configurator to walk every independent Gradle, sbt, and Maven build root in your project.
 - `socket manifest dynamic-sbom-inference`: generate a Socket facts SBOM for every independent Gradle, sbt, and Maven build root directly, without creating a scan.
 
 ### Changed
