@@ -7,13 +7,13 @@ packages:
   - '.claude/hooks/fleet/*'
   - '.claude/hooks/repo/*'
 
-# Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
+# Native post-install build scripts. These three arrive transitively via
+# @redwoodjs/agent-ci's `ssh2` (optional crypto acceleration). agent-ci's
+# published CLI (`dist/cli.js`) runs without them — verified `agent-ci --help`
+# works with the builds skipped — so we decline to run their post-install
+# scripts. Declining is the safe default; running native build scripts from a
+# transitive dep is unnecessary attack surface here.
 allowBuilds:
-  # sdk 4.0.3 ships a `preinstall` bootstrap script in the published tarball;
-  # it is repo-setup tooling and is unneeded when consumed as a dep.
-  '@socketsecurity/sdk': false
-  # @swc/core native binding — vitiate's coverage-guided fuzz lane.
-  '@swc/core': true
   # Optional native addon for ssh2 crypto acceleration; JS fallback is fine.
   cpu-features: false
   # Ships prebuilt dist; its postinstall codegen isn't needed as a dependency.
@@ -25,8 +25,20 @@ allowBuilds:
   puppeteer: false
   # Native bindings are optional (cpu-features above); pure-JS paths suffice.
   ssh2: false
+  # sdk 4.0.3 ships a `preinstall` bootstrap script in the published tarball;
+  # it is repo-setup tooling and is unneeded when consumed as a dep.
+  '@socketsecurity/sdk': false
+  # @swc/core native binding — vitiate's coverage-guided fuzz lane.
+  '@swc/core': true
   rolldown: true
   postject: false
+
+# pnpm 11's packageManager-version-check failure policy. `warn` lets the
+# install proceed with a mismatched pnpm (emitting a warning) rather than
+# hard-failing. `error` is the default when the field is absent — socket-lib
+# had `error` while the wheelhouse lacked the field, which blocked commits
+# under a dev pnpm that differed from the `packageManager` pin. `warn` keeps
+# the pin informational without blocking CI or local dev.
 pmOnFail: warn
 
 catalogDriftIgnore:
@@ -43,7 +55,6 @@ catalog:
   # platform-binary optionalDependencies, despite the monorepo's internal
   # workspace layout. dtu-github-actions is its GitHub-Actions parser, pinned
   # explicitly (not left transitive) so its version is uniform fleet-wide.
-  '@anthropic-ai/claude-code': 2.1.220
   '@redwoodjs/agent-ci': 0.17.1
   '@ultrathink/acorn.rs.wasm': 0.1.1
   'brace-expansion': 5.0.9
@@ -81,12 +92,6 @@ catalog:
   '@types/semver': 7.7.1
   '@types/shell-quote': 1.7.5
   'compromise': 14.16.0
-  # comptime 0.1.0 — Zig-inspired build-time evaluation for Rolldown/Vite.
-  # Wraps comptime(() => expr) calls; the Rolldown plugin evaluates them at
-  # build time and replaces the call site with the serialized literal result.
-  # Use in rolldown.config.mts for any repo with a Rolldown build.
-  # published: 2026-05-07 (26 days, past 7-day soak)
-  'comptime': 0.1.0
   # fast-check — property-based testing for pure fleet-script logic (pin
   # derivation, version compare, config validation). Runs standalone in vitest.
   # published: 2026-07-08 (past 7-day soak). See .claude/skills/fleet/property-testing.
@@ -141,11 +146,8 @@ catalog:
   # @rolldown/binding-* + @oxc-project/types stay as soak-excluded
   # transitives (consumers depend on `rolldown` only).
   'regjsparser': 0.13.2
-  'rolldown': 1.2.3
-  'rolldown-plugin-dts': 0.28.0
   'semver': 7.8.5
   'shell-quote': 1.10.0
-  'svgo': 4.0.2
   'taze': 19.17.1
   # vite 8.0.16 swaps esbuild → rolldown natively (bundles rolldown
   # 1.0.2) and patches the <=8.0.15 advisories (GHSA-fx2h-pf6j-xcff
@@ -153,10 +155,7 @@ catalog:
   # override below pins every transitive `vite` (vitest, @vitest/*,
   # plugin authors) to it.
   'typescript': 7.0.2
-  'vite': 8.2.0
-  'vitiate': 0.3.1
   'vitest': 4.1.10
-  '@vitiate/core': 0.3.1
   '@vitest/coverage-v8': 4.1.10
   c8: 12.0.0
   'chrome-devtools-mcp': 1.6.0
@@ -164,6 +163,25 @@ catalog:
   # init script (see .config/fleet/playwright/).
   '@playwright/mcp': 0.0.78
   '@vitest/ui': 4.1.10
+  # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
+  # change can be validated before it's pushed (see the `agent-ci` skill).
+  # The published package is a self-contained Node CLI (`dist/cli.js`) — no
+  # platform-binary optionalDependencies, despite the monorepo's internal
+  # workspace layout. dtu-github-actions is its GitHub-Actions parser, pinned
+  # explicitly (not left transitive) so its version is uniform fleet-wide.
+  '@anthropic-ai/claude-code': 2.1.220
+  # comptime 0.1.0 — Zig-inspired build-time evaluation for Rolldown/Vite.
+  # Wraps comptime(() => expr) calls; the Rolldown plugin evaluates them at
+  # build time and replaces the call site with the serialized literal result.
+  # Use in rolldown.config.mts for any repo with a Rolldown build.
+  # published: 2026-05-07 (26 days, past 7-day soak)
+  'comptime': 0.1.0
+  'rolldown': 1.2.3
+  'rolldown-plugin-dts': 0.28.0
+  'svgo': 4.0.2
+  'vite': 8.2.0
+  'vitiate': 0.3.1
+  '@vitiate/core': 0.3.1
 
   # pnpm `overrides` block — two purposes:
   #
@@ -311,7 +329,10 @@ ignoredOptionalDependencies:
 # install shows up as churn across every manifest that links a sibling.
 saveWorkspaceProtocol: rolling
 
-# Wait 7 days (10080 minutes) before installing newly published packages.
+# Soak time for external-tools updates: minutes a release must have
+# existed before scripts/fleet/external-tools/update.mts will consider it
+# (mirrors pnpm's `minimumReleaseAge` for npm catalog entries). 10080
+# minutes = 7 days. Same value fleet repos use.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   # published: 2026-08-03 | removable: 2026-08-10
@@ -505,6 +526,14 @@ minimumReleaseAgeExclude:
   - 'oxlint@1.77.0'
   # published: 2026-08-05 | removable: 2026-08-12
   - 'rolldown@1.2.3'
+
+# Refuse transitive (sub-) deps declared via git/tarball/local-tarball
+# specs. Direct git deps in this repo are still allowed; this only
+# affects what nested dependencies are permitted. Defends against a
+# package listing a git URL in its own dependencies — a supply-chain
+# vector that bypasses npm registry validation. pnpm's current
+# default is `false`; declared explicitly so a future default flip
+# can't silently widen the trust boundary.
 blockExoticSubdeps: true
 
 # Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
@@ -517,6 +546,14 @@ blockExoticSubdeps: true
 peerDependencyRules:
   allowedVersions:
     'type-coverage-core>typescript': '6 || 7'
+
+# Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
+# runs pnpm non-interactively everywhere (skills, scripts, hooks, agents, CI) —
+# no TTY. pnpm's default ABORTS a purge for lack of a TTY
+# (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY), wedging any commit whose
+# pre-commit re-checks deps after a workspace/.npmrc change. Purging
+# node_modules is safe (gitignored + regenerable). Unlike CI=true this does NOT
+# force a frozen lockfile; CI keeps owning frozen-vs-update policy.
 confirmModulesPurge: false
 
 # Opt out of pnpm's packageManager-version self-check. CI installs pnpm from
@@ -527,10 +564,22 @@ confirmModulesPurge: false
 # the moment the runner's pnpm differs from the pin.
 managePackageManagerVersions: false
 
-# Soak time for external-tools updates: minutes a release must have
-# existed before scripts/fleet/external-tools/update.mts will consider it
-# (mirrors pnpm's `minimumReleaseAge` for npm catalog entries). 10080
-# minutes = 7 days. Same value fleet repos use.
+# pnpm `overrides` block — two purposes:
+#
+# 1. Force every transitive `vite` resolution to the catalog'd 8.0.13.
+#    Vitest 4.1.6 advertises support for `vite: ^6.0.0 || ^7.0.0 || ^8.0.0`,
+#    so the bump is compatible. The override is what actually removes
+#    esbuild from the install tree — without it, vitest would still
+#    resolve vite ^6.x.
+#
+# 2. Force every consumer of Socket's own packages to resolve through
+#    the catalog-pinned published versions. The `catalog:` form rewrites
+#    `workspace:*`, `^x.y.z`, and bare-version specs alike to the version
+#    in the default `catalog:` block above. This is the safety property
+#    that prevents accidental local-checkout resolution when a sibling
+#    repo is on disk: even if a downstream package declares
+#    `"@socketsecurity/lib": "workspace:*"`, pnpm rewrites it to the
+#    pinned npm version instead of a sibling working tree.
 overrides:
   # Fleet-canonical overrides (managed by socket-wheelhouse sync; do not edit).
   '@sinclair/typebox': 'catalog:'
