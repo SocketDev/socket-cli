@@ -1350,6 +1350,16 @@ importers:
         specifier: 'catalog:'
         version: 26.1.2
 
+  .claude/hooks/fleet/corrupt-rebase-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
   .claude/hooks/fleet/cross-repo-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -1804,6 +1814,16 @@ importers:
         version: 26.1.2
 
   .claude/hooks/fleet/no-disable-lint-rule-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
+  .claude/hooks/fleet/no-duplicate-pr-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -2851,6 +2871,16 @@ importers:
         specifier: 'catalog:'
         version: 26.1.2
 
+  .claude/hooks/fleet/stop-means-commit-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
   .claude/hooks/fleet/sweep-ds-store:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -2929,6 +2959,16 @@ importers:
         version: 26.1.2
 
   .claude/hooks/fleet/uncodified-lesson-nudge:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
+  .claude/hooks/fleet/uncommitted-sweep-nudge:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -3086,6 +3126,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/inclusive-language: {}
 
+  .config/fleet/oxlint-plugin/fleet/lint-disable-precedes-code: {}
+
   .config/fleet/oxlint-plugin/fleet/max-comment-block-lines: {}
 
   .config/fleet/oxlint-plugin/fleet/max-file-lines: {}
@@ -3160,6 +3202,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-promise-race-in-loop: {}
 
+  .config/fleet/oxlint-plugin/fleet/no-redundant-spread-fallback: {}
+
   .config/fleet/oxlint-plugin/fleet/no-required-in-options-bag: {}
 
   .config/fleet/oxlint-plugin/fleet/no-runtime-features-below-engine-floor: {}
@@ -3181,6 +3225,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/no-sync-rm-in-test-lifecycle: {}
 
   .config/fleet/oxlint-plugin/fleet/no-top-level-await: {}
+
+  .config/fleet/oxlint-plugin/fleet/no-truncated-lint-disable-reason: {}
 
   .config/fleet/oxlint-plugin/fleet/no-underscore-identifier: {}
 
@@ -3246,6 +3292,8 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/prefer-pure-call-form: {}
 
+  .config/fleet/oxlint-plugin/fleet/prefer-replace-function: {}
+
   .config/fleet/oxlint-plugin/fleet/prefer-repo-root-dot-cache: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-safe-delete: {}
@@ -3293,6 +3341,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/sort-set-args: {}
 
   .config/fleet/oxlint-plugin/fleet/sort-source-methods: {}
+
+  .config/fleet/oxlint-plugin/fleet/terse-lint-disable-reason: {}
 
   .config/fleet/oxlint-plugin/fleet/use-fleet-canonical-api-token-getter: {}
 

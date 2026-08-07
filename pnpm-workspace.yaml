@@ -529,12 +529,10 @@ confirmModulesPurge: false
 # the moment the runner's pnpm differs from the pin.
 managePackageManagerVersions: false
 
-# pnpm 11's packageManager-version-check failure policy. `warn` lets the
-# install proceed with a mismatched pnpm (emitting a warning) rather than
-# hard-failing. `error` is the default when the field is absent — socket-lib
-# had `error` while the wheelhouse lacked the field, which blocked commits
-# under a dev pnpm that differed from the `packageManager` pin. `warn` keeps
-# the pin informational without blocking CI or local dev.
+# Soak time for external-tools updates: minutes a release must have
+# existed before scripts/fleet/external-tools/update.mts will consider it
+# (mirrors pnpm's `minimumReleaseAge` for npm catalog entries). 10080
+# minutes = 7 days. Same value fleet repos use.
 overrides:
   # Fleet-canonical overrides (managed by socket-wheelhouse sync; do not edit).
   '@sinclair/typebox': 'catalog:'
