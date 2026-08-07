@@ -80,7 +80,9 @@
     "hide-comments": "node scripts/fleet/hide-comments.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
     "soak:bypass": "node scripts/fleet/soak-bypass.mts",
-    "npm:trust": "node scripts/fleet/publish-infra/npm/trust.mts"
+    "npm:trust": "node scripts/fleet/publish-infra/npm/trust.mts",
+    "sync-fleet": "node scripts/repo/bootstrap/fleet.mjs",
+    "fleet:status": "node scripts/repo/bootstrap/fleet.mjs --status"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
