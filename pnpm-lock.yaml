@@ -290,8 +290,8 @@ catalogs:
       specifier: 0.17.1
       version: 0.17.1
     '@shadscan/cli':
-      specifier: 0.7.0
-      version: 0.7.0
+      specifier: 0.8.0
+      version: 0.8.0
     '@socketregistry/hyrious__bun.lockb':
       specifier: 1.0.19
       version: 1.0.19
@@ -446,8 +446,8 @@ catalogs:
       specifier: 0.3.0
       version: 0.3.0
     nock:
-      specifier: 14.0.16
-      version: 14.0.16
+      specifier: 14.0.17
+      version: 14.0.17
     npm-high-impact:
       specifier: 1.13.0
       version: 1.13.0
@@ -470,11 +470,11 @@ catalogs:
       specifier: 8.0.1
       version: 8.0.1
     playwright-core:
-      specifier: 1.62.0
-      version: 1.62.0
+      specifier: 1.62.1
+      version: 1.62.1
     portless:
-      specifier: 0.15.4
-      version: 0.15.4
+      specifier: 0.15.5
+      version: 0.15.5
     postject:
       specifier: 1.0.0-alpha.6
       version: 1.0.0-alpha.6
@@ -525,8 +525,8 @@ overrides:
   '@sinclair/typebox': 0.34.52
   '@socketregistry/packageurl-js': 1.5.2
   '@socketsecurity/lib': 6.7.0
-  '@socketsecurity/registry': npm:@socketsecurity/registry@2.0.5
-  '@socketsecurity/sdk': npm:@socketsecurity/sdk@4.1.3
+  '@socketsecurity/registry': 2.0.5
+  '@socketsecurity/sdk': 4.1.4
   brace-expansion@>=4: 5.0.9
   chalk@>=5: 5.6.2
   es-define-property: npm:@socketregistry/es-define-property@1.0.7
@@ -561,6 +561,26 @@ overrides:
   which: 7.0.0
   wrap-ansi@>=8: 9.0.2
   yaml@2: 2.9.0
+  '@grpc/proto-loader': 0.8.1
+  '@polka/url': 1.0.0-next.29
+  '@types/unist@2': 3.0.3
+  ansi-regex: 6.2.2
+  color-convert: 2.0.1
+  commander: 11.1.0
+  content-type: 2.0.0
+  css-tree: 3.2.1
+  is-interactive: npm:@socketregistry/is-interactive@1.0.6
+  is-unicode-supported: npm:@socketregistry/is-unicode-supported@1.0.5
+  json-stable-stringify: npm:@socketregistry/json-stable-stringify@1.0.14
+  markdown-it: 14.3.0
+  picomatch: 4.0.5
+  protobufjs: 7.6.5
+  rolldown: 1.2.3
+  sharp: 0.35.3
+  string-width: 8.2.2
+  strip-ansi: 7.2.0
+  vite: 8.2.0
+  which@>=4: 7.0.0
   '@octokit/graphql': 9.0.3
   '@octokit/request-error': 7.1.0
   '@sigstore/core': 3.2.1
@@ -570,9 +590,8 @@ overrides:
   '@socketregistry/packageurl-js-stable': npm:@socketregistry/packageurl-js@1.5.2
   '@socketsecurity/lib-stable': npm:@socketsecurity/lib@6.7.0
   '@socketsecurity/registry-stable': npm:@socketsecurity/registry@2.0.5
-  '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.1.3
+  '@socketsecurity/sdk-stable': npm:@socketsecurity/sdk@4.1.4
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
-  ansi-regex: 6.2.2
   ast-v8-to-istanbul: 1.0.5
   brace-expansion: 5.0.9
   defu: '>=6.1.7'
@@ -596,21 +615,16 @@ overrides:
   path-parse: npm:@socketregistry/path-parse@^1.0.8
   postcss: '>=8.5.23'
   qs: '>=6.15.3'
-  rolldown: 1.2.3
   semver: 7.8.5
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
   shell-quote: 1.10.0
   signal-exit: 4.1.0
   sigstore: 4.1.1
-  string-width: 8.2.2
   string_decoder: 0.10.31
-  strip-ansi: 7.2.0
   tar: '>=7.5.22'
   tiny-colors: 2.2.2
   typedarray: npm:@socketregistry/typedarray@^1.0.8
   undici: 6.28.0
-  vite: 8.2.0
-  which@>=4: 7.0.0
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.9.0
@@ -702,7 +716,7 @@ importers:
         version: 0.17.1(supports-color@7.2.0)
       '@shadscan/cli':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.8.0
       '@sinclair/typebox':
         specifier: 0.34.52
         version: 0.34.52
@@ -731,17 +745,17 @@ importers:
         specifier: npm:@socketsecurity/lib@6.7.0
         version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
       '@socketsecurity/registry':
-        specifier: npm:@socketsecurity/registry@2.0.5
+        specifier: 2.0.5
         version: 2.0.5(typescript@7.0.2)
       '@socketsecurity/registry-stable':
         specifier: npm:@socketsecurity/registry@2.0.5
         version: '@socketsecurity/registry@2.0.5(typescript@7.0.2)'
       '@socketsecurity/sdk':
-        specifier: npm:@socketsecurity/sdk@4.1.3
-        version: 4.1.3
+        specifier: 4.1.4
+        version: 4.1.4
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.1.3
-        version: '@socketsecurity/sdk@4.1.3'
+        specifier: npm:@socketsecurity/sdk@4.1.4
+        version: '@socketsecurity/sdk@4.1.4'
       '@types/cmd-shim':
         specifier: 'catalog:'
         version: 5.0.2
@@ -870,7 +884,7 @@ importers:
         version: 0.3.0(parse5@8.0.1)
       nock:
         specifier: 'catalog:'
-        version: 14.0.16
+        version: 14.0.17
       npm-high-impact:
         specifier: 'catalog:'
         version: 1.13.0
@@ -900,10 +914,10 @@ importers:
         version: 8.0.1
       playwright-core:
         specifier: 'catalog:'
-        version: 1.62.0
+        version: 1.62.1
       portless:
         specifier: 'catalog:'
-        version: 0.15.4
+        version: 0.15.5
       postject:
         specifier: 'catalog:'
         version: 1.0.0-alpha.6
@@ -1171,8 +1185,8 @@ importers:
         specifier: npm:@socketsecurity/lib@6.7.0
         version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.1.3
-        version: '@socketsecurity/sdk@4.1.3'
+        specifier: npm:@socketsecurity/sdk@4.1.4
+        version: '@socketsecurity/sdk@4.1.4'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1303,6 +1317,19 @@ importers:
         version: 26.1.2
 
   .claude/hooks/fleet/compound-lessons-nudge:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
+  .claude/hooks/fleet/concurrent-cargo-build-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
+      shell-quote:
+        specifier: 1.10.0
+        version: 1.10.0
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -1819,6 +1846,16 @@ importers:
         version: 26.1.2
 
   .claude/hooks/fleet/no-fleet-fork-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.1.2
+
+  .claude/hooks/fleet/no-fleet-pr-to-main-guard:
     dependencies:
       '@socketsecurity/lib-stable':
         specifier: npm:@socketsecurity/lib@6.7.0
@@ -3346,17 +3383,17 @@ importers:
         specifier: npm:@socketsecurity/lib@6.7.0
         version: '@socketsecurity/lib@6.7.0(typescript@7.0.2)'
       '@socketsecurity/registry':
-        specifier: npm:@socketsecurity/registry@2.0.5
+        specifier: 2.0.5
         version: 2.0.5(typescript@7.0.2)
       '@socketsecurity/registry-stable':
         specifier: npm:@socketsecurity/registry@2.0.5
         version: '@socketsecurity/registry@2.0.5(typescript@7.0.2)'
       '@socketsecurity/sdk':
-        specifier: npm:@socketsecurity/sdk@4.1.3
-        version: 4.1.3
+        specifier: 4.1.4
+        version: 4.1.4
       '@socketsecurity/sdk-stable':
-        specifier: npm:@socketsecurity/sdk@4.1.3
-        version: '@socketsecurity/sdk@4.1.3'
+        specifier: npm:@socketsecurity/sdk@4.1.4
+        version: '@socketsecurity/sdk@4.1.4'
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.8
@@ -3932,11 +3969,6 @@ packages:
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
     engines: {node: '>=12.10.0'}
-
-  '@grpc/proto-loader@0.7.15':
-    resolution: {integrity: sha512-tMXdRCfYVixjuFK+Hk0Q1s38gV9zDiDJfWL3h1rv4Qc39oILCu1TRTDt7+fGUI8K4G1Fj125Hx/ru3azECWTyQ==}
-    engines: {node: '>=6'}
-    hasBin: true
 
   '@grpc/proto-loader@0.8.1':
     resolution: {integrity: sha512-wtF6h+DY6M3YaDBPAmvuuA6jV8Sif9MjtOI5euKFWRgCDl5PeDpPsHR9u2l6St5ceY8AZgoNDww5+HvEsXFsGg==}
@@ -4563,9 +4595,6 @@ packages:
     resolution: {integrity: sha512-EZ3aWU7ThppE3Xgq7/ftxq8J/nit6z8I2/wZbC/acea2Zw7KJ1k/fLkGBgyyVAE37CULFsOSmPl3EjYM18cB2Q==}
     engines: {node: '>=22.13'}
 
-  '@polka/url@0.5.0':
-    resolution: {integrity: sha512-oZLYFEAzUKyi3SKnXvj32ZCEGH6RDnao7COuCVhDydMS9NrCSVXhM79VaKyP5+Zc33m0QXEd2DN3UkU7OsHcfw==}
-
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
@@ -4700,8 +4729,8 @@ packages:
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
-  '@shadscan/cli@0.7.0':
-    resolution: {integrity: sha512-zcm+UW6BRcPxzbgJIkRyQM0q38y0aoxlp/WPvVld8jxpBEHvRIU9bn81MOvq/OHCjkyRHTFwP7Tl1xYhbjqfTA==}
+  '@shadscan/cli@0.8.0':
+    resolution: {integrity: sha512-5yyuSJp5EBCCgQYtiRFeHsGrkwrzJViKVvZlo5gpy28LmALPyxY0A2nBKcRicPoiFgkRnoGYYQGkg8dlJxc3Rw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4777,6 +4806,10 @@ packages:
     resolution: {integrity: sha512-KbKE6j98nf+cZum6lAO5ubP/Sid5tbbl3S7XYb8VFu3RaHy9I1uIZ/dcM932xYk3+TQuoXgV3pzqAM2ekqA1tA==}
     engines: {node: '>=18'}
 
+  '@socketregistry/is-unicode-supported@1.0.5':
+    resolution: {integrity: sha512-l3wz0cknjyGlI2iCyZxp50FJhtUFXkdZR6CfUU7OfNxE7I4CRBdsvORLgV+JPwqQQErRO/CZgKsbDHefd3puYA==}
+    engines: {node: '>=18'}
+
   '@socketregistry/packageurl-js@1.5.2':
     resolution: {integrity: sha512-j8plTfIjXEU8u2q4clv9njGqHFXQz0Ad4lscj2em3QcQlaWD/UHaQeYgyKlAiM6PowkEWMXFhVD7cgm1BzX6Sg==}
     engines: {node: '>=24', npm: '>=12.0.1', pnpm: '>=11.0.5'}
@@ -4816,8 +4849,8 @@ packages:
       typescript:
         optional: true
 
-  '@socketsecurity/sdk@4.1.3':
-    resolution: {integrity: sha512-iaUkTWdBvUt5SMkfdhIOdt66sxZ0TakW/Ni533YbuHJpe1qQN3gq7KHCjEqEQUeL4o6YRsJ2G/XoUrwrXx+jvQ==}
+  '@socketsecurity/sdk@4.1.4':
+    resolution: {integrity: sha512-1VU+nhQXhK5ttH5N7ehVHfk+eSyHXX/BaqDV6RVwAtyWarcYlcSdJq+SMV5ykBo08DRdF6W1ZoG0DesgjovmPQ==}
     engines: {node: '>=24', npm: '>=12.0.1', pnpm: '>=11.0.5'}
 
   '@standard-schema/spec@1.1.0':
@@ -5020,9 +5053,6 @@ packages:
 
   '@types/ssri@7.1.5':
     resolution: {integrity: sha512-odD/56S3B51liILSk5aXJlnYt99S6Rt9EFDDqGtJM26rKHApHcwyU/UoYHrzKkdkHMAIquGWCuHtQTbes+FRQw==}
-
-  '@types/unist@2.0.11':
-    resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
@@ -5636,15 +5666,9 @@ packages:
     resolution: {integrity: sha512-Jk/BK6NCapZ58BKUxlSI+ouKRbjH1NLZCgJkYoab+vEHUY3f6OzpNBN9u7HFSv9J6TRDGs4PLOHezoKGaFRSCA==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  color-convert@1.9.3:
-    resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
-
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
     engines: {node: '>=7.0.0'}
-
-  color-name@1.1.3:
-    resolution: {integrity: sha512-72fSenhMw2HZMTVHeCA9KCmpEIbzWiQsjN+BHcBbS9vr1mtt+vJjPdksIBNUmKAW8TFUDPJK5SUU3QhE9NEXDw==}
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
@@ -5659,22 +5683,6 @@ packages:
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
-
-  commander@13.1.0:
-    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
-    engines: {node: '>=18'}
-
-  commander@14.0.3:
-    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
-    engines: {node: '>=20'}
-
-  commander@8.3.0:
-    resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
-    engines: {node: '>= 12'}
-
-  commander@9.5.0:
-    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
-    engines: {node: ^12.20.0 || >=14}
 
   common-ancestor-path@2.0.0:
     resolution: {integrity: sha512-dnN3ibLeoRf2HNC+OlCiNc5d2zxbLJXOtiZUudNFSXZrNSydxcCsSpRzXwfu7BBWCIfHPw+xTayeBvJCP/D8Ng==}
@@ -5720,10 +5728,6 @@ packages:
 
   css-select@5.2.2:
     resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
-
-  css-tree@2.2.1:
-    resolution: {integrity: sha512-OA0mILzGc1kCOCSJerOeqDxDQ4HOh+G8NbOJFOTgOCzpw7fCBubk0fEyxp8AgOL/jvLgYA/uV0cMbe43ElF1JA==}
-    engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
   css-tree@3.2.1:
     resolution: {integrity: sha512-X7sjQzceUhu1u7Y/ylrRZFU2FS6LRiFVp6rKLPg23y3x3c3DOKAwuXGDp+PAGjh6CSnCjYeAul8pcT8bAl+lSA==}
@@ -5959,7 +5963,7 @@ packages:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
-      picomatch: ^3 || ^4
+      picomatch: 4.0.5
     peerDependenciesMeta:
       picomatch:
         optional: true
@@ -6213,10 +6217,6 @@ packages:
 
   is-stream@4.0.1:
     resolution: {integrity: sha512-Dnz92NInDqYckGEUJv689RbRiTSEHCQ7wOVeALbkOz999YpqT46yMRIGtSNl2iCL1waAZSx40+h59NV/EwzV/A==}
-    engines: {node: '>=18'}
-
-  is-unicode-supported@2.1.0:
-    resolution: {integrity: sha512-mE00Gnza5EEB3Ds0HfMyllZzbBrmLOX3vfWoj9A9PEnTfratQ/BcaJOuMhnkhjXvb2+FkY3VuHqtAGpTPmglFQ==}
     engines: {node: '>=18'}
 
   is-wsl@3.1.1:
@@ -6515,9 +6515,6 @@ packages:
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
 
-  mdn-data@2.0.28:
-    resolution: {integrity: sha512-aylIc7Z9y4yzHYAJNuESG3hfhC+0Ibp/MAMiaOZgNv4pmEdFyfZhhhny4MNiAfWdBQ1RQ2mfDWmM1x8SvGyp8g==}
-
   mdn-data@2.27.1:
     resolution: {integrity: sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==}
 
@@ -6755,8 +6752,8 @@ packages:
       parse5:
         optional: true
 
-  nock@14.0.16:
-    resolution: {integrity: sha512-8r4KEc6nT1D/fdLD/R1BO1CPaVEL8o40u/guFRJlXabN7vr3RmMqyjsY5Krt0nMwhsOAwXQ/mtN5vy5Jh3aErg==}
+  nock@14.0.17:
+    resolution: {integrity: sha512-EjRr1weMa4ALQX35AgZTEnP+weJJjlW1KGDiNM2IQC2069YDHas4f4B4UUYR+TTLyKWxJvOz2wObDKQs/LNreA==}
     engines: {node: '>=18.20.0 <20 || >=20.12.1'}
 
   node-domexception@1.0.0:
@@ -6979,10 +6976,6 @@ packages:
     resolution: {integrity: sha512-0ypsOQt9D4e3hziV8O4elD9uN0z/jtUEfxVRtNaAAtXIyUx9m/SzlO020i8YNL2aL/E6blOvvHQcin6HZlFy/w==}
     engines: {node: '>=8.6'}
 
-  picomatch@2.3.2:
-    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
-    engines: {node: '>=8.6'}
-
   picomatch@4.0.5:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
@@ -7011,13 +7004,13 @@ packages:
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
-  playwright-core@1.62.0:
-    resolution: {integrity: sha512-nsNRyq0r2zsG8AcRHWknc9QRA5XCueC7gWMrs+Gx2tlZn9hcl8zudfh00lhJPY1DE7NmZ6bDsT9g2yey8mXljA==}
+  playwright-core@1.62.0-alpha-1783623505000:
+    resolution: {integrity: sha512-CPJZdsA/KGT2QQlekiV6Wt+QlQrZHVSZ6oiNtOI/bYYOIVLM8jfKGWTM4zQiyd4UN+40Cq4cA6lxmZHZbtPvJQ==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright-core@1.62.0-alpha-1783623505000:
-    resolution: {integrity: sha512-CPJZdsA/KGT2QQlekiV6Wt+QlQrZHVSZ6oiNtOI/bYYOIVLM8jfKGWTM4zQiyd4UN+40Cq4cA6lxmZHZbtPvJQ==}
+  playwright-core@1.62.1:
+    resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -7032,8 +7025,8 @@ packages:
   polka@0.5.2:
     resolution: {integrity: sha512-FVg3vDmCqP80tOrs+OeNlgXYmFppTXdjD5E7I4ET1NjvtNmQrb1/mJibybKkb/d4NA7YWAr1ojxuhpL3FHqdlw==}
 
-  portless@0.15.4:
-    resolution: {integrity: sha512-tOxEsdlDGuPHO6DPkuK3c3mMV5ctXEgVFm53Sa8nfZ2RsRGTq4By424C6z5+JWfNbd3ktR5SOd1FJBOlB1Woqg==}
+  portless@0.15.5:
+    resolution: {integrity: sha512-zmJu4Q8/fY54oVUT/5NnmF4Ih8wTdCvCf6JCN783dRYl9mXkJBzXSckX2lztGCLIbM70varDjCudAbGKT73XPg==}
     engines: {node: '>=24'}
     os: [darwin, linux, win32]
     hasBin: true
@@ -8266,13 +8259,6 @@ snapshots:
       '@grpc/proto-loader': 0.8.1
       '@js-sdsl/ordered-map': 4.4.2
 
-  '@grpc/proto-loader@0.7.15':
-    dependencies:
-      lodash.camelcase: 4.3.0
-      long: 5.3.2
-      protobufjs: 7.6.5
-      yargs: 17.7.3
-
   '@grpc/proto-loader@0.8.1':
     dependencies:
       lodash.camelcase: 4.3.0
@@ -8872,8 +8858,6 @@ snapshots:
 
   '@pnpm/util.lex-comparator@4.0.1': {}
 
-  '@polka/url@0.5.0': {}
-
   '@polka/url@1.0.0-next.29': {}
 
   '@protobufjs/aspromise@1.1.2': {}
@@ -8956,7 +8940,7 @@ snapshots:
 
   '@sec-ant/readable-stream@0.4.1': {}
 
-  '@shadscan/cli@0.7.0':
+  '@shadscan/cli@0.8.0':
     dependencies:
       cross-spawn: 7.0.6
       jsonc-parser: 3.3.1
@@ -9026,6 +9010,8 @@ snapshots:
 
   '@socketregistry/is-interactive@1.0.6': {}
 
+  '@socketregistry/is-unicode-supported@1.0.5': {}
+
   '@socketregistry/packageurl-js@1.5.2': {}
 
   '@socketregistry/path-parse@1.0.8': {}
@@ -9046,7 +9032,7 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
-  '@socketsecurity/sdk@4.1.3': {}
+  '@socketsecurity/sdk@4.1.4': {}
 
   '@standard-schema/spec@1.1.0': {}
 
@@ -9227,8 +9213,6 @@ snapshots:
   '@types/ssri@7.1.5':
     dependencies:
       '@types/node': 26.1.2
-
-  '@types/unist@2.0.11': {}
 
   '@types/unist@3.0.3': {}
 
@@ -9488,7 +9472,7 @@ snapshots:
 
   ansi-styles@3.2.1:
     dependencies:
-      color-convert: 1.9.3
+      color-convert: 2.0.1
 
   ansi-styles@4.3.0:
     dependencies:
@@ -9762,15 +9746,9 @@ snapshots:
 
   cmd-shim@8.0.0: {}
 
-  color-convert@1.9.3:
-    dependencies:
-      color-name: 1.1.3
-
   color-convert@2.0.1:
     dependencies:
       color-name: 1.1.4
-
-  color-name@1.1.3: {}
 
   color-name@1.1.4: {}
 
@@ -9781,14 +9759,6 @@ snapshots:
       delayed-stream: 1.0.0
 
   commander@11.1.0: {}
-
-  commander@13.1.0: {}
-
-  commander@14.0.3: {}
-
-  commander@8.3.0: {}
-
-  commander@9.5.0: {}
 
   common-ancestor-path@2.0.0: {}
 
@@ -9837,11 +9807,6 @@ snapshots:
       domutils: 3.2.2
       nth-check: 2.1.1
 
-  css-tree@2.2.1:
-    dependencies:
-      mdn-data: 2.0.28
-      source-map-js: 1.2.1
-
   css-tree@3.2.1:
     dependencies:
       mdn-data: 2.27.1
@@ -9853,7 +9818,7 @@ snapshots:
 
   csso@5.0.5:
     dependencies:
-      css-tree: 2.2.1
+      css-tree: 3.2.1
 
   debug@4.4.3(supports-color@7.2.0):
     dependencies:
@@ -9932,7 +9897,7 @@ snapshots:
     dependencies:
       '@balena/dockerignore': 1.0.2
       '@grpc/grpc-js': 1.14.4
-      '@grpc/proto-loader': 0.7.15
+      '@grpc/proto-loader': 0.8.1
       docker-modem: 5.0.7(supports-color@7.2.0)
       protobufjs: 7.6.5
       tar-fs: 2.1.5
@@ -9970,7 +9935,7 @@ snapshots:
     dependencies:
       '@anthropic-ai/sdk': 0.39.0
       chalk: 5.6.2
-      commander: 13.1.0
+      commander: 11.1.0
       glob: 13.0.6
       yaml: 2.9.0
       zod: 3.25.76
@@ -10109,7 +10074,7 @@ snapshots:
 
   figures@6.1.0:
     dependencies:
-      is-unicode-supported: 2.1.0
+      is-unicode-supported: '@socketregistry/is-unicode-supported@1.0.5'
 
   fill-range@7.1.1:
     dependencies:
@@ -10332,8 +10297,6 @@ snapshots:
 
   is-stream@4.0.1: {}
 
-  is-unicode-supported@2.1.0: {}
-
   is-wsl@3.1.1:
     dependencies:
       is-inside-container: 1.0.0
@@ -10393,7 +10356,7 @@ snapshots:
 
   katex@0.16.47:
     dependencies:
-      commander: 8.3.0
+      commander: 11.1.0
 
   kind-of@6.0.3: {}
 
@@ -10454,7 +10417,7 @@ snapshots:
 
   lint-staged@16.4.0:
     dependencies:
-      commander: 14.0.3
+      commander: 11.1.0
       listr2: 9.0.5
       picomatch: 4.0.5
       string-argv: 0.3.2
@@ -10702,8 +10665,6 @@ snapshots:
     dependencies:
       '@types/mdast': 4.0.4
 
-  mdn-data@2.0.28: {}
-
   mdn-data@2.27.1: {}
 
   mdurl@2.0.0: {}
@@ -10945,7 +10906,7 @@ snapshots:
   micromatch@4.0.8:
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.2
+      picomatch: 4.0.5
 
   mime-db@1.54.0: {}
 
@@ -11051,7 +11012,7 @@ snapshots:
     optionalDependencies:
       parse5: 8.0.1
 
-  nock@14.0.16:
+  nock@14.0.17:
     dependencies:
       '@mswjs/interceptors': 0.41.9
       json-stringify-safe: 5.0.1
@@ -11293,7 +11254,7 @@ snapshots:
 
   parse-entities@4.0.2:
     dependencies:
-      '@types/unist': 2.0.11
+      '@types/unist': 3.0.3
       character-entities-legacy: 3.0.0
       character-reference-invalid: 2.0.1
       decode-named-character-reference: 1.3.0
@@ -11333,8 +11294,6 @@ snapshots:
 
   picomatch-browser@2.2.6: {}
 
-  picomatch@2.3.2: {}
-
   picomatch@4.0.5: {}
 
   pidtree@1.0.0: {}
@@ -11355,9 +11314,9 @@ snapshots:
       mlly: 1.8.2
       pathe: 2.0.3
 
-  playwright-core@1.62.0: {}
-
   playwright-core@1.62.0-alpha-1783623505000: {}
+
+  playwright-core@1.62.1: {}
 
   playwright@1.62.0-alpha-1783623505000:
     dependencies:
@@ -11371,10 +11330,10 @@ snapshots:
 
   polka@0.5.2:
     dependencies:
-      '@polka/url': 0.5.0
+      '@polka/url': 1.0.0-next.29
       trouter: 2.0.1
 
-  portless@0.15.4: {}
+  portless@0.15.5: {}
 
   postcss-selector-parser@7.1.4:
     dependencies:
@@ -11389,7 +11348,7 @@ snapshots:
 
   postject@1.0.0-alpha.6:
     dependencies:
-      commander: 9.5.0
+      commander: 11.1.0
 
   powershell-utils@0.1.0: {}
 

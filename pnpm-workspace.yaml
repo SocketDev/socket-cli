@@ -9,20 +9,24 @@ packages:
 
 # Packages allowed to run build scripts (pnpm v11 strictDepBuilds default).
 allowBuilds:
-  # @swc/core native binding — vitiate's coverage-guided fuzz lane
-  # (packages/cli/scripts/repo/fuzz.mts) SWC-instruments src for coverage.
+  # sdk 4.0.3 ships a `preinstall` bootstrap script in the published tarball;
+  # it is repo-setup tooling and is unneeded when consumed as a dep.
+  '@socketsecurity/sdk': false
+  # @swc/core native binding — vitiate's coverage-guided fuzz lane.
   '@swc/core': true
+  # Optional native addon for ssh2 crypto acceleration; JS fallback is fine.
   cpu-features: false
+  # Ships prebuilt dist; its postinstall codegen isn't needed as a dependency.
   protobufjs: false
+  # Fleet browser automation is playwright-core (page + extension-popup PNG) and
+  # chrome-devtools-mcp; puppeteer itself is unused. Kept as a guard — no dep
+  # pulls puppeteer today, but if a transitive ever does, its Chrome-download
+  # postinstall stays declined (playwright-core already supplies the browser).
   puppeteer: false
+  # Native bindings are optional (cpu-features above); pure-JS paths suffice.
+  ssh2: false
   rolldown: true
   postject: false
-  ssh2: false
-
-# Refuse to run if the pnpm version on PATH differs from the packageManager
-# field in package.json. Our setup action pins pnpm via external-tools.json;
-# any drift should fail fast, not silently auto-download via @pnpm/exe
-# (which in rc.5 leaves a placeholder launcher that errors at runtime).
 pmOnFail: warn
 
 catalogDriftIgnore:
@@ -33,7 +37,150 @@ catalogDriftIgnore:
   - 'typescript'
 
 catalog:
+  # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
+  # change can be validated before it's pushed (see the `agent-ci` skill).
+  # The published package is a self-contained Node CLI (`dist/cli.js`) — no
+  # platform-binary optionalDependencies, despite the monorepo's internal
+  # workspace layout. dtu-github-actions is its GitHub-Actions parser, pinned
+  # explicitly (not left transitive) so its version is uniform fleet-wide.
   '@anthropic-ai/claude-code': 2.1.220
+  '@redwoodjs/agent-ci': 0.17.1
+  '@ultrathink/acorn.rs.wasm': 0.1.1
+  'brace-expansion': 5.0.9
+  'dtu-github-actions': 0.17.1
+  # shadscan — shadcn UI audit CLI for the design skills (missing UI
+  # fundamentals report). Exact-pinned; the whole package is younger than
+  # the soak window, so it carries a minimumReleaseAgeExclude entry below.
+  '@shadscan/cli': 0.8.0
+  '@sinclair/typebox': 0.34.52
+  # typebox 1.x — the unscoped rewrite of @sinclair/typebox. Both names are
+  # pinned while the fleet migrates; the 0.x entry is deleted once no member
+  # imports the scoped name. 1.3.10 is inside the 7-day soak, so it carries a
+  # dated minimumReleaseAgeExclude entry above.
+  'typebox': 1.3.10
+  '@socketregistry/packageurl-js': 1.5.2
+  # -stable aliases: pnpm `overrides:` can't redirect a package's own
+  # name when used INSIDE that same package — Node ESM treats it as a
+  # self-reference and resolves through the local exports map, not
+  # the override. The 4 Socket-published packages therefore need a
+  # SECOND name (`<canonical>-stable`) aliased via `npm:` to the
+  # published version. Build / hook / script / config code uses the
+  # -stable name so it always resolves to the published catalog
+  # version regardless of where the importing file lives. src/ +
+  # test/ code uses the canonical name because vitest aliases that
+  # to local src/.
+  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
+  '@socketsecurity/lib': 6.7.0
+  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.7.0'
+  '@socketsecurity/registry': 2.0.5
+  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
+  '@socketsecurity/sdk': 4.1.4
+  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.4'
+  '@types/mdast': 4.0.4
+  '@types/node': 26.1.2
+  '@types/semver': 7.7.1
+  '@types/shell-quote': 1.7.5
+  'compromise': 14.16.0
+  # comptime 0.1.0 — Zig-inspired build-time evaluation for Rolldown/Vite.
+  # Wraps comptime(() => expr) calls; the Rolldown plugin evaluates them at
+  # build time and replaces the call site with the serialized literal result.
+  # Use in rolldown.config.mts for any repo with a Rolldown build.
+  # published: 2026-05-07 (26 days, past 7-day soak)
+  'comptime': 0.1.0
+  # fast-check — property-based testing for pure fleet-script logic (pin
+  # derivation, version compare, config validation). Runs standalone in vitest.
+  # published: 2026-07-08 (past 7-day soak). See .claude/skills/fleet/property-testing.
+  'fast-check': 4.9.0
+  'magic-string': 1.1.0
+  'markdownlint-cli2': 0.23.2
+  'mdast-util-from-markdown': 2.0.3
+  # GFM pair for render-faithful markdown parsing (tables, footnotes,
+  # strikethrough, autolinks) — mdast-util-from-markdown must always be
+  # combined with micromark-extension-gfm + mdast-util-gfm.
+  'mdast-util-gfm': 3.1.0
+  # The serializer half, for tools that legitimately EMIT markdown; edits to
+  # existing documents stay position-based (never a whole-doc round-trip).
+  'mdast-util-to-markdown': 2.1.2
+  'micromark': 4.0.2
+  'micromark-extension-gfm': 3.0.0
+  'minimatch': 10.2.6
+  'neosanitize': 0.3.0
+  # nock — HTTP mocking for tests (disableNetConnect() + stubs). Pinned back
+  # from the @mswjs/interceptors rewrite: npm deprecates 15.0.0 ("released
+  # accidentally"), so the catalog-drift automation skips it and this pin is
+  # hand-aligned with the canonical fleet catalog; bump to the stabilized 15.x
+  # when it ships.
+  'nock': 14.0.17
+  # npm-high-impact 1.13.0 — wooorm's high-impact npm package lists
+  # (npmHighImpact + npmTopDependents + npmTopDownloads); the ecosystem-reach
+  # input for scripts/fleet/measure-ecosystem-impact.mts, which ranks override
+  # candidates before simulating what a port actually cuts. Published
+  # 2026-06-08, past the 7-day soak.
+  'npm-high-impact': 1.13.0
+  'oxfmt': 0.62.0
+  'oxlint': 1.77.0
+  'oxlint-tsgolint': 7.0.2001
+  # parse5 — the HTML parser half of the markdown story. mdast hands raw HTML
+  # back as an opaque `html` node (README `<picture>`/`<img>` blocks), so
+  # attribute-level edits need parse5's per-attribute source locations to land
+  # on a real attribute value instead of a string match. Paired with the mdast
+  # + micromark GFM entries above; see lib/markdown-ast.mts.
+  'parse5': 8.0.1
+  # playwright-core — headless Chromium driver for the seeing-rendered-output
+  # skill (render a page / unpacked MV3 extension popup to PNG). Fleet-canonical
+  # catalog dep; source of truth is template/pnpm-workspace.fleet.yaml.
+  'playwright-core': 1.62.1
+  # portless — stable HTTPS `.localhost` URLs for local page tests and rendered UI checks.
+  'portless': 0.15.5
+  # Direct bundler pin for repos that run rolldown as their build
+  # (socket-packageurl-js, socket-webext, the trusted-publisher
+  # extension, and the in-progress esbuild→rolldown migrations).
+  # Single-sourcing the version here stops the per-repo drift
+  # (was 1.0.0 / 1.0.1 / 1.0.2 across adopters). Matches the
+  # vite-bundled rolldown (8.0.14 → 1.0.2); the per-platform
+  # @rolldown/binding-* + @oxc-project/types stay as soak-excluded
+  # transitives (consumers depend on `rolldown` only).
+  'regjsparser': 0.13.2
+  'rolldown': 1.2.3
+  'rolldown-plugin-dts': 0.28.0
+  'semver': 7.8.5
+  'shell-quote': 1.10.0
+  'svgo': 4.0.2
+  'taze': 19.17.1
+  # vite 8.0.16 swaps esbuild → rolldown natively (bundles rolldown
+  # 1.0.2) and patches the <=8.0.15 advisories (GHSA-fx2h-pf6j-xcff
+  # high, GHSA-v6wh-96g9-6wx3 medium). Tracked here so the pnpm
+  # override below pins every transitive `vite` (vitest, @vitest/*,
+  # plugin authors) to it.
+  'typescript': 7.0.2
+  'vite': 8.2.0
+  'vitiate': 0.3.1
+  'vitest': 4.1.10
+  '@vitiate/core': 0.3.1
+  '@vitest/coverage-v8': 4.1.10
+  c8: 12.0.0
+  'chrome-devtools-mcp': 1.6.0
+  # Playwright MCP server — agent-driven browsing with the fleet agent-banner
+  # init script (see .config/fleet/playwright/).
+  '@playwright/mcp': 0.0.78
+  '@vitest/ui': 4.1.10
+
+  # pnpm `overrides` block — two purposes:
+  #
+  # 1. Force every transitive `vite` resolution to the catalog'd 8.0.13.
+  #    Vitest 4.1.6 advertises support for `vite: ^6.0.0 || ^7.0.0 || ^8.0.0`,
+  #    so the bump is compatible. The override is what actually removes
+  #    esbuild from the install tree — without it, vitest would still
+  #    resolve vite ^6.x.
+  #
+  # 2. Force every consumer of Socket's own packages to resolve through
+  #    the catalog-pinned published versions. The `catalog:` form rewrites
+  #    `workspace:*`, `^x.y.z`, and bare-version specs alike to the version
+  #    in the default `catalog:` block above. This is the safety property
+  #    that prevents accidental local-checkout resolution when a sibling
+  #    repo is on disk: even if a downstream package declares
+  #    `"@socketsecurity/lib": "workspace:*"`, pnpm rewrites it to the
+  #    pinned npm version instead of a sibling working tree.
   '@babel/core': 7.29.7
   '@babel/generator': 7.29.7
   '@babel/parser': 7.29.7
@@ -58,75 +205,42 @@ catalog:
   '@octokit/request-error': 7.1.0
   '@octokit/rest': 22.0.1
   '@octokit/types': 14.1.0
-  '@playwright/mcp': 0.0.78
   '@pnpm/dependency-path': 1001.1.10
   '@pnpm/lockfile.detect-dep-types': 1100.0.16
   '@pnpm/lockfile.fs': 1100.1.14
   '@pnpm/logger': 1100.0.0
-  '@redwoodjs/agent-ci': 0.17.1
   '@sentry/node': 8.55.2
-  '@shadscan/cli': 0.7.0
-  '@sinclair/typebox': 0.34.52
   '@socketregistry/hyrious__bun.lockb': 1.0.19
   '@socketregistry/indent-string': 1.0.14
   '@socketregistry/is-interactive': 1.0.6
-  '@socketregistry/packageurl-js': 1.5.2
-  '@socketsecurity/lib': 6.7.0
-  '@types/shell-quote': 1.7.5
-  '@ultrathink/acorn.rs.wasm': 0.1.1
-  # -stable aliases: pnpm `overrides:` can't redirect a package's own
-  # name from inside the same package — Node ESM resolves it as a
-  # self-reference. The 4 Socket-published packages each need a
-  # SECOND name (`<canonical>-stable`) so build/script/hook/config
-  # code resolves to the published catalog version regardless of where
-  # the importing file lives. See socket-wheelhouse@92cd3e3 for the
-  # full rationale.
-  '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
   '@socketregistry/yocto-spinner': 1.0.25
-  '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@6.7.0'
-  '@socketsecurity/registry': 'npm:@socketsecurity/registry@2.0.5'
-  '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
-  '@socketsecurity/sdk': 'npm:@socketsecurity/sdk@4.1.3'
-  '@socketsecurity/sdk-stable': 'npm:@socketsecurity/sdk@4.1.3'
   '@types/adm-zip': 0.5.8
   '@types/cmd-shim': 5.0.2
   '@types/js-yaml': 4.0.9
-  '@types/mdast': 4.0.4
   '@types/micromatch': 4.0.10
   '@types/mock-fs': 4.13.4
-  '@types/node': 26.1.2
   '@types/npm-package-arg': 6.1.4
   '@types/npmcli__arborist': 6.3.3
   '@types/npmcli__config': 6.0.4
   '@types/proc-log': 3.0.4
   '@types/react': 19.2.17
-  '@types/semver': 7.7.1
   '@types/which': 3.0.4
   '@types/yargs-parser': 21.0.3
   '@typescript/native-preview': 7.0.0-dev.20260510.1
-  '@vitiate/core': 0.3.1
-  '@vitest/coverage-v8': 4.1.10
-  '@vitest/ui': 4.1.10
   '@yarnpkg/parsers': 3.0.3
   adm-zip: 0.5.18
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.15
   ajv-dist: 8.17.1
   ansi-regex: 6.2.2
-  brace-expansion: 5.0.9
   browserslist: 4.28.7
-  'c8': 12.0.0
   chalk-table: 1.0.2
-  'chrome-devtools-mcp': 1.6.0
   cmd-shim: 7.0.0
-  compromise: 14.16.0
   del-cli: 6.0.0
   dev-null-cli: 2.0.0
-  'dtu-github-actions': 0.17.1
   ecc-agentshield: 1.4.0
   emoji-regex: 10.6.0
   es-define-property: npm:@socketregistry/es-define-property@^1.0.7
   es-set-tostringtag: npm:@socketregistry/es-set-tostringtag@^1.0.10
-  'fast-check': 4.9.0
   fast-glob: 3.3.3
   fast-xml-parser: 5.10.1
   function-bind: npm:@socketregistry/function-bind@^1.0.7
@@ -148,67 +262,35 @@ catalog:
   js-yaml: npm:@zkochan/js-yaml@0.0.10
   lint-staged: 16.4.0
   lodash: 4.18.1
-  magic-string: 1.1.0
-  'markdownlint-cli2': 0.23.2
-  'mdast-util-from-markdown': 2.0.3
-  'mdast-util-gfm': 3.1.0
-  'mdast-util-to-markdown': 2.1.2
-  'micromark': 4.0.2
-  'micromark-extension-gfm': 3.0.0
   micromatch: 4.0.8
-  'minimatch': 10.2.6
   mock-fs: 5.5.0
   nanotar: 0.2.1
-  'neosanitize': 0.3.0
-  nock: 14.0.16
-  'npm-high-impact': 1.13.0
   npm-package-arg: 13.0.2
   npm-run-all2: 9.0.2
   octokit: 5.0.5
   onnxruntime-web: 1.27.0
   open: 10.2.0
-  oxfmt: 0.62.0
-  oxlint: 1.77.0
-  'oxlint-tsgolint': 7.0.2001
   packageurl-js: npm:@socketregistry/packageurl-js@^1.5.0
-  'parse5': 8.0.1
   path-parse: npm:@socketregistry/path-parse@^1.0.8
-  'playwright-core': 1.62.0
-  'portless': 0.15.4
   postject: 1.0.0-alpha.6
   react: 19.2.8
   react-reconciler: 0.33.0
-  # Fleet bundler (replaces esbuild) for the CLI bundle. Fleet-latest,
-  # single-sourced; the override forces vite's bundled rolldown to match.
-  'regjsparser': 0.13.2
-  rolldown: 1.2.3
   safe-buffer: npm:@socketregistry/safe-buffer@^1.0.9
   safer-buffer: npm:@socketregistry/safer-buffer@^1.0.10
-  semver: 7.8.5
   set-function-length: npm:@socketregistry/set-function-length@^1.0.10
-  shell-quote: 1.10.0
   side-channel: npm:@socketregistry/side-channel@^1.0.10
   ssri: 12.0.0
   string-width: 8.2.2
   string_decoder: 0.10.31
   strip-ansi: 7.2.0
-  'svgo': 4.0.2
   tar-stream: 3.2.0
-  taze: 19.17.1
   terminal-link: 2.1.1
   tiny-colors: 2.2.2
   trash: 10.1.1
   type-coverage: 2.30.1
-  'typebox': 1.3.10
   typedarray: npm:@socketregistry/typedarray@^1.0.8
-  typescript: 7.0.2
   undici: 6.28.0
   unplugin-purge-polyfills: 0.1.0
-  # vite 8.0.14 swaps esbuild → rolldown natively; the override forces its
-  # bundled rolldown up to the catalog's 1.0.3.
-  vite: 8.2.0
-  vitiate: 0.3.1
-  vitest: 4.1.10
   wrap-ansi: 9.0.2
   xml2js: 0.6.2
   yaml: 2.9.0
@@ -232,32 +314,87 @@ saveWorkspaceProtocol: rolling
 # Wait 7 days (10080 minutes) before installing newly published packages.
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
-  # @pnpm/lockfile.detect-dep-types@latest (1100.0.16) + its 1100.x/1101.x
-  # transitive tree; all published 2026-07-23, soak naturally by 2026-07-30.
-  # @pnpm/lockfile.fs@1100.1.14 + its 1100.x transitive tree (off the
-  # provenance-less 1001.1.35 trust-downgrade); all published 2026-07-23,
-  # soak naturally by 2026-07-30.
+  # published: 2026-08-03 | removable: 2026-08-10
+  - '@oxc-project/types@0.143.0'
+  # published: 2026-08-01 | removable: 2026-08-08
+  - 'tinyexec@1.3.0'
+  # Socket-owned scopes — bypass the soak window because they ship
+  # through Socket's own provenance + publish pipeline. Canonical
+  # list: scripts/constants/socket-scopes.mts SOCKET_PACKAGE_PATTERNS.
+  # Mirrored in `.config/taze.config.mts` (same scopes, same reason)
+  # and consumed by scripts/fleet/external-tools/update.mts via
+  # isSocketSourcedPackage / isSocketSourcedRepository.
+  - '@socketoverride/*'
   - '@socketregistry/*'
   - '@socketsecurity/*'
   - 'sfw'
+  - 'socket'
+  # pnpm and the other external tools are NOT listed here. Their soak bypass
+  # lives inline in scripts/fleet/setup/external-tools.json as a per-tool
+  # `soakBypass` block carrying `published` + `removable` dates, which
+  # `soak-exclude-scope-guard` requires (this list is Socket-owned scopes only)
+  # and which auto-disarms on the `removable` date instead of lingering here.
+  # Agent-CI 0.17.1 gives each job private writable node_modules and shares
+  # completed pnpm/Yarn/Bun dependency trees through atomic lockfile-keyed
+  # snapshots. dtu-github-actions is its matching workflow-parser package.
+  # Both are dev-only local-CI tools and must stay on the same exact version.
+  # playwright-core@1.55.1 — headless Chromium driver for the
+  # rendering-chromium-to-png skill. Well-known Microsoft package, dev-only
+  # (renders PNGs an agent can read; no runtime/ship surface). Long past soak;
+  # listed for cascade parity. Exact-pinned so a future minor re-soaks.
+  # compromise@14.15.1 is the attested re-publish that clears the
+  # trust-downgrade flag on 14.15.0. The catalog bump to 14.15.1 + the
+  # removed `trustPolicyExclude: compromise@14.15.0` need a matching
+  # lockfile entry, and 14.15.1 published today so the resolution needs
+  # a soak bypass. Scoped to the exact tag so a future 14.15.2 still
+  # goes through the normal soak time.
+  # vite 8.0.14 ships rolldown 1.0.2 natively (no esbuild transitive).
+  # Excluded from the 7-day soak so we can pull the rolldown-based
+  # build now — the fleet rule "bundler = rolldown, not esbuild"
+  # trumps the soak heuristic for this one pinned version. Scoped to
   - '@stuie/*'
   - '@ultrathink/*'
-  - '@socketoverride/*'
-  - 'socket'
+  # @yuku-parser 0.5.31 — third-party native parser; the per-platform binding
+  # family pinned to the exact version (a scope glob would blanket-bypass any
+  # future @yuku-parser publish). Published within the 7-day soak.
+  # oxfmt 0.55.0 — the formatter; bumped from 0.48.0 for its jsdoc fixes.
+  # The main package + per-platform binding family are pinned to the exact
+  # version (a scope glob would blanket-bypass any future @oxfmt publish). All
+  # published within the 7-day soak; exact-pinned so a future 0.56 re-soaks.
+  # oxlint 1.75.0 — the linter; catalog-pinned at 1.75.0. The main package + its
+  # per-platform binding family are soak-excluded because oxlint is a
+  # known-publisher (oxc) tool and the fleet MIGRATES + SUPPORTS its plugin API
+  # (the socket/* rules are kept current with oxlint's plugin surface), so a
+  # fresh oxlint is adopted immediately rather than pinned back. The soak targets
+  # npm freshpub typosquats, not a first-party oxc release.
   - '@sdxgen/*'
   - 'sdxgen'
-  # The fleet-cascaded .npmrc already excludes verkit; mirrored here because
-  # pnpm v11 reads excludes from this file.
+  # vite 8.1.0 — dev dep (vitest's bundler). 8.1 adds experimental.bundledDev
+  # (NOT adopted — experimental, and the fleet runs stable-only). Published
+  # within the 7-day soak; exact-pinned so a future 8.1.1 still soaks.
+  # taze 19.16.0 — the dep updater itself; forced ahead of the soak by owner
+  # directive so the regenerated single-registry patch (patchedDependencies)
+  # tracks the current release. Exact-pinned so a future version re-soaks.
+  # shadscan 0.2.0 — deterministic UI audits for shadcn apps, used by the
+  # design skills; forced ahead of the soak by owner directive. Exact-pinned
+  # so a future version re-soaks.
+  # verkit — new dev-only transitive of taze 19.16.0 (same owner directive);
+  # exact-pinned so future versions re-soak.
+  # js-yaml 5.2.2 — HIGH security fix, GHSA-pm4m-ph32-ghv5: exponential parse
+  # time in flow collections. The canonical overrides entry forces it past
+  # markdownlint-cli2 0.23.1's vulnerable 5.2.1 exact-pin. Soak bypassed per
+  # the high-severity security exception; exact-pinned so a future version
+  # re-soaks.
+  # yuku 0.8.0 — the transitive napi tree behind rolldown-plugin-dts
+  # 0.27.14 (same owner directive as its entry above: build-only dts
+  # emitter, never shipped to runtime). Core packages + both per-platform
+  # binding families, exact-pinned so future versions re-soak.
   # published: 2026-08-04 | removable: 2026-08-11
   - '@socketsecurity/lib@6.5.3'
-  # published: 2026-07-30 | removable: 2026-08-06
-  - 'brace-expansion@5.0.9'
   # published: 2026-08-03 | removable: 2026-08-10
   - 'taze@19.17.1'
-  # published: 2026-08-01 | removable: 2026-08-08
-  - 'tinyexec@1.3.0'
-  # published: 2026-08-03 | removable: 2026-08-10
-  - '@oxc-project/types@0.143.0'
+  # published: 2026-08-02 | removable: 2026-08-09
+  - 'typebox@1.3.10'
   # published: 2026-08-03 | removable: 2026-08-10
   - '@oxfmt/binding-android-arm-eabi@0.62.0'
   # published: 2026-08-03 | removable: 2026-08-10
@@ -368,34 +505,36 @@ minimumReleaseAgeExclude:
   - 'oxlint@1.77.0'
   # published: 2026-08-05 | removable: 2026-08-12
   - 'rolldown@1.2.3'
-  # published: 2026-08-02 | removable: 2026-08-09
-  - 'typebox@1.3.10'
-
-# Refuse transitive dependencies declared via git/tarball/local-tarball
-# specs — an npm package shouldn't be allowed to drag in a git URL we
-# don't control (bypasses npm registry validation, no provenance, no
-# soak window). Direct git deps are still allowed (the test suite at
-# pnpm/pkg-manager/core/test/install/blockExoticSubdeps.ts confirms
-# this). pnpm's current default is `false`; declared explicitly so a
-# future flip can't silently change install behavior.
+  # published: 2026-07-30 | removable: 2026-08-06
+  - 'brace-expansion@5.0.9'
 blockExoticSubdeps: true
 
-# type-coverage-core 2.29.7 declares a typescript peer through 5. The catalog
-# already resolves typescript 7 for the private tools/type-coverage workspace
-# (the lockfile has carried 7.0.2 since the catalog bump; only a fresh
-# resolution re-checks peers), so allow 6 and 7 to keep re-resolution green.
+# Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
+# runs pnpm non-interactively everywhere (skills, scripts, hooks, agents, CI) —
+# no TTY. pnpm's default ABORTS a purge for lack of a TTY
+# (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY), wedging any commit whose
+# pre-commit re-checks deps after a workspace/.npmrc change. Purging
+# node_modules is safe (gitignored + regenerable). Unlike CI=true this does NOT
+# force a frozen lockfile; CI keeps owning frozen-vs-update policy.
 peerDependencyRules:
   allowedVersions:
     'type-coverage-core>typescript': '6 || 7'
 confirmModulesPurge: false
+
+# Opt out of pnpm's packageManager-version self-check. CI installs pnpm from
+# its native bin via the shared setup workflow, not corepack, so the runner's
+# pnpm legitimately differs from the `packageManager` pin (which is
+# informational, not a version to enforce). Without this, pnpm hard-fails
+# ("This project is configured to use <pin> ... your current pnpm is <run>")
+# the moment the runner's pnpm differs from the pin.
 managePackageManagerVersions: false
 
-# Dependency overrides (migrated from package.json pnpm.overrides).
-# Force every consumer of Socket's own packages to resolve through the
-# catalog-pinned published versions. The `catalog:` form rewrites
-# `workspace:*`, `^x.y.z`, and bare-version specs alike to the version
-# in the default `catalog:` block above. This defeats accidental
-# local-checkout resolution when a sibling repo is on disk.
+# pnpm 11's packageManager-version-check failure policy. `warn` lets the
+# install proceed with a mismatched pnpm (emitting a warning) rather than
+# hard-failing. `error` is the default when the field is absent — socket-lib
+# had `error` while the wheelhouse lacked the field, which blocked commits
+# under a dev pnpm that differed from the `packageManager` pin. `warn` keeps
+# the pin informational without blocking CI or local dev.
 overrides:
   # Fleet-canonical overrides (managed by socket-wheelhouse sync; do not edit).
   '@sinclair/typebox': 'catalog:'
@@ -439,6 +578,84 @@ overrides:
   'yaml@2': '2.9.0'
 
   # Repo-specific overrides below.
+  # Dedup: @grpc/proto-loader 0.7 (dockerode direct) vs 0.8 (via @grpc/grpc-js,
+  # also a dockerode dep). The 0.7->0.8 diff only touches an internal
+  # `createMessageDefinition` helper signature; the public `loadSync`/`load`
+  # API dockerode's session.js calls is unchanged. Collapse unscoped to 0.8.1.
+  '@grpc/proto-loader': '0.8.1'
+  # Dedup compat shim: @polka/url 0.5 (polka, via dtu-github-actions) vs
+  # 1.0.0-next (sirv). See the patchedDependencies comment for the API break
+  # + the shim that restores it.
+  '@polka/url': '1.0.0-next.29'
+  # Dedup: @types/unist is types-only (no runtime), pulled transitively by the
+  # markdown tooling at both v2 and v3. Collapse v2→v3 — a types-only major is
+  # not type-checked transitively (skipLibCheck), so the redirect is safe and
+  # drops one duplicate from the dev tree.
+  '@types/unist@2': '3.0.3'
+  # Dedup compat shim: ansi-regex 5 (CJS yargs@17 cluster) vs 6 (ESM,
+  # markdownlint). See the patchedDependencies comment for the shim.
+  'ansi-regex': '6.2.2'
+  # Dedup: color-convert 0.5.3 is a declared-but-unused dependency of
+  # css-color-converter@2.0.0 (badge-maker) — its lib/index.js never
+  # `require`s color-convert at all, so the 0.5.3 resolution is dead weight.
+  # Collapse unscoped to color-convert 2.0.1 (already present via
+  # ansi-styles -> wrap-ansi -> cliui -> yargs).
+  'color-convert': '2.0.1'
+  # Dedup: commander 8 (katex's cli.js, via micromark-extension-math ->
+  # markdownlint) vs 11 (svgo). katex's cli.js only uses `.version()`,
+  # `.option()`, `.parse()`, `.opts()` — stable across commander 8-11.
+  # Verified: program.parse(['-i','in.tex']).opts() returns {input:'in.tex'}
+  # under commander@11.1.0. Collapse unscoped to 11.1.0.
+  'commander': '11.1.0'
+  # Dedup compat shim: content-type 1 (body-parser direct) vs 2 (via type-is,
+  # also a body-parser dep). See the patchedDependencies comment for the API
+  # break + the shim that restores it.
+  'content-type': '2.0.0'
+  # Dedup: css-tree 2.2.1 (csso, pinned ~2.2.0, via svgo) vs 3.2.1 (svgo
+  # direct). css-tree 3's changelog lists deep AST-shape breaks (Block/Ratio/
+  # MediaFeature node shape, List.getSize()->size), but none touch the
+  # surface csso actually exercises: functionally verified csso.minify()
+  # (restructure on/off, !important merging, shorthand collapse, @supports,
+  # @font-face/unicode-range, duplicate url() backgrounds) and a full
+  # svgo.optimize() pass (preset-default, inlineStyles + minifyStyles) both
+  # forced onto css-tree@3.2.1 and produced correct output. Collapse unscoped
+  # to 3.2.1.
+  'css-tree': '3.2.1'
+  'is-interactive': 'npm:@socketregistry/is-interactive@1.0.6'
+  'is-unicode-supported': 'npm:@socketregistry/is-unicode-supported@1.0.5'
+  'json-stable-stringify': 'npm:@socketregistry/json-stable-stringify@1.0.14'
+  # Dependabot transitive-advisory pin (soaked, semver-compatible).
+  'markdown-it': '14.3.0'
+  # Dedup: picomatch 2 (micromatch, via fast-glob -> globby ->
+  # markdownlint-cli2) vs 4 (fdir/tinyglobby, via vite/vitest). micromatch's
+  # `picomatch(glob, options, returnState)` call and its
+  # `require('picomatch/lib/utils')` surface (isObject, isWindows,
+  # toPosixSlashes) are unchanged; the one behavior diff (utils.isWindows()
+  # no longer reads an options override) is never hit — neither fast-glob nor
+  # globby ever pass a `windows` option. Collapse unscoped to 4.0.4.
+  'picomatch': '4.0.5'
+  'protobufjs': '7.6.5'
+  'rolldown': 'catalog:'
+  # sharp 0.35.0 dropped its install script (source compile is opt-in); pin the
+  # logo generator's sharp to 0.35.3 so it stays on a no-build-script line — its
+  # prebuilt @img/sharp-* binaries cover the rasterize + animated-GIF encode.
+  'sharp': '0.35.3'
+  'string-width': '8.2.2'
+  # Dedup compat shim: strip-ansi 6 (CJS yargs@17 cluster) vs 7 (ESM,
+  # via string-width@8 -> markdownlint). See the patchedDependencies comment
+  # for the shim.
+  'strip-ansi': '7.2.0'
+  'vite': 'catalog:'
+  'which@>=4': '7.0.0'
+
+  # Native post-install build scripts. These three arrive transitively via
+  # @redwoodjs/agent-ci's `ssh2` (optional crypto acceleration). agent-ci's
+  # published CLI (`dist/cli.js`) runs without them — verified `agent-ci --help`
+  # works with the builds skipped — so we decline to run their post-install
+  # scripts. Declining is the safe default; running native build scripts from a
+  # transitive dep is unnecessary attack surface here.
+
+  # Repo-specific overrides below.
   '@octokit/graphql': 'catalog:'
   '@octokit/request-error': 'catalog:'
   '@sigstore/core': '3.2.1'
@@ -456,7 +673,6 @@ overrides:
   '@socketsecurity/registry-stable': 'catalog:'
   '@socketsecurity/sdk-stable': 'catalog:'
   'aggregate-error': 'catalog:'
-  'ansi-regex': 'catalog:'
   # The previous transitive 1.0.2 release failed the trust policy; 1.0.4 has
   # cleared the seven-day soak and restores the normal no-downgrade gate.
   'ast-v8-to-istanbul': '1.0.5'
@@ -486,22 +702,16 @@ overrides:
   'path-parse': 'catalog:'
   'postcss': '>=8.5.23'
   'qs': '>=6.15.3'
-  # Force vite's bundled rolldown (1.0.2) up to the catalog's 1.0.3.
-  'rolldown': 'catalog:'
   'semver': 'catalog:'
   'set-function-length': 'catalog:'
   'shell-quote': 'catalog:'
   'signal-exit': '4.1.0'
   'sigstore': '4.1.1'
-  'string-width': 'catalog:'
   'string_decoder': 'catalog:'
-  'strip-ansi': 'catalog:'
   'tar': '>=7.5.22'
   'tiny-colors': 'catalog:'
   'typedarray': 'catalog:'
   'undici': 'catalog:'
-  'vite': 'catalog:'
-  'which@>=4': '7.0.0'
   'wrap-ansi': 'catalog:'
   'xml2js': 'catalog:'
   'yaml': 'catalog:'
@@ -579,6 +789,14 @@ patchedDependencies:
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade
+
+# Refuse transitive (sub-) deps declared via git/tarball/local-tarball
+# specs. Direct git deps in this repo are still allowed; this only
+# affects what nested dependencies are permitted. Defends against a
+# package listing a git URL in its own dependencies — a supply-chain
+# vector that bypasses npm registry validation. pnpm's current
+# default is `false`; declared explicitly so a future default flip
+# can't silently widen the trust boundary.
 trustPolicyExclude:
   # Transitive dep of @vitest/coverage-v8@4.1.6. Same maintainer
   # (ariperkkio) + same repo + provenance attestation as earlier
