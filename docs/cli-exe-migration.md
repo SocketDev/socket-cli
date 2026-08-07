@@ -158,12 +158,12 @@ first wrapper release.
 - The fleet-mirrored publish surfaces - `scripts/fleet/util/source-allowlist.mts`,
   `scripts/fleet/util/multi-package-publish.mts`, `.github/workflows/npm-publish.yml`
   - are cascade-owned. The `@socketsecurity` scope-union + dot-terminated
-  name-prefix support must land at the wheelhouse template and ride a bundle
-  refresh; local edits get reverted. Verified 2026-07-24: bundle v1.0.11 does
-  NOT carry it - the template still restricts `SourceAllowlistTargetScope` to
-  `@socketaddon | @socketbin` and `namePrefix` to hyphen-terminated. Not a
-  Phase 1 blocker, since the tails publish through the in-repo
-  npm-publish-cli-exe surface, not the cross-org stager.
+    name-prefix support must land at the wheelhouse template and ride a bundle
+    refresh; local edits get reverted. Verified 2026-07-24: bundle v1.0.11 does
+    NOT carry it - the template still restricts `SourceAllowlistTargetScope` to
+    `@socketaddon | @socketbin` and `namePrefix` to hyphen-terminated. Not a
+    Phase 1 blocker, since the tails publish through the in-repo
+    npm-publish-cli-exe surface, not the cross-org stager.
 - The frozen `node-win-*.exe` base assets are minimal stub launchers binject
   cannot inject into - exit 252, `Cannot inject into uncompressed stub
 binary` - so the win32-arm64/win32-x64 tails cannot build from this base.

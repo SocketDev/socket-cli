@@ -1,4 +1,7 @@
 {
+  "ai": {
+    "localAssist": true
+  },
   "$schema": "./socket-wheelhouse-schema.json",
   "schemaVersion": 1,
   "repoName": "socket-cli",
@@ -8,10 +11,6 @@
   },
   "repo": {
     "type": "mono"
-  },
-  "bundle": {
-    "ref": "fleet-pack-cb1dd209d91f98077a1ba8a971d17d2f0d82ae3f",
-    "cascadeSha": "cb1dd209d91f98077a1ba8a971d17d2f0d82ae3f"
   },
   "build": {
     "from": "npm-registry",
