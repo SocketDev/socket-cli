@@ -11,7 +11,7 @@ import path from 'node:path'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { transformUnicodePropertyEscapes } from 'build-infra/lib/unicode-property-escape-transform'
+import { transformUnicodePropertyEscapes } from 'socket-cli-packages-build-infra/lib/unicode-property-escape-transform'
 
 import { EnvironmentVariables } from './environment-variables.mts'
 

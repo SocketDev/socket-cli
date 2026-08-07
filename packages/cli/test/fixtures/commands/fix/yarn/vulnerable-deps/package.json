@@ -1,6 +1,6 @@
 {
-  "name": "vulnerable-deps-test-yarn",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-fix-yarn-vulnerable-deps",
+  "version": "0.0.0",
   "private": true,
   "description": "Test fixture with vulnerable dependencies (yarn)",
   "main": "index.js",

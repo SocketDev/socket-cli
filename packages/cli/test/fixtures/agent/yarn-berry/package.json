@@ -1,6 +1,6 @@
 {
-  "name": "yarn-berry-fixture",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-agent-yarn-berry",
+  "version": "0.0.0",
   "private": true,
   "dependencies": {
     "@yarnpkg/cli": "4.10.3"

@@ -1,6 +1,6 @@
 {
-  "name": "cdxgen-test-fixture",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-cdxgen-npm",
+  "version": "0.0.0",
   "private": true,
   "description": "Test fixture for cdxgen command testing",
   "main": "index.js",

@@ -1,6 +1,6 @@
 {
-  "name": "@monorepo/lib",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-fix-pnpm-monorepo-packages-lib",
+  "version": "0.0.0",
   "private": true,
   "description": "Lib package in monorepo",
   "main": "index.js",

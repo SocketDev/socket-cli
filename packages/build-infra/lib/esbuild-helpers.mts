@@ -8,7 +8,7 @@
  * Usage:
  *
  * ```javascript
- * import { IMPORT_META_URL_BANNER } from 'build-infra/lib/esbuild-helpers'
+ * import { IMPORT_META_URL_BANNER } from 'socket-cli-packages-build-infra/lib/esbuild-helpers'
  *
  * export default {
  *   // ... other config.

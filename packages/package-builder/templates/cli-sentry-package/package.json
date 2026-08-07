@@ -1,7 +1,6 @@
 {
   "name": "@socketsecurity/cli-with-sentry",
-  "version": "2.1.0",
-  "private": true,
+  "version": "3.0.0-pre.0",
   "description": "Socket CLI with Sentry telemetry for enhanced error reporting",
   "keywords": [
     "cli",
@@ -54,8 +53,8 @@
   },
   "devDependencies": {
     "@socketsecurity/cli": "workspace:0.0.0",
-    "build-infra": "workspace:1.0.0",
-    "rolldown": "catalog:"
+    "rolldown": "catalog:",
+    "socket-cli-packages-build-infra": "workspace:0.0.0"
   },
   "engines": {
     "node": ">=18"

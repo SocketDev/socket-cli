@@ -1,6 +1,6 @@
 {
-  "name": "patch-test-fixture",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-patch-yarn",
+  "version": "0.0.0",
   "private": true,
   "description": "Test fixture for patch command",
   "main": "index.js",

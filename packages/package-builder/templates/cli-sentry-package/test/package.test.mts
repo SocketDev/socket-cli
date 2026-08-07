@@ -195,13 +195,14 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
   })
 
   describe('package is publishable', () => {
-    it('should be marked as private during development', async () => {
+    it('should not be private: the declared publish set must be release-ready', async () => {
       const pkgJson = JSON.parse(
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
-      // cli-with-sentry is private during development but public on release.
-      expect(pkgJson.private).toBe(true)
+      // A `private: true` here makes npm skip the package while the release
+      // stays green, so the publish set keeps it non-private.
+      expect(pkgJson.private).toBeUndefined()
     })
 
     it('should have publishConfig for npm', async () => {

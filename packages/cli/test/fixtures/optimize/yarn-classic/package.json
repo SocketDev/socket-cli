@@ -1,6 +1,6 @@
 {
-  "name": "test-yarn-classic",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-optimize-yarn-classic",
+  "version": "0.0.0",
   "private": true,
   "dependencies": {
     "yarn": "1.22.22"

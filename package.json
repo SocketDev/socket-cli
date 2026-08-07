@@ -1,6 +1,6 @@
 {
-  "name": "socket-cli-monorepo",
-  "version": "2.0.0",
+  "name": "socket-cli",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "// Build": "",
@@ -174,7 +174,6 @@
     "oxfmt": "catalog:",
     "oxlint": "catalog:",
     "oxlint-tsgolint": "catalog:",
-    "package-builder": "workspace:1.0.0",
     "parse5": "catalog:",
     "playwright-core": "catalog:",
     "portless": "catalog:",
@@ -183,6 +182,7 @@
     "rolldown": "catalog:",
     "semver": "catalog:",
     "shell-quote": "catalog:",
+    "socket-cli-packages-package-builder": "workspace:0.0.0",
     "ssri": "catalog:",
     "svgo": "catalog:",
     "taze": "catalog:",

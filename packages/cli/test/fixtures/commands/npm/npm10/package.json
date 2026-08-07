@@ -1,6 +1,6 @@
 {
-  "name": "npm10",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-npm-npm10",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

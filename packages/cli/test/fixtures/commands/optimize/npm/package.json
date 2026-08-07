@@ -1,6 +1,6 @@
 {
-  "name": "optimize-test-fixture-npm",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-optimize-npm",
+  "version": "0.0.0",
   "private": true,
   "description": "Test fixture for optimize command testing (npm)",
   "main": "index.js",

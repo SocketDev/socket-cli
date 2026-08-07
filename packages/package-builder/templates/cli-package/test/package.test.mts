@@ -70,7 +70,9 @@ describe('@socketsecurity/cli package template', () => {
 
       expect(pkgJson.devDependencies).toBeDefined()
       expect(pkgJson.devDependencies.rolldown).toBeDefined()
-      expect(pkgJson.devDependencies['build-infra']).toBe('workspace:1.0.0')
+      expect(pkgJson.devDependencies['socket-cli-packages-build-infra']).toBe(
+        'workspace:0.0.0',
+      )
     })
   })
 
@@ -199,13 +201,14 @@ describe('@socketsecurity/cli package template', () => {
   })
 
   describe('package is publishable', () => {
-    it('should be marked as private during development', async () => {
+    it('should not be private: the declared publish set must be release-ready', async () => {
       const pkgJson = JSON.parse(
         await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8'),
       )
 
-      // The template is private during development but published on release.
-      expect(pkgJson.private).toBe(true)
+      // A `private: true` here makes npm skip the package while the release
+      // stays green, so the publish set keeps it non-private.
+      expect(pkgJson.private).toBeUndefined()
     })
 
     it('should have publishConfig for npm', async () => {

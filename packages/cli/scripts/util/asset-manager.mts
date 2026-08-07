@@ -17,8 +17,8 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { logTransientErrorHelp } from 'build-infra/lib/github-error-utils'
-import { downloadReleaseAsset } from 'build-infra/lib/github-releases'
+import { logTransientErrorHelp } from 'socket-cli-packages-build-infra/lib/github-error-utils'
+import { downloadReleaseAsset } from 'socket-cli-packages-build-infra/lib/github-releases'
 
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'

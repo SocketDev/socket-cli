@@ -1,6 +1,6 @@
 {
-  "name": "test-yarn-berry",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-optimize-yarn-berry",
+  "version": "0.0.0",
   "private": true,
   "dependencies": {
     "yarn": "4.10.3"

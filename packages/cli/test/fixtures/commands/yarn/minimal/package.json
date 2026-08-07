@@ -1,6 +1,6 @@
 {
-  "name": "test-yarn-minimal",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-yarn-minimal",
+  "version": "0.0.0",
   "private": true,
   "packageManager": "yarn@4.10.3"
 }

@@ -1,6 +1,6 @@
 {
-  "name": "reach-test-fixture",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-scan-reach-pnpm",
+  "version": "0.0.0",
   "private": true,
   "description": "Test fixture for reachability analysis",
   "main": "index.js",

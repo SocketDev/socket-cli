@@ -1,6 +1,6 @@
 {
-  "name": "monorepo-test-npm",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-fix-npm-monorepo",
+  "version": "0.0.0",
   "private": true,
   "description": "Test monorepo fixture (npm)",
   "workspaces": [

@@ -71,7 +71,7 @@ async function main() {
     ]
     const typeCoverageArgs = [
       '--filter',
-      '@socketsecurity/type-coverage-runner',
+      'socket-cli-tools-type-coverage',
       'exec',
       'type-coverage',
       '--project',

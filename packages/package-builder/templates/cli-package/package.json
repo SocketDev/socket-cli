@@ -1,7 +1,6 @@
 {
   "name": "@socketsecurity/cli",
   "version": "3.0.0-pre.0",
-  "private": true,
   "description": "Socket CLI for Socket.dev security analysis",
   "keywords": [
     "cli",
@@ -50,8 +49,8 @@
     "verify": "node scripts/verify-package.mts"
   },
   "devDependencies": {
-    "build-infra": "workspace:1.0.0",
-    "rolldown": "catalog:"
+    "rolldown": "catalog:",
+    "socket-cli-packages-build-infra": "workspace:0.0.0"
   },
   "engines": {
     "node": ">=18"

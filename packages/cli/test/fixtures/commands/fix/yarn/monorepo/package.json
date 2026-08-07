@@ -1,6 +1,6 @@
 {
-  "name": "monorepo-test-yarn",
-  "version": "1.0.0",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-fix-yarn-monorepo",
+  "version": "0.0.0",
   "private": true,
   "description": "Test monorepo fixture (yarn)",
   "workspaces": [

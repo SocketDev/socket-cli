@@ -1,7 +1,6 @@
 {
   "name": "socket",
-  "version": "2.1.0",
-  "private": true,
+  "version": "3.0.0-pre.0",
   "description": "Socket CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",

@@ -30,14 +30,14 @@ import {
   cliExeBinaryName,
   cliExePackageName,
   isCliExeTriplet,
-} from 'package-builder/scripts/cli-exe-targets.mts'
-import type { CliExeTriplet } from 'package-builder/scripts/cli-exe-targets.mts'
+} from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
+import type { CliExeTriplet } from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
 import {
   getCliExeBinaryPath,
   getCliExePackageDir,
   getPackageOutDir,
-} from 'package-builder/scripts/paths.mts'
-import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
+} from 'socket-cli-packages-package-builder/scripts/paths.mts'
+import { preparePackageForPublish } from 'socket-cli-packages-package-builder/scripts/util/prepare-package.mts'
 
 const logger = getDefaultLogger()
 

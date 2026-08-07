@@ -8,7 +8,7 @@ import path from 'node:path'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { preparePackageForPublish } from 'package-builder/scripts/util/prepare-package.mts'
+import { preparePackageForPublish } from 'socket-cli-packages-package-builder/scripts/util/prepare-package.mts'
 
 const logger = getDefaultLogger()
 
