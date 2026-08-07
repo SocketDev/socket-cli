@@ -60,6 +60,10 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
           # Full history: the commit-history checks (AI-attribution,
           # release-boundary) read the default branch's history and refuse a
           # shallow clone rather than false-green.
@@ -87,6 +91,10 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # Authorizes a thin member's bundle download during install. Both
+          # stay empty on a member with no payload App, which skips the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - uses: ./.github/actions/fleet/run-script
         env:
