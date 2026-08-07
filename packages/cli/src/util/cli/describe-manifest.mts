@@ -52,7 +52,10 @@ export function buildRootManifest(config: {
   subcommands: Readonly<Record<string, CliSubcommand>>
   version: string
 }): CliManifest {
-  const { name, subcommands, version } = { __proto__: null, ...config }
+  const { name, subcommands, version } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
   const commands = Object.entries(subcommands).map(
     ([commandName, subcommand]): CliCommandMeta =>
       subcommand.hidden
