@@ -747,16 +747,33 @@ describe('setupRecursiveManifestConfig', () => {
     vi.mocked(enumerateWorkspaces).mockResolvedValue({ projects: [] })
   })
 
-  it('asks about nothing and finishes immediately when the scan finds no build roots anywhere', async () => {
+  it('fails closed when the scan finds no build roots anywhere', async () => {
     const result = await setupRecursiveManifestConfig(cwd, false)
 
-    expect(result).toEqual({ ok: true, data: { canceled: false } })
+    expect(result).toEqual({
+      ok: false,
+      code: 1,
+      message: 'No Gradle, sbt, or Maven build root was found beneath /repo.',
+    })
     expect(select).not.toHaveBeenCalled()
     expect(setupGradle).not.toHaveBeenCalled()
     expect(setupMaven).not.toHaveBeenCalled()
     expect(setupSbt).not.toHaveBeenCalled()
     expect(writeSocketJson).not.toHaveBeenCalled()
     expect(findBuildToolCandidates).toHaveBeenCalled()
+  })
+
+  it('still proceeds normally when build roots exist but --exclude-paths excludes all of them (a deliberate choice, not "none exist")', async () => {
+    vi.mocked(findBuildToolCandidates).mockImplementation(
+      async ({ excludePaths }) =>
+        excludePaths?.length
+          ? new Map()
+          : new Map([['maven', [`${cwd}/service`]]]),
+    )
+
+    const result = await setupRecursiveManifestConfig(cwd, false, ['service'])
+
+    expect(result.ok).toBe(true)
   })
 
   it('only asks about ecosystems detected somewhere in the tree, with plain phrasing', async () => {
