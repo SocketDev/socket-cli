@@ -18,17 +18,27 @@ import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { compressSocketFactsForUpload } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
+import { InputError } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+import {
+  hasSidecarEntries,
+  mergeResolvedPathsSidecars,
+  serializeSidecar,
+} from '../manifest/scripts/sidecar.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type {
+  ResolvedPathsSidecar,
+  SidecarAccumulator,
+} from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -153,6 +163,50 @@ export async function handleCreateNewScan({
       const sockJson = readOrDefaultSocketJson(cwd)
       const detected = await detectManifestActions(sockJson, cwd)
       debugDir('inspect', { detected })
+
+      if (reach.dynamicSbomInference) {
+        // Recursively discover and generate Socket facts for every
+        // independent gradle/sbt/maven build root instead of only the one at
+        // cwd; generateAutoManifest below is left to handle conda/bazel only.
+        detected.gradle = false
+        detected.sbt = false
+        detected.maven = false
+
+        const sidecarAcc: SidecarAccumulator | undefined =
+          reach.runReachabilityAnalysis ? new Map() : undefined
+        const outcomes = await generateRecursiveManifests({
+          cwd,
+          excludePaths: reach.excludePaths,
+          // sbt's Scala toolchain lives under its shared global base;
+          // withFiles' resolved paths point into it, so when reachability
+          // will consume them afterward, reuse manifestTmpDir (kept alive
+          // until reach finishes below) instead of letting this call clean
+          // its own ephemeral base up before reach ever reads those paths.
+          sbtTmpDir: reach.runReachabilityAnalysis ? manifestTmpDir : undefined,
+          sidecarAcc,
+          verbose: false,
+          withFiles: reach.runReachabilityAnalysis,
+        })
+        // Fail loud rather than silently upload a partial multi-root scan:
+        // matches handleManifestDynamicSbomInference's own check.
+        if (outcomes.some(o => o.status === 'failed')) {
+          throw new InputError(
+            'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
+          )
+        }
+        const generatedFactsPaths = outcomes
+          .filter(o => o.status === 'generated')
+          .map(o => o.factsPath!)
+        if (generatedFactsPaths.length) {
+          scanTargets = Array.from(
+            new Set([...scanTargets, ...generatedFactsPaths]),
+          )
+        }
+        if (sidecarAcc && hasSidecarEntries(sidecarAcc)) {
+          resolvedPathsSidecar = serializeSidecar(sidecarAcc)
+        }
+      }
+
       const autoManifestResult = await generateAutoManifest({
         computeArtifactsSidecar: reach.runReachabilityAnalysis,
         cwd,
@@ -162,10 +216,17 @@ export async function handleCreateNewScan({
         tmpDir: manifestTmpDir,
         verbose: false,
       })
-      resolvedPathsSidecar = autoManifestResult.resolvedPathsSidecar
+      if (autoManifestResult.resolvedPathsSidecar) {
+        resolvedPathsSidecar = resolvedPathsSidecar
+          ? mergeResolvedPathsSidecars(
+              resolvedPathsSidecar,
+              autoManifestResult.resolvedPathsSidecar,
+            )
+          : autoManifestResult.resolvedPathsSidecar
+      }
       if (autoManifestResult.generatedFiles.length) {
         scanTargets = Array.from(
-          new Set([...targets, ...autoManifestResult.generatedFiles]),
+          new Set([...scanTargets, ...autoManifestResult.generatedFiles]),
         )
       }
       logger.info('Auto-generation finished. Proceeding with Scan creation.')

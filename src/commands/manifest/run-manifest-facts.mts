@@ -12,6 +12,7 @@ import { runManifestScript } from './scripts/run.mts'
 import { accumulateSidecar } from './scripts/sidecar.mts'
 import constants from '../../constants.mts'
 import { getErrorMessageOr } from '../../utils/errors.mts'
+import { realpathOrResolved } from '../../utils/fs.mts'
 
 import type { BuildTool } from './scripts/build-tool.mts'
 import type { SocketFactsSbomProject } from './scripts/facts.mts'
@@ -223,7 +224,16 @@ export async function runManifestFacts({
   await fs.writeFile(factsPath, JSON.stringify(facts, null, 2), 'utf8')
 
   if (withFiles && sidecarAcc) {
-    accumulateSidecar(sidecarAcc, facts, artifactPaths)
+    // Key by the symlink-resolved path so the sidecar's keys are comparable
+    // regardless of which caller's cwd it was joined against (the recursive
+    // discovery path already resolves symlinks before this point; the plain
+    // single-root path does not).
+    accumulateSidecar(
+      sidecarAcc,
+      facts,
+      artifactPaths,
+      await realpathOrResolved(factsPath),
+    )
   }
 
   logger.success('Generated Socket facts')

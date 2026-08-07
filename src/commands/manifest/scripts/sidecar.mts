@@ -1,111 +1,147 @@
 import { mavenCoordinateKey } from './facts.mts'
 
-import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
+import type {
+  AnyPURL,
+  ResolvedArtifactPaths,
+  SocketFactsSbom,
+  SocketFactsSbomComponent,
+  SocketFactsSbomProject,
+} from './facts.mts'
 
-// Frozen contract with `coana run --compute-artifacts-sidecar`; change only in
-// sync with the coana consumer. Per coordinate: targets/sources present →
-// resolved (coana uses the paths); both empty → resolved with no artifact
-// (pom/BOM), not a failure; absent → coana degrades that vuln to precomputed.
-export type ResolvedComponent = {
-  group: string
-  name: string
-  version: string
-  ext: string
-  classifier: string | null
-  // Classpath entries (jars / first-party output dirs).
-  targets: string[]
-  // First-party source roots; [] for external deps.
-  sources: string[]
+export type SidecarComponentEntry = SocketFactsSbomComponent & {
+  // Classpath entries (jars, or a sibling first-party project's own build
+  // output dirs when this dependency edge resolves to one). `[]`
+  // means resolution was attempted and found nothing (e.g. a pom/BOM);
+  // undefined means resolution couldn't be attempted at all (see attachPaths).
+  targets?: string[] | undefined
+  // First-party source roots; `[]` for a genuinely external dependency (still
+  // attempted, nothing to find), not undefined.
+  sources?: string[] | undefined
 }
 
-// Bare array, no schema version: socket-cli pins the coana version, so producer
-// and consumer never drift.
-export type ResolvedPathsSidecar = ResolvedComponent[]
+export type SidecarProjectEntry = SocketFactsSbomProject & {
+  targets?: string[] | undefined
+  sources?: string[] | undefined
+}
 
-// Keyed by full coordinate; unions paths so multiple build roots merge into one.
-export type SidecarAccumulator = Map<string, ResolvedComponent>
-
-function pushUnique(into: string[], from: string[]): void {
-  for (const f of from) {
-    if (!into.includes(f)) {
-      into.push(f)
-    }
+// Frozen contract with `coana run --compute-artifacts-sidecar`; change only
+// in sync with the coana consumer. Keyed by the absolute path of the
+// `.socket.facts.json` file whose own projects[]/components[] these entries
+// describe - the key IS the scope, so two independent reactors that happen to
+// emit the same purl identity (e.g. a shared internal module name) can never
+// collide: each is only ever looked up within its own key. No cross-reactor
+// deduplication - the same external dependency resolved by several
+// independent reactors is intentionally duplicated across all of their
+// components[].
+export type ResolvedPathsSidecar = Record<
+  string,
+  {
+    // This facts file's own first-party modules.
+    projects: SidecarProjectEntry[]
+    // This reactor's dependency-position entries: genuinely external
+    // artifacts, and dependency edges that resolve to a sibling first-party
+    // project (reported via that project's own source/target roots instead
+    // of a jar path).
+    components: SidecarComponentEntry[]
   }
-}
+>
 
-function addEntry(
-  acc: SidecarAccumulator,
+export type SidecarAccumulator = Map<
+  string,
+  { projects: SidecarProjectEntry[]; components: SidecarComponentEntry[] }
+>
+
+// `targets`/`sources` present (possibly `[]`) means resolution was attempted
+// for this coordinate - an empty array is a successful resolve that found
+// nothing (e.g. a pom/BOM with no artifact), not a failure. Both fields
+// omitted (undefined) means resolution couldn't even be attempted - the only
+// case here is a degenerate entry with no computable coordinate at all, since
+// every entry reaching this function already came from a resolved graph node
+// (an unresolved dependency lives in the resolution report, not here).
+function attachPaths<T extends AnyPURL>(
+  entry: T,
   artifactPaths: ResolvedArtifactPaths,
-  group: string,
-  name: string,
-  version: string,
-  ext: string,
-  classifier: string | null,
-): void {
+): T & { targets?: string[] | undefined; sources?: string[] | undefined } {
   const coordKey = mavenCoordinateKey(
-    group,
-    name,
-    ext || undefined,
-    classifier ?? undefined,
-    version || undefined,
+    entry.namespace,
+    entry.name,
+    entry.qualifiers?.['ext'],
+    entry.qualifiers?.['classifier'],
+    entry.version,
   )
   if (!coordKey) {
-    return
+    return { ...entry }
   }
-  let entry = acc.get(coordKey)
-  if (!entry) {
-    entry = { group, name, version, ext, classifier, targets: [], sources: [] }
-    acc.set(coordKey, entry)
+  return {
+    ...entry,
+    targets: [...(artifactPaths.targetsByCoord.get(coordKey) ?? [])].sort(),
+    sources: [...(artifactPaths.sourcesByCoord.get(coordKey) ?? [])].sort(),
   }
-  pushUnique(entry.targets, artifactPaths.targetsByCoord.get(coordKey) ?? [])
-  pushUnique(entry.sources, artifactPaths.sourcesByCoord.get(coordKey) ?? [])
+}
+
+function purlSortKey(entry: AnyPURL): string {
+  return `${entry.type}:${entry.namespace ?? ''}:${entry.name}:${entry.version ?? ''}:${entry.qualifiers?.['ext'] ?? ''}:${entry.qualifiers?.['classifier'] ?? ''}`
+}
+
+function sortByPurl<T extends AnyPURL>(entries: T[]): T[] {
+  return entries.sort((a, b) => {
+    const ka = purlSortKey(a)
+    const kb = purlSortKey(b)
+    return ka < kb ? -1 : ka > kb ? 1 : 0
+  })
 }
 
 // Emit an entry for every SBOM component AND every first-party project: a
 // top-level module is a project, not a dependency component, yet its source
 // roots are where reachability starts, so the sidecar must carry them.
+// A second call for the same factsFile (a dual-marker directory where two
+// build tools both target it) overwrites rather than merges, matching the
+// existing last-writer-wins convention for that case.
 export function accumulateSidecar(
   acc: SidecarAccumulator,
   facts: SocketFactsSbom,
   artifactPaths: ResolvedArtifactPaths,
+  factsFile: string,
 ): void {
-  for (const comp of facts.components) {
-    addEntry(
-      acc,
-      artifactPaths,
-      comp.namespace ?? '',
-      comp.name,
-      comp.version ?? '',
-      comp.qualifiers?.['ext'] ?? '',
-      comp.qualifiers?.['classifier'] ?? null,
-    )
-  }
-  // First-party modules have no ext/classifier.
-  for (const proj of facts.projects ?? []) {
-    addEntry(
-      acc,
-      artifactPaths,
-      proj.namespace ?? '',
-      proj.name,
-      proj.version ?? '',
-      '',
-      null,
-    )
-  }
+  acc.set(factsFile, {
+    components: facts.components.map(comp => attachPaths(comp, artifactPaths)),
+    projects: (facts.projects ?? []).map(proj =>
+      attachPaths(proj, artifactPaths),
+    ),
+  })
+}
+
+export function hasResolvedPathsSidecarEntries(
+  sidecar: ResolvedPathsSidecar,
+): boolean {
+  return Object.keys(sidecar).length > 0
+}
+
+export function hasSidecarEntries(acc: SidecarAccumulator): boolean {
+  return acc.size > 0
+}
+
+// Combines two already-serialized sidecars (e.g. the recursive-discovery path
+// and the plain conda/bazel auto-manifest path). Keys are already scoped to
+// one facts file each and can't collide between the two inputs in practice,
+// so this is a plain merge; the later input wins on a genuine key collision.
+export function mergeResolvedPathsSidecars(
+  a: ResolvedPathsSidecar,
+  b: ResolvedPathsSidecar,
+): ResolvedPathsSidecar {
+  return { __proto__: null, ...a, ...b } as unknown as ResolvedPathsSidecar
 }
 
 export function serializeSidecar(
   acc: SidecarAccumulator,
 ): ResolvedPathsSidecar {
-  const resolved = [...acc.values()]
-  for (const entry of resolved) {
-    entry.targets.sort()
-    entry.sources.sort()
+  const result = { __proto__: null } as unknown as ResolvedPathsSidecar
+  for (const factsFile of [...acc.keys()].sort()) {
+    const bucket = acc.get(factsFile)!
+    result[factsFile] = {
+      projects: sortByPurl(bucket.projects),
+      components: sortByPurl(bucket.components),
+    }
   }
-  resolved.sort((a, b) => {
-    const ka = `${a.group}:${a.name}:${a.ext}:${a.classifier ?? ''}:${a.version}`
-    const kb = `${b.group}:${b.name}:${b.ext}:${b.classifier ?? ''}:${b.version}`
-    return ka < kb ? -1 : ka > kb ? 1 : 0
-  })
-  return resolved
+  return result
 }

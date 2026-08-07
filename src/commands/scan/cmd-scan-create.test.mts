@@ -56,6 +56,7 @@ describe('socket scan create', async () => {
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
+            --dynamic-sbom-inference  For Gradle, sbt, and Maven: splits reachability analysis per project/module using a Socket facts SBOM (generated directly by each package manager) per build root, instead of one synthetic root. Reachability analysis only; implies --auto-manifest.
             --reach-analysis-memory-limit  The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.
             --reach-analysis-timeout  Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available.

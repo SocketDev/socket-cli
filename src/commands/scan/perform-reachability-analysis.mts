@@ -13,6 +13,7 @@ import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { socketDevLink } from '../../utils/terminal-link.mts'
+import { hasResolvedPathsSidecarEntries } from '../manifest/scripts/sidecar.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -187,7 +188,10 @@ export async function performReachabilityAnalysis(
   // Write the sidecar to a temp file for `--compute-artifacts-sidecar`; cleaned
   // up in the finally below.
   let sidecarPath: string | undefined
-  if (resolvedPathsSidecar?.length) {
+  if (
+    resolvedPathsSidecar &&
+    hasResolvedPathsSidecarEntries(resolvedPathsSidecar)
+  ) {
     sidecarPath = path.join(
       tmpdir(),
       `socket-compute-artifacts-sidecar-${randomUUID()}.json`,
@@ -253,7 +257,7 @@ export async function performReachabilityAnalysis(
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
     ...(reachabilityOptions.dynamicSbomInference
-      ? ['--maven-use-only-root-socket-facts']
+      ? ['--maven-use-only-socket-facts']
       : []),
     ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),

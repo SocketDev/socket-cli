@@ -22,10 +22,7 @@ const config: CliCommandConfig = {
   commandName: 'dynamic-sbom-inference',
   description:
     'Recursively discover gradle/sbt/maven build roots and generate a Socket facts SBOM for each',
-  // Hidden: `--dynamic-sbom-inference` already names an unrelated, root-only
-  // scan create/reach flag (see reachability-flags.mts). Keep this hidden
-  // until the naming collision between the two is resolved.
-  hidden: true,
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,

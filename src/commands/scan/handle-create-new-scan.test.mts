@@ -12,6 +12,7 @@ const {
   mockFetchSupportedScanFileNames,
   mockFindSocketYmlSync,
   mockGenerateAutoManifest,
+  mockGenerateRecursiveManifests,
   mockGetPackageFilesForScan,
   mockPerformReachabilityAnalysis,
   mockReadOrDefaultSocketJson,
@@ -20,6 +21,7 @@ const {
   mockFetchSupportedScanFileNames: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
   mockGenerateAutoManifest: vi.fn(),
+  mockGenerateRecursiveManifests: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
   mockReadOrDefaultSocketJson: vi.fn(),
@@ -63,6 +65,10 @@ vi.mock('../../utils/socket-json.mts', () => ({
 
 vi.mock('../manifest/detect-manifest-actions.mts', () => ({
   detectManifestActions: vi.fn(() => Promise.resolve({ count: 0 })),
+}))
+
+vi.mock('../manifest/generate-recursive-manifests.mts', () => ({
+  generateRecursiveManifests: mockGenerateRecursiveManifests,
 }))
 
 vi.mock('../manifest/generate_auto_manifest.mts', () => ({
@@ -136,6 +142,7 @@ describe('handleCreateNewScan excludePaths', () => {
       ok: true,
     })
     mockGenerateAutoManifest.mockResolvedValue({ generatedFiles: [] })
+    mockGenerateRecursiveManifests.mockResolvedValue([])
     mockGetPackageFilesForScan.mockResolvedValue(['package.json'])
     mockPerformReachabilityAnalysis.mockResolvedValue({
       data: {
@@ -169,6 +176,134 @@ describe('handleCreateNewScan excludePaths', () => {
       },
     )
     expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
+  })
+
+  it('drives JVM facts generation through generateRecursiveManifests under --dynamic-sbom-inference, merging generated facts into scan targets', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/service-a',
+        ecosystem: 'maven',
+        factsPath: '/repo/service-a/.socket.facts.json',
+        status: 'generated',
+      },
+      {
+        dir: '/repo/service-b',
+        ecosystem: 'gradle',
+        factsPath: '/repo/service-b/.socket.facts.json',
+        status: 'generated',
+      },
+      { dir: '/repo/service-c', ecosystem: 'maven', status: 'empty' },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/repo',
+        sbtTmpDir: undefined,
+        withFiles: false,
+      }),
+    )
+    expect(mockGenerateAutoManifest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        detected: expect.objectContaining({
+          gradle: false,
+          maven: false,
+          sbt: false,
+        }),
+      }),
+    )
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      [
+        '/repo',
+        '/repo/service-a/.socket.facts.json',
+        '/repo/service-b/.socket.facts.json',
+      ],
+      { size: 1 },
+      {
+        additionalIgnores: [],
+        config: { projectIgnorePaths: ['fixtures/**'] },
+        cwd: '/repo',
+      },
+    )
+  })
+
+  it('aborts instead of silently uploading a partial scan when a recursive build root fails', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/service-a',
+        ecosystem: 'maven',
+        factsPath: '/repo/service-a/.socket.facts.json',
+        status: 'generated',
+      },
+      { dir: '/repo/service-b', ecosystem: 'maven', status: 'failed' },
+    ])
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await expect(handleCreateNewScan(config)).rejects.toThrow(
+      /one or more independent build roots failed/i,
+    )
+    expect(mockGetPackageFilesForScan).not.toHaveBeenCalled()
+    expect(mockFetchCreateOrgFullScan).not.toHaveBeenCalled()
+  })
+
+  it('accumulates a sidecar across recursively discovered build roots and forwards it to reachability analysis', async () => {
+    mockGenerateRecursiveManifests.mockImplementationOnce(
+      async ({ sidecarAcc }) => {
+        sidecarAcc?.set('/repo/service-a/.socket.facts.json', {
+          projects: [
+            {
+              type: 'maven',
+              namespace: 'com.example',
+              name: 'app',
+              version: '1.0',
+              subprojectDir: '.',
+              dependencies: [],
+              resolvedAs: [],
+              targets: ['/repo/service-a/build/classes'],
+              sources: ['/repo/service-a/src/main/java'],
+            },
+          ],
+          components: [],
+        })
+        return [
+          {
+            dir: '/repo/service-a',
+            ecosystem: 'maven',
+            factsPath: '/repo/service-a/.socket.facts.json',
+            status: 'generated',
+          },
+        ]
+      },
+    )
+
+    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+    config.reach.runReachabilityAnalysis = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sbtTmpDir: expect.any(String),
+        withFiles: true,
+      }),
+    )
+    expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resolvedPathsSidecar: {
+          '/repo/service-a/.socket.facts.json': {
+            projects: [expect.objectContaining({ name: 'app' })],
+            components: [],
+          },
+        },
+      }),
+    )
   })
 
   it('aborts before scan creation when auto-manifest generation fails', async () => {

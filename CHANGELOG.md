@@ -4,18 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- `socket scan create --reach --dynamic-sbom-inference` splits full application reachability analysis per project/module for Gradle, sbt, and Maven monorepos, using a Socket facts SBOM generated directly by each package manager for every build root, instead of one synthetic root.
+- `socket manifest setup --dynamic-sbom-inference` extends the interactive `socket.json` configurator to walk every independent Gradle, sbt, and Maven build root in your project.
+- `socket manifest dynamic-sbom-inference`: generate a Socket facts SBOM for every independent Gradle, sbt, and Maven build root directly, without creating a scan.
+
+### Changed
+- Updated the Coana CLI to v `15.10.8`.
+
+### Fixed
+- Declared `form-data` as a dependency, so a fresh install no longer throws `Cannot find module 'form-data'` on its first upload.
+
 ## [1.1.154](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.154) - 2026-08-06
 
 ### Changed
 - Updated the Coana CLI to v `15.10.4`.
-
-## [Unreleased]
-
-### Changed
-- Updated the Coana CLI to v `15.10.3`.
-
-### Fixed
-- Declared `form-data` as a dependency, so a fresh install no longer throws `Cannot find module 'form-data'` on its first upload.
 
 ## [1.1.153](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.153) - 2026-08-04
 

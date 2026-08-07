@@ -33,6 +33,21 @@ const description = 'Compute full application reachability'
 
 const hidden = true
 
+// dynamicSbomInference relies on --auto-manifest generating per-workspace
+// Socket facts first, which this command never runs (see the hardcoded
+// `false` passed to handleScanReach below) - hidden here even though it's
+// otherwise public on `scan create`, since advertising a flag this command
+// silently ignores would be misleading.
+const reachabilityFlagsForReach: MeowFlags = {
+  ...reachabilityFlags,
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    hidden: true,
+    description: reachabilityFlags['dynamicSbomInference']!.description,
+  },
+}
+
 const generalFlags: MeowFlags = {
   ...commonFlags,
   ...outputFlags,
@@ -74,7 +89,7 @@ async function run(
     flags: {
       ...generalFlags,
       ...excludePathsFlag,
-      ...reachabilityFlags,
+      ...reachabilityFlagsForReach,
     },
     help: command =>
       `
@@ -88,7 +103,7 @@ async function run(
       ${getFlagListOutput(generalFlags)}
 
     Reachability Options
-      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlags })}
+      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlagsForReach })}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
     The output is written to .socket.facts.json in the current working directory

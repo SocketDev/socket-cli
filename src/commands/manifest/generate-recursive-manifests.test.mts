@@ -602,4 +602,122 @@ describe('generateRecursiveManifests', () => {
       await fs.rm(outer, { recursive: true, force: true })
     }
   })
+
+  it('shares one sbt tmpDir across every discovered sbt root, but passes tmpDir: undefined for gradle/maven', async () => {
+    const outer = await fs.mkdtemp(path.join(tmpdir(), 'sbt-shared-tmpdir-'))
+    const sbtA = path.join(outer, 'sbt-a')
+    const sbtB = path.join(outer, 'sbt-b')
+    const mavenRoot = path.join(outer, 'maven-root')
+    try {
+      await fs.mkdir(sbtA, { recursive: true })
+      await fs.mkdir(sbtB, { recursive: true })
+      await fs.mkdir(mavenRoot, { recursive: true })
+      await fs.writeFile(path.join(sbtA, 'build.sbt'), '')
+      await fs.writeFile(path.join(sbtB, 'build.sbt'), '')
+      await fs.writeFile(path.join(mavenRoot, 'pom.xml'), '<project/>')
+
+      const tmpDirsSeen: Record<string, Array<string | undefined>> = {}
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, ecosystem, tmpDir }) => {
+          ;(tmpDirsSeen[ecosystem] ??= []).push(tmpDir)
+          return {
+            factsPath: path.join(cwd, '.socket.facts.json'),
+            projects: [],
+          }
+        },
+      )
+
+      await generateRecursiveManifests({ cwd: outer, verbose: false })
+
+      expect(tmpDirsSeen['sbt']).toHaveLength(2)
+      expect(tmpDirsSeen['sbt']![0]).toBeDefined()
+      expect(tmpDirsSeen['sbt']![0]).toBe(tmpDirsSeen['sbt']![1])
+      expect(tmpDirsSeen['maven']).toEqual([undefined])
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
+  it('does not allocate a shared tmpDir at all when no sbt root is discovered', async () => {
+    const outer = await fs.mkdtemp(path.join(tmpdir(), 'no-sbt-tmpdir-'))
+    try {
+      await fs.writeFile(path.join(outer, 'pom.xml'), '<project/>')
+
+      vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+        factsPath: path.join(cwd, '.socket.facts.json'),
+        projects: [],
+      }))
+
+      await generateRecursiveManifests({ cwd: outer, verbose: false })
+
+      expect(
+        vi.mocked(runManifestFacts).mock.calls[0]?.[0].tmpDir,
+      ).toBeUndefined()
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+    }
+  })
+
+  it('reuses a caller-supplied sbtTmpDir as-is for every sbt root, and does not delete it', async () => {
+    const outer = await fs.mkdtemp(path.join(tmpdir(), 'sbt-caller-tmpdir-'))
+    const sbtA = path.join(outer, 'sbt-a')
+    const sbtB = path.join(outer, 'sbt-b')
+    const callerOwnedDir = await fs.mkdtemp(
+      path.join(tmpdir(), 'caller-owned-sbt-base-'),
+    )
+    try {
+      await fs.mkdir(sbtA, { recursive: true })
+      await fs.mkdir(sbtB, { recursive: true })
+      await fs.writeFile(path.join(sbtA, 'build.sbt'), '')
+      await fs.writeFile(path.join(sbtB, 'build.sbt'), '')
+
+      const tmpDirsSeen: Array<string | undefined> = []
+      vi.mocked(runManifestFacts).mockImplementation(
+        async ({ cwd, tmpDir }) => {
+          tmpDirsSeen.push(tmpDir)
+          return {
+            factsPath: path.join(cwd, '.socket.facts.json'),
+            projects: [],
+          }
+        },
+      )
+
+      await generateRecursiveManifests({
+        cwd: outer,
+        sbtTmpDir: callerOwnedDir,
+        verbose: false,
+      })
+
+      expect(tmpDirsSeen).toEqual([callerOwnedDir, callerOwnedDir])
+      // generateRecursiveManifests must not clean up a directory it didn't
+      // allocate - the caller (e.g. handleCreateNewScan keeping it alive
+      // until reachability analysis consumes the sidecar's resolved paths)
+      // owns that lifetime.
+      await expect(fs.access(callerOwnedDir)).resolves.toBeUndefined()
+    } finally {
+      await fs.rm(outer, { recursive: true, force: true })
+      await fs.rm(callerOwnedDir, { recursive: true, force: true })
+    }
+  })
+
+  it('threads sidecarAcc/withFiles through to every build root, not just the first', async () => {
+    vi.mocked(runManifestFacts).mockImplementation(async ({ cwd }) => ({
+      factsPath: path.join(cwd, '.socket.facts.json'),
+      projects: [],
+    }))
+
+    const sidecarAcc = new Map()
+    await generateRecursiveManifests({
+      cwd: monorepo,
+      sidecarAcc,
+      verbose: false,
+      withFiles: true,
+    })
+
+    expect(vi.mocked(runManifestFacts).mock.calls.length).toBeGreaterThan(1)
+    for (const [opts] of vi.mocked(runManifestFacts).mock.calls) {
+      expect(opts.sidecarAcc).toBe(sidecarAcc)
+      expect(opts.withFiles).toBe(true)
+    }
+  })
 })
