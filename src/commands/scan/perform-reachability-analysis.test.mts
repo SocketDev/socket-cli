@@ -12,7 +12,7 @@
  * - utils/coana.mts (extractTier1ReachabilityScanId — exercised for real)
  */
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
@@ -242,7 +242,14 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
     rmSync(scanCwd, { force: true, recursive: true })
   })
 
-  it('never passes --maven-use-only-socket-facts without a sidecar, even with dynamicSbomInference on (e.g. no JVM build root found)', async () => {
+  it('writes an empty sidecar and still passes both flags when dynamicSbomInference is on but no build root produced one (e.g. none found, or all empty/disabled)', async () => {
+    let sidecarContentAtSpawnTime: unknown
+    mockSpawnCoanaDlx.mockImplementationOnce(async (args: string[]) => {
+      const sidecarPath = args[args.indexOf('--compute-artifacts-sidecar') + 1]!
+      sidecarContentAtSpawnTime = JSON.parse(readFileSync(sidecarPath, 'utf8'))
+      return { ok: true, data: '' }
+    })
+
     await performReachabilityAnalysis({
       cwd: scanCwd,
       reachabilityOptions: {
@@ -254,8 +261,9 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
     })
 
     const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
-    expect(args).not.toContain('--maven-use-only-socket-facts')
-    expect(args).not.toContain('--compute-artifacts-sidecar')
+    expect(args).toContain('--maven-use-only-socket-facts')
+    expect(args).toContain('--compute-artifacts-sidecar')
+    expect(sidecarContentAtSpawnTime).toEqual({})
   })
 
   it('passes --maven-use-only-socket-facts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {

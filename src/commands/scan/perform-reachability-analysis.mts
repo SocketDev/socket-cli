@@ -185,12 +185,14 @@ export async function performReachabilityAnalysis(
 
   const outputFilePath = outputPath || constants.DOT_SOCKET_DOT_FACTS_JSON
 
-  // Write the sidecar to a temp file for `--compute-artifacts-sidecar`; cleaned
-  // up in the finally below.
+  // Temp file for --compute-artifacts-sidecar, removed in the finally below.
+  // Written even when empty under dynamicSbomInference, since the
+  // --maven-use-only-socket-facts flag below requires one to be present.
   let sidecarPath: string | undefined
   if (
-    resolvedPathsSidecar &&
-    hasResolvedPathsSidecarEntries(resolvedPathsSidecar)
+    reachabilityOptions.dynamicSbomInference ||
+    (resolvedPathsSidecar &&
+      hasResolvedPathsSidecarEntries(resolvedPathsSidecar))
   ) {
     sidecarPath = path.join(
       tmpdir(),
@@ -198,7 +200,7 @@ export async function performReachabilityAnalysis(
     )
     await fs.writeFile(
       sidecarPath,
-      JSON.stringify(resolvedPathsSidecar),
+      JSON.stringify(resolvedPathsSidecar ?? {}),
       'utf8',
     )
   }
@@ -256,10 +258,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
-    // Coana rejects --maven-use-only-socket-facts without a sidecar to back
-    // it, so this also requires sidecarPath: a target with no Gradle/sbt/
-    // Maven build root never generates one, even with dynamicSbomInference on.
-    ...(reachabilityOptions.dynamicSbomInference && sidecarPath
+    // sidecarPath is always set above when this is true - Coana rejects this
+    // flag without one.
+    ...(reachabilityOptions.dynamicSbomInference
       ? ['--maven-use-only-socket-facts']
       : []),
     ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
