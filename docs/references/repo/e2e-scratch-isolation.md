@@ -9,7 +9,7 @@ pointing every such variable at a throwaway directory.
 There are two helpers because there are two ways a test reaches the CLI, and
 they do not pin the same set.
 
-## `executeCliInScratch` — spawning the binary
+## `executeCliInScratch` - spawning the binary
 
 Use this when the test runs the CLI as a subprocess. It builds a fresh scratch
 cwd and a fresh scratch HOME, then hands the child a pinned environment.
@@ -36,7 +36,7 @@ There is deliberately **no** `npm_config_userconfig` pin. `HOME` already decides
 where npm looks for the user `.npmrc`, so pinning it separately would be a
 second source of truth for the same path.
 
-## `withScratchHome` — calling internals in-process
+## `withScratchHome` - calling internals in-process
 
 Use this when the test calls socket-cli functions directly instead of spawning
 the binary. It swaps the environment for the duration of one callback and

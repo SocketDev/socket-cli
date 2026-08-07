@@ -1,8 +1,8 @@
 # JVM manifest-script compatibility tests
 
-These exercise the bundled build-tool scripts — the Gradle init script
+These exercise the bundled build-tool scripts - the Gradle init script
 (`socket-facts.init.gradle`), the sbt plugin (`socket-facts.plugin.scala`), and
-the Maven extension (`maven-extension/`) — against a matrix of build-tool
+the Maven extension (`maven-extension/`) - against a matrix of build-tool
 versions, asserting they still emit the expected line-protocol records.
 
 ## Run locally, on demand
@@ -26,15 +26,15 @@ by the `*.test.mts` unit tests.
 
 ## Stub dependencies
 
-All three fixtures declare their dependencies as stub artifacts — empty jars plus
-generated poms — that `make-stub-repo.sh` writes into a file-based Maven repo at
+All three fixtures declare their dependencies as stub artifacts - empty jars plus
+generated poms - that `make-stub-repo.sh` writes into a file-based Maven repo at
 test time. The fixtures only need the _shape_ of a dependency graph (a prod dep, a
 test dep, a transitive), never the code, so a stub is behaviourally identical here
 and can never age into a CVE alert or a version bump. The generated repos are
 gitignored; nothing binary is committed.
 
-Each build tool still fetches its own closure — Maven's plugins, sbt's
-scala-library, the Gradle distribution — from the network, so these fixtures are
+Each build tool still fetches its own closure - Maven's plugins, sbt's
+scala-library, the Gradle distribution - from the network, so these fixtures are
 not "fully offline"; they simply declare no third-party dependencies of their own.
 Gradle is the exception: it also passes `--offline` and resolves everything it
 needs for the smoke test from the stub repo.

@@ -141,10 +141,10 @@
 
 ### Testing
 
-- 🚨 **NEVER use `--` before test file paths** — runs ALL tests
+- 🚨 **NEVER use `--` before test file paths** - runs ALL tests
 - Always build before testing: `pnpm run build:cli`
 - Update snapshots: `pnpm testu <path>` or `--update` flag
-- NEVER write source-code-scanning tests — verify behavior, not string patterns
+- NEVER write source-code-scanning tests - verify behavior, not string patterns
 
 ### Command Pattern
 
@@ -152,14 +152,14 @@ Simple (<200 LOC, no subcommands): single `cmd-*.mts`. Complex: `cmd-*.mts` + `h
 
 ### Codex Usage
 
-Advice and critical assessment ONLY — never for making code changes. Consult before complex optimizations (>30min).
+Advice and critical assessment ONLY - never for making code changes. Consult before complex optimizations (>30min).
 
 ### Releasing v1.x
 
-`v1.x` ships `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry` from one tree at one version, via `.github/workflows/npm-publish.yml` on that branch — not `main`'s pipeline.
+`v1.x` ships `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry` from one tree at one version, via `.github/workflows/npm-publish.yml` on that branch - not `main`'s pipeline.
 
 - 🚨 A failure AFTER the tag step burns that version; move the hint to the next patch, never re-dispatch the same number. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage — both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
+- 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage - both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
 - 🚨 The USER names the release version; prepare the bump commit only after they do. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
 - Between releases `package.json` carries an `X.Y.Z-prerelease` hint; the bump strips it and promotes CHANGELOG's `## [Unreleased]`. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
 - 🚨 `v1.x` is the consumable line and owns the `latest` dist-tag; the default branch carries the 2.x PRERELEASE line and is refused `latest`. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)

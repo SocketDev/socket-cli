@@ -1,6 +1,6 @@
 # token-hygiene
 
-Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secrets to tool output. Mandatory across the Socket fleet — every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mjs`.
+Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secrets to tool output. Mandatory across the Socket fleet - every repo ships this file byte-for-byte via `scripts/sync-scaffolding.mjs`.
 
 ## What it blocks
 
@@ -23,20 +23,20 @@ Claude Code `PreToolUse` hook that refuses Bash tool calls that would leak secre
 
 Literal value patterns caught in-command:
 
-- Val Town — `vtwn_`
-- Linear — `lin_api_`
-- OpenAI / Anthropic — `sk-` (20+ chars)
-- Stripe — `sk_live_`, `sk_test_`, `pk_live_`, `rk_live_`
-- GitHub — `ghp_`, `gho_`, `ghs_`, `ghu_`, `ghr_`, `github_pat_`
-- GitLab — `glpat-`
-- AWS — `AKIA…`
-- Slack — `xoxb-`, `xoxa-`, `xoxp-`, `xoxr-`, `xoxs-`
-- Google — `AIza…`
-- JWTs — three-segment `eyJ…`
+- Val Town - `vtwn_`
+- Linear - `lin_api_`
+- OpenAI / Anthropic - `sk-` (20+ chars)
+- Stripe - `sk_live_`, `sk_test_`, `pk_live_`, `rk_live_`
+- GitHub - `ghp_`, `gho_`, `ghs_`, `ghu_`, `ghr_`, `github_pat_`
+- GitLab - `glpat-`
+- AWS - `AKIA…`
+- Slack - `xoxb-`, `xoxa-`, `xoxp-`, `xoxr-`, `xoxs-`
+- Google - `AIza…`
+- JWTs - three-segment `eyJ…`
 
 ## Control flow
 
-The hook reads the tool-use payload from stdin, type-checks `tool_name === 'Bash'`, and runs `check(command)`. Any rule violation `throw`s a typed `BlockError`; a single top-level `try/catch` in `main()` writes the block message to stderr and sets `process.exitCode = 2`. Hook bugs fail **open** — a crash in the hook writes a log line and returns exit 0 so legitimate work isn't blocked on a bad deploy.
+The hook reads the tool-use payload from stdin, type-checks `tool_name === 'Bash'`, and runs `check(command)`. Any rule violation `throw`s a typed `BlockError`; a single top-level `try/catch` in `main()` writes the block message to stderr and sets `process.exitCode = 2`. Hook bugs fail **open** - a crash in the hook writes a log line and returns exit 0 so legitimate work isn't blocked on a bad deploy.
 
 ## Testing
 

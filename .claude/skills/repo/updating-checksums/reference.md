@@ -99,7 +99,7 @@ Summary: X updated, Y unchanged
 Each tool has specific asset naming conventions:
 
 <details>
-<summary><b>Per-tool asset filenames</b> — the exact release-asset names for opengrep, python, socket-patch, sfw, trivy, and trufflehog</summary>
+<summary><b>Per-tool asset filenames</b> - the exact release-asset names for opengrep, python, socket-patch, sfw, trivy, and trufflehog</summary>
 
 **opengrep:**
 
@@ -113,7 +113,7 @@ Each tool has specific asset naming conventions:
 **python (python-build-standalone):**
 
 - `cpython-{version}+{buildTag}-{target}-{config}.tar.zst`
-- No checksums.txt — hashes computed by downloading each asset
+- No checksums.txt - hashes computed by downloading each asset
 
 **socket-patch:**
 

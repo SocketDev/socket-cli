@@ -25,7 +25,7 @@ Run the same command against the new version and replace the block below:
 npx @cyclonedx/cdxgen@<new-version> --help
 ```
 
-Then diff the two. Pay closest attention to flags that change _type_ — a flag
+Then diff the two. Pay closest attention to flags that change _type_ - a flag
 that moves between boolean, string, and array does not raise an error when our
 config disagrees. It parses to the wrong shape silently, and the mistake
 surfaces much later as a malformed SBOM.
@@ -38,7 +38,7 @@ Upstream sources for the pinned version:
 ## Frozen output
 
 <details>
-<summary><b>cdxgen@11.2.7 --help</b> — the full frozen flag list this repo's parser config must match</summary>
+<summary><b>cdxgen@11.2.7 --help</b> - the full frozen flag list this repo's parser config must match</summary>
 
 ```console
 npx @cyclonedx/cdxgen@11.2.7 --help

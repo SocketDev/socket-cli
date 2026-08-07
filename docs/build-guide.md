@@ -46,7 +46,7 @@ pnpm dev
 ### Directory Structure
 
 <details>
-<summary><b>Full tree</b> — every build-relevant directory under packages/ and scripts/</summary>
+<summary><b>Full tree</b> - every build-relevant directory under packages/ and scripts/</summary>
 
 ```text
 socket-cli/
@@ -146,10 +146,10 @@ pnpm build --target darwin-arm64
 pnpm build --platform darwin --arch arm64
 ```
 
-**Output**: `packages/package-builder/build/{dev|prod}/out/cli.exe.<triplet>/bin/socket` — `bin/socket.exe` on Windows. These directories are the publishable `@socketsecurity/cli.exe.<triplet>` tail packages.
+**Output**: `packages/package-builder/build/{dev|prod}/out/cli.exe.<triplet>/bin/socket` - `bin/socket.exe` on Windows. These directories are the publishable `@socketsecurity/cli.exe.<triplet>` tail packages.
 
 <details>
-<summary><b>Supported platforms and build steps</b> — the full target table and the SEA build phases</summary>
+<summary><b>Supported platforms and build steps</b> - the full target table and the SEA build phases</summary>
 
 #### Supported Platforms
 
@@ -291,8 +291,8 @@ Located in `packages/cli/.config/`:
 
 | Config              | Output          | Description                                      |
 | ------------------- | --------------- | ------------------------------------------------ |
-| `esbuild.cli.mjs`   | `build/cli.js`  | Main CLI bundle — bundles all source into one JS |
-| `esbuild.index.mjs` | `dist/index.js` | Entry point loader — thin shim that loads cli.js |
+| `esbuild.cli.mjs`   | `build/cli.js`  | Main CLI bundle - bundles all source into one JS |
+| `esbuild.index.mjs` | `dist/index.js` | Entry point loader - thin shim that loads cli.js |
 | `esbuild.build.mjs` | (orchestrator)  | Runs both cli and index builds in parallel       |
 
 ### Build Variants
@@ -364,7 +364,7 @@ pnpm build --force
 ### GitHub Actions Example
 
 <details>
-<summary><b>Full workflow</b> — build + test job plus the SEA matrix build across all eight targets</summary>
+<summary><b>Full workflow</b> - build + test job plus the SEA matrix build across all eight targets</summary>
 
 ```yaml
 jobs:

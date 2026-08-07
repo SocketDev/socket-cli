@@ -9,7 +9,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 ## Table of Contents
 
 <details>
-<summary><b>Full section list</b> — every heading and subheading in this document, in order</summary>
+<summary><b>Full section list</b> - every heading and subheading in this document, in order</summary>
 
 - [Architecture Overview](#architecture-overview)
 - [Command Pattern Architecture](#command-pattern-architecture)
@@ -46,7 +46,7 @@ Command-line interface for Socket.dev supply chain security analysis. Provides s
 ## Architecture Overview
 
 <details>
-<summary><b>Component diagram</b> — entry points, command routing, and handler/output layering down to the API/registry/filesystem</summary>
+<summary><b>Component diagram</b> - entry points, command routing, and handler/output layering down to the API/registry/filesystem</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -122,7 +122,7 @@ Example: scan create command
 ### Command Organization
 
 <details>
-<summary><b>Full directory listing</b> — every command directory under src/commands/ with its purpose</summary>
+<summary><b>Full directory listing</b> - every command directory under src/commands/ with its purpose</summary>
 
 ```text
 src/commands/
@@ -159,7 +159,7 @@ src/commands/
 Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 
 <details>
-<summary><b>Firewall dispatch diagram</b> — spawn path through DLX, security scanning, and registry override, plus the feature list</summary>
+<summary><b>Firewall dispatch diagram</b> - spawn path through DLX, security scanning, and registry override, plus the feature list</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -203,7 +203,7 @@ Package manager wrapping uses Socket Firewall (sfw) for security scanning:
 Multi-target build system supporting npm distribution and standalone executables:
 
 <details>
-<summary><b>Build pipeline</b> — esbuild source build, the SEA build steps, target list, and output artifacts</summary>
+<summary><b>Build pipeline</b> - esbuild source build, the SEA build steps, target list, and output artifacts</summary>
 
 ```text
 Build Pipeline
@@ -252,7 +252,7 @@ pnpm build:sea             # Build SEA binaries (all platforms)
 Dual update system based on installation method:
 
 <details>
-<summary><b>Update paths</b> — the SEA-binary stub check and the npm/pnpm/yarn manager.mts check, side by side</summary>
+<summary><b>Update paths</b> - the SEA-binary stub check and the npm/pnpm/yarn manager.mts check, side by side</summary>
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -284,7 +284,7 @@ Dual update system based on installation method:
 ## Utility Modules
 
 <details>
-<summary><b>Full directory listing</b> — every category under src/util/ with its purpose</summary>
+<summary><b>Full directory listing</b> - every category under src/util/ with its purpose</summary>
 
 ```text
 src/util/
@@ -511,7 +511,7 @@ Features:
 ### Command Modules (src/commands/)
 
 <details>
-<summary><b>Full command module list</b> — every directory under src/commands/ with what it wraps</summary>
+<summary><b>Full command module list</b> - every directory under src/commands/ with what it wraps</summary>
 
 - `scan/` - Security scanning with 11 subcommands (create, report, reach, diff, view, list, delete, metadata, setup, github)
 - `organization/` - Organization management (dependencies, quota, policies)
@@ -547,7 +547,7 @@ Features:
 ### Utility Modules (src/util/)
 
 <details>
-<summary><b>Full module list</b> — every src/util/ file grouped by category, from API & Network through Validation</summary>
+<summary><b>Full module list</b> - every src/util/ file grouped by category, from API & Network through Validation</summary>
 
 #### API & Network
 

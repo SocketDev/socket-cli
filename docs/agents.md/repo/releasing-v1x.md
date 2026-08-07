@@ -1,7 +1,7 @@
 # Releasing v1.x
 
-The `v1.x` branch ships three npm packages — `socket`, `@socketsecurity/cli`,
-and `@socketsecurity/cli-with-sentry` — from one source tree at one shared
+The `v1.x` branch ships three npm packages - `socket`, `@socketsecurity/cli`,
+and `@socketsecurity/cli-with-sentry` - from one source tree at one shared
 version. The publisher is `.github/workflows/npm-publish.yml` **on the `v1.x`
 branch**, which is a different pipeline from the one `main` uses for the 2.x
 line.
@@ -53,8 +53,8 @@ every other member.
 
 ## Two jobs, one credential boundary
 
-`verify` binds no environment and mints no OIDC token, so nothing it runs —
-install scripts, build tooling, third-party actions — can reach a publish
+`verify` binds no environment and mints no OIDC token, so nothing it runs -
+install scripts, build tooling, third-party actions - can reach a publish
 credential. `publish` holds the credential and does almost nothing: no
 checkout, no install, no build. It publishes the exact bytes `verify` packed
 and proved, so what ships is what was tested.
@@ -63,7 +63,7 @@ and proved, so what ships is what was tested.
 
 The tag and release are cut BEFORE the uploads so the provenance attestation
 binds markers that already exist. The trade: a failure after the tag exists
-burns that version number. Move the hint to the next patch and go again — the
+burns that version number. Move the hint to the next patch and go again - the
 tag step hard-fails on a re-tag by design rather than silently moving a tag
 someone may already have pulled. Re-running the exact same commit is safe: the
 tag and release steps are idempotent and the stage upload retries.

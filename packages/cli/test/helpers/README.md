@@ -9,7 +9,7 @@ This test helper library provides a fluent, type-safe API for testing Socket CLI
 ## Quick Start
 
 <details>
-<summary><b>Full example</b> — importing the helpers and scanning a temp workspace end to end</summary>
+<summary><b>Full example</b> - importing the helpers and scanning a temp workspace end to end</summary>
 
 ```typescript
 import {

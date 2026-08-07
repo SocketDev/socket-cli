@@ -6,7 +6,7 @@
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 [![Follow @socket.dev on Bluesky](https://img.shields.io/badge/Follow-@socket.dev-1DA1F2?style=social&logo=bluesky)](https://bsky.app/profile/socket.dev)
 
-CLI for [Socket.dev](https://socket.dev) — bring Socket's supply-chain security analysis to your terminal and CI.
+CLI for [Socket.dev](https://socket.dev) - bring Socket's supply-chain security analysis to your terminal and CI.
 
 Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This repository is the source for the published `socket` package on npm; end-user documentation lives on [socket.dev](https://docs.socket.dev) and the [`socket` npm page](https://socket.dev/npm/package/socket).
 
@@ -96,7 +96,7 @@ Key development environment variables:
 
 The API base URL and the npm registry URL both receive an `Authorization`
 header, so the CLI refuses either one when it points at a loopback, private, or
-link-local host — a repo-supplied `SOCKET_CLI_CONFIG` or `.npmrc` cannot aim the
+link-local host - a repo-supplied `SOCKET_CLI_CONFIG` or `.npmrc` cannot aim the
 token at `169.254.169.254` or an internal service. An enterprise Socket instance
 or npm registry reached by a literal private address names that host in
 `SOCKET_CLI_ALLOWED_PRIVATE_HOSTS`:
@@ -110,11 +110,11 @@ allow every other private host.
 
 Further contributor reading:
 
-- [`docs/build-guide.md`](docs/build-guide.md) — build pipeline, SEA binaries, cache management
-- [`docs/bundle-tools.md`](docs/bundle-tools.md) — how bundled tools (opengrep, trivy, etc.) are integrated
-- [`packages/cli/README.md`](packages/cli/README.md) — CLI package architecture
-- [`packages/build-infra/README.md`](packages/build-infra/README.md) — shared build tooling
-- [`packages/package-builder/README.md`](packages/package-builder/README.md) — template-based package generation
+- [`docs/build-guide.md`](docs/build-guide.md) - build pipeline, SEA binaries, cache management
+- [`docs/bundle-tools.md`](docs/bundle-tools.md) - how bundled tools (opengrep, trivy, etc.) are integrated
+- [`packages/cli/README.md`](packages/cli/README.md) - CLI package architecture
+- [`packages/build-infra/README.md`](packages/build-infra/README.md) - shared build tooling
+- [`packages/package-builder/README.md`](packages/package-builder/README.md) - template-based package generation
 
 </details>
 

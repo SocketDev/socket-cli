@@ -200,7 +200,7 @@ src/commands/package/
 Commands are exported from `src/commands.mts`:
 
 <details>
-<summary><b>Root export and subcommand wiring</b> — the commands.mts shape and a full meowWithSubcommands example</summary>
+<summary><b>Root export and subcommand wiring</b> - the commands.mts shape and a full meowWithSubcommands example</summary>
 
 ```typescript
 export const rootCommands = {
@@ -279,7 +279,7 @@ mkdir -p src/commands/mycommand
 **`src/commands/mycommand/cmd-mycommand.mts`:**
 
 <details>
-<summary><b>Full command-definition scaffold</b> — imports, CMD_NAME, description, and the run() stub</summary>
+<summary><b>Full command-definition scaffold</b> - imports, CMD_NAME, description, and the run() stub</summary>
 
 ```typescript
 import type {

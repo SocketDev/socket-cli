@@ -121,7 +121,7 @@ it('should display <command> help', async () => {
 Some commands have functional tests beyond `--help`:
 
 <details>
-<summary><b>whoami and config list tests</b> — the two auth-gated functional checks beyond --help</summary>
+<summary><b>whoami and config list tests</b> - the two auth-gated functional checks beyond --help</summary>
 
 ```typescript
 // whoami

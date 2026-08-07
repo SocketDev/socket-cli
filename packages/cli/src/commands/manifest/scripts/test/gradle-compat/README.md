@@ -13,10 +13,10 @@ could silently rot. This smoke test exercises them.
 
 ## What it does
 
-`smoke-test.sh <path-to-gradle>` generates a tiny **local** Maven repo (`../make-stub-repo.sh` — two
+`smoke-test.sh <path-to-gradle>` generates a tiny **local** Maven repo (`../make-stub-repo.sh` - two
 transitive-free artifacts, a prod `demo.lib:foo` and a test `demo.test:bar`), runs the init script's
 `socketFacts` task against `project/` **fully offline**, and asserts the emitted RECORDS (the script's
-only output — the TS assembler that turns records into `.socket.facts.json` is covered by
+only output - the TS assembler that turns records into `.socket.facts.json` is covered by
 `nx test utils`): exactly the two expected dependency nodes, `foo` in a prod root, `bar` only in
 non-prod roots, and an on-disk jar `file` record for each under `-Psocket.withFiles`.
 
@@ -31,4 +31,4 @@ JAVA_HOME=<jdk8> ./smoke-test.sh "$PWD/gradle-2.14.1/bin/gradle"
 ```
 
 CI runs it (and the SBT equivalent) across a label-gated matrix in
-`.github/workflows/manifest-scripts-compat.yml` — add the `manifest-scripts` label to a PR to run it.
+`.github/workflows/manifest-scripts-compat.yml` - add the `manifest-scripts` label to a PR to run it.

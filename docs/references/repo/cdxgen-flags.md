@@ -7,7 +7,7 @@ is derived from it: cdxgen parses its own args with yargs, so the Socket CLI
 mirrors that config instead of re-declaring every flag in meow.
 
 This lives in a doc rather than inline because it is a snapshot of one exact
-version, and that is what makes it useful — a version that gets unpublished
+version, and that is what makes it useful - a version that gets unpublished
 cannot be fetched again. To move to a newer cdxgen, run the command below and
 replace the block with its output.
 

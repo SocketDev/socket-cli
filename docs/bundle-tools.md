@@ -149,8 +149,8 @@ Checksums are **required** in production builds. Dev mode allows downloads witho
 
 ### npm tool integrity
 
-The three `packageManager: "npm"` tools — `@coana-tech/cli`, `@cyclonedx/cdxgen`,
-and `synp` — pin a `sha512-<base64>` SRI in `integrity` rather than a per-asset
+The three `packageManager: "npm"` tools - `@coana-tech/cli`, `@cyclonedx/cdxgen`,
+and `synp` - pin a `sha512-<base64>` SRI in `integrity` rather than a per-asset
 sha256. Two links have to hold for that pin to mean anything:
 
 1. **Tarball bytes against the registry's advertised hash.** npm's installer
