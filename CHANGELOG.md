@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Updated the Coana CLI to v `15.10.9`.
 
+## [1.1.156](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.156) - 2026-08-07
+
+### Changed
+- Updated the Coana CLI to v `15.10.10`.
+
 ## [1.1.155](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.155) - 2026-08-07
 
 ### Added
