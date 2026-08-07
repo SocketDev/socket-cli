@@ -21,7 +21,7 @@ export type ResolvedComponent = {
   ext: string
   // The serialized sidecar carries an explicit JSON null for "no classifier";
   // omitting the key would change the frozen contract.
-  // socket-lint: allow prefer-undefined-over-null
+  // oxlint-disable-next-line socket/prefer-undefined-over-null -- frozen sidecar contract serializes an explicit JSON null
   classifier: string | null
   // Classpath entries (jars / first-party output dirs).
   targets: string[]
