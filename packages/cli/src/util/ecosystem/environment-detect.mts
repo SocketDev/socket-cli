@@ -14,7 +14,7 @@ import { toEditablePackageJson } from '@socketsecurity/lib-stable/packages/edit'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
-// socket-lint: allow bare-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
 import semver from 'semver'
 
 import { getMinimumVersionByAgent } from '../../constants/agents.mts'
