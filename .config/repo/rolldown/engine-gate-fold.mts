@@ -37,9 +37,10 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import MagicString from 'magic-string'
 import { parseAst } from 'rolldown/parseAst'
-// socket-lint: allow bare-semver -- the fold verdicts are range ALGEBRA
+// The fold verdicts are range ALGEBRA.
 // (validRange / subset / intersects), which the lib versions/* surface does
 // not expose; this build-time plugin needs the upstream package directly.
+// oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- the fold
 import semver from 'semver'
 
 import { langForId, matchesChain, memberPropName } from './define-guarded.mts'

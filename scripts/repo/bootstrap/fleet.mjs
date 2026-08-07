@@ -1447,12 +1447,24 @@ function extractFleetBlockLines(target) {
     .filter(line => line.trim() !== '')
 }
 /**
- * Apply thin mode: write a fleet-managed `.gitignore` block carrying the
- * cascade's existing rules plus the wholly-fleet bundle untrack paths (see
- * fleetPackOwnedPaths) and `.agents/`, then untrack them from git so the fetch
- * action repopulates them going forward.
+ * Write the fleet-managed `.gitignore` block: the cascade's existing rules plus
+ * the wholly-fleet bundle untrack paths (see fleetPackOwnedPaths) and
+ * `.agents/`. Idempotent — entries already in the block are not re-added, so
+ * running this on every hydrate converges instead of growing.
+ *
+ * This is the HALF that is safe to run unconditionally for a thin consumer. It
+ * only edits `.gitignore`; it never touches the git index, so a member whose
+ * payload is still tracked keeps every file it has committed (gitignore has no
+ * effect on tracked paths). The index-mutating half lives in
+ * untrackFleetPackPaths and stays behind an explicit `--thin`.
+ *
+ * Splitting them is what lets the list stay CURRENT. The entries are explicit,
+ * one line per bundle file, so the list is only correct for the pack that
+ * generated it; a pack that adds files leaves those files matching nothing.
+ * Regenerating only under `--thin` — a one-time conversion flag no normal
+ * invocation passes — froze every member's list on its conversion day.
  */
-function untrackFleetPackPaths(config) {
+function refreshFleetPackIgnores(config) {
   const { dest, manifest } = {
     __proto__: null,
     ...config,
@@ -1478,7 +1490,25 @@ function untrackFleetPackPaths(config) {
     target: existing,
   })
   writeFileSync(gitignorePath, updated)
-  const rmTargets = ['.agents/', ...sortedRoots]
+}
+/**
+ * Apply thin mode: refresh the gitignore block (refreshFleetPackIgnores), then
+ * untrack those paths from git so the fetch action repopulates them going
+ * forward. The `git rm --cached` is the CONVERSION step and is destructive —
+ * it drops files from the index — so it stays behind an explicit `--thin` and
+ * is never inferred from repo state. socket-vscode is the case that forces the
+ * distinction: it carries a pinned `bundle.ref` AND 81 still-tracked payload
+ * files, so inferring the untrack from the pin alone would silently delete
+ * them from its index on the next ordinary hydrate.
+ */
+function untrackFleetPackPaths(config) {
+  const cfg = {
+    __proto__: null,
+    ...config,
+  }
+  const { dest, manifest } = cfg
+  refreshFleetPackIgnores(cfg)
+  const rmTargets = ['.agents/', ...fleetPackOwnedPaths(manifest)]
   if (rmTargets.length > 0)
     try {
       execFileSync(
@@ -2576,6 +2606,11 @@ async function installFleet(config) {
         dest,
         manifest,
       })
+    else if (readBundleRef(dest) !== void 0)
+      refreshFleetPackIgnores({
+        dest,
+        manifest,
+      })
     writeAppliedRef(dest, sourceRef)
     writeAppliedFiles(dest, Object.keys(manifest.files))
     const prunedTotal = prunedCount + tombstonedCount
@@ -2669,6 +2704,7 @@ export {
   readBundleRef,
   readManifest,
   readNoticeStore,
+  refreshFleetPackIgnores,
   removeTombstonedPaths,
   resolveLockStepState,
   resolveNewestRef,

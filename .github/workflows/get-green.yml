@@ -142,7 +142,14 @@ jobs:
             echo "no mechanical fixes to commit — the branch was already green."
             exit 0
           fi
-          git add -A
+          # Stage the catalog + lockfile pair by name, then every tracked
+          # modification the fixer made. Never a blanket `git add -A`: a
+          # blanket sweep once carried a half-finished update tree — a
+          # pnpm-workspace.yaml catalog bump without its regenerated
+          # pnpm-lock.yaml — into a member commit, and untracked leftovers
+          # (build output, logs) have no place in a mechanical-fix commit.
+          git add -- pnpm-workspace.yaml pnpm-lock.yaml
+          git add --update -- .
           git -c user.name='socket-bot' \
               -c user.email='socket-bot@users.noreply.github.com' \
               commit -m 'fix(deps): apply the deterministic autofixer after the update'

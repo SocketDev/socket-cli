@@ -139,8 +139,7 @@ template/.claude/hooks/fleet/_shared/acorn/acorn.wasm binary
 .github/agent-ci.Dockerfile linguist-generated=true
 .github/dependabot.yml linguist-generated=true
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
-.github/workflows/get-green.lock.yml linguist-generated=true
-.github/workflows/get-green.md linguist-generated=true
+.github/workflows/get-green.yml linguist-generated=true
 .github/workflows/github-release.yml linguist-generated=true
 .github/workflows/npm-publish-dryrun.yml linguist-generated=true
 .github/workflows/npm-publish.yml linguist-generated=true
@@ -164,10 +163,13 @@ patches/taze@19.17.1.patch linguist-generated=true
 scripts/fleet linguist-generated=true
 scripts/repo/bootstrap linguist-generated=true
 test/fleet/_shared/lib linguist-generated=true
+test/fleet/e2e/comment-voice.test.mts linguist-generated=true
+test/fleet/integration/comment-voice.test.mts linguist-generated=true
 test/fleet/nock-loopback-passthrough.test.mts linguist-generated=true
 test/fleet/publish-infra/cargo/placeholder.test.mts linguist-generated=true
 test/fleet/publish-infra/npm/placeholder.test.mts linguist-generated=true
 test/fleet/scripts/setup.mts linguist-generated=true
+test/fleet/unit/comment-voice.test.mts linguist-generated=true
 # </fleet>
 # <repo>
 # </repo>

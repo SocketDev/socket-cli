@@ -203,6 +203,7 @@ packages/socket/*.png
 # load this single artifact via jsPlugins instead of the ~100 rule source
 # dirs. Release-only + gitignored like the hook bundles above.
 **/.config/fleet/oxlint-plugin.mjs
+
 # Derived cross-harness rule adapters — generated per-repo, per-platform by
 # the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
 # and CLAUDE.md, never committed. A tracked symlink checks out as a plain
@@ -226,6 +227,7 @@ packages/socket/*.png
 /.windsurf/
 /AGENTS.md
 /opencode.json
+
 # VS Code: ignore the dir contents so a hidden tasks.json with a `folderOpen`
 # auto-run (a known npm supply-chain vector — runs on folder open, zero clicks)
 # cannot be committed. Re-include only the benign shared settings.json. Use the
@@ -233,10 +235,12 @@ packages/socket/*.png
 # vscode-folder-open-task-guard backstops any explicitly-added auto-run task.
 /.vscode/*
 !/.vscode/settings.json
+
 # OS noise
 .DS_Store
 ._.DS_Store
 Thumbs.db
+
 # Build outputs — universal across the fleet. Project-specific
 # variants (e.g. a non-standard dist path) go OUTSIDE this block.
 # The build/test-output + vendored-tree entries below are kept in
@@ -250,6 +254,7 @@ Thumbs.db
 **/.repo-map/
 **/.swc/
 **/.vitiate/
+
 # Vendored / upstream trees + conformance fixtures — untracked-by-default
 # (docs/agents.md/fleet/untracked-by-default.md): someone else's source or
 # synced corpora, restored by the owning sync/build step, never hand-edited.
@@ -257,6 +262,7 @@ Thumbs.db
 # OUTSIDE this block (!<dir>/ then <dir>/* then !<dir>/<file>).
 **/test/fixtures/
 **/upstream/
+
 # Node
 node_modules
 # Workspace-local pnpm store — CI jobs whose pnpm runs inside a

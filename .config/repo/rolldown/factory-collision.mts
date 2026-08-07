@@ -139,9 +139,9 @@ export function createPrebundleRenamePlugin(
     },
     ...(realpathIds
       ? {
-          // socket-lint: allow bag-param-optionality-naming -- mirrors
           // rolldown's resolveId hook signature; the third positional arg IS
           // rolldown's resolve options, not a fleet options bag.
+          // oxlint-disable-next-line socket/bag-param-optionality-naming -- mirrors
           async resolveId(source, importer, options) {
             const resolved = await this.resolve(source, importer, {
               ...options,

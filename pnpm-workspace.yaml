@@ -505,8 +505,6 @@ minimumReleaseAgeExclude:
   - 'oxlint@1.77.0'
   # published: 2026-08-05 | removable: 2026-08-12
   - 'rolldown@1.2.3'
-  # published: 2026-07-30 | removable: 2026-08-06
-  - 'brace-expansion@5.0.9'
 blockExoticSubdeps: true
 
 # Proceed with a node_modules purge WITHOUT an interactive confirm. The fleet
