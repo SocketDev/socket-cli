@@ -1204,19 +1204,6 @@ function pruneStaleFleetFiles(dest, manifest, previousFiles) {
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/install.mts
 const logger$4 = getDep0Logger()
-/**
- * Place every verified bundle file from `filesDir` into `dest`, creating
- * parent directories as needed. Sentinel-scoped ONLY for the DESIGNATED
- * segment files (FLEET_CANONICAL_SPLICE_FILES): the bundle bytes replace
- * everything through the fleet-canonical end sentinel and the member tail
- * after it survives byte-for-byte — the repo-local oxlintrc ignorePatterns,
- * the derived .prettierignore lockstep-mirrors block. A whole-file copy here
- * wiped exactly those tails on every bootstrap-path refresh. Every other file
- * is a plain byte copy — the PATH gate is load-bearing: content-only gating
- * spliced ANY placed file merely mentioning the sentinel token, stitching
- * stale member tails onto fresh bundle heads (the v1.0.14 fetcher-chimera
- * incident). A designated file landing for the first time also byte-copies.
- */
 function installFiles(filesDir, dest, manifest) {
   const locking = readonlyBundleMirrorsEnabled()
   const generatedPaths = new Set(
@@ -1224,11 +1211,16 @@ function installFiles(filesDir, dest, manifest) {
   )
   const hybridPaths = computeHybridPaths(manifest)
   const rels = Object.keys(manifest.files)
+  let placed = 0
+  let skippedAlwaysTracked = 0
   for (let i = 0, { length } = rels; i < length; i += 1) {
     const rel = rels[i]
     const source = path.join(filesDir, rel)
     const target = path.join(dest, rel)
-    if (isAlwaysTrackedSurface(rel) && existsSync(target)) continue
+    if (isAlwaysTrackedSurface(rel) && existsSync(target)) {
+      skippedAlwaysTracked += 1
+      continue
+    }
     mkdirSync(path.dirname(target), { recursive: true })
     let spliced
     if (isFleetCanonicalSpliceFile(rel) && existsSync(target)) {
@@ -1242,9 +1234,11 @@ function installFiles(filesDir, dest, manifest) {
     ensureWritableTarget(target)
     if (spliced !== void 0) {
       writeFileSync(target, spliced)
+      placed += 1
       continue
     }
     copyFileSync(source, target)
+    placed += 1
     if (
       locking &&
       isLockablePlacement({
@@ -1254,6 +1248,10 @@ function installFiles(filesDir, dest, manifest) {
       })
     )
       lockFileReadonlySync(target)
+  }
+  return {
+    placed,
+    skippedAlwaysTracked,
   }
 }
 /**
@@ -2664,7 +2662,7 @@ async function installFleet(config) {
       )
       return 0
     }
-    installFiles(filesDir, dest, manifest)
+    const installResult = installFiles(filesDir, dest, manifest)
     untrackGeneratedOutputs(dest, manifest.generatedPaths)
     const prunedCount = pruneStaleFleetFiles(
       dest,
@@ -2695,8 +2693,12 @@ async function installFleet(config) {
     const movedNote = movedCount > 0 ? `, moved ${movedCount}` : ''
     const prunedNote =
       (prunedTotal > 0 ? `, pruned ${prunedTotal} stale` : '') + movedNote
+    const skippedNote =
+      installResult.skippedAlwaysTracked > 0
+        ? ` ${installResult.skippedAlwaysTracked} always-tracked file(s) left to the cascade (run sync-scaffolding to refresh them).`
+        : ''
     logger.log(
-      `install-fleet: placed ${fileCount} file(s) + ${segmentCount} segment(s)${prunedNote} from ${sourceRef} (template ${manifest.templateSha}) → ${dest}.`,
+      `install-fleet: placed ${installResult.placed} of ${fileCount} file(s) + ${segmentCount} segment(s)${prunedNote} from ${sourceRef} (template ${manifest.templateSha}) → ${dest}.${skippedNote}`,
     )
     return 0
   } finally {
