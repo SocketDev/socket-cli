@@ -2855,6 +2855,7 @@ scripts/fleet/publish-infra/npm/bump.mts
 scripts/fleet/publish-infra/npm/challenge-gate.mts
 scripts/fleet/publish-infra/npm/login.mts
 scripts/fleet/publish-infra/npm/otp-runner.mts
+scripts/fleet/publish-infra/npm/owner-sweep.mts
 scripts/fleet/publish-infra/npm/pack-manifest.mts
 scripts/fleet/publish-infra/npm/pack-preflight.mts
 scripts/fleet/publish-infra/npm/pinned-npm.mts
