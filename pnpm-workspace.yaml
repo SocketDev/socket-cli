@@ -375,9 +375,6 @@ minimumReleaseAgeExclude:
   # trumps the soak heuristic for this one pinned version. Scoped to
   - '@stuie/*'
   - '@ultrathink/*'
-  # @yuku-parser 0.5.31 — third-party native parser; the per-platform binding
-  # family pinned to the exact version (a scope glob would blanket-bypass any
-  # future @yuku-parser publish). Published within the 7-day soak.
   # oxfmt 0.55.0 — the formatter; bumped from 0.48.0 for its jsdoc fixes.
   # The main package + per-platform binding family are pinned to the exact
   # version (a scope glob would blanket-bypass any future @oxfmt publish). All
@@ -406,10 +403,6 @@ minimumReleaseAgeExclude:
   # markdownlint-cli2 0.23.1's vulnerable 5.2.1 exact-pin. Soak bypassed per
   # the high-severity security exception; exact-pinned so a future version
   # re-soaks.
-  # yuku 0.8.0 — the transitive napi tree behind rolldown-plugin-dts
-  # 0.27.14 (same owner directive as its entry above: build-only dts
-  # emitter, never shipped to runtime). Core packages + both per-platform
-  # binding families, exact-pinned so future versions re-soak.
   # published: 2026-08-04 | removable: 2026-08-11
   - '@socketsecurity/lib@6.5.3'
   # published: 2026-08-03 | removable: 2026-08-10
