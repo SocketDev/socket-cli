@@ -163,9 +163,7 @@ async function main() {
       const outputPath = getCliExeBinaryPath(triplet)
 
       await buildTarget(target, entryPoint, { outputPath })
-      logger.success(
-        `${targetName} -> ${path.relative(rootPath, outputPath)}`,
-      )
+      logger.success(`${targetName} -> ${path.relative(rootPath, outputPath)}`)
       return { outputPath, success: true, target }
     }),
   )

@@ -13,7 +13,7 @@ export function fileLink(filePath: string, text?: string | undefined): string {
   const absolutePath = path.isAbsolute(filePath)
     ? filePath
     : path.resolve(filePath)
-  return terminalLink(text ?? filePath, `file://${absolutePath}`)
+  return terminalLink(text ?? filePath, pathToFileURL(absolutePath).href)
 }
 
 /**

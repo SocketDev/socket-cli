@@ -243,8 +243,8 @@ describe('renderGrepMatches', () => {
 
   it('does not repeat a line shared by two windows', () => {
     const rendered = renderGrepMatches(lines, [1, 2], 1)
-    expect(rendered.split(/\r?\n/).filter(l => l.includes('three'))).toHaveLength(
-      1,
-    )
+    expect(
+      rendered.split(/\r?\n/).filter(l => l.includes('three')),
+    ).toHaveLength(1)
   })
 })
