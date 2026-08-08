@@ -1879,6 +1879,7 @@ pnpm-debug.log
 .config/fleet/oxlint-plugin/fleet/no-file-scope-oxlint-disable/package.json
 .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file/index.mts
 .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file/package.json
+.config/fleet/oxlint-plugin/fleet/no-handbuilt-file-url/index.mts
 .config/fleet/oxlint-plugin/fleet/no-inline-defer-async/index.mts
 .config/fleet/oxlint-plugin/fleet/no-inline-defer-async/package.json
 .config/fleet/oxlint-plugin/fleet/no-inline-logger/index.mts
@@ -2544,7 +2545,7 @@ scripts/fleet/check/odai-legs-are-switched-on.mts
 scripts/fleet/check/oxlint-plugin-loads.mts
 scripts/fleet/check/pack-bytes-have-no-private-refs.mts
 scripts/fleet/check/pack-contents-are-clean.mts
-scripts/fleet/check/pack-scripts-import-lib-stable.mts
+scripts/fleet/check/pack-imports-are-lib-stable.mts
 scripts/fleet/check/package-files-are-allowlisted.mts
 scripts/fleet/check/package-manager-auto-update-is-disabled.mts
 scripts/fleet/check/package-manager-node-is-continuous.mts
