@@ -24,7 +24,7 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../fleet/_shared/is-main-module.mts'
-import { uploadNpmPackage } from '../fleet/publish-infra/npm/publish-command.mts'
+import { uploadNpmPackage } from '../fleet/registry-infra/npm/publish-command.mts'
 import {
   CLI_EXE_TRIPLETS,
   cliExeBinaryName,
