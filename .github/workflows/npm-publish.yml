@@ -24,7 +24,7 @@ name: 📦 npm publish
 # the CONTENT while the workflow definition stays main's. The bump/changelog
 # gate is bypassed; hard gap-fill-only guards replace it (never-published
 # version, lower than latest, non-latest dist-tag, content declares its own
-# version) — see scripts/fleet/publish-infra/npm/backfill.mts.
+# version) — see scripts/fleet/registry-infra/npm/backfill.mts.
 #
 # NAPI ADDON PATH: not here. A member that declares a `napi` block in
 # .config/repo/socket-wheelhouse.json receives a SEPARATE, conditionally

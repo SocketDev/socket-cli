@@ -57,7 +57,7 @@ const [, , url, integrityArg, destDir, binName] = process.argv
 
 if (!url || !integrityArg || !destDir) {
   logger.fail(
-    '× usage: install-tool.mjs <url> <integrity> <dest-dir> [<bin-name>]',
+    'usage: install-tool.mjs <url> <integrity> <dest-dir> [<bin-name>]',
   )
   process.exit(1)
 }

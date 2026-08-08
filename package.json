@@ -75,16 +75,19 @@
     "weekly-update:ci": "gh workflow run weekly-update.yml",
     "strip:ai-tags": "node scripts/fleet/strip-ai-tags.mts",
     "npm:approve": "node scripts/fleet/publish-pipeline.mts --approve",
-    "npm:auth": "node scripts/fleet/npm-web-auth.mts",
+    "npm:auth": "node scripts/fleet/npm-auth.mts",
     "npm:staged": "node scripts/fleet/publish-pipeline.mts --status",
     "hide-comments": "node scripts/fleet/hide-comments.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
     "soak:bypass": "node scripts/fleet/soak-bypass.mts",
-    "npm:trust": "node scripts/fleet/publish-infra/npm/trust.mts",
+    "npm:trust": "node scripts/fleet/registry-infra/npm/trust.mts",
     "npm:dispatch": "gh workflow run npm-publish-packages.yml -R SocketDev/socket-registry --ref main -f publish=true",
     "npm:login": "node scripts/fleet/npm-web-auth.mts login",
     "prune:branch-backups": "node scripts/fleet/backup-branches.mts prune",
-    "preflight": "node scripts/fleet/preflight.mts"
+    "preflight": "node scripts/fleet/preflight.mts",
+    "npm:auth:browser": "node scripts/fleet/npm-auth-browser.mts",
+    "npm:auth:cli": "node scripts/fleet/npm-auth-cli.mts",
+    "prune:gha-caches": "node scripts/fleet/prune-actions-caches.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",

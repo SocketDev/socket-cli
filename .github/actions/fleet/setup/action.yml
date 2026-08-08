@@ -267,7 +267,7 @@ runs:
         # and leaves a placeholder NODE_AUTH_TOKEN in every later step's env;
         # fleet npm publishes authenticate via OIDC trusted publishing and the
         # preflight refuses any set token
-        # (scripts/fleet/publish-infra/npm/auth-posture.mts), so the port
+        # (scripts/fleet/registry-infra/npm/auth-posture.mts), so the port
         # removes that credential surface instead of reproducing it. Branch
         # decisions — version-spec resolution, the platform → asset mapping,
         # and the SHASUMS256 hex → SRI conversion — live in the co-located

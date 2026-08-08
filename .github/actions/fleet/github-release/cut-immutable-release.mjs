@@ -124,7 +124,7 @@ export function resolveNotesArgs(
  */
 export function parseAssetList(assets) {
   return assets
-    .split('\n')
+    .split(/\r?\n/)
     .map(line => line.trim())
     .filter(line => line !== '')
 }
