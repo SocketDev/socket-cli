@@ -106,7 +106,7 @@ export function formatErrorForDisplay(
 
     if (showStack && error.stack) {
       // Format stack trace with proper indentation.
-      const stackLines = error.stack.split('\n')
+      const stackLines = error.stack.split(/\r?\n/)
       const formattedStack = stackLines
         .slice(1)
         .map(line => `  ${colors.dim(line.trim())}`)
@@ -138,7 +138,7 @@ export function formatErrorForDisplay(
 
         if (isError(currentCause) && currentCause.stack && depth === 1) {
           const causeStack = currentCause.stack
-            .split('\n')
+            .split(/\r?\n/)
             .slice(1)
             .map(line => `  ${colors.dim(line.trim())}`)
             .join('\n')

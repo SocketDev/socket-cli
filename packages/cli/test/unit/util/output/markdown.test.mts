@@ -243,7 +243,7 @@ describe('markdown utilities', () => {
 
       expect(result).toContain('| Col1 | Col2 |')
       expect(result).toContain('| ---- | ---- |')
-      expect(result.split('\n')).toHaveLength(3)
+      expect(result.split(/\r?\n/)).toHaveLength(3)
     })
   })
 
@@ -364,7 +364,7 @@ describe('markdown utilities', () => {
       expect(result).toContain('| Column1 | Column2 |')
       expect(result).toContain('| ------- | ------- |')
       // Empty array produces: div, header, div, div (body.trim() is empty so removed).
-      const lines = result.split('\n')
+      const lines = result.split(/\r?\n/)
       expect(lines).toHaveLength(4)
       expect(lines[0]).toBe('| ------- | ------- |')
       expect(lines[1]).toBe('| Column1 | Column2 |')

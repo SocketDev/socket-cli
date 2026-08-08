@@ -20,7 +20,7 @@ export function loadEnvFile(filePath: string): Record<string, string> {
   } catch {
     return env
   }
-  const lines = content.split('\n')
+  const lines = content.split(/\r?\n/)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]
     const trimmed = line.trim()

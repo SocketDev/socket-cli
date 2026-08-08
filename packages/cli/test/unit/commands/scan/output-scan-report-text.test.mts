@@ -170,7 +170,7 @@ describe('toPlainTextReport', () => {
 
     const lines = toPlainTextReport(
       buildReport({ alerts, healthy: false }),
-    ).split('\n')
+    ).split(/\r?\n/)
     const header = lines.find(line => line.includes('ALERT TYPE'))!
     const shortRow = lines.find(line => line.includes('envVars'))!
     const longRow = lines.find(line => line.includes('telemetry'))!
@@ -198,7 +198,7 @@ describe('toPlainTextReport', () => {
       buildReport({ alerts: buildAlerts(), healthy: false }),
     )
     const overlong = text
-      .split('\n')
+      .split(/\r?\n/)
       .filter(line => !line.trim().startsWith('https://') && line.length > 100)
 
     expect(overlong).toEqual([])

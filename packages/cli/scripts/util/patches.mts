@@ -34,7 +34,7 @@ async function commitPatch(patchPath, packageName) {
     throw new Error(`Failed to commit patch for ${packageName}`)
   }
 
-  logger.log(`✓ Patch created for ${packageName}`)
+  logger.success(`Patch created for ${packageName}`)
 }
 
 /**
@@ -78,7 +78,7 @@ async function createPatch(patchDef) {
       const changed = await transform(file, utils)
       if (changed) {
         hasChanges = true
-        logger.log(`✓ Transformed ${file}`)
+        logger.success(`Transformed ${file}`)
       } else {
         logger.log(`- No changes needed for ${file}`)
       }
@@ -223,7 +223,7 @@ async function startPatch(packageSpec) {
   // Extract path from output.
   // pnpm patch outputs: "Patch: You can now edit the package at:\n\n  /path/to/package\n\n..."
   // We need to find the line with the path, starts with whitespace and contains the package name.
-  const lines = result.stdout.split('\n')
+  const lines = result.stdout.split(/\r?\n/)
   const packageNamePart = packageSpec.split('@')[0]
   const pathLine = lines.find(
     line => line.trim().startsWith('/') && line.includes(packageNamePart),

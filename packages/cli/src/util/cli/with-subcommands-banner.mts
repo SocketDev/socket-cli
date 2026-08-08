@@ -143,7 +143,7 @@ export function getAsciiHeader(
   ]
 
   // Combine logo and info side-by-side.
-  const logoLines = logo.split('\n')
+  const logoLines = logo.split(/\r?\n/)
   const combinedLines: string[] = []
 
   for (let i = 0; i < Math.max(logoLines.length, infoLines.length); i++) {

@@ -390,7 +390,7 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
 
       // TUI / custom output formatter; emoji is part of the visual contract.
       // oxlint-disable-next-line socket/no-status-emoji -- visual contract
-      logger.info(`  ✓ Extracted ${tool} binary to ${binaryPath}`)
+      logger.success(`  Extracted ${tool} binary to ${binaryPath}`)
 
       extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
 

@@ -160,7 +160,7 @@ async function hashFiles(globPattern, cwd) {
     if (result.code !== 0) {
       return 'none'
     }
-    const files = result.stdout.split('\n').filter(Boolean).toSorted()
+    const files = result.stdout.split(/\r?\n/).filter(Boolean).toSorted()
     if (!files.length) {
       return 'none'
     }

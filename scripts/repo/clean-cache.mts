@@ -199,8 +199,8 @@ async function main(): Promise<void> {
       const [latest, ...older] = entries
 
       if (latest) {
-        logger.log(
-          `  ✓ ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
+        logger.success(
+          `  ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
         )
       }
 

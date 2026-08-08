@@ -137,7 +137,7 @@ export function parseRecords(text: string): ParsedRecords {
     return p
   }
 
-  const lines = text.split('\n')
+  const lines = text.split(/\r?\n/)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const rawLine = lines[i]!
     if (!rawLine) {

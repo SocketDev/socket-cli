@@ -17,7 +17,7 @@ export function checkSocketWrapperSetup(file: string): boolean {
   }
 
   const linesWithSocketAlias = fileContent
-    .split('\n')
+    .split(/\r?\n/)
     .filter(
       l => l === 'alias npm="socket npm"' || l === 'alias npx="socket npx"',
     )

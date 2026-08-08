@@ -139,7 +139,7 @@ describe('env-helpers', () => {
 
     it('should format env var names consistently', () => {
       const instructions = getCiEnvInstructions()
-      const lines = instructions.split('\n')
+      const lines = instructions.split(/\r?\n/)
 
       // First line is intro text.
       expect(lines[0]).toContain('To enable automatic pull request creation')

@@ -35,7 +35,7 @@ export function checkCommandInput(
     if (!d.message) {
       continue
     }
-    const lines = d.message.split('\n')
+    const lines = d.message.split(/\r?\n/)
     const { length: lineCount } = lines
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.

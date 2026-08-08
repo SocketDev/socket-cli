@@ -70,7 +70,7 @@ describe('renderDescribe', () => {
   it('renders the one-liner for text', () => {
     const out = renderDescribe('text', manifest)
     expect(out.endsWith('\n')).toBe(true)
-    expect(out.split('\n').filter(Boolean).length).toBe(1)
+    expect(out.split(/\r?\n/).filter(Boolean).length).toBe(1)
   })
 
   it('renders one parseable JSON document for json', () => {

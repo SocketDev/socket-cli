@@ -107,7 +107,7 @@ export function definePackageFileGrepTool(): ToolSpec {
             `Searching a package file failed. Where: ${label}. Saw: binary content (${blob.bytes} bytes, content-type: ${blob.contentType ?? 'unknown'}), wanted UTF-8 text. Fix: pick a text file from the \`package_files\` listing.`,
           )
         }
-        const lines = blob.text.split('\n')
+        const lines = blob.text.split(/\r?\n/)
         const { budgetExceeded, matchIndexes } = scanLinesForPattern(
           lines,
           regexp,

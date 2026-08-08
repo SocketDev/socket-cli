@@ -191,5 +191,5 @@ export function tailBuildOutput(stdout: string, stderr: string): string {
     .map(s => s.trimEnd())
     .filter(Boolean)
     .join('\n')
-  return combined.split('\n').slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
+  return combined.split(/\r?\n/).slice(-MAX_FAILURE_OUTPUT_LINES).join('\n')
 }

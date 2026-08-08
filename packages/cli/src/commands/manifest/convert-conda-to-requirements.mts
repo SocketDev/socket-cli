@@ -122,7 +122,7 @@ export function convertCondaToRequirementsFromInput(input: string): string {
   let delim = '-'
   let indent = ''
   const keeping: string[] = []
-  const lines = input.split('\n')
+  const lines = input.split(/\r?\n/)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
     const trimmed = line.trim()

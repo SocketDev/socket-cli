@@ -153,7 +153,7 @@ describe('message shape', () => {
 
   it('leads with what went wrong before any detail', () => {
     for (let i = 0, { length } = messages; i < length; i += 1) {
-      const firstLine = messages[i]!.split('\n')[0]!
+      const firstLine = messages[i]!.split(/\r?\n/)[0]!
       expect(firstLine).not.toMatch(/^\s/)
       expect(firstLine.length).toBeGreaterThan(20)
     }

@@ -45,7 +45,7 @@ export function parseArtifactsNdjson(
   jsonsString: string,
 ): CResult<SocketArtifact[]> {
   // This is nd-json; each line is a json object.
-  const lines = jsonsString.split('\n').filter(Boolean)
+  const lines = jsonsString.split(/\r?\n/).filter(Boolean)
   const data: SocketArtifact[] = []
 
   for (let i = 0, { length } = lines; i < length; i += 1) {

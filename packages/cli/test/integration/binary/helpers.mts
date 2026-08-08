@@ -120,7 +120,7 @@ export async function prepareBinary(
     logger.success('Build complete')
   } else {
     // Binary exists.
-    logger.log(`✓ ${binary.name}`)
+    logger.success(binary.name)
   }
 
   return true

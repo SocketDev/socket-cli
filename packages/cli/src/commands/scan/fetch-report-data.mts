@@ -87,7 +87,7 @@ export async function fetchScanData(
     const ndJsonString = result.data
 
     // This is nd-json; each line is a json object.
-    const lines = ndJsonString.split('\n').filter(Boolean)
+    const lines = ndJsonString.split(/\r?\n/).filter(Boolean)
     const data: SocketArtifact[] = []
     for (let i = 0, { length } = lines; i < length; i += 1) {
       const line = lines[i]!

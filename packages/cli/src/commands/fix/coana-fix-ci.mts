@@ -103,7 +103,7 @@ export async function runCiCoanaFix(
         try {
           const lines = discoverCResult.data
             .trim()
-            .split('\n')
+            .split(/\r?\n/)
             .filter(line => line.trim())
           const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
           if (ghsaIdsRaw?.trim()) {

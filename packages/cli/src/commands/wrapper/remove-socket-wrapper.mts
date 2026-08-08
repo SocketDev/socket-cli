@@ -16,7 +16,7 @@ export function removeSocketWrapper(filepath: string): void {
   }
 
   const linesWithoutSocketAlias = content
-    .split('\n')
+    .split(/\r?\n/)
     .filter(
       l => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"',
     )

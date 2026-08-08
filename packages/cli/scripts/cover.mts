@@ -22,7 +22,7 @@ import { PACKAGE_ROOT, WORKSPACE_ROOT } from './paths.mts'
 const logger = getDefaultLogger()
 
 export function printError(message) {
-  logger.error(`✖ ${message}`)
+  logger.fail(`${message}`)
 }
 
 export function printHeader(message) {
@@ -34,7 +34,7 @@ export function printHeader(message) {
 }
 
 export function printSuccess(message) {
-  logger.log(`✔ ${message}`)
+  logger.success(`${message}`)
 }
 
 async function main() {

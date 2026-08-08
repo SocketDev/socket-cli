@@ -128,7 +128,7 @@ describe('ascii-header', () => {
 
     it('should produce 4 lines of output', () => {
       const logo = renderShimmerFrame(0)
-      const lines = logo.split('\n')
+      const lines = logo.split(/\r?\n/)
       expect(lines).toHaveLength(4)
     })
 

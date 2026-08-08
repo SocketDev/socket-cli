@@ -233,7 +233,7 @@ export function meow<const F extends MeowFlags = MeowFlags>(
       fullHelp +=
         '\n' +
         trimmed
-          .split('\n')
+          .split(/\r?\n/)
           .map(line => ' '.repeat(helpIndent) + line)
           .join('\n')
     } else {

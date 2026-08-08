@@ -164,7 +164,7 @@ async function main() {
 
       await buildTarget(target, entryPoint, { outputPath })
       logger.success(
-        `✓ ${targetName} -> ${path.relative(rootPath, outputPath)}`,
+        `${targetName} -> ${path.relative(rootPath, outputPath)}`,
       )
       return { outputPath, success: true, target }
     }),

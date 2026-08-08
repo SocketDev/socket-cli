@@ -35,7 +35,7 @@ async function runScript(scriptName, description) {
     throw error
   }
 
-  logger.success(`✓ ${description} complete`)
+  logger.success(`${description} complete`)
 }
 
 /**

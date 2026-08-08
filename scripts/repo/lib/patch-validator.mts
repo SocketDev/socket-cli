@@ -78,7 +78,7 @@ export function analyzePatchContent(patchContent: string): PatchAnalysis {
     modifiesFiles: [],
   }
 
-  const lines = patchContent.split('\n')
+  const lines = patchContent.split(/\r?\n/)
   let currentFile: string | undefined
 
   for (let i = 0, { length } = lines; i < length; i += 1) {
@@ -220,7 +220,7 @@ function isPatchCompatible(
  * Parse patch metadata from header comments.
  */
 function parsePatchMetadata(patchContent: string): PatchMetadata {
-  const lines = patchContent.split('\n')
+  const lines = patchContent.split(/\r?\n/)
   const metadata: PatchMetadata = {
     description: undefined,
     nodeVersions: [],

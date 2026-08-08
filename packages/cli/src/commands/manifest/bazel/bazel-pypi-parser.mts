@@ -219,7 +219,7 @@ export function parseRequirementsLock(
   text: string,
 ): Map<string, ExtractedPypiPackage> {
   const out = new Map<string, ExtractedPypiPackage>()
-  const lines = text.split('\n')
+  const lines = text.split(/\r?\n/)
   for (let i = 0; i < lines.length; i += 1) {
     const rawLine = lines[i]
     if (rawLine === undefined) {

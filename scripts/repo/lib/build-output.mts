@@ -74,7 +74,7 @@ export function printWarning(
   suggestions: string[] = [],
 ): void {
   logger.warn('')
-  logger.warn('⚠️ ', title)
+  logger.warn('', title)
   logger.warn('')
   logger.warn(message)
   if (suggestions.length > 0) {

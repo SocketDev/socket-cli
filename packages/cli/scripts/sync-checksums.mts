@@ -182,7 +182,7 @@ async function fetchGitHubReleaseChecksums(
  */
 export function parseChecksums(content) {
   const checksums = {}
-  const lines = content.split('\n')
+  const lines = content.split(/\r?\n/)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const line = lines[i]!
     const trimmed = line.trim()

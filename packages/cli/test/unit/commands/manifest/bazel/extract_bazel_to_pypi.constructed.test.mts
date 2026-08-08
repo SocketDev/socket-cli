@@ -96,7 +96,7 @@ describe.skipIf(isSandboxed() || !existsSync(FIXTURE_DIR))(
           readFileSync(result.manifestPath!, 'utf8'),
         )
         const actualLines = actualContent
-          .split('\n')
+          .split(/\r?\n/)
           .filter(l => l.trim() !== '')
 
         const oraclePath = path.resolve(

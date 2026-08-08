@@ -38,7 +38,7 @@ const BUILD_JAR_PATH = path.join(
  * JDK, the Maven wrapper, or the network.
  */
 function readResolutionPrelude(): string {
-  const lines = readFileSync(BUILD_JAR_PATH, 'utf8').split('\n')
+  const lines = readFileSync(BUILD_JAR_PATH, 'utf8').split(/\r?\n/)
   const subshellAt = lines.indexOf('(')
   if (subshellAt === -1) {
     throw new Error('build-jar.sh no longer opens a subshell with a bare "("')

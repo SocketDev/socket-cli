@@ -104,7 +104,7 @@ export function expectExitCodeOneOf(
  * @param expectedLines - Expected number of lines.
  */
 export function expectLineCount(output: string, expectedLines: number): void {
-  const lines = output.split('\n')
+  const lines = output.split(/\r?\n/)
   expect(lines.length).toBe(expectedLines)
 }
 
@@ -120,7 +120,7 @@ export function expectLineCount(output: string, expectedLines: number): void {
  * @param maxLines - Maximum number of lines.
  */
 export function expectMaxLineCount(output: string, maxLines: number): void {
-  const lines = output.split('\n')
+  const lines = output.split(/\r?\n/)
   expect(lines.length).toBeLessThanOrEqual(maxLines)
 }
 
@@ -136,7 +136,7 @@ export function expectMaxLineCount(output: string, maxLines: number): void {
  * @param minLines - Minimum number of lines.
  */
 export function expectMinLineCount(output: string, minLines: number): void {
-  const lines = output.split('\n')
+  const lines = output.split(/\r?\n/)
   expect(lines.length).toBeGreaterThanOrEqual(minLines)
 }
 
@@ -245,7 +245,7 @@ export function expectStdoutContainsAny(
  * @param output - CLI output string.
  */
 export function expectTableStructure(output: string): void {
-  const lines = output.split('\n').filter(line => line.trim())
+  const lines = output.split(/\r?\n/).filter(line => line.trim())
 
   expect(lines.length, 'Expected at least 2 lines for table').toBeGreaterThan(1)
 

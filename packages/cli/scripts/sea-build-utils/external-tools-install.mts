@@ -37,7 +37,7 @@ export async function downloadAndInstallTool(
     existsSync(binaryPath) ||
     (toolName === 'python' && existsSync(path.join(toolsDir, 'python')))
   ) {
-    logger.log(`  ✓ ${toolName} already downloaded`)
+    logger.success(`  ${toolName} already downloaded`)
     return [toolName === 'python' ? 'python' : binaryName]
   }
 
@@ -103,7 +103,7 @@ export async function downloadAndInstallTool(
       await fs.chmod(packageBinaryPath, 0o755)
     }
 
-    logger.log(`  ✓ ${toolName} ready`)
+    logger.success(`  ${toolName} ready`)
     return [`node_modules/@socketsecurity/${toolName}-bin`]
   }
 
@@ -224,7 +224,7 @@ export async function downloadAndInstallTool(
       // Clean up wheel file.
       await safeDelete(wheelPath)
 
-      logger.log(`  ✓ socketsecurity ${pyCliVersion} installed`)
+      logger.success(`  socketsecurity ${pyCliVersion} installed`)
     }
 
     // Install socket_basics from GitHub source (not on PyPI).
@@ -279,7 +279,7 @@ export async function downloadAndInstallTool(
       // Clean up tarball.
       await safeDelete(tarballPath)
 
-      logger.log(`  ✓ socket_basics ${version} installed`)
+      logger.success(`  socket_basics ${version} installed`)
     }
 
     // Don't clean up - keep the whole python directory.
@@ -342,7 +342,7 @@ export async function downloadAndInstallTool(
   // Clean up archive.
   await safeDelete(archivePath)
 
-  logger.log(`  ✓ ${toolName} ready`)
+  logger.success(`  ${toolName} ready`)
 
   return installed
 }

@@ -77,7 +77,7 @@ function fmtList(list: string[], limit: number): string {
 function firstLine(s: string): string {
   return (
     (s || '')
-      .split('\n')
+      .split(/\r?\n/)
       .map(l => l.trim())
       .find(Boolean) ?? ''
   )
@@ -267,7 +267,7 @@ export function renderResolutionReport(
     const info = allInfos[i]!
     detailLines.push('')
     detailLines.push(`  ${info.coord}:`)
-    const infoLines = (info.detail || '(no message)').split('\n')
+    const infoLines = (info.detail || '(no message)').split(/\r?\n/)
     for (let j = 0, { length: lineCount } = infoLines; j < lineCount; j += 1) {
       detailLines.push(`    ${infoLines[j]}`)
     }
@@ -278,7 +278,7 @@ export function renderResolutionReport(
     for (const u of unscannable) {
       detailLines.push('')
       detailLines.push(`  ${u.config}:`)
-      const uLines = (u.detail || '(no message)').split('\n')
+      const uLines = (u.detail || '(no message)').split(/\r?\n/)
       for (let j = 0, { length: lineCount } = uLines; j < lineCount; j += 1) {
         detailLines.push(`    ${uLines[j]}`)
       }

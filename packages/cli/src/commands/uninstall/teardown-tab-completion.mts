@@ -11,7 +11,7 @@ import type { CResult } from '../../types.mts'
 
 export function findRemainingCompletionSetups(bashrc: string): string[] {
   return bashrc
-    .split('\n')
+    .split(/\r?\n/)
     .map(s => s.trim())
     .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
     .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())

@@ -105,8 +105,8 @@ async function buildWasm() {
   logger.info('╚═══════════════════════════════════════════════════╝')
   logger.error('')
   logger.done(' WASM bundle built successfully')
-  logger.info(`✓ Output: ${outputFile}`)
-  logger.info(`✓ Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+  logger.success(`Output: ${outputFile}`)
+  logger.success(`Size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
   logger.error('')
 }
 
@@ -151,8 +151,8 @@ export async function downloadFile(url, outputPath, expectedSize) {
     await fs.writeFile(outputPath, Buffer.from(buffer))
 
     const stats = await fs.stat(outputPath)
-    logger.info(`✓ Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
-    logger.info(`✓ Saved to ${outputPath}`)
+    logger.success(`Downloaded ${(stats.size / 1024 / 1024).toFixed(2)} MB`)
+    logger.success(`Saved to ${outputPath}`)
     logger.error('')
   } catch (e) {
     logger.error(' Download failed')
@@ -200,7 +200,7 @@ async function downloadWasm() {
 
   // Get latest release info.
   const release = await getLatestWasmRelease()
-  logger.info(`✓ Found release: ${release.name}`)
+  logger.success(`Found release: ${release.name}`)
   logger.substep(`Tag: ${release.tagName}`)
   logger.error('')
 
@@ -215,7 +215,7 @@ async function downloadWasm() {
   logger.info('╚═══════════════════════════════════════════════════╝')
   logger.error('')
   logger.done(' WASM bundle downloaded successfully')
-  logger.info(`✓ Output: ${outputFile}`)
+  logger.success(`Output: ${outputFile}`)
   logger.error('')
 }
 

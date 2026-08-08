@@ -117,7 +117,7 @@ export async function gitUnstagedModifiedFiles(
   try {
     const gitDiffResult = await spawnGit(['diff', '--name-only'], { cwd })
     const changedFilesDetails = gitDiffResult.stdout
-    const relPaths = changedFilesDetails.split('\n')
+    const relPaths = changedFilesDetails.split(/\r?\n/)
     return {
       ok: true,
       data: relPaths.map((p: string) => normalizePath(p)),

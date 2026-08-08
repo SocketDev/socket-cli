@@ -164,7 +164,7 @@ const readPinnedVersion = (pkgName: string): string => {
   const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
   if (existsSync(wsPath)) {
     const content = readFileSync(wsPath, 'utf8')
-    const lines = content.split('\n')
+    const lines = content.split(/\r?\n/)
     let inCatalog = false
     for (let i = 0, { length } = lines; i < length; i += 1) {
       const rawLine = lines[i] ?? ''

@@ -17,7 +17,7 @@ import { parsePackageSpecifiers } from '../../../../src/commands/package/parse-p
 fuzz(
   'parsePackageSpecifiers never throws and returns a well-formed result',
   data => {
-    const lines = data.toString('utf8').split('\n')
+    const lines = data.toString('utf8').split(/\r?\n/)
     const ecosystem = lines[0] ?? ''
     // A fresh array each call — parsePackageSpecifiers mutates it (unshift).
     const pkgs = lines.slice(1)

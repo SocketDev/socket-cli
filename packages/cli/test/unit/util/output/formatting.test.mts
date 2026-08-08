@@ -215,7 +215,7 @@ describe('output-formatting utilities', () => {
       }
 
       const result = getHelpListOutput(list)
-      const lines = result.split('\n')
+      const lines = result.split(/\r?\n/)
       expect(lines[0]).toContain('item1')
       expect(lines[1]).toContain('item2')
       expect(lines[2]).toContain('item10')
@@ -239,7 +239,7 @@ describe('output-formatting utilities', () => {
       }
 
       const result = getHelpListOutput(list, { padName: 15 })
-      const lines = result.split('\n')
+      const lines = result.split(/\r?\n/)
 
       // Both descriptions should start at similar positions.
       const shortLine = lines.find(l => l.includes('short'))!
