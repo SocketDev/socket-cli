@@ -24,16 +24,16 @@ describe('extractSocketFileList', () => {
   it('normalizes a well-formed response', () => {
     expect(
       extractSocketFileList({
-        files: [{ path: 'b.js', size: 10, type: 'file' }],
+        files: [{ path: 'index.js', size: 10, type: 'file' }],
       }),
-    ).toEqual([{ path: 'b.js', size: 10, type: 'file' }])
+    ).toEqual([{ path: 'index.js', size: 10, type: 'file' }])
   })
 
   it('sorts entries by path', () => {
     const entries = extractSocketFileList({
-      files: [{ path: 'z.js' }, { path: 'a.js' }],
+      files: [{ path: 'utils.js' }, { path: 'index.js' }],
     })
-    expect(entries.map(e => e.path)).toEqual(['a.js', 'z.js'])
+    expect(entries.map(e => e.path)).toEqual(['index.js', 'utils.js'])
   })
 
   it('defaults an unknown type to file', () => {
@@ -74,7 +74,7 @@ describe('extractSocketFileList', () => {
 
   it.each([
     ['a null entry', JSON_NULL],
-    ['a non-object entry', 'a.js'],
+    ['a non-object entry', 'example.js'],
     ['an entry with no path', { size: 1 }],
     ['an entry with a non-string path', { path: 42 }],
     ['an entry with an empty path', { path: '' }],
@@ -118,48 +118,50 @@ describe('buildFileTree', () => {
   })
 
   it('collapses duplicate leading separators', () => {
-    const root = buildFileTree([{ path: '//lib//a.js', type: 'file' }])
-    expect(root.children.get('lib')?.children.get('a.js')).toBeDefined()
+    const root = buildFileTree([{ path: '//lib//index.js', type: 'file' }])
+    expect(root.children.get('lib')?.children.get('index.js')).toBeDefined()
   })
 })
 
 describe('renderFileTree', () => {
   it('sorts directories before files', () => {
     const rendered = renderFileTree([
-      { path: 'a.js', type: 'file' },
-      { path: 'lib/b.js', type: 'file' },
+      { path: 'index.js', type: 'file' },
+      { path: 'lib/helper.js', type: 'file' },
     ])
-    expect(rendered.indexOf('lib/')).toBeLessThan(rendered.indexOf('a.js'))
+    expect(rendered.indexOf('lib/')).toBeLessThan(rendered.indexOf('index.js'))
   })
 
   it('marks a directory with a trailing slash', () => {
-    expect(renderFileTree([{ path: 'lib/b.js', type: 'file' }])).toContain(
+    expect(renderFileTree([{ path: 'lib/helper.js', type: 'file' }])).toContain(
       'lib/',
     )
   })
 
   it('shows sizes by default', () => {
     expect(
-      renderFileTree([{ path: 'a.js', size: 2048, type: 'file' }]),
+      renderFileTree([{ path: 'index.js', size: 2048, type: 'file' }]),
     ).toContain('2.0K')
   })
 
   it('hides sizes when told to', () => {
     expect(
-      renderFileTree([{ path: 'a.js', size: 2048, type: 'file' }], {
+      renderFileTree([{ path: 'index.js', size: 2048, type: 'file' }], {
         showSize: false,
       }),
     ).not.toContain('2.0K')
   })
 
   it('shows hashes only when asked', () => {
-    const entry = { hash: 'Qabc', path: 'a.js', type: 'file' as const }
+    const entry = { hash: 'Qabc', path: 'index.js', type: 'file' as const }
     expect(renderFileTree([entry])).not.toContain('Qabc')
     expect(renderFileTree([entry], { showHash: true })).toContain('Qabc')
   })
 
   it('uses the last-child branch glyph for the final sibling', () => {
-    expect(renderFileTree([{ path: 'a.js', type: 'file' }])).toContain('└── ')
+    expect(renderFileTree([{ path: 'index.js', type: 'file' }])).toContain(
+      '└── ',
+    )
   })
 
   it('keeps children of a path that is both a file and a parent', () => {

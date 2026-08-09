@@ -69,9 +69,9 @@ describe('fetchSocketBlob — single blob', () => {
 
   it('percent-encodes the hash into the path', async () => {
     mockHttpRequest.mockResolvedValue(okResponse('x'))
-    await fetchSocketBlob('Qa/b')
+    await fetchSocketBlob('Qexample/nested')
     expect(mockHttpRequest.mock.calls[0]![0]).toBe(
-      `${EXPECTED_USER_CONTENT_URL}/blob/Qa%2Fb`,
+      `${EXPECTED_USER_CONTENT_URL}/blob/Qexample%2Fnested`,
     )
   })
 

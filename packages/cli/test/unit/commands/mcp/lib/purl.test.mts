@@ -85,9 +85,10 @@ describe('buildPurl', () => {
     })
 
     it('prefers `:` over `/` when both are present', () => {
-      // First `:` wins for the split, so `a:b/c` → namespace=a, name=b/c
-      const result = buildPurl('maven', 'a:b/c', '1.0')
-      expect(result).toContain('pkg:maven/a/')
+      // First `:` wins for the split, so `groupid:artifactid/nested` →
+      // namespace=groupid, name=artifactid/nested
+      const result = buildPurl('maven', 'groupid:artifactid/nested', '1.0')
+      expect(result).toContain('pkg:maven/groupid/')
       expect(result).toContain('@1.0')
     })
 

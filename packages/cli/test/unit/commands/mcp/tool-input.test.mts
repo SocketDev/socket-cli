@@ -75,7 +75,7 @@ describe('isSocketBlobHash', () => {
     ['no Q/S prefix', 'X'.repeat(20)],
     ['too short', 'Qabc'],
     ['a path traversal', `Q${'a'.repeat(15)}/../etc/passwd`],
-    ['a slash', `Q${'a'.repeat(15)}/x`],
+    ['a slash', `Q${'a'.repeat(15)}/tail`],
     ['a plus (non URL-safe base64)', `Q${'a'.repeat(15)}+x`],
     ['whitespace', `Q${'a'.repeat(15)} x`],
   ])('rejects %s', (_label, hash) => {
