@@ -184,7 +184,6 @@
     "rolldown": "catalog:",
     "semver": "catalog:",
     "shell-quote": "catalog:",
-    "socket-cli-packages-package-builder": "workspace:0.0.0",
     "ssri": "catalog:",
     "svgo": "catalog:",
     "taze": "catalog:",
@@ -197,7 +196,8 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "local-package-builder": "workspace:0.0.0"
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

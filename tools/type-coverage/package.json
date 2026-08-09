@@ -1,5 +1,5 @@
 {
-  "name": "socket-cli-tools-type-coverage",
+  "name": "local-type-coverage",
   "version": "0.0.0",
   "private": true,
   "devDependencies": {

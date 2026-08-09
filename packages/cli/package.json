@@ -131,8 +131,6 @@
     "open": "catalog:",
     "rolldown": "catalog:",
     "semver": "catalog:",
-    "socket-cli-packages-build-infra": "workspace:0.0.0",
-    "socket-cli-packages-package-builder": "workspace:0.0.0",
     "ssri": "catalog:",
     "string-width": "catalog:",
     "tar-stream": "catalog:",
@@ -141,7 +139,9 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "local-build-infra": "workspace:0.0.0",
+    "local-package-builder": "workspace:0.0.0"
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

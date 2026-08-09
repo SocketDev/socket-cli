@@ -1,5 +1,5 @@
 {
-  "name": "socket-cli-packages-package-builder",
+  "name": "local-package-builder",
   "version": "0.0.0",
   "private": true,
   "description": "Template-based package generation system for Socket CLI distribution",
@@ -18,6 +18,6 @@
   "dependencies": {
     "@socketsecurity/lib": "catalog:",
     "handlebars": "^4.7.9",
-    "socket-cli-packages-build-infra": "workspace:0.0.0"
+    "local-build-infra": "workspace:0.0.0"
   }
 }

@@ -849,6 +849,9 @@ importers:
       lint-staged:
         specifier: 'catalog:'
         version: 16.4.0
+      local-package-builder:
+        specifier: workspace:0.0.0
+        version: link:packages/package-builder
       magic-string:
         specifier: 1.1.0
         version: 1.1.0
@@ -930,9 +933,6 @@ importers:
       shell-quote:
         specifier: 1.10.0
         version: 1.10.0
-      socket-cli-packages-package-builder:
-        specifier: workspace:0.0.0
-        version: link:packages/package-builder
       ssri:
         specifier: 'catalog:'
         version: 12.0.0
@@ -3520,6 +3520,12 @@ importers:
       ignore:
         specifier: 'catalog:'
         version: 7.0.6
+      local-build-infra:
+        specifier: workspace:0.0.0
+        version: link:../build-infra
+      local-package-builder:
+        specifier: workspace:0.0.0
+        version: link:../package-builder
       lru-cache:
         specifier: 11.5.2
         version: 11.5.2
@@ -3541,12 +3547,6 @@ importers:
       semver:
         specifier: 7.8.5
         version: 7.8.5
-      socket-cli-packages-build-infra:
-        specifier: workspace:0.0.0
-        version: link:../build-infra
-      socket-cli-packages-package-builder:
-        specifier: workspace:0.0.0
-        version: link:../package-builder
       ssri:
         specifier: 'catalog:'
         version: 12.0.0
@@ -3583,7 +3583,7 @@ importers:
       handlebars:
         specifier: ^4.7.9
         version: 4.7.9
-      socket-cli-packages-build-infra:
+      local-build-infra:
         specifier: workspace:0.0.0
         version: link:../build-infra
 
