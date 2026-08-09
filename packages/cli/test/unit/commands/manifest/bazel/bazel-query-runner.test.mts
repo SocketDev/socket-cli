@@ -391,11 +391,11 @@ describe('buildMavenProbeFor', () => {
       bin: 'bazel',
       cwd: '/r',
       invocationFlags: [],
-      outputUserRoot: '/tmp/x',
+      outputUserRoot: '/tmp/example-root',
     })
     await probe('maven')
     const argv = mocked.mock.calls[0]![1] as string[]
-    expect(argv[0]).toBe('--output_user_root=/tmp/x')
+    expect(argv[0]).toBe('--output_user_root=/tmp/example-root')
     expect(argv).toContain('@maven//...')
   })
 

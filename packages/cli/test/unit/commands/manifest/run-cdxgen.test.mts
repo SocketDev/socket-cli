@@ -95,7 +95,7 @@ describe('detectNodejsCdxgenSources', () => {
   it('detects a pnpm-lock.yaml', async () => {
     mockFindUp.mockImplementation((name: string) =>
       Promise.resolve(
-        name === 'pnpm-lock.yaml' ? '/x/pnpm-lock.yaml' : undefined,
+        name === 'pnpm-lock.yaml' ? '/path/to/pnpm-lock.yaml' : undefined,
       ),
     )
     const result = await detectNodejsCdxgenSources('/tmp/project')
@@ -106,7 +106,7 @@ describe('detectNodejsCdxgenSources', () => {
   it('detects a package-lock.json', async () => {
     mockFindUp.mockImplementation((name: string) =>
       Promise.resolve(
-        name === 'package-lock.json' ? '/x/package-lock.json' : undefined,
+        name === 'package-lock.json' ? '/path/to/package-lock.json' : undefined,
       ),
     )
     const result = await detectNodejsCdxgenSources('/tmp/project')
@@ -115,7 +115,7 @@ describe('detectNodejsCdxgenSources', () => {
 
   it('detects a yarn.lock', async () => {
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'yarn.lock' ? '/x/yarn.lock' : undefined),
+      Promise.resolve(name === 'yarn.lock' ? '/path/to/yarn.lock' : undefined),
     )
     const result = await detectNodejsCdxgenSources('/tmp/project')
     expect(result.hasLockfile).toBe(true)
@@ -123,7 +123,7 @@ describe('detectNodejsCdxgenSources', () => {
 
   it('detects node_modules/', async () => {
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'node_modules' ? '/x/node_modules' : undefined),
+      Promise.resolve(name === 'node_modules' ? '/path/to/node_modules' : undefined),
     )
     const result = await detectNodejsCdxgenSources('/tmp/project')
     expect(result.hasLockfile).toBe(false)
@@ -159,7 +159,7 @@ describe('runCdxgen', () => {
   it('uses pnpm agent when pnpm-lock.yaml is found', async () => {
     mockFindUp.mockImplementation((name: string) =>
       Promise.resolve(
-        name === 'pnpm-lock.yaml' ? '/x/pnpm-lock.yaml' : undefined,
+        name === 'pnpm-lock.yaml' ? '/path/to/pnpm-lock.yaml' : undefined,
       ),
     )
 
@@ -175,7 +175,7 @@ describe('runCdxgen', () => {
   it('uses yarn agent when yarn.lock is found and yarn berry is detected', async () => {
     mockIsYarnBerry.mockReturnValueOnce(true)
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'yarn.lock' ? '/x/yarn.lock' : undefined),
+      Promise.resolve(name === 'yarn.lock' ? '/path/to/yarn.lock' : undefined),
     )
 
     const result = await runCdxgen({ _: [], type: 'java' })
@@ -190,7 +190,7 @@ describe('runCdxgen', () => {
   it('keeps original type when only package-lock.json exists', async () => {
     mockFindUp.mockImplementation((name: string) =>
       Promise.resolve(
-        name === 'package-lock.json' ? '/x/package-lock.json' : undefined,
+        name === 'package-lock.json' ? '/path/to/package-lock.json' : undefined,
       ),
     )
 
@@ -201,7 +201,7 @@ describe('runCdxgen', () => {
 
   it('uses synp to create package-lock.json when only yarn.lock exists', async () => {
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'yarn.lock' ? '/x/yarn.lock' : undefined),
+      Promise.resolve(name === 'yarn.lock' ? '/path/to/yarn.lock' : undefined),
     )
 
     const result = await runCdxgen({ _: [], type: 'js' })
@@ -213,7 +213,7 @@ describe('runCdxgen', () => {
 
   it('handles synp failures gracefully and continues with cdxgen', async () => {
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'yarn.lock' ? '/x/yarn.lock' : undefined),
+      Promise.resolve(name === 'yarn.lock' ? '/path/to/yarn.lock' : undefined),
     )
     mockSpawnSynpDlx.mockRejectedValueOnce(new Error('synp failed'))
 
