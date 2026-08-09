@@ -144,7 +144,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
     it('returns "Not a file" error when content is a directory', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: true,
-        data: [{ name: 'a.txt' }, { name: 'b.txt' }],
+        data: [{ name: 'readme.txt' }, { name: 'license.txt' }],
       })
       const result = await downloadManifestFile({
         defaultBranch: 'main',

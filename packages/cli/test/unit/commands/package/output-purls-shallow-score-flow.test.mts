@@ -43,7 +43,7 @@ describe('outputPurlsShallowScore', () => {
 
   it('sets exit code from result.code on failure', async () => {
     outputPurlsShallowScore(
-      ['pkg:npm/x'],
+      ['pkg:npm/example-pkg'],
       { ok: false, message: 'fail', code: 5 } as unknown,
       'text',
     )
@@ -52,7 +52,7 @@ describe('outputPurlsShallowScore', () => {
 
   it('defaults exit code to 1 when result.code is missing', async () => {
     outputPurlsShallowScore(
-      ['pkg:npm/x'],
+      ['pkg:npm/example-pkg'],
       { ok: false, message: 'fail' } as unknown,
       'text',
     )
@@ -61,7 +61,7 @@ describe('outputPurlsShallowScore', () => {
 
   it('logs JSON for failed result in JSON mode', async () => {
     outputPurlsShallowScore(
-      ['pkg:npm/x'],
+      ['pkg:npm/example-pkg'],
       { ok: false, message: 'fail' } as unknown,
       'json',
     )
@@ -80,7 +80,7 @@ describe('outputPurlsShallowScore', () => {
 
   it('logs failure with badge in non-JSON mode', async () => {
     outputPurlsShallowScore(
-      ['pkg:npm/x'],
+      ['pkg:npm/example-pkg'],
       { ok: false, message: 'fail', cause: 'detail' } as unknown,
       'text',
     )
