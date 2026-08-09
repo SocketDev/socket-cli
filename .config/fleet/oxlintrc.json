@@ -23,6 +23,7 @@
     "socket/no-comment-glob-star-slash": "error",
     "socket/no-console-prefer-logger": "error",
     "socket/no-default-export": "error",
+    "socket/no-dynamic-import-in-snapshot-hook": "error",
     "socket/no-deprecation": "error",
     "socket/no-dynamic-import-outside-bundle": "error",
     "socket/no-eslint-biome-config-ref": "error",
