@@ -124,6 +124,8 @@
     "hpagent": "catalog:",
     "https-proxy-agent": "catalog:",
     "ignore": "catalog:",
+    "local-build-infra": "workspace:0.0.0",
+    "local-package-builder": "workspace:0.0.0",
     "lru-cache": "11.2.6",
     "micromatch": "catalog:",
     "nanotar": "catalog:",
@@ -139,9 +141,7 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "zod": "catalog:",
-    "local-build-infra": "workspace:0.0.0",
-    "local-package-builder": "workspace:0.0.0"
+    "zod": "catalog:"
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

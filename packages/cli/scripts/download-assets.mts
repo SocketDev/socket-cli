@@ -15,7 +15,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { logTransientErrorHelp } from 'socket-cli-packages-build-infra/lib/github-error-utils'
+import { logTransientErrorHelp } from 'local-build-infra/lib/github-error-utils'
 
 import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'

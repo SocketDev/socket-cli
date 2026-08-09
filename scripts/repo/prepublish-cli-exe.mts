@@ -15,13 +15,13 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   CLI_EXE_TRIPLETS,
   isCliExeTriplet,
-} from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
-import type { CliExeTriplet } from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
+} from 'local-package-builder/scripts/cli-exe-targets.mts'
+import type { CliExeTriplet } from 'local-package-builder/scripts/cli-exe-targets.mts'
 import {
   getCliExeBinaryPath,
   getCliExePackageDir,
-} from 'socket-cli-packages-package-builder/scripts/paths.mts'
-import { preparePackageForPublish } from 'socket-cli-packages-package-builder/scripts/util/prepare-package.mts'
+} from 'local-package-builder/scripts/paths.mts'
+import { preparePackageForPublish } from 'local-package-builder/scripts/util/prepare-package.mts'
 
 const logger = getDefaultLogger()
 

@@ -157,6 +157,7 @@
     "ignore": "catalog:",
     "js-yaml": "catalog:",
     "lint-staged": "catalog:",
+    "local-package-builder": "workspace:0.0.0",
     "magic-string": "catalog:",
     "markdownlint-cli2": "catalog:",
     "mdast-util-from-markdown": "catalog:",
@@ -196,8 +197,7 @@
     "yaml": "catalog:",
     "yargs-parser": "catalog:",
     "yoctocolors-cjs": "catalog:",
-    "zod": "catalog:",
-    "local-package-builder": "workspace:0.0.0"
+    "zod": "catalog:"
   },
   "lint-staged": {
     "*.{cjs,cts,js,json,md,mjs,mts,ts}": [

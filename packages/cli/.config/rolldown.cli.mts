@@ -12,7 +12,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { IMPORT_META_URL_BANNER } from 'socket-cli-packages-build-infra/lib/esbuild-helpers'
+import { IMPORT_META_URL_BANNER } from 'local-build-infra/lib/esbuild-helpers'
 
 import {
   createBaseConfig,

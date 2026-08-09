@@ -10,7 +10,7 @@ import {
   isCliExeTriplet,
   legacySocketbinPackageName,
   tripletFromParts,
-} from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
+} from 'local-package-builder/scripts/cli-exe-targets.mts'
 
 describe('cli-exe-targets', () => {
   it('ships exactly the eight pack-app triplets in ASCII order', () => {

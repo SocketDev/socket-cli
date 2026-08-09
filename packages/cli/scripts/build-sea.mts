@@ -20,9 +20,9 @@ import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { parsePlatformArgs } from 'socket-cli-packages-build-infra/lib/platform-targets'
-import { tripletFromParts } from 'socket-cli-packages-package-builder/scripts/cli-exe-targets.mts'
-import { getCliExeBinaryPath } from 'socket-cli-packages-package-builder/scripts/paths.mts'
+import { parsePlatformArgs } from 'local-build-infra/lib/platform-targets'
+import { tripletFromParts } from 'local-package-builder/scripts/cli-exe-targets.mts'
+import { getCliExeBinaryPath } from 'local-package-builder/scripts/paths.mts'
 
 import { buildTarget } from './sea-build-utils/orchestration.mts'
 import {

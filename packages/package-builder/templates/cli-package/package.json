@@ -49,8 +49,8 @@
     "verify": "node scripts/verify-package.mts"
   },
   "devDependencies": {
-    "rolldown": "catalog:",
-    "local-build-infra": "workspace:0.0.0"
+    "local-build-infra": "workspace:0.0.0",
+    "rolldown": "catalog:"
   },
   "engines": {
     "node": ">=18"

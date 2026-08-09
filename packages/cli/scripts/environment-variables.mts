@@ -18,7 +18,7 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-import { getPackageOutDir } from 'socket-cli-packages-package-builder/scripts/paths.mts'
+import { getPackageOutDir } from 'local-package-builder/scripts/paths.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
