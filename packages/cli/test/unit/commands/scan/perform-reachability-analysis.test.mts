@@ -415,11 +415,11 @@ describe('performReachabilityAnalysis — repo and branch env', () => {
 
   it('exports SOCKET_BRANCH_NAME for non-default branch names', async () => {
     await performReachabilityAnalysis({
-      branchName: 'feat/x',
+      branchName: 'feat/example',
       reachabilityOptions: baseReachOpts,
       target: '.',
     })
     const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
-    expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/x')
+    expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/example')
   })
 })
