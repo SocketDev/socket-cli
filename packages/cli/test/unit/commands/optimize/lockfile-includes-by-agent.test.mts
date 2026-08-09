@@ -230,6 +230,30 @@ lodash@^4.17.0:
       `
       expect(bunLockSrcIncludes(lockSrc, 'lodash')).toBe(true)
     })
+
+    it('matches packages in a lockfileVersion 2 bun.lock (Bun v1.4+)', () => {
+      // Version 2 keeps the v0/v1 workspaces/packages schema and adds a
+      // top-level configVersion key; workspace members appear as 1-element
+      // tuples.
+      const lockSrc = `{
+        "lockfileVersion": 2,
+        "configVersion": 1,
+        "workspaces": {
+          "": {
+            "name": "test-project",
+            "dependencies": {
+              "lodash": "^4.17.21",
+            },
+          },
+        },
+        "packages": {
+          "app-a": ["app-a@workspace:packages/app-a"],
+          "lodash": ["lodash@4.17.21", "", {}, "sha512-stub"],
+        }
+      }`
+      expect(bunLockSrcIncludes(lockSrc, 'lodash', 'bun.lock')).toBe(true)
+      expect(bunLockSrcIncludes(lockSrc, 'express', 'bun.lock')).toBe(false)
+    })
   })
 
   describe('vltLockSrcIncludes', () => {
