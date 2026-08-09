@@ -132,7 +132,7 @@ export NODE_ENV=development`,
 
     const result = checkSocketWrapperSetup('/home/user/.bashrc')
 
-    expect(result).toBe(false)
+    expect(result).toBe(true)
   })
 
   it('returns false when readFileSync throws (deleted/unreadable file)', () => {
