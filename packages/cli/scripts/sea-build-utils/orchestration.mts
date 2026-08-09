@@ -9,6 +9,9 @@ import path from 'node:path'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
+import { notarizeMachO } from 'local-build-infra/lib/notarize'
+import { developerIdSign } from 'local-build-infra/lib/sign'
+
 import { PACKAGE_ROOT } from '../paths.mts'
 
 import { generateSeaConfig, injectSeaBlob } from './builder.mts'
@@ -47,6 +50,7 @@ import { downloadExternalTools, logger } from './downloads.mts'
  *
  * @returns Promise resolving to absolute path of built SEA binary.
  */
+
 // c8 ignore start - Requires downloading binaries, building blobs, and binary injection.
 export async function buildTarget(target, entryPoint, config) {
   const { outputDir, outputPath: providedOutputPath } = {
@@ -100,6 +104,15 @@ export async function buildTarget(target, entryPoint, config) {
     // Inject SEA using config-based blob generation.
     // binject reads the config, generates the blob, and injects VFS in one operation.
     await injectSeaBlob(nodeBinary, configPath, outputPath, cacheId, vfsTarGz)
+
+    if (target.platform === 'darwin') {
+      // No entitlements arg: Enhanced Security entitlements wait for macOS 26 validation.
+      const signed = await developerIdSign(outputPath)
+      if (signed) {
+        // Self-skips without APPLE_ASC_* env credentials.
+        await notarizeMachO(outputPath)
+      }
+    }
 
     // Make executable on Unix.
     if (target.platform !== 'win32') {

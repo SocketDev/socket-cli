@@ -10,8 +10,10 @@
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mts",
     "./lib/github-error-utils": "./lib/github-error-utils.mts",
     "./lib/github-releases": "./lib/github-releases.mts",
+    "./lib/notarize": "./lib/notarize.mts",
     "./lib/platform-mappings": "./lib/platform-mappings.mts",
     "./lib/platform-targets": "./lib/platform-targets.mts",
+    "./lib/sign": "./lib/sign.mts",
     "./lib/unicode-property-escape-transform": "./lib/unicode-property-escape-transform.mts"
   },
   "dependencies": {
