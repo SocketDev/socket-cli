@@ -217,7 +217,7 @@ describe('commands/optimize/ls-by-agent', () => {
       const { parsableToQueryStdout } =
         await import('../../../../src/commands/optimize/ls-by-agent.mts')
       const result = parsableToQueryStdout(
-        '/Users/x/proj/node_modules/lodash\n/Users/x/proj/node_modules/react\n',
+        '/Users/<user>/proj/node_modules/lodash\n/Users/<user>/proj/node_modules/react\n',
       )
       expect(typeof result).toBe('string')
     })

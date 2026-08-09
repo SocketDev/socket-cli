@@ -380,8 +380,8 @@ describe('handleOptimize', () => {
       data: {
         agent: 'npm',
         agentVersion: new SemVer('10.0.0'),
-        manifestPath: '/p/package.json',
-        lockfilePath: '/p/package-lock.json',
+        manifestPath: '/path/to/project/package.json',
+        lockfilePath: '/path/to/project/package-lock.json',
       },
     } as unknown)
     vi.mocked(applyOptimization).mockResolvedValue({

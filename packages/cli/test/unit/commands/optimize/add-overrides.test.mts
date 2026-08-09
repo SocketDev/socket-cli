@@ -232,8 +232,8 @@ describe('addOverrides', () => {
     // (line 266+). With workspacePkgJsonPaths populated, the function recurses
     // into each workspace dir.
     mockGlobWorkspace.mockResolvedValueOnce([
-      '/test/project/packages/a/package.json',
-      '/test/project/packages/b/package.json',
+      '/test/project/packages/alpha/package.json',
+      '/test/project/packages/beta/package.json',
     ])
     // Subsequent calls (recursion) return [].
     mockGlobWorkspace.mockResolvedValue([])
