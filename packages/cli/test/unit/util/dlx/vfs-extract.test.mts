@@ -113,7 +113,7 @@ describe('util/dlx/vfs-extract', () => {
 
     it('returns true when in SEA mode with smol.mount', () => {
       mockIsSeaBinary.mockReturnValue(true)
-      withMountReturning(async () => '/tmp/x')
+      withMountReturning(async () => '/tmp/example')
       expect(areExternalToolsAvailable()).toBe(true)
     })
   })
@@ -221,7 +221,7 @@ describe('util/dlx/vfs-extract', () => {
     it('returns false for missing path', async () => {
       mockExistsSync.mockReturnValue(false)
       const result = await isNpmPackageExtracted(
-        '/definitely/not/a/real/path/' + Date.now(),
+        '/path/to/example/' + Date.now(),
       )
       expect(result).toBe(false)
     })

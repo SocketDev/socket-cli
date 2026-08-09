@@ -137,7 +137,7 @@ describe('dry-run output utilities', () => {
           {
             type: 'create',
             description: 'add file',
-            target: '/tmp/x',
+            target: '/tmp/example',
             details: { mode: '0644' },
           },
         ],
@@ -147,7 +147,7 @@ describe('dry-run output utilities', () => {
       const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
       expect(output).toContain('[DryRun]: create a thing')
       expect(output).toContain('Actions that would be performed')
-      expect(output).toContain('[create] add file → /tmp/x')
+      expect(output).toContain('[create] add file → /tmp/example')
       expect(output).toContain('mode: "0644"')
       expect(output).toContain('Would complete successfully')
     })
@@ -197,16 +197,16 @@ describe('dry-run output utilities', () => {
 
   describe('outputDryRunWrite', () => {
     it('renders changes list', () => {
-      outputDryRunWrite('/tmp/x.json', 'update config', ['key=value'])
+      outputDryRunWrite('/tmp/config.json', 'update config', ['key=value'])
 
       const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
       expect(output).toContain('Would update config')
-      expect(output).toContain('Target file: /tmp/x.json')
+      expect(output).toContain('Target file: /tmp/config.json')
       expect(output).toContain('- key=value')
     })
 
     it('omits changes section when empty', () => {
-      outputDryRunWrite('/tmp/x.json', 'update config')
+      outputDryRunWrite('/tmp/config.json', 'update config')
 
       const output = mockStderrLog.mock.calls.map(c => c[0]).join('\n')
       expect(output).not.toContain('Changes:')

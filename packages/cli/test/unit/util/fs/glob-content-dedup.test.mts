@@ -111,16 +111,16 @@ describe('globWithGitIgnore() nested-gitignore semantics (slow path)', () => {
   it('honors a bare filename at any depth below its .gitignore', async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'socket-glob-bare-'))
     try {
-      mkdirSync(path.join(root, 'packages/a/sub'), { recursive: true })
+      mkdirSync(path.join(root, 'packages/example/sub'), { recursive: true })
       writeFileSync(path.join(root, 'package.json'), '{}')
       // The `!` line forces the slow path; it matches none of the manifests.
       writeFileSync(
-        path.join(root, 'packages/a/.gitignore'),
+        path.join(root, 'packages/example/.gitignore'),
         'secret.json\n!unused.keep\n',
       )
-      writeFileSync(path.join(root, 'packages/a/package.json'), '{}')
-      writeFileSync(path.join(root, 'packages/a/sub/secret.json'), '{}')
-      writeFileSync(path.join(root, 'packages/a/sub/keep.json'), '{}')
+      writeFileSync(path.join(root, 'packages/example/package.json'), '{}')
+      writeFileSync(path.join(root, 'packages/example/sub/secret.json'), '{}')
+      writeFileSync(path.join(root, 'packages/example/sub/keep.json'), '{}')
 
       const results = await globWithGitIgnore(['**/*'], {
         cwd: root,
@@ -131,10 +131,10 @@ describe('globWithGitIgnore() nested-gitignore semantics (slow path)', () => {
         .toSorted()
       expect(rel).toEqual([
         'package.json',
-        'packages/a/package.json',
-        'packages/a/sub/keep.json',
+        'packages/example/package.json',
+        'packages/example/sub/keep.json',
       ])
-      expect(rel).not.toContain('packages/a/sub/secret.json')
+      expect(rel).not.toContain('packages/example/sub/secret.json')
     } finally {
       safeDeleteSync(root)
     }
@@ -146,14 +146,14 @@ describe('globWithGitIgnore() nested-gitignore semantics (slow path)', () => {
   it('does not re-include a file under a parent-excluded directory', async () => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'socket-glob-reinc-'))
     try {
-      mkdirSync(path.join(root, 'packages/a/build'), { recursive: true })
+      mkdirSync(path.join(root, 'packages/example/build'), { recursive: true })
       writeFileSync(path.join(root, 'package.json'), '{}')
       writeFileSync(path.join(root, '.gitignore'), 'build/\n')
       writeFileSync(
-        path.join(root, 'packages/a/.gitignore'),
+        path.join(root, 'packages/example/.gitignore'),
         '!build/important.json\n',
       )
-      writeFileSync(path.join(root, 'packages/a/build/important.json'), '{}')
+      writeFileSync(path.join(root, 'packages/example/build/important.json'), '{}')
 
       const results = await globWithGitIgnore(['**/*'], {
         cwd: root,
