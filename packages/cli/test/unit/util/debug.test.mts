@@ -199,7 +199,7 @@ describe('debug utilities', () => {
         requestedAt: '2026-04-18T00:00:00.000Z',
       }
 
-      debugApiResponse('/api/x', { status: 500, requestInfo })
+      debugApiResponse('/api/timestamp', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.requestedAt).toBe('2026-04-18T00:00:00.000Z')
@@ -215,7 +215,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/y', { status: 500, requestInfo })
+      debugApiResponse('/api/cf-ray', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('abc123-IAD')
@@ -231,7 +231,7 @@ describe('debug utilities', () => {
         },
       }
 
-      debugApiResponse('/api/z', { status: 500, requestInfo })
+      debugApiResponse('/api/cf-ray-casing', { status: 500, requestInfo })
 
       const calledWith = mockDebugDirNs.mock.calls[0]?.[1] as unknown
       expect(calledWith.cfRay).toBe('xyz789-SJC')

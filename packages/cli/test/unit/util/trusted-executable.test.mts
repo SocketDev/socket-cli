@@ -79,7 +79,10 @@ describe('trusted-executable', () => {
     })
 
     it('treats a sibling with a shared prefix as outside', () => {
-      expect(isPathWithinRoot('/a/b', '/a/bb')).toBe(false)
+      // Path-shape algebra (like the /a/b describe block above), not a
+      // named fixture: /a/bb shares the /a/b string prefix on purpose to
+      // exercise the boundary check.
+      expect(isPathWithinRoot('/a/b', '/a/bb')).toBe(false) // fixture-name: allow
     })
 
     it('treats an ancestor as outside', () => {

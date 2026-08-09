@@ -123,7 +123,7 @@ describe('package-environment', () => {
     it('returns input path when readFileSync throws', () => {
       mockExistsSync.mockReturnValue(true)
       mockReadFileSync.mockImplementation(() => {
-        throw new Error('I/O error')
+        throw new Error('I/O error') // fixture-name: allow
       })
       const result = resolveBinPathSync('/usr/local/bin/npm')
       expect(result).toBe('/usr/local/bin/npm')
