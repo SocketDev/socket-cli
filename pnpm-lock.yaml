@@ -338,8 +338,8 @@ catalogs:
       specifier: 3.0.4
       version: 3.0.4
     '@types/semver':
-      specifier: 7.7.1
-      version: 7.7.1
+      specifier: 7.8.0
+      version: 7.8.0
     '@types/shell-quote':
       specifier: 1.7.5
       version: 1.7.5
@@ -788,7 +788,7 @@ importers:
         version: 3.0.4
       '@types/semver':
         specifier: 'catalog:'
-        version: 7.7.1
+        version: 7.8.0
       '@types/shell-quote':
         specifier: 'catalog:'
         version: 1.7.5
@@ -5114,8 +5114,8 @@ packages:
   '@types/proc-log@3.0.4':
     resolution: {integrity: sha512-E1DsqzHqsKRkFoY6VFjnU15gOGwyDrCgtcH32X1Uq79E50V4CiMJWF7PRakcdwgGfHJfcGfq+hO8Sk2u1ZFVXw==}
 
-  '@types/semver@7.7.1':
-    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
+  '@types/semver@7.8.0':
+    resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
 
   '@types/shell-quote@1.7.5':
     resolution: {integrity: sha512-+UE8GAGRPbJVQDdxi16dgadcBfQ+KG2vgZhV1+3A1XmHbmwcdwhCUwIdy+d3pAGrbvgRoVSjeI9vOWyq376Yzw==}
@@ -9258,7 +9258,7 @@ snapshots:
   '@types/npmcli__config@6.0.4':
     dependencies:
       '@types/node': 26.1.2
-      '@types/semver': 7.7.1
+      '@types/semver': 7.8.0
 
   '@types/npmcli__package-json@4.0.4': {}
 
@@ -9275,7 +9275,7 @@ snapshots:
 
   '@types/proc-log@3.0.4': {}
 
-  '@types/semver@7.7.1': {}
+  '@types/semver@7.8.0': {}
 
   '@types/shell-quote@1.7.5': {}
 
