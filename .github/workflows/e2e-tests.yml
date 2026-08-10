@@ -162,7 +162,7 @@ jobs:
       - name: Probe tier1 legacy_mode (DIAGNOSTIC - REMOVE AFTER USE)
         if: matrix.node-version == 22
         env:
-          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
         run: |
           set -eu
           auth=$(printf '%s:' "$SOCKET_CLI_API_TOKEN" | base64 -w0)
@@ -186,5 +186,5 @@ jobs:
 
       - name: Run e2e tests
         env:
-          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }} # zizmor: ignore[secrets-outside-env]
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
         run: pnpm run e2e-tests

@@ -206,7 +206,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          SOCKET_API_KEY: ${{ secrets.SOCKET_API_KEY }} # zizmor: ignore[secrets-outside-env]
+          SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }} # zizmor: ignore[secrets-outside-env]
         run: | # zizmor: ignore[github-env]
           # Pinned version + per-platform checksum pairs. Bumping a tool
           # requires updating the matching version AND every platform's
