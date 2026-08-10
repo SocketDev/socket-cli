@@ -1,3 +1,7 @@
+<div align="center">
+  <img width="128" height="128" alt="Socket CLI" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/socket-cli-logomark.svg">
+</div>
+
 # Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
