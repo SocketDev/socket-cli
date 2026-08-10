@@ -1,5 +1,5 @@
 {
-  "// <fleet-canonical>": "Managed by socket-wheelhouse; edit the template, then cascade.",
+  "// <fleet>": "Managed by socket-wheelhouse; edit the template, then cascade.",
   "hooks": {
     "PostToolUse": [
       {
@@ -83,5 +83,5 @@
     "type": "command",
     "command": "[ -f \"$CLAUDE_PROJECT_DIR\"/scripts/fleet/spend-statusline.mts ] && node \"$CLAUDE_PROJECT_DIR\"/scripts/fleet/spend-statusline.mts || true"
   },
-  "// </fleet-canonical>": "Repository-owned Claude settings belong below this marker."
+  "// </fleet>": "Repository-owned Claude settings belong below this marker."
 }

@@ -1006,18 +1006,36 @@ function rewriteDispatchCommands(settings, make) {
 
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/settings.mts
-const FLEET_SETTINGS_BEGIN = '// <fleet-canonical>'
-const FLEET_SETTINGS_END = '// </fleet-canonical>'
+const FLEET_SETTINGS_BEGIN = '// <fleet>'
+const FLEET_SETTINGS_END = '// </fleet>'
+const LEGACY_FLEET_SETTINGS_BEGIN = '// <fleet-canonical>'
+const LEGACY_FLEET_SETTINGS_END = '// </fleet-canonical>'
+const LEGACY_FLEET_SETTINGS_MARKERS = /* @__PURE__ */ new Set([
+  LEGACY_FLEET_SETTINGS_BEGIN,
+  LEGACY_FLEET_SETTINGS_END,
+])
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value))
 }
+function findMarkerIndex(keys, short, long) {
+  const i = keys.indexOf(short)
+  return i === -1 ? keys.indexOf(long) : i
+}
 function fleetSettingsKeys(settings) {
   const keys = Object.keys(settings)
-  const start = keys.indexOf(FLEET_SETTINGS_BEGIN)
-  const end = keys.indexOf(FLEET_SETTINGS_END)
+  const start = findMarkerIndex(
+    keys,
+    FLEET_SETTINGS_BEGIN,
+    LEGACY_FLEET_SETTINGS_BEGIN,
+  )
+  const end = findMarkerIndex(
+    keys,
+    FLEET_SETTINGS_END,
+    LEGACY_FLEET_SETTINGS_END,
+  )
   if (start === -1 || end === -1 || end <= start)
     throw new Error(
-      'Invalid Claude settings fleet section: settings.json has missing or misordered <fleet-canonical> markers; expected one opening marker before one closing marker; fix the marker keys in the canonical template.',
+      'Invalid Claude settings fleet section: settings.json has missing or misordered <fleet> markers; expected one opening marker before one closing marker; fix the marker keys in the canonical template.',
     )
   return keys.slice(start, end + 1)
 }
@@ -1059,8 +1077,9 @@ function mergeClaudeSettings(config) {
     for (const [key, value] of Object.entries(repoSettings)) {
       if (
         fleetKeySet.has(key) ||
-        key === '// <fleet-canonical>' ||
-        key === '// </fleet-canonical>' ||
+        key === '// <fleet>' ||
+        key === '// </fleet>' ||
+        LEGACY_FLEET_SETTINGS_MARKERS.has(key) ||
         (key === 'env' && isLegacyFleetCommentEnv(value))
       )
         continue
