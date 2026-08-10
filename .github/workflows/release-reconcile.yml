@@ -80,7 +80,7 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      # A THIN member does not track scripts/fleet/, so reconcile-gap.mts below
+      # A member does not track scripts/fleet/, so reconcile-gap.mts below
       # does not exist yet on a fresh checkout — the job died with
       # `Cannot find module .../reconcile-gap.mts`. Hydration normally rides the
       # fleet/checkout composite, and this job deliberately does not use it (see
@@ -89,7 +89,7 @@ jobs:
       # The dep-0 fetcher is node-builtins-only, which keeps this job's
       # no-install property intact. It pulls the bundle anonymously from the
       # public GHCR artifact, so no token is needed and none is minted.
-      - name: Detect thin fleet payload
+      - name: Detect fleet payload
         id: detect-hydration
         shell: bash
         run: |
@@ -100,7 +100,7 @@ jobs:
           else
             echo 'needed=false' >> "$GITHUB_OUTPUT"
           fi
-      - name: Hydrate thin fleet payload
+      - name: Hydrate fleet payload
         if: steps.detect-hydration.outputs.needed == 'true'
         shell: bash
         run: node scripts/repo/bootstrap/fleet.mjs
@@ -148,7 +148,7 @@ jobs:
           # Full history + tags: the content-commit search walks package.json
           # history, and the release stage checks the existing v* tags.
           checkout-fetch-depth: '0'
-          # Authorizes a thin member's bundle download during install. Both
+          # Authorizes the member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
@@ -169,14 +169,26 @@ jobs:
           PIPELINE_SHA: ${{ steps.flip.outputs.pipeline-sha }}
         run: |
           set -euo pipefail
-          git checkout --detach "${FLIP_SHA}"
+          # --force: the install's hydration refreshes tracked splice files
+          # (the .gitignore fleet region), and checkout refuses to switch over
+          # those local modifications. On a CI runner they are regenerable
+          # output, never operator work, so discarding them is safe.
+          git checkout --force --detach "${FLIP_SHA}"
           # Run TODAY's pipeline code against the historical content: overlay
           # the default branch's scripts/fleet as an uncommitted working-tree
           # change — HEAD stays the content commit, so the tag lands on it.
           # Fleet packages don't ship scripts/ in their pack; if one does, the
           # verify digest compare fails loudly rather than tagging mixed
           # content.
-          git checkout "${PIPELINE_SHA}" -- scripts/fleet
+          # A member never TRACKS scripts/fleet — its hydrated payload is
+          # already on disk (untracked, so the detach left it in place) and
+          # `git checkout <sha> -- scripts/fleet` dies on "pathspec did not
+          # match". The git-overlay branch below is live ONLY in the
+          # wheelhouse, the one fat repo, whose dogfood run of this same
+          # workflow needs it.
+          if git cat-file -e "${PIPELINE_SHA}:scripts/fleet" 2>/dev/null; then
+            git checkout "${PIPELINE_SHA}" -- scripts/fleet
+          fi
           # Re-install against the content commit's lockfile so the rebuild
           # reproduces the published bytes.
           pnpm install --frozen-lockfile

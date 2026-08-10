@@ -180,6 +180,11 @@ packages/socket/*.png
 # files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
 # sync-scaffolding/dir-mirror-skip.mts). See docs/agents.md/fleet/release-vs-cascade.md.
 **/.claude/hooks/fleet/_dist/fleet-pack.cjs
+# Prebuilt dispatch-launcher variants (one per platform-arch), CI
+# cross-compiled and hydrated from the release bundle; the host build
+# copies its match into _shared/ instead of invoking cc. Contract:
+# scripts/fleet/_shared/launcher-variants.mts.
+**/.claude/hooks/fleet/_dist/launchers/
 # Legacy pre-v1.0.16 dispatch layout: socket-sdk-js still tracks the
 # _dispatch/index.cjs loader, which requires ./fleet-pack.cjs — that generated
 # bundle must stay untracked there. This path stays _dispatch/ on purpose: it

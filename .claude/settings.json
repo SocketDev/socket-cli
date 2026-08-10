@@ -49,6 +49,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/fleet/index.cjs UserPromptSubmit"
+          }
+        ]
+      }
     ]
   },
   "permissions": {
@@ -67,6 +77,11 @@
       "Bash(git push -f:*)",
       "Bash(git push --force-with-lease:*)"
     ]
+  },
+  "// statusLine": "Fail-soft on purpose. scripts/fleet is FETCHED from the release bundle, never tracked, so the script is absent until a fetch has run. Measured without the -f test: the statusline exited 1 on module-not-found, once per render. The test makes an absent script render nothing instead.",
+  "statusLine": {
+    "type": "command",
+    "command": "[ -f \"$CLAUDE_PROJECT_DIR\"/scripts/fleet/spend-statusline.mts ] && node \"$CLAUDE_PROJECT_DIR\"/scripts/fleet/spend-statusline.mts || true"
   },
   "// </fleet-canonical>": "Repository-owned Claude settings belong below this marker."
 }

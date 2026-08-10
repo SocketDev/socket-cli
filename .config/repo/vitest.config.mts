@@ -29,6 +29,22 @@ import {
   stringArray,
 } from './vitest.settings.mts'
 
+// Pin TZ here, at config-eval time in the MAIN process, so every worker
+// inherits TZ=UTC from its spawn env. This has to happen before a worker
+// starts: under the default `threads` pool a worker cannot change its own
+// timezone afterwards — V8 caches it at the first Date op — so a `test.env.TZ`
+// entry or a setupFiles assignment LOOKS right and does nothing, because both
+// run inside the worker. Measured: `main after set TZ=UTC` reads day 19 while
+// `worker after self-set TZ=UTC` still reads day 18.
+//
+// Why it matters beyond flakiness: an unpinned TZ makes a date-formatting bug
+// invisible to whoever wrote it and reproducible only for readers in another
+// offset. socket-cli's analytics report labeled every row by LOCAL day while
+// the API buckets by UTC day, so the same command emitted different dates
+// west of UTC; its per-package config pinned TZ and hid the bug from the
+// fleet runner. `??=` so an operator probing another zone can still override.
+process.env['TZ'] ??= 'UTC'
+
 // Coverage is on when the COVERAGE env is set (cover.mts) or the `--coverage`
 // flag is passed. Match the FLAG, not any argv containing the substring
 // "coverage" — a nested test run whose file-path args happen to include

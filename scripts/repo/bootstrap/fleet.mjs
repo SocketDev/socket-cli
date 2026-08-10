@@ -183,41 +183,42 @@ function splicePackBlock(config) {
   return `${trimmed}\n\n${packBlock}\n`
 }
 /**
- * The transitional long-form tag, bare form — every existing fleet member's
- * CLAUDE.md / .gitignore / .gitattributes still carries this pre-rename.
- * spliceFleetBlock matches it alongside the short-tag form, so a
- * not-yet-recascaded member is still found and re-spliced in one pass.
+ * Every balanced fleet block in `lines`, in document order. Each open marker
+ * pairs with the NEXT close marker after it, and the scan resumes past that
+ * close — so a file carrying several stacked blocks reports one span per block
+ * rather than one span swallowing them all. An unclosed trailing open marker
+ * yields no span: an unbalanced file is left for a human, never half-rewritten.
  */
-function legacyTagBeginMarker(style) {
-  if (style === 'html') return '<!-- <fleet-canonical> -->'
-  if (style === 'slash') return '// <fleet-canonical>'
-  return '# <fleet-canonical>'
-}
-function legacyTagEndMarker(style) {
-  if (style === 'html') return '<!-- </fleet-canonical> -->'
-  if (style === 'slash') return '// </fleet-canonical>'
-  return '# </fleet-canonical>'
-}
-/**
- * Returns the BEGIN/END keyword marker form (long-form tag) for a style — an
- * older transition, predating the short-tag rename. spliceFleetBlock matches
- * it alongside the bare-tag forms, so a file carrying any of the three forms
- * is re-spliced in one pass.
- */
-function legacyBeginMarker(style) {
-  if (style === 'html') return '<!-- BEGIN <fleet-canonical> -->'
-  if (style === 'slash') return '// BEGIN <fleet-canonical>'
-  return '# BEGIN <fleet-canonical>'
-}
-function legacyEndMarker(style) {
-  if (style === 'html') return '<!-- END </fleet-canonical> -->'
-  if (style === 'slash') return '// END </fleet-canonical>'
-  return '# END </fleet-canonical>'
+function findFleetBlockSpans(lines, commentStyle) {
+  const begin = beginMarker(commentStyle)
+  const end = endMarker(commentStyle)
+  const spans = []
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    if (lines[i] !== begin) continue
+    let close = -1
+    for (let j = i + 1; j < length; j += 1)
+      if (lines[j] === end) {
+        close = j
+        break
+      }
+    if (close === -1) break
+    spans.push({
+      end: close,
+      start: i,
+    })
+    i = close
+  }
+  return spans
 }
 /**
  * Splice the canonical fleet block into `target`. If `target` already contains
- * the open/close markers (short-tag bare, long-form tag bare, or legacy
- * BEGIN/END form), the content between them (markers inclusive) is replaced.
+ * the open/close markers, the content between them (markers inclusive) is
+ * replaced. A file carrying SEVERAL stacked blocks collapses to one: the first
+ * is replaced with `fleetBlock` and every later one is deleted, so a member
+ * whose file grew a second managed region ends up with one region instead of a
+ * growing stack. Content outside the matched blocks is preserved
+ * byte-for-byte, except that removing a block sandwiched between blank lines
+ * drops one of them rather than leaving a doubled blank.
  * If markers are absent:
  * - `html` style (CLAUDE.md, README): insert before the first level-2 heading
  * (`## `) with i > 0, or append at end.
@@ -228,23 +229,21 @@ function spliceFleetBlock(config) {
     __proto__: null,
     ...config,
   }
-  const begin = beginMarker(commentStyle)
-  const end = endMarker(commentStyle)
-  const legacyTag0 = legacyTagBeginMarker(commentStyle)
-  const legacyTag1 = legacyTagEndMarker(commentStyle)
-  const legacy0 = legacyBeginMarker(commentStyle)
-  const legacy1 = legacyEndMarker(commentStyle)
   const lines = target.split('\n')
-  const startIdx = lines.findIndex(
-    l => l === begin || l === legacyTag0 || l === legacy0,
-  )
-  const endIdx = lines.findIndex(
-    l => l === end || l === legacyTag1 || l === legacy1,
-  )
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    const before = lines.slice(0, startIdx)
-    const after = lines.slice(endIdx + 1)
-    return [...before, fleetBlock, ...after].join('\n')
+  const spans = findFleetBlockSpans(lines, commentStyle)
+  const anchor = spans[0]
+  if (anchor !== void 0) {
+    const out = [...lines.slice(0, anchor.start), fleetBlock]
+    let cursor = anchor.end + 1
+    for (let i = 1, { length } = spans; i < length; i += 1) {
+      const span = spans[i]
+      const between = lines.slice(cursor, span.start)
+      if (between.at(-1) === '' && lines[span.end + 1] === '') between.pop()
+      out.push(...between)
+      cursor = span.end + 1
+    }
+    out.push(...lines.slice(cursor))
+    return out.join('\n')
   }
   if (commentStyle === 'html') {
     let insertIdx = lines.length
@@ -339,7 +338,6 @@ function resolveSettingsPath(dest) {
 }
 const APPLIED_MARKER = '.cache/fleet/socket-wheelhouse/bundle-applied'
 const APPLIED_FILES_MARKER = '.cache/fleet/socket-wheelhouse/applied-files'
-const LEGACY_APPLIED_MARKER = '.config/fleet/.bundle-applied'
 /**
  * Default bundle ref for a member — `bundle.ref` in its wheelhouse settings
  * file. Lets install-fleet (and the prepare/CI wires) omit an explicit --ref so
@@ -352,6 +350,33 @@ function readBundleRef(dest) {
     return JSON.parse(readFileSync(p, 'utf8')).bundle?.ref
   } catch {
     return
+  }
+}
+/**
+ * The member's build shape — `build.from` / `build.type` in its wheelhouse
+ * settings file. Drives the manifest's shape-scoped file groups: a group is
+ * placed only for shapes that ship it. Undefined fields on an absent or
+ * malformed config read as "shape unknown", which the filter treats as
+ * ship-everything so a config problem can never withhold payload.
+ */
+function readBuildShape(dest) {
+  const p = resolveSettingsPath(dest)
+  if (!p)
+    return {
+      from: void 0,
+      type: void 0,
+    }
+  try {
+    const json = JSON.parse(readFileSync(p, 'utf8'))
+    return {
+      from: json.build?.from,
+      type: json.build?.type,
+    }
+  } catch {
+    return {
+      from: void 0,
+      type: void 0,
+    }
   }
 }
 /**
@@ -411,8 +436,6 @@ function writeAppliedRef(dest, ref) {
   const p = path.join(dest, APPLIED_MARKER)
   mkdirSync(path.dirname(p), { recursive: true })
   writeFileSync(p, `${ref}\n`)
-  const legacy = path.join(dest, LEGACY_APPLIED_MARKER)
-  if (existsSync(legacy)) rm(legacy)
 }
 
 //#endregion
@@ -1430,6 +1453,42 @@ function wirePackageJson(dest) {
 }
 function normalizeManifestEntryPath(entry) {
   return normalizeBundlePath(entry.path)
+}
+/**
+ * Drop the manifest's shape-scoped files that the member's build shape does
+ * not ship, so every downstream consumer (placement, prune, ignore refresh,
+ * applied-files record) sees one consistent, member-effective file set. The
+ * matcher mirrors releaseChecksumFiles in sync-scaffolding/repo-shape.mts;
+ * the group DATA is stamped by make-release-bundle from that one source.
+ * Fail-open: no stamped groups, or an unknown shape (absent/malformed member
+ * config), returns the manifest untouched — a config problem must never
+ * withhold payload.
+ */
+function filterManifestForShape(manifest, shape) {
+  const groups = manifest.shapeScopedFiles
+  if (!groups?.length || shape.from === void 0) return manifest
+  const excluded = /* @__PURE__ */ new Set()
+  for (let i = 0, { length } = groups; i < length; i += 1) {
+    const group = groups[i]
+    if (
+      !group.ship.some(
+        cond =>
+          cond.from === shape.from &&
+          (cond.types === void 0 ||
+            (shape.type !== void 0 && cond.types.includes(shape.type))),
+      )
+    )
+      for (let j = 0, { length: flen } = group.files; j < flen; j += 1)
+        excluded.add(normalizeBundlePath(group.files[j]))
+  }
+  if (!excluded.size) return manifest
+  const files = {}
+  for (const { 0: rel, 1: hash } of Object.entries(manifest.files))
+    if (!excluded.has(normalizeBundlePath(rel))) files[rel] = hash
+  return {
+    ...manifest,
+    files,
+  }
 }
 /**
  * Compute the gitignore entries for thin mode — the wholly-fleet files that the
@@ -2652,21 +2711,25 @@ async function installFleet(config) {
         return 1
       }
     }
-    const fileCount = Object.keys(manifest.files).length
+    const memberManifest = filterManifestForShape(
+      manifest,
+      readBuildShape(dest),
+    )
+    const fileCount = Object.keys(memberManifest.files).length
     const segmentCount =
-      (manifest.segments?.length ?? 0) +
-      (manifest.settingsSegment === void 0 ? 0 : 1)
+      (memberManifest.segments?.length ?? 0) +
+      (memberManifest.settingsSegment === void 0 ? 0 : 1)
     if (cfg.dryRun) {
       logger.log(
         `install-fleet: [dry-run] ${fileCount} file(s) + ${segmentCount} segment(s) verified for ${sourceRef} (template ${manifest.templateSha}). Would write into ${dest}.`,
       )
       return 0
     }
-    const installResult = installFiles(filesDir, dest, manifest)
+    const installResult = installFiles(filesDir, dest, memberManifest)
     untrackGeneratedOutputs(dest, manifest.generatedPaths)
     const prunedCount = pruneStaleFleetFiles(
       dest,
-      manifest,
+      memberManifest,
       readAppliedFiles(dest),
     )
     const movedCount = applyMovedPaths(dest, manifest)
@@ -2680,15 +2743,15 @@ async function installFleet(config) {
     if (cfg.thin)
       untrackFleetPackPaths({
         dest,
-        manifest,
+        manifest: memberManifest,
       })
     else if (readBundleRef(dest) !== void 0)
       refreshFleetPackIgnores({
         dest,
-        manifest,
+        manifest: memberManifest,
       })
     writeAppliedRef(dest, sourceRef)
-    writeAppliedFiles(dest, Object.keys(manifest.files))
+    writeAppliedFiles(dest, Object.keys(memberManifest.files))
     const prunedTotal = prunedCount + tombstonedCount
     const movedNote = movedCount > 0 ? `, moved ${movedCount}` : ''
     const prunedNote =
@@ -2743,6 +2806,8 @@ export {
   fetchBlob,
   fetchBundleSource,
   fetchOciManifest,
+  filterManifestForShape,
+  findFleetBlockSpans,
   firstHeader,
   fleetPackOwnedPaths,
   formatLockStepError,
@@ -2760,10 +2825,6 @@ export {
   installWorkspaceSegment,
   isBundleBehindLocalTemplate,
   isMainModule,
-  legacyBeginMarker,
-  legacyEndMarker,
-  legacyTagBeginMarker,
-  legacyTagEndMarker,
   lockStepExitCode,
   maybeShowUpdateNotice,
   mergeWorkspaceYaml,
@@ -2782,6 +2843,7 @@ export {
   pullFleetBundleTarball,
   readAppliedFiles,
   readAppliedRef,
+  readBuildShape,
   readBundleConfig,
   readBundleRef,
   readManifest,
