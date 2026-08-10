@@ -123,7 +123,9 @@ describe('detectNodejsCdxgenSources', () => {
 
   it('detects node_modules/', async () => {
     mockFindUp.mockImplementation((name: string) =>
-      Promise.resolve(name === 'node_modules' ? '/path/to/node_modules' : undefined),
+      Promise.resolve(
+        name === 'node_modules' ? '/path/to/node_modules' : undefined,
+      ),
     )
     const result = await detectNodejsCdxgenSources('/tmp/project')
     expect(result.hasLockfile).toBe(false)

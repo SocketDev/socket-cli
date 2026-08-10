@@ -153,7 +153,10 @@ describe('globWithGitIgnore() nested-gitignore semantics (slow path)', () => {
         path.join(root, 'packages/example/.gitignore'),
         '!build/important.json\n',
       )
-      writeFileSync(path.join(root, 'packages/example/build/important.json'), '{}')
+      writeFileSync(
+        path.join(root, 'packages/example/build/important.json'),
+        '{}',
+      )
 
       const results = await globWithGitIgnore(['**/*'], {
         cwd: root,
