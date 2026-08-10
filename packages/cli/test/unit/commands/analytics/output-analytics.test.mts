@@ -8,12 +8,12 @@ import {
   renderMarkdown,
 } from '../../../../src/commands/analytics/output-analytics.mts'
 
-// formatDate() in output-analytics.mts uses local-time getMonth() /
-// getDate() — the user-visible output is intentionally local. The
-// snapshots encode UTC-day dates (e.g. "Apr 19" for 2025-04-19T04:50Z),
-// matching CI runners which are UTC. scripts/test-wrapper.mts pins TZ
-// to UTC for the spawned vitest process so these snapshots are stable
-// across developer timezones.
+// formatDate() in output-analytics.mts reads the UTC calendar day, so the
+// snapshots below ("Apr 19" for 2025-04-19T04:50Z) hold on any machine no
+// matter which vitest config a run picks up. Do not reintroduce a dependency
+// on the ambient TZ here: the root fleet config runs the threads pool, and a
+// worker thread cannot change its own timezone after start, so neither
+// `test.env.TZ` nor a setupFile can pin it back.
 describe('output-analytics', () => {
   describe('format data', () => {
     it('should formatDataRepo', () => {

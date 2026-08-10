@@ -28,7 +28,7 @@ const METRICS = [
   'total_low_prevented',
 ] as const
 
-// Note: This maps `new Date(date).getMonth()` to English three letters
+// Note: This maps `new Date(date).getUTCMonth()` to English three letters
 const Months = [
   'Jan',
   'Feb',
@@ -168,10 +168,16 @@ export function formatDataRepo(
   }
 }
 
+// Reads the UTC calendar day, not the local one. The analytics API buckets
+// each row by UTC day and stamps `created_at` with an instant inside it, so a
+// local-time read relabels the bucket: 2025-04-19T04:50Z is the server's Apr 19
+// row, and `getDate()` in UTC-7 renders it "Apr 18". Since the label is also
+// the aggregation key in formatDataOrg, that shifted every row of the report
+// for anyone west of UTC and made the output depend on the reader's machine.
 export function formatDate(date: string): string {
   const dateObj = new Date(date)
-  const month = dateObj.getMonth()
-  const day = dateObj.getDate()
+  const month = dateObj.getUTCMonth()
+  const day = dateObj.getUTCDate()
   if (Number.isNaN(month) || month < 0 || month > 11 || Number.isNaN(day)) {
     return date.slice(0, 10)
   }
