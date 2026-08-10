@@ -75,6 +75,7 @@
 .github/workflows/prune-workflow-runs.yml linguist-generated=true
 .github/workflows/release-reconcile.yml linguist-generated=true
 .github/workflows/weekly-update.yml linguist-generated=true
+.github/zizmor.yml linguist-generated=true
 .mcp.json linguist-generated=true
 .npmrc linguist-generated=true
 assets/badge-follow-bluesky.svg linguist-generated=true

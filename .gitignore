@@ -322,6 +322,7 @@ pnpm-debug.log
 /.git-hooks/post-commit
 /.git-hooks/pre-commit
 /.git-hooks/pre-push
+/.github/zizmor.yml
 /.mcp.json
 /docs/agents.md/fleet/
 /docs/references/fleet/sfw-local-install.md

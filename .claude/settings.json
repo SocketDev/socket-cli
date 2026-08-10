@@ -67,7 +67,6 @@
       "SendMessage"
     ],
     "deny": [
-      "Bash(gh release delete:*)",
       "Bash(npm publish:*)",
       "Bash(pnpm publish:*)",
       "Bash(yarn publish:*)"
