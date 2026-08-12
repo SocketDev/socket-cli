@@ -4,7 +4,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../../constants.mts'
-import { extractReachabilityErrors } from '../../utils/coana.mts'
+import {
+  extractReachabilityErrors,
+  getFullWorkspacePath,
+} from '../../utils/coana.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -53,7 +56,7 @@ export async function outputScanReach(
     )
     for (const err of errors) {
       logger.warn(
-        `  - ${err.ghsaId} in ${err.componentName}@${err.componentVersion} (${err.subprojectPath})`,
+        `  - ${err.ghsaId} in ${err.componentName}@${err.componentVersion} (${getFullWorkspacePath(err.subprojectPath, err.workspacePath)})`,
       )
     }
   }

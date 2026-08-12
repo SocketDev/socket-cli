@@ -6,6 +6,8 @@
  *   brotli-compressed .br temps, leaves other paths alone, cleans up.
  * - extractTier1ReachabilityScanId: plain JSON + edge cases.
  * - extractReachabilityErrors: plain JSON + missing + malformed.
+ * - getFullWorkspacePath: build-root/workspace labelling, including the
+ *   single-root and absent-path cases.
  *
  * Related Files:
  * - utils/coana.mts (implementation)
@@ -28,6 +30,7 @@ import {
   compressSocketFactsForUpload,
   extractReachabilityErrors,
   extractTier1ReachabilityScanId,
+  getFullWorkspacePath,
 } from './coana.mts'
 
 describe('coana facts-file utils', () => {
@@ -233,8 +236,16 @@ describe('coana facts-file utils', () => {
             {
               ghsa_id: 'GHSA-aaaa-bbbb-cccc',
               reachability: [
-                { type: 'error', subprojectPath: 'packages/web' },
-                { type: 'reachable', subprojectPath: 'packages/api' },
+                {
+                  type: 'error',
+                  subprojectPath: '.',
+                  workspacePath: 'packages/web',
+                },
+                {
+                  type: 'reachable',
+                  subprojectPath: '.',
+                  workspacePath: 'packages/api',
+                },
               ],
             },
           ],
@@ -245,7 +256,13 @@ describe('coana facts-file utils', () => {
           reachability: [
             {
               ghsa_id: 'GHSA-xxxx-yyyy-zzzz',
-              reachability: [{ type: 'error', subprojectPath: 'packages/api' }],
+              reachability: [
+                {
+                  type: 'error',
+                  subprojectPath: 'services/gateway',
+                  workspacePath: 'packages/api',
+                },
+              ],
             },
           ],
         },
@@ -257,13 +274,15 @@ describe('coana facts-file utils', () => {
         componentName: 'lodash',
         componentVersion: '4.17.21',
         ghsaId: 'GHSA-aaaa-bbbb-cccc',
-        subprojectPath: 'packages/web',
+        subprojectPath: '.',
+        workspacePath: 'packages/web',
       },
       {
         componentName: 'axios',
         componentVersion: '1.4.0',
         ghsaId: 'GHSA-xxxx-yyyy-zzzz',
-        subprojectPath: 'packages/api',
+        subprojectPath: 'services/gateway',
+        workspacePath: 'packages/api',
       },
     ]
 
@@ -298,6 +317,36 @@ describe('coana facts-file utils', () => {
       })
 
       expect(extractReachabilityErrors(file)).toEqual([])
+    })
+  })
+
+  describe('getFullWorkspacePath', () => {
+    it('joins a build root with the workspace inside it', () => {
+      expect(getFullWorkspacePath('services/gateway', 'packages/api')).toBe(
+        'services/gateway/packages/api',
+      )
+    })
+
+    it('uses the workspace alone for a single-root repo', () => {
+      expect(getFullWorkspacePath('.', 'packages/api')).toBe('packages/api')
+    })
+
+    it('uses the build root alone when it holds no nested workspace', () => {
+      expect(getFullWorkspacePath('services/gateway', '.')).toBe(
+        'services/gateway',
+      )
+    })
+
+    it('falls back to the root when neither path is meaningful', () => {
+      expect(getFullWorkspacePath('.', '.')).toBe('.')
+      expect(getFullWorkspacePath('', '')).toBe('.')
+    })
+
+    it('ignores an absent path from an older Coana release', () => {
+      expect(getFullWorkspacePath('', 'packages/api')).toBe('packages/api')
+      expect(getFullWorkspacePath('services/gateway', '')).toBe(
+        'services/gateway',
+      )
     })
   })
 })

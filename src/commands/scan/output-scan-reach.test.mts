@@ -39,7 +39,13 @@ const errorComponentsBody = {
       reachability: [
         {
           ghsa_id: 'GHSA-aaaa-bbbb-cccc',
-          reachability: [{ type: 'error', subprojectPath: 'packages/web' }],
+          reachability: [
+            {
+              type: 'error',
+              subprojectPath: '.',
+              workspacePath: 'packages/web',
+            },
+          ],
         },
       ],
     },
@@ -91,5 +97,7 @@ describe('outputScanReach facts-file resolution', () => {
     const warned = warnSpy.mock.calls.map(c => String(c[0])).join('\n')
     expect(warned).toContain('GHSA-aaaa-bbbb-cccc')
     expect(warned).toContain('lodash@4.17.21')
+    // The workspace, not the `.` build root Coana reports as subprojectPath.
+    expect(warned).toContain('packages/web')
   })
 })
