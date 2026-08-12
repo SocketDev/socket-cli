@@ -9,6 +9,7 @@
  *   to depscan is brotli (api-v0 decodes at the multipart boundary).
  * - extractReachabilityErrors: Extract per-component reachability errors
  * - extractTier1ReachabilityScanId: Extract scan ID from socket facts file
+ * - getFullWorkspacePath: Label a build-root/workspace pair the way Coana does
  *
  * Integration:
  * - Works with @coana-tech/cli for reachability analysis
@@ -120,6 +121,7 @@ export type ReachabilityError = {
   componentVersion: string
   ghsaId: string
   subprojectPath: string
+  workspacePath: string
 }
 
 export function extractReachabilityErrors(
@@ -134,6 +136,7 @@ export function extractReachabilityErrors(
             reachability?: Array<{
               subprojectPath?: string
               type?: string
+              workspacePath?: string
             }>
           }>
           version?: string
@@ -160,6 +163,7 @@ export function extractReachabilityErrors(
             componentVersion: String(component.version ?? ''),
             ghsaId: String(ghsaEntry.ghsa_id ?? ''),
             subprojectPath: String(entry.subprojectPath ?? ''),
+            workspacePath: String(entry.workspacePath ?? ''),
           })
         }
       }
@@ -178,4 +182,21 @@ export function extractTier1ReachabilityScanId(
   return tier1ReachabilityScanId.length > 0
     ? tier1ReachabilityScanId
     : undefined
+}
+
+// Label a reachability location the way Coana's own `getFullWorkspacePath`
+// does. Since @coana-tech/cli v15.10.8 `subprojectPath` names the build root
+// and `workspacePath` the workspace within it, so a single-root repo reports
+// `.` as its subproject and must be labelled by its workspace alone.
+export function getFullWorkspacePath(
+  subprojectPath: string,
+  workspacePath: string,
+): string {
+  const subproject =
+    subprojectPath && subprojectPath !== '.' ? subprojectPath : ''
+  const workspace = workspacePath && workspacePath !== '.' ? workspacePath : ''
+  if (subproject && workspace) {
+    return `${subproject}/${workspace}`
+  }
+  return subproject || workspace || '.'
 }

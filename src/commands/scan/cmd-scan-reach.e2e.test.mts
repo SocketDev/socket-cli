@@ -327,14 +327,21 @@ describe('socket scan reach (E2E tests)', async () => {
           expect(Array.isArray(facts.components)).toBe(true)
           expect(Array.isArray(facts.workspaceDiagnostics)).toBe(true)
 
-          // Verify workspace diagnostics includes all 3 subprojects.
-          const subprojectPaths = facts.workspaceDiagnostics.map(
-            d => d.subprojectPath,
+          // Verify workspace diagnostics includes all 3 workspaces. Since
+          // Coana v15.10.8, subprojectPath identifies the build root and
+          // workspacePath the workspace within it, so this single-root npm
+          // monorepo reports one `.` subproject holding three workspaces.
+          const workspacePaths = facts.workspaceDiagnostics.map(
+            d => d.workspacePath,
           )
-          expect(subprojectPaths).toContain('.')
-          expect(subprojectPaths).toContain('packages/package-a')
-          expect(subprojectPaths).toContain('packages/package-b')
+          expect(workspacePaths).toContain('.')
+          expect(workspacePaths).toContain('packages/package-a')
+          expect(workspacePaths).toContain('packages/package-b')
           expect(facts.workspaceDiagnostics).toHaveLength(3)
+          expect(
+            facts.workspaceDiagnostics.every(d => d.subprojectPath === '.'),
+            'all workspaces should belong to the single `.` build root',
+          ).toBe(true)
 
           // Verify components count is reasonable (should be > 100 for this workspace).
           expect(facts.components.length).toBeGreaterThan(100)
@@ -694,13 +701,13 @@ describe('socket scan reach (E2E tests)', async () => {
           // Read and validate the facts file structure.
           const facts = await readSocketFactsJson(tempFixture.path)
 
-          // Verify all workspace subprojects are found when using --cwd.
-          const subprojectPaths = facts.workspaceDiagnostics.map(
-            d => d.subprojectPath,
+          // Verify all workspaces are found when using --cwd.
+          const workspacePaths = facts.workspaceDiagnostics.map(
+            d => d.workspacePath,
           )
-          expect(subprojectPaths).toContain('.')
-          expect(subprojectPaths).toContain('packages/package-a')
-          expect(subprojectPaths).toContain('packages/package-b')
+          expect(workspacePaths).toContain('.')
+          expect(workspacePaths).toContain('packages/package-a')
+          expect(workspacePaths).toContain('packages/package-b')
 
           // Verify we have components.
           expect(facts.components.length).toBeGreaterThan(100)
