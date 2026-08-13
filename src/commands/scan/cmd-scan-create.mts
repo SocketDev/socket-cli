@@ -504,30 +504,28 @@ async function run(
   const isUsingNonDefaultConcurrency =
     reachConcurrency !== reachabilityFlags['reachConcurrency']?.default
 
-  const isUsingNonDefaultAnalytics =
-    reachDisableAnalytics !==
-    reachabilityFlags['reachDisableAnalytics']?.default
-
   const isUsingNonDefaultVersion =
     reachVersion !== reachabilityFlags['reachVersion']?.default
 
+  // Compare every boolean reach flag against its declared default so newly
+  // added flags require --reach automatically instead of relying on a
+  // hand-maintained list. The deprecated no-op
+  // --reach-disable-analysis-splitting is excluded on purpose.
+  const isUsingAnyBooleanReachFlag = Object.entries(reachabilityFlags).some(
+    ({ 0: name, 1: flag }) =>
+      flag.type === 'boolean' &&
+      name !== 'reachDisableAnalysisSplitting' &&
+      cli.flags[name] !== flag.default,
+  )
+
   const isUsingAnyReachabilityFlags =
-    dynamicSbomInference ||
     hasReachEcosystems ||
     hasReachExcludePaths ||
-    isUsingNonDefaultAnalytics ||
+    isUsingAnyBooleanReachFlag ||
     isUsingNonDefaultConcurrency ||
     isUsingNonDefaultMemoryLimit ||
     isUsingNonDefaultTimeout ||
-    isUsingNonDefaultVersion ||
-    reachContinueOnAnalysisErrors ||
-    reachContinueOnInstallErrors ||
-    reachContinueOnMissingLockFiles ||
-    reachContinueOnNoSourceFiles ||
-    reachEnableAnalysisSplitting ||
-    reachLazyMode ||
-    reachSkipCache ||
-    reachUseOnlyPregeneratedSboms
+    isUsingNonDefaultVersion
 
   // Validate target constraints when --reach is enabled.
   const reachTargetValidation = reach
