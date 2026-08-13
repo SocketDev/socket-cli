@@ -16,6 +16,7 @@ import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
   getSimpleCleanScan,
+  withAlertAction,
 } from '../../../helpers/generate-report-test-helpers.mts'
 
 describe('generate-report-test-helpers', () => {
@@ -109,6 +110,15 @@ describe('generate-report-test-helpers', () => {
       expect(scan[0].manifestFiles.length).toBe(1)
       expect(scan[1].manifestFiles).toBeDefined()
       expect(scan[1].manifestFiles.length).toBe(1)
+    })
+  })
+
+  describe('withAlertAction', () => {
+    it('stamps action onto every alert', () => {
+      const scan = withAlertAction(getScanWithEnvVars(), 'error')
+
+      expect(scan[0].alerts[0].action).toBe('error')
+      expect(scan[0].alerts[1].action).toBe('error')
     })
   })
 })

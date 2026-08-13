@@ -39,8 +39,8 @@ describe('socket scan report', async () => {
                 $ socket scan report [options] <SCAN_ID> [OUTPUT_PATH]
           
               API Token Requirements
-                - Quota: 2 units
-                - Permissions: full-scans:list and security-policy:read
+                - Quota: 1 unit
+                - Permissions: full-scans:list
           
               Options
                 --fold              Fold reported alerts to some degree (default 'none')

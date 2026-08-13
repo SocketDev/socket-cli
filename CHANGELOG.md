@@ -240,6 +240,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- **`scan`** — grade `scan report` / `scan create --report` from each alert's resolved `action` on the scan instead of re-fetching the org security-policy map
 - **`cli`** — use direct env reads for HOME in 5 commands
 - **`publish`** — optimize CLI build and consolidate platform definitions
 - **`sea`** — parallelize binary injection for 8x faster builds

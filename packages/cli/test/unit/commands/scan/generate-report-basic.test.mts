@@ -17,22 +17,14 @@ import { describe, expect, it } from 'vitest'
 
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
-
-type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
-
 describe('generate-report - basic functionality', () => {
   it('should accept empty args', () => {
-    const result = generateReport(
-      [],
-      { securityPolicyRules: [] } as SecurityPolicyData,
-      {
-        orgSlug: 'fakeOrg',
-        scanId: 'scan-ai-dee',
-        fold: 'none',
-        reportLevel: 'warn',
-      },
-    )
+    const result = generateReport([], {
+      orgSlug: 'fakeOrg',
+      scanId: 'scan-ai-dee',
+      fold: 'none',
+      reportLevel: 'warn',
+    })
 
     expect(result).toMatchInlineSnapshot(`
       {
@@ -51,20 +43,13 @@ describe('generate-report - basic functionality', () => {
     `)
   })
 
-  it('should handle empty security policy rules', () => {
-    const result = generateReport(
-      [],
-      {
-        securityPolicyRules: {},
-        securityPolicyDefault: 'medium',
-      },
-      {
-        orgSlug: 'testOrg',
-        scanId: 'test-scan-id',
-        fold: 'none',
-        reportLevel: 'error',
-      },
-    )
+  it('should handle an empty scan', () => {
+    const result = generateReport([], {
+      orgSlug: 'testOrg',
+      scanId: 'test-scan-id',
+      fold: 'none',
+      reportLevel: 'error',
+    })
 
     expect(result.ok).toBe(true)
     expect(result.data.healthy).toBe(true)
@@ -73,16 +58,12 @@ describe('generate-report - basic functionality', () => {
   })
 
   it('should set correct options in result', () => {
-    const result = generateReport(
-      [],
-      { securityPolicyRules: [] } as SecurityPolicyData,
-      {
-        orgSlug: 'myOrg',
-        scanId: 'my-scan-123',
-        fold: 'pkg',
-        reportLevel: 'error',
-      },
-    )
+    const result = generateReport([], {
+      orgSlug: 'myOrg',
+      scanId: 'my-scan-123',
+      fold: 'pkg',
+      reportLevel: 'error',
+    })
 
     expect(result.data.options).toEqual({
       fold: 'pkg',
@@ -93,16 +74,12 @@ describe('generate-report - basic functionality', () => {
   })
 
   it('should return ok:true for successful report generation', () => {
-    const result = generateReport(
-      [],
-      { securityPolicyRules: [] } as SecurityPolicyData,
-      {
-        orgSlug: 'testOrg',
-        scanId: 'test-id',
-        fold: 'type',
-        reportLevel: 'warn',
-      },
-    )
+    const result = generateReport([], {
+      orgSlug: 'testOrg',
+      scanId: 'test-id',
+      fold: 'type',
+      reportLevel: 'warn',
+    })
 
     expect(result.ok).toBe(true)
     expect(result).toHaveProperty('data')

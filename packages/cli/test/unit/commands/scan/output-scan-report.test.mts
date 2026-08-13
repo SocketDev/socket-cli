@@ -120,7 +120,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -149,7 +148,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -174,7 +172,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -196,7 +193,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -221,7 +217,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -251,7 +246,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -283,7 +277,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -313,7 +306,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -344,7 +336,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -376,7 +367,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 

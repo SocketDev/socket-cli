@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getScanWithMultiplePackages,
+  withAlertAction,
 } from '../../../helpers/generate-report-test-helpers.mts'
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
@@ -27,15 +28,7 @@ describe('generate-report - fold functionality', () => {
   describe('fold=none', () => {
     it('should not fold anything when fold=none', () => {
       const result = generateReport(
-        getScanWithEnvVars(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithEnvVars(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -56,15 +49,7 @@ describe('generate-report - fold functionality', () => {
   describe('fold=pkg', () => {
     it('should fold alerts by package when fold=pkg', () => {
       const result = generateReport(
-        getScanWithMultiplePackages(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithMultiplePackages(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -93,15 +78,7 @@ describe('generate-report - fold functionality', () => {
   describe('fold=type', () => {
     it('should fold alerts by type when fold=type', () => {
       const result = generateReport(
-        getScanWithMultiplePackages(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithMultiplePackages(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -119,15 +96,7 @@ describe('generate-report - fold functionality', () => {
   describe('fold=all', () => {
     it('should fold all alerts when fold=all', () => {
       const result = generateReport(
-        getScanWithMultiplePackages(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithMultiplePackages(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',

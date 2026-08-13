@@ -18,35 +18,21 @@ import { describe, expect, it } from 'vitest'
 import {
   getScanWithEnvVars,
   getSimpleCleanScan,
+  withAlertAction,
 } from '../../../helpers/generate-report-test-helpers.mts'
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 
 import type { ScanReport } from '../../../../src/commands/scan/generate-report.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
-
-// biome-ignore lint/correctness/noUnusedVariables: Destructuring import for test setup
-type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 
 describe('generate-report - report shape', () => {
   describe('report-level=warn', () => {
     it('should return a healthy report without alerts when there are no violations', () => {
-      const result = generateReport(
-        getSimpleCleanScan(),
-        {
-          securityPolicyRules: {
-            gptSecurity: {
-              action: 'ignore',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
-        {
-          orgSlug: 'fakeOrg',
-          scanId: 'scan-ai-dee',
-          fold: 'none',
-          reportLevel: 'warn',
-        },
-      )
+      const result = generateReport(getSimpleCleanScan(), {
+        orgSlug: 'fakeOrg',
+        scanId: 'scan-ai-dee',
+        fold: 'none',
+        reportLevel: 'warn',
+      })
 
       expect(result).toMatchInlineSnapshot(`
         {
@@ -70,15 +56,7 @@ describe('generate-report - report shape', () => {
 
     it('should return a sick report with alert when an alert violates at error', () => {
       const result = generateReport(
-        getScanWithEnvVars(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithEnvVars(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -94,15 +72,7 @@ describe('generate-report - report shape', () => {
 
     it('should return a healthy report without alerts when an alert violates at warn', () => {
       const result = generateReport(
-        getScanWithEnvVars(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'warn',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithEnvVars(), 'warn'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -119,23 +89,12 @@ describe('generate-report - report shape', () => {
 
   describe('report-level=error', () => {
     it('should return a healthy report without alerts when there are no violations', () => {
-      const result = generateReport(
-        getSimpleCleanScan(),
-        {
-          securityPolicyRules: {
-            gptSecurity: {
-              action: 'ignore',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
-        {
-          orgSlug: 'fakeOrg',
-          scanId: 'scan-ai-dee',
-          fold: 'none',
-          reportLevel: 'error',
-        },
-      )
+      const result = generateReport(getSimpleCleanScan(), {
+        orgSlug: 'fakeOrg',
+        scanId: 'scan-ai-dee',
+        fold: 'none',
+        reportLevel: 'error',
+      })
 
       expect(result.ok).toBe(true)
       expect(result.ok && result.data.healthy).toBe(true)
@@ -144,15 +103,7 @@ describe('generate-report - report shape', () => {
 
     it('should return a sick report with alert when an alert violates at error', () => {
       const result = generateReport(
-        getScanWithEnvVars(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'error',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithEnvVars(), 'error'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
@@ -168,15 +119,7 @@ describe('generate-report - report shape', () => {
 
     it('should return a healthy report without alerts when an alert violates at warn', () => {
       const result = generateReport(
-        getScanWithEnvVars(),
-        {
-          securityPolicyRules: {
-            envVars: {
-              action: 'warn',
-            },
-          },
-          securityPolicyDefault: 'medium',
-        },
+        withAlertAction(getScanWithEnvVars(), 'warn'),
         {
           orgSlug: 'fakeOrg',
           scanId: 'scan-ai-dee',
