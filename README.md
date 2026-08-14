@@ -1,7 +1,7 @@
-# <img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/logomark-inverse.svg" width="96" height="96" alt="Socket CLI"><br>Socket CLI
+# <img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark-light.svg" width="96" height="96" alt="Socket CLI"><br>Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
-<img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/coverage.svg" width="90" height="20" alt="Coverage" />
+<img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/coverage.svg" width="90" height="20" alt="Coverage" />
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 [![Follow @socket.dev on Bluesky](https://img.shields.io/badge/Follow-@socket.dev-1DA1F2?style=social&logo=bluesky)](https://bsky.app/profile/socket.dev)
