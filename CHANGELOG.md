@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- `socket scan create` now rejects every `--reach-*` modifier when `--reach` is not enabled. Previously flags such as `--reach-debug` were silently ignored, making a plain SBOM scan look like a reachability scan.
+
 ## [1.1.157](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.157) - 2026-08-12
 
 ### Changed
