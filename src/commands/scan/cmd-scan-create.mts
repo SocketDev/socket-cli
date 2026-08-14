@@ -512,7 +512,7 @@ async function run(
   // hand-maintained list. The deprecated no-op
   // --reach-disable-analysis-splitting is excluded on purpose.
   const isUsingAnyBooleanReachFlag = Object.entries(reachabilityFlags).some(
-    ({ 0: name, 1: flag }) =>
+    ([name, flag]) =>
       flag.type === 'boolean' &&
       name !== 'reachDisableAnalysisSplitting' &&
       cli.flags[name] !== flag.default,
