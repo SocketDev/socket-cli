@@ -4,7 +4,9 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { applyOptimization } from './apply-optimization.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
+import { runPastoralistAudit } from './pastoralist-audit.mts'
 import { CMD_NAME } from './shared.mts'
+import { syncOriginMain } from './sync-origin-main.mts'
 import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
@@ -25,6 +27,15 @@ export async function handleOptimize({
 
   debug(`Starting optimization for ${cwd}`)
   debugDir({ cwd, outputKind, pin, prod })
+
+  // Update the default branch to origin before reading any project state, so
+  // the optimization runs against the latest project inputs. A skipped or
+  // failed sync is logged and never fails the run.
+  const syncResult = await syncOriginMain(cwd)
+  debugDir({ syncOriginMain: syncResult })
+  if (!syncResult.synced) {
+    logger.info(`Origin sync skipped: ${syncResult.reason}.`)
+  }
 
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
@@ -79,6 +90,15 @@ export async function handleOptimize({
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion.version}.`)
   logger.error('')
+
+  // The pastoralist override audit runs ahead of socket's own overrides so
+  // stale package-manager overrides carry their review record first. Its
+  // errors are logged and swallowed inside the audit wrapper.
+  const pastoralistResult = runPastoralistAudit(pkgEnvDetails.pkgPath)
+  debugDir({ pastoralistAudit: pastoralistResult })
+  if (!pastoralistResult.ok) {
+    logger.warn(`Pastoralist audit skipped: ${pastoralistResult.reason}.`)
+  }
 
   debug('Applying optimization')
   const optimizationResult = await applyOptimization(pkgEnvDetails, {

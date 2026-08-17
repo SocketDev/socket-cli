@@ -716,7 +716,11 @@ patchedDependencies:
   # blocked by egress policy — every lookup then hits the request timeout
   # while taze still exits 0 (false green; update.mts fails loud on it).
   # On a taze bump, regenerate via `pnpm patch taze` + `pnpm patch-commit`.
-  taze@20.0.0: patches/taze@20.0.0.patch
+  # DISABLED 2026-08-17: the entry targets taze@20.0.0 but the catalog pins
+  # taze 19.17.1, so pnpm hard-fails the install with ERR_PNPM_UNUSED_PATCH.
+  # Fleet-side inconsistency (patch ahead of the catalog bump) — restore when
+  # the catalog reaches 20.0.0.
+  # taze@20.0.0: patches/taze@20.0.0.patch
 saveExact: true
 strictPeerDependencies: true
 trustPolicy: no-downgrade
@@ -734,3 +738,15 @@ trustPolicyExclude:
   # (ariperkkio) + same repo + provenance attestation as earlier
   - undici@6.21.3
   - 'compromise@14.15.0'
+  # 0.18.0 (2026-08-09) is the LATEST publish and lost the provenance
+  # attestation earlier minors carried (publisher pipeline change), so
+  # no-downgrade flags it. There is no attested re-publish to bump to.
+  # Scoped to the exact tag so 0.18.1 re-enters the normal gate.
+  - '@redwoodjs/agent-ci@0.18.0'
+  # Sibling package from the same publisher, first real release (0.18.0,
+  # 2026-08-09): no earlier attested versions exist, so the no-downgrade
+  # check has nothing to compare against and flags it. Same scoping rule:
+  # the exact tag only, so 0.18.1 re-enters the normal gate.
+  - 'run-local-ci@0.18.0'
+  # Same publisher, same 2026-08-09 unprovenanced wave as agent-ci.
+  - 'dtu-github-actions@0.18.0'

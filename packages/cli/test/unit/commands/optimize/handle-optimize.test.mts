@@ -49,6 +49,22 @@ vi.mock(
     outputOptimizeResult: vi.fn(),
   }),
 )
+vi.mock(
+  import('../../../../src/commands/optimize/pastoralist-audit.mts'),
+  () => ({
+    runPastoralistAudit: vi.fn(async () => ({ ok: true })),
+  }),
+)
+vi.mock(
+  import('../../../../src/commands/optimize/sync-origin-main.mts'),
+  () => ({
+    syncOriginMain: vi.fn(async () => ({
+      ok: true,
+      reason: 'already current with origin/main',
+      synced: false,
+    })),
+  }),
+)
 vi.mock(import('../../../../src/commands/optimize/shared.mts'), () => ({
   CMD_NAME: 'optimize',
 }))

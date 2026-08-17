@@ -196,5 +196,8 @@
   },
   "contentPolicy": {
     "class": "dual-use"
+  },
+  "dependencies": {
+    "pastoralist": "1.13.0"
   }
 }
