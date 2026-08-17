@@ -4,6 +4,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { applyOptimization } from './apply-optimization.mts'
 import { bundleStubOffer } from './bundle-stub-offer.mts'
+import { hoistAdvisory } from './hoist-advisory.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { runPastoralistAudit } from './pastoralist-audit.mts'
 import { CMD_NAME } from './shared.mts'
@@ -113,10 +114,23 @@ export async function handleOptimize({
   debug(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
   debugDir({ optimizationResult })
 
-  // After a successful run, surface the next optimization: stubbing the
-  // bundle paths the runtime never reaches (the wheelhouse fleet's
-  // bundle-stub pattern). Advisory only — the operator applies it.
+  // After a successful run, surface the next optimizations: the odai-assisted
+  // hoisting advisory (cross-major duplicates with hoist-safety verdicts when
+  // the on-device model is present), then the bundle-stub offer. Advisory
+  // only — the operator applies it.
   if (optimizationResult.ok) {
+    const advisoryLines = await hoistAdvisory(pkgEnvDetails.pkgPath)
+    debugDir({ hoistAdvisory: advisoryLines })
+    if (advisoryLines.length > 0) {
+      logger.error('')
+      logger.info(
+        `Hoisting advisory (${advisoryLines.length} cross-major duplicate(s)):`,
+      )
+      for (const line of advisoryLines) {
+        logger.log(`  ${line.suggestion}`)
+      }
+    }
+
     const offer = bundleStubOffer(pkgEnvDetails.pkgPath)
     debugDir({ bundleStubOffer: offer })
     if (offer !== undefined) {

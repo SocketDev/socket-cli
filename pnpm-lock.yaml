@@ -3413,6 +3413,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@socketsecurity/odai':
+        specifier: 0.2.1
+        version: 0.2.1(playwright-core@1.62.1)
       pastoralist:
         specifier: 1.13.0
         version: 1.13.0
@@ -4938,6 +4941,16 @@ packages:
       typescript:
         optional: true
 
+  '@socketsecurity/odai@0.2.1':
+    resolution: {integrity: sha512-9jF4KNYflezDxE9gWd4W1jqL4sYlGMxZjGS0RprBdJNTMWzESv4xV0Ra/qKF4+Wl5DgpTkz9XJsql2FGUDcBXQ==}
+    engines: {node: '>=24', npm: '>=12.0.1', pnpm: '>=11.0.5'}
+    hasBin: true
+    peerDependencies:
+      playwright-core: '>=1.49.0'
+    peerDependenciesMeta:
+      playwright-core:
+        optional: true
+
   '@socketsecurity/registry@2.0.5':
     resolution: {integrity: sha512-sE4c3CPeEw492GXis9HZz5567j+qzGpAcyaa+Zi+wmJmi/GATB+cURnQ9MXkOyLZVmGjEZRhmfMbZ8mnyzrxCg==}
     engines: {node: '>=24'}
@@ -5079,6 +5092,9 @@ packages:
 
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
+
+  '@types/dom-chromium-ai@0.0.17':
+    resolution: {integrity: sha512-UnSAIVKONaY2vTAM4TkPpwdKeGgg3tPCwNP3KxR+U8bLYC2rQU7UrgW9LIVx0B02dKZxuPA6a0Q5wvyW5Rk6nw==}
 
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
@@ -9135,6 +9151,13 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
+  '@socketsecurity/odai@0.2.1(playwright-core@1.62.1)':
+    dependencies:
+      '@sinclair/typebox': 0.34.52
+      '@types/dom-chromium-ai': 0.0.17
+    optionalDependencies:
+      playwright-core: 1.62.1
+
   '@socketsecurity/registry@2.0.5(typescript@7.0.2)':
     optionalDependencies:
       typescript: 7.0.2
@@ -9235,6 +9258,8 @@ snapshots:
       '@types/ms': 2.1.0
 
   '@types/deep-eql@4.0.2': {}
+
+  '@types/dom-chromium-ai@0.0.17': {}
 
   '@types/estree@1.0.9': {}
 

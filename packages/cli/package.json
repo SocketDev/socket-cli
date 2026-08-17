@@ -198,6 +198,7 @@
     "class": "dual-use"
   },
   "dependencies": {
+    "@socketsecurity/odai": "0.2.1",
     "pastoralist": "1.13.0"
   }
 }
