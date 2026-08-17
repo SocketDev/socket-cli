@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "1.1.157",
+  "version": "1.1.158",
   "description": "CLI for Socket.dev",
   "contentPolicy": {
     "class": "dual-use"
