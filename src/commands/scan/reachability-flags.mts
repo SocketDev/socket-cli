@@ -4,12 +4,6 @@ import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 export const reachabilityFlags: MeowFlags = {
-  dynamicSbomInference: {
-    type: 'boolean',
-    default: false,
-    description:
-      'For Gradle, sbt, and Maven: splits reachability analysis per project/module using a Socket facts SBOM (generated directly by each package manager) per build root, instead of one synthetic root. Reachability analysis only; implies --auto-manifest.',
-  },
   reachVersion: {
     type: 'string',
     description: `Override the version of @coana-tech/cli used for reachability analysis. Default: ${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}.`,

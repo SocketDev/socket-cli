@@ -178,7 +178,39 @@ describe('handleCreateNewScan excludePaths', () => {
     expect(mockFetchCreateOrgFullScan).toHaveBeenCalled()
   })
 
-  it('drives JVM facts generation through generateRecursiveManifests under --dynamic-sbom-inference, merging generated facts into scan targets', async () => {
+  it('generates nothing beyond Gradle/sbt/Maven when --dynamic-sbom-inference is used without --auto-manifest', async () => {
+    mockGenerateRecursiveManifests.mockResolvedValueOnce([
+      {
+        dir: '/repo/service-a',
+        ecosystem: 'gradle',
+        factsPath: '/repo/service-a/.socket.facts.json',
+        status: 'generated',
+      },
+    ])
+
+    const config = createConfig({ autoManifest: false, targets: ['/repo'] })
+    config.reach.dynamicSbomInference = true
+
+    await handleCreateNewScan(config)
+
+    expect(mockGenerateRecursiveManifests).toHaveBeenCalledWith(
+      expect.objectContaining({ cwd: '/repo' }),
+    )
+    // generateAutoManifest is what would pull in conda and bazel; the flag on
+    // its own must never reach it.
+    expect(mockGenerateAutoManifest).not.toHaveBeenCalled()
+    expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+      ['/repo', '/repo/service-a/.socket.facts.json'],
+      { size: 1 },
+      {
+        additionalIgnores: [],
+        config: { projectIgnorePaths: ['fixtures/**'] },
+        cwd: '/repo',
+      },
+    )
+  })
+
+  it('suppresses auto-manifest JVM branches and merges recursive facts into scan targets when --dynamic-sbom-inference is combined with --auto-manifest', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([
       {
         dir: '/repo/service-a',
@@ -242,7 +274,7 @@ describe('handleCreateNewScan excludePaths', () => {
       { dir: '/repo/service-b', ecosystem: 'maven', status: 'failed' },
     ])
 
-    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    const config = createConfig({ autoManifest: false, targets: ['/repo'] })
     config.reach.dynamicSbomInference = true
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
@@ -255,7 +287,7 @@ describe('handleCreateNewScan excludePaths', () => {
   it('aborts when --dynamic-sbom-inference finds no Gradle/sbt/Maven build root', async () => {
     mockGenerateRecursiveManifests.mockResolvedValueOnce([])
 
-    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    const config = createConfig({ autoManifest: false, targets: ['/repo'] })
     config.reach.dynamicSbomInference = true
 
     await expect(handleCreateNewScan(config)).rejects.toThrow(
@@ -271,7 +303,7 @@ describe('handleCreateNewScan excludePaths', () => {
       { dir: '/repo/service-b', ecosystem: 'maven', status: 'skippedDisabled' },
     ])
 
-    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    const config = createConfig({ autoManifest: false, targets: ['/repo'] })
     config.reach.dynamicSbomInference = true
 
     await handleCreateNewScan(config)
@@ -309,7 +341,7 @@ describe('handleCreateNewScan excludePaths', () => {
       },
     )
 
-    const config = createConfig({ autoManifest: true, targets: ['/repo'] })
+    const config = createConfig({ autoManifest: false, targets: ['/repo'] })
     config.reach.dynamicSbomInference = true
     config.reach.runReachabilityAnalysis = true
 
