@@ -7,6 +7,7 @@ import { cmdBundler } from './commands/bundler/cmd-bundler.mts'
 import { cmdCargo } from './commands/cargo/cmd-cargo.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
+import { cmdDoctor } from './commands/doctor/cmd-doctor.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdGem } from './commands/gem/cmd-gem.mts'
 import { cmdGo } from './commands/go/cmd-go.mts'
@@ -53,6 +54,7 @@ export const rootCommands = {
   ci: cmdCI,
   config: cmdConfig,
   dependencies: cmdOrganizationDependencies,
+  doctor: cmdDoctor,
   fix: cmdFix,
   gem: cmdGem,
   go: cmdGo,
@@ -114,6 +116,7 @@ export const rootCommandBuckets: Readonly<
   // Main commands — the "hero" actions surfaced first in `socket --help`.
   fix: 'main',
   optimize: 'main',
+  doctor: 'main',
   cdxgen: 'main',
   ci: 'main',
   // Socket API — commands that hit the Socket.dev REST API.

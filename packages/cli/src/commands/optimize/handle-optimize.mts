@@ -3,6 +3,7 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { applyOptimization } from './apply-optimization.mts'
+import { bundleStubOffer } from './bundle-stub-offer.mts'
 import { outputOptimizeResult } from './output-optimize-result.mts'
 import { runPastoralistAudit } from './pastoralist-audit.mts'
 import { CMD_NAME } from './shared.mts'
@@ -111,5 +112,20 @@ export async function handleOptimize({
   }
   debug(`Optimization ${optimizationResult.ok ? 'succeeded' : 'failed'}`)
   debugDir({ optimizationResult })
+
+  // After a successful run, surface the next optimization: stubbing the
+  // bundle paths the runtime never reaches (the wheelhouse fleet's
+  // bundle-stub pattern). Advisory only — the operator applies it.
+  if (optimizationResult.ok) {
+    const offer = bundleStubOffer(pkgEnvDetails.pkgPath)
+    debugDir({ bundleStubOffer: offer })
+    if (offer !== undefined) {
+      logger.error('')
+      logger.info(offer.summary)
+      logger.error('')
+      logger.log(offer.snippet)
+    }
+  }
+
   await outputOptimizeResult(optimizationResult, outputKind)
 }

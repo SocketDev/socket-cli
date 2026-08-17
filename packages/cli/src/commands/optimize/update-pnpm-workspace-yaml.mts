@@ -19,6 +19,55 @@ import type { Document } from 'yaml'
 import type { Overrides } from './types.mts'
 
 /**
+ * The fleet soak policy: no dependency younger than 7 days installs. pnpm
+ * reads `minimumReleaseAge` (minutes) from pnpm-workspace.yaml and refuses
+ * resolutions published more recently — the freshpub-typosquat gate.
+ */
+export const SOAK_MIN_RELEASE_AGE_MINUTES = 10_080
+
+export type MinReleaseAgeOutcome = 'added' | 'present' | 'raised'
+
+/**
+ * Enforce the soak policy in `<repoRoot>/pnpm-workspace.yaml`: add
+ * `minimumReleaseAge` when absent, raise it when it sits below the fleet
+ * floor, leave it when it already meets the floor. Comments and other keys
+ * are preserved (same Document API as the overrides merge).
+ */
+export async function ensurePnpmWorkspaceMinReleaseAge(
+  repoRoot: string,
+): Promise<MinReleaseAgeOutcome> {
+  const yamlPath = path.join(repoRoot, 'pnpm-workspace.yaml')
+  const existing = existsSync(yamlPath)
+    ? await safeReadFile(yamlPath, { encoding: 'utf8' })
+    : undefined
+
+  if (!existing) {
+    // Fresh file: write the minimal document directly so the key lands in
+    // the same plain style as a hand-written pnpm-workspace.yaml.
+    writeFileSync(
+      yamlPath,
+      `minimumReleaseAge: ${SOAK_MIN_RELEASE_AGE_MINUTES}\n`,
+      'utf8',
+    )
+    return 'added'
+  }
+
+  const doc: Document = parseDocument(existing, { keepSourceTokens: true })
+
+  const current = doc.get('minimumReleaseAge')
+  const currentMinutes = typeof current === 'number' ? current : undefined
+  if (
+    currentMinutes !== undefined &&
+    currentMinutes >= SOAK_MIN_RELEASE_AGE_MINUTES
+  ) {
+    return 'present'
+  }
+  doc.set('minimumReleaseAge', SOAK_MIN_RELEASE_AGE_MINUTES)
+  writeFileSync(yamlPath, doc.toString(), 'utf8')
+  return currentMinutes === undefined ? 'added' : 'raised'
+}
+
+/**
  * Merge `overrides` into `pnpm-workspace.yaml` at
  * `<repoRoot>/pnpm-workspace.yaml`.
  *
