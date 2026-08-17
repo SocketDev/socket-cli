@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.10.15`.
+
 ### Fixed
 - `socket scan create` now rejects every `--reach-*` modifier when `--reach` is not enabled. Previously flags such as `--reach-debug` were silently ignored, making a plain SBOM scan look like a reachability scan.
 
