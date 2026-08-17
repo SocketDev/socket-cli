@@ -21,12 +21,15 @@ name: 🧹 Prune Actions Storage
 
 on:
   schedule:
-    # Sundays at 04:00 UTC — off-peak, clear of the daily/weekly update runs.
-    - cron: '0 4 * * 0'
+    # Daily at 03:17 UTC — off-peak, off the :00/:30 marks. Was weekly; the
+    # release-reconcile poll chain dispatches a run per poll, and only a
+    # daily sweep keeps that no-op streak from accumulating a week's backlog
+    # (the workflow opts into keep=2 via its `# prune: keep=2` marker).
+    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       days:
-        description: 'Optional retention window in days for present workflows (empty = keep-count policy only)'
+        description: 'Age cap in days for present workflows (empty = keep newest 20 only)'
         required: false
         type: string
         default: ''

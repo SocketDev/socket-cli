@@ -21,7 +21,7 @@
  *   SessionStart hook): node scripts/repo/bootstrap/session-fetch.mjs.
  */
 
-import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { spawnSync } from 'node:child_process'
 import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'

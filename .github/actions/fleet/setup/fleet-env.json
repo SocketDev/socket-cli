@@ -1,0 +1,35 @@
+{
+  "$comment": "The universal fleet no-phone-home / no-telemetry env knobs. THE one list: the shell-rc bridge, the CI setup action, telemetry-env-is-disabled.mts, and spawned AI agents all derive from here. It lives beside the setup action rather than under .claude/hooks/ because the action reads it at RUNTIME on a bare runner, before a thin member has hydrated its fleet payload, so it has to sit on a path every member tracks. Sorted by name, per the fleet socket/sort-* convention.",
+  "knobs": [
+    {
+      "name": "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+      "value": "1",
+      "note": "Claude Code master no-phone-home switch (telemetry + error reporting + autoupdater + non-essential model calls). Set for completeness even though Claude Code also honors DO_NOT_TRACK."
+    },
+    {
+      "name": "COREPACK_ENABLE_PROJECT_SPEC",
+      "value": "0",
+      "note": "Disable corepack — it is deprecated (removed from Node core) and the fleet never enables it. 0 makes corepack ignore package.json spec, so a stray shim cannot enforce a package manager; pnpm is declared via devEngines.packageManager and provisioned out-of-band."
+    },
+    {
+      "name": "DISABLE_TELEMETRY",
+      "value": "1",
+      "note": "Generic telemetry opt-out honored by Claude Code and several CLIs."
+    },
+    {
+      "name": "DO_NOT_TRACK",
+      "value": "1",
+      "note": "Cross-tool opt-out standard (consoledonottrack.com); honored by @socketsecurity/lib prim (the vendored Claude Code runtime) and any future tool that reads it."
+    },
+    {
+      "name": "NO_UPDATE_NOTIFIER",
+      "value": "1",
+      "note": "Disables the npm + pnpm update-notifier registry phone-home. Universal (all platforms) — previously mis-scoped under the macOS-only list, which is why CI runners never received it."
+    },
+    {
+      "name": "OTEL_SDK_DISABLED",
+      "value": "true",
+      "note": "Master OpenTelemetry SDK no-op (spec-defined: the SDK reads this and exports nothing). The skillspector security tool bundles langgraph-api, whose closure ships opentelemetry-sdk + an OTLP exporter; this knob holds that exporter inert on every fleet surface. Value is the string \"true\" — the SDK does NOT treat \"1\" as disabled."
+    }
+  ]
+}

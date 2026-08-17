@@ -22,7 +22,7 @@
  *     the canonical shape re-reads a version, legacy shares one. An output
  *     matching BOTH shapes classifies as 5xx: the inline loop's 5xx grep ran
  *     first, so 5xx always outranked the SKU string.
- *   - extended-env gating, disabled-seam-pattern, fleet docs: the optional
+ *   - extended-env gating, gated-extension-point, fleet docs: the optional
  *     SOCKET_TOOL_* provenance exports emit only when EXTENDED_ENV=true; the
  *     load-bearing exports — SFW_BIN, SFW_IS_ENTERPRISE (with its
  *     enterprise-flag derivation), SFW_SILENT, and the SOCKET_API_TOKEN /
@@ -166,7 +166,7 @@ export function classifySfwProbe(probeOutput) {
 }
 
 /**
- * The gated SOCKET_TOOL_CHECKSUMS_FILE pointer (disabled-seam: the staged
+ * The gated SOCKET_TOOL_CHECKSUMS_FILE pointer (gated off: the staged
  * copy at TOOLS_DEST is unconditional; only this env-var pointer — which no
  * load-bearing step reads — is off unless a consumer opts in).
  */
@@ -177,8 +177,8 @@ export function planChecksumsEnvExports({ extendedEnv, toolsDest }) {
 }
 
 /**
- * The gated pnpm provenance exports (disabled-seam: pnpm is already on
- * $GITHUB_PATH — the load-bearing wire-in — so these have no required
+ * The gated pnpm provenance exports (gated off: pnpm is already on
+ * $GITHUB_PATH — the load-bearing export — so these have no required
  * consumer).
  */
 export function planPnpmEnvExports({
@@ -218,8 +218,8 @@ export function planPnpmEnvExports({
  *   after any fallback. SFW_SILENT keeps the firewall's stdout banners out of
  *   every wrapped command — scripts that parse a tool's stdout (pack --json,
  *   the format pipe) would otherwise ingest banner lines as data.
- * - The SOCKET_TOOL_SFW_* provenance has no required consumer;
- *   disabled-seam-gated off unless extended-env opts in.
+ * - The SOCKET_TOOL_SFW_* provenance has no required consumer; gated off unless
+ *   extended-env opts in.
  */
 export function planSfwEnvExports({
   asset,

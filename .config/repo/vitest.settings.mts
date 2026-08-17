@@ -2,7 +2,7 @@
  * @file The repo-tunable vitest settings surface — the `vitest` section of
  *   the canonical per-repo settings file
  *   (.config/repo/socket-wheelhouse.json), split from vitest.config.mts along
- *   its natural seam: everything here READS settings, everything there
+ *   its natural boundary: everything here READS settings, everything there
  *   RESOLVES runtime config from them. One file, one parse; each key's
  *   contract is on its field below, and docs/agents.md/fleet/test-layout.md
  *   carries the tier rationale.

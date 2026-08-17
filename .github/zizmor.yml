@@ -4,3 +4,33 @@
 rules:
   secrets-outside-env:
     disable: true
+  # `dangerous-triggers` stays ON fleet-wide — it is the rule that catches a
+  # `pull_request_target` checking out a fork's code, and blinding the fleet to
+  # that is not worth one file. Scoped to the single workflow instead.
+  #
+  # release-reconcile.yml is triggered by `workflow_run` so a publish finishing
+  # reconciles the tag immediately rather than waiting out a polling window.
+  #
+  # WHY IT IS SAFE, strongest reason first. The rule fires because `workflow_run`
+  # is normally chained off `pull_request`, where a FORK controls the input. This
+  # one is scoped to two named workflows ('📦 npm publish', '🚀 GitHub release')
+  # and BOTH are `workflow_dispatch`-only, which requires repo write access — an
+  # untrusted actor cannot start the chain at all. It also never checks out the
+  # untrusted head: it fetches `github.ref`, the default branch for a
+  # workflow_run event, never `github.event.workflow_run.head_sha`. Across the
+  # whole file the only `github.event.workflow_run.*` reference is `.conclusion`
+  # in an `if` gate — nothing interpolated into a shell step, and no
+  # `download-artifact` from the triggering run, which is the usual exfil path.
+  # One `permissions:` block, workflow-level, `contents: read`; no job escalates.
+  #
+  # REVISIT IF: either upstream workflow gains a `pull_request` /
+  # `pull_request_target` trigger. That would give a fork a way in, and this
+  # entry would have to be re-argued rather than kept.
+  # FILENAME ONLY. zizmor matches this against the workflow's file name, so a
+  # repo-relative path here looks more precise and silently matches nothing:
+  # spelled `.github/workflows/release-reconcile.yml` the finding came back and
+  # failed all four launcher jobs in GitHub Publish. Verified with zizmor 1.25.2
+  # both ways before landing.
+  dangerous-triggers:
+    ignore:
+      - release-reconcile.yml

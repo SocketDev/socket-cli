@@ -40,6 +40,21 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # FIRST step on purpose. $GITHUB_ENV only reaches SUBSEQUENT steps, so
+    # exporting here is what puts the no-phone-home posture in front of
+    # everything this composite goes on to do - notably the pnpm install, which
+    # is the step NO_UPDATE_NOTIFIER exists for.
+    #
+    # Derived from FLEET_ENV, the one list in
+    # .claude/hooks/fleet/_shared/fleet-env.mts, so a workflow inherits every
+    # knob by running setup rather than hand-copying an env: block. That
+    # duplication is what let OTEL_SDK_DISABLED reach ci.yml and miss
+    # github-release.yml.
+    - name: Export the fleet no-phone-home env
+      shell: bash
+      run: | # zizmor: ignore[github-env] - emits fixed NAME=value lines read from the tracked fleet-env.json, no runtime-attacker data.
+        node "${GITHUB_ACTION_PATH}/export-fleet-env.mjs" >> "$GITHUB_ENV"
+
     - name: Check GitHub platform health
       uses: ./.github/actions/fleet/github-status-check
 
@@ -91,17 +106,17 @@ runs:
             exit 1
           fi
           # Branch decisions — the tools-file schema probe and the extended-env
-          # disabled-seam gating — live in the co-located plan-setup-tools.mjs:
+          # gating — live in the co-located plan-setup-tools.mjs:
           # pure functions, unit-tested in the wheelhouse, run via
           # $GITHUB_ACTION_PATH so it travels when a member consumes the action
           # — same shape as github-status-check's probe-github-status.mjs.
           # Inputs go in via env; decisions come back on stdout.
           export TOOLS_FILE
           # The staged file always exists at $TOOLS_DEST; only the env-var
-          # pointer to it is gated. Disabled-seam: the cp above stays
-          # unconditional (the wire-in point), but the SOCKET_TOOL_CHECKSUMS_FILE
+          # pointer to it is gated. Gated off: the cp above stays
+          # unconditional (the extension point), but the SOCKET_TOOL_CHECKSUMS_FILE
           # export — which no load-bearing step reads — is off unless a consumer
-          # opts in via extended-env. See disabled-seam-pattern (fleet docs).
+          # opts in via extended-env. See gated-extension-point (fleet docs).
           TOOLS_DEST="$TOOLS_DEST" node "$PLAN" pnpm-checksums-env >> "${GITHUB_ENV:-/dev/null}"
           # Read JSON values via lib/jq.mjs. Node is preinstalled on
           # every GitHub-hosted runner image and in node:* Docker base
@@ -241,10 +256,10 @@ runs:
         # Optional pnpm provenance for downstream steps and Docker builds —
         # lets a consumer pass `--build-arg PNPM_VERSION` sourced from the
         # SOCKET_TOOL_PNPM_VERSION env var instead of a drift-prone ARG
-        # default. Disabled-seam: pnpm is already on $GITHUB_PATH above (the
-        # load-bearing wire-in), so these provenance vars have no required
+        # default. Gated off: pnpm is already on $GITHUB_PATH above (the
+        # load-bearing export), so these provenance vars have no required
         # consumer — gated off unless extended-env opts in. See
-        # disabled-seam-pattern (fleet docs).
+        # gated-extension-point (fleet docs).
         export PNPM_VERSION PLATFORM ASSET INTEGRITY PNPM_BIN PNPM_DIR
         node "$PLAN" pnpm-env >> "${GITHUB_ENV:-/dev/null}"
 

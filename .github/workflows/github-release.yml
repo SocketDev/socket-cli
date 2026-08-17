@@ -49,7 +49,7 @@ env:
   OTEL_SDK_DISABLED: 'true'
 
 jobs:
-  release:
+  github-release:
     runs-on: ubuntu-latest
     permissions:
       contents: write

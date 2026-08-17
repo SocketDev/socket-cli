@@ -6,17 +6,21 @@
   "include": [
     "../../scripts/**/*.mts",
     "../../.claude/hooks/repo/**/*.mts",
-    "../../.config/fleet/oxlint-plugin/**/*.mts"
+    "../../.claude/hooks/fleet/**/*.mts",
+    "../../.config/fleet/markdownlint-rules/**/*.mts",
+    "../../.config/fleet/oxlint-plugin/**/*.mts",
+    "../../.config/fleet/rolldown/**/*.mts",
+    "../../test/**/*.mts"
   ],
   "exclude": [
     "../../.cache",
-    "../../.claude/hooks/fleet",
     "../../build",
     "../../coverage",
     "../../dist",
     "../../node_modules",
     "../../scripts/fleet",
     "../../template",
+    "**/_shared/**",
     "**/node_modules"
   ]
 }

@@ -216,9 +216,9 @@ packages/socket/*.png
 # own OS. Tracking them only produces churn + merge conflicts. Keep in sync
 # with ADAPTERS in scripts/fleet/gen/harness-adapters.mts + the .agents/ mirror
 # (and the .mcp.json projections in scripts/fleet/mcp-config.mts: /.codex/,
-# /.kimi-code/, and /opencode.json — all generated from the single committed
-# .mcp.json authority at setup:mcp and rebuilt into the release bundle at
-# make-release-bundle, never committed).
+# and /opencode.json — all generated from the single committed .mcp.json
+# authority at setup and rebuilt into the release bundle at
+# make-publish-bundle, never committed).
 # Host dirs we own entirely are ignored wholesale; .github/ holds tracked
 # fleet files, so only its generated adapter file is named.
 /.agents/
@@ -227,7 +227,6 @@ packages/socket/*.png
 /.cursor/
 /.github/copilot-instructions.md
 /.janus/
-/.kimi-code/
 /.kiro/
 /.windsurf/
 /AGENTS.md
@@ -305,6 +304,7 @@ pnpm-debug.log
 /.config/fleet/oxlint.config.mts
 /.config/fleet/playwright/
 /.config/fleet/pnpm-workspace.fleet.yaml
+/.config/fleet/rolldown/bundle-stub.mts
 /.config/fleet/rolldown/hook-bundle-excluded.config.mts
 /.config/fleet/rolldown/hook-bundle-snapshot.config.mts
 /.config/fleet/rolldown/hook-bundle.config.mts
@@ -315,17 +315,24 @@ pnpm-debug.log
 /.config/fleet/tsconfig.base.json
 /.config/fleet/tsconfig.check.base.json
 /.config/fleet/vitest.coverage.fleet.config.mts
-/.editorconfig
-/.git-hooks/_shared/
-/.git-hooks/commit-msg
-/.git-hooks/fleet/
-/.git-hooks/post-commit
-/.git-hooks/pre-commit
-/.git-hooks/pre-push
+/.github/actions/fleet/cleanup-git-signing/
+/.github/actions/fleet/github-pr-app-token/
+/.github/actions/fleet/github-release-app-token/
+/.github/actions/fleet/github-release/
+/.github/actions/fleet/run-offline/
+/.github/actions/fleet/run-script/
+/.github/actions/fleet/setup-git-signing/
+/.github/actions/fleet/setup-odai/
+/.github/actions/fleet/setup-rust-cache/
+/.github/actions/fleet/setup-rust-toolchain/
 /.github/zizmor.yml
 /.mcp.json
 /docs/agents.md/fleet/
 /docs/references/fleet/sfw-local-install.md
+/patches/@socketsecurity__lib@6.7.0.patch
+/patches/brace-expansion@5.0.9.patch
+/patches/minimatch@10.2.6.patch
+/patches/taze@20.0.0.patch
 /scripts/fleet/
 # </fleet>
 # <repo>

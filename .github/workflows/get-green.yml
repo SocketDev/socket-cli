@@ -15,7 +15,7 @@ name: 🟢 Get Green
 #      model at all.
 #   2. The ON-DEVICE model, for diagnosis only. What survives the fixer gets an
 #      odai `summarize` digest of the red log tails appended to the report. The
-#      odai seam deliberately admits the summary and decision families and NOT
+#      odai runner deliberately admits the summary and decision families and NOT
 #      code repair — its `patch` task stays bench-gated — so this names the
 #      failure rather than guessing at an edit.
 #   3. A HUMAN, for anything left. A logic break is reported with its digest,

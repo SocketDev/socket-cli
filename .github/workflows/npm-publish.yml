@@ -88,7 +88,7 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  npm-publish:
     runs-on: ubuntu-latest
     # npm's trusted-publisher config pins this GitHub environment name; the
     # OIDC token exchange 404s if the job runs outside it.

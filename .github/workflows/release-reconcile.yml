@@ -25,10 +25,23 @@ name: 🩹 Release reconcile
 # template/base/.github/workflows/release-reconcile.yml and re-cascade.
 
 on:
+  # The PIPELINE path is event-driven: a publish or release run finishing is
+  # the moment a gap can appear, so the reconcile follows it immediately
+  # instead of waiting out a polling window. Fires on completion of either
+  # workflow and filters for success below — a failed publish has nothing to
+  # reconcile.
+  workflow_run:
+    types: [completed]
+    workflows: ['📦 npm publish', '🚀 GitHub release']
   schedule:
-    # Every 30 minutes, offset from the top of the hour. The gap job is two
-    # unauthenticated-grade network reads on the no-gap path — near-free.
-    - cron: '13,43 * * * *'
+    # The clock covers only the OUT-OF-BAND path, which is why this workflow
+    # exists at all: an owner promoting in the npm web UI emits no event
+    # anywhere, so nothing but a clock can notice it. The in-band path needs
+    # no polling at all — npm-publish.mts --approve dispatches this workflow
+    # at the exact moment the registry accepts, and a pipeline publish's
+    # workflow_run does the same — so four times a day suffices for the rare
+    # case no event ever sees.
+    - cron: '13 */6 * * *'
   workflow_dispatch:
     inputs:
       dry-run:
@@ -46,6 +59,13 @@ concurrency:
 
 jobs:
   gap:
+    # A workflow_run fires on completion regardless of conclusion, so a FAILED
+    # publish would otherwise kick a reconcile that has nothing to heal. Every
+    # other trigger (cron, manual) carries no conclusion and passes straight
+    # through.
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:

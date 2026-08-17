@@ -1,0 +1,628 @@
+# Fleet-canonical fuzz workflow, one file for every toolchain. Edit HERE in
+# template/base and cascade — it reaches every member, and each leg self-skips
+# when the repo carries no marker for it, so a pure-docs repo pays one skipped
+# workflow and a multi-implementation repo (Rust + Go + C++ + TypeScript in
+# one tree) fuzzes all of them on the same night.
+#
+# Toolchain markers, all checked at runtime, never by hard-coding a repo:
+#   rust  — fuzz/Cargo.toml (cargo-fuzz's own "this repo fuzzes" file)
+#   js/ts — vitest config plus test/**/*.fuzz.* targets (the vitiate lane)
+#   go    — go.mod (native `go test -fuzz`, Go >= 1.18)
+#   c++   — .clang-tidy or CMakeLists.txt (clang libFuzzer)
+#
+# Rust targets are DISCOVERED from fuzz/Cargo.toml's [[bin]] entries rather
+# than listed here, because each member fuzzes a different set and a
+# hard-coded list would silently skip a newly added target — the failure mode
+# where the workflow stays green precisely because it stopped testing
+# something. The same discovery rule holds per language: JS targets come from
+# the fuzz-file glob, Go targets from -fuzz functions in _test.go files, C++
+# targets from fuzz/*.cpp.
+#
+# Two shapes, one file. On a PR or push that touches fuzzable code, a fast
+# gate: targets build, lints pass, a short smoke run is clean. On the nightly
+# schedule, the real coverage-guided campaign per toolchain, with the corpus
+# cached between runs so coverage accumulates instead of restarting from
+# seeds.
+#
+# Rust repo contract: `fuzz/run.sh <target> [seconds]` and
+# `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
+# optional and runs only where it exists.
+name: fuzz
+
+on:
+  schedule:
+    # 07:00 UTC nightly — the standing fuzz cadence.
+    - cron: '0 7 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - 'fuzz/**'
+      - 'crates/**'
+      - 'test/**/*.fuzz.*'
+      - '**/*_test.go'
+      - 'go.mod'
+      - '.github/workflows/fuzz.yml'
+  pull_request:
+    paths:
+      - 'fuzz/**'
+      - 'crates/**'
+      - 'test/**/*.fuzz.*'
+      - '**/*_test.go'
+      - 'go.mod'
+      - '.github/workflows/fuzz.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CARGO_TERM_COLOR: always
+  # Pinned so a cargo-fuzz release cannot change what CI runs underneath us.
+  # Must match the cargo-fuzz `version` in the fleet tool registry
+  # (.github/actions/fleet/_shared/external-tools.json), whose per-platform
+  # SRI hashes are what verify the download.
+  CARGO_FUZZ_VERSION: '0.13.2'
+
+jobs:
+  # Which toolchain legs fire, and the rust target list, read from the repo so
+  # no job below hard-codes names.
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      rustTargets: ${{ steps.rust.outputs.targets }}
+      hasRust: ${{ steps.markers.outputs.hasRust }}
+      hasJs: ${{ steps.markers.outputs.hasJs }}
+      hasGo: ${{ steps.markers.outputs.hasGo }}
+      hasCpp: ${{ steps.markers.outputs.hasCpp }}
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite: nothing is checked out yet, so the action.yml it lives in
+      # does not exist for the runner to resolve.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body —
+          # zizmor expression-injection). Token authorizes the fetch inline and
+          # is never persisted to .git/config.
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Detect toolchain markers
+        id: markers
+        run: |
+          set -euo pipefail
+          {
+            echo "hasRust=$([ -f fuzz/Cargo.toml ] && echo true || echo false)"
+            echo "hasJs=$(ls test/**/*.fuzz.* >/dev/null 2>&1 && echo true || echo false)"
+            echo "hasGo=$([ -f go.mod ] && echo true || echo false)"
+            echo "hasCpp=$([ -f .clang-tidy ] || [ -f CMakeLists.txt ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+      - name: Read rust fuzz targets from fuzz/Cargo.toml
+        id: rust
+        if: steps.markers.outputs.hasRust == 'true'
+        run: |
+          set -euo pipefail
+          # Every [[bin]] in a cargo-fuzz manifest is a fuzz target. Take the
+          # `name = "..."` that follows each one.
+          targets="$(python3 -c '
+          import json, re, sys
+          text = open("fuzz/Cargo.toml", encoding="utf-8").read()
+          names = re.findall(r"\[\[bin\]\][^\[]*?name\s*=\s*\"([^\"]+)\"", text, re.S)
+          if not names:
+              sys.exit("no [[bin]] targets found in fuzz/Cargo.toml")
+          print(json.dumps(sorted(set(names))))
+          ')"
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+          echo "Discovered rust targets: $targets"
+
+  # Fast gate on PRs/pushes: targets compile, the no-unsafe lint passes, and a
+  # short smoke run over the seed corpus is clean. Never scheduled.
+  build-rust:
+    if: github.event_name != 'schedule' && needs.discover.outputs.hasRust == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite: nothing is checked out yet, so the action.yml it lives in
+      # does not exist for the runner to resolve.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Rust toolchain
+        uses: ./.github/actions/fleet/setup-rust-toolchain
+        with:
+          channel: nightly
+      - name: Rust cache
+        uses: ./.github/actions/fleet/setup-rust-cache
+        with:
+          prefix-key: rust-fuzz-build
+          workspaces: 'fuzz -> target'
+      - name: Install cargo-fuzz
+        run: |
+          set -euo pipefail
+          # The pinned, SRI-verified release from the fleet tool registry.
+          # `cargo install` would build it from source — minutes on a cold
+          # cache, and it verifies nothing.
+          SHARED=".github/actions/fleet/_shared"
+          # The fleet registry has ONE home. The _shared/ .mjs helpers beside
+          # the composites are code that ships with them; the pins are not.
+          TOOLS_FILE="scripts/fleet/setup/external-tools.json"
+          JQ="$SHARED/jq.mjs"
+          NS="tools"
+          node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+          PLATFORM="$(node "$SHARED/platform.mjs")"
+          # Upstream ships x86_64 only. On anything else fall back to the
+          # source build rather than failing the run — the fallback is slower
+          # and unverified, so it says so.
+          ASSET=""
+          if TRY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" asset 2>/dev/null)"; then
+            ASSET="$TRY"
+          fi
+          if [ -z "$ASSET" ]; then
+            echo "cargo-fuzz publishes no asset for ${PLATFORM}; building from source (slower, unverified)."
+            cargo install cargo-fuzz --locked --version "$CARGO_FUZZ_VERSION"
+            exit 0
+          fi
+          INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" integrity)"
+          DEST="$HOME/.cargo/bin"
+          mkdir -p "$DEST"
+          node "$SHARED/install-tool.mjs" \
+            "https://github.com/rust-fuzz/cargo-fuzz/releases/download/${CARGO_FUZZ_VERSION}/${ASSET}" \
+            "$INTEGRITY" \
+            "$DEST"
+          echo "$DEST" >> "$GITHUB_PATH"
+      - name: 'no unsafe without a // FUZZ: annotation'
+        run: bash fuzz/no-unsafe-without-fuzz.sh
+      # Reproducible fuzz builds need a committed fuzz/Cargo.lock that matches
+      # the dependency graph. This fails when a change adds or updates a
+      # dependency without refreshing it; `--locked` errors rather than
+      # rewriting.
+      - name: Verify fuzz/Cargo.lock is up to date
+        run: cargo metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
+      - name: Build all fuzz targets
+        run: cargo +nightly fuzz build --target x86_64-unknown-linux-gnu
+      - name: Regenerate the seed corpus
+        if: hashFiles('fuzz/seed-corpus.py') != ''
+        run: python3 fuzz/seed-corpus.py
+      - name: Smoke run, 60s per target over the seed corpus
+        env:
+          TARGETS: ${{ needs.discover.outputs.rustTargets }}
+        run: |
+          set -euo pipefail
+          # The matrix shape is a JSON array; read it back the same way here so
+          # the smoke run covers exactly what the nightly campaign will.
+          while IFS= read -r target; do
+            bash fuzz/run.sh "$target" 60
+          done < <(printf '%s' "$TARGETS" | python3 -c 'import json,sys; print("\n".join(json.load(sys.stdin)))')
+      # Last step on purpose: the restore-phase "Rust cache" call above
+      # exported the RUST_CACHE_* job env; this saves the populated target
+      # dirs. Runs only when every previous step succeeded — the same
+      # success gate the old cache post step used.
+      - name: Save Rust cache
+        uses: ./.github/actions/fleet/setup-rust-cache
+        with:
+          phase: save
+
+  # JS/TS gate: the vitiate coverage-guided lane runs its targets once, fast.
+  build-js:
+    if: github.event_name != 'schedule' && needs.discover.outputs.hasJs == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # The org secret feeds both SOCKET_API_TOKEN and SOCKET_API_KEY.
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+      - name: Smoke the JS fuzz lane
+        run: |
+          set -euo pipefail
+          # The repo's own fuzz script is the lane (fleet-canonical shape:
+          # `pnpm run test:fuzz` drives vitiate over test/**/*.fuzz.*).
+          # FUZZ_TIME_MS bounds the gate; the nightly campaign runs unbounded.
+          if ! node -e "process.exit(JSON.parse(require('fs').readFileSync('package.json','utf8')).scripts?.['test:fuzz'] ? 0 : 1)"; then
+            echo 'test/**/*.fuzz.* targets exist but no test:fuzz script — add the vitiate lane.'
+            exit 1
+          fi
+          FUZZ_TIME_MS=60000 pnpm run test:fuzz
+
+  # Go gate: native go test -fuzz, one short pass per fuzz function.
+  build-go:
+    if: github.event_name != 'schedule' && needs.discover.outputs.hasGo == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Go toolchain
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0 (2026-06-26)
+        with:
+          go-version-file: go.mod
+      - name: Smoke go fuzz functions, 60s each
+        uses: ./.github/actions/fleet/run-offline
+        with:
+          run: |
+            set -euo pipefail
+            # Discover every FuzzXxx in *_test.go and give each a short pass.
+            # Native fuzzing (Go >= 1.18) needs no extra tooling.
+            found=0
+            while IFS= read -r fn; do
+              found=1
+              echo "go test -fuzz=^${fn}\$ -fuzztime=60s"
+              go test -fuzz="^${fn}\$" -fuzztime=60s ./...
+            done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
+            if [ "$found" -eq 0 ]; then
+              echo 'go.mod exists but no Fuzz functions — add one or drop the marker.'
+              exit 1
+            fi
+
+  # C++ gate: libFuzzer targets under fuzz/*.cpp, clang-pinned short run.
+  build-cpp:
+    if: github.event_name != 'schedule' && needs.discover.outputs.hasCpp == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Clang toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends clang
+      - name: Build and smoke libFuzzer targets, 60s each
+        run: |
+          set -euo pipefail
+          found=0
+          for src in fuzz/*.cpp; do
+            [ -e "$src" ] || continue
+            found=1
+            bin="/tmp/$(basename "${src%.cpp}")"
+            clang++ -std=c++17 -g -fsanitize=fuzzer,address "$src" -o "$bin"
+            "$bin" -max_total_time=60
+          done
+          if [ "$found" -eq 0 ]; then
+            echo 'C++ markers exist but fuzz/*.cpp has no targets — add one or drop the marker.'
+            exit 1
+          fi
+
+  # Nightly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
+  fuzz-rust:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasRust == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.discover.outputs.rustTargets) }}
+    steps:
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite: nothing is checked out yet, so the action.yml it lives in
+      # does not exist for the runner to resolve.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Rust toolchain
+        uses: ./.github/actions/fleet/setup-rust-toolchain
+        with:
+          channel: nightly
+      - name: Rust cache
+        uses: ./.github/actions/fleet/setup-rust-cache
+        with:
+          prefix-key: rust-fuzz-nightly
+          workspaces: 'fuzz -> target'
+      - name: Install cargo-fuzz
+        run: |
+          set -euo pipefail
+          # The pinned, SRI-verified release from the fleet tool registry.
+          # `cargo install` would build it from source — minutes on a cold
+          # cache, and it verifies nothing.
+          SHARED=".github/actions/fleet/_shared"
+          # The fleet registry has ONE home. The _shared/ .mjs helpers beside
+          # the composites are code that ships with them; the pins are not.
+          TOOLS_FILE="scripts/fleet/setup/external-tools.json"
+          JQ="$SHARED/jq.mjs"
+          NS="tools"
+          node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
+          PLATFORM="$(node "$SHARED/platform.mjs")"
+          # Upstream ships x86_64 only. On anything else fall back to the
+          # source build rather than failing the run — the fallback is slower
+          # and unverified, so it says so.
+          ASSET=""
+          if TRY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" asset 2>/dev/null)"; then
+            ASSET="$TRY"
+          fi
+          if [ -z "$ASSET" ]; then
+            echo "cargo-fuzz publishes no asset for ${PLATFORM}; building from source (slower, unverified)."
+            cargo install cargo-fuzz --locked --version "$CARGO_FUZZ_VERSION"
+            exit 0
+          fi
+          INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" integrity)"
+          DEST="$HOME/.cargo/bin"
+          mkdir -p "$DEST"
+          node "$SHARED/install-tool.mjs" \
+            "https://github.com/rust-fuzz/cargo-fuzz/releases/download/${CARGO_FUZZ_VERSION}/${ASSET}" \
+            "$INTEGRITY" \
+            "$DEST"
+          echo "$DEST" >> "$GITHUB_PATH"
+      # The corpus grows across nightly runs because the fuzzer is
+      # coverage-guided. Save under a run-unique key and restore the most recent
+      # prior corpus through the shared prefix.
+      - name: Restore the cached corpus
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+        with:
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          path: fuzz/corpus/${{ matrix.target }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+      # ADDITIVE: layer the committed seeds on top of the cache-restored corpus
+      # WITHOUT deleting fuzzer-discovered growth. The default reset mode would
+      # rmtree the restored corpus, so coverage could never accumulate across
+      # nights. Seed names never collide with libFuzzer's SHA1-hashed inputs, so
+      # this is a no-op for seeds that are already present.
+      - name: Seed the corpus additively
+        if: hashFiles('fuzz/seed-corpus.py') != ''
+        run: python3 fuzz/seed-corpus.py --additive
+      - name: Fuzz ${{ matrix.target }} for 10 minutes
+        env:
+          # Route the matrix value through env. A ${{ }} expansion inside a run
+          # block is substituted before the shell sees it, so a target name
+          # carrying shell metacharacters would execute — zizmor flags this as
+          # template-injection, and the fleet's other workflows carry the same
+          # note.
+          TARGET: ${{ matrix.target }}
+        run: bash fuzz/run.sh "$TARGET" 600
+      # A crash, timeout, or OOM writes fuzz/artifacts/<target>/. Upload it so
+      # the fix + minimized-regression-commit protocol can proceed.
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (2026-08-01)
+        with:
+          if-no-files-found: ignore
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}/
+      # Last step on purpose: the restore-phase "Rust cache" call above
+      # exported the RUST_CACHE_* job env; this saves the populated target
+      # dirs. Runs only when the campaign succeeded — the same success gate
+      # the old cache post step used (a crashing target still gets its
+      # artifacts uploaded above).
+      - name: Save Rust cache
+        uses: ./.github/actions/fleet/setup-rust-cache
+        with:
+          phase: save
+
+  # Nightly JS campaign: the vitiate lane, unbounded.
+  fuzz-js:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasJs == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - uses: ./.github/actions/fleet/setup-and-install
+      - name: Run the JS fuzz campaign
+        run: |
+          set -euo pipefail
+          if ! node -e "process.exit(JSON.parse(require('fs').readFileSync('package.json','utf8')).scripts?.['test:fuzz'] ? 0 : 1)"; then
+            echo 'test/**/*.fuzz.* targets exist but no test:fuzz script — add the vitiate lane.'
+            exit 1
+          fi
+          pnpm run test:fuzz
+
+  # Nightly Go campaign: 10 min per fuzz function.
+  fuzz-go:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasGo == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Go toolchain
+        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0 (2026-06-26)
+        with:
+          go-version-file: go.mod
+      - name: Run go fuzz functions, 10 minutes each
+        uses: ./.github/actions/fleet/run-offline
+        with:
+          run: |
+            set -euo pipefail
+            while IFS= read -r fn; do
+              echo "go test -fuzz=^${fn}\$ -fuzztime=600s"
+              go test -fuzz="^${fn}\$" -fuzztime=600s ./...
+            done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
+
+  # Nightly C++ campaign: 10 min per libFuzzer target.
+  fuzz-cpp:
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasCpp == 'true'
+    needs: discover
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Clang toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends clang
+      - name: Run libFuzzer targets, 10 minutes each
+        run: |
+          set -euo pipefail
+          for src in fuzz/*.cpp; do
+            [ -e "$src" ] || continue
+            bin="/tmp/$(basename "${src%.cpp}")"
+            clang++ -std=c++17 -g -fsanitize=fuzzer,address "$src" -o "$bin"
+            "$bin" -max_total_time=600
+          done

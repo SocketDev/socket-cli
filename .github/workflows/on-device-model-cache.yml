@@ -1,0 +1,286 @@
+name: ✨ on-device model cache
+
+# Fleet-canonical on-device model cache. The fleet's keyless-AI lane (the
+# weekly-update decision leg, every odai-driven assist) needs the on-device
+# model present on a fresh runner: this proves the chrome-builtin backend
+# runs on a public ubuntu runner, fills the ~4 GB Gemini Nano component into
+# a cacheable profile, and verifies a FRESH runner restores it and prompts
+# offline.
+#
+# The weekly schedule is load-bearing twice over: Actions caches evict after
+# 7 idle days, and prune-actions-caches never evicts an entry accessed within
+# its fresh window — a weekly touch keeps the one 4 GB profile entry both
+# alive and prune-protected.
+#
+# Unlike the fleet seam (exit 69 = clean skip), this workflow FAILS LOUD on
+# an unavailable backend: its whole job is evidence.
+#
+# Chrome installs at current stable, version logged in the receipts —
+# Google's deb pool does not retain old versions, and Chrome auto-updates
+# the model component regardless, so the receipts record versions instead
+# of pretending a pin.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: on-device-model-cache
+  cancel-in-progress: false
+
+env:
+  ODAI_PROFILE_DIR: /home/runner/.cache/odai/chrome-builtin
+
+jobs:
+  fill:
+    name: 🫗 Fill the model profile
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    outputs:
+      component-version: ${{ steps.component.outputs.version }}
+      cache-key: ${{ steps.component.outputs.cache-key }}
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+
+      # The model download wants ~22 GB free and Chrome REMOVES an installed
+      # model when free disk drops under 10 GB — the stock runner image does
+      # not leave that headroom, so the unused preinstalled toolchains go.
+      - name: Reclaim runner disk
+        shell: bash
+        run: |
+          set -euo pipefail
+          df -h / | tail -1
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h / | tail -1
+
+      - name: Install Google Chrome stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          rm google-chrome-stable_current_amd64.deb
+          google-chrome-stable --version
+
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          # Thin-distribution CI auth: mint a contents:read-only token so the
+          # bootstrap fetch (fired by `prepare` during install) can download the
+          # fleet release bundle from the private wheelhouse. Both refs are
+          # empty on a non-thin member (var/secret unset) - the mint is skipped
+          # and the fetch no-ops. A thin member sets a dedicated read-only App's
+          # client-id var + private-key secret.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+
+      # Cache the model components + activation state ONLY — the same set the
+      # bridge's clone mode copies from a system profile. The rest of the
+      # user-data-dir is Chrome litter (GPU/code caches, crashpad) that would
+      # grow the entry on every weekly refill without bounding benefit.
+      - name: Restore any prior model profile
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+        with:
+          path: |
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
+            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
+            /home/runner/.cache/odai/chrome-builtin/Local State
+          key: odai-nano-Linux-x64-fill-anchor
+          restore-keys: |
+            odai-nano-Linux-x64-
+
+      - name: Build the CLI
+        shell: bash
+        run: pnpm run build
+
+      # First activation of a fresh profile needs network for one keyless
+      # component-metadata exchange; with a restored profile the download is
+      # skipped and this doubles as the warm-path timing receipt.
+      - name: Fill + first prompt (download allowed)
+        shell: bash
+        env:
+          ODAI_CHROME_ALLOW_DOWNLOAD: '1'
+          ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'The fleet cascade synchronizes template-owned files across member' \
+            'repositories. Each wave reads the committed template state, writes' \
+            'byte-identical copies into every member, and commits the result' \
+            'with a receipt naming the template commit it mirrors. Drift between' \
+            'a template file and a member copy is a defect the next wave heals.' \
+            > /tmp/on-device-model-cache-input.txt
+          START="$(date +%s)"
+          node dist/cli.js summarize --backend chrome-builtin \
+            --input /tmp/on-device-model-cache-input.txt --timeout 240000 \
+            > /tmp/on-device-model-cache-fill.json
+          ELAPSED="$(( $(date +%s) - START ))"
+          node -e '
+            const fs = require("node:fs")
+            const r = JSON.parse(fs.readFileSync("/tmp/on-device-model-cache-fill.json", "utf8"))
+            if (typeof r.summary !== "string" || r.summary.length === 0) {
+              console.error("on-device-model-cache: summarize reply carries no summary string.")
+              process.exit(1)
+            }
+            console.log("summary:", r.summary)
+          '
+          echo "fill prompt wall time: ${ELAPSED}s"
+          node dist/cli.js backends || true
+          du -sh /home/runner/.cache/odai/chrome-builtin
+
+      - name: Read the component version
+        id: component
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIR=/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
+          if [ ! -d "$DIR" ]; then
+            echo "::error::on-device-model-cache: no model component after the fill." >&2
+            echo "::error::Where: $DIR on the fill runner." >&2
+            echo "::error::Saw vs wanted: directory absent; wanted one <component-version> subdir." >&2
+            echo "::error::Fix: read the fill-step log — availability() reasons are printed by the CLI." >&2
+            exit 1
+          fi
+          VERSION="$(ls "$DIR" | head -1)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "cache-key=odai-nano-Linux-x64-${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "component version: ${VERSION}"
+
+      - name: Save the profile cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+        with:
+          path: |
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
+            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
+            /home/runner/.cache/odai/chrome-builtin/Local State
+          key: ${{ steps.component.outputs.cache-key }}
+
+  verify:
+    name: 🧊 Offline verify on a fresh runner
+    needs: fill
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+
+      # This job is the CONSUMER REFERENCE SHAPE: no disk reclaim (the 22 GB
+      # free-space need is download-time only; a restore-only job holds 4.2 GB
+      # against the image's ~88 GB free, comfortably over Chrome's 10 GB model
+      # retention floor) and no unconditional Chrome upgrade. One deliberate
+      # difference from a real consumer: this repo's verify builds the CLI
+      # from HEAD to validate the checkout; consumers install the published
+      # @socketsecurity/odai instead.
+      - name: Ensure Google Chrome stable
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v google-chrome-stable >/dev/null 2>&1; then
+            echo "preinstalled: $(google-chrome-stable --version)"
+            exit 0
+          fi
+          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
+          rm google-chrome-stable_current_amd64.deb
+          google-chrome-stable --version
+
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          # Thin-distribution CI auth: mint a contents:read-only token so the
+          # bootstrap fetch (fired by `prepare` during install) can download the
+          # fleet release bundle from the private wheelhouse. Both refs are
+          # empty on a non-thin member (var/secret unset) - the mint is skipped
+          # and the fetch no-ops. A thin member sets a dedicated read-only App's
+          # client-id var + private-key secret.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+
+      - name: Restore the filled profile (miss = failure)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
+        with:
+          path: |
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
+            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
+            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
+            /home/runner/.cache/odai/chrome-builtin/Local State
+          key: ${{ needs.fill.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Build the CLI
+        shell: bash
+        run: pnpm run build
+
+      - name: Prompt with downloads off
+        shell: bash
+        env:
+          ODAI_CHROME_USER_DATA_DIR: /home/runner/.cache/odai/chrome-builtin
+        run: |
+          set -euo pipefail
+          printf '%s\n' \
+            'A worktree keeps branch work out of the primary checkout. Each' \
+            'worktree shares the same object store but holds its own files,' \
+            'so an agent can build and test a feature branch in isolation' \
+            'while the default branch stays clean for other sessions.' \
+            > /tmp/on-device-model-cache-verify.txt
+          START="$(date +%s)"
+          node dist/cli.js summarize --backend chrome-builtin \
+            --input /tmp/on-device-model-cache-verify.txt --timeout 240000 \
+            > /tmp/on-device-model-cache-verify.json
+          ELAPSED="$(( $(date +%s) - START ))"
+          node -e '
+            const fs = require("node:fs")
+            const r = JSON.parse(fs.readFileSync("/tmp/on-device-model-cache-verify.json", "utf8"))
+            if (typeof r.summary !== "string" || r.summary.length === 0) {
+              console.error("on-device-model-cache: offline summarize reply carries no summary string.")
+              process.exit(1)
+            }
+            console.log("summary:", r.summary)
+          '
+          echo "restored-profile prompt wall time: ${ELAPSED}s"

@@ -55,7 +55,7 @@ const isCoverageEnabled =
   process.argv.some(arg => arg.startsWith('--coverage'))
 
 // Ceiling on the contention multiplier. A starved spawn is queued, not hung, so
-// it deserves more time — but a genuinely WEDGED test must still fail in
+// it deserves more time — but a genuinely STUCK test must still fail in
 // bounded time instead of hanging the run behind a growing budget.
 const BUDGET_LOAD_CAP = 4
 
