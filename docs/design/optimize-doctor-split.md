@@ -37,7 +37,12 @@ The split in one line: **doctor enforces time, optimize enforces shape.**
    10080 when absent, raise when below the floor, report when already
    enforced. npm/yarn get a warning that soak-time needs pnpm (npm has no
    equivalent knob) rather than a silent pass.
-2. **Report**: one summary line per policy ("soak-time: enforced at 7 days"
+2. **The practice gate** (`practice-checks.mts`, landed with the first
+   chunk): workflows must run Socket somewhere (SocketDev/action, socket CLI,
+   or an sfw step), and every package-manager install in package.json
+   scripts and workflows must be sfw-wrapped. Violations print the exact
+   file and line, and doctor exits 1 - the gate holds in CI.
+3. **Report**: one summary line per policy ("soak-time: enforced at 7 days"
    / "soak-time: raised from 1 day to 7" / "soak-time: not enforceable
    under npm v10"), `--json` carries the structured form.
 

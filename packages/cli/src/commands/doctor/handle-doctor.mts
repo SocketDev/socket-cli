@@ -3,6 +3,10 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { CMD_NAME } from './shared.mts'
+import {
+  checkSfwWrap,
+  checkWorkflowSocket,
+} from './practice-checks.mts'
 import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import { ensurePnpmWorkspaceMinReleaseAge } from '../optimize/update-pnpm-workspace-yaml.mts'
 import { cmdPrefixMessage } from '../../util/process/cmd.mts'
@@ -10,11 +14,15 @@ import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 import type { CResult } from '../../types.mts'
 import type { MinReleaseAgeOutcome } from '../optimize/update-pnpm-workspace-yaml.mts'
 import type { OutputKind } from '../../types.mts'
+import type { PracticeViolation } from './practice-checks.mts'
 
 export type DoctorReport = {
   minReleaseAge:
     | { enforceable: false; outcome: 'non-pnpm'; agent: string }
     | { enforceable: true; outcome: MinReleaseAgeOutcome }
+  practices?: {
+    violations: PracticeViolation[]
+  }
 }
 
 /**
@@ -87,19 +95,47 @@ export async function handleDoctor({
   }
 
   const outcome = await ensurePnpmWorkspaceMinReleaseAge(pkgPath)
+
+  // The practice gate: the skills' guidance, enforced without an agent.
+  const violations = [
+    ...checkWorkflowSocket(pkgPath),
+    ...checkSfwWrap(pkgPath),
+  ]
   const report: DoctorReport = {
     minReleaseAge: { enforceable: true, outcome },
+    practices: { violations },
   }
   debugDir({ doctorReport: report })
   if (outputKind === 'json') {
     logger.log(JSON.stringify(report, undefined, 2))
+  } else {
+    const line =
+      outcome === 'added'
+        ? 'soak-time: enforced at 7 days (minimumReleaseAge added to pnpm-workspace.yaml).'
+        : outcome === 'raised'
+          ? 'soak-time: raised to 7 days in pnpm-workspace.yaml.'
+          : 'soak-time: already enforced at 7 days.'
+    logger.info(cmdPrefixMessage(CMD_NAME, line))
+    if (violations.length === 0) {
+      logger.success(cmdPrefixMessage(CMD_NAME, 'workflows + sfw: clean.'))
+    } else {
+      for (const v of violations) {
+        const where = v.line > 0 ? `${v.file}:${v.line}` : v.file
+        logger.warn(
+          cmdPrefixMessage(CMD_NAME, `${v.practice}: ${where} - ${v.text}`),
+        )
+      }
+      logger.fail(
+        cmdPrefixMessage(
+          CMD_NAME,
+          `${violations.length} practice violation(s): wrap installs in sfw and run Socket in CI (SocketDev/action).`,
+        ),
+      )
+      process.exitCode = 1
+    }
     return
   }
-  const line =
-    outcome === 'added'
-      ? 'soak-time: enforced at 7 days (minimumReleaseAge added to pnpm-workspace.yaml).'
-      : outcome === 'raised'
-        ? 'soak-time: raised to 7 days in pnpm-workspace.yaml.'
-        : 'soak-time: already enforced at 7 days.'
-  logger.info(cmdPrefixMessage(CMD_NAME, line))
+  if (violations.length > 0) {
+    process.exitCode = 1
+  }
 }

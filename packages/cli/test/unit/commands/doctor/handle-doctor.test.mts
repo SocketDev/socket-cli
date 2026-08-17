@@ -35,6 +35,14 @@ vi.mock(
   }),
 )
 
+const sfwWrapMock = vi.hoisted(() => vi.fn(() => []))
+const workflowSocketMock = vi.hoisted(() => vi.fn(() => []))
+
+vi.mock(import('../../../../src/commands/doctor/practice-checks.mts'), () => ({
+  checkSfwWrap: sfwWrapMock,
+  checkWorkflowSocket: workflowSocketMock,
+}))
+
 function pnpmEnv() {
   return {
     ok: true,
@@ -100,11 +108,45 @@ describe('handleDoctor', () => {
     await handleDoctor({ cwd: '.', outputKind: 'json' })
     expect(mockLogger.log).toHaveBeenCalledWith(
       JSON.stringify(
-        { minReleaseAge: { enforceable: true, outcome: 'present' } },
+        {
+          minReleaseAge: { enforceable: true, outcome: 'present' },
+          practices: { violations: [] },
+        },
         undefined,
         2,
       ),
     )
+  })
+
+  it('reports a clean practice gate', async () => {
+    detectMock.mockResolvedValue(pnpmEnv())
+    ensureMock.mockResolvedValue('present')
+    await handleDoctor({ cwd: '.', outputKind: 'text' })
+    expect(mockLogger.success).toHaveBeenCalledWith(
+      expect.stringContaining('workflows + sfw: clean'),
+    )
+    expect(process.exitCode).toBeUndefined()
+  })
+
+  it('fails loud with the violating file and line', async () => {
+    detectMock.mockResolvedValue(pnpmEnv())
+    ensureMock.mockResolvedValue('present')
+    sfwWrapMock.mockReturnValue([
+      {
+        file: '.github/workflows/ci.yml',
+        line: 4,
+        practice: 'sfw',
+        text: 'run: pnpm install',
+      },
+    ])
+    await handleDoctor({ cwd: '.', outputKind: 'text' })
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('.github/workflows/ci.yml:4'),
+    )
+    expect(mockLogger.fail).toHaveBeenCalledWith(
+      expect.stringContaining('1 practice violation(s)'),
+    )
+    expect(process.exitCode).toBe(1)
   })
 
   it('fails loud when the environment is invalid', async () => {
