@@ -27,7 +27,11 @@ export async function fetchDiffScan({
   const sockSdk = sockSdkCResult.data
 
   const createResult = await handleApiCall<'createOrgDiffScanFromIds'>(
-    sockSdk.createOrgDiffScanFromIds(orgSlug, { before: id1, after: id2 }),
+    sockSdk.createOrgDiffScanFromIds(orgSlug, {
+      before: id1,
+      after: id2,
+      on_duplicate: 'redirect',
+    }),
     {
       description: 'a scan diff creation',
     },

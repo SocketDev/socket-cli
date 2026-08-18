@@ -183,6 +183,7 @@ describe('fetchDiffScan', () => {
     expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith('test-org', {
       before: 'scan-123',
       after: 'scan-456',
+      on_duplicate: 'redirect',
     })
     expect(mockSdk.getDiffScanById).toHaveBeenCalledWith(
       'test-org',
@@ -305,6 +306,7 @@ describe('fetchDiffScan', () => {
       expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith(orgSlug, {
         before: 'scan-1',
         after: 'scan-2',
+        on_duplicate: 'redirect',
       })
     }
   })
