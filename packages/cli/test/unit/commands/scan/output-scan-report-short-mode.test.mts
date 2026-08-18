@@ -88,7 +88,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -113,7 +112,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
       mockGenerateReport.mockReturnValue({
@@ -142,7 +140,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 
@@ -167,7 +164,6 @@ describe('output-scan-report', () => {
         ok: true as const,
         data: {
           scan: [],
-          securityPolicy: { rules: [] },
         },
       }
 

@@ -1,4 +1,17 @@
-import type { SocketArtifact } from '../../src/util/alert/artifact.mts'
+import type { ALERT_ACTION, SocketArtifact } from '../../src/util/alert/artifact.mts'
+
+/**
+ * Stamp a resolved policy action onto every alert in a scan fixture.
+ */
+export function withAlertAction(
+  scan: SocketArtifact[],
+  action: ALERT_ACTION,
+): SocketArtifact[] {
+  return scan.map(artifact => ({
+    ...artifact,
+    alerts: artifact.alerts?.map(alert => ({ ...alert, action })),
+  }))
+}
 
 /**
  * Helper function to create a scan with environment variable alerts.

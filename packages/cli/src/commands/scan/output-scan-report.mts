@@ -22,7 +22,6 @@ import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export type OutputScanReportConfig = {
@@ -118,7 +117,6 @@ export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
 export async function outputScanReport(
   result: CResult<{
     scan: SocketArtifact[]
-    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>,
   {
     filepath,
@@ -145,18 +143,14 @@ export async function outputScanReport(
   }
 
   const spinner = getDefaultSpinner()
-  const scanReport = generateReport(
-    result.data.scan,
-    result.data.securityPolicy,
-    {
-      orgSlug,
-      scanId,
-      fold,
-      reportLevel,
-      short,
-      spinner,
-    },
-  )
+  const scanReport = generateReport(result.data.scan, {
+    orgSlug,
+    scanId,
+    fold,
+    reportLevel,
+    short,
+    spinner,
+  })
 
   if (!scanReport.ok) {
     // Note: This means generation failed, it does not reflect the healthy state.

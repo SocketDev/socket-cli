@@ -3,8 +3,8 @@
  *
  * Purpose: Tests the report generation from scan artifacts.
  *
- * Test Coverage: - generateReport function - Policy action handling (error,
- * warn, monitor, ignore, defer) - Fold settings, pkg, version, file - Report
+ * Test Coverage: - generateReport function - Alert action handling (error,
+ * warn, monitor, ignore) - Fold settings, pkg, version, file - Report
  * level filtering - Health status determination.
  *
  * Related Files: - src/commands/scan/generate-report.mts (implementation)
@@ -26,7 +26,6 @@ import {
   FOLD_SETTING_VERSION,
 } from '../../../../src/constants/cli.mts'
 import {
-  REPORT_LEVEL_DEFER,
   REPORT_LEVEL_ERROR,
   REPORT_LEVEL_IGNORE,
   REPORT_LEVEL_MONITOR,
@@ -51,12 +50,6 @@ describe('generate-report', () => {
         ...overrides,
       }) as SocketArtifact
 
-    const createSecurityPolicy = (
-      rules: Record<string, { action: string }> = {},
-    ) => ({
-      securityPolicyRules: rules,
-    })
-
     const defaultOptions = {
       fold: FOLD_SETTING_NONE,
       orgSlug: 'my-org',
@@ -66,9 +59,8 @@ describe('generate-report', () => {
 
     it('returns healthy report when no alerts', () => {
       const scan = [createArtifact()]
-      const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -82,9 +74,8 @@ describe('generate-report', () => {
 
     it('returns short report when short option is true', () => {
       const scan = [createArtifact()]
-      const policy = createSecurityPolicy()
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         short: true,
       })
@@ -96,14 +87,19 @@ describe('generate-report', () => {
     it('marks unhealthy when error policy alerts exist', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'badAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'error',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        badAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -117,14 +113,19 @@ describe('generate-report', () => {
     it('stays healthy with warn policy alerts', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'warnAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'warn',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        warnAlert: { action: 'warn' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
@@ -140,14 +141,19 @@ describe('generate-report', () => {
     it('includes warn alerts when reportLevel is warn', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'warnAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'warn',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        warnAlert: { action: 'warn' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_WARN,
       })
@@ -160,14 +166,19 @@ describe('generate-report', () => {
     it('excludes warn alerts when reportLevel is error', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'warnAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'warnAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'warn',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        warnAlert: { action: 'warn' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_ERROR,
       })
@@ -181,15 +192,18 @@ describe('generate-report', () => {
       const scan = [
         createArtifact({
           alerts: [
-            { type: 'monitorAlert', file: 'index.js', start: 0, end: 10 },
+            {
+              type: 'monitorAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'monitor',
+            },
           ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        monitorAlert: { action: 'monitor' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_MONITOR,
       })
@@ -203,15 +217,18 @@ describe('generate-report', () => {
       const scan = [
         createArtifact({
           alerts: [
-            { type: 'ignoreAlert', file: 'index.js', start: 0, end: 10 },
+            {
+              type: 'ignoreAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'ignore',
+            },
           ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        ignoreAlert: { action: 'ignore' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         reportLevel: REPORT_LEVEL_IGNORE,
       })
@@ -221,36 +238,43 @@ describe('generate-report', () => {
       expect(data.alerts.size).toBeGreaterThan(0)
     })
 
-    it('includes defer alerts when reportLevel is defer', () => {
+    it('skips alerts that have no resolved action', () => {
       const scan = [
         createArtifact({
           alerts: [{ type: 'deferAlert', file: 'index.js', start: 0, end: 10 }],
         }),
       ]
-      const policy = createSecurityPolicy({
-        deferAlert: { action: 'defer' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
-        reportLevel: REPORT_LEVEL_DEFER,
+        reportLevel: REPORT_LEVEL_WARN,
       })
 
       expect(result.ok).toBe(true)
+      expect(result.data).toEqual(
+        expect.objectContaining({
+          healthy: true,
+        }),
+      )
       const data = result.data as { alerts: Map<string, unknown> }
-      expect(data.alerts.size).toBeGreaterThan(0)
+      expect(data.alerts.size).toBe(0)
     })
 
     describe('fold settings', () => {
       const alertedArtifact = createArtifact({
-        alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
-      })
-      const errorPolicy = createSecurityPolicy({
-        badAlert: { action: 'error' },
+        alerts: [
+          {
+            type: 'badAlert',
+            file: 'index.js',
+            start: 0,
+            end: 10,
+            action: 'error',
+          },
+        ],
       })
 
       it('folds by package when fold is pkg', () => {
-        const result = generateReport([alertedArtifact], errorPolicy, {
+        const result = generateReport([alertedArtifact], {
           ...defaultOptions,
           fold: FOLD_SETTING_PKG,
         })
@@ -265,7 +289,7 @@ describe('generate-report', () => {
       })
 
       it('folds by version when fold is version', () => {
-        const result = generateReport([alertedArtifact], errorPolicy, {
+        const result = generateReport([alertedArtifact], {
           ...defaultOptions,
           fold: FOLD_SETTING_VERSION,
         })
@@ -281,7 +305,7 @@ describe('generate-report', () => {
       })
 
       it('folds by file when fold is file', () => {
-        const result = generateReport([alertedArtifact], errorPolicy, {
+        const result = generateReport([alertedArtifact], {
           ...defaultOptions,
           fold: FOLD_SETTING_FILE,
         })
@@ -298,7 +322,7 @@ describe('generate-report', () => {
       })
 
       it('does not fold when fold is none', () => {
-        const result = generateReport([alertedArtifact], errorPolicy, {
+        const result = generateReport([alertedArtifact], {
           ...defaultOptions,
           fold: FOLD_SETTING_NONE,
         })
@@ -322,14 +346,19 @@ describe('generate-report', () => {
         createArtifact({
           name: undefined as unknown,
           version: undefined as unknown,
-          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'badAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'error',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        badAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -343,14 +372,19 @@ describe('generate-report', () => {
       const scan = [
         createArtifact({
           manifestFiles: undefined as unknown,
-          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'badAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'error',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        badAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
     })
@@ -358,14 +392,11 @@ describe('generate-report', () => {
     it('handles alerts with no file', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'badAlert', start: 0, end: 10 }],
+          alerts: [{ type: 'badAlert', start: 0, end: 10, action: 'error' }],
         }),
       ]
-      const policy = createSecurityPolicy({
-        badAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         fold: FOLD_SETTING_NONE,
       })
@@ -373,19 +404,22 @@ describe('generate-report', () => {
       expect(result.ok).toBe(true)
     })
 
-    it('handles unknown policy actions', () => {
+    it('handles unknown alert actions', () => {
       const scan = [
         createArtifact({
           alerts: [
-            { type: 'unknownAlert', file: 'index.js', start: 0, end: 10 },
+            {
+              type: 'unknownAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'unknown-action' as never,
+            },
           ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        unknownAlert: { action: 'unknown-action' },
-      })
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -395,15 +429,14 @@ describe('generate-report', () => {
       )
     })
 
-    it('handles missing security policy rules', () => {
+    it('skips alerts when action is missing', () => {
       const scan = [
         createArtifact({
           alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
         }),
       ]
-      const policy = {} // No securityPolicyRules.
 
-      const result = generateReport(scan, policy, defaultOptions)
+      const result = generateReport(scan, defaultOptions)
 
       expect(result.ok).toBe(true)
       expect(result.data).toEqual(
@@ -417,17 +450,25 @@ describe('generate-report', () => {
       const scan = [
         createArtifact({
           alerts: [
-            { type: 'warnAlert', file: 'index.js', start: 0, end: 10 },
-            { type: 'errorAlert', file: 'index.js', start: 0, end: 10 },
+            {
+              type: 'warnAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'warn',
+            },
+            {
+              type: 'errorAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'error',
+            },
           ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        warnAlert: { action: 'warn' },
-        errorAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         fold: FOLD_SETTING_PKG,
         reportLevel: REPORT_LEVEL_WARN,
@@ -446,9 +487,8 @@ describe('generate-report', () => {
         successAndStop: vi.fn(),
       }
       const scan = [createArtifact()]
-      const policy = createSecurityPolicy()
 
-      generateReport(scan, policy, {
+      generateReport(scan, {
         ...defaultOptions,
         spinner: mockSpinner as unknown,
       })
@@ -462,14 +502,19 @@ describe('generate-report', () => {
     it('returns short unhealthy report for error alerts', () => {
       const scan = [
         createArtifact({
-          alerts: [{ type: 'badAlert', file: 'index.js', start: 0, end: 10 }],
+          alerts: [
+            {
+              type: 'badAlert',
+              file: 'index.js',
+              start: 0,
+              end: 10,
+              action: 'error',
+            },
+          ],
         }),
       ]
-      const policy = createSecurityPolicy({
-        badAlert: { action: 'error' },
-      })
 
-      const result = generateReport(scan, policy, {
+      const result = generateReport(scan, {
         ...defaultOptions,
         short: true,
       })

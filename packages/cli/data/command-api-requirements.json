@@ -101,8 +101,8 @@
       "permissions": ["full-scans:create"]
     },
     "scan:report": {
-      "quota": 2,
-      "permissions": ["full-scans:list", "security-policy:read"]
+      "quota": 1,
+      "permissions": ["full-scans:list"]
     },
     "scan:view": {
       "quota": 1,

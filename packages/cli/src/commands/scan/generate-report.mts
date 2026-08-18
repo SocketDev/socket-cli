@@ -16,9 +16,11 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../util/socket/url.mt
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { CResult } from '../../types.mts'
-import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type {
+  ALERT_ACTION,
+  SocketArtifact,
+} from '../../util/alert/artifact.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 export type AlertKey = string
 export type EcoMap = Map<string, ReportLeafNode | PackageMap>
@@ -49,6 +51,15 @@ export type ReportLeafNode = {
   manifest: string[]
 }
 
+function isReportLeaf(value: unknown): value is ReportLeafNode {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !(value instanceof Map) &&
+    'policy' in value
+  )
+}
+
 export function addAlert(
   art: SocketArtifact,
   violations: ViolationsMap,
@@ -59,49 +70,64 @@ export function addAlert(
   alert: NonNullable<SocketArtifact['alerts']>[number],
   policyAction: REPORT_LEVEL,
 ): void {
-  if (!violations.has(ecosystem)) {
-    violations.set(ecosystem, new Map())
+  let ecoMap = violations.get(ecosystem)
+  if (!ecoMap) {
+    ecoMap = new Map()
+    violations.set(ecosystem, ecoMap)
   }
-  const ecoMap: EcoMap = violations.get(ecosystem)!
   if (fold === FOLD_SETTING_PKG) {
-    const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
-    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+    const existing = ecoMap.get(pkgName)
+    if (
+      !isReportLeaf(existing) ||
+      isStricterPolicy(existing.policy, policyAction)
+    ) {
       ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
     }
-  } else {
-    if (!ecoMap.has(pkgName)) {
-      ecoMap.set(pkgName, new Map())
+    return
+  }
+  let pkgMap = ecoMap.get(pkgName)
+  if (!pkgMap || isReportLeaf(pkgMap)) {
+    pkgMap = new Map()
+    ecoMap.set(pkgName, pkgMap)
+  }
+  if (fold === FOLD_SETTING_VERSION) {
+    const existing = pkgMap.get(version)
+    if (
+      !isReportLeaf(existing) ||
+      isStricterPolicy(existing.policy, policyAction)
+    ) {
+      pkgMap.set(version, createLeaf(art, alert, policyAction))
     }
-    const pkgMap = ecoMap.get(pkgName) as PackageMap
-    if (fold === FOLD_SETTING_VERSION) {
-      const existing = pkgMap.get(version) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-        pkgMap.set(version, createLeaf(art, alert, policyAction))
-      }
-    } else {
-      if (!pkgMap.has(version)) {
-        pkgMap.set(version, new Map())
-      }
-      const file = alert.file || UNKNOWN_VALUE
-      const verMap = pkgMap.get(version) as VersionMap
-
-      if (fold === FOLD_SETTING_FILE) {
-        const existing = verMap.get(file) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-          verMap.set(file, createLeaf(art, alert, policyAction))
-        }
-      } else {
-        if (!verMap.has(file)) {
-          verMap.set(file, new Map())
-        }
-        const key = `${alert.type} at ${alert.start}:${alert.end}`
-        const fileMap: FileMap = verMap.get(file) as FileMap
-        const existing = fileMap.get(key) as ReportLeafNode | undefined
-        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-          fileMap.set(key, createLeaf(art, alert, policyAction))
-        }
-      }
+    return
+  }
+  let verMap = pkgMap.get(version)
+  if (!verMap || isReportLeaf(verMap)) {
+    verMap = new Map()
+    pkgMap.set(version, verMap)
+  }
+  const file = alert.file || UNKNOWN_VALUE
+  if (fold === FOLD_SETTING_FILE) {
+    const existing = verMap.get(file)
+    if (
+      !isReportLeaf(existing) ||
+      isStricterPolicy(existing.policy, policyAction)
+    ) {
+      verMap.set(file, createLeaf(art, alert, policyAction))
     }
+    return
+  }
+  let fileMap = verMap.get(file)
+  if (!fileMap || isReportLeaf(fileMap)) {
+    fileMap = new Map()
+    verMap.set(file, fileMap)
+  }
+  const key = `${alert.type} at ${alert.start}:${alert.end}`
+  const existing = fileMap.get(key)
+  if (
+    !isReportLeaf(existing) ||
+    isStricterPolicy(existing.policy, policyAction)
+  ) {
+    fileMap.set(key, createLeaf(art, alert, policyAction))
   }
 }
 
@@ -119,11 +145,19 @@ export function createLeaf(
   return leaf
 }
 
+function isAlertAction(value: string | undefined): value is ALERT_ACTION {
+  return (
+    value === REPORT_LEVEL_ERROR ||
+    value === REPORT_LEVEL_WARN ||
+    value === REPORT_LEVEL_MONITOR ||
+    value === REPORT_LEVEL_IGNORE
+  )
+}
+
 // Note: The returned cResult will only be ok:false when the generation
 //       failed. It won't reflect the healthy state.
 export function generateReport(
   scan: SocketArtifact[],
-  securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data'],
   {
     fold,
     orgSlug,
@@ -155,13 +189,12 @@ export function generateReport(
 
   // In the context of a report;
   // - the alert.severity is irrelevant
-  // - the securityPolicyDefault is irrelevant
   // - the report defaults to healthy:true with no alerts
-  // - the appearance of an alert will trigger the policy action;
+  // - the appearance of an alert will trigger its resolved action;
   //   - error: healthy will end up as false, add alerts to report
   //   - warn: healthy unchanged, add alerts to report
-  //   - monitor/ignore: no action
-  //   - defer: unknown, no action
+  //   - monitor/ignore: no action unless reportLevel asks for them
+  //   - missing action: skip the alert (do not fail the report)
 
   // Note: the server will emit alerts for license policy violations but
   //       those are only included if you set the flag when requesting the scan
@@ -175,121 +208,100 @@ export function generateReport(
 
   let healthy = true
 
-  const securityRules = securityPolicy.securityPolicyRules
-  if (securityRules) {
-    // Note: reportLevel: error > warn > monitor > ignore > defer
-    for (let i = 0, { length } = scan; i < length; i += 1) {
-      const artifact = scan[i]!
-      const {
-        alerts,
-        name: pkgName = UNKNOWN_VALUE,
-        type: ecosystem,
-        version = UNKNOWN_VALUE,
-      } = artifact
+  // Note: reportLevel: error > warn > monitor > ignore > defer
+  for (let i = 0, { length } = scan; i < length; i += 1) {
+    const artifact = scan[i]!
+    const {
+      alerts,
+      name: pkgName = UNKNOWN_VALUE,
+      type: ecosystem,
+      version = UNKNOWN_VALUE,
+    } = artifact
 
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
-      alerts?.forEach(
-        (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
-          const alertName = alert.type // => policy[type]
-          const action = (securityRules[alertName]?.action ||
-            '') as REPORT_LEVEL
-          switch (action) {
-            case REPORT_LEVEL_ERROR: {
-              healthy = false
-              if (!short) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case REPORT_LEVEL_WARN: {
-              if (!short && reportLevel !== REPORT_LEVEL_ERROR) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-            case REPORT_LEVEL_MONITOR: {
-              if (
-                !short &&
-                reportLevel !== REPORT_LEVEL_WARN &&
-                reportLevel !== REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            case REPORT_LEVEL_IGNORE: {
-              if (
-                !short &&
-                reportLevel !== REPORT_LEVEL_MONITOR &&
-                reportLevel !== REPORT_LEVEL_WARN &&
-                reportLevel !== REPORT_LEVEL_ERROR
-              ) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            case REPORT_LEVEL_DEFER: {
-              // Not sure but ignore for now. Defer to later ;)
-              if (!short && reportLevel === REPORT_LEVEL_DEFER) {
-                addAlert(
-                  artifact,
-                  violations,
-                  fold,
-                  ecosystem,
-                  pkgName,
-                  version,
-                  alert,
-                  action,
-                )
-              }
-              break
-            }
-
-            default: {
-              // This value was not emitted from the Socket API at the time of writing.
-            }
+    // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
+    alerts?.forEach((alert: NonNullable<SocketArtifact['alerts']>[number]) => {
+      const action = alert.action
+      if (!isAlertAction(action)) {
+        return
+      }
+      switch (action) {
+        case REPORT_LEVEL_ERROR: {
+          healthy = false
+          if (!short) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
           }
-        },
-      )
-    }
+          break
+        }
+        case REPORT_LEVEL_WARN: {
+          if (!short && reportLevel !== REPORT_LEVEL_ERROR) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+        case REPORT_LEVEL_MONITOR: {
+          if (
+            !short &&
+            reportLevel !== REPORT_LEVEL_WARN &&
+            reportLevel !== REPORT_LEVEL_ERROR
+          ) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+
+        case REPORT_LEVEL_IGNORE: {
+          if (
+            !short &&
+            reportLevel !== REPORT_LEVEL_MONITOR &&
+            reportLevel !== REPORT_LEVEL_WARN &&
+            reportLevel !== REPORT_LEVEL_ERROR
+          ) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+          break
+        }
+
+        default: {
+          // This value was not emitted from the Socket API at the time of writing.
+        }
+      }
+    })
   }
 
   spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)
