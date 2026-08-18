@@ -69,39 +69,50 @@ vi.mock(import('node:fs'), () => ({
 
 import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.mts'
 
-// Helper to create mock diff scan data.
+// Helper to create mock diff scan data (getDiffScanById response shape).
 function createMockDiffData(overrides = {}) {
   return {
-    diff_report_url: 'https://socket.dev/diff/123',
-    directDependenciesChanged: true,
-    before: {
-      id: 'scan-before',
+    diff_scan: {
+      id: 'diff-scan-001',
       organization_id: 'org-1',
-      organization_slug: 'test-org',
       repository_id: 'repo-1',
-      repository_slug: 'test-repo',
-      branch: 'main',
       created_at: '2024-01-01T00:00:00Z',
-      pull_request: undefined,
+      updated_at: '2024-01-01T00:00:00Z',
+      before_full_scan: {
+        id: 'scan-before',
+        organization_id: 'org-1',
+        organization_slug: 'test-org',
+        repository_id: 'repo-1',
+        repository_slug: 'test-repo',
+        branch: 'main',
+        created_at: '2024-01-01T00:00:00Z',
+        pull_request: undefined,
+      },
+      after_full_scan: {
+        id: 'scan-after',
+        organization_id: 'org-1',
+        organization_slug: 'test-org',
+        repository_id: 'repo-1',
+        repository_slug: 'test-repo',
+        branch: 'feature',
+        created_at: '2024-01-02T00:00:00Z',
+        pull_request: undefined,
+      },
+      description: null,
+      external_href: null,
+      merge: false,
+      html_url: 'https://socket.dev/diff/123',
+      api_url: null,
+      incomplete: false,
+      artifacts: {
+        added: [],
+        removed: [],
+        replaced: [],
+        updated: [],
+        unchanged: [],
+      },
+      ...overrides,
     },
-    after: {
-      id: 'scan-after',
-      organization_id: 'org-1',
-      organization_slug: 'test-org',
-      repository_id: 'repo-1',
-      repository_slug: 'test-repo',
-      branch: 'feature',
-      created_at: '2024-01-02T00:00:00Z',
-      pull_request: undefined,
-    },
-    artifacts: {
-      added: [],
-      removed: [],
-      replaced: [],
-      updated: [],
-      unchanged: [],
-    },
-    ...overrides,
   }
 }
 

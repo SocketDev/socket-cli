@@ -12,14 +12,21 @@
  * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
  * Validates comprehensive error handling and API integration.
  *
- * Related Files: - src/commands/DiffScan.mts (implementation)
+ * Related Files: - src/commands/scan/fetch-diff-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import {
+  setupSdkSetupFailure,
+} from '../../../helpers/sdk-test-helpers.mts'
 import { fetchDiffScan } from '../../../../src/commands/scan/fetch-diff-scan.mts'
 
-// Mock the dependencies.
+import type * as ApiModule from '../../../../src/util/socket/api.mts'
+import type * as SdkModule from '../../../../src/util/socket/sdk.mts'
+import type { Mock } from 'vitest'
+
+// Mock the logger.
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
   log: vi.fn(),
@@ -29,44 +36,138 @@ const mockLogger = vi.hoisted(() => ({
   error: vi.fn(),
 }))
 
-const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
-const mockGetDefaultApiToken = vi.hoisted(() => vi.fn(() => 'test-token'))
-
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
 
-vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
-  queryApiSafeJson: mockQueryApiSafeJson,
+vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
+  handleApiCall: vi.fn(),
 }))
 
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
-  getDefaultApiToken: mockGetDefaultApiToken,
+  setupSdk: vi.fn(),
 }))
 
+async function getMockHandleApiCall(): Promise<Mock> {
+  const module = await vi.importMock<typeof ApiModule>(
+    '../../../../src/util/socket/api.mts',
+  )
+  return vi.mocked(module.handleApiCall)
+}
+
+async function getMockSetupSdk(): Promise<Mock> {
+  const module = await vi.importMock<typeof SdkModule>(
+    '../../../../src/util/socket/sdk.mts',
+  )
+  return vi.mocked(module.setupSdk)
+}
+
+// Helper to create a mock diff scan response (getDiffScanById shape).
+function createMockDiffScanData(overrides = {}) {
+  return {
+    diff_scan: {
+      id: 'diff-scan-001',
+      organization_id: 'org-1',
+      repository_id: 'repo-1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      before_full_scan: {
+        id: 'scan-before',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+        organization_id: 'org-1',
+        organization_slug: 'test-org',
+        repository_id: 'repo-1',
+        repository_slug: 'test-repo',
+        branch: 'main',
+        commit_message: null,
+        commit_hash: null,
+        pull_request: null,
+        committers: [],
+        html_url: null,
+        api_url: null,
+      },
+      after_full_scan: {
+        id: 'scan-after',
+        created_at: '2024-01-02T00:00:00Z',
+        updated_at: '2024-01-02T00:00:00Z',
+        organization_id: 'org-1',
+        organization_slug: 'test-org',
+        repository_id: 'repo-1',
+        repository_slug: 'test-repo',
+        branch: 'feature',
+        commit_message: null,
+        commit_hash: null,
+        pull_request: null,
+        committers: [],
+        html_url: null,
+        api_url: null,
+      },
+      description: null,
+      external_href: null,
+      merge: false,
+      html_url: 'https://socket.dev/diff/123',
+      api_url: null,
+      incomplete: false,
+      artifacts: {
+        added: [],
+        removed: [],
+        unchanged: [],
+        replaced: [],
+        updated: [],
+      },
+      ...overrides,
+    },
+  }
+}
+
+// Helper to create a mock create result (createOrgDiffScanFromIds shape).
+function createMockCreateData(diffScanId = 'diff-scan-001') {
+  return {
+    diff_scan: {
+      id: diffScanId,
+      organization_id: 'org-1',
+      repository_id: 'repo-1',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    },
+  }
+}
+
 describe('fetchDiffScan', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
+    setupSdk.mockReset()
+    handleApiCall.mockReset()
   })
 
   it('fetches diff scan successfully', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    const mockDiffData = {
-      added: ['package-a@1.0.0'],
-      removed: ['package-b@1.0.0'],
-      modified: ['package-c@1.0.0 -> 1.1.0'],
-      issues: {
-        new: ['CVE-2023-001'],
-        resolved: ['CVE-2023-002'],
-      },
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn().mockResolvedValue({
+        success: true,
+        data: createMockCreateData('diff-scan-001'),
+      }),
+      getDiffScanById: vi.fn().mockResolvedValue({
+        success: true,
+        data: createMockDiffScanData(),
+      }),
     }
 
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: mockDiffData,
-    })
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+
+    const mockDiffData = createMockDiffScanData()
+    handleApiCall
+      .mockResolvedValueOnce({
+        ok: true,
+        data: createMockCreateData('diff-scan-001'),
+      })
+      .mockResolvedValueOnce({ ok: true, data: mockDiffData })
 
     const result = await fetchDiffScan({
       id1: 'scan-123',
@@ -79,24 +180,51 @@ describe('fetchDiffScan', () => {
     expect(mockLogger.info).toHaveBeenCalledWith(
       'Note: this request may take some time if the scans are big',
     )
-    expect(mockQueryApi).toHaveBeenCalledWith(
-      'orgs/test-org/full-scans/diff?before=scan-123&after=scan-456',
-      'a scan diff',
+    expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith('test-org', {
+      before: 'scan-123',
+      after: 'scan-456',
+      on_duplicate: 'redirect',
+    })
+    expect(mockSdk.getDiffScanById).toHaveBeenCalledWith(
+      'test-org',
+      'diff-scan-001',
+      { cached: true },
     )
     expect(result.ok).toBe(true)
     expect(result.data).toEqual(mockDiffData)
   })
 
-  it('handles API call failure', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+  it('handles SDK setup failure', async () => {
+    await setupSdkSetupFailure('Failed to setup SDK', {
+      code: 1,
+      cause: 'Authentication failed',
+    })
 
-    const error = {
-      ok: false,
-      code: 404,
-      message: 'Scan not found',
-      cause: 'One or both scans do not exist',
+    const result = await fetchDiffScan({
+      id1: 'scan-123',
+      id2: 'scan-456',
+      orgSlug: 'test-org',
+    })
+
+    expect(result.ok).toBe(false)
+  })
+
+  it('handles createOrgDiffScanFromIds failure', async () => {
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
+
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn(),
+      getDiffScanById: vi.fn(),
     }
-    mockQueryApi.mockResolvedValue(error)
+
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    handleApiCall.mockResolvedValueOnce({
+      ok: false,
+      message: 'Socket API error',
+      code: 404,
+      cause: 'Scan not found',
+    })
 
     const result = await fetchDiffScan({
       id1: 'nonexistent-scan',
@@ -104,39 +232,61 @@ describe('fetchDiffScan', () => {
       orgSlug: 'test-org',
     })
 
-    expect(result).toEqual(error)
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(404)
+    // getDiffScanById should not be called when create fails
+    expect(mockSdk.getDiffScanById).not.toHaveBeenCalled()
   })
 
-  it('properly URL encodes scan IDs', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+  it('handles getDiffScanById failure', async () => {
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: {},
-    })
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn(),
+      getDiffScanById: vi.fn(),
+    }
 
-    const specialCharsId1 = 'scan+with%special&chars'
-    const specialCharsId2 = 'another/scan?with=query'
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    handleApiCall
+      .mockResolvedValueOnce({
+        ok: true,
+        data: createMockCreateData('diff-scan-001'),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        message: 'Socket API error',
+        code: 504,
+        cause: 'Gateway timeout',
+      })
 
-    await fetchDiffScan({
-      id1: specialCharsId1,
-      id2: specialCharsId2,
+    const result = await fetchDiffScan({
+      id1: 'large-scan-1',
+      id2: 'large-scan-2',
       orgSlug: 'test-org',
     })
 
-    expect(mockQueryApi).toHaveBeenCalledWith(
-      'orgs/test-org/full-scans/diff?before=scan%2Bwith%25special%26chars&after=another%2Fscan%3Fwith%3Dquery',
-      'a scan diff',
-    )
+    expect(result.ok).toBe(false)
+    expect(result.code).toBe(504)
   })
 
   it('handles different org slugs', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: {},
-    })
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn().mockResolvedValue({
+        success: true,
+        data: createMockCreateData(),
+      }),
+      getDiffScanById: vi.fn().mockResolvedValue({
+        success: true,
+        data: createMockDiffScanData(),
+      }),
+    }
+
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    handleApiCall.mockResolvedValue({ ok: true, data: createMockDiffScanData() })
 
     const testCases = [
       'org-with-dashes',
@@ -153,30 +303,28 @@ describe('fetchDiffScan', () => {
         orgSlug,
       })
 
-      expect(mockQueryApi).toHaveBeenCalledWith(
-        `orgs/${orgSlug}/full-scans/diff?before=scan-1&after=scan-2`,
-        'a scan diff',
-      )
+      expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith(orgSlug, {
+        before: 'scan-1',
+        after: 'scan-2',
+        on_duplicate: 'redirect',
+      })
     }
   })
 
   it('handles empty diff results', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    const emptyDiffData = {
-      added: [],
-      removed: [],
-      modified: [],
-      issues: {
-        new: [],
-        resolved: [],
-      },
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn(),
+      getDiffScanById: vi.fn(),
     }
 
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: emptyDiffData,
-    })
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    const emptyDiffData = createMockDiffScanData()
+    handleApiCall
+      .mockResolvedValueOnce({ ok: true, data: createMockCreateData() })
+      .mockResolvedValueOnce({ ok: true, data: emptyDiffData })
 
     const result = await fetchDiffScan({
       id1: 'scan-identical-1',
@@ -189,17 +337,18 @@ describe('fetchDiffScan', () => {
   })
 
   it('handles same scan IDs gracefully', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: {
-        added: [],
-        removed: [],
-        modified: [],
-        issues: { new: [], resolved: [] },
-      },
-    })
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn(),
+      getDiffScanById: vi.fn(),
+    }
+
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    handleApiCall
+      .mockResolvedValueOnce({ ok: true, data: createMockCreateData() })
+      .mockResolvedValueOnce({ ok: true, data: createMockDiffScanData() })
 
     await fetchDiffScan({
       id1: 'same-scan-id',
@@ -209,48 +358,36 @@ describe('fetchDiffScan', () => {
 
     expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 1:', 'same-scan-id')
     expect(mockLogger.info).toHaveBeenCalledWith('Scan ID 2:', 'same-scan-id')
-    expect(mockQueryApi).toHaveBeenCalledWith(
-      'orgs/test-org/full-scans/diff?before=same-scan-id&after=same-scan-id',
-      'a scan diff',
-    )
+    expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith('test-org', {
+      before: 'same-scan-id',
+      after: 'same-scan-id',
+    })
   })
 
-  it('handles server timeout gracefully', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
+  it('passes cached: true to getDiffScanById', async () => {
+    const setupSdk = await getMockSetupSdk()
+    const handleApiCall = await getMockHandleApiCall()
 
-    const timeoutError = {
-      ok: false,
-      code: 504,
-      message: 'Gateway timeout',
-      cause: 'The request took too long to process',
+    const mockSdk = {
+      createOrgDiffScanFromIds: vi.fn(),
+      getDiffScanById: vi.fn(),
     }
-    mockQueryApi.mockResolvedValue(timeoutError)
 
-    const result = await fetchDiffScan({
-      id1: 'large-scan-1',
-      id2: 'large-scan-2',
-      orgSlug: 'test-org',
-    })
+    setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
+    handleApiCall
+      .mockResolvedValueOnce({ ok: true, data: createMockCreateData() })
+      .mockResolvedValueOnce({ ok: true, data: createMockDiffScanData() })
 
-    expect(result).toEqual(timeoutError)
-  })
-
-  it('uses null prototype internally', async () => {
-    const mockQueryApi = mockQueryApiSafeJson
-
-    mockQueryApi.mockResolvedValue({
-      ok: true,
-      data: {},
-    })
-
-    // This tests that the function works without prototype pollution issues.
     await fetchDiffScan({
       id1: 'scan-1',
       id2: 'scan-2',
       orgSlug: 'test-org',
     })
 
-    // The function should work properly.
-    expect(mockQueryApi).toHaveBeenCalled()
+    expect(mockSdk.getDiffScanById).toHaveBeenCalledWith(
+      'test-org',
+      'diff-scan-001',
+      { cached: true },
+    )
   })
 })
