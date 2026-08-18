@@ -92,6 +92,12 @@ const generalFlags: MeowFlags = {
     description:
       'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
   },
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    description:
+      'For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.',
+  },
   interactive: {
     type: 'boolean',
     default: true,
@@ -355,11 +361,6 @@ async function run(
       autoManifest = false
     }
   }
-  // --dynamic-sbom-inference requires auto-manifest to generate the
-  // per-workspace facts it feeds to Coana.
-  if (dynamicSbomInference) {
-    autoManifest = true
-  }
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
@@ -455,7 +456,12 @@ async function run(
   const hasFactsFile = existsSync(
     path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
   )
-  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
+  if (
+    detected.count > 0 &&
+    !autoManifest &&
+    !dynamicSbomInference &&
+    !hasFactsFile
+  ) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
