@@ -226,14 +226,15 @@ export async function hoistAdvisory(
       }
     }
 
-    // The backend label appended to odai verdicts. Backend is the runtime
-    // that hosts the model (chrome-builtin = Chrome's Prompt API,
-    // llama-server, apple-fm, windows-phi-silica, simulator), NOT the model
-    // weights (Gemini Nano today, Gemma 4 later) — odai names backends by
-    // interface because the weights behind them change.
-    // Produces: `(odai chrome-builtin)` when odai stamps its identity
-    // (>=0.3); `(odai modern)` on the released line, where only the
-    // availability namespace exists.
+    // The model label appended to odai verdicts: the detected model identity
+    // (Gemini Nano today, Gemma 4 later), queried once and cached by odai,
+    // with the backend's registry name as the fallback when detection fails
+    // — odai names backends by interface (chrome-builtin = Chrome's Prompt
+    // API, llama-server, apple-fm, windows-phi-silica, simulator) because
+    // the weights behind them change.
+    // Produces: `(odai Gemini Nano)` when odai stamps its identity (>=0.3);
+    // `(odai modern)` on the released line, where only the availability
+    // namespace exists.
     const via =
       verdict === undefined
         ? ''
