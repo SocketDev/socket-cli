@@ -77,6 +77,18 @@ export type HoistAdvisoryLine = {
 const MAX_ADVISED = 5
 
 /**
+ * odai's backend registry names. When the stamp is one of these, the model
+ * itself was NOT identified — the label must say that, not repeat the token.
+ */
+const BACKEND_NAMES: readonly string[] = [
+  'apple-fm',
+  'chrome-builtin',
+  'llama-server',
+  'simulator',
+  'windows-phi-silica',
+]
+
+/**
  * Packages present under two or more majors, from the pnpm lockfile's
  * package keys. The lockfile is the installed truth — the registry's view of
  * "latest" is irrelevant to what the tree actually carries.
@@ -227,15 +239,22 @@ export async function hoistAdvisory(
     }
 
     // The model label appended to odai verdicts: the detected model identity
-    // (Gemini Nano today, Gemma 4 later), queried once and cached by odai,
-    // with the backend's registry name as the fallback when detection fails
-    // — odai names backends by interface (chrome-builtin = Chrome's Prompt
-    // API, llama-server, apple-fm, windows-phi-silica, simulator) because
-    // the weights behind them change.
-    // Produces: `(odai Gemini Nano)` when odai stamps its identity (>=0.3);
-    // NO label when nothing is stamped — the availability namespace
-    // ('modern') carries no identity, and a meaningless label does not print.
-    const via = backend === undefined ? '' : ` (odai ${backend})`
+    // (Gemini Nano today, Gemma 4 later), queried once and cached by odai.
+    // When detection fails, the stamp carries the backend's registry name
+    // instead (odai names backends by interface: chrome-builtin = Chrome's
+    // Prompt API, llama-server, apple-fm, windows-phi-silica, simulator) —
+    // and then the label says so explicitly: the model is UNKNOWN, the host
+    // is named.
+    // Produces: `(odai Gemini Nano)` with a detected identity;
+    // `(odai unknown model via chrome-builtin)` when only the backend is
+    // known; NO label when nothing is stamped at all — a meaningless label
+    // does not print.
+    const via =
+      backend === undefined
+        ? ''
+        : BACKEND_NAMES.includes(backend)
+          ? ` (odai unknown model via ${backend})`
+          : ` (odai ${backend})`
     let suggestion: string
     if (verdict !== undefined && verdict.verdict === 'safe') {
       suggestion =

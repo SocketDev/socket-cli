@@ -141,6 +141,20 @@ describe('hoistAdvisory', () => {
     expect(lines[0]!.suggestion).not.toContain('odai modern')
   })
 
+  it('says the model is unknown when only the backend is known', async () => {
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
+    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nAll good.' })
+    assessMock.mockResolvedValue({
+      ok: true,
+      data: { breakingChanges: [], reason: '', verdict: 'safe' },
+      model: 'chrome-builtin',
+    })
+    const lines = await hoistAdvisory(dir)
+    expect(lines[0]!.suggestion).toContain(
+      '(odai unknown model via chrome-builtin)',
+    )
+  })
+
   it('labels the stamped model identity when odai provides it', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
     manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nAll good.' })
