@@ -94,6 +94,28 @@ function nodeMajorOf(root: string): number {
   }
 }
 
+const CHANGELOG_NAMES = ['CHANGELOG.md', 'CHANGELOG', 'HISTORY.md']
+
+/**
+ * The installed copy's changelog, when the package ships one. Scoped to the
+ * top level of the package dir — nested paths belong to subtrees the
+ * duplicate already covers by name.
+ */
+function findLocalChangelog(root: string, name: string): string | undefined {
+  const pkgDir = path.join(root, 'node_modules', name)
+  for (const file of CHANGELOG_NAMES) {
+    const candidate = path.join(pkgDir, file)
+    if (existsSync(candidate)) {
+      try {
+        return readFileSync(candidate, 'utf8').slice(0, 8000)
+      } catch {
+        return undefined
+      }
+    }
+  }
+  return undefined
+}
+
 /**
  * The advisory. Cap at MAX_ADVISED duplicates (the worst offenders first by
  * major spread), verdict each when odai is available, and degrade to the
@@ -137,35 +159,64 @@ export async function hoistAdvisory(
     const target = duplicate.versions.find(
       v => getMajorVersion(v) === duplicate.majors[duplicate.majors.length - 1],
     )!
-    const manifest = await fetchPackageManifest(
-      `${duplicate.name}@${target}`,
-    )
-    const changelog =
-      typeof manifest?.['readme'] === 'string'
-        ? (manifest['readme'] as string).slice(0, 8000)
-        : ''
+    // Changelog source, strongest first: the installed package's own
+    // CHANGELOG.md beats the registry README, which mixes marketing with
+    // release notes. The source is LABELED in the output so a verdict's
+    // provenance is never invisible.
+    const localChangelog = findLocalChangelog(root, duplicate.name)
+    let changelog: string
+    let source: string
+    if (localChangelog !== undefined) {
+      changelog = localChangelog
+      source = 'CHANGELOG.md'
+    } else {
+      const manifest = await fetchPackageManifest(
+        `${duplicate.name}@${target}`,
+      )
+      changelog =
+        typeof manifest?.['readme'] === 'string'
+          ? (manifest['readme'] as string).slice(0, 8000)
+          : ''
+      source = 'registry README'
+    }
+
     let verdict: HoistAssessment | undefined
-    let suggestion: string
+    let assessFailed = false
     if (changelog.length > 0) {
-      const result = await assessHoistSafety(model, {
-        changelog,
-        currentVersion: lowest,
-        minNodeSupported: nodeMajorOf(root),
-        targetVersion: target,
-      })
-      if (result.ok && result.data !== undefined) {
-        verdict = result.data
+      try {
+        const result = await assessHoistSafety(model, {
+          changelog,
+          currentVersion: lowest,
+          minNodeSupported: nodeMajorOf(root),
+          targetVersion: target,
+        })
+        if (result.ok && result.data !== undefined) {
+          verdict = result.data
+        } else {
+          assessFailed = true
+        }
+      } catch {
+        assessFailed = true
       }
     }
+
+    const via = verdict === undefined ? '' : ` (odai ${availability.namespace})`
+    let suggestion: string
     if (verdict !== undefined && verdict.verdict === 'safe') {
       suggestion =
         `${duplicate.name} ${lowest} → ${target}: safe to unify — ` +
-        `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc`
+        `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc` +
+        ` (assessed against ${source}${via})`
     } else if (verdict !== undefined) {
       const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
       suggestion =
         `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
-        (reasons ? ` (${reasons})` : verdict.reason ? ` (${verdict.reason})` : '')
+        (reasons ? ` (${reasons})` : verdict.reason ? ` (${verdict.reason})` : '') +
+        ` (assessed against ${source}${via})`
+    } else if (changelog.length > 0 && assessFailed) {
+      suggestion =
+        `${duplicate.name} ${lowest} → ${target}: assessment failed against ` +
+        `${source} — review manually`
     } else {
       suggestion =
         `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +

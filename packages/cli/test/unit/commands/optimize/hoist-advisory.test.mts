@@ -106,7 +106,7 @@ describe('hoistAdvisory', () => {
   })
 
   it('gives a safe-to-unify suggestion when odai says safe', async () => {
-    probeMock.mockResolvedValue({ available: true })
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
     manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nNothing scary.' })
     assessMock.mockResolvedValue({
       ok: true,
@@ -119,7 +119,7 @@ describe('hoistAdvisory', () => {
   })
 
   it('abstains when odai finds breaking changes', async () => {
-    probeMock.mockResolvedValue({ available: true })
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
     manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nDropped Node 14.' })
     assessMock.mockResolvedValue({
       ok: true,
@@ -132,6 +132,31 @@ describe('hoistAdvisory', () => {
     const lines = await hoistAdvisory(dir)
     expect(lines[0]!.suggestion).toContain('unsafe')
     expect(lines[0]!.suggestion).toContain('dropped Node 14 support')
+    expect(lines[0]!.suggestion).toContain('assessed against registry README')
+    expect(lines[0]!.suggestion).toContain('odai modern')
+  })
+
+  it('prefers the installed CHANGELOG.md and labels it', async () => {
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
+    manifestMock.mockResolvedValue({ readme: '# marketing' })
+    assessMock.mockResolvedValue({
+      ok: true,
+      data: { breakingChanges: [], reason: '', verdict: 'safe' },
+    })
+    const { mkdirSync } = await import('node:fs')
+    mkdirSync(path.join(dir, 'node_modules', 'ansi-styles'), { recursive: true })
+    writeFileSync(path.join(dir, 'node_modules', 'ansi-styles', 'CHANGELOG.md'), '# Changelog')
+    const lines = await hoistAdvisory(dir)
+    expect(lines[0]!.suggestion).toContain('assessed against CHANGELOG.md')
+  })
+
+  it('says assessment failed when extraction errors on real text', async () => {
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
+    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nLots here.' })
+    assessMock.mockResolvedValue({ ok: false })
+    const lines = await hoistAdvisory(dir)
+    expect(lines[0]!.suggestion).toContain('assessment failed against registry README')
+    expect(lines[0]!.suggestion).toContain('review manually')
   })
 
   it('returns no lines for an empty project path', async () => {
