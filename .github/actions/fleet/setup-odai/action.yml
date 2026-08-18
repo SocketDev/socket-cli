@@ -168,7 +168,7 @@ runs:
           --key "odai-nano-Linux-x64-${COMPONENT_VERSION}"
 
     # One readiness verdict, computed from what actually happened. Exports
-    # the profile dir so consumer steps and the odai seam agree on the path.
+    # the profile dir so consumer steps and the odai runner agree on the path.
     - name: Report readiness
       id: status
       if: ${{ always() }}
