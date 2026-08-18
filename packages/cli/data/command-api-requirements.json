@@ -81,8 +81,8 @@
       "permissions": ["full-scans:delete"]
     },
     "scan:diff": {
-      "quota": 1,
-      "permissions": ["full-scans:list"]
+      "quota": 0,
+      "permissions": ["diff-scans:create", "diff-scans:list", "full-scans:list"]
     },
     "scan:list": {
       "quota": 1,

@@ -16,7 +16,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 const logger = getDefaultLogger()
 
 export async function handleJson(
-  data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
+  data: CResult<SocketSdkSuccessResult<'getDiffScanById'>['data']>,
   file: string,
   dashboardMessage: string,
 ) {
@@ -44,75 +44,76 @@ export async function handleJson(
 }
 
 export async function handleMarkdown(
-  data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
+  data: SocketSdkSuccessResult<'getDiffScanById'>['data'],
 ) {
   const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+
+  const diffScan = data.diff_scan
+  const beforeScan = diffScan.before_full_scan
+  const afterScan = diffScan.after_full_scan
 
   logger.log(mdHeader('Scan diff result'))
   logger.log('')
   logger.log('This Socket.dev report shows the changes between two scans:')
-  logger.log(
-    `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`,
-  )
-  logger.log(`- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`)
+  logger.log(`- [${beforeScan.id}](${SOCKET_SBOM_URL_PREFIX}${beforeScan.id})`)
+  logger.log(`- [${afterScan.id}](${SOCKET_SBOM_URL_PREFIX}${afterScan.id})`)
   logger.log('')
   logger.log(
-    `You can [view this report in your dashboard](${data.diff_report_url})`,
+    `You can [view this report in your dashboard](${diffScan.html_url})`,
   )
   logger.log('')
   logger.log(mdHeader('Changes', 2))
   logger.log('')
-  logger.log(`- directDependenciesChanged: ${data.directDependenciesChanged}`)
-  logger.log(`- Added packages: ${data.artifacts.added.length}`)
+  logger.log(`- Added packages: ${diffScan.artifacts.added.length}`)
 
-  if (data.artifacts.added.length > 0) {
-    const addedHead = data.artifacts.added.slice(0, 10)
+  if (diffScan.artifacts.added.length > 0) {
+    const addedHead = diffScan.artifacts.added.slice(0, 10)
     for (let i = 0, { length } = addedHead; i < length; i += 1) {
       const artifact = addedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
-    if (data.artifacts.added.length > 10) {
-      logger.log(`  … and ${data.artifacts.added.length - 10} more`)
+    if (diffScan.artifacts.added.length > 10) {
+      logger.log(`  … and ${diffScan.artifacts.added.length - 10} more`)
     }
   }
 
-  logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
-  if (data.artifacts.removed.length > 0) {
-    const removedHead = data.artifacts.removed.slice(0, 10)
+  logger.log(`- Removed packages: ${diffScan.artifacts.removed.length}`)
+  if (diffScan.artifacts.removed.length > 0) {
+    const removedHead = diffScan.artifacts.removed.slice(0, 10)
     for (let i = 0, { length } = removedHead; i < length; i += 1) {
       const artifact = removedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
-    if (data.artifacts.removed.length > 10) {
-      logger.log(`  … and ${data.artifacts.removed.length - 10} more`)
+    if (diffScan.artifacts.removed.length > 10) {
+      logger.log(`  … and ${diffScan.artifacts.removed.length - 10} more`)
     }
   }
 
-  logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
-  if (data.artifacts.replaced.length > 0) {
-    const replacedHead = data.artifacts.replaced.slice(0, 10)
+  logger.log(`- Replaced packages: ${diffScan.artifacts.replaced.length}`)
+  if (diffScan.artifacts.replaced.length > 0) {
+    const replacedHead = diffScan.artifacts.replaced.slice(0, 10)
     for (let i = 0, { length } = replacedHead; i < length; i += 1) {
       const artifact = replacedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
-    if (data.artifacts.replaced.length > 10) {
-      logger.log(`  … and ${data.artifacts.replaced.length - 10} more`)
+    if (diffScan.artifacts.replaced.length > 10) {
+      logger.log(`  … and ${diffScan.artifacts.replaced.length - 10} more`)
     }
   }
 
-  logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
-  if (data.artifacts.updated.length > 0) {
-    const updatedHead = data.artifacts.updated.slice(0, 10)
+  logger.log(`- Updated packages: ${diffScan.artifacts.updated.length}`)
+  if (diffScan.artifacts.updated.length > 0) {
+    const updatedHead = diffScan.artifacts.updated.slice(0, 10)
     for (let i = 0, { length } = updatedHead; i < length; i += 1) {
       const artifact = updatedHead[i]!
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
     }
-    if (data.artifacts.updated.length > 10) {
-      logger.log(`  … and ${data.artifacts.updated.length - 10} more`)
+    if (diffScan.artifacts.updated.length > 10) {
+      logger.log(`  … and ${diffScan.artifacts.updated.length - 10} more`)
     }
   }
 
-  const unchanged = data.artifacts.unchanged ?? []
+  const unchanged = diffScan.artifacts.unchanged ?? []
   logger.log(`- Unchanged packages: ${unchanged.length}`)
   if (unchanged.length > 0) {
     const firstUpToTen = unchanged.slice(0, 10)
@@ -126,13 +127,13 @@ export async function handleMarkdown(
   }
 
   logger.log('')
-  logger.log(`## Scan ${data.before.id}`)
+  logger.log(`## Scan ${beforeScan.id}`)
   logger.log('')
   logger.log(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(data.before)) {
+  for (const { 0: key, 1: value } of Object.entries(beforeScan)) {
     if (key === 'pull_request' && !value) {
       continue
     }
@@ -145,11 +146,11 @@ export async function handleMarkdown(
   }
 
   logger.log('')
-  logger.log(`## Scan ${data.after.id}`)
+  logger.log(`## Scan ${afterScan.id}`)
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(data.after)) {
+  for (const { 0: key, 1: value } of Object.entries(afterScan)) {
     if (key === 'pull_request' && !value) {
       continue
     }
@@ -165,7 +166,7 @@ export async function handleMarkdown(
 }
 
 export async function outputDiffScan(
-  result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getDiffScanById'>['data']>,
   {
     depth,
     file,
@@ -189,7 +190,7 @@ export async function outputDiffScan(
     return
   }
 
-  const dashboardUrl = result.data.diff_report_url
+  const dashboardUrl = result.data.diff_scan.html_url
   const dashboardMessage = dashboardUrl
     ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`
     : ''

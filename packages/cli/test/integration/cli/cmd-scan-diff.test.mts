@@ -38,8 +38,7 @@ describe('socket scan diff', async () => {
                 $ socket scan diff [options] <SCAN_ID1> <SCAN_ID2>
           
               API Token Requirements
-                - Quota: 1 unit
-                - Permissions: full-scans:list
+                - Permissions: diff-scans:create, diff-scans:list, and full-scans:list
           
               This command displays the package changes between two scans. The full output
               can be pretty large depending on the size of your repo and time range. It is
