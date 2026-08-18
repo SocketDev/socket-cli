@@ -136,7 +136,21 @@ describe('hoistAdvisory', () => {
     expect(lines[0]!.suggestion).toContain('unsafe')
     expect(lines[0]!.suggestion).toContain('dropped Node 14 support')
     expect(lines[0]!.suggestion).toContain('assessed against registry README')
-    expect(lines[0]!.suggestion).toContain('odai modern')
+    // No model stamp on the released odai line: a meaningless label ('odai
+    // modern') does not print.
+    expect(lines[0]!.suggestion).not.toContain('odai modern')
+  })
+
+  it('labels the stamped model identity when odai provides it', async () => {
+    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
+    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nAll good.' })
+    assessMock.mockResolvedValue({
+      ok: true,
+      data: { breakingChanges: [], reason: '', verdict: 'safe' },
+      model: 'Gemini Nano',
+    })
+    const lines = await hoistAdvisory(dir)
+    expect(lines[0]!.suggestion).toContain('(odai Gemini Nano)')
   })
 
   it('prefers the installed CHANGELOG.md and labels it', async () => {

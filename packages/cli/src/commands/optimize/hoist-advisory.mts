@@ -233,12 +233,9 @@ export async function hoistAdvisory(
     // API, llama-server, apple-fm, windows-phi-silica, simulator) because
     // the weights behind them change.
     // Produces: `(odai Gemini Nano)` when odai stamps its identity (>=0.3);
-    // `(odai modern)` on the released line, where only the availability
-    // namespace exists.
-    const via =
-      verdict === undefined
-        ? ''
-        : ` (odai ${backend ?? availability.namespace})`
+    // NO label when nothing is stamped — the availability namespace
+    // ('modern') carries no identity, and a meaningless label does not print.
+    const via = backend === undefined ? '' : ` (odai ${backend})`
     let suggestion: string
     if (verdict !== undefined && verdict.verdict === 'safe') {
       suggestion =
