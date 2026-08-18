@@ -20,6 +20,9 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
 vi.mock(import('@socketsecurity/odai'), () => ({
   assessHoistSafety: assessMock,
   createOdaiModel: vi.fn(async () => ({})),
+  // Explicitly undefined: the advisory's feature detection falls back to
+  // its pacote/README path on the released odai line.
+  fetchChangelog: undefined,
   probeAvailability: probeMock,
 }))
 

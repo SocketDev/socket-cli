@@ -20,12 +20,47 @@ import { getMajor as getMajorVersion } from '../../util/semver.mts'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+import * as odai from '@socketsecurity/odai'
 import {
   assessHoistSafety,
   createOdaiModel,
   probeAvailability,
 } from '@socketsecurity/odai'
 import type { HoistAssessment } from '@socketsecurity/odai'
+
+/**
+ * Odai's changelog helper (odai >=0.3) with the pacote-README fallback for
+ * the released line. Same contract either way: text plus its provenance.
+ */
+async function changelogFor(
+  root: string,
+  name: string,
+  target: string,
+): Promise<{ source: string; text: string }> {
+  const helper = (odai as Record<string, unknown>)['fetchChangelog']
+  if (typeof helper === 'function') {
+    const result = await (
+      helper as (
+        name: string,
+        options?: { root?: string; version?: string },
+      ) => Promise<{ source: string; text: string }>
+    )(name, { root, version: target })
+    return result.source === 'none' ? { source: 'none', text: '' } : result
+  }
+  const local = findLocalChangelog(root, name)
+  if (local !== undefined) {
+    return { source: 'CHANGELOG.md', text: local }
+  }
+  const manifest = await fetchPackageManifest(`${name}@${target}`)
+  const text =
+    typeof manifest?.['readme'] === 'string'
+      ? (manifest['readme'] as string).slice(0, 8000)
+      : ''
+  return {
+    source: text.length > 0 ? 'registry README' : 'none',
+    text,
+  }
+}
 
 export type HoistDuplicate = {
   name: string
@@ -55,7 +90,8 @@ export async function findCrossMajorDuplicates(
   }
   const content = await safeReadFile(lockPath, { encoding: 'utf8' })
   const versionsByName = new Map<string, Set<string>>()
-  const keyRe = /^\s{2}(?:'|")?((?:@[a-z0-9-]+\/)?[a-z0-9._-]+)@(\d+\.\d+\.\d+(?:[-+][^'"\s]*)?)(?:'|")?\s*:/gim
+  const keyRe =
+    /^\s{2}(?:'|")?((?:@[a-z0-9-]+\/)?[a-z0-9._-]+)@(\d+\.\d+\.\d+(?:[-+][^'"\s]*)?)(?:'|")?\s*:/gim
   for (const match of content.matchAll(keyRe)) {
     const [, name, version] = match as unknown as [string, string, string]
     let versions = versionsByName.get(name)
@@ -159,29 +195,18 @@ export async function hoistAdvisory(
     const target = duplicate.versions.find(
       v => getMajorVersion(v) === duplicate.majors[duplicate.majors.length - 1],
     )!
-    // Changelog source, strongest first: the installed package's own
-    // CHANGELOG.md beats the registry README, which mixes marketing with
-    // release notes. The source is LABELED in the output so a verdict's
-    // provenance is never invisible.
-    const localChangelog = findLocalChangelog(root, duplicate.name)
-    let changelog: string
-    let source: string
-    if (localChangelog !== undefined) {
-      changelog = localChangelog
-      source = 'CHANGELOG.md'
-    } else {
-      const manifest = await fetchPackageManifest(
-        `${duplicate.name}@${target}`,
-      )
-      changelog =
-        typeof manifest?.['readme'] === 'string'
-          ? (manifest['readme'] as string).slice(0, 8000)
-          : ''
-      source = 'registry README'
-    }
+    // Changelog source via odai's provenance helper (registry README when
+    // the released odai predates it). The source is LABELED in the output so
+    // a verdict's provenance is never invisible.
+    const { source, text: changelog } = await changelogFor(
+      root,
+      duplicate.name,
+      target,
+    )
 
     let verdict: HoistAssessment | undefined
     let assessFailed = false
+    let backend: string | undefined
     if (changelog.length > 0) {
       try {
         const result = await assessHoistSafety(model, {
@@ -192,6 +217,7 @@ export async function hoistAdvisory(
         })
         if (result.ok && result.data !== undefined) {
           verdict = result.data
+          backend = result.model
         } else {
           assessFailed = true
         }
@@ -200,7 +226,18 @@ export async function hoistAdvisory(
       }
     }
 
-    const via = verdict === undefined ? '' : ` (odai ${availability.namespace})`
+    // The backend label appended to odai verdicts. Backend is the runtime
+    // that hosts the model (chrome-builtin = Chrome's Prompt API,
+    // llama-server, apple-fm, windows-phi-silica, simulator), NOT the model
+    // weights (Gemini Nano today, Gemma 4 later) — odai names backends by
+    // interface because the weights behind them change.
+    // Produces: `(odai chrome-builtin)` when odai stamps its identity
+    // (>=0.3); `(odai modern)` on the released line, where only the
+    // availability namespace exists.
+    const via =
+      verdict === undefined
+        ? ''
+        : ` (odai ${backend ?? availability.namespace})`
     let suggestion: string
     if (verdict !== undefined && verdict.verdict === 'safe') {
       suggestion =
@@ -211,7 +248,11 @@ export async function hoistAdvisory(
       const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
       suggestion =
         `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
-        (reasons ? ` (${reasons})` : verdict.reason ? ` (${verdict.reason})` : '') +
+        (reasons
+          ? ` (${reasons})`
+          : verdict.reason
+            ? ` (${verdict.reason})`
+            : '') +
         ` (assessed against ${source}${via})`
     } else if (changelog.length > 0 && assessFailed) {
       suggestion =
