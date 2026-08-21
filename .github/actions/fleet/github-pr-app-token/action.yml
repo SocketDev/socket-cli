@@ -47,4 +47,5 @@ runs:
         OWNER: ${{ inputs.owner || github.repository_owner }}
         PERMISSIONS: '{"contents":"write","issues":"write","pull_requests":"write"}'
         REPOSITORIES: ${{ inputs.repositories }}
-      run: node "${{ github.action_path }}/mint-app-installation-token.mjs"
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+      run: node "${GITHUB_ACTION_PATH}/mint-app-installation-token.mjs"

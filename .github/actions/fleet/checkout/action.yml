@@ -197,7 +197,19 @@ runs:
         set -euo pipefail
         DEST="${CHECKOUT_DEST:-.}"
         cd "${DEST}"
-        if ! node scripts/repo/bootstrap/fleet.mjs; then
+        # The PRODUCER hydrates from its own template/base; only a consumer
+        # fetches a release bundle. Both reach this step, because the payload is
+        # untracked in either case, so the branch is on which tree is present.
+        # Without it the wheelhouse's own jobs took the consumer path and died
+        # on "no --ref and no bundle.ref" - correct for a member, meaningless in
+        # the repo that PUBLISHES the bundle, which has no ref of its own to
+        # pin. Mirrors materializeFromLocalTemplate, which returns undefined
+        # exactly when template/base is absent.
+        HYDRATE_ARGS=()
+        if [ -d template/base ]; then
+          HYDRATE_ARGS+=(--from-template)
+        fi
+        if ! node scripts/repo/bootstrap/fleet.mjs "${HYDRATE_ARGS[@]+"${HYDRATE_ARGS[@]}"}"; then
           echo "::error title=fleet payload hydration failed::node scripts/repo/bootstrap/fleet.mjs exited non-zero"
           {
             echo "  What:   the thin fleet payload fetch failed on a fresh checkout."
@@ -205,7 +217,7 @@ runs:
             echo "  Saw:    a non-zero exit — see this step's own output above for the reason"
             echo "          (bundle.ref unpinned, GHCR pull AND the gh-release fallback both"
             echo "          failed, or a bundle-verification mismatch)."
-            echo "  Fix:    confirm .config/repo/socket-wheelhouse.json carries a valid"
+            echo "  Fix:    in a MEMBER, confirm .config/repo/socket-wheelhouse.json carries a valid"
             echo "          bundle.ref, that ghcr.io/socketdev/socket-wheelhouse/fleet-pack is"
             echo "          reachable, and — if GHCR is down — that payload-token-client-id /"
             echo "          payload-token-private-key are wired through to this action."
@@ -333,7 +345,7 @@ runs:
       run: |
         if [ -d .github ]; then
           # Pass --gh-token only when a token is actually present. In a local
-          # agent-ci run github.token is empty, and zizmor 1.25+ treats an empty
+          # local-ci run github.token is empty, and zizmor 1.25+ treats an empty
           # `--gh-token ""` as a real token, then fatally errors ("no audit was
           # performed") when its online impostor-commit check can't reach the
           # GitHub API. Omitting the flag makes zizmor skip its online audits

@@ -104,16 +104,16 @@ jobs:
       # user-data-dir is Chrome litter (GPU/code caches, crashpad) that would
       # grow the entry on every weekly refill without bounding benefit.
       - name: Restore any prior model profile
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-        with:
-          path: |
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
-            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
-            /home/runner/.cache/odai/chrome-builtin/Local State
-          key: odai-nano-Linux-x64-fill-anchor
-          restore-keys: |
-            odai-nano-Linux-x64-
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/fleet/cache/restore.mts \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store" \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/Local State" \
+            --key "odai-nano-Linux-x64-fill-anchor" \
+            --restore-key "odai-nano-Linux-x64-"
 
       - name: Build the CLI
         shell: bash
@@ -173,14 +173,17 @@ jobs:
           echo "component version: ${VERSION}"
 
       - name: Save the profile cache
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-        with:
-          path: |
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
-            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
-            /home/runner/.cache/odai/chrome-builtin/Local State
-          key: ${{ steps.component.outputs.cache-key }}
+        shell: bash
+        env:
+          CACHE_KEY: ${{ steps.component.outputs.cache-key }}
+        run: |
+          set -euo pipefail
+          node scripts/fleet/cache/save.mts \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store" \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/Local State" \
+            --key "$CACHE_KEY"
 
   verify:
     name: 🧊 Offline verify on a fresh runner
@@ -243,15 +246,18 @@ jobs:
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
 
       - name: Restore the filled profile (miss = failure)
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-        with:
-          path: |
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel
-            /home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store
-            /home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel
-            /home/runner/.cache/odai/chrome-builtin/Local State
-          key: ${{ needs.fill.outputs.cache-key }}
-          fail-on-cache-miss: true
+        shell: bash
+        env:
+          CACHE_KEY: ${{ needs.fill.outputs.cache-key }}
+        run: |
+          set -euo pipefail
+          node scripts/fleet/cache/restore.mts \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/optimization_guide_model_store" \
+            --path "/home/runner/.cache/odai/chrome-builtin/OptGuideOnDeviceClassifierModel" \
+            --path "/home/runner/.cache/odai/chrome-builtin/Local State" \
+            --key "$CACHE_KEY" \
+            --fail-on-miss
 
       - name: Build the CLI
         shell: bash

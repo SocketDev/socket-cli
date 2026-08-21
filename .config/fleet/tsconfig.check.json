@@ -1,5 +1,6 @@
 {
-  "extends": "./tsconfig.check.base.json",
+  "//": "The repo half comes last so a member's own compilerOptions win. Path aliases live there: without it the type gate resolved none of a member's src/external/* mappings, because the root tsconfig is a sibling of this chain rather than an ancestor.",
+  "extends": ["./tsconfig.check.base.json", "../repo/tsconfig.check.json"],
   "compilerOptions": {
     "rootDir": "../.."
   },
@@ -10,6 +11,7 @@
     "../../.config/fleet/markdownlint-rules/**/*.mts",
     "../../.config/fleet/oxlint-plugin/**/*.mts",
     "../../.config/fleet/rolldown/**/*.mts",
+    "../../src/**/*.d.ts",
     "../../test/**/*.mts"
   ],
   "exclude": [

@@ -42,7 +42,8 @@ runs:
       # Empty for a non-thin member, where that fetch no-ops and needs no token.
       env:
         GH_TOKEN: ${{ inputs.fleet-payload-token }}
-      run: |
+        FROZEN_LOCKFILE: ${{ inputs.frozen-lockfile }}
+      run: | # zizmor: ignore[github-env]
         if [ -z "$SFW_BIN" ] || [ ! -x "$SFW_BIN" ]; then
           echo "Error: sfw is not installed — run the setup-and-install action first" >&2
           exit 1
@@ -53,7 +54,22 @@ runs:
         # 1` with no clue what broke. The default reporter is verbose
         # but at least surfaces the cause; CI's `set -e` will still
         # exit on non-zero.
-        pnpm install ${{ inputs.frozen-lockfile == 'true' && '--frozen-lockfile' || '' }}
+        # frozen-lockfile is env-mapped (never interpolated into the run
+        # body — zizmor template-injection shape); branch on $FROZEN_LOCKFILE.
+        # Both directions are passed EXPLICITLY. pnpm turns frozen-lockfile ON
+        # by itself when CI=true, so omitting the flag is not "off" - it is
+        # "on", and the input then cannot express what it claims. That bites a
+        # repo whose fleet mirrors arrive during the `prepare` lifecycle: at the
+        # frozen CHECK the live mirror workspace projects do not exist yet, so
+        # the lockfile's importer set cannot match
+        # (ERR_PNPM_LOCKFILE_CONFIG_MISMATCH). Measured: a pristine wheelhouse
+        # clone is missing 258 of its 514 lockfile importers until hydration
+        # runs.
+        if [ "$FROZEN_LOCKFILE" = 'true' ]; then
+          pnpm install --frozen-lockfile
+        else
+          pnpm install --no-frozen-lockfile
+        fi
 
     - name: Verify @socketsecurity/lib resolvable and >= floor version
       shell: bash

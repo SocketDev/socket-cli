@@ -1,0 +1,4 @@
+{
+  "//": "Member-owned half of the type-check config. .config/fleet/tsconfig.check.json extends this LAST, so anything declared here wins over the fleet defaults. Its main job is compilerOptions.paths: a member's package aliases resolve for `pnpm run type` only when they are declared here, because the root tsconfig.json is a sibling of the check chain rather than an ancestor. Paths are relative to THIS file, so a src/ wrapper reads ../../src/external/<name>. Seeded empty and extended unconditionally, so leave the file in place even with nothing in it.",
+  "compilerOptions": {}
+}

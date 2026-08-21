@@ -20,7 +20,7 @@
     "check": "node scripts/fleet/check.mts",
     "check:all": "node scripts/fleet/check.mts --all",
     "check:paths": "node scripts/fleet/check/paths-are-canonical.mts",
-    "ci:local": "node scripts/fleet/agent-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
+    "ci:local": "node scripts/fleet/local-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
     "claude": "pnpm --filter @socketsecurity/cli run claude --",
     "clean": "node scripts/fleet/clean.mts",
     "clean:cache": "node scripts/repo/clean-cache.mts",
@@ -94,7 +94,8 @@
     "gh:auth": "node scripts/fleet/gh-auth.mts",
     "offload:model": "node scripts/fleet/offload-model.mts",
     "setup:fireconnect": "node scripts/fleet/setup/fireconnect.mts",
-    "setup:offload-providers": "node scripts/fleet/setup/offload-providers.mts"
+    "setup:offload-providers": "node scripts/fleet/setup/offload-providers.mts",
+    "backup": "node scripts/fleet/backup-work.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -119,7 +120,6 @@
     "@pnpm/lockfile.detect-dep-types": "catalog:",
     "@pnpm/lockfile.fs": "catalog:",
     "@pnpm/logger": "catalog:",
-    "@redwoodjs/agent-ci": "catalog:",
     "@shadscan/cli": "catalog:",
     "@sinclair/typebox": "catalog:",
     "@socketregistry/hyrious__bun.lockb": "catalog:",
@@ -149,6 +149,7 @@
     "@types/which": "catalog:",
     "@types/yargs-parser": "catalog:",
     "@typescript/native-preview": "catalog:",
+    "@ultrathink/acorn.rs.wasm": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
     "browserslist": "catalog:",
@@ -191,6 +192,7 @@
     "postject": "catalog:",
     "regjsparser": "catalog:",
     "rolldown": "catalog:",
+    "run-local-ci": "catalog:",
     "semver": "catalog:",
     "shell-quote": "catalog:",
     "ssri": "catalog:",
