@@ -7,6 +7,7 @@ import {
   checkSfwWrap,
   checkWorkflowSocket,
 } from '../../../../src/commands/doctor/practice-checks.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 describe('practice checks', () => {
   let dir: string
@@ -15,8 +16,8 @@ describe('practice checks', () => {
     dir = mkdtempSync(path.join(os.tmpdir(), 'practice-checks-'))
   })
 
-  afterEach(() => {
-    rmSync(dir, { force: true, recursive: true })
+  afterEach(async () => {
+    await safeDelete(dir)
   })
 
   function write(rel: string, content: string) {
@@ -61,15 +62,22 @@ describe('practice checks', () => {
   it('ignores comment lines and non-install commands', () => {
     write(
       '.github/workflows/ci.yml',
-      ['# npm install is what we avoid here', 'jobs:', '  test:', '    steps:', '      - run: pnpm test'].join(
-        '\n',
-      ),
+      [
+        '# npm install is what we avoid here',
+        'jobs:',
+        '  test:',
+        '    steps:',
+        '      - run: pnpm test',
+      ].join('\n'),
     )
     expect(checkSfwWrap(dir)).toEqual([])
   })
 
   it('flags a workflow set with no Socket anywhere', () => {
-    write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - run: pnpm test')
+    write(
+      '.github/workflows/ci.yml',
+      'jobs:\n  test:\n    steps:\n      - run: pnpm test',
+    )
     const violations = checkWorkflowSocket(dir)
     expect(violations).toHaveLength(1)
     expect(violations[0]?.practice).toBe('workflows')
@@ -84,7 +92,10 @@ describe('practice checks', () => {
   })
 
   it('passes when a workflow step is sfw-wrapped', () => {
-    write('.github/workflows/ci.yml', 'jobs:\n  test:\n    steps:\n      - run: sfw npm install')
+    write(
+      '.github/workflows/ci.yml',
+      'jobs:\n  test:\n    steps:\n      - run: sfw npm install',
+    )
     expect(checkWorkflowSocket(dir)).toEqual([])
     expect(checkSfwWrap(dir)).toEqual([])
   })

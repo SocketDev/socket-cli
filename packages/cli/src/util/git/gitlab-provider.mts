@@ -82,7 +82,7 @@ export class GitLabProvider implements PrProvider {
 
         // Don't retry on validation errors (400).
         if (
-          e &&
+          e !== null &&
           typeof e === 'object' &&
           'cause' in e &&
           e.cause &&
@@ -91,7 +91,7 @@ export class GitLabProvider implements PrProvider {
         ) {
           const { response } = e.cause
           if (
-            response &&
+            response !== null &&
             typeof response === 'object' &&
             'status' in response &&
             response.status === 400

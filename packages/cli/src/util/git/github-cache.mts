@@ -88,7 +88,7 @@ export async function readCache(
   try {
     const entry = await readJson(cacheJsonPath)
     // Handle both new format, with timestamp, and legacy format (without).
-    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+    if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
       const { data, timestamp } = entry
       /* c8 ignore start - cache fresh-hit + legacy-format branches; tests pre-populate cache files in only one format */
       if (typeof timestamp === 'number' && data !== undefined) {

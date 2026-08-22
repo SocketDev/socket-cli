@@ -23,7 +23,7 @@ export type SyncOriginMainResult = {
   synced: boolean
 }
 
-function skip(reason: string): SyncOriginMainResult {
+export function skip(reason: string): SyncOriginMainResult {
   return { ok: true, reason, synced: false }
 }
 

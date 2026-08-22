@@ -36,7 +36,7 @@ export async function outputLicensePolicy(
     ({ 0: key, 1: value }) =>
       [
         key,
-        value &&
+        value !== null &&
         typeof value === 'object' &&
         'allowed' in value &&
         value.allowed

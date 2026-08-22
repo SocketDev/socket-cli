@@ -23,19 +23,6 @@ helpFlags.add(FLAG_HELP)
 helpFlags.add('-h')
 
 /**
- * Convert flag values to array format for processing.
- */
-export function cmdFlagValueToArray(value: unknown): string[] {
-  if (typeof value === 'string') {
-    return value.trim().split(/, */).filter(Boolean)
-  }
-  if (Array.isArray(value)) {
-    return value.flatMap(cmdFlagValueToArray)
-  }
-  return []
-}
-
-/**
  * Convert command arguments to a properly formatted string representation.
  */
 export function cmdFlagsToString(args: string[] | readonly string[]): string {
@@ -57,6 +44,19 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
     }
   }
   return result.join(' ')
+}
+
+/**
+ * Convert flag values to array format for processing.
+ */
+export function cmdFlagValueToArray(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return value.trim().split(/, */).filter(Boolean)
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap(cmdFlagValueToArray)
+  }
+  return []
 }
 
 /**

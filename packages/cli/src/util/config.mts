@@ -232,7 +232,7 @@ export function getConfigValues(retryCount = 0): LocalConfig {
             }
             const parsed = JSON.parse(decoded)
             // Only copy supported config keys to prevent prototype pollution.
-            if (parsed && typeof parsed === 'object') {
+            if (parsed !== null && typeof parsed === 'object') {
               const keys = Object.keys(parsed)
               for (let i = 0, { length } = keys; i < length; i += 1) {
                 const key = keys[i]!

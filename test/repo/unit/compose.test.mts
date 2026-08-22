@@ -43,7 +43,10 @@ describe('promoteChangelogUnreleasedSection', () => {
       '- Updated the Coana CLI.',
       '',
     ].join('\n')
-    const promoted = promoteChangelogUnreleasedSection(changelog, versionHeading)
+    const promoted = promoteChangelogUnreleasedSection(
+      changelog,
+      versionHeading,
+    )
     expect(promoted).toBeDefined()
     expect(promoted!.section).toContain(
       '```md\n## [9.9.9](https://example.com) - 2020-01-01\n```',
@@ -82,9 +85,9 @@ describe('changelogSectionHasEntries', () => {
   })
 
   it('does not count a bullet lookalike inside a fence', () => {
-    expect(
-      changelogSectionHasEntries('```sh\n- fenced output\n```'),
-    ).toBe(false)
+    expect(changelogSectionHasEntries('```sh\n- fenced output\n```')).toBe(
+      false,
+    )
   })
 })
 

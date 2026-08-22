@@ -2,11 +2,11 @@
  * Practice checks for the doctor command: the enforcement twin of the
  * skills' guidance, run without an agent present.
  *
- * - workflows: a repo with CI should run Socket in it (the Socket action, a
+ * - Workflows: a repo with CI should run Socket in it (the Socket action, a
  *   Socket CLI call, or an sfw-wrapped install somewhere).
- * - sfw: every package-manager install invocation is sfw-wrapped, in
- *   package.json scripts and in workflows alike. A bare `npm install` is
- *   where the malicious package lands.
+ * - Sfw: every package-manager install invocation is sfw-wrapped, in package.json
+ *   scripts and in workflows alike. A bare `npm install` is where the malicious
+ *   package lands.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
@@ -22,12 +22,12 @@ export type PracticeViolation = {
 const WORKFLOW_SOCKET_RE =
   /SocketDev\/action|socket\.dev\/action|@socketsecurity|\bsfw\b|socket scan|socket run|socket firewall/i
 
+// ^\s*-?\s*          — optional YAML list-item dash, e.g. a workflow `run:` step
+// (?:run:\s*)?       — optional YAML `run:` key
+// (?:sudo\s+)?       — optional sudo prefix
+// (?:npm ci|...)     — the bare install command itself
 const BARE_INSTALL_RE =
-  /^\s*-?\s*(?:run:\s*)?(?:sudo\s+)?(npm ci|npm install|pnpm install|pnpm i|yarn install|yarn add|pip install|uv pip install|cargo fetch|cargo install)\b/
-
-function isSfwWrapped(line: string): boolean {
-  return /\bsfw\b/.test(line)
-}
+  /^\s*-?\s*(?:run:\s*)?(?:sudo\s+)?(?:npm ci|npm install|pnpm install|pnpm i|yarn install|yarn add|pip install|uv pip install|cargo fetch|cargo install)\b/
 
 /**
  * Every bare package-manager install in package.json scripts and
@@ -37,7 +37,7 @@ function isSfwWrapped(line: string): boolean {
 export function checkSfwWrap(root: string): PracticeViolation[] {
   const violations: PracticeViolation[] = []
   const scanLines = (rel: string, content: string) => {
-    const lines = content.split('\n')
+    const lines = content.split(/\r?\n/)
     for (let i = 0, { length } = lines; i < length; i += 1) {
       const line = lines[i]!
       const trimmed = line.trimStart()
@@ -80,7 +80,7 @@ export function checkSfwWrap(root: string): PracticeViolation[] {
   const workflowsDir = path.join(root, '.github', 'workflows')
   if (existsSync(workflowsDir)) {
     for (const file of readdirSync(workflowsDir)) {
-      if (!/\.(yml|yaml)$/.test(file)) {
+      if (!/\.(?:yaml|yml)$/.test(file)) {
         continue
       }
       const rel = path.join('.github', 'workflows', file)
@@ -100,7 +100,7 @@ export function checkWorkflowSocket(root: string): PracticeViolation[] {
   if (!existsSync(workflowsDir)) {
     return []
   }
-  const files = readdirSync(workflowsDir).filter(f => /\.(yml|yaml)$/.test(f))
+  const files = readdirSync(workflowsDir).filter(f => /\.(?:yaml|yml)$/.test(f))
   if (files.length === 0) {
     return []
   }
@@ -119,4 +119,8 @@ export function checkWorkflowSocket(root: string): PracticeViolation[] {
           text: 'no workflow runs Socket (SocketDev/action, socket CLI, or sfw)',
         },
       ]
+}
+
+export function isSfwWrapped(line: string): boolean {
+  return /\bsfw\b/.test(line)
 }

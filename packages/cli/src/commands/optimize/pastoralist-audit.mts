@@ -1,7 +1,8 @@
 /**
  * Pastoralist override audit for the optimize command. Runs pastoralist's
  * update pipeline against the project so stale package-manager overrides get
- * the review record (and pruning) pastoralist maintains, before socket's own
+ * the review record (and pruning) pastoralist maintains, before socket's own.
+ *
  * @socketregistry overrides are applied.
  *
  * Key Functions: - runPastoralistAudit: spawn the pinned pastoralist bin

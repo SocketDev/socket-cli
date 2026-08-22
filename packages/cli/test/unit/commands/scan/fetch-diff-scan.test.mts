@@ -17,9 +17,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+import { setupSdkSetupFailure } from '../../../helpers/sdk-test-helpers.mts'
 import { fetchDiffScan } from '../../../../src/commands/scan/fetch-diff-scan.mts'
 
 import type * as ApiModule from '../../../../src/util/socket/api.mts'
@@ -81,12 +79,12 @@ function createMockDiffScanData(overrides = {}) {
         repository_id: 'repo-1',
         repository_slug: 'test-repo',
         branch: 'main',
-        commit_message: null,
-        commit_hash: null,
-        pull_request: null,
+        commit_message: undefined,
+        commit_hash: undefined,
+        pull_request: undefined,
         committers: [],
-        html_url: null,
-        api_url: null,
+        html_url: undefined,
+        api_url: undefined,
       },
       after_full_scan: {
         id: 'scan-after',
@@ -97,18 +95,18 @@ function createMockDiffScanData(overrides = {}) {
         repository_id: 'repo-1',
         repository_slug: 'test-repo',
         branch: 'feature',
-        commit_message: null,
-        commit_hash: null,
-        pull_request: null,
+        commit_message: undefined,
+        commit_hash: undefined,
+        pull_request: undefined,
         committers: [],
-        html_url: null,
-        api_url: null,
+        html_url: undefined,
+        api_url: undefined,
       },
-      description: null,
-      external_href: null,
+      description: undefined,
+      external_href: undefined,
       merge: false,
       html_url: 'https://socket.dev/diff/123',
-      api_url: null,
+      api_url: undefined,
       incomplete: false,
       artifacts: {
         added: [],
@@ -286,7 +284,10 @@ describe('fetchDiffScan', () => {
     }
 
     setupSdk.mockResolvedValue({ ok: true, data: mockSdk })
-    handleApiCall.mockResolvedValue({ ok: true, data: createMockDiffScanData() })
+    handleApiCall.mockResolvedValue({
+      ok: true,
+      data: createMockDiffScanData(),
+    })
 
     const testCases = [
       'org-with-dashes',
@@ -361,6 +362,7 @@ describe('fetchDiffScan', () => {
     expect(mockSdk.createOrgDiffScanFromIds).toHaveBeenCalledWith('test-org', {
       before: 'same-scan-id',
       after: 'same-scan-id',
+      on_duplicate: 'redirect',
     })
   })
 

@@ -43,8 +43,7 @@ export function withToolLogging(
       const result = await handler(args, extra, context)
       // An auth-required result is a denial, not a generic failure.
       const isDenied =
-        result.isError &&
-        result.content.some(c => c.text === AUTH_REQUIRED_MSG)
+        result.isError && result.content.some(c => c.text === AUTH_REQUIRED_MSG)
       const status: 'success' | 'failure' | 'denied' = isDenied
         ? 'denied'
         : result.isError

@@ -79,6 +79,10 @@
     "wasm:build": "node scripts/wasm.mts --build",
     "wasm:download": "node scripts/wasm.mts --download"
   },
+  "dependencies": {
+    "@socketsecurity/odai": "0.2.1",
+    "pastoralist": "1.13.0"
+  },
   "devDependencies": {
     "@babel/generator": "catalog:",
     "@babel/parser": "catalog:",
@@ -196,9 +200,5 @@
   },
   "contentPolicy": {
     "class": "dual-use"
-  },
-  "dependencies": {
-    "@socketsecurity/odai": "0.2.1",
-    "pastoralist": "1.13.0"
   }
 }

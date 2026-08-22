@@ -154,7 +154,7 @@ export async function injectSeaBlob(
   const result = await spawn(binjectPath, args, { env, stdio: 'inherit' })
 
   if (
-    result &&
+    result !== null &&
     typeof result === 'object' &&
     'code' in result &&
     result.code !== 0

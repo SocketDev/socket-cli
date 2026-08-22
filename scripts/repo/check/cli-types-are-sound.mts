@@ -42,14 +42,14 @@ export async function main(): Promise<void> {
   } catch (e) {
     // The lib spawn rejection carries the child's captured stdio.
     const stdout =
-      e &&
+      e !== null &&
       typeof e === 'object' &&
       'stdout' in e &&
       typeof e.stdout === 'string'
         ? e.stdout
         : ''
     const stderr =
-      e &&
+      e !== null &&
       typeof e === 'object' &&
       'stderr' in e &&
       typeof e.stderr === 'string'

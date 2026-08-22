@@ -14,31 +14,46 @@
  */
 
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs'
-import { createHash, randomUUID } from 'node:crypto'
-import { homedir } from 'node:os'
+import crypto from 'node:crypto'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { errorMessage } from '@socketsecurity/lib/errors/message'
 
 /**
  * One audit event. The shape is stable so a SIEM or export consumer can parse
  * it without per-version logic.
  */
 export interface AuditEntry {
-  /** ISO 8601 timestamp of the event. */
+  /**
+   * ISO 8601 timestamp of the event.
+   */
   readonly timestamp: string
-  /** The authenticated identity (a token hash, or `operator` for stdio). */
+  /**
+   * The authenticated identity (a token hash, or `operator` for stdio).
+   */
   readonly identity: string
-  /** A per-call request identifier (UUID v4). */
+  /**
+   * A per-call request identifier (UUID v4).
+   */
   readonly requestId: string
-  /** The MCP tool name. */
+  /**
+   * The MCP tool name.
+   */
   readonly tool: string
-  /** `success`, `failure`, or `denied`. */
+  /**
+   * `success`, `failure`, or `denied`.
+   */
   readonly status: 'success' | 'failure' | 'denied'
-  /** Target resources the tool touched (org slugs, PURLs, etc.), best-effort. */
+  /**
+   * Target resources the tool touched (org slugs, PURLs, etc.), best-effort.
+   */
   readonly resources: readonly string[]
-  /** The input arguments with sensitive keys masked. */
+  /**
+   * The input arguments with sensitive keys masked.
+   */
   readonly args: Record<string, unknown>
 }
 
@@ -58,82 +73,15 @@ const SENSITIVE_KEY_PATTERNS = [
 const REDACTED = '***REDACTED***'
 
 /**
- * Mask sensitive values in an argument record. A key matching any sensitive
- * pattern (case-insensitive substring) has its value replaced with
- * `***REDACTED***`. Nested objects are masked recursively. Pure.
- */
-export function maskArgs(
-  args: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  for (const key of Object.keys(args)) {
-    const lower = key.toLowerCase()
-    const value = args[key]
-    if (SENSITIVE_KEY_PATTERNS.some(p => lower.includes(p))) {
-      out[key] = REDACTED
-    } else if (
-      value !== null &&
-      typeof value === 'object' &&
-      !Array.isArray(value)
-    ) {
-      out[key] = maskArgs(value as Record<string, unknown>)
-    } else {
-      out[key] = value
-    }
-  }
-  return out
-}
-
-/**
- * A short, stable hash of a bearer token for the `identity` field. SHA-256 of
- * the token, truncated to 16 hex chars. The raw token is never logged.
- */
-export function tokenIdentity(token: string | undefined): string {
-  if (!token) {
-    return 'operator'
-  }
-  return 'sha256:' + createHash('sha256').update(token).digest('hex').slice(0, 16)
-}
-
-/**
- * Best-effort extraction of target resource identifiers from the arguments.
- * Picks common resource fields (org, organization, ecosystem, depname,
- * version, purl) so the audit entry names what the tool touched.
- */
-export function extractResources(
-  args: Record<string, unknown>,
-): string[] {
-  const out: string[] = []
-  const org = args['org'] ?? args['organization']
-  if (typeof org === 'string' && org) {
-    out.push(`org:${org}`)
-  }
-  const ecosystem = args['ecosystem']
-  const depname = args['depname'] ?? args['name']
-  const version = args['version']
-  if (typeof ecosystem === 'string' && typeof depname === 'string') {
-    out.push(
-      `pkg:${ecosystem}/${depname}` +
-        (typeof version === 'string' ? `@${version}` : ''),
-    )
-  }
-  const purl = args['purl']
-  if (typeof purl === 'string' && purl) {
-    out.push(`purl:${purl}`)
-  }
-  return out
-}
-
-/**
  * Resolve the audit log file path. `SOCKET_MCP_AUDIT_LOG` env var overrides;
  * default is `~/.socket/mcp-audit.jsonl`.
  */
-function auditLogPath(): string {
+export function auditLogPath(): string {
   const override = process.env['SOCKET_MCP_AUDIT_LOG']
   if (override) {
     return override
   }
-  return path.join(homedir(), '.socket', 'mcp-audit.jsonl')
+  return path.join(os.homedir(), '.socket', 'mcp-audit.jsonl')
 }
 
 const auditLogger = getDefaultLogger()
@@ -156,15 +104,83 @@ export function emitAuditEvent(entry: AuditEntry): void {
   } catch (e) {
     // Non-fatal: the audit log is defense-in-depth, not a gate. A write
     // failure (disk full, permissions) must not break the tool call.
-    auditLogger.error(
-      `mcp audit log write failed: ${e instanceof Error ? e.message : String(e)}`,
+    auditLogger.error(`mcp audit log write failed: ${errorMessage(e)}`)
+  }
+}
+
+/**
+ * Best-effort extraction of target resource identifiers from the arguments.
+ * Picks common resource fields (org, organization, ecosystem, depname,
+ * version, purl) so the audit entry names what the tool touched.
+ */
+export function extractResources(args: Record<string, unknown>): string[] {
+  const out: string[] = []
+  const org = args['org'] ?? args['organization']
+  if (typeof org === 'string' && org) {
+    out.push(`org:${org}`)
+  }
+  const ecosystem = args['ecosystem']
+  const depname = args['depname'] ?? args['name']
+  const version = args['version']
+  if (typeof ecosystem === 'string' && typeof depname === 'string') {
+    out.push(
+      `pkg:${ecosystem}/${depname}` +
+        (typeof version === 'string' ? `@${version}` : ''),
     )
   }
+  const purl = args['purl']
+  if (typeof purl === 'string' && purl) {
+    out.push(`purl:${purl}`)
+  }
+  return out
+}
+
+/**
+ * Mask sensitive values in an argument record. A key matching any sensitive
+ * pattern (case-insensitive substring) has its value replaced with
+ * `***REDACTED***`. Nested objects are masked recursively. Pure.
+ */
+export function maskArgs(
+  args: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  const keys = Object.keys(args)
+  for (let i = 0, { length } = keys; i < length; i += 1) {
+    const key = keys[i]!
+    const lower = key.toLowerCase()
+    const value = args[key]
+    if (SENSITIVE_KEY_PATTERNS.some(p => lower.includes(p))) {
+      out[key] = REDACTED
+    } else if (
+      value !== null &&
+      typeof value === 'object' &&
+      !Array.isArray(value)
+    ) {
+      out[key] = maskArgs(value as Record<string, unknown>)
+    } else {
+      out[key] = value
+    }
+  }
+  return out
 }
 
 /**
  * Generate a per-call request identifier (UUID v4).
  */
 export function newRequestId(): string {
-  return randomUUID()
+  return crypto.randomUUID()
+}
+
+/**
+ * A short, stable hash of a bearer token for the `identity` field. SHA-256 of
+ * the token, truncated to 16 hex chars. The raw token is never logged.
+ */
+export function tokenIdentity(token: string | undefined): string {
+  if (!token) {
+    return 'operator'
+  }
+  return (
+    'sha256:' +
+    crypto.createHash('sha256').update(token).digest('hex').slice(0, 16)
+  )
 }

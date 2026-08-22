@@ -152,17 +152,6 @@ export function pathRelativeToTarget(
   return undefined
 }
 
-export function projectIgnorePathToReachExcludePaths(
-  ignorePath: string,
-  targetPattern: string,
-): string[] {
-  const reachPath = pathRelativeToTarget(ignorePath, targetPattern)
-  if (!reachPath) {
-    return []
-  }
-  return expandReachExcludePath(reachPath)
-}
-
 /**
  * Translates project-root projectIgnorePaths into Coana --exclude-dirs values,
  * which are interpreted relative to the current reachability analysis target.
@@ -191,6 +180,17 @@ export function projectIgnorePathsToReachExcludePaths(
   return paths.flatMap(ignorePath =>
     projectIgnorePathToReachExcludePaths(ignorePath, targetPattern),
   )
+}
+
+export function projectIgnorePathToReachExcludePaths(
+  ignorePath: string,
+  targetPattern: string,
+): string[] {
+  const reachPath = pathRelativeToTarget(ignorePath, targetPattern)
+  if (!reachPath) {
+    return []
+  }
+  return expandReachExcludePath(reachPath)
 }
 
 export function stripTrailingSlash(value: string): string {

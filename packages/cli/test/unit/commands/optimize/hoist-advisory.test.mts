@@ -7,6 +7,7 @@ import {
   findCrossMajorDuplicates,
   hoistAdvisory,
 } from '../../../../src/commands/optimize/hoist-advisory.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 const probeMock = vi.hoisted(() => vi.fn())
 const assessMock = vi.hoisted(() => vi.fn())
@@ -26,12 +27,9 @@ vi.mock(import('@socketsecurity/odai'), () => ({
   probeAvailability: probeMock,
 }))
 
-vi.mock(
-  import('@socketsecurity/lib-stable/packages/manifest'),
-  () => ({
-    fetchPackageManifest: manifestMock,
-  }),
-)
+vi.mock(import('@socketsecurity/lib-stable/packages/manifest'), () => ({
+  fetchPackageManifest: manifestMock,
+}))
 
 const LOCKFILE = `
 lockfileVersion: '9.0'
@@ -53,8 +51,8 @@ describe('findCrossMajorDuplicates', () => {
     dir = mkdtempSync(path.join(os.tmpdir(), 'hoist-advisory-'))
   })
 
-  afterEach(() => {
-    rmSync(dir, { force: true, recursive: true })
+  afterEach(async () => {
+    await safeDelete(dir)
   })
 
   it('finds packages present under two or more majors', async () => {
@@ -94,8 +92,8 @@ describe('hoistAdvisory', () => {
     )
   })
 
-  afterEach(() => {
-    rmSync(dir, { force: true, recursive: true })
+  afterEach(async () => {
+    await safeDelete(dir)
     vi.clearAllMocks()
   })
 
@@ -110,7 +108,9 @@ describe('hoistAdvisory', () => {
 
   it('gives a safe-to-unify suggestion when odai says safe', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nNothing scary.' })
+    manifestMock.mockResolvedValue({
+      readme: '# Changelog\n\n## 6.0.0\nNothing scary.',
+    })
     assessMock.mockResolvedValue({
       ok: true,
       data: { breakingChanges: [], reason: '', verdict: 'safe' },
@@ -123,7 +123,9 @@ describe('hoistAdvisory', () => {
 
   it('abstains when odai finds breaking changes', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nDropped Node 14.' })
+    manifestMock.mockResolvedValue({
+      readme: '# Changelog\n\n## 6.0.0\nDropped Node 14.',
+    })
     assessMock.mockResolvedValue({
       ok: true,
       data: {
@@ -143,7 +145,9 @@ describe('hoistAdvisory', () => {
 
   it('says the model is unknown when only the backend is known', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nAll good.' })
+    manifestMock.mockResolvedValue({
+      readme: '# Changelog\n\n## 6.0.0\nAll good.',
+    })
     assessMock.mockResolvedValue({
       ok: true,
       data: { breakingChanges: [], reason: '', verdict: 'safe' },
@@ -157,7 +161,9 @@ describe('hoistAdvisory', () => {
 
   it('labels the stamped model identity when odai provides it', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nAll good.' })
+    manifestMock.mockResolvedValue({
+      readme: '# Changelog\n\n## 6.0.0\nAll good.',
+    })
     assessMock.mockResolvedValue({
       ok: true,
       data: { breakingChanges: [], reason: '', verdict: 'safe' },
@@ -175,18 +181,27 @@ describe('hoistAdvisory', () => {
       data: { breakingChanges: [], reason: '', verdict: 'safe' },
     })
     const { mkdirSync } = await import('node:fs')
-    mkdirSync(path.join(dir, 'node_modules', 'ansi-styles'), { recursive: true })
-    writeFileSync(path.join(dir, 'node_modules', 'ansi-styles', 'CHANGELOG.md'), '# Changelog')
+    mkdirSync(path.join(dir, 'node_modules', 'ansi-styles'), {
+      recursive: true,
+    })
+    writeFileSync(
+      path.join(dir, 'node_modules', 'ansi-styles', 'CHANGELOG.md'),
+      '# Changelog',
+    )
     const lines = await hoistAdvisory(dir)
     expect(lines[0]!.suggestion).toContain('assessed against CHANGELOG.md')
   })
 
   it('says assessment failed when extraction errors on real text', async () => {
     probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# Changelog\n\n## 6.0.0\nLots here.' })
+    manifestMock.mockResolvedValue({
+      readme: '# Changelog\n\n## 6.0.0\nLots here.',
+    })
     assessMock.mockResolvedValue({ ok: false })
     const lines = await hoistAdvisory(dir)
-    expect(lines[0]!.suggestion).toContain('assessment failed against registry README')
+    expect(lines[0]!.suggestion).toContain(
+      'assessment failed against registry README',
+    )
     expect(lines[0]!.suggestion).toContain('review manually')
   })
 

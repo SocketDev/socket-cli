@@ -67,11 +67,11 @@ Later passes (not in the first chunk): trust-policy scaffolding
 
 ## Command map after the split
 
-| Command | Reads | Writes | Fails when |
-| --- | --- | --- | --- |
-| `socket doctor` | package manager, workspace yaml, lockfile | `minimumReleaseAge` in `pnpm-workspace.yaml` | policy unenforceable (non-pnpm) warns, exit 0 with notes |
-| `socket optimize` | deps, registry, bundler config | overrides, lockfile, advisory blocks | env invalid or install fails (existing) |
-| `socket fix` | CVE feed, tree | fix PRs/branches (existing) | unchanged |
+| Command           | Reads                                     | Writes                                       | Fails when                                               |
+| ----------------- | ----------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
+| `socket doctor`   | package manager, workspace yaml, lockfile | `minimumReleaseAge` in `pnpm-workspace.yaml` | policy unenforceable (non-pnpm) warns, exit 0 with notes |
+| `socket optimize` | deps, registry, bundler config            | overrides, lockfile, advisory blocks         | env invalid or install fails (existing)                  |
+| `socket fix`      | CVE feed, tree                            | fix PRs/branches (existing)                  | unchanged                                                |
 
 ## Tests
 

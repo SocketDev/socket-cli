@@ -80,7 +80,7 @@ export function waitForBootstrapHandshake(
 
       // Check if message has SOCKET_IPC_HANDSHAKE key.
       if (
-        message &&
+        message !== null &&
         typeof message === 'object' &&
         SOCKET_IPC_HANDSHAKE in message
       ) {
@@ -90,7 +90,7 @@ export function waitForBootstrapHandshake(
 
         // Validate bootstrap indicators are present.
         if (
-          ipcData &&
+          ipcData !== null &&
           typeof ipcData === 'object' &&
           ipcData['subprocess'] === true &&
           typeof ipcData['parent_pid'] === 'number'

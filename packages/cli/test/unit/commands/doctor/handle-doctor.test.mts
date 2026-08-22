@@ -46,7 +46,11 @@ vi.mock(import('../../../../src/commands/doctor/practice-checks.mts'), () => ({
 function pnpmEnv() {
   return {
     ok: true,
-    data: { agent: 'pnpm', agentVersion: { version: '11.19.0' }, pkgPath: '/repo' },
+    data: {
+      agent: 'pnpm',
+      agentVersion: { version: '11.19.0' },
+      pkgPath: '/repo',
+    },
   }
 }
 
@@ -65,7 +69,11 @@ describe('handleDoctor', () => {
   it('warns instead of silently passing on a non-pnpm agent', async () => {
     detectMock.mockResolvedValue({
       ok: true,
-      data: { agent: 'npm', agentVersion: { version: '12.0.0' }, pkgPath: '/repo' },
+      data: {
+        agent: 'npm',
+        agentVersion: { version: '12.0.0' },
+        pkgPath: '/repo',
+      },
     })
     await handleDoctor({ cwd: '.', outputKind: 'text' })
     expect(ensureMock).not.toHaveBeenCalled()
@@ -80,7 +88,9 @@ describe('handleDoctor', () => {
     await handleDoctor({ cwd: '.', outputKind: 'text' })
     expect(ensureMock).toHaveBeenCalledWith('/repo')
     expect(mockLogger.info).toHaveBeenCalledWith(
-      expect.stringContaining('soak-time: enforced at 7 days (minimumReleaseAge added'),
+      expect.stringContaining(
+        'soak-time: enforced at 7 days (minimumReleaseAge added',
+      ),
     )
   })
 
