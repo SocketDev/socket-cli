@@ -56,7 +56,6 @@
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "setup:brew": "node scripts/fleet/setup/brew.mts",
     "setup:go": "node scripts/fleet/setup/go.mts",
-    "setup:kimi-user-config": "node scripts/fleet/setup/kimi-user-config.mts",
     "setup:python": "node scripts/fleet/setup/python.mts",
     "setup:refero": "node scripts/fleet/setup/refero.mts",
     "setup:rust": "node scripts/fleet/setup/rust.mts",
