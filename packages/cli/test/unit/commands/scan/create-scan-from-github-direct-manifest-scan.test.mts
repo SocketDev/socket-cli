@@ -155,7 +155,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Not a file')
+        expect(result.cause).toContain('subdir')
       }
     })
 
@@ -177,7 +177,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Missing download URL')
+        expect(result.cause).toContain('package.json')
       }
     })
 
@@ -222,7 +222,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('No manifest files found')
+        expect(result.cause).toContain('org/r')
       }
     })
 
