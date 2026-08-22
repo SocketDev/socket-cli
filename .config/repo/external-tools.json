@@ -2,6 +2,30 @@
   "$schema": "https://raw.githubusercontent.com/SocketDev/socket-wheelhouse/main/packages/build-infra/lib/external-tools-schema.json",
   "description": "External tools required to build + release this repo. The canonical schema lives at socket-wheelhouse/packages/build-infra/lib/external-tools-schema.json (generated from scripts/fleet/lib/external-tools-schema.mts); every fleet repo references it via the $schema field above so validators pick up the single source of truth. Extend the `tools` map with repo-specific entries (e.g. language toolchains for sdxgen, git credential helpers for packageurl-js).",
   "tools": {
+    "gh": {
+      "description": "GitHub CLI — workflow dispatch, release downloads, PR creation in weekly-update; host for the gh-aw agentic-workflows extension.",
+      "version": "2.94.0",
+      "notes": [
+        "Required: only in workflows that call `gh api` / `gh pr create` (weekly-update, provenance)",
+        "Preinstalled on GitHub-hosted runners",
+        "Local: `brew install gh` / `winget install gh` / `apt install gh`",
+        "The gh-aw extension needs gh >= 2.0.0; the pinned version above is the current latest"
+      ],
+      "origin": "system"
+    },
+    "gh-aw": {
+      "description": "GitHub Agentic Workflows — `gh` extension that authors agentic workflows as `.github/workflows/<name>.md` (markdown + frontmatter) and compiles them to a hardened `<name>.lock.yml`. The fleet uses `engine: claude`.",
+      "version": "latest",
+      "repository": "github:github/gh-aw",
+      "notes": [
+        "Required: any repo with a `.github/workflows/*.md` agentic workflow",
+        "Install: `gh extension install github/gh-aw`; init a repo with `gh aw init`; compile after editing frontmatter with `gh aw compile` (commit BOTH the .md and the generated .lock.yml)",
+        "Engine secrets (set per repo, by engine): `ANTHROPIC_API_KEY` (claude), `COPILOT_GITHUB_TOKEN` (copilot — distinct from the default GITHUB_TOKEN; or use `permissions: copilot-requests: write` to bill the org via the Actions token, no PAT), `OPENAI_API_KEY` (codex), `GEMINI_API_KEY` (gemini)",
+        "`copilot-requests: write` is Copilot-engine-only — claude/codex/gemini need no GitHub permission beyond their API key",
+        "Any action a compiled .lock.yml references must be added to the repo's GitHub Actions allowlist (Settings → Actions → Allowed actions)"
+      ],
+      "origin": "system"
+    },
     "git": {
       "description": "Git CLI — checkout, submodule init, tag signing.",
       "version": "2.30+",
@@ -70,29 +94,87 @@
       },
       "origin": "gh-asset"
     },
-    "gh": {
-      "description": "GitHub CLI — workflow dispatch, release downloads, PR creation in weekly-update; host for the gh-aw agentic-workflows extension.",
-      "version": "2.94.0",
+    "sfw-enterprise": {
       "notes": [
-        "Required: only in workflows that call `gh api` / `gh pr create` (weekly-update, provenance)",
-        "Preinstalled on GitHub-hosted runners",
-        "Local: `brew install gh` / `winget install gh` / `apt install gh`",
-        "The gh-aw extension needs gh >= 2.0.0; the pinned version above is the current latest"
+        "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",
+        "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
       ],
-      "origin": "system"
+      "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
+      "version": "1.15.0",
+      "repository": "github:SocketDev/firewall-release",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-macos-arm64",
+          "integrity": "sha512-JmNdVTAULB0f+oRaNBFd3h0KdU1zP7e/ERGPppQdIHn2/CHROknyKndPzzkbGdKN/AIsSrSfW1c2v6v+eVc2Sw=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-macos-x86_64",
+          "integrity": "sha512-3+3IJI3EwV9WcwNwisXmzQn0x5ThLGJDR6b+B/tAn1dlqJcRRdYIqp4ZG/cy5xD04ewLqMAOncGc0qGswx7NRQ=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-linux-arm64",
+          "integrity": "sha512-owLh6ODQTwObU+mV8XToR/qoYvIlPtUJ2Vqzcwb7+bXER544pgt7nN5o+YllWZOSyTmzjNfLALrhONEb0FGt5A=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-musl-linux-arm64",
+          "integrity": "sha512-kcwkTTc2/YzYJv354GKWxIc6mhAGWZkuJKFpp2OrERw8YNM1eNzQLAhJgaGZoVGtXHnSe+h896GRnsUjbEinmA=="
+        },
+        "linux-x64": {
+          "asset": "sfw-linux-x86_64",
+          "integrity": "sha512-pPxU6AJDTHX4NDfX31rvmUiFNOob/s+kv3XvUaH7QQvpRfyPJEuuxzkPyOTgqgyf0RSePOedG7kRPijH4T/QLQ=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-musl-linux-x86_64",
+          "integrity": "sha512-N/b4w/zKYPYSy42D+8HgwieHs3JfGdFQvXHZhGJ2L4hi2QMJy5TVt3dHWQ7XYyxqvZQAOEQiwIR0pu9G1AwnKg=="
+        },
+        "win32-x64": {
+          "asset": "sfw-windows-x86_64.exe",
+          "integrity": "sha512-ag9R+AyD4PisdQFSEER06R3IyzSSwqZABFkhONd48ycB0oVTvX5imP//3aZ2j6DaQxCPj0ooSXo4lI8P5XS53g=="
+        }
+      },
+      "origin": "gh-asset"
     },
-    "gh-aw": {
-      "description": "GitHub Agentic Workflows — `gh` extension that authors agentic workflows as `.github/workflows/<name>.md` (markdown + frontmatter) and compiles them to a hardened `<name>.lock.yml`. The fleet uses `engine: claude`.",
-      "version": "latest",
-      "repository": "github:github/gh-aw",
+    "sfw-free": {
       "notes": [
-        "Required: any repo with a `.github/workflows/*.md` agentic workflow",
-        "Install: `gh extension install github/gh-aw`; init a repo with `gh aw init`; compile after editing frontmatter with `gh aw compile` (commit BOTH the .md and the generated .lock.yml)",
-        "Engine secrets (set per repo, by engine): `ANTHROPIC_API_KEY` (claude), `COPILOT_GITHUB_TOKEN` (copilot — distinct from the default GITHUB_TOKEN; or use `permissions: copilot-requests: write` to bill the org via the Actions token, no PAT), `OPENAI_API_KEY` (codex), `GEMINI_API_KEY` (gemini)",
-        "`copilot-requests: write` is Copilot-engine-only — claude/codex/gemini need no GitHub permission beyond their API key",
-        "Any action a compiled .lock.yml references must be added to the repo's GitHub Actions allowlist (Settings → Actions → Allowed actions)"
+        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. SFW is a required dependency of the install flow, so consumers on win-arm64 skip SFW-dependent steps until upstream support lands.",
+        "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
       ],
-      "origin": "system"
+      "description": "Socket Firewall (free tier) — package manager command wrapper",
+      "version": "1.15.0",
+      "repository": "github:SocketDev/sfw-free",
+      "binaryName": "sfw",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-free-macos-arm64",
+          "integrity": "sha512-gLeor4y8eeJeQBJ/pLhcsWXG+ntx0sCM6s/MrKtW1uANKjhOwiQBNR5Hw8d1gRhjRuW4R2cPENdjk121sOFQag=="
+        },
+        "darwin-x64": {
+          "asset": "sfw-free-macos-x86_64",
+          "integrity": "sha512-ZW7jS8+Tg0+ZRWzYbSIZ82LiehytQHNbmYQ3X8FeLJQmg8AY8denDCAIPtJ8+haKeX/7a3AIkpaC8jgBHwGv6Q=="
+        },
+        "linux-arm64": {
+          "asset": "sfw-free-linux-arm64",
+          "integrity": "sha512-BmdfsTfIJDigVv3ImnmZ+/Ktj54kYn8rhNIDJhFkp0X9VeNeJaFteLYrPYox2SQ3hq++qvLfbnPJnuCDRCEdlA=="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-free-musl-linux-arm64",
+          "integrity": "sha512-yEUwhNyRAGCgSQpRk5Avxk8ZWrYixzKXn7MjC5Fd93DfPTA2QGl0ijsIK334XaiWSuA5FLcmn4gZhVd4YSosAQ=="
+        },
+        "linux-x64": {
+          "asset": "sfw-free-linux-x86_64",
+          "integrity": "sha512-PcvpMzR28A0BpUHvHB3chzakWAyGmFSsCuu5zhenAxs0RTF8AlQHJLWnOxBWkK54U+kv50HhbqnjiYMZ9KnUDw=="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-free-musl-linux-x86_64",
+          "integrity": "sha512-UzJeP11VcqrKcauaLPQR9v1PGb8U19Kli7+Oskbetf+cO5oIrNFd+/zQsUG4hJ6GtLvz0H5FTDNiAQZkg0MhrA=="
+        },
+        "win32-x64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "integrity": "sha512-nWSLEwbh2NNHVMHSCc8tc95Je+XGm988EF0pXCz0X2QRoXw3ytydqfU5TFHue4xHinh5F9fGbiNywtLOMnKmgg=="
+        }
+      },
+      "origin": "gh-asset"
     },
     "uv": {
       "notes": [
@@ -161,88 +243,6 @@
         "published": "2026-08-01",
         "removable": "2026-08-08",
         "version": "1.29.0"
-      },
-      "origin": "gh-asset"
-    },
-    "sfw-free": {
-      "notes": [
-        "SFW (Socket Firewall) free flavor (public, SocketDev/sfw-free). Ships a 7-platform set: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win-x64. win-arm64 is intentionally absent — upstream does not yet build it. SFW is a required dependency of the install flow, so consumers on win-arm64 skip SFW-dependent steps until upstream support lands.",
-        "Installed when neither SOCKET_API_KEY nor SOCKET_API_TOKEN is set; the enterprise flavor (sfw-enterprise) is selected when one of those is present. The two flavors share a version and install to the same `sfw` binary name."
-      ],
-      "description": "Socket Firewall (free tier) — package manager command wrapper",
-      "version": "1.15.0",
-      "repository": "github:SocketDev/sfw-free",
-      "binaryName": "sfw",
-      "platforms": {
-        "darwin-arm64": {
-          "asset": "sfw-free-macos-arm64",
-          "integrity": "sha512-gLeor4y8eeJeQBJ/pLhcsWXG+ntx0sCM6s/MrKtW1uANKjhOwiQBNR5Hw8d1gRhjRuW4R2cPENdjk121sOFQag=="
-        },
-        "darwin-x64": {
-          "asset": "sfw-free-macos-x86_64",
-          "integrity": "sha512-ZW7jS8+Tg0+ZRWzYbSIZ82LiehytQHNbmYQ3X8FeLJQmg8AY8denDCAIPtJ8+haKeX/7a3AIkpaC8jgBHwGv6Q=="
-        },
-        "linux-arm64": {
-          "asset": "sfw-free-linux-arm64",
-          "integrity": "sha512-BmdfsTfIJDigVv3ImnmZ+/Ktj54kYn8rhNIDJhFkp0X9VeNeJaFteLYrPYox2SQ3hq++qvLfbnPJnuCDRCEdlA=="
-        },
-        "linux-arm64-musl": {
-          "asset": "sfw-free-musl-linux-arm64",
-          "integrity": "sha512-yEUwhNyRAGCgSQpRk5Avxk8ZWrYixzKXn7MjC5Fd93DfPTA2QGl0ijsIK334XaiWSuA5FLcmn4gZhVd4YSosAQ=="
-        },
-        "linux-x64": {
-          "asset": "sfw-free-linux-x86_64",
-          "integrity": "sha512-PcvpMzR28A0BpUHvHB3chzakWAyGmFSsCuu5zhenAxs0RTF8AlQHJLWnOxBWkK54U+kv50HhbqnjiYMZ9KnUDw=="
-        },
-        "linux-x64-musl": {
-          "asset": "sfw-free-musl-linux-x86_64",
-          "integrity": "sha512-UzJeP11VcqrKcauaLPQR9v1PGb8U19Kli7+Oskbetf+cO5oIrNFd+/zQsUG4hJ6GtLvz0H5FTDNiAQZkg0MhrA=="
-        },
-        "win32-x64": {
-          "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha512-nWSLEwbh2NNHVMHSCc8tc95Je+XGm988EF0pXCz0X2QRoXw3ytydqfU5TFHue4xHinh5F9fGbiNywtLOMnKmgg=="
-        }
-      },
-      "origin": "gh-asset"
-    },
-    "sfw-enterprise": {
-      "notes": [
-        "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",
-        "Installed when SOCKET_API_KEY (or SOCKET_API_TOKEN) is set; otherwise the free flavor (sfw-free) is used. The two flavors share a version and install to the same `sfw` binary name."
-      ],
-      "description": "Socket Firewall (enterprise tier) — package manager command wrapper",
-      "version": "1.15.0",
-      "repository": "github:SocketDev/firewall-release",
-      "binaryName": "sfw",
-      "platforms": {
-        "darwin-arm64": {
-          "asset": "sfw-macos-arm64",
-          "integrity": "sha512-JmNdVTAULB0f+oRaNBFd3h0KdU1zP7e/ERGPppQdIHn2/CHROknyKndPzzkbGdKN/AIsSrSfW1c2v6v+eVc2Sw=="
-        },
-        "darwin-x64": {
-          "asset": "sfw-macos-x86_64",
-          "integrity": "sha512-3+3IJI3EwV9WcwNwisXmzQn0x5ThLGJDR6b+B/tAn1dlqJcRRdYIqp4ZG/cy5xD04ewLqMAOncGc0qGswx7NRQ=="
-        },
-        "linux-arm64": {
-          "asset": "sfw-linux-arm64",
-          "integrity": "sha512-owLh6ODQTwObU+mV8XToR/qoYvIlPtUJ2Vqzcwb7+bXER544pgt7nN5o+YllWZOSyTmzjNfLALrhONEb0FGt5A=="
-        },
-        "linux-arm64-musl": {
-          "asset": "sfw-musl-linux-arm64",
-          "integrity": "sha512-kcwkTTc2/YzYJv354GKWxIc6mhAGWZkuJKFpp2OrERw8YNM1eNzQLAhJgaGZoVGtXHnSe+h896GRnsUjbEinmA=="
-        },
-        "linux-x64": {
-          "asset": "sfw-linux-x86_64",
-          "integrity": "sha512-pPxU6AJDTHX4NDfX31rvmUiFNOob/s+kv3XvUaH7QQvpRfyPJEuuxzkPyOTgqgyf0RSePOedG7kRPijH4T/QLQ=="
-        },
-        "linux-x64-musl": {
-          "asset": "sfw-musl-linux-x86_64",
-          "integrity": "sha512-N/b4w/zKYPYSy42D+8HgwieHs3JfGdFQvXHZhGJ2L4hi2QMJy5TVt3dHWQ7XYyxqvZQAOEQiwIR0pu9G1AwnKg=="
-        },
-        "win32-x64": {
-          "asset": "sfw-windows-x86_64.exe",
-          "integrity": "sha512-ag9R+AyD4PisdQFSEER06R3IyzSSwqZABFkhONd48ycB0oVTvX5imP//3aZ2j6DaQxCPj0ooSXo4lI8P5XS53g=="
-        }
       },
       "origin": "gh-asset"
     }
