@@ -305,7 +305,7 @@ describe('coanaFix (coverage)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('coana failed')
+        expect(result.cause).toBe('no coana available')
       }
     })
 
