@@ -288,10 +288,17 @@ export async function postForm<T>(
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
           method: 'POST',
         })
-  const json = JSON.parse(response.text()) as T | OAuthErrorResponse
+  const parsed: unknown = JSON.parse(response.text())
+  const json = (
+    parsed !== null && typeof parsed === 'object' ? parsed : {}
+  ) as Record<string, unknown>
   if (response.status < 200 || response.status >= 300) {
-    const oauthError = json as OAuthErrorResponse
-    throw new DeviceLoginError(oauthError.error, oauthError.error_description)
+    throw new DeviceLoginError(
+      String(json['error'] ?? 'unknown_error'),
+      typeof json['error_description'] === 'string'
+        ? json['error_description']
+        : undefined,
+    )
   }
   return json as T
 }
