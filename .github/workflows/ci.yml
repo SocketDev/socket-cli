@@ -22,20 +22,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Fleet no-phone-home posture: CI runners don't source the shell-rc that dev
-# machines get from setup-security-tools, so set every FLEET_ENV knob
-# workflow-level or the telemetry-env-is-disabled +
-# package-manager-auto-update-is-disabled gates (under `check --all`) fail.
-# Lockstep source: .claude/hooks/fleet/_shared/fleet-env.mts (FLEET_ENV) —
-# the telemetry-env-is-disabled check asserts each knob at CI runtime.
-env:
-  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
-  COREPACK_ENABLE_PROJECT_SPEC: '0'
-  DISABLE_TELEMETRY: '1'
-  DO_NOT_TRACK: '1'
-  NO_UPDATE_NOTIFIER: '1'
-  OTEL_SDK_DISABLED: 'true'
-
 jobs:
   # First step of every job is the third-party actions/checkout (GitHub fetches
   # it independently) to populate the workspace so the LOCAL `./.github/actions/*`
