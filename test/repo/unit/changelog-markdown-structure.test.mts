@@ -1,6 +1,6 @@
 /**
  * @file Structure-vs-content coverage for the changelog flows
- *   (`scripts/fleet/lib/changelog.mts`). The `[Unreleased]` range, the
+ *   (`scripts/fleet/changelog/compose.mts`). The `[Unreleased]` range, the
  *   insertion point, and the has-entries check read the parsed GFM mdast tree,
  *   so a `## ` or `- ` line inside a fenced code block is content — it can
  *   neither truncate a promoted block nor satisfy the empty-changelog guard.
@@ -8,10 +8,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  mergeUnreleased,
-  promoteUnreleased,
-  sectionHasEntries,
-} from '../../../scripts/fleet/lib/changelog.mts'
+  changelogSectionHasEntries,
+  mergeChangelogUnreleased,
+  promoteChangelogUnreleasedSection,
+} from '../../../scripts/fleet/changelog/compose.mts'
 
 const preamble = [
   '# Changelog',
@@ -22,7 +22,7 @@ const preamble = [
 const versionHeading =
   '## [1.2.3](https://github.com/SocketDev/socket-cli/releases/tag/v1.2.3) - 2026-08-06'
 
-describe('promoteUnreleased', () => {
+describe('promoteChangelogUnreleasedSection', () => {
   it('promotes a block whose code fence contains a ## line intact', () => {
     const changelog = [
       preamble,
@@ -43,7 +43,7 @@ describe('promoteUnreleased', () => {
       '- Updated the Coana CLI.',
       '',
     ].join('\n')
-    const promoted = promoteUnreleased(changelog, versionHeading)
+    const promoted = promoteChangelogUnreleasedSection(changelog, versionHeading)
     expect(promoted).toBeDefined()
     expect(promoted!.section).toContain(
       '```md\n## [9.9.9](https://example.com) - 2020-01-01\n```',
@@ -68,21 +68,27 @@ describe('promoteUnreleased', () => {
       '- Updated the Coana CLI.',
       '',
     ].join('\n')
-    expect(promoteUnreleased(changelog, versionHeading)).toBeUndefined()
+    expect(
+      promoteChangelogUnreleasedSection(changelog, versionHeading),
+    ).toBeUndefined()
   })
 })
 
-describe('sectionHasEntries', () => {
+describe('changelogSectionHasEntries', () => {
   it('counts a real bullet', () => {
-    expect(sectionHasEntries('### Changed\n\n- a real entry')).toBe(true)
+    expect(changelogSectionHasEntries('### Changed\n\n- a real entry')).toBe(
+      true,
+    )
   })
 
   it('does not count a bullet lookalike inside a fence', () => {
-    expect(sectionHasEntries('```sh\n- fenced output\n```')).toBe(false)
+    expect(
+      changelogSectionHasEntries('```sh\n- fenced output\n```'),
+    ).toBe(false)
   })
 })
 
-describe('mergeUnreleased', () => {
+describe('mergeChangelogUnreleased', () => {
   it('creates the block above the first real heading, not a fenced ## line', () => {
     const changelog = [
       preamble,
@@ -99,7 +105,10 @@ describe('mergeUnreleased', () => {
       '- Updated the Coana CLI.',
       '',
     ].join('\n')
-    const merged = mergeUnreleased(changelog, '### Fixed\n\n- a new fix')
+    const merged = mergeChangelogUnreleased(
+      changelog,
+      '### Fixed\n\n- a new fix',
+    )
     const unreleasedAt = merged.indexOf('## [Unreleased]')
     const fencedAt = merged.indexOf('## [0.0.0]')
     const firstVersionAt = merged.indexOf('## [1.2.2]')
