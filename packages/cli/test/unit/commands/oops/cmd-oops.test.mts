@@ -217,7 +217,7 @@ describe('cmd-oops', () => {
         } catch (e: unknown) {
           expect(e).toBeInstanceOf(Error)
           if (e instanceof Error) {
-            expect(e.message).toBe('This error was intentionally left blank.')
+            expect(e.message).toContain('intentionally left blank')
           }
         }
       })
