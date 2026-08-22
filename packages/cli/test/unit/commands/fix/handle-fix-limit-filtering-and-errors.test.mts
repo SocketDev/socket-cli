@@ -261,7 +261,7 @@ describe('socket fix --limit behavior verification', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Auth Error')
+        expect(result.cause).toBe('Invalid token')
       }
       // spawnCoanaDlx should never run when SDK setup fails.
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
@@ -281,7 +281,7 @@ describe('socket fix --limit behavior verification', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('API Error')
+        expect(result.cause).toBe('Network timeout')
       }
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
     })
@@ -300,7 +300,7 @@ describe('socket fix --limit behavior verification', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Upload Failed')
+        expect(result.cause).toBe('Bad gateway')
       }
       expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
     })
