@@ -33,5 +33,16 @@
       "packages/cli",
       "packages/package-builder/templates/socket-package"
     ]
+  },
+  "bornTested": {
+    "grandfathered": [
+      "scripts/repo/bootstrap/prepare.mts",
+      "scripts/repo/build.mts",
+      "scripts/repo/check/cli-types-are-sound.mts",
+      "scripts/repo/clean-cache.mts",
+      "scripts/repo/stage-publish-cli-exe.mts",
+      "scripts/repo/validate-no-cdn-refs.mts",
+      "scripts/repo/warm-dlx-cache.mts"
+    ]
   }
 }
