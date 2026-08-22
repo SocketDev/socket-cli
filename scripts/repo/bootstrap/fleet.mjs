@@ -796,14 +796,15 @@ function expandManifestForLocalTemplate(filesDir, manifest) {
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/placement-lock.mts
 /**
- * True when the release-bundle installer should lock what it places. Reads the
- * SAME `CASCADE_READONLY_MIRRORS` switch the cascade's mirror-mode fixer reads,
- * so one knob covers both delivery paths — a file is protected the same way
- * whether a cascade copied it or a bundle install placed it. ON by default;
- * only the exact value "0" opts out.
+ * True when the release-bundle installer should lock what it places.
+ *
+ * Unconditional, matching the cascade's mirror-mode fixer: a file is protected
+ * the same way whether a cascade copied it or a bundle install placed it. The
+ * former CASCADE_READONLY_MIRRORS opt-out is gone, since its only real effect
+ * was leaving a checkout unlocked long after the run that set it.
  */
 function readonlyBundleMirrorsEnabled() {
-  return process.env['CASCADE_READONLY_MIRRORS'] !== '0'
+  return true
 }
 /**
  * Lift a read-only lock off a placement target before the installer overwrites
@@ -1410,7 +1411,10 @@ function installFiles(filesDir, dest, manifest, options) {
     const rel = rels[i]
     const source = path.join(filesDir, rel)
     const target = path.join(dest, rel)
-    if (isAlwaysTrackedSurface(rel) && existsSync(target)) {
+    if (
+      (isAlwaysTrackedSurface(rel) || rel === '.gitignore') &&
+      existsSync(target)
+    ) {
       if (!refreshTracked) {
         skippedAlwaysTracked += 1
         continue
