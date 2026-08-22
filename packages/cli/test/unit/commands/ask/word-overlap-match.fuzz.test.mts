@@ -12,6 +12,9 @@
  *     itself; 0 whenever the query set is empty or the operands are disjoint.
  *     The symmetry check compares two SUT calls, so both sides are computed
  *     into variables before the assertion (never a src call inside expect()).
+ *     runner-collection: opt-in lane — excluded from the ordinary `pnpm test`
+ *     include glob; collected only when FLEET_TEST_FUZZ=1, the weekly fuzz
+ *     workflow's env, per .config/repo/vitest.config.mts.
  */
 
 import fc from 'fast-check'

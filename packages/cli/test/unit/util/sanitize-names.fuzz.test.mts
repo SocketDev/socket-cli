@@ -14,6 +14,9 @@
  *     unbounded input. `extractName` / `extractOwner` wrap `sanitizeName` with
  *     empty-input fallbacks; those fallbacks are asserted without importing the
  *     default constant, which would make a src value build the expected side.
+ *     runner-collection: opt-in lane — excluded from the ordinary `pnpm test`
+ *     include glob; collected only when FLEET_TEST_FUZZ=1, the weekly fuzz
+ *     workflow's env, per .config/repo/vitest.config.mts.
  */
 
 import fc from 'fast-check'

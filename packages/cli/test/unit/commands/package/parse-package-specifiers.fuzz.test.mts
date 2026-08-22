@@ -10,7 +10,10 @@
  *   - `valid === true` implies at least one purl was produced
  *   - an empty ecosystem is always invalid with no purls The oracle cases
  *     construct alpha-ecosystem inputs where the exact output is knowable
- *     without reimplementing the branchy parser.
+ *     without reimplementing the branchy parser. runner-collection: opt-in lane
+ *     — excluded from the ordinary `pnpm test` include glob; collected only
+ *     when FLEET_TEST_FUZZ=1, the weekly fuzz workflow's env, per
+ *     .config/repo/vitest.config.mts.
  */
 
 import fc from 'fast-check'
