@@ -15,10 +15,6 @@ export interface BabelIdentifier extends BabelNode {
   name: string
 }
 
-export interface BabelLiteral extends BabelNode {
-  value: string | number | boolean | null
-}
-
 export interface BabelMemberExpression extends BabelNode {
   type: 'MemberExpression'
   computed: boolean

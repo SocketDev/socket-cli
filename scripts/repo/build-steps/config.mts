@@ -68,8 +68,3 @@ export const CLI_BUILD_PACKAGE: BuildPackageConfig = {
   name: 'CLI Package',
   outputCheck: 'packages/cli/dist/index.js',
 }
-
-/**
- * Build configuration for each package in the default build order.
- */
-export const BUILD_PACKAGES: BuildPackageConfig[] = [CLI_BUILD_PACKAGE]

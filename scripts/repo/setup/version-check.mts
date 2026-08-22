@@ -44,8 +44,11 @@ export function compareVersions(a: VersionInfo, b: VersionInfo): number {
  */
 export async function getVersion(
   command: string,
-  args: string[] = ['--version'],
+  options?: { args?: string[] | undefined } | undefined,
 ): Promise<string | undefined> {
+  const { args = ['--version'] } = { __proto__: null, ...options } as {
+    args?: string[] | undefined
+  }
   try {
     // shell: WIN32 — pnpm/gh resolve to .cmd shims on Windows, which only a
     // shell can execute.
