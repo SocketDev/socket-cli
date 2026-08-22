@@ -69,8 +69,8 @@ export const SETTINGS_FILES = [
  *
  * `scripts/repo/test-conformance.mts` runs this tier explicitly with
  * FLEET_TEST_CONFORMANCE=1; every other run must EXCLUDE it. Both halves live
- * here because both were previously unwired: the runner set the env var and
- * nothing read it, and the setting named the tier while no lane excluded it —
+ * here so neither can sit unwired: an env var the runner sets and nothing
+ * reads, or a setting that names the tier while no lane excludes it, would —
  * so `pnpm run cover` spawned a ~92k-scenario corpus per BUILT implementation,
  * three at once. Against the 60s unit budget that reads as a hung run rather
  * than the multi-hour sweep it actually is.
@@ -85,7 +85,7 @@ export function readNonIsolatedGlobs(): string[] {
 
 export function readVitestLanes(): VitestLanes {
   const lanes = readVitestSettings().lanes
-  return lanes && typeof lanes === 'object' && !Array.isArray(lanes)
+  return lanes !== null && typeof lanes === 'object' && !Array.isArray(lanes)
     ? { mid: stringArray(lanes.mid), slow: stringArray(lanes.slow) }
     : {}
 }
@@ -104,10 +104,12 @@ export function readVitestSettings(): VitestRepoConfig {
     try {
       const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'))
       const section =
-        parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
           ? (parsed as { vitest?: VitestRepoConfig | undefined }).vitest
           : undefined
-      return section && typeof section === 'object' && !Array.isArray(section)
+      return section !== null &&
+        typeof section === 'object' &&
+        !Array.isArray(section)
         ? section
         : {}
     } catch {

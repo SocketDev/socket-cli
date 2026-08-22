@@ -67,34 +67,66 @@ runs:
         TARGETS: ${{ inputs.targets }}
         COMPONENTS: ${{ inputs.components }}
         PROFILE: ${{ inputs.profile }}
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+        GITHUB_WORKSPACE: ${{ github.workspace }}
       run: | # zizmor: ignore[github-env]
         set -euo pipefail
 
-        # rustup is preinstalled on GitHub-hosted runners. On
-        # self-hosted / minimal images, we fetch rustup-init from
-        # sh.rustup.rs (already on the SFW bypass list).
+        # rustup is preinstalled on GitHub-hosted runners. On self-hosted /
+        # minimal images, we fetch rustup-init from static.rust-lang.org (the
+        # canonical rustup dist host; sh.rustup.rs / win.rustup.rs redirect
+        # there) — and SRI-verify its SHA-256 against the pin in
+        # external-tools.json BEFORE executing it. No more `curl | sh`.
         if ! command -v rustup >/dev/null 2>&1; then
-          echo "rustup not on PATH, installing via rustup-init..."
+          echo "rustup not on PATH, installing via rustup-init (SRI-verified)…"
+
+          RESOLVER="${GITHUB_ACTION_PATH}/../_shared/resolve-external-tool-asset.mjs"
+          JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
+          INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+
+          # Resolve the rustup-init asset URL + pinned SHA-256 for THIS
+          # runner's platform from external-tools.json (the `rustup` manager
+          # entry). rustup is pinned to a single version; the pin IS the
+          # integrity source (no per-version override path).
+          PLAN_JSON="$(node "$RESOLVER" --tool rustup)"
+          ASSET="$(printf '%s' "$PLAN_JSON" | node "$JQ" - asset)"
+          INTEGRITY="$(printf '%s' "$PLAN_JSON" | node "$JQ" - integrity)"
+
+          # Forward the object-form integrity provenance (src/date) so
+          # install-tool.mjs live-verifies the pin against the rustup sidecar
+          # + checks staleness AFTER the static SRI check. jq.mjs exits
+          # non-zero on empty; tolerate with `|| true`.
+          SRC="$(printf '%s' "$PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+          DATE="$(printf '%s' "$PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+          PROVENANCE_ARGS=()
+          [[ -n "$SRC" ]] && PROVENANCE_ARGS+=(--src "$SRC")
+          [[ -n "$DATE" ]] && PROVENANCE_ARGS+=(--date "$DATE")
+
+          # Download + SRI-verify the bare rustup-init binary, then live-verify
+          # provenance. install-tool.mjs streams it, verifies sha256 in-process
+          # via node:crypto (aborts on mismatch, exit 2), live-verifies the pin
+          # against src + checks date staleness, and chmod +x the binary.
+          rustup_dir="${RUNNER_TEMP:-/tmp}/rustup-init-bin"
+          rm -rf "$rustup_dir"
+          mkdir -p "$rustup_dir"
+          node "$INSTALL_TOOL" "$ASSET" "$INTEGRITY" "$rustup_dir" "${PROVENANCE_ARGS[@]}"
 
           case "$(uname -s)" in
             Linux|Darwin)
-              # rustup-init.sh is the canonical bootstrap script.
               # --default-toolchain none: we'll install the requested
               #   channel explicitly in the next step.
               # --profile minimal: don't pull docs/clippy here; the
               #   per-input PROFILE controls the final set.
               # -y: non-interactive.
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-                | sh -s -- -y --default-toolchain none --profile minimal
+              "$rustup_dir/rustup-init" -y \
+                --default-toolchain none --profile minimal
               # shellcheck disable=SC1091
               . "$HOME/.cargo/env"
               ;;
             MINGW*|MSYS*|CYGWIN*)
               # Windows rustup-init.exe; same flags.
-              curl --proto '=https' --tlsv1.2 -sSfo rustup-init.exe \
-                https://win.rustup.rs/x86_64
-              ./rustup-init.exe -y --default-toolchain none --profile minimal
-              rm rustup-init.exe
+              "$rustup_dir/rustup-init.exe" -y \
+                --default-toolchain none --profile minimal
               ;;
             *)
               echo "× Unsupported platform: $(uname -s)" >&2

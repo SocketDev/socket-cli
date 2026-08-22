@@ -273,6 +273,10 @@ jobs:
           git checkout -q --detach FETCH_HEAD
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # Authorizes a thin member's bundle hydration right after checkout.
+          # Both stay empty on a member with no payload App, skipping the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
           # The org secret feeds both SOCKET_API_TOKEN and SOCKET_API_KEY.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - name: Smoke the JS fuzz lane
@@ -315,7 +319,7 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
       - name: Go toolchain
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0 (2026-06-26)
+        uses: ./.github/actions/fleet/setup-go-toolchain
         with:
           go-version-file: go.mod
       - name: Smoke go fuzz functions, 60s each
@@ -465,12 +469,17 @@ jobs:
       # coverage-guided. Save under a run-unique key and restore the most recent
       # prior corpus through the shared prefix.
       - name: Restore the cached corpus
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0 (2026-06-26)
-        with:
-          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
-          path: fuzz/corpus/${{ matrix.target }}
-          restore-keys: |
-            fuzz-corpus-${{ matrix.target }}-
+        shell: bash
+        env:
+          CACHE_PATH: fuzz/corpus/${{ matrix.target }}
+          CACHE_KEY: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          CACHE_RESTORE_KEY: fuzz-corpus-${{ matrix.target }}-
+        run: |
+          set -euo pipefail
+          node scripts/fleet/cache/restore.mts \
+            --path "$CACHE_PATH" \
+            --key "$CACHE_KEY" \
+            --restore-key "$CACHE_RESTORE_KEY"
       # ADDITIVE: layer the committed seeds on top of the cache-restored corpus
       # WITHOUT deleting fuzzer-discovered growth. The default reset mode would
       # rmtree the restored corpus, so coverage could never accumulate across
@@ -492,11 +501,22 @@ jobs:
       # the fix + minimized-regression-commit protocol can proceed.
       - name: Upload crash artifacts
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1 (2026-08-01)
+        uses: ./.github/actions/fleet/upload-artifact
         with:
           if-no-files-found: ignore
           name: fuzz-artifacts-${{ matrix.target }}
           path: fuzz/artifacts/${{ matrix.target }}/
+      - name: Save the fuzz corpus
+        if: success()
+        shell: bash
+        env:
+          CACHE_PATH: fuzz/corpus/${{ matrix.target }}
+          CACHE_KEY: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          node scripts/fleet/cache/save.mts \
+            --path "$CACHE_PATH" \
+            --key "$CACHE_KEY"
       # Last step on purpose: the restore-phase "Rust cache" call above
       # exported the RUST_CACHE_* job env; this saves the populated target
       # dirs. Runs only when the campaign succeeded — the same success gate
@@ -535,6 +555,11 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
       - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Authorizes a thin member's bundle hydration right after checkout.
+          # Both stay empty on a member with no payload App, skipping the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       - name: Run the JS fuzz campaign
         run: |
           set -euo pipefail
@@ -572,7 +597,7 @@ jobs:
           fi
           git checkout -q --detach FETCH_HEAD
       - name: Go toolchain
-        uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0 (2026-06-26)
+        uses: ./.github/actions/fleet/setup-go-toolchain
         with:
           go-version-file: go.mod
       - name: Run go fuzz functions, 10 minutes each

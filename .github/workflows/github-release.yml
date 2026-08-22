@@ -58,10 +58,13 @@ jobs:
       # independently) to populate the workspace so the LOCAL
       # ./.github/actions/* composite resolves; the fleet checkout action then
       # re-checks-out at its own depth.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (2026-05-15)
+      - uses: ./.github/actions/fleet/checkout
         with:
+          # Authorizes a thin member's bundle hydration right after checkout.
+          # Both stay empty on a member with no payload App, skipping the mint.
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
           fetch-depth: 1
-          persist-credentials: false
       - name: Checkout
         uses: ./.github/actions/fleet/checkout
         with:

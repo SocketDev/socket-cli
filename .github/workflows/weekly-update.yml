@@ -79,6 +79,9 @@ jobs:
           set -euo pipefail
           ACTIONABLE='true'
           node scripts/fleet/weekly-update.mts --check-updates || ACTIONABLE='false'
+          # Report inline-action port drift (does not gate the update; a
+          # behind port is reported for the weekly output).
+          node scripts/fleet/sync-inline-action-pins.mts || true
           echo "actionable=${ACTIONABLE}" >> "$GITHUB_OUTPUT"
 
   update:

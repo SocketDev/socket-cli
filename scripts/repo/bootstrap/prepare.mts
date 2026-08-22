@@ -125,6 +125,21 @@ export function fetchBundle(): void {
     log('no scripts/repo/bootstrap/fleet.mjs beside me — skipping bundle fetch')
     return
   }
+  // The PRODUCER branch. A checkout carrying `template/base` holds the canon
+  // locally: there is no bundle to fetch and no pin to compare, so it
+  // materializes from its own template instead. Everything after this step —
+  // the pnpm-workspace repair and the reconcile install — is identical, and is
+  // exactly what a producer needs too: the mirrors it just placed include ~380
+  // workspace package.json files that the first install could not see.
+  // Branching here rather than writing a second doctor keeps one code path.
+  if (existsSync(path.join(REPO_ROOT, 'template', 'base'))) {
+    if (!tryRun('node', [fleet, '--from-template'])) {
+      log(
+        'materialize (fleet.mjs --from-template) reported a problem — continuing',
+      )
+    }
+    return
+  }
   const pinnedRef = readPinnedRef(REPO_ROOT)
   const appliedRef = readAppliedRefLocal(REPO_ROOT)
   if (isAppliedRefCurrentOrNewer(pinnedRef, appliedRef)) {
@@ -145,7 +160,7 @@ export function fetchBundle(): void {
  */
 const SETTINGS_CANDIDATES_LOCAL = [
   '.config/repo/socket-wheelhouse.json',
-  '.config/socket-wheelhouse.json',
+  '.config/socket-wheelhouse.json', // loose-config-ref: allow -- migration read
   '.socket-wheelhouse.json',
 ] as const
 
@@ -402,46 +417,6 @@ export function reconcileInstall(): boolean {
 }
 
 /**
- * Step 4: regenerate the cross-tool `.agents/skills/` mirror when it is absent
- * or drifted. The mirror is a git-untracked generated copy of
- * `.claude/skills/{fleet,repo}/` (generator:
- * `scripts/fleet/gen/agents-skills-mirror.mts`). Nothing else in the install
- * path regenerates it, so a fresh clone + `pnpm install` leaves Codex/OpenCode
- * skill discovery empty until a cascade or manual run. This closes that gap.
- *
- * Drift-gated: runs the generator's `--check` mode first (reads only, no
- * membership gate), and regenerates only when drift is detected. Silent when
- * `.claude/skills/` is absent (a thin member before hydration has nothing to
- * mirror) or the generator script is missing. Fail-open: any error is
- * swallowed so a `pnpm install` never breaks on it.
- */
-export function regenSkillsMirrorIfDrifted(): void {
-  const claudeSkills = path.join(REPO_ROOT, '.claude', 'skills')
-  if (!existsSync(claudeSkills)) {
-    return
-  }
-  const generator = path.join(
-    REPO_ROOT,
-    'scripts',
-    'fleet',
-    'gen',
-    'agents-skills-mirror.mts',
-  )
-  if (!existsSync(generator)) {
-    return
-  }
-  // --check exits 0 when the mirror is in sync, 1 when drifted. A spawn
-  // failure (missing node_modules, crash) also returns false from tryRun — in
-  // every non-zero case we try a regen, and if that fails too, we swallow it.
-  if (tryRun('node', [generator, '--check'])) {
-    return
-  }
-  if (!tryRun('node', [generator])) {
-    log('skills mirror regen reported a problem — continuing')
-  }
-}
-
-/**
  * Step 2: repair `pnpm-workspace.yaml` `packages:` to list the fleet dirs.
  */
 export function repairWorkspacePackages(): void {
@@ -490,7 +465,6 @@ export async function runPrepare(): Promise<number> {
     log('reconcile `pnpm install --ignore-scripts` failed')
     return 1
   }
-  regenSkillsMirrorIfDrifted()
   await maybeNotifyUpdate()
   return 0
 }

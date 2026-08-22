@@ -1,0 +1,41 @@
+# Layer 1 — leaf action (no internal SocketDev refs). The first-party
+# artifact-service client (scripts/fleet/artifact/download.mts) is the port of
+# @actions/artifact's download surface; this composite is the workflow-facing
+# wrapper over it. When this file bumps, the cascade is: 2b → 3 → 4 → external
+# repos. See updating-workflows skill at .claude/skills/updating-workflows/.
+#
+# Runs expose-actions-runtime first to surface the runner-injected
+# ACTIONS_RESULTS_URL + ACTIONS_RUNTIME_TOKEN the download client reads (a
+# composite's `run:` steps never see them otherwise). No third-party
+# actions/download-artifact dependency. Downloads one named artifact; a
+# publish job that needs several uses one step per name.
+
+name: 'Download Artifact'
+description: >-
+  Download one named GitHub Actions artifact from the current run into a
+  directory via the first-party artifact-service client
+  (scripts/fleet/artifact/download.mts). The zip's relative paths are
+  preserved under the destination.
+
+inputs:
+  name:
+    description: 'The artifact name to download'
+    required: true
+  path:
+    description: 'The directory to write the entries under'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: ./.github/actions/fleet/expose-actions-runtime
+    - name: Download artifact
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        node scripts/fleet/artifact/download.mts \
+          --name "$ARTIFACT_NAME" \
+          --path "$ARTIFACT_PATH"

@@ -88,14 +88,27 @@ jobs:
     env:
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
-      - name: Checkout the failing branch
-        uses: ./.github/actions/fleet/checkout
-        with:
-          ref: ${{ inputs.branch }}
-          # Authorizes a thin member's bundle download during install. Both
-          # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ inputs.branch }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
 
       - uses: ./.github/actions/fleet/setup-and-install
         with:
@@ -136,6 +149,8 @@ jobs:
         shell: bash
         env:
           BRANCH: ${{ inputs.branch }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
         run: |
           set -euo pipefail
           if git diff --quiet; then
@@ -153,4 +168,17 @@ jobs:
           git -c user.name='socket-bot' \
               -c user.email='socket-bot@users.noreply.github.com' \
               commit -m 'fix(deps): apply the deterministic autofixer after the update'
-          git push origin "HEAD:${BRANCH}"
+          # The bootstrap checkout above authenticated only its own fetch via
+          # a per-invocation `-c`, so nothing landed in .git/config — this
+          # push needs its own auth the same way. The job's contents: write
+          # GITHUB_TOKEN is enough; the header is cleared in an always() step
+          # below rather than left in .git/config.
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" \
+              push origin "HEAD:${BRANCH}"
+
+      - name: Clear push credentials
+        if: ${{ always() }}
+        env:
+          SERVER_URL: ${{ github.server_url }}
+        run: git config --local --unset-all "http.${SERVER_URL}/.extraheader" || true

@@ -67,19 +67,51 @@ runs:
 
     # The image ships google-chrome-stable; install only when absent. odai
     # requires real Chrome — Chromium lacks optimization_guide_internal and
-    # cannot run the on-device model.
+    # cannot run the on-device model. The .deb is the version-pinned pool file
+    # from dl.google.com (NOT the floating _current_amd64.deb the old action
+    # used), SHA-256-verified against the pin in external-tools.json BEFORE
+    # apt-get install — no more unverified wget-and-install.
     - name: Ensure Google Chrome stable
       if: ${{ steps.gate.outputs.enabled == 'true' }}
       shell: bash
+      env:
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+        GITHUB_WORKSPACE: ${{ github.workspace }}
       run: |
         set -euo pipefail
         if command -v google-chrome-stable >/dev/null 2>&1; then
           echo "preinstalled: $(google-chrome-stable --version)"
           exit 0
         fi
-        wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo apt-get install -y ./google-chrome-stable_current_amd64.deb
-        rm google-chrome-stable_current_amd64.deb
+        RESOLVER="${GITHUB_ACTION_PATH}/../_shared/resolve-external-tool-asset.mjs"
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        # Resolve the pinned .deb URL + SHA-256 for linux-x64 from
+        # external-tools.json (the `google-chrome-stable` node-dist entry).
+        PLAN_JSON="$(node "$RESOLVER" --tool google-chrome-stable)"
+        ASSET="$(printf '%s' "$PLAN_JSON" | node "$JQ" - asset)"
+        INTEGRITY="$(printf '%s' "$PLAN_JSON" | node "$JQ" - integrity)"
+        # Forward the object-form integrity provenance (src/date) so
+        # install-tool.mjs live-verifies the pin against the Google Packages
+        # index + checks staleness AFTER the static SRI check. jq.mjs exits
+        # non-zero on empty; tolerate with `|| true`.
+        SRC="$(printf '%s' "$PLAN_JSON" | node "$JQ" - src 2>/dev/null || true)"
+        DATE="$(printf '%s' "$PLAN_JSON" | node "$JQ" - date 2>/dev/null || true)"
+        PROVENANCE_ARGS=()
+        [[ -n "$SRC" ]] && PROVENANCE_ARGS+=(--src "$SRC")
+        [[ -n "$DATE" ]] && PROVENANCE_ARGS+=(--date "$DATE")
+        chrome_dir="${RUNNER_TEMP:-/tmp}/chrome-deb"
+        rm -rf "$chrome_dir"
+        mkdir -p "$chrome_dir"
+        # Download + SRI-verify the .deb, then live-verify provenance.
+        # install-tool.mjs streams it, verifies sha256 in-process via
+        # node:crypto (aborts on mismatch, exit 2), live-verifies the pin
+        # against src + checks date staleness; a .deb is not a recognized
+        # archive so the file is left on disk chmod'd for apt-get install.
+        node "$INSTALL_TOOL" "$ASSET" "$INTEGRITY" "$chrome_dir" "${PROVENANCE_ARGS[@]}"
+        DEB="$chrome_dir/$(basename "$ASSET")"
+        sudo apt-get install -y "$DEB"
+        rm -f "$DEB"
         google-chrome-stable --version
 
     # Bounded cache set: the model component dirs + activation state — the
@@ -110,9 +142,66 @@ runs:
       shell: bash
       env:
         ODAI_VERSION: ${{ inputs.odai-version }}
-      run: |
+        GITHUB_ACTION_PATH: ${{ github.action_path }}
+      run: | # zizmor: ignore[github-env]
         set -euo pipefail
-        npm install -g "@socketsecurity/odai@${ODAI_VERSION}"
+        # Provision odai via the fleet's downloadNpmPackage path (the same
+        # shape install/action.yml uses for agentshield) rather than a raw
+        # `npm install -g`. Node sees the consumer repo's node_modules
+        # (already installed by setup-and-install, which runs before this
+        # action), so the dynamic import of @socketsecurity/lib/dlx/package
+        # resolves the workspace copy.
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
+        ODAI_SPEC="@socketsecurity/odai@${ODAI_VERSION}"
+        # Name + option compat across the @socketsecurity/lib rename boundary:
+        # <= 6.0.6 exports `downloadPackage({ package })`; >= 6.0.7 renamed it
+        # to `downloadNpmPackage({ spec })`. Accept BOTH — pick whichever export
+        # the module provides and pass both option keys. `|| true` + a SKIP
+        # sentinel: the import can legitimately fail to resolve when the
+        # consumer IS @socketsecurity/lib itself and its dist/ isn't built yet
+        # at this setup-time step (chicken-and-egg). odai legs are fail-open,
+        # so skip with a warning rather than failing the whole job.
+        RESULT_JSON="$(ODAI_SPEC="$ODAI_SPEC" node --input-type=module -e "
+            let mod;
+            try {
+              mod = await import('@socketsecurity/lib-stable/dlx/package');
+            } catch {
+              try {
+                mod = await import('@socketsecurity/lib/dlx/package');
+              } catch (e) {
+                process.stdout.write(JSON.stringify({ skip: 'import-failed', error: String(e && e.message || e) }));
+                process.exit(0);
+              }
+            }
+            const download = mod.downloadNpmPackage ?? mod.downloadPackage;
+            if (typeof download !== 'function') {
+              process.stdout.write(JSON.stringify({ skip: 'no-export' }));
+              process.exit(0);
+            }
+            const spec = process.env.ODAI_SPEC;
+            const { binaryPath, installed } = await download({
+              spec,
+              package: spec,
+              binaryName: 'odai',
+            });
+            process.stdout.write(JSON.stringify({ binaryPath, installed }));
+          " 2>/dev/null || true)"
+        SKIP="$(echo "$RESULT_JSON" | node "$JQ" - skip 2>/dev/null || true)"
+        if [ -n "$SKIP" ]; then
+          echo "⚠ Skipping odai install ($SKIP) — @socketsecurity/lib/dlx/package unavailable at setup time. odai legs will clean-skip." >&2
+          exit 0
+        fi
+        BIN="$(echo "$RESULT_JSON" | node "$JQ" - binaryPath 2>/dev/null || true)"
+        if [ -z "$BIN" ] || [ ! -x "$BIN" ]; then
+          echo "× odai install failed — the npm-package downloader did not return an executable binary path" >&2
+          echo "  Got: $RESULT_JSON" >&2
+          exit 1
+        fi
+        # Put the odai binary on PATH for this step + subsequent steps (the
+        # fill step below runs `odai summarize`).
+        BINDIR="$(dirname "$BIN")"
+        echo "$BINDIR" >> "${GITHUB_PATH:-/dev/null}"
+        export PATH="$BINDIR:$PATH"
         odai --help >/dev/null
 
     # Fill-on-miss. The component download wants ~22 GB free and Chrome

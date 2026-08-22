@@ -291,7 +291,8 @@ pnpm-debug.log
 /.claude/skills/fleet/
 /.claude/workflows/
 /.config/fleet/.markdownlint-cli2.jsonc
-/.config/fleet/egress-allowlist.json
+/.config/fleet/external-tools.json
+/.config/fleet/fetch-allowlist.json
 /.config/fleet/git-authors.json
 /.config/fleet/lockstep.schema.json
 /.config/fleet/markdownlint-rules/
@@ -322,6 +323,7 @@ pnpm-debug.log
 /.github/actions/fleet/run-offline/
 /.github/actions/fleet/run-script/
 /.github/actions/fleet/setup-git-signing/
+/.github/actions/fleet/setup-go-toolchain/
 /.github/actions/fleet/setup-odai/
 /.github/actions/fleet/setup-rust-cache/
 /.github/actions/fleet/setup-rust-toolchain/
@@ -332,7 +334,6 @@ pnpm-debug.log
 /patches/@socketsecurity__lib@6.7.0.patch
 /patches/brace-expansion@5.0.9.patch
 /patches/minimatch@10.2.6.patch
-/patches/taze@20.0.0.patch
 /scripts/fleet/
 # </fleet>
 # <repo>

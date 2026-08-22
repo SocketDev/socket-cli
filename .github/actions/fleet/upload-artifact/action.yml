@@ -1,0 +1,55 @@
+# Layer 1 — leaf action (no internal SocketDev refs). The first-party
+# artifact-service client (scripts/fleet/artifact/upload.mts) is the port of
+# @actions/artifact's upload surface; this composite is the workflow-facing
+# wrapper over it. When this file bumps, the cascade is: 2b → 3 → 4 → external
+# repos. See updating-workflows skill at .claude/skills/updating-workflows/.
+#
+# The runner injects ACTIONS_RESULTS_URL + ACTIONS_RUNTIME_TOKEN into
+# JavaScript-action processes only - a composite's `run:` steps never see them -
+# so this runs expose-actions-runtime first to surface them to the upload step.
+# No third-party actions/upload-artifact dependency.
+
+name: 'Upload Artifact'
+description: >-
+  Upload one or more paths as a named GitHub Actions artifact via the
+  first-party artifact-service client (scripts/fleet/artifact/upload.mts). A
+  missing path or an empty set fails loud - the actions/upload-artifact
+  if-no-files-found: error default.
+
+inputs:
+  name:
+    description: 'The artifact name to upload under'
+    required: true
+  path:
+    description: >-
+      A path (file or directory) to include. Repeatable as a newline-separated
+      list.
+    required: true
+  if-no-files-found:
+    description: >-
+      Fail when no files match (error) or skip silently (ignore). Default
+      error.
+    required: false
+    default: 'error'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: ./.github/actions/fleet/expose-actions-runtime
+    - name: Upload artifact
+      shell: bash
+      env:
+        ARTIFACT_NAME: ${{ inputs.name }}
+        ARTIFACT_PATH: ${{ inputs.path }}
+        IF_NO_FILES_FOUND: ${{ inputs.if-no-files-found }}
+      run: |
+        set -euo pipefail
+        # The path input may be a newline-separated list; turn each line into a
+        # --path arg so one upload covers every named path.
+        args=(--name "$ARTIFACT_NAME" --if-no-files-found "$IF_NO_FILES_FOUND")
+        while IFS= read -r line; do
+          if [ -n "$line" ]; then
+            args+=(--path "$line")
+          fi
+        done <<< "$ARTIFACT_PATH"
+        node scripts/fleet/artifact/upload.mts "${args[@]}"
