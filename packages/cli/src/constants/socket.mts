@@ -8,6 +8,12 @@ export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
 
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'
+export const API_V1_OAUTH_URL = 'https://api.socket.dev/v1/oauth2/'
+
+// The public client_id registered for the Socket CLI's device-authorization
+// flow (see `socket login --device`). Public: no client_secret, since the CLI
+// cannot keep one confidential.
+export const SOCKET_CLI_OAUTH_CLIENT_ID = 'socket-cli'
 export const SOCKET_WEBSITE_URL = 'https://socket.dev'
 export const SOCKET_DASHBOARD_URL = 'https://socket.dev/dashboard'
 export const SOCKET_PRICING_URL = 'https://socket.dev/pricing'

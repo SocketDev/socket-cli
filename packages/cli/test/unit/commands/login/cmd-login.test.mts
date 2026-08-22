@@ -42,6 +42,18 @@ vi.mock(import('../../../../src/commands/login/attempt-login.mts'), () => ({
   attemptLogin: mockAttemptLogin,
 }))
 
+// Mock attemptDeviceLogin.
+const mockAttemptDeviceLogin = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(undefined),
+)
+
+vi.mock(
+  import('../../../../src/commands/login/attempt-device-login.mts'),
+  () => ({
+    attemptDeviceLogin: mockAttemptDeviceLogin,
+  }),
+)
+
 // Mock outputDryRunWrite.
 const mockOutputDryRunWrite = vi.hoisted(() => vi.fn())
 
@@ -193,6 +205,55 @@ describe('cmd-login', () => {
         await cmdLogin.run(['--api-proxy='], importMeta, context)
 
         expect(mockAttemptLogin).toHaveBeenCalledWith('', '')
+      })
+    })
+
+    describe('--device flag', () => {
+      it('should call attemptDeviceLogin instead of attemptLogin', async () => {
+        await cmdLogin.run(['--device'], importMeta, context)
+
+        expect(mockAttemptDeviceLogin).toHaveBeenCalledWith('', '')
+        expect(mockAttemptLogin).not.toHaveBeenCalled()
+      })
+
+      it('should pass API base URL and proxy through', async () => {
+        await cmdLogin.run(
+          [
+            '--device',
+            '--api-base-url=https://api.example.com',
+            '--api-proxy=http://localhost:8080',
+          ],
+          importMeta,
+          context,
+        )
+
+        expect(mockAttemptDeviceLogin).toHaveBeenCalledWith(
+          'https://api.example.com',
+          'http://localhost:8080',
+        )
+      })
+
+      it('should show device-specific steps in dry-run mode', async () => {
+        await cmdLogin.run(['--device', '--dry-run'], importMeta, context)
+
+        expect(mockOutputDryRunWrite).toHaveBeenCalledWith(
+          expect.stringContaining('config.json'),
+          'authenticate with Socket API',
+          expect.arrayContaining([
+            'Request a device code from Socket',
+            'Open a browser to approve the device code',
+          ]),
+        )
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
+      })
+
+      it('should still require an interactive TTY', async () => {
+        mockIsInteractive.mockReturnValue(false)
+
+        await expect(
+          cmdLogin.run(['--device'], importMeta, context),
+        ).rejects.toThrow(/socket login needs an interactive TTY/)
+        expect(mockAttemptDeviceLogin).not.toHaveBeenCalled()
       })
     })
 

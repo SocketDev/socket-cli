@@ -1,5 +1,6 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
+import { attemptDeviceLogin } from './attempt-device-login.mts'
 import { attemptLogin } from './attempt-login.mts'
 import { outputDryRunWrite } from '../../util/dry-run/output.mts'
 import { defineFlags } from '../../meow.mts'
@@ -18,6 +19,7 @@ import type { MeowFlags } from '../../flags.mts'
 export interface LoginFlags {
   apiBaseUrl?: string | undefined
   apiProxy?: string | undefined
+  device?: boolean | undefined
 }
 
 export const CMD_NAME = 'login'
@@ -53,6 +55,12 @@ export async function run(
         default: '',
         description: 'Proxy to use when making connection to API server',
       },
+      device: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Log in by approving a device code in your browser instead of pasting an API token',
+      },
     }),
     help: (command: string, helpConfig: { flags: MeowFlags }) => `
     Usage
@@ -68,6 +76,7 @@ export async function run(
 
     Examples
       $ ${command}
+      $ ${command} --device
       $ ${command} --api-proxy=http://localhost:1234
   `,
   }
@@ -80,28 +89,41 @@ export async function run(
   })
 
   const dryRun = cli.flags['dryRun']
+  const { device } = cli.flags
 
   if (dryRun) {
     // Runtime read so tests that mutate process.env['HOME'] pick up changes.
     const configPath = `${process.env['HOME']}/.config/socket/config.json`
-    const changes = [
-      'Prompt for Socket API token',
-      'Verify token with Socket API',
-      'Save API token to config',
-      'Optionally set default organization',
-      'Optionally install bash completion',
-    ]
+    const changes = device
+      ? [
+          'Request a device code from Socket',
+          'Open a browser to approve the device code',
+          'Verify token with Socket API',
+          'Save API token to config',
+        ]
+      : [
+          'Prompt for Socket API token',
+          'Verify token with Socket API',
+          'Save API token to config',
+          'Optionally set default organization',
+          'Optionally install bash completion',
+        ]
     outputDryRunWrite(configPath, 'authenticate with Socket API', changes)
     return
   }
 
   if (!isInteractive()) {
     throw new InputError(
-      'socket login needs an interactive TTY to prompt for credentials (stdin/stdout is not a TTY); set SOCKET_CLI_API_TOKEN in the environment instead',
+      'socket login needs an interactive TTY (stdin/stdout is not a TTY); set SOCKET_CLI_API_TOKEN in the environment instead',
     )
   }
 
   const { apiBaseUrl, apiProxy } = cli.flags
+
+  if (device) {
+    await attemptDeviceLogin(apiBaseUrl, apiProxy)
+    return
+  }
 
   await attemptLogin(apiBaseUrl, apiProxy)
 }
