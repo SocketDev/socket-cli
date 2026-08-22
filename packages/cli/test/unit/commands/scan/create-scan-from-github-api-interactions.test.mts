@@ -17,6 +17,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
+// Matches the exported GITHUB_ERR_RATE_LIMIT contract value in
+// src/util/git/github-errors.mts, which callers switch on directly.
+const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
+
 const mockOctokit = vi.hoisted(() => ({
   repos: {
     get: vi.fn(),
@@ -81,7 +85,7 @@ describe('GitHub scan API interactions', () => {
       // Simulate withGitHubRetry returning a rate limit error.
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: false,
-        message: 'GitHub rate limit exceeded',
+        message: GITHUB_ERR_RATE_LIMIT,
         cause:
           'GitHub API rate limit exceeded while fetching repository details. ' +
           'Try again in a few minutes.\n\n' +
@@ -96,7 +100,7 @@ describe('GitHub scan API interactions', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
+        expect(result.message).toBe(GITHUB_ERR_RATE_LIMIT)
         expect(result.cause).toContain('GITHUB_TOKEN')
       }
     })
@@ -106,6 +110,7 @@ describe('GitHub scan API interactions', () => {
 
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: false,
+        code: 404,
         message: 'GitHub resource not found',
         cause:
           'GitHub resource not found while fetching repository details. ' +
@@ -120,7 +125,7 @@ describe('GitHub scan API interactions', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub resource not found')
+        expect(result.code).toBe(404)
       }
     })
   })
@@ -162,7 +167,7 @@ describe('GitHub scan API interactions', () => {
     it('handles rate limit error during tree fetch', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: false,
-        message: 'GitHub rate limit exceeded',
+        message: GITHUB_ERR_RATE_LIMIT,
         cause: 'GitHub API rate limit exceeded while fetching file tree.',
       })
 
@@ -173,7 +178,7 @@ describe('GitHub scan API interactions', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
+        expect(result.message).toBe(GITHUB_ERR_RATE_LIMIT)
       }
     })
 
@@ -238,7 +243,7 @@ describe('GitHub scan API interactions', () => {
       // This is the exact scenario that caused "Cannot read properties of undefined (reading 'sha')".
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: false,
-        message: 'GitHub rate limit exceeded',
+        message: GITHUB_ERR_RATE_LIMIT,
         cause:
           'GitHub API rate limit exceeded while fetching latest commit SHA. ' +
           'Try again in a few minutes.',
@@ -253,7 +258,7 @@ describe('GitHub scan API interactions', () => {
       // With the fix, we get a proper error instead of crashing.
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
+        expect(result.message).toBe(GITHUB_ERR_RATE_LIMIT)
         // Should NOT crash with "Cannot read properties of undefined (reading 'sha')".
       }
     })
@@ -313,7 +318,7 @@ describe('GitHub scan API interactions', () => {
     it('handles rate limit during file fetch', async () => {
       mockWithGitHubRetry.mockResolvedValueOnce({
         ok: false,
-        message: 'GitHub rate limit exceeded',
+        message: GITHUB_ERR_RATE_LIMIT,
         cause: 'GitHub API rate limit exceeded while fetching file content.',
       })
 
@@ -329,7 +334,7 @@ describe('GitHub scan API interactions', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
+        expect(result.message).toBe(GITHUB_ERR_RATE_LIMIT)
       }
     })
   })
