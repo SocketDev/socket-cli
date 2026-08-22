@@ -73,7 +73,7 @@ describe('fetchRepoAnalytics', () => {
     const result = await fetchRepoAnalyticsData('my-repo', 7)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {
