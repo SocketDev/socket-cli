@@ -94,7 +94,9 @@ describe('fetchOrgFullScanList', () => {
     const result = await fetchOrgFullScanList(config)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    if (!result.ok) {
+      expect(result.code).toBe(1)
+    }
     expect(result.cause).toBe('Invalid configuration')
   })
 
