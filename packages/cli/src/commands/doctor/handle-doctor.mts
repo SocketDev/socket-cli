@@ -3,15 +3,11 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { CMD_NAME } from './shared.mts'
-import {
-  checkSfwWrap,
-  checkWorkflowSocket,
-} from './practice-checks.mts'
+import { checkSfwWrap, checkWorkflowSocket } from './practice-checks.mts'
 import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import { ensurePnpmWorkspaceMinReleaseAge } from '../optimize/update-pnpm-workspace-yaml.mts'
 import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
-import type { CResult } from '../../types.mts'
 import type { MinReleaseAgeOutcome } from '../optimize/update-pnpm-workspace-yaml.mts'
 import type { OutputKind } from '../../types.mts'
 import type { PracticeViolation } from './practice-checks.mts'
@@ -20,9 +16,11 @@ export type DoctorReport = {
   minReleaseAge:
     | { enforceable: false; outcome: 'non-pnpm'; agent: string }
     | { enforceable: true; outcome: MinReleaseAgeOutcome }
-  practices?: {
-    violations: PracticeViolation[]
-  }
+  practices?:
+    | {
+        violations: PracticeViolation[]
+      }
+    | undefined
 }
 
 /**
@@ -97,10 +95,7 @@ export async function handleDoctor({
   const outcome = await ensurePnpmWorkspaceMinReleaseAge(pkgPath)
 
   // The practice gate: the skills' guidance, enforced without an agent.
-  const violations = [
-    ...checkWorkflowSocket(pkgPath),
-    ...checkSfwWrap(pkgPath),
-  ]
+  const violations = [...checkWorkflowSocket(pkgPath), ...checkSfwWrap(pkgPath)]
   const report: DoctorReport = {
     minReleaseAge: { enforceable: true, outcome },
     practices: { violations },
@@ -119,7 +114,8 @@ export async function handleDoctor({
     if (violations.length === 0) {
       logger.success(cmdPrefixMessage(CMD_NAME, 'workflows + sfw: clean.'))
     } else {
-      for (const v of violations) {
+      for (let i = 0, { length } = violations; i < length; i += 1) {
+        const v = violations[i]!
         const where = v.line > 0 ? `${v.file}:${v.line}` : v.file
         logger.warn(
           cmdPrefixMessage(CMD_NAME, `${v.practice}: ${where} - ${v.text}`),

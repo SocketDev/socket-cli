@@ -20,6 +20,9 @@ import { getMajor as getMajorVersion } from '../../util/semver.mts'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
+// Feature-detects fetchChangelog, an odai >=0.3 export the pinned 0.2.1
+// type declarations don't carry yet.
+// oxlint-disable-next-line socket/no-namespace-import -- feature detection
 import * as odai from '@socketsecurity/odai'
 import {
   assessHoistSafety,
@@ -32,7 +35,7 @@ import type { HoistAssessment } from '@socketsecurity/odai'
  * Odai's changelog helper (odai >=0.3) with the pacote-README fallback for
  * the released line. Same contract either way: text plus its provenance.
  */
-async function changelogFor(
+export async function changelogFor(
   root: string,
   name: string,
   target: string,
@@ -42,7 +45,9 @@ async function changelogFor(
     const result = await (
       helper as (
         name: string,
-        options?: { root?: string; version?: string },
+        options?:
+          | { root?: string | undefined; version?: string | undefined }
+          | undefined,
       ) => Promise<{ source: string; text: string }>
     )(name, { root, version: target })
     return result.source === 'none' ? { source: 'none', text: '' } : result
@@ -51,7 +56,9 @@ async function changelogFor(
   if (local !== undefined) {
     return { source: 'CHANGELOG.md', text: local }
   }
-  const manifest = await fetchPackageManifest(`${name}@${target}`)
+  const manifest = (await fetchPackageManifest(`${name}@${target}`)) as
+    | Record<string, unknown>
+    | undefined
   const text =
     typeof manifest?.['readme'] === 'string'
       ? (manifest['readme'] as string).slice(0, 8000)
@@ -77,7 +84,7 @@ export type HoistAdvisoryLine = {
 const MAX_ADVISED = 5
 
 /**
- * odai's backend registry names. When the stamp is one of these, the model
+ * Odai's backend registry names. When the stamp is one of these, the model
  * itself was NOT identified — the label must say that, not repeat the token.
  */
 const BACKEND_NAMES: readonly string[] = [
@@ -101,9 +108,17 @@ export async function findCrossMajorDuplicates(
     return []
   }
   const content = await safeReadFile(lockPath, { encoding: 'utf8' })
+  if (content === undefined) {
+    return []
+  }
   const versionsByName = new Map<string, Set<string>>()
+  // ^\s{2}              — a 2-space-indented top-level package key line
+  // (?:"|')?            — optional quote wrapping the key
+  // ((?:@[a-z0-9-]+\/)?[a-z0-9._-]+) — group 1: name, with an optional @scope/
+  // @(\d+\.\d+\.\d+(?:[-+][^'"\s]*)?) — group 2: semver, with optional pre-release/build
+  // (?:"|')?\s*:        — optional closing quote, then the `:` key terminator
   const keyRe =
-    /^\s{2}(?:'|")?((?:@[a-z0-9-]+\/)?[a-z0-9._-]+)@(\d+\.\d+\.\d+(?:[-+][^'"\s]*)?)(?:'|")?\s*:/gim
+    /^\s{2}(?:"|')?((?:@[a-z0-9-]+\/)?[a-z0-9._-]+)@(\d+\.\d+\.\d+(?:[-+][^'"\s]*)?)(?:"|')?\s*:/gim
   for (const match of content.matchAll(keyRe)) {
     const [, name, version] = match as unknown as [string, string, string]
     let versions = versionsByName.get(name)
@@ -117,29 +132,16 @@ export async function findCrossMajorDuplicates(
   for (const [name, versions] of versionsByName) {
     const majors = [
       ...new Set([...versions].map(v => getMajorVersion(v) ?? 0)),
-    ].sort((a, b) => a - b)
+    ].toSorted((a, b) => a - b)
     if (majors.length >= 2) {
       duplicates.push({
         majors,
         name,
-        versions: [...versions].sort(),
+        versions: [...versions].toSorted(),
       })
     }
   }
   return duplicates
-}
-
-function nodeMajorOf(root: string): number {
-  try {
-    const pkg = JSON.parse(
-      readFileSync(path.join(root, 'package.json'), 'utf8'),
-    )
-    const engines = pkg['engines']?.['node'] ?? ''
-    const match = /(\d+)/.exec(engines)
-    return match ? Number.parseInt(match[1]!, 10) : 18
-  } catch {
-    return 18
-  }
 }
 
 const CHANGELOG_NAMES = ['CHANGELOG.md', 'CHANGELOG', 'HISTORY.md']
@@ -149,9 +151,13 @@ const CHANGELOG_NAMES = ['CHANGELOG.md', 'CHANGELOG', 'HISTORY.md']
  * top level of the package dir — nested paths belong to subtrees the
  * duplicate already covers by name.
  */
-function findLocalChangelog(root: string, name: string): string | undefined {
+export function findLocalChangelog(
+  root: string,
+  name: string,
+): string | undefined {
   const pkgDir = path.join(root, 'node_modules', name)
-  for (const file of CHANGELOG_NAMES) {
+  for (let i = 0, { length } = CHANGELOG_NAMES; i < length; i += 1) {
+    const file = CHANGELOG_NAMES[i]!
     const candidate = path.join(pkgDir, file)
     if (existsSync(candidate)) {
       try {
@@ -200,7 +206,8 @@ export async function hoistAdvisory(
 
   const model = await createOdaiModel()
   const lines: HoistAdvisoryLine[] = []
-  for (const duplicate of advised) {
+  for (let i = 0, { length } = advised; i < length; i += 1) {
+    const duplicate = advised[i]!
     const lowest = duplicate.versions.find(
       v => getMajorVersion(v) === duplicate.majors[0],
     )!
@@ -283,4 +290,17 @@ export async function hoistAdvisory(
     lines.push({ duplicate, suggestion, verdict })
   }
   return lines
+}
+
+export function nodeMajorOf(root: string): number {
+  try {
+    const pkg = JSON.parse(
+      readFileSync(path.join(root, 'package.json'), 'utf8'),
+    )
+    const engines = pkg['engines']?.['node'] ?? ''
+    const match = /(\d+)/.exec(engines)
+    return match ? Number.parseInt(match[1]!, 10) : 18
+  } catch {
+    return 18
+  }
 }

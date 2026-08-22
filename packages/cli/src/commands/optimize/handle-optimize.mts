@@ -96,7 +96,7 @@ export async function handleOptimize({
   // The pastoralist override audit runs ahead of socket's own overrides so
   // stale package-manager overrides carry their review record first. Its
   // errors are logged and swallowed inside the audit wrapper.
-  const pastoralistResult = runPastoralistAudit(pkgEnvDetails.pkgPath)
+  const pastoralistResult = await runPastoralistAudit(pkgEnvDetails.pkgPath)
   debugDir({ pastoralistAudit: pastoralistResult })
   if (!pastoralistResult.ok) {
     logger.warn(`Pastoralist audit skipped: ${pastoralistResult.reason}.`)
