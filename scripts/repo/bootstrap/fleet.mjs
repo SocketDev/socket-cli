@@ -1411,7 +1411,10 @@ function installFiles(filesDir, dest, manifest, options) {
     const rel = rels[i]
     const source = path.join(filesDir, rel)
     const target = path.join(dest, rel)
-    if (isAlwaysTrackedSurface(rel) && existsSync(target)) {
+    if (
+      (isAlwaysTrackedSurface(rel) || rel === '.gitignore') &&
+      existsSync(target)
+    ) {
       if (!refreshTracked) {
         skippedAlwaysTracked += 1
         continue
