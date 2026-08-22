@@ -7,8 +7,10 @@
 # Runs expose-actions-runtime first to surface the runner-injected
 # ACTIONS_RESULTS_URL + ACTIONS_RUNTIME_TOKEN the download client reads (a
 # composite's `run:` steps never see them otherwise). No third-party
-# actions/download-artifact dependency. Downloads one named artifact; a
-# publish job that needs several uses one step per name.
+# actions/download-artifact dependency. Downloads one named artifact, or every
+# artifact in the run when `name` is omitted - each into its own `<path>/<name>/`
+# subdirectory, which is what a publish job collecting one artifact per
+# build-matrix leg needs, since the legs are the list of names.
 
 name: 'Download Artifact'
 description: >-
@@ -19,8 +21,11 @@ description: >-
 
 inputs:
   name:
-    description: 'The artifact name to download'
-    required: true
+    description: >-
+      The artifact name to download. Omit to download EVERY artifact in the
+      run, each under its own `<path>/<name>/` subdirectory.
+    required: false
+    default: ''
   path:
     description: 'The directory to write the entries under'
     required: true
@@ -36,6 +41,10 @@ runs:
         ARTIFACT_PATH: ${{ inputs.path }}
       run: |
         set -euo pipefail
-        node scripts/fleet/artifact/download.mts \
-          --name "$ARTIFACT_NAME" \
-          --path "$ARTIFACT_PATH"
+        args=(--path "$ARTIFACT_PATH")
+        # An empty name means every artifact; passing --name '' would ask for
+        # one literally named the empty string.
+        if [ -n "$ARTIFACT_NAME" ]; then
+          args+=(--name "$ARTIFACT_NAME")
+        fi
+        node scripts/fleet/artifact/download.mts "${args[@]}"
