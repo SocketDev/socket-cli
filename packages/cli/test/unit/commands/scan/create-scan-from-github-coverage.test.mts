@@ -464,7 +464,7 @@ describe('create-scan-from-github (coverage)', () => {
       expect(mockSelect).toHaveBeenCalled()
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('All repos failed to scan')
+        expect(result.cause).toContain('r2')
       }
     })
   })
