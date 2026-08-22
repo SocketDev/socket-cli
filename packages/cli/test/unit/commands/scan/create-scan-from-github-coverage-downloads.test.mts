@@ -168,7 +168,7 @@ describe('create-scan-from-github (coverage)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Download Failed')
+        expect(result.cause).toContain('500')
       }
     })
   })
