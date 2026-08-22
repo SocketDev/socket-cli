@@ -44,13 +44,18 @@ const toolSchema = Type.Object(
     origin: Type.Optional(
       Type.Union(
         [
-          Type.Literal('gh-asset'),
+          Type.Literal('cargo'),
           Type.Literal('gh-archive'),
+          Type.Literal('gh-asset'),
+          Type.Literal('git'),
+          Type.Literal('manager'),
+          Type.Literal('node-dist'),
           Type.Literal('npm'),
+          Type.Literal('system'),
         ],
         {
           description:
-            'How the tool reaches the machine: "gh-asset" for a GitHub release binary, "gh-archive" for a GitHub source tarball, "npm" for a registry tarball',
+            'How the tool reaches the machine. The eight variants of the shared fleet union: cargo, gh-archive, gh-asset, git, manager, node-dist, npm, system',
         },
       ),
     ),
