@@ -49,22 +49,89 @@ env:
   OTEL_SDK_DISABLED: 'true'
 
 jobs:
+  # Does this repo cut GitHub Releases at all? Read from the repo's own
+  # settings, never hard-coded here: a member publishing to npm or crates.io
+  # uses the release as the immutable marker its consumers and provenance
+  # checks read, while a repo distributing through GHCR alone (the wheelhouse
+  # and its fleet pack) would only be minting a second name for bytes nobody
+  # fetches under it. Defaults to enabled, so a member that says nothing keeps
+  # what it has.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.flag.outputs.enabled }}
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - name: Read release.github
+        id: flag
+        run: node scripts/fleet/release/github-release-enabled.mts
+      - name: Say so when the repo opts out
+        if: steps.flag.outputs.enabled != 'true'
+        run: |
+          set -euo pipefail
+          echo 'release.github is false in .config/repo/socket-wheelhouse.json — this repo does not cut GitHub Releases. Skipping.'
+
   github-release:
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      # First step must be the third-party actions/checkout (GitHub fetches it
-      # independently) to populate the workspace so the LOCAL
-      # ./.github/actions/* composite resolves; the fleet checkout action then
-      # re-checks-out at its own depth.
-      - uses: ./.github/actions/fleet/checkout
-        with:
-          # Authorizes a thin member's bundle hydration right after checkout.
-          # Both stay empty on a member with no payload App, skipping the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
-          fetch-depth: 1
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # same inline git-fetch shape npm-publish.yml uses, so the fleet
+      # checkout action below can re-check-out at its own depth.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body —
+          # zizmor expression-injection). Token authorizes the fetch inline and
+          # is never persisted to .git/config.
+          GITHUB_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          # A dispatched tag input wins; otherwise the ref that triggered the run.
+          FETCH_REF="${TRIGGER_REF}"
+          if [ -n "${INPUT_TAG}" ]; then
+            FETCH_REF="refs/tags/${INPUT_TAG}"
+          fi
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${FETCH_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
       - name: Checkout
         uses: ./.github/actions/fleet/checkout
         with:

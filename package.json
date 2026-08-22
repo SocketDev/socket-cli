@@ -95,7 +95,8 @@
     "offload:model": "node scripts/fleet/offload-model.mts",
     "setup:fireconnect": "node scripts/fleet/setup/fireconnect.mts",
     "setup:offload-providers": "node scripts/fleet/setup/offload-providers.mts",
-    "backup": "node scripts/fleet/backup-work.mts"
+    "backup": "node scripts/fleet/backup-work.mts",
+    "sync-global-hooks": "node scripts/fleet/sync-global-hooks.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -108,6 +109,7 @@
     "@babel/preset-typescript": "catalog:",
     "@babel/runtime": "catalog:",
     "@babel/traverse": "catalog:",
+    "@mdn/browser-compat-data": "catalog:",
     "@npmcli/arborist": "catalog:",
     "@npmcli/config": "catalog:",
     "@octokit/graphql": "catalog:",

@@ -290,21 +290,24 @@ runs:
         # failing the whole build there.
         PLATFORM_TOOL="${GITHUB_ACTION_PATH}/../_shared/platform.mjs"
         PLATFORM="$(node "$PLATFORM_TOOL")"
+        # Schema-lookup key for external-tools.json `platforms` (win32-*).
+        # NOT $PLATFORM, which is the prose shape (win-*) and misses on Windows.
+        PLATFORM_KEY="$(node "${GITHUB_ACTION_PATH}/../_shared/platform-key.mjs")"
         # Soft-skip when zizmor upstream has no binary for this
         # platform. SOCKET_TOOL_ZIZMOR_AVAILABLE=false signals the
         # Audit step to skip cleanly. lib/jq.mjs exits non-zero when
         # the key is missing — capture that without tripping set -e.
         ASSET=""
-        if ASSET_TRY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM" asset 2>/dev/null)"; then
+        if ASSET_TRY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM_KEY" asset 2>/dev/null)"; then
           ASSET="$ASSET_TRY"
         fi
         if [ -z "$ASSET" ]; then
-          echo "ℹ zizmor is not published for ${PLATFORM} at v${ZIZMOR_VERSION} — skipping audit on this runner."
+          echo "ℹ zizmor is not published for ${PLATFORM_KEY} at v${ZIZMOR_VERSION} — skipping audit on this runner."
           echo "  See external-tools.json zizmor._notes for the supported set."
           echo "SOCKET_TOOL_ZIZMOR_AVAILABLE=false" >> "${GITHUB_ENV:-/dev/null}"
           exit 0
         fi
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM" integrity)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS zizmor platforms "$PLATFORM_KEY" integrity)"
         ZIZMOR_BIN="$ZIZMOR_DIR/zizmor"
         [[ "$ASSET" == *.zip ]] && ZIZMOR_BIN="$ZIZMOR_DIR/zizmor.exe"
         # Shared installer: fetches, integrity-verifies (SRI), extracts.

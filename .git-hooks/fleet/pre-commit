@@ -1,0 +1,92 @@
+#!/bin/sh
+# Git pre-commit hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time).
+#
+# Optional checks — can be bypassed with --no-verify for fast local
+# commits. Mandatory security checks ALSO run in pre-push hook.
+#
+# Use --no-verify (gated by the `Allow no-verify bypass` phrase) for:
+# - History operations (squash, rebase, amend)
+# - Emergency hotfixes
+# - When tests require binaries that haven't been built yet
+#
+# There is NO per-step env kill-switch: every escape is all-or-nothing,
+# and every one is gated by the `Allow no-verify bypass` phrase in
+# no-revert-guard. Three reach this chain:
+#
+#   1. `--no-verify` on commit / push.
+#   2. `HUSKY=0`, handled by the root dispatcher — heavier, it covers
+#      every hook type including post-commit, which has no git flag.
+#   3. `core.hooksPath` pointed elsewhere for one invocation, whether by
+#      `-c core.hooksPath=<path>`, `--config-env=core.hooksPath=<VAR>`,
+#      or the `GIT_CONFIG_KEY_<i>` env form.
+#
+# Treat that list as the state of the enforcement, not a proof no fourth
+# route exists — route 3 went ungated until an agent found it unaided.
+# A new one belongs in no-revert-guard and in this list, same phrase.
+
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
+# Skip guards during rebase — commits are being replayed; lint/test on
+# each pick is noisy and slow. Signing is unaffected: git signs via
+# commit.gpgsign config, not this hook.
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null) || GIT_DIR=''
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+  exit 0
+fi
+
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 24). See
+# _shared/resolve-node.sh.
+. "$(dirname "$0")/../_shared/resolve-node.sh"
+
+# Sanitize placeholder Socket API credentials (logs each unset here; see the
+# shared script for the rationale) so the sfw pnpm-shim doesn't 401.
+SANITIZE_TOKEN_LABEL=pre-commit
+. "$(dirname "$0")/../_shared/sanitize-token-env.sh"
+
+# Run Socket security pre-commit checks (API keys, .DS_Store, etc.). The
+# `|| exit $?` is load-bearing: pre-commit.mts refuses by returning non-zero,
+# and without it the shell drops that status and the commit proceeds — every
+# refusal in that file prints and is ignored, which is how a mass-deletion
+# refusal once printed and committed anyway.
+node "$(dirname "$0")/pre-commit.mts" || exit $?
+
+# Check if pnpm is available.
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "Error: pnpm not found. Install pnpm to run git hooks."
+  echo "Visit: https://pnpm.io/installation"
+  exit 1
+fi
+
+# Error-visibility + budget-bounded step runners (run_step / run_step_bounded /
+# run_pkg_step_bounded), extracted so the logic lives in one place, plus the
+# ungated-step ledger the summary at the bottom renders. See
+# _shared/run-step.sh.
+. "$(dirname "$0")/../_shared/run-step.sh"
+
+# `run_pkg_step_bounded <script> [args…]` runs the repo's package.json script
+# for <script>, invoking its `node <path>` body directly rather than through
+# `pnpm run` — pnpm's startup (the sfw shim boots the Socket Firewall proxy,
+# then pnpm re-resolves the workspace) costs seconds per step against a 10s
+# budget, for a staged-scope run whose real work is milliseconds. A script
+# whose body isn't a plain `node <path>` keeps the wrapper.
+run_pkg_step_bounded lint --staged || exit $?
+
+# Each repo's `pnpm test` script wraps a runner that understands
+# `--staged` (e.g. scripts/test.mts forwards staged-filtering to
+# vitest, or filters the staged set in a pre-pass). Repos whose
+# `pnpm test` is bare vitest without a wrapper need a local override
+# that pre-filters with `git diff --cached --name-only` then runs
+# `pnpm test`. Bounded so an sfw-proxy deadlock can't hang the commit.
+run_pkg_step_bounded test --staged || exit $?
+
+# Name every step that did not actually gate this commit — a killed hang or a
+# run over zero files. Silent when both gates ran for real.
+precommit_gate_summary

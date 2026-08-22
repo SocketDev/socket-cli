@@ -12,6 +12,7 @@
     "../../.config/fleet/oxlint-plugin/**/*.mts",
     "../../.config/fleet/rolldown/**/*.mts",
     "../../src/**/*.d.ts",
+    "../../src/**/*.d.mts",
     "../../test/**/*.mts"
   ],
   "exclude": [

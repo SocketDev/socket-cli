@@ -2,11 +2,11 @@
 # template/base and cascade — it reaches every member, and each leg self-skips
 # when the repo carries no marker for it, so a pure-docs repo pays one skipped
 # workflow and a multi-implementation repo (Rust + Go + C++ + TypeScript in
-# one tree) fuzzes all of them on the same night.
+# one tree) fuzzes all of them in the same run.
 #
 # Toolchain markers, all checked at runtime, never by hard-coding a repo:
 #   rust  — fuzz/Cargo.toml (cargo-fuzz's own "this repo fuzzes" file)
-#   js/ts — vitest config plus test/**/*.fuzz.* targets (the vitiate lane)
+#   js/ts — any test/**/*.fuzz.* harness, at any depth
 #   go    — go.mod (native `go test -fuzz`, Go >= 1.18)
 #   c++   — .clang-tidy or CMakeLists.txt (clang libFuzzer)
 #
@@ -18,39 +18,39 @@
 # the fuzz-file glob, Go targets from -fuzz functions in _test.go files, C++
 # targets from fuzz/*.cpp.
 #
-# Two shapes, one file. On a PR or push that touches fuzzable code, a fast
-# gate: targets build, lints pass, a short smoke run is clean. On the nightly
-# schedule, the real coverage-guided campaign per toolchain, with the corpus
-# cached between runs so coverage accumulates instead of restarting from
-# seeds.
+# ONE shape: the full coverage-guided campaign per toolchain, with the corpus
+# cached between runs so coverage accumulates instead of restarting from seeds.
+# There is no fast PR gate, because there is no PR trigger — see the `on:`
+# block for why fuzzing is not a per-commit concern.
+#
+# What DID stay per-PR is the fuzz-adjacent work that never runs a fuzzer: the
+# no-unsafe lint and the fuzz/Cargo.lock freshness read live in
+# scripts/fleet/check/fuzz-targets-are-sound.mts, in the ordinary check suite,
+# so a broken target still fails the change that introduced it.
 #
 # Rust repo contract: `fuzz/run.sh <target> [seconds]` and
 # `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
 # optional and runs only where it exists.
 name: fuzz
 
+# Fuzzing is NOT a per-commit gate, which is why there is no push or
+# pull_request trigger here. A randomized harness is budgeted by wall-clock, so
+# whether it finds a crash depends on how loaded the runner was — a gate that
+# flakes with machine load teaches everyone to re-run it. The deterministic
+# harnesses replay exactly, but cost far more than the per-commit signal is
+# worth. Both run here, at full budget, on the schedule.
+#
+# The cost of a scheduled run is that nobody watches it, so a failing leg opens
+# an issue (scripts/fleet/fuzz/report-crash.mts) rather than leaving a red
+# square in a tab no one has open. Filed through the PR App, which already
+# carries issues:write.
 on:
   schedule:
-    # 07:00 UTC nightly — the standing fuzz cadence.
-    - cron: '0 7 * * *'
+    # Sunday 07:00 UTC — the standing weekly fuzz cadence. Sunday keeps it clear
+    # of weekly-update's Monday 09:00 slot, so a fuzz campaign and a fleet-wide
+    # dependency bump never contend for runners.
+    - cron: '0 7 * * 0'
   workflow_dispatch: {}
-  push:
-    branches: [main]
-    paths:
-      - 'fuzz/**'
-      - 'crates/**'
-      - 'test/**/*.fuzz.*'
-      - '**/*_test.go'
-      - 'go.mod'
-      - '.github/workflows/fuzz.yml'
-  pull_request:
-    paths:
-      - 'fuzz/**'
-      - 'crates/**'
-      - 'test/**/*.fuzz.*'
-      - '**/*_test.go'
-      - 'go.mod'
-      - '.github/workflows/fuzz.yml'
 
 permissions:
   contents: read
@@ -114,9 +114,14 @@ jobs:
         id: markers
         run: |
           set -euo pipefail
+          # hasJs uses `find`, not a glob. `ls test/**/*.fuzz.*` needs bash's
+          # globstar, which is OFF by default, so `**` collapsed to a single
+          # level and matched only test/<one-dir>/*.fuzz.*. Every real harness
+          # sits deeper (test/repo/unit/…), so the marker read false in a repo
+          # with four of them and both JS legs silently never ran.
           {
             echo "hasRust=$([ -f fuzz/Cargo.toml ] && echo true || echo false)"
-            echo "hasJs=$(ls test/**/*.fuzz.* >/dev/null 2>&1 && echo true || echo false)"
+            echo "hasJs=$(find test -type f -name '*.fuzz.*' -print -quit 2>/dev/null | grep -q . && echo true || echo false)"
             echo "hasGo=$([ -f go.mod ] && echo true || echo false)"
             echo "hasCpp=$([ -f .clang-tidy ] || [ -f CMakeLists.txt ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
@@ -138,257 +143,7 @@ jobs:
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
           echo "Discovered rust targets: $targets"
 
-  # Fast gate on PRs/pushes: targets compile, the no-unsafe lint passes, and a
-  # short smoke run over the seed corpus is clean. Never scheduled.
-  build-rust:
-    if: github.event_name != 'schedule' && needs.discover.outputs.hasRust == 'true'
-    needs: discover
-    runs-on: ubuntu-latest
-    steps:
-      # First step can't call the local ./.github/actions/fleet/checkout
-      # composite: nothing is checked out yet, so the action.yml it lives in
-      # does not exist for the runner to resolve.
-      - name: Bootstrap checkout
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          SERVER_URL: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          git init -q
-          git config --local advice.detachedHead false
-          git remote remove origin 2>/dev/null || true
-          git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
-          if [ -n "${GITHUB_TOKEN}" ]; then
-            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
-          else
-            git fetch "${FETCH_ARGS[@]}"
-          fi
-          git checkout -q --detach FETCH_HEAD
-      - name: Rust toolchain
-        uses: ./.github/actions/fleet/setup-rust-toolchain
-        with:
-          channel: nightly
-      - name: Rust cache
-        uses: ./.github/actions/fleet/setup-rust-cache
-        with:
-          prefix-key: rust-fuzz-build
-          workspaces: 'fuzz -> target'
-      - name: Install cargo-fuzz
-        run: |
-          set -euo pipefail
-          # The pinned, SRI-verified release from the fleet tool registry.
-          # `cargo install` would build it from source — minutes on a cold
-          # cache, and it verifies nothing.
-          SHARED=".github/actions/fleet/_shared"
-          # The fleet registry has ONE home. The _shared/ .mjs helpers beside
-          # the composites are code that ships with them; the pins are not.
-          TOOLS_FILE="scripts/fleet/setup/external-tools.json"
-          JQ="$SHARED/jq.mjs"
-          NS="tools"
-          node "$JQ" "$TOOLS_FILE" tools >/dev/null 2>&1 || NS=""
-          PLATFORM="$(node "$SHARED/platform.mjs")"
-          # Upstream ships x86_64 only. On anything else fall back to the
-          # source build rather than failing the run — the fallback is slower
-          # and unverified, so it says so.
-          ASSET=""
-          if TRY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" asset 2>/dev/null)"; then
-            ASSET="$TRY"
-          fi
-          if [ -z "$ASSET" ]; then
-            echo "cargo-fuzz publishes no asset for ${PLATFORM}; building from source (slower, unverified)."
-            cargo install cargo-fuzz --locked --version "$CARGO_FUZZ_VERSION"
-            exit 0
-          fi
-          INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS cargo-fuzz platforms "$PLATFORM" integrity)"
-          DEST="$HOME/.cargo/bin"
-          mkdir -p "$DEST"
-          node "$SHARED/install-tool.mjs" \
-            "https://github.com/rust-fuzz/cargo-fuzz/releases/download/${CARGO_FUZZ_VERSION}/${ASSET}" \
-            "$INTEGRITY" \
-            "$DEST"
-          echo "$DEST" >> "$GITHUB_PATH"
-      - name: 'no unsafe without a // FUZZ: annotation'
-        run: bash fuzz/no-unsafe-without-fuzz.sh
-      # Reproducible fuzz builds need a committed fuzz/Cargo.lock that matches
-      # the dependency graph. This fails when a change adds or updates a
-      # dependency without refreshing it; `--locked` errors rather than
-      # rewriting.
-      - name: Verify fuzz/Cargo.lock is up to date
-        run: cargo metadata --manifest-path fuzz/Cargo.toml --locked --format-version 1 > /dev/null
-      - name: Build all fuzz targets
-        run: cargo +nightly fuzz build --target x86_64-unknown-linux-gnu
-      - name: Regenerate the seed corpus
-        if: hashFiles('fuzz/seed-corpus.py') != ''
-        run: python3 fuzz/seed-corpus.py
-      - name: Smoke run, 60s per target over the seed corpus
-        env:
-          TARGETS: ${{ needs.discover.outputs.rustTargets }}
-        run: |
-          set -euo pipefail
-          # The matrix shape is a JSON array; read it back the same way here so
-          # the smoke run covers exactly what the nightly campaign will.
-          while IFS= read -r target; do
-            bash fuzz/run.sh "$target" 60
-          done < <(printf '%s' "$TARGETS" | python3 -c 'import json,sys; print("\n".join(json.load(sys.stdin)))')
-      # Last step on purpose: the restore-phase "Rust cache" call above
-      # exported the RUST_CACHE_* job env; this saves the populated target
-      # dirs. Runs only when every previous step succeeded — the same
-      # success gate the old cache post step used.
-      - name: Save Rust cache
-        uses: ./.github/actions/fleet/setup-rust-cache
-        with:
-          phase: save
-
-  # JS/TS gate: the vitiate coverage-guided lane runs its targets once, fast.
-  build-js:
-    if: github.event_name != 'schedule' && needs.discover.outputs.hasJs == 'true'
-    needs: discover
-    runs-on: ubuntu-latest
-    steps:
-      - name: Bootstrap checkout
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          SERVER_URL: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          git init -q
-          git config --local advice.detachedHead false
-          git remote remove origin 2>/dev/null || true
-          git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
-          if [ -n "${GITHUB_TOKEN}" ]; then
-            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
-          else
-            git fetch "${FETCH_ARGS[@]}"
-          fi
-          git checkout -q --detach FETCH_HEAD
-      - uses: ./.github/actions/fleet/setup-and-install
-        with:
-          # Authorizes a thin member's bundle hydration right after checkout.
-          # Both stay empty on a member with no payload App, skipping the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
-          # The org secret feeds both SOCKET_API_TOKEN and SOCKET_API_KEY.
-          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-      - name: Smoke the JS fuzz lane
-        run: |
-          set -euo pipefail
-          # The repo's own fuzz script is the lane (fleet-canonical shape:
-          # `pnpm run test:fuzz` drives vitiate over test/**/*.fuzz.*).
-          # FUZZ_TIME_MS bounds the gate; the nightly campaign runs unbounded.
-          if ! node -e "process.exit(JSON.parse(require('fs').readFileSync('package.json','utf8')).scripts?.['test:fuzz'] ? 0 : 1)"; then
-            echo 'test/**/*.fuzz.* targets exist but no test:fuzz script — add the vitiate lane.'
-            exit 1
-          fi
-          FUZZ_TIME_MS=60000 pnpm run test:fuzz
-
-  # Go gate: native go test -fuzz, one short pass per fuzz function.
-  build-go:
-    if: github.event_name != 'schedule' && needs.discover.outputs.hasGo == 'true'
-    needs: discover
-    runs-on: ubuntu-latest
-    steps:
-      - name: Bootstrap checkout
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          SERVER_URL: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          git init -q
-          git config --local advice.detachedHead false
-          git remote remove origin 2>/dev/null || true
-          git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
-          if [ -n "${GITHUB_TOKEN}" ]; then
-            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
-          else
-            git fetch "${FETCH_ARGS[@]}"
-          fi
-          git checkout -q --detach FETCH_HEAD
-      - name: Go toolchain
-        uses: ./.github/actions/fleet/setup-go-toolchain
-        with:
-          go-version-file: go.mod
-      - name: Smoke go fuzz functions, 60s each
-        uses: ./.github/actions/fleet/run-offline
-        with:
-          run: |
-            set -euo pipefail
-            # Discover every FuzzXxx in *_test.go and give each a short pass.
-            # Native fuzzing (Go >= 1.18) needs no extra tooling.
-            found=0
-            while IFS= read -r fn; do
-              found=1
-              echo "go test -fuzz=^${fn}\$ -fuzztime=60s"
-              go test -fuzz="^${fn}\$" -fuzztime=60s ./...
-            done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
-            if [ "$found" -eq 0 ]; then
-              echo 'go.mod exists but no Fuzz functions — add one or drop the marker.'
-              exit 1
-            fi
-
-  # C++ gate: libFuzzer targets under fuzz/*.cpp, clang-pinned short run.
-  build-cpp:
-    if: github.event_name != 'schedule' && needs.discover.outputs.hasCpp == 'true'
-    needs: discover
-    runs-on: ubuntu-latest
-    steps:
-      - name: Bootstrap checkout
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          SERVER_URL: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
-        run: |
-          set -euo pipefail
-          git init -q
-          git config --local advice.detachedHead false
-          git remote remove origin 2>/dev/null || true
-          git remote add origin "${SERVER_URL}/${REPOSITORY}"
-          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
-          if [ -n "${GITHUB_TOKEN}" ]; then
-            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
-            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
-          else
-            git fetch "${FETCH_ARGS[@]}"
-          fi
-          git checkout -q --detach FETCH_HEAD
-      - name: Clang toolchain
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends clang
-      - name: Build and smoke libFuzzer targets, 60s each
-        run: |
-          set -euo pipefail
-          found=0
-          for src in fuzz/*.cpp; do
-            [ -e "$src" ] || continue
-            found=1
-            bin="/tmp/$(basename "${src%.cpp}")"
-            clang++ -std=c++17 -g -fsanitize=fuzzer,address "$src" -o "$bin"
-            "$bin" -max_total_time=60
-          done
-          if [ "$found" -eq 0 ]; then
-            echo 'C++ markers exist but fuzz/*.cpp has no targets — add one or drop the marker.'
-            exit 1
-          fi
-
-  # Nightly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
+  # Weekly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
   fuzz-rust:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasRust == 'true'
     needs: discover
@@ -488,6 +243,12 @@ jobs:
       - name: Seed the corpus additively
         if: hashFiles('fuzz/seed-corpus.py') != ''
         run: python3 fuzz/seed-corpus.py --additive
+      # The no-unsafe lint and the fuzz/Cargo.lock freshness read are NOT here.
+      # Neither runs a fuzzer, so both belong on the per-PR path where a broken
+      # target fails the change that introduced it —
+      # scripts/fleet/check/fuzz-targets-are-sound.mts owns them, and it runs in
+      # the ordinary check suite. Repeating them here would be a second
+      # implementation of the same rule, free to drift from the first.
       - name: Fuzz ${{ matrix.target }} for 10 minutes
         env:
           # Route the matrix value through env. A ${{ }} expansion inside a run
@@ -527,7 +288,7 @@ jobs:
         with:
           phase: save
 
-  # Nightly JS campaign: the vitiate lane, unbounded.
+  # Weekly JS campaign: the vitiate lane, unbounded.
   fuzz-js:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasJs == 'true'
     needs: discover
@@ -556,20 +317,39 @@ jobs:
           git checkout -q --detach FETCH_HEAD
       - uses: ./.github/actions/fleet/setup-and-install
         with:
+          # Without this the install runs the firewall unauthenticated while the
+          # job still reports green.
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
           # Authorizes a thin member's bundle hydration right after checkout.
           # Both stay empty on a member with no payload App, skipping the mint.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+      # The vitest-runnable harnesses (`*.fuzz.test.mts` — Tier 1 property,
+      # Tier 3 seeded). The ordinary suite EXCLUDES these, so this is the only
+      # place they run: FLEET_TEST_FUZZ=1 flips the vitest config's include to
+      # exactly the fuzz globs. Runs before the vitiate campaign because it is
+      # the cheap, deterministic half — a failure here replays from the log.
+      #
+      # Not gated on a `test:fuzz` script: a repo can carry Tier-1/3 harnesses
+      # without adopting vitiate, and those must still run.
+      - name: Run the vitest fuzz harnesses at full budget
+        env:
+          FLEET_TEST_FUZZ: '1'
+        run: pnpm run test --all
       - name: Run the JS fuzz campaign
         run: |
           set -euo pipefail
+          # No test:fuzz script means this repo has no vitiate lane, which is
+          # legitimate when its harnesses are all Tier 1/3 (run above). Skip
+          # rather than fail: the marker only proves `*.fuzz.*` files exist, not
+          # which tier they are.
           if ! node -e "process.exit(JSON.parse(require('fs').readFileSync('package.json','utf8')).scripts?.['test:fuzz'] ? 0 : 1)"; then
-            echo 'test/**/*.fuzz.* targets exist but no test:fuzz script — add the vitiate lane.'
-            exit 1
+            echo 'No test:fuzz script — no vitiate lane in this repo; the vitest harnesses above are the whole JS tier.'
+            exit 0
           fi
           pnpm run test:fuzz
 
-  # Nightly Go campaign: 10 min per fuzz function.
+  # Weekly Go campaign: 10 min per fuzz function.
   fuzz-go:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasGo == 'true'
     needs: discover
@@ -610,7 +390,7 @@ jobs:
               go test -fuzz="^${fn}\$" -fuzztime=600s ./...
             done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
 
-  # Nightly C++ campaign: 10 min per libFuzzer target.
+  # Weekly C++ campaign: 10 min per libFuzzer target.
   fuzz-cpp:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasCpp == 'true'
     needs: discover
@@ -650,4 +430,91 @@ jobs:
             bin="/tmp/$(basename "${src%.cpp}")"
             clang++ -std=c++17 -g -fsanitize=fuzzer,address "$src" -o "$bin"
             "$bin" -max_total_time=600
+          done
+
+  # A scheduled run nobody watches needs to speak up, so one reporting job
+  # covers every leg. It runs AFTER the campaigns, only when one of them failed,
+  # and files or updates the issue tracking that leg.
+  #
+  # One job rather than a step per campaign: the reporter is a Node script that
+  # imports from the fleet lib, so it needs node_modules, and only the JS leg
+  # installs them. Adding an install to the Rust/Go/C++ legs would spend a pnpm
+  # install on every green run to prepare for a failure that usually is not
+  # coming.
+  report-crashes:
+    # `always()` because the default `success()` gate would skip the reporter in
+    # exactly the case it exists for. `contains(needs.*.result, 'failure')` so a
+    # run where every leg was skipped (a repo with no markers) reports nothing.
+    if: always() && contains(needs.*.result, 'failure')
+    needs: [fuzz-rust, fuzz-js, fuzz-go, fuzz-cpp]
+    # No issues:write here on purpose. The write grant rides the PR App token
+    # minted below, so the default GITHUB_TOKEN stays read-only for checkout and
+    # install — the same split every other fleet workflow uses.
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
+      - uses: ./.github/actions/fleet/setup-and-install
+        with:
+          # Without this the install runs the firewall unauthenticated while the
+          # job still reports green.
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+      # The PR App carries the issues:write grant this needs and already owns
+      # the comment surface. The default GITHUB_TOKEN is deliberately not used:
+      # an issue it opens is attributed to github-actions[bot] and, more to the
+      # point, cannot trigger the on:issues workflows a member may hang off a
+      # filed crash.
+      - name: Mint PR App token
+        id: pr-app
+        uses: ./.github/actions/fleet/github-pr-app-token
+        with:
+          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+      - name: File an issue for each failed leg
+        env:
+          GH_TOKEN: ${{ steps.pr-app.outputs.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+          # Routed through env, never interpolated into the shell body.
+          RESULT_RUST: ${{ needs.fuzz-rust.result }}
+          RESULT_JS: ${{ needs.fuzz-js.result }}
+          RESULT_GO: ${{ needs.fuzz-go.result }}
+          RESULT_CPP: ${{ needs.fuzz-cpp.result }}
+        run: |
+          set -euo pipefail
+          # Only `failure` files an issue. A skipped or cancelled leg is not a
+          # crash, and reporting one would train everyone to close fuzz issues
+          # without reading them.
+          for leg in rust js go cpp; do
+            upper="$(printf '%s' "$leg" | tr '[:lower:]' '[:upper:]')"
+            var="RESULT_${upper}"
+            if [ "${!var}" = "failure" ]; then
+              node scripts/fleet/fuzz/report-crash.mts \
+                --leg "fuzz-${leg}" \
+                --run-url "${RUN_URL}" \
+                --sha "${COMMIT_SHA}"
+            fi
           done

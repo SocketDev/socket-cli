@@ -297,6 +297,24 @@ export function laneToTestGlobs(globs: string[]): string[] {
 const conformanceGlobs = readConformanceExcludeGlobs()
 const conformanceTier = process.env['FLEET_TEST_CONFORMANCE'] === '1'
 
+/**
+ * Vitest-runnable property/fuzz harnesses (`*.fuzz.test.mts`). The Tier-2
+ * vitiate form (`*.fuzz.mts`) is already outside the include glob and runs on
+ * its own runner, so it needs no entry here.
+ */
+export const FUZZ_GLOBS: readonly string[] = [
+  '**/test/**/*.fuzz.test.{js,ts,mjs,mts,cjs}',
+]
+// Whether THIS run is the explicit fuzz tier. Set by the weekly fuzz workflow,
+// never by hand.
+//
+// Fuzzing is not a per-commit gate. A randomized harness is budgeted by
+// wall-clock, so a red run depends on machine load and cannot be replayed; a
+// deterministic one replays but costs far more than the signal is worth per
+// commit (the seeded parity harness alone ran 5-20s). Both belong to a
+// scheduled run that can afford the full budget and file what it finds.
+const fuzzTier = process.env['FLEET_TEST_FUZZ'] === '1'
+
 export default defineConfig({
   // Repo-owned resolution from the settings file's `vitest.alias` +
   // `vitest.conditions` — see mergeVitestAlias and resolveVitestConditions.
@@ -348,13 +366,15 @@ export default defineConfig({
     // root, silently missing every sub-package's tests (each scoped `vitest run`
     // returns "No test files found" and a full run "passes" having executed
     // zero of them).
-    include: conformanceTier
-      ? laneToTestGlobs(conformanceGlobs)
-      : laneFilterActive && activeLane === 'mid'
-        ? laneToTestGlobs(midLaneGlobs)
-        : laneFilterActive && activeLane === 'slow'
-          ? laneToTestGlobs(slowLaneGlobs)
-          : ['**/test/**/*.test.{js,ts,mjs,mts,cjs}'],
+    include: fuzzTier
+      ? [...FUZZ_GLOBS]
+      : conformanceTier
+        ? laneToTestGlobs(conformanceGlobs)
+        : laneFilterActive && activeLane === 'mid'
+          ? laneToTestGlobs(midLaneGlobs)
+          : laneFilterActive && activeLane === 'slow'
+            ? laneToTestGlobs(slowLaneGlobs)
+            : ['**/test/**/*.test.{js,ts,mjs,mts,cjs}'],
     // Vitest treats `test/**` as `**/test/**`, so without an explicit
     // exclude it picks up every nested `test/` directory in the repo
     // — including the `.git-hooks/test/`, the oxlint plugin's per-rule
@@ -372,6 +392,10 @@ export default defineConfig({
       // hours, not a unit suite. Lifted only for the explicit conformance run,
       // where the include above targets exactly these globs.
       ...(conformanceTier ? [] : conformanceGlobs),
+      // Property/fuzz harnesses run ONLY in the fuzz tier, never in the
+      // ordinary suite or a pre-commit lane. Lifted only for the explicit fuzz
+      // run, where the include above targets exactly these globs.
+      ...(fuzzTier ? [] : FUZZ_GLOBS),
       // Generated/vendored trees (dist, build, upstream, test/fixtures, …) —
       // shared with lint + format from one source (constants/generated-globs.mts)
       // so the ignore surfaces can't drift. vite's default loader can't
@@ -425,6 +449,11 @@ export default defineConfig({
     // for the conformance tier: that run exists to execute those globs, so
     // discovering none means the tier is misconfigured and a silent pass would
     // report the heavy suites green without running one of them.
+    //
+    // The fuzz tier is deliberately NOT held to that: a repo can fuzz only at
+    // Tier 2 (`*.fuzz.mts`, its own runner), which discovers nothing here and
+    // is not a misconfiguration. Whether a repo fuzzes at all is
+    // fuzz-tiers-are-covered's question, and which legs fire is the workflow's.
     passWithNoTests: !conformanceTier,
     // Reporters left unset so vitest applies its own default:
     // `[isAgent ? 'minimal' : 'default', ...(GITHUB_ACTIONS ? ['github-actions'] : [])]`

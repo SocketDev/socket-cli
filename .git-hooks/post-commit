@@ -1,0 +1,31 @@
+#!/bin/sh
+# Git post-commit dispatcher (Option A). core.hooksPath points at .git-hooks/;
+# fleet/ and repo/ are peers under it. Runs the fleet hook first, then the
+# repo hook if present. post-commit fires AFTER the commit has already
+# landed, so unlike the other dispatchers a non-zero exit here only reports
+# failure — it can't block or undo the commit. Both tiers always run (one
+# tier's failure doesn't skip the other); the dispatcher's own exit status
+# reflects the last failure for visibility.
+
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
+# HUSKY=0 skips this hook for the current invocation — the husky-compatible
+# whole-chain escape (details in the pre-commit dispatcher).
+if [ "${HUSKY-}" = "0" ]; then
+  echo "[git-hooks] HUSKY=0 — skipping post-commit."
+  exit 0
+fi
+
+DIR=$(dirname "$0")
+status=0
+if [ -x "$DIR/fleet/post-commit" ]; then
+  "$DIR/fleet/post-commit" "$@" || status=$?
+fi
+if [ -x "$DIR/repo/post-commit" ]; then
+  "$DIR/repo/post-commit" "$@" || status=$?
+fi
+exit "$status"

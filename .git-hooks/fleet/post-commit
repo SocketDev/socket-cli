@@ -1,0 +1,21 @@
+#!/bin/sh
+# Git post-commit hook entry point (fleet tier). Invoked by the root
+# .git-hooks/post-commit dispatcher when this file is present + executable.
+#
+# Runs after the commit has already landed, so a non-zero exit here reports
+# failure but cannot undo or block the commit.
+
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
+# Skip during rebase — commits are being replayed, HEAD~1 diffs are
+# unreliable, and cascading every picked commit would be noisy/wrong.
+# Signing still happens: git signs each commit as it lands; this hook
+# only controls fleet post-commit bookkeeping, not commit signing.
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null) || GIT_DIR=''
+if [ -d "${GIT_DIR}/rebase-merge" ] || [ -d "${GIT_DIR}/rebase-apply" ]; then
+  exit 0
+fi

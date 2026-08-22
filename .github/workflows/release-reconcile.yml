@@ -154,17 +154,34 @@ jobs:
       # Socket Firewall + CLI auth for the sfw-wrapped setup + pnpm install.
       SOCKET_API_KEY: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
     steps:
-      # First step must be the third-party actions/checkout (GitHub fetches it
-      # independently) to populate the workspace so the LOCAL
-      # ./.github/actions/* composite resolves; setup-and-install re-checks-out
-      # at the full depth below.
-      - uses: ./.github/actions/fleet/checkout
-        with:
-          # Authorizes a thin member's bundle hydration right after checkout.
-          # Both stay empty on a member with no payload App, skipping the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
-          fetch-depth: 1
+      # First step can't call the local ./.github/actions/fleet/checkout
+      # composite (nothing checked out yet); bootstrap the workspace with the
+      # same inline git-fetch shape npm-publish.yml uses, so setup-and-install
+      # can re-check-out at the full depth below.
+      - name: Bootstrap checkout
+        shell: bash
+        env:
+          # Route context through env (no ${{ }} in the shell body —
+          # zizmor expression-injection). Token authorizes the fetch inline and
+          # is never persisted to .git/config.
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          TRIGGER_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          if [ -n "${GITHUB_TOKEN}" ]; then
+            AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+            git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          else
+            git fetch "${FETCH_ARGS[@]}"
+          fi
+          git checkout -q --detach FETCH_HEAD
       - name: Setup + install
         uses: ./.github/actions/fleet/setup-and-install
         with:
