@@ -51,12 +51,11 @@ catalogDriftIgnore:
 
 catalog:
   '@mdn/browser-compat-data': 8.0.11
-  # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
-  # change can be validated before it's pushed (see the `agent-ci` skill).
-  # The published package is a self-contained Node CLI (`dist/cli.js`) — no
-  # platform-binary optionalDependencies, despite the monorepo's internal
-  # workspace layout. dtu-github-actions is its GitHub-Actions parser, pinned
-  # explicitly (not left transitive) so its version is uniform fleet-wide.
+  # run-local-ci (bin: local-ci, formerly published as @redwoodjs/agent-ci)
+  # runs a repo's GitHub Actions workflows locally in Docker so a change can
+  # be validated before it's pushed (see the `agent-ci` skill). dtu-github-
+  # actions is its GitHub-Actions parser, pinned explicitly (not left
+  # transitive) so its version is uniform fleet-wide.
   '@ultrathink/acorn.rs.wasm': 0.1.1
   'brace-expansion': 5.0.9
   'dtu-github-actions': 0.18.1
@@ -66,6 +65,7 @@ catalog:
   '@shadscan/cli': 0.16.0
   '@sinclair/typebox': 0.34.52
   'ecc-agentshield': 1.4.0
+  'run-local-ci': 0.18.1
   # typebox 1.x — the unscoped rewrite of @sinclair/typebox. Both names are
   # pinned while the fleet migrates; the 0.x entry is deleted once no member
   # imports the scoped name. 1.3.10 is inside the 7-day soak, so it carries a
@@ -166,7 +166,6 @@ catalog:
   # init script (see .config/fleet/playwright/).
   '@playwright/mcp': 0.0.79
   '@vitest/ui': 4.1.10
-  'run-local-ci': 0.18.1
   # agent-ci runs a repo's GitHub Actions workflows locally in Docker so a
   # change can be validated before it's pushed (see the `agent-ci` skill).
   # The published package is a self-contained Node CLI (`dist/cli.js`) — no
@@ -385,30 +384,14 @@ minimumReleaseAgeExclude:
   # npm freshpub typosquats, not a first-party oxc release.
   - '@sdxgen/*'
   - 'sdxgen'
-  # vite 8.1.0 — dev dep (vitest's bundler). 8.1 adds experimental.bundledDev
-  # (NOT adopted — experimental, and the fleet runs stable-only). Published
-  # within the 7-day soak; exact-pinned so a future 8.1.1 still soaks.
-  # taze 19.16.0 — the dep updater itself; forced ahead of the soak by owner
-  # directive so the regenerated single-registry patch (patchedDependencies)
-  # tracks the current release. Exact-pinned so a future version re-soaks.
-  # shadscan 0.2.0 — deterministic UI audits for shadcn apps, used by the
-  # design skills; forced ahead of the soak by owner directive. Exact-pinned
-  # so a future version re-soaks.
-  # verkit — new dev-only transitive of taze 19.16.0 (same owner directive);
-  # exact-pinned so future versions re-soak.
-  # js-yaml 5.2.2 — HIGH security fix, GHSA-pm4m-ph32-ghv5: exponential parse
-  # time in flow collections. The canonical overrides entry forces it past
-  # markdownlint-cli2 0.23.1's vulnerable 5.2.1 exact-pin. Soak bypassed per
-  # the high-severity security exception; exact-pinned so a future version
-  # re-soaks.
-  - '@abitious/*'
-  - '@decmpfs/*'
-  - '@node-smol/*'
-  - 'sockeye'
   # published: 2026-08-21 | removable: 2026-08-28
   - 'dtu-github-actions@0.18.1'
   # published: 2026-08-21 | removable: 2026-08-28
   - 'run-local-ci@0.18.1'
+  - '@abitious/*'
+  - '@decmpfs/*'
+  - '@node-smol/*'
+  - 'sockeye'
 
 # Refuse transitive (sub-) deps declared via git/tarball/local-tarball
 # specs. Direct git deps in this repo are still allowed; this only

@@ -1094,6 +1094,16 @@ importers:
         specifier: 'catalog:'
         version: 26.2.0
 
+  .claude/hooks/fleet/artifact-gates-on-stop:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(patch_hash=6013bc5930e8dc12861356e4d5a6affc9c860745c8c0cfdabb4ec9fc635009af)(typescript@7.0.2)'
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+
   .claude/hooks/fleet/ask-suppression-nudge:
     devDependencies:
       '@types/node':
@@ -1417,6 +1427,16 @@ importers:
         version: 26.2.0
 
   .claude/hooks/fleet/commit-message-format-guard:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.2.0
+
+  .claude/hooks/fleet/commit-paths-are-named-guard:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@6.7.0
+        version: '@socketsecurity/lib@6.7.0(patch_hash=6013bc5930e8dc12861356e4d5a6affc9c860745c8c0cfdabb4ec9fc635009af)(typescript@7.0.2)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
