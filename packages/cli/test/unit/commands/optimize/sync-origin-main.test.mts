@@ -39,7 +39,12 @@ vi.mock(import('../../../../src/util/git/git-remote-info.mts'), () => ({
   gitUnstagedModifiedFiles: gitUnstagedModifiedFilesMock,
 }))
 
-function spawnSequence(map: Record<string, { code?: number; stdout?: string }>) {
+function spawnSequence(
+  map: Record<
+    string,
+    { code?: number | undefined; stdout?: string | undefined }
+  >,
+) {
   return async (args: readonly string[]) => {
     const key = args.join(' ')
     for (const [prefix, result] of Object.entries(map)) {
@@ -66,11 +71,11 @@ describe('syncOriginMain', () => {
   })
 
   it('skips on a non-default branch', async () => {
-    gitBranchMock.mockResolvedValue('feature/x')
+    gitBranchMock.mockResolvedValue('feature/my-feature')
     const result = await syncOriginMain('/repo')
     expect(result).toEqual({
       ok: true,
-      reason: 'on feature/x, not main',
+      reason: 'on feature/my-feature, not main',
       synced: false,
     })
     expect(spawnGitMock).not.toHaveBeenCalled()

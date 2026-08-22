@@ -62,7 +62,7 @@ describe('markdown utilities', () => {
 
     it('shows N/A for undefined values', () => {
       const result = mdKeyValue('Missing', undefined)
-      expect(result).toBe('**Missing**: N/A') // fixture-name: allow
+      expect(result).toBe('**Missing**: N/A')
     })
 
     it('escapes markdown characters when escaped=true', () => {

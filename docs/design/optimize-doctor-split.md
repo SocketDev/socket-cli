@@ -84,7 +84,7 @@ Later passes (not in the first chunk): trust-policy scaffolding
 
 ## Rollout
 
-1. doctor command with soak-time only (this plan's first chunk).
+1. doctor command with soak-time only, this plan's first chunk.
 2. optimize hoisting advisory.
 3. doctor trust-policy scaffolding, after the first chunk's usage data.
 

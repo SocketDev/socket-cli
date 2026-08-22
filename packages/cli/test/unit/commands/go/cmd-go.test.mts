@@ -156,13 +156,13 @@ describe('cmd-go', () => {
 
       mockFilterFlags.mockReturnValue([
         'install',
-        'golang.org/x/tools/cmd/goimports', // fixture-name: allow
+        'golang.org/x/tools/cmd/goimports',
       ])
 
       const runPromise = cmdGo.run(
         [
           'install',
-          'golang.org/x/tools/cmd/goimports', // fixture-name: allow
+          'golang.org/x/tools/cmd/goimports',
           '--config',
           'socket.config.json',
         ],
@@ -178,7 +178,7 @@ describe('cmd-go', () => {
       await runPromise
 
       expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-        ['go', 'install', 'golang.org/x/tools/cmd/goimports'], // fixture-name: allow
+        ['go', 'install', 'golang.org/x/tools/cmd/goimports'],
         { stdio: 'inherit' },
       )
     })
