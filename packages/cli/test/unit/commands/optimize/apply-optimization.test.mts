@@ -164,7 +164,7 @@ describe('apply-optimization', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Install failed')
+        expect(result.code).toBe(1)
       }
       expect(mockSpinner.stop).toHaveBeenCalled()
     })
