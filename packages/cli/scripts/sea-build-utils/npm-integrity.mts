@@ -55,7 +55,7 @@ export function collectNpmToolPins(
   const entries = Object.entries(tools)
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const [name, config] = entries[i]!
-    if (config['packageManager'] === 'npm') {
+    if (config['origin'] === 'npm') {
       pins.push({
         integrity: config['integrity'] as string | undefined,
         name,

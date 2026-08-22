@@ -7,26 +7,25 @@
       ],
       "description": "Coana CLI for static analysis and reachability detection",
       "version": "15.10.3",
-      "packageManager": "npm",
       "integrity": "sha512-mhIrcOihimlp4MKgbkarKZWkWRhkhLvtsaSE3KabMT+0Bl/Y6mrL+Gaae09w4OmnfotXx6wVV8/faCl0opxhGQ==",
       "soakBypass": {
         "version": "15.10.3",
         "published": "2026-08-05",
         "removable": "2026-08-12"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "npm"
     },
     "@cyclonedx/cdxgen": {
       "description": "CycloneDX SBOM generator for software bill of materials",
       "version": "12.0.0",
-      "packageManager": "npm",
       "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg==",
-      "bundled": true
+      "bundled": true,
+      "origin": "npm"
     },
     "opengrep": {
       "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
       "repository": "github:opengrep/opengrep",
-      "release": "asset",
       "version": "v1.16.0",
       "checksums": {
         "opengrep-core_linux_aarch64.tar.gz": "e6a92e2c465b53284ae326d20b315acbd2eb99bc9ea4b3af48db6379306f3a82",
@@ -35,12 +34,46 @@
         "opengrep-core_osx_x86.tar.gz": "2b9f380b5840596ec57f6ead508af7be7bfcac4dbcfe5414dfe495d5f7277887",
         "opengrep-core_windows_x86.zip": "d7cae83d95fea6b945a373b800839505bf27770771388514fe17e0f2437e8f71"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "opengrep-core_osx_aarch64.tar.gz",
+          "integrity": "sha256-s9b/hjRJAUhEOR7muHQGg1JHh9pasHl/mPqjJxTlWOk="
+        },
+        "darwin-x64": {
+          "asset": "opengrep-core_osx_x86.tar.gz",
+          "integrity": "sha256-K584C1hAWW7Ff26tUIr3vnv8rE28/lQU3+SV1fcneIc="
+        },
+        "linux-arm64": {
+          "asset": "opengrep-core_linux_aarch64.tar.gz",
+          "integrity": "sha256-5qkuLEZbUyhK4ybSCzFay9LrmbyepLOvSNtjeTBvOoI="
+        },
+        "linux-arm64-musl": {
+          "asset": "opengrep-core_linux_aarch64.tar.gz",
+          "integrity": "sha256-5qkuLEZbUyhK4ybSCzFay9LrmbyepLOvSNtjeTBvOoI="
+        },
+        "linux-x64": {
+          "asset": "opengrep-core_linux_x86.tar.gz",
+          "integrity": "sha256-TUdBQTKZg8Td16bNWGdZ3uzH8/qa7m5u6rjFV1ncgWs="
+        },
+        "linux-x64-musl": {
+          "asset": "opengrep-core_linux_x86.tar.gz",
+          "integrity": "sha256-TUdBQTKZg8Td16bNWGdZ3uzH8/qa7m5u6rjFV1ncgWs="
+        },
+        "win32-arm64": {
+          "asset": "opengrep-core_windows_x86.zip",
+          "integrity": "sha256-18roPZX+prlFo3O4AIOVBb8ndwdxOIUU/hfg8kN+j3E="
+        },
+        "win32-x64": {
+          "asset": "opengrep-core_windows_x86.zip",
+          "integrity": "sha256-18roPZX+prlFo3O4AIOVBb8ndwdxOIUU/hfg8kN+j3E="
+        }
+      }
     },
     "python": {
       "description": "Python runtime from python-build-standalone",
       "repository": "github:astral-sh/python-build-standalone",
-      "release": "asset",
       "version": "3.11.14",
       "tag": "20260203",
       "checksums": {
@@ -53,18 +86,53 @@
         "cpython-3.11.14+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz": "67abde21b6e074b58c0f738f0c4802b23827a7d49707dcaf3ed4dadf572f3f37",
         "cpython-3.11.14+20260203-x86_64-unknown-linux-musl-install_only.tar.gz": "290de5199a9647d4de4adcf13a79a7c59f060357853bf41fd6d1a69b4b5fd00c"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "cpython-3.11.14+20260203-aarch64-apple-darwin-install_only.tar.gz",
+          "integrity": "sha256-Y+M1L+/TtklPc/RvUcZYHFen4NmHdebgAinRSmfsPOk="
+        },
+        "darwin-x64": {
+          "asset": "cpython-3.11.14+20260203-x86_64-apple-darwin-install_only.tar.gz",
+          "integrity": "sha256-87YwUamx/7T2Y9ko667EMRQ1y2fzvfpWNJU9+TOX8l4="
+        },
+        "linux-arm64": {
+          "asset": "cpython-3.11.14+20260203-aarch64-unknown-linux-gnu-install_only.tar.gz",
+          "integrity": "sha256-c0GloKzWXyx8eiKNi6+mVh0iD/7SYpPWoCwVri7oavU="
+        },
+        "linux-arm64-musl": {
+          "asset": "cpython-3.11.14+20260203-aarch64-unknown-linux-musl-install_only.tar.gz",
+          "integrity": "sha256-8OWYjBCBh7EutNU8usM6SZqOOOFpMQRDLh+qu6sUxmQ="
+        },
+        "linux-x64": {
+          "asset": "cpython-3.11.14+20260203-x86_64-unknown-linux-gnu-install_only.tar.gz",
+          "integrity": "sha256-Z6veIbbgdLWMD3OPDEgCsjgnp9SXB9yvPtTa31cvPzc="
+        },
+        "linux-x64-musl": {
+          "asset": "cpython-3.11.14+20260203-x86_64-unknown-linux-musl-install_only.tar.gz",
+          "integrity": "sha256-KQ3lGZqWR9TeStzxOnmnxZ8GA1eFO/Qf1tGmm0tf0Aw="
+        },
+        "win32-arm64": {
+          "asset": "cpython-3.11.14+20260203-aarch64-pc-windows-msvc-install_only.tar.gz",
+          "integrity": "sha256-y3gowTGgBdo2f326OlYb7ZFhlFLehw5THuAzRLKsNG8="
+        },
+        "win32-x64": {
+          "asset": "cpython-3.11.14+20260203-x86_64-pc-windows-msvc-install_only.tar.gz",
+          "integrity": "sha256-0iC+/0Zb3Je/WHS+j/vwcnjlvfmgZMq5MrXZO1QuPoY="
+        }
+      }
     },
     "socket-basics": {
       "description": "Socket Basics - integrated SAST, secret scanning, and container analysis",
       "repository": "github:SocketDev/socket-basics",
-      "release": "archive",
       "version": "v2.0.2",
-      "packageManager": "pip",
       "checksums": {
         "socket-basics-v2.0.2.tar.gz": "ba175171f07ac927eb926387e526283320630e80da42da000ec6894a55adeb13"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-archive",
+      "tag": "v2.0.2"
     },
     "socketsecurity": {
       "description": "Socket Python CLI (socket-python-cli)",
@@ -74,12 +142,14 @@
         "socketsecurity-2.2.70-py3-none-any.whl": "8633c2a7f204cc5cec18d8ed04cfd09aa448f7e2257345596435493d2102ba5d",
         "socketsecurity-2.2.70.tar.gz": "e5212fb9b6b7bee3c5d936efe439508df76a7d0d81b99f84f6eafe760f3d77b7"
       },
-      "bundled": true
+      "bundled": true,
+      "notes": [
+        "TODO: no `origin` yet. This is a PyPI distribution and the shared external-tools schema (scripts/fleet/lib/external-tools-schema.mts) has no `pypi` origin variant, so the entry cannot join the discriminated union without a schema change. Add a `pypi` origin upstream in socket-wheelhouse, then set `origin: \"pypi\"` here and drop `packageManager`."
+      ]
     },
     "socket-patch": {
       "description": "Socket Patch CLI for applying security patches (Rust binary)",
       "repository": "github:SocketDev/socket-patch",
-      "release": "asset",
       "version": "v2.0.0",
       "checksums": {
         "socket-patch-aarch64-apple-darwin.tar.gz": "dd8f778aef4db3f2c5000cd870101a31d1bb03822158d76e5bd2e773098428f0",
@@ -89,12 +159,46 @@
         "socket-patch-x86_64-pc-windows-msvc.zip": "3b980a74621f084ff92126e4e6284f2f742e57e66cf6727e6e010257377017e8",
         "socket-patch-x86_64-unknown-linux-musl.tar.gz": "00e7b659c82e863857dc6b1d9721a2719a4a77f981488484e35e998359dc91b0"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "socket-patch-aarch64-apple-darwin.tar.gz",
+          "integrity": "sha256-3Y93iu9Ns/LFAAzYcBAaMdG7A4IhWNduW9LncwmEKPA="
+        },
+        "darwin-x64": {
+          "asset": "socket-patch-x86_64-apple-darwin.tar.gz",
+          "integrity": "sha256-c9tMcPGBDZj3+BrflNAGji2TeN/YZggR+1QXUavgB40="
+        },
+        "linux-arm64": {
+          "asset": "socket-patch-aarch64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha256-uvhMDshKpTVa6dAiWukZn2GAFKEK90FJRxMtMmwQzdU="
+        },
+        "linux-arm64-musl": {
+          "asset": "socket-patch-aarch64-unknown-linux-gnu.tar.gz",
+          "integrity": "sha256-uvhMDshKpTVa6dAiWukZn2GAFKEK90FJRxMtMmwQzdU="
+        },
+        "linux-x64": {
+          "asset": "socket-patch-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha256-AOe2WcguhjhX3GsdlyGicZpKd/mBSISE416Zg1nckbA="
+        },
+        "linux-x64-musl": {
+          "asset": "socket-patch-x86_64-unknown-linux-musl.tar.gz",
+          "integrity": "sha256-AOe2WcguhjhX3GsdlyGicZpKd/mBSISE416Zg1nckbA="
+        },
+        "win32-arm64": {
+          "asset": "socket-patch-aarch64-pc-windows-msvc.zip",
+          "integrity": "sha256-XAu/wS0rbzCg95yvS/+FoerGuvlUHEbZr0s/N7Bb1XQ="
+        },
+        "win32-x64": {
+          "asset": "socket-patch-x86_64-pc-windows-msvc.zip",
+          "integrity": "sha256-O5gKdGIfCE/5ISbk5ihPL3QuV+Zs9nJ+bgECVzdwF+g="
+        }
+      }
     },
     "sfw": {
       "description": "Socket Firewall (sfw-free) - GitHub binary, bundled for SEA and CLI dlx",
       "repository": "github:SocketDev/sfw-free",
-      "release": "asset",
       "version": "v1.12.0",
       "checksums": {
         "sfw-free-linux-arm64": "598c8d19c80832ef5ca7fdb0a9fc35c045847fd02889126a7115c0345a478da3",
@@ -105,19 +209,53 @@
         "sfw-free-musl-linux-x86_64": "fe321d0b0f0c3bb9c84ca61c414563205b3d27b20b0061ad5f0c108e70b39488",
         "sfw-free-windows-x86_64.exe": "820d0868b7870afb47c094c9368666bf9af18744d75c946533a334b57ed9f18a"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "sfw-free-macos-arm64",
+          "integrity": "sha256-MZrrqT1eV8LbaNZwnloEqhIuMmstlaJ8EHTQqExWcDE="
+        },
+        "darwin-x64": {
+          "asset": "sfw-free-macos-x86_64",
+          "integrity": "sha256-sF/KJci6E/rQGhbwW5nSG4Zlkca0b5xmL2i6MSC1obM="
+        },
+        "linux-arm64": {
+          "asset": "sfw-free-linux-arm64",
+          "integrity": "sha256-WYyNGcgIMu9cp/2wqfw1wEWEf9AoiRJqcRXANFpHjaM="
+        },
+        "linux-arm64-musl": {
+          "asset": "sfw-free-musl-linux-arm64",
+          "integrity": "sha256-sDbKuadvoHhUBID6ktZVm8LO3jaDqsu8WbkYkBVyBK4="
+        },
+        "linux-x64": {
+          "asset": "sfw-free-linux-x86_64",
+          "integrity": "sha256-UYJPAqJC+JLGHEIiPgW36Cu2JHYjN/Amr8KsIp/8rec="
+        },
+        "linux-x64-musl": {
+          "asset": "sfw-free-musl-linux-x86_64",
+          "integrity": "sha256-/jIdCw8MO7nITKYcQUVjIFs9J7ILAGGtXwwQjnCzlIg="
+        },
+        "win32-arm64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
+        },
+        "win32-x64": {
+          "asset": "sfw-free-windows-x86_64.exe",
+          "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
+        }
+      }
     },
     "synp": {
       "description": "Tool for converting between yarn.lock and package-lock.json",
       "version": "1.9.14",
-      "packageManager": "npm",
       "integrity": "sha512-0e4u7KtrCrMqvuXvDN4nnHSEQbPlONtJuoolRWzut0PfuT2mEOvIFnYFHEpn5YPIOv7S5Ubher0b04jmYRQOzQ==",
-      "bundled": true
+      "bundled": true,
+      "origin": "npm"
     },
     "trivy": {
       "description": "Trivy container and filesystem vulnerability scanner",
       "repository": "github:aquasecurity/trivy",
-      "release": "asset",
       "version": "v0.69.2",
       "checksums": {
         "trivy_0.69.2_Linux-64bit.tar.gz": "affa59a1e37d86e4b8ab2cd02f0ab2e63d22f1bf9cf6a7aa326c884e25e26ce3",
@@ -126,12 +264,46 @@
         "trivy_0.69.2_macOS-ARM64.tar.gz": "320c0e6af90b5733b9326da0834240e944c6f44091e50019abdf584237ff4d0c",
         "trivy_0.69.2_windows-64bit.zip": "d772fa7c3c1bc52d2914ff78107596fbd20010b5f18bec6f39d63ee3bb31ad45"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "trivy_0.69.2_macOS-ARM64.tar.gz",
+          "integrity": "sha256-MgwOavkLVzO5Mm2gg0JA6UTG9ECR5QAZq99YQjf/TQw="
+        },
+        "darwin-x64": {
+          "asset": "trivy_0.69.2_macOS-64bit.tar.gz",
+          "integrity": "sha256-Qfbqw+vjoARIoW8IA4tVznaf4tUSjLDWS98oLNrUgxo="
+        },
+        "linux-arm64": {
+          "asset": "trivy_0.69.2_Linux-ARM64.tar.gz",
+          "integrity": "sha256-xzuXaZwxew0lUys/GIVktOKdE9VHLOb46weAglRqZIE="
+        },
+        "linux-arm64-musl": {
+          "asset": "trivy_0.69.2_Linux-ARM64.tar.gz",
+          "integrity": "sha256-xzuXaZwxew0lUys/GIVktOKdE9VHLOb46weAglRqZIE="
+        },
+        "linux-x64": {
+          "asset": "trivy_0.69.2_Linux-64bit.tar.gz",
+          "integrity": "sha256-r/pZoeN9huS4qyzQLwqy5j0i8b+c9qeqMmyITiXibOM="
+        },
+        "linux-x64-musl": {
+          "asset": "trivy_0.69.2_Linux-64bit.tar.gz",
+          "integrity": "sha256-r/pZoeN9huS4qyzQLwqy5j0i8b+c9qeqMmyITiXibOM="
+        },
+        "win32-arm64": {
+          "asset": "trivy_0.69.2_windows-64bit.zip",
+          "integrity": "sha256-13L6fDwbxS0pFP94EHWW+9IAELXxi+xvOdY+47sxrUU="
+        },
+        "win32-x64": {
+          "asset": "trivy_0.69.2_windows-64bit.zip",
+          "integrity": "sha256-13L6fDwbxS0pFP94EHWW+9IAELXxi+xvOdY+47sxrUU="
+        }
+      }
     },
     "trufflehog": {
       "description": "TruffleHog secret and credential detection",
       "repository": "github:trufflesecurity/trufflehog",
-      "release": "asset",
       "version": "v3.93.1",
       "checksums": {
         "trufflehog_3.93.1_darwin_amd64.tar.gz": "f1f4ecbda3996b88dc70cf6aef2c469c4902efb591aca86128d6305d606d8e07",
@@ -141,7 +313,42 @@
         "trufflehog_3.93.1_windows_amd64.tar.gz": "2add5bcfd2f9b9fd5db721f7d47921e02b3f093838d24551f7cf8d6d66bc023e",
         "trufflehog_3.93.1_windows_arm64.tar.gz": "f2d53334a8f6c0c871db1e53defb9ce591a13e1f84d35cb9ca7865255f4fd4ae"
       },
-      "bundled": true
+      "bundled": true,
+      "origin": "gh-asset",
+      "platforms": {
+        "darwin-arm64": {
+          "asset": "trufflehog_3.93.1_darwin_arm64.tar.gz",
+          "integrity": "sha256-1loq0PBDqdSKlxdvKFM4kOVYgX4vt90eNBMmU7Yb5KA="
+        },
+        "darwin-x64": {
+          "asset": "trufflehog_3.93.1_darwin_amd64.tar.gz",
+          "integrity": "sha256-8fTsvaOZa4jccM9q7yxGnEkC77WRrKhhKNYwXWBtjgc="
+        },
+        "linux-arm64": {
+          "asset": "trufflehog_3.93.1_linux_arm64.tar.gz",
+          "integrity": "sha256-ZCTmPgOX9+G2O4gL7WZX92AleDc4tFhoIQtEWqWie18="
+        },
+        "linux-arm64-musl": {
+          "asset": "trufflehog_3.93.1_linux_arm64.tar.gz",
+          "integrity": "sha256-ZCTmPgOX9+G2O4gL7WZX92AleDc4tFhoIQtEWqWie18="
+        },
+        "linux-x64": {
+          "asset": "trufflehog_3.93.1_linux_amd64.tar.gz",
+          "integrity": "sha256-Lt+ZHCD9jm0uxfJVuSgokVa8HwZAYYgpxYDG6H4o/1c="
+        },
+        "linux-x64-musl": {
+          "asset": "trufflehog_3.93.1_linux_amd64.tar.gz",
+          "integrity": "sha256-Lt+ZHCD9jm0uxfJVuSgokVa8HwZAYYgpxYDG6H4o/1c="
+        },
+        "win32-arm64": {
+          "asset": "trufflehog_3.93.1_windows_arm64.tar.gz",
+          "integrity": "sha256-8tUzNKj2wMhx2x5T3vuc5ZGhPh+E01y5ynhlJV9P1K4="
+        },
+        "win32-x64": {
+          "asset": "trufflehog_3.93.1_windows_amd64.tar.gz",
+          "integrity": "sha256-Kt1bz9L5uf1dtyH31Hkh4Cs/CTg40kVR98+NbWa8Aj4="
+        }
+      }
     }
   }
 }

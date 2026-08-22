@@ -230,7 +230,7 @@ export async function downloadAndInstallTool(
     // Install socket_basics from GitHub source (not on PyPI).
     // socket_basics orchestrates the security tools, trivy, trufflehog, opengrep.
     const socketBasicsConfig = externalTools['socket-basics']
-    if (socketBasicsConfig && socketBasicsConfig.release === 'archive') {
+    if (socketBasicsConfig && socketBasicsConfig.origin === 'gh-archive') {
       const repoPath = socketBasicsConfig.repository.replace(/^[^:]+:/, '')
       const releaseVersion = socketBasicsConfig.version
       const version = releaseVersion.replace(/^v/, '') // Remove 'v' prefix for version

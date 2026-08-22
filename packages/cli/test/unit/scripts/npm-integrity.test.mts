@@ -40,10 +40,10 @@ describe('collectNpmToolPins', () => {
     const pins = collectNpmToolPins({
       '@coana-tech/cli': {
         integrity: PINNED_SRI,
-        packageManager: 'npm',
+        origin: 'npm',
         version: '15.9.5',
       },
-      trivy: { checksums: {}, release: 'asset', version: 'v0.69.2' },
+      trivy: { checksums: {}, origin: 'gh-asset', version: 'v0.69.2' },
     })
 
     expect(pins).toEqual([
@@ -57,7 +57,7 @@ describe('collectNpmToolPins', () => {
 
   it('keeps an npm tool that declares no integrity so it can be reported', () => {
     const pins = collectNpmToolPins({
-      synp: { packageManager: 'npm', version: '1.9.14' },
+      synp: { origin: 'npm', version: '1.9.14' },
     })
 
     expect(pins[0]!.integrity).toBe(undefined)
