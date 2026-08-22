@@ -95,7 +95,7 @@ describe('fetchPurlsShallowScore', () => {
     const result = await fetchPurlsShallowScore(['pkg:npm/test@1.0.0'])
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {
