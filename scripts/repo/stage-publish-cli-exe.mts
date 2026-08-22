@@ -24,6 +24,8 @@ import process from 'node:process'
 import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { isMainModule } from '../fleet/_shared/is-main-module.mts'
+import { runMain } from '../fleet/_shared/run-main.mts'
+import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
 import { uploadNpmPackage } from '../fleet/registry-infra/npm/publish-command.mts'
 import {
   CLI_EXE_TRIPLETS,
@@ -296,9 +298,23 @@ async function main(): Promise<void> {
   )
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'staged-publish runner for the @socketsecurity/cli.exe.<triplet> tail family and the socket wrapper',
+  help: `Usage: node scripts/repo/stage-publish-cli-exe.mts --version=<version> [flags]
+  --version=<version>      version to stamp + stage (required)
+  --triplets=<spec>        'all', 'buildable', or a comma list of triplets
+  --wrapper                stage the socket wrapper package instead of a triplet tail
+  --stamp                  stamp the version into the package before staging
+  --publish                upload to npm staging for real (DRY-RUN by default)
+  --tag=<tag>               dist-tag for the staged publish (default: latest)
+  --list                   list staged packages instead of staging
+
+Staging only - approval stays a human step: pnpm stage list, then
+pnpm stage approve <id> locally with 2FA. --provenance is added
+automatically under GITHUB_ACTIONS so OIDC trusted publishing applies.`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(e)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

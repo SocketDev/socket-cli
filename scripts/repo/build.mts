@@ -20,22 +20,17 @@
  * help.
  */
 
-import process from 'node:process'
-
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
-
-import colors from 'yoctocolors-cjs'
-
 import {
   runParallelBuilds,
   runSequentialBuilds,
   runSmartBuild,
   runTargetedBuild,
 } from './build-steps/build-orchestration.mts'
-import { parseArgs, showHelp } from './build-steps/cli.mts'
-import { logger } from './build-steps/context.mts'
+import { parseArgs } from './build-steps/cli.mts'
 import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
 import { isMainModule } from '../fleet/_shared/is-main-module.mts'
+import { runMain } from '../fleet/_shared/run-main.mts'
+import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
 
 export { parseArgs } from './build-steps/cli.mts'
 export { showHelp } from './build-steps/cli.mts'
@@ -46,11 +41,6 @@ export { buildTarget } from './build-steps/build-targets.mts'
  */
 async function main(): Promise<void> {
   const opts = parseArgs()
-
-  if (opts.help) {
-    showHelp()
-    return
-  }
 
   // Handle platforms build.
   if (opts.platforms) {
@@ -76,12 +66,24 @@ async function main(): Promise<void> {
   await runSmartBuild(opts.force)
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'comprehensive build script with intelligent caching (CLI package, then SEA binary for the current platform)',
+  help: `Usage: node scripts/repo/build.mts [flags]
+  (no flags)                       smart build, skips unchanged
+  --force                          force rebuild all + SEA for current platform
+  --target <name>                  build a specific target
+  --targets <t1,t2,...>            build multiple targets
+  --platform <p> --arch <a>        build a specific platform/arch
+  --platforms                      build all platform binaries
+  --platforms --parallel           build platforms in parallel
+
+Platform targets: ${PLATFORM_TARGETS.join(', ')}
+
+Yoga WASM and node-smol binaries are downloaded from socket-btm; all
+pre-built binaries are cached in ~/.socket/.`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    const message = errorMessage(e)
-    logger.error('')
-    logger.error(`${colors.red('✗')} Unexpected error: ${message}`)
-    logger.error('')
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }

@@ -16,6 +16,8 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
 import { isMainModule } from '../fleet/_shared/is-main-module.mts'
+import { runMain } from '../fleet/_shared/run-main.mts'
+import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
 import { REPO_ROOT } from '../fleet/paths.mts'
 
 const logger = getDefaultLogger()
@@ -260,9 +262,13 @@ async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'clean stale caches across all packages',
+  help: `Usage: node scripts/repo/clean-cache.mts [flags]
+  --all       clean ALL caches, nuclear option
+  --dry-run   show what would be deleted`,
+}
+
 if (isMainModule(import.meta.url)) {
-  main().catch((e: unknown) => {
-    logger.error(`Error: ${errorMessage(e)}`)
-    process.exitCode = 1
-  })
+  runMain(main, SCRIPT_META)
 }
