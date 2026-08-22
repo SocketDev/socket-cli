@@ -103,7 +103,7 @@ describe('fetchAuditLog', () => {
     const result = await fetchAuditLog(config)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {
