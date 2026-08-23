@@ -290,8 +290,8 @@ catalogs:
       specifier: 1100.0.0
       version: 1100.0.0
     '@shadscan/cli':
-      specifier: 0.16.0
-      version: 0.16.0
+      specifier: 0.17.0
+      version: 0.17.0
     '@socketregistry/hyrious__bun.lockb':
       specifier: 1.0.19
       version: 1.0.19
@@ -719,7 +719,7 @@ importers:
         version: 1100.0.0
       '@shadscan/cli':
         specifier: 'catalog:'
-        version: 0.16.0
+        version: 0.17.0
       '@sinclair/typebox':
         specifier: 0.34.52
         version: 0.34.52
@@ -5559,8 +5559,8 @@ packages:
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
-  '@shadscan/cli@0.16.0':
-    resolution: {integrity: sha512-CTAfeoKYITalPQMOO15sCSa3wRmV1gChzm4qLv/dR2bh7fQOH9ZHNS8w++J+Qtb5+PAj8WAv7B3rTCCVBJczpw==}
+  '@shadscan/cli@0.17.0':
+    resolution: {integrity: sha512-bRMrWmcdUAlZ3YZa6S4j0taFJK47mCOdsH1XWpts/GRrXbkPurtm8HJiBkoBbPGP3RXmZ1yO3IMwiJCw+G9OIA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -9783,7 +9783,7 @@ snapshots:
 
   '@sec-ant/readable-stream@0.4.1': {}
 
-  '@shadscan/cli@0.16.0':
+  '@shadscan/cli@0.17.0':
     dependencies:
       cross-spawn: 7.0.6
       jsonc-parser: 3.3.1

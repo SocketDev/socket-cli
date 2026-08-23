@@ -276,65 +276,6 @@ node_modules
 npm-debug.log
 pnpm-debug.log
 *.tgz
-# Fleet-pack payload — this repo pins bundle.ref, so the wholly-fleet
-# payload is hydrated from the fleet-pack release and stays UNTRACKED
-# (docs/agents.md/fleet/fleet-pack-distribution.md). Derived per
-# bundle.json mirror entry: the always-tracked GitHub/npm surfaces and
-# the member-tailed hybrids are cascade-channel and deliberately NOT
-# listed, so they stay tracked. Re-asserted after the `!/.claude/<x>/`
-# re-includes above — last match wins.
-/.claude/agents/fleet/
-/.claude/commands/fleet/
-/.claude/hooks/fleet/
-/.claude/output-styles/fleet.md
-/.claude/rules/fleet/
-/.claude/skills/fleet/
-/.claude/workflows/
-/.config/fleet/.markdownlint-cli2.jsonc
-/.config/fleet/external-tools.json
-/.config/fleet/fetch-allowlist.json
-/.config/fleet/git-authors.json
-/.config/fleet/lockstep.schema.json
-/.config/fleet/markdownlint-rules/
-/.config/fleet/oxfmtrc.json
-/.config/fleet/oxlint-plugin/_shared/
-/.config/fleet/oxlint-plugin/fleet/
-/.config/fleet/oxlint-plugin/index.mts
-/.config/fleet/oxlint-plugin/lib/
-/.config/fleet/oxlint-plugin/package.json
-/.config/fleet/oxlint.config.mts
-/.config/fleet/playwright/
-/.config/fleet/pnpm-workspace.fleet.yaml
-/.config/fleet/rolldown/bundle-stub.mts
-/.config/fleet/rolldown/hook-bundle-excluded.config.mts
-/.config/fleet/rolldown/hook-bundle-snapshot.config.mts
-/.config/fleet/rolldown/hook-bundle.config.mts
-/.config/fleet/rolldown/lib-snapshot-fix.mts
-/.config/fleet/rolldown/oxlint-plugin.config.mts
-/.config/fleet/sfw-bypass-list.txt
-/.config/fleet/taze.config.mts
-/.config/fleet/tsconfig.base.json
-/.config/fleet/tsconfig.check.base.json
-/.config/fleet/vitest.coverage.fleet.config.mts
-/.github/actions/fleet/cleanup-git-signing/
-/.github/actions/fleet/github-pr-app-token/
-/.github/actions/fleet/github-release-app-token/
-/.github/actions/fleet/github-release/
-/.github/actions/fleet/run-offline/
-/.github/actions/fleet/run-script/
-/.github/actions/fleet/setup-git-signing/
-/.github/actions/fleet/setup-go-toolchain/
-/.github/actions/fleet/setup-odai/
-/.github/actions/fleet/setup-rust-cache/
-/.github/actions/fleet/setup-rust-toolchain/
-/.github/zizmor.yml
-/.mcp.json
-/docs/agents.md/fleet/
-/docs/references/fleet/sfw-local-install.md
-/patches/@socketsecurity__lib@6.7.0.patch
-/patches/brace-expansion@5.0.9.patch
-/patches/minimatch@10.2.6.patch
-/scripts/fleet/
 # </fleet>
 # <repo>
 # </repo>
