@@ -6,8 +6,8 @@
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "bundle": {
-    "ref": "fleet-pack-01e7c0cefca8fd5c0cfb767ad43162a6a47eee62",
-    "cascadeSha": "01e7c0cefca8fd5c0cfb767ad43162a6a47eee62"
+    "ref": "fleet-pack-09737d3dac94c555226c1354603c48a09c4c8c48",
+    "cascadeSha": "09737d3dac94c555226c1354603c48a09c4c8c48"
   },
   "repo": {
     "type": "mono"
