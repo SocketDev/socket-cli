@@ -535,6 +535,10 @@ pnpm-debug.log
 .claude/hooks/fleet/anti-prose-guard/package.json
 .claude/hooks/fleet/anti-prose-guard/patterns.mts
 .claude/hooks/fleet/anti-prose-guard/tsconfig.json
+.claude/hooks/fleet/artifact-gates-on-stop/README.md
+.claude/hooks/fleet/artifact-gates-on-stop/index.mts
+.claude/hooks/fleet/artifact-gates-on-stop/package.json
+.claude/hooks/fleet/artifact-gates-on-stop/tsconfig.json
 .claude/hooks/fleet/ask-suppression-nudge/README.md
 .claude/hooks/fleet/ask-suppression-nudge/index.mts
 .claude/hooks/fleet/ask-suppression-nudge/package.json
@@ -689,6 +693,10 @@ pnpm-debug.log
 .claude/hooks/fleet/commit-message-format-guard/index.mts
 .claude/hooks/fleet/commit-message-format-guard/package.json
 .claude/hooks/fleet/commit-message-format-guard/tsconfig.json
+.claude/hooks/fleet/commit-paths-are-named-guard/README.md
+.claude/hooks/fleet/commit-paths-are-named-guard/index.mts
+.claude/hooks/fleet/commit-paths-are-named-guard/package.json
+.claude/hooks/fleet/commit-paths-are-named-guard/tsconfig.json
 .claude/hooks/fleet/commit-pr-nudge/README.md
 .claude/hooks/fleet/commit-pr-nudge/index.mts
 .claude/hooks/fleet/commit-pr-nudge/package.json
@@ -2503,6 +2511,7 @@ docs/agents.md/fleet/dependency-spec-pinning.md
 docs/agents.md/fleet/diagnosing-bugs.md
 docs/agents.md/fleet/drift-watch.md
 docs/agents.md/fleet/ecosystem-impact-measurement.md
+docs/agents.md/fleet/enforcement-ratchet.md
 docs/agents.md/fleet/error-messages.md
 docs/agents.md/fleet/export-and-no-any.md
 docs/agents.md/fleet/fable-fallback.md
@@ -2650,6 +2659,7 @@ scripts/fleet/_shared/chrome-cdp.mts
 scripts/fleet/_shared/claude-model.mts
 scripts/fleet/_shared/claude-usage-breakdowns.mts
 scripts/fleet/_shared/claude-usage.mts
+scripts/fleet/_shared/client-limits.mts
 scripts/fleet/_shared/codex-model.mts
 scripts/fleet/_shared/codex-usage.mts
 scripts/fleet/_shared/comment-voice-store.mts
@@ -2797,6 +2807,13 @@ scripts/fleet/artifact/download.mts
 scripts/fleet/artifact/twirp.mts
 scripts/fleet/artifact/upload.mts
 scripts/fleet/artifact/zip.mts
+scripts/fleet/attest/claims.mts
+scripts/fleet/attest/cli-args.mts
+scripts/fleet/attest/endpoints.mts
+scripts/fleet/attest/provenance.mts
+scripts/fleet/attest/statement.mts
+scripts/fleet/attest/store.mts
+scripts/fleet/attest/subject.mts
 scripts/fleet/audit-transcript.mts
 scripts/fleet/auditing-history/patch-id.mts
 scripts/fleet/auditing-history/types.mts
@@ -2844,6 +2861,7 @@ scripts/fleet/check/actions-checkout-is-absent.mts
 scripts/fleet/check/actions-secrets-are-declared.mts
 scripts/fleet/check/added-statements-are-covered.mts
 scripts/fleet/check/agent-offload-routes-are-declared.mts
+scripts/fleet/check/agents-are-well-formed.mts
 scripts/fleet/check/agents-have-rule-citations.mts
 scripts/fleet/check/ai-spawns-have-paired-effort.mts
 scripts/fleet/check/alias-mirrors-are-ungated.mts
@@ -2993,6 +3011,7 @@ scripts/fleet/check/npm-package-page-is-visible.mts
 scripts/fleet/check/npm-packages-are-bot-co-owned.mts
 scripts/fleet/check/odai-legs-are-switched-on.mts
 scripts/fleet/check/options-objects-are-last.mts
+scripts/fleet/check/output-styles-are-well-formed.mts
 scripts/fleet/check/oxlint-plugin-loads.mts
 scripts/fleet/check/pack-bytes-have-no-private-refs.mts
 scripts/fleet/check/pack-contents-are-clean.mts
@@ -3076,6 +3095,7 @@ scripts/fleet/check/sources-are-mts.mts
 scripts/fleet/check/sparkle-auto-update-is-disabled.mts
 scripts/fleet/check/stable-aliases-match-base.mts
 scripts/fleet/check/static-imports-are-declared.mts
+scripts/fleet/check/stray-artifacts-are-absent.mts
 scripts/fleet/check/subagent-status-doc-is-current.mts
 scripts/fleet/check/submodules-are-rooted-in-upstream.mts
 scripts/fleet/check/submodules-are-sparse-or-annotated.mts
