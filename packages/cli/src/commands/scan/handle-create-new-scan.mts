@@ -304,10 +304,7 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const basicsResult = await runSocketBasics({
-      cwd,
-      orgSlug,
-      repoName,
+    const basicsResult = await runSocketBasics(cwd, orgSlug, repoName, {
       spinner,
     })
 

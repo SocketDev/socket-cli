@@ -123,11 +123,8 @@ export async function parseSocketFacts(factsPath: string): Promise<{
 
 export type SocketBasicsOptions = {
   cacheDir?: string | undefined
-  cwd: string
   languages?: string[] | undefined
-  orgSlug: string
   outputPath?: string | undefined
-  repoName: string
   scanContainers?: boolean | undefined
   scanSecrets?: boolean | undefined
   spinner?: SpinnerInstance | undefined
@@ -156,20 +153,20 @@ export type SocketBasicsResult = {
  * @returns Result with path to .socket.facts.json and finding counts.
  */
 export async function runSocketBasics(
-  config: SocketBasicsOptions,
+  cwd: string,
+  orgSlug: string,
+  repoName: string,
+  options?: SocketBasicsOptions | undefined,
 ): Promise<CResult<SocketBasicsResult>> {
   const {
     cacheDir,
-    cwd,
     languages = [],
-    orgSlug,
     outputPath,
-    repoName,
     scanContainers = false,
     scanSecrets = true,
     spinner,
     timeout = 600_000, // 10 minutes default.
-  } = { __proto__: null, ...config } as typeof config
+  } = { __proto__: null, ...options } as SocketBasicsOptions
 
   // Check if basics tools are available.
   const toolsAvailable = areBasicsToolsAvailable()

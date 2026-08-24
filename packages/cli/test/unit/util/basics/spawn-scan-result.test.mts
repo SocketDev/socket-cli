@@ -126,7 +126,11 @@ describe('runSocketBasics — basics process result', () => {
       }
       return { code: 0, stdout: '', stderr: '' }
     })
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.cause).toBe('spawn() returned null')
@@ -143,7 +147,11 @@ describe('runSocketBasics — basics process result', () => {
       }
       return { code: 0, stdout: '', stderr: '' }
     })
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.cause).toBe('basics boom')
@@ -170,7 +178,14 @@ describe('runSocketBasics — basics process result', () => {
       }
       return { code: 0, stdout: '', stderr: '' }
     })
-    const result = await runSocketBasics({ ...baseOpts, spinner })
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+      {
+        spinner,
+      },
+    )
     expect(result.ok).toBe(false)
     expect(stopSpy).toHaveBeenCalled()
     expect(failSpy).toHaveBeenCalled()
@@ -188,7 +203,14 @@ describe('runSocketBasics — basics process result', () => {
       success: successSpy,
     } as unknown
     // Default mock returns code 0 for basics_socket call.
-    const result = await runSocketBasics({ ...baseOpts, spinner })
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+      {
+        spinner,
+      },
+    )
     expect(result.ok).toBe(true)
     expect(successSpy).toHaveBeenCalled()
   })
@@ -213,7 +235,14 @@ describe('runSocketBasics — basics process result', () => {
       }
       return { code: 0, stdout: '', stderr: '' }
     })
-    const result = await runSocketBasics({ ...baseOpts, spinner })
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+      {
+        spinner,
+      },
+    )
     expect(result.ok).toBe(false)
     expect(failSpy).toHaveBeenCalled()
   })
@@ -226,7 +255,11 @@ describe('runSocketBasics — basics process result', () => {
       // First call is python check; second is the facts check after scan.
       return callIndex === 1
     })
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.cause).toBe(
@@ -238,7 +271,11 @@ describe('runSocketBasics — basics process result', () => {
 
 describe('runSocketBasics — parseSocketFacts', () => {
   it('returns finding counts on a well-formed facts file', async () => {
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toMatchObject({
@@ -251,7 +288,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('returns empty findings when the facts file is empty', async () => {
     mockReadFile.mockResolvedValueOnce('')
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toEqual({})
@@ -260,7 +301,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('returns empty findings on whitespace-only facts content', async () => {
     mockReadFile.mockResolvedValueOnce('   \n\n')
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toEqual({})
@@ -269,7 +314,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('returns empty findings when JSON is malformed', async () => {
     mockReadFile.mockResolvedValueOnce('{not valid json')
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toEqual({})
@@ -278,7 +327,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('returns empty findings when fs.readFile throws', async () => {
     mockReadFile.mockRejectedValueOnce(new Error('EACCES'))
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toEqual({})
@@ -287,7 +340,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('handles missing findings sub-keys with zero counts', async () => {
     mockReadFile.mockResolvedValueOnce(JSON.stringify({ findings: {} }))
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toMatchObject({
@@ -300,7 +357,11 @@ describe('runSocketBasics — parseSocketFacts', () => {
 
   it('handles top-level facts with no findings field', async () => {
     mockReadFile.mockResolvedValueOnce(JSON.stringify({}))
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.findings).toMatchObject({

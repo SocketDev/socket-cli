@@ -115,7 +115,11 @@ beforeEach(() => {
 
 describe('runSocketBasics — argument construction', () => {
   it('uses default cwd-relative facts path', async () => {
-    const result = await runSocketBasics(baseOpts)
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       // normalizePath converts the path so we just check it includes the trailing filename.
@@ -124,10 +128,12 @@ describe('runSocketBasics — argument construction', () => {
   })
 
   it('uses provided outputPath verbatim', async () => {
-    const result = await runSocketBasics({
-      ...baseOpts,
-      outputPath: '/abs/path/facts.json',
-    })
+    const result = await runSocketBasics(
+      baseOpts.cwd,
+      baseOpts.orgSlug,
+      baseOpts.repoName,
+      { outputPath: '/abs/path/facts.json' },
+    )
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.factsPath).toBe('/abs/path/facts.json')
@@ -135,8 +141,7 @@ describe('runSocketBasics — argument construction', () => {
   })
 
   it('passes --languages csv when languages array is non-empty', async () => {
-    await runSocketBasics({
-      ...baseOpts,
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName, {
       languages: ['python', 'javascript'],
     })
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
@@ -145,37 +150,43 @@ describe('runSocketBasics — argument construction', () => {
   })
 
   it('omits --languages when languages array is empty', async () => {
-    await runSocketBasics({ ...baseOpts, languages: [] })
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName, {
+      languages: [],
+    })
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
     expect(spawnedArgs).not.toContain('--languages')
   })
 
   it('adds --secrets when scanSecrets is true (default)', async () => {
-    await runSocketBasics(baseOpts)
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName)
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
     expect(spawnedArgs).toContain('--secrets')
   })
 
   it('omits --secrets when scanSecrets is false', async () => {
-    await runSocketBasics({ ...baseOpts, scanSecrets: false })
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName, {
+      scanSecrets: false,
+    })
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
     expect(spawnedArgs).not.toContain('--secrets')
   })
 
   it('adds --containers when scanContainers is true', async () => {
-    await runSocketBasics({ ...baseOpts, scanContainers: true })
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName, {
+      scanContainers: true,
+    })
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
     expect(spawnedArgs).toContain('--containers')
   })
 
   it('omits --containers by default', async () => {
-    await runSocketBasics(baseOpts)
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName)
     const spawnedArgs = mockSpawn.mock.calls.at(-1)?.[1] as string[]
     expect(spawnedArgs).not.toContain('--containers')
   })
 
   it('sets PATH and SKIP_* env vars on the basics process', async () => {
-    await runSocketBasics(baseOpts)
+    await runSocketBasics(baseOpts.cwd, baseOpts.orgSlug, baseOpts.repoName)
     const spawnOpts = mockSpawn.mock.calls.at(-1)?.[2] as {
       env: Record<string, string>
     }
