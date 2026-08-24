@@ -12,10 +12,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
+import { scanPhantomDependencies } from './phantom-deps/scan.mts'
+
 export type PracticeViolation = {
   file: string
   line: number
-  practice: 'sfw' | 'workflows'
+  practice: 'sfw' | 'workflows' | 'phantom-deps'
   text: string
 }
 
@@ -28,6 +30,21 @@ const WORKFLOW_SOCKET_RE =
 // (?:npm ci|...)     — the bare install command itself
 const BARE_INSTALL_RE =
   /^\s*-?\s*(?:run:\s*)?(?:sudo\s+)?(?:npm ci|npm install|pnpm install|pnpm i|yarn install|yarn add|pip install|uv pip install|cargo fetch|cargo install)\b/
+
+/**
+ * Every direct dependency's published code carries only imports its own
+ * `package.json` declares (or the project's root declares - see
+ * scanPhantomDependencies). A hard phantom resolves by accident under npm's
+ * flat layout and breaks under a strict resolver.
+ */
+export function checkPhantomDependencies(root: string): PracticeViolation[] {
+  return scanPhantomDependencies(root).map(finding => ({
+    file: `node_modules/${finding.importer}`,
+    line: 0,
+    practice: 'phantom-deps',
+    text: `${finding.importer} imports '${finding.target}' (${finding.specifiers.join(', ')}) without declaring it${finding.isSubpathAdapter ? ' - reachable only via a subpath import' : ''}`,
+  }))
+}
 
 /**
  * Every bare package-manager install in package.json scripts and

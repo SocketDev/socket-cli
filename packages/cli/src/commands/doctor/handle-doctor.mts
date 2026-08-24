@@ -3,7 +3,11 @@ import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { CMD_NAME } from './shared.mts'
-import { checkSfwWrap, checkWorkflowSocket } from './practice-checks.mts'
+import {
+  checkPhantomDependencies,
+  checkSfwWrap,
+  checkWorkflowSocket,
+} from './practice-checks.mts'
 import { detectAndValidatePackageEnvironment } from '../../util/ecosystem/environment.mjs'
 import { ensurePnpmWorkspaceMinReleaseAge } from '../optimize/update-pnpm-workspace-yaml.mts'
 import { cmdPrefixMessage } from '../../util/process/cmd.mts'
@@ -95,7 +99,11 @@ export async function handleDoctor({
   const outcome = await ensurePnpmWorkspaceMinReleaseAge(pkgPath)
 
   // The practice gate: the skills' guidance, enforced without an agent.
-  const violations = [...checkWorkflowSocket(pkgPath), ...checkSfwWrap(pkgPath)]
+  const violations = [
+    ...checkWorkflowSocket(pkgPath),
+    ...checkSfwWrap(pkgPath),
+    ...checkPhantomDependencies(pkgPath),
+  ]
   const report: DoctorReport = {
     minReleaseAge: { enforceable: true, outcome },
     practices: { violations },
@@ -112,7 +120,9 @@ export async function handleDoctor({
           : 'soak-time: already enforced at 7 days.'
     logger.info(cmdPrefixMessage(CMD_NAME, line))
     if (violations.length === 0) {
-      logger.success(cmdPrefixMessage(CMD_NAME, 'workflows + sfw: clean.'))
+      logger.success(
+        cmdPrefixMessage(CMD_NAME, 'workflows + sfw + phantom-deps: clean.'),
+      )
     } else {
       for (let i = 0, { length } = violations; i < length; i += 1) {
         const v = violations[i]!
@@ -124,7 +134,7 @@ export async function handleDoctor({
       logger.fail(
         cmdPrefixMessage(
           CMD_NAME,
-          `${violations.length} practice violation(s): wrap installs in sfw and run Socket in CI (SocketDev/action).`,
+          `${violations.length} practice violation(s): wrap installs in sfw, run Socket in CI (SocketDev/action), and declare every import a phantom dependency finding names.`,
         ),
       )
       process.exitCode = 1

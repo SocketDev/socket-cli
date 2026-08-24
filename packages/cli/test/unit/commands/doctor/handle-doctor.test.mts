@@ -35,10 +35,12 @@ vi.mock(
   }),
 )
 
+const phantomDepsMock = vi.hoisted(() => vi.fn(() => []))
 const sfwWrapMock = vi.hoisted(() => vi.fn(() => []))
 const workflowSocketMock = vi.hoisted(() => vi.fn(() => []))
 
 vi.mock(import('../../../../src/commands/doctor/practice-checks.mts'), () => ({
+  checkPhantomDependencies: phantomDepsMock,
   checkSfwWrap: sfwWrapMock,
   checkWorkflowSocket: workflowSocketMock,
 }))
@@ -133,7 +135,7 @@ describe('handleDoctor', () => {
     ensureMock.mockResolvedValue('present')
     await handleDoctor({ cwd: '.', outputKind: 'text' })
     expect(mockLogger.success).toHaveBeenCalledWith(
-      expect.stringContaining('workflows + sfw: clean'),
+      expect.stringContaining('workflows + sfw + phantom-deps: clean'),
     )
     expect(process.exitCode).toBeUndefined()
   })
@@ -153,6 +155,25 @@ describe('handleDoctor', () => {
     expect(mockLogger.warn).toHaveBeenCalledWith(
       expect.stringContaining('.github/workflows/ci.yml:4'),
     )
+    expect(mockLogger.fail).toHaveBeenCalledWith(
+      expect.stringContaining('1 practice violation(s)'),
+    )
+    expect(process.exitCode).toBe(1)
+  })
+
+  it('fails loud on a phantom-dependency finding', async () => {
+    detectMock.mockResolvedValue(pnpmEnv())
+    ensureMock.mockResolvedValue('present')
+    sfwWrapMock.mockReturnValue([])
+    phantomDepsMock.mockReturnValue([
+      {
+        file: 'node_modules/some-dep',
+        line: 0,
+        practice: 'phantom-deps',
+        text: "some-dep imports 'lodash' (lodash) without declaring it",
+      },
+    ])
+    await handleDoctor({ cwd: '.', outputKind: 'text' })
     expect(mockLogger.fail).toHaveBeenCalledWith(
       expect.stringContaining('1 practice violation(s)'),
     )
