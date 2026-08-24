@@ -263,10 +263,20 @@ export async function runHttpTransport(
       host === 'localhost' ||
       host === '127.0.0.1' ||
       allowedHosts.includes(host)
-    const isValidOrigin = origin
-      ? isLocalhostOrigin(origin) ||
+    // DNS-rebinding protection (the reason Origin is checked at all) only
+    // matters when the request could be reaching a private/loopback listener
+    // a malicious webpage isn't supposed to reach. Once Host matches a known
+    // hosted deployment, the only credential that matters is the Bearer token
+    // OAuthIntrospector checks — there's no ambient/cookie-based credential
+    // for a forged cross-origin request to ride on, so an Origin mismatch
+    // there isn't a real CSRF signal. It only breaks legitimate non-browser
+    // MCP clients (Claude Desktop, Codex, etc.) whose HTTP stacks happen to
+    // set an Origin header. Only localhost targets keep the strict allowlist.
+    const isValidOrigin = !origin
+      ? isAllowedHost
+      : allowedHosts.includes(host) ||
+        isLocalhostOrigin(origin) ||
         (allowedOrigins as readonly string[]).includes(origin)
-      : isAllowedHost
 
     if (!isValidOrigin) {
       logger.warn(
