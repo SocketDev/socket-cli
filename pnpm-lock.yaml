@@ -135,8 +135,8 @@ importers:
         specifier: 2.2.4
         version: 2.2.4
       '@coana-tech/cli':
-        specifier: 15.10.17
-        version: 15.10.17
+        specifier: 15.10.23
+        version: 15.10.23
       '@cyclonedx/cdxgen':
         specifier: 12.1.2
         version: 12.1.2
@@ -824,8 +824,8 @@ packages:
     resolution: {integrity: sha512-hAs5PPKPCQ3/Nha+1fo4A4/gL85fIfxZwHPehsjCJ+BhQH2/yw6/xReuaPA/RfNQr6iz1PcD7BZcE3ctyyl3EA==}
     cpu: [x64]
 
-  '@coana-tech/cli@15.10.17':
-    resolution: {integrity: sha512-lE7/Hfwwx7Ru90mofo0upnzA7ZANFz6oa3aRht2KSz45Q911mNxHccuLkicvO9q05VjUSN/17tYQJq30PqB+Nw==}
+  '@coana-tech/cli@15.10.23':
+    resolution: {integrity: sha512-uNvzeJdJA4bZqjS1n89tcGILCH1xzlfl5OHbUlSiuuxIdlDhNan9cps3yBW2F/P/K5DVwwo5csr3gqg9c0KAXQ==}
     hasBin: true
 
   '@colors/colors@1.5.0':
@@ -3001,6 +3001,7 @@ packages:
   eslint@9.35.0:
     resolution: {integrity: sha512-QePbBFMJFjgmlE+cXAlbHZbHpdFVS2E/6vzCy7aKlebddvl1vadiC4JFV5u/wqTkNUwEV8WrQi257jf5f06hrg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -5698,7 +5699,7 @@ snapshots:
   '@cdxgen/cdxgen-plugins-bin@2.0.2':
     optional: true
 
-  '@coana-tech/cli@15.10.17': {}
+  '@coana-tech/cli@15.10.23': {}
 
   '@colors/colors@1.5.0':
     optional: true
