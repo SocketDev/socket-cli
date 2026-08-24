@@ -126,7 +126,9 @@ describe('runSocketBasics — preflight failures', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Basics tools not available')
+      expect(result.cause).toBe(
+        'Socket-basics requires Python, Trivy, TruffleHog, and OpenGrep to be bundled in the SEA binary',
+      )
     }
   })
 
@@ -145,7 +147,7 @@ describe('runSocketBasics — preflight failures', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Python not found')
+      expect(result.cause).toBe('Expected Python at: /tools/python')
     }
   })
 })
@@ -198,7 +200,7 @@ describe('runSocketBasics — pyCli installation', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Failed to start pip install process')
+      expect(result.cause).toBe('spawn() returned null')
     }
   })
 
@@ -215,7 +217,7 @@ describe('runSocketBasics — pyCli installation', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Failed to install Socket Python CLI')
+      expect(result.cause).toBe('pip install boom')
     }
   })
 
@@ -255,7 +257,9 @@ describe('runSocketBasics — pyCli installation', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Socket Python CLI version mismatch')
+      expect(result.cause).toBe(
+        'Expected version 1.2.3 but got 9.9.9. This may cause compatibility issues.',
+      )
     }
   })
 
@@ -275,7 +279,9 @@ describe('runSocketBasics — pyCli installation', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Socket Python CLI version mismatch')
+      expect(result.cause).toBe(
+        'Expected version 1.2.3 but got undefined. This may cause compatibility issues.',
+      )
     }
   })
 })
@@ -294,7 +300,9 @@ describe('runSocketBasics — socket_basics presence', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('socket_basics package not installed')
+      expect(result.cause).toBe(
+        'socket_basics must be pre-bundled at SEA build time (not available on PyPI)',
+      )
     }
   })
 })
