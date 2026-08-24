@@ -210,7 +210,7 @@ describe('telemetry/integration', () => {
 
       const call = mockTrack.mock.calls[0][0]
       expect(call.error).toBeDefined()
-      expect(call.error.message).toBe('Test error')
+      expect(call.error.message).toBe(error.message)
     })
 
     it('sanitizes error with undefined stack (line 304-305)', async () => {
@@ -347,19 +347,20 @@ describe('telemetry/integration', () => {
       const call = mockTrack.mock.calls[0][0]
       expect(call.event_type).toBe('cli_error')
       expect(call.error).toBeDefined()
-      expect(call.error.message).toBe('Test error')
+      expect(call.error.message).toBe(error.message)
     })
 
     it('normalizes non-Error values', async () => {
+      const nonErrorValue = 'string error'
       await trackCliError(
         ['node', 'socket', 'scan'],
         Date.now(),
-        'string error',
+        nonErrorValue,
         1,
       )
 
       const call = mockTrack.mock.calls[0][0]
-      expect(call.error.message).toBe('string error')
+      expect(call.error.message).toBe(nonErrorValue)
     })
   })
 
