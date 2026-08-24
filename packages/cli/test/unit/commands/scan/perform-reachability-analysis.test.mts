@@ -164,7 +164,9 @@ describe('performReachabilityAnalysis — plan checks', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Authentication failed')
+      expect(result.cause).toBe(
+        'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      )
     }
   })
 
@@ -179,7 +181,9 @@ describe('performReachabilityAnalysis — plan checks', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Unable to verify plan permissions')
+      expect(result.cause).toBe(
+        'Failed to fetch organization information to verify enterprise plan access',
+      )
     }
   })
 
@@ -333,7 +337,7 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Auth Error')
+      expect(result.cause).toBe('no token')
     }
     expect(mockHandleApiCall).not.toHaveBeenCalled()
   })
@@ -345,6 +349,7 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     })
     mockHandleApiCall.mockResolvedValueOnce({
       ok: false,
+      code: 502,
       message: 'Upload failed',
     })
     const result = await performReachabilityAnalysis({
@@ -355,7 +360,7 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Upload failed')
+      expect(result.code).toBe(502)
     }
     expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
   })
