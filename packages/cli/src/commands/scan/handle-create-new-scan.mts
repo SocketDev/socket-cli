@@ -43,7 +43,7 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
@@ -64,7 +64,7 @@ export type HandleCreateNewScanConfig = {
   pullRequest: number
   outputKind: OutputKind
   reach: Remap<
-    ReachabilityOptions & {
+    ReachabilityConfig & {
       runReachabilityAnalysis: boolean
     }
   >
@@ -261,17 +261,19 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const reachResult = await performReachabilityAnalysis({
-      branchName,
-      cwd,
-      orgSlug,
-      packagePaths,
-      reachabilityOptions: mergedReachabilityOptions,
-      repoName,
-      resolvedPathsSidecar,
-      spinner,
-      target: firstTarget,
-    })
+    const reachResult = await performReachabilityAnalysis(
+      firstTarget,
+      mergedReachabilityOptions,
+      {
+        branchName,
+        cwd,
+        orgSlug,
+        packagePaths,
+        repoName,
+        resolvedPathsSidecar,
+        spinner,
+      },
+    )
 
     spinner.stop()
 

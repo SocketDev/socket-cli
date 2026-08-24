@@ -4,12 +4,12 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { InputError } from '../../util/error/errors.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
 import type { SocketYml } from '../../util/socket-yaml.mts'
 
 export type ApplyFullExcludePathsResult = {
   effectiveSocketConfig: SocketYml | undefined
-  mergedReachabilityOptions: ReachabilityOptions
+  mergedReachabilityOptions: ReachabilityConfig
 }
 
 /**
@@ -20,7 +20,7 @@ export type ApplyFullExcludePathsResult = {
  */
 export function applyFullExcludePaths(
   cwd: string,
-  reachabilityOptions: ReachabilityOptions,
+  reachabilityOptions: ReachabilityConfig,
   socketConfig: SocketYml | undefined,
   target: string,
 ): ApplyFullExcludePathsResult {

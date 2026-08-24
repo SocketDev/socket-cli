@@ -13,7 +13,7 @@ import { findSocketYmlSync } from '../../util/config.mts'
 import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
 
 export type HandleScanReachConfig = {
@@ -22,7 +22,7 @@ export type HandleScanReachConfig = {
   orgSlug: string
   outputKind: OutputKind
   outputPath: string
-  reachabilityOptions: ReachabilityOptions
+  reachabilityOptions: ReachabilityConfig
   targets: string[]
 }
 
@@ -88,16 +88,18 @@ export async function handleScanReach({
 
   spinner.start('Running reachability analysis…')
 
-  const result = await performReachabilityAnalysis({
-    cwd,
-    orgSlug,
-    outputPath,
-    packagePaths,
-    reachabilityOptions: mergedReachabilityOptions,
-    spinner,
-    target: targets[0]!,
-    uploadManifests: true,
-  })
+  const result = await performReachabilityAnalysis(
+    targets[0]!,
+    mergedReachabilityOptions,
+    {
+      cwd,
+      orgSlug,
+      outputPath,
+      packagePaths,
+      spinner,
+      uploadManifests: true,
+    },
+  )
 
   spinner.stop()
 

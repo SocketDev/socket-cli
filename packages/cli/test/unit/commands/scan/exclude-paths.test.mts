@@ -16,7 +16,7 @@ import {
 } from '../../../../src/commands/scan/exclude-paths.mts'
 import { InputError } from '../../../../src/util/error/errors.mts'
 
-import type { ReachabilityOptions } from '../../../../src/commands/scan/perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from '../../../../src/commands/scan/perform-reachability-analysis.mts'
 
 describe('exclude-paths', () => {
   describe('assertNoNegationPatterns', () => {
@@ -165,7 +165,7 @@ describe('exclude-paths', () => {
         {
           excludePaths: ['tests'],
           reachExcludePaths: [],
-        } as unknown as ReachabilityOptions,
+        } as unknown as ReachabilityConfig,
         undefined,
         '.',
       )
