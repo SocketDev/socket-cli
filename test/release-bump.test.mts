@@ -37,4 +37,11 @@ describe('writeManifestVersion', () => {
       /could not rewrite the package\.json version field/,
     )
   })
+
+  it('throws when the version field is already empty', () => {
+    const raw = '{\n  "name": "socket",\n  "version": ""\n}\n'
+    expect(() => writeManifestVersion(raw, '1.1.160')).toThrow(
+      /could not rewrite the package\.json version field/,
+    )
+  })
 })

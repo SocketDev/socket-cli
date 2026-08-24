@@ -158,7 +158,10 @@ function readPackageJson(): { parsed: PackageJsonShape; raw: string } {
  * is the one line a reviewer expects.
  */
 export function writeManifestVersion(raw: string, version: string): string {
-  const replaced = raw.replace(/("version":\s*")[^"]*(")/, `$1${version}$2`)
+  const replaced = raw.replace(
+    /("version":\s*")[^"]+(")/,
+    (_m, pre: string, post: string) => `${pre}${version}${post}`,
+  )
   if (replaced === raw) {
     throw new Error(
       '[bump] could not rewrite the package.json version field.\n' +
