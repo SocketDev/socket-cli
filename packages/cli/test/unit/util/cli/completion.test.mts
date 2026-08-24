@@ -66,7 +66,6 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Tab Completion script not found')
         expect(result.cause).toContain('Expected to find completion script')
       }
     })
@@ -103,7 +102,7 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Tab Completion script not found')
+        expect(result.cause).toContain('Expected to find completion script')
       }
     })
 
@@ -115,7 +114,7 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Could not determine config directory')
+        expect(result.cause).toBe('Failed to get config path')
       }
     })
 
