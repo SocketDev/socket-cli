@@ -17,7 +17,7 @@ import { EXTERNAL_TOOLS, getToolFilePath } from './vfs-extract-config.mts'
 
 import type { ExternalTool } from './vfs-extract-config.mts'
 
-export interface WaitForConcurrentExtractionOptions {
+export interface WaitForConcurrentExtractionConfig {
   cacheMarker: string
   isPlatWin: boolean
   lockFile: string
@@ -72,7 +72,7 @@ export function verifyToolPathsStillValid(
  * @throws {Error} If no completion is observed within the wait window.
  */
 export async function waitForConcurrentExtraction(
-  config: WaitForConcurrentExtractionOptions,
+  config: WaitForConcurrentExtractionConfig,
 ): Promise<Record<ExternalTool, string> | 'retry'> {
   const { cacheMarker, isPlatWin, lockFile, nodeSmolBase } = {
     __proto__: null,
