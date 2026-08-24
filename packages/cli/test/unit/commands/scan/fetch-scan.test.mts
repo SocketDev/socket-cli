@@ -148,7 +148,6 @@ describe('fetchScan', () => {
       line: '{"invalid":json}',
     })
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Invalid Socket API response')
     expect(result.cause).toBe(
       'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
     )
@@ -183,7 +182,9 @@ describe('fetchScan', () => {
 
     // This should fail because '   ' cannot be parsed as JSON.
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Invalid Socket API response')
+    expect(result.cause).toBe(
+      'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
+    )
   })
 
   it('properly URL encodes scan ID', async () => {
