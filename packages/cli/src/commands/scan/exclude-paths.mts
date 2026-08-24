@@ -7,13 +7,6 @@ import { InputError } from '../../util/error/errors.mts'
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { SocketYml } from '../../util/socket-yaml.mts'
 
-export type ApplyFullExcludePathsOptions = {
-  cwd: string
-  reachabilityOptions: ReachabilityOptions
-  socketConfig: SocketYml | undefined
-  target: string
-}
-
 export type ApplyFullExcludePathsResult = {
   effectiveSocketConfig: SocketYml | undefined
   mergedReachabilityOptions: ReachabilityOptions
@@ -25,12 +18,12 @@ export type ApplyFullExcludePathsResult = {
  * are merged unconditionally; callers decide whether to actually run
  * reachability and consume them.
  */
-export function applyFullExcludePaths({
-  cwd,
-  reachabilityOptions,
-  socketConfig,
-  target,
-}: ApplyFullExcludePathsOptions): ApplyFullExcludePathsResult {
+export function applyFullExcludePaths(
+  cwd: string,
+  reachabilityOptions: ReachabilityOptions,
+  socketConfig: SocketYml | undefined,
+  target: string,
+): ApplyFullExcludePathsResult {
   const { excludePaths } = reachabilityOptions
   const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
   const coanaExcludeGlobs = projectIgnorePathsToReachExcludePaths(

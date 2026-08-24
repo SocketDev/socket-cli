@@ -182,12 +182,7 @@ export async function handleCreateNewScan({
     : undefined
 
   const { effectiveSocketConfig, mergedReachabilityOptions } =
-    applyFullExcludePaths({
-      cwd,
-      reachabilityOptions: reach,
-      socketConfig,
-      target: targets[0]!,
-    })
+    applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!)
 
   const packagePaths = await getPackageFilesForScan(
     scanTargets,
@@ -237,7 +232,7 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths({ target: targets[0]! }) — this guard is unreachable in practice. */
+    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!) — this guard is unreachable in practice. */
     if (!targets.length) {
       logger.fail('Reachability analysis requires at least one target')
       return

@@ -16,6 +16,8 @@ import {
 } from '../../../../src/commands/scan/exclude-paths.mts'
 import { InputError } from '../../../../src/util/error/errors.mts'
 
+import type { ReachabilityOptions } from '../../../../src/commands/scan/perform-reachability-analysis.mts'
+
 describe('exclude-paths', () => {
   describe('assertNoNegationPatterns', () => {
     it('allows positive patterns', () => {
@@ -119,12 +121,12 @@ describe('exclude-paths', () => {
       } as unknown
       const socketConfig = { foo: 'bar' } as unknown
 
-      const result = applyFullExcludePaths({
-        cwd: '/repo',
+      const result = applyFullExcludePaths(
+        '/repo',
         reachabilityOptions,
         socketConfig,
-        target: '.',
-      })
+        '.',
+      )
 
       expect(result.effectiveSocketConfig).toBe(socketConfig)
       expect(result.mergedReachabilityOptions).toBe(reachabilityOptions)
@@ -142,12 +144,12 @@ describe('exclude-paths', () => {
         projectIgnorePaths: ['cfg-ignore'],
       } as unknown
 
-      const result = applyFullExcludePaths({
-        cwd: '/repo',
+      const result = applyFullExcludePaths(
+        '/repo',
         reachabilityOptions,
         socketConfig,
-        target: '.',
-      })
+        '.',
+      )
 
       expect(result.effectiveSocketConfig.projectIgnorePaths).toEqual(
         expect.arrayContaining(['cfg-ignore']),
@@ -158,15 +160,15 @@ describe('exclude-paths', () => {
     })
 
     it('initializes config defaults when socketConfig is missing fields', () => {
-      const result = applyFullExcludePaths({
-        cwd: '/repo',
-        reachabilityOptions: {
+      const result = applyFullExcludePaths(
+        '/repo',
+        {
           excludePaths: ['tests'],
           reachExcludePaths: [],
-        } as unknown,
-        socketConfig: undefined,
-        target: '.',
-      })
+        } as unknown as ReachabilityOptions,
+        undefined,
+        '.',
+      )
 
       expect(result.effectiveSocketConfig).toBeDefined()
       expect(result.effectiveSocketConfig?.version).toBe(2)
