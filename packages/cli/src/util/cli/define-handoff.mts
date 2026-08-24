@@ -34,7 +34,7 @@ import {
 import type { CliCommandContext } from './with-subcommands.mts'
 import type { CliSubcommand } from './with-subcommands-shared.mts'
 
-export interface DefineHandoffCommandOptions {
+export interface DefineHandoffCommandConfig {
   /**
    * Command name as it appears under `socket`. Forwarded to sfw as the first
    * arg unless `binaryPicker` overrides it.
@@ -103,7 +103,7 @@ const DEFAULT_TRACK_TELEMETRY = true
  * Build the help-text generator function used by meow.
  */
 export function buildHelp(
-  config: DefineHandoffCommandOptions,
+  config: DefineHandoffCommandConfig,
   parentName: string,
 ): (command: string) => string {
   const { examples, helpNotes, name, showApiRequirements, wrapperHint } = {
@@ -164,7 +164,7 @@ export function buildHelp(
  * Returns a CliSubcommand-shaped object ready to plug into the meow router.
  */
 export function defineHandoffCommand(
-  config: DefineHandoffCommandOptions,
+  config: DefineHandoffCommandConfig,
 ): CliSubcommand {
   const {
     description,
