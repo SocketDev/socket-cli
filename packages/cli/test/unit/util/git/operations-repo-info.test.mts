@@ -356,7 +356,8 @@ describe('git utilities', () => {
       const result = await gitUnstagedModifiedFiles('/test/dir')
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Git Error')
+        // Pin the short verdict-kind token, not the full message string.
+        expect(result.message).toContain('Git Error')
       }
     })
   })
