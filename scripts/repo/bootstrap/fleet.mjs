@@ -586,18 +586,6 @@ function spliceFleetCanonicalContent(source, target) {
 //#endregion
 //#region template/base/scripts/fleet/_shared/github-tracked-surface.mts
 const ALWAYS_TRACKED_GITHUB_PREFIXES = [
-  '.github/actions/fleet/_shared/',
-  '.github/actions/fleet/cache-pnpm-store/',
-  '.github/actions/fleet/checkout/',
-  '.github/actions/fleet/debug/',
-  '.github/actions/fleet/download-artifact/',
-  '.github/actions/fleet/expose-actions-runtime/',
-  '.github/actions/fleet/github-payload-app-token/',
-  '.github/actions/fleet/github-status-check/',
-  '.github/actions/fleet/install/',
-  '.github/actions/fleet/setup-and-install/',
-  '.github/actions/fleet/setup/',
-  '.github/actions/fleet/upload-artifact/',
   '.github/dependabot.yml',
   '.github/workflows/',
 ]
@@ -634,9 +622,10 @@ function isAlwaysTrackedSurface(relPath) {
 }
 /**
  * True when `relPath`, repo-relative, either separator, is part of the GitHub
- * CI surface a member must keep git-tracked even when thin — a workflow file,
- * a fleet composite action, or dependabot.yml. GitHub reads all of them from
- * the committed tree before any fetch step runs.
+ * CI surface a member must keep git-tracked even when thin — a workflow file or
+ * dependabot.yml. GitHub reads both from the committed tree before a runner
+ * exists. A `./` composite is NOT here: it resolves at step-execution time
+ * from the workspace, so the pack delivers it mid-job.
  */
 function isAlwaysTrackedGitHubSurface(relPath) {
   const p = relPath.replaceAll('\\', '/')
