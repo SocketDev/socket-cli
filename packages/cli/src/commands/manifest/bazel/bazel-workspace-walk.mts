@@ -49,7 +49,6 @@ const WORKSPACE_MARKER_FILES = new Set([
 ])
 
 export type FindWorkspaceRootsOptions = {
-  cwd: string
   // Directory basenames to skip outright (exact match). Pass the union of
   // the codebase-wide ignore set and any caller-specific additions
   // (e.g. `.socket-auto-manifest`).
@@ -69,10 +68,11 @@ const EMPTY_ARRAY: readonly string[] = []
 // directory that contains at least one workspace marker file. Output is
 // sorted for determinism and capped at MAX_WORKSPACE_ROOTS.
 export function findWorkspaceRoots(
-  config: FindWorkspaceRootsOptions,
+  cwd: string,
+  options?: FindWorkspaceRootsOptions | undefined,
 ): string[] {
-  const cfg = { __proto__: null, ...config } as FindWorkspaceRootsOptions
-  const { cwd, verbose } = cfg
+  const cfg = { __proto__: null, ...options } as FindWorkspaceRootsOptions
+  const { verbose } = cfg
   const ignoreDirNames = cfg.ignoreDirNames ?? EMPTY_SET
   const ignoreDirPrefixes = cfg.ignoreDirPrefixes ?? EMPTY_ARRAY
   const maxWalkDirs = cfg.maxWalkDirs ?? DEFAULT_MAX_WALK_DIRS
