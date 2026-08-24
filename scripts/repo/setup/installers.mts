@@ -12,10 +12,6 @@ import { getVersion, hasCommand } from './version-check.mts'
 
 const logger = getDefaultLogger()
 
-export interface EnsureGhCliOptions {
-  autoInstall: boolean
-}
-
 /**
  * Install Chocolatey (Windows).
  */
@@ -125,9 +121,7 @@ async function installWithHomebrew(packageName: string): Promise<boolean> {
 /**
  * Check and optionally install gh CLI.
  */
-export async function ensureGhCli({
-  autoInstall,
-}: EnsureGhCliOptions): Promise<boolean> {
+export async function ensureGhCli(autoInstall: boolean): Promise<boolean> {
   if (await hasCommand('gh')) {
     const version = await getVersion('gh')
     logger.log(`gh CLI ${version} (optional)`)

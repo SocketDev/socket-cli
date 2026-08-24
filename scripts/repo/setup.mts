@@ -159,7 +159,7 @@ async function main(): Promise<number> {
   })
 
   // Check gh CLI, optional, with auto-install.
-  const ghOk = await ensureGhCli({ autoInstall })
+  const ghOk = await ensureGhCli(autoInstall)
 
   if (!quiet) {
     logger.log('')
