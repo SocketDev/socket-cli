@@ -129,7 +129,7 @@ describe('runSocketBasics — basics process result', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Failed to start socket-basics process')
+      expect(result.cause).toBe('spawn() returned null')
     }
   })
 
@@ -146,7 +146,7 @@ describe('runSocketBasics — basics process result', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Socket-basics scan failed')
+      expect(result.cause).toBe('basics boom')
     }
   })
 
@@ -229,7 +229,9 @@ describe('runSocketBasics — basics process result', () => {
     const result = await runSocketBasics(baseOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Socket facts file not created')
+      expect(result.cause).toBe(
+        'Expected .socket.facts.json at: /work/.socket.facts.json',
+      )
     }
   })
 })
