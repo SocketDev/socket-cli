@@ -21,26 +21,23 @@ import type {
 } from './pipeline-types.mts'
 
 export interface BuildCacheKeyOptions {
-  buildMode: string
   extraHash?: string | undefined
-  nodeVersion: string
-  packageVersion: string
-  platformArch: string
-  sources: SourceMap
-  toolsHash: string
-  toolVersions: ToolVersions
 }
 
-export function buildCacheKey({
-  buildMode,
-  extraHash,
-  nodeVersion,
-  packageVersion,
-  platformArch,
-  sources,
-  toolsHash,
-  toolVersions,
-}: BuildCacheKeyOptions): string {
+export function buildCacheKey(
+  buildMode: string,
+  nodeVersion: string,
+  packageVersion: string,
+  platformArch: string,
+  sources: SourceMap,
+  toolsHash: string,
+  toolVersions: ToolVersions,
+  options?: BuildCacheKeyOptions | undefined,
+): string {
+  const { extraHash } = {
+    __proto__: null,
+    ...options,
+  } as BuildCacheKeyOptions
   const hash = crypto.createHash('sha256')
   hash.update(`node=${nodeVersion}`)
   hash.update(`platformArch=${platformArch}`)

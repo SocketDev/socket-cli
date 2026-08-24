@@ -146,17 +146,15 @@ export interface PipelineStage {
 }
 
 /**
- * Options accepted by {@link runPipeline} / {@link runPipelineCli}.
+ * Optional knobs accepted by {@link runPipeline} / {@link runPipelineCli},
+ * alongside the required `getBuildPaths` / `packageName` / `packageRoot` /
+ * `stages` positional params.
  */
 export interface RunPipelineOptions {
   /**
    * Extra file paths whose content is mixed into the cache key.
    */
   extraCacheInputs?: string[] | undefined
-  /**
-   * Package's path resolver for mode + platformArch.
-   */
-  getBuildPaths: (mode: string, platformArch: string) => BuildPaths
   /**
    * Returns absolute paths to the artifacts the build is expected to emit.
    * Missing files trigger a full-checkpoint clean to force a rebuild.
@@ -166,14 +164,6 @@ export interface RunPipelineOptions {
    * Optional shared-path resolver, for source-cloned tarballs.
    */
   getSharedBuildPaths?: (() => SharedBuildPaths) | undefined
-  /**
-   * Short name used in logs (e.g. 'yoga').
-   */
-  packageName: string
-  /**
-   * Absolute path to the package directory.
-   */
-  packageRoot: string
   /**
    * Optional pre-build check, tool probing, disk space. Runs once before
    * the first stage. Throws to abort the build.
@@ -187,10 +177,6 @@ export interface RunPipelineOptions {
    * key stays stable across host OSes.
    */
   resolvePlatformArch?: (() => Promise<string>) | undefined
-  /**
-   * Stages in execution order.
-   */
-  stages: PipelineStage[]
 }
 
 /**

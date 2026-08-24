@@ -47,8 +47,10 @@ import {
   runStage,
 } from './pipeline-stage-runner.mts'
 import type {
+  BuildPaths,
   ParsedFlags,
   PipelineContext,
+  PipelineStage,
   RunPipelineOptions,
   SharedBuildPaths,
   SourceMap,
@@ -75,20 +77,20 @@ const logger = getDefaultLogger()
  * building. Returns the context so the caller can render a summary.
  */
 export async function runPipeline(
-  config: RunPipelineOptions,
+  getBuildPaths: (mode: string, platformArch: string) => BuildPaths,
+  packageName: string,
+  packageRoot: string,
+  stages: PipelineStage[],
+  options?: RunPipelineOptions | undefined,
   cliOverrides?: ParsedFlags | undefined,
 ): Promise<PipelineContext | undefined> {
   const {
     extraCacheInputs = [],
-    getBuildPaths,
     getOutputFiles,
     getSharedBuildPaths,
-    packageName,
-    packageRoot,
     preflight,
     resolvePlatformArch,
-    stages,
-  } = { __proto__: null, ...config } as typeof config
+  } = { __proto__: null, ...options } as RunPipelineOptions
 
   const flags = cliOverrides ?? parseFlags(process.argv.slice(2))
   const buildMode = getBuildMode(flags.raw ?? new Set())
@@ -108,16 +110,16 @@ export async function runPipeline(
 
   const extraHash =
     extraCacheInputs.length > 0 ? hashFileContents(extraCacheInputs) : ''
-  const cacheKey = buildCacheKey({
+  const cacheKey = buildCacheKey(
     buildMode,
-    extraHash,
     nodeVersion,
     packageVersion,
     platformArch,
     sources,
     toolsHash,
     toolVersions,
-  })
+    { extraHash },
+  )
 
   if (flags.printCacheKey) {
     process.stdout.write(`${cacheKey}\n`) // socket-hook: allow console
@@ -246,10 +248,14 @@ export async function runPipeline(
  * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
  */
 export async function runPipelineCli(
-  config: RunPipelineOptions,
+  getBuildPaths: (mode: string, platformArch: string) => BuildPaths,
+  packageName: string,
+  packageRoot: string,
+  stages: PipelineStage[],
+  options?: RunPipelineOptions | undefined,
 ): Promise<void> {
   try {
-    await runPipeline(config)
+    await runPipeline(getBuildPaths, packageName, packageRoot, stages, options)
   } catch (e) {
     // Set exit code and rethrow so the caller's top-level handler is the
     // single place that formats/logs the failure. Logging here AND in the
