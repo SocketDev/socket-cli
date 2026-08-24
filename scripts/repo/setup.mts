@@ -143,18 +143,14 @@ async function main(): Promise<number> {
   }
 
   // Check Node.js.
-  const nodeOk = await checkPrerequisite({
-    command: 'node',
+  const nodeOk = await checkPrerequisite('node', 'Node.js', {
     minVersion: { major: 18, minor: 0, patch: 0 },
-    name: 'Node.js',
     required: true,
   })
 
   // Check pnpm.
-  const pnpmOk = await checkPrerequisite({
-    command: 'pnpm',
+  const pnpmOk = await checkPrerequisite('pnpm', 'pnpm', {
     minVersion: { major: 10, minor: 21, patch: 0 },
-    name: 'pnpm',
     required: true,
   })
 
