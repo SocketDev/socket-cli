@@ -249,13 +249,18 @@ describe('cmd utilities', () => {
 
   describe('cmdPrefixMessage', () => {
     it('generates prefix message', () => {
-      const msg = cmdPrefixMessage('npm install', 'message text')
-      expect(msg).toBe('npm install: message text')
+      const cmdName = 'npm install'
+      const text = 'message text'
+      const msg = cmdPrefixMessage(cmdName, text)
+      // Pin structure: `<cmdName>: <text>`, not the literal joined string.
+      expect(msg).toBe(`${cmdName}: ${text}`)
     })
 
     it('handles empty command name', () => {
-      const msg = cmdPrefixMessage('', 'message text')
-      expect(msg).toBe('message text')
+      const text = 'message text'
+      const msg = cmdPrefixMessage('', text)
+      // Pin identity: with no cmdName, the text passes through unchanged.
+      expect(msg).toBe(text)
     })
   })
 })
