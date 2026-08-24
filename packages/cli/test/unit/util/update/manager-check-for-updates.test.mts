@@ -194,11 +194,11 @@ describe('update manager', () => {
           immediate: true,
         })
 
-        expect(mockShowUpdateNotification).toHaveBeenCalledWith({
-          name: 'socket',
-          current: '1.0.0',
-          latest: '2.0.0',
-        })
+        expect(mockShowUpdateNotification).toHaveBeenCalledWith(
+          'socket',
+          '1.0.0',
+          '2.0.0',
+        )
       })
 
       it('schedules exit notification when not immediate', async () => {
@@ -208,11 +208,11 @@ describe('update manager', () => {
           immediate: false,
         })
 
-        expect(mockScheduleExitNotification).toHaveBeenCalledWith({
-          name: 'socket',
-          current: '1.0.0',
-          latest: '2.0.0',
-        })
+        expect(mockScheduleExitNotification).toHaveBeenCalledWith(
+          'socket',
+          '1.0.0',
+          '2.0.0',
+        )
       })
 
       it('does not notify when no update available', async () => {

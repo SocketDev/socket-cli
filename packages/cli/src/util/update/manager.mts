@@ -152,16 +152,10 @@ export async function checkForUpdates(
         // Use cached data for notification.
         const updateAvailable = version !== record.version
         if (updateAvailable) {
-          const notificationOptions = {
-            name,
-            current: version,
-            latest: record.version,
-          }
-
           if (immediate) {
-            showUpdateNotification(notificationOptions)
+            showUpdateNotification(name, version, record.version)
           } else {
-            scheduleExitNotification(notificationOptions)
+            scheduleExitNotification(name, version, record.version)
           }
         }
         return updateAvailable
@@ -234,16 +228,18 @@ export async function checkForUpdates(
     // Only show notification if it's been more than NOTIFICATION_TTL_MS since last notification.
     if (timeSinceLastNotification >= NOTIFICATION_TTL_MS) {
       try {
-        const notificationOptions = {
-          name,
-          current: updateResult.current,
-          latest: updateResult.latest,
-        }
-
         if (immediate) {
-          showUpdateNotification(notificationOptions)
+          showUpdateNotification(
+            name,
+            updateResult.current,
+            updateResult.latest,
+          )
         } else {
-          scheduleExitNotification(notificationOptions)
+          scheduleExitNotification(
+            name,
+            updateResult.current,
+            updateResult.latest,
+          )
         }
 
         // Update timestampNotification in cache to prevent spam.

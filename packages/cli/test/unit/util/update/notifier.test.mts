@@ -67,11 +67,7 @@ describe('update notifier', () => {
 
   describe('formatUpdateMessage', () => {
     it('formats update message for npm installation', () => {
-      const result = formatUpdateMessage({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      const result = formatUpdateMessage('socket', '1.0.0', '2.0.0')
 
       expect(result.message).toContain('socket')
       expect(result.message).toContain('1.0.0')
@@ -83,11 +79,7 @@ describe('update notifier', () => {
     it('formats update message for SEA binary', () => {
       mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
-      const result = formatUpdateMessage({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      const result = formatUpdateMessage('socket', '1.0.0', '2.0.0')
 
       expect(result.message).toContain('socket')
       expect(result.command).toContain('/usr/local/bin/socket')
@@ -96,11 +88,7 @@ describe('update notifier', () => {
     })
 
     it('includes changelog link for npm', () => {
-      const result = formatUpdateMessage({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      const result = formatUpdateMessage('socket', '1.0.0', '2.0.0')
 
       expect(result.changelog).toContain('CHANGELOG.md')
       expect(result.changelog).toContain('2.0.0')
@@ -109,11 +97,7 @@ describe('update notifier', () => {
     it('includes changelog link for SEA', () => {
       mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
-      const result = formatUpdateMessage({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      const result = formatUpdateMessage('socket', '1.0.0', '2.0.0')
 
       expect(result.changelog).toContain('CHANGELOG.md')
       expect(result.changelog).toContain('SocketDev')
@@ -142,11 +126,7 @@ describe('update notifier', () => {
     })
 
     it('shows notification when TTY is available', () => {
-      showUpdateNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      showUpdateNotification('socket', '1.0.0', '2.0.0')
 
       expect(mockLogger.log).toHaveBeenCalled()
       const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
@@ -160,11 +140,7 @@ describe('update notifier', () => {
         configurable: true,
       })
 
-      showUpdateNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      showUpdateNotification('socket', '1.0.0', '2.0.0')
 
       expect(mockLogger.log).not.toHaveBeenCalled()
     })
@@ -172,22 +148,14 @@ describe('update notifier', () => {
     it('shows command for SEA binary', () => {
       mockGetSeaBinaryPath.mockReturnValue('/usr/local/bin/socket')
 
-      showUpdateNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      showUpdateNotification('socket', '1.0.0', '2.0.0')
 
       const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
       expect(calls).toContain('self-update')
     })
 
     it('shows changelog link', () => {
-      showUpdateNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      showUpdateNotification('socket', '1.0.0', '2.0.0')
 
       const calls = mockLogger.log.mock.calls.map(c => c[0]).join('\n')
       expect(calls).toContain('CHANGELOG.md')
@@ -205,11 +173,7 @@ describe('update notifier', () => {
 
       // Should not throw.
       expect(() =>
-        showUpdateNotification({
-          name: 'socket',
-          current: '1.0.0',
-          latest: '2.0.0',
-        }),
+        showUpdateNotification('socket', '1.0.0', '2.0.0'),
       ).not.toThrow()
 
       // Fallback message should be shown.
@@ -231,11 +195,7 @@ describe('update notifier', () => {
 
       // Should not throw.
       expect(() =>
-        showUpdateNotification({
-          name: 'socket',
-          current: '1.0.0',
-          latest: '2.0.0',
-        }),
+        showUpdateNotification('socket', '1.0.0', '2.0.0'),
       ).not.toThrow()
 
       // Fallback message with self-update command should be shown.
@@ -264,11 +224,7 @@ describe('update notifier', () => {
     })
 
     it('schedules exit notification when TTY', () => {
-      scheduleExitNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      scheduleExitNotification('socket', '1.0.0', '2.0.0')
 
       expect(mockOnExit).toHaveBeenCalledWith(expect.any(Function))
     })
@@ -281,11 +237,7 @@ describe('update notifier', () => {
         registered = cb
       })
 
-      scheduleExitNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      scheduleExitNotification('socket', '1.0.0', '2.0.0')
 
       expect(registered).toBeTypeOf('function')
       registered!()
@@ -299,11 +251,7 @@ describe('update notifier', () => {
         configurable: true,
       })
 
-      scheduleExitNotification({
-        name: 'socket',
-        current: '1.0.0',
-        latest: '2.0.0',
-      })
+      scheduleExitNotification('socket', '1.0.0', '2.0.0')
 
       expect(mockOnExit).not.toHaveBeenCalled()
     })
@@ -315,11 +263,7 @@ describe('update notifier', () => {
 
       // Should not throw.
       expect(() =>
-        scheduleExitNotification({
-          name: 'socket',
-          current: '1.0.0',
-          latest: '2.0.0',
-        }),
+        scheduleExitNotification('socket', '1.0.0', '2.0.0'),
       ).not.toThrow()
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
