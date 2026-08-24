@@ -115,8 +115,9 @@ describe('detectAndValidatePackageEnvironment - package.json inference', () => {
     expect(result.ok).toBe(false)
     if (!result.ok) {
       // The validation checks for lockfile presence first, and
-      // editablePkgJson being undefined makes lockName undefined.
-      expect(result.message).toBe('Missing lockfile')
+      // editablePkgJson being undefined makes lockName undefined. Pin the
+      // short verdict-kind token, not the full message as an exact string.
+      expect(result.message).toContain('Missing lockfile')
     }
   })
 
