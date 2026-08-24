@@ -404,9 +404,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(
-        checkForUpdates('test-package', '1.0.0'),
-      ).rejects.toThrow()
+      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
     })
 
     it('throws when registry returns no version field', async () => {
@@ -425,9 +423,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(
-        checkForUpdates('test-package', '1.0.0'),
-      ).rejects.toThrow()
+      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
     })
   })
 })
