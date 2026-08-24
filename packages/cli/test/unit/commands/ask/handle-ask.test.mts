@@ -79,8 +79,7 @@ describe('handleAsk', () => {
   })
 
   it('should output command and show tip when not executing', async () => {
-    await handleAsk({
-      query: 'scan for vulnerabilities',
+    await handleAsk('scan for vulnerabilities', {
       execute: false,
       explain: false,
     })
@@ -96,8 +95,7 @@ describe('handleAsk', () => {
   it('should execute command when execute is true', async () => {
     mockSpawn.mockResolvedValue({ code: 0 })
 
-    await handleAsk({
-      query: 'scan for vulnerabilities',
+    await handleAsk('scan for vulnerabilities', {
       execute: true,
       explain: false,
     })
@@ -146,11 +144,7 @@ describe('handleAsk', () => {
 
     // The function checks result.code before checking for null, so we need to handle the error
     try {
-      await handleAsk({
-        query: 'scan for issues',
-        execute: true,
-        explain: false,
-      })
+      await handleAsk('scan for issues', { execute: true, explain: false })
     } catch (e) {
       // Expected - result is null so accessing .code throws
     }
@@ -169,11 +163,7 @@ describe('handleAsk', () => {
       .spyOn(process, 'exit')
       .mockImplementation(() => undefined as never)
 
-    await handleAsk({
-      query: 'fix vulnerabilities',
-      execute: true,
-      explain: false,
-    })
+    await handleAsk('fix vulnerabilities', { execute: true, explain: false })
 
     expect(mockLogger.error).toHaveBeenCalledWith(
       'Command failed with exit code 1',
@@ -184,16 +174,13 @@ describe('handleAsk', () => {
   })
 
   it('should pass explain flag to output', async () => {
-    await handleAsk({
-      query: 'optimize dependencies',
-      execute: false,
-      explain: true,
-    })
+    await handleAsk('optimize dependencies', { execute: false, explain: true })
 
     expect(mockOutputAskCommand).toHaveBeenCalledWith(
-      expect.objectContaining({
-        explain: true,
-      }),
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      { explain: true },
     )
   })
 })
