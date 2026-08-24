@@ -159,8 +159,8 @@ function readPackageJson(): { parsed: PackageJsonShape; raw: string } {
  */
 export function writeManifestVersion(raw: string, version: string): string {
   const replaced = raw.replace(
-    /^(\s*"version":\s*")[^"]*(")/m,
-    `$1${version}$2`,
+    /("version":\s*")[^"]+(")/,
+    (_m, pre: string, post: string) => `${pre}${version}${post}`,
   )
   if (replaced === raw) {
     throw new Error(
