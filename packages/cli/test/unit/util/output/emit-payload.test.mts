@@ -30,13 +30,13 @@ describe('emitPayload', () => {
   })
 
   it('emits plain payload as one log call in human mode', () => {
-    emitPayload('hello', { flags: {} })
+    emitPayload('hello', {})
     expect(mockStdoutLog).toHaveBeenCalledTimes(1)
     expect(mockStdoutLog).toHaveBeenCalledWith('hello')
   })
 
   it('emits BEGIN, payload, END as three log calls under --json', () => {
-    emitPayload('{"ok":true}', { flags: { json: true } })
+    emitPayload('{"ok":true}', { json: true })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
     expect(mockStdoutLog).toHaveBeenNthCalledWith(1, '\0SOCKET_PAYLOAD_BEGIN\0')
     expect(mockStdoutLog).toHaveBeenNthCalledWith(2, '{"ok":true}')
@@ -44,7 +44,7 @@ describe('emitPayload', () => {
   })
 
   it('emits three log calls under --markdown', () => {
-    emitPayload('# Hello', { flags: { markdown: true } })
+    emitPayload('# Hello', { markdown: true })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
     expect(mockStdoutLog).toHaveBeenNthCalledWith(1, '\0SOCKET_PAYLOAD_BEGIN\0')
     expect(mockStdoutLog).toHaveBeenNthCalledWith(2, '# Hello')
@@ -52,13 +52,13 @@ describe('emitPayload', () => {
   })
 
   it('emits three log calls under --quiet', () => {
-    emitPayload('payload', { flags: { quiet: true } })
+    emitPayload('payload', { quiet: true })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
   })
 
   it('preserves embedded newlines in the payload (multi-line markdown)', () => {
     const md = '# Title\n\n- item 1\n- item 2\n'
-    emitPayload(md, { flags: { markdown: true } })
+    emitPayload(md, { markdown: true })
     // emitPayload strips exactly one trailing newline before logging
     // (logger.log appends its own \n, so keeping the payload's would
     // double it). Intermediate \n bytes inside the payload are
@@ -70,7 +70,7 @@ describe('emitPayload', () => {
   })
 
   it('emitJsonPayload stringifies and wraps', () => {
-    emitJsonPayload({ status: 'ok', count: 3 }, { flags: { json: true } })
+    emitJsonPayload({ status: 'ok', count: 3 }, { json: true })
     expect(mockStdoutLog).toHaveBeenCalledTimes(3)
     expect(mockStdoutLog).toHaveBeenNthCalledWith(
       2,
@@ -79,8 +79,8 @@ describe('emitPayload', () => {
   })
 
   it('never writes to stderr', () => {
-    emitPayload('anything', { flags: { json: true } })
-    emitPayload('anything', { flags: {} })
+    emitPayload('anything', { json: true })
+    emitPayload('anything', {})
     expect(mockStderrLog).not.toHaveBeenCalled()
   })
 })
