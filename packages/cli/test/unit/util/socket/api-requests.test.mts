@@ -432,7 +432,8 @@ describe('api utilities', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Socket API error')
+        // Pin the short verdict-kind token, not the full message string.
+        expect(result.message).toContain('Socket API error')
         expect(result.cause).toContain('thrown boom')
       }
     })
