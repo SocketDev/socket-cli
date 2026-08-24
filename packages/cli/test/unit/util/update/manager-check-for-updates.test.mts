@@ -79,52 +79,42 @@ describe('update manager', () => {
   describe('checkForUpdates', () => {
     describe('parameter validation', () => {
       it('returns false for empty package name', async () => {
-        const result = await checkForUpdates({
-          name: '',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('', '1.0.0')
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
           expect.stringContaining(
-            'checkForUpdates config.name requires a non-empty string',
+            'checkForUpdates(name) requires a non-empty string',
           ),
         )
       })
 
       it('returns false for empty version', async () => {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '',
-        })
+        const result = await checkForUpdates('socket', '')
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
           expect.stringContaining(
-            'checkForUpdates config.version requires a non-empty string',
+            'checkForUpdates(name, version) requires version to be a non-empty string',
           ),
         )
       })
 
       it('returns false for negative TTL', async () => {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           ttl: -1,
         })
 
         expect(result).toBe(false)
         expect(mockLogger.warn).toHaveBeenCalledWith(
           expect.stringContaining(
-            'checkForUpdates config.ttl must be >= 0 (saw: -1)',
+            'checkForUpdates options.ttl must be >= 0 (saw: -1)',
           ),
         )
       })
 
       it('warns about invalid auth info but continues', async () => {
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           authInfo: { token: '', type: '' },
         })
 
@@ -135,9 +125,7 @@ describe('update manager', () => {
 
       it('handles empty registry URL without warning', async () => {
         // Empty string is treated as "use default", not invalid.
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           registryUrl: '',
         })
 
@@ -154,9 +142,7 @@ describe('update manager', () => {
           version: '1.0.0',
         })
 
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           ttl: 60_000, // 1 minute.
         })
 
@@ -171,9 +157,7 @@ describe('update manager', () => {
           version: '1.0.0',
         })
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           ttl: 60_000, // 1 minute.
         })
 
@@ -183,10 +167,7 @@ describe('update manager', () => {
       it('fetches when no cache exists', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        await checkForUpdates('socket', '1.0.0')
 
         expect(mockPerformUpdateCheck).toHaveBeenCalled()
       })
@@ -194,10 +175,7 @@ describe('update manager', () => {
       it('updates cache after successful fetch', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        await checkForUpdates('socket', '1.0.0')
 
         expect(mockDlxManifest.set).toHaveBeenCalledWith(
           'socket@1.0.0',
@@ -212,9 +190,7 @@ describe('update manager', () => {
       it('shows immediate notification when update available', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           immediate: true,
         })
 
@@ -228,9 +204,7 @@ describe('update manager', () => {
       it('schedules exit notification when not immediate', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           immediate: false,
         })
 
@@ -248,10 +222,7 @@ describe('update manager', () => {
           updateAvailable: false,
         })
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        await checkForUpdates('socket', '1.0.0')
 
         expect(mockShowUpdateNotification).not.toHaveBeenCalled()
         expect(mockScheduleExitNotification).not.toHaveBeenCalled()
@@ -266,9 +237,7 @@ describe('update manager', () => {
         })
         mockPerformUpdateCheck.mockRejectedValue(new Error('Network error'))
 
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           ttl: 60_000,
         })
 
@@ -279,10 +248,7 @@ describe('update manager', () => {
         mockDlxManifest.get.mockReturnValue(undefined)
         mockPerformUpdateCheck.mockRejectedValue(new Error('Network error'))
 
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('socket', '1.0.0')
 
         expect(result).toBe(false)
         expect(mockLogger.log).toHaveBeenCalledWith(
@@ -296,10 +262,7 @@ describe('update manager', () => {
         })
 
         // Should not throw.
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('socket', '1.0.0')
 
         expect(mockLogger.warn).toHaveBeenCalledWith(
           expect.stringContaining('Failed to access cache'),
@@ -314,10 +277,7 @@ describe('update manager', () => {
         mockDlxManifest.set.mockRejectedValue(new Error('Cache write error'))
 
         // Should not throw.
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('socket', '1.0.0')
 
         expect(mockLogger.warn).toHaveBeenCalledWith(
           expect.stringContaining('Failed to update cache'),
@@ -332,9 +292,7 @@ describe('update manager', () => {
         })
 
         // Should not throw.
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           immediate: true,
         })
 
@@ -349,9 +307,7 @@ describe('update manager', () => {
       it('normalizes registry URL in cache key', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           registryUrl: 'https://registry.npmjs.org',
         })
 
@@ -364,9 +320,7 @@ describe('update manager', () => {
       it('handles invalid registry URL gracefully', async () => {
         mockDlxManifest.get.mockReturnValue(undefined)
 
-        await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        await checkForUpdates('socket', '1.0.0', {
           registryUrl: 'not-a-valid-url',
         })
 

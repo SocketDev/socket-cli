@@ -89,10 +89,7 @@ describe('update manager', () => {
       // We can't actually mock Date.now() easily, but we can test the
       // scenario where cache exists but system time is wrong by
       // verifying the checkForUpdates function behavior.
-      const result = await checkForUpdates({
-        name: 'socket',
-        version: '1.0.0',
-      })
+      const result = await checkForUpdates('socket', '1.0.0')
 
       // Cache is fresh (timestampFetch > current time), so no fetch.
       expect(mockPerformUpdateCheck).not.toHaveBeenCalled()
@@ -106,10 +103,7 @@ describe('update manager', () => {
         version: '2.0.0',
       })
 
-      await checkForUpdates({
-        name: 'socket',
-        version: '1.0.0',
-      })
+      await checkForUpdates('socket', '1.0.0')
 
       // Should fetch because cache has no valid timestampFetch.
       expect(mockPerformUpdateCheck).toHaveBeenCalled()
@@ -121,10 +115,7 @@ describe('update manager', () => {
         version: '2.0.0',
       })
 
-      await checkForUpdates({
-        name: 'socket',
-        version: '1.0.0',
-      })
+      await checkForUpdates('socket', '1.0.0')
 
       // Should fetch because timestampFetch is 0.
       expect(mockPerformUpdateCheck).toHaveBeenCalled()
@@ -139,9 +130,7 @@ describe('update manager', () => {
       Date.now = () => 0
 
       try {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           immediate: true,
         })
         expect(result).toBe(true)
@@ -160,9 +149,7 @@ describe('update manager', () => {
       Date.now = () => 0
 
       try {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
+        const result = await checkForUpdates('socket', '1.0.0', {
           immediate: false,
         })
         expect(result).toBe(true)
@@ -181,10 +168,7 @@ describe('update manager', () => {
       Date.now = () => 0
 
       try {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('socket', '1.0.0')
         expect(result).toBe(false)
       } finally {
         Date.now = realNow
@@ -197,10 +181,7 @@ describe('update manager', () => {
       Date.now = () => 0
 
       try {
-        const result = await checkForUpdates({
-          name: 'socket',
-          version: '1.0.0',
-        })
+        const result = await checkForUpdates('socket', '1.0.0')
         expect(result).toBe(false)
       } finally {
         Date.now = realNow
@@ -212,10 +193,7 @@ describe('update manager', () => {
     it('skips update check for SEA binaries', async () => {
       mockIsSeaBinary.mockReturnValue(true)
 
-      await scheduleUpdateCheck({
-        name: 'socket',
-        version: '1.0.0',
-      })
+      await scheduleUpdateCheck('socket', '1.0.0')
 
       expect(mockPerformUpdateCheck).not.toHaveBeenCalled()
     })
@@ -223,10 +201,7 @@ describe('update manager', () => {
     it('performs update check for npm installations', async () => {
       mockIsSeaBinary.mockReturnValue(false)
 
-      await scheduleUpdateCheck({
-        name: 'socket',
-        version: '1.0.0',
-      })
+      await scheduleUpdateCheck('socket', '1.0.0')
 
       expect(mockPerformUpdateCheck).toHaveBeenCalled()
     })
@@ -235,9 +210,7 @@ describe('update manager', () => {
       mockIsSeaBinary.mockReturnValue(false)
       mockDlxManifest.get.mockReturnValue(undefined)
 
-      await scheduleUpdateCheck({
-        name: 'socket',
-        version: '1.0.0',
+      await scheduleUpdateCheck('socket', '1.0.0', {
         immediate: true, // Should be overridden.
       })
 
@@ -252,10 +225,7 @@ describe('update manager', () => {
 
       // Should not throw.
       await expect(
-        scheduleUpdateCheck({
-          name: 'socket',
-          version: '1.0.0',
-        }),
+        scheduleUpdateCheck('socket', '1.0.0'),
       ).resolves.not.toThrow()
 
       // When fetch fails and no cache, logs about no version info.

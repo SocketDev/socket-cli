@@ -45,8 +45,6 @@ const NOTIFICATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 export interface UpdateManagerOptions {
   authInfo?: AuthInfo | undefined
-  name: string
-  version: string
   /**
    * Whether to show notification immediately or on exit.
    */
@@ -60,16 +58,16 @@ export interface UpdateManagerOptions {
  * the main function that orchestrates the entire update process.
  */
 export async function checkForUpdates(
-  config: UpdateManagerOptions,
+  name: string,
+  version: string,
+  options?: UpdateManagerOptions | undefined,
 ): Promise<boolean> {
   const {
     authInfo,
     immediate = false,
-    name,
     registryUrl,
     ttl = UPDATE_CHECK_TTL,
-    version,
-  } = { __proto__: null, ...config } as UpdateManagerOptions
+  } = { __proto__: null, ...options } as UpdateManagerOptions
 
   const loggerLocal = getDefaultLogger()
 
@@ -79,21 +77,21 @@ export async function checkForUpdates(
   // Validate required parameters.
   if (!isNonEmptyString(name)) {
     loggerLocal.warn(
-      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); skipping update check`,
+      `checkForUpdates(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); skipping update check`,
     )
     return false
   }
 
   if (!isNonEmptyString(version)) {
     loggerLocal.warn(
-      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); skipping update check`,
+      `checkForUpdates(name, version) requires version to be a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); skipping update check`,
     )
     return false
   }
 
   if (ttl < 0) {
     loggerLocal.warn(
-      `checkForUpdates config.ttl must be >= 0 (saw: ${ttl}); pass a positive number of milliseconds, e.g. 86_400_000 for 24h`,
+      `checkForUpdates options.ttl must be >= 0 (saw: ${ttl}); pass a positive number of milliseconds, e.g. 86_400_000 for 24h`,
     )
     return false
   }
@@ -278,7 +276,9 @@ export async function checkForUpdates(
  * built-in update checker (embedded via --update-config).
  */
 export async function scheduleUpdateCheck(
-  config: UpdateManagerOptions,
+  name: string,
+  version: string,
+  options?: UpdateManagerOptions | undefined,
 ): Promise<void> {
   // Skip update checks for SEA binaries - node-smol handles it via embedded update-config.
   if (isSeaBinary()) {
@@ -286,10 +286,10 @@ export async function scheduleUpdateCheck(
   }
 
   // Set immediate to false to show notification on exit.
-  const updateOptions = { ...config, immediate: false }
+  const updateOptions = { ...options, immediate: false }
 
   try {
-    await checkForUpdates(updateOptions)
+    await checkForUpdates(name, version, updateOptions)
     /* c8 ignore start - update-check failures are silent and can't be triggered without mocking the entire update pipeline */
   } catch (e) {
     logger.log(`Update check failed: ${errorMessage(e)}`)

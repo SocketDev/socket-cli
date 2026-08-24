@@ -169,13 +169,11 @@ void (async () => {
     // update" forever.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
     // scheduleUpdateCheck catches internally, so void can't drop a rejection.
-    void scheduleUpdateCheck({
-      name: isSeaBinary()
-        ? SOCKET_CLI_BIN_NAME
-        : getCliName() || SOCKET_CLI_BIN_NAME,
-      registryUrl: NPM_REGISTRY_URL,
-      version: getCliVersion() || '0.0.0',
-    })
+    void scheduleUpdateCheck(
+      isSeaBinary() ? SOCKET_CLI_BIN_NAME : getCliName() || SOCKET_CLI_BIN_NAME,
+      getCliVersion() || '0.0.0',
+      { registryUrl: NPM_REGISTRY_URL },
+    )
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.
