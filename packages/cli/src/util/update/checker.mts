@@ -46,9 +46,7 @@ export interface NpmCredentials {
 
 export interface UpdateCheckOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
-  name: string
   registryUrl?: string | undefined
-  version: string
 }
 
 export interface UpdateCheckResult {
@@ -265,22 +263,24 @@ const NetworkUtils = {
  * registry and compares with current.
  */
 export async function checkForUpdates(
-  config: UpdateCheckOptions,
+  name: string,
+  version: string,
+  options?: UpdateCheckOptions | undefined,
 ): Promise<UpdateCheckResult> {
-  const { authInfo, name, registryUrl, version } = {
+  const { authInfo, registryUrl } = {
     __proto__: null,
-    ...config,
+    ...options,
   } as UpdateCheckOptions
 
   if (!isNonEmptyString(name)) {
     throw new Error(
-      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      `checkForUpdates(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
     )
   }
 
   if (!isNonEmptyString(version)) {
     throw new Error(
-      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+      `checkForUpdates(name, version) requires version to be a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
     )
   }
 

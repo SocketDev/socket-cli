@@ -184,11 +184,9 @@ export async function checkForUpdates(
   if (!isFresh) {
     // Need to fetch fresh data from registry.
     try {
-      updateResult = await performUpdateCheck({
+      updateResult = await performUpdateCheck(name, version, {
         authInfo,
-        name,
         registryUrl,
-        version,
       })
 
       // Update cache with fresh data.

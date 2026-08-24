@@ -312,18 +312,14 @@ describe('update/checker', () => {
 
   describe('checkForUpdates', () => {
     it('throws error for empty package name', async () => {
-      await expect(
-        checkForUpdates({ name: '', version: '1.0.0' }),
-      ).rejects.toThrow(
-        /checkForUpdates config\.name requires a non-empty string/,
+      await expect(checkForUpdates('', '1.0.0')).rejects.toThrow(
+        /checkForUpdates\(name\) requires a non-empty string/,
       )
     })
 
     it('throws error for empty version', async () => {
-      await expect(
-        checkForUpdates({ name: 'test', version: '' }),
-      ).rejects.toThrow(
-        /checkForUpdates config\.version requires a non-empty string/,
+      await expect(checkForUpdates('test', '')).rejects.toThrow(
+        /checkForUpdates\(name, version\) requires version to be a non-empty string/,
       )
     })
 
@@ -342,10 +338,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      const result = await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
-      })
+      const result = await checkForUpdates('test-package', '1.0.0')
 
       expect(result).toEqual({
         current: '1.0.0',
@@ -369,10 +362,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      const result = await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
-      })
+      const result = await checkForUpdates('test-package', '1.0.0')
 
       expect(result).toEqual({
         current: '1.0.0',
@@ -396,9 +386,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
+      await checkForUpdates('test-package', '1.0.0', {
         authInfo: { token: 'test-token', type: 'Bearer' },
       })
 
@@ -417,7 +405,7 @@ describe('update/checker', () => {
       })
 
       await expect(
-        checkForUpdates({ name: 'test-package', version: '1.0.0' }),
+        checkForUpdates('test-package', '1.0.0'),
       ).rejects.toThrow()
     })
 
@@ -438,7 +426,7 @@ describe('update/checker', () => {
       })
 
       await expect(
-        checkForUpdates({ name: 'test-package', version: '1.0.0' }),
+        checkForUpdates('test-package', '1.0.0'),
       ).rejects.toThrow()
     })
   })
