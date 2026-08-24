@@ -21,7 +21,7 @@ export interface ReachabilityFlagUsageInput {
   reachSkipCache: boolean
 }
 
-export interface ScanCreateInputCheckOptions {
+export interface ScanCreateInputCheckConfig {
   branchName: string
   hasApiToken: boolean
   isUsingAnyReachabilityFlags: boolean
@@ -110,7 +110,7 @@ export function validateReachEcosystems(rawValues: string[]): PURL_Type[] {
  * output-format, api-token, and reachability constraints).
  */
 export function validateScanCreateInput(
-  config: ScanCreateInputCheckOptions,
+  config: ScanCreateInputCheckConfig,
 ): boolean {
   const {
     branchName,
