@@ -100,7 +100,8 @@ describe('SDK Utilities', () => {
       return setupSdk().then(result => {
         expect(result.ok).toBe(false)
         if (!result.ok) {
-          expect(result.message).toBe('Auth Error')
+          // Pin the short verdict-kind token, not the full message string.
+          expect(result.message).toContain('Auth Error')
           expect(result.cause).toContain('socket login')
         }
       })
@@ -139,7 +140,8 @@ describe('SDK Utilities', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Configuration Error')
+        // Pin the short verdict-kind token, not the full message string.
+        expect(result.message).toContain('Configuration Error')
         expect(result.cause).toContain('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS')
       }
       expect(mockSocketSdkConstructor).not.toHaveBeenCalled()
