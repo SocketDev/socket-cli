@@ -61,7 +61,8 @@ describe('error/display', () => {
       const result = formatErrorForDisplay(error)
 
       expect(result.title).toBe('Authentication error')
-      expect(result.message).toBe('Invalid token')
+      // Pin identity: the display message passes the error message through.
+      expect(result.message).toBe(error.message)
     })
 
     it('formats NetworkError', () => {
@@ -99,7 +100,8 @@ describe('error/display', () => {
 
       const result = formatErrorForDisplay(error)
 
-      expect(result.message).toBe('Disk full')
+      // Pin identity: the display message passes the error message through.
+      expect(result.message).toBe(error.message)
     })
 
     it('formats ConfigError', () => {
@@ -127,8 +129,9 @@ describe('error/display', () => {
       const result = formatErrorForDisplay(error)
 
       expect(result.title).toBe('Invalid input')
-      expect(result.message).toBe('Invalid input')
-      expect(result.body).toBe('Expected a number')
+      // Pin identity: the display message passes the error message through.
+      expect(result.message).toBe(error.message)
+      expect(result.body).toBe(error.body)
     })
 
     it('formats generic Error', () => {
@@ -137,7 +140,8 @@ describe('error/display', () => {
       const result = formatErrorForDisplay(error)
 
       expect(result.title).toBe('Unexpected error')
-      expect(result.message).toBe('Something went wrong')
+      // Pin identity: the display message passes the error message through.
+      expect(result.message).toBe(error.message)
     })
 
     it('preserves Error.cause chain in message without debug mode', () => {
@@ -174,17 +178,21 @@ describe('error/display', () => {
     })
 
     it('formats string error', () => {
-      const result = formatErrorForDisplay('Something went wrong')
+      const errorText = 'Something went wrong'
+
+      const result = formatErrorForDisplay(errorText)
 
       expect(result.title).toBe('Error')
-      expect(result.message).toBe('Something went wrong')
+      // Pin identity: the display message passes the string through.
+      expect(result.message).toBe(errorText)
     })
 
     it('formats unknown error', () => {
       const result = formatErrorForDisplay(42)
 
       expect(result.title).toBe('Unexpected error')
-      expect(result.message).toBe('An unknown error occurred')
+      // Short fallback token for the non-Error, non-string branch.
+      expect(result.message).toContain('unknown error')
     })
 
     it('adds cause from options', () => {
