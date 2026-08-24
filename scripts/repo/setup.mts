@@ -183,17 +183,17 @@ async function main(): Promise<number> {
   }
 
   // Generate packages from templates.
-  await generateCliSentryPackage({ quiet })
+  await generateCliSentryPackage(quiet)
   if (!quiet) {
     logger.log('')
   }
 
-  await generateCliExePackages({ quiet })
+  await generateCliExePackages(quiet)
   if (!quiet) {
     logger.log('')
   }
 
-  await generateSocketbinPackages({ quiet })
+  await generateSocketbinPackages(quiet)
 
   if (!quiet) {
     logger.log('')
