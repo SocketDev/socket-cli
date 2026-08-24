@@ -16,7 +16,6 @@ import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
 import type { ResolutionReport } from './resolution-report.mts'
 
 export type ManifestScriptOptions = {
-  projectDir: string
   // Unset ⇒ resolved to the project wrapper, else PATH (resolveBuildToolBin).
   bin?: string | undefined
   // Reachability-only: also materialize resolved artifact paths (artifactPaths).
@@ -33,6 +32,12 @@ export type ManifestScriptOptions = {
   stdio?: 'inherit' | 'pipe' | undefined
   env?: NodeJS.ProcessEnv | undefined
   signal?: AbortSignal | undefined
+}
+
+// Internal shape threaded through the private per-tool runners once
+// `projectDir` has been hoisted off the public options bag.
+type ResolvedManifestScriptOptions = ManifestScriptOptions & {
+  projectDir: string
 }
 
 export type ManifestRunResult = {
@@ -61,9 +66,9 @@ function manifestScriptsPath(...parts: string[]): string {
 async function runNeverThrow(
   bin: string,
   args: string[],
-  config: ManifestScriptOptions,
+  config: ResolvedManifestScriptOptions,
 ): Promise<RunOutput> {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = { __proto__: null, ...config } as ResolvedManifestScriptOptions
   try {
     const result = await spawn(bin, args, {
       cwd: cfg.projectDir,
@@ -158,9 +163,14 @@ function assertMavenExtensionBuilt(jarPath: string): void {
 // Writes no files; the caller persists facts or consumes artifactPaths.
 export async function runManifestScript(
   tool: BuildTool,
-  config: ManifestScriptOptions,
+  projectDir: string,
+  options?: ManifestScriptOptions | undefined,
 ): Promise<ManifestRunResult> {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = {
+    __proto__: null,
+    ...options,
+    projectDir,
+  } as ResolvedManifestScriptOptions
   switch (tool) {
     case 'gradle':
       return await runGradle(cfg)
@@ -176,10 +186,10 @@ export async function runManifestScript(
 }
 
 function commonProps(
-  config: ManifestScriptOptions,
+  config: ResolvedManifestScriptOptions,
   prefix: '-D' | '-P',
 ): string[] {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = { __proto__: null, ...config } as ResolvedManifestScriptOptions
   const props: string[] = []
   if (cfg.withFiles) {
     props.push(`${prefix}socket.withFiles=true`)
@@ -202,9 +212,9 @@ function commonProps(
 }
 
 async function runGradle(
-  config: ManifestScriptOptions,
+  config: ResolvedManifestScriptOptions,
 ): Promise<ManifestRunResult> {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = { __proto__: null, ...config } as ResolvedManifestScriptOptions
   const initScript = manifestScriptsPath('socket-facts.init.gradle')
   return await withTmpDir('socket-gradle-facts-', async tmp => {
     const recordsFile = path.join(tmp, 'records.tsv')
@@ -228,9 +238,9 @@ async function runGradle(
 }
 
 async function runSbt(
-  config: ManifestScriptOptions,
+  config: ResolvedManifestScriptOptions,
 ): Promise<ManifestRunResult> {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = { __proto__: null, ...config } as ResolvedManifestScriptOptions
   return await withTmpDir('socket-sbt-facts-', async globalBase => {
     await writeSbtPlugin(globalBase)
     const recordsFile = path.join(globalBase, 'records.tsv')
@@ -263,9 +273,9 @@ async function runSbt(
 }
 
 async function runMaven(
-  config: ManifestScriptOptions,
+  config: ResolvedManifestScriptOptions,
 ): Promise<ManifestRunResult> {
-  const cfg = { __proto__: null, ...config } as ManifestScriptOptions
+  const cfg = { __proto__: null, ...config } as ResolvedManifestScriptOptions
   const jarPath = manifestScriptsPath(
     'maven-extension',
     'coana-maven-extension.jar',

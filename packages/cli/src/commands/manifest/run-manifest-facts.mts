@@ -61,7 +61,6 @@ export async function runManifestFacts({
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     includeConfigs: includeConfigs || undefined,
-    projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and
     // show a spinner, surfacing the output only if the build crashes.
     stdio: verbose ? ('inherit' as const) : ('pipe' as const),
@@ -75,13 +74,13 @@ export async function runManifestFacts({
       logger.info(
         `(Running ${ecosystem} with output streaming; this can take a while.)`,
       )
-      result = await runManifestScript(ecosystem, scriptOpts)
+      result = await runManifestScript(ecosystem, cwd, scriptOpts)
     } else {
       logger.info(
         `(No live output; pass --verbose to stream the ${ecosystem} build output.)`,
       )
       spinner.start(`Resolving ${ecosystem} dependencies ...`)
-      result = await runManifestScript(ecosystem, scriptOpts)
+      result = await runManifestScript(ecosystem, cwd, scriptOpts)
       if (result.code === 0) {
         spinner.successAndStop(`Resolved ${ecosystem} dependencies.`)
       } else {
