@@ -4,7 +4,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
-import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  excludePathsFlag,
+  reachabilityFlags,
+} from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants from '../../constants.mts'
@@ -33,18 +37,15 @@ const description = 'Compute full application reachability'
 
 const hidden = true
 
-// dynamicSbomInference relies on --auto-manifest generating per-workspace
-// Socket facts first, which this command never runs (see the hardcoded
-// `false` passed to handleScanReach below) - hidden here even though it's
-// otherwise public on `scan create`, since advertising a flag this command
-// silently ignores would be misleading.
+// `scan create` gets its per-build-root facts from --auto-manifest, a flag
+// this command doesn't have; here the build tools are run directly instead,
+// so the flag's description differs.
 const reachabilityFlagsForReach: MeowFlags = {
   ...reachabilityFlags,
   dynamicSbomInference: {
     type: 'boolean',
     default: false,
-    hidden: true,
-    description: reachabilityFlags['dynamicSbomInference']!.description,
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Each discovered build root is built first to generate its SBOM.`,
   },
 }
 
@@ -117,6 +118,7 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
+      $ ${command} ./monorepo --dynamic-sbom-inference
       $ ${command} --output custom-report.json
       $ ${command} ./proj --output ./reports/analysis.json
   `,
@@ -131,6 +133,7 @@ async function run(
 
   const {
     cwd: cwdOverride,
+    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -156,6 +159,7 @@ async function run(
     reachVersion,
   } = cli.flags as {
     cwd: string
+    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -282,9 +286,7 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
-      // Not exposed here: it relies on --auto-manifest generating per-workspace
-      // Socket facts first, which `socket scan reach` never runs.
-      dynamicSbomInference: false,
+      dynamicSbomInference: Boolean(dynamicSbomInference),
       excludePaths,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,

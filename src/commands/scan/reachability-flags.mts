@@ -3,12 +3,17 @@ import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 
+// Shared prefix so each command can append how it obtains the per-build-root
+// SBOMs, which differs: `scan create` piggybacks on --auto-manifest, while
+// `scan reach` runs the build tools itself.
+export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
+  'For Gradle, sbt, and Maven: splits reachability analysis per project/module using a Socket facts SBOM (generated directly by each package manager) per build root, instead of one synthetic root.'
+
 export const reachabilityFlags: MeowFlags = {
   dynamicSbomInference: {
     type: 'boolean',
     default: false,
-    description:
-      'For Gradle, sbt, and Maven: splits reachability analysis per project/module using a Socket facts SBOM (generated directly by each package manager) per build root, instead of one synthetic root. Reachability analysis only; implies --auto-manifest.',
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Reachability analysis only; implies --auto-manifest.`,
   },
   reachVersion: {
     type: 'string',
