@@ -31,6 +31,23 @@ describe('writeManifestVersion', () => {
     )
   })
 
+  // A manifest already sitting on the target rewrites to itself. The prior
+  // `replaced === raw` guard read that no-op as a missing field and failed the
+  // release with "no top-level version line" for a manifest whose version was
+  // present and well-formed — the exact failure that broke the 1.1.160 run,
+  // where a hand-written bump had already put 1.1.160 in the manifest.
+  it('is a no-op when the manifest already holds the target version', () => {
+    const raw = [
+      '{',
+      '  "name": "socket",',
+      '  "version": "1.1.160",',
+      '  "description": "CLI for Socket.dev"',
+      '}',
+      '',
+    ].join('\n')
+    expect(writeManifestVersion(raw, '1.1.160')).toBe(raw)
+  })
+
   it('throws when the manifest has no version field', () => {
     const raw = '{\n  "name": "socket"\n}\n'
     expect(() => writeManifestVersion(raw, '1.1.160')).toThrow(
