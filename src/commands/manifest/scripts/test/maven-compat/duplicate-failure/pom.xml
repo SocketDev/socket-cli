@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>dup-root</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>m1</module>
+    <module>m2</module>
+  </modules>
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <!-- Declared on the parent so all three modules inherit the SAME unresolvable dependency and the
+       SAME (default) repository list, which is what makes each module's failure message identical. -->
+  <dependencies>
+    <dependency>
+      <groupId>demo.missing</groupId>
+      <artifactId>ghost</artifactId>
+      <version>9.9.9</version>
+    </dependency>
+  </dependencies>
+</project>

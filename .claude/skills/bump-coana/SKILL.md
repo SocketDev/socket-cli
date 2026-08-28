@@ -54,7 +54,8 @@ advance.
 1. Read `CHANGELOG.md` in the repository root.
 2. Find the `## [Unreleased]` heading. If it is absent — the previous release
    consumes it — recreate it directly after the header section (which ends with
-   "The format is based on...").
+   "The format is based on..."), spelled exactly `## [Unreleased]` and nothing
+   else.
 3. Add the entry under `## [Unreleased]`, in its `### Changed` subsection,
    creating that subsection if it is missing. If a Coana line is already there
    from an earlier unreleased bump, update it in place rather than adding a
@@ -64,6 +65,15 @@ advance.
 release workflow, which promotes the whole `## [Unreleased]` block under the
 version it derives. Writing one here both names a version that may never exist
 and consumes the block, leaving the real release with empty notes.
+
+🚨 **Never put a date on the `## [Unreleased]` heading.** `unreleasedRange()` in
+`scripts/release/changelog.mts` finds the block by matching that heading for
+equality (case-insensitively, but otherwise exactly), so a heading like
+`## [Unreleased] - 2026-08-27` is invisible to it. The release then promotes
+nothing, falls back to a section derived from the commits in range, and inserts
+its own heading *above* the block it could not see — stranding the entry below a
+released version, where no release will ever pick it up. Dates belong only on
+release headings, which the workflow writes.
 
 **Resulting shape**:
 ```markdown

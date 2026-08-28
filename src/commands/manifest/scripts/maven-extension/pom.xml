@@ -43,8 +43,9 @@
         </executions>
       </plugin>
 
-      <!-- Single self-contained jar, merging the Sisu indexes from our code and from the bundled
-           maven-dependency-tree so the container discovers everything in the ext realm. -->
+      <!-- Single self-contained jar. Everything the extension compiles against lives in the Maven
+           core realm at runtime, so nothing is bundled; shade stays for the Sisu index transformer
+           that lets the container discover the participants in the ext realm. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -97,17 +98,10 @@
       <version>${maven.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!-- Aether graph/artifact types: what ProjectDependenciesResolver hands back. -->
     <dependency>
       <groupId>org.apache.maven.resolver</groupId>
       <artifactId>maven-resolver-api</artifactId>
-      <version>1.9.18</version>
-      <scope>provided</scope>
-    </dependency>
-    <!-- maven-dependency-tree pulls this at compile scope; it's in the core realm at runtime, so
-         declare it provided to keep it out of the shaded jar. -->
-    <dependency>
-      <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-util</artifactId>
       <version>1.9.18</version>
       <scope>provided</scope>
     </dependency>
@@ -116,13 +110,6 @@
       <artifactId>slf4j-api</artifactId>
       <version>1.7.36</version>
       <scope>provided</scope>
-    </dependency>
-
-    <!-- NOT part of Maven core: bundled (shaded) into the extension jar. -->
-    <dependency>
-      <groupId>org.apache.maven.shared</groupId>
-      <artifactId>maven-dependency-tree</artifactId>
-      <version>3.3.0</version>
     </dependency>
   </dependencies>
 </project>
