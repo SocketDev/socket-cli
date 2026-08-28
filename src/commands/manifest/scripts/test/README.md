@@ -23,9 +23,12 @@ The matrix needs several JDKs. Point `JDK8` / `JDK11` / `JDK17` / `JDK21` at JDK
 homes to use the right one per row; otherwise the current `java` is used. The
 sbt rows also need the `sbt` launcher on `PATH`.
 
-The runner downloads the build-tool distributions and invokes the per-ecosystem
-`smoke-test.sh`. The unit-level assembler/sidecar behavior is covered separately
-by the `*.test.mts` unit tests.
+The runner does not fetch the build-tool distributions: SocketDev's CDN allowlist
+keeps downloads out of a committed script. It expects each Gradle and Maven
+distribution already unzipped under the cache root below, and prints the archive
+URL for any that is missing; sbt comes from the `sbt` launcher on `PATH`. It then
+invokes the per-ecosystem `smoke-test.sh`. The unit-level assembler/sidecar
+behavior is covered separately by the `*.test.mts` unit tests.
 
 ## Stub dependencies
 
@@ -35,6 +38,10 @@ test time. The fixtures only need the *shape* of a dependency graph (a prod dep,
 test dep, a transitive), never the code, so a stub is behaviourally identical here
 and can never age into a CVE alert or a version bump. The generated repos are
 gitignored; nothing binary is committed.
+
+The exception is `maven-compat/duplicate-failure`, whose dependency is deliberately
+absent from every repository: it asserts how an unresolvable dependency is
+reported, so it needs no stub and runs offline.
 
 Each build tool still fetches its own closure — Maven's plugins, sbt's
 scala-library, the Gradle distribution — from the network, so these fixtures are

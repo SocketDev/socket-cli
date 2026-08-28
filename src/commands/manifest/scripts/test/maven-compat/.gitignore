@@ -3,3 +3,11 @@ project/records.tsv
 project/workspaces-records.tsv
 project/target/
 project/*/target/
+repo-inheritance/localrepo/
+repo-inheritance/records.tsv
+repo-inheritance/target/
+repo-inheritance/*/target/
+repo-inheritance/.mirror-settings.xml
+duplicate-failure/records.tsv
+duplicate-failure/target/
+duplicate-failure/*/target/

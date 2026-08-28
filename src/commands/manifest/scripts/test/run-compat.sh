@@ -24,7 +24,10 @@ CACHE="$SOCKET_COMPAT_CACHE"
 
 # Same matrix as the former CI workflow. Rows: "<ver> <javaMajor> [scala]".
 GRADLE_MATRIX=("1.12 8" "2.14.1 8" "3.3 8" "8.10.2 17" "9.2.1 21")
-MAVEN_MATRIX=("3.6.3 11" "3.8.8 17" "3.9.9 17")
+# The Maven rows span the range the extension claims to support (see maven-extension/pom.xml):
+# 3.2.5 is the oldest, 4.x the newest. Resolution goes through Maven's own
+# ProjectDependenciesResolver, so both ends are load-bearing, not decorative.
+MAVEN_MATRIX=("3.2.5 8" "3.6.3 11" "3.8.8 17" "3.9.9 17" "4.0.0-rc-6 21")
 SBT_MATRIX=("0.13.18 8 2.10.7" "1.4.9 11 2.12.20" "1.6.2 17 2.12.20" "1.9.9 17 2.12.20")
 
 # Select a JDK for the given Java major: use $JDK<major> if set, else current java.
@@ -74,12 +77,15 @@ run_maven() {
     if [ ! -x "$dir/bin/mvn" ]; then
       # Distribution downloads stay out of this committed script (fleet CDN
       # allowlist); the operator fetches the archive once into the cache.
+      local line="maven-${ver%%.*}"
       echo "maven $ver not found at $dir/bin/mvn." >&2
-      echo "Fix: download https://archive.apache.org/dist/maven/maven-3/$ver/binaries/apache-maven-$ver-bin.zip and unzip it into $CACHE" >&2
+      echo "Fix: download https://archive.apache.org/dist/maven/$line/$ver/binaries/apache-maven-$ver-bin.zip and unzip it into $CACHE" >&2
       exit 1
     fi
     bash "$HERE/maven-compat/smoke-test.sh" "$dir/bin/mvn" "$jar"
     bash "$HERE/maven-compat/smoke-test-workspaces.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-repo-inheritance.sh" "$dir/bin/mvn" "$jar"
+    bash "$HERE/maven-compat/smoke-test-duplicate-failure.sh" "$dir/bin/mvn" "$jar"
   done
 }
 
