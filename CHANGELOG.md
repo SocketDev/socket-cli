@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
-- Updated the Coana CLI to v `15.10.25`.
+- Updated the Coana CLI to v `15.10.26`.
 
 ### Fixed
 - Maven reachability scans now resolve dependencies through Maven itself, so they see the same artifacts a Maven build does — including one served only by a repository that a single module declares.
