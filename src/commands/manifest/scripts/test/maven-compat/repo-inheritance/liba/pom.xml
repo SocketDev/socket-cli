@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>demo</groupId>
+    <artifactId>inherit-root</artifactId>
+    <version>1.0</version>
+  </parent>
+  <artifactId>liba</artifactId>
+  <!-- The only place the stub repo is declared. -->
+  <repositories>
+    <repository>
+      <id>socket-scoped-stubs</id>
+      <url>${stub.repo.url}</url>
+      <releases>
+        <enabled>true</enabled>
+        <!-- the generator writes no .sha1 sidecars; nothing crosses a network to corrupt -->
+        <checksumPolicy>ignore</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>demo.scoped</groupId>
+      <artifactId>widget</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+</project>

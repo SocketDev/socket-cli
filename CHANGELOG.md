@@ -4,20 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.1.162](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.162) - 2026-08-28
+## [Unreleased]
 
 ### Changed
 - Updated the Coana CLI to v `15.10.26`.
 
-## [1.1.161](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.161) - 2026-08-27
-
 ### Fixed
-- **`release`** — stop the coana bump from hand-writing versions (#1515)
-
-## [Unreleased] - 2026-08-27
-
-### Changed
-- Updated the Coana CLI to v `15.10.25`.
+- Maven reachability scans now resolve dependencies through Maven itself, so they see the same artifacts a Maven build does — including one served only by a repository that a single module declares.
 
 ## [1.1.160](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.160) - 2026-08-26
 

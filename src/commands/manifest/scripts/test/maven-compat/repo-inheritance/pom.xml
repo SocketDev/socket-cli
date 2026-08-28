@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>demo</groupId>
+  <artifactId>inherit-root</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <modules>
+    <module>liba</module>
+    <module>libb</module>
+  </modules>
+  <!-- Deliberately declares NO <repositories>: the stub repo is declared by liba alone, so libb can
+       only reach demo.scoped:widget through the repository list liba's POM contributes to that node.
+       Resolving it against libb's own repositories instead finds nothing. -->
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <stub.repo.url>file://${maven.multiModuleProjectDirectory}/localrepo</stub.repo.url>
+  </properties>
+</project>
