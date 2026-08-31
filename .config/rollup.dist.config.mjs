@@ -74,6 +74,22 @@ const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 const UTILS = 'utils'
 const VENDOR = 'vendor'
 
+// A fresh regexp per call: socketModifyPlugin advances lastIndex, so a shared
+// instance would make chunks skip each other's matches.
+function newBareBlessedRequireRegExp() {
+  return /(?<=require[$\w]*(?:\.resolve)?\(["'])blessed(?=(?:\/[^"']+)?["']\))/g
+}
+
+// '.' rather than '' keeps a require from a file sitting in blessed's own root
+// from becoming an absolute-looking specifier.
+function relativeBlessedPath(filepath) {
+  return (
+    normalizePath(
+      path.relative(path.dirname(filepath), constants.blessedPath),
+    ) || '.'
+  )
+}
+
 async function copyInitGradle() {
   const filepath = path.join(constants.srcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(constants.distPath, 'init.gradle')
@@ -197,22 +213,26 @@ async function copyExternalPackages() {
       await removeEmptyDirs(thePath)
     }),
   )
-  // Rewire 'blessed' inside 'blessed-contrib'.
+  // Rewire 'blessed' inside 'blessed-contrib', and inside blessed's own vendor
+  // files, which reach for it by bare name too.
   await Promise.all(
-    (
-      await fastGlob.glob(['**/*.js'], {
+    [blessedPath, blessedContribPath].map(async cwd => {
+      const filepaths = await fastGlob.glob(['**/*.js'], {
         absolute: true,
-        cwd: blessedContribPath,
+        cwd,
         ignore: [NODE_MODULES_GLOB_RECURSIVE],
       })
-    ).map(async p => {
-      const relPath = path.relative(path.dirname(p), blessedPath)
-      const content = await fs.readFile(p, 'utf8')
-      const modded = content.replace(
-        /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
-        () => relPath,
+      await Promise.all(
+        filepaths.map(async p => {
+          const relPath = relativeBlessedPath(p)
+          const content = await fs.readFile(p, 'utf8')
+          const modded = content.replace(
+            newBareBlessedRequireRegExp(),
+            () => relPath,
+          )
+          await fs.writeFile(p, modded, 'utf8')
+        }),
       )
-      await fs.writeFile(p, modded, 'utf8')
     }),
   )
 }
@@ -563,6 +583,11 @@ export default async () => {
           )
         },
         plugins: [
+          // Runs after copyExternalPackages() and overwrites what it rewired.
+          socketModifyPlugin({
+            find: newBareBlessedRequireRegExp(),
+            replace: () => relativeBlessedPath(path.join(rootPath, relPath)),
+          }),
           nodeResolve({
             exportConditions: ['node'],
             extensions: ['.mjs', '.js', '.json'],
