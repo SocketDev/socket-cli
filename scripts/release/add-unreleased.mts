@@ -5,18 +5,12 @@
  *   the way a human does. The counterpart to `bump.mts`, which promotes the
  *   block at release time.
  *
- *   This exists so a caller never has to reimplement the shape. Both things it
- *   deliberately cannot touch — `package.json`'s `version` and the
- *   `## [X.Y.Z]` headings — belong to the release workflow, and a caller that
- *   wrote them has already cost a release its notes: v1.1.161 shipped with
- *   commit-derived notes because a hand-written heading had consumed the block
- *   the release meant to promote.
+ *   This exists so a caller never has to reimplement the shape.
  *
  *   Usage:
  *     node scripts/release/add-unreleased.mts [flags] <entry>
  *
- *   Example — the Coana bump, which reruns on every Coana release and so must
- *   update its own line rather than stack a new one each time:
+ *   Example — the Coana bump, which reruns on every Coana release:
  *     node scripts/release/add-unreleased.mts \
  *       --replace '^Updated the Coana CLI to v ' \
  *       'Updated the Coana CLI to v `15.10.28`.'

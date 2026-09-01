@@ -349,11 +349,7 @@ export interface AddUnreleasedEntryConfig {
  *
  * NOTHING ELSE MOVES. The release owns `package.json`'s version and every
  * `## [X.Y.Z]` heading — it derives the version from the tags and promotes this
- * block under a heading it writes itself. A caller that writes either invents a
- * version that may never ship and consumes the block the release meant to
- * promote, which has already cost a release its notes. So an accruing note goes
- * here and only here, whether a human, the `/bump-coana` skill, or another
- * repo's automation is writing it.
+ * block under a heading it writes itself.
  *
  * The block is created when the previous release consumed it, and a decorated
  * heading is repaired, so there is always somewhere for the entry to go that
