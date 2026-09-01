@@ -51,15 +51,18 @@ advance.
 
 ### Step 3: Update CHANGELOG.md
 
-1. Read `CHANGELOG.md` in the repository root.
-2. Find the `## [Unreleased]` heading. If it is absent — the previous release
-   consumes it — recreate it directly after the header section (which ends with
-   "The format is based on..."), spelled exactly `## [Unreleased]` and nothing
-   else.
-3. Add the entry under `## [Unreleased]`, in its `### Changed` subsection,
-   creating that subsection if it is missing. If a Coana line is already there
-   from an earlier unreleased bump, update it in place rather than adding a
-   second one.
+Do not hand-edit the file. Run the helper, which owns the shape:
+
+```bash
+node scripts/release/add-unreleased.mts \
+  --replace '^Updated the Coana CLI to v ' \
+  "Updated the Coana CLI to v \`$COANA_VERSION\`."
+```
+
+It puts the entry under `## [Unreleased]` in the `### Changed` section,
+recreating either when the previous release consumed it, and `--replace`
+rewrites a Coana line left by an earlier unreleased bump instead of stacking a
+second one. Rerunning it for the same version changes nothing.
 
 🚨 **Never write a `## [<version>]` heading.** Release headings belong to the
 release workflow, which promotes the whole `## [Unreleased]` block under the
@@ -73,7 +76,8 @@ equality (case-insensitively, but otherwise exactly), so a heading like
 nothing, falls back to a section derived from the commits in range, and inserts
 its own heading *above* the block it could not see — stranding the entry below a
 released version, where no release will ever pick it up. Dates belong only on
-release headings, which the workflow writes.
+release headings, which the workflow writes. (The helper repairs such a heading
+if it finds one; hand-editing is what puts one there.)
 
 **Resulting shape**:
 ```markdown
@@ -81,10 +85,7 @@ release headings, which the workflow writes.
 
 ### Changed
 - Updated the Coana CLI to v `COANA_VERSION`.
-
 ```
-
-**Note**: Include a blank line after the entry.
 
 ### Step 4: Update Lock File
 
