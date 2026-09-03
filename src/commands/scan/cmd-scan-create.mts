@@ -6,7 +6,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  excludePathsFlag,
+  reachabilityFlags,
+} from './reachability-flags.mts'
 import {
   isOmittedReachValue,
   reachMemoryLimitToMb,
@@ -55,7 +59,7 @@ const generalFlags: MeowFlags = {
   autoManifest: {
     type: 'boolean',
     description:
-      'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
+      'Run `socket manifest auto` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See `socket manifest auto --help`. For Gradle, sbt, and Maven, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.',
   },
   branch: {
     type: 'string',
@@ -91,6 +95,11 @@ const generalFlags: MeowFlags = {
     default: false,
     description:
       'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
+  },
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Combine with --reach to split the reachability analysis per project/module.`,
   },
   interactive: {
     type: 'boolean',
@@ -355,11 +364,6 @@ async function run(
       autoManifest = false
     }
   }
-  // --dynamic-sbom-inference requires auto-manifest to generate the
-  // per-workspace facts it feeds to Coana.
-  if (dynamicSbomInference) {
-    autoManifest = true
-  }
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
@@ -455,7 +459,12 @@ async function run(
   const hasFactsFile = existsSync(
     path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON),
   )
-  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
+  if (
+    detected.count > 0 &&
+    !autoManifest &&
+    !dynamicSbomInference &&
+    !hasFactsFile
+  ) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )

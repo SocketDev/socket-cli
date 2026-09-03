@@ -33,13 +33,14 @@ describe('socket scan create', async () => {
             - Permissions: full-scans:create
 
           Options
-            --auto-manifest     Run \`socket manifest auto\` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
+            --auto-manifest     Run \`socket manifest auto\` before collecting manifest files, which generates them for ecosystems that need their build tool to resolve dependencies, such as Scala, Gradle, and Kotlin. See \`socket manifest auto --help\`. For Gradle, sbt, and Maven, --dynamic-sbom-inference generates a Socket facts SBOM per build root instead.
             --branch            Branch name
             --commit-hash       Commit hash
             --commit-message    Commit message
             --committers        Committers
             --cwd               working directory, defaults to process.cwd()
             --default-branch    Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
+            --dynamic-sbom-inference  For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.
             --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output as JSON
@@ -56,7 +57,6 @@ describe('socket scan create', async () => {
             --workspace         The workspace in the Socket Organization that the repository is in to associate with the full scan.
 
           Reachability Options (when --reach is used)
-            --dynamic-sbom-inference  For Gradle, sbt, and Maven: splits reachability analysis per project/module using a Socket facts SBOM (generated directly by each package manager) per build root, instead of one synthetic root. Reachability analysis only; implies --auto-manifest.
             --reach-analysis-memory-limit  The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.
             --reach-analysis-timeout  Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-concurrency  Set the maximum number of concurrent reachability analysis runs. It is recommended to choose a concurrency level that ensures each analysis run has at least the --reach-analysis-memory-limit amount of memory available.
@@ -272,6 +272,36 @@ describe('socket scan create', async () => {
       expect(
         code,
         'should exit with code 0 for the deprecated no-op flag',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      FLAG_ORG,
+      'fakeOrg',
+      'target',
+      FLAG_DRY_RUN,
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--dynamic-sbom-inference',
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when --dynamic-sbom-inference is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout + stderr).not.toContain(
+        'Reachability analysis flags require --reach to be enabled',
+      )
+      expect(
+        code,
+        'should exit with code 0 since it is not a reachability modifier',
       ).toBe(0)
     },
   )

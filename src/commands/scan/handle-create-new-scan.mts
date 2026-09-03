@@ -149,21 +149,15 @@ export async function handleCreateNewScan({
   // paths. Always allocated (even when unused) to keep this uniform rather
   // than conditional on autoManifest/reach.
   await withTmpDir('socket-auto-manifest-', async manifestTmpDir => {
-    if (autoManifest) {
+    if (autoManifest || reach.dynamicSbomInference) {
       logger.info('Auto-generating manifest files ...')
-      debugFn('notice', 'Auto-manifest mode enabled')
-      const sockJson = readOrDefaultSocketJson(cwd)
-      const detected = await detectManifestActions(sockJson, cwd)
-      debugDir('inspect', { detected })
+      debugFn('notice', 'Manifest auto-generation enabled')
 
       if (reach.dynamicSbomInference) {
         // Recursively discover and generate Socket facts for every
         // independent gradle/sbt/maven build root instead of only the one at
-        // cwd; generateAutoManifest below is left to handle conda/bazel only.
-        detected.gradle = false
-        detected.sbt = false
-        detected.maven = false
-
+        // cwd. This runs on its own, so nothing outside those three
+        // ecosystems is generated unless --auto-manifest also asked for it.
         const dynamicResult = await runDynamicSbomInference({
           cwd,
           excludePaths: reach.excludePaths,
@@ -181,27 +175,41 @@ export async function handleCreateNewScan({
         resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
       }
 
-      const autoManifestResult = await generateAutoManifest({
-        computeArtifactsSidecar: reach.runReachabilityAnalysis,
-        cwd,
-        detected,
-        excludePaths: reach.excludePaths,
-        outputKind,
-        tmpDir: manifestTmpDir,
-        verbose: false,
-      })
-      if (autoManifestResult.resolvedPathsSidecar) {
-        resolvedPathsSidecar = resolvedPathsSidecar
-          ? mergeResolvedPathsSidecars(
-              resolvedPathsSidecar,
-              autoManifestResult.resolvedPathsSidecar,
-            )
-          : autoManifestResult.resolvedPathsSidecar
-      }
-      if (autoManifestResult.generatedFiles.length) {
-        scanTargets = Array.from(
-          new Set([...scanTargets, ...autoManifestResult.generatedFiles]),
-        )
+      if (autoManifest) {
+        const sockJson = readOrDefaultSocketJson(cwd)
+        const detected = await detectManifestActions(sockJson, cwd)
+        debugDir('inspect', { detected })
+
+        if (reach.dynamicSbomInference) {
+          // Already generated recursively above; resolving cwd's own build
+          // root a second time would race on the same .socket.facts.json.
+          detected.gradle = false
+          detected.sbt = false
+          detected.maven = false
+        }
+
+        const autoManifestResult = await generateAutoManifest({
+          computeArtifactsSidecar: reach.runReachabilityAnalysis,
+          cwd,
+          detected,
+          excludePaths: reach.excludePaths,
+          outputKind,
+          tmpDir: manifestTmpDir,
+          verbose: false,
+        })
+        if (autoManifestResult.resolvedPathsSidecar) {
+          resolvedPathsSidecar = resolvedPathsSidecar
+            ? mergeResolvedPathsSidecars(
+                resolvedPathsSidecar,
+                autoManifestResult.resolvedPathsSidecar,
+              )
+            : autoManifestResult.resolvedPathsSidecar
+        }
+        if (autoManifestResult.generatedFiles.length) {
+          scanTargets = Array.from(
+            new Set([...scanTargets, ...autoManifestResult.generatedFiles]),
+          )
+        }
       }
       logger.info('Auto-generation finished. Proceeding with Scan creation.')
     }

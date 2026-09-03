@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Updated the Coana CLI to v `15.10.33`.
 
+### Fixed
+- `socket scan create --dynamic-sbom-inference` works without `--reach` again, so a single command produces a per-build-root Socket facts SBOM for Gradle, sbt, and Maven projects. It is a standalone flag now, no longer a reachability modifier.
+- `--dynamic-sbom-inference` no longer generates Conda or Bazel manifests as a side effect. It touches Gradle, sbt, and Maven only; pass `--auto-manifest` alongside it if you want the other ecosystems too.
+
 ## [1.1.165](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.165) - 2026-09-02
 
 ### Changed

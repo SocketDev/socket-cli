@@ -47,3 +47,10 @@ test/fixtures/commands/fix/e2e-test-py-temp-*
 /src/commands/manifest/scripts/test/sbt-compat/project/localrepo/
 /src/commands/manifest/scripts/test/sbt-compat/project/records.tsv
 /src/commands/manifest/scripts/test/sbt-compat/project/target/
+
+# Generated when the dynamic SBOM inference tests walk their fixtures
+# (test/fixtures/commands/manifest/dynamic-sbom-inference). Those fixtures are
+# build-tool marker files only, so any build output under them is debris.
+/test/fixtures/commands/manifest/dynamic-sbom-inference/**/.gradle/
+/test/fixtures/commands/manifest/dynamic-sbom-inference/**/build/
+/test/fixtures/commands/manifest/dynamic-sbom-inference/**/target/

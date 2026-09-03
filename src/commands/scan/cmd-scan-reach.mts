@@ -37,15 +37,15 @@ const description = 'Compute full application reachability'
 
 const hidden = true
 
-// `scan create` gets its per-build-root facts from --auto-manifest, a flag
-// this command doesn't have; here the build tools are run directly instead,
-// so the flag's description differs.
+// Not in reachabilityFlags: on `scan create` it is a general flag the --reach
+// guard must not reject. Reachability is always on here, so the description
+// drops that command's --reach caveat.
 const reachabilityFlagsForReach: MeowFlags = {
   ...reachabilityFlags,
   dynamicSbomInference: {
     type: 'boolean',
     default: false,
-    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Each discovered build root is built first to generate its SBOM.`,
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} The reachability analysis is split per project/module accordingly.`,
   },
 }
 
