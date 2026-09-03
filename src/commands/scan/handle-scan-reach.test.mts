@@ -8,10 +8,12 @@ const {
   mockFinalizeTier1Scan,
   mockFindSocketYmlSync,
   mockGetPackageFilesForScan,
+  mockLoggerInfo,
   mockLoggerSuccess,
   mockLoggerWarn,
   mockOutputScanReach,
   mockPerformReachabilityAnalysis,
+  mockRunDynamicSbomInference,
   mockSentryInternalsSymbol,
 } = vi.hoisted(() => ({
   mockCheckCommandInput: vi.fn(),
@@ -19,10 +21,12 @@ const {
   mockFinalizeTier1Scan: vi.fn(),
   mockFindSocketYmlSync: vi.fn(),
   mockGetPackageFilesForScan: vi.fn(),
+  mockLoggerInfo: vi.fn(),
   mockLoggerSuccess: vi.fn(),
   mockLoggerWarn: vi.fn(),
   mockOutputScanReach: vi.fn(),
   mockPerformReachabilityAnalysis: vi.fn(),
+  mockRunDynamicSbomInference: vi.fn(),
   mockSentryInternalsSymbol: Symbol('kInternalsSymbol'),
 }))
 
@@ -40,6 +44,10 @@ vi.mock('./output-scan-reach.mts', () => ({
 
 vi.mock('./perform-reachability-analysis.mts', () => ({
   performReachabilityAnalysis: mockPerformReachabilityAnalysis,
+}))
+
+vi.mock('./run-dynamic-sbom-inference.mts', () => ({
+  runDynamicSbomInference: mockRunDynamicSbomInference,
 }))
 
 vi.mock('../../constants.mts', () => ({
@@ -74,6 +82,7 @@ vi.mock('../../utils/path-resolve.mts', () => ({
 
 vi.mock('@socketsecurity/registry/lib/logger', () => ({
   logger: {
+    info: mockLoggerInfo,
     success: mockLoggerSuccess,
     warn: mockLoggerWarn,
   },
@@ -99,6 +108,10 @@ describe('handleScanReach', () => {
         reachabilityReport: '.socket.facts.json',
         tier1ReachabilityScanId: undefined,
       },
+    })
+    mockRunDynamicSbomInference.mockResolvedValue({
+      factsPaths: [],
+      resolvedPathsSidecar: undefined,
     })
   })
 
@@ -462,5 +475,124 @@ describe('handleScanReach', () => {
       expect.objectContaining({ ok: true }),
       { cwd: '/repo', outputKind: 'text', outputPath: '' },
     )
+  })
+  describe('dynamic SBOM inference', () => {
+    const baseReachabilityOptions = {
+      dynamicSbomInference: true,
+      excludePaths: ['vendor/**'],
+      reachAnalysisMemoryLimit: '8192',
+      reachAnalysisTimeout: '',
+      reachConcurrency: 1,
+      reachContinueOnAnalysisErrors: false,
+      reachContinueOnInstallErrors: false,
+      reachContinueOnMissingLockFiles: false,
+      reachContinueOnNoSourceFiles: false,
+      reachDebug: false,
+      reachDetailedAnalysisLogFile: false,
+      reachDisableAnalytics: false,
+      reachDisableExternalToolChecks: false,
+      reachEcosystems: [],
+      reachEnableAnalysisSplitting: false,
+      reachExcludePaths: [],
+      reachLazyMode: false,
+      reachRetainFactsFile: false,
+      reachSkipCache: false,
+      reachUseOnlyPregeneratedSboms: false,
+      reachVersion: undefined,
+    }
+
+    it('generates per-build-root facts, merges them into manifest discovery, and forwards the sidecar', async () => {
+      mockRunDynamicSbomInference.mockResolvedValueOnce({
+        factsPaths: [
+          '/repo/service-a/.socket.facts.json',
+          '/repo/service-b/.socket.facts.json',
+        ],
+        resolvedPathsSidecar: {
+          '/repo/service-a/.socket.facts.json': {
+            projects: [],
+            components: [],
+          },
+        },
+      })
+
+      await handleScanReach({
+        cwd: '/repo',
+        interactive: false,
+        orgSlug: 'fakeOrg',
+        outputKind: 'text',
+        outputPath: '',
+        reachabilityOptions: baseReachabilityOptions,
+        targets: ['/repo'],
+      })
+
+      expect(mockRunDynamicSbomInference).toHaveBeenCalledWith({
+        cwd: '/repo',
+        excludePaths: ['vendor/**'],
+        // A caller-owned dir that outlives the analysis consuming its paths.
+        sbtTmpDir: expect.any(String),
+        withFiles: true,
+      })
+      expect(mockGetPackageFilesForScan).toHaveBeenCalledWith(
+        [
+          '/repo',
+          '/repo/service-a/.socket.facts.json',
+          '/repo/service-b/.socket.facts.json',
+        ],
+        expect.anything(),
+        expect.objectContaining({ cwd: '/repo' }),
+      )
+      expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+        expect.objectContaining({
+          resolvedPathsSidecar: {
+            '/repo/service-a/.socket.facts.json': {
+              projects: [],
+              components: [],
+            },
+          },
+          // The reachability target stays the user's own, never a facts file.
+          target: '/repo',
+        }),
+      )
+    })
+
+    it('propagates a build-root failure instead of analyzing a partial set', async () => {
+      mockRunDynamicSbomInference.mockRejectedValueOnce(
+        new Error('One or more independent build roots failed'),
+      )
+
+      await expect(
+        handleScanReach({
+          cwd: '/repo',
+          interactive: false,
+          orgSlug: 'fakeOrg',
+          outputKind: 'text',
+          outputPath: '',
+          reachabilityOptions: baseReachabilityOptions,
+          targets: ['/repo'],
+        }),
+      ).rejects.toThrow(/build roots failed/)
+
+      expect(mockPerformReachabilityAnalysis).not.toHaveBeenCalled()
+    })
+
+    it('does not run when the flag is off', async () => {
+      await handleScanReach({
+        cwd: '/repo',
+        interactive: false,
+        orgSlug: 'fakeOrg',
+        outputKind: 'text',
+        outputPath: '',
+        reachabilityOptions: {
+          ...baseReachabilityOptions,
+          dynamicSbomInference: false,
+        },
+        targets: ['/repo'],
+      })
+
+      expect(mockRunDynamicSbomInference).not.toHaveBeenCalled()
+      expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+        expect.objectContaining({ resolvedPathsSidecar: undefined }),
+      )
+    })
   })
 })

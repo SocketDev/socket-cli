@@ -4,7 +4,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleScanReach } from './handle-scan-reach.mts'
-import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  excludePathsFlag,
+  reachabilityFlags,
+} from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { validateReachabilityTarget } from './validate-reachability-target.mts'
 import constants from '../../constants.mts'
@@ -32,6 +36,18 @@ export const CMD_NAME = 'reach'
 const description = 'Compute full application reachability'
 
 const hidden = true
+
+// Not in reachabilityFlags: on `scan create` it is a general flag the --reach
+// guard must not reject. Reachability is always on here, so the description
+// drops that command's --reach caveat.
+const reachabilityFlagsForReach: MeowFlags = {
+  ...reachabilityFlags,
+  dynamicSbomInference: {
+    type: 'boolean',
+    default: false,
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} The reachability analysis is split per project/module accordingly.`,
+  },
+}
 
 const generalFlags: MeowFlags = {
   ...commonFlags,
@@ -74,7 +90,7 @@ async function run(
     flags: {
       ...generalFlags,
       ...excludePathsFlag,
-      ...reachabilityFlags,
+      ...reachabilityFlagsForReach,
     },
     help: command =>
       `
@@ -88,7 +104,7 @@ async function run(
       ${getFlagListOutput(generalFlags)}
 
     Reachability Options
-      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlags })}
+      ${getFlagListOutput({ ...excludePathsFlag, ...reachabilityFlagsForReach })}
 
     Runs the Socket reachability analysis without creating a scan in Socket.
     The output is written to .socket.facts.json in the current working directory
@@ -102,6 +118,7 @@ async function run(
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
+      $ ${command} ./monorepo --dynamic-sbom-inference
       $ ${command} --output custom-report.json
       $ ${command} ./proj --output ./reports/analysis.json
   `,
@@ -116,6 +133,7 @@ async function run(
 
   const {
     cwd: cwdOverride,
+    dynamicSbomInference,
     interactive = true,
     json,
     markdown,
@@ -141,6 +159,7 @@ async function run(
     reachVersion,
   } = cli.flags as {
     cwd: string
+    dynamicSbomInference: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -267,9 +286,7 @@ async function run(
     outputKind,
     outputPath: outputPath || '',
     reachabilityOptions: {
-      // Not exposed here: it relies on the per-build-root Socket facts that
-      // only `socket scan create` generates.
-      dynamicSbomInference: false,
+      dynamicSbomInference: Boolean(dynamicSbomInference),
       excludePaths,
       reachAnalysisMemoryLimit,
       reachAnalysisTimeout,

@@ -3,6 +3,12 @@ import { getReachabilityEcosystemChoices } from '../../utils/ecosystem.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 
+// Shared prefix so each command can append what the SBOMs are used for, which
+// differs: reachability is optional on `scan create` and always on for
+// `scan reach`.
+export const DYNAMIC_SBOM_INFERENCE_DESCRIPTION =
+  'For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root.'
+
 export const reachabilityFlags: MeowFlags = {
   reachVersion: {
     type: 'string',

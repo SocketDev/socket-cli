@@ -6,9 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Updated the Coana CLI to v `15.10.33`.
+
 ### Fixed
 - `socket scan create --dynamic-sbom-inference` works without `--reach` again, so a single command produces a per-build-root Socket facts SBOM for Gradle, sbt, and Maven projects. It is a standalone flag now, no longer a reachability modifier.
 - `--dynamic-sbom-inference` no longer generates Conda or Bazel manifests as a side effect. It touches Gradle, sbt, and Maven only; pass `--auto-manifest` alongside it if you want the other ecosystems too.
+
+## [1.1.165](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.165) - 2026-09-02
+
+### Changed
+- Updated the Coana CLI to v `15.10.32`.
+
+## [1.1.164](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.164) - 2026-09-01
+
+### Changed
+- Updated the Coana CLI to v `15.10.28`.
+
+## [1.1.163](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.163) - 2026-08-31
+
+### Changed
+- Updated the Coana CLI to v `15.10.27`.
+
+## [1.1.162](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.162) - 2026-08-28
+
+### Changed
+- Updated the Coana CLI to v `15.10.26`.
+
+### Fixed
+- Maven reachability scans now resolve dependencies through Maven itself, so they see the same artifacts a Maven build does — including one served only by a repository that a single module declares.
+
+## [1.1.160](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.160) - 2026-08-26
+
+### Changed
+- Updated the Coana CLI to v `15.10.24`.
 
 ## [1.1.158](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.158) - 2026-08-17
 

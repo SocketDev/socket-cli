@@ -6,7 +6,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { assertValidExcludePaths } from './exclude-paths.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { excludePathsFlag, reachabilityFlags } from './reachability-flags.mts'
+import {
+  DYNAMIC_SBOM_INFERENCE_DESCRIPTION,
+  excludePathsFlag,
+  reachabilityFlags,
+} from './reachability-flags.mts'
 import {
   isOmittedReachValue,
   reachMemoryLimitToMb,
@@ -95,8 +99,7 @@ const generalFlags: MeowFlags = {
   dynamicSbomInference: {
     type: 'boolean',
     default: false,
-    description:
-      'For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. Combine with --reach to split the reachability analysis per project/module.',
+    description: `${DYNAMIC_SBOM_INFERENCE_DESCRIPTION} Combine with --reach to split the reachability analysis per project/module.`,
   },
   interactive: {
     type: 'boolean',

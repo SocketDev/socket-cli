@@ -53,6 +53,8 @@ const rootPath = path.join(
 
 const REGISTRY_URL = 'https://registry.npmjs.org'
 
+const VERSION_FIELD_PATTERN = /("version":\s*")[^"]+(")/
+
 interface PackageJsonShape {
   name?: string | undefined
   repository?: { url?: string | undefined } | string | undefined
@@ -158,11 +160,10 @@ function readPackageJson(): { parsed: PackageJsonShape; raw: string } {
  * is the one line a reviewer expects.
  */
 export function writeManifestVersion(raw: string, version: string): string {
-  const replaced = raw.replace(
-    /^(\s*"version":\s*")[^"]*(")/m,
-    `$1${version}$2`,
-  )
-  if (replaced === raw) {
+  // Test for the field before replacing: a manifest already sitting on
+  // `version` rewrites to itself, and comparing output to input cannot tell
+  // that no-op apart from a missing field.
+  if (!VERSION_FIELD_PATTERN.test(raw)) {
     throw new Error(
       '[bump] could not rewrite the package.json version field.\n' +
         '  Where: the root package.json, at bump time.\n' +
@@ -170,7 +171,10 @@ export function writeManifestVersion(raw: string, version: string): string {
         '  Fix: restore the version field, then re-dispatch.',
     )
   }
-  return replaced
+  return raw.replace(
+    VERSION_FIELD_PATTERN,
+    (_m, pre: string, post: string) => `${pre}${version}${post}`,
+  )
 }
 
 function emitOutputs(outputs: Record<string, string>): void {

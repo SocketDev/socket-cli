@@ -14,31 +14,23 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { runDynamicSbomInference } from './run-dynamic-sbom-inference.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { compressSocketFactsForUpload } from '../../utils/coana.mts'
 import { findSocketYmlSync } from '../../utils/config.mts'
-import { InputError } from '../../utils/errors.mts'
 import { withTmpDir } from '../../utils/fs.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
-import { generateRecursiveManifests } from '../manifest/generate-recursive-manifests.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
-import {
-  hasSidecarEntries,
-  mergeResolvedPathsSidecars,
-  serializeSidecar,
-} from '../manifest/scripts/sidecar.mts'
+import { mergeResolvedPathsSidecars } from '../manifest/scripts/sidecar.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
-import type {
-  ResolvedPathsSidecar,
-  SidecarAccumulator,
-} from '../manifest/scripts/sidecar.mts'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -166,50 +158,21 @@ export async function handleCreateNewScan({
         // independent gradle/sbt/maven build root instead of only the one at
         // cwd. This runs on its own, so nothing outside those three
         // ecosystems is generated unless --auto-manifest also asked for it.
-        const sidecarAcc: SidecarAccumulator | undefined =
-          reach.runReachabilityAnalysis ? new Map() : undefined
-        const outcomes = await generateRecursiveManifests({
+        const dynamicResult = await runDynamicSbomInference({
           cwd,
           excludePaths: reach.excludePaths,
           // sbt's Scala toolchain lives under its shared global base;
           // withFiles' resolved paths point into it, so when reachability
           // will consume them afterward, reuse manifestTmpDir (kept alive
-          // until reach finishes below) instead of letting this call clean
+          // until reach finishes below) instead of letting the call clean
           // its own ephemeral base up before reach ever reads those paths.
-          sbtTmpDir: reach.runReachabilityAnalysis ? manifestTmpDir : undefined,
-          sidecarAcc,
-          verbose: false,
+          sbtTmpDir: manifestTmpDir,
           withFiles: reach.runReachabilityAnalysis,
         })
-        // No candidates discovered at all (distinct from candidates that were
-        // found but produced no generated facts - empty/skippedDisabled are
-        // already warned about elsewhere and are not this kind of mistake).
-        if (!outcomes.length) {
-          throw new InputError(
-            [
-              'No Gradle, sbt, or Maven build root was found.',
-              '',
-              '- Remove --dynamic-sbom-inference; it only applies to these ecosystems.',
-              '- Make sure to run it from the correct dir (use --cwd to target another dir).',
-            ].join('\n'),
-          )
-        }
-        // Fail loud rather than silently upload a partial multi-root scan:
-        // matches handleManifestDynamicSbomInference's own check.
-        if (outcomes.some(o => o.status === 'failed')) {
-          throw new InputError(
-            'One or more independent build roots failed to generate Socket facts; aborting (see the errors above).',
-          )
-        }
-        const generatedFactsPaths = outcomes
-          .filter(o => o.status === 'generated')
-          .map(o => o.factsPath!)
         scanTargets = Array.from(
-          new Set([...scanTargets, ...generatedFactsPaths]),
+          new Set([...scanTargets, ...dynamicResult.factsPaths]),
         )
-        if (sidecarAcc && hasSidecarEntries(sidecarAcc)) {
-          resolvedPathsSidecar = serializeSidecar(sidecarAcc)
-        }
+        resolvedPathsSidecar = dynamicResult.resolvedPathsSidecar
       }
 
       if (autoManifest) {

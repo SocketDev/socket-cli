@@ -37,6 +37,7 @@ describe('socket scan reach', async () => {
             --output            Path to write the reachability report to (must end with .json). Defaults to .socket.facts.json in the current working directory.
 
           Reachability Options
+            --dynamic-sbom-inference  For Gradle, sbt, and Maven: generate a Socket facts SBOM (produced directly by each package manager) per independent build root, instead of one synthetic root. The reachability analysis is split per project/module accordingly.
             --exclude-paths     List of glob patterns to exclude from the scan, including SCA/SBOM manifest discovery and (when --reach is enabled) full application reachability analysis. Patterns are anchored micromatch globs matched relative to the Socket scan root, which is the command working directory (\`--cwd\` if set), not the reachability target: \`tests\` matches only \`<cwd>/tests\`; use \`**/tests\` to match at any depth. Negation patterns (\`!path\`) are not supported. Accepts a comma-separated value or multiple flags.
             --reach-analysis-memory-limit  The maximum memory for the reachability analysis as a whole number optionally followed by MB or GB (e.g. 512MB, 8GB). The default is 8GB.
             --reach-analysis-timeout  Set the timeout for the reachability analysis as a whole number optionally followed by s, m or h (e.g. 90s, 10m, 1h). Defaults to 10m. Split analysis runs may cause the total scan time to exceed this timeout significantly.
@@ -68,6 +69,7 @@ describe('socket scan reach', async () => {
             $ socket scan reach
             $ socket scan reach ./proj
             $ socket scan reach ./proj --reach-ecosystems npm,pypi
+            $ socket scan reach ./monorepo --dynamic-sbom-inference
             $ socket scan reach --output custom-report.json
             $ socket scan reach ./proj --output ./reports/analysis.json"
       `)
