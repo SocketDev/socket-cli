@@ -30,7 +30,6 @@ function makeReachOptions(
     reachEcosystems: [],
     reachEnableAnalysisSplitting: false,
     reachExcludePaths: [],
-    reachLazyMode: false,
     reachRetainFactsFile: false,
     reachSkipCache: false,
     reachUseOnlyPregeneratedSboms: false,

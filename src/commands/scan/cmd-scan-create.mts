@@ -49,6 +49,13 @@ import type {
 
 export const CMD_NAME = 'create'
 
+// Accepted for backwards compatibility but forwarded nowhere, so passing one
+// must not imply --reach.
+const DEPRECATED_NO_OP_REACH_FLAGS = new Set([
+  'reachDisableAnalysisSplitting',
+  'reachLazyMode',
+])
+
 const description = 'Create a new Socket scan and report'
 
 const hidden = false
@@ -270,7 +277,7 @@ async function run(
     reachDisableAnalytics,
     reachDisableExternalToolChecks,
     reachEnableAnalysisSplitting,
-    reachLazyMode,
+    reachLazyMode: _reachLazyMode,
     reachRetainFactsFile,
     reachSkipCache,
     reachUseOnlyPregeneratedSboms,
@@ -518,12 +525,11 @@ async function run(
 
   // Compare every boolean reach flag against its declared default so newly
   // added flags require --reach automatically instead of relying on a
-  // hand-maintained list. The deprecated no-op
-  // --reach-disable-analysis-splitting is excluded on purpose.
+  // hand-maintained list. Deprecated no-ops are excluded on purpose.
   const isUsingAnyBooleanReachFlag = Object.entries(reachabilityFlags).some(
     ([name, flag]) =>
       flag.type === 'boolean' &&
-      name !== 'reachDisableAnalysisSplitting' &&
+      !DEPRECATED_NO_OP_REACH_FLAGS.has(name) &&
       cli.flags[name] !== flag.default,
   )
 
@@ -656,7 +662,6 @@ async function run(
       reachEcosystems,
       reachEnableAnalysisSplitting: Boolean(reachEnableAnalysisSplitting),
       reachExcludePaths,
-      reachLazyMode: Boolean(reachLazyMode),
       reachRetainFactsFile: Boolean(reachRetainFactsFile),
       reachSkipCache: Boolean(reachSkipCache),
       reachUseOnlyPregeneratedSboms: Boolean(reachUseOnlyPregeneratedSboms),

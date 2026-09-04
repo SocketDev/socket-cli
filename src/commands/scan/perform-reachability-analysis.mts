@@ -39,7 +39,6 @@ export type ReachabilityOptions = {
   reachEcosystems: PURL_Type[]
   reachEnableAnalysisSplitting: boolean
   reachExcludePaths: string[]
-  reachLazyMode: boolean
   reachRetainFactsFile: boolean
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
@@ -260,7 +259,6 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.dynamicSbomInference
       ? ['--maven-use-only-socket-facts']
       : []),
-    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']
