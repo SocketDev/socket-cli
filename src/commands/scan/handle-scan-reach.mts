@@ -137,7 +137,6 @@ async function runScanReach(
     resolvedPathsSidecar,
     spinner,
     target: targets[0]!,
-    uploadManifests: true,
   })
 
   spinner.stop()

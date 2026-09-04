@@ -107,8 +107,9 @@ export const reachabilityFlags: MeowFlags = {
   reachLazyMode: {
     type: 'boolean',
     default: false,
-    description: 'Enable lazy mode for reachability analysis.',
     hidden: true,
+    description:
+      'Deprecated: lazy mode is no longer supported. This flag is a no-op.',
   },
   reachRetainFactsFile: {
     type: 'boolean',

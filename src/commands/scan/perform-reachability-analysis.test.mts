@@ -6,6 +6,8 @@
  *   `--cwd <dir>` flag), the full application reachability scan id must be read from the
  *   facts file Coana actually wrote at `<cwd>/.socket.facts.json`, not from a
  *   relative path resolved against `process.cwd()`.
+ * - Coana is never spawned without `--manifests-tar-hash`; a missing hash is a
+ *   hard failure rather than a silent fall back to Docker mode.
  *
  * Related Files:
  * - perform-reachability-analysis.mts (implementation)
@@ -22,12 +24,31 @@ import { performReachabilityAnalysis } from './perform-reachability-analysis.mts
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 
-const { mockFetchOrganization, mockHasEnterpriseOrgPlan, mockSpawnCoanaDlx } =
-  vi.hoisted(() => ({
-    mockFetchOrganization: vi.fn(),
-    mockHasEnterpriseOrgPlan: vi.fn(),
-    mockSpawnCoanaDlx: vi.fn(),
-  }))
+// The manifest upload is mandatory, so every call below runs through it and
+// gets this tar hash back.
+const TEST_ORG_SLUG = 'test-org'
+const TEST_PACKAGE_PATHS = ['package.json']
+const TEST_TAR_HASH = 'test-tar-hash'
+
+const {
+  mockFetchOrganization,
+  mockHandleApiCall,
+  mockHasEnterpriseOrgPlan,
+  mockSetupSdk,
+  mockSpawnCoanaDlx,
+} = vi.hoisted(() => ({
+  mockFetchOrganization: vi.fn(),
+  mockHandleApiCall: vi.fn(async () => ({
+    ok: true,
+    data: { tarHash: 'test-tar-hash' },
+  })),
+  mockHasEnterpriseOrgPlan: vi.fn(),
+  mockSetupSdk: vi.fn(async () => ({
+    ok: true,
+    data: { uploadManifestFiles: vi.fn() },
+  })),
+  mockSpawnCoanaDlx: vi.fn(),
+}))
 
 vi.mock('../organization/fetch-organization-list.mts', () => ({
   fetchOrganization: mockFetchOrganization,
@@ -41,14 +62,13 @@ vi.mock('../../utils/dlx.mts', () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
 }))
 
-// Stubbed to keep the heavy SDK / API import chains out of the test; the
-// happy path below skips the manifest-upload branch entirely.
+// Stubbed to keep the heavy SDK / API import chains out of the test.
 vi.mock('../../utils/sdk.mts', () => ({
-  setupSdk: vi.fn(),
+  setupSdk: mockSetupSdk,
 }))
 
 vi.mock('../../utils/api.mts', () => ({
-  handleApiCall: vi.fn(),
+  handleApiCall: mockHandleApiCall,
 }))
 
 vi.mock('../../utils/terminal-link.mts', () => ({
@@ -91,7 +111,6 @@ function makeReachabilityOptions(): ReachabilityOptions {
     reachEcosystems: [],
     reachEnableAnalysisSplitting: false,
     reachExcludePaths: [],
-    reachLazyMode: false,
     reachRetainFactsFile: false,
     reachSkipCache: false,
     reachUseOnlyPregeneratedSboms: false,
@@ -130,6 +149,8 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
 
     const result = await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })
@@ -156,12 +177,62 @@ describe('performReachabilityAnalysis facts-file resolution', () => {
 
     const result = await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })
 
     expect(result.ok).toBe(true)
     expect(result.ok && result.data.tier1ReachabilityScanId).toBeUndefined()
+  })
+})
+
+describe('performReachabilityAnalysis manifests tar hash', () => {
+  let scanCwd: string
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFetchOrganization.mockResolvedValue({
+      ok: true,
+      data: { organizations: {} },
+    })
+    mockHasEnterpriseOrgPlan.mockReturnValue(true)
+    mockSpawnCoanaDlx.mockResolvedValue({ ok: true, data: '' })
+    scanCwd = mkdtempSync(path.join(tmpdir(), 'socket-reatar-'))
+  })
+
+  afterEach(() => {
+    rmSync(scanCwd, { force: true, recursive: true })
+  })
+
+  it('always passes the uploaded tar hash and --run-without-docker to Coana', async () => {
+    await performReachabilityAnalysis({
+      cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    const args = mockSpawnCoanaDlx.mock.calls[0]![0] as string[]
+    expect(args).toContain('--run-without-docker')
+    expect(args[args.indexOf('--manifests-tar-hash') + 1]).toBe(TEST_TAR_HASH)
+  })
+
+  it('fails without spawning Coana when the upload returns no tar hash', async () => {
+    mockHandleApiCall.mockResolvedValueOnce({ ok: true, data: {} } as never)
+
+    const result = await performReachabilityAnalysis({
+      cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
+      reachabilityOptions: makeReachabilityOptions(),
+      target: scanCwd,
+    })
+
+    expect(result.ok).toBe(false)
+    expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
   })
 })
 
@@ -188,6 +259,8 @@ describe('performReachabilityAnalysis timeout/memory forwarding', () => {
   ): Promise<string[]> {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: { ...makeReachabilityOptions(), ...overrides },
       target: scanCwd,
     })
@@ -252,6 +325,8 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
 
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: {
         ...makeReachabilityOptions(),
         dynamicSbomInference: true,
@@ -269,6 +344,8 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
   it('passes --maven-use-only-socket-facts alongside --compute-artifacts-sidecar when dynamicSbomInference is on and a sidecar was generated', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: {
         ...makeReachabilityOptions(),
         dynamicSbomInference: true,
@@ -290,6 +367,8 @@ describe('performReachabilityAnalysis --maven-use-only-socket-facts gating', () 
   it('never passes --maven-use-only-socket-facts when dynamicSbomInference is off, even if a sidecar happens to be present', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: {
         ...makeReachabilityOptions(),
         dynamicSbomInference: false,
@@ -334,7 +413,9 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
   it('inherits stdio in text output mode', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
       outputKind: 'text',
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })
@@ -347,6 +428,8 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
   it('defaults to inheriting stdio when no output kind is given', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })
@@ -359,7 +442,9 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
   it('redirects Coana stdout to stderr (fd 2) in json output mode', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
       outputKind: 'json',
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })
@@ -372,7 +457,9 @@ describe('performReachabilityAnalysis stdio routing by output kind', () => {
   it('redirects Coana stdout to stderr (fd 2) in markdown output mode', async () => {
     await performReachabilityAnalysis({
       cwd: scanCwd,
+      orgSlug: TEST_ORG_SLUG,
       outputKind: 'markdown',
+      packagePaths: TEST_PACKAGE_PATHS,
       reachabilityOptions: makeReachabilityOptions(),
       target: scanCwd,
     })

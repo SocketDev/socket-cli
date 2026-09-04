@@ -39,7 +39,6 @@ export type ReachabilityOptions = {
   reachEcosystems: PURL_Type[]
   reachEnableAnalysisSplitting: boolean
   reachExcludePaths: string[]
-  reachLazyMode: boolean
   reachRetainFactsFile: boolean
   reachSkipCache: boolean
   reachUseOnlyPregeneratedSboms: boolean
@@ -49,10 +48,12 @@ export type ReachabilityOptions = {
 export type ReachabilityAnalysisOptions = {
   branchName?: string | undefined
   cwd?: string | undefined
-  orgSlug?: string | undefined
+  // Required: the manifest upload they drive produces the tar hash Coana needs
+  // to run without Docker.
+  orgSlug: string
   outputKind?: OutputKind | undefined
   outputPath?: string | undefined
-  packagePaths?: string[] | undefined
+  packagePaths: string[]
   reachabilityOptions: ReachabilityOptions
   // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
   // reuses these paths instead of re-resolving the build.
@@ -60,7 +61,6 @@ export type ReachabilityAnalysisOptions = {
   repoName?: string | undefined
   spinner?: Spinner | undefined
   target: string
-  uploadManifests?: boolean | undefined
 }
 
 export type ReachabilityAnalysisResult = {
@@ -69,7 +69,7 @@ export type ReachabilityAnalysisResult = {
 }
 
 export async function performReachabilityAnalysis(
-  options?: ReachabilityAnalysisOptions | undefined,
+  options: ReachabilityAnalysisOptions,
 ): Promise<CResult<ReachabilityAnalysisResult>> {
   const {
     branchName,
@@ -83,7 +83,6 @@ export async function performReachabilityAnalysis(
     resolvedPathsSidecar,
     spinner,
     target,
-    uploadManifests = true,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
 
   // Determine the analysis target - make it relative to cwd if absolute.
@@ -125,60 +124,57 @@ export async function performReachabilityAnalysis(
 
   const wasSpinning = !!spinner?.isSpinning
 
-  let tarHash: string | undefined
-
-  if (uploadManifests && orgSlug && packagePaths) {
-    // Setup SDK for uploading manifests
-    const sockSdkCResult = await setupSdk()
-    if (!sockSdkCResult.ok) {
-      return sockSdkCResult
-    }
-
-    const sockSdk = sockSdkCResult.data
-
-    spinner?.start('Uploading manifests for reachability analysis...')
-
-    // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
-    // NOTE: previously stripped any `.socket.facts.json` from packagePaths
-    // here to avoid uploading leftover post-reachability output. With the
-    // producer flow (`socket manifest gradle --facts`) those files are
-    // legitimate INPUT to compute-artifacts, so we now upload them. Stale
-    // facts files are cleaned up downstream — see the post-success
-    // deletion in handle-create-new-scan.mts.
-    const uploadCResult = await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
-        pathsRelativeTo: path.resolve(cwd, analysisTarget),
-      }),
-      {
-        description: 'upload manifests',
-        spinner,
-      },
-    )
-
-    spinner?.stop()
-
-    if (!uploadCResult.ok) {
-      if (wasSpinning) {
-        spinner.start()
-      }
-      return uploadCResult
-    }
-
-    tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
-    if (!tarHash) {
-      if (wasSpinning) {
-        spinner.start()
-      }
-      return {
-        ok: false,
-        message: 'Failed to get manifest tar hash',
-        cause: 'Server did not return a tar hash for the uploaded manifests',
-      }
-    }
-
-    spinner?.start()
-    spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+  // Setup SDK for uploading manifests
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
+
+  const sockSdk = sockSdkCResult.data
+
+  spinner?.start('Uploading manifests for reachability analysis...')
+
+  // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path
+  // NOTE: previously stripped any `.socket.facts.json` from packagePaths
+  // here to avoid uploading leftover post-reachability output. With the
+  // producer flow (`socket manifest gradle --facts`) those files are
+  // legitimate INPUT to compute-artifacts, so we now upload them. Stale
+  // facts files are cleaned up downstream — see the post-success
+  // deletion in handle-create-new-scan.mts.
+  const uploadCResult = await handleApiCall(
+    sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
+      pathsRelativeTo: path.resolve(cwd, analysisTarget),
+    }),
+    {
+      description: 'upload manifests',
+      spinner,
+    },
+  )
+
+  spinner?.stop()
+
+  if (!uploadCResult.ok) {
+    if (wasSpinning) {
+      spinner.start()
+    }
+    return uploadCResult
+  }
+
+  const tarHash = (uploadCResult.data as { tarHash?: string } | undefined)
+    ?.tarHash
+  if (!tarHash) {
+    if (wasSpinning) {
+      spinner.start()
+    }
+    return {
+      ok: false,
+      message: 'Failed to get manifest tar hash',
+      cause: 'Server did not return a tar hash for the uploaded manifests',
+    }
+  }
+
+  spinner?.start()
+  spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
 
   spinner?.start()
   spinner?.infoAndStop('Running reachability analysis with Coana...')
@@ -248,9 +244,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachEnableAnalysisSplitting
       ? []
       : ['--disable-analysis-splitting']),
-    ...(tarHash
-      ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
-      : []),
+    '--run-without-docker',
+    '--manifests-tar-hash',
+    tarHash,
     // Empty reachEcosystems implies scanning all ecosystems.
     ...(reachabilityOptions.reachEcosystems.length
       ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
@@ -263,7 +259,6 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.dynamicSbomInference
       ? ['--maven-use-only-socket-facts']
       : []),
-    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
     ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
     ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
       ? ['--use-only-pregenerated-sboms']
