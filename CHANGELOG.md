@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.169](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.169) - 2026-09-07
+
 ## [1.1.168](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.168) - 2026-09-07
 
 ### Changed
