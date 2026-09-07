@@ -11,16 +11,12 @@ import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 const logger = getDefaultLogger()
 
-export interface PackageGenerationOptions {
-  quiet: boolean
-}
-
 /**
  * Generate cli-with-sentry package from template.
  */
-export async function generateCliSentryPackage({
-  quiet,
-}: PackageGenerationOptions): Promise<boolean> {
+export async function generateCliSentryPackage(
+  quiet: boolean,
+): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating cli-with-sentry package from template…')
   }
@@ -51,9 +47,7 @@ export async function generateCliSentryPackage({
 /**
  * Generate `@socketsecurity/cli.exe.<triplet>` tail packages from template.
  */
-export async function generateCliExePackages({
-  quiet,
-}: PackageGenerationOptions): Promise<boolean> {
+export async function generateCliExePackages(quiet: boolean): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating cli.exe tail packages from template…')
   }
@@ -83,9 +77,9 @@ export async function generateCliExePackages({
 /**
  * Generate socketbin packages from template.
  */
-export async function generateSocketbinPackages({
-  quiet,
-}: PackageGenerationOptions): Promise<boolean> {
+export async function generateSocketbinPackages(
+  quiet: boolean,
+): Promise<boolean> {
   if (!quiet) {
     logger.log('Generating socketbin packages from template…')
   }

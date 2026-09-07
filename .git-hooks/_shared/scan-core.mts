@@ -29,7 +29,7 @@ export const stripTemplateLayer = (p: string): string =>
  * Hooks consume text from three sources where CRLF can show up:
  *
  * - Subprocess stdout/stderr (especially git on Windows / msys)
- * - Stdin from the git push protocol on Windows
+ * - Stdin from the `git push` protocol on Windows
  * - File contents from a working copy with `core.autocrlf` semantics
  *
  * Plain `text.split('\n')` on CRLF input leaves a trailing `\r` on every line,
@@ -44,14 +44,14 @@ export const splitLines = (text: string): string[] =>
 
 // Per-line opt-out marker for our pre-commit / pre-push scanners.
 //
-// Canonical form:    <comment-prefix> socket-lint: allow
-// Targeted form:     <comment-prefix> socket-lint: allow <rule>
+// Canonical form:    <comment-prefix> oxlint-disable-next-line
+// Targeted form:     <comment-prefix> oxlint-disable-next-line <rule>
 //
 // `<comment-prefix>` is whichever comment style the host file uses —
 // `#` for shell / YAML / TOML / Dockerfile, `//` for TS / JS / Rust /
 // Go / C-family, or `/*` for the C-block-comment opener. The hook is
 // invoked from many file types; pinning to `#` made the marker fail
-// silently in `.ts` / `.mts` files (where `// socket-lint: allow` is
+// silently in `.ts` / `.mts` files (where `// oxlint-disable-next-line` is
 // the only sensible spelling) and confused contributors.
 //
 // The targeted form names a specific rule (`personal-path`, `npx`,
@@ -80,7 +80,7 @@ export const splitLines = (text: string): string[] =>
 /**
  * The rule id an opt-out on `line` names, in either spelling. `matched` is
  * false when the line carries no opt-out at all; `id` is undefined for the
- * bare `socket-lint: allow` blanket form, which names no rule. Pure.
+ * bare `oxlint-disable-next-line` blanket form, which names no rule. Pure.
  */
 const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\*|\/\/)\s*zizmor:\s*[\w-]+/
 
@@ -203,6 +203,43 @@ export function looksLikeDocumentation(
   return false
 }
 
+/**
+ * The index of every line that sits inside a `/* … *\/` block comment.
+ *
+ * COMMENT_LINE_RE only recognizes a line whose FIRST token is a comment
+ * marker, so it sees the opening `/*` line and nothing after it. A block
+ * comment written without a leading `*` on each continuation - the shape
+ * `c8 ignore` blocks and long rationales use - therefore reads as code, and
+ * prose naming a banned command gets flagged as an invocation of it. Tracking
+ * the open/close state answers that for the whole block instead of asking each
+ * line to prove it is a comment.
+ *
+ * Line-scoped, matching the rest of this scanner: a `/*` inside a string or a
+ * regex literal would open a block that is not really open. That is the same
+ * bet every heuristic here makes, and it fails toward silence (a skipped line)
+ * rather than toward a false accusation.
+ */
+export function blockCommentLines(lines: readonly string[]): Set<number> {
+  const inside = new Set<number>()
+  let open = false
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i] ?? ''
+    if (open) {
+      inside.add(i)
+      if (line.includes('*/')) {
+        open = false
+      }
+      continue
+    }
+    const start = line.indexOf('/*')
+    if (start !== -1 && !line.includes('*/', start)) {
+      inside.add(i)
+      open = true
+    }
+  }
+  return inside
+}
+
 export type LineHit = {
   lineNumber: number
   line: string
@@ -239,6 +276,10 @@ export function scanLines(
 ): LineHit[] {
   const hits: LineHit[] = []
   const lines = splitLines(text)
+  // Computed once per scan, only for the scanners that skip documentation.
+  const insideBlockComment = options.skipDocs
+    ? blockCommentLines(lines)
+    : undefined
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     const lineForMatch = options.normalizeForMatch
@@ -252,7 +293,8 @@ export function scanLines(
     }
     if (
       options.skipDocs &&
-      (looksLikeDocumentation(lineForMatch, pattern, options.skipDocs.rule) ||
+      (insideBlockComment?.has(i) ||
+        looksLikeDocumentation(lineForMatch, pattern, options.skipDocs.rule) ||
         suppressionCoversLine(lines, i, options.skipDocs.rule))
     ) {
       continue

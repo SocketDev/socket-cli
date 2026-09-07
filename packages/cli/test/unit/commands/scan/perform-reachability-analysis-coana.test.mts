@@ -147,10 +147,7 @@ beforeEach(() => {
 
 describe('performReachabilityAnalysis — coana flag forwarding', () => {
   it('builds the base flag set (--disable-report-submission, --disable-analysis-splitting)', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('--disable-report-submission')
     expect(args).toContain('--disable-analysis-splitting')
@@ -158,26 +155,23 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
   })
 
   it('forwards every reachability flag when set', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: {
-        ...baseReachOpts,
-        reachAnalysisMemoryLimit: 4096,
-        reachAnalysisTimeout: 600,
-        reachConcurrency: 4,
-        reachDebug: true,
-        reachDetailedAnalysisLogFile: true,
-        reachDisableAnalytics: true,
-        reachDisableExternalToolChecks: true,
-        reachEcosystems: ['npm', 'pypi'],
-        reachEnableAnalysisSplitting: true,
-        reachExcludePaths: ['vendor/', 'node_modules/'],
-        reachLazyMode: true,
-        reachMinSeverity: 'high',
-        reachSkipCache: true,
-        reachUseOnlyPregeneratedSboms: true,
-        reachUseUnreachableFromPrecomputation: true,
-      },
-      target: '.',
+    await performReachabilityAnalysis('.', {
+      ...baseReachOpts,
+      reachAnalysisMemoryLimit: 4096,
+      reachAnalysisTimeout: 600,
+      reachConcurrency: 4,
+      reachDebug: true,
+      reachDetailedAnalysisLogFile: true,
+      reachDisableAnalytics: true,
+      reachDisableExternalToolChecks: true,
+      reachEcosystems: ['npm', 'pypi'],
+      reachEnableAnalysisSplitting: true,
+      reachExcludePaths: ['vendor/', 'node_modules/'],
+      reachLazyMode: true,
+      reachMinSeverity: 'high',
+      reachSkipCache: true,
+      reachUseOnlyPregeneratedSboms: true,
+      reachUseUnreachableFromPrecomputation: true,
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).toContain('--analysis-timeout')
@@ -207,19 +201,13 @@ describe('performReachabilityAnalysis — coana flag forwarding', () => {
   })
 
   it('omits --purl-types when reachEcosystems is empty', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--purl-types')
   })
 
   it('omits --exclude-dirs when reachExcludePaths is empty', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--exclude-dirs')
   })
@@ -251,10 +239,8 @@ describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
       return { ok: true, data: undefined }
     })
 
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
+    await performReachabilityAnalysis('.', baseReachOpts, {
       resolvedPathsSidecar: sidecar,
-      target: '.',
     })
 
     expect(sidecarArgPath).toMatch(/socket-compute-artifacts-sidecar-.*\.json/)
@@ -272,10 +258,8 @@ describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
       return { ok: false, message: 'coana crashed' }
     })
 
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       resolvedPathsSidecar: sidecar,
-      target: '.',
     })
 
     expect(result.ok).toBe(false)
@@ -284,19 +268,14 @@ describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
   })
 
   it('omits --compute-artifacts-sidecar when no sidecar is provided', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--compute-artifacts-sidecar')
   })
 
   it('omits --compute-artifacts-sidecar for an empty sidecar', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
+    await performReachabilityAnalysis('.', baseReachOpts, {
       resolvedPathsSidecar: [],
-      target: '.',
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     expect(args).not.toContain('--compute-artifacts-sidecar')
@@ -306,10 +285,7 @@ describe('performReachabilityAnalysis — resolved-paths sidecar', () => {
 describe('performReachabilityAnalysis — machine-output mode', () => {
   it('adds --silent and routes coana stdout to stderr in machine mode', async () => {
     mockGetMachineOutputMode.mockReturnValue(true)
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     // Argument 1 is the CoanaDlxOptions bag that carries stdio. Argument 2 is
     // spawnExtra, which performReachabilityAnalysis never passes, so reading
@@ -322,10 +298,7 @@ describe('performReachabilityAnalysis — machine-output mode', () => {
 
   it('keeps stdio: inherit in interactive mode', async () => {
     mockGetMachineOutputMode.mockReturnValue(false)
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    await performReachabilityAnalysis('.', baseReachOpts)
     const opts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(opts.stdio).toBe('inherit')
   })
@@ -337,10 +310,7 @@ describe('performReachabilityAnalysis — coana result handling', () => {
       ok: false,
       message: 'coana crashed',
     })
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    const result = await performReachabilityAnalysis('.', baseReachOpts)
     expect(result.ok).toBe(false)
     expect(mockLogger.error).toHaveBeenCalledWith(
       expect.stringContaining('Reachability analysis failed'),
@@ -349,10 +319,7 @@ describe('performReachabilityAnalysis — coana result handling', () => {
 
   it('returns the report path + scan ID on success', async () => {
     mockExtractTier1ReachabilityScanId.mockReturnValue('scan-xyz')
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    const result = await performReachabilityAnalysis('.', baseReachOpts)
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.reachabilityReport).toBe('.socket.facts.json')
@@ -365,10 +332,8 @@ describe('performReachabilityAnalysis — coana result handling', () => {
     // the read against process.cwd() missed it under `--cwd <dir>` and the
     // tier 1 id came back undefined.
     mockExtractTier1ReachabilityScanId.mockReturnValue('scan-xyz')
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       cwd: '/elsewhere/project',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(mockExtractTier1ReachabilityScanId).toHaveBeenCalledWith(
       path.resolve('/elsewhere/project', '.socket.facts.json'),
@@ -376,10 +341,8 @@ describe('performReachabilityAnalysis — coana result handling', () => {
   })
 
   it('uses outputPath when provided', async () => {
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       outputPath: '/custom/out.json',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     if (result.ok) {
       expect(result.data.reachabilityReport).toBe('/custom/out.json')
@@ -389,10 +352,8 @@ describe('performReachabilityAnalysis — coana result handling', () => {
   })
 
   it('falls back to default outputPath when value is whitespace', async () => {
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       outputPath: '   ',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     if (result.ok) {
       expect(result.data.reachabilityReport).toBe('.socket.facts.json')

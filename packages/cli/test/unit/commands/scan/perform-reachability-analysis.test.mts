@@ -158,13 +158,12 @@ describe('performReachabilityAnalysis — plan checks', () => {
       message: 'Unauthorized',
       data: { code: 401 },
     })
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    const result = await performReachabilityAnalysis('.', baseReachOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Authentication failed')
+      expect(result.cause).toBe(
+        'Your API token appears to be invalid, expired, or revoked. Please check your token and try again.',
+      )
     }
   })
 
@@ -173,22 +172,18 @@ describe('performReachabilityAnalysis — plan checks', () => {
       ok: false,
       message: 'API down',
     })
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    const result = await performReachabilityAnalysis('.', baseReachOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Unable to verify plan permissions')
+      expect(result.cause).toBe(
+        'Failed to fetch organization information to verify enterprise plan access',
+      )
     }
   })
 
   it('rejects non-enterprise plans with an upgrade link', async () => {
     mockHasEnterpriseOrgPlan.mockReturnValue(false)
-    const result = await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
-      target: '.',
-    })
+    const result = await performReachabilityAnalysis('.', baseReachOpts)
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.message).toContain('enterprise plan')
@@ -199,10 +194,8 @@ describe('performReachabilityAnalysis — plan checks', () => {
 
 describe('performReachabilityAnalysis — target normalization', () => {
   it('relativizes an absolute target to the cwd', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('/work/sub', baseReachOpts, {
       cwd: '/work',
-      reachabilityOptions: baseReachOpts,
-      target: '/work/sub',
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     // Coana args includes 'run' followed by the relativized target.
@@ -211,10 +204,8 @@ describe('performReachabilityAnalysis — target normalization', () => {
   })
 
   it('uses "." when relative resolution would produce empty string', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('/work', baseReachOpts, {
       cwd: '/work',
-      reachabilityOptions: baseReachOpts,
-      target: '/work',
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     const idx = args.indexOf('run')
@@ -222,10 +213,8 @@ describe('performReachabilityAnalysis — target normalization', () => {
   })
 
   it('keeps a relative target unchanged', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('sub/dir', baseReachOpts, {
       cwd: '/work',
-      reachabilityOptions: baseReachOpts,
-      target: 'sub/dir',
     })
     const args = mockSpawnCoanaDlx.mock.calls[0][0] as string[]
     const idx = args.indexOf('run')
@@ -235,11 +224,9 @@ describe('performReachabilityAnalysis — target normalization', () => {
 
 describe('performReachabilityAnalysis — manifest upload', () => {
   it('skips upload when uploadManifests is false', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
       uploadManifests: false,
     })
     expect(mockSetupSdk).not.toHaveBeenCalled()
@@ -247,19 +234,15 @@ describe('performReachabilityAnalysis — manifest upload', () => {
   })
 
   it('skips upload when orgSlug is missing', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(mockSetupSdk).not.toHaveBeenCalled()
   })
 
   it('skips upload when packagePaths is missing', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(mockSetupSdk).not.toHaveBeenCalled()
   })
@@ -273,11 +256,9 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       ok: true,
       data: { tarHash: 'abc123' },
     })
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(mockSetupSdk).toHaveBeenCalled()
     expect(mockHandleApiCall).toHaveBeenCalled()
@@ -300,15 +281,13 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       ok: true,
       data: { tarHash: 'abc123' },
     })
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: [
         'pkg/package.json',
         'sub/.socket.facts.json',
         'pkg/.socket.facts.json',
       ],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(mockUploadManifestFiles).toHaveBeenCalledTimes(1)
     const [, filepaths] = mockUploadManifestFiles.mock.calls[0]
@@ -325,15 +304,13 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       message: 'Auth Error',
       cause: 'no token',
     })
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Auth Error')
+      expect(result.cause).toBe('no token')
     }
     expect(mockHandleApiCall).not.toHaveBeenCalled()
   })
@@ -345,17 +322,16 @@ describe('performReachabilityAnalysis — manifest upload', () => {
     })
     mockHandleApiCall.mockResolvedValueOnce({
       ok: false,
+      code: 502,
       message: 'Upload failed',
     })
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Upload failed')
+      expect(result.code).toBe(502)
     }
     expect(mockSpawnCoanaDlx).not.toHaveBeenCalled()
   })
@@ -369,11 +345,9 @@ describe('performReachabilityAnalysis — manifest upload', () => {
       ok: true,
       data: {},
     })
-    const result = await performReachabilityAnalysis({
+    const result = await performReachabilityAnalysis('.', baseReachOpts, {
       orgSlug: 'ent',
       packagePaths: ['pkg/package.json'],
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -384,40 +358,32 @@ describe('performReachabilityAnalysis — manifest upload', () => {
 
 describe('performReachabilityAnalysis — repo and branch env', () => {
   it('omits SOCKET_REPO_NAME when repo is the default', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
+    await performReachabilityAnalysis('.', baseReachOpts, {
       repoName: 'socket-default-repository',
-      target: '.',
     })
     const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBeUndefined()
   })
 
   it('exports SOCKET_REPO_NAME for non-default repo names', async () => {
-    await performReachabilityAnalysis({
-      reachabilityOptions: baseReachOpts,
+    await performReachabilityAnalysis('.', baseReachOpts, {
       repoName: 'my-repo',
-      target: '.',
     })
     const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_REPO_NAME']).toBe('my-repo')
   })
 
   it('omits SOCKET_BRANCH_NAME when branch is the default', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       branchName: 'socket-default-branch',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBeUndefined()
   })
 
   it('exports SOCKET_BRANCH_NAME for non-default branch names', async () => {
-    await performReachabilityAnalysis({
+    await performReachabilityAnalysis('.', baseReachOpts, {
       branchName: 'feat/example',
-      reachabilityOptions: baseReachOpts,
-      target: '.',
     })
     const callOpts = mockSpawnCoanaDlx.mock.calls[0][1]
     expect(callOpts.env['SOCKET_BRANCH_NAME']).toBe('feat/example')

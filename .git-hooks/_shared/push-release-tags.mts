@@ -20,11 +20,9 @@
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugCheck } from './check-output.mts'
 
 import { git, gitLines } from './git.mts'
-
-const logger = getDefaultLogger()
 
 // How many exempt commits the notice names before it summarizes the rest.
 const EXEMPT_SAMPLE_LIMIT = 5
@@ -87,7 +85,7 @@ export function listLocalReleaseTagCommits(
   )
   const found = new Map<string, string>()
   for (const line of lines) {
-    const [name, objectName, peeled] = line.trim().split(/\s+/)
+    const { 0: name, 1: objectName, 2: peeled } = line.trim().split(/\s+/)
     if (!name || !isReleaseTagName(name)) {
       continue
     }
@@ -114,7 +112,7 @@ export function listPublishedReleaseTagCommits(
   }
   const rawLines = raw.split(/\r?\n/)
   for (let i = 0, { length } = rawLines; i < length; i += 1) {
-    const [sha, ref] = rawLines[i]!.trim().split(/\s+/)
+    const { 0: sha, 1: ref } = rawLines[i]!.trim().split(/\s+/)
     if (!sha || !ref) {
       continue
     }
@@ -250,6 +248,6 @@ export function reportReleaseTagExemption(
 ): void {
   const lines = formatReleaseTagExemption(exemption, scanLabel)
   for (let i = 0, { length } = lines; i < length; i += 1) {
-    logger.info(lines[i]!)
+    debugCheck(lines[i]!)
   }
 }

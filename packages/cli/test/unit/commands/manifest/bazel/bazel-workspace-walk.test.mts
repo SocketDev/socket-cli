@@ -66,38 +66,34 @@ describe('bazel-workspace-walk', () => {
   describe('findWorkspaceRoots', () => {
     it('returns the root when only the root has MODULE.bazel', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
-      expect(findWorkspaceRoots({ cwd: tmp })).toEqual([tmp])
+      expect(findWorkspaceRoots(tmp)).toEqual([tmp])
     })
 
     it('detects WORKSPACE and WORKSPACE.bazel as root markers', () => {
       touch(path.join(tmp, 'WORKSPACE'))
-      expect(findWorkspaceRoots({ cwd: tmp })).toEqual([tmp])
+      expect(findWorkspaceRoots(tmp)).toEqual([tmp])
       safeDeleteSync(path.join(tmp, 'WORKSPACE'))
       touch(path.join(tmp, 'WORKSPACE.bazel'))
-      expect(findWorkspaceRoots({ cwd: tmp })).toEqual([tmp])
+      expect(findWorkspaceRoots(tmp)).toEqual([tmp])
     })
 
     it('finds nested workspaces at arbitrary depth', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
       touch(path.join(tmp, 'examples', 'dagger', 'MODULE.bazel'))
       touch(path.join(tmp, 'examples', 'android', 'nested', 'WORKSPACE.bazel'))
-      const found = findWorkspaceRoots({ cwd: tmp }).map(p =>
-        path.relative(tmp, p),
-      )
+      const found = findWorkspaceRoots(tmp).map(p => path.relative(tmp, p))
       expect(found).toEqual(['', 'examples/android/nested', 'examples/dagger'])
     })
 
     it('returns [] when there is no workspace root', () => {
       writeFileSync(path.join(tmp, 'README.md'), '')
-      expect(findWorkspaceRoots({ cwd: tmp })).toEqual([])
+      expect(findWorkspaceRoots(tmp)).toEqual([])
     })
 
     it('does NOT prune by default — pruning policy is caller-supplied', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
       touch(path.join(tmp, 'node_modules', 'MODULE.bazel'))
-      const found = findWorkspaceRoots({ cwd: tmp }).map(p =>
-        path.relative(tmp, p),
-      )
+      const found = findWorkspaceRoots(tmp).map(p => path.relative(tmp, p))
       expect(found).toEqual(['', 'node_modules'])
     })
 
@@ -106,8 +102,7 @@ describe('bazel-workspace-walk', () => {
       for (const dir of ['node_modules', '.git', '.socket-auto-manifest']) {
         touch(path.join(tmp, dir, 'sub', 'MODULE.bazel'))
       }
-      const found = findWorkspaceRoots({
-        cwd: tmp,
+      const found = findWorkspaceRoots(tmp, {
         ignoreDirNames: BAZEL_IGNORE_NAMES,
       }).map(p => path.relative(tmp, p))
       expect(found).toEqual([''])
@@ -124,8 +119,7 @@ describe('bazel-workspace-walk', () => {
         touch(path.join(fakeOutputBase, 'external', 'maven', 'MODULE.bazel'))
         symlinkSync(fakeOutputBase, path.join(tmp, 'bazel-out'))
         touch(path.join(tmp, 'MODULE.bazel'))
-        const found = findWorkspaceRoots({
-          cwd: tmp,
+        const found = findWorkspaceRoots(tmp, {
           ignoreDirPrefixes: BAZEL_IGNORE_PREFIXES,
         }).map(p => path.relative(tmp, p))
         expect(found).toEqual([''])
@@ -138,8 +132,7 @@ describe('bazel-workspace-walk', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
       touch(path.join(tmp, 'dist', 'MODULE.bazel'))
       touch(path.join(tmp, 'distribution', 'MODULE.bazel'))
-      const found = findWorkspaceRoots({
-        cwd: tmp,
+      const found = findWorkspaceRoots(tmp, {
         ignoreDirPrefixes: BAZEL_IGNORE_PREFIXES,
       }).map(p => path.relative(tmp, p))
       expect(found).toEqual([''])
@@ -149,7 +142,7 @@ describe('bazel-workspace-walk', () => {
       touch(path.join(tmp, 'z', 'MODULE.bazel'))
       touch(path.join(tmp, 'a', 'MODULE.bazel'))
       touch(path.join(tmp, 'm', 'MODULE.bazel'))
-      const found = findWorkspaceRoots({ cwd: tmp })
+      const found = findWorkspaceRoots(tmp)
       expect(found).toEqual([
         path.join(tmp, 'a'),
         path.join(tmp, 'm'),
@@ -162,7 +155,7 @@ describe('bazel-workspace-walk', () => {
 
     it('handles an unreadable directory by skipping it (no throw)', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
-      expect(findWorkspaceRoots({ cwd: path.join(tmp, 'nope') })).toEqual([])
+      expect(findWorkspaceRoots(path.join(tmp, 'nope'))).toEqual([])
     })
 
     it('finds a workspace marker at depth 9 (no depth cap)', () => {
@@ -179,7 +172,7 @@ describe('bazel-workspace-walk', () => {
         'l9',
       )
       touch(path.join(deep, 'MODULE.bazel'))
-      const found = findWorkspaceRoots({ cwd: tmp })
+      const found = findWorkspaceRoots(tmp)
       expect(found).toEqual([deep])
     })
   })
@@ -195,9 +188,7 @@ describe('bazel-workspace-walk', () => {
         const name = names[i]!
         touch(path.join(tmp, name, 'MODULE.bazel'))
       }
-      const found = findWorkspaceRoots({ cwd: tmp }).map(p =>
-        path.relative(tmp, p),
-      )
+      const found = findWorkspaceRoots(tmp).map(p => path.relative(tmp, p))
       expect(found).toHaveLength(16)
       expect(found).toEqual(names.slice(0, 16))
       expect(mockLogger.warn).toHaveBeenCalled()
@@ -211,7 +202,7 @@ describe('bazel-workspace-walk', () => {
         touch(path.join(tmp, name, 'MODULE.bazel'))
       }
       // Budget of 3 visits tmp + a + b, then stops before c.
-      const found = findWorkspaceRoots({ cwd: tmp, maxWalkDirs: 3 }).map(p =>
+      const found = findWorkspaceRoots(tmp, { maxWalkDirs: 3 }).map(p =>
         path.relative(tmp, p),
       )
       expect(found).toEqual(['a', 'b'])
@@ -223,7 +214,7 @@ describe('bazel-workspace-walk', () => {
     it('does not warn on a normal small tree', () => {
       touch(path.join(tmp, 'MODULE.bazel'))
       touch(path.join(tmp, 'examples', 'dagger', 'MODULE.bazel'))
-      findWorkspaceRoots({ cwd: tmp })
+      findWorkspaceRoots(tmp)
       expect(mockLogger.warn).not.toHaveBeenCalled()
     })
   })

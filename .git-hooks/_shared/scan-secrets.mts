@@ -2,8 +2,7 @@
 // API-key allowlist that exempts known-safe matches (public/example/fake
 // tokens we deliberately ship). Gate-free string logic built on scan-core.
 
-import { SOCKET_PUBLIC_API_KEY } from '@socketsecurity/lib-stable/constants/socket'
-
+import { isSafePlaceholderMatch } from '../../.claude/hooks/fleet/_shared/placeholder-values.mts'
 import { lineIsSuppressed, scanLines } from './scan-core.mts'
 // Personal-path matcher lives in the gate-free _shared/personal-path.mts so the
 // edit-time personal-path-guard shares THIS code, was a lock-step inline copy.
@@ -62,8 +61,14 @@ export const SOCKET_SECURITY_ENV = SOCKET_TOKEN_ENV_NAMES[0]!
 // `oxlint-disable-line socket/socket-api-token-env`, own-line semantics,
 // and hard-coding one spelling as a substring is exactly how a scanner
 // and the linter drift apart.
+// Socket's PUBLIC anonymous-tier key, which lib-stable ships in its dist and
+// the rolldown hook bundle inlines. Truncated on purpose: `includes` matches
+// the full token, and spelling it out would make this file the leak it
+// prevents. A prefix, not a key.
+const PUBLIC_API_KEY_PREFIX = 'sktsec_t_--'
+
 const isAllowedApiKey = (line: string): boolean =>
-  line.includes(SOCKET_PUBLIC_API_KEY) ||
+  line.includes(PUBLIC_API_KEY_PREFIX) ||
   line.includes(FAKE_TOKEN_MARKER) ||
   line.includes(FAKE_TOKEN_LEGACY) ||
   SOCKET_TOKEN_ENV_NAMES.some(name => line.includes(name)) ||
@@ -145,14 +150,41 @@ const GITHUB_TOKEN_RE =
 // before "PRIVATE KEY" so future formats are caught automatically.
 const PRIVATE_KEY_RE = /-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----/
 
+// True when the credential shape this line matched is written from the fleet's
+// safe-placeholder vocabulary, so the line is documentation or a fixture rather
+// than a leak.
+//
+// The edit-time `secret-content-guard` has always consulted this recognizer
+// through `scanSecretValues`. Commit and push did not, which left the three
+// gates disagreeing in the wrong direction: a value you could write could not
+// then be committed, and the fleet's own vocabulary page - whose entire subject
+// is these shapes - could not pass its own push gate.
+function isSafePlaceholderLine(pattern: RegExp, line: string): boolean {
+  const match = pattern.exec(line)
+  if (!match) {
+    return false
+  }
+  return isSafePlaceholderMatch(
+    match[0],
+    line.slice(match.index + match[0].length),
+  )
+}
+
 export const scanSocketApiKeys = (text: string): LineHit[] =>
-  scanLines(text, SOCKET_API_KEY_RE, { filter: isAllowedApiKey })
+  scanLines(text, SOCKET_API_KEY_RE, {
+    filter: line =>
+      isAllowedApiKey(line) || isSafePlaceholderLine(SOCKET_API_KEY_RE, line),
+  })
 
 export const scanAwsKeys = (text: string): LineHit[] =>
-  scanLines(text, AWS_KEY_RE)
+  scanLines(text, AWS_KEY_RE, {
+    filter: line => isSafePlaceholderLine(AWS_KEY_RE, line),
+  })
 
 export const scanGitHubTokens = (text: string): LineHit[] =>
-  scanLines(text, GITHUB_TOKEN_RE)
+  scanLines(text, GITHUB_TOKEN_RE, {
+    filter: line => isSafePlaceholderLine(GITHUB_TOKEN_RE, line),
+  })
 
 export const scanPrivateKeys = (text: string): LineHit[] =>
   scanLines(text, PRIVATE_KEY_RE)

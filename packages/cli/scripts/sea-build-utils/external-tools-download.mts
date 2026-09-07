@@ -110,9 +110,9 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
   }
 
   // Populate TOOL_REPOS from bundle-tools.json.
-  // Filter by release === 'asset' to include all GitHub-released tools.
+  // Filter by origin === 'gh-asset' to include all GitHub-released tools.
   for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.release === 'asset') {
+    if (toolConfig.origin === 'gh-asset') {
       const repoPath = toolConfig.repository.replace(/^[^:]+:/, '')
       const parts = normalizePath(repoPath).split('/')
       if (parts.length !== 2 || !parts[0] || !parts[1]) {
@@ -150,7 +150,7 @@ export async function downloadExternalTools(platform, arch, isMusl = false) {
     if (!config) {
       throw new Error(
         `Tool "${toolName}" is defined in platform mappings but not found in TOOL_REPOS. ` +
-          `Ensure "${toolName}" exists in bundle-tools.json with release "asset".`,
+          `Ensure "${toolName}" exists in bundle-tools.json with origin "gh-asset".`,
       )
     }
 

@@ -12,6 +12,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugCheck } from '../_shared/check-output.mts'
 
 import {
   catastrophicDeletionReason,
@@ -44,13 +45,12 @@ import {
 
 const logger = getDefaultLogger()
 
-const main = (): number => {
-  logger.info('Running Socket Security checks…')
+function refuseCatastrophicDeletion(): number {
   // Catastrophic mass-deletion gate — FIRST, unconditionally. The PreToolUse
   // mass-delete-guard checked the index when the `git commit` command was seen,
   // but a pre-commit step (lint/test) can stage deletions mid-commit, after
   // that check passed. The index here IS the about-to-commit tree, so this is
-  // the last line of defense against a wipe (a hung pnpm test once staged the
+  // the last line of defense against a wipe (a hung `pnpm test` once staged the
   // whole .claude/ tree for deletion). Runs before the ACM-staged read because
   // a pure-deletion commit has zero ACM files. No bypass — a wipe is never
   // intentional; finish/abort the operation that staged it. Untracking ignored
@@ -70,6 +70,10 @@ const main = (): number => {
     logger.info('  | tail. Restore the tree, then commit only what you meant.')
     return 1
   }
+  return 0
+}
+
+function refuseEmptyStagedIndex(): number {
   // Empty-commit gate — the commit-time twin of the no-empty-commit-guard
   // PreToolUse hook (which blocks `git commit --allow-empty` at Claude Code
   // tool time). A commit made outside the agent — or one that reaches the index empty
@@ -96,26 +100,11 @@ const main = (): number => {
     logger.info('  A genuine no-content waypoint needs git commit --no-verify.')
     return 1
   }
+  return 0
+}
 
-  // Normalize to POSIX forward slashes so downstream
-  // `startsWith('.git-hooks/')` / `includes('/external/')` matchers
-  // work the same on Windows (where git can return `\` separators).
-  const stagedFiles = gitLines(
-    'diff',
-    '--cached',
-    '--name-only',
-    '--diff-filter=ACM',
-  ).map(normalizePath)
-  // No add/change/modify staged — but the empty-index gate above already
-  // proved the commit is non-empty, a pure-deletion or merge commit. Nothing
-  // for the content scanners to read, so the security sweep is a no-op.
-  if (stagedFiles.length === 0) {
-    logger.success('No files to scan')
-    return 0
-  }
-
+function checkSigningConfig(): number {
   let errors = 0
-
   // Commit signing config gate. The commit hasn't been created yet,
   // so we can't verify the signature artifact — only the config that
   // determines whether the commit WILL be signed. Two requirements:
@@ -165,9 +154,13 @@ const main = (): number => {
       return 1
     }
   }
+  return 0
+}
 
+function checkDsStoreFiles(stagedFiles: string[]): number {
+  let errors = 0
   // .DS_Store files.
-  logger.info('Checking for .DS_Store files…')
+  debugCheck('Checking for .DS_Store files…')
   const dsStores = stagedFiles.filter(f => f.includes('.DS_Store'))
   if (dsStores.length > 0) {
     logger.fail('.DS_Store file detected!')
@@ -176,9 +169,13 @@ const main = (): number => {
     }
     errors++
   }
+  return errors
+}
 
+function checkLogFiles(stagedFiles: string[]): number {
+  let errors = 0
   // Log files, ignore test logs.
-  logger.info('Checking for log files…')
+  debugCheck('Checking for log files…')
   const logs = stagedFiles.filter(
     f => f.endsWith('.log') && !/test.*\.log$/.test(f),
   )
@@ -189,12 +186,16 @@ const main = (): number => {
     }
     errors++
   }
+  return errors
+}
 
+function checkEnvFiles(stagedFiles: string[]): number {
+  let errors = 0
   // .env files at any depth — allow only .env.example, .env.test,
   // .env.precommit (templates / tracked placeholders). Match the
   // commit-msg.mts behavior: a nested .env.local is just as much a
   // leak as a root-level one. basename() catches both.
-  logger.info('Checking for .env files…')
+  debugCheck('Checking for .env files…')
   const envFiles = stagedFiles.filter(f => {
     const base = path.basename(f)
     return (
@@ -212,14 +213,18 @@ const main = (): number => {
     )
     errors++
   }
+  return errors
+}
 
+function checkPersonalPaths(stagedFiles: string[]): number {
+  let errors = 0
   // Hardcoded personal paths. SOURCE-ONLY, via the shared predicate the
   // `private-paths-are-absent-at-commit` check gate also imports — markdown, docs, JSON,
   // and YAML reference these patterns legitimately, and a generated detector
   // table whose regexes spell `/Users/` is data, not a leak. Scanning it here
   // while the gate ignored it stranded operators between a red hook and a
   // green check, with a suggested fix that would corrupt the payload.
-  logger.info('Checking for hardcoded personal paths…')
+  debugCheck('Checking for hardcoded personal paths…')
   for (let k = 0, { length: klen } = stagedFiles; k < klen; k += 1) {
     const file = stagedFiles[k]!
     if (shouldSkipSourceScan(file)) {
@@ -250,9 +255,12 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function warnApiKeys(stagedFiles: string[]): void {
   // Socket API keys, warning, not blocking.
-  logger.info('Checking for API keys…')
+  debugCheck('Checking for API keys…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
@@ -273,9 +281,12 @@ const main = (): number => {
       logger.info('If this is a real API key, DO NOT COMMIT IT.')
     }
   }
+}
 
+function checkOtherSecrets(stagedFiles: string[]): number {
+  let errors = 0
   // Other secret patterns (AWS, GitHub, private keys).
-  logger.info('Checking for potential secrets…')
+  debugCheck('Checking for potential secrets…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
@@ -314,10 +325,14 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function checkPackageJsonOverrides(stagedFiles: string[]): number {
+  let errors = 0
   // package.json pnpm.overrides — overrides belong in
   // pnpm-workspace.yaml overrides:, not package.json.
-  logger.info('Checking for package.json pnpm.overrides…')
+  debugCheck('Checking for package.json pnpm.overrides…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (path.basename(file) !== 'package.json' || shouldSkipFile(file)) {
@@ -337,7 +352,11 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function checkSoakExcludeDates(stagedFiles: string[]): number {
+  let errors = 0
   // Soak-exclude date annotations (HARD block, pnpm-workspace.yaml). Every
   // exact-pin soak-bypass entry under `minimumReleaseAgeExclude:` must carry the
   // `# published: YYYY-MM-DD | removable: YYYY-MM-DD` line above it — the 7-day
@@ -345,7 +364,7 @@ const main = (): number => {
   // Claude edits; pre-push catches non-Claude pushes; this is the commit-time
   // twin so a staged bypass entry can't slip past `git commit`. Scans the staged
   // working-tree content via readFileForScan, parity with the other scanners.
-  logger.info('Checking soak-bypass date annotations…')
+  debugCheck('Checking soak-bypass date annotations…')
   if (stagedFiles.includes('pnpm-workspace.yaml')) {
     const text = readFileForScan('pnpm-workspace.yaml')
     if (text) {
@@ -368,9 +387,13 @@ const main = (): number => {
       }
     }
   }
+  return errors
+}
 
+function checkNpxDlxUsage(stagedFiles: string[]): number {
+  let errors = 0
   // npx/dlx usage.
-  logger.info('Checking for npx/dlx usage…')
+  debugCheck('Checking for npx/dlx usage…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     // shouldSkipFile covers tests, fixtures, .git-hooks, etc. — test
@@ -431,14 +454,17 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function warnDocsPnpmFirst(stagedFiles: string[]): void {
   // Documentation pnpm-first scanner, warning, not blocking.
   //
   // Fleet rule: user-facing install commands in docs lead with the
   // pnpm form. npm/yarn fallbacks come after. Block-only — inline
   // backtick spans are not scanned. Suppress per-block with
   // `oxlint-disable-next-line socket/docs-lead-with-pnpm`.
-  logger.info('Checking docs lead with pnpm install commands…')
+  debugCheck('Checking docs lead with pnpm install commands…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
@@ -464,52 +490,67 @@ const main = (): number => {
       }
       logger.info(
         'Lead with the pnpm form; keep npm/yarn as fallbacks. To ' +
-          'suppress a fenced block, include `socket-lint: allow ' +
+          'suppress a fenced block, include `oxlint-disable-next-line ' +
           'pnpm-first` anywhere in the block.',
       )
     }
   }
+}
 
+// A path under a vendored / third-party tree.
+function isVendoredPath(file: string): boolean {
+  const normalized = normalizePath(file)
+  return (
+    normalized.includes('/external/') ||
+    normalized.includes('/vendor/') ||
+    normalized.includes('/upstream/')
+  )
+}
+
+// The same exempt set as the logger-guard hook so the rule is consistent:
+// hooks, git-hooks, scripts, vendored / external sources are allowed. The
+// shouldSkipFile helper covers tests and fixtures already.
+function isLoggerExemptPath(file: string): boolean {
+  // template/ is the canonical source for code that cascades to
+  // .claude/hooks/, .git-hooks/, and scripts/. Apply the same
+  // exemption at the source. stripTemplateLayer collapses the
+  // archetype layer segment (template/base/... → template/...) so
+  // the move stays exempt.
+  const layerless = stripTemplateLayer(file)
+  return (
+    file.startsWith('.claude/hooks/') ||
+    file.startsWith('.git-hooks/') ||
+    file.startsWith('scripts/') ||
+    // The dep-0 bootstrap runs before any dependency exists, so it never
+    // imports socket-lib's logger and must call console.* directly. Its live
+    // home, scripts/repo/bootstrap/, is covered by the scripts/ exemption;
+    // this covers the LEGACY root copies until the fleet sweep lands.
+    file.startsWith('bootstrap/') ||
+    layerless.startsWith('template/.claude/hooks/') ||
+    layerless.startsWith('template/.git-hooks/') ||
+    layerless.startsWith('template/scripts/') ||
+    isVendoredPath(file) ||
+    // src/logger/ IS the logger — implementing the surface itself
+    // requires direct console.* calls. Same exemption the
+    // logger-guard PreToolUse hook applies.
+    file.startsWith('src/logger/')
+  )
+}
+
+function checkLoggerLeaks(stagedFiles: string[]): number {
+  let errors = 0
   // Direct stream writes (process.stderr.write, process.stdout.write,
   // console.*) in source files. Source code uses getDefaultLogger()
   // from @socketsecurity/lib-stable/logger/default; the logger-guard PreToolUse hook
   // catches these at edit time, this gate catches them at commit time
   // for edits made outside Claude.
-  logger.info('Checking for direct stream writes…')
+  debugCheck('Checking for direct stream writes…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
       continue
     }
-    // Apply the same exempt set as the logger-guard hook so the rule
-    // is consistent: hooks, git-hooks, scripts, vendored / external
-    // sources are allowed. The shouldSkipFile helper covers tests and
-    // fixtures already.
-    if (
-      file.startsWith('.claude/hooks/') ||
-      file.startsWith('.git-hooks/') ||
-      file.startsWith('scripts/') ||
-      // The dep-0 bootstrap runs before any dependency exists, so it never
-      // imports socket-lib's logger and must call console.* directly. Its live
-      // home, scripts/repo/bootstrap/, is covered by the scripts/ exemption;
-      // this covers the LEGACY root copies until the fleet sweep lands.
-      file.startsWith('bootstrap/') ||
-      // template/ is the canonical source for code that cascades to
-      // .claude/hooks/, .git-hooks/, and scripts/. Apply the same
-      // exemption at the source. stripTemplateLayer collapses the
-      // archetype layer segment (template/base/... → template/...) so
-      // the move stays exempt.
-      stripTemplateLayer(file).startsWith('template/.claude/hooks/') ||
-      stripTemplateLayer(file).startsWith('template/.git-hooks/') ||
-      stripTemplateLayer(file).startsWith('template/scripts/') ||
-      normalizePath(file).includes('/external/') ||
-      normalizePath(file).includes('/vendor/') ||
-      normalizePath(file).includes('/upstream/') ||
-      // src/logger/ IS the logger — implementing the surface itself
-      // requires direct console.* calls. Same exemption the
-      // logger-guard PreToolUse hook applies.
-      file.startsWith('src/logger/')
-    ) {
+    if (isLoggerExemptPath(file)) {
       continue
     }
     // Matches TypeScript source extensions: .mts, .ts, .tsx, .cts.
@@ -539,15 +580,16 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function checkCrossRepoPaths(stagedFiles: string[]): number {
+  let errors = 0
   // Cross-repo path references — `../<fleet-repo>/…` (relative escape
   // out of the current repo) or `…/projects/<fleet-repo>/…` (absolute
   // sibling-clone escape). Both forms hardcode someone's local layout
   // and break in CI / fresh clones / non-standard checkouts.
-  logger.info('Checking for cross-repo path references…')
-  // Repo toplevel — used below as the wiring root. The cross-repo scanner now
-  // derives the repo name per-file from each file's `.git` root.
-  const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
+  debugCheck('Checking for cross-repo path references…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipFile(file)) {
@@ -591,7 +633,11 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function checkPrProcessComments(stagedFiles: string[]): number {
+  let errors = 0
   // PR-process / quest / step-N narrative in source COMMENTS (HARD block).
   // Sub-agents wrote point-in-time process references — `//! Step 4 of the net
   // perf quest (#5419) …`, `// Step 2 ([#5638]) replaced …` — into shipping
@@ -610,7 +656,7 @@ const main = (): number => {
   // markdown, docs, JSON, and YAML reference these patterns legitimately.
   // shouldSkipFile still exempts tests/fixtures. Per-line opt-out:
   // `// oxlint-disable-next-line socket/no-pr-process-comment`.
-  logger.info('Checking comments for PR-process / step-N references…')
+  debugCheck('Checking comments for PR-process / step-N references…')
   for (let j = 0, { length: jlen } = stagedFiles; j < jlen; j += 1) {
     const file = stagedFiles[j]!
     if (shouldSkipSourceScan(file)) {
@@ -639,7 +685,14 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
 
+function checkOxlintRuleWiring(
+  stagedFiles: string[],
+  repoTopline: string,
+): number {
+  let errors = 0
   // oxlint plugin rule WIRING gate. When a rule file / plugin index /
   // oxlintrc activation / rule test is staged, confirm the wiring triad
   // (rule file → import+registry → activation → test) is complete. A
@@ -647,7 +700,7 @@ const main = (): number => {
   // commit time, not just in a PR, many commits land without one. No-ops
   // unless a wiring-relevant file is staged + the generator is present
   // so it only runs in the wheelhouse, where the rule files live.
-  logger.info('Checking oxlint plugin rule wiring…')
+  debugCheck('Checking oxlint plugin rule wiring…')
   const wiringRoot = repoTopline || process.cwd()
   const wiringDrift = checkOxlintRuleWiringStaged(stagedFiles, wiringRoot)
   if (wiringDrift) {
@@ -664,7 +717,14 @@ const main = (): number => {
     )
     errors++
   }
+  return errors
+}
 
+function checkCanonicalForks(
+  stagedFiles: string[],
+  repoTopline: string,
+): number {
+  let errors = 0
   // Fleet-canonical fork gate — the commit-time backstop for
   // no-fleet-fork-guard. A legitimate cascade commit is made with
   // `--no-verify` and never reaches this hook, so any staged canonical path
@@ -674,7 +734,7 @@ const main = (): number => {
   // the guard cannot attribute or fire for it), or a hand-run git command.
   // Bypass: SOCKET_PRE_COMMIT_ALLOW_CANONICAL_FORK=1, one-shot, for a
   // genuine emergency hotfix that can't wait for a template edit + cascade.
-  logger.info('Checking for canonical files forked outside the cascade…')
+  debugCheck('Checking for canonical files forked outside the cascade…')
   if (!process.env['SOCKET_PRE_COMMIT_ALLOW_CANONICAL_FORK']) {
     const forkRoot = repoTopline || process.cwd()
     const forkFindings = scanCanonicalForkPaths(stagedFiles, forkRoot)
@@ -686,7 +746,7 @@ const main = (): number => {
       }
       logger.info('')
       logger.info(
-        'Fleet-canonical files (anything tracked by socket-wheelhouse/scripts/sync-scaffolding/manifest.mts) ' +
+        'Fleet-canonical files (anything tracked by socket-wheelhouse/scripts/repo/commit-cascade/manifest.mts) ' +
           'MUST be edited in socket-wheelhouse/template/<path> and cascaded out — never authored directly.',
       )
       logger.info('')
@@ -694,7 +754,7 @@ const main = (): number => {
       logger.info('  1. Edit socket-wheelhouse/template/<path> instead')
       logger.info('  2. Commit + push template')
       logger.info(
-        '  3. Cascade with: node scripts/repo/sync-scaffolding/cli.mts --target . --fix',
+        '  3. Cascade with: node scripts/repo/commit-cascade/run.mts --target . --fix',
       )
       logger.info('')
       logger.info(
@@ -703,6 +763,61 @@ const main = (): number => {
       errors++
     }
   }
+  return errors
+}
+
+const main = (): number => {
+  debugCheck('Running Socket Security checks…')
+  const wipeVerdict = refuseCatastrophicDeletion()
+  if (wipeVerdict) {
+    return wipeVerdict
+  }
+  const emptyVerdict = refuseEmptyStagedIndex()
+  if (emptyVerdict) {
+    return emptyVerdict
+  }
+
+  // Normalize to POSIX forward slashes so downstream
+  // `startsWith('.git-hooks/')` / `includes('/external/')` matchers
+  // work the same on Windows (where git can return `\` separators).
+  const stagedFiles = gitLines(
+    'diff',
+    '--cached',
+    '--name-only',
+    '--diff-filter=ACM',
+  ).map(normalizePath)
+  // No add/change/modify staged — but the empty-index gate above already
+  // proved the commit is non-empty, a pure-deletion or merge commit. Nothing
+  // for the content scanners to read, so the security sweep is a no-op.
+  if (stagedFiles.length === 0) {
+    debugCheck('No files to scan')
+    return 0
+  }
+
+  if (checkSigningConfig() > 0) {
+    return 1
+  }
+
+  // Repo toplevel — used below as the wiring root. The cross-repo scanner now
+  // derives the repo name per-file from each file's `.git` root.
+  const repoTopline = gitLines('rev-parse', '--show-toplevel')[0] ?? ''
+
+  let errors = 0
+  errors += checkDsStoreFiles(stagedFiles)
+  errors += checkLogFiles(stagedFiles)
+  errors += checkEnvFiles(stagedFiles)
+  errors += checkPersonalPaths(stagedFiles)
+  warnApiKeys(stagedFiles)
+  errors += checkOtherSecrets(stagedFiles)
+  errors += checkPackageJsonOverrides(stagedFiles)
+  errors += checkSoakExcludeDates(stagedFiles)
+  errors += checkNpxDlxUsage(stagedFiles)
+  warnDocsPnpmFirst(stagedFiles)
+  errors += checkLoggerLeaks(stagedFiles)
+  errors += checkCrossRepoPaths(stagedFiles)
+  errors += checkPrProcessComments(stagedFiles)
+  errors += checkOxlintRuleWiring(stagedFiles, repoTopline)
+  errors += checkCanonicalForks(stagedFiles, repoTopline)
 
   if (errors > 0) {
     logger.error('')
@@ -717,7 +832,7 @@ const main = (): number => {
   // them in this security pass too meant the staged delta was tested twice, and
   // this pass used the old 60s ceiling, which is what blew the ≤10s pre-commit
   // budget. The single bounded shell step keeps the commit fast.
-  logger.success('All security checks passed!')
+  debugCheck('All security checks passed!')
   return 0
 }
 

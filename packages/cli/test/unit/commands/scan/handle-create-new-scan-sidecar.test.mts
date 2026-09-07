@@ -210,6 +210,8 @@ describe('handleCreateNewScan sidecar threading', () => {
       expect.objectContaining({ computeArtifactsSidecar: true }),
     )
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
       expect.objectContaining({ resolvedPathsSidecar: sidecar }),
     )
   })

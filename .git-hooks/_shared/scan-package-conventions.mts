@@ -146,31 +146,73 @@ const FENCE_OPEN_RE = /^\s*(?:```|~~~)/
 const PNPM_FIRST_SUPPRESS_RE =
   /oxlint-disable-(?:next-)?line\s+socket\/docs-lead-with-pnpm\b/
 
+// What one fenced block has shown so far. Reset at every fence boundary.
+interface PnpmFenceState {
+  hasPnpm: boolean
+  hasSuppress: boolean
+  firstNpmYarnHit: LineHit | undefined
+}
+
+function emptyPnpmFenceState(): PnpmFenceState {
+  return { firstNpmYarnHit: undefined, hasPnpm: false, hasSuppress: false }
+}
+
+// The verdict for one finished block: the npm/yarn line to warn on, or
+// nothing when the block also led with pnpm or carried a suppression marker.
+function pnpmFenceWarning(state: PnpmFenceState): LineHit | undefined {
+  if (state.firstNpmYarnHit && !state.hasPnpm && !state.hasSuppress) {
+    return state.firstNpmYarnHit
+  }
+  return undefined
+}
+
+// Fold one line that sits INSIDE a fence into the block's state: the
+// suppression marker, the `pnpm install` form, or the first npm/yarn form.
+function absorbPnpmFenceLine(
+  state: PnpmFenceState,
+  line: string,
+  lineNumber: number,
+): void {
+  if (PNPM_FIRST_SUPPRESS_RE.test(line)) {
+    state.hasSuppress = true
+    return
+  }
+  if (PNPM_INSTALL_LINE_RE.test(line)) {
+    state.hasPnpm = true
+    return
+  }
+  if (
+    NPM_YARN_INSTALL_LINE_RE.test(line) &&
+    state.firstNpmYarnHit === undefined
+  ) {
+    state.firstNpmYarnHit = {
+      lineNumber,
+      line,
+      // Replace the npm/yarn subcommand with pnpm, preserving the add|i|install verb.
+      suggested: line.replace(/\b(npm|yarn)\s+(add|i|install)\b/, 'pnpm $2'),
+    }
+  }
+}
+
 export const scanDocsPnpmFirst = (text: string): LineHit[] => {
   const hits: LineHit[] = []
   const lines = splitLines(text)
   let inFence = false
-  let fenceStartLine = -1
-  let fenceHasPnpm = false
-  let fenceHasSuppress = false
-  let fenceFirstNpmYarnHit: LineHit | undefined
+  let state = emptyPnpmFenceState()
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     if (FENCE_OPEN_RE.test(line)) {
       // Closing fence: flush any pending hit if no pnpm form was seen
       // and the block wasn't suppressed.
       if (inFence) {
-        if (fenceFirstNpmYarnHit && !fenceHasPnpm && !fenceHasSuppress) {
-          hits.push(fenceFirstNpmYarnHit)
+        const warning = pnpmFenceWarning(state)
+        if (warning) {
+          hits.push(warning)
         }
         inFence = false
-        fenceStartLine = -1
-        fenceHasPnpm = false
-        fenceHasSuppress = false
-        fenceFirstNpmYarnHit = undefined
+        state = emptyPnpmFenceState()
       } else {
         inFence = true
-        fenceStartLine = i + 1
       }
       continue
     }
@@ -178,44 +220,24 @@ export const scanDocsPnpmFirst = (text: string): LineHit[] => {
       // Suppression marker on a comment line just above the fence is
       // also honored (some docs prefer keeping markers outside the
       // rendered code block).
-      if (PNPM_FIRST_SUPPRESS_RE.test(line)) {
-        // Look ahead one line for a fence open; if it's there, mark
-        // the upcoming block as suppressed.
-        const next = lines[i + 1]
-        if (next !== undefined && FENCE_OPEN_RE.test(next)) {
-          fenceHasSuppress = true
-        }
+      // Look ahead one line for a fence open; if it's there, mark
+      // the upcoming block as suppressed.
+      const next = lines[i + 1]
+      if (
+        PNPM_FIRST_SUPPRESS_RE.test(line) &&
+        next !== undefined &&
+        FENCE_OPEN_RE.test(next)
+      ) {
+        state.hasSuppress = true
       }
       continue
     }
-    if (PNPM_FIRST_SUPPRESS_RE.test(line)) {
-      fenceHasSuppress = true
-      continue
-    }
-    if (PNPM_INSTALL_LINE_RE.test(line)) {
-      fenceHasPnpm = true
-      continue
-    }
-    if (
-      NPM_YARN_INSTALL_LINE_RE.test(line) &&
-      fenceFirstNpmYarnHit === undefined
-    ) {
-      fenceFirstNpmYarnHit = {
-        lineNumber: i + 1,
-        line,
-        // Replace the npm/yarn subcommand with pnpm, preserving the add|i|install verb.
-        suggested: line.replace(/\b(npm|yarn)\s+(add|i|install)\b/, 'pnpm $2'),
-      }
-    }
+    absorbPnpmFenceLine(state, line, i + 1)
   }
   // Unclosed fence at EOF — flush whatever's pending.
-  if (inFence && fenceFirstNpmYarnHit && !fenceHasPnpm && !fenceHasSuppress) {
-    hits.push(fenceFirstNpmYarnHit)
+  const pending = inFence ? pnpmFenceWarning(state) : undefined
+  if (pending) {
+    hits.push(pending)
   }
-  // Reference fenceStartLine to suppress unused-variable lints; the
-  // value is useful for future enhancements (e.g. block-level
-  // diagnostics) but the current per-line LineHit shape carries the
-  // offending line number directly.
-  void fenceStartLine
   return hits
 }

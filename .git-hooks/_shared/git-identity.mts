@@ -2,8 +2,12 @@
 // the wheelhouse-cascaded config FILE, resolved repo-scoped only (no machine-
 // local fallback, by design — minimize outside-wheelhouse settings):
 //
-//   .config/repo/git-authors.json, per-repo override, optional
+//   .config/repo/socket-wheelhouse.json → "gitAuthors", per-repo, optional
 //   .config/fleet/git-authors.json, cascaded fleet default
+//
+// The per-repo half is a SECTION of the member settings file rather than its
+// own JSON: per-repo config lives in ONE surface, and a second `.config/repo/
+// *.json` is the fragmentation `no-new-config-guard` refuses.
 //
 // Shape: { denylist: { emails[], names[] }, canonical: {name,email}, aliases[] }.
 //
@@ -41,7 +45,12 @@ interface RawConfig {
   aliases?: GitAuthor[] | undefined
 }
 
-const REPO_CONFIG = '.config/repo/git-authors.json'
+// The per-repo half lives as a SECTION of the one member settings file, not
+// as its own `.config/repo/*.json`. Per-repo config lives in ONE surface
+// (`config-segregation`); a second file there is exactly the fragmentation
+// `no-new-config-guard` exists to refuse.
+const REPO_SETTINGS = '.config/repo/socket-wheelhouse.json'
+const REPO_SETTINGS_KEY = 'gitAuthors'
 const FLEET_CONFIG = '.config/fleet/git-authors.json'
 
 function loadJson(file: string): RawConfig | undefined {
@@ -56,6 +65,81 @@ function loadJson(file: string): RawConfig | undefined {
 }
 
 /**
+ * The `gitAuthors` section of the member settings file, or undefined when the
+ * file or the section is absent.
+ */
+function loadRepoSection(repoRoot: string): RawConfig | undefined {
+  const settings = loadJson(path.join(repoRoot, REPO_SETTINGS)) as
+    | { [REPO_SETTINGS_KEY]?: RawConfig | undefined }
+    | undefined
+  return settings?.[REPO_SETTINGS_KEY]
+}
+
+/**
+ * Split a `git var GIT_AUTHOR_IDENT` / `GIT_COMMITTER_IDENT` string
+ * (`Name <email> <unix-ts> <tz>`) into its name and email. A field git left
+ * empty comes back as undefined rather than an empty string, so the denylist
+ * and allowlist checks see the same "unset" shape either way.
+ */
+export function parseGitIdentLine(ident: string): GitAuthor {
+  const match = /^(.*?)\s*<([^>]*)>/.exec(ident)
+  return {
+    name: match?.[1]?.trim() || undefined,
+    email: match?.[2]?.trim() || undefined,
+  }
+}
+
+/**
+ * One config's denylist halves, each defaulted to empty.
+ */
+function readDenyEntries(config: RawConfig | undefined): {
+  emails: string[]
+  names: string[]
+} {
+  return {
+    emails: config?.denylist?.emails ?? [],
+    names: config?.denylist?.names ?? [],
+  }
+}
+
+/**
+ * The union of both denylists, lowercased. A repo can ADD denied identities;
+ * the fleet denylist always applies, so neither side can shorten the other.
+ */
+function mergeIdentityDenyList(
+  fleet: RawConfig | undefined,
+  repo: RawConfig | undefined,
+): { denyEmails: string[]; denyNames: string[] } {
+  const fleetDeny = readDenyEntries(fleet)
+  const repoDeny = readDenyEntries(repo)
+  return {
+    denyEmails: [...fleetDeny.emails, ...repoDeny.emails].map(e =>
+      e.toLowerCase(),
+    ),
+    denyNames: [...fleetDeny.names, ...repoDeny.names].map(n =>
+      n.toLowerCase(),
+    ),
+  }
+}
+
+/**
+ * The allowlist half, taken whole from the first config that declares one:
+ * the repo override when it names a canonical email or any alias, else the
+ * cascaded fleet default.
+ */
+function selectIdentityAllowlist(
+  fleet: RawConfig | undefined,
+  repo: RawConfig | undefined,
+): { canonical: GitAuthor; aliases: GitAuthor[] } {
+  const repoHasAllow = !!repo?.canonical?.email || !!repo?.aliases?.length
+  const src = repoHasAllow ? repo! : (fleet ?? {})
+  return {
+    aliases: Array.isArray(src.aliases) ? src.aliases : [],
+    canonical: src.canonical ?? {},
+  }
+}
+
+/**
  * Resolve the identity policy: a repo override (.config/repo) takes precedence
  * over the cascaded fleet default (.config/fleet). The denylist merges both (a
  * repo can ADD denied identities but the fleet denylist always applies); the
@@ -64,23 +148,9 @@ function loadJson(file: string): RawConfig | undefined {
  */
 export function readIdentityPolicy(repoRoot: string): IdentityPolicy {
   const fleet = loadJson(path.join(repoRoot, FLEET_CONFIG))
-  const repo = loadJson(path.join(repoRoot, REPO_CONFIG))
-
-  const denyEmails = [
-    ...(fleet?.denylist?.emails ?? []),
-    ...(repo?.denylist?.emails ?? []),
-  ].map(e => e.toLowerCase())
-  const denyNames = [
-    ...(fleet?.denylist?.names ?? []),
-    ...(repo?.denylist?.names ?? []),
-  ].map(n => n.toLowerCase())
-
-  // Allowlist: repo override wins when it declares one, else fleet's.
-  const repoHasAllow = !!repo?.canonical?.email || !!repo?.aliases?.length
-  const src = repoHasAllow ? repo! : (fleet ?? {})
-  const canonical = src.canonical ?? {}
-  const aliases = Array.isArray(src.aliases) ? src.aliases : []
-
+  const repo = loadRepoSection(repoRoot)
+  const { denyEmails, denyNames } = mergeIdentityDenyList(fleet, repo)
+  const { aliases, canonical } = selectIdentityAllowlist(fleet, repo)
   return { denyEmails, denyNames, canonical, aliases }
 }
 

@@ -369,7 +369,9 @@ describe('util/config', () => {
       const result = overrideCachedConfig('42')
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Could not parse Config as JSON')
+        expect(result.cause).toBe(
+          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
+        )
       }
     })
 
@@ -377,7 +379,9 @@ describe('util/config', () => {
       const result = overrideCachedConfig('null')
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Could not parse Config as JSON')
+        expect(result.cause).toBe(
+          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
+        )
       }
     })
   })

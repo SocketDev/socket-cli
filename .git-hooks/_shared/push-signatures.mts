@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugCheck } from './check-output.mts'
 
 import { git, gitLines } from './git.mts'
 
@@ -81,29 +82,20 @@ export const readAllowedSignerKeys = (): Set<string> => {
   return out
 }
 
-export const scanSignedCommits = (range: string, remoteRef: string): number => {
-  // Only enforce on default-branch refs (main / master). Feature
-  // branches and topic branches can stay unsigned during development;
-  // signing is required at the point of landing on the protected ref.
-  const refBase = remoteRef.replace(/^refs\/heads\//, '')
-  if (refBase !== 'main' && refBase !== 'master') {
-    return 0
-  }
-  logger.info('Checking commit signatures…')
-  // %G? — signature verification marker (G/U/E/X/Y/R/N/B).
-  // %GK — signing key fingerprint, empty if unsigned.
-  // %GS — signer name, from key user-id.
-  // Cross-check %GK against gpg.ssh.allowedSignersFile when configured
-  // and `gpg.format = ssh`. For gpg-format signatures, %G? alone
-  // reflects the local keyring's trust, which is sufficient for our
-  // threat model (the attacker would need to control the dev's
-  // ~/.gnupg, at which point the local box is fully owned).
-  const lines = gitLines('log', '--format=%H %G? %GK', range)
-  const allowedSigners = readAllowedSignerKeys()
-  let errors = 0
+interface SignatureVerdict {
+  unsigned: string[]
+  unauthorized: string[]
+}
+
+// Sorts one `%H %G? %GK` line per commit into the two blocking buckets.
+function classifyCommitSignatures(
+  lines: string[],
+  allowedSigners: Set<string>,
+): SignatureVerdict {
   const unsigned: string[] = []
   const unauthorized: string[] = []
-  for (const line of lines) {
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
     const parts = line.split(' ')
     const sha = parts[0]
     const marker = parts[1]
@@ -114,7 +106,6 @@ export const scanSignedCommits = (range: string, remoteRef: string): number => {
     // `N` = no signature. `B` = bad signature. Both block.
     if (marker === 'B' || marker === 'N') {
       unsigned.push(sha)
-      errors++
       continue
     }
     // Allowed-signers cross-check, SSH-signed commits only. `G`
@@ -128,9 +119,17 @@ export const scanSignedCommits = (range: string, remoteRef: string): number => {
       !allowedSigners.has(signerKey)
     ) {
       unauthorized.push(`${sha} (signed by ${signerKey.slice(0, 16)}…)`)
-      errors++
     }
   }
+  return { unauthorized, unsigned }
+}
+
+// Prints the operator-facing failure report for both buckets.
+function reportSignatureFailures(
+  verdict: SignatureVerdict,
+  refBase: string,
+): void {
+  const { unauthorized, unsigned } = verdict
   if (unauthorized.length > 0) {
     logger.error(
       `${unauthorized.length} commit(s) signed by a key NOT in gpg.ssh.allowedSignersFile:`,
@@ -140,9 +139,7 @@ export const scanSignedCommits = (range: string, remoteRef: string): number => {
       logger.error(`  ${u}`)
     }
   }
-  if (errors === 0) {
-    return 0
-  }
+  const errors = unsigned.length + unauthorized.length
   logger.fail(`${errors} unsigned commit(s) being pushed to ${refBase}.`)
   const shaList = unsigned.slice(0, 5)
   for (let j = 0, { length: jlen } = shaList; j < jlen; j += 1) {
@@ -156,5 +153,32 @@ export const scanSignedCommits = (range: string, remoteRef: string): number => {
   logger.info('')
   logger.info('Fix: rebase + re-sign the commits.')
   logger.info(`  git rebase --exec 'git commit --amend --no-edit -S' <base>`)
+}
+
+export const scanSignedCommits = (range: string, remoteRef: string): number => {
+  // Only enforce on default-branch refs (main / master). Feature
+  // branches and topic branches can stay unsigned during development;
+  // signing is required at the point of landing on the protected ref.
+  const refBase = remoteRef.replace(/^refs\/heads\//, '')
+  if (refBase !== 'main' && refBase !== 'master') {
+    return 0
+  }
+  debugCheck('Checking commit signatures…')
+  // %G? — signature verification marker (G/U/E/X/Y/R/N/B).
+  // %GK — signing key fingerprint, empty if unsigned.
+  // %GS — signer name, from key user-id.
+  // Cross-check %GK against gpg.ssh.allowedSignersFile when configured
+  // and `gpg.format = ssh`. For gpg-format signatures, %G? alone
+  // reflects the local keyring's trust, which is sufficient for our
+  // threat model (the attacker would need to control the dev's
+  // ~/.gnupg, at which point the local box is fully owned).
+  const lines = gitLines('log', '--format=%H %G? %GK', range)
+  const allowedSigners = readAllowedSignerKeys()
+  const verdict = classifyCommitSignatures(lines, allowedSigners)
+  const errors = verdict.unsigned.length + verdict.unauthorized.length
+  if (errors === 0) {
+    return 0
+  }
+  reportSignatureFailures(verdict, refBase)
   return errors
 }

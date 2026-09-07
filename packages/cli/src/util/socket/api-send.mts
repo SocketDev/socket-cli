@@ -24,7 +24,6 @@ import { getDefaultApiToken } from './sdk.mts'
 import type { CResult } from '../../types.mts'
 
 export type SendApiRequestOptions = {
-  method: 'POST' | 'PUT'
   body?: unknown | undefined
   description?: string | undefined
   commandPath?: string | undefined
@@ -35,6 +34,7 @@ export type SendApiRequestOptions = {
  */
 export async function sendApiRequest<T>(
   path: string,
+  method: 'POST' | 'PUT',
   options?: SendApiRequestOptions | undefined,
 ): Promise<CResult<T>> {
   const apiToken = getDefaultApiToken()
@@ -59,7 +59,7 @@ export async function sendApiRequest<T>(
   }
   /* c8 ignore stop */
 
-  const { body, commandPath, description, method } = {
+  const { body, commandPath, description } = {
     __proto__: null,
     ...options,
   } as SendApiRequestOptions

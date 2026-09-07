@@ -6,6 +6,7 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugCheck } from './check-output.mts'
 
 import { git } from './git.mts'
 
@@ -22,7 +23,7 @@ export const computeRange = (
   remoteSha: string,
 ): string | undefined => {
   if (localRef.startsWith('refs/tags/')) {
-    logger.info(`Skipping tag push: ${localRef}`)
+    debugCheck(`Skipping tag push: ${localRef}`)
     return undefined
   }
   if (localSha === ZERO_SHA) {
@@ -64,7 +65,7 @@ export const computeRange = (
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
-      logger.success('Skipping validation (no baseline to compare against)')
+      logger.warn('Skipping validation (no baseline to compare against)')
       return undefined
     }
     return `${baseRef}..${localSha}`
@@ -87,7 +88,7 @@ export const computeRange = (
     const def = defaultBranchOf(remote)
     const baseRef = `${remote}/${def}`
     if (!refExists(baseRef)) {
-      logger.success('Skipping validation (no baseline for force-push)')
+      logger.warn('Skipping validation (no baseline for force-push)')
       return undefined
     }
     return `${baseRef}..${localSha}`

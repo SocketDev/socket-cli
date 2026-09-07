@@ -425,6 +425,25 @@ describe('runHttpTransport — Host and Origin validation (DNS rebinding)', () =
     expect(response).not.toContain('403')
   })
 
+  it('accepts a non-allowlisted Origin once Host matches the hosted deployment', async () => {
+    // Claude Desktop's custom connector (and other native MCP clients) send
+    // an Origin header their HTTP stack sets automatically; Bearer-token
+    // auth, not Origin, is what actually gates the hosted deployment. This
+    // is the regression case for that report.
+    const { port } = await startServer()
+    const response = await rawRequest(
+      port,
+      `POST / HTTP/1.1\r\n` +
+        `Host: mcp.socket.dev\r\n` +
+        `Origin: https://claude.ai\r\n` +
+        `Content-Type: application/json\r\n` +
+        `Accept: application/json, text/event-stream\r\n` +
+        `Content-Length: 2\r\n` +
+        `Connection: close\r\n\r\n{}`,
+    )
+    expect(response).not.toContain('403')
+  })
+
   it('rejects a request with no Origin and a non-allowlist Host (logs "missing")', async () => {
     const { port } = await startServer()
     // Send via raw TCP with a Host that's none of the allowed values

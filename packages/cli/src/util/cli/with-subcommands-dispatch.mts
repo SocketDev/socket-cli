@@ -16,7 +16,7 @@ import type { CliCommandContext } from './with-subcommands.mts'
 
 const logger = getDefaultLogger()
 
-export interface DispatchSubcommandOptions {
+export interface DispatchSubcommandConfig {
   aliases: CliAliases
   commandOrAliasName: string
   defaultSub: string | undefined
@@ -32,7 +32,7 @@ export interface DispatchSubcommandOptions {
  * sub-command ran, or because an unknown-command error was already reported).
  */
 export async function tryDispatchSubcommand(
-  config: DispatchSubcommandOptions,
+  config: DispatchSubcommandConfig,
 ): Promise<boolean> {
   const {
     aliases,

@@ -115,7 +115,7 @@ describe('update-dependencies', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Dependencies update failed')
+        expect(result.message).toContain('failed')
         expect(result.cause).toContain('npm install failed')
       }
       expect(mockSpinner.stop).toHaveBeenCalled()

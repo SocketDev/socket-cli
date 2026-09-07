@@ -22,28 +22,20 @@ import type { MachineModeFlags } from './mode.mts'
 
 const logger = getDefaultLogger()
 
-export interface EmitPayloadOptions {
-  flags: MachineModeFlags
-}
-
-export function emitJsonPayload(
-  value: unknown,
-  config: EmitPayloadOptions,
-): void {
+export function emitJsonPayload(value: unknown, flags: MachineModeFlags): void {
   // JSON.stringify(undefined) returns undefined, which logs as the
   // literal string "undefined" — serialize as null instead so we
   // always emit syntactically valid JSON.
   const serialized = JSON.stringify(value) ?? 'null'
-  emitPayload(serialized, config)
+  emitPayload(serialized, flags)
 }
 
-export function emitPayload(payload: string, config: EmitPayloadOptions): void {
+export function emitPayload(payload: string, flags: MachineModeFlags): void {
   // logger.log appends its own \n, so strip ONE trailing newline from
   // the payload to avoid a doubled \n. Applied in both modes so the
   // output is consistent regardless of mode.
-  const cfg = { __proto__: null, ...config } as typeof config
   const normalized = payload.endsWith('\n') ? payload.slice(0, -1) : payload
-  if (isMachineOutputMode(cfg.flags)) {
+  if (isMachineOutputMode(flags)) {
     logger.log(SENTINEL_BEGIN)
     logger.log(normalized)
     logger.log(SENTINEL_END)

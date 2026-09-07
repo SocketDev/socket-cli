@@ -64,7 +64,7 @@ export async function outputQuota(
   if (outputKind === 'json') {
     // Sentinel-wrap the JSON so pipe-safety is preserved even if a
     // downstream spawn in the same process writes to stdout.
-    emitPayload(serializeResultJson(result), { flags: { json: true } })
+    emitPayload(serializeResultJson(result), { json: true })
     return
   }
   if (!result.ok) {
@@ -82,7 +82,7 @@ export async function outputQuota(
       `- ${usageLine}`,
       `- ${refreshLine}`,
     ].join('\n')
-    emitPayload(md, { flags: { markdown: true } })
+    emitPayload(md, { markdown: true })
     return
   }
 

@@ -143,23 +143,19 @@ async function main(): Promise<number> {
   }
 
   // Check Node.js.
-  const nodeOk = await checkPrerequisite({
-    command: 'node',
+  const nodeOk = await checkPrerequisite('node', 'Node.js', {
     minVersion: { major: 18, minor: 0, patch: 0 },
-    name: 'Node.js',
     required: true,
   })
 
   // Check pnpm.
-  const pnpmOk = await checkPrerequisite({
-    command: 'pnpm',
+  const pnpmOk = await checkPrerequisite('pnpm', 'pnpm', {
     minVersion: { major: 10, minor: 21, patch: 0 },
-    name: 'pnpm',
     required: true,
   })
 
   // Check gh CLI, optional, with auto-install.
-  const ghOk = await ensureGhCli({ autoInstall })
+  const ghOk = await ensureGhCli(autoInstall)
 
   if (!quiet) {
     logger.log('')
@@ -187,17 +183,17 @@ async function main(): Promise<number> {
   }
 
   // Generate packages from templates.
-  await generateCliSentryPackage({ quiet })
+  await generateCliSentryPackage(quiet)
   if (!quiet) {
     logger.log('')
   }
 
-  await generateCliExePackages({ quiet })
+  await generateCliExePackages(quiet)
   if (!quiet) {
     logger.log('')
   }
 
-  await generateSocketbinPackages({ quiet })
+  await generateSocketbinPackages(quiet)
 
   if (!quiet) {
     logger.log('')

@@ -27,7 +27,7 @@ import type { PURL_Type } from '../../util/ecosystem/types.mjs'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-export type ReachabilityOptions = {
+export type ReachabilityConfig = {
   excludePaths: string[]
   reachAnalysisMemoryLimit: number
   reachAnalysisTimeout: number
@@ -53,13 +53,11 @@ export type ReachabilityAnalysisOptions = {
   orgSlug?: string | undefined
   outputPath?: string | undefined
   packagePaths?: string[] | undefined
-  reachabilityOptions: ReachabilityOptions
   repoName?: string | undefined
   // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
   // reuses these paths instead of re-resolving the build.
   resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
   spinner?: SpinnerInstance | undefined
-  target: string
   uploadManifests?: boolean | undefined
 }
 
@@ -69,6 +67,8 @@ export type ReachabilityAnalysisResult = {
 }
 
 export async function performReachabilityAnalysis(
+  target: string,
+  reachabilityOptions: ReachabilityConfig,
   options?: ReachabilityAnalysisOptions | undefined,
 ): Promise<CResult<ReachabilityAnalysisResult>> {
   const {
@@ -77,11 +77,9 @@ export async function performReachabilityAnalysis(
     orgSlug,
     outputPath,
     packagePaths,
-    reachabilityOptions,
     repoName,
     resolvedPathsSidecar,
     spinner,
-    target,
     uploadManifests = true,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
 

@@ -124,8 +124,7 @@ export async function extractBazelToMaven(
       ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
       ...(cfg.ignoreDirPrefixes ?? []),
     ]
-    const workspaceRoots = findWorkspaceRoots({
-      cwd,
+    const workspaceRoots = findWorkspaceRoots(cwd, {
       ignoreDirNames,
       ignoreDirPrefixes,
       verbose,

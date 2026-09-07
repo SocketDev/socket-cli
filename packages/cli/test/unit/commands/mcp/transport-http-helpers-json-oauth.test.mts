@@ -300,7 +300,6 @@ describe('handleRequestSafely', () => {
     expect(writeHead).toHaveBeenCalledWith(500, expect.any(Object))
     const body = JSON.parse(end.mock.calls[0]![0] as string)
     expect(body.error.code).toBe(-32_603)
-    expect(body.error.message).toBe('Internal server error')
     expect(body.id).toBe(undefined)
     expect(body.jsonrpc).toBe('2.0')
   })

@@ -39,15 +39,43 @@ const toolSchema = Type.Object(
       }),
     ),
 
+    // Acquisition method — the discriminant of the shared fleet schema in
+    // scripts/fleet/lib/external-tools-schema.mts.
+    origin: Type.Optional(
+      Type.Union(
+        [
+          Type.Literal('cargo'),
+          Type.Literal('gh-archive'),
+          Type.Literal('gh-asset'),
+          Type.Literal('git'),
+          Type.Literal('manager'),
+          Type.Literal('node-dist'),
+          Type.Literal('npm'),
+          Type.Literal('system'),
+        ],
+        {
+          description:
+            'How the tool reaches the machine. The eight variants of the shared fleet union: cargo, gh-archive, gh-asset, git, manager, node-dist, npm, system',
+        },
+      ),
+    ),
+
     // GitHub release fields, socket-cli bundle-tools, socket-registry.
     repository: Type.Optional(
       Type.String({ description: 'Repository in "github:owner/repo" format' }),
     ),
-    release: Type.Optional(
-      Type.Union([Type.Literal('asset'), Type.Literal('archive')], {
-        description:
-          'Release type: "asset" for individual binaries, "archive" for source tarballs',
-      }),
+    platforms: Type.Optional(
+      Type.Record(
+        Type.String(),
+        Type.Object({
+          asset: Type.String(),
+          integrity: Type.String(),
+        }),
+        {
+          description:
+            'Canonical platform key (darwin-arm64, linux-x64-musl, win32-x64, …) to its release asset + SRI integrity',
+        },
+      ),
     ),
     tag: Type.Optional(
       Type.String({ description: 'Release tag (when different from version)' }),

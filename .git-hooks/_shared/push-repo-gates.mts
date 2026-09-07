@@ -2,7 +2,7 @@
 // commit range): submodule pristine-ness, soak-bypass date annotations, the
 // fast lint/format gate, and the wheelhouse-only hook-dispatch-table drift check.
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 
 import path from 'node:path'
 
@@ -15,6 +15,32 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { gitLines } from './git.mts'
+import {
+  debugCheck,
+  showCheckOutput,
+  showCheckResult,
+} from './check-output.mts'
+import {
+  dirtyEntry,
+  readTypecheckVerdict,
+  typecheckCacheKey,
+  waitForTypecheckTurn,
+  writeTypecheckVerdict,
+} from './typecheck-cache.mts'
+
+// The repo-wide fixer lock, the same one lint.mts and fix.mts take. Sharing
+// it is deliberate: a push's typecheck should also serialize against a
+// running `pnpm run fix`, since both read the whole working tree.
+import {
+  acquireFixerLock,
+  fixerLockPath,
+} from '../../scripts/fleet/process/fixer-lock.mts'
+// One owner for the path, per `paths-are-constructed-once`: a cascaded file is
+// tracked twice (source + live mirror), so a literal spelled here counts as
+// two construction sites on its own.
+import { TYPECHECK_CACHE_DIR } from '../../scripts/fleet/paths.mts'
+
+import type { TypecheckVerdict } from './typecheck-cache.mts'
 import { scanSoakExcludeDateAnnotations } from './scan-supply-chain.mts'
 
 const logger = getDefaultLogger()
@@ -25,7 +51,7 @@ export const checkSubmodules = (): number => {
   if (!existsSync('.gitmodules')) {
     return 0
   }
-  logger.info('Checking submodules are pristine…')
+  debugCheck('Checking submodules are pristine…')
   let errors = 0
   const status = gitLines('submodule', 'status')
   for (const line of status) {
@@ -51,7 +77,7 @@ export const checkSubmodules = (): number => {
     logger.error('Fix submodules before pushing.')
     return errors
   }
-  logger.success('All submodules pristine')
+  debugCheck('All submodules pristine')
   return 0
 }
 
@@ -104,7 +130,7 @@ export const scanSoakAnnotations = (): number => {
 //
 // SCOPE: the pushed COMMITS via `--range=`, NEVER the working tree, which on a
 // shared checkout also holds a parallel session's files. Empty `ranges` falls
-// back to `--all`. See docs/agents.md/fleet/push-policy.md.
+// back to `--all`. See docs/fleet/agents.md/push-policy.md.
 //
 // Degrades to a skip (not a block) when there's no lint script, the script
 // isn't a `node <path>` invocation, or there's no oxlint config. Bypass:
@@ -130,7 +156,7 @@ export const scanFastChecks = (ranges: readonly string[] = []): number => {
   }
   // Matches `.claude` as a complete path segment anywhere in `toplevel`, start, middle, or end.
   if (/(?:^|\/)\.claude(?:\/|$)/.test(toplevel)) {
-    logger.info(
+    logger.warn(
       'Fast lint/format check skipped — checkout is under an ignored path (.claude/); CI re-lints from a clean tree.',
     )
     return 0
@@ -155,7 +181,7 @@ export const scanFastChecks = (ranges: readonly string[] = []): number => {
   }
   const scopeArgs =
     ranges.length > 0 ? ranges.map(range => `--range=${range}`) : ['--all']
-  logger.info(
+  debugCheck(
     ranges.length > 0
       ? `Running fast lint/format check on the pushed range (${ranges.join(', ')})…`
       : 'Running fast lint/format check on the whole tree (no pushed range to scope by)…',
@@ -169,8 +195,10 @@ export const scanFastChecks = (ranges: readonly string[] = []): number => {
   // blocking a worktree push.
   const r = spawnSync(process.execPath, [m[1]!, ...scopeArgs], {
     env: { ...process.env, CI: 'true' },
-    stdio: 'inherit',
+    maxBuffer: Infinity,
+    stdioString: true,
   })
+  showCheckResult(r)
   if (r.status !== 0) {
     logger.fail(
       'Fast lint/format check failed — fix lint/format before pushing.',
@@ -306,6 +334,87 @@ export function readDirtyFiles(): Set<string> {
   return out
 }
 
+/**
+ * `statSync` narrowed to what the cache key needs, with a missing path
+ * reported as undefined rather than thrown.
+ */
+function statOrUndefined(
+  p: string,
+): { mtimeMs: number; size: number } | undefined {
+  try {
+    const s = statSync(p)
+    return { mtimeMs: s.mtimeMs, size: s.size }
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Run the whole-project typecheck, serialized against peer pushes, and record
+ * the verdict for the tree it describes.
+ *
+ * The lock WAITS rather than failing: 27 concurrent pushes of one tree each
+ * spawned their own tsc and put the machine at load 225. Waiting turns the
+ * other 26 into cache reads. Past the deadline a waiter proceeds anyway, so a
+ * holder that never releases costs concurrency, never a blocked push.
+ */
+function runTypeCheckOnce(cacheKey: string): TypecheckVerdict {
+  const lock = acquireFixerLock(
+    fixerLockPath(process.cwd()),
+    'pre-push type check',
+  )
+  // Hold the ACQUIRED handle, not the first attempt. The retry below returns a
+  // different handle, and keeping only the original dropped its release: a
+  // successful retry then left the lock held forever, so every later push
+  // waited on a holder that had already finished.
+  let held = lock.acquired ? lock : undefined
+  if (held === undefined) {
+    const outcome = waitForTypecheckTurn({
+      cacheHit: () =>
+        readTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey) !== undefined,
+      now: () => Date.now(),
+      sleep: ms => {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+      },
+      tryAcquire: () => {
+        const retry = acquireFixerLock(
+          fixerLockPath(process.cwd()),
+          'pre-push type check',
+        )
+        if (retry.acquired) {
+          held = retry
+        }
+        return retry.acquired
+      },
+    })
+    if (outcome === 'peer-finished') {
+      const peer = readTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey)
+      if (peer) {
+        return peer
+      }
+    }
+  }
+  try {
+    debugCheck('Running type check…')
+    // Captured rather than inherited so the diagnostics can be ATTRIBUTED. tsc
+    // reads the working tree, which in a shared checkout holds a co-session's
+    // half-finished edits — errors this push neither caused nor can fix.
+    const r = spawnSync(
+      process.execPath,
+      [TSC_BIN, '--noEmit', '-p', TYPE_CHECK_TSCONFIG],
+      { stdioString: true },
+    )
+    const verdict: TypecheckVerdict = {
+      output: `${String(r.stdout ?? '')}${String(r.stderr ?? '')}`,
+      status: r.status ?? 1,
+    }
+    writeTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey, verdict)
+    return verdict
+  } finally {
+    held?.release()
+  }
+}
+
 export const scanTypeCheck = (ranges: readonly string[] = []): number => {
   if (!existsSync('package.json') || !existsSync(TYPE_CHECK_TSCONFIG)) {
     return 0
@@ -322,19 +431,21 @@ export const scanTypeCheck = (ranges: readonly string[] = []): number => {
     return 1
   }
   ensureDispatchTables()
-  logger.info('Running type check…')
-  // Captured rather than inherited so the diagnostics can be ATTRIBUTED. tsc
-  // reads the working tree, which in a shared checkout holds a co-session's
-  // half-finished edits — errors this push neither caused nor can fix.
-  const r = spawnSync(
-    process.execPath,
-    [TSC_BIN, '--noEmit', '-p', TYPE_CHECK_TSCONFIG],
-    { stdioString: true },
+  const dirty = readDirtyFiles()
+  const cacheKey = typecheckCacheKey(
+    gitLines('rev-parse', 'HEAD')[0] ?? '',
+    [...dirty].map(p => dirtyEntry(process.cwd(), p, statOrUndefined)),
   )
-  if (r.status === 0) {
+  const cached = readTypecheckVerdict(TYPECHECK_CACHE_DIR, cacheKey)
+  const verdict = cached ?? runTypeCheckOnce(cacheKey)
+  if (cached) {
+    debugCheck('Type check: reusing the verdict for this exact tree.')
+  }
+  if (verdict.status === 0) {
+    showCheckOutput(verdict.status, verdict.output)
     return 0
   }
-  const output = `${String(r.stdout ?? '')}${String(r.stderr ?? '')}`
+  const { output } = verdict
   process.stderr.write(output.endsWith('\n') ? output : `${output}\n`)
   const errorFiles = parseTypeErrorFiles(output)
   // No parseable diagnostic means tsc failed some other way (a bad tsconfig, a
@@ -412,10 +523,11 @@ export const scanDispatchDrift = (): number => {
     return 0
   }
   const r = spawnSync(
-    'node',
+    process.execPath,
     ['scripts/fleet/check/dispatch-table-is-current.mts', '--quiet'],
-    { stdio: 'inherit' },
+    { maxBuffer: Infinity, stdioString: true },
   )
+  showCheckResult(r)
   if (r.status !== 0) {
     logger.fail('Hook dispatch table is stale — rebuild before pushing.')
     logger.info(

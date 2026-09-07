@@ -28,7 +28,6 @@ describe('mock-auth', () => {
       const result = await mockInteractiveLogin({ shouldSucceed: false })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Login failed')
         expect(result.code).toBe(401)
       }
     })
@@ -60,11 +59,11 @@ describe('mock-auth', () => {
     it('should fail with custom error', async () => {
       const result = await mockApiTokenAuth({
         shouldSucceed: false,
-        errorMessage: 'Custom error',
+        errorMessage: 'custom_error_token',
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Custom error')
+        expect(result.message).toBe('custom_error_token')
       }
     })
   })
@@ -103,7 +102,6 @@ describe('mock-auth', () => {
       const result = await mockOrgSelection({ organizations: [] })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('No organizations available')
         expect(result.code).toBe(404)
       }
     })

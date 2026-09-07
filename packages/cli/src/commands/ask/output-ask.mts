@@ -7,24 +7,25 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 const logger = getDefaultLogger()
 
+export interface AskIntent {
+  action: string
+  command: string[]
+  confidence: number
+  explanation: string
+  packageName?: string | undefined
+  severity?: string | undefined
+  environment?: string | undefined
+  isDryRun?: boolean | undefined
+}
+
+export interface AskProjectContext {
+  hasPackageJson: boolean
+  dependencies?: Record<string, string> | undefined
+  devDependencies?: Record<string, string> | undefined
+}
+
 export interface OutputAskCommandOptions {
-  query: string
-  intent: {
-    action: string
-    command: string[]
-    confidence: number
-    explanation: string
-    packageName?: string | undefined
-    severity?: string | undefined
-    environment?: string | undefined
-    isDryRun?: boolean | undefined
-  }
-  context: {
-    hasPackageJson: boolean
-    dependencies?: Record<string, string> | undefined
-    devDependencies?: Record<string, string> | undefined
-  }
-  explain: boolean
+  explain?: boolean | undefined
 }
 
 /**
@@ -121,11 +122,16 @@ export function explainCommand(intent: {
 /**
  * Format the ask command output.
  */
-export function outputAskCommand(config: OutputAskCommandOptions): void {
-  const { context, explain, intent, query } = {
+export function outputAskCommand(
+  query: string,
+  intent: AskIntent,
+  context: AskProjectContext,
+  options?: OutputAskCommandOptions | undefined,
+): void {
+  const { explain = false } = {
     __proto__: null,
-    ...config,
-  } as typeof config
+    ...options,
+  } as OutputAskCommandOptions
 
   // Show the query.
   logger.log('')

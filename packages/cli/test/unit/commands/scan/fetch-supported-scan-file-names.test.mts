@@ -61,7 +61,7 @@ describe('fetchSupportedScanFileNames', () => {
     const result = await fetchSupportedScanFileNames({ orgSlug: 'test-org' })
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
     expect(result.cause).toBe('Invalid configuration')
   })
 

@@ -1,3 +1,8 @@
+# STAYS .sh, NOT .mts. It UNSETS variables in the caller's environment, so the
+# hook chain must SOURCE it — a node child process can only mutate its own env,
+# which dies with it. It also has to run before the first spawn it protects,
+# which is earlier than node is reliably on PATH (see resolve-node.sh).
+#
 # Sanitize placeholder Socket API credentials. Some shell setups export
 # `SOCKET_API_TOKEN=literal-value` (or a similar placeholder from onboarding
 # docs), which makes Socket Firewall's sfw pnpm-shim return 401 on every

@@ -43,14 +43,32 @@ export function commitSubject(message: string): string {
 }
 
 /**
- * True when a commit subject is a content-free placeholder. An empty/whitespace
- * subject also counts. Strips a single trailing period and lowercases before
- * matching the denylist.
+ * Why a commit subject is unusable, or `ok`.
+ *
+ * `empty` and `placeholder` are separated because they have DIFFERENT causes
+ * and different fixes. An empty subject is almost never someone typing nothing:
+ * it is a `-F` path that did not resolve, a truncated command line, or an
+ * editor closed without saving. Telling that author their subject looks like
+ * `wip` sends them looking for a denylist entry that was never involved.
  */
-export function isPlaceholderSubject(subject: string): boolean {
+export type CommitSubjectVerdict = 'empty' | 'ok' | 'placeholder'
+
+/**
+ * Classify a commit subject. Strips a single trailing period and lowercases
+ * before matching the denylist.
+ */
+export function commitSubjectVerdict(subject: string): CommitSubjectVerdict {
   const norm = subject.trim().replace(/\.$/, '').trim().toLowerCase()
   if (!norm) {
-    return true
+    return 'empty'
   }
-  return PLACEHOLDER_SUBJECTS.has(norm)
+  return PLACEHOLDER_SUBJECTS.has(norm) ? 'placeholder' : 'ok'
+}
+
+/**
+ * True when a commit subject is unusable, either kind. Callers that need to
+ * explain WHICH problem it is read {@link commitSubjectVerdict} instead.
+ */
+export function isPlaceholderSubject(subject: string): boolean {
+  return commitSubjectVerdict(subject) !== 'ok'
 }

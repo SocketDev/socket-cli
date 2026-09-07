@@ -449,7 +449,7 @@ Fetched repositories:
       verbose: false,
     })
     const calls = vi.mocked(findWorkspaceRoots).mock.calls
-    const call = calls[calls.length - 1]![0]
+    const call = calls[calls.length - 1]![1]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toContain('node_modules')
     expect(names).toContain('.git')
@@ -477,7 +477,7 @@ Fetched repositories:
       verbose: false,
     })
     const calls = vi.mocked(findWorkspaceRoots).mock.calls
-    const call = calls[calls.length - 1]![0]
+    const call = calls[calls.length - 1]![1]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toEqual(
       expect.arrayContaining(['node_modules', 'custom_dir']),

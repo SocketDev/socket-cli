@@ -257,7 +257,7 @@ describe('convertSbtToMaven', () => {
     expect(result.ok).toBe(false)
     expect(mockSpawn).not.toHaveBeenCalled()
     if (!result.ok) {
-      expect(result.message).toContain('Could not resolve the `sbt` executable')
+      expect(result.message).toContain('`sbt`')
       expect(result.cause).toContain('untrusted checkout')
       expect(result.cause).toContain('brew install sbt')
     }

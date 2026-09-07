@@ -43,7 +43,7 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
 import type { REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
@@ -64,7 +64,7 @@ export type HandleCreateNewScanConfig = {
   pullRequest: number
   outputKind: OutputKind
   reach: Remap<
-    ReachabilityOptions & {
+    ReachabilityConfig & {
       runReachabilityAnalysis: boolean
     }
   >
@@ -182,12 +182,7 @@ export async function handleCreateNewScan({
     : undefined
 
   const { effectiveSocketConfig, mergedReachabilityOptions } =
-    applyFullExcludePaths({
-      cwd,
-      reachabilityOptions: reach,
-      socketConfig,
-      target: targets[0]!,
-    })
+    applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!)
 
   const packagePaths = await getPackageFilesForScan(
     scanTargets,
@@ -237,7 +232,7 @@ export async function handleCreateNewScan({
 
   // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths({ target: targets[0]! }) — this guard is unreachable in practice. */
+    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!) — this guard is unreachable in practice. */
     if (!targets.length) {
       logger.fail('Reachability analysis requires at least one target')
       return
@@ -266,17 +261,19 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const reachResult = await performReachabilityAnalysis({
-      branchName,
-      cwd,
-      orgSlug,
-      packagePaths,
-      reachabilityOptions: mergedReachabilityOptions,
-      repoName,
-      resolvedPathsSidecar,
-      spinner,
-      target: firstTarget,
-    })
+    const reachResult = await performReachabilityAnalysis(
+      firstTarget,
+      mergedReachabilityOptions,
+      {
+        branchName,
+        cwd,
+        orgSlug,
+        packagePaths,
+        repoName,
+        resolvedPathsSidecar,
+        spinner,
+      },
+    )
 
     spinner.stop()
 
@@ -307,10 +304,7 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const basicsResult = await runSocketBasics({
-      cwd,
-      orgSlug,
-      repoName,
+    const basicsResult = await runSocketBasics(cwd, orgSlug, repoName, {
       spinner,
     })
 

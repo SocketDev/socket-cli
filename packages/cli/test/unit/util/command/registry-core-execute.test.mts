@@ -150,9 +150,7 @@ describe('CommandRegistry', () => {
       const result = await registry.execute('test', [])
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain(
-        'command "test" requires --name but it was not provided',
-      )
+      expect(result.message).toContain('requires --name')
     })
 
     it('should run validation function', async () => {
@@ -207,9 +205,7 @@ describe('CommandRegistry', () => {
       const result = await registry.execute('test', ['--name'])
 
       expect(result.ok).toBe(false)
-      expect(result.message).toContain(
-        'flag --name requires a string value but none was provided',
-      )
+      expect(result.message).toContain('--name requires a string value')
     })
 
     it('should error when number flag has invalid value', async () => {

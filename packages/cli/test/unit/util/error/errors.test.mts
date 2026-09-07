@@ -41,10 +41,12 @@ const __dirname = path.dirname(__filename)
 describe('Error Classes', () => {
   describe('AuthError', () => {
     it('should create an AuthError instance', () => {
-      const error = new AuthError('Authentication failed')
+      const authMessage = 'Authentication failed'
+      const error = new AuthError(authMessage)
       expect(error).toBeInstanceOf(AuthError)
       expect(error).toBeInstanceOf(Error)
-      expect(error.message).toBe('Authentication failed')
+      // Pin identity: the constructor arg is preserved unchanged.
+      expect(error.message).toBe(authMessage)
       expect(error.name).toBe('AuthError')
     })
 
@@ -63,10 +65,12 @@ describe('Error Classes', () => {
 
   describe('NetworkError', () => {
     it('should create a NetworkError with status code', () => {
-      const error = new NetworkError('Connection failed', 503)
+      const networkMessage = 'Connection failed'
+      const error = new NetworkError(networkMessage, 503)
       expect(error).toBeInstanceOf(NetworkError)
       expect(error.name).toBe('NetworkError')
-      expect(error.message).toBe('Connection failed')
+      // Pin identity: the constructor arg is preserved unchanged.
+      expect(error.message).toBe(networkMessage)
       expect(error.statusCode).toBe(503)
     })
 
@@ -216,29 +220,35 @@ describe('Error Classes', () => {
 
   describe('InputError', () => {
     it('should create an InputError with message only', () => {
-      const error = new InputError('Invalid input')
+      const inputMessage = 'Invalid input'
+      const error = new InputError(inputMessage)
       expect(error).toBeInstanceOf(InputError)
       expect(error).toBeInstanceOf(Error)
-      expect(error.message).toBe('Invalid input')
+      // Pin identity: the constructor arg is preserved unchanged.
+      expect(error.message).toBe(inputMessage)
       expect(error.body).toBeUndefined()
     })
 
     it('should create an InputError with message and body', () => {
-      const error = new InputError('Invalid JSON', '{invalid}')
-      expect(error.message).toBe('Invalid JSON')
+      const inputMessage = 'Invalid JSON'
+      const error = new InputError(inputMessage, '{invalid}')
+      // Pin identity: the constructor arg is preserved unchanged.
+      expect(error.message).toBe(inputMessage)
       expect(error.body).toBe('{invalid}')
     })
   })
 
   describe('TimeoutError', () => {
     it('should create TimeoutError with timeout and elapsed times', () => {
-      const error = new TimeoutError('Request timed out', {
+      const timeoutMessage = 'Request timed out'
+      const error = new TimeoutError(timeoutMessage, {
         timeoutMs: 30_000,
         elapsedMs: 35_000,
       })
       expect(error).toBeInstanceOf(TimeoutError)
       expect(error.name).toBe('TimeoutError')
-      expect(error.message).toBe('Request timed out')
+      // Pin identity: the constructor arg is preserved unchanged.
+      expect(error.message).toBe(timeoutMessage)
       expect(error.timeoutMs).toBe(30_000)
       expect(error.elapsedMs).toBe(35_000)
     })

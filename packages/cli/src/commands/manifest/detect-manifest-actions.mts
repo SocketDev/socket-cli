@@ -55,8 +55,7 @@ export async function detectManifestActions(
     // (e.g. `mobile/MODULE.bazel`). The extractor walks the same tree with the
     // same prune policy, so detection matching it never flags a workspace the
     // extraction cannot find.
-    findWorkspaceRoots({
-      cwd,
+    findWorkspaceRoots(cwd, {
       ignoreDirNames: DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
       ignoreDirPrefixes: DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
     }).length > 0

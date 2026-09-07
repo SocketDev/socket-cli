@@ -31,12 +31,6 @@ const logger = getDefaultLogger()
 // semantic-match fallback (currently a no-op; see onnx-match.mts).
 const PATTERN_MATCH_THRESHOLD = 0.6
 
-export interface HandleAskOptions {
-  query: string
-  execute: boolean
-  explain: boolean
-}
-
 export interface ParsedIntent {
   action: string
   command: string[]
@@ -192,14 +186,22 @@ export async function getProjectContext(cwd: string): Promise<{
   }
 }
 
+export interface HandleAskOptions {
+  execute?: boolean | undefined
+  explain?: boolean | undefined
+}
+
 /**
  * Main handler for ask command.
  */
-export async function handleAsk(config: HandleAskOptions): Promise<void> {
-  const { execute, explain, query } = {
+export async function handleAsk(
+  query: string,
+  options?: HandleAskOptions | undefined,
+): Promise<void> {
+  const { execute = false, explain = false } = {
     __proto__: null,
-    ...config,
-  } as typeof config
+    ...options,
+  } as HandleAskOptions
 
   // Parse the intent.
   const intent = await parseIntent(query)
@@ -208,12 +210,7 @@ export async function handleAsk(config: HandleAskOptions): Promise<void> {
   const context = await getProjectContext(process.cwd())
 
   // Show what we understood.
-  outputAskCommand({
-    query,
-    intent,
-    context,
-    explain,
-  })
+  outputAskCommand(query, intent, context, { explain })
 
   // If not executing, just show the command.
   if (!execute) {

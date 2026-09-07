@@ -1,25 +1,60 @@
 # Shared pre-commit step runners, sourced by .git-hooks/fleet/pre-commit so the
 # error-visibility + budget-bounding logic lives in ONE place.
+#
+# STAYS .sh, NOT .mts. The fleet writes TypeScript everywhere above the node
+# boundary; this file sits below it. Two reasons it cannot move:
+#   1. The hook dispatchers are pure POSIX sh and SOURCE this file, so its
+#      functions have to exist in the caller's shell. A node script cannot
+#      export a shell function back to its parent.
+#   2. It bounds a step and, on timeout, kills the whole PROCESS GROUP —
+#      the sfw pnpm-shim plus every descendant. That is job-control, which
+#      the shell owns.
+# Its own callee, resolve-node.sh, is what puts node on PATH in the first
+# place, so this layer runs before `node` is reliably callable.
 
-# Error-visibility helper. When lint/test fails, harness output often
-# shows only a final "Failed with non-blocking status code" line — the
-# actual error is buried thousands of lines up the log and gets clipped
-# by the agent's stdout limits. Tee each step's output to a tempfile,
-# tail it on failure with a clear marker so the operator (or agent)
-# can see what broke without scrolling.
+# V8 bytecode cache for every step this file runs. Node caches the compiled
+# form of each module it loads and reuses it on the next spawn, and a commit
+# spawns the same lint and test entrypoints over and over.
+#
+# THE ONE PLACE the fleet names this directory. `.claude/hooks/fleet/index.cjs`
+# calls enableCompileCache() with no argument so it inherits this value rather
+# than repeating the literal; anything else that wants the cache reads
+# NODE_COMPILE_CACHE too. Node keys entries by source path, so one directory
+# shared across checkouts is correct rather than merely tolerable.
+#
+# In os.tmpdir(), not the repo: scratch never goes in the tracked tree, and a
+# temp path cannot write a stray cache into the cascade payload.
+#
+# Measured on this repo it is a wash - a warm staged test run came out
+# indistinguishable from an uncached one, because vitest's cost is vite
+# transform and worker spawn rather than JS compile. It stays because it costs
+# nothing, and the balance shifts as more of a step's work becomes plain module
+# loading.
+if [ -z "$NODE_COMPILE_CACHE" ]; then
+  NODE_COMPILE_CACHE="${TMPDIR:-/tmp}/socket/compile-cache"
+  export NODE_COMPILE_CACHE
+fi
+
+CHECK_OUTPUT_HELPER=.git-hooks/_shared/check-output.mts
+
+show_step_output() {
+  if ! node "$CHECK_OUTPUT_HELPER" "$status" "$step_log"; then
+    cat "$step_log" >&2
+  fi
+}
+
 run_step() {
   step_name=$1
   shift
   step_log=$(mktemp -t "pre-commit-${step_name}.XXXXXX") || step_log=/tmp/pre-commit-step.log
-  if "$@" 2>&1 | tee "$step_log"; then
+  if "$@" >"$step_log" 2>&1; then
     status=0
   else
     status=$?
   fi
+  show_step_output
   if [ "$status" -ne 0 ]; then
     printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
-    printf 'Last 60 lines of output:\n\n'
-    tail -60 "$step_log"
     printf '\n========== full log: %s ==========\n' "$step_log"
   else
     rm -f "$step_log"
@@ -141,9 +176,12 @@ run_step_bounded() {
     ticks=$((ticks + 1))
     elapsed=$((ticks / 5))
   done
-  wait "$job"
-  status=$?
-  cat "$step_log" 2>/dev/null
+  if wait "$job"; then
+    status=0
+  else
+    status=$?
+  fi
+  show_step_output
   if [ "$status" -ne 0 ]; then
     printf '\n========== pre-commit: %s FAILED (exit %s) ==========\n' "$step_name" "$status"
     printf '\n========== full log: %s ==========\n' "$step_log"

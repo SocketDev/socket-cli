@@ -34,8 +34,8 @@ describe('finalize-tier1-scan', () => {
       expect(mockSendApiRequest).toHaveBeenCalledTimes(1)
       expect(mockSendApiRequest).toHaveBeenCalledWith(
         'tier1-reachability-scan/finalize',
+        'POST',
         {
-          method: 'POST',
           body: {
             tier1_reachability_scan_id: 'tier1-scan-id-123',
             report_run_id: 'scan-id-456',

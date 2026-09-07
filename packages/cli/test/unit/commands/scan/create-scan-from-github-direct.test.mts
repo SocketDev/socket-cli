@@ -107,7 +107,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('GitHub rate limit exceeded')
+        expect(result.cause).toBe('fail')
       }
     })
 
@@ -124,7 +124,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Default branch not found')
+        expect(result.cause).toContain('org/r')
       }
     })
   })
@@ -196,7 +196,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Invalid tree response')
+        expect(result.cause).toContain('org/r')
       }
     })
   })
@@ -261,7 +261,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('No commits found')
+        expect(result.cause).toContain('org/r')
       }
     })
 
@@ -277,7 +277,7 @@ describe('create-scan-from-github (direct)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Missing commit SHA')
+        expect(result.cause).toContain('org/r')
       }
     })
 
@@ -311,7 +311,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await selectFocus(['r1', 'r2'])
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Canceled by user')
+        expect(result.cause).toBe('User chose to cancel the action')
       }
     })
   })
@@ -328,7 +328,7 @@ describe('create-scan-from-github (direct)', () => {
       const result = await makeSure(50)
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('User canceled')
+        expect(result.cause).toBe('Action canceled by user')
       }
     })
   })
@@ -346,7 +346,7 @@ describe('create-scan-from-github (direct)', () => {
       )
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Download Failed')
+        expect(result.cause).toContain('404')
       }
     })
 
@@ -362,7 +362,7 @@ describe('create-scan-from-github (direct)', () => {
       )
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Download Failed')
+        expect(result.cause).toContain('ECONNREFUSED')
       }
     })
   })

@@ -221,7 +221,7 @@ async function main() {
 
   // Find all GitHub-released tools.
   const githubTools = Object.entries(externalTools)
-    .filter(([, value]) => value.release === 'asset')
+    .filter(([, value]) => value.origin === 'gh-asset')
     .map(([key, value]) => ({ key, ...value }))
 
   if (toolFilter) {
