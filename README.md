@@ -1,5 +1,9 @@
 # <img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark-light.svg" width="96" height="96" alt="Socket CLI"><br>Socket CLI
 
+<div align="center">
+  <img width="160" height="160" alt="socket-cli" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark.svg">
+</div>
+
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 <img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/coverage.svg" width="90" height="20" alt="Coverage" />
 
