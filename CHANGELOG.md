@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.168](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.168) - 2026-09-07
 
 ### Changed
-- Updated the Coana CLI to v `15.10.37`.
+- Updated the Coana CLI to v `15.10.38`.
 
 ## [1.1.167](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.167) - 2026-09-03
 
