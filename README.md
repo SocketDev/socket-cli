@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark-light.svg" width="96" height="96" alt="Socket CLI"><br>Socket CLI
+# Socket CLI
 
 <div align="center">
   <img width="160" height="160" alt="socket-cli" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark.svg">
