@@ -107,17 +107,7 @@ export function ensureWorkspacePackages(
 }
 
 /**
- * Step 1: fetch + apply the pinned bundle when not current (best-effort).
- *
- * Guards against downgrading a newer applied pack: `maybeNotifyUpdate` (which
- * runs AFTER this in `runPrepare`) opportunistically applies the newest ref it
- * resolves, but does NOT update the config pin. Without this guard, the next
- * install's `fleet.mjs --if-current` sees `appliedRef !== pinnedRef` and
- * re-applies the OLD pin, reverting the auto-update — wasted work every cycle.
- * The guard skips the fetch when the applied ref is at or ahead of the pin, so
- * a newer applied pack is never downgraded to the pin outside CI. CI behavior
- * is unchanged: `maybeNotifyUpdate` is suppressed there, so the applied ref
- * always matches the pin and the guard is never consulted.
+ * Fetch the pinned bundle unless an equal or newer pack is already applied.
  */
 export function fetchBundle(): void {
   const fleet = path.join(HERE, 'fleet.mjs')
@@ -179,12 +169,8 @@ const APPLIED_MARKER_PATH = '.cache/fleet/socket-wheelhouse/bundle-applied'
  * `git merge-base --is-ancestor` path the stale-template guard in `fleet.mjs`
  * uses, but checking whether the PIN is an ancestor of the APPLIED ref). When
  * no sibling checkout is available (a thin member), ancestry cannot be proven
- * without a network call, so this falls back to trusting the applied ref:
- * outside CI the only writer that diverges the applied ref from the pin is
- * `maybeNotifyUpdate`, which exclusively applies newer refs, so a divergent
- * applied ref is newer by construction. In CI `maybeNotifyUpdate` is
- * suppressed, so the applied ref always matches the pin and this function is
- * never consulted.
+ * without a network call, so local installs preserve the applied pack.
+ * CI requires a verified ancestry relationship or an exact pin match.
  */
 export function isAppliedRefCurrentOrNewer(
   pinnedRef: string | undefined,
@@ -259,22 +245,7 @@ const NOTICE_CHECK_TTL_MS = 864e5
 const OFFLINE_RETRY_TTL_MS = 36e5
 
 /**
- * Opportunistic update: when this cheaply learns a newer release exists, it
- * APPLIES that ref and then fires the throttled boxed notice on STDERR via the
- * fetcher's own notice machinery.
- *
- * Checking and then telling the operator to go re-cascade left every member
- * stale until somebody acted on a message, so the check does the update it
- * discovered. `fetchBundle` still applies the PINNED ref on every install; this
- * is what moves the pin forward.
- *
- * Best-effort throughout: offline, no gh, or a failed apply is swallowed so a
- * `pnpm install` never breaks on it, and the run continues.
- *
- * The CI-suppress, opt-out, and 24h throttle are checked BEFORE the GitHub
- * lookup, so they gate the apply as well as the display: no CI runner updates
- * itself, an opted-out operator is never touched, and no member updates more
- * than once a day.
+ * Report newer releases without changing the cascaded bundle pin or payload.
  */
 export async function maybeNotifyUpdate(): Promise<void> {
   const fleet = path.join(HERE, 'fleet.mjs')
@@ -317,22 +288,6 @@ export async function maybeNotifyUpdate(): Promise<void> {
     if (!cfg.ref) {
       return
     }
-    // Gate the NETWORK CALL, not just the display. `resolveNewestRef` reaches
-    // the GHCR registry (two anonymous requests: a pull token, then the
-    // `latest` manifest), and the CI-suppress / opt-out / 24h throttle inside
-    // `shouldShowNotice` ran AFTER it — so every `pnpm install`, in every CI
-    // job, paid for a lookup whose result was then discarded. At fleet scale
-    // that is the shape that earns an anonymous-pull rate limit.
-    //
-    // In CI and under the opt-out nothing may be applied or printed, so the
-    // call is pure waste and is skipped outright. Otherwise honor the same 24h
-    // window the display uses.
-    //
-    // The tradeoff is deliberate: a release cut inside the window is not picked
-    // up until the window closes. That costs freshness, never correctness — the
-    // PINNED bundle is still applied on every install by `fetchBundle`
-    // (`fleet.mjs --if-current`), in CI and locally alike, so a member is never
-    // running unverified or half-applied scaffolding while it waits.
     if (process.env['CI'] || process.env[UPDATE_NOTIFIER_OPT_OUT_ENV]) {
       return
     }
@@ -345,51 +300,19 @@ export async function maybeNotifyUpdate(): Promise<void> {
     }
     const repo = 'SocketDev/socket-wheelhouse'
     const newestRef = await resolveNewestRef(repo)
-    // STAMP EVERY ANSWER, including the two that change nothing.
-    //
-    // Writing it only from `maybeShowUpdateNotice` below would reach the store
-    // only when an update was actually found. For a member that is already
-    // current - the steady state, and the overwhelmingly common one -
-    // `lastCheckMs` would never advance, the TTL gate above would never fire,
-    // and the registry lookup would run on EVERY `pnpm install`. The throttle
-    // only ever engaged for members that were behind, which are the ones least
-    // in need of throttling.
-    //
-    // A lookup that answered nothing is stamped short (see
-    // OFFLINE_RETRY_TTL_MS) so an outage costs an hour of freshness, not a day.
+    if (newestRef !== undefined && newestRef !== cfg.ref) {
+      maybeShowUpdateNotice({
+        dest: REPO_ROOT,
+        newestRef,
+        updateAvailable: true,
+      })
+    }
     writeNoticeStore(REPO_ROOT, {
       lastCheckMs:
         newestRef === undefined
           ? Date.now() - NOTICE_CHECK_TTL_MS + OFFLINE_RETRY_TTL_MS
           : Date.now(),
       lastSeenRef: newestRef,
-    })
-    if (newestRef === undefined || newestRef === cfg.ref) {
-      return
-    }
-    // A newer tag exists than the pinned ref, so APPLY it rather than only
-    // saying so. A notice naming a re-cascade the operator has to run by hand is
-    // a to-do item: it costs a read on every install and the member stays stale
-    // until somebody acts on it.
-    //
-    // Safe because the apply is the SAME verified path `fetchBundle` uses —
-    // every file's SHA-256 checked against the manifest, nothing written unless
-    // the whole set matches — so applying a newer ref is no riskier than
-    // applying the pinned one.
-    //
-    // Everything that gates the LOOKUP gates the apply: CI, the opt-out env, and
-    // the 24h window are all checked above. So this cannot fire on a CI runner,
-    // cannot fire for an operator who opted out, and cannot fire more than once
-    // a day. The notice still prints, now reporting what happened rather than
-    // what to go do.
-    const applied = tryRun('node', [fleet, '--ref', newestRef])
-    if (!applied) {
-      log(`bundle update to ${newestRef} reported a problem — continuing`)
-    }
-    maybeShowUpdateNotice({
-      dest: REPO_ROOT,
-      newestRef,
-      updateAvailable: true,
     })
   } catch {
     // Best-effort: offline / no gh / a status hard-fail never breaks install.
