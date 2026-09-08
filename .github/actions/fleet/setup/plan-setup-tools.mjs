@@ -121,6 +121,7 @@ export function resolveSfwSelection({ probe, socketApiToken, toolsFile }) {
   const shape = sfwShape(probe(toolsFile, [...nsKeys, 'sfw-free', 'version']))
   const { flavor, repo } = selectSfwFlavor(socketApiToken)
   return {
+    __proto__: null,
     entryPath: sfwEntryPath(shape, flavor),
     flavor,
     ns,
@@ -138,6 +139,7 @@ export function resolveSfwSelection({ probe, socketApiToken, toolsFile }) {
  */
 export function fallbackSfwSelection(shape) {
   return {
+    __proto__: null,
     entryPath: sfwEntryPath(shape, 'free'),
     flavor: 'free',
     repo: 'SocketDev/sfw-free',
@@ -351,7 +353,7 @@ function main() {
 }
 
 // Realpath both sides — the naive argv[1] comparison is symlink-fragile, the
-// same pitfall scripts/fleet/_shared/is-main-module.mts documents; that
+// same pitfall scripts/fleet/process/is-main-module.mts documents; that
 // helper is .mts and this script must stay importless-runnable on system
 // Node, so the comparison is inlined.
 function isEntrypoint(invokedPath) {

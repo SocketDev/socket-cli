@@ -1,4 +1,4 @@
-name: ✨ on-device model cache
+name: ✨ Weekly Odai Cache
 
 # Fleet-canonical on-device model cache. The fleet's keyless-AI lane (the
 # weekly-update decision leg, every odai-driven assist) needs the on-device

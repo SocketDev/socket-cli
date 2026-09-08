@@ -18,6 +18,10 @@ description: 'Aggregate: checkout + setup environment + install dependencies'
 #   - ./.github/actions/install
 
 inputs:
+  cache:
+    description: 'Restore and save the pnpm store cache'
+    required: false
+    default: 'true'
   checkout:
     description: 'Whether to checkout code'
     required: false
@@ -183,6 +187,7 @@ runs:
         esac
 
     - name: Cache pnpm store
+      if: inputs.cache == 'true'
       # Restore-only. Exports PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY /
       # PNPM_STORE_CACHE_HIT via $GITHUB_ENV for the save step below.
       uses: ./.github/actions/fleet/cache-pnpm-store
@@ -222,7 +227,7 @@ runs:
       # when the restore never ran (empty key, e.g. setup failed).
       # PNPM_STORE_PATH / PNPM_STORE_CACHE_KEY are job env exported by
       # cache-pnpm-store — read from env, never `${{ }}` inside the run body.
-      if: always() && env.PNPM_STORE_CACHE_KEY != '' && env.PNPM_STORE_CACHE_HIT != 'true'
+      if: always() && inputs.cache == 'true' && env.PNPM_STORE_CACHE_KEY != '' && env.PNPM_STORE_CACHE_HIT != 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |

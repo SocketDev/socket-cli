@@ -1,5 +1,5 @@
 # Fleet-canonical fuzz workflow, one file for every toolchain. Edit HERE in
-# template/base and cascade — it reaches every member, and each leg self-skips
+# template/base/universal and cascade — it reaches every member, and each leg self-skips
 # when the repo carries no marker for it, so a pure-docs repo pays one skipped
 # workflow and a multi-implementation repo (Rust + Go + C++ + TypeScript in
 # one tree) fuzzes all of them in the same run.
@@ -31,7 +31,7 @@
 # Rust repo contract: `fuzz/run.sh <target> [seconds]` and
 # `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
 # optional and runs only where it exists.
-name: fuzz
+name: 🎯 Weekly Fuzz
 
 # Fuzzing is NOT a per-commit gate, which is why there is no push or
 # pull_request trigger here. A randomized harness is budgeted by wall-clock, so
@@ -177,6 +177,11 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+      - name: Hydrate fleet actions
+        uses: ./.github/actions/fleet/checkout
+        with:
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       - name: Rust toolchain
         uses: ./.github/actions/fleet/setup-rust-toolchain
         with:
@@ -376,6 +381,11 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
+      - name: Hydrate fleet actions
+        uses: ./.github/actions/fleet/checkout
+        with:
+          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
       - name: Go toolchain
         uses: ./.github/actions/fleet/setup-go-toolchain
         with:

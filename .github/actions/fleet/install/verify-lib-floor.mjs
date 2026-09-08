@@ -111,9 +111,9 @@ function truncateChars(value, max) {
  */
 export function selectLibPackage(stableVersion, libVersion) {
   if (stableVersion !== '') {
-    return { actualVersion: stableVersion, libPkg: STABLE_PKG }
+    return { __proto__: null, actualVersion: stableVersion, libPkg: STABLE_PKG }
   }
-  return { actualVersion: libVersion, libPkg: LIB_PKG }
+  return { __proto__: null, actualVersion: libVersion, libPkg: LIB_PKG }
 }
 
 /**
@@ -123,15 +123,21 @@ export function selectLibPackage(stableVersion, libVersion) {
  */
 export function chooseFloor(npmLatest, hardcodedFloor = HARDCODED_FLOOR) {
   if (npmLatest !== '' && isPlainSemver(npmLatest)) {
-    return { minSource: 'latest published on npm', minVersion: npmLatest }
+    return {
+      __proto__: null,
+      minSource: 'latest published on npm',
+      minVersion: npmLatest,
+    }
   }
   if (npmLatest !== '') {
     return {
+      __proto__: null,
       minSource: `hardcoded floor (npm view returned non-semver: ${truncateChars(npmLatest, 80)})`,
       minVersion: hardcodedFloor,
     }
   }
   return {
+    __proto__: null,
     minSource: 'hardcoded floor (npm query failed)',
     minVersion: hardcodedFloor,
   }
@@ -200,6 +206,7 @@ export function planVerification({
   const { actualVersion, libPkg } = selectLibPackage(stableVersion, libVersion)
   if (actualVersion === '') {
     return {
+      __proto__: null,
       exitCode: 1,
       stderrText: notResolvableText(cwd, hardcodedFloor),
       stdoutText: '',
@@ -211,6 +218,7 @@ export function planVerification({
   // clear error rather than a poisoned comparison.
   if (!isPlainSemver(actualVersion)) {
     return {
+      __proto__: null,
       exitCode: 1,
       stderrText: nonSemverActualText(libPkg, actualVersion),
       stdoutText: '',
@@ -218,6 +226,7 @@ export function planVerification({
   }
   if (semverLt(actualVersion, minVersion)) {
     return {
+      __proto__: null,
       exitCode: 1,
       stderrText: floorViolationText({
         actualVersion,
@@ -230,6 +239,7 @@ export function planVerification({
     }
   }
   return {
+    __proto__: null,
     exitCode: 0,
     stderrText: '',
     stdoutText: `${libPkg} ${actualVersion} >= ${minVersion} (${minSource})\n`,
@@ -289,7 +299,7 @@ function main() {
 }
 
 // Realpath both sides — the naive argv[1] comparison is symlink-fragile, the
-// same pitfall scripts/fleet/_shared/is-main-module.mts documents; that
+// same pitfall scripts/fleet/process/is-main-module.mts documents; that
 // helper is .mts and this script must stay importless-runnable on system
 // Node, so the comparison is inlined.
 function isEntrypoint(invokedPath) {

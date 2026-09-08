@@ -5,7 +5,7 @@ description: >-
   to contents:read on the payload repo only — the least privilege the bootstrap
   fetch (`gh release download` in scripts/repo/bootstrap/fleet.mjs) needs, and
   strictly narrower than the sibling github-release-app-token (contents:write).
-  Fleet-shared: authored in socket-wheelhouse's template/base, cascaded fleet-
+  Fleet-shared: authored in socket-wheelhouse's template/base/universal, cascaded fleet-
   wide, and consumed via
   `uses: ./.github/actions/fleet/github-payload-app-token`.
 

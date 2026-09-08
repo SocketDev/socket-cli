@@ -16,7 +16,7 @@ name: 🧹 Prune Actions Storage
 # rebuilds cold.
 #
 # Byte-identical across the fleet (cascaded); edit
-# template/base/.github/workflows/prune-workflow-runs.yml and re-cascade via
+# template/base/universal/.github/workflows/prune-workflow-runs.yml and re-cascade via
 # `pnpm run sync`.
 
 on:

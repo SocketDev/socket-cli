@@ -99,12 +99,14 @@ export function parseComponents(body) {
     root = JSON.parse(body)
   } catch (error) {
     return {
+      __proto__: null,
       entries,
       error: `components.json did not parse — ${String(error)}`,
     }
   }
   if (root === null || typeof root !== 'object' || Array.isArray(root)) {
     return {
+      __proto__: null,
       entries,
       error: 'components.json root is not an object — cannot read components',
     }
@@ -112,6 +114,7 @@ export function parseComponents(body) {
   const components = 'components' in root ? root.components : []
   if (!Array.isArray(components)) {
     return {
+      __proto__: null,
       entries,
       error: 'components.json "components" is not a list — cannot iterate',
     }
@@ -124,13 +127,14 @@ export function parseComponents(body) {
       typeof component.status !== 'string'
     ) {
       return {
+        __proto__: null,
         entries,
         error: `components.json entry ${entries.length} lacks a string id/status — reporting from the ${entries.length} component(s) before it`,
       }
     }
     entries.push({ id: component.id, status: component.status })
   }
-  return { entries }
+  return { __proto__: null, entries }
 }
 
 /**
@@ -159,7 +163,12 @@ export function assessComponents(entries) {
       messages.push(`${name}: ${status}`)
     }
   }
-  return { messages: messages.join(' '), worstSeverity, worstStatus }
+  return {
+    __proto__: null,
+    messages: messages.join(' '),
+    worstSeverity,
+    worstStatus,
+  }
 }
 
 /**
@@ -169,6 +178,7 @@ export function assessComponents(entries) {
  */
 export function planUnreachable() {
   return {
+    __proto__: null,
     exitCode: 0,
     lines: [
       '::warning title=GitHub Status::githubstatus.com unreachable; CI results may be unreliable',
@@ -192,6 +202,7 @@ export function planReport(assessment, failOnIncident) {
   if (messages === '') {
     const summary = 'All monitored GitHub components operational'
     return {
+      __proto__: null,
       exitCode: 0,
       lines: [`ℹ️  ${summary}`],
       outputs: { status: 'operational', summary },
@@ -208,7 +219,12 @@ export function planReport(assessment, failOnIncident) {
     )
     exitCode = 1
   }
-  return { exitCode, lines, outputs: { status: worstStatus, summary } }
+  return {
+    __proto__: null,
+    exitCode,
+    lines,
+    outputs: { status: worstStatus, summary },
+  }
 }
 
 // The default output sink: the step-scoped GITHUB_OUTPUT file, the
@@ -276,7 +292,7 @@ async function main() {
 }
 
 // Realpath both sides — the naive argv[1] comparison is symlink-fragile, the
-// same pitfall scripts/fleet/_shared/is-main-module.mts documents; that
+// same pitfall scripts/fleet/process/is-main-module.mts documents; that
 // helper is .mts and this script must stay importless-runnable on system
 // Node, so the comparison is inlined.
 function isEntrypoint(invokedPath) {

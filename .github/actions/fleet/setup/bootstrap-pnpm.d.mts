@@ -17,9 +17,7 @@ export interface NpmDist {
   tarball: string
 }
 
-export declare function extractNpmDist(
-  manifest: unknown,
-): NpmDist | undefined
+export declare function extractNpmDist(manifest: unknown): NpmDist | undefined
 
 export type SemverTriple = readonly [number, number, number]
 

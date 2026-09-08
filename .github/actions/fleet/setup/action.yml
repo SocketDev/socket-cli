@@ -177,7 +177,7 @@ runs:
           # sync-package-manager-pins.mts) and, unlike external-tools.json
           # itself, always tracked, even on a thin member. Corepack and its
           # `packageManager` field are retired fleet-wide (no-corepack-guard,
-          # docs/agents.md/fleet/tooling.md) — this is deliberately the ONLY
+          # docs/fleet/agents.md/tooling.md) — this is deliberately the ONLY
           # bootstrap source. This pnpm only has to be good enough to run the
           # `pnpm install` that fetches TOOLS_FILE — every later step
           # re-resolves pnpm from $GITHUB_PATH set below, so nothing
@@ -243,19 +243,17 @@ runs:
         # external-tools.json — it IS the source of truth for the pnpm
         # version in CI. Corepack and its exact `packageManager` field are
         # retired fleet-wide (no-corepack-guard,
-        # docs/agents.md/fleet/tooling.md); package.json's
+        # docs/fleet/agents.md/tooling.md); package.json's
         # `devEngines.packageManager` is the enforced pin instead — a
         # major-bounded SemVer RANGE derived from external-tools.json by
         # sync-package-manager-pins.mts, meant for dev machines, and it
         # routinely differs from the exact version a consumer's action pin
-        # resolves to. With pnpm managing package-manager versions (the
-        # default), that difference makes every `pnpm install` hard-fail with
-        # "configured to use X, your current pnpm is Y". Turn the management
-        # off so the action-pinned binary always wins; the floor a repo
+        # resolves to. Each member's pnpm-workspace.yaml carries
+        # `pmOnFail: warn`, so that difference emits a warning rather than a
+        # hard-fail — the action-pinned binary always wins. The floor a repo
         # actually cares about is its `engines.pnpm` range, and pnpm versions
         # are reconciled by cascade, not by failing CI on a version outside
         # the devEngines range.
-        echo "npm_config_manage_package_manager_versions=false" >> "${GITHUB_ENV:-/dev/null}"
         # Optional pnpm provenance for downstream steps and Docker builds —
         # lets a consumer pass `--build-arg PNPM_VERSION` sourced from the
         # SOCKET_TOOL_PNPM_VERSION env var instead of a drift-prone ARG
@@ -330,6 +328,36 @@ runs:
         # pin to the same Node — SOCKET_TOOL_NODE_VERSION is load-bearing and
         # exports unconditionally.
         echo "SOCKET_TOOL_NODE_VERSION=$NODE_VERSION" >> "${GITHUB_ENV:-/dev/null}"
+
+    - name: Install uv
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        set -euo pipefail
+        TOOLS_FILE="${GITHUB_WORKSPACE}/scripts/fleet/setup/external-tools.json"
+        JQ="${GITHUB_ACTION_PATH}/../_shared/jq.mjs"
+        INSTALL_TOOL="${GITHUB_ACTION_PATH}/../_shared/install-tool.mjs"
+        PLATFORM_KEY="$(node "${GITHUB_ACTION_PATH}/../_shared/platform-key.mjs")"
+        export TOOLS_FILE
+        NS="$(node "${GITHUB_ACTION_PATH}/plan-setup-tools.mjs" namespace)"
+        UV_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS uv version)"
+        ASSET="$(node "$JQ" "$TOOLS_FILE" $NS uv platforms "$PLATFORM_KEY" asset)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS uv platforms "$PLATFORM_KEY" integrity)"
+        UV_REPOSITORY="$(node "$JQ" "$TOOLS_FILE" $NS uv repository)"
+        UV_REPOSITORY="${UV_REPOSITORY#github:}"
+        UV_DIR="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}/socket-uv/${UV_VERSION}-${PLATFORM_KEY}"
+        ASSET_STEM="${ASSET%.tar.gz}"
+        ASSET_STEM="${ASSET_STEM%.zip}"
+        UV_BIN_DIR="${UV_DIR}/${ASSET_STEM}"
+        UV_BIN="${UV_BIN_DIR}/uv"
+        [[ "$ASSET" == *.zip ]] && UV_BIN="${UV_BIN}.exe"
+        if [ ! -x "$UV_BIN" ]; then
+          node "$INSTALL_TOOL" "https://github.com/${UV_REPOSITORY}/releases/download/${UV_VERSION}/${ASSET}" "$INTEGRITY" "$UV_DIR"
+        fi
+        if [ ! -x "$UV_BIN" ]; then
+          echo "uv installation failed at ${UV_BIN}: expected an executable. Check the pinned release asset." >&2
+          exit 1
+        fi
+        echo "$UV_BIN_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
     - name: Download sfw
       shell: bash
@@ -742,7 +770,7 @@ runs:
         # The bypass list itself lives in the wheelhouse-canonical
         # location `.config/fleet/sfw-bypass-list.txt` (action_path is
         # the running repo checkout (inlined local action);
-        # `../../../../.config/fleet/` walks up out of
+        # `../../../../.config/fleet` walks up out of
         # `.github/actions/fleet/setup/` to repo root). Every fleet repo gets
         # a byte-identical copy via sync-scaffolding, so socket-btm's
         # install-sfw.mts can read its own local copy at the same path.

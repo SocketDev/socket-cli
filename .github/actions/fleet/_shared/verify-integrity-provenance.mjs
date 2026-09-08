@@ -76,6 +76,52 @@ function parseSriValue(value) {
 // each with a `files` array of `{ filename, sha256, … }`; rustup-style JSON
 // sidecars are a single object. When no assetFilename is given, the first
 // hex checksum found is returned. Returns the bare hex string or ''.
+// The hex digest carried directly by one object — a leaf checksum node has a
+// `sha256` (or `sha512`) field holding bare hex. '' when it has neither.
+function readLeafChecksumHex(data) {
+  if (typeof data.sha256 === 'string' && /^[0-9a-f]+$/i.test(data.sha256)) {
+    return data.sha256
+  }
+  if (typeof data.sha512 === 'string' && /^[0-9a-f]+$/i.test(data.sha512)) {
+    return data.sha512
+  }
+  return ''
+}
+
+// The asset name a leaf checksum node claims, under whichever of the three
+// spellings the publisher used. '' when the node names no file at all.
+function readSiblingAssetName(data) {
+  if (typeof data.filename === 'string') {
+    return data.filename
+  }
+  if (typeof data.name === 'string') {
+    return data.name
+  }
+  if (typeof data.path === 'string') {
+    return data.path
+  }
+  return ''
+}
+
+// The verdict for ONE node treated as a leaf checksum object: undefined when
+// it is not a leaf (so the caller keeps walking), the hex when it matches the
+// wanted asset, '' when it is a leaf naming a DIFFERENT asset (the caller
+// stops — a named mismatch is an answer, not a miss).
+function matchLeafChecksum(data, assetFilename) {
+  const hex = readLeafChecksumHex(data)
+  if (!hex) {
+    return undefined
+  }
+  if (!assetFilename) {
+    return hex
+  }
+  const name = readSiblingAssetName(data)
+  if (!name || basename(name) === assetFilename) {
+    return hex
+  }
+  return ''
+}
+
 function findShaInJson(data, assetFilename) {
   if (typeof data !== 'object' || data === null) {
     return ''
@@ -89,29 +135,9 @@ function findShaInJson(data, assetFilename) {
     }
     return ''
   }
-  // A leaf checksum object: has a sha256 (or sha512) field.
-  const hex =
-    typeof data.sha256 === 'string' && /^[0-9a-f]+$/i.test(data.sha256)
-      ? data.sha256
-      : typeof data.sha512 === 'string' && /^[0-9a-f]+$/i.test(data.sha512)
-        ? data.sha512
-        : ''
-  if (hex) {
-    if (!assetFilename) {
-      return hex
-    }
-    const name =
-      typeof data.filename === 'string'
-        ? data.filename
-        : typeof data.name === 'string'
-          ? data.name
-          : typeof data.path === 'string'
-            ? data.path
-            : ''
-    if (!name || basename(name) === assetFilename) {
-      return hex
-    }
-    return ''
+  const leaf = matchLeafChecksum(data, assetFilename)
+  if (leaf !== undefined) {
+    return leaf
   }
   // Recurse into nested objects / arrays (release.files, etc.).
   const keys = Object.keys(data)
@@ -324,7 +350,121 @@ export function checkStaleness(dateString, options = {}) {
       ? opts.maxAgeDays
       : 90
   const ageDays = Math.floor((now.getTime() - pinned) / 86_400_000)
-  return { stale: ageDays > maxAgeDays, ageDays }
+  return { __proto__: null, stale: ageDays > maxAgeDays, ageDays }
+}
+
+// ── provenance stages (each returns a ProvenanceResult, or undefined to
+//    mean "this stage found nothing to report") ───────────────────────────
+
+/**
+ * Fetch the publisher's checksum document. Returns `{ text }` on success and
+ * `{ failure }` carrying the ProvenanceResult when the request never produced
+ * a usable body.
+ */
+async function fetchPublisherChecksumBody(src, fetchImpl) {
+  let res
+  try {
+    // pre-setup-node action: built-in fetch only.
+    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dep-0
+    res = await fetchImpl(src, { redirect: 'follow' })
+  } catch (e) {
+    return {
+      __proto__: null,
+      failure: {
+        ok: false,
+        status: 'fail',
+        reason: `provenance fetch failed for ${src}: ${e?.message ?? e}`,
+      },
+    }
+  }
+  if (!res || !res.ok) {
+    return {
+      __proto__: null,
+      failure: {
+        ok: false,
+        status: 'fail',
+        reason: `provenance fetch failed: HTTP ${res?.status ?? '?'} for ${src}`,
+      },
+    }
+  }
+  return { __proto__: null, text: await res.text() }
+}
+
+/**
+ * The live provenance check: pull the publisher's current checksum for the
+ * asset and compare it to the pinned `value`. Returns a failing
+ * ProvenanceResult, or undefined when the pin still matches the publisher.
+ */
+async function verifyPublisherChecksum(src, value, o) {
+  const assetFilename = o.assetFilename || ''
+  const fetchImpl = o.fetch || fetch
+  const body = await fetchPublisherChecksumBody(src, fetchImpl)
+  if (body.failure) {
+    return body.failure
+  }
+  const fetched = parseChecksumFile(body.text, { assetFilename })
+  if (!fetched) {
+    return {
+      __proto__: null,
+      ok: false,
+      status: 'fail',
+      reason: `could not parse a checksum from ${src} for ${assetFilename || '(asset)'}`,
+    }
+  }
+  if (!checksumsMatch(value, fetched)) {
+    return {
+      __proto__: null,
+      ok: false,
+      status: 'fail',
+      reason: `provenance mismatch: pin ${value} != publisher ${fetched} from ${src}`,
+    }
+  }
+  return undefined
+}
+
+/**
+ * The staleness check for a pin's `date`. A pin past `maxAgeDays` warns by
+ * default and fails under `strict`. Returns undefined when the date could not
+ * be read at all, leaving the caller's default verdict in place.
+ */
+function evaluatePinStaleness(date, src, o, warn) {
+  const maxAgeDays =
+    typeof o.maxAgeDays === 'number' && o.maxAgeDays > 0 ? o.maxAgeDays : 90
+  const r = checkStaleness(date, { now: o.now, maxAgeDays })
+  if (!r) {
+    return undefined
+  }
+  if (!r.stale) {
+    return {
+      __proto__: null,
+      ok: true,
+      status: 'pass',
+      reason: `pin is ${r.ageDays} days old (within ${maxAgeDays})`,
+      ageDays: r.ageDays,
+    }
+  }
+  const msg =
+    `· integrity pin is stale: date ${date} is ${r.ageDays} days old ` +
+    `(threshold ${maxAgeDays}) — re-verify against ${src || 'the publisher'}`
+  if (o.strict || false) {
+    return {
+      __proto__: null,
+      ok: false,
+      status: 'fail',
+      reason: msg,
+      stale: true,
+      ageDays: r.ageDays,
+    }
+  }
+  warn(msg)
+  return {
+    __proto__: null,
+    ok: true,
+    status: 'warn',
+    reason: msg,
+    stale: true,
+    ageDays: r.ageDays,
+  }
 }
 
 // ── orchestrator (exported; fetch injected for tests) ────────────────────
@@ -333,11 +473,12 @@ export function checkStaleness(dateString, options = {}) {
  * Verify an `integrity` pin's live provenance + staleness. For the STRING form
  * (no src/date), this is a no-op — the static SRI check is the only gate, and
  * existing behavior is unchanged. For the OBJECT form:
- * - `src` present → fetch the publisher's current checksum, parse it, and
- * compare to `value`. A mismatch FAILS (the pin is stale / re-released /
- * possibly compromised — the hash no longer matches the source of truth).
+ *
+ * - `src` present → fetch the publisher's current checksum, parse it, and compare
+ *   to `value`. A mismatch FAILS (the pin is stale / re-released / possibly
+ *   compromised — the hash no longer matches the source of truth).
  * - `date` present → staleness check; a pin older than `maxAgeDays` WARNS by
- * default and FAILS only under `strict`.
+ *   default and FAILS only under `strict`.
  *
  * @param {string | { value: string; src?: string; date?: string }} integrity
  * @param {ProvenanceOptions} [options]
@@ -359,6 +500,7 @@ export async function verifyIntegrityProvenance(integrity, options = {}) {
   // gate). Only the object form { value, src?, date? } carries provenance.
   if (typeof integrity !== 'object' || integrity === null) {
     return {
+      __proto__: null,
       ok: true,
       reason: 'string integrity — no provenance check',
       status: 'pass',
@@ -370,84 +512,22 @@ export async function verifyIntegrityProvenance(integrity, options = {}) {
 
   // ── src: live provenance check ──────────────────────────────────────────
   if (src) {
-    const assetFilename = o.assetFilename || ''
-    const fetchImpl = o.fetch || fetch
-    let res
-    try {
-      // pre-setup-node action: built-in fetch only.
-      // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dep-0
-      res = await fetchImpl(src, { redirect: 'follow' })
-    } catch (e) {
-      return {
-        ok: false,
-        status: 'fail',
-        reason: `provenance fetch failed for ${src}: ${e?.message ?? e}`,
-      }
-    }
-    if (!res || !res.ok) {
-      return {
-        ok: false,
-        status: 'fail',
-        reason: `provenance fetch failed: HTTP ${res?.status ?? '?'} for ${src}`,
-      }
-    }
-    const text = await res.text()
-    const fetched = parseChecksumFile(text, { assetFilename })
-    if (!fetched) {
-      return {
-        ok: false,
-        status: 'fail',
-        reason: `could not parse a checksum from ${src} for ${assetFilename || '(asset)'}`,
-      }
-    }
-    if (!checksumsMatch(value, fetched)) {
-      return {
-        ok: false,
-        status: 'fail',
-        reason: `provenance mismatch: pin ${value} != publisher ${fetched} from ${src}`,
-      }
+    const mismatch = await verifyPublisherChecksum(src, value, o)
+    if (mismatch) {
+      return mismatch
     }
   }
 
   // ── date: staleness check ───────────────────────────────────────────────
-  const maxAgeDays =
-    typeof o.maxAgeDays === 'number' && o.maxAgeDays > 0 ? o.maxAgeDays : 90
-  const strict = o.strict || false
   if (date) {
-    const r = checkStaleness(date, { now: o.now, maxAgeDays })
-    if (r) {
-      if (r.stale) {
-        const msg =
-          `· integrity pin is stale: date ${date} is ${r.ageDays} days old ` +
-          `(threshold ${maxAgeDays}) — re-verify against ${src || 'the publisher'}`
-        if (strict) {
-          return {
-            ok: false,
-            status: 'fail',
-            reason: msg,
-            stale: true,
-            ageDays: r.ageDays,
-          }
-        }
-        warn(msg)
-        return {
-          ok: true,
-          status: 'warn',
-          reason: msg,
-          stale: true,
-          ageDays: r.ageDays,
-        }
-      }
-      return {
-        ok: true,
-        status: 'pass',
-        reason: `pin is ${r.ageDays} days old (within ${maxAgeDays})`,
-        ageDays: r.ageDays,
-      }
+    const staleness = evaluatePinStaleness(date, src, o, warn)
+    if (staleness) {
+      return staleness
     }
   }
 
   return {
+    __proto__: null,
     ok: true,
     status: 'pass',
     reason: src ? 'provenance verified' : 'no src/date',

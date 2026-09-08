@@ -1,4 +1,4 @@
-name: 📦 npm publish
+name: 📦 npm Publish
 
 # Cascade-owned — every npm-publishing repo carries the byte-identical copy
 # (adopt by copying the template once; the sync then keeps it in lock-step;
@@ -46,28 +46,6 @@ on:
         description: 'npm dist-tag to publish under.'
         type: string
         default: 'latest'
-      release-as:
-        description: >-
-          Force the bump level. MAJOR is never derived from commits — the
-          bump script stops on breaking commits unless a human selects
-          major here.
-        type: choice
-        options:
-          - ''
-          - major
-          - minor
-          - patch
-        default: ''
-      bump:
-        description: >-
-          Run the CI bump step: consume the committed version hint, write
-          CHANGELOG, and commit via the release App before staging. The
-          publish pipeline dispatches with false — its bump stage already
-          landed the bump commit, and a re-entrant CI bump once committed a
-          duplicate CHANGELOG section. Ignored by backfills, which never
-          bump.
-        type: boolean
-        default: true
       backfill-version:
         description: >-
           Backfill a never-published GAP version below registry latest with
@@ -205,41 +183,22 @@ jobs:
       # resolves to dist/), and `files` ships dist/, so the tarball needs it.
       - name: Build
         run: pnpm run build
-      # The release App signs the bump commit via the GitHub API — the
-      # workflow's own GITHUB_TOKEN stays contents: read. A backfill never
-      # commits a bump, and a bump=false pipeline dispatch already carries
-      # its bump commit, so both skip the mint.
       - name: Mint release App token
-        if: ${{ inputs.backfill-version == '' && inputs.bump }}
+        if: ${{ inputs.backfill-version == '' }}
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
           client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
-      # --bump consumes the committed version hint (X.Y.Z-prerelease →
-      # X.Y.Z), writes CHANGELOG, and commits via the release App (verified,
-      # signed) onto a throwaway npm-publish-v<version> branch — main's ref is
-      # fast-forwarded to that exact commit only after the publish succeeds, and
-      # the branch is nuked on a rejected publish, so a failed stage never
-      # creeps the version. The bump NEVER goes through a pull request: the
-      # release App's contents:write lands it directly. The version decision
-      # stays with the human: it is whatever the committed hint names.
-      # The bump runs EXACTLY ONCE across the pipeline + workflow chain: the
-      # publish pipeline dispatches with bump=false because its own bump stage
-      # already landed the bump commit — the CI re-bump once re-derived the
-      # same version and committed a duplicate CHANGELOG section. Manual
-      # dispatches keep the default bump=true hint-consuming flow.
-      # Backfill swaps --bump for --backfill + --checkout-ref: no bump commit,
-      # no changelog — the checked-out content publishes as-is once the
-      # backfill guards pass (npm-publish.mts fails loud when they don't).
+      # The version resolver consumes a prerelease hint or selects patch/minor
+      # from the committed changes. Backfills keep their declared version.
       - name: Publish
         env:
           BACKFILL_VERSION: ${{ inputs.backfill-version }}
           CHECKOUT_REF: ${{ inputs.checkout-ref }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          RELEASE_AS: ${{ inputs.release-as }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
         # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
         # backfill-version is refused by the script instead of silently
         # bump-publishing historical content.
-        run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '' && inputs.bump) && '--bump' || '' }} --tag "$DIST_TAG" ${RELEASE_AS:+--release-as "$RELEASE_AS"} ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}
+        run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '') && '--bump' || '' }} --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}

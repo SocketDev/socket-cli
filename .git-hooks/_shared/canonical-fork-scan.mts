@@ -7,7 +7,7 @@
  *   cascade: an Edit/Write/Bash tool call, a background Workflow `agent()`
  *   subagent (whose Bash reaches PreToolUse with the PARENT transcript, so
  *   the `no-fleet-fork-guard` PreToolUse hook cannot attribute or block it —
- *   see docs/agents.md/fleet/agent-delegation.md), or a hand-run git command.
+ *   see docs/fleet/agents.md/agent-delegation.md), or a hand-run git command.
  *   A git hook fires for every commit regardless of which process or agent
  *   ran `git commit`, so this closes the gap the tool-call guard cannot
  *   reach.
@@ -19,7 +19,7 @@
  *   enforcement points can never disagree about what counts as canonical.
  */
 
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import {
@@ -29,17 +29,31 @@ import {
 } from '../../.claude/hooks/fleet/_shared/fleet-fork.mts'
 import { textHasFleetBlockMarkers } from '../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 
-// The template trees a live path can be cascaded from. `base` maps directly;
-// `conditional` and `overrides` interpose one directory level - a capability
-// name, or a member name - so each of their children is a candidate.
-const TEMPLATE_ROOTS: readonly string[] = ['base', 'conditional', 'overrides']
+// Each child names one capability or member, never an arbitrary generated
+// bucket. Generated universal files map directly to the destination tree.
+const TEMPLATE_ROOTS: readonly string[] = [
+  path.join('base', 'conditional'),
+  'overrides',
+  path.join('generated', 'conditional'),
+]
 
 /**
  * Candidate template sources for a live repo-relative path.
  */
 export function templateTwinPaths(repoRoot: string, file: string): string[] {
-  const candidates = [path.join(repoRoot, 'template', 'base', file)]
-  for (let i = 1, { length } = TEMPLATE_ROOTS; i < length; i += 1) {
+  const candidates = [
+    path.join(repoRoot, 'template', 'base', 'universal', file),
+  ]
+  const generatedUniversal = path.join(
+    repoRoot,
+    'template',
+    'generated',
+    'universal',
+  )
+  if (existsSync(generatedUniversal)) {
+    candidates.push(path.join(generatedUniversal, file))
+  }
+  for (let i = 0, { length } = TEMPLATE_ROOTS; i < length; i += 1) {
     const root = path.join(repoRoot, 'template', TEMPLATE_ROOTS[i]!)
     let names: string[]
     try {

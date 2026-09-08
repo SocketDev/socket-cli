@@ -63,7 +63,7 @@ export function resolveExtends(data, resolvedPath, visited = new Set()) {
     Object.assign(tools, base?.tools || {})
   }
   Object.assign(tools, data.tools || {})
-  return { ...data, tools }
+  return { __proto__: null, ...data, tools }
 }
 
 // Walk a list of keys down a JSON value, returning the resolved value (or

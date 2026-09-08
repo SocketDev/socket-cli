@@ -73,7 +73,7 @@ export function main(): void {
 }
 
 // Entry guard, spelled inline: this file sits in `.git-hooks/`, which cannot
-// import the `scripts/fleet/_shared/is-main-module.mts` helper.
+// import the `scripts/fleet/process/is-main-module.mts` helper.
 const entry = process.argv[1]
 if (entry && path.resolve(entry) === fileURLToPath(import.meta.url)) {
   main()

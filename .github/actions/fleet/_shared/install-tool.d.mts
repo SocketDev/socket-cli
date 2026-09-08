@@ -7,7 +7,11 @@
  *   exports.
  */
 
+export function fetchToolResponse(url: string, headers: HeadersInit): Promise<Response>
+
 export function parseIntegrity(s: string): {
   algo: 'sha256' | 'sha384' | 'sha512'
   expected: string
 }
+
+export function toolDownloadHeaders(url: string, token: string | undefined): Record<string, string>

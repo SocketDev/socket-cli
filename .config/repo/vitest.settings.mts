@@ -4,14 +4,15 @@
  *   (.config/repo/socket-wheelhouse.json), split from vitest.config.mts along
  *   its natural boundary: everything here READS settings, everything there
  *   RESOLVES runtime config from them. One file, one parse; each key's
- *   contract is on its field below, and docs/agents.md/fleet/test-layout.md
+ *   contract is on its field below, and docs/fleet/agents.md/test-layout.md
  *   carries the tier rationale.
  *   Exported readers are ordered alphabetically, which `socket/sort-source-
  *   methods` enforces in every consuming member. Neither copy of this file is
  *   linted in the wheelhouse itself, so the order is a downstream contract.
  */
 
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, globSync, lstatSync, readFileSync } from 'node:fs'
+import path from 'node:path'
 
 export interface VitestRepoConfig {
   // Module resolve aliases for the test transform, e.g.
@@ -46,9 +47,8 @@ export interface VitestRepoConfig {
  * fs-heavy); `fast` = the implicit complement, pure in-process. The runner's
  * `--lane <fast|mid|slow>` flag (scripts/fleet/test.mts) selects one, and bare
  * `pnpm test` defaults to `fast` for a quick local loop. The lane filter is
- * INERT under coverage and for an unset FLEET_LANE (an --all / scoped / cover
- * run), so coverage + CI run EVERY lane — the split shapes only the fast local
- * feedback loop and never removes a suite from the gate.
+ * active under coverage too. An unset FLEET_LANE traverses every lane; the
+ * coverage runner selects each lane in turn and merges their reports.
  */
 export interface VitestLanes {
   mid?: string[] | undefined
@@ -61,6 +61,51 @@ export const SETTINGS_FILES = [
   '.config/repo/socket-wheelhouse.json',
   '.socket-wheelhouse.json',
 ] as const
+
+/**
+ * Resolve the shared project while retaining Node's glob semantics. Most lane
+ * exclusions are exact test files: checking those in a Set avoids repeatedly
+ * matching hundreds of literal patterns during glob traversal. Only ordinary
+ * relative file paths qualify; escapes, glob syntax, unusual names, missing
+ * paths and directories stay with Node's original exclusion implementation.
+ */
+export function discoverSharedTestFiles(
+  patterns: string[],
+  options: { include: string[]; exclude: string[]; cwd?: string | undefined },
+): string[] {
+  const exactFiles = new Set<string>()
+  const globExcludes: string[] = []
+  for (const pattern of options.exclude) {
+    // Positive literal grammar: no escape, extglob, brace or bracket syntax;
+    // segments cannot be dot/dotdot. Unrecognized forms use native glob.
+    const literal =
+      /^(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.test\.(?:js|ts|mjs|mts|cjs)$/u.test(
+        pattern,
+      )
+    let regularFile = false
+    if (literal) {
+      try {
+        regularFile = lstatSync(
+          path.resolve(options.cwd ?? '.', pattern),
+        ).isFile()
+      } catch {
+        // Missing or unreadable candidates retain native exclusion behavior.
+      }
+    }
+    if (regularFile) {
+      exactFiles.add(pattern)
+    } else {
+      globExcludes.push(pattern)
+    }
+  }
+  return [
+    ...globSync(patterns, { cwd: options.cwd, exclude: globExcludes }),
+  ].filter(
+    file =>
+      !exactFiles.has(file.split(path.sep).join('/')) &&
+      options.include.some(pattern => path.matchesGlob(file, pattern)),
+  )
+}
 
 /**
  * The CONFORMANCE tier — heavy external-suite wrappers (a full Test262 corpus

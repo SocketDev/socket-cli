@@ -4,6 +4,7 @@
   "compilerOptions": {
     "rootDir": "../.."
   },
+  "//include": "The fleet authors .mts, so these globs were .mts-only. `.opencode/plugins/` is the one dir where the extension is not ours to pick: OpenCode discovers ONLY .ts/.js there — measured, an identical .mts is never even attempted — and a TUI plugin rendering JSX must be .tsx. So NO .mts glob here; that extension is unusable in this dir and listing it would invite someone to add a file nothing loads. Entries are spelled out one per extension because tsconfig include does NOT support brace globs: `**/*.{ts,tsx}` matches ZERO files (verified), unlike oxlint, which does support them. Both failure modes are silent — a missed glob means the file is absent from the program and `pnpm run type` reports 0 errors for code it never read. The .tsx glob is deliberately absent: a TUI plugin imports `@opencode-ai/plugin/tui` and `solid-js`, which the HOST provides and this repo does not install, so including them reports missing modules for code that resolves fine where it runs.",
   "include": [
     "../../scripts/**/*.mts",
     "../../.claude/hooks/repo/**/*.mts",
@@ -11,6 +12,7 @@
     "../../.config/fleet/markdownlint-rules/**/*.mts",
     "../../.config/fleet/oxlint-plugin/**/*.mts",
     "../../.config/fleet/rolldown/**/*.mts",
+    "../../.opencode/plugins/**/*.ts",
     "../../src/**/*.d.ts",
     "../../src/**/*.d.mts",
     "../../test/**/*.mts"

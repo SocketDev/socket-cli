@@ -123,21 +123,28 @@ export function canonicalPlatformKey() {
 export function resolvePlatformEntry(platforms, canonicalKey) {
   const entry = platforms[canonicalKey]
   if (entry) {
-    return { entry, fallbackKey: undefined }
+    return { __proto__: null, entry, fallbackKey: undefined }
   }
   // musl → glibc sibling fallback (linux-x64-musl → linux-x64).
   if (canonicalKey.endsWith('-musl')) {
     const glibcKey = canonicalKey.slice(0, -5)
     const fallback = platforms[glibcKey]
     if (fallback) {
-      return { entry: fallback, fallbackKey: glibcKey }
+      return { __proto__: null, entry: fallback, fallbackKey: glibcKey }
     }
   }
-  return { entry: undefined, fallbackKey: undefined }
+  return { __proto__: null, entry: undefined, fallbackKey: undefined }
 }
 
 // Normalize an integrity field (string SRI form OR the object provenance form
 // { value, src?, date? }) to the SRI string install-tool.mjs verifies. Pure.
+//
+// This is the composite-action channel's copy of
+// scripts/fleet/external-tools/integrity.mts, and it stays a copy. A composite
+// action runs from the COMMITTED tree at checkout, before the fleet-pack fetch
+// that puts scripts/fleet/ on disk in a thin member, so importing the canonical
+// module from here would resolve a path that does not exist yet. Keep the two
+// bodies identical; change one, change the other.
 export function integrityValue(integrity) {
   if (typeof integrity === 'object' && integrity !== null) {
     return integrity.value
@@ -151,11 +158,12 @@ export function integrityValue(integrity) {
 export function integrityProvenance(integrity) {
   if (typeof integrity === 'object' && integrity !== null) {
     return {
+      __proto__: null,
       src: typeof integrity.src === 'string' ? integrity.src : '',
       date: typeof integrity.date === 'string' ? integrity.date : '',
     }
   }
-  return { src: '', date: '' }
+  return { __proto__: null, src: '', date: '' }
 }
 
 // Read a `go <version>` line from a go.mod file (the only --version-file
@@ -207,6 +215,7 @@ export function resolveGoAssetFromManifest(manifest, version, canonicalKey) {
     )
   }
   return {
+    __proto__: null,
     asset: `https://go.dev/dl/${file.filename}`,
     integrity: `sha256-${file.sha256}`,
     version: String(version),
@@ -237,6 +246,106 @@ function argValue(name) {
   return i >= 0 && i + 1 < process.argv.length ? process.argv[i + 1] : ''
 }
 
+// The external-tools.json path and its parsed `tools` map. Every failure
+// here is terminal, so this exits rather than returning a verdict.
+function loadToolsCatalog(toolsFileArg) {
+  const toolsFile =
+    toolsFileArg ||
+    path.join(
+      process.env['GITHUB_WORKSPACE'] ?? '.',
+      'scripts/fleet/setup/external-tools.json',
+    )
+  if (!existsSync(toolsFile)) {
+    fail(`× external-tools.json not found at ${toolsFile}`)
+    process.exit(1)
+  }
+  let toolsData
+  try {
+    toolsData = JSON.parse(readFileSync(toolsFile, 'utf8'))
+  } catch (e) {
+    fail(`× could not parse ${toolsFile}: ${e?.message ?? e}`)
+    process.exit(1)
+  }
+  return { __proto__: null, tools: toolsData?.tools || {}, toolsFile }
+}
+
+// The named tool's catalog entry. A missing tool or a tool with no platforms
+// map is terminal.
+function selectToolEntry(tools, toolName, toolsFile) {
+  const tool = tools[toolName]
+  if (!tool) {
+    fail(`× no '${toolName}' entry in ${toolsFile}`)
+    process.exit(1)
+  }
+  if (!tool.platforms) {
+    fail(`× '${toolName}' has no platforms map in ${toolsFile}`)
+    process.exit(1)
+  }
+  return tool
+}
+
+// The version to install, in precedence order: the version file, then an
+// explicit non-`stable` argument, then the catalog pin. No version at all is
+// terminal.
+function resolveToolVersion({ tool, toolName, versionArg, versionFile }) {
+  const fileVersion = readVersionFromFile(versionFile)
+  let resolvedVersion = ''
+  if (fileVersion) {
+    resolvedVersion = fileVersion
+  } else if (versionArg && versionArg !== 'stable') {
+    resolvedVersion = versionArg
+  }
+  if (!resolvedVersion) {
+    resolvedVersion = tool.version
+  }
+  if (!resolvedVersion) {
+    fail(`× no version resolved for '${toolName}' (no pin, no input)`)
+    process.exit(1)
+  }
+  return resolvedVersion
+}
+
+// Emit the catalog entry's own asset + integrity. Forwards the object-form
+// provenance (src/date) so install-tool.mjs can run the live src + staleness
+// checks after the static SRI check. Empty for the string form (no
+// provenance) — install-tool.mjs no-ops them.
+function emitPinnedAsset(
+  entry,
+  { canonicalKey, resolvedVersion, toolName, toolsFile },
+) {
+  const asset = entry.asset
+  const integrity = integrityValue(entry.integrity)
+  if (!asset || !integrity) {
+    fail(
+      `× '${toolName}' ${canonicalKey} entry is missing asset or integrity in ${toolsFile}`,
+    )
+    process.exit(1)
+  }
+  const { src, date } = integrityProvenance(entry.integrity)
+  emit({ asset, integrity, version: resolvedVersion, src, date })
+}
+
+// The go.dev release manifest, the integrity source for a `go` version that
+// is not the catalog pin. Any fetch failure is terminal.
+async function fetchGoDlManifest() {
+  try {
+    // pre-setup-node helper: built-in fetch only.
+    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- bootstrap
+    const res = await fetch('https://go.dev/dl/?mode=json&include=all', {
+      redirect: 'follow',
+    })
+    if (!res.ok) {
+      fail(`× go.dev manifest fetch failed: HTTP ${res.status}`)
+      process.exit(1)
+    }
+    return await res.json()
+  } catch (e) {
+    fail(`× go.dev manifest fetch failed: ${e?.message ?? e}`)
+    process.exit(1)
+  }
+  return undefined
+}
+
 async function main() {
   const toolName = argValue('--tool')
   const versionArg = argValue('--version')
@@ -250,36 +359,8 @@ async function main() {
     process.exit(1)
   }
 
-  const toolsFile =
-    toolsFileArg ||
-    path.join(
-      process.env['GITHUB_WORKSPACE'] ?? '.',
-      'scripts/fleet/setup/external-tools.json',
-    )
-
-  if (!existsSync(toolsFile)) {
-    fail(`× external-tools.json not found at ${toolsFile}`)
-    process.exit(1)
-  }
-
-  let toolsData
-  try {
-    toolsData = JSON.parse(readFileSync(toolsFile, 'utf8'))
-  } catch (e) {
-    fail(`× could not parse ${toolsFile}: ${e?.message ?? e}`)
-    process.exit(1)
-  }
-
-  const tools = toolsData?.tools || {}
-  const tool = tools[toolName]
-  if (!tool) {
-    fail(`× no '${toolName}' entry in ${toolsFile}`)
-    process.exit(1)
-  }
-  if (!tool.platforms) {
-    fail(`× '${toolName}' has no platforms map in ${toolsFile}`)
-    process.exit(1)
-  }
+  const { tools, toolsFile } = loadToolsCatalog(toolsFileArg)
+  const tool = selectToolEntry(tools, toolName, toolsFile)
 
   const canonicalKey = canonicalPlatformKey()
 
@@ -299,20 +380,12 @@ async function main() {
     process.exit(1)
   }
 
-  let resolvedVersion = ''
-  const fileVersion = readVersionFromFile(versionFile)
-  if (fileVersion) {
-    resolvedVersion = fileVersion
-  } else if (versionArg && versionArg !== 'stable') {
-    resolvedVersion = versionArg
-  }
-  if (!resolvedVersion) {
-    resolvedVersion = tool.version
-  }
-  if (!resolvedVersion) {
-    fail(`× no version resolved for '${toolName}' (no pin, no input)`)
-    process.exit(1)
-  }
+  const resolvedVersion = resolveToolVersion({
+    tool,
+    toolName,
+    versionArg,
+    versionFile,
+  })
 
   // Pinned-version fast path: emit the entry's asset + integrity. A version
   // override on `go` is resolved live against go.dev below; every other tool
@@ -320,39 +393,17 @@ async function main() {
   const isGo = toolName === 'go' || tool.manager === 'go'
   const pinVersion = tool.version || ''
   if (!isGo || resolvedVersion === pinVersion) {
-    const asset = entry.asset
-    const integrity = integrityValue(entry.integrity)
-    if (!asset || !integrity) {
-      fail(
-        `× '${toolName}' ${canonicalKey} entry is missing asset or integrity in ${toolsFile}`,
-      )
-      process.exit(1)
-    }
-    // Forward the object-form provenance (src/date) so install-tool.mjs can
-    // run the live src + staleness checks after the static SRI check. Empty
-    // for the string form (no provenance) — install-tool.mjs no-ops them.
-    const { src, date } = integrityProvenance(entry.integrity)
-    emit({ asset, integrity, version: resolvedVersion, src, date })
+    emitPinnedAsset(entry, {
+      canonicalKey,
+      resolvedVersion,
+      toolName,
+      toolsFile,
+    })
     return
   }
 
   // go custom-version path: resolve the SHA-256 from the go.dev manifest.
-  let manifest
-  try {
-    // pre-setup-node helper: built-in fetch only.
-    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- bootstrap
-    const res = await fetch('https://go.dev/dl/?mode=json&include=all', {
-      redirect: 'follow',
-    })
-    if (!res.ok) {
-      fail(`× go.dev manifest fetch failed: HTTP ${res.status}`)
-      process.exit(1)
-    }
-    manifest = await res.json()
-  } catch (e) {
-    fail(`× go.dev manifest fetch failed: ${e?.message ?? e}`)
-    process.exit(1)
-  }
+  const manifest = await fetchGoDlManifest()
 
   try {
     emit(resolveGoAssetFromManifest(manifest, resolvedVersion, canonicalKey))

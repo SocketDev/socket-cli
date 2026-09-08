@@ -36,6 +36,24 @@ function die(message) {
   process.exit(1)
 }
 
+// Dep-0 local copy of @socketsecurity/lib's errorMessage: this composite-action
+// .mjs uses only node: builtins and runs BEFORE `pnpm install`, so it cannot
+// import the lib helper. Written as `if` statements, the faithful equivalent
+// the rule points at, rather than the flagged ternary behind a disable.
+function errorMessage(value) {
+  if (value instanceof Error) {
+    return value.message || 'Unknown error'
+  }
+  if (value === null || value === undefined) {
+    return 'Unknown error'
+  }
+  const s = String(value)
+  if (s === '' || s === '[object Object]') {
+    return 'Unknown error'
+  }
+  return s
+}
+
 function env(name) {
   const value = process.env[name]
   if (!value) {
@@ -316,11 +334,7 @@ if (
     try {
       await main()
     } catch (e) {
-      // dep-0: this .mjs uses only node: builtins and runs in CI BEFORE
-      // `pnpm install`, so it cannot import errorMessage() from the external
-      // @socketsecurity/lib. The disable trails the line because both rule
-      // names cannot fit an 80-column standalone directive line.
-      die(e instanceof Error ? e.message : String(e)) // oxlint-disable-line socket/prefer-error-message, socket/prefer-error-message-helper -- dep-0
+      die(errorMessage(e))
     }
   })()
 }

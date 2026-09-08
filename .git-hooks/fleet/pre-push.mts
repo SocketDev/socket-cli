@@ -34,6 +34,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 // version gate in `../_shared/helpers.mts` runs at load — every gate below
 // assumes native .mts type stripping.
 import { splitLines } from '../_shared/helpers.mts'
+import { debugCheck } from '../_shared/check-output.mts'
 import { scanCommitMessages } from '../_shared/push-commit-messages.mts'
 import { scanFilesInRange } from '../_shared/push-file-scan.mts'
 import { computeRange } from '../_shared/push-range.mts'
@@ -61,7 +62,7 @@ const readStdin = (): Promise<string> =>
   })
 
 const main = async (): Promise<number> => {
-  logger.info('Running mandatory pre-push validation…')
+  debugCheck('Running mandatory pre-push validation…')
 
   const submoduleErrors = checkSubmodules()
   if (submoduleErrors > 0) {
@@ -82,7 +83,12 @@ const main = async (): Promise<number> => {
 
   for (let i = 0, { length } = refLines; i < length; i += 1) {
     const refLine = refLines[i]!
-    const [localRef, localSha, remoteRef, remoteSha] = refLine.split(/\s+/)
+    const {
+      0: localRef,
+      1: localSha,
+      2: remoteRef,
+      3: remoteSha,
+    } = refLine.split(/\s+/)
     if (!localRef || !localSha || !remoteRef || !remoteSha) {
       continue
     }
@@ -135,7 +141,7 @@ const main = async (): Promise<number> => {
       )
       return 1
     }
-    logger.info(
+    logger.warn(
       `Durable backup (${pushedRemoteRefs.join(', ')}): safety scans only, quality gates skipped.`,
     )
     logger.info(
@@ -194,7 +200,7 @@ const main = async (): Promise<number> => {
     return 1
   }
 
-  logger.success('All mandatory validation passed!')
+  debugCheck('All mandatory validation passed!')
   return 0
 }
 

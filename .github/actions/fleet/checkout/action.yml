@@ -197,16 +197,16 @@ runs:
         set -euo pipefail
         DEST="${CHECKOUT_DEST:-.}"
         cd "${DEST}"
-        # The PRODUCER hydrates from its own template/base; only a consumer
+        # The PRODUCER hydrates from its own template/base/universal; only a consumer
         # fetches a release bundle. Both reach this step, because the payload is
         # untracked in either case, so the branch is on which tree is present.
         # Without it the wheelhouse's own jobs took the consumer path and died
         # on "no --ref and no bundle.ref" - correct for a member, meaningless in
         # the repo that PUBLISHES the bundle, which has no ref of its own to
         # pin. Mirrors materializeFromLocalTemplate, which returns undefined
-        # exactly when template/base is absent.
+        # exactly when template/base/universal is absent.
         HYDRATE_ARGS=()
-        if [ -d template/base ]; then
+        if [ -d template/base/universal ]; then
           HYDRATE_ARGS+=(--from-template)
         fi
         if ! node scripts/repo/bootstrap/fleet.mjs "${HYDRATE_ARGS[@]+"${HYDRATE_ARGS[@]}"}"; then

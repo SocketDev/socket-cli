@@ -41,7 +41,12 @@ export function checksumsMatch(value: string, fetchedHex: string): boolean
 
 export function checkStaleness(
   dateString: string,
-  options?: { readonly now?: Date | (() => Date) | undefined; readonly maxAgeDays?: number | undefined } | undefined,
+  options?:
+    | {
+        readonly now?: Date | (() => Date) | undefined
+        readonly maxAgeDays?: number | undefined
+      }
+    | undefined,
 ): { readonly stale: boolean; readonly ageDays: number } | undefined
 
 export function verifyIntegrityProvenance(

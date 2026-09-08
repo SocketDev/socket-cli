@@ -1,0 +1,26 @@
+diff --git a/dist/commands/run.js b/dist/commands/run.js
+index 43bbfddb76eaa4decfa824fb8939d58193e6cd6a..6549dc315bef7a310bdb91993b1999d203137e6d 100644
+--- a/dist/commands/run.js
++++ b/dist/commands/run.js
+@@ -730,7 +730,7 @@ function preflightVars(workflowPaths, vars) {
+         catch {
+             continue;
+         }
+-        const missing = refs.filter((n) => !vars[n]);
++        const missing = refs.filter((n) => !Object.hasOwn(vars, n));
+         if (missing.length > 0) {
+             perFile.push({ file: wf, missing });
+             for (const n of missing) {
+diff --git a/dist/workflow/workflow-parser.js b/dist/workflow/workflow-parser.js
+index 3b4b66db324c513c22f26dedad8888a7fed2580b..ce8ed57e5d2fd99177f4d13f62cbce22c3da40ed 100644
+--- a/dist/workflow/workflow-parser.js
++++ b/dist/workflow/workflow-parser.js
+@@ -1231,7 +1231,7 @@ export function extractVarRefs(filePath, taskName) {
+  */
+ export function validateVars(filePath, taskName, vars) {
+     const required = extractVarRefs(filePath, taskName);
+-    const missing = required.filter((name) => !vars[name]);
++    const missing = required.filter((name) => !Object.hasOwn(vars, name));
+     if (missing.length === 0) {
+         return;
+     }

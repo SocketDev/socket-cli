@@ -27,7 +27,7 @@ import type { LineHit } from './scan-core.mts'
 //   - `console.{log,error,warn,info,debug}` → marker
 //     `// oxlint-disable-next-line socket/no-console-prefer-logger` (`allow logger` accepted as a legacy
 //     alias for one deprecation cycle).
-//   - `process.std{out,err}.write` → marker `// socket-lint: allow
+//   - `process.std{out,err}.write` → marker `// oxlint-disable-next-line
 //     process-stdio`, reserved for a CLI whose stdio IS a protocol a caller
 //     parses back, where a logger prefix would corrupt the bytes.
 // Doc-context lines are exempt from both. AST-based via the shared

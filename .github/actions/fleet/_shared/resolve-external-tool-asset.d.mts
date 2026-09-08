@@ -37,9 +37,10 @@ export function resolvePlatformEntry(
 
 export function integrityValue(integrity: unknown): string
 
-export function integrityProvenance(
-  integrity: unknown,
-): { readonly src: string; readonly date: string }
+export function integrityProvenance(integrity: unknown): {
+  readonly src: string
+  readonly date: string
+}
 
 export function readVersionFromFile(file: string): string
 

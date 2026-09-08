@@ -44,9 +44,11 @@ export function isDurableBackupRef(remoteRef: string): boolean {
  * Whether this push carries ONLY durable-backup refs.
  *
  * Every ref must qualify. A push that updates a backup ref AND a real branch in
- * one invocation is a real push, because the real branch is what people consume
- * - reading it as a backup would let any ref smuggle a main update past the
- * quality gates.
+ * one invocation is a real push, because the real branch is what people
+ * consume.
+ *
+ * - Reading it as a backup would let any ref smuggle a main update past the
+ *   quality gates.
  *
  * An empty list is NOT durable. No refs means nothing was proven, and
  * defaulting to "skip the gates" on an unreadable stdin is the wrong direction

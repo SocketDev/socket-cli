@@ -64,15 +64,20 @@ export function resolveStorePath({
   runnerOs,
 }) {
   if (queriedPath !== '') {
-    return { fallback: false, storePath: queriedPath }
+    return { __proto__: null, fallback: false, storePath: queriedPath }
   }
   if (runnerOs === 'Windows') {
     return {
+      __proto__: null,
       fallback: true,
       storePath: `${localAppData}/pnpm/store/v3`.replaceAll('\\', '/'),
     }
   }
-  return { fallback: true, storePath: `${home}/.local/share/pnpm/store/v3` }
+  return {
+    __proto__: null,
+    fallback: true,
+    storePath: `${home}/.local/share/pnpm/store/v3`,
+  }
 }
 
 /**
@@ -122,6 +127,25 @@ function defaultAppend(name) {
 }
 
 /**
+ * The action's env contract, read once and defaulted to the empty string the
+ * old non-`-u` bash steps saw for an unset variable. Every downstream decision
+ * function takes plain strings, so this is the only place `process.env` shape
+ * is known.
+ */
+export function readStoreCacheEnv(env) {
+  return {
+    __proto__: null,
+    cacheVersion: env.CACHE_VERSION ?? '',
+    home: env.HOME ?? '',
+    keyPrefix: env.KEY_PREFIX ?? '',
+    localAppData: env.LOCALAPPDATA ?? '',
+    lockfileHash: env.LOCKFILE_HASH ?? '',
+    queriedPath: env.QUERIED_STORE_PATH ?? '',
+    runnerOs: env.RUNNER_OS ?? '',
+  }
+}
+
+/**
  * The whole resolution: store path, Node major, cache key, emitted in the
  * old steps' order — path/major step outputs, PNPM_STORE_PATH/
  * PNPM_STORE_CACHE_KEY job env, the fallback notice before the final
@@ -135,22 +159,23 @@ export function runResolve({
   log = console.log,
   nodeVersion = process.versions.node,
 } = {}) {
+  const settings = readStoreCacheEnv(env)
   const { fallback, storePath } = resolveStorePath({
-    home: env.HOME ?? '',
-    localAppData: env.LOCALAPPDATA ?? '',
-    queriedPath: env.QUERIED_STORE_PATH ?? '',
-    runnerOs: env.RUNNER_OS ?? '',
+    home: settings.home,
+    localAppData: settings.localAppData,
+    queriedPath: settings.queriedPath,
+    runnerOs: settings.runnerOs,
   })
   if (fallback) {
     log(`ⓘ pnpm store path query failed; using default ${storePath}`)
   }
   const nodeMajor = nodeMajorForKey(nodeVersion)
   const cacheKey = composeCacheKey({
-    cacheVersion: env.CACHE_VERSION ?? '',
-    keyPrefix: env.KEY_PREFIX ?? '',
-    lockfileHash: env.LOCKFILE_HASH ?? '',
+    cacheVersion: settings.cacheVersion,
+    keyPrefix: settings.keyPrefix,
+    lockfileHash: settings.lockfileHash,
     nodeMajor,
-    runnerOs: env.RUNNER_OS ?? '',
+    runnerOs: settings.runnerOs,
   })
   appendOutput(`path=${storePath}`)
   appendOutput(`major=${nodeMajor}`)
@@ -160,7 +185,7 @@ export function runResolve({
 }
 
 // Realpath both sides — the naive argv[1] comparison is symlink-fragile,
-// the same pitfall scripts/fleet/_shared/is-main-module.mts documents; that
+// the same pitfall scripts/fleet/process/is-main-module.mts documents; that
 // helper is .mts and this script must stay importless-runnable on system
 // Node, so the comparison is inlined.
 function isEntrypoint(invokedPath) {

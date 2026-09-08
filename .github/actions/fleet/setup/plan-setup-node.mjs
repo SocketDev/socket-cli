@@ -65,24 +65,28 @@ export function parseNodeVersionSpec(wanted) {
   // digits or the literal `x` placeholder.
   const m = /^(\d+)(?:\.(\d+|x))?(?:\.(\d+|x))?$/.exec(spec)
   if (!m) {
-    return { kind: 'unsupported' }
+    return { __proto__: null, kind: 'unsupported' }
   }
   const [, major, minor, patch] = m
   const minorIsNumber = minor !== undefined && minor !== 'x'
   const patchIsNumber = patch !== undefined && patch !== 'x'
   if (!minorIsNumber && patchIsNumber) {
     // `X.x.5` — a number below an x placeholder names nothing.
-    return { kind: 'unsupported' }
+    return { __proto__: null, kind: 'unsupported' }
   }
   if (minorIsNumber && patchIsNumber) {
-    return { kind: 'exact', version: `${major}.${minor}.${patch}` }
+    return {
+      __proto__: null,
+      kind: 'exact',
+      version: `${major}.${minor}.${patch}`,
+    }
   }
   if (minorIsNumber) {
     // `X.Y` or `X.Y.x` — resolve the newest patch of that minor.
-    return { kind: 'prefix', prefix: `v${major}.${minor}.` }
+    return { __proto__: null, kind: 'prefix', prefix: `v${major}.${minor}.` }
   }
   // `X`, `X.x`, or `X.x.x` — resolve the newest release of that major.
-  return { kind: 'prefix', prefix: `v${major}.` }
+  return { __proto__: null, kind: 'prefix', prefix: `v${major}.` }
 }
 
 // Numeric [major, minor, patch] of a `vX.Y.Z` index entry, for the
@@ -280,7 +284,7 @@ async function main() {
 }
 
 // Realpath both sides — the naive argv[1] comparison is symlink-fragile, the
-// same pitfall scripts/fleet/_shared/is-main-module.mts documents; that
+// same pitfall scripts/fleet/process/is-main-module.mts documents; that
 // helper is .mts and this script must stay importless-runnable on system
 // Node, so the comparison is inlined.
 function isEntrypoint(invokedPath) {

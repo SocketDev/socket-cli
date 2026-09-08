@@ -7,6 +7,7 @@
 // it has nothing to say about a commit a published tag has already frozen.
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { debugCheck } from './check-output.mts'
 
 import { containsAiAttribution } from '../../.claude/hooks/fleet/_shared/ai-attribution.mts'
 import { git } from './git.mts'
@@ -29,7 +30,7 @@ export function scanCommitMessages(
 ): number {
   const { cwd } = { __proto__: null, ...options } as ReleaseTagOptions
   const repo = cwd ? ['-C', cwd] : []
-  logger.info('Checking commit messages for AI attribution…')
+  debugCheck('Checking commit messages for AI attribution…')
   const exemption = resolveRewritableCommits(range, remote, { cwd })
   reportReleaseTagExemption(exemption, 'AI-attribution')
   let errors = 0

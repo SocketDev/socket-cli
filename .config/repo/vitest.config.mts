@@ -15,12 +15,13 @@ import path from 'node:path'
 import process from 'node:process'
 
 import { envAsBoolean } from '@socketsecurity/lib-stable/env/boolean'
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { defineConfig } from 'vitest/config'
 
 import { GENERATED_GLOBS } from '../../scripts/fleet/constants/generated-globs.mts'
-import { resolveCoverageConfig } from '../fleet/vitest.coverage.fleet.config.mts'
+import { resolveCoverageConfig } from '../../.config/fleet/vitest.coverage.fleet.config.mts'
 import {
+  discoverSharedTestFiles,
   readConformanceExcludeGlobs,
   readNonIsolatedGlobs,
   readVitestLanes,
@@ -120,7 +121,7 @@ export function resolveTestBudgetMs(
       }
     | undefined,
 ): number {
-  const ci = getCI()
+  const ci = isCI()
   const base =
     ci && isCoverageEnabled
       ? 120_000
@@ -158,7 +159,7 @@ export function resolveFallbackMaxWorkers(
     cores?: number | undefined
     isCI?: boolean | undefined
   }
-  if (opts.isCI ?? getCI()) {
+  if (opts.isCI ?? isCI()) {
     return 4
   }
   // Coverage instrumentation is memory-hungry, so it keeps the flat, lower cap
@@ -194,7 +195,7 @@ export function resolveMaxWorkers(): number {
 }
 /**
  * Fast-fail bail count. A coverage run MUST execute the FULL suite to measure
- * it, so bail is INERT under coverage, like the lane filter: bailing on the
+ * it, so bail is INERT under coverage: bailing on the
  * first failure aborts ~half the suite and its subprocess coverage, collapsing
  * the aggregate to a phantom partial (#79: CI read 36% vs the true ~73% because
  * one failing test bailed the run after 249 of 1224 files). Plain CI test jobs
@@ -276,20 +277,20 @@ const repoResolveAlias = resolveVitestAlias()
 const repoResolveConditions = resolveVitestConditions()
 
 // Lane resolution. The runner sets FLEET_LANE (bare `pnpm test` → 'fast'); the
-// filter is inert under coverage and for an unset lane, so --all / scoped /
-// cover runs traverse every lane, nothing is cut from the gate.
+// filter also applies under coverage. An unset lane traverses every lane.
 const vitestLanes = readVitestLanes()
 const slowLaneGlobs = vitestLanes.slow ?? []
 const midLaneGlobs = vitestLanes.mid ?? []
 const activeLane = process.env['FLEET_LANE']
 const laneFilterActive =
-  !isCoverageEnabled &&
-  (activeLane === 'fast' || activeLane === 'mid' || activeLane === 'slow')
+  activeLane === 'fast' || activeLane === 'mid' || activeLane === 'slow'
 // A lane's dir globs → test-file include patterns (`--lane mid|slow` runs ONLY
 // that lane; a trailing `/**` becomes `/**/*.test.{…}`).
 export function laneToTestGlobs(globs: string[]): string[] {
-  return globs.map(
-    g => `${g.replace(/\/\*+$/, '')}/**/*.test.{js,ts,mjs,mts,cjs}`,
+  return globs.map(g =>
+    /\.[cm]?[jt]s(?:\}|$)/u.test(g)
+      ? g
+      : `${g.replace(/\/\*+$/, '')}/**/*.test.{js,ts,mjs,mts,cjs}`,
   )
 }
 // The conformance tier's dir globs, and whether THIS run is the explicit
@@ -315,7 +316,7 @@ export const FUZZ_GLOBS: readonly string[] = [
 // scheduled run that can afford the full budget and file what it finds.
 const fuzzTier = process.env['FLEET_TEST_FUZZ'] === '1'
 
-export default defineConfig({
+const config = defineConfig({
   // Repo-owned resolution from the settings file's `vitest.alias` +
   // `vitest.conditions` — see mergeVitestAlias and resolveVitestConditions.
   // Spread conditionally so a repo declaring neither keeps vite's own
@@ -333,6 +334,8 @@ export default defineConfig({
       }
     : {}),
   test: {
+    // Reuse content-keyed transforms while each isolated file keeps fresh state.
+    fsModuleCache: true,
     deps: {
       interopDefault: false,
     },
@@ -433,8 +436,8 @@ export default defineConfig({
       ...repoNodeTestExcludeGlobs(),
       // Fast lane (`--lane fast`, the bare `pnpm test` default) skips the mid +
       // slow lane globs (heavy/isolated suites) for a quick local loop. Inert
-      // under coverage and for an unset lane, so --all + cover + CI still run
-      // every suite (see readVitestLanes). `--lane mid|slow` scopes via the
+      // for an unset lane. Coverage explicitly selects each lane in turn;
+      // `--lane mid|slow` scopes via the
       // include above instead, so no exclusion is applied for them here.
       ...(laneFilterActive && activeLane === 'fast'
         ? [...midLaneGlobs, ...slowLaneGlobs]
@@ -456,7 +459,7 @@ export default defineConfig({
     // fuzz-tiers-are-covered's question, and which legs fire is the workflow's.
     passWithNoTests: !conformanceTier,
     // Reporters left unset so vitest applies its own default:
-    // `[isAgent ? 'minimal' : 'default', ...(GITHUB_ACTIONS ? ['github-actions'] : [])]`
+    // `[isAgent() ? 'minimal' : 'default', ...(GITHUB_ACTIONS ? ['github-actions'] : [])]`
     // (vitest/src/defaults.ts). That yields the token-lean `minimal` reporter
     // inside an AI coding agent (std-env `isAgent`: CLAUDECODE/CURSOR_/…),
     // `default` for humans, and the `github-actions` annotations reporter in CI.
@@ -468,7 +471,7 @@ export default defineConfig({
     // `singleFork` → `fileParallelism: false` (forces maxWorkers to 1);
     // `minThreads` and `useAtomics` were dropped with no replacement.
     // Worker count tuned to physical CPUs: GH Actions ubuntu-latest has
-    // 4 cores, dev laptops typically 8-16. `getCI()` (rewire-aware
+    // 4 cores, dev laptops typically 8-16. `isCI()` (rewire-aware
     // presence check on `CI`) is truthy even for CI="" or CI=0, matching
     // the fleet convention that any CI value means CI.
     //
@@ -478,28 +481,6 @@ export default defineConfig({
     // EXCLUDES them (the second project runs them non-isolated). When unset,
     // every file is isolated.
     isolate: true,
-    ...(nonIsolatedGlobs.length
-      ? {
-          projects: [
-            {
-              extends: true,
-              test: {
-                name: 'isolated',
-                isolate: true,
-                exclude: nonIsolatedGlobs,
-              },
-            },
-            {
-              extends: true,
-              test: {
-                name: 'non-isolated',
-                isolate: false,
-                include: nonIsolatedGlobs,
-              },
-            },
-          ],
-        }
-      : {}),
     // Keep coverage file-parallel. Worker setup removes the already-consumed
     // COVERAGE flag before test code runs, so a nested Vitest child cannot turn
     // coverage back on and clean the outer run's shared .tmp reports. Ordinary
@@ -524,7 +505,7 @@ export default defineConfig({
     testTimeout: resolveTestBudgetMs(),
     hookTimeout: resolveTestBudgetMs(),
     bail: resolveBail({
-      isCI: getCI(),
+      isCI: isCI(),
       isCoverage: isCoverageEnabled,
     }),
     // Coverage shape comes from the fleet base merged with the repo-owned
@@ -537,3 +518,45 @@ export default defineConfig({
     },
   },
 })
+
+// Construct complete project options explicitly: Vite's extends merge concatenates
+// include arrays, which otherwise makes the shared project rerun isolated files.
+if (nonIsolatedGlobs.length && config.test) {
+  const baseTest = config.test
+  const include = baseTest.include ?? []
+  const exclude = baseTest.exclude ?? []
+  const sharedFiles = discoverSharedTestFiles(nonIsolatedGlobs, {
+    include,
+    exclude,
+  })
+
+  config.test = {
+    ...baseTest,
+    projects: [
+      {
+        ...config,
+        extends: false,
+        test: {
+          ...baseTest,
+          name: 'isolated',
+          isolate: true,
+          exclude: [...exclude, ...nonIsolatedGlobs],
+        },
+      },
+      {
+        ...config,
+        extends: false,
+        test: {
+          ...baseTest,
+          name: 'non-isolated',
+          isolate: false,
+          include: sharedFiles.length
+            ? sharedFiles
+            : ['__fleet_no_shared_tests__'],
+        },
+      },
+    ],
+  }
+}
+
+export default config

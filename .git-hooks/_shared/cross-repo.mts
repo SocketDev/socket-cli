@@ -32,6 +32,21 @@ export const CROSS_REPO_ABSOLUTE_RE = new RegExp(
   String.raw`/projects/(?:${FLEET_RE_FRAGMENT})/`,
 )
 
+// `…/projects/<repo>` as a COMMAND ARGUMENT — the same absolute shape without
+// the trailing slash, because a path handed to a script ends at a space:
+// `--target /…/projects/odai --fix`. Kept beside its slash-terminated sibling so
+// the two derive from one roster.
+export const CROSS_REPO_ABSOLUTE_ARG_RE = new RegExp(
+  String.raw`/projects/(?:${FLEET_RE_FRAGMENT})(?:/|\b)`,
+)
+
+// Either shape as a command ARGUMENT: `../<repo>` or `…/projects/<repo>`, each
+// ending at a slash or a word boundary. One regex so a caller cannot cover the
+// absolute form and forget the relative one.
+export const CROSS_REPO_ARG_RE = new RegExp(
+  String.raw`(?:\.\.(?:/\.\.)*|/projects)/(?:${FLEET_RE_FRAGMENT})(?:/|\b)`,
+)
+
 export const CROSS_REPO_ANY_RE = new RegExp(
   `${CROSS_REPO_RELATIVE_RE.source}|${CROSS_REPO_ABSOLUTE_RE.source}`,
 )
