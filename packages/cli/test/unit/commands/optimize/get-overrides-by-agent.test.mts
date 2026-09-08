@@ -5,8 +5,10 @@
  * different package managers.
  *
  * Test Coverage: - getOverridesData for all package managers -
- * getOverridesDataNpm - getOverridesDataPnpm - getOverridesDataYarn/YarnClassic
- * - getOverridesDataBun - getOverridesDataVlt.
+ * getOverridesDataNpm - getOverridesDataPnpm -
+ * getOverridesDataYarn/YarnClassic.
+ *
+ * - GetOverridesDataBun - getOverridesDataVlt.
  *
  * Related Files: - commands/optimize/get-overrides-by-agent.mts
  * (implementation)

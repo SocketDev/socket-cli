@@ -1,25 +1,3 @@
-/*
- * Comprehensive build script with intelligent caching.
- *
- * Builds packages in the correct order:
- *
- * 1. CLI package (TypeScript compilation and bundling)
- * 2. SEA binary for current platform (only with --force)
- *
- * Note: Yoga WASM and node-smol binaries are downloaded from socket-btm during
- * CLI build.
- *
- * Usage: pnpm run build # Smart build, skips unchanged, pnpm run build --force.
- *
- * # Force rebuild all + SEA for current platform pnpm run build:sea # Build SEA
- *
- * Binaries for all platforms pnpm run build --target <name> # Build specific
- * target pnpm run build --targets <t1,t2,...> # Build multiple targets pnpm run
- * build --platforms # Build all platform binaries pnpm run build --platforms
- * --parallel # Build platforms in parallel pnpm run build --help # Show this
- * help.
- */
-
 import {
   runParallelBuilds,
   runSequentialBuilds,
@@ -28,9 +6,9 @@ import {
 } from './build-steps/build-orchestration.mts'
 import { parseArgs } from './build-steps/cli.mts'
 import { PLATFORM_TARGETS } from '../../packages/build-infra/lib/platform-targets.mts'
-import { isMainModule } from '../fleet/_shared/is-main-module.mts'
-import { runMain } from '../fleet/_shared/run-main.mts'
-import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 export { parseArgs } from './build-steps/cli.mts'
 export { showHelp } from './build-steps/cli.mts'

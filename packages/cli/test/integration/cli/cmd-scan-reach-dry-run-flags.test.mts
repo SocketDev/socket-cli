@@ -6,7 +6,9 @@
  * and single/combined flag validation cases live in
  * test/integration/cli/cmd-scan-reach-dry-run.test.mts.
  *
- * Test Coverage: - Dry-run behavior validation - Flag parsing without execution
+ * Test Coverage: - Dry-run behavior validation - Flag parsing without
+ * execution.
+ *
  * - Input validation in dry-run mode.
  *
  * Note: This test suite was split from cmd-scan-reach.test.mts to improve test

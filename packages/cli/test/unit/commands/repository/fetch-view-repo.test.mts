@@ -11,9 +11,10 @@
  * Tests read-only repository data retrieval.
  *
  * Related Files: - src/commands/repository/fetch-view-repo.mts (implementation)
- * - src/commands/repository/handle-view-repo.mts (handler) -
- * src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
- * setup)
+ *
+ * - Src/commands/repository/handle-view-repo.mts (handler) -
+ *   src/util/socket/api.mts (API utilities) - src/util/socket/sdk.mts (SDK
+ *   setup)
  */
 
 import { describe, expect, it, vi } from 'vitest'

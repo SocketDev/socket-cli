@@ -27,70 +27,11 @@ import type { PURL_Type } from '../../util/ecosystem/types.mjs'
 import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
-export type ReachabilityOptions = {
-  excludePaths: string[]
-  reachAnalysisMemoryLimit: number
-  reachAnalysisTimeout: number
-  reachConcurrency: number
-  reachDebug: boolean
-  reachDetailedAnalysisLogFile: boolean
-  reachDisableAnalytics: boolean
-  reachDisableExternalToolChecks: boolean
-  reachEnableAnalysisSplitting: boolean
-  reachEcosystems: PURL_Type[]
-  reachExcludePaths: string[]
-  reachLazyMode: boolean
-  reachMinSeverity: string
-  reachSkipCache: boolean
-  reachUseOnlyPregeneratedSboms: boolean
-  reachUseUnreachableFromPrecomputation: boolean
-  reachVersion: string | undefined
-}
+const logger = getDefaultLogger()
 
-export type ReachabilityAnalysisOptions = {
-  branchName?: string | undefined
-  cwd?: string | undefined
-  orgSlug?: string | undefined
-  outputPath?: string | undefined
-  packagePaths?: string[] | undefined
-  reachabilityOptions: ReachabilityOptions
-  repoName?: string | undefined
-  // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
-  // reuses these paths instead of re-resolving the build.
-  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
-  spinner?: SpinnerInstance | undefined
-  target: string
-  uploadManifests?: boolean | undefined
-}
-
-export type ReachabilityAnalysisResult = {
-  reachabilityReport: string
-  tier1ReachabilityScanId: string | undefined
-}
-
-export async function performReachabilityAnalysis(
-  options?: ReachabilityAnalysisOptions | undefined,
-): Promise<CResult<ReachabilityAnalysisResult>> {
-  const {
-    branchName,
-    cwd = process.cwd(),
-    orgSlug,
-    outputPath,
-    packagePaths,
-    reachabilityOptions,
-    repoName,
-    resolvedPathsSidecar,
-    spinner,
-    target,
-    uploadManifests = true,
-  } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
-
-  // Determine the analysis target - make it relative to cwd if absolute.
-  let analysisTarget = target
-  if (path.isAbsolute(analysisTarget)) {
-    analysisTarget = path.relative(cwd, analysisTarget) || '.'
-  }
-
+export async function checkReachabilityPermissions(): Promise<
+  CResult<undefined>
+> {
   // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
@@ -123,99 +64,56 @@ export async function performReachabilityAnalysis(
     }
   }
 
-  const wasSpinning = !!spinner?.isSpinning
+  return { __proto__: null, ok: true, data: undefined } as CResult<undefined>
+}
 
-  let tarHash: string | undefined
+export function getReachabilityAnalysisArgs(
+  reachabilityOptions: ReachabilityConfig,
+): string[] {
+  return [
+    // Empty reachEcosystems implies scanning all ecosystems.
+    ...(reachabilityOptions.reachEcosystems.length
+      ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
+      : []),
+    ...(reachabilityOptions.reachExcludePaths.length
+      ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
+      : []),
+    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
+    ...(reachabilityOptions.reachMinSeverity
+      ? ['--min-severity', reachabilityOptions.reachMinSeverity]
+      : []),
+    ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
+    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
+      ? ['--use-only-pregenerated-sboms']
+      : []),
+    ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
+      ? ['--use-unreachable-from-precomputation']
+      : []),
+  ]
+}
 
-  if (orgSlug && packagePaths && uploadManifests) {
-    // Setup SDK for uploading manifests
-    const sockSdkCResult = await setupSdk()
-    if (!sockSdkCResult.ok) {
-      return sockSdkCResult
-    }
-
-    const sockSdk = sockSdkCResult.data
-
-    spinner?.start('Uploading manifests for reachability analysis…')
-
-    // A `.socket.facts.json` in packagePaths is legitimate INPUT to
-    // compute-artifacts (the auto-manifest facts generators write it), so it
-    // uploads with the rest. Coana reads the plain filename out of the
-    // manifests tar, so this path stays uncompressed; the full-scan upload in
-    // handle-create-new-scan.mts is where facts files go up brotli-compressed.
-    // Stale facts files are cleaned up downstream — see the post-success
-    // deletion in handle-create-new-scan.mts.
-    // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
-    const uploadCResult = (await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, packagePaths, {
-        pathsRelativeTo: path.resolve(cwd, analysisTarget),
-      }),
-      {
-        description: 'upload manifests',
-        spinner,
-      },
-    )) as CResult<{ tarHash?: string | undefined }>
-
-    spinner?.stop()
-
-    if (!uploadCResult.ok) {
-      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
-      if (wasSpinning) {
-        spinner?.start()
-      }
-      /* c8 ignore stop */
-      return uploadCResult
-    }
-
-    tarHash = uploadCResult.data?.tarHash
-    if (!tarHash) {
-      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
-      if (wasSpinning) {
-        spinner?.start()
-      }
-      /* c8 ignore stop */
-      return {
-        ok: false,
-        message: 'Failed to get manifest tar hash',
-        cause: 'Server did not return a tar hash for the uploaded manifests',
-      }
-    }
-
-    spinner?.start()
-    spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+export function getReachabilityEnvironment(
+  repoName: string | undefined,
+  branchName: string | undefined,
+): Record<string, string> {
+  // Build environment variables.
+  const coanaEnv: Record<string, string> = {}
+  // do not pass default repo and branch name to coana to avoid mixing
+  // buckets, cached configuration, from projects that are likely very different.
+  if (repoName && repoName !== SOCKET_DEFAULT_REPOSITORY) {
+    coanaEnv['SOCKET_REPO_NAME'] = repoName
+  }
+  if (branchName && branchName !== SOCKET_DEFAULT_BRANCH) {
+    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  spinner?.start()
-  spinner?.infoAndStop('Running reachability analysis with Coana…')
+  return coanaEnv
+}
 
-  const outputFilePath = outputPath?.trim()
-    ? outputPath
-    : DOT_SOCKET_DOT_FACTS_JSON
-
-  // Write the sidecar to a temp file for `--compute-artifacts-sidecar`;
-  // cleaned up in the finally below.
-  let sidecarPath: string | undefined
-  if (resolvedPathsSidecar?.length) {
-    sidecarPath = path.join(
-      os.tmpdir(),
-      `socket-compute-artifacts-sidecar-${crypto.randomUUID()}.json`,
-    )
-    await writeFile(sidecarPath, JSON.stringify(resolvedPathsSidecar), 'utf8')
-  }
-
-  // Build Coana arguments.
-  // Under machine-output mode, --silent suppresses coana's Winston
-  // logger entirely; the report still lands in --socket-mode's file.
-  const machineMode = getMachineOutputMode()
-  const coanaArgs = [
-    ...(machineMode ? ['--silent'] : []),
-    'run',
-    analysisTarget,
-    '--output-dir',
-    path.dirname(outputFilePath),
-    '--socket-mode',
-    outputFilePath,
-    '--disable-report-submission',
+export function getReachabilityResourceArgs(
+  reachabilityOptions: ReachabilityConfig,
+): string[] {
+  return [
     ...(reachabilityOptions.reachAnalysisTimeout
       ? ['--analysis-timeout', `${reachabilityOptions.reachAnalysisTimeout}`]
       : []),
@@ -239,100 +137,273 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachEnableAnalysisSplitting
       ? []
       : ['--disable-analysis-splitting']),
-    ...(tarHash
-      ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
-      : []),
-    // Empty reachEcosystems implies scanning all ecosystems.
-    ...(reachabilityOptions.reachEcosystems.length
-      ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
-      : []),
-    ...(reachabilityOptions.reachExcludePaths.length
-      ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
-      : []),
-    ...(reachabilityOptions.reachLazyMode ? ['--lazy-mode'] : []),
-    ...(reachabilityOptions.reachMinSeverity
-      ? ['--min-severity', reachabilityOptions.reachMinSeverity]
-      : []),
-    ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
-    ...(reachabilityOptions.reachUseOnlyPregeneratedSboms
-      ? ['--use-only-pregenerated-sboms']
-      : []),
-    ...(reachabilityOptions.reachUseUnreachableFromPrecomputation
-      ? ['--use-unreachable-from-precomputation']
-      : []),
-    ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
   ]
+}
 
-  // Build environment variables.
-  const coanaEnv: Record<string, string> = {}
-  // do not pass default repo and branch name to coana to avoid mixing
-  // buckets, cached configuration, from projects that are likely very different.
-  if (repoName && repoName !== SOCKET_DEFAULT_REPOSITORY) {
-    coanaEnv['SOCKET_REPO_NAME'] = repoName
+export type ReachabilityConfig = {
+  excludePaths: string[]
+  reachAnalysisMemoryLimit: number
+  reachAnalysisTimeout: number
+  reachConcurrency: number
+  reachDebug: boolean
+  reachDetailedAnalysisLogFile: boolean
+  reachDisableAnalytics: boolean
+  reachDisableExternalToolChecks: boolean
+  reachEnableAnalysisSplitting: boolean
+  reachEcosystems: PURL_Type[]
+  reachExcludePaths: string[]
+  reachLazyMode: boolean
+  reachMinSeverity: string
+  reachSkipCache: boolean
+  reachUseOnlyPregeneratedSboms: boolean
+  reachUseUnreachableFromPrecomputation: boolean
+  reachVersion: string | undefined
+}
+
+export type ReachabilityAnalysisOptions = {
+  branchName?: string | undefined
+  cwd?: string | undefined
+  orgSlug?: string | undefined
+  outputPath?: string | undefined
+  packagePaths?: string[] | undefined
+  repoName?: string | undefined
+  // Resolved-paths sidecar from the auto-manifest run; passed to coana so it
+  // reuses these paths instead of re-resolving the build.
+  resolvedPathsSidecar?: ResolvedPathsSidecar | undefined
+  spinner?: SpinnerInstance | undefined
+  uploadManifests?: boolean | undefined
+}
+
+export type ReachabilityAnalysisResult = {
+  reachabilityReport: string
+  tier1ReachabilityScanId: string | undefined
+}
+
+export async function performReachabilityAnalysis(
+  target: string,
+  reachabilityOptions: ReachabilityConfig,
+  options?: ReachabilityAnalysisOptions | undefined,
+): Promise<CResult<ReachabilityAnalysisResult>> {
+  const {
+    branchName,
+    cwd = process.cwd(),
+    orgSlug,
+    outputPath,
+    packagePaths,
+    repoName,
+    resolvedPathsSidecar,
+    spinner,
+    uploadManifests = true,
+  } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
+
+  // Determine the analysis target - make it relative to cwd if absolute.
+  let analysisTarget = target
+  if (path.isAbsolute(analysisTarget)) {
+    analysisTarget = path.relative(cwd, analysisTarget) || '.'
   }
-  if (branchName && branchName !== SOCKET_DEFAULT_BRANCH) {
-    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
+
+  const permissions = await checkReachabilityPermissions()
+  if (!permissions.ok) {
+    return permissions
   }
 
-  // Under --json/--markdown the final payload owns stdout, and coana streams
-  // its progress there under 'inherit'. Route the child's stdout to our stderr
-  // (fd 2) instead of dropping it: `2>/dev/null` still isolates the payload,
-  // and a human watching a long reachability run keeps seeing progress. stdin
-  // and stderr stay inherited. Text mode inherits stdout unchanged.
-  const coanaStdio: StdioOptions = machineMode
-    ? ['inherit', 2, 'inherit']
-    : 'inherit'
+  const wasSpinning = !!spinner?.isSpinning
 
-  try {
-    // Run Coana with the manifests tar hash.
-    const coanaResult = await spawnCoanaDlx(coanaArgs, {
+  let tarHash: string | undefined
+
+  if (orgSlug && packagePaths && uploadManifests) {
+    const uploadResult = await uploadReachabilityManifests(
       orgSlug,
-      coanaVersion: reachabilityOptions.reachVersion || undefined,
-      cwd,
-      env: coanaEnv,
-      spinner,
-      stdio: coanaStdio,
-    })
-
-    /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
-    if (wasSpinning) {
-      spinner?.start()
+      packagePaths,
+    )
+    if (!uploadResult.ok) {
+      return uploadResult
     }
-    /* c8 ignore stop */
+    tarHash = uploadResult.data
+  }
 
-    if (!coanaResult.ok) {
-      const logger = getDefaultLogger()
-      logger.error('Reachability analysis failed')
-      logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`)
-      if (coanaResult.message) {
-        logger.error(`  ${coanaResult.message}`)
+  async function uploadReachabilityManifests(
+    uploadOrgSlug: string,
+    uploadPackagePaths: string[],
+  ): Promise<CResult<string>> {
+    // Setup SDK for uploading manifests
+    const sockSdkCResult = await setupSdk()
+    if (!sockSdkCResult.ok) {
+      return sockSdkCResult
+    }
+
+    const sockSdk = sockSdkCResult.data
+
+    spinner?.start('Uploading manifests for reachability analysis…')
+
+    // A `.socket.facts.json` in uploadPackagePaths is legitimate INPUT to
+    // compute-artifacts (the auto-manifest facts generators write it), so it
+    // uploads with the rest. Coana reads the plain filename out of the
+    // manifests tar, so this path stays uncompressed; the full-scan upload in
+    // handle-create-new-scan.mts is where facts files go up brotli-compressed.
+    // Stale facts files are cleaned up downstream — see the post-success
+    // deletion in handle-create-new-scan.mts.
+    // Ensure uploaded manifest files are relative to analysis target as coana resolves SBOM manifest files relative to this path.
+    const uploadCResult = (await handleApiCall(
+      sockSdk.uploadManifestFiles(uploadOrgSlug, uploadPackagePaths, {
+        pathsRelativeTo: path.resolve(cwd, analysisTarget),
+      }),
+      {
+        description: 'upload manifests',
+        spinner,
+      },
+    )) as CResult<{ tarHash?: string | undefined }>
+
+    spinner?.stop()
+
+    if (!uploadCResult.ok) {
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+      if (wasSpinning) {
+        spinner?.start()
+      }
+      /* c8 ignore stop */
+      return uploadCResult
+    }
+
+    const uploadedTarHash = uploadCResult.data?.tarHash
+    if (!uploadedTarHash) {
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+      if (wasSpinning) {
+        spinner?.start()
+      }
+      /* c8 ignore stop */
+      return {
+        ok: false,
+        message: 'Failed to get manifest tar hash',
+        cause: 'Server did not return a tar hash for the uploaded manifests',
       }
     }
 
-    return coanaResult.ok
-      ? {
-          ok: true,
-          data: {
-            // Use the actual output filename for the scan. Keep it
-            // `cwd`-relative so the upload (which relativizes against `cwd`)
-            // and the post-success delete (`path.resolve(cwd, …)`) keep
-            // working.
-            reachabilityReport: outputFilePath,
-            // Coana is spawned with `cwd`, so it writes the facts file there.
-            // Reading the bare relative path resolves against `process.cwd()`
-            // and misses the file whenever `cwd !== process.cwd()` (`--cwd
-            // <dir>`), which silently drops the tier 1 scan id and skips
-            // finalize downstream.
-            tier1ReachabilityScanId: extractTier1ReachabilityScanId(
-              path.resolve(cwd, outputFilePath),
-            ),
-          },
+    spinner?.start()
+    spinner?.success(
+      `Manifests uploaded successfully. Tar hash: ${uploadedTarHash}`,
+    )
+
+    return {
+      __proto__: null,
+      ok: true,
+      data: uploadedTarHash,
+    } as CResult<string>
+  }
+
+  spinner?.start()
+  spinner?.infoAndStop('Running reachability analysis with Coana…')
+
+  const outputFilePath = outputPath?.trim()
+    ? outputPath
+    : DOT_SOCKET_DOT_FACTS_JSON
+
+  const sidecarPath = await writeReachabilitySidecar(resolvedPathsSidecar)
+
+  return executeReachability()
+
+  async function executeReachability(): Promise<
+    CResult<ReachabilityAnalysisResult>
+  > {
+    // Build Coana arguments.
+    // Under machine-output mode, --silent suppresses coana's Winston
+    // logger entirely; the report still lands in --socket-mode's file.
+    const machineMode = getMachineOutputMode()
+    const coanaArgs = [
+      ...(machineMode ? ['--silent'] : []),
+      'run',
+      analysisTarget,
+      '--output-dir',
+      path.dirname(outputFilePath),
+      '--socket-mode',
+      outputFilePath,
+      '--disable-report-submission',
+      ...getReachabilityResourceArgs(reachabilityOptions),
+      ...(tarHash
+        ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
+        : []),
+      ...getReachabilityAnalysisArgs(reachabilityOptions),
+      ...(sidecarPath ? ['--compute-artifacts-sidecar', sidecarPath] : []),
+    ]
+
+    const coanaEnv = getReachabilityEnvironment(repoName, branchName)
+
+    // Under --json/--markdown the final payload owns stdout, and coana streams
+    // its progress there under 'inherit'. Route the child's stdout to our stderr
+    // (fd 2) instead of dropping it: `2>/dev/null` still isolates the payload,
+    // and a human watching a long reachability run keeps seeing progress. stdin
+    // and stderr stay inherited. Text mode inherits stdout unchanged.
+    const coanaStdio: StdioOptions = machineMode
+      ? ['inherit', 2, 'inherit']
+      : 'inherit'
+
+    try {
+      // Run Coana with the manifests tar hash.
+      const coanaResult = await spawnCoanaDlx(coanaArgs, {
+        orgSlug,
+        coanaVersion: reachabilityOptions.reachVersion || undefined,
+        cwd,
+        env: coanaEnv,
+        spinner,
+        stdio: coanaStdio,
+      })
+
+      /* c8 ignore start - wasSpinning only set when caller passes a running spinner; unit tests pass undefined */
+      if (wasSpinning) {
+        spinner?.start()
+      }
+      /* c8 ignore stop */
+
+      if (!coanaResult.ok) {
+        logger.error('Reachability analysis failed')
+        logger.error(`  target: ${analysisTarget}, cwd: ${cwd}`)
+        if (coanaResult.message) {
+          logger.error(`  ${coanaResult.message}`)
         }
-      : coanaResult
-  } finally {
-    // Best-effort cleanup of the temp sidecar.
-    if (sidecarPath) {
-      await safeDelete(sidecarPath, { force: true })
+      }
+
+      return coanaResult.ok
+        ? {
+            ok: true,
+            data: {
+              // Use the actual output filename for the scan. Keep it
+              // `cwd`-relative so the upload (which relativizes against `cwd`)
+              // and the post-success delete (`path.resolve(cwd, …)`) keep
+              // working.
+              reachabilityReport: outputFilePath,
+              // Coana is spawned with `cwd`, so it writes the facts file there.
+              // Reading the bare relative path resolves against `process.cwd()`
+              // and misses the file whenever `cwd !== process.cwd()` (`--cwd
+              // <dir>`), which silently drops the tier 1 scan id and skips
+              // finalize downstream.
+              tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+                path.resolve(cwd, outputFilePath),
+              ),
+            },
+          }
+        : coanaResult
+    } finally {
+      // Best-effort cleanup of the temp sidecar.
+      if (sidecarPath) {
+        await safeDelete(sidecarPath)
+      }
     }
   }
+}
+
+export async function writeReachabilitySidecar(
+  resolvedPathsSidecar: ResolvedPathsSidecar | undefined,
+): Promise<string | undefined> {
+  // Write the sidecar to a temp file for `--compute-artifacts-sidecar`;
+  // cleaned up in the finally below.
+  let sidecarPath: string | undefined
+  if (resolvedPathsSidecar?.length) {
+    sidecarPath = path.join(
+      os.tmpdir(),
+      `socket-compute-artifacts-sidecar-${crypto.randomUUID()}.json`,
+    )
+    await writeFile(sidecarPath, JSON.stringify(resolvedPathsSidecar), 'utf8')
+  }
+
+  return sidecarPath
 }

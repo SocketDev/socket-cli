@@ -9,8 +9,10 @@
  * markdown)
  *
  * Related Files: - src/commands/package/cmd-package-shallow.mts - Command
- * definition - src/commands/package/handle-package-shallow.mts - Analysis logic
- * - src/commands/package/output-package-shallow.mts - Formatting.
+ * definition - src/commands/package/handle-package-shallow.mts - Analysis
+ * logic.
+ *
+ * - Src/commands/package/output-package-shallow.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'

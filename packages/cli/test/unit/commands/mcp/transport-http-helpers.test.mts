@@ -12,8 +12,10 @@
  * splitScopes: non-string / empty string / single / multiple / extra ws -
  * isLocalhostOrigin: localhost / 127.0.0.1 / other / malformed URL.
  *
- * Related Files: - src/commands/mcp/transport-http-helpers.mts - Implementation
- * - src/commands/mcp/transport-http.mts - Caller (HTTP server)
+ * Related Files: - src/commands/mcp/transport-http-helpers.mts -
+ * Implementation.
+ *
+ * - Src/commands/mcp/transport-http.mts - Caller (HTTP server)
  */
 
 import { describe, expect, it } from 'vitest'

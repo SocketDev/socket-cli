@@ -175,14 +175,14 @@ const baseConfig: FixConfig = {
   ecosystems: [],
   exclude: [],
   excludePaths: [],
-  packageManagers: [],
   ghsas: [],
   include: [],
-  minSatisfying: false,
   minimumReleaseAge: '',
+  minSatisfying: false,
   orgSlug: 'test-org',
   outputFile: '',
   outputKind: 'text',
+  packageManagers: [],
   prCheck: true,
   prLimit: 10,
   rangeStyle: 'preserve',
@@ -305,7 +305,7 @@ describe('coanaFix (coverage)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('coana failed')
+        expect(result.cause).toBe('no coana available')
       }
     })
 

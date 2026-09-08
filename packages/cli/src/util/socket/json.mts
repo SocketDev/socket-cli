@@ -2,9 +2,11 @@
  * Socket JSON utilities for Socket CLI. Manages .socket/socket.json
  * configuration and scan metadata.
  *
- * Key Functions: - loadDotSocketDirectory: Load .socket directory configuration
- * - saveSocketJson: Persist scan configuration to .socket/socket.json -
- * validateSocketJson: Validate socket.json structure.
+ * Key Functions: - loadDotSocketDirectory: Load .socket directory
+ * configuration.
+ *
+ * - SaveSocketJson: Persist scan configuration to .socket/socket.json -
+ *   validateSocketJson: Validate socket.json structure.
  *
  * File Structure: - Contains scan metadata and configuration - Stores scan IDs
  * and repository information - Tracks CLI version and scan timestamps.

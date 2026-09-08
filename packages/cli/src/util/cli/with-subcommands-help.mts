@@ -33,6 +33,8 @@ import { API_V0_URL } from '../../constants/socket.mts'
 import { getFlagListOutput, getHelpListOutput } from '../output/formatting.mts'
 import { socketPackageLink } from '../terminal/link.mts'
 
+import { lookupSubcommand } from './lookup-subcommand.mts'
+
 import { description } from './with-subcommands-shared.mts'
 
 import type {
@@ -46,7 +48,7 @@ import type { MeowFlag, MeowFlags } from '../../flags.mts'
 const HELP_INDENT = 2
 const HELP_PAD_NAME = 28
 
-export interface BuildHelpLinesOptions {
+export interface BuildHelpLinesConfig<CommandName extends string> {
   aliases: Record<string, CliAliases[string]>
   argv: readonly string[]
   /**
@@ -57,7 +59,7 @@ export interface BuildHelpLinesOptions {
   flags: MeowFlags
   isRootCommand: boolean
   name: string
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<CommandName, CliSubcommand>
 }
 
 export interface BucketSection {
@@ -87,7 +89,9 @@ const BUCKET_SECTIONS: readonly BucketSection[] = [
  * For sub-commands (`socket scan`, `socket package`, …): a flat alphabetised
  * list of the subcommand's own children + aliases.
  */
-export function buildHelpLines(config: BuildHelpLinesOptions): string[] {
+export function buildHelpLines<CommandName extends string>(
+  config: BuildHelpLinesConfig<CommandName>,
+): string[] {
   const { aliases, argv, buckets, flags, isRootCommand, name, subcommands } = {
     __proto__: null,
     ...config,
@@ -155,12 +159,12 @@ export function describeOrFallback(
  *
  * Hidden commands and commands without a bucket assignment are excluded.
  */
-export function groupCommandsByBucket(
-  subcommands: Record<string, CliSubcommand>,
+export function groupCommandsByBucket<CommandName extends string>(
+  subcommands: Record<CommandName, CliSubcommand>,
   buckets: CliBuckets,
 ): Map<CliBucket, string[]> {
   const grouped = new Map<CliBucket, string[]>()
-  for (const [cmdName, cmd] of Object.entries(subcommands)) {
+  for (const [cmdName, cmd] of Object.entries<CliSubcommand>(subcommands)) {
     if (cmd.hidden) {
       continue
     }
@@ -239,9 +243,9 @@ export function pushEnvironmentVariables(
  * "hero" rows in the Main bucket that aren't standalone commands (e.g. `socket
  * scan create`, `socket npm/<purl>`).
  */
-export function pushRootBucketedLayout(
+export function pushRootBucketedLayout<CommandName extends string>(
   lines: string[],
-  subcommands: Record<string, CliSubcommand>,
+  subcommands: Record<CommandName, CliSubcommand>,
   buckets: CliBuckets,
 ): void {
   const grouped = groupCommandsByBucket(subcommands, buckets)
@@ -259,7 +263,7 @@ export function pushRootBucketedLayout(
       // entry but anchor the user's mental model. Order matches the
       // historical layout.
       lines.push(
-        `  socket login                ${describeOrFallback(subcommands['login'], 'Socket API login and CLI setup')}`,
+        `  socket login                ${describeOrFallback(lookupSubcommand(subcommands, 'login'), 'Socket API login and CLI setup')}`,
         '  socket scan create          Create a new Socket scan and report',
         '  socket npm/lodash@4.17.21   Request the Socket score of a package',
       )
@@ -270,7 +274,7 @@ export function pushRootBucketedLayout(
       if (bucket === 'main' && cmdName === 'login') {
         continue
       }
-      const cmd = subcommands[cmdName]
+      const cmd = lookupSubcommand(subcommands, cmdName)
       /* c8 ignore start - defensive: cmdName comes from grouped subcommands so the lookup always resolves */
       if (!cmd) {
         continue
@@ -282,9 +286,9 @@ export function pushRootBucketedLayout(
   }
 }
 
-export function pushSubcommandFlatList(
+export function pushSubcommandFlatList<CommandName extends string>(
   lines: string[],
-  subcommands: Record<string, CliSubcommand>,
+  subcommands: Record<CommandName, CliSubcommand>,
   aliases: Record<string, CliAliases[string]>,
 ): void {
   lines.push('Commands')
@@ -293,7 +297,7 @@ export function pushSubcommandFlatList(
       {
         ...toSortedObject(
           Object.fromEntries(
-            Object.entries(subcommands).filter(
+            Object.entries<CliSubcommand>(subcommands).filter(
               ({ 1: subcommand }) => !subcommand.hidden,
             ),
           ),
@@ -303,7 +307,9 @@ export function pushSubcommandFlatList(
             Object.entries(aliases).filter(({ 1: alias }) => {
               const { hidden } = alias
               const cmdName = hidden ? '' : alias.argv[0]
-              const subcommand = cmdName ? subcommands[cmdName] : undefined
+              const subcommand = cmdName
+                ? lookupSubcommand(subcommands, cmdName)
+                : undefined
               return subcommand && !subcommand.hidden
             }),
           ),

@@ -6,8 +6,10 @@
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
  * validation - Metadata display - Output format support.
  *
- * Related Files: - src/commands/scan/cmd-scan-metadata.mts - Command definition
- * - src/commands/scan/handle-scan-metadata.mts - Metadata retrieval logic.
+ * Related Files: - src/commands/scan/cmd-scan-metadata.mts - Command
+ * definition.
+ *
+ * - Src/commands/scan/handle-scan-metadata.mts - Metadata retrieval logic.
  */
 
 import { describe, expect } from 'vitest'

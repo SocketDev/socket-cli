@@ -12,7 +12,8 @@
  *
  * Related Files: - src/commands/repository/handle-view-repo.mts
  * (implementation) - src/commands/repository/fetch-view-repo.mts (API fetcher)
- * - src/commands/repository/output-view-repo.mts (formatter)
+ *
+ * - Src/commands/repository/output-view-repo.mts (formatter)
  */
 
 import { describe, expect, it, vi } from 'vitest'

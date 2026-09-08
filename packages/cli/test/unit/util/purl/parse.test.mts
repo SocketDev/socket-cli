@@ -4,7 +4,9 @@
  * Purpose: Tests Package URL (PURL) parsing. Validates PURL spec compliance and
  * component extraction.
  *
- * Test Coverage: - PURL syntax parsing - Namespace extraction - Version parsing
+ * Test Coverage: - PURL syntax parsing - Namespace extraction - Version
+ * parsing.
+ *
  * - Qualifiers handling - Subpath parsing - Invalid PURL error handling.
  *
  * Testing Approach: Tests PURL parser with various ecosystem formats.

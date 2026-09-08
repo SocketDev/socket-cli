@@ -5,7 +5,9 @@
  * fetch-process-output pipeline, input validation, and error handling for
  * repository creation workflows.
  *
- * Test Coverage: - Successful repository creation flow - Fetch failure handling
+ * Test Coverage: - Successful repository creation flow - Fetch failure
+ * handling.
+ *
  * - Input validation - Output formatting delegation.
  *
  * Testing Approach: Mocks fetch and output functions to isolate handler

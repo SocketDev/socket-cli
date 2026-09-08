@@ -17,7 +17,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createSuccessResult } from '../../../helpers/mocks.mts'
-import { handleCreateNewScan } from '../../../../src/commands/scan/handle-create-new-scan.mts'
+import {
+  handleCreateNewScan,
+  removeGeneratedScanFacts,
+} from '../../../../src/commands/scan/handle-create-new-scan.mts'
 
 // Mock all the dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -122,11 +125,11 @@ vi.mock(import('../../../../src/util/basics/spawn.mts'), () => ({
   runSocketBasics: mockRunSocketBasics,
 }))
 
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockDeleteAsync = vi.hoisted(() => vi.fn())
 // Mock the post-success facts deletion so no real fs delete runs.
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), async importOriginal => ({
   ...(await importOriginal()),
-  safeDelete: mockSafeDelete,
+  getDel: () => ({ deleteAsync: mockDeleteAsync }),
 }))
 
 describe('handleCreateNewScan sidecar threading', () => {
@@ -210,7 +213,38 @@ describe('handleCreateNewScan sidecar threading', () => {
       expect.objectContaining({ computeArtifactsSidecar: true }),
     )
     expect(mockPerformReachabilityAnalysis).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Object),
       expect.objectContaining({ resolvedPathsSidecar: sidecar }),
     )
+  })
+})
+
+describe('removeGeneratedScanFacts', () => {
+  beforeEach(() => {
+    mockDeleteAsync.mockReset().mockResolvedValue([])
+  })
+
+  it('deletes only the generated filename within its parent', async () => {
+    await removeGeneratedScanFacts('/test/project/.socket.facts.json')
+    expect(mockDeleteAsync).toHaveBeenCalledWith('.socket.facts.json', {
+      cwd: '/test/project',
+      onlyFiles: true,
+    })
+  })
+
+  it('rejects unrelated report filenames', async () => {
+    await expect(
+      removeGeneratedScanFacts('/test/project/report.json'),
+    ).rejects.toThrow(Error)
+    expect(mockDeleteAsync).not.toHaveBeenCalled()
+  })
+
+  it('preserves deletion failures', async () => {
+    const error = Object.assign(new Error('access denied'), { code: 'EACCES' })
+    mockDeleteAsync.mockRejectedValueOnce(error)
+    await expect(
+      removeGeneratedScanFacts('/test/project/.socket.facts.json'),
+    ).rejects.toBe(error)
   })
 })

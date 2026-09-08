@@ -1,0 +1,22 @@
+#!/bin/sh
+# Git pre-merge-commit hook entry point. Invoked by git when core.hooksPath
+# points at this directory (set by `node scripts/install-git-hooks.mts`
+# at `pnpm install` time). Defers to the .mts implementation.
+
+# Fail on the first unhandled non-zero status. Without it a fallible
+# command that drops its status turns a refusal into a printed notice the
+# shell ignores — how the security step's refusals ran unheeded. Enforced
+# by scripts/fleet/check/git-hooks-have-exit-status-propagation.mts.
+set -e
+
+# Put the repo-pinned Node (.node-version) on PATH — git runs hooks with
+# the login shell's PATH, which may be an older system Node than the
+# hooks' floor (.mts type-stripping needs Node >= 24). See
+# _shared/resolve-node.sh.
+. "$(dirname "$0")/../_shared/resolve-node.sh"
+
+# Sanitize placeholder Socket API credentials (silent here; see the shared
+# script for the rationale) so the .mts step's subprocesses don't 401.
+. "$(dirname "$0")/../_shared/sanitize-token-env.sh"
+
+exec node "$(dirname "$0")/pre-merge-commit.mts" "$@"

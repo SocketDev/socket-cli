@@ -21,10 +21,80 @@ import {
 } from './api-http.mts'
 import { getDefaultApiToken } from './sdk.mts'
 
+import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
+
 import type { CResult } from '../../types.mts'
 
+export function decodeApiResponse<T>(
+  response: { json: () => unknown },
+  path: string,
+): CResult<T> {
+  try {
+    const data = response.json()
+    return {
+      ok: true,
+      data: data as T,
+    }
+  } catch (e) {
+    debug('Failed to parse API response JSON')
+    debugDir(e)
+    return {
+      ok: false,
+      message: 'API request failed',
+      cause: `Unexpected error parsing response JSON (path: ${path})`,
+    }
+  }
+}
+
+export async function reportApiHttpError<T>(
+  result: HttpResponse,
+  path: string,
+  request: {
+    commandPath: string | undefined
+    description: string | undefined
+    method: 'POST' | 'PUT'
+    fullUrl: string
+    startTime: number
+    requestedAt: string
+  },
+): Promise<CResult<T>> {
+  const { commandPath, description, method, fullUrl, startTime, requestedAt } =
+    request
+  const { status } = result
+  const durationMs = Date.now() - startTime
+  // Include response headers, for cf-ray, and a truncated body so
+  // support tickets have everything needed to file against Cloudflare
+  // or backend teams.
+  debugApiResponse(description || 'Send API Request', {
+    status,
+    requestInfo: {
+      method,
+      url: fullUrl,
+      durationMs,
+      requestedAt,
+      headers: {
+        Authorization: '[REDACTED]',
+        'Content-Type': 'application/json',
+      },
+      responseHeaders: result.headers,
+      responseBody: tryReadResponseText(result),
+    },
+  })
+  // Log required permissions for 403 errors when in a command context.
+  if (commandPath && status === 403) {
+    logPermissionsFor403(commandPath)
+  }
+  return {
+    ok: false,
+    message: 'Socket API error',
+    cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
+    data: {
+      code: status,
+    },
+  }
+}
+
 export type SendApiRequestOptions = {
-  method: 'POST' | 'PUT'
   body?: unknown | undefined
   description?: string | undefined
   commandPath?: string | undefined
@@ -35,6 +105,7 @@ export type SendApiRequestOptions = {
  */
 export async function sendApiRequest<T>(
   path: string,
+  method: 'POST' | 'PUT',
   options?: SendApiRequestOptions | undefined,
 ): Promise<CResult<T>> {
   const apiToken = getDefaultApiToken()
@@ -59,7 +130,7 @@ export async function sendApiRequest<T>(
   }
   /* c8 ignore stop */
 
-  const { body, commandPath, description, method } = {
+  const { body, commandPath, description } = {
     __proto__: null,
     ...options,
   } as SendApiRequestOptions
@@ -73,8 +144,7 @@ export async function sendApiRequest<T>(
   const startTime = Date.now()
   const requestedAt = new Date(startTime).toISOString()
 
-  // eslint-disable-next-line typescript-eslint/no-explicit-any -- HTTP response shape (status/ok/headers/text/json/data) is dynamically narrowed below; typing here would require a discriminated union for every status code.
-  let result: any
+  let result: HttpResponse
   try {
     result = await socketHttpRequest(fullUrl, {
       body: body ? JSON.stringify(body) : undefined,
@@ -140,53 +210,15 @@ export async function sendApiRequest<T>(
   }
 
   if (!result.ok) {
-    const { status } = result
-    const durationMs = Date.now() - startTime
-    // Include response headers, for cf-ray, and a truncated body so
-    // support tickets have everything needed to file against Cloudflare
-    // or backend teams.
-    debugApiResponse(description || 'Send API Request', {
-      status,
-      requestInfo: {
-        method,
-        url: fullUrl,
-        durationMs,
-        requestedAt,
-        headers: {
-          Authorization: '[REDACTED]',
-          'Content-Type': 'application/json',
-        },
-        responseHeaders: result.headers,
-        responseBody: tryReadResponseText(result),
-      },
+    return reportApiHttpError(result, path, {
+      commandPath,
+      description,
+      method,
+      fullUrl,
+      startTime,
+      requestedAt,
     })
-    // Log required permissions for 403 errors when in a command context.
-    if (commandPath && status === 403) {
-      logPermissionsFor403(commandPath)
-    }
-    return {
-      ok: false,
-      message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
-      data: {
-        code: status,
-      },
-    }
   }
 
-  try {
-    const data = result.json()
-    return {
-      ok: true,
-      data: data as T,
-    }
-  } catch (e) {
-    debug('Failed to parse API response JSON')
-    debugDir(e)
-    return {
-      ok: false,
-      message: 'API request failed',
-      cause: `Unexpected error parsing response JSON (path: ${path})`,
-    }
-  }
+  return decodeApiResponse<T>(result, path)
 }

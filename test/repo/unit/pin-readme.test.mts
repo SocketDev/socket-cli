@@ -11,13 +11,14 @@ import { describe, expect, it } from 'vitest'
 
 import { pinReadmeAssets } from '../../../scripts/fleet/registry-infra/pin-readme.mts'
 
-const base =
-  'https://raw.githubusercontent.com/SocketDev/socket-cli/0123456789abcdef0123456789abcdef01234567/'
+const slug = 'SocketDev/socket-cli'
+const ref = '0123456789abcdef0123456789abcdef01234567'
+const base = `https://raw.githubusercontent.com/${slug}/${ref}/`
 
 describe('pinReadmeAssets', () => {
   it('pins a relative img src', () => {
     expect(
-      pinReadmeAssets('<img src="assets/logo.png" alt="logo">\n', base),
+      pinReadmeAssets('<img src="assets/logo.png" alt="logo">\n', slug, ref),
     ).toBe(`<img src="${base}assets/logo.png" alt="logo">\n`)
   })
 
@@ -25,7 +26,8 @@ describe('pinReadmeAssets', () => {
     expect(
       pinReadmeAssets(
         '<source srcset="assets/dark.png" media="(prefers-color-scheme: dark)">\n',
-        base,
+        slug,
+        ref,
       ),
     ).toBe(
       `<source srcset="${base}assets/dark.png" media="(prefers-color-scheme: dark)">\n`,
@@ -33,20 +35,24 @@ describe('pinReadmeAssets', () => {
   })
 
   it('pins a markdown image ref', () => {
-    expect(pinReadmeAssets('![banner](assets/banner.png)\n', base)).toBe(
+    expect(pinReadmeAssets('![banner](assets/banner.png)\n', slug, ref)).toBe(
       `![banner](${base}assets/banner.png)\n`,
     )
   })
 
   it('pins a markdown link ref', () => {
-    expect(pinReadmeAssets('[download](assets/file.pdf)\n', base)).toBe(
+    expect(pinReadmeAssets('[download](assets/file.pdf)\n', slug, ref)).toBe(
       `[download](${base}assets/file.pdf)\n`,
     )
   })
 
   it('pins a reference-style definition', () => {
     expect(
-      pinReadmeAssets('![banner][ref]\n\n[ref]: assets/banner.png\n', base),
+      pinReadmeAssets(
+        '![banner][ref]\n\n[ref]: assets/banner.png\n',
+        slug,
+        ref,
+      ),
     ).toBe(`![banner][ref]\n\n[ref]: ${base}assets/banner.png\n`)
   })
 
@@ -54,7 +60,8 @@ describe('pinReadmeAssets', () => {
     expect(
       pinReadmeAssets(
         '> ![quoted](assets/quoted.png)\n\n- [download](assets/file.pdf)\n',
-        base,
+        slug,
+        ref,
       ),
     ).toBe(
       `> ![quoted](${base}assets/quoted.png)\n\n- [download](${base}assets/file.pdf)\n`,
@@ -70,7 +77,8 @@ describe('pinReadmeAssets', () => {
         'See the screenshot.[^shot]\n' +
         '\n' +
         '[^shot]: ![shot](assets/shot.png)\n',
-      base,
+      slug,
+      ref,
     )
     expect(pinned).toContain(`| ![logo](${base}assets/logo.png) | Socket |`)
     expect(pinned).toContain(`[^shot]: ![shot](${base}assets/shot.png)`)
@@ -80,7 +88,7 @@ describe('pinReadmeAssets', () => {
     const readme =
       '<img src="https://example.com/assets/logo.png">\n' +
       '![ext](https://example.com/assets/banner.png)\n'
-    expect(pinReadmeAssets(readme, base)).toBe(readme)
+    expect(pinReadmeAssets(readme, slug, ref)).toBe(readme)
   })
 
   it('is idempotent — pinning a pinned README changes nothing', () => {
@@ -88,26 +96,27 @@ describe('pinReadmeAssets', () => {
       '<img src="assets/logo.png">\n' +
       '<source srcset="assets/dark.png">\n' +
       '![banner](assets/banner.png)\n'
-    const once = pinReadmeAssets(readme, base)
-    expect(pinReadmeAssets(once, base)).toBe(once)
+    const once = pinReadmeAssets(readme, slug, ref)
+    expect(pinReadmeAssets(once, slug, ref)).toBe(once)
   })
 
   it('leaves assets/ refs inside fenced code blocks alone', () => {
     const readme =
       '```md\n![example](assets/example.png)\n<img src="assets/example.png">\n```\n'
-    expect(pinReadmeAssets(readme, base)).toBe(readme)
+    expect(pinReadmeAssets(readme, slug, ref)).toBe(readme)
   })
 
   it('leaves assets/ refs inside inline code spans alone', () => {
     const readme = 'Point refs like `](assets/x.png)` at the release sha.\n'
-    expect(pinReadmeAssets(readme, base)).toBe(readme)
+    expect(pinReadmeAssets(readme, slug, ref)).toBe(readme)
   })
 
   it('pins real refs while leaving code-block lookalikes alone', () => {
     expect(
       pinReadmeAssets(
         '![banner](assets/banner.png)\n\n```html\n<img src="assets/banner.png">\n```\n',
-        base,
+        slug,
+        ref,
       ),
     ).toBe(
       `![banner](${base}assets/banner.png)\n\n` +
@@ -123,7 +132,8 @@ describe('pinReadmeAssets', () => {
         '</picture>\n' +
         '\n' +
         'See ![the flow](assets/flow.png) for details.\n',
-      base,
+      slug,
+      ref,
     )
     expect(pinned).not.toContain('"assets/')
     expect(pinned).not.toContain('](assets/')

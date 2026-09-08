@@ -17,9 +17,7 @@ export interface VersionInfo {
 }
 
 export interface PrerequisiteOptions {
-  command: string
   minVersion?: VersionInfo | undefined
-  name: string
   required?: boolean | undefined
 }
 
@@ -106,12 +104,15 @@ function parseVersion(versionString: string): VersionInfo | undefined {
 /**
  * Check prerequisite.
  */
-export async function checkPrerequisite({
-  command,
-  minVersion,
-  name,
-  required = true,
-}: PrerequisiteOptions): Promise<boolean> {
+export async function checkPrerequisite(
+  command: string,
+  name: string,
+  options?: PrerequisiteOptions | undefined,
+): Promise<boolean> {
+  const { minVersion, required = true } = {
+    __proto__: null,
+    ...options,
+  } as PrerequisiteOptions
   const version = await getVersion(command)
 
   if (!version) {

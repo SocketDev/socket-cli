@@ -28,6 +28,7 @@
 
 import { readdirSync } from 'node:fs'
 import path from 'node:path'
+import type { Dirent } from 'node:fs'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -49,7 +50,6 @@ const WORKSPACE_MARKER_FILES = new Set([
 ])
 
 export type FindWorkspaceRootsOptions = {
-  cwd: string
   // Directory basenames to skip outright (exact match). Pass the union of
   // the codebase-wide ignore set and any caller-specific additions
   // (e.g. `.socket-auto-manifest`).
@@ -65,14 +65,56 @@ export type FindWorkspaceRootsOptions = {
 const EMPTY_SET: ReadonlySet<string> = new Set()
 const EMPTY_ARRAY: readonly string[] = []
 
+export function classifyWorkspaceEntries(
+  entries: Dirent[],
+  ignoreDirNames: ReadonlySet<string>,
+  ignoreDirPrefixes: readonly string[],
+) {
+  let isWorkspaceRoot = false
+  const childNames: string[] = []
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const entry = entries[i]!
+    if (entry.isFile()) {
+      if (WORKSPACE_MARKER_FILES.has(entry.name)) {
+        isWorkspaceRoot = true
+      }
+      continue
+    }
+    if (!entry.isDirectory()) {
+      continue
+    }
+    const name = entry.name
+    if (ignoreDirNames.has(name)) {
+      continue
+    }
+    let pruned = false
+    for (
+      let j = 0, prefixCount = ignoreDirPrefixes.length;
+      j < prefixCount;
+      j += 1
+    ) {
+      if (name.startsWith(ignoreDirPrefixes[j]!)) {
+        pruned = true
+        break
+      }
+    }
+    if (!pruned) {
+      childNames.push(name)
+    }
+  }
+
+  return { __proto__: null, childNames, isWorkspaceRoot }
+}
+
 // Walks the tree rooted at `config.cwd` and returns absolute paths to every
 // directory that contains at least one workspace marker file. Output is
 // sorted for determinism and capped at MAX_WORKSPACE_ROOTS.
 export function findWorkspaceRoots(
-  config: FindWorkspaceRootsOptions,
+  cwd: string,
+  options?: FindWorkspaceRootsOptions | undefined,
 ): string[] {
-  const cfg = { __proto__: null, ...config } as FindWorkspaceRootsOptions
-  const { cwd, verbose } = cfg
+  const cfg = { __proto__: null, ...options } as FindWorkspaceRootsOptions
+  const { verbose } = cfg
   const ignoreDirNames = cfg.ignoreDirNames ?? EMPTY_SET
   const ignoreDirPrefixes = cfg.ignoreDirPrefixes ?? EMPTY_ARRAY
   const maxWalkDirs = cfg.maxWalkDirs ?? DEFAULT_MAX_WALK_DIRS
@@ -98,38 +140,11 @@ export function findWorkspaceRoots(
     } catch {
       continue
     }
-    let isWorkspaceRoot = false
-    const childNames: string[] = []
-    for (let i = 0, { length } = entries; i < length; i += 1) {
-      const entry = entries[i]!
-      if (entry.isFile()) {
-        if (WORKSPACE_MARKER_FILES.has(entry.name)) {
-          isWorkspaceRoot = true
-        }
-        continue
-      }
-      if (!entry.isDirectory()) {
-        continue
-      }
-      const name = entry.name
-      if (ignoreDirNames.has(name)) {
-        continue
-      }
-      let pruned = false
-      for (
-        let j = 0, prefixCount = ignoreDirPrefixes.length;
-        j < prefixCount;
-        j += 1
-      ) {
-        if (name.startsWith(ignoreDirPrefixes[j]!)) {
-          pruned = true
-          break
-        }
-      }
-      if (!pruned) {
-        childNames.push(name)
-      }
-    }
+    const { childNames, isWorkspaceRoot } = classifyWorkspaceEntries(
+      entries,
+      ignoreDirNames,
+      ignoreDirPrefixes,
+    )
     if (isWorkspaceRoot) {
       roots.push(dir)
     }

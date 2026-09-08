@@ -145,12 +145,9 @@ describe('handleScanReach', () => {
       targets: ['src'],
     })
 
-    expect(mockPerformAnalysis).toHaveBeenCalledWith({
-      cwd: '/project',
-      orgSlug: 'test-org',
-      outputPath: '',
-      packagePaths: ['/project/package.json', '/project/package-lock.json'],
-      reachabilityOptions: {
+    expect(mockPerformAnalysis).toHaveBeenCalledWith(
+      'src',
+      {
         excludePaths: [],
         reachAnalysisTimeout: 300,
         reachAnalysisMemoryLimit: 2048,
@@ -161,10 +158,15 @@ describe('handleScanReach', () => {
         reachSkipCache: false,
         reachUseUnreachableFromPrecomputation: false,
       },
-      spinner: expect.any(Object),
-      target: 'src',
-      uploadManifests: true,
-    })
+      {
+        cwd: '/project',
+        orgSlug: 'test-org',
+        outputPath: '',
+        packagePaths: ['/project/package.json', '/project/package-lock.json'],
+        spinner: expect.any(Object),
+        uploadManifests: true,
+      },
+    )
     expect(mockOutput).toHaveBeenCalled()
   })
 

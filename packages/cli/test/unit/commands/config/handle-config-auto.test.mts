@@ -13,9 +13,10 @@
  * messages - Use createSuccessResult/createErrorResult helpers - Test CResult
  * pattern flow.
  *
- * Related Files: - src/commands/config/handle-config-auto.mts - Implementation
- * - src/commands/config/discover-config-value.mts - Discovery logic -
- * src/commands/config/output-config-auto.mts - Output formatter.
+ * Related Files: - src/commands/config/handle-config-auto.mts - Implementation.
+ *
+ * - Src/commands/config/discover-config-value.mts - Discovery logic -
+ *   src/commands/config/output-config-auto.mts - Output formatter.
  */
 
 import { describe, expect, it, vi } from 'vitest'

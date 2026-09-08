@@ -5,7 +5,9 @@
  * fetch-process-output pipeline and confirmation workflows for destructive
  * operations.
  *
- * Test Coverage: - Successful repository deletion flow - Fetch failure handling
+ * Test Coverage: - Successful repository deletion flow - Fetch failure
+ * handling.
+ *
  * - Output formatting delegation - Deletion confirmation handling.
  *
  * Testing Approach: Mocks fetch and output functions to isolate handler

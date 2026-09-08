@@ -8,10 +8,12 @@
  * validation - Organization dependency listing - Output format support (JSON,
  * markdown)
  *
- * Related Files: - src/commands/organization/cmd-organization-dependencies.mts
+ * Related Files: - src/commands/organization/cmd-organization-dependencies.mts.
+ *
  * - Command definition -
- * src/commands/organization/handle-organization-dependencies.mts - Logic -
- * src/commands/organization/output-organization-dependencies.mts - Formatting.
+ *   src/commands/organization/handle-organization-dependencies.mts - Logic -
+ *   src/commands/organization/output-organization-dependencies.mts -
+ *   Formatting.
  */
 
 import { describe, expect } from 'vitest'

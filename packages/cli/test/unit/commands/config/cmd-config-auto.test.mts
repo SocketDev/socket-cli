@@ -5,7 +5,8 @@
  * values.
  *
  * Test Coverage: - Command metadata, description, hidden flag - Config key
- * validation - Flag combinations (--json, --markdown) - --dry-run flag support
+ * validation - Flag combinations (--json, --markdown) - --dry-run flag support.
+ *
  * - Handler invocation with correct parameters.
  *
  * Testing Approach: - Mock logger to capture output - Mock meowOrExit to

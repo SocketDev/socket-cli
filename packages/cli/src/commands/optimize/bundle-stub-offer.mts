@@ -8,7 +8,8 @@
  * `.config/fleet/rolldown/bundle-stub.mts`.
  *
  * Key Functions: - detectBundler: which bundler the project builds with.
- * - bundleStubOffer: the advisory block, or undefined when no bundler shows.
+ *
+ * - BundleStubOffer: the advisory block, or undefined when no bundler shows.
  */
 
 import { existsSync, readFileSync } from 'node:fs'

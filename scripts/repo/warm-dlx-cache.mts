@@ -21,18 +21,15 @@ import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { isMainModule } from '../fleet/_shared/is-main-module.mts'
-import { runMain } from '../fleet/_shared/run-main.mts'
-import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
 const repoRoot = path.join(fileURLToPath(import.meta.url), '..', '..', '..')
 const cliPath = path.join(repoRoot, 'packages', 'cli', 'dist', 'index.js')
 
-// Bounded so a wedged registry can never hang the suite start; generous
-// because a cold @cyclonedx/cdxgen install is a full dependency-tree
-// download.
 const WARM_TIMEOUT_MS = 600_000
 
 async function main(): Promise<void> {

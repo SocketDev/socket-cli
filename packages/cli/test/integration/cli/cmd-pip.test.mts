@@ -6,7 +6,8 @@
  * to sfw which provides security scanning before installation.
  *
  * Test Coverage: - Help text display and usage examples - pip and pip3 alias
- * support - Dry-run behavior validation - pip install operations with scanning
+ * support - Dry-run behavior validation - pip install operations with scanning.
+ *
  * - Config flag variants - Issue rules configuration.
  *
  * Security Features: - Pre-installation security scanning via Socket Firewall -

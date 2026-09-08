@@ -15,6 +15,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 
+// Mirrors the literal values the github.mts mock below returns as message
+// contracts, so assertions pin identity instead of duplicating prose inline.
+const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
+const GITHUB_ERR_GRAPHQL_RATE_LIMIT = 'GitHub GraphQL rate limit exceeded'
+const GITHUB_ERR_ABUSE_DETECTION = 'GitHub abuse detection triggered'
+const GITHUB_ERR_AUTH_FAILED = 'GitHub authentication failed'
+
 const mockOctokit = vi.hoisted(() => ({
   repos: {
     get: vi.fn(),
@@ -131,7 +138,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('GitHub rate limit exceeded')
+      expect(result.message).toBe(GITHUB_ERR_RATE_LIMIT)
     }
     // Short-circuit: only the first repo's getRepoDetails should have run.
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
@@ -160,7 +167,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('GitHub GraphQL rate limit exceeded')
+      expect(result.message).toBe(GITHUB_ERR_GRAPHQL_RATE_LIMIT)
     }
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
   })
@@ -188,7 +195,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('GitHub abuse detection triggered')
+      expect(result.message).toBe(GITHUB_ERR_ABUSE_DETECTION)
     }
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
   })
@@ -216,7 +223,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('GitHub authentication failed')
+      expect(result.message).toBe(GITHUB_ERR_AUTH_FAILED)
     }
     expect(mockWithGitHubRetry).toHaveBeenCalledTimes(1)
   })
@@ -246,7 +253,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('All repos failed to scan')
+      expect(result.cause).toContain('First failure')
       expect(result.cause).toContain('repo-a')
     }
     // Both repos should have been attempted (no short-circuit for 404).
@@ -287,6 +294,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
       await import('../../../../src/commands/repository/fetch-list-all-repos.mts')
     vi.mocked(fetchListAllRepos).mockResolvedValueOnce({
       ok: false,
+      code: 502,
       message: 'API Error',
       cause: 'Something broke',
     } as unknown)
@@ -304,7 +312,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('API Error')
+      expect(result.code).toBe(502)
     }
   })
 
@@ -329,7 +337,7 @@ describe('createScanFromGithub rate-limit short-circuit', () => {
     })
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('No repo found')
+      expect(result.cause).toContain('--repos')
     }
   })
 })

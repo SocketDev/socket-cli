@@ -47,8 +47,10 @@ import {
   runStage,
 } from './pipeline-stage-runner.mts'
 import type {
+  BuildPaths,
   ParsedFlags,
   PipelineContext,
+  PipelineStage,
   RunPipelineOptions,
   SharedBuildPaths,
   SourceMap,
@@ -70,94 +72,13 @@ export {
 
 const logger = getDefaultLogger()
 
-/**
- * Validate + run a pipeline. On --cache-key, prints the key and exits without
- * building. Returns the context so the caller can render a summary.
- */
-export async function runPipeline(
-  config: RunPipelineOptions,
-  cliOverrides?: ParsedFlags | undefined,
-): Promise<PipelineContext | undefined> {
-  const {
-    extraCacheInputs = [],
-    getBuildPaths,
-    getOutputFiles,
-    getSharedBuildPaths,
-    packageName,
-    packageRoot,
-    preflight,
-    resolvePlatformArch,
-    stages,
-  } = { __proto__: null, ...config } as typeof config
-
-  const flags = cliOverrides ?? parseFlags(process.argv.slice(2))
-  const buildMode = getBuildMode(flags.raw ?? new Set())
-  const platformArch = resolvePlatformArch
-    ? await resolvePlatformArch()
-    : await getCurrentPlatformArch()
-  const nodeVersion = getNodeVersion().replace(/^v/, '')
-
-  const [pkgJson, { versions: toolVersions, rawHash: toolsHash }] =
-    await Promise.all([
-      loadPackageJson(packageRoot),
-      loadExternalTools(packageRoot),
-    ])
-
-  const sources: SourceMap = pkgJson.sources ?? {}
-  const packageVersion = pkgJson.version ?? '0.0.0'
-
-  const extraHash =
-    extraCacheInputs.length > 0 ? hashFileContents(extraCacheInputs) : ''
-  const cacheKey = buildCacheKey({
-    buildMode,
-    extraHash,
-    nodeVersion,
-    packageVersion,
-    platformArch,
-    sources,
-    toolsHash,
-    toolVersions,
-  })
-
-  if (flags.printCacheKey) {
-    process.stdout.write(`${cacheKey}\n`) // socket-hook: allow console
-    return undefined
-  }
-
-  const paths = getBuildPaths(buildMode, platformArch)
-  const sharedPaths: SharedBuildPaths | undefined = getSharedBuildPaths
-    ? getSharedBuildPaths()
-    : undefined
-  const outputFiles = getOutputFiles ? getOutputFiles(paths) : []
-
-  // Validate chain for typos / unknown names.
-  validateCheckpointChain(
-    stages.map(s => s.name),
-    packageName,
-  )
-
-  const ctx: PipelineContext = {
-    buildMode,
-    cacheKey,
-    forceRebuild: flags.force,
-    logger,
-    nodeVersion,
-    packageName,
-    packageRoot,
-    paths,
-    platformArch,
-    sharedPaths,
-    sources,
-    toolVersions,
-  }
-
-  const totalStart = Date.now()
-  logger.step(`🔨 Building ${packageName}`)
-  logger.info(`Mode: ${buildMode}`)
-  logger.info(`Platform: ${platformArch}`)
-  logger.info(`Cache key: ${cacheKey}`)
-  logger.info('')
-
+export async function cleanPipelineCheckpoints(
+  flags: ParsedFlags,
+  ctx: PipelineContext,
+  stages: PipelineStage[],
+  outputFiles: string[],
+): Promise<void> {
+  const { paths, sharedPaths } = ctx
   // Handle --clean / --clean-stage / missing-output clean-up.
   if (flags.clean) {
     logger.substep('Clean build requested — removing all checkpoints')
@@ -198,6 +119,100 @@ export async function runPipeline(
       await cleanCheckpoint(sharedPaths.buildDir, '')
     }
   }
+}
+
+/**
+ * Validate + run a pipeline. On --cache-key, prints the key and exits without
+ * building. Returns the context so the caller can render a summary.
+ */
+export async function runPipeline(
+  getBuildPaths: (mode: string, platformArch: string) => BuildPaths,
+  packageName: string,
+  packageRoot: string,
+  stages: PipelineStage[],
+  options?: RunPipelineOptions | undefined,
+  cliOverrides?: ParsedFlags | undefined,
+): Promise<PipelineContext | undefined> {
+  const {
+    extraCacheInputs = [],
+    getOutputFiles,
+    getSharedBuildPaths,
+    preflight,
+    resolvePlatformArch,
+  } = { __proto__: null, ...options } as RunPipelineOptions
+
+  const flags = cliOverrides ?? parseFlags(process.argv.slice(2))
+  const buildMode = getBuildMode(flags.raw ?? new Set())
+  const platformArch = resolvePlatformArch
+    ? await resolvePlatformArch()
+    : await getCurrentPlatformArch()
+  const nodeVersion = getNodeVersion().replace(/^v/, '')
+
+  const {
+    0: pkgJson,
+    1: { versions: toolVersions, rawHash: toolsHash },
+  } = await Promise.all([
+    loadPackageJson(packageRoot),
+    loadExternalTools(packageRoot),
+  ])
+
+  const sources: SourceMap = pkgJson.sources ?? {}
+  const packageVersion = pkgJson.version ?? '0.0.0'
+
+  const extraHash =
+    extraCacheInputs.length > 0 ? hashFileContents(extraCacheInputs) : ''
+  const cacheKey = buildCacheKey(
+    buildMode,
+    nodeVersion,
+    packageVersion,
+    platformArch,
+    sources,
+    toolsHash,
+    toolVersions,
+    { extraHash },
+  )
+
+  if (flags.printCacheKey) {
+    // oxlint-disable-next-line socket/no-direct-stream-write -- raw cache key
+    process.stdout.write(`${cacheKey}\n`)
+    return undefined
+  }
+
+  const paths = getBuildPaths(buildMode, platformArch)
+  const sharedPaths: SharedBuildPaths | undefined = getSharedBuildPaths
+    ? getSharedBuildPaths()
+    : undefined
+  const outputFiles = getOutputFiles ? getOutputFiles(paths) : []
+
+  // Validate chain for typos / unknown names.
+  validateCheckpointChain(
+    stages.map(s => s.name),
+    packageName,
+  )
+
+  const ctx: PipelineContext = {
+    buildMode,
+    cacheKey,
+    forceRebuild: flags.force,
+    logger,
+    nodeVersion,
+    packageName,
+    packageRoot,
+    paths,
+    platformArch,
+    sharedPaths,
+    sources,
+    toolVersions,
+  }
+
+  const totalStart = Date.now()
+  logger.step(`Building ${packageName}`)
+  logger.info(`Mode: ${buildMode}`)
+  logger.info(`Platform: ${platformArch}`)
+  logger.info(`Cache key: ${cacheKey}`)
+  logger.info('')
+
+  await cleanPipelineCheckpoints(flags, ctx, stages, outputFiles)
 
   if (preflight) {
     logger.step('Pre-flight Checks')
@@ -205,6 +220,49 @@ export async function runPipeline(
     logger.success('Pre-flight checks passed')
   }
 
+  await runPipelineStages(flags, stages, ctx)
+
+  const seconds = ((Date.now() - totalStart) / 1000).toFixed(1)
+  logger.step('Build Complete!')
+  logger.success(`Total time: ${seconds}s`)
+  logger.success(`Output: ${paths.outputFinalDir ?? paths.buildDir}`)
+  if (outputFiles.length) {
+    logger.info('')
+    logger.info('Files:')
+    for (const file of outputFiles) {
+      logger.info(`  - ${path.relative(packageRoot, file)}`)
+    }
+    logger.info('')
+  }
+  return ctx
+}
+
+/**
+ * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
+ */
+export async function runPipelineCli(
+  getBuildPaths: (mode: string, platformArch: string) => BuildPaths,
+  packageName: string,
+  packageRoot: string,
+  stages: PipelineStage[],
+  options?: RunPipelineOptions | undefined,
+): Promise<void> {
+  try {
+    await runPipeline(getBuildPaths, packageName, packageRoot, stages, options)
+  } catch (e) {
+    // Set exit code and rethrow so the caller's top-level handler is the
+    // single place that formats/logs the failure. Logging here AND in the
+    // caller's catch shows the same error twice.
+    process.exitCode = 1
+    throw e
+  }
+}
+
+export async function runPipelineStages(
+  flags: ParsedFlags,
+  stages: PipelineStage[],
+  ctx: PipelineContext,
+): Promise<void> {
   // --from-stage: pretend earlier stages succeeded (they should have cached
   // checkpoints already). We just skip running them.
   let startIdx = 0
@@ -225,36 +283,5 @@ export async function runPipeline(
       continue
     }
     await runStage(stage, ctx, {})
-  }
-
-  const seconds = ((Date.now() - totalStart) / 1000).toFixed(1)
-  logger.step('🎉 Build Complete!')
-  logger.success(`Total time: ${seconds}s`)
-  logger.success(`Output: ${paths.outputFinalDir ?? paths.buildDir}`)
-  if (outputFiles.length) {
-    logger.info('')
-    logger.info('Files:')
-    for (const file of outputFiles) {
-      logger.info(`  - ${path.relative(packageRoot, file)}`)
-    }
-    logger.info('')
-  }
-  return ctx
-}
-
-/**
- * CLI entry-point helper. Wraps runPipeline with a top-level error handler.
- */
-export async function runPipelineCli(
-  config: RunPipelineOptions,
-): Promise<void> {
-  try {
-    await runPipeline(config)
-  } catch (e) {
-    // Set exit code and rethrow so the caller's top-level handler is the
-    // single place that formats/logs the failure. Logging here AND in the
-    // caller's catch shows the same error twice.
-    process.exitCode = 1
-    throw e
   }
 }

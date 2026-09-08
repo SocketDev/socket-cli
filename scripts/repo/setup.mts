@@ -1,34 +1,5 @@
 import process from 'node:process'
 
-/**
- * @file Developer setup script - checks prerequisites and prepares environment.
- *   Checks and optionally installs:
- *
- *   - Node.js version (>=18.0.0)
- *   - pnpm version (>=10.21.0)
- *   - gh CLI, optional, for cache restoration
- *   - Homebrew, if needed for installations, Actions:
- *   - Checks for required tools (Node.js, pnpm) and fails if missing
- *   - Auto-installs optional tools (gh CLI, brew/choco) if --install flag
- *     provided
- *   - Verifies installed tools are actually available in PATH before proceeding
- *   - Attempts to restore build cache from CI (only if gh CLI available)
- *   - Reports missing tools with installation instructions Usage: pnpm run setup
- *
- *   # Check prerequisites and restore GitHub cache pnpm run setup --install
- *
- *   Check and auto-install optional tools, then restore cache pnpm run setup
- *   --skip-prereqs # Only restore GitHub cache, skip prerequisite checks, pnpm
- *   run setup --skip-gh-cache # Check prerequisites but skip GitHub cache
- *   restoration pnpm run setup --quiet # Minimal output, for postinstall
- *   Flags: --install Auto-install missing optional tools (gh CLI)
- *   --skip-prereqs Skip prerequisite checks (for CI use; still attempts cache
- *   restoration) --skip-gh-cache Skip GitHub cache restoration (useful when
- *   cache is corrupt) --quiet Minimal output Note: Setup helpers are also
- *   exported in build-infra/lib/setup-helpers for reuse in other build
- *   scripts.
- */
-
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -91,37 +62,59 @@ if (showHelp) {
 /**
  * Main entry point.
  */
+async function restoreSetupCache(): Promise<number> {
+  if (!quiet) {
+    logger.log('')
+    logger.log('Socket CLI Cache Restoration')
+    logger.log('============================')
+    logger.log('')
+    logger.info('Skipping prerequisite checks (--skip-prereqs)')
+    logger.log('')
+  }
+
+  // Cache restoration respects --skip-gh-cache flag.
+  if (!skipGhCache) {
+    const hasGh = await hasCommand('gh')
+    if (!hasGh) {
+      logger.error('gh CLI not found (required for cache restoration)')
+      logger.info('Install from: https://cli.github.com/')
+      return 1
+    }
+    await restoreCache(hasGh)
+  } else if (!quiet) {
+    logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
+  }
+
+  if (!quiet) {
+    logger.log('')
+    logger.log('Setup complete!')
+    logger.log('')
+  }
+  return 0
+}
+
+async function generateSetupPackages(): Promise<void> {
+  // Generate packages from templates.
+  await generateCliSentryPackage(quiet)
+  if (!quiet) {
+    logger.log('')
+  }
+
+  await generateCliExePackages(quiet)
+  if (!quiet) {
+    logger.log('')
+  }
+
+  await generateSocketbinPackages(quiet)
+
+  if (!quiet) {
+    logger.log('')
+  }
+}
+
 async function main(): Promise<number> {
-  // Handle --skip-prereqs: skip prerequisite checks, proceed to cache restoration.
   if (skipPrereqs) {
-    if (!quiet) {
-      logger.log('')
-      logger.log('Socket CLI Cache Restoration')
-      logger.log('============================')
-      logger.log('')
-      logger.info('Skipping prerequisite checks (--skip-prereqs)')
-      logger.log('')
-    }
-
-    // Cache restoration respects --skip-gh-cache flag.
-    if (!skipGhCache) {
-      const hasGh = await hasCommand('gh')
-      if (!hasGh) {
-        logger.error('gh CLI not found (required for cache restoration)')
-        logger.info('Install from: https://cli.github.com/')
-        return 1
-      }
-      await restoreCache(hasGh)
-    } else if (!quiet) {
-      logger.info('Skipping GitHub cache restoration (--skip-gh-cache)')
-    }
-
-    if (!quiet) {
-      logger.log('')
-      logger.log('Setup complete!')
-      logger.log('')
-    }
-    return 0
+    return restoreSetupCache()
   }
 
   // Normal setup flow: check prerequisites and restore cache.
@@ -143,23 +136,19 @@ async function main(): Promise<number> {
   }
 
   // Check Node.js.
-  const nodeOk = await checkPrerequisite({
-    command: 'node',
+  const nodeOk = await checkPrerequisite('node', 'Node.js', {
     minVersion: { major: 18, minor: 0, patch: 0 },
-    name: 'Node.js',
     required: true,
   })
 
   // Check pnpm.
-  const pnpmOk = await checkPrerequisite({
-    command: 'pnpm',
+  const pnpmOk = await checkPrerequisite('pnpm', 'pnpm', {
     minVersion: { major: 10, minor: 21, patch: 0 },
-    name: 'pnpm',
     required: true,
   })
 
   // Check gh CLI, optional, with auto-install.
-  const ghOk = await ensureGhCli({ autoInstall })
+  const ghOk = await ensureGhCli(autoInstall)
 
   if (!quiet) {
     logger.log('')
@@ -186,22 +175,7 @@ async function main(): Promise<number> {
     logger.log('')
   }
 
-  // Generate packages from templates.
-  await generateCliSentryPackage({ quiet })
-  if (!quiet) {
-    logger.log('')
-  }
-
-  await generateCliExePackages({ quiet })
-  if (!quiet) {
-    logger.log('')
-  }
-
-  await generateSocketbinPackages({ quiet })
-
-  if (!quiet) {
-    logger.log('')
-  }
+  await generateSetupPackages()
 
   // Always restore cache after prerequisite checks (unless --skip-gh-cache).
   if (!skipGhCache) {

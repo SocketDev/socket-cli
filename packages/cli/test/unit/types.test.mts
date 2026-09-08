@@ -8,7 +8,8 @@
  * CResult union type: Type narrowing with ok property - SocketCliConfigObject:
  * Minimal and full configuration objects - SocketCliConfigObject output
  * formats: Text, JSON, markdown, and combined formats - SocketconfigAny: String
- * or object config representations - Type guards: isValidResult implementation
+ * or object config representations - Type guards: isValidResult implementation.
+ *
  * - Type utilities: unwrapResult for extracting values.
  *
  * Testing Approach: - Type-level testing using TypeScript inference - Runtime
@@ -43,12 +44,12 @@ describe('types', () => {
     it('can represent an invalid result', () => {
       const invalidResult: InvalidResult = {
         ok: false,
-        error: new Error('Something went wrong'),
+        error: new Error('Something went wrong', { cause: 'test-error-1' }),
       }
 
       expect(invalidResult.ok).toBe(false)
       expect(invalidResult.error).toBeInstanceOf(Error)
-      expect(invalidResult.error.message).toBe('Something went wrong')
+      expect(invalidResult.error.cause).toBe('test-error-1')
     })
 
     it('can be used as a union type', () => {
@@ -57,7 +58,12 @@ describe('types', () => {
         if (value > 0) {
           return { ok: true, data: `Positive: ${value}` }
         }
-        return { ok: false, error: new Error('Value must be positive') }
+        return {
+          ok: false,
+          error: new Error('Value must be positive', {
+            cause: 'test-error-2',
+          }),
+        }
       }
 
       const success = processResult(5)
@@ -68,7 +74,7 @@ describe('types', () => {
       }
 
       if (!failure.ok) {
-        expect(failure.error.message).toBe('Value must be positive')
+        expect(failure.error.cause).toBe('test-error-2')
       }
     })
   })

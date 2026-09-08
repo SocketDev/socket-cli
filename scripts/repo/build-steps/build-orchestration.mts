@@ -201,15 +201,14 @@ export async function runSmartBuild(force: boolean): Promise<void> {
   const cliPkg = CLI_BUILD_PACKAGE
   const cliOutputPath = path.join(rootDir, cliPkg.outputCheck)
 
-  await runPipelineCli({
-    packageRoot: rootDir,
-    packageName: 'cli',
-    resolvePlatformArch: async () => 'universal',
-    getBuildPaths: (mode: string) => ({
+  await runPipelineCli(
+    (mode: string) => ({
+      __proto__: null,
       buildDir: path.join(rootDir, 'build', mode),
     }),
-    getOutputFiles: () => [cliOutputPath],
-    stages: [
+    'cli',
+    rootDir,
+    [
       {
         name: CHECKPOINTS.CLI,
         sourcePaths: fg.sync(cliPkg.inputs, {
@@ -224,6 +223,7 @@ export async function runSmartBuild(force: boolean): Promise<void> {
             throw new Error(`${cliPkg.name} build failed`)
           }
           return {
+            __proto__: null,
             smokeTest: async () => {
               if (!existsSync(cliOutputPath)) {
                 throw new Error(`CLI output missing: ${cliOutputPath}`)
@@ -255,7 +255,6 @@ export async function runSmartBuild(force: boolean): Promise<void> {
           if (!seaResult.success) {
             throw new Error('SEA binary build failed')
           }
-          return {}
         },
       },
       {
@@ -269,7 +268,11 @@ export async function runSmartBuild(force: boolean): Promise<void> {
         }),
       },
     ],
-  })
+    {
+      resolvePlatformArch: async () => 'universal',
+      getOutputFiles: () => [cliOutputPath],
+    },
+  )
 }
 
 /**

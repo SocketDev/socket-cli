@@ -13,7 +13,8 @@
  *
  * Related Files: - src/commands/repository/handle-list-repos.mts
  * (implementation) - src/commands/repository/fetch-list-repos.mts (API fetcher)
- * - src/commands/repository/output-list-repos.mts (formatter)
+ *
+ * - Src/commands/repository/output-list-repos.mts (formatter)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -46,9 +46,7 @@ export interface NpmCredentials {
 
 export interface UpdateCheckOptions {
   authInfo?: AuthInfo | NpmCredentials | undefined
-  name: string
   registryUrl?: string | undefined
-  version: string
 }
 
 export interface UpdateCheckResult {
@@ -66,9 +64,6 @@ export interface GetLatestVersionOptions {
   registryUrl?: string | undefined
 }
 
-/**
- * Network utilities with robust error handling and timeouts.
- */
 const NetworkUtils = {
   /**
    * Fetch package information from npm registry using https.request(). Uses
@@ -187,22 +182,11 @@ const NetworkUtils = {
     name: string,
     options: GetLatestVersionOptions = {},
   ): Promise<string | undefined> {
-    if (!isNonEmptyString(name)) {
-      throw new Error(
-        `getLatestVersion(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
-      )
-    }
-
     const { authInfo, registryUrl = NPM_REGISTRY_URL } = {
       __proto__: null,
       ...options,
     } as GetLatestVersionOptions
-
-    if (!isNonEmptyString(registryUrl)) {
-      throw new Error(
-        `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === 'string' ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
-      )
-    }
+    validateRegistryVersionRequest(name, registryUrl)
 
     // The registry URL comes from .npmrc, which a checked-out repo can supply,
     // and the auth token for that registry rides along in the Authorization
@@ -265,22 +249,24 @@ const NetworkUtils = {
  * registry and compares with current.
  */
 export async function checkForUpdates(
-  config: UpdateCheckOptions,
+  name: string,
+  version: string,
+  options?: UpdateCheckOptions | undefined,
 ): Promise<UpdateCheckResult> {
-  const { authInfo, name, registryUrl, version } = {
+  const { authInfo, registryUrl } = {
     __proto__: null,
-    ...config,
+    ...options,
   } as UpdateCheckOptions
 
   if (!isNonEmptyString(name)) {
     throw new Error(
-      `checkForUpdates config.name requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+      `checkForUpdates(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
     )
   }
 
   if (!isNonEmptyString(version)) {
     throw new Error(
-      `checkForUpdates config.version requires a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
+      `checkForUpdates(name, version) requires version to be a non-empty string (got: ${typeof version === 'string' ? '""' : typeof version}); pass the currently-installed semver like "1.2.3"`,
     )
   }
 
@@ -334,3 +320,20 @@ export function isUpdateAvailable(current: string, latest: string): boolean {
 }
 
 export { NetworkUtils }
+
+export function validateRegistryVersionRequest(
+  name: string,
+  registryUrl: string,
+): void {
+  if (!isNonEmptyString(name)) {
+    throw new Error(
+      `getLatestVersion(name) requires a non-empty string (got: ${typeof name === 'string' ? '""' : typeof name}); pass an npm package name like "socket" or "@socketsecurity/cli"`,
+    )
+  }
+
+  if (!isNonEmptyString(registryUrl)) {
+    throw new Error(
+      `getLatestVersion options.registryUrl must be a non-empty string (got: ${typeof registryUrl === 'string' ? '""' : typeof registryUrl}); omit it to default to ${NPM_REGISTRY_URL}`,
+    )
+  }
+}

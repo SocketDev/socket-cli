@@ -91,7 +91,9 @@ describe('fetchScanData', () => {
     const result = await fetchScanData('test-org', 'scan-123')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    if (!result.ok) {
+      expect(result.code).toBe(1)
+    }
     expect(mockSetupSdk).toHaveBeenCalled()
   })
 
@@ -151,7 +153,7 @@ describe('fetchScanData', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Invalid Socket API response')
+      expect(result.cause).toContain('not valid JSON')
     }
   })
 

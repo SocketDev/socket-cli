@@ -17,8 +17,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as FsLibType from '@socketsecurity/lib-stable/fs/safe'
+import {
+  downloadManifestFile,
+  streamDownloadWithFetch,
+} from '../../../../src/commands/scan/create-scan-from-github.mts'
+import { testAndDownloadManifestFiles } from '../../../../src/commands/scan/github-scan-manifest.mts'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: { get: vi.fn(), listCommits: vi.fn(), getContent: vi.fn() },
@@ -96,14 +100,9 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeMkdirSync: mockSafeMkdirSync,
 }))
 
-import {
-  downloadManifestFile,
-  streamDownloadWithFetch,
-} from '../../../../src/commands/scan/create-scan-from-github.mts'
 // testAndDownloadManifestFiles (plural) lives in github-scan-manifest.mts and
 // is only re-exported singular from create-scan-from-github.mts, so import it
 // from its owning module directly.
-import { testAndDownloadManifestFiles } from '../../../../src/commands/scan/github-scan-manifest.mts'
 
 describe('create-scan-from-github (coverage)', () => {
   beforeEach(() => {
@@ -168,7 +167,7 @@ describe('create-scan-from-github (coverage)', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Download Failed')
+        expect(result.cause).toContain('500')
       }
     })
   })
@@ -254,7 +253,7 @@ describe('create-scan-from-github (coverage)', () => {
       const actualFs = await vi.importActual<typeof FsLibType>(
         '@socketsecurity/lib-stable/fs/safe',
       )
-      await actualFs.safeDelete(dir, { force: true, recursive: true })
+      await actualFs.safeDelete(dir, { recursive: true })
     })
 
     it('creates the parent dir via safeMkdirSync when it does not exist', async () => {
@@ -288,7 +287,7 @@ describe('create-scan-from-github (coverage)', () => {
       expect(result.ok).toBe(true)
       const written = await fs.readFile(target, 'utf8')
       expect(written).toBe('hi')
-      await actualFs.safeDelete(dir, { force: true, recursive: true })
+      await actualFs.safeDelete(dir, { recursive: true })
     })
   })
 })

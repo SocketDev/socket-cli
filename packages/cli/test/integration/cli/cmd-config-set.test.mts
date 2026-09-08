@@ -17,9 +17,10 @@
  * organization slug - enforcedOrgs: Organizations with enforced policies -
  * skipAskToPersistDefaultOrg: Skip org persistence prompt.
  *
- * Related Files: - src/commands/config/cmd-config-set.mts - Command definition
- * - src/commands/config/handle-config-set.mts - Config update logic -
- * src/util/config.mts - Config management utilities.
+ * Related Files: - src/commands/config/cmd-config-set.mts - Command definition.
+ *
+ * - Src/commands/config/handle-config-set.mts - Config update logic -
+ *   src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'

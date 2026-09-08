@@ -14,6 +14,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  downloadManifestFile,
+  scanOneRepo,
+  scanRepo,
+  testAndDownloadManifestFile,
+} from '../../../../src/commands/scan/create-scan-from-github.mts'
+import { testAndDownloadManifestFiles } from '../../../../src/commands/scan/github-scan-manifest.mts'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: { get: vi.fn(), listCommits: vi.fn() },
@@ -76,16 +83,9 @@ vi.mock(
   }),
 )
 
-import {
-  downloadManifestFile,
-  scanOneRepo,
-  scanRepo,
-  testAndDownloadManifestFile,
-} from '../../../../src/commands/scan/create-scan-from-github.mts'
 // testAndDownloadManifestFiles (plural) lives in github-scan-manifest.mts and
 // is only re-exported singular from create-scan-from-github.mts, so import it
 // from its owning module directly.
-import { testAndDownloadManifestFiles } from '../../../../src/commands/scan/github-scan-manifest.mts'
 
 describe('create-scan-from-github (direct) - manifest and scan', () => {
   beforeEach(() => {
@@ -155,7 +155,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Not a file')
+        expect(result.cause).toContain('subdir')
       }
     })
 
@@ -177,7 +177,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Missing download URL')
+        expect(result.cause).toContain('package.json')
       }
     })
 
@@ -222,7 +222,7 @@ describe('create-scan-from-github (direct) - manifest and scan', () => {
       })
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('No manifest files found')
+        expect(result.cause).toContain('org/r')
       }
     })
 

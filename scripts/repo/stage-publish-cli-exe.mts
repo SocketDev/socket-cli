@@ -23,9 +23,9 @@ import process from 'node:process'
 
 import { parseArgs } from '@socketsecurity/lib-stable/exe/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-import { isMainModule } from '../fleet/_shared/is-main-module.mts'
-import { runMain } from '../fleet/_shared/run-main.mts'
-import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 import { uploadNpmPackage } from '../fleet/registry-infra/npm/publish-command.mts'
 import {
   CLI_EXE_TRIPLETS,
@@ -209,72 +209,89 @@ async function main(): Promise<void> {
   }
   const version = providedVersion.replace(/^v/, '')
 
-  const targets: StageTarget[] = []
-  if (tripletsSpec) {
-    const triplets = resolveTriplets(tripletsSpec)
-    if (!triplets) {
-      process.exitCode = 1
-      return
-    }
-    if (!triplets.length) {
-      logger.error('No buildable triplets found — run the SEA build first')
-      process.exitCode = 1
-      return
-    }
-    for (const triplet of triplets) {
-      const dir = getCliExePackageDir(triplet)
-      if (stamp) {
-        preparePackageForPublish(dir, { buildMethod: 'sea', version })
-      }
-      targets.push({
-        dir,
-        name: cliExePackageName(triplet),
-        payloadPath: path.join(dir, 'bin', cliExeBinaryName(triplet)),
-      })
-    }
-  }
-  if (values.wrapper) {
-    const dir = getPackageOutDir('socket')
-    if (stamp) {
-      // Also rewrites the wrapper's `0.0.0-replaced-by-publish` cli.exe
-      // optionalDependencies to this version (lockstep); the frozen
-      // @socketbin/* pins stay put.
-      preparePackageForPublish(dir, { version })
-    }
-    targets.push({
-      dir,
-      name: 'socket',
-      payloadPath: path.join(dir, 'bin', 'socket.js'),
-    })
+  const targets = collectStageTargets()
+  if (!targets) {
+    return
   }
 
-  let ok = true
-  for (let i = 0, { length } = targets; i < length; i += 1) {
-    const target = targets[i]
-    if (!target) {
-      continue
+  function collectStageTargets(): StageTarget[] | undefined {
+    const collectedTargets: StageTarget[] = []
+    if (tripletsSpec) {
+      const triplets = resolveTriplets(tripletsSpec)
+      if (!triplets) {
+        process.exitCode = 1
+        return undefined
+      }
+      if (!triplets.length) {
+        logger.error('No buildable triplets found — run the SEA build first')
+        process.exitCode = 1
+        return undefined
+      }
+      for (const triplet of triplets) {
+        const dir = getCliExePackageDir(triplet)
+        if (stamp) {
+          preparePackageForPublish(dir, { buildMethod: 'sea', version })
+        }
+        collectedTargets.push({
+          dir,
+          name: cliExePackageName(triplet),
+          payloadPath: path.join(dir, 'bin', cliExeBinaryName(triplet)),
+        })
+      }
     }
-    ok = guardTarget(target, version) && ok
+    if (values.wrapper) {
+      const dir = getPackageOutDir('socket')
+      if (stamp) {
+        // Also rewrites the wrapper's `0.0.0-replaced-by-publish` cli.exe
+        // optionalDependencies to this version (lockstep); the frozen
+        // @socketbin/* pins stay put.
+        preparePackageForPublish(dir, { version })
+      }
+      collectedTargets.push({
+        dir,
+        name: 'socket',
+        payloadPath: path.join(dir, 'bin', 'socket.js'),
+      })
+    }
+
+    return collectedTargets
   }
-  if (!ok) {
+
+  const targetsValid = validateStageTargets(targets)
+  function validateStageTargets(validationTargets: StageTarget[]): boolean {
+    let ok = true
+    for (let i = 0, { length } = validationTargets; i < length; i += 1) {
+      const target = validationTargets[i]
+      if (!target) {
+        continue
+      }
+      ok = guardTarget(target, version) && ok
+    }
+
+    return ok
+  }
+  if (!targetsValid) {
     process.exitCode = 1
     return
   }
 
   const dryRun = !publish
   if (list) {
+    printStageTargets(targets)
+    return
+  }
+  function printStageTargets(plannedTargets: StageTarget[]): void {
     logger.log('')
     logger.log(
       `Plan (${dryRun ? 'dry-run' : 'PUBLISH'}, tag=${tag}, version=${version}):`,
     )
-    for (let i = 0, { length } = targets; i < length; i += 1) {
-      const target = targets[i]
+    for (let i = 0, { length } = plannedTargets; i < length; i += 1) {
+      const target = plannedTargets[i]
       if (!target) {
         continue
       }
       logger.log(`  ${target.name}@${version}  <- ${target.dir}`)
     }
-    return
   }
 
   for (let i = 0, { length } = targets; i < length; i += 1) {

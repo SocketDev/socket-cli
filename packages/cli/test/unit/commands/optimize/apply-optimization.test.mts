@@ -11,6 +11,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { applyOptimization } from '../../../../src/commands/optimize/apply-optimization.mts'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -53,10 +55,6 @@ vi.mock(
 vi.mock(import('../../../../src/commands/optimize/shared.mts'), () => ({
   CMD_NAME: 'optimize',
 }))
-
-import { applyOptimization } from '../../../../src/commands/optimize/apply-optimization.mts'
-
-import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 describe('apply-optimization', () => {
   const mockEnvDetails = {
@@ -164,7 +162,7 @@ describe('apply-optimization', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Install failed')
+        expect(result.code).toBe(1)
       }
       expect(mockSpinner.stop).toHaveBeenCalled()
     })

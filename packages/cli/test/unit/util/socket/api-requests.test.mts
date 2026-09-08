@@ -13,11 +13,17 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   mockErrorResponse,
   mockSuccessResponse,
 } from '@socketsecurity/sdk-stable/testing'
+import { overrideCachedConfig } from '../../../../src/util/config.mts'
+import {
+  handleApiCallNoSpinner,
+  queryApiSafeJson,
+  queryApiSafeText,
+  sendApiRequest,
+} from '../../../../src/util/socket/api.mts'
 
 // Mock dependencies first.
 const mockSpinner = vi.hoisted(() => vi.fn())
@@ -98,14 +104,6 @@ function createHttpResponse(opts: {
     text: () => bodyStr,
   }
 }
-
-import { overrideCachedConfig } from '../../../../src/util/config.mts'
-import {
-  handleApiCallNoSpinner,
-  queryApiSafeJson,
-  queryApiSafeText,
-  sendApiRequest,
-} from '../../../../src/util/socket/api.mts'
 
 describe('api utilities', () => {
   beforeEach(() => {
@@ -265,9 +263,7 @@ describe('api utilities', () => {
     it('returns error when not authenticated', async () => {
       mockGetDefaultApiToken.mockReturnValue(undefined)
 
-      const result = await sendApiRequest<unknown>('test/path', {
-        method: 'POST',
-      })
+      const result = await sendApiRequest<unknown>('test/path', 'POST', {})
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -280,11 +276,14 @@ describe('api utilities', () => {
         createHttpResponse({ body: '{"result": "success"}' }),
       )
 
-      const result = await sendApiRequest<{ result: string }>('test/path', {
-        method: 'POST',
-        body: { data: 'test' },
-        description: 'test operation',
-      })
+      const result = await sendApiRequest<{ result: string }>(
+        'test/path',
+        'POST',
+        {
+          body: { data: 'test' },
+          description: 'test operation',
+        },
+      )
 
       expect(result.ok).toBe(true)
       if (result.ok) {
@@ -307,10 +306,13 @@ describe('api utilities', () => {
         createHttpResponse({ body: '{"updated": true}' }),
       )
 
-      const result = await sendApiRequest<{ updated: boolean }>('test/path', {
-        method: 'PUT',
-        body: { value: 'updated' },
-      })
+      const result = await sendApiRequest<{ updated: boolean }>(
+        'test/path',
+        'PUT',
+        {
+          body: { value: 'updated' },
+        },
+      )
 
       expect(result.ok).toBe(true)
       expect(mockHttpRequest).toHaveBeenCalledWith(
@@ -328,9 +330,7 @@ describe('api utilities', () => {
         }),
       )
 
-      const result = await sendApiRequest<unknown>('test/path', {
-        method: 'POST',
-      })
+      const result = await sendApiRequest<unknown>('test/path', 'POST', {})
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -341,8 +341,7 @@ describe('api utilities', () => {
     it('returns error for network failures', async () => {
       mockHttpRequest.mockRejectedValueOnce(new Error('Connection refused'))
 
-      const result = await sendApiRequest<unknown>('test/path', {
-        method: 'POST',
+      const result = await sendApiRequest<unknown>('test/path', 'POST', {
         description: 'test operation',
       })
 
@@ -360,9 +359,7 @@ describe('api utilities', () => {
         createHttpResponse({ body: 'not-json' }),
       )
 
-      const result = await sendApiRequest<unknown>('test/path', {
-        method: 'POST',
-      })
+      const result = await sendApiRequest<unknown>('test/path', 'POST', {})
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
@@ -380,8 +377,7 @@ describe('api utilities', () => {
         }),
       )
 
-      await sendApiRequest<unknown>('test/path', {
-        method: 'POST',
+      await sendApiRequest<unknown>('test/path', 'POST', {
         commandPath: 'socket fix',
       })
 
@@ -432,7 +428,8 @@ describe('api utilities', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Socket API error')
+        // Pin the short verdict-kind token, not the full message string.
+        expect(result.message).toContain('Socket API error')
         expect(result.cause).toContain('thrown boom')
       }
     })

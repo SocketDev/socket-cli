@@ -4,7 +4,9 @@
  * Purpose: Tests output mode detection and selection. Validates detection of
  * text, json, and markdown modes.
  *
- * Test Coverage: - Output mode parsing - Default mode selection - TTY detection
+ * Test Coverage: - Output mode parsing - Default mode selection - TTY
+ * detection.
+ *
  * - CI environment detection - Mode validation.
  *
  * Testing Approach: Tests output mode selection logic based on environment.

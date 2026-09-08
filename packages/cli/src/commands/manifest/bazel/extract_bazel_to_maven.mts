@@ -94,7 +94,7 @@ export async function extractBazelToMaven(
   const layout = cfg.outLayout ?? 'standalone'
   const manifestDir =
     layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
-  // One manifest per (workspace, hub), written best-effort: a single wedged
+  // One manifest per (workspace, hub), written best-effort: a single unresponsive
   // hub must not discard the manifests every other hub produced.
   const manifestPaths: string[] = []
   let totalArtifacts = 0
@@ -114,22 +114,24 @@ export async function extractBazelToMaven(
   let anyHubCoveredByLockfile = false
 
   try {
-    // Always apply the default prune policy so no caller can forget it;
-    // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
-    const ignoreDirNames = new Set([
-      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
-      ...(cfg.ignoreDirNames ?? []),
-    ])
-    const ignoreDirPrefixes = [
-      ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
-      ...(cfg.ignoreDirPrefixes ?? []),
-    ]
-    const workspaceRoots = findWorkspaceRoots({
-      cwd,
-      ignoreDirNames,
-      ignoreDirPrefixes,
-      verbose,
-    })
+    const workspaceRoots = discoverWorkspaceRoots()
+    function discoverWorkspaceRoots(): string[] {
+      // Always apply the default prune policy so no caller can forget it;
+      // callers EXTEND it via ignoreDirNames/ignoreDirPrefixes.
+      const ignoreDirNames = new Set([
+        ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+        ...(cfg.ignoreDirNames ?? []),
+      ])
+      const ignoreDirPrefixes = [
+        ...DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+        ...(cfg.ignoreDirPrefixes ?? []),
+      ]
+      return findWorkspaceRoots(cwd, {
+        ignoreDirNames,
+        ignoreDirPrefixes,
+        verbose,
+      })
+    }
     if (!workspaceRoots.length) {
       logger.warn(
         `No Bazel workspace found at ${cwd} or beneath (looked for MODULE.bazel / WORKSPACE / WORKSPACE.bazel).`,
@@ -149,36 +151,45 @@ export async function extractBazelToMaven(
       )
     }
 
-    for (
-      let rootIdx = 0, rootCount = workspaceRoots.length;
-      rootIdx < rootCount;
-      rootIdx += 1
-    ) {
-      const workspaceRun = await processWorkspaceForMaven({
-        baseEnv,
-        bin,
-        cwd,
-        extractOptions: cfg,
-        manifestDir,
-        outputUserRoot,
-        perRepoTimeoutMs,
-        verbose,
-        workspaceRoot: workspaceRoots[rootIdx]!,
-      })
-      anyHubCoveredByLockfile ||= workspaceRun.anyHubCoveredByLockfile
-      anyIndeterminate ||= workspaceRun.anyIndeterminate
-      anyRepos ||= workspaceRun.anyRepos
-      anyWorkspaceLoadFailed ||= workspaceRun.workspaceOutcome.load === 'failed'
-      hubsFailed += workspaceRun.hubsFailed
-      hubsSucceeded += workspaceRun.hubsSucceeded
-      manifestPaths.push(...workspaceRun.manifestPaths)
-      mintedRoots.push(...workspaceRun.mintedRoots)
-      outputUserRoot = workspaceRun.outputUserRoot
-      totalArtifacts += workspaceRun.artifactCount
-      workspaceOutcomes.push(workspaceRun.workspaceOutcome)
+    await processWorkspaceRoots()
+
+    async function processWorkspaceRoots(): Promise<void> {
+      for (
+        let rootIdx = 0, rootCount = workspaceRoots.length;
+        rootIdx < rootCount;
+        rootIdx += 1
+      ) {
+        const workspaceRun = await processWorkspaceForMaven({
+          baseEnv,
+          bin,
+          cwd,
+          extractOptions: cfg,
+          manifestDir,
+          outputUserRoot,
+          perRepoTimeoutMs,
+          verbose,
+          workspaceRoot: workspaceRoots[rootIdx]!,
+        })
+        anyHubCoveredByLockfile ||= workspaceRun.anyHubCoveredByLockfile
+        anyIndeterminate ||= workspaceRun.anyIndeterminate
+        anyRepos ||= workspaceRun.anyRepos
+        anyWorkspaceLoadFailed ||=
+          workspaceRun.workspaceOutcome.load === 'failed'
+        hubsFailed += workspaceRun.hubsFailed
+        hubsSucceeded += workspaceRun.hubsSucceeded
+        manifestPaths.push(...workspaceRun.manifestPaths)
+        mintedRoots.push(...workspaceRun.mintedRoots)
+        outputUserRoot = workspaceRun.outputUserRoot
+        totalArtifacts += workspaceRun.artifactCount
+        workspaceOutcomes.push(workspaceRun.workspaceOutcome)
+      }
     }
 
     if (!manifestPaths.length) {
+      return await finishEmptyExtraction()
+    }
+
+    async function finishEmptyExtraction(): Promise<ExtractBazelResult> {
       // Every discovered hub was already covered by a committed lockfile and
       // nothing else needed extraction: writing zero synthetic manifests is
       // the CORRECT complement, not a failure. The run is complete only when
@@ -253,55 +264,61 @@ export async function extractBazelToMaven(
       }
     }
 
-    // Manifests were written, so the run is not a hard failure. It is only
-    // `complete` when every queried hub succeeded cleanly AND no workspace
-    // failed to load AND no probe was indeterminate; any of those means the
-    // emitted SBOM is known-incomplete and the run is reported partial.
-    const knownIncomplete =
-      hubsFailed > 0 || anyWorkspaceLoadFailed || anyIndeterminate
-    const status: ExtractBazelStatus = knownIncomplete ? 'partial' : 'complete'
-    if (status === 'complete') {
-      logger.success(
-        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total.`,
-      )
-    } else {
-      const loadNote = anyWorkspaceLoadFailed
-        ? ', at least one workspace failed to load'
-        : ''
-      const indetNote = anyIndeterminate
-        ? ', at least one hub could not be classified'
-        : ''
-      logger.warn(
-        `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total — partial run: ${hubsSucceeded} hub(s) succeeded, ${hubsFailed} failed or incomplete${loadNote}${indetNote}. The uploaded SBOM is known-incomplete.`,
-      )
-    }
-    if (verbose) {
-      logger.log('[VERBOSE] outputs:', {
-        anyIndeterminate,
-        anyWorkspaceLoadFailed,
+    return await finishExtraction()
+
+    async function finishExtraction(): Promise<ExtractBazelResult> {
+      // Manifests were written, so the run is not a hard failure. It is only
+      // `complete` when every queried hub succeeded cleanly AND no workspace
+      // failed to load AND no probe was indeterminate; any of those means the
+      // emitted SBOM is known-incomplete and the run is reported partial.
+      const knownIncomplete =
+        hubsFailed > 0 || anyWorkspaceLoadFailed || anyIndeterminate
+      const status: ExtractBazelStatus = knownIncomplete
+        ? 'partial'
+        : 'complete'
+      if (status === 'complete') {
+        logger.success(
+          `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total.`,
+        )
+      } else {
+        const loadNote = anyWorkspaceLoadFailed
+          ? ', at least one workspace failed to load'
+          : ''
+        const indetNote = anyIndeterminate
+          ? ', at least one hub could not be classified'
+          : ''
+        logger.warn(
+          `Wrote ${manifestPaths.length} manifest(s), ${totalArtifacts} artifact(s) total — partial run: ${hubsSucceeded} hub(s) succeeded, ${hubsFailed} failed or incomplete${loadNote}${indetNote}. The uploaded SBOM is known-incomplete.`,
+        )
+      }
+      if (verbose) {
+        logger.log('[VERBOSE] outputs:', {
+          anyIndeterminate,
+          anyWorkspaceLoadFailed,
+          artifactCount: totalArtifacts,
+          hubsFailed,
+          hubsSucceeded,
+          layout,
+          manifestPaths,
+          status,
+        })
+      }
+      await writeCompletenessSummary({
         artifactCount: totalArtifacts,
-        hubsFailed,
-        hubsSucceeded,
-        layout,
+        complete: status === 'complete',
+        manifestDir,
         manifestPaths,
         status,
+        verbose,
+        workspaceOutcomes,
       })
-    }
-    await writeCompletenessSummary({
-      artifactCount: totalArtifacts,
-      complete: status === 'complete',
-      manifestDir,
-      manifestPaths,
-      status,
-      verbose,
-      workspaceOutcomes,
-    })
-    return {
-      artifactCount: totalArtifacts,
-      complete: status === 'complete',
-      manifestPaths,
-      status,
-      workspaceOutcomes,
+      return {
+        artifactCount: totalArtifacts,
+        complete: status === 'complete',
+        manifestPaths,
+        status,
+        workspaceOutcomes,
+      }
     }
   } catch (e) {
     logger.fail(`Unexpected error in bazel2maven: ${errorMessage(e)}`)
@@ -320,14 +337,17 @@ export async function extractBazelToMaven(
       workspaceOutcomes,
     }
   } finally {
-    for (
-      let dirIdx = 0, dirCount = mintedRoots.length;
-      dirIdx < dirCount;
-      dirIdx += 1
-    ) {
-      const dir = mintedRoots[dirIdx]!
-      await reapBazelServer(bin, dir, { verbose })
-      await removeTempdir(dir, { verbose })
+    await cleanupBazelRoots()
+    async function cleanupBazelRoots(): Promise<void> {
+      for (
+        let dirIdx = 0, dirCount = mintedRoots.length;
+        dirIdx < dirCount;
+        dirIdx += 1
+      ) {
+        const dir = mintedRoots[dirIdx]!
+        await reapBazelServer(bin, dir, { verbose })
+        await removeTempdir(dir, { verbose })
+      }
     }
   }
 }

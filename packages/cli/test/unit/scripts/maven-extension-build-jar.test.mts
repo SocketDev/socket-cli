@@ -6,7 +6,8 @@
  * directory they mean, so the resolved home has to be absolute before the cd.
  *
  * Related Files:
- * - src/commands/manifest/scripts/maven-extension/build-jar.sh (implementation)
+ *
+ * - Src/commands/manifest/scripts/maven-extension/build-jar.sh (implementation)
  */
 
 import {

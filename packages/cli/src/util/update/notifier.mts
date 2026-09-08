@@ -35,33 +35,27 @@ const NPM = 'npm'
 const SOCKET_CLI_GITHUB_REPO = 'socket-cli'
 const SOCKET_GITHUB_ORG = 'SocketDev'
 
-export interface UpdateNotificationOptions {
-  name: string
-  current: string
-  latest: string
-}
-
 /**
  * Format an update message with appropriate commands and links.
  */
-export function formatUpdateMessage(config: UpdateNotificationOptions): {
+export function formatUpdateMessage(
+  name: string,
+  current: string,
+  latest: string,
+): {
   message: string
   command?: string | undefined
   changelog: string
 } {
-  const { current, latest, name } = {
-    __proto__: null,
-    ...config,
-  } as typeof config
   const seaBinPath = getSeaBinaryPath()
 
-  const message = `📦 Update available for ${colors.cyan(name)}: ${colors.gray(current)} → ${colors.green(latest)}`
+  const message = `Update available for ${colors.cyan(name)}: ${colors.gray(current)} → ${colors.green(latest)}`
 
   if (isNonEmptyString(seaBinPath)) {
     // SEA binary - show self-update command
     return {
       message,
-      command: `🔄 Run ${colors.cyan(`${seaBinPath} ${SEA_UPDATE_COMMAND}`)} to update automatically`,
+      command: `Run ${colors.cyan(`${seaBinPath} ${SEA_UPDATE_COMMAND}`)} to update automatically`,
       changelog: githubRepoLink(
         SOCKET_GITHUB_ORG,
         SOCKET_CLI_GITHUB_REPO,
@@ -70,7 +64,7 @@ export function formatUpdateMessage(config: UpdateNotificationOptions): {
       ),
     }
   }
-  // npm installation - show npm install command
+  // npm installation - show `npm install` command
   return {
     message,
     changelog: socketPackageLink(
@@ -87,14 +81,17 @@ export function formatUpdateMessage(config: UpdateNotificationOptions): {
  * notification doesn't interfere with command output.
  */
 export function scheduleExitNotification(
-  config: UpdateNotificationOptions,
+  name: string,
+  current: string,
+  latest: string,
 ): void {
   if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
   try {
-    const notificationLogger = () => showUpdateNotification(config)
+    const notificationLogger = () =>
+      showUpdateNotification(name, current, latest)
     onExit(notificationLogger)
   } catch (e) {
     logger.warn(`Failed to schedule exit notification: ${errorMessage(e)}`)
@@ -105,35 +102,33 @@ export function scheduleExitNotification(
  * Show update notification immediately.
  */
 export function showUpdateNotification(
-  config: UpdateNotificationOptions,
+  name: string,
+  current: string,
+  latest: string,
 ): void {
   if (!process.stdout?.isTTY) {
     return // Probably piping stdout.
   }
 
   try {
-    const formatted = formatUpdateMessage(config)
-    const loggerLocal = getDefaultLogger()
+    const formatted = formatUpdateMessage(name, current, latest)
 
-    loggerLocal.log(`\n\n${formatted.message}`)
+    logger.log('')
+    logger.log('')
+    logger.log(formatted.message)
     if (formatted.command) {
-      loggerLocal.log(formatted.command)
+      logger.log(formatted.command)
     }
-    loggerLocal.log(`📝 ${formatted.changelog}`)
+    logger.log(formatted.changelog)
   } catch {
     // If formatting or logging fails, show a simpler message.
-    const loggerLocal = getDefaultLogger()
-    const { current, latest, name } = {
-      __proto__: null,
-      ...config,
-    } as typeof config
     const seaBinPath = getSeaBinaryPath()
 
-    loggerLocal.log(
-      `\n\n📦 Update available for ${name}: ${current} → ${latest}`,
-    )
+    logger.log('')
+    logger.log('')
+    logger.log(`Update available for ${name}: ${current} → ${latest}`)
     if (isNonEmptyString(seaBinPath)) {
-      loggerLocal.log(
+      logger.log(
         `Run '${seaBinPath} ${SEA_UPDATE_COMMAND}' to update automatically`,
       )
     }

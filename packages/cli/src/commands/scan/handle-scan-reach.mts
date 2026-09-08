@@ -2,8 +2,6 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
-const logger = getDefaultLogger()
-
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
@@ -13,8 +11,10 @@ import { findSocketYmlSync } from '../../util/config.mts'
 import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
+
+const logger = getDefaultLogger()
 
 export type HandleScanReachConfig = {
   cwd: string
@@ -22,7 +22,7 @@ export type HandleScanReachConfig = {
   orgSlug: string
   outputKind: OutputKind
   outputPath: string
-  reachabilityOptions: ReachabilityOptions
+  reachabilityOptions: ReachabilityConfig
   targets: string[]
 }
 
@@ -60,12 +60,7 @@ export async function handleScanReach({
     : undefined
 
   const { effectiveSocketConfig, mergedReachabilityOptions } =
-    applyFullExcludePaths({
-      cwd,
-      reachabilityOptions,
-      socketConfig,
-      target: targets[0]!,
-    })
+    applyFullExcludePaths(cwd, reachabilityOptions, socketConfig, targets[0]!)
 
   const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     config: effectiveSocketConfig,
@@ -93,16 +88,18 @@ export async function handleScanReach({
 
   spinner.start('Running reachability analysis…')
 
-  const result = await performReachabilityAnalysis({
-    cwd,
-    orgSlug,
-    outputPath,
-    packagePaths,
-    reachabilityOptions: mergedReachabilityOptions,
-    spinner,
-    target: targets[0]!,
-    uploadManifests: true,
-  })
+  const result = await performReachabilityAnalysis(
+    targets[0]!,
+    mergedReachabilityOptions,
+    {
+      cwd,
+      orgSlug,
+      outputPath,
+      packagePaths,
+      spinner,
+      uploadManifests: true,
+    },
+  )
 
   spinner.stop()
 

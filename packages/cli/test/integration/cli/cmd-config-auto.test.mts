@@ -11,9 +11,11 @@
  * Auto-Discoverable Keys: - defaultOrg: Automatically detects the organization
  * from API token - Other keys may be added in future releases.
  *
- * Related Files: - src/commands/config/cmd-config-auto.mts - Command definition
- * - src/commands/config/handle-config-auto.mts - Auto-discovery logic -
- * src/util/config.mts - Config management utilities.
+ * Related Files: - src/commands/config/cmd-config-auto.mts - Command
+ * definition.
+ *
+ * - Src/commands/config/handle-config-auto.mts - Auto-discovery logic -
+ *   src/util/config.mts - Config management utilities.
  */
 
 import { describe, expect } from 'vitest'

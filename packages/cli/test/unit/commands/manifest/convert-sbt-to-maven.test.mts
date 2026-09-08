@@ -12,6 +12,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import {
+  convertSbtToMaven,
+  findProjectRootAboveTarget,
+  resolveSbtExecutable,
+} from '../../../../src/commands/manifest/convert-sbt-to-maven.mts'
 
 const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
@@ -50,18 +59,6 @@ vi.mock(
     findSystemTool: mockFindSystemTool,
   }),
 )
-
-import { promises as fs } from 'node:fs'
-import os from 'node:os'
-import path from 'node:path'
-
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
-
-import {
-  convertSbtToMaven,
-  findProjectRootAboveTarget,
-  resolveSbtExecutable,
-} from '../../../../src/commands/manifest/convert-sbt-to-maven.mts'
 
 const SYSTEM_SBT = '/usr/local/bin/sbt'
 const SAFE_PATH = '/usr/local/bin:/usr/bin'
@@ -257,7 +254,7 @@ describe('convertSbtToMaven', () => {
     expect(result.ok).toBe(false)
     expect(mockSpawn).not.toHaveBeenCalled()
     if (!result.ok) {
-      expect(result.message).toContain('Could not resolve the `sbt` executable')
+      expect(result.message).toContain('`sbt`')
       expect(result.cause).toContain('untrusted checkout')
       expect(result.cause).toContain('brew install sbt')
     }

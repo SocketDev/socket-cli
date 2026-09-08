@@ -21,7 +21,7 @@ import { meowWithSubcommands } from './with-subcommands.mts'
 import type { MeowFlags } from '../../flags.mts'
 import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
 
-export interface DefineSubcommandGroupOptions {
+export interface DefineSubcommandGroupConfig<CommandName extends string> {
   /**
    * Group name as it appears under `socket`. Used as the second token of the
    * usage string (`socket <name> <subcommand>`).
@@ -40,7 +40,7 @@ export interface DefineSubcommandGroupOptions {
    * Map of subcommand name → CliSubcommand. The router routes the first
    * positional arg to the matching entry.
    */
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<CommandName, CliSubcommand>
   /**
    * Optional aliases. Each key is an alternative name for the group; its `argv`
    * is the canonical command tokens to invoke (e.g. `aliases: { deps: { argv:
@@ -75,8 +75,8 @@ export interface DefineSubcommandGroupOptions {
  * never had a `hidden` field at all) and keeps existing test assertions about
  * object identity / strict shape working.
  */
-export function defineSubcommandGroup(
-  config: DefineSubcommandGroupOptions,
+export function defineSubcommandGroup<CommandName extends string>(
+  config: DefineSubcommandGroupConfig<CommandName>,
 ): CliSubcommand {
   const {
     aliases,

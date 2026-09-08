@@ -4,9 +4,10 @@
  * Purpose: Tests repository deletion via the Socket API. Validates SDK
  * integration, error handling for deletion workflows, and permission checks.
  *
- * Test Coverage: - Successful repository deletion - SDK setup failure handling
+ * Test Coverage: - Successful repository deletion - SDK setup failure handling.
+ *
  * - API call errors (404 not found, 403 forbidden) - Custom SDK options (API
- * tokens, base URLs) - Insufficient permissions error handling.
+ *   tokens, base URLs) - Insufficient permissions error handling.
  *
  * Testing Approach: Uses SDK test helpers to mock Socket API interactions.
  * Tests destructive operation error handling and permission scenarios.

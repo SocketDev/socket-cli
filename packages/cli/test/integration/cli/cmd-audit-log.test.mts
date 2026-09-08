@@ -20,8 +20,9 @@
  * report deletion) - Access control, invitations, transfers, removals.
  *
  * Related Files: - src/commands/audit-log/cmd-audit-log.mts - Command
- * definition - src/commands/audit-log/handle-audit-log.mts - Audit log handler
- * - src/commands/audit-log/output-audit-log.mts - Output formatting.
+ * definition - src/commands/audit-log/handle-audit-log.mts - Audit log handler.
+ *
+ * - Src/commands/audit-log/output-audit-log.mts - Output formatting.
  */
 
 import { describe, expect } from 'vitest'

@@ -68,7 +68,7 @@ describe('fetchScanMetadata', () => {
     const result = await fetchScanMetadata('test-org', 'scan-123')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
     expect(result.cause).toBe('Invalid configuration')
   })
 

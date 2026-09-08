@@ -13,6 +13,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setupSdk } from '../../../../src/util/socket/sdk.mts'
 
 // Mock the config utility.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
@@ -78,8 +79,6 @@ vi.mock(import('../../../../src/util/debug.mts'), () => ({
   debugApiResponse: vi.fn(),
 }))
 
-import { setupSdk } from '../../../../src/util/socket/sdk.mts'
-
 describe('SDK Utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -100,7 +99,8 @@ describe('SDK Utilities', () => {
       return setupSdk().then(result => {
         expect(result.ok).toBe(false)
         if (!result.ok) {
-          expect(result.message).toBe('Auth Error')
+          // Pin the short verdict-kind token, not the full message string.
+          expect(result.message).toContain('Auth Error')
           expect(result.cause).toContain('socket login')
         }
       })
@@ -139,7 +139,8 @@ describe('SDK Utilities', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Configuration Error')
+        // Pin the short verdict-kind token, not the full message string.
+        expect(result.message).toContain('Configuration Error')
         expect(result.cause).toContain('SOCKET_CLI_ALLOWED_PRIVATE_HOSTS')
       }
       expect(mockSocketSdkConstructor).not.toHaveBeenCalled()

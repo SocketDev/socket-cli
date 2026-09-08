@@ -1,8 +1,8 @@
 /**
  * Clean stale caches across all packages.
  *
- * Usage: pnpm run clean:cache # Clean all stale caches pnpm run clean:cache
- * --all # Clean ALL caches, nuclear option, pnpm run clean:cache --dry-run #
+ * Usage: `pnpm run` clean:cache # Clean all stale caches `pnpm run` clean:cache
+ * --all # Clean ALL caches, nuclear option, `pnpm run` clean:cache --dry-run #
  * Show what would be deleted.
  */
 
@@ -15,9 +15,9 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
-import { isMainModule } from '../fleet/_shared/is-main-module.mts'
-import { runMain } from '../fleet/_shared/run-main.mts'
-import type { ScriptMeta } from '../fleet/_shared/run-main.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 import { REPO_ROOT } from '../fleet/paths.mts'
 
 const logger = getDefaultLogger()
@@ -174,16 +174,26 @@ async function main(): Promise<void> {
     const entries = analyzeCacheDir(cacheDir)
 
     if (!entries.length) {
-      logger.log(`📦 ${pkg}: Empty cache`)
+      logger.log(`${pkg}: Empty cache`)
       continue
     }
 
-    logger.log(`📦 ${pkg}:`)
+    logger.log(`${pkg}:`)
 
-    if (cleanAll) {
-      // Delete everything.
-      for (let i = 0, { length } = entries; i < length; i += 1) {
-        const entry = entries[i]
+    const latest = entries[0]
+    if (!cleanAll && latest) {
+      logger.success(
+        `  ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
+      )
+    }
+    const staleEntries = cleanAll ? entries : entries.slice(1)
+    await cleanCacheEntries(staleEntries)
+
+    async function cleanCacheEntries(
+      cacheEntries: CacheEntry[],
+    ): Promise<void> {
+      for (let i = 0, { length } = cacheEntries; i < length; i += 1) {
+        const entry = cacheEntries[i]
         if (!entry) {
           continue
         }
@@ -193,31 +203,7 @@ async function main(): Promise<void> {
         if (!dryRun) {
           await safeDelete(entry.path)
         }
-        totalDeleted++
-        totalSize += entry.size
-      }
-    } else {
-      // Keep most recent, delete older ones.
-      const [latest, ...older] = entries
-
-      if (latest) {
-        logger.success(
-          `  ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
-        )
-      }
-
-      for (let i = 0, { length } = older; i < length; i += 1) {
-        const entry = older[i]
-        if (!entry) {
-          continue
-        }
-        logger.log(
-          `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
-        )
-        if (!dryRun) {
-          await safeDelete(entry.path)
-        }
-        totalDeleted++
+        totalDeleted += 1
         totalSize += entry.size
       }
     }
@@ -233,10 +219,13 @@ async function main(): Promise<void> {
     logger.success('All caches are current - nothing to delete')
   }
 
-  // Clean global caches if --all flag is used.
   if (cleanAll) {
+    await cleanGlobalCaches()
+  }
+
+  async function cleanGlobalCaches(): Promise<void> {
     logger.log('')
-    logger.log('🌍 Cleaning global caches:')
+    logger.log('Cleaning global caches:')
 
     const globalCaches = getGlobalCacheDirs()
 

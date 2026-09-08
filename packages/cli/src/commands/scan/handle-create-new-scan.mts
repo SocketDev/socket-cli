@@ -2,12 +2,9 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { debugDir, debugNs } from '@socketsecurity/lib-stable/debug/output'
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getDefaultSpinner } from '@socketsecurity/lib-stable/spinner/default'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
-
-const logger = getDefaultLogger()
 
 import { applyFullExcludePaths } from './exclude-paths.mts'
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
@@ -24,6 +21,24 @@ import {
 } from '../../constants.mts'
 import { runSocketBasics } from '../../util/basics/spawn.mts'
 
+import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
+import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
+import { socketDocsLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
+import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
+
+import type { ReachabilityConfig } from './perform-reachability-analysis.mts'
+import type { REPORT_LEVEL } from './types.mts'
+import type { OutputKind } from '../../types.mts'
+import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
+import type { Remap } from '@socketsecurity/lib-stable/objects/types'
+import { getDel } from '@socketsecurity/lib-stable/fs/safe'
+
+const logger = getDefaultLogger()
+
 /**
  * Filter out .socket.facts.json files from scan paths to avoid duplicates.
  *
@@ -34,20 +49,6 @@ import { runSocketBasics } from '../../util/basics/spawn.mts'
 export function excludeFactsJson(paths: string[]): string[] {
   return paths.filter(p => path.basename(p) !== DOT_SOCKET_DOT_FACTS_JSON)
 }
-import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
-import { findSocketYmlSync } from '../../util/config.mts'
-import { getPackageFilesForScan } from '../../util/fs/path-resolve.mts'
-import { readOrDefaultSocketJson } from '../../util/socket/json.mts'
-import { socketDocsLink } from '../../util/terminal/link.mts'
-import { checkCommandInput } from '../../util/validation/check-input.mts'
-import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
-import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
-
-import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
-import type { REPORT_LEVEL } from './types.mts'
-import type { OutputKind } from '../../types.mts'
-import type { ResolvedPathsSidecar } from '../manifest/scripts/sidecar.mts'
-import type { Remap } from '@socketsecurity/lib-stable/objects/types'
 
 export type HandleCreateNewScanConfig = {
   autoManifest: boolean
@@ -64,7 +65,7 @@ export type HandleCreateNewScanConfig = {
   pullRequest: number
   outputKind: OutputKind
   reach: Remap<
-    ReachabilityOptions & {
+    ReachabilityConfig & {
       runReachabilityAnalysis: boolean
     }
   >
@@ -182,12 +183,7 @@ export async function handleCreateNewScan({
     : undefined
 
   const { effectiveSocketConfig, mergedReachabilityOptions } =
-    applyFullExcludePaths({
-      cwd,
-      reachabilityOptions: reach,
-      socketConfig,
-      target: targets[0]!,
-    })
+    applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!)
 
   const packagePaths = await getPackageFilesForScan(
     scanTargets,
@@ -235,19 +231,22 @@ export async function handleCreateNewScan({
   // is left untouched.
   let generatedFactsFile = false
 
-  // If reachability is enabled, perform reachability analysis.
-  if (reach.runReachabilityAnalysis) {
-    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths({ target: targets[0]! }) — this guard is unreachable in practice. */
+  if (reach.runReachabilityAnalysis && !(await runScanReachability())) {
+    return
+  }
+
+  async function runScanReachability(): Promise<boolean> {
+    /* c8 ignore start - defensive: empty targets crashes earlier at applyFullExcludePaths(cwd, reach, socketConfig, targets[0]!) — this guard is unreachable in practice. */
     if (!targets.length) {
       logger.fail('Reachability analysis requires at least one target')
-      return
+      return false
     }
     /* c8 ignore stop */
 
-    const [firstTarget] = targets
+    const { 0: firstTarget } = targets
     if (!firstTarget) {
       logger.fail('Reachability analysis requires at least one valid target')
-      return
+      return false
     }
 
     logger.error('')
@@ -266,23 +265,25 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const reachResult = await performReachabilityAnalysis({
-      branchName,
-      cwd,
-      orgSlug,
-      packagePaths,
-      reachabilityOptions: mergedReachabilityOptions,
-      repoName,
-      resolvedPathsSidecar,
-      spinner,
-      target: firstTarget,
-    })
+    const reachResult = await performReachabilityAnalysis(
+      firstTarget,
+      mergedReachabilityOptions,
+      {
+        branchName,
+        cwd,
+        orgSlug,
+        packagePaths,
+        repoName,
+        resolvedPathsSidecar,
+        spinner,
+      },
+    )
 
     spinner.stop()
 
     if (!reachResult.ok) {
       await outputCreateNewScan(reachResult, { interactive, outputKind })
-      return
+      return false
     }
 
     logger.success('Reachability analysis completed successfully')
@@ -297,20 +298,22 @@ export async function handleCreateNewScan({
     ]
 
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
+
+    return true
   }
 
-  // Run socket-basics comprehensive security scanning if --basics flag is set.
   if (basics) {
+    await runScanBasics()
+  }
+
+  async function runScanBasics(): Promise<void> {
     logger.error('')
     logger.info('Starting comprehensive security scan (socket-basics)...')
     debugNs('notice', 'Socket-basics enabled')
 
     spinner.start()
 
-    const basicsResult = await runSocketBasics({
-      cwd,
-      orgSlug,
-      repoName,
+    const basicsResult = await runSocketBasics(cwd, orgSlug, repoName, {
       spinner,
     })
 
@@ -381,58 +384,77 @@ export async function handleCreateNewScan({
     await compressed.cleanup()
   }
 
-  const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
+  await finishCreatedScan()
 
-  if (reach && scanId && tier1ReachabilityScanId) {
-    await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
-  } else if (reach && reachabilityReport && scanId) {
-    // Reachability ran and a scan was created, but no tier 1 scan id came out
-    // of the facts file. Say so instead of skipping finalize in silence — the
-    // tier 1 row otherwise stays stuck and the full scan is never linked to
-    // its reachability report.
-    logger.warn(
-      'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
-    )
-  }
+  async function finishCreatedScan(): Promise<void> {
+    const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
 
-  if (fullScanCResult.ok && reachabilityReport && generatedFactsFile) {
-    // The facts file is an upload artifact, not user-facing output — remove
-    // it once the scan is submitted so it doesn't linger in the project. Only
-    // a file we generated this run is removed; a pre-existing or
-    // user-pre-generated facts file is left in place (see generatedFactsFile).
-    // On submission failure we intentionally keep the file for debuggability.
-    await safeDelete(path.resolve(cwd, reachabilityReport), { force: true })
-  }
-
-  if (report && fullScanCResult.ok) {
-    if (scanId) {
-      await handleScanReport({
-        filepath: '-',
-        fold: FOLD_SETTING_VERSION,
-        includeLicensePolicy: true,
-        orgSlug,
-        outputKind,
-        reportLevel,
-        scanId,
-        short: false,
-      })
-    } else {
-      await outputCreateNewScan(
-        {
-          ok: false,
-          message: 'Missing Scan ID',
-          cause: 'Server did not respond with a scan ID',
-          data: fullScanCResult.data,
-        },
-        {
-          interactive,
-          outputKind,
-        },
+    if (reach && scanId && tier1ReachabilityScanId) {
+      await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
+    } else if (reach && reachabilityReport && scanId) {
+      // Reachability ran and a scan was created, but no tier 1 scan id came out
+      // of the facts file. Say so instead of skipping finalize in silence — the
+      // tier 1 row otherwise stays stuck and the full scan is never linked to
+      // its reachability report.
+      logger.warn(
+        'Reachability analysis ran but no tier 1 reachability scan ID was found; skipping tier 1 finalize. The scan was created but its reachability report was not linked.',
       )
     }
-  } else {
-    spinner.stop()
 
-    await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
+    if (fullScanCResult.ok && reachabilityReport && generatedFactsFile) {
+      // The facts file is an upload artifact, not user-facing output — remove
+      // it once the scan is submitted so it doesn't linger in the project. Only
+      // a file we generated this run is removed; a pre-existing or
+      // user-pre-generated facts file is left in place (see generatedFactsFile).
+      // On submission failure we intentionally keep the file for debuggability.
+      await removeGeneratedScanFacts(path.resolve(cwd, reachabilityReport))
+    }
+
+    if (report && fullScanCResult.ok) {
+      if (scanId) {
+        await handleScanReport({
+          filepath: '-',
+          fold: FOLD_SETTING_VERSION,
+          includeLicensePolicy: true,
+          orgSlug,
+          outputKind,
+          reportLevel,
+          scanId,
+          short: false,
+        })
+      } else {
+        await outputCreateNewScan(
+          {
+            ok: false,
+            message: 'Missing Scan ID',
+            cause: 'Server did not respond with a scan ID',
+            data: fullScanCResult.data,
+          },
+          {
+            interactive,
+            outputKind,
+          },
+        )
+      }
+    } else {
+      spinner.stop()
+
+      await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
+    }
   }
+}
+
+export async function removeGeneratedScanFacts(
+  filepath: string,
+): Promise<void> {
+  const filename = path.basename(filepath)
+  if (filename !== DOT_SOCKET_DOT_FACTS_JSON) {
+    throw new Error(
+      `Cannot remove generated scan facts at ${filepath}: expected ${DOT_SOCKET_DOT_FACTS_JSON}. Keep other report files outside generated facts cleanup.`,
+    )
+  }
+  await getDel().deleteAsync(filename, {
+    cwd: path.dirname(path.resolve(filepath)),
+    onlyFiles: true,
+  })
 }

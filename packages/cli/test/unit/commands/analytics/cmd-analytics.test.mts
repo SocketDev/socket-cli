@@ -10,7 +10,9 @@
  * flag detection.
  *
  * Testing Approach: - Mock logger to capture output - Mock handleAnalytics to
- * verify handler invocation - Mock hasDefaultApiToken for authentication checks
+ * verify handler invocation - Mock hasDefaultApiToken for authentication
+ * checks.
+ *
  * - Test argument combinations and defaults.
  *
  * Related Files: - src/commands/analytics/cmd-analytics.mts - Implementation -

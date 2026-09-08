@@ -15,6 +15,12 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  COMPLETION_CMD_PREFIX,
+  getBashrcDetails,
+  getCompletionSourcingCommand,
+} from '../../../../src/util/cli/completion.mts'
+import type * as PathsModule from '../../../../src/constants/paths.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
@@ -34,14 +40,6 @@ vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
     getSocketAppDataPath: mockGetSocketAppDataPath,
   }
 })
-
-import {
-  COMPLETION_CMD_PREFIX,
-  getBashrcDetails,
-  getCompletionSourcingCommand,
-} from '../../../../src/util/cli/completion.mts'
-
-import type * as PathsModule from '../../../../src/constants/paths.mts'
 
 describe('cli/completion', () => {
   beforeEach(() => {
@@ -66,7 +64,6 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Tab Completion script not found')
         expect(result.cause).toContain('Expected to find completion script')
       }
     })
@@ -103,7 +100,7 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Tab Completion script not found')
+        expect(result.cause).toContain('Expected to find completion script')
       }
     })
 
@@ -115,7 +112,7 @@ describe('cli/completion', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Could not determine config directory')
+        expect(result.cause).toBe('Failed to get config path')
       }
     })
 

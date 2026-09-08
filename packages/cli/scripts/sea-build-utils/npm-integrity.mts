@@ -49,13 +49,20 @@ export const INTEGRITY_EXEMPT_NPM_TOOLS: Record<string, string> = {
  * Collect the npm-sourced tools from a parsed bundle-tools.json `tools` map.
  */
 export function collectNpmToolPins(
-  tools: Record<string, Record<string, unknown>>,
+  tools: Record<
+    string,
+    {
+      origin?: unknown | undefined
+      integrity?: unknown | undefined
+      version?: unknown | undefined
+    }
+  >,
 ): NpmToolPin[] {
   const pins: NpmToolPin[] = []
   const entries = Object.entries(tools)
   for (let i = 0, { length } = entries; i < length; i += 1) {
     const { 0: name, 1: config } = entries[i]!
-    if (config['packageManager'] === 'npm') {
+    if (config['origin'] === 'npm') {
       pins.push({
         integrity: config['integrity'] as string | undefined,
         name,

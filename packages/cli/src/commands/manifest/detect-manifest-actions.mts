@@ -42,88 +42,68 @@ export async function detectManifestActions(
     sbt: false,
   }
 
-  if (sockJson?.defaults?.manifest?.bazel?.disabled) {
-    debugLog(
-      'notice',
-      `[DEBUG] - bazel auto-detection is disabled in ${SOCKET_JSON}`,
-    )
-  } else if (
-    existsSync(path.join(cwd, 'MODULE.bazel')) ||
-    existsSync(path.join(cwd, 'WORKSPACE')) ||
-    existsSync(path.join(cwd, 'WORKSPACE.bazel')) ||
-    // Real monorepos host nested workspace roots with no marker at the top
-    // (e.g. `mobile/MODULE.bazel`). The extractor walks the same tree with the
-    // same prune policy, so detection matching it never flags a workspace the
-    // extraction cannot find.
-    findWorkspaceRoots({
-      cwd,
-      ignoreDirNames: DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
-      ignoreDirPrefixes: DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
-    }).length > 0
-  ) {
-    debugLog('notice', '[DEBUG] - Detected a Bazel workspace')
-    output.bazel = true
-    output.count += 1
-  }
-
-  if (sockJson?.defaults?.manifest?.sbt?.disabled) {
-    debugLog(
-      'notice',
-      `[DEBUG] - sbt auto-detection is disabled in ${SOCKET_JSON}`,
-    )
-  } else if (existsSync(path.join(cwd, 'build.sbt'))) {
-    debugLog('notice', '[DEBUG] - Detected a Scala sbt build file')
-
-    output.sbt = true
-    output.count += 1
-  }
-
-  if (sockJson?.defaults?.manifest?.gradle?.disabled) {
-    debugLog(
-      'notice',
-      `[DEBUG] - gradle auto-detection is disabled in ${SOCKET_JSON}`,
-    )
-  } else if (
-    existsSync(path.join(cwd, 'build.gradle')) ||
-    existsSync(path.join(cwd, 'build.gradle.kts')) ||
-    existsSync(path.join(cwd, 'settings.gradle')) ||
-    existsSync(path.join(cwd, 'settings.gradle.kts'))
-  ) {
-    // Detect by build descriptor, not the `gradlew` wrapper (a project can
-    // build via `gradle` on PATH). `settings.gradle(.kts)` covers Kotlin-DSL
-    // roots with no root build script.
-    debugLog('notice', '[DEBUG] - Detected a gradle build file')
-    output.gradle = true
-    output.count += 1
-  }
-
-  if (sockJson?.defaults?.manifest?.maven?.disabled) {
-    debugLog(
-      'notice',
-      `[DEBUG] - maven auto-detection is disabled in ${SOCKET_JSON}`,
-    )
-  } else if (existsSync(path.join(cwd, 'pom.xml'))) {
-    debugLog('notice', '[DEBUG] - Detected a Maven pom.xml build file')
-    output.maven = true
-    output.count += 1
-  }
-
-  if (sockJson?.defaults?.manifest?.conda?.disabled) {
-    debugLog(
-      'notice',
-      `[DEBUG] - conda auto-detection is disabled in ${SOCKET_JSON}`,
-    )
-  } else {
-    const envyml = path.join(cwd, ENVIRONMENT_YML)
-    const hasEnvyml = existsSync(envyml)
-    const envyaml = path.join(cwd, ENVIRONMENT_YAML)
-    const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
-    if (hasEnvyml || hasEnvyaml) {
-      debugLog('notice', '[DEBUG] - Detected an environment.yml Conda file')
-      output.conda = true
+  const manifest = sockJson?.defaults?.manifest
+  const detectors = [
+    {
+      name: 'bazel',
+      files: ['MODULE.bazel', 'WORKSPACE', 'WORKSPACE.bazel'],
+      message: 'a Bazel workspace',
+    },
+    {
+      name: 'sbt',
+      files: ['build.sbt'],
+      message: 'a Scala sbt build file',
+    },
+    {
+      name: 'gradle',
+      files: [
+        'build.gradle',
+        'build.gradle.kts',
+        'settings.gradle',
+        'settings.gradle.kts',
+      ],
+      message: 'a gradle build file',
+    },
+    {
+      name: 'maven',
+      files: ['pom.xml'],
+      message: 'a Maven pom.xml build file',
+    },
+    {
+      name: 'conda',
+      files: [ENVIRONMENT_YML, ENVIRONMENT_YAML],
+      message: 'an environment.yml Conda file',
+    },
+  ] as const
+  for (const detector of detectors) {
+    if (manifest?.[detector.name]?.disabled) {
+      debugLog(
+        'notice',
+        `[DEBUG] - ${detector.name} auto-detection is disabled in ${SOCKET_JSON}`,
+      )
+    } else if (detectManifestFiles(cwd, detector.name, detector.files)) {
+      debugLog('notice', `[DEBUG] - Detected ${detector.message}`)
+      output[detector.name] = true
       output.count += 1
     }
   }
 
   return output
+}
+
+export function detectManifestFiles(
+  cwd: string,
+  name: string,
+  files: readonly string[],
+): boolean {
+  if (files.some(file => existsSync(path.join(cwd, file)))) {
+    return true
+  }
+  return (
+    name === 'bazel' &&
+    findWorkspaceRoots(cwd, {
+      ignoreDirNames: DEFAULT_BAZEL_WALKER_IGNORE_DIR_NAMES,
+      ignoreDirPrefixes: DEFAULT_BAZEL_WALKER_IGNORE_DIR_PREFIXES,
+    }).length > 0
+  )
 }

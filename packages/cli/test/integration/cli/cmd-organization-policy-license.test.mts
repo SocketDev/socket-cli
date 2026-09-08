@@ -10,7 +10,9 @@
  *
  * Related Files: -
  * src/commands/organization/cmd-organization-policy-license.mts - Command
- * definition - src/commands/organization/handle-organization-policy-license.mts
+ * definition -
+ * src/commands/organization/handle-organization-policy-license.mts.
+ *
  * - Logic.
  */
 

@@ -15,12 +15,18 @@ import type { PrProvider } from './provider.mts'
 export async function createPrProvider(): Promise<PrProvider> {
   const remoteUrl = await getGitRemoteUrl()
 
-  // Check for GitLab.
-  if (
-    remoteUrl.includes('gitlab.com') ||
-    process.env['GITLAB_HOST'] ||
-    remoteUrl.includes('gitlab')
-  ) {
+  let remoteHostname = ''
+  try {
+    const remote = remoteUrl.includes('://')
+      ? remoteUrl
+      : `ssh://${remoteUrl.replace(':', '/')}`
+    remoteHostname = new URL(remote).hostname
+  } catch {
+    // Local paths and malformed remotes use the default provider.
+  }
+
+  // Hostname matching preserves automatic detection of self-hosted GitLab.
+  if (process.env['GITLAB_HOST'] || remoteHostname.includes('gitlab')) {
     return new GitLabProvider()
   }
 

@@ -7,9 +7,12 @@
  * rule-specific actions.
  *
  * Test Coverage: - JSON format output for successful results - JSON format
- * error output with exit codes - Text format with security policy rules display
+ * error output with exit codes - Text format with security policy rules
+ * display.
+ *
  * - Text format error output with badges - Markdown format output - Empty
- * security policy handling - Default exit code setting when code is undefined.
+ *   security policy handling - Default exit code setting when code is
+ *   undefined.
  *
  * Testing Approach: Uses vi.doMock to reset module state between tests, mocking
  * logger, result serialization, markdown utilities, and error formatting. Tests

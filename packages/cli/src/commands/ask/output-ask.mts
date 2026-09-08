@@ -7,24 +7,25 @@ import colors from 'yoctocolors-cjs'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 const logger = getDefaultLogger()
 
+export interface AskIntent {
+  action: string
+  command: string[]
+  confidence: number
+  explanation: string
+  packageName?: string | undefined
+  severity?: string | undefined
+  environment?: string | undefined
+  isDryRun?: boolean | undefined
+}
+
+export interface AskProjectContext {
+  hasPackageJson: boolean
+  dependencies?: Record<string, string> | undefined
+  devDependencies?: Record<string, string> | undefined
+}
+
 export interface OutputAskCommandOptions {
-  query: string
-  intent: {
-    action: string
-    command: string[]
-    confidence: number
-    explanation: string
-    packageName?: string | undefined
-    severity?: string | undefined
-    environment?: string | undefined
-    isDryRun?: boolean | undefined
-  }
-  context: {
-    hasPackageJson: boolean
-    dependencies?: Record<string, string> | undefined
-    devDependencies?: Record<string, string> | undefined
-  }
-  explain: boolean
+  explain?: boolean | undefined
 }
 
 /**
@@ -121,11 +122,16 @@ export function explainCommand(intent: {
 /**
  * Format the ask command output.
  */
-export function outputAskCommand(config: OutputAskCommandOptions): void {
-  const { context, explain, intent, query } = {
+export function outputAskCommand(
+  query: string,
+  intent: AskIntent,
+  context: AskProjectContext,
+  options?: OutputAskCommandOptions | undefined,
+): void {
+  const { explain = false } = {
     __proto__: null,
-    ...config,
-  } as typeof config
+    ...options,
+  } as OutputAskCommandOptions
 
   // Show the query.
   logger.log('')
@@ -137,30 +143,7 @@ export function outputAskCommand(config: OutputAskCommandOptions): void {
   logger.log(colors.bold(colors.magenta('🤖 I understood:')))
   logger.log(`  ${intent.explanation}`)
 
-  // Show extracted details if present.
-  const details = []
-  if (intent.packageName) {
-    details.push(`Package: ${colors.cyan(intent.packageName)}`)
-  }
-  if (intent.severity) {
-    const severityColor =
-      intent.severity === 'critical' || intent.severity === 'high'
-        ? colors.red
-        : intent.severity === 'medium'
-          ? colors.yellow
-          : colors.blue
-    details.push(`Severity: ${severityColor(intent.severity)}`)
-  }
-  if (intent.environment) {
-    details.push(`Environment: ${colors.green(intent.environment)}`)
-  }
-  if (intent.isDryRun) {
-    details.push(`Mode: ${colors.yellow('dry-run (preview only)')}`)
-  }
-
-  if (details.length > 0) {
-    logger.log(`  ${details.join(', ')}`)
-  }
+  outputIntentDetails(intent)
 
   // Show confidence if low.
   if (intent.confidence < 0.6) {
@@ -195,5 +178,32 @@ export function outputAskCommand(config: OutputAskCommandOptions): void {
     const devDepCount = Object.keys(context.devDependencies || {}).length
     logger.log(`  Dependencies: ${depCount} packages`)
     logger.log(`  Dev Dependencies: ${devDepCount} packages`)
+  }
+}
+
+export function outputIntentDetails(intent: AskIntent): void {
+  // Show extracted details if present.
+  const details = []
+  if (intent.packageName) {
+    details.push(`Package: ${colors.cyan(intent.packageName)}`)
+  }
+  if (intent.severity) {
+    const severityColor =
+      intent.severity === 'critical' || intent.severity === 'high'
+        ? colors.red
+        : intent.severity === 'medium'
+          ? colors.yellow
+          : colors.blue
+    details.push(`Severity: ${severityColor(intent.severity)}`)
+  }
+  if (intent.environment) {
+    details.push(`Environment: ${colors.green(intent.environment)}`)
+  }
+  if (intent.isDryRun) {
+    details.push(`Mode: ${colors.yellow('dry-run (preview only)')}`)
+  }
+
+  if (details.length > 0) {
+    logger.log(`  ${details.join(', ')}`)
   }
 }

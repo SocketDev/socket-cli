@@ -7,16 +7,19 @@
  * fetch/output pipeline.
  *
  * Test Coverage: - Successful fetch and output with default output kind (text)
- * - Multiple output kind support, json, markdown, table - Error propagation
- * from fetchQuota preventing output.
+ *
+ * - Multiple output kind support, json, markdown, table - Error propagation from
+ *   fetchQuota preventing output.
  *
  * Testing Approach: Mocks fetchQuota and outputQuota modules to test
  * orchestration logic without actual API calls or terminal output. Uses test
  * environment setup helpers for consistent isolation.
  *
- * Related Files: - src/commands/organization/handle-quota.mts - Command handler
- * - src/commands/organization/fetch-quota.mts - Quota fetcher -
- * src/commands/organization/output-quota.mts - Output formatter.
+ * Related Files: - src/commands/organization/handle-quota.mts - Command
+ * handler.
+ *
+ * - Src/commands/organization/fetch-quota.mts - Quota fetcher -
+ *   src/commands/organization/output-quota.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

@@ -112,7 +112,7 @@ export function extract(filePath: string, content: string): Occurrence[] {
     const { source } = path.node
     if (source.type === 'StringLiteral' && typeof source.value === 'string') {
       push({
-        soft: isInsideTryBlock(path as WalkPath<Ranged>),
+        soft: isInsideTryBlock(path),
         spec: source.value,
         typeOnly: path.node[kindField] === 'type',
       })
@@ -135,7 +135,7 @@ export function extract(filePath: string, content: string): Occurrence[] {
         first?.type === 'StringLiteral'
       ) {
         push({
-          soft: isInsideTryBlock(path as WalkPath<Ranged>),
+          soft: isInsideTryBlock(path),
           spec: first.value,
           typeOnly: false,
         })
@@ -156,7 +156,7 @@ export function extract(filePath: string, content: string): Occurrence[] {
       const { source } = path.node
       if (source.type === 'StringLiteral' && typeof source.value === 'string') {
         push({
-          soft: isInsideTryBlock(path as WalkPath<Ranged>),
+          soft: isInsideTryBlock(path),
           spec: source.value,
           typeOnly: false,
         })
@@ -167,7 +167,7 @@ export function extract(filePath: string, content: string): Occurrence[] {
   return occurrences
 }
 
-export function isInsideTryBlock(path: WalkPath<Ranged>): boolean {
+export function isInsideTryBlock(path: WalkPath<unknown>): boolean {
   const tryParent = path.findParent(p => p.isTryStatement())
   if (!tryParent) {
     return false

@@ -3,13 +3,16 @@
  *
  * Purpose: Tests the scan streaming to file/stdout.
  *
- * Test Coverage: - streamScan function - SDK setup handling - API call handling
+ * Test Coverage: - streamScan function - SDK setup handling - API call
+ * handling.
+ *
  * - File output options.
  *
  * Related Files: - src/commands/scan/stream-scan.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { streamScan } from '../../../../src/commands/scan/stream-scan.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -35,8 +38,6 @@ const mockHandleApiCall = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
-
-import { streamScan } from '../../../../src/commands/scan/stream-scan.mts'
 
 describe('stream-scan', () => {
   beforeEach(() => {

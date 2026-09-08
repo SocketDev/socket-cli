@@ -10,7 +10,7 @@
 
 import process from 'node:process'
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 
 /**
  * Build stage directory names inside build/<mode>/.
@@ -103,7 +103,7 @@ export function getBuildMode(
   if (process.env['BUILD_MODE']) {
     return process.env['BUILD_MODE']
   }
-  return getCI() ? 'prod' : 'dev'
+  return isCI() ? 'prod' : 'dev'
 }
 
 /**

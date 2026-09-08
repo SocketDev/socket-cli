@@ -19,6 +19,100 @@ const logger = getDefaultLogger()
 
 const MAX_FAILURE_OUTPUT_LINES = 40
 
+export function reportManifestBuildFailure(
+  result: ManifestRunResult,
+  ecosystem: BuildTool,
+  { verbose }: { verbose: boolean },
+): boolean {
+  const { code, facts, report, stderr, stdout } = result
+  // A non-zero build exit with no usable output (no graph, no first-party
+  // modules, no failure records) means the build died before the socketFacts
+  // task emitted anything — a script/plugin compile error, OOM, or an unchecked
+  // exception in the extension. The build tool's own exit is the only signal, so
+  // fail closed rather than silently dropping the ecosystem with an empty SBOM
+  // (the empty-facts branch below would otherwise just log "nothing to upload").
+  if (
+    code !== 0 &&
+    !facts.components.length &&
+    !facts.projects?.length &&
+    !report.failures.length &&
+    !report.unscannable.length
+  ) {
+    if (!verbose) {
+      const tail = tailBuildOutput(stdout, stderr)
+      if (tail) {
+        logger.group('Build output:')
+        logger.error(tail)
+        logger.groupEnd()
+      }
+    }
+    // A crashed build is a process failure (missing JDK/build tool, unparseable
+    // project, OOM, plugin error), not an unresolved dependency, so it fails
+    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
+    // successful run couldn't resolve.
+    process.exitCode = 1
+    logger.fail(
+      `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
+    )
+    return true
+  }
+
+  return false
+}
+
+export function reportManifestFacts(
+  result: ManifestRunResult,
+  ecosystem: BuildTool,
+  {
+    ignoreUnresolved,
+    verbose,
+  }: { ignoreUnresolved: boolean; verbose: boolean },
+): boolean {
+  const { facts, report } = result
+
+  const rendered = renderResolutionErrorReport(
+    report.failures,
+    report.scannedConfigs,
+    ecosystem,
+    { ignoreUnresolved, unscannable: report.unscannable },
+  )
+
+  if (rendered.hasBlockingFailures) {
+    if (ignoreUnresolved) {
+      logger.warn(rendered.summary)
+    } else {
+      process.exitCode = 1
+      logger.fail(rendered.summary)
+      if (verbose && rendered.details) {
+        logger.log(rendered.details)
+      }
+      return false
+    }
+  }
+  if (rendered.nonBlockingNotice) {
+    logger.info(rendered.nonBlockingNotice)
+  }
+  if (verbose && rendered.details) {
+    logger.log(rendered.details)
+  }
+
+  if (reportManifestBuildFailure(result, ecosystem, { verbose })) {
+    return false
+  }
+
+  // Nothing resolved at all — no dependencies and no first-party modules. A
+  // project with only first-party modules (empty components, non-empty projects)
+  // still has source roots reachability needs, so it must be written.
+  if (!facts.components.length && !facts.projects?.length) {
+    logger.warn(
+      `No resolvable ${ecosystem} dependencies found; nothing to upload.`,
+    )
+    return false
+  }
+
+  return true
+}
+
 // Runs the bundled build-tool resolution script for a JVM project and writes
 // `.socket.facts.json`. `withFiles` (reachability only) additionally folds
 // resolved artifact paths into `sidecarAcc`. A blocking resolution failure sets
@@ -61,7 +155,6 @@ export async function runManifestFacts({
     excludeConfigs: excludeConfigs || undefined,
     excludePaths: excludePaths?.length ? excludePaths : undefined,
     includeConfigs: includeConfigs || undefined,
-    projectDir: cwd,
     // Stream the build tool's output only when asked; otherwise capture it and
     // show a spinner, surfacing the output only if the build crashes.
     stdio: verbose ? ('inherit' as const) : ('pipe' as const),
@@ -75,13 +168,13 @@ export async function runManifestFacts({
       logger.info(
         `(Running ${ecosystem} with output streaming; this can take a while.)`,
       )
-      result = await runManifestScript(ecosystem, scriptOpts)
+      result = await runManifestScript(ecosystem, cwd, scriptOpts)
     } else {
       logger.info(
         `(No live output; pass --verbose to stream the ${ecosystem} build output.)`,
       )
       spinner.start(`Resolving ${ecosystem} dependencies ...`)
-      result = await runManifestScript(ecosystem, scriptOpts)
+      result = await runManifestScript(ecosystem, cwd, scriptOpts)
       if (result.code === 0) {
         spinner.successAndStop(`Resolved ${ecosystem} dependencies.`)
       } else {
@@ -105,73 +198,8 @@ export async function runManifestFacts({
     )
     return
   }
-  const { artifactPaths, code, facts, report, stderr, stdout } = result
-
-  const rendered = renderResolutionErrorReport(
-    report.failures,
-    report.scannedConfigs,
-    ecosystem,
-    { ignoreUnresolved, unscannable: report.unscannable },
-  )
-
-  if (rendered.hasBlockingFailures) {
-    if (ignoreUnresolved) {
-      logger.warn(rendered.summary)
-    } else {
-      process.exitCode = 1
-      logger.fail(rendered.summary)
-      if (verbose && rendered.details) {
-        logger.log(rendered.details)
-      }
-      return
-    }
-  }
-  if (rendered.nonBlockingNotice) {
-    logger.info(rendered.nonBlockingNotice)
-  }
-  if (verbose && rendered.details) {
-    logger.log(rendered.details)
-  }
-
-  // A non-zero build exit with no usable output (no graph, no first-party
-  // modules, no failure records) means the build died before the socketFacts
-  // task emitted anything — a script/plugin compile error, OOM, or an unchecked
-  // exception in the extension. The build tool's own exit is the only signal, so
-  // fail closed rather than silently dropping the ecosystem with an empty SBOM
-  // (the empty-facts branch below would otherwise just log "nothing to upload").
-  if (
-    code !== 0 &&
-    !facts.components.length &&
-    !facts.projects?.length &&
-    !report.failures.length &&
-    !report.unscannable.length
-  ) {
-    if (!verbose) {
-      const tail = tailBuildOutput(stdout, stderr)
-      if (tail) {
-        logger.group('Build output:')
-        logger.error(tail)
-        logger.groupEnd()
-      }
-    }
-    // A crashed build is a process failure (missing JDK/build tool, unparseable
-    // project, OOM, plugin error), not an unresolved dependency, so it fails
-    // regardless of `ignoreUnresolved` — that flag only tolerates dependencies a
-    // successful run couldn't resolve.
-    process.exitCode = 1
-    logger.fail(
-      `The ${ecosystem} build failed (exit code ${code}) before producing any Socket facts.`,
-    )
-    return
-  }
-
-  // Nothing resolved at all — no dependencies and no first-party modules. A
-  // project with only first-party modules (empty components, non-empty projects)
-  // still has source roots reachability needs, so it must be written.
-  if (!facts.components.length && !facts.projects?.length) {
-    logger.warn(
-      `No resolvable ${ecosystem} dependencies found; nothing to upload.`,
-    )
+  const { artifactPaths, facts } = result
+  if (!reportManifestFacts(result, ecosystem, { ignoreUnresolved, verbose })) {
     return
   }
 

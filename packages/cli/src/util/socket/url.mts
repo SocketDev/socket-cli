@@ -2,13 +2,14 @@
  * Socket.dev URL utilities for Socket CLI. Generates URLs for Socket.dev
  * website features and resources.
  *
- * Key Functions: - getPkgFullNameFromPurl: Extract full package name from PURL
- * - getSocketDevAlertUrl: Generate alert type documentation URL -
- * getSocketDevPackageOverviewUrl: Generate package overview URL -
- * getSocketDevPackageOverviewUrlFromPurl: Generate overview URL from PURL -
- * getSocketDevPackageUrl: Generate package detail URL -
- * getSocketDevPackageUrlFromPurl: Generate package URL from PURL -
- * getSocketDevReportUrl: Generate scan report URL.
+ * Key Functions: - getPkgFullNameFromPurl: Extract full package name from PURL.
+ *
+ * - GetSocketDevAlertUrl: Generate alert type documentation URL -
+ *   getSocketDevPackageOverviewUrl: Generate package overview URL -
+ *   getSocketDevPackageOverviewUrlFromPurl: Generate overview URL from PURL -
+ *   getSocketDevPackageUrl: Generate package detail URL -
+ *   getSocketDevPackageUrlFromPurl: Generate package URL from PURL -
+ *   getSocketDevReportUrl: Generate scan report URL.
  *
  * URL Generation: - Package overview and detail pages - Security alert
  * documentation - Scan report links - Ecosystem-specific URL formatting.

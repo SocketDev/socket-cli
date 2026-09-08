@@ -17,9 +17,11 @@
  * helpers for CResult pattern - Verify correct parameter passing between
  * layers.
  *
- * Related Files: - src/commands/audit-log/handle-audit-log.mts - Implementation
- * - src/commands/audit-log/fetch-audit-log.mts - Fetcher -
- * src/commands/audit-log/output-audit-log.mts - Output formatter.
+ * Related Files: - src/commands/audit-log/handle-audit-log.mts -
+ * Implementation.
+ *
+ * - Src/commands/audit-log/fetch-audit-log.mts - Fetcher -
+ *   src/commands/audit-log/output-audit-log.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

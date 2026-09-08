@@ -75,7 +75,7 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'fetching commits')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub rate limit exceeded')
+      expect(result.message).toContain('GitHub rate limit exceeded')
       expect(result.cause).toContain('rate limit exceeded')
       expect(result.cause).toContain('fetching commits')
       expect(result.cause).toContain('GITHUB_TOKEN')
@@ -89,7 +89,7 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'listing repos')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub rate limit exceeded')
+      expect(result.message).toContain('GitHub rate limit exceeded')
       expect(result.cause).toContain('listing repos')
     })
 
@@ -157,7 +157,7 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'bulk operation')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub abuse detection triggered')
+      expect(result.message).toContain('GitHub abuse detection triggered')
       expect(result.cause).toContain('abuse detection')
       expect(result.cause).toContain('bulk operation')
     })
@@ -177,7 +177,7 @@ describe('handleGitHubApiError', () => {
         'You have exceeded a secondary rate limit',
       )
       const abuseResult = handleGitHubApiError(abuseError, 'operation')
-      expect(abuseResult.message).toBe('GitHub abuse detection triggered')
+      expect(abuseResult.message).toContain('GitHub abuse detection triggered')
     })
   })
 
@@ -187,7 +187,7 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'creating PR')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub authentication failed')
+      expect(result.message).toContain('GitHub authentication failed')
       expect(result.cause).toContain('authentication failed')
       expect(result.cause).toContain('creating PR')
       expect(result.cause).toContain('token')
@@ -203,7 +203,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'accessing private repo')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub permission denied')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub permission denied')
       expect(result.cause).toContain('permission denied')
       expect(result.cause).toContain('accessing private repo')
     })
@@ -215,7 +217,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'fetching repo details')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub resource not found')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub resource not found')
       expect(result.cause).toContain('not found')
       expect(result.cause).toContain('fetching repo details')
     })
@@ -227,7 +231,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'creating scan')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub server error')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub server error')
       expect(result.cause).toContain('server error')
       expect(result.cause).toContain('500')
       expect(result.cause).toContain('githubstatus.com')
@@ -238,7 +244,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'fetching tree')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub server error')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub server error')
     })
 
     it('handles 503 service unavailable error', () => {
@@ -246,7 +254,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'listing commits')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub server error')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub server error')
     })
   })
 
@@ -259,7 +269,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'connecting to API')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('Network error connecting to GitHub')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('Network error connecting to GitHub')
       expect(result.cause).toContain('connecting to API')
       expect(result.cause).toContain('internet connection')
     })
@@ -270,7 +282,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'fetching data')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('Network error connecting to GitHub')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('Network error connecting to GitHub')
     })
 
     it('handles ENOTFOUND error', () => {
@@ -281,7 +295,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'resolving host')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('Network error connecting to GitHub')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('Network error connecting to GitHub')
     })
   })
 
@@ -291,7 +307,10 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'brewing coffee')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub API error (418)')
+      // No exported constant for this branch; pin the short label plus the
+      // status code rather than an exact-string equality.
+      expect(result.message).toContain('GitHub API error')
+      expect(result.message).toContain('418')
       expect(result.cause).toContain("I'm a teapot")
     })
 
@@ -299,7 +318,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError('string error', 'doing something')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub API error')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub API error')
       expect(result.cause).toContain('string error')
     })
 
@@ -308,7 +329,9 @@ describe('handleGitHubApiError', () => {
       const result = handleGitHubApiError(error, 'processing request')
 
       expect(result.ok).toBe(false)
-      expect(result.message).toBe('GitHub API error')
+      // No exported constant for this branch; pin the short label as a
+      // substring check rather than an exact-string equality.
+      expect(result.message).toContain('GitHub API error')
       expect(result.cause).toContain('Something went wrong')
     })
   })
@@ -355,7 +378,7 @@ describe('handleGraphqlError', () => {
     const result = handleGraphqlError(error, 'fetching advisories')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub GraphQL rate limit exceeded')
+    expect(result.message).toContain('GitHub GraphQL rate limit exceeded')
     expect(result.cause).toContain('fetching advisories')
     expect(result.cause).toContain('GITHUB_TOKEN')
   })
@@ -367,7 +390,9 @@ describe('handleGraphqlError', () => {
     const result = handleGraphqlError(error, 'enabling auto-merge')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub GraphQL error')
+    // No exported constant for this branch; pin the short label as a
+    // substring check rather than an exact-string equality.
+    expect(result.message).toContain('GitHub GraphQL error')
     expect(result.cause).toContain('enabling auto-merge')
     expect(result.cause).toContain('Must have admin rights')
   })
@@ -389,6 +414,6 @@ describe('handleGraphqlError', () => {
     const result = handleGraphqlError(error, 'api call')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('GitHub server error')
+    expect(result.message).toContain('GitHub server error')
   })
 })

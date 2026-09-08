@@ -8,8 +8,9 @@
  * markdown)
  *
  * Related Files: - src/commands/repository/cmd-repository-view.mts - Command
- * definition - src/commands/repository/handle-repository-view.mts - View logic
- * - src/commands/repository/output-repository-view.mts - Formatting.
+ * definition - src/commands/repository/handle-repository-view.mts - View logic.
+ *
+ * - Src/commands/repository/output-repository-view.mts - Formatting.
  */
 
 import { describe, expect } from 'vitest'

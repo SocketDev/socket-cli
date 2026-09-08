@@ -7,17 +7,32 @@
  *
  * Purpose: Tests the telemetry integration helper functions.
  *
- * Test Coverage: - finalizeTelemetry function - finalizeTelemetrySync function
- * - setupTelemetryExitHandlers function - trackSubprocessExit function -
- * sanitizeArgv function (via buildContext) - trackEvent function -
- * trackCliStart function - trackCliEvent function - trackCliComplete function -
- * trackCliError function - trackSubprocessStart function -
- * trackSubprocessComplete function - trackSubprocessError function.
+ * Test Coverage: - finalizeTelemetry function - finalizeTelemetrySync function.
+ *
+ * - SetupTelemetryExitHandlers function - trackSubprocessExit function -
+ *   sanitizeArgv function (via buildContext) - trackEvent function -
+ *   trackCliStart function - trackCliEvent function - trackCliComplete function -
+ *   trackCliError function - trackSubprocessStart function -
+ *   trackSubprocessComplete function - trackSubprocessError function.
  *
  * Related Files: - util/telemetry/integration.mts (implementation)
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  finalizeTelemetry,
+  finalizeTelemetrySync,
+  setupTelemetryExitHandlers,
+  trackCliComplete,
+  trackCliError,
+  trackCliEvent,
+  trackCliStart,
+  trackEvent,
+  trackSubprocessComplete,
+  trackSubprocessError,
+  trackSubprocessExit,
+  trackSubprocessStart,
+} from '../../../../src/util/telemetry/integration.mts'
 
 // Mock TelemetryService.
 const mockFlush = vi.hoisted(() => vi.fn())
@@ -79,21 +94,6 @@ vi.mock(import('node:os'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debugNs: vi.fn(),
 }))
-
-import {
-  finalizeTelemetry,
-  finalizeTelemetrySync,
-  setupTelemetryExitHandlers,
-  trackCliComplete,
-  trackCliError,
-  trackCliEvent,
-  trackCliStart,
-  trackEvent,
-  trackSubprocessComplete,
-  trackSubprocessError,
-  trackSubprocessExit,
-  trackSubprocessStart,
-} from '../../../../src/util/telemetry/integration.mts'
 
 describe('telemetry/integration', () => {
   beforeEach(() => {
@@ -210,7 +210,7 @@ describe('telemetry/integration', () => {
 
       const call = mockTrack.mock.calls[0][0]
       expect(call.error).toBeDefined()
-      expect(call.error.message).toBe('Test error')
+      expect(call.error.message).toBe(error.message)
     })
 
     it('sanitizes error with undefined stack (line 304-305)', async () => {
@@ -347,19 +347,20 @@ describe('telemetry/integration', () => {
       const call = mockTrack.mock.calls[0][0]
       expect(call.event_type).toBe('cli_error')
       expect(call.error).toBeDefined()
-      expect(call.error.message).toBe('Test error')
+      expect(call.error.message).toBe(error.message)
     })
 
     it('normalizes non-Error values', async () => {
+      const nonErrorValue = 'string error'
       await trackCliError(
         ['node', 'socket', 'scan'],
         Date.now(),
-        'string error',
+        nonErrorValue,
         1,
       )
 
       const call = mockTrack.mock.calls[0][0]
-      expect(call.error.message).toBe('string error')
+      expect(call.error.message).toBe(nonErrorValue)
     })
   })
 

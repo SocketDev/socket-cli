@@ -12,9 +12,11 @@
  * the output. Use --full flag to show plaintext values (unsafe in shared
  * environments).
  *
- * Related Files: - src/commands/config/cmd-config-list.mts - Command definition
- * - src/commands/config/handle-config-list.mts - Config listing logic -
- * src/commands/config/output-config-list.mts - Output formatting.
+ * Related Files: - src/commands/config/cmd-config-list.mts - Command
+ * definition.
+ *
+ * - Src/commands/config/handle-config-list.mts - Config listing logic -
+ *   src/commands/config/output-config-list.mts - Output formatting.
  */
 
 import { describe, expect } from 'vitest'

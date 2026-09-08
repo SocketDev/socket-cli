@@ -85,7 +85,7 @@ async function fetchGitHubReleaseChecksums(
   releaseTag,
   existingChecksums = {},
 ) {
-  const [owner, repoName] = repo.split('/')
+  const { 0: owner, 1: repoName } = repo.split('/')
   const apiUrl = `https://api.github.com/repos/${owner}/${repoName}/releases/tags/${releaseTag}`
 
   logger.log(`  Fetching release info from ${apiUrl}...`)
@@ -201,6 +201,20 @@ export function parseChecksums(content) {
 /**
  * Main sync function.
  */
+async function writeUpdatedChecksums(config, updated, dryRun) {
+  // Write updated file.
+  if (updated > 0 && !dryRun) {
+    await fs.writeFile(
+      EXTERNAL_TOOLS_FILE,
+      JSON.stringify(config, null, 2) + '\n',
+      'utf8',
+    )
+    logger.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
+  } else if (dryRun && updated > 0) {
+    logger.log('Dry run - no changes written')
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2)
   const force = args.includes('--force')
@@ -221,8 +235,8 @@ async function main() {
 
   // Find all GitHub-released tools.
   const githubTools = Object.entries(externalTools)
-    .filter(([, value]) => value.release === 'asset')
-    .map(([key, value]) => ({ key, ...value }))
+    .filter(([, value]) => value.origin === 'gh-asset')
+    .map(([key, value]) => ({ __proto__: null, key, ...value }))
 
   if (toolFilter) {
     const filtered = githubTools.filter(t => t.key === toolFilter)
@@ -296,17 +310,7 @@ async function main() {
     }
   }
 
-  // Write updated file.
-  if (updated > 0 && !dryRun) {
-    await fs.writeFile(
-      EXTERNAL_TOOLS_FILE,
-      JSON.stringify(config, null, 2) + '\n',
-      'utf8',
-    )
-    logger.log(`Updated ${EXTERNAL_TOOLS_FILE}`)
-  } else if (dryRun && updated > 0) {
-    logger.log('Dry run - no changes written')
-  }
+  await writeUpdatedChecksums(config, updated, dryRun)
 
   // Summary.
   logger.log('')

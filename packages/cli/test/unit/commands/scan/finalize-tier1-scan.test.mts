@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { finalizeTier1Scan } from '../../../../src/commands/scan/finalize-tier1-scan.mts'
 
 // Mock dependencies.
 const mockSendApiRequest = vi.hoisted(() => vi.fn())
@@ -17,8 +18,6 @@ const mockSendApiRequest = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   sendApiRequest: mockSendApiRequest,
 }))
-
-import { finalizeTier1Scan } from '../../../../src/commands/scan/finalize-tier1-scan.mts'
 
 describe('finalize-tier1-scan', () => {
   beforeEach(() => {
@@ -34,8 +33,8 @@ describe('finalize-tier1-scan', () => {
       expect(mockSendApiRequest).toHaveBeenCalledTimes(1)
       expect(mockSendApiRequest).toHaveBeenCalledWith(
         'tier1-reachability-scan/finalize',
+        'POST',
         {
-          method: 'POST',
           body: {
             tier1_reachability_scan_id: 'tier1-scan-id-123',
             report_run_id: 'scan-id-456',

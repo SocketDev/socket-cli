@@ -98,6 +98,25 @@ export async function dispatchToMcp(
   })
 }
 
+export function ensureMcpAcceptHeader(req: IncomingMessage): void {
+  // Some clients (e.g. Cursor) omit the required Accept value; patch it
+  // before the SDK rejects with 406.
+  const accept = req.headers.accept || ''
+  if (
+    !accept.includes('application/json') ||
+    !accept.includes('text/event-stream')
+  ) {
+    const requiredAccept = 'application/json, text/event-stream'
+    req.headers.accept = requiredAccept
+    const idx = req.rawHeaders.findIndex(h => h.toLowerCase() === 'accept')
+    if (idx !== -1) {
+      req.rawHeaders[idx + 1] = requiredAccept
+    } else {
+      req.rawHeaders.push('Accept', requiredAccept)
+    }
+  }
+}
+
 /**
  * Buffer a request body under the byte cap.
  *
@@ -229,6 +248,31 @@ export async function runHttpTransport(
   ] as const
   const allowedHosts = allowedOrigins.map(o => new URL(o).hostname)
 
+  function validateRequestOrigin(origin: string, host: string): boolean {
+    const isAllowedHost =
+      host === `localhost:${config.port}` ||
+      host === `127.0.0.1:${config.port}` ||
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      allowedHosts.includes(host)
+    // DNS-rebinding protection (the reason Origin is checked at all) only
+    // matters when the request could be reaching a private/loopback listener
+    // a malicious webpage isn't supposed to reach. Once Host matches a known
+    // hosted deployment, the only credential that matters is the Bearer token
+    // OAuthIntrospector checks — there's no ambient/cookie-based credential
+    // for a forged cross-origin request to ride on, so an Origin mismatch
+    // there isn't a real CSRF signal. It only breaks legitimate non-browser
+    // MCP clients (Claude Desktop, Codex, etc.) whose HTTP stacks happen to
+    // set an Origin header. Only localhost targets keep the strict allowlist.
+    const isValidOrigin = !origin
+      ? isAllowedHost
+      : allowedHosts.includes(host) ||
+        isLocalhostOrigin(origin) ||
+        (allowedOrigins as readonly string[]).includes(origin)
+
+    return isValidOrigin
+  }
+
   const httpServer = createServer(async (req, res) => {
     const authenticatedReq = req as AuthenticatedRequest
     let url: URL
@@ -257,17 +301,7 @@ export async function runHttpTransport(
     const origin = getRequestHeaderValue(req.headers.origin).trim()
     const host = getRequestHeaderValue(req.headers.host).trim()
     const peer = origin || host
-    const isAllowedHost =
-      host === `localhost:${config.port}` ||
-      host === `127.0.0.1:${config.port}` ||
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      allowedHosts.includes(host)
-    const isValidOrigin = origin
-      ? isLocalhostOrigin(origin) ||
-        (allowedOrigins as readonly string[]).includes(origin)
-      : isAllowedHost
-
+    const isValidOrigin = validateRequestOrigin(origin, host)
     if (!isValidOrigin) {
       logger.warn(
         `Rejected request from invalid origin: ${origin || 'missing'} (host: ${host})`,
@@ -328,22 +362,7 @@ export async function runHttpTransport(
       return
     }
 
-    // Some clients (e.g. Cursor) omit the required Accept value; patch it
-    // before the SDK rejects with 406.
-    const accept = req.headers.accept || ''
-    if (
-      !accept.includes('application/json') ||
-      !accept.includes('text/event-stream')
-    ) {
-      const requiredAccept = 'application/json, text/event-stream'
-      req.headers.accept = requiredAccept
-      const idx = req.rawHeaders.findIndex(h => h.toLowerCase() === 'accept')
-      if (idx !== -1) {
-        req.rawHeaders[idx + 1] = requiredAccept
-      } else {
-        req.rawHeaders.push('Accept', requiredAccept)
-      }
-    }
+    ensureMcpAcceptHeader(req)
 
     // Auth runs on every request and fails closed: nothing past this point is
     // reachable without a bearer the introspector accepted, minted for THIS
@@ -362,22 +381,25 @@ export async function runHttpTransport(
 
     // GET carries no body, so it goes straight to the handler, which answers
     // the 2025-era standalone-stream request with its own 405.
-    if (req.method === 'GET') {
-      await dispatchToMcp(mcpHandler, authenticatedReq, res, undefined, peer)
-      return
-    }
-
-    if (req.method === 'DELETE' || req.method === 'POST') {
-      const body = await readCappedRequestBody(req, res)
-      if (body === undefined) {
+    await dispatchRequestBody()
+    async function dispatchRequestBody(): Promise<void> {
+      if (req.method === 'GET') {
+        await dispatchToMcp(mcpHandler, authenticatedReq, res, undefined, peer)
         return
       }
-      await dispatchToMcp(mcpHandler, authenticatedReq, res, body, peer)
-      return
-    }
 
-    res.writeHead(405)
-    res.end('Method not allowed')
+      if (req.method === 'DELETE' || req.method === 'POST') {
+        const body = await readCappedRequestBody(req, res)
+        if (body === undefined) {
+          return
+        }
+        await dispatchToMcp(mcpHandler, authenticatedReq, res, body, peer)
+        return
+      }
+
+      res.writeHead(405)
+      res.end('Method not allowed')
+    }
   })
 
   // Without OAuth introspection there is no per-client authentication, so

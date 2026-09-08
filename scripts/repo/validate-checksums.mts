@@ -13,38 +13,29 @@
 
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { PLATFORM_MAP_TOOLS } from '../../packages/cli/scripts/constants/external-tools-platforms.mts'
+import { REPO_ROOT } from '../fleet/paths.mts'
 
 export interface ExternalToolConfig {
+  // oxlint-disable-next-line socket/prefer-refined-record -- JSON shape.
   checksums?: Record<string, string> | undefined
-  release?: string | undefined
+  origin?: string | undefined
 }
 
 const logger = getDefaultLogger()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const rootPath = path.join(__dirname, '..')
 
 // Load external tools configuration. Entries live under the `tools` key
 // the shared external-tools shape.
-const externalToolsPath = path.join(rootPath, 'packages/cli/bundle-tools.json')
+const externalToolsPath = path.join(REPO_ROOT, 'packages/cli/bundle-tools.json')
+// oxlint-disable-next-line socket/prefer-refined-record -- JSON shape.
 const externalTools: Record<string, ExternalToolConfig> = JSON.parse(
   readFileSync(externalToolsPath, 'utf8'),
 ).tools
 
-/**
- * Validate that all required checksums exist for external tools.
- */
-export function validateChecksums(): boolean {
-  const errors: string[] = []
-  const warnings: string[] = []
-
-  logger.info('Validating SHA-256 checksums for external tools…')
-  logger.error('')
-
+function collectRequiredAssets(): Map<string, Set<string>> {
   // Track all unique assets that need checksums.
   const requiredAssets = new Map<string, Set<string>>()
 
@@ -70,6 +61,44 @@ export function validateChecksums(): boolean {
     }
   }
 
+  return requiredAssets
+}
+
+function collectUnusedChecksumWarnings(
+  requiredAssets: Map<string, Set<string>>,
+  warnings: string[],
+): void {
+  // Check for extra checksums that aren't used (informational).
+  for (const [toolName, toolConfig] of Object.entries(externalTools)) {
+    if (toolConfig.origin !== 'gh-asset' || !toolConfig.checksums) {
+      continue
+    }
+
+    const usedAssets = requiredAssets.get(toolName) || new Set()
+    const extraAssets = Object.keys(toolConfig.checksums).filter(
+      asset => !usedAssets.has(asset),
+    )
+
+    if (extraAssets.length > 0) {
+      warnings.push(
+        `${toolName} has ${extraAssets.length} unused checksum(s) (may be for unsupported platforms)`,
+      )
+    }
+  }
+}
+
+/**
+ * Validate that all required checksums exist for external tools.
+ */
+export function validateChecksums(): boolean {
+  const errors: string[] = []
+  const warnings: string[] = []
+
+  logger.info('Validating SHA-256 checksums for external tools…')
+  logger.error('')
+
+  const requiredAssets = collectRequiredAssets()
+
   // Validate each tool's checksums.
   for (const [toolName, assets] of requiredAssets) {
     const toolConfig = externalTools[toolName]
@@ -80,7 +109,7 @@ export function validateChecksums(): boolean {
     }
 
     // Only GitHub release-asset tools need per-asset checksums.
-    if (toolConfig.release !== 'asset') {
+    if (toolConfig.origin !== 'gh-asset') {
       continue
     }
 
@@ -103,23 +132,7 @@ export function validateChecksums(): boolean {
     }
   }
 
-  // Check for extra checksums that aren't used (informational).
-  for (const [toolName, toolConfig] of Object.entries(externalTools)) {
-    if (toolConfig.release !== 'asset' || !toolConfig.checksums) {
-      continue
-    }
-
-    const usedAssets = requiredAssets.get(toolName) || new Set()
-    const extraAssets = Object.keys(toolConfig.checksums).filter(
-      asset => !usedAssets.has(asset),
-    )
-
-    if (extraAssets.length > 0) {
-      warnings.push(
-        `${toolName} has ${extraAssets.length} unused checksum(s) (may be for unsupported platforms)`,
-      )
-    }
-  }
+  collectUnusedChecksumWarnings(requiredAssets, warnings)
 
   // Print summary.
   logger.log('')

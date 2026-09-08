@@ -8,12 +8,13 @@
  * routing to socket-patch binary.
  *
  * Available socket-patch v2.0.0 Commands: - apply: Apply security patches from
- * local manifest - get (alias: download): Get security patches from Socket API
- * - list: List all patches in local manifest - remove: Remove a patch from
- * manifest (replaces old 'rm') - repair (alias: gc): Download missing blobs and
- * clean up - rollback: Rollback patches to restore original files - scan: Scan
- * installed packages for available patches - setup: Configure package.json
- * postinstall scripts.
+ * local manifest - get (alias: download): Get security patches from Socket API.
+ *
+ * - List: List all patches in local manifest - remove: Remove a patch from
+ *   manifest (replaces old 'rm') - repair (alias: gc): Download missing blobs
+ *   and clean up - rollback: Rollback patches to restore original files - scan:
+ *   Scan installed packages for available patches - setup: Configure
+ *   package.json postinstall scripts.
  *
  * Related Files: - src/commands/patch/cmd-patch.mts - Root command that
  * forwards to socket-patch.

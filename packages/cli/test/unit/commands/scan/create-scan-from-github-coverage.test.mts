@@ -18,8 +18,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as CreateScanFromGithub from '../../../../src/commands/scan/create-scan-from-github.mts'
+import { scanOneRepo } from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 const mockOctokit = vi.hoisted(() => ({
   repos: { get: vi.fn(), listCommits: vi.fn(), getContent: vi.fn() },
@@ -96,8 +96,6 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeDelete: mockSafeDelete,
   safeMkdirSync: mockSafeMkdirSync,
 }))
-
-import { scanOneRepo } from '../../../../src/commands/scan/create-scan-from-github.mts'
 
 describe('create-scan-from-github (coverage)', () => {
   beforeEach(() => {
@@ -464,7 +462,7 @@ describe('create-scan-from-github (coverage)', () => {
       expect(mockSelect).toHaveBeenCalled()
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('All repos failed to scan')
+        expect(result.cause).toContain('r2')
       }
     })
   })

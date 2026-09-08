@@ -6,10 +6,12 @@
  * setting, and quota value display including zero quota scenarios.
  *
  * Test Coverage: - JSON format output for successful results - JSON format
- * error output with exit codes - Text format with remaining/max/refresh display
+ * error output with exit codes - Text format with remaining/max/refresh
+ * display.
+ *
  * - Fallback when maxQuota is missing - Text format error output with badges -
- * Markdown format output - Zero quota handling - Default text output when
- * format unspecified - Default exit code setting when code is undefined.
+ *   Markdown format output - Zero quota handling - Default text output when
+ *   format unspecified - Default exit code setting when code is undefined.
  *
  * Testing Approach: Uses vi.doMock to reset module state between tests, mocking
  * logger, result serialization, markdown utilities, and error formatting. Tests

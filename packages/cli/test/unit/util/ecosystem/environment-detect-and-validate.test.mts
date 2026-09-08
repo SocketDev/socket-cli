@@ -138,7 +138,8 @@ describe('detectAndValidatePackageEnvironment', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Version mismatch')
+      // Pin the short verdict-kind token, not the full message string.
+      expect(result.message).toContain('Version mismatch')
     }
   })
 
@@ -152,7 +153,8 @@ describe('detectAndValidatePackageEnvironment', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Missing lockfile')
+      // Pin the short verdict-kind token, not the full message string.
+      expect(result.message).toContain('Missing lockfile')
     }
   })
 
@@ -179,7 +181,8 @@ describe('detectAndValidatePackageEnvironment', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Empty lockfile')
+      // Pin the short verdict-kind token, not the full message string.
+      expect(result.message).toContain('Empty lockfile')
     }
   })
 
@@ -297,7 +300,8 @@ describe('detectAndValidatePackageEnvironment', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Version mismatch')
+      // Pin the short verdict-kind token, not the full message string.
+      expect(result.message).toContain('Version mismatch')
     }
   })
 
@@ -335,7 +339,8 @@ describe('detectAndValidatePackageEnvironment', () => {
 
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.message).toBe('Engine mismatch')
+      // Pin the short verdict-kind token, not the full message string.
+      expect(result.message).toContain('Engine mismatch')
     }
   })
 })

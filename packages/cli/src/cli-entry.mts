@@ -3,33 +3,11 @@
 // Set global Socket theme for consistent CLI branding.
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { setTheme } from '@socketsecurity/lib-stable/term/themes/context'
-setTheme('socket')
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import url, { fileURLToPath } from 'node:url'
-
-// Suppress MaxListenersExceeded warning for AbortSignal.
-// The Socket SDK properly manages listeners but may exceed the default limit of 30
-// during high-concurrency batch operations.
-// Bind the captured original so the reference is safe to call standalone
-// and clear of the type-aware unbound-method rule.
-const originalEmitWarning = process.emitWarning.bind(process)
-process.emitWarning = function (warning, ...args) {
-  if (
-    (typeof warning === 'string' &&
-      warning.includes('MaxListenersExceededWarning') &&
-      warning.includes('AbortSignal')) ||
-    (args[0] === 'MaxListenersExceededWarning' &&
-      typeof warning === 'string' &&
-      warning.includes('AbortSignal'))
-  ) {
-    // Suppress the specific MaxListenersExceeded warning for AbortSignal.
-    return
-  }
-  Reflect.apply(originalEmitWarning, this, [warning, ...args])
-}
 
 import {
   debug as debugNs,
@@ -77,6 +55,29 @@ import {
 import { scheduleUpdateCheck } from './util/update/manager.mts'
 
 import { dlxManifest } from '@socketsecurity/lib-stable/dlx/manifest'
+
+setTheme('socket')
+
+// Suppress MaxListenersExceeded warning for AbortSignal.
+// The Socket SDK properly manages listeners but may exceed the default limit of 30
+// during high-concurrency batch operations.
+// Bind the captured original so the reference is safe to call standalone
+// and clear of the type-aware unbound-method rule.
+const originalEmitWarning = process.emitWarning.bind(process)
+process.emitWarning = function (warning, ...args) {
+  if (
+    (typeof warning === 'string' &&
+      warning.includes('MaxListenersExceededWarning') &&
+      warning.includes('AbortSignal')) ||
+    (args[0] === 'MaxListenersExceededWarning' &&
+      typeof warning === 'string' &&
+      warning.includes('AbortSignal'))
+  ) {
+    // Suppress the specific MaxListenersExceeded warning for AbortSignal.
+    return
+  }
+  Reflect.apply(originalEmitWarning, this, [warning, ...args])
+}
 
 const logger = getDefaultLogger()
 
@@ -141,6 +142,7 @@ void (async () => {
   // an update check.
   const describeKind = describeRequest(process.argv.slice(2))
   if (describeKind) {
+    // oxlint-disable-next-line socket/no-direct-stream-write -- protocol output
     process.stdout.write(
       renderDescribe(
         describeKind,
@@ -169,13 +171,11 @@ void (async () => {
     // update" forever.
     // Fire-and-forget: Don't await to avoid blocking on HTTP keep-alive timeouts.
     // scheduleUpdateCheck catches internally, so void can't drop a rejection.
-    void scheduleUpdateCheck({
-      name: isSeaBinary()
-        ? SOCKET_CLI_BIN_NAME
-        : getCliName() || SOCKET_CLI_BIN_NAME,
-      registryUrl: NPM_REGISTRY_URL,
-      version: getCliVersion() || '0.0.0',
-    })
+    void scheduleUpdateCheck(
+      isSeaBinary() ? SOCKET_CLI_BIN_NAME : getCliName() || SOCKET_CLI_BIN_NAME,
+      getCliVersion() || '0.0.0',
+      { registryUrl: NPM_REGISTRY_URL },
+    )
 
     // Write manifest entry if launched via bootstrap (SEA/smol).
     // Bootstrap passes spec and cache dir via env vars.

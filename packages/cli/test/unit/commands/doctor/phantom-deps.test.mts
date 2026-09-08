@@ -34,9 +34,7 @@ describe('phantom-deps/extract', () => {
 
   it('marks a runtime import as neither soft nor typeOnly', () => {
     const occurrences = extract('file.mts', `import { z } from 'zod'\n`)
-    expect(occurrences).toEqual([
-      { spec: 'zod', soft: false, typeOnly: false },
-    ])
+    expect(occurrences).toEqual([{ spec: 'zod', soft: false, typeOnly: false }])
   })
 })
 

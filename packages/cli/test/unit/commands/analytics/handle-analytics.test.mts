@@ -19,10 +19,12 @@
  * correct function selection based on scope parameter - Test validation logic
  * before API calls.
  *
- * Related Files: - src/commands/analytics/handle-analytics.mts - Implementation
- * - src/commands/analytics/fetch-org-analytics.mts - Org data fetcher -
- * src/commands/analytics/fetch-repo-analytics.mts - Repo data fetcher -
- * src/commands/analytics/output-analytics.mts - Output formatter.
+ * Related Files: - src/commands/analytics/handle-analytics.mts -
+ * Implementation.
+ *
+ * - Src/commands/analytics/fetch-org-analytics.mts - Org data fetcher -
+ *   src/commands/analytics/fetch-repo-analytics.mts - Repo data fetcher -
+ *   src/commands/analytics/output-analytics.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

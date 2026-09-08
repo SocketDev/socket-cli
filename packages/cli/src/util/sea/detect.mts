@@ -11,7 +11,9 @@
  * Detection Method: - Uses Node.js 24+ native sea.isSea() API - Caches result
  * for performance - Graceful fallback for unsupported versions.
  *
- * Features: - Cached detection for performance - Error-resistant implementation
+ * Features: - Cached detection for performance - Error-resistant
+ * implementation.
+ *
  * - Support for Node.js 24+ SEA API.
  *
  * Usage: - Detecting SEA execution context - Conditional SEA-specific

@@ -3,7 +3,9 @@
  *
  * Purpose: Tests the output formatting for scan configuration results.
  *
- * Test Coverage: - outputScanConfigResult function - Success and error handling
+ * Test Coverage: - outputScanConfigResult function - Success and error
+ * handling.
+ *
  * - Exit code handling.
  *
  * Related Files: - src/commands/scan/output-scan-config-result.mts
@@ -11,6 +13,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputScanConfigResult } from '../../../../src/commands/scan/output-scan-config-result.mts'
+import type { CResult } from '../../../../src/types.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -29,10 +33,6 @@ vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
-
-import { outputScanConfigResult } from '../../../../src/commands/scan/output-scan-config-result.mts'
-
-import type { CResult } from '../../../../src/types.mts'
 
 describe('output-scan-config-result', () => {
   beforeEach(() => {

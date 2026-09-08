@@ -13,6 +13,11 @@
 
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  checkForUpdates,
+  isUpdateAvailable,
+  NetworkUtils,
+} from '../../../../src/util/update/checker.mts'
 
 // Mock https module.
 const mockRequest = vi.hoisted(() => vi.fn())
@@ -35,12 +40,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     warn: vi.fn(),
   }),
 }))
-
-import {
-  checkForUpdates,
-  isUpdateAvailable,
-  NetworkUtils,
-} from '../../../../src/util/update/checker.mts'
 
 // Helper types.
 interface MockResponse extends EventEmitter {
@@ -312,18 +311,14 @@ describe('update/checker', () => {
 
   describe('checkForUpdates', () => {
     it('throws error for empty package name', async () => {
-      await expect(
-        checkForUpdates({ name: '', version: '1.0.0' }),
-      ).rejects.toThrow(
-        /checkForUpdates config\.name requires a non-empty string/,
+      await expect(checkForUpdates('', '1.0.0')).rejects.toThrow(
+        /checkForUpdates\(name\) requires a non-empty string/,
       )
     })
 
     it('throws error for empty version', async () => {
-      await expect(
-        checkForUpdates({ name: 'test', version: '' }),
-      ).rejects.toThrow(
-        /checkForUpdates config\.version requires a non-empty string/,
+      await expect(checkForUpdates('test', '')).rejects.toThrow(
+        /checkForUpdates\(name, version\) requires version to be a non-empty string/,
       )
     })
 
@@ -342,10 +337,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      const result = await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
-      })
+      const result = await checkForUpdates('test-package', '1.0.0')
 
       expect(result).toEqual({
         current: '1.0.0',
@@ -369,10 +361,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      const result = await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
-      })
+      const result = await checkForUpdates('test-package', '1.0.0')
 
       expect(result).toEqual({
         current: '1.0.0',
@@ -396,9 +385,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await checkForUpdates({
-        name: 'test-package',
-        version: '1.0.0',
+      await checkForUpdates('test-package', '1.0.0', {
         authInfo: { token: 'test-token', type: 'Bearer' },
       })
 
@@ -416,9 +403,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(
-        checkForUpdates({ name: 'test-package', version: '1.0.0' }),
-      ).rejects.toThrow()
+      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
     })
 
     it('throws when registry returns no version field', async () => {
@@ -437,9 +422,7 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(
-        checkForUpdates({ name: 'test-package', version: '1.0.0' }),
-      ).rejects.toThrow()
+      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
     })
   })
 })

@@ -5,11 +5,12 @@
  * SDK integration for repository-specific metrics and error handling.
  *
  * Test Coverage: - Successful repository analytics fetch (commits,
- * contributors, issues, PRs, stars) - SDK setup failure with error propagation
- * - API call failure with 404 handling for non-existent repositories - Custom
- * SDK options pass-through (apiToken, baseUrl) - Different repository name
- * formats (org/repo, user/project) - Multiple time range parameters (1, 7, 14,
- * 30, 60, 90, 365 days) - Prototype pollution protection verification.
+ * contributors, issues, PRs, stars) - SDK setup failure with error propagation.
+ *
+ * - API call failure with 404 handling for non-existent repositories - Custom SDK
+ *   options pass-through (apiToken, baseUrl) - Different repository name
+ *   formats (org/repo, user/project) - Multiple time range parameters (1, 7,
+ *   14, 30, 60, 90, 365 days) - Prototype pollution protection verification.
  *
  * Testing Approach: - Mock Socket SDK using
  * setupSdkMockSuccess/Error/SetupFailure helpers - Mock handleApiCall from
@@ -73,7 +74,7 @@ describe('fetchRepoAnalytics', () => {
     const result = await fetchRepoAnalyticsData('my-repo', 7)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {

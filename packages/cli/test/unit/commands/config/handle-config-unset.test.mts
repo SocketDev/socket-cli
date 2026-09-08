@@ -13,9 +13,11 @@
  * messages - Use createSuccessResult/createErrorResult helpers - Test CResult
  * pattern flow.
  *
- * Related Files: - src/commands/config/handle-config-unset.mts - Implementation
- * - src/util/config.mts - Config file utilities -
- * src/commands/config/output-config-unset.mts - Output formatter.
+ * Related Files: - src/commands/config/handle-config-unset.mts -
+ * Implementation.
+ *
+ * - Src/util/config.mts - Config file utilities -
+ *   src/commands/config/output-config-unset.mts - Output formatter.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

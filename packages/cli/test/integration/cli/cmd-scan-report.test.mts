@@ -5,6 +5,7 @@
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
  * validation - Report generation - Output format support (JSON, markdown, HTML)
+ *
  * - Policy compliance checking.
  *
  * Related Files: - src/commands/scan/cmd-scan-report.mts - Command definition -

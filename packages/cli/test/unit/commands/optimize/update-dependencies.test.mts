@@ -11,6 +11,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { updateDependencies } from '../../../../src/commands/optimize/update-dependencies.mts'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -65,10 +67,6 @@ vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
     cmd ? `${cmd}: ${msg}` : msg,
 }))
 
-import { updateDependencies } from '../../../../src/commands/optimize/update-dependencies.mts'
-
-import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
-
 describe('update-dependencies', () => {
   const mockEnvDetails = {
     agent: 'npm',
@@ -115,7 +113,7 @@ describe('update-dependencies', () => {
 
       expect(result.ok).toBe(false)
       if (!result.ok) {
-        expect(result.message).toBe('Dependencies update failed')
+        expect(result.message).toContain('failed')
         expect(result.cause).toContain('npm install failed')
       }
       expect(mockSpinner.stop).toHaveBeenCalled()

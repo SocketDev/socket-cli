@@ -27,6 +27,9 @@ import {
 } from '@socketsecurity/lib-stable/debug/output'
 import { isDebug, isDebugNs } from '@socketsecurity/lib-stable/debug/namespace'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
+
+import type { IncomingHttpHeaders } from 'node:http'
+
 export type ApiRequestDebugInfo = {
   durationMs?: number | undefined
   headers?: Record<string, string> | undefined
@@ -40,7 +43,7 @@ export type ApiRequestDebugInfo = {
   // Response headers from the failed request. The helper extracts the
   // cf-ray trace id as a first-class field so support can look it up in
   // the Cloudflare dashboard without eyeballing the whole header dump.
-  responseHeaders?: Record<string, string> | undefined
+  responseHeaders?: IncomingHttpHeaders | undefined
   url?: string | undefined
 }
 
@@ -258,9 +261,9 @@ export function debugGit(
  * Callers must gate truthy — passing an empty/undefined map skips the loop.
  */
 export function sanitizeHeaders(
-  headers: Record<string, string>,
-): Record<string, string> {
-  const sanitized: Record<string, string> = Object.create(null)
+  headers: IncomingHttpHeaders,
+): IncomingHttpHeaders {
+  const sanitized: IncomingHttpHeaders = Object.create(null)
   for (const [key, value] of Object.entries(headers)) {
     const lowerKey = key.toLowerCase()
     if (lowerKey === 'authorization' || lowerKey.includes('api-key')) {

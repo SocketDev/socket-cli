@@ -10,7 +10,8 @@
  * Test Coverage: - Successful security policy fetching with blocking rules -
  * SDK setup failure handling - API call error handling with HTTP status codes -
  * Custom SDK options passing (API token, base URL) - Default security policy
- * handling for new organizations - Various organization slug format validation
+ * handling for new organizations - Various organization slug format validation.
+ *
  * - Null prototype usage for security.
  *
  * Testing Approach: Uses SDK test helpers to mock setupSdk and handleApiCall

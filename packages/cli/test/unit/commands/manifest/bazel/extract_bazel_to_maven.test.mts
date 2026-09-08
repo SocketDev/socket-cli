@@ -6,9 +6,24 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { runMetadataCqueryForRepo } from '../../../../../src/commands/manifest/bazel/bazel-cquery.mts'
+import {
+  buildMavenProbeFor,
+  runBazelModShowMavenExtension,
+} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
+import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from '../../../../../src/commands/manifest/bazel/bazel-workspace-walk.mts'
+import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
+import {
+  mkArt,
+  mkResult,
+  PROBE_NOT_DEFINED,
+  readManifest,
+  readNamedManifest,
+  SHOW_EXT_HUB_ONLY,
+} from './extract-maven-test-helpers.mts'
 
 // Mock the logger so narration is capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -25,10 +40,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-// Mock collaborators BEFORE importing the orchestrator. The orchestrator
-// composes pure-function discovery + the metadata cquery + a workspace
-// walker; mocking these lets us drive end-to-end behaviour without a
-// real Bazel toolchain.
 vi.mock(
   import('../../../../../src/commands/manifest/bazel/bazel-bin-detect.mts'),
   () => ({
@@ -90,23 +101,6 @@ vi.mock(
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
 }))
-
-import { runMetadataCqueryForRepo } from '../../../../../src/commands/manifest/bazel/bazel-cquery.mts'
-import {
-  buildMavenProbeFor,
-  runBazelModShowMavenExtension,
-} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
-import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
-import { findWorkspaceRoots } from '../../../../../src/commands/manifest/bazel/bazel-workspace-walk.mts'
-import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
-import {
-  mkArt,
-  mkResult,
-  PROBE_NOT_DEFINED,
-  readManifest,
-  readNamedManifest,
-  SHOW_EXT_HUB_ONLY,
-} from './extract-maven-test-helpers.mts'
 
 describe('extractBazelToMaven core outcomes', () => {
   let tmp: string
@@ -449,7 +443,7 @@ Fetched repositories:
       verbose: false,
     })
     const calls = vi.mocked(findWorkspaceRoots).mock.calls
-    const call = calls[calls.length - 1]![0]
+    const call = calls[calls.length - 1]![1]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toContain('node_modules')
     expect(names).toContain('.git')
@@ -477,7 +471,7 @@ Fetched repositories:
       verbose: false,
     })
     const calls = vi.mocked(findWorkspaceRoots).mock.calls
-    const call = calls[calls.length - 1]![0]
+    const call = calls[calls.length - 1]![1]
     const names = [...(call.ignoreDirNames ?? [])]
     expect(names).toEqual(
       expect.arrayContaining(['node_modules', 'custom_dir']),

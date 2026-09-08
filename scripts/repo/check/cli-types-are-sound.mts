@@ -16,10 +16,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { REPO_ROOT } from '../../fleet/paths.mts'
-import { isMainModule } from '../../fleet/_shared/is-main-module.mts'
-import { runMain } from '../../fleet/_shared/run-main.mts'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
 
-import type { ScriptMeta } from '../../fleet/_shared/run-main.mts'
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -30,7 +30,7 @@ export async function main(): Promise<void> {
   // `pnpm exec` would bury tsc's diagnostics under its own preamble.
   try {
     await spawn(
-      'node',
+      process.execPath,
       [
         path.join(REPO_ROOT, 'node_modules', 'typescript', 'bin', 'tsc'),
         '--noEmit',

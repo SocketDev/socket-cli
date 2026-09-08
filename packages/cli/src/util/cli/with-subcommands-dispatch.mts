@@ -9,6 +9,8 @@
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { lookupSubcommand } from './lookup-subcommand.mts'
+
 import { findBestCommandMatch } from './with-subcommands-fuzzy-match.mts'
 
 import type { CliAliases, CliSubcommand } from './with-subcommands-shared.mts'
@@ -16,14 +18,14 @@ import type { CliCommandContext } from './with-subcommands.mts'
 
 const logger = getDefaultLogger()
 
-export interface DispatchSubcommandOptions {
+export interface DispatchSubcommandConfig<CommandName extends string> {
   aliases: CliAliases
   commandOrAliasName: string
   defaultSub: string | undefined
   importMeta: ImportMeta
   name: string
   rawCommandArgv: string[]
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<CommandName, CliSubcommand>
 }
 
 /**
@@ -31,8 +33,8 @@ export interface DispatchSubcommandOptions {
  * match. Returns `true` once the router should stop (either because a
  * sub-command ran, or because an unknown-command error was already reported).
  */
-export async function tryDispatchSubcommand(
-  config: DispatchSubcommandOptions,
+export async function tryDispatchSubcommand<CommandName extends string>(
+  config: DispatchSubcommandConfig<CommandName>,
 ): Promise<boolean> {
   const {
     aliases,
@@ -55,7 +57,9 @@ export async function tryDispatchSubcommand(
     ? [...alias.argv, ...rawCommandArgv]
     : [commandOrAliasName, ...rawCommandArgv]
   // Second: Find a command definition using that data.
-  const commandDefinition = commandName ? subcommands[commandName] : undefined
+  const commandDefinition = commandName
+    ? lookupSubcommand(subcommands, commandName)
+    : undefined
   // Third: If a valid command has been found, then we run it...
   if (commandDefinition) {
     // Extract the original command arguments from the full argv
@@ -70,8 +74,12 @@ export async function tryDispatchSubcommand(
 
   // If no command found but defaultSub exists, use it as the command.
   // This treats the first arg as an argument to the default subcommand.
-  if (!commandDefinition && defaultSub && subcommands[defaultSub]) {
-    await subcommands[defaultSub].run(
+  if (
+    !commandDefinition &&
+    defaultSub &&
+    lookupSubcommand(subcommands, defaultSub)
+  ) {
+    await lookupSubcommand(subcommands, defaultSub)!.run(
       [commandOrAliasName, ...rawCommandArgv],
       importMeta,
       {

@@ -161,7 +161,9 @@ describe('fetchListAllRepos', () => {
     const result = await fetchListAllRepos('infinite-org')
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Infinite loop detected')
+    if (!result.ok) {
+      expect(result.cause).toContain('nextPage=')
+    }
     // The protection triggers after ++protection > 100, but BEFORE the API call.
     // So handleApiCall is called exactly 100 times before protection kicks in.
     expect(mockHandleApi).toHaveBeenCalledTimes(100)

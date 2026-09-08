@@ -16,7 +16,8 @@
  *
  * Related Files: - src/commands/organization/handle-license-policy.mts -
  * Command handler - src/commands/organization/fetch-license-policy.mts -
- * License policy fetcher - src/commands/organization/output-license-policy.mts
+ * License policy fetcher - src/commands/organization/output-license-policy.mts.
+ *
  * - Output formatter.
  */
 

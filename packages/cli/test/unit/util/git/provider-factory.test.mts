@@ -102,6 +102,17 @@ describe('createPrProvider', () => {
     expect(provider.kind).toBe('gitlab')
   })
 
+  it.each([
+    'https://github.com/example/gitlab.com.git',
+    'https://gitlab.com@github.com/example/repository.git',
+    'https://github.com/example/repository.git?host=gitlab.com',
+    'git@github.com:example/gitlab-project.git',
+  ])('uses the hostname to select the provider for %s', async remote => {
+    mockSpawn.mockResolvedValue({ code: 0, stdout: remote })
+    const provider = (await createPrProvider()) as { kind: string }
+    expect(provider.kind).toBe('github')
+  })
+
   it('returns GitHubProvider for github remotes', async () => {
     mockSpawn.mockResolvedValue({
       code: 0,

@@ -16,9 +16,10 @@
  * method calls with correct query parameters - Test CResult pattern (ok/error
  * states)
  *
- * Related Files: - src/commands/audit-log/fetch-audit-log.mts - Implementation
- * - src/commands/audit-log/handle-audit-log.mts - Handler that calls this
- * fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking utilities.
+ * Related Files: - src/commands/audit-log/fetch-audit-log.mts - Implementation.
+ *
+ * - Src/commands/audit-log/handle-audit-log.mts - Handler that calls this fetcher -
+ *   test/helpers/sdk-test-helpers.mts - SDK mocking utilities.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -103,7 +104,7 @@ describe('fetchAuditLog', () => {
     const result = await fetchAuditLog(config)
 
     expect(result.ok).toBe(false)
-    expect(result.message).toBe('Failed to setup SDK')
+    expect(result.code).toBe(1)
   })
 
   it('handles API call failure', async () => {

@@ -9,8 +9,10 @@
  * parsePurl: Parse PURL string to object - purlToString: Convert PURL object to
  * string.
  *
- * Supported Types: - cargo: Rust packages - gem: Ruby packages - go: Go modules
- * - maven: Java packages - npm: Node.js packages - pypi: Python packages.
+ * Supported Types: - cargo: Rust packages - gem: Ruby packages - go: Go
+ * modules.
+ *
+ * - Maven: Java packages - npm: Node.js packages - pypi: Python packages.
  *
  * See: https://github.com/package-url/purl-spec.
  */
