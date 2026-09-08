@@ -1,24 +1,4 @@
-/*
- * @file Commit-time backstop for the fleet-fork rule. A fleet-canonical path
- *   (per .gitattributes `linguist-generated=true`) lives only in `template/`
- *   and is cascaded out via sync-scaffolding, which commits with
- *   `--no-verify` — a legitimate cascade commit never reaches this hook.
- *   Anything staged on a canonical path here was written outside the
- *   cascade: an Edit/Write/Bash tool call, a background Workflow `agent()`
- *   subagent (whose Bash reaches PreToolUse with the PARENT transcript, so
- *   the `no-fleet-fork-guard` PreToolUse hook cannot attribute or block it —
- *   see docs/fleet/agents.md/agent-delegation.md), or a hand-run git command.
- *   A git hook fires for every commit regardless of which process or agent
- *   ran `git commit`, so this closes the gap the tool-call guard cannot
- *   reach.
- *
- *   Reuses the exact decision inputs `no-fleet-fork-guard` already uses
- *   (fleetCanonicalEntries / isPerRepoMarkerPath / isOperatorLocalPath /
- *   textHasFleetBlockMarkers) from
- *   .claude/hooks/fleet/_shared/{fleet-fork,fleet-markers}.mts, so the two
- *   enforcement points can never disagree about what counts as canonical.
- */
-
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
@@ -99,6 +79,75 @@ export function matchesTemplateTwin(
   return false
 }
 
+function readForkGit(repoRoot: string, args: string[]): string {
+  const result = spawnSync('git', ['--literal-pathspecs', ...args], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout: 5000,
+  })
+  return result.status === 0 ? (result.stdout ?? '') : ''
+}
+
+function mergeParentIds(repoRoot: string): string[] {
+  const mergeHeadPath = readForkGit(repoRoot, [
+    'rev-parse',
+    '--git-path',
+    'MERGE_HEAD',
+  ]).trim()
+  const parents = readFileSync(path.resolve(repoRoot, mergeHeadPath), 'utf8')
+    .trim()
+    .split(/\r?\n/)
+  // Each parent is a full SHA-1 (40 hex digits) or SHA-256 (64 hex digits).
+  if (
+    !parents.every(parent => /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(parent))
+  ) {
+    return []
+  }
+  return parents
+}
+
+export function matchesMergeParentIndex(
+  repoRoot: string,
+  file: string,
+): boolean {
+  try {
+    const parents = mergeParentIds(repoRoot)
+    if (parents.length === 0) {
+      return false
+    }
+    const staged = readForkGit(repoRoot, [
+      'ls-files',
+      '--stage',
+      '-z',
+      '--',
+      file,
+    ])
+    // Match one stage-zero entry: mode, object ID, stage, then a tab.
+    const entry = /^(\d+) ([a-f0-9]+) 0\t/.exec(staged)
+    if (!entry || staged !== `${entry[0]}${file}\0`) {
+      return false
+    }
+    const expected = `${entry[1]} blob ${entry[2]}\t${file}\0`
+    for (const parent of parents) {
+      if (
+        readForkGit(repoRoot, ['cat-file', '-t', parent]).trim() !== 'commit'
+      ) {
+        return false
+      }
+      if (
+        readForkGit(repoRoot, ['ls-tree', '-z', parent, '--', file]) ===
+        expected
+      ) {
+        return true
+      }
+    }
+  } catch {
+    return false
+  }
+  return false
+}
+
 export interface CanonicalForkFinding {
   file: string
 }
@@ -110,8 +159,7 @@ function isInsideTemplateRelative(file: string): boolean {
 /**
  * Every staged path (repo-relative, POSIX-normalized, add/change/modify
  * only — a caller filters deletions out via `--diff-filter=ACM`) that is
- * fleet-canonical and was staged OUTSIDE the cascade. Pure aside from the
- * file reads the fleet-block-marker allowance needs.
+ * fleet-canonical and differs from its canonical source or merge parent.
  */
 export function scanCanonicalForkPaths(
   stagedFiles: readonly string[],
@@ -149,6 +197,9 @@ export function scanCanonicalForkPaths(
       }
     }
     if (!isCanonical) {
+      continue
+    }
+    if (matchesMergeParentIndex(repoRoot, file)) {
       continue
     }
     // Fleet-block allowance: a canonical file carrying `<fleet-canonical>`
