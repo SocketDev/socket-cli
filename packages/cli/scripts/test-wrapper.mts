@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 import fastGlob from 'fast-glob'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -125,7 +125,7 @@ async function main() {
     const testEnv = loadEnvFile(path.join(rootPath, '.env.test'))
 
     // Handle Windows vs Unix for vitest executable.
-    const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
+    const vitestCmd = isWin32() ? 'vitest.cmd' : 'vitest'
     const vitestPath = path.join(rootNodeModulesBinPath, vitestCmd)
 
     // Expand glob patterns in arguments.
@@ -152,7 +152,7 @@ async function main() {
         ...spawnEnv,
       },
       stdio: 'inherit',
-      shell: WIN32,
+      shell: isWin32(),
     }
 
     // --passWithNoTests: a scoped run where the expanded args don't

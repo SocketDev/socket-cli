@@ -67,11 +67,10 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
 }))
 
-// Mock WIN32 constant.
 const mockWIN32 = vi.hoisted(() => false)
 
 vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
-  get WIN32() {
+  isWin32() {
     return mockWIN32
   },
 }))

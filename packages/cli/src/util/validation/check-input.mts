@@ -2,7 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
-import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
+import { stripAnsi } from '@socketsecurity/lib-stable/term/ansi/strip'
 
 import { failMsgWithBadge } from '../error/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../output/result-json.mts'

@@ -6,7 +6,7 @@
  * File size hard cap.
  */
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
 import { trimNewlines } from '@socketsecurity/lib-stable/strings/transform'
@@ -118,7 +118,7 @@ export function meowOrExit<const F extends MeowFlags = MeowFlags>(
     quiet: quietFlag,
   })
 
-  const compactMode = compactHeaderFlag || (getCI() && !VITEST)
+  const compactMode = compactHeaderFlag || (isCI() && !VITEST)
   const noSpinner = !spinnerFlag || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.

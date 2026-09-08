@@ -1,4 +1,4 @@
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import {
   getSocketCliConfig,
@@ -235,7 +235,7 @@ export async function meowWithSubcommands(
     quiet: quietFlag,
   })
 
-  const compactMode = compactHeaderFlag || (getCI() && !VITEST)
+  const compactMode = compactHeaderFlag || (isCI() && !VITEST)
   const noSpinner = !spinnerFlag || isDebug()
 
   // Use CI spinner style when --no-spinner is passed or debug mode is enabled.

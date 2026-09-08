@@ -68,7 +68,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
 }))
 
 vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
-  WIN32: false,
+  isWin32: () => false,
 }))
 
 vi.mock(import('node:fs'), async () => {

@@ -8,7 +8,7 @@ import {
   NPM,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { getMaintainedNodeVersions } from '@socketsecurity/lib-stable/constants/node'
 import { toEditablePackageJson } from '@socketsecurity/lib-stable/packages/edit'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'

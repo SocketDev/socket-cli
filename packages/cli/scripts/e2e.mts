@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -124,7 +124,7 @@ export async function runVitest(binaryType) {
   const e2eEnv = loadEnvFile(path.join(ROOT_DIR, '.env.e2e'))
 
   // Resolve vitest path.
-  const vitestCmd = WIN32 ? 'vitest.cmd' : 'vitest'
+  const vitestCmd = isWin32() ? 'vitest.cmd' : 'vitest'
   const vitestPath = path.join(NODE_MODULES_BIN_PATH, vitestCmd)
 
   const result = await spawn(

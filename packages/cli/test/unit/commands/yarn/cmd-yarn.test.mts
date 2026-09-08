@@ -10,7 +10,7 @@
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
-import { YARN } from '@socketsecurity/lib-stable/constants/agents'
+import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cmdYarn } from '../../../../src/commands/yarn/cmd-yarn.mts'

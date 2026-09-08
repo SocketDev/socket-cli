@@ -8,11 +8,11 @@ import path from 'node:path'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: vi.fn(),
 }))
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 
 import {
   provisionPythonShim,

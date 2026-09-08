@@ -2,7 +2,7 @@
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/no-npx-dlx -- intentional literal */
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_DRY_RUN, FLAG_HELP } from '../../constants/cli.mts'
@@ -76,7 +76,7 @@ export async function runRawNpx(
     // On Windows, npx is often a .cmd file that requires shell execution.
     // The spawn function from @socketsecurity/registry will handle this properly
     // when shell is true.
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'inherit',
   })
 

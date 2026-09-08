@@ -13,7 +13,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   areBasicsToolsAvailable,
@@ -35,7 +35,7 @@ export async function isSocketBasicsInstalled(
 ): Promise<boolean> {
   try {
     const result = await spawn(pythonBin, ['-c', 'import socket_basics'], {
-      shell: WIN32,
+      shell: isWin32(),
       stdio: 'pipe',
     })
     return result.code === 0
@@ -55,7 +55,7 @@ export async function isSocketPyCliInstalled(
       pythonBin,
       ['-c', 'import socketsecurity.socketcli'],
       {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'pipe',
       },
     )

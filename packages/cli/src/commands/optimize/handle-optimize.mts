@@ -1,4 +1,4 @@
-import { VLT } from '@socketsecurity/lib-stable/constants/agents'
+import { VLT } from '@socketsecurity/lib-stable/constants/package-managers'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 

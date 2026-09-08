@@ -28,7 +28,7 @@
 import { constants as fsConstants, existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 export type ExecutableProbe = {
   runnable: boolean
@@ -139,7 +139,7 @@ export async function isRunnableFile(
   options?: TrustedExecutableOptions | undefined,
 ): Promise<boolean> {
   const opts = { __proto__: null, ...options } as TrustedExecutableOptions
-  const { windows = WIN32 } = opts
+  const { windows = isWin32() } = opts
   try {
     // probes the exec bit (X_OK); existsSync cannot express a permission check.
     // oxlint-disable-next-line socket/prefer-exists-sync -- probes X_OK
@@ -168,7 +168,7 @@ export function listExecutableProbes(
   options?: TrustedExecutableOptions | undefined,
 ): ExecutableProbe[] {
   const opts = { __proto__: null, ...options } as TrustedExecutableOptions
-  const { windows = WIN32 } = opts
+  const { windows = isWin32() } = opts
   if (!windows || WINDOWS_EXECUTABLE_SUFFIX_RE.test(candidate)) {
     return [{ runnable: true, suffix: '' }]
   }
@@ -201,7 +201,7 @@ export async function resolveTrustedExecutable(
   options?: TrustedExecutableOptions | undefined,
 ): Promise<TrustedExecutable | undefined> {
   const opts = { __proto__: null, ...options } as TrustedExecutableOptions
-  const { windows = WIN32 } = opts
+  const { windows = isWin32() } = opts
   const root =
     (await canonicalizePath(protectedRoot)) ?? path.resolve(protectedRoot)
 

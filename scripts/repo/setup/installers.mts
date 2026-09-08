@@ -4,7 +4,7 @@
  *   the fleet file-size cap.
  */
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -20,7 +20,7 @@ export interface EnsureGhCliOptions {
  * Install Chocolatey (Windows).
  */
 async function installChocolatey(): Promise<boolean> {
-  if (!WIN32) {
+  if (!isWin32()) {
     logger.warn('Chocolatey is only available on Windows')
     return false
   }
@@ -49,7 +49,7 @@ async function installChocolatey(): Promise<boolean> {
  * Install Homebrew (macOS/Linux).
  */
 async function installHomebrew(): Promise<boolean> {
-  if (WIN32) {
+  if (isWin32()) {
     logger.warn('Homebrew is not available on Windows')
     return false
   }
@@ -142,7 +142,7 @@ export async function ensureGhCli({
   }
 
   // Auto-install mode.
-  if (WIN32) {
+  if (isWin32()) {
     // Windows: Try Chocolatey.
     if (!(await hasCommand('choco'))) {
       logger.info('Chocolatey not found (needed for auto-install on Windows)')

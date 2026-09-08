@@ -5,8 +5,8 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+} from '@socketsecurity/lib-stable/constants/package-managers'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { FLAG_PROD } from '../../constants/cli.mts'
@@ -89,7 +89,7 @@ export async function lsBun(
         // On Windows, bun is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     return result.stdout
@@ -134,7 +134,7 @@ export async function lsPnpm(
         // On Windows, pnpm is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     stdout = result.stdout
@@ -161,7 +161,7 @@ export async function lsVlt(
         // On Windows, pnpm is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     stdout = result.stdout
@@ -188,7 +188,7 @@ export async function lsYarnBerry(
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     return result.stdout
@@ -217,7 +217,7 @@ export async function lsYarnClassic(
         // On Windows, yarn is often a .cmd file that requires shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     return result.stdout
@@ -236,7 +236,7 @@ export async function npmQuery(
       // On Windows, npm is often a .cmd file that requires shell execution.
       // The spawn function from @socketsecurity/registry will handle this properly
       // when shell is true.
-      shell: WIN32,
+      shell: isWin32(),
     })
     stdout = result.stdout
   } catch {}

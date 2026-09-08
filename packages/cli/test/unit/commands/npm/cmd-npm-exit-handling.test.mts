@@ -11,7 +11,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
 import { cmdNpm } from '../../../../src/commands/npm/cmd-npm.mts'

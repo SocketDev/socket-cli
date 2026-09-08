@@ -11,7 +11,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
 import { cmdPnpm } from '../../../../src/commands/pnpm/cmd-pnpm.mts'

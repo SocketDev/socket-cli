@@ -17,7 +17,7 @@ import {
   getDlxCachePath,
 } from '@socketsecurity/lib-stable/dlx/binary'
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   areBasicsToolsAvailable,
@@ -158,7 +158,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
       }
 
       // Make executable on POSIX.
-      if (!WIN32) {
+      if (!isWin32()) {
         await fs.chmod(pythonBin, 0o755)
       }
     } finally {
@@ -174,8 +174,8 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
  * Get the path to the Python executable within the installation.
  */
 export function getPythonBinPath(pythonDir: string): string {
-  /* c8 ignore start - Windows-only branch; CI/test env mocks WIN32=false */
-  if (WIN32) {
+  /* c8 ignore start - Windows-only branch; CI/test env mocks isWin32()=false */
+  if (isWin32()) {
     return path.join(pythonDir, 'python', 'python.exe')
   }
   /* c8 ignore stop */

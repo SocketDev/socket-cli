@@ -9,7 +9,11 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { NPM, PNPM, YARN } from '@socketsecurity/lib-stable/constants/agents'
+import {
+  NPM,
+  PNPM,
+  YARN,
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -94,13 +98,17 @@ export type NodejsCdxgenSources = {
 export async function detectNodejsCdxgenSources(
   cwd: string = process.cwd(),
 ): Promise<NodejsCdxgenSources> {
-  const [pnpmLockPath, npmLockPath, yarnLockPath, nodeModulesPath] =
-    await Promise.all([
-      findUp(PNPM_LOCK_YAML, { cwd, onlyFiles: true }),
-      findUp(PACKAGE_LOCK_JSON, { cwd, onlyFiles: true }),
-      findUp(YARN_LOCK, { cwd, onlyFiles: true }),
-      findUp(NODE_MODULES, { cwd, onlyDirectories: true }),
-    ])
+  const {
+    0: pnpmLockPath,
+    1: npmLockPath,
+    2: yarnLockPath,
+    3: nodeModulesPath,
+  } = await Promise.all([
+    findUp(PNPM_LOCK_YAML, { cwd, onlyFiles: true }),
+    findUp(PACKAGE_LOCK_JSON, { cwd, onlyFiles: true }),
+    findUp(YARN_LOCK, { cwd, onlyFiles: true }),
+    findUp(NODE_MODULES, { cwd, onlyDirectories: true }),
+  ])
   return {
     hasLockfile: Boolean(npmLockPath || pnpmLockPath || yarnLockPath),
     hasNodeModules: Boolean(nodeModulesPath),

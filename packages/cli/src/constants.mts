@@ -5,10 +5,7 @@
 
 // Import everything we need to re-export.
 import { UTF8 } from '@socketsecurity/lib-stable/constants/encoding'
-import {
-  SOCKET_IPC_HANDSHAKE,
-  SOCKET_PUBLIC_API_TOKEN,
-} from '@socketsecurity/lib-stable/constants/socket'
+import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
 
 import {
   BUN,
@@ -241,6 +238,7 @@ import {
   SOCKET_CLI_ISSUES_URL,
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
+  SOCKET_PUBLIC_API_TOKEN,
   SOCKET_WEBSITE_URL,
   SOCKET_YAML,
   SOCKET_YML,
@@ -248,7 +246,7 @@ import {
   TOKEN_PREFIX_LENGTH,
   V1_MIGRATION_GUIDE_URL,
 } from './constants/socket.mts'
-import { WIN32 } from './constants/types.mts'
+import { isWin32 } from './constants/types.mts'
 
 // Export types.
 export type {
@@ -470,7 +468,7 @@ export {
   V1_MIGRATION_GUIDE_URL,
   VITEST,
   VLT,
-  WIN32,
+  isWin32,
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,

@@ -1,4 +1,4 @@
-import { computeHash } from '@socketsecurity/lib-stable/integrity'
+import { computeHash } from '@socketsecurity/lib-stable/crypto/integrity'
 import { describe, expect, it } from 'vitest'
 
 import {

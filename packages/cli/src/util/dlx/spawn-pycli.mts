@@ -12,7 +12,7 @@
 import path from 'node:path'
 
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import { resolvePyCli } from './resolve-binary.mjs'
 import {
@@ -60,7 +60,7 @@ export async function spawnSocketPyCli(
       const spawnNodeOpts: SpawnNodeOptions = {
         ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
         env: finalEnv,
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       }
       const spawnResult = await spawnNode(
@@ -97,7 +97,7 @@ export async function spawnSocketPyCli(
       {
         ...dlxOptions,
         env: spawnEnvFinal,
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       },
     )
@@ -142,7 +142,7 @@ export async function spawnSocketPyCliDlx(
       const spawnNodeOpts: SpawnNodeOptions = {
         ...(dlxOptions.cwd ? { cwd: dlxOptions.cwd } : {}),
         env: finalEnv,
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       }
       const spawnResult = await spawnNode(
@@ -169,7 +169,7 @@ export async function spawnSocketPyCliDlx(
       {
         ...dlxOptions,
         env: finalEnv,
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       },
     )
@@ -259,7 +259,7 @@ export async function spawnSocketPyCliVfs(
           // Isolate PATH to bundled tools only.
           PATH: `${path.dirname(pythonBin)}:${toolsDir}`,
         },
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       },
     )

@@ -6,7 +6,7 @@
  *
  * Test Coverage:
  *
- * - Core properties (rootPath, distPath, homePath, WIN32 platform flag)
+ * - Core properties (rootPath, distPath, homePath, isWin32 platform flag)
  * - Path properties validation, correct directory structure
  * - URL defaults (API_V0_URL, NPM_REGISTRY_URL, SOCKET_PUBLIC_API_TOKEN)
  * - Environment variable overrides (via ENV object)
@@ -60,8 +60,8 @@ describe('constants', () => {
     expect(constants).toHaveProperty('homePath')
 
     // Check for platform properties.
-    expect(constants).toHaveProperty('WIN32')
-    expect(typeof constants.WIN32).toBe('boolean')
+    expect(constants).toHaveProperty('isWin32')
+    expect(typeof constants.isWin32).toBe('function')
 
     // Check for URL properties.
     expect(constants).toHaveProperty('API_V0_URL')

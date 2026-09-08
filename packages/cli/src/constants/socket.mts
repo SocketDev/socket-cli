@@ -4,7 +4,7 @@
  */
 
 // Re-export NPM registry URL from registry for backward compatibility.
-export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
+export { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/package-managers'
 
 // Socket API URLs
 export const API_V0_URL = 'https://api.socket.dev/v0/'
@@ -35,6 +35,8 @@ export const SCAN_TYPE_SOCKET = 'socket'
 export const SCAN_TYPE_SOCKET_TIER1 = 'socket_tier1'
 
 // Token
+export const SOCKET_PUBLIC_API_TOKEN =
+  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
 export const TOKEN_PREFIX = 'sktsec_'
 export const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 

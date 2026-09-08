@@ -2,7 +2,7 @@
  * Unit tests for the Windows-shim resolution helpers.
  *
  * The helpers behave as no-ops on POSIX, so most assertions pivot on stubbing
- * the WIN32 constant from @socketsecurity/lib via vi.mock().
+ * the isWin32 predicate from @socketsecurity/lib via vi.mock().
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -25,13 +25,10 @@ vi.mock(import('node:fs'), async importOriginal => {
   }
 })
 
-// Toggle the WIN32 export per test. Ships at module load, so we re-import
-// the SUT inside each branch that needs a different platform.
 const mockWin32 = vi.hoisted(() => ({ WIN32: false }))
-vi.mock(
-  import('@socketsecurity/lib-stable/constants/platform'),
-  () => mockWin32,
-)
+vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
+  isWin32: () => mockWin32.WIN32,
+}))
 
 import {
   preferWindowsCmdShim,

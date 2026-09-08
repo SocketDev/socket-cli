@@ -27,7 +27,7 @@ vi.mock(import('node:fs'), () => ({
 vi.mock(import('browserslist'), () => ({
   default: mockDefault.mockReturnValue([]),
 }))
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: mockWhichBin,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({

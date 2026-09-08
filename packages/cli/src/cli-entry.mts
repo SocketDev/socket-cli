@@ -2,7 +2,7 @@
 
 // Set global Socket theme for consistent CLI branding.
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
-import { setTheme } from '@socketsecurity/lib-stable/themes/context'
+import { setTheme } from '@socketsecurity/lib-stable/term/themes/context'
 setTheme('socket')
 
 import { promises as fs } from 'node:fs'
@@ -36,8 +36,8 @@ import {
   debugDir,
   debugDirNs,
 } from '@socketsecurity/lib-stable/debug/output'
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/package-managers'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import {
   getSocketCliBootstrapCacheDir,
@@ -160,10 +160,10 @@ void (async () => {
   // Skip update checks in test environments or when explicitly disabled.
   // Note: Update checks create HTTP connections that may delay process exit by up to 30s
   // due to keep-alive timeouts. Set SOCKET_CLI_SKIP_UPDATE_CHECK=1 to disable.
-  if (!VITEST && !getCI() && !SOCKET_CLI_SKIP_UPDATE_CHECK) {
+  if (!VITEST && !isCI() && !SOCKET_CLI_SKIP_UPDATE_CHECK) {
     // Unified update notifier handles both SEA and npm automatically.
     // The registry is pinned to the public npm registry rather than resolved
-    // from the local npm config, so the check answers the same question no
+    // from the local `npm config`, so the check answers the same question no
     // matter which directory the CLI runs in — a repo whose .npmrc points at a
     // private mirror that does not carry the socket package used to report "no
     // update" forever.

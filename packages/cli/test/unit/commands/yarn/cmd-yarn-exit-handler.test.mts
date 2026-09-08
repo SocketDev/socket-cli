@@ -9,7 +9,7 @@
  * exit.
  */
 
-import { YARN } from '@socketsecurity/lib-stable/constants/agents'
+import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'

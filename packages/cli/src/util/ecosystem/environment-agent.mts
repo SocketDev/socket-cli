@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 import {
   BUN,
   NPM,
@@ -10,8 +10,8 @@ import {
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+} from '@socketsecurity/lib-stable/constants/package-managers'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { debugDirNs, debugNs } from '@socketsecurity/lib-stable/debug/output'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 // oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- lib-stable 6.0.9 doesn't publish ./external/semver; semver is bundled at build so no runtime dep leaks.
@@ -45,8 +45,8 @@ export async function getAgentExecPath(agent: Agent): Promise<string> {
     // If getNpmExecPath() doesn't exist, try common locations.
     // Check npm in the same directory as node.
     const nodeDir = path.dirname(process.execPath)
-    /* c8 ignore start - WIN32-only branch and existsSync(npm-in-node-dir) hit; tests run on macOS/Linux against test fixtures, not a real node install dir */
-    if (WIN32) {
+    /* c8 ignore start - isWin32()-only branch and existsSync(npm-in-node-dir) hit; tests run on macOS/Linux against test fixtures, not a real node install dir */
+    if (isWin32()) {
       const npmCmdInNodeDir = path.join(nodeDir, `${NPM}.cmd`)
       if (existsSync(npmCmdInNodeDir)) {
         return npmCmdInNodeDir
@@ -99,8 +99,8 @@ export async function getAgentVersion(
     // (e.g. the extensionless `npm` shim on Windows). Resolve the underlying entrypoint
     // and run it with Node when it is a JS file.
     let shouldRunWithNode: string | undefined = undefined
-    /* c8 ignore start - WIN32-only branch for resolving JS shim entrypoints; tests run on macOS/Linux */
-    if (WIN32) {
+    /* c8 ignore start - isWin32()-only branch for resolving JS shim entrypoints; tests run on macOS/Linux */
+    if (isWin32()) {
       try {
         const resolved = resolveBinPathSync(agentExecPath)
         const ext = path.extname(resolved).toLowerCase()
@@ -135,7 +135,7 @@ export async function getAgentVersion(
         // On Windows, package managers are often .cmd files that require shell execution.
         // The spawn function from @socketsecurity/registry will handle this properly
         // when shell is true.
-        shell: WIN32,
+        shell: isWin32(),
       })
 
       if (!spawnResult) {

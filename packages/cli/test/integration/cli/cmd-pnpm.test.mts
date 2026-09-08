@@ -6,16 +6,18 @@
  * which provides security scanning before installation.
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
- * validation - pnpm install operations with scanning - Config flag variants -
+ * validation - `pnpm install` operations with scanning - Config flag variants -
  * Issue rules configuration.
  *
  * Security Features: - Pre-installation security scanning via Socket Firewall -
  * Malware detection integration - Workspace support.
  *
- * Related Files: - src/commands/pnpm/cmd-pnpm.mts - pnpm command implementation
- * - src/pnpm-cli.mts - pnpm CLI entry point - src/util/dlx/resolve-binary.mjs -
- * sfw resolution - test/integration/cli/cmd-pnpm-malware.test.mts - Malware
- * tests.
+ * Related Files: - src/commands/pnpm/cmd-pnpm.mts - pnpm command
+ * implementation.
+ *
+ * - Src/pnpm-cli.mts - pnpm CLI entry point - src/util/dlx/resolve-binary.mjs -
+ *   sfw resolution - test/integration/cli/cmd-pnpm-malware.test.mts - Malware
+ *   tests.
  */
 
 import { promises as fs } from 'node:fs'
@@ -24,7 +26,7 @@ import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -383,12 +385,12 @@ describe('socket pnpm', async () => {
   )
 
   it('should work when invoked via pnpm dlx', { timeout: 30_000 }, async () => {
-    // Mock spawn to avoid actual pnpm dlx execution.
+    // Mock spawn to avoid actual `pnpm dlx` execution.
     const spawnMock = vi
       .fn()
       .mockImplementation(
         async (command: string, args: string[], options: SpawnOptions) => {
-          // Simulate successful pnpm dlx execution.
+          // Simulate successful `pnpm dlx` execution.
           if (command === PNPM && args[0] === 'dlx') {
             // Simulate cowsay output if cowsay is being run.
             if (args.some(a => a.includes('cowsay'))) {
@@ -430,7 +432,7 @@ describe('socket pnpm', async () => {
         JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
       )
 
-      // Run socket pnpm via pnpm dlx (mocked).
+      // Run socket pnpm via `pnpm dlx` (mocked).
       const { code, stdout } = await spawnMock(
         PNPM,
         ['dlx', '@socketsecurity/cli@latest', PNPM, FLAG_VERSION],

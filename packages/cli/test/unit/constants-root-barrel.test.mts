@@ -121,7 +121,7 @@ import {
   TOKEN_PREFIX,
   TOKEN_PREFIX_LENGTH,
   // Type constants.
-  WIN32,
+  isWin32,
   // Env constants.
   VITEST,
 } from '../../src/constants.mts'
@@ -327,9 +327,8 @@ describe('constants root barrel exports', () => {
   })
 
   describe('type constants', () => {
-    it('exports WIN32 constant', () => {
-      // WIN32 is process.platform === 'win32' boolean on non-Windows, string on Windows.
-      expect(typeof WIN32 === 'boolean' || typeof WIN32 === 'string').toBe(true)
+    it('exports isWin32 predicate', () => {
+      expect(isWin32()).toBe(process.platform === 'win32')
     })
   })
 

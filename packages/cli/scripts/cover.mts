@@ -11,9 +11,9 @@
 import {
   isQuiet,
   isVerbose,
-} from '@socketsecurity/lib-stable/argv/flag-predicates'
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+} from '@socketsecurity/lib-stable/exe/argv/flag-predicates'
+import { parseArgs } from '@socketsecurity/lib-stable/exe/argv/parse'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -87,7 +87,7 @@ async function main() {
       typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
         cwd: WORKSPACE_ROOT,
         encoding: 'utf8',
-        shell: WIN32,
+        shell: isWin32(),
         stdio: ['pipe', 'pipe', 'pipe'],
       })
       exitCode = typeCoverageResult.code
@@ -129,7 +129,7 @@ async function main() {
       codeCoverageResult = await spawn('pnpm', vitestArgs, {
         cwd: PACKAGE_ROOT,
         encoding: 'utf8',
-        shell: WIN32,
+        shell: isWin32(),
         stdio: ['pipe', 'pipe', 'pipe'],
       })
       exitCode = codeCoverageResult.code
@@ -203,7 +203,7 @@ async function main() {
     codeCoverageResult = await spawn('pnpm', vitestArgs, {
       cwd: PACKAGE_ROOT,
       encoding: 'utf8',
-      shell: WIN32,
+      shell: isWin32(),
       stdio: ['pipe', 'pipe', 'pipe'],
     })
     exitCode = codeCoverageResult.code
@@ -212,7 +212,7 @@ async function main() {
     typeCoverageResult = await spawn('pnpm', typeCoverageArgs, {
       cwd: WORKSPACE_ROOT,
       encoding: 'utf8',
-      shell: WIN32,
+      shell: isWin32(),
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
@@ -308,7 +308,7 @@ async function main() {
         if (open) {
           logger.info('Opening coverage report…')
           await spawn('open', ['coverage/index.html'], {
-            shell: WIN32,
+            shell: isWin32(),
             stdio: 'ignore',
           })
         }

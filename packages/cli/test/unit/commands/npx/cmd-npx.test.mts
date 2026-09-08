@@ -10,7 +10,7 @@
  * Subprocess spawning and exit handling - Telemetry tracking - Error handling.
  */
 
-import { NPX } from '@socketsecurity/lib-stable/constants/agents'
+import { NPX } from '@socketsecurity/lib-stable/constants/package-managers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'

@@ -1,7 +1,7 @@
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { isDebug } from '@socketsecurity/lib-stable/debug/namespace'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { getSocketCliGithubToken } from '@socketsecurity/lib-stable/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
@@ -31,7 +31,7 @@ export function checkCiEnvVars(): MissingEnvVars {
     }
   }
 
-  checkVar(getCI(), 'CI')
+  checkVar(isCI(), 'CI')
   checkVar(SOCKET_CLI_GIT_USER_EMAIL, 'SOCKET_CLI_GIT_USER_EMAIL')
   checkVar(SOCKET_CLI_GIT_USER_NAME, 'SOCKET_CLI_GIT_USER_NAME')
   checkVar(
@@ -91,12 +91,12 @@ export async function getFixEnv(): Promise<FixEnv> {
   const gitEmail = SOCKET_CLI_GIT_USER_EMAIL
   const gitUser = SOCKET_CLI_GIT_USER_NAME
   const githubToken = getSocketCliGithubToken()
-  const isCi = !!(getCI() && gitEmail && gitUser && githubToken)
+  const isCi = !!(isCI() && gitEmail && gitUser && githubToken)
 
   const envCheck = checkCiEnvVars()
 
   // Provide clear feedback about missing environment variables.
-  if (getCI() && envCheck.missing.length) {
+  if (isCI() && envCheck.missing.length) {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
@@ -109,7 +109,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     }
   } else if (
     // If not in CI but some CI-related env vars are set.
-    !getCI() &&
+    !isCI() &&
     envCheck.present.length &&
     // then log about it when in debug mode.
     isDebug()

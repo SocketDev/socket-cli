@@ -25,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // Mock @socketsecurity/lib/env/ci.
 const mockGetCI = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/env/ci'), () => ({
-  getCI: mockGetCI,
+  isCI: mockGetCI,
 }))
 
 // Mock @socketsecurity/lib/env/socket-cli.

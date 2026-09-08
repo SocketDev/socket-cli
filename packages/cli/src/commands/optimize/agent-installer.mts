@@ -12,13 +12,16 @@
  * indication - CI-mode configuration for non-interactive execution.
  */
 
-import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import {
+  NPM,
+  PNPM,
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import {
   getNodeDisableSigusr1Flags,
   getNodeHardenFlags,
   getNodeNoWarningsFlags,
 } from '@socketsecurity/lib-stable/constants/node'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -83,7 +86,7 @@ export function runAgentInstall(
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
     // Package managers on Windows often require shell execution.
-    shell: WIN32,
+    shell: isWin32(),
     spinner,
     stdio: 'inherit',
     ...spawnOpts,

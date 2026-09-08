@@ -10,7 +10,7 @@ import path from 'node:path'
 import { parse } from '@babel/core'
 import MagicString from 'magic-string'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
@@ -26,7 +26,7 @@ const logger = getDefaultLogger()
 async function commitPatch(patchPath, packageName) {
   logger.log(`Committing patch for ${packageName}...`)
   const result = await spawn('pnpm', ['patch-commit', patchPath], {
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'inherit',
   })
 
@@ -179,7 +179,7 @@ async function startPatch(packageSpec) {
 
   // First, try to run pnpm patch to see if directory already exists.
   let result = await spawn('pnpm', ['patch', packageSpec], {
-    shell: WIN32,
+    shell: isWin32(),
     // Capture stdout and stderr.
     stdio: ['inherit', 'pipe', 'pipe'],
     stdioString: true,
@@ -209,7 +209,7 @@ async function startPatch(packageSpec) {
 
       // Try pnpm patch again.
       result = await spawn('pnpm', ['patch', packageSpec], {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: ['inherit', 'pipe', 'inherit'],
         stdioString: true,
       })

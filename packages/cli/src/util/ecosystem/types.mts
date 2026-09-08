@@ -25,7 +25,7 @@
  * - Ensures type safety for ecosystem operations
  */
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import type { components } from '@socketsecurity/sdk-stable/types/api'
 

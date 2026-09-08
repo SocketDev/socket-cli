@@ -51,7 +51,7 @@ import semver from 'semver'
 import { describe, expect } from 'vitest'
 
 import { getNodeVersion } from '@socketsecurity/lib-stable/constants/node'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,
@@ -101,7 +101,7 @@ describe('socket config get', async () => {
       // Node 24 on Windows currently fails this test with added stderr:
       // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
       const skipOnWin32Node24 =
-        WIN32 && semver.parse(getNodeVersion())?.major >= 24
+        isWin32() && semver.parse(getNodeVersion())?.major >= 24
       if (!skipOnWin32Node24) {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "

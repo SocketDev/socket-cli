@@ -1,4 +1,4 @@
-import * as binModule from '@socketsecurity/lib-stable/bin/which'
+import * as binModule from '@socketsecurity/lib-stable/exe/path/which'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { cmdPip } from '../../../../src/commands/pip/cmd-pip.mts'
@@ -9,7 +9,7 @@ import * as cmdModule from '../../../../src/util/process/cmd.mts'
 import type { CliCommandContext } from '../../../../src/util/cli/with-subcommands.mts'
 
 // Mock dependencies before imports.
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: vi.fn(),
 }))
 

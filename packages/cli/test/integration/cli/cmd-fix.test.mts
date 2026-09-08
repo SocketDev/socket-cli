@@ -58,7 +58,7 @@ import path from 'node:path'
 
 import { afterEach, describe, expect } from 'vitest'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   FLAG_CONFIG,
@@ -82,7 +82,7 @@ let cleanupFunctions: Array<() => Promise<void>> = []
 
 describe('socket fix', async () => {
   // Increase timeout for CI environments and Windows where operations can be slower.
-  const testTimeout = ENV.CI || WIN32 ? 60_000 : 30_000
+  const testTimeout = ENV.CI || isWin32() ? 60_000 : 30_000
 
   afterEach(async () => {
     // Clean up all temporary directories after each test.

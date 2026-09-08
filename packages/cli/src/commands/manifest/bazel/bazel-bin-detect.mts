@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 
 import { InputError } from '../../../util/error/errors-types.mts'
 
@@ -16,6 +16,7 @@ export function firstBinPath(
  * Resolve the bazel binary to invoke for `socket manifest bazel`.
  *
  * Resolution order:
+ *
  * 1. If `explicit` is provided, return it iff it exists on disk; else throw.
  * 2. Look up `bazelisk` on PATH (preferred — respects `.bazelversion`).
  * 3. Fall back to `bazel` on PATH.

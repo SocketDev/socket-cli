@@ -10,7 +10,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import {
+  NPM,
+  PNPM,
+} from '@socketsecurity/lib-stable/constants/package-managers'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())

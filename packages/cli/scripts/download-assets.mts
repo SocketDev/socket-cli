@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 import { logTransientErrorHelp } from 'local-build-infra/lib/github-error-utils'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
@@ -214,7 +214,7 @@ async function extractArchive(tarGzPath, extractConfig, assetName) {
     '-C',
     normalizePath(outputDir),
   ]
-  if (WIN32) {
+  if (isWin32()) {
     tarArgs.push('--force-local')
   }
   const result = await spawn('tar', tarArgs, {

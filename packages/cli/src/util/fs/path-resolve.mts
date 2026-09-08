@@ -1,8 +1,8 @@
 import path from 'node:path'
 
-import { resolveRealBinSync } from '@socketsecurity/lib-stable/bin/resolve'
-import { isShadowBinPath } from '@socketsecurity/lib-stable/bin/shadow'
-import { whichRealSync } from '@socketsecurity/lib-stable/bin/which'
+import { resolveRealBinSync } from '@socketsecurity/lib-stable/exe/path/resolve'
+import { isShadowBinPath } from '@socketsecurity/lib-stable/exe/shadow/detect'
+import { whichRealSync } from '@socketsecurity/lib-stable/exe/path/which'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {

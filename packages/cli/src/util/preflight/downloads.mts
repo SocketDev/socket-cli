@@ -14,7 +14,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 
 import { downloadNpmPackage } from '@socketsecurity/lib-stable/dlx/package'
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 
 import { getCoanaVersion } from '../../env/coana-version.mts'
 import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
@@ -38,7 +38,7 @@ export function runPreflightDownloads(): void {
   preflightRunning = true
 
   // Don't run in test/CI environments.
-  if (getCI() || VITEST) {
+  if (isCI() || VITEST) {
     return
   }
 

@@ -1,5 +1,5 @@
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/lib-stable/constants/socket'
+import { SOCKET_PUBLIC_API_TOKEN } from '../../constants/socket.mts'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import {
   confirm,
@@ -112,7 +112,7 @@ export async function attemptLogin(
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    const [firstChoice] = enforcedChoices
+    const { 0: firstChoice } = enforcedChoices
     if (firstChoice?.name) {
       const shouldEnforce = await confirm({
         message: `Should Socket enforce ${firstChoice.name}'s security policies system-wide?`,

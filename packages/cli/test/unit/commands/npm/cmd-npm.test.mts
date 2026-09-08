@@ -12,7 +12,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import { cmdNpm } from '../../../../src/commands/npm/cmd-npm.mts'
 

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, symlinkSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 
 import { firstBinPath } from './bazel-bin-detect.mts'
 import { InputError } from '../../../util/error/errors-types.mts'

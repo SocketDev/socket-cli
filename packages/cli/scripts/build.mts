@@ -6,7 +6,7 @@ import { copyFileSync, existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -154,10 +154,10 @@ async function main() {
     }
 
     const watchResult = await spawn(
-      'node',
+      process.execPath,
       [...NODE_MEMORY_FLAGS, '.config/rolldown.cli.mts', '--watch'],
       {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       },
     )
@@ -185,7 +185,7 @@ async function main() {
         logger.step('Phase 1: Cleaning…')
       }
       const result = await spawn('pnpm', ['run', 'clean:dist'], {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       })
       if (result.code !== 0) {
@@ -207,15 +207,15 @@ async function main() {
     }
 
     const parallelPrep = await Promise.allSettled([
-      spawn('node', [path.join(__dirname, 'generate-packages.mts')], {
-        shell: WIN32,
+      spawn(process.execPath, [path.join(__dirname, 'generate-packages.mts')], {
+        shell: isWin32(),
         stdio: 'inherit',
       }).then(result => ({ name: 'Generate Packages', result })),
       spawn(
-        'node',
+        process.execPath,
         [...NODE_MEMORY_FLAGS, path.join(__dirname, 'download-assets.mts')],
         {
-          shell: WIN32,
+          shell: isWin32(),
           stdio: 'inherit',
         },
       ).then(result => ({ name: 'Download Assets', result })),
@@ -267,10 +267,10 @@ async function main() {
     await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
 
     const buildResult = await spawn(
-      'node',
+      process.execPath,
       [...NODE_MEMORY_FLAGS, '.config/rolldown.build.mts', 'all'],
       {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       },
     )

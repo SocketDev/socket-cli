@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import fg from 'fast-glob'
@@ -186,7 +186,7 @@ export async function runSequentialBuilds(
  * Run the default smart build — now orchestrated via the shared build-pipeline
  * (same system socket-btm/ultrathink/socket-tui/sdxgen use).
  *
- * Stages: CLI build @socketsecurity/cli via pnpm --filter (the existing
+ * Stages: CLI build @socketsecurity/cli via `pnpm --filter` (the existing
  * buildPackage helper handles signature check + skip-on-cached inside the
  * workspace; the orchestrator's shouldRun layer complements with a
  * content-hashed cache key) SEA build SEA binary for current platform (only
@@ -319,7 +319,7 @@ export async function runTargetedBuild(
   const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
 
   const result = await spawn('pnpm', pnpmArgs, {
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'inherit',
   })
 

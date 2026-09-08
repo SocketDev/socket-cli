@@ -38,7 +38,7 @@ vi.mock(import('node:fs'), () => ({
 
 const mockCoerce = vi.hoisted(() => vi.fn())
 const mockWhichBin = vi.hoisted(() => vi.fn())
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: mockWhichBin,
 }))
 

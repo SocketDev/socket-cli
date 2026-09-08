@@ -4,7 +4,7 @@
  *   under the fleet file-size cap.
  */
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -52,7 +52,7 @@ export async function buildCurrentPlatformSea(): Promise<{ success: boolean }> {
       `--arch=${currentArch}`,
     ],
     {
-      shell: WIN32,
+      shell: isWin32(),
       stdio: 'inherit',
     },
   )
@@ -91,7 +91,7 @@ export async function buildPackage(
 
   const startTime = Date.now()
   const result = await spawn('pnpm', args, {
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'inherit',
   })
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -146,7 +146,7 @@ export async function buildPlatformSea(
 
   const startTime = Date.now()
   const result = await spawn('pnpm', seaArgs, {
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'inherit',
   })
   const duration = ((Date.now() - startTime) / 1000).toFixed(1)
@@ -191,7 +191,7 @@ export async function buildTarget(
     }
 
     const result = await spawn('pnpm', seaArgs, {
-      shell: WIN32,
+      shell: isWin32(),
       stdio: 'pipe',
     })
 
@@ -221,7 +221,7 @@ export async function buildTarget(
   const pnpmArgs = ['--filter', packageFilter, 'run', 'build', ...buildArgs]
 
   const result = await spawn('pnpm', pnpmArgs, {
-    shell: WIN32,
+    shell: isWin32(),
     stdio: 'pipe',
   })
 

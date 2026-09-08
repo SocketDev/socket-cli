@@ -12,7 +12,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 /**
  * Given a bin path that might be an extensionless shim, return the matching
@@ -25,7 +25,7 @@ import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
  * shim).
  */
 export function preferWindowsCmdShim(binPath: string, binName: string): string {
-  if (!WIN32) {
+  if (!isWin32()) {
     return binPath
   }
 

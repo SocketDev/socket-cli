@@ -8,7 +8,7 @@
  * See util/cli/define-handoff.mts.
  */
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 
 import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 

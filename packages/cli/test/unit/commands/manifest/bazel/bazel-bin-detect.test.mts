@@ -5,11 +5,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock whichReal so tests run with no bazel on PATH.
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: vi.fn(),
 }))
 
-import { whichReal } from '@socketsecurity/lib-stable/bin/which'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 
 import { resolveBazelBinary } from '../../../../../src/commands/manifest/bazel/bazel-bin-detect.mts'
 

@@ -4,9 +4,11 @@
  * Purpose: Tests the package listing functions for different package managers.
  *
  * Test Coverage: - cleanupQueryStdout function (via lsNpm, lsVlt) -
- * parsableToQueryStdout function (via lsPnpm) - lsBun function - lsNpm function
- * - lsPnpm function - lsVlt function - lsYarnBerry function - lsYarnClassic
- * function - listPackages function.
+ * parsableToQueryStdout function (via lsPnpm) - lsBun function - lsNpm
+ * function.
+ *
+ * - LsPnpm function - lsVlt function - lsYarnBerry function - lsYarnClassic
+ *   function - listPackages function.
  *
  * Related Files: - commands/optimize/ls-by-agent.mts (implementation)
  */
@@ -20,7 +22,7 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())

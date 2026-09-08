@@ -10,14 +10,14 @@ import colors from 'yoctocolors-cjs'
 import {
   configToSpec,
   frameColors,
-} from '@socketsecurity/lib-stable/effects/shimmer'
-import { colorsToAnsi } from '@socketsecurity/lib-stable/effects/shimmer-terminal'
+} from '@socketsecurity/lib-stable/term/effects/shimmer'
+import { colorsToAnsi } from '@socketsecurity/lib-stable/term/effects/shimmer-terminal'
 
 import type {
   Palette,
   RGB,
   ShimmerSpec,
-} from '@socketsecurity/lib-stable/effects/shimmer'
+} from '@socketsecurity/lib-stable/term/effects/shimmer'
 
 /**
  * Color themes for header styling.
@@ -34,17 +34,17 @@ export type HeaderTheme =
  */
 const THEME_COLORS_RGB = {
   __proto__: null,
-  default: [
-    [139, 92, 246],
-    [167, 139, 250],
-    [196, 181, 253],
-    [221, 214, 254],
-  ] as const,
   cyberpunk: [
     [255, 0, 255],
     [0, 255, 255],
     [255, 0, 170],
     [0, 170, 255],
+  ] as const,
+  default: [
+    [139, 92, 246],
+    [167, 139, 250],
+    [196, 181, 253],
+    [221, 214, 254],
   ] as const,
   forest: [
     [16, 185, 129],

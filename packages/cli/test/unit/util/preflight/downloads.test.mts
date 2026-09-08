@@ -23,7 +23,7 @@ vi.mock(import('@socketsecurity/lib-stable/dlx/package'), () => ({
 
 const mockGetCI = vi.hoisted(() => vi.fn(() => false))
 vi.mock(import('@socketsecurity/lib-stable/env/ci'), () => ({
-  getCI: mockGetCI,
+  isCI: mockGetCI,
 }))
 
 vi.mock(import('../../../../src/env/coana-version.mts'), () => ({

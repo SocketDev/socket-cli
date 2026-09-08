@@ -12,7 +12,7 @@ import path from 'node:path'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 
 import {
   convertCaretToPipRange,
@@ -126,7 +126,7 @@ export async function ensureSocketPyCli(
       )
       if (wheelPath) {
         await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
-          shell: WIN32,
+          shell: isWin32(),
           stdio: 'inherit',
         })
         /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
@@ -144,7 +144,7 @@ export async function ensureSocketPyCli(
         : 'socketsecurity'
 
       await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
-        shell: WIN32,
+        shell: isWin32(),
         stdio: 'inherit',
       })
     }
@@ -180,7 +180,7 @@ export async function isSocketPyCliInstalled(
       pythonBin,
       ['-c', 'import socketsecurity.socketcli'],
       {
-        shell: WIN32,
+        shell: isWin32(),
       },
     )
     return result.code === 0

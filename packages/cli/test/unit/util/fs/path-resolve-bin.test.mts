@@ -18,15 +18,15 @@ import {
 } from '../../../../src/util/fs/path-resolve.mts'
 import { createTestWorkspace } from '../../../helpers/workspace-helper.mts'
 
-import type * as BinResolveModule from '@socketsecurity/lib-stable/bin/resolve'
-import type * as BinWhichModule from '@socketsecurity/lib-stable/bin/which'
+import type * as BinResolveModule from '@socketsecurity/lib-stable/exe/path/resolve'
+import type * as BinWhichModule from '@socketsecurity/lib-stable/exe/path/which'
 
 const mockWhichRealSync = vi.hoisted(() => vi.fn())
 const mockResolveRealBinSync = vi.hoisted(() => vi.fn((p: string) => p))
 
-vi.mock(import('@socketsecurity/lib-stable/bin/resolve'), async () => {
+vi.mock(import('@socketsecurity/lib-stable/exe/path/resolve'), async () => {
   const actual = await vi.importActual<typeof BinResolveModule>(
-    '@socketsecurity/lib-stable/bin/resolve',
+    '@socketsecurity/lib-stable/exe/path/resolve',
   )
   return {
     ...actual,
@@ -34,9 +34,9 @@ vi.mock(import('@socketsecurity/lib-stable/bin/resolve'), async () => {
   }
 })
 
-vi.mock(import('@socketsecurity/lib-stable/bin/which'), async () => {
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), async () => {
   const actual = await vi.importActual<typeof BinWhichModule>(
-    '@socketsecurity/lib-stable/bin/which',
+    '@socketsecurity/lib-stable/exe/path/which',
   )
   return {
     ...actual,

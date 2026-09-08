@@ -5,7 +5,10 @@ import path from 'node:path'
 // oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- bundled
 import semver from 'semver'
 
-import { NPM, PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import {
+  NPM,
+  PNPM,
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { hasOwn } from '@socketsecurity/lib-stable/objects/predicates'
 import { toSortedObject } from '@socketsecurity/lib-stable/objects/sort'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'

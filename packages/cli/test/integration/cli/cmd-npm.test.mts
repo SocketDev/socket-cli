@@ -6,7 +6,7 @@
  * security issues before allowing installation.
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
- * (--dry-run flag) - npm exec command with package versions - Config flag
+ * (--dry-run flag) - `npm exec` command with package versions - Config flag
  * variants (-c vs --config) - Issue rules configuration (malware, gptMalware
  * detection) - Silent mode (--silent flag) - Banner and exit code validation.
  *
@@ -22,7 +22,7 @@
 
 import { describe, expect } from 'vitest'
 
-import { NPM } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import {
   FLAG_CONFIG,

@@ -13,7 +13,7 @@ import path from 'node:path'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 
-import { WIN32 } from '@socketsecurity/lib-stable/constants/platform'
+import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import {
   readFileBinary,
   readFileUtf8,
@@ -34,7 +34,7 @@ import {
   YARN_BERRY,
   YARN_CLASSIC,
   YARN_LOCK,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
 
 // `.package-lock.json` is the npm "hidden lockfile" name. Defined locally
@@ -106,7 +106,7 @@ export const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
                 cwd,
                 // On Windows, bun is often a .cmd file that requires shell
                 // execution. The spawn helper handles that when shell is true.
-                shell: WIN32,
+                shell: isWin32(),
               })
             ).stdout
           }

@@ -52,7 +52,7 @@ vi.mock(import('@socketsecurity/lib-stable/logger/symbols'), () => ({
   },
 }))
 
-vi.mock(import('@socketsecurity/lib-stable/ansi/strip'), () => ({
+vi.mock(import('@socketsecurity/lib-stable/term/ansi/strip'), () => ({
   stripAnsi: vi.fn(str => str),
 }))
 
@@ -345,7 +345,7 @@ describe('checkCommandInput', () => {
 
     it('strips ANSI codes for JSON output', async () => {
       const { stripAnsi } = vi.mocked(
-        await import('@socketsecurity/lib-stable/ansi/strip'),
+        await import('@socketsecurity/lib-stable/term/ansi/strip'),
       )
       const { serializeResultJson } = vi.mocked(
         await import('../../../../src/util/output/result-json.mts'),

@@ -6,7 +6,7 @@ import {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-} from '@socketsecurity/lib-stable/constants/agents'
+} from '@socketsecurity/lib-stable/constants/package-managers'
 import {
   hasKeys,
   isObject,
@@ -127,7 +127,7 @@ export function updatePkgJsonField(
           },
         })
       } else if (isPnpmObj) {
-        // Drop the overrides key but keep the rest of the pnpm config.
+        // Drop the overrides key but keep the rest of the `pnpm config`.
         const { overrides: _omitted, ...rest } = oldValue as Record<
           string,
           unknown

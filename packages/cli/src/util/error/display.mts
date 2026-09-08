@@ -10,7 +10,7 @@ import {
 } from '@socketsecurity/lib-stable/errors/message'
 import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { LOG_SYMBOLS } from '@socketsecurity/lib-stable/logger/symbols'
-import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
+import { stripAnsi } from '@socketsecurity/lib-stable/term/ansi/strip'
 
 import { isDebugNs } from '../debug.mts'
 import { redactSecretsFromText } from '../redact-secrets-from-text.mts'

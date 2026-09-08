@@ -5,7 +5,7 @@ import { it } from 'vitest'
 
 import { createEnvProxy } from '@socketsecurity/lib-stable/env/proxy'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-import { stripAnsi } from '@socketsecurity/lib-stable/ansi/strip'
+import { stripAnsi } from '@socketsecurity/lib-stable/term/ansi/strip'
 
 import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 

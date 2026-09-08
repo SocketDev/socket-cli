@@ -21,7 +21,7 @@ import https from 'node:https'
 // oxlint-disable-next-line socket/prefer-lib-versions-over-semver -- bundled
 import semver from 'semver'
 
-import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/agents'
+import { NPM_REGISTRY_URL } from '@socketsecurity/lib-stable/constants/package-managers'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'

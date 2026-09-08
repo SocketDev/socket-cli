@@ -9,7 +9,7 @@
 
 import { existsSync } from 'node:fs'
 
-import { parseArgs } from '@socketsecurity/lib-stable/argv/parse'
+import { parseArgs } from '@socketsecurity/lib-stable/exe/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import {

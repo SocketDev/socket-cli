@@ -15,7 +15,7 @@ import {
   equalHashes,
   isIntegrity,
   parseHash,
-} from '@socketsecurity/lib-stable/integrity'
+} from '@socketsecurity/lib-stable/crypto/integrity'
 
 /**
  * An npm-sourced tool as declared in bundle-tools.json.
@@ -54,7 +54,7 @@ export function collectNpmToolPins(
   const pins: NpmToolPin[] = []
   const entries = Object.entries(tools)
   for (let i = 0, { length } = entries; i < length; i += 1) {
-    const [name, config] = entries[i]!
+    const { 0: name, 1: config } = entries[i]!
     if (config['packageManager'] === 'npm') {
       pins.push({
         integrity: config['integrity'] as string | undefined,

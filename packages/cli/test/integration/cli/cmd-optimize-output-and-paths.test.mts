@@ -14,7 +14,7 @@ import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { PNPM } from '@socketsecurity/lib-stable/constants/agents'
+import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 import { readPackageJson } from '@socketsecurity/lib-stable/packages/read'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 

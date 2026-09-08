@@ -12,15 +12,17 @@
  * Security Features: - Pre-installation security scanning via Socket Firewall -
  * Malware detection integration - Workspace support.
  *
- * Related Files: - src/commands/yarn/cmd-yarn.mts - yarn command implementation
- * - src/yarn-cli.mts - yarn CLI entry point - src/util/dlx/resolve-binary.mjs -
- * sfw resolution - test/integration/cli/cmd-yarn-malware.test.mts - Malware
- * tests.
+ * Related Files: - src/commands/yarn/cmd-yarn.mts - yarn command
+ * implementation.
+ *
+ * - Src/yarn-cli.mts - yarn CLI entry point - src/util/dlx/resolve-binary.mjs -
+ *   sfw resolution - test/integration/cli/cmd-yarn-malware.test.mts - Malware
+ *   tests.
  */
 
 import { describe, expect } from 'vitest'
 
-import { YARN } from '@socketsecurity/lib-stable/constants/agents'
+import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import {
   FLAG_CONFIG,

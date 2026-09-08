@@ -10,7 +10,7 @@
 
 import colors from 'yoctocolors-cjs'
 
-import { getCI } from '@socketsecurity/lib-stable/env/ci'
+import { isCI } from '@socketsecurity/lib-stable/env/ci'
 import { getSocketApiToken } from '@socketsecurity/lib-stable/env/socket'
 import { getSocketCliNoApiToken } from '@socketsecurity/lib-stable/env/socket-cli'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
@@ -203,7 +203,7 @@ export function shouldAnimateHeader(
   flags?: Record<string, unknown> | undefined,
 ): boolean {
   // Disable animation in CI, tests, or when explicitly disabled.
-  if (getCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
+  if (isCI() || VITEST || !process.stdout.isTTY || !supportsFullColor()) {
     return false
   }
   /* c8 ignore start - VITEST is true under tests so the early-return above always fires; the flag-check + default-true paths require an interactive TTY */

@@ -7,13 +7,16 @@
  * Test Coverage: - pnpm: Special flags (--config.confirmModulesPurge=false,
  * --no-frozen-lockfile, CI=1) - yarn: Basic install command - Custom args
  * pass-through (--frozen-lockfile, --production, etc.) - Spinner integration
- * for progress indication - Unknown/future package managers, fallback behavior
+ * for progress indication - Unknown/future package managers, fallback behavior.
+ *
  * - Option merging, args, env, stdio.
  *
  * Npm Behavior (NOT tested here): - npm uses Socket Firewall (sfw) for security
- * scanning - This cannot be reliably mocked due to ESM module resolution issues
- * - npm behavior is tested via integration tests at:
- * test/integration/cli/cmd-optimize.test.mts.
+ * scanning - This cannot be reliably mocked due to ESM module resolution
+ * issues.
+ *
+ * - Npm behavior is tested via integration tests at:
+ *   test/integration/cli/cmd-optimize.test.mts.
  *
  * Related Files: - src/commands/optimize/agent-installer.mts - Implementation -
  * src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities -
@@ -49,7 +52,7 @@ vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
 }))
 
 vi.mock(
-  import('@socketsecurity/lib-stable/constants/agents'),
+  import('@socketsecurity/lib-stable/constants/package-managers'),
   async importOriginal => {
     const actual = await importOriginal()
     return {
@@ -75,7 +78,7 @@ vi.mock(
 )
 
 vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
-  WIN32: false,
+  isWin32: () => false,
 }))
 
 describe('agent installer utilities', () => {
