@@ -1,3 +1,6 @@
+//#region scripts/repo/gen/bootstrap/src/workspace-migration.d.mts
+export declare function migrateWorkspaceSettings(dest: string, yaml: string): string;
+//#endregion
 //#region template/base/universal/scripts/fleet/lib/conditional-config.d.mts
 type ConfigFlag = 'bundlesVendoredDeps' | 'hasGhcr' | 'hasNapi' | 'hasPrebakes' | 'hasRust' | 'isGithubAction';
 //#endregion
@@ -137,25 +140,9 @@ export declare function stripLegacyPackBlock(target: string): string;
  */
 export declare function stripLegacyUntrackEntriesFromFleetBlock(target: string): string;
 /**
- * Write the fetcher-owned `<fleet-pack>` `.gitignore` region: `.agents/` (the
- * regenerated agent mirror — dead weight in a thin consumer; the fetch
- * repopulates it) plus the wholly-fleet bundle untrack paths (see
- * fleetPackOwnedPaths). The region is REGENERATED from the manifest on every
- * run — replaced whole, so a stale entry from an earlier pack is pruned
- * instead of carried forward (the old append-only refresh accreted every
- * prior line forever). Hand-added ignores belong outside the markers and are
- * untouched, as is the cascade's `<fleet>` region — the two writers own
- * disjoint regions, so neither can discard the other's rules. The dep-0
- * bootstrap (`scripts/repo/bootstrap/`) is NOT listed: it ships via the
- * manual cascade, never the release bundle, so it never enters this untrack
- * set and stays tracked by default.
- *
- * This is the HALF that is safe to run unconditionally for a thin consumer. It
- * only edits `.gitignore`; it never touches the git index, so a member whose
- * payload is still tracked keeps every file it has committed (gitignore has no
- * effect on tracked paths). The index-mutating half lives in
- * untrackFleetPackPaths and stays behind an explicit `--thin`.
+ * Refresh exact tracked fleet paths using the active ownership classification.
  */
+export declare function fleetTrackedAllowlist(manifest: FleetFileManifest, current: readonly string[]): string;
 export declare function refreshFleetPackIgnores(config: {
   dest: string;
   manifest: FleetFileManifest;
@@ -279,12 +266,7 @@ export declare function packBeginMarker(): string;
  */
 export declare function packEndMarker(): string;
 /**
- * Splice the fetcher-owned `<fleet-pack>` block into `target`. When the
- * markers exist the whole region (markers inclusive) is REPLACED — that is
- * what prunes a stale entry; the region is wholly fetcher-owned, so hand
- * ignores belong outside it. When absent, the block is appended at end of
- * file, after the cascade's `<fleet>` region and the member's `<repo>`
- * wrapper, so the fleet splice's repo-region adjacency is never broken.
+ * Replace the nested fleet-pack inventory and preserve repo overrides.
  */
 export declare function splicePackBlock(config: {
   readonly packBlock: string;

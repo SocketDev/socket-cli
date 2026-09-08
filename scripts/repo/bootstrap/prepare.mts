@@ -496,6 +496,20 @@ export function resolveRepoRoot(startDir: string): string {
  */
 export async function runPrepare(): Promise<number> {
   fetchBundle()
+  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+  if (existsSync(wsPath)) {
+    const before = readFileSync(wsPath, 'utf8')
+    if (
+      /^(catalogDriftIgnore|confirmModulesPurge|managePackageManagerVersions):/m.test(
+        before,
+      )
+    ) {
+      const { migrateWorkspaceSettings } = await import(
+        pathToFileURL(path.join(HERE, 'fleet.mjs')).href
+      )
+      writeFileSync(wsPath, migrateWorkspaceSettings(REPO_ROOT, before))
+    }
+  }
   repairWorkspacePackages()
   if (!reconcileInstall()) {
     log('reconcile `pnpm install --ignore-scripts` failed')

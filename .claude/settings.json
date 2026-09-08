@@ -1,5 +1,16 @@
 {
   "// <fleet>": "Managed by socket-wheelhouse; edit the template, then cascade.",
+  "// auth": "No apiKeyHelper. Claude Code spawns that runner with neither env nor cwd, so it could never read AI_BALANCER_ENABLED, and a helper that returns nothing renders as 'apiKeyHelper failed: did not return a value' on every launch. The balancer route instead exports ANTHROPIC_API_KEY into CLAUDE_ENV_FILE from the ai-balancer-proxy-start SessionStart hook, which DOES receive the env and so can gate on the flag. Nothing persists in settings, so the claude.ai login is the default and needs no undo.",
+  "// env": "The fleet no-phone-home knobs, one copy per delivery surface. FLEET_ENV (.github/actions/fleet/setup/fleet-env.json) is the source; the shell-rc bridge and the CI workflow env already derive from it, and this block is the third surface — a Claude Code session and every tool it spawns. Kept in lockstep by claude-settings-env-matches-fleet-env.mts, so a knob added there fails this file until it is added here too.",
+  "env": {
+    "AI_BALANCER_ENABLED": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "COREPACK_ENABLE_PROJECT_SPEC": "0",
+    "DISABLE_TELEMETRY": "1",
+    "DO_NOT_TRACK": "1",
+    "NO_UPDATE_NOTIFIER": "1",
+    "OTEL_SDK_DISABLED": "true"
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -27,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/repo/bootstrap/session-fetch.mjs"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/scripts/repo/bootstrap/fetch-session.mts"
           }
         ]
       },

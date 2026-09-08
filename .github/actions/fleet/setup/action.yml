@@ -345,11 +345,14 @@ runs:
         UV_REPOSITORY="$(node "$JQ" "$TOOLS_FILE" $NS uv repository)"
         UV_REPOSITORY="${UV_REPOSITORY#github:}"
         UV_DIR="${RUNNER_TOOL_CACHE:-${RUNNER_TEMP:-/tmp}}/socket-uv/${UV_VERSION}-${PLATFORM_KEY}"
-        ASSET_STEM="${ASSET%.tar.gz}"
-        ASSET_STEM="${ASSET_STEM%.zip}"
-        UV_BIN_DIR="${UV_DIR}/${ASSET_STEM}"
-        UV_BIN="${UV_BIN_DIR}/uv"
-        [[ "$ASSET" == *.zip ]] && UV_BIN="${UV_BIN}.exe"
+        if [[ "$ASSET" == *.zip ]]; then
+          UV_BIN_DIR="$UV_DIR"
+          UV_EXECUTABLE="uv.exe"
+        else
+          UV_BIN_DIR="${UV_DIR}/${ASSET%.tar.gz}"
+          UV_EXECUTABLE="uv"
+        fi
+        UV_BIN="${UV_BIN_DIR}/${UV_EXECUTABLE}"
         if [ ! -x "$UV_BIN" ]; then
           node "$INSTALL_TOOL" "https://github.com/${UV_REPOSITORY}/releases/download/${UV_VERSION}/${ASSET}" "$INTEGRITY" "$UV_DIR"
         fi

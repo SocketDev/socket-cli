@@ -172,5 +172,10 @@
       "unix-path",
       "untrack-offenders"
     ]
+  },
+  "workspace": {
+    "catalogDriftIgnore": [
+      "typescript"
+    ]
   }
 }

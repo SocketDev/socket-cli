@@ -298,6 +298,8 @@ jobs:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasJs == 'true'
     needs: discover
     runs-on: ubuntu-latest
+    env:
+      DO_NOT_TRACK: '1'
     steps:
       - name: Bootstrap checkout
         shell: bash
@@ -329,6 +331,37 @@ jobs:
           # Both stay empty on a member with no payload App, skipping the mint.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+      - name: Resolve JS fuzz runtime
+        id: js-runtime
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const configPath = '.config/repo/socket-wheelhouse.json'
+          const config = fs.existsSync(configPath) ? JSON.parse(fs.readFileSync(configPath, 'utf8')) : {}
+          const runner = config.cover?.runner === 'bun' ? 'bun' : 'vitest'
+          let version = ''
+          if (runner === 'bun') {
+            const tools = JSON.parse(fs.readFileSync('.config/repo/external-tools.json', 'utf8'))
+            version = tools.tools?.bun?.version
+            if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+              throw new Error('Bun fuzz runtime requires an exact pin in .config/repo/external-tools.json')
+            }
+          }
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `runner=${runner}\nbun-version=${version}\n`)
+          NODE
+      - name: Setup Bun fuzz runtime
+        if: steps.js-runtime.outputs.runner == 'bun'
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          import path from 'node:path'
+          import { ensureTool } from './scripts/fleet/external-tools/manager.mts'
+          const result = await ensureTool('bun')
+          if (!result.available || !result.binPath) {
+            throw new Error(`Bun fuzz runtime installation failed: ${result.error ?? 'no executable returned'}`)
+          }
+          fs.appendFileSync(process.env.GITHUB_PATH, `${path.dirname(result.binPath)}\n`)
+          NODE
       # The vitest-runnable harnesses (`*.fuzz.test.mts` — Tier 1 property,
       # Tier 3 seeded). The ordinary suite EXCLUDES these, so this is the only
       # place they run: FLEET_TEST_FUZZ=1 flips the vitest config's include to
@@ -353,6 +386,20 @@ jobs:
             exit 0
           fi
           pnpm run test:fuzz
+      - name: Upload JS fuzz failure evidence
+        if: failure()
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          if-no-files-found: ignore
+          name: fuzz-js-failure-evidence
+          path: .cache/repo/fuzz/
+      - name: Upload JS fuzz replay corpus
+        if: always()
+        uses: ./.github/actions/fleet/upload-artifact
+        with:
+          if-no-files-found: ignore
+          name: fuzz-js-replay-corpus
+          path: .vitiate/
 
   # Weekly Go campaign: 10 min per fuzz function.
   fuzz-go:
