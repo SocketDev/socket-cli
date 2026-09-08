@@ -73,12 +73,11 @@
 .github/dependabot.yml linguist-generated=true
 .github/local-ci.Dockerfile linguist-generated=true
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
-.github/workflows/fuzz.yml linguist-generated=true
+.github/workflows/weekly-fuzz.yml linguist-generated=true
 .github/workflows/get-green.yml linguist-generated=true
 .github/workflows/github-release.yml linguist-generated=true
-.github/workflows/npm-publish-dryrun.yml linguist-generated=true
 .github/workflows/npm-publish.yml linguist-generated=true
-.github/workflows/on-device-model-cache.yml linguist-generated=true
+.github/workflows/weekly-odai-cache.yml linguist-generated=true
 .github/workflows/prune-workflow-runs.yml linguist-generated=true
 .github/workflows/release-reconcile.yml linguist-generated=true
 .github/workflows/weekly-update.yml linguist-generated=true

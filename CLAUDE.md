@@ -169,8 +169,8 @@ Advice and critical assessment ONLY - never for making code changes. Consult bef
 
 `v1.x` ships `socket`, `@socketsecurity/cli`, and `@socketsecurity/cli-with-sentry` from one tree at one version, via `.github/workflows/npm-publish.yml` on that branch - not `main`'s pipeline.
 
-- 🚨 A failure AFTER the tag step burns that version; move the hint to the next patch, never re-dispatch the same number. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage - both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- 🚨 The USER names the release version; prepare the bump commit only after they do. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- Between releases `package.json` carries an `X.Y.Z-prerelease` hint; the bump strips it and promotes CHANGELOG's `## [Unreleased]`. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
-- 🚨 `v1.x` is the consumable line and owns the `latest` dist-tag; the default branch carries the 2.x PRERELEASE line and is refused `latest`. [`releasing-v1x`](docs/agents.md/repo/releasing-v1x.md)
+- 🚨 A failure AFTER the tag step burns that version; move the hint to the next patch, never re-dispatch the same number. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
+- 🚨 Never dispatch a real run (`dry-run=false`) and never approve a stage - both are human actions, and stage approval needs browser 2FA. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
+- 🚨 The USER names the release version; prepare the bump commit only after they do. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
+- Between releases `package.json` carries an `X.Y.Z-prerelease` hint; the bump strips it and promotes CHANGELOG's `## [Unreleased]`. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
+- 🚨 `v1.x` is the consumable line and owns the `latest` dist-tag; the default branch carries the 2.x PRERELEASE line and is refused `latest`. [`releasing-v1x`](docs/repo/agents.md/releasing-v1x.md)
