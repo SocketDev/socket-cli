@@ -11,7 +11,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   buildSocketAlertsQuery,
+  fetchSocketAlerts,
   fetchSocketOrganizations,
+  fetchSocketPackageFileList,
+  fetchSocketThreatFeed,
   resolveSocketSdkForToken,
   socketApiErrorMessage,
   toSocketApiResult,
@@ -22,10 +25,13 @@ import {
 // faithfully and keeps a bare `null` literal out of the source.
 const JSON_NULL: unknown = JSON.parse('null')
 
-const { mockListOrganizations, mockSetupSdk } = vi.hoisted(() => ({
-  mockListOrganizations: vi.fn(),
-  mockSetupSdk: vi.fn(),
-}))
+const { mockGetApi, mockGetThreatFeed, mockListOrganizations, mockSetupSdk } =
+  vi.hoisted(() => ({
+    mockGetApi: vi.fn(),
+    mockGetThreatFeed: vi.fn(),
+    mockListOrganizations: vi.fn(),
+    mockSetupSdk: vi.fn(),
+  }))
 
 vi.mock(import('../../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: vi.fn(() => 'test_fake_token'),
@@ -40,8 +46,89 @@ beforeEach(() => {
     success: true,
   })
   mockSetupSdk.mockResolvedValue({
-    data: { listOrganizations: mockListOrganizations },
+    data: {
+      getApi: mockGetApi,
+      getOrgThreatFeedItems: mockGetThreatFeed,
+      listOrganizations: mockListOrganizations,
+    },
     ok: true,
+  })
+})
+
+describe('Socket API reads', () => {
+  it.each([
+    [{}, 'orgs/example%2Forg/alerts'],
+    [
+      { severity: 'high' },
+      'orgs/example%2Forg/alerts?filters.alertSeverity=high',
+    ],
+  ])(
+    'encodes the organization and forwards alert filters',
+    async (filters, path) => {
+      const data = { alerts: [{ type: 'usesEval' }] }
+      mockGetApi.mockResolvedValueOnce({ data, status: 200, success: true })
+      expect(
+        await fetchSocketAlerts(
+          'test_fake_alert_token',
+          'example/org',
+          filters,
+        ),
+      ).toEqual(data)
+      expect(mockGetApi).toHaveBeenLastCalledWith(path, {
+        responseType: 'json',
+        throws: false,
+      })
+    },
+  )
+
+  it('encodes the complete PURL as one file-list path segment', async () => {
+    const data = { files: [{ path: 'index.js' }] }
+    mockGetApi.mockResolvedValueOnce({ data, status: 200, success: true })
+    expect(
+      await fetchSocketPackageFileList(
+        'test_fake_files_token',
+        'pkg:npm/@example/package@1.0.0',
+      ),
+    ).toEqual(data)
+    expect(mockGetApi).toHaveBeenLastCalledWith(
+      'purl/file-list/pkg%3Anpm%2F%40example%2Fpackage%401.0.0',
+      { responseType: 'json', throws: false },
+    )
+  })
+
+  it('rejects an unsuccessful file-list envelope', async () => {
+    mockGetApi.mockResolvedValueOnce({ status: 403, success: false })
+    await expect(
+      fetchSocketPackageFileList(
+        'test_fake_files_failure_token',
+        'pkg:npm/example-package@1.0.0',
+      ),
+    ).rejects.toBeInstanceOf(Error)
+  })
+
+  it('passes threat-feed pagination to the SDK and returns its payload', async () => {
+    const query = { cursor: 'example-cursor', per_page: 20 }
+    const data = { items: [] }
+    mockGetThreatFeed.mockResolvedValueOnce({
+      data,
+      status: 200,
+      success: true,
+    })
+    expect(
+      await fetchSocketThreatFeed('test_fake_feed_token', 'example-org', query),
+    ).toEqual(data)
+    expect(mockGetThreatFeed).toHaveBeenLastCalledWith('example-org', query)
+  })
+
+  it('rejects an unsuccessful threat-feed envelope', async () => {
+    mockGetThreatFeed.mockResolvedValueOnce({
+      error: 'Forbidden',
+      status: 403,
+      success: false,
+    })
+    await expect(
+      fetchSocketThreatFeed('test_fake_feed_failure_token', 'example-org', {}),
+    ).rejects.toBeInstanceOf(Error)
   })
 })
 
@@ -230,6 +317,20 @@ describe('resolveSocketSdkForToken', () => {
     await expect(resolveSocketSdkForToken('token_fail')).rejects.toThrow(
       'bad proxy',
     )
+  })
+
+  it.each([
+    { message: 'Example SDK initialization failed', ok: false },
+    { ok: false },
+  ])('allows retry after SDK initialization fails', async failure => {
+    const token = failure.message
+      ? 'test_fake_retry_message_token'
+      : 'test_fake_retry_empty_token'
+    mockSetupSdk.mockResolvedValueOnce(failure)
+    await expect(resolveSocketSdkForToken(token)).rejects.toBeInstanceOf(Error)
+    const sdk = await resolveSocketSdkForToken(token)
+    expect(sdk.listOrganizations).toBe(mockListOrganizations)
+    expect(mockSetupSdk).toHaveBeenCalledTimes(2)
   })
 })
 

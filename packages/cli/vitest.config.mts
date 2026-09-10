@@ -202,6 +202,12 @@ const normalConfig = defineConfig({
       skipFull: false,
       ignoreClassMethods: ['constructor'],
       thresholds: {
+        'src/commands/mcp/**': {
+          statements: 99,
+          lines: 99,
+          functions: 98,
+          branches: 95,
+        },
         lines: 0,
         functions: 0,
         branches: 0,

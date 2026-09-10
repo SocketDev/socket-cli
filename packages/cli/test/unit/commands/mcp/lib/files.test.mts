@@ -7,14 +7,60 @@
  * Related Files: - src/commands/mcp/lib/files.mts.
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
   buildFileTree,
   extractSocketFileList,
+  fetchSocketFileList,
   formatFileSize,
   renderFileTree,
 } from '../../../../../src/commands/mcp/lib/files.mts'
+
+const { mockFetchFileList } = vi.hoisted(() => ({
+  mockFetchFileList: vi.fn(),
+}))
+
+vi.mock(import('../../../../../src/commands/mcp/lib/socket-api.mts'), () => ({
+  fetchSocketPackageFileList: mockFetchFileList,
+}))
+
+describe('fetchSocketFileList', () => {
+  it('counts files, excludes directory sizes, and preserves hashes in the tree', async () => {
+    const purl = 'pkg:npm/example-package@1.0.0'
+    mockFetchFileList.mockResolvedValueOnce({
+      files: [
+        { path: 'lib', type: 'dir', size: 4096 },
+        {
+          path: 'lib/zebra.js',
+          type: 'file',
+          size: 1024,
+          hash: 'example-hash',
+        },
+        { path: 'lib/alpha.js', type: 'file' },
+      ],
+    })
+    const result = await fetchSocketFileList('test_fake_token', purl)
+    expect(mockFetchFileList).toHaveBeenLastCalledWith('test_fake_token', purl)
+    expect(result).toMatchObject({ fileCount: 2, purl, totalBytes: 1024 })
+    expect(result.files.map(file => file.path)).toEqual([
+      'lib',
+      'lib/alpha.js',
+      'lib/zebra.js',
+    ])
+    expect(result.tree).toBe(
+      '└── lib/\n    ├── alpha.js\n    └── zebra.js  1.0K  example-hash',
+    )
+  })
+
+  it('propagates a failed manifest request', async () => {
+    const failure = new Error('Example manifest request failed')
+    mockFetchFileList.mockRejectedValueOnce(failure)
+    await expect(
+      fetchSocketFileList('test_fake_token', 'pkg:npm/example-package@1.0.0'),
+    ).rejects.toBe(failure)
+  })
+})
 
 // The API can genuinely send a JSON null; parsing one models that faithfully
 // and keeps a bare `null` literal out of the source.
