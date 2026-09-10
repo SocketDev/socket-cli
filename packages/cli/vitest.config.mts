@@ -99,7 +99,7 @@ const isMacCI = isCI && process.platform === 'darwin'
 // macOS CI runners have limited memory, so use fewer threads to prevent SIGABRT.
 export function getMaxThreads(): number {
   if (isCoverageEnabled) {
-    return 1
+    return Math.min(4, os.availableParallelism())
   }
   if (isMacCI) {
     // Use 50% of CPUs on macOS CI to prevent memory exhaustion.
