@@ -3444,6 +3444,7 @@ scripts/fleet/mcp/janus/runner.mts
 scripts/fleet/mcp/janus/workspace.mts
 scripts/fleet/mcp/playwright/run.mts
 scripts/fleet/mcp/reset.mts
+scripts/fleet/mcp/schemas.mts
 scripts/fleet/mcp/slack/client.mts
 scripts/fleet/mcp/slack/credential.mts
 scripts/fleet/mcp/slack/format.mts

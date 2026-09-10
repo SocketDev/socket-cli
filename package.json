@@ -96,7 +96,9 @@
     "setup:offload-providers": "node scripts/fleet/setup/offload-providers.mts",
     "backup": "node scripts/fleet/backup-work.mts",
     "sync-global-hooks": "node scripts/fleet/sync-global-hooks.mts",
-    "gen:glyph": "node scripts/fleet/gen/glyph.mts"
+    "gen:glyph": "node scripts/fleet/gen/glyph.mts",
+    "mcp:introspect": "node scripts/fleet/mcp/schemas.mts introspect",
+    "mcp:check": "node scripts/fleet/mcp/schemas.mts check"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -171,6 +173,7 @@
     "local-package-builder": "workspace:0.0.0",
     "magic-string": "catalog:",
     "markdownlint-cli2": "catalog:",
+    "mcp-tada": "catalog:",
     "mdast-util-from-markdown": "catalog:",
     "mdast-util-gfm": "catalog:",
     "mdast-util-to-markdown": "catalog:",

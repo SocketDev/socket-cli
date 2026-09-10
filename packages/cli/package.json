@@ -80,7 +80,9 @@
     "wasm:download": "node scripts/wasm.mts --download",
     "test:unit:all": "node --import=./scripts/load.mts scripts/test-wrapper.mts --all",
     "test:integration": "node --import=./scripts/load.mts scripts/test-wrapper.mts --config vitest.integration.config.mts --lane slow",
-    "test:mid": "node --import=./scripts/load.mts scripts/test-wrapper.mts --lane mid"
+    "test:mid": "node --import=./scripts/load.mts scripts/test-wrapper.mts --lane mid",
+    "mcp:schema:update": "mcp-tada introspect --stdio \"node dist/index.js mcp\" --env SOCKET_API_TOKEN=YOUR_API_TOKEN --env MCP_HTTP_MODE=false --timeout 10000 --json --out test/integration/mcp-schema.golden.json && pnpm --workspace-root run format packages/cli/test/integration/mcp-schema.golden.json",
+    "mcp:schema:check": "mcp-tada check --stdio \"node dist/index.js mcp\" --env SOCKET_API_TOKEN=YOUR_API_TOKEN --env MCP_HTTP_MODE=false --timeout 10000 --against test/integration/mcp-schema.golden.json"
   },
   "dependencies": {
     "@socketsecurity/odai": "0.2.1",
@@ -134,6 +136,7 @@
     "local-build-infra": "workspace:0.0.0",
     "local-package-builder": "workspace:0.0.0",
     "lru-cache": "11.2.6",
+    "mcp-tada": "catalog:",
     "micromatch": "catalog:",
     "nanotar": "catalog:",
     "npm-package-arg": "catalog:",
