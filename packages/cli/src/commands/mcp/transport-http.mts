@@ -242,6 +242,7 @@ export async function runHttpTransport(
     },
   )
 
+  let listeningPort = config.port
   const allowedOrigins = [
     'https://mcp.socket.dev',
     'https://mcp.socket-staging.dev',
@@ -250,8 +251,8 @@ export async function runHttpTransport(
 
   function validateRequestOrigin(origin: string, host: string): boolean {
     const isAllowedHost =
-      host === `localhost:${config.port}` ||
-      host === `127.0.0.1:${config.port}` ||
+      host === `localhost:${listeningPort}` ||
+      host === `127.0.0.1:${listeningPort}` ||
       host === 'localhost' ||
       host === '127.0.0.1' ||
       allowedHosts.includes(host)
@@ -277,7 +278,7 @@ export async function runHttpTransport(
     const authenticatedReq = req as AuthenticatedRequest
     let url: URL
     try {
-      url = new URL(req.url!, `http://localhost:${config.port}`)
+      url = new URL(req.url!, `http://localhost:${listeningPort}`)
     } catch (e) {
       logger.warn(`Invalid URL in request: ${req.url} - ${errorMessage(e)}`)
       writeJson(res, 400, {
@@ -336,7 +337,7 @@ export async function runHttpTransport(
       return
     }
 
-    const baseUrl = getRequestBaseUrl(req, config.port, config.trustProxy)
+    const baseUrl = getRequestBaseUrl(req, listeningPort, config.trustProxy)
 
     if (
       introspector &&
@@ -410,10 +411,14 @@ export async function runHttpTransport(
   const listenHost = introspector ? undefined : '127.0.0.1'
   await new Promise<void>(resolve => {
     const onListening = () => {
+      const address = httpServer.address()
+      if (typeof address === 'object' && address !== null) {
+        listeningPort = address.port
+      }
       logger.info(
-        `Socket MCP HTTP server version ${config.version} started successfully on port ${config.port}${listenHost ? ` (bound to ${listenHost})` : ''}`,
+        `Socket MCP HTTP server version ${config.version} started successfully on port ${listeningPort}${listenHost ? ` (bound to ${listenHost})` : ''}`,
       )
-      logger.info(`Connect to: http://localhost:${config.port}/`)
+      logger.info(`Connect to: http://localhost:${listeningPort}/`)
       resolve()
     }
     if (listenHost) {
