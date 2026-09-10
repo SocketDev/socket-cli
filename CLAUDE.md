@@ -41,7 +41,7 @@
 - The sfw CA is a PERSISTENT per-user pair (`pnpm run setup:sfw-ca`), never sfw's per-invocation tmpdir CA: pnpm's Rust tarball fetcher / cargo / uv / go fail `UnknownIssuer` on an uncached download. [`sfw-persistent-ca`](docs/fleet/agents.md/sfw-persistent-ca.md)
 - Dedup the install tree: no avoidable cross-major duplicate, and every `@socketregistry/*` hardened drop-in is redirected via `overrides:`. [`tooling`](docs/fleet/agents.md/tooling.md)
 - An override's value is MEASURED, never predicted: report surviving gateways beside every cut %. [`ecosystem-impact-measurement`](docs/fleet/agents.md/ecosystem-impact-measurement.md)
-- `pnpm run fix --all` runs the fleet doctor: auto-fixes missing `catalog:` entries, reports soak-window install failures. [`fleet-doctor`](docs/fleet/agents.md/fleet-doctor.md)
+- Every user-facing CLI provides `doctor` (diagnose, read-only) and `doctor --fix` (safe, idempotent repair); `pnpm run fix --all` runs the fleet doctor. [`fleet-doctor`](docs/fleet/agents.md/fleet-doctor.md)
 - A peer agent's number is a LEAD: re-measure or attribute it. (`.claude/hooks/fleet/stop-claim-verify-nudge/`) [`a-peers-claim-is-a-lead`](docs/fleet/agents.md/a-peers-claim-is-a-lead.md)
 - Fix a lint/type/test error or broken comment in your reading window in a sibling commit. [`judgment-and-self-evaluation`](docs/fleet/agents.md/judgment-and-self-evaluation.md)
 - "stop"/"pause" means stop FORWARD action: finish the in-flight commit, never freeze broken. (`.claude/hooks/fleet/stop-means-commit-guard/`) [`stop-means-finish-the-commit`](docs/fleet/agents.md/stop-means-finish-the-commit.md)
