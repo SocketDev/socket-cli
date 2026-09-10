@@ -20,8 +20,10 @@ import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { REPO_ROOT } from '../../../scripts/fleet/paths.mts'
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'
+import { resolvePackageTestScope } from './test-lanes.mts'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -71,6 +73,9 @@ async function main() {
       args = args.slice(1)
     }
 
+    const scope = resolvePackageTestScope(args, REPO_ROOT)
+    args = scope.args
+
     // Check for and warn about environment variables that can cause snapshot mismatches.
     // These are all aliases for the Socket API token that should not be set during tests.
     const problematicEnvVars = [
@@ -98,6 +103,7 @@ async function main() {
 
     const spawnEnv = {
       ...process.env,
+      FLEET_LANE: scope.lane,
       // Increase Node.js heap size to prevent out of memory errors.
       // Use 8GB in CI, 4GB locally.
       // Add --max-semi-space-size for better GC with RegExp-heavy tests.
@@ -147,6 +153,7 @@ async function main() {
     // On Windows, .cmd files need shell: true.
     const spawnOptions = {
       cwd: rootPath,
+      timeout: scope.timeout,
       env: {
         ...testEnv,
         ...spawnEnv,
