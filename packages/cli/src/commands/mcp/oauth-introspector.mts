@@ -295,7 +295,7 @@ export class OAuthIntrospector {
     }
     if (
       typeof authInfo.expiresAt === 'number' &&
-      authInfo.expiresAt < Date.now() / 1000
+      authInfo.expiresAt <= Date.now() / 1000
     ) {
       writeOAuthError(
         res,

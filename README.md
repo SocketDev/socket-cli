@@ -44,6 +44,37 @@ protection is no longer npm-only.
 
 See [the Socket docs](https://docs.socket.dev) for the full command reference.
 
+### MCP connections
+
+For a local stdio connection, run `socket login` once, then configure your MCP
+client to launch `socket` with arguments `["mcp"]`. Reuse saved authentication
+until it expires or the server rejects it.
+
+For the hosted service, use your client's native remote connector with
+`https://mcp.socket.dev/`. In Claude Desktop, add it through **Customize >
+Connectors**.
+
+Clients that require a stdio bridge can use the verified `mcp-remote@0.8.3`
+release. Install it with `pnpm add --global mcp-remote@0.8.3`, then configure:
+
+```json
+{
+  "mcpServers": {
+    "socket": {
+      "command": "mcp-remote",
+      "args": ["https://mcp.socket.dev/"]
+    }
+  }
+}
+```
+
+The bridge runs the OAuth callback listener on your computer. Version 0.1.49
+can open authorization after connection without starting that listener. The
+[upstream fix](https://github.com/punkpeye/mcp-remote/pull/340) is included in
+0.8.3. Update the bridge executable if authorization returns to an unavailable
+localhost callback. Reauthorization recovery was verified against the published
+bridge transport; a complete browser login remains a separate integration check.
+
 ## Development
 
 <details>

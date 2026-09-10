@@ -1122,6 +1122,74 @@ describe('runHttpTransport — auth is enforced on every request, fail-closed', 
 })
 
 describe('runHttpTransport — OAuth enabled', () => {
+  it('reuses valid credentials and challenges revoked or expired credentials before accepting a replacement', async () => {
+    const now = 1_800_000_000_000
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now)
+    let introspection = {
+      active: true,
+      client_id: 'example-client',
+      exp: now / 1000 + 60,
+      scope: 'packages:list',
+    }
+    const issuer = await mockIssuerServer({
+      introspectionResponse: () => introspection,
+    })
+    try {
+      const { port } = await startServer({
+        oauthClientId: 'cid',
+        oauthClientSecret: 'csec',
+        oauthIssuer: issuer.url,
+      })
+      const resource = `http://127.0.0.1:${port}/`
+      const metadataUrl = `${resource}.well-known/oauth-protected-resource`
+      async function listTools(token?: string | undefined) {
+        return await httpRequest(resource, {
+          headers: {
+            accept: 'application/json, text/event-stream',
+            'content-type': 'application/json',
+            ...(token ? { authorization: `Bearer ${token}` } : {}),
+          },
+          method: 'POST',
+          body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+        })
+      }
+      const missing = await listTools()
+      expect(missing.status).toBe(401)
+      expect(missing.headers['www-authenticate']).toContain(
+        `resource_metadata="${metadataUrl}"`,
+      )
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const authorized = await listTools('test_oauth_cached')
+        expect(authorized.status).toBe(200)
+        expect(authorized.headers['www-authenticate']).toBeUndefined()
+      }
+      for (const state of [
+        { active: false, exp: now / 1000 + 60 },
+        { active: true, exp: now / 1000 },
+      ]) {
+        introspection = { ...introspection, ...state }
+        const rejected = await listTools('test_oauth_cached')
+        expect(rejected.status).toBe(401)
+        expect(rejected.headers['www-authenticate']).toContain(
+          'error="invalid_token"',
+        )
+        expect(rejected.headers['www-authenticate']).toContain(
+          `resource_metadata="${metadataUrl}"`,
+        )
+        const discovery = await httpRequest(metadataUrl)
+        expect(discovery.status).toBe(200)
+        expect(discovery.json()).toMatchObject({
+          authorization_servers: [issuer.url],
+        })
+      }
+      introspection = { ...introspection, active: true, exp: now / 1000 + 60 }
+      expect((await listTools('test_oauth_replacement')).status).toBe(200)
+    } finally {
+      clock.mockRestore()
+      await issuer.close()
+    }
+  })
+
   it('proceeds through the request pipeline on a valid OAuth token', async () => {
     const issuer = await mockIssuerServer({
       introspectionResponse: {

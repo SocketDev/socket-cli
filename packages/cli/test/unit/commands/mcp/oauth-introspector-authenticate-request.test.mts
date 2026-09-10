@@ -15,7 +15,7 @@
  * - Src/commands/mcp/oauth-introspector.mts - Implementation
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { OAuthIntrospector } from '../../../../src/commands/mcp/oauth-introspector.mts'
 
@@ -99,6 +99,10 @@ const BASE_URL = new URL('https://api.example.com/')
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
 })
 
 function newIntrospector(scopes: readonly string[] = SCOPES) {
@@ -264,35 +268,40 @@ describe('OAuthIntrospector — authenticateRequest', () => {
     )
   })
 
-  it('returns 401 invalid_token when token has expired', async () => {
-    const intro = newIntrospectorWithMetadataPrimed()
-    await prime(intro)
-    const past = Math.floor(Date.now() / 1000) - 60
-    mockHttpRequest.mockResolvedValueOnce(
-      fakeResponse({
-        status: 200,
-        body: {
-          active: true,
-          client_id: 'app',
-          exp: past,
-          scope: 'packages:list',
-        },
-      }),
-    )
-    const { res, writeHead } = makeRes()
-    const result = await intro.authenticateRequest(
-      makeReq('Bearer abc'),
-      res,
-      BASE_URL,
-    )
-    expect(result.ok).toBe(false)
-    expect(writeHead).toHaveBeenCalledWith(
-      401,
-      expect.objectContaining({
-        'WWW-Authenticate': expect.stringContaining('Token has expired'),
-      }),
-    )
-  })
+  it.each([-60, 0])(
+    'returns 401 invalid_token at expiry offset %i seconds',
+    async offset => {
+      const intro = newIntrospectorWithMetadataPrimed()
+      await prime(intro)
+      const now = 1_800_000_000_000
+      vi.spyOn(Date, 'now').mockReturnValue(now)
+      const past = now / 1000 + offset
+      mockHttpRequest.mockResolvedValueOnce(
+        fakeResponse({
+          status: 200,
+          body: {
+            active: true,
+            client_id: 'app',
+            exp: past,
+            scope: 'packages:list',
+          },
+        }),
+      )
+      const { res, writeHead } = makeRes()
+      const result = await intro.authenticateRequest(
+        makeReq('Bearer abc'),
+        res,
+        BASE_URL,
+      )
+      expect(result.ok).toBe(false)
+      expect(writeHead).toHaveBeenCalledWith(
+        401,
+        expect.objectContaining({
+          'WWW-Authenticate': expect.stringContaining('Token has expired'),
+        }),
+      )
+    },
+  )
 
   it('returns 403 insufficient_scope when token lacks the required scope', async () => {
     const intro = newIntrospectorWithMetadataPrimed()
