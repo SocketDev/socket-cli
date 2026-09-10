@@ -1,11 +1,11 @@
 /**
- * Simplified meow-like CLI helper for Socket CLI. Uses socket-registry's
- * parseArgs for argument parsing.
+ * Simplified meow-like CLI helper for Socket CLI.
  */
 
-import { parseArgs } from '@socketsecurity/lib-stable/exe/argv/parse'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { readPackageJsonSync } from '@socketsecurity/lib-stable/packages/read'
+
+import { parseCliArgs } from './util/cli/parse-args.mts'
 
 import type {
   ParseArgsConfig,
@@ -13,6 +13,93 @@ import type {
 } from '@socketsecurity/lib-stable/exe/argv/parse'
 
 const logger = getDefaultLogger()
+
+export function collectMeowUnknownFlags(
+  argv: readonly string[],
+  flags: MeowFlags,
+): string[] {
+  // Collect unknown flags.
+  const unknownFlags: string[] = []
+  for (let i = 0, { length } = argv; i < length; i += 1) {
+    const arg = argv[i]
+    if (typeof arg === 'string' && arg.startsWith('-')) {
+      const flagName = arg.replace(/^-+/, '').split('=')[0] || ''
+      if (flagName && !(flagName in flags)) {
+        unknownFlags.push(arg)
+      }
+    }
+  }
+  return unknownFlags
+}
+
+export function createMeowHelp(
+  description: string | false | undefined,
+  helpText: string,
+  helpIndent: number,
+): string {
+  // Build help text.
+  let fullHelp = ''
+  if (description !== false && description) {
+    fullHelp += `\n${description}\n`
+  }
+  if (helpText) {
+    const trimmed = helpText.trim()
+    if (trimmed.includes('\n')) {
+      fullHelp +=
+        '\n' +
+        trimmed
+          .split(/\r?\n/)
+          .map(line => ' '.repeat(helpIndent) + line)
+          .join('\n')
+    } else {
+      fullHelp += `\n${trimmed}`
+    }
+  }
+  fullHelp += '\n'
+
+  return fullHelp
+}
+
+export function createMeowParseOptions(
+  flagEntries: Array<[string, MeowFlag]>,
+  flags: MeowFlags,
+): ParseArgsConfig['options'] {
+  const parseArgsOptions = new Map<string, ParseArgsOptionsConfig>()
+  for (const [name, flag] of flagEntries) {
+    const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
+    parseArgsOptions.set(name, {
+      type,
+      short: flag.shortFlag,
+      default: flag.default,
+      multiple: flag.isMultiple,
+    })
+
+    // Register the kebab-case spelling as a declared option too. yargs only
+    // camel-expands input it recognizes; an undeclared `--ignore-unresolved`
+    // for a declared `ignoreUnresolved` boolean otherwise consumes the next
+    // positional as its value and parses false.
+    const kebabName = name.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)
+    if (kebabName !== name && !(kebabName in flags)) {
+      parseArgsOptions.set(kebabName, {
+        type,
+        default: flag.default,
+        multiple: flag.isMultiple,
+      })
+    }
+
+    // Handle aliases.
+    const aliases = flag.aliases || (flag.alias ? [flag.alias].flat() : [])
+    for (let i = 0, { length } = aliases; i < length; i += 1) {
+      const alias = aliases[i]
+      parseArgsOptions.set(alias as string, {
+        type,
+        default: flag.default,
+      })
+    }
+  }
+
+  return Object.fromEntries(parseArgsOptions)
+}
 
 export interface MeowFlag {
   readonly type?: 'string' | 'boolean' | 'number' | undefined
@@ -27,7 +114,9 @@ export interface MeowFlag {
   readonly isMultiple?: boolean | undefined
 }
 
-export type MeowFlags = Record<string, MeowFlag>
+export interface MeowFlags {
+  [flagName: string]: MeowFlag
+}
 
 // Identity helper that preserves the literal flag-schema type so callers
 // can write a plain object literal (no `as const`) and still benefit
@@ -124,8 +213,8 @@ export function meow<const F extends MeowFlags = MeowFlags>(
 ): MeowResult<F> {
   const {
     argv = process.argv.slice(2),
-    autoHelp = false,
-    autoVersion = false,
+    autoHelp,
+    autoVersion,
     booleanDefault,
     collectUnknownFlags = false,
     description,
@@ -134,56 +223,11 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     importMeta,
   } = options
 
-  // Read package.json.
-  let pkg: Record<string, unknown> = {}
-  if (importMeta?.url) {
-    try {
-      const url = new URL(importMeta.url)
-      const packageJsonPath = url.pathname.replace(/\/[^/]+$/, '/package.json')
-      pkg = readPackageJsonSync(packageJsonPath) || {}
-    } catch {
-      // Fallback to empty object.
-    }
-  }
+  const pkg = readMeowPackage(importMeta)
 
-  // Convert meow flags to parseArgs options. Widen the generic `F` schema to
-  // `MeowFlags` here so `Object.entries` yields typed `MeowFlag` values —
-  // entries over a bare generic (or its `{}` fallback) degrade to `unknown`.
   const flags: MeowFlags = options.flags ?? {}
-  const parseArgsOptions: Record<string, ParseArgsOptionsConfig> = {}
   const flagEntries = Object.entries(flags)
-  for (const [name, flag] of flagEntries) {
-    const type = flag.type === 'number' ? 'string' : flag.type || 'boolean'
-    parseArgsOptions[name] = {
-      type,
-      short: flag.shortFlag,
-      default: flag.default,
-      multiple: flag.isMultiple,
-    }
-
-    // Register the kebab-case spelling as a declared option too. yargs only
-    // camel-expands input it recognizes; an undeclared `--ignore-unresolved`
-    // for a declared `ignoreUnresolved` boolean otherwise consumes the next
-    // positional as its value and parses false.
-    const kebabName = name.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)
-    if (kebabName !== name && !(kebabName in flags)) {
-      parseArgsOptions[kebabName] = {
-        type,
-        default: flag.default,
-        multiple: flag.isMultiple,
-      }
-    }
-
-    // Handle aliases.
-    const aliases = flag.aliases || (flag.alias ? [flag.alias].flat() : [])
-    for (let i = 0, { length } = aliases; i < length; i += 1) {
-      const alias = aliases[i]
-      parseArgsOptions[alias as string] = {
-        type,
-        default: flag.default,
-      }
-    }
-  }
+  const parseArgsOptions = createMeowParseOptions(flagEntries, flags)
 
   // Parse arguments.
   const config: ParseArgsConfig = {
@@ -196,65 +240,15 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     configuration: { 'greedy-arrays': false },
   }
 
-  const parsed = parseArgs(config)
+  const parsed = parseCliArgs(config)
   const input = parsed.positionals
   const flagValues = parsed.values as InferFlagValues<F>
 
-  // Convert number flags.
-  for (const [name, flag] of flagEntries) {
-    if (
-      flag.type === 'number' &&
-      typeof flagValues[name as keyof InferFlagValues<F>] === 'string'
-    ) {
-      const numValue = Number(flagValues[name as keyof InferFlagValues<F>])
-      if (!Number.isNaN(numValue)) {
-        ;(flagValues as Record<string, unknown>)[name] = numValue
-      }
-    }
-  }
-
-  // Handle boolean defaults.
-  if (booleanDefault !== undefined) {
-    for (const [name, flag] of flagEntries) {
-      if (flag.type === 'boolean' && !(name in flagValues)) {
-        ;(flagValues as Record<string, unknown>)[name] = booleanDefault
-      }
-    }
-  }
-
-  // Build help text.
-  let fullHelp = ''
-  if (description !== false && description) {
-    fullHelp += `\n${description}\n`
-  }
-  if (helpText) {
-    const trimmed = helpText.trim()
-    if (trimmed.includes('\n')) {
-      fullHelp +=
-        '\n' +
-        trimmed
-          .split(/\r?\n/)
-          .map(line => ' '.repeat(helpIndent) + line)
-          .join('\n')
-    } else {
-      fullHelp += `\n${trimmed}`
-    }
-  }
-  fullHelp += '\n'
-
-  // Collect unknown flags.
-  const unknownFlags: string[] = []
-  if (collectUnknownFlags) {
-    for (let i = 0, { length } = argv; i < length; i += 1) {
-      const arg = argv[i]
-      if (typeof arg === 'string' && arg.startsWith('-')) {
-        const flagName = arg.replace(/^-+/, '').split('=')[0] || ''
-        if (flagName && !(flagName in flags)) {
-          unknownFlags.push(arg)
-        }
-      }
-    }
-  }
+  normalizeMeowFlagValues(flagEntries, flagValues, { booleanDefault })
+  const fullHelp = createMeowHelp(description, helpText, helpIndent)
+  const unknownFlags = collectUnknownFlags
+    ? collectMeowUnknownFlags(argv, flags)
+    : []
 
   const showHelp = (exitCode = 2) => {
     logger.log(fullHelp)
@@ -290,4 +284,48 @@ export function meow<const F extends MeowFlags = MeowFlags>(
     showVersion,
     unknownFlags,
   }
+}
+
+export function normalizeMeowFlagValues(
+  flagEntries: Array<[string, MeowFlag]>,
+  flagValues: Record<string, unknown>,
+  config: { booleanDefault: boolean | null | undefined },
+): void {
+  const { booleanDefault } = config
+  // Convert number flags.
+  for (const [name, flag] of flagEntries) {
+    if (flag.type === 'number' && typeof flagValues[name] === 'string') {
+      const numValue = Number(flagValues[name])
+      if (!Number.isNaN(numValue)) {
+        flagValues[name] = numValue
+      }
+    }
+  }
+
+  // Handle boolean defaults.
+  if (booleanDefault !== undefined) {
+    for (const [name, flag] of flagEntries) {
+      if (flag.type === 'boolean' && !(name in flagValues)) {
+        flagValues[name] = booleanDefault
+      }
+    }
+  }
+}
+
+export function readMeowPackage(
+  importMeta: ImportMeta | undefined,
+): Record<string, unknown> {
+  // Read package.json.
+  let pkg: Record<string, unknown> = {}
+  if (importMeta?.url) {
+    try {
+      const url = new URL(importMeta.url)
+      const packageJsonPath = url.pathname.replace(/\/[^/]+$/, '/package.json')
+      pkg = readPackageJsonSync(packageJsonPath) || {}
+    } catch {
+      // Fallback to empty object.
+    }
+  }
+
+  return pkg
 }
