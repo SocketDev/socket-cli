@@ -84,11 +84,9 @@ function makeShadowedToolFixture(): ToolFixture {
 }
 
 function makeTempDir(): string {
-  const dir = realpathSync(
-    mkdtempSync(path.join(os.tmpdir(), 'socket-system-tool-')),
-  )
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'socket-system-tool-'))
   tempDirs.push(dir)
-  return dir
+  return realpathSync(dir)
 }
 
 function writeExecutable(dir: string, name: string): string {
@@ -106,7 +104,7 @@ afterEach(async () => {
   clearSystemToolCache()
   const dirs = tempDirs.splice(0)
   for (let i = 0, { length } = dirs; i < length; i += 1) {
-    await safeDelete(dirs[i]!)
+    await safeDelete(dirs[i]!, { maxRetries: 0 })
   }
 })
 

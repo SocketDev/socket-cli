@@ -12,7 +12,7 @@
 import { YARN } from '@socketsecurity/lib-stable/constants/package-managers'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+import { settlePromiseCallbacks } from '../../../helpers/promise-callbacks.mts'
 import { cmdYarn } from '../../../../src/commands/yarn/cmd-yarn.mts'
 
 import type { EventEmitter } from 'node:events'
@@ -129,7 +129,7 @@ describe('cmd-yarn', () => {
         exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           YARN,
@@ -149,7 +149,7 @@ describe('cmd-yarn', () => {
         exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           YARN,
@@ -169,7 +169,7 @@ describe('cmd-yarn', () => {
         exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         // Should still exit even though telemetry failed.
         expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -181,7 +181,7 @@ describe('cmd-yarn', () => {
 
         await cmdYarn.run(['install', 'lodash'], importMeta, context)
         exitHandler(undefined, undefined)
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
       })
@@ -198,7 +198,7 @@ describe('cmd-yarn', () => {
         exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(YARN, startTime, 0)
       })

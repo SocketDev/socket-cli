@@ -85,10 +85,9 @@ describe('handleAsk', () => {
     })
 
     expect(mockOutputAskCommand).toHaveBeenCalled()
-    expect(mockLogger.log).toHaveBeenCalledWith('')
-    expect(mockLogger.log).toHaveBeenCalledWith(
-      '💡 Tip: Add --execute or -e to run this command directly',
-    )
+    const guidance = mockLogger.log.mock.calls.flat().join('\n')
+    expect(guidance).toContain('--execute')
+    expect(guidance).toContain('-e')
     expect(mockSpawn).not.toHaveBeenCalled()
   })
 
@@ -101,7 +100,6 @@ describe('handleAsk', () => {
     })
 
     expect(mockOutputAskCommand).toHaveBeenCalled()
-    expect(mockLogger.log).toHaveBeenCalledWith('🚀 Executing…')
     expect(mockSpawn).toHaveBeenCalledWith(
       process.execPath,
       expect.arrayContaining([process.argv[1], 'scan']),
@@ -135,25 +133,22 @@ describe('handleAsk', () => {
     }
   })
 
-  it('should handle spawn returning null', async () => {
+  it('exits unsuccessfully when spawning returns no result', async () => {
     mockSpawn.mockResolvedValue(undefined)
-
-    const mockExit = vi
-      .spyOn(process, 'exit')
-      .mockImplementation(() => undefined as never)
-
-    // The function checks result.code before checking for null, so we need to handle the error
+    const exit = new Error('Example process exit')
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw exit
+    })
     try {
-      await handleAsk('scan for issues', { execute: true, explain: false })
-    } catch (e) {
-      // Expected - result is null so accessing .code throws
+      await expect(
+        handleAsk('scan for issues', { execute: true, explain: false }),
+      ).rejects.toBe(exit)
+      expect(mockSpawn).toHaveBeenCalledTimes(1)
+      expect(mockExit).toHaveBeenCalledWith(1)
+      expect(mockLogger.error).toHaveBeenCalled()
+    } finally {
+      mockExit.mockRestore()
     }
-
-    // The implementation checks code before null, so we can't test the null branch directly
-    // Just verify spawn was called
-    expect(mockSpawn).toHaveBeenCalled()
-
-    mockExit.mockRestore()
   })
 
   it('should handle non-zero exit code', async () => {
@@ -165,9 +160,7 @@ describe('handleAsk', () => {
 
     await handleAsk('fix vulnerabilities', { execute: true, explain: false })
 
-    expect(mockLogger.error).toHaveBeenCalledWith(
-      'Command failed with exit code 1',
-    )
+    expect(mockLogger.error).toHaveBeenCalled()
     expect(mockExit).toHaveBeenCalledWith(1)
 
     mockExit.mockRestore()

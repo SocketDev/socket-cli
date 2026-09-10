@@ -11,7 +11,17 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+import { settlePromiseCallbacks } from '../../../helpers/promise-callbacks.mts'
+
+const { mockSleep, mockEnsurePython, mockEnsureSocketPyCli } = vi.hoisted(
+  () => ({
+    mockSleep: vi.fn(),
+    mockEnsurePython: vi.fn(),
+    mockEnsureSocketPyCli: vi.fn(),
+  }),
+)
+
+vi.mock(import('node:timers/promises'), () => ({ setTimeout: mockSleep }))
 
 // Mock all external dependencies.
 const mockDownloadPackage = vi.hoisted(() =>
@@ -39,8 +49,8 @@ const mockVitest = vi.hoisted(() => ({ VITEST: true }))
 vi.mock(import('../../../../src/env/vitest.mts'), () => mockVitest)
 
 vi.mock(import('../../../../src/util/python/standalone.mts'), () => ({
-  ensurePythonDlx: vi.fn().mockResolvedValue('/usr/bin/python3'),
-  ensureSocketPyCli: vi.fn().mockResolvedValue(undefined),
+  ensurePythonDlx: mockEnsurePython,
+  ensureSocketPyCli: mockEnsureSocketPyCli,
 }))
 
 describe('preflight downloads', () => {
@@ -48,6 +58,11 @@ describe('preflight downloads', () => {
     vi.clearAllMocks()
     vi.resetModules()
     mockGetCI.mockReturnValue(false)
+    mockVitest.VITEST = true
+    mockDownloadPackage.mockReset().mockResolvedValue(undefined)
+    mockSleep.mockReset().mockResolvedValue(undefined)
+    mockEnsurePython.mockReset().mockResolvedValue('/usr/bin/python3')
+    mockEnsureSocketPyCli.mockReset().mockResolvedValue(undefined)
   })
 
   describe('runPreflightDownloads', () => {
@@ -73,6 +88,7 @@ describe('preflight downloads', () => {
     })
 
     it('only runs once per module load', async () => {
+      mockVitest.VITEST = false
       const { runPreflightDownloads } =
         await import('../../../../src/util/preflight/downloads.mts')
 
@@ -80,10 +96,10 @@ describe('preflight downloads', () => {
       runPreflightDownloads()
       runPreflightDownloads()
 
-      // Function should guard against multiple calls.
-      // Since VITEST is mocked to true, no downloads happen anyway.
-      // But the function should track that it's been called.
-      expect(true).toBe(true)
+      await settlePromiseCallbacks()
+      expect(mockDownloadPackage).toHaveBeenCalledTimes(2)
+      expect(mockEnsurePython).toHaveBeenCalledOnce()
+      expect(mockEnsureSocketPyCli).toHaveBeenCalledOnce()
     })
 
     it('swallows errors thrown inside the background async closure', async () => {
@@ -94,20 +110,20 @@ describe('preflight downloads', () => {
       const { runPreflightDownloads } =
         await import('../../../../src/util/preflight/downloads.mts')
 
-      // Should not throw / reject.
-      runPreflightDownloads()
-      await new Promise(resolve => setTimeout(resolve, tolerantSleep(50)))
-      // No assertion needed — test just verifies no unhandled rejection.
-      expect(true).toBe(true)
-      mockVitest.VITEST = true
+      expect(() => runPreflightDownloads()).not.toThrow()
+      await settlePromiseCallbacks()
+      expect(mockDownloadPackage).toHaveBeenCalledOnce()
+      expect(mockDownloadPackage).toHaveBeenCalledWith({
+        binaryName: 'coana',
+        force: false,
+        spec: '@coana-tech/cli@1.0.0',
+      })
+      expect(mockSleep).not.toHaveBeenCalled()
+      expect(mockEnsurePython).not.toHaveBeenCalled()
+      expect(mockEnsureSocketPyCli).not.toHaveBeenCalled()
     })
 
     it('runs the full download chain when not in CI/vitest', async () => {
-      // Mock node:timers/promises sleep to resolve immediately so the test
-      // doesn't actually wait 4 seconds for the staggered delays.
-      vi.doMock(import('node:timers/promises'), () => ({
-        setTimeout: () => Promise.resolve(),
-      }))
       mockVitest.VITEST = false
       mockGetCI.mockReturnValue(false)
       mockDownloadPackage.mockResolvedValue(undefined)
@@ -115,22 +131,20 @@ describe('preflight downloads', () => {
       const { runPreflightDownloads } =
         await import('../../../../src/util/preflight/downloads.mts')
       runPreflightDownloads()
-      // Allow the background closure to drain.
-      await new Promise(resolve => setImmediate(resolve))
-      await new Promise(resolve => setImmediate(resolve))
-      await new Promise(resolve => setImmediate(resolve))
-
-      // Coana + cdxgen should have been queued.
-      expect(mockDownloadPackage).toHaveBeenCalled()
-      const specs = mockDownloadPackage.mock.calls.map(
-        (c: unknown) => (c[0] as { spec: string }).spec,
-      )
-      expect(specs.some((s: string) => s.startsWith('@coana-tech/cli@'))).toBe(
-        true,
-      )
-
-      mockVitest.VITEST = true
-      vi.doUnmock(import('node:timers/promises'))
+      await settlePromiseCallbacks()
+      expect(mockDownloadPackage.mock.calls).toEqual([
+        [{ binaryName: 'coana', force: false, spec: '@coana-tech/cli@1.0.0' }],
+        [
+          {
+            binaryName: 'cdxgen',
+            force: false,
+            spec: '@cyclonedx/cdxgen@10.0.0',
+          },
+        ],
+      ])
+      expect(mockSleep.mock.calls).toEqual([[2000], [2000]])
+      expect(mockEnsurePython).toHaveBeenCalledOnce()
+      expect(mockEnsureSocketPyCli).toHaveBeenCalledWith('/usr/bin/python3')
     })
   })
 })

@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
-import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+import { settlePromiseCallbacks } from '../../../helpers/promise-callbacks.mts'
 import { cmdNpm } from '../../../../src/commands/npm/cmd-npm.mts'
 
 import type { EventEmitter } from 'node:events'
@@ -193,7 +193,7 @@ describe('cmd-npm', () => {
         exitHandler(42, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           NPM,
@@ -213,7 +213,7 @@ describe('cmd-npm', () => {
         exitHandler(undefined, 'SIGTERM')
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(
           NPM,
@@ -233,7 +233,7 @@ describe('cmd-npm', () => {
         exitHandler(1, undefined)
 
         // Wait for telemetry promise to reject and catch handler to run.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         // Should still exit even though telemetry failed.
         expect(mockProcessExit).toHaveBeenCalledWith(1)
@@ -249,7 +249,7 @@ describe('cmd-npm', () => {
         exitHandler(undefined, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockProcessExit).not.toHaveBeenCalled()
         expect(mockProcessKill).not.toHaveBeenCalled()
@@ -267,7 +267,7 @@ describe('cmd-npm', () => {
         exitHandler(0, undefined)
 
         // Wait for telemetry promise to resolve.
-        await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+        await settlePromiseCallbacks()
 
         expect(mockTrackSubprocessExit).toHaveBeenCalledWith(NPM, startTime, 0)
       })

@@ -9,7 +9,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+import { TelemetryService } from '../../../../src/util/telemetry/service.mts'
+import { settlePromiseCallbacks } from '../../../helpers/promise-callbacks.mts'
 
 // Mock setupSdk.
 const mockSetupSdk = vi.hoisted(() => vi.fn())
@@ -19,8 +20,6 @@ const mockPostOrgTelemetry = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
-
-import { TelemetryService } from '../../../../src/util/telemetry/service.mts'
 
 describe('TelemetryService', () => {
   beforeEach(() => {
@@ -60,7 +59,11 @@ describe('TelemetryService', () => {
   describe('concurrent initialization', () => {
     it('handles concurrent calls to getTelemetryClient', async () => {
       // Simulate concurrent calls.
-      const [client1, client2, client3] = await Promise.all([
+      const {
+        0: client1,
+        1: client2,
+        2: client3,
+      } = await Promise.all([
         TelemetryService.getTelemetryClient('test-org'),
         TelemetryService.getTelemetryClient('test-org'),
         TelemetryService.getTelemetryClient('test-org'),
@@ -156,8 +159,7 @@ describe('TelemetryService', () => {
         })
       }
 
-      // Give time for auto-flush to complete.
-      await new Promise(resolve => setTimeout(resolve, tolerantSleep(100)))
+      await settlePromiseCallbacks()
 
       // Events should have been sent.
       expect(mockPostOrgTelemetry).toHaveBeenCalled()

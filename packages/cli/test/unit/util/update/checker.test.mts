@@ -82,6 +82,7 @@ describe('update/checker', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.useRealTimers()
   })
 
   describe('isUpdateAvailable', () => {
@@ -289,6 +290,7 @@ describe('update/checker', () => {
     })
 
     it('throws error when version is missing from response', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
       const mockRes = createMockResponse(200)
       const mockReq = createMockRequest()
 
@@ -303,9 +305,12 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(
+      const rejected = expect(
         NetworkUtils.getLatestVersion('test-package'),
-      ).rejects.toThrow(/responded without a \.version string/)
+      ).rejects.toBeInstanceOf(Error)
+      await vi.runAllTimersAsync()
+      await rejected
+      expect(mockRequest).toHaveBeenCalledTimes(3)
     })
   })
 
@@ -394,6 +399,7 @@ describe('update/checker', () => {
     })
 
     it('throws error when registry fetch fails', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
       const mockReq = createMockRequest()
 
       mockRequest.mockImplementation(() => {
@@ -403,10 +409,16 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
+      const rejected = expect(
+        checkForUpdates('test-package', '1.0.0'),
+      ).rejects.toBeInstanceOf(Error)
+      await vi.runAllTimersAsync()
+      await rejected
+      expect(mockRequest).toHaveBeenCalledTimes(3)
     })
 
     it('throws when registry returns no version field', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
       // Make getLatestVersion's parse path return JSON with version: ''.
       // After 3 retry attempts the inner throw escapes.
       const mockReq = createMockRequest()
@@ -422,7 +434,12 @@ describe('update/checker', () => {
         return mockReq
       })
 
-      await expect(checkForUpdates('test-package', '1.0.0')).rejects.toThrow()
+      const rejected = expect(
+        checkForUpdates('test-package', '1.0.0'),
+      ).rejects.toBeInstanceOf(Error)
+      await vi.runAllTimersAsync()
+      await rejected
+      expect(mockRequest).toHaveBeenCalledTimes(3)
     })
   })
 })

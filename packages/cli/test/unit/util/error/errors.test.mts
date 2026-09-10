@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { UNKNOWN_ERROR } from '@socketsecurity/lib-stable/constants/sentinels'
 
@@ -36,6 +36,12 @@ import {
 } from '../../../../src/util/error/errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
+const { mockSleep } = vi.hoisted(() => ({
+  mockSleep: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock(import('node:timers/promises'), () => ({ setTimeout: mockSleep }))
+
 const __dirname = path.dirname(__filename)
 
 describe('Error Classes', () => {
@@ -203,8 +209,10 @@ describe('Error Classes', () => {
     it('captureException returns "" when Sentry is not configured', async () => {
       const { captureException } =
         await import('../../../../src/util/error/errors.mts')
+      mockSleep.mockClear()
       const result = await captureException(new Error('boom'))
       expect(result).toBe('')
+      expect(mockSleep).toHaveBeenCalledWith(1000)
     })
   })
 

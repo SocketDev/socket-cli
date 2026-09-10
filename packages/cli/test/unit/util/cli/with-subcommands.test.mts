@@ -14,7 +14,7 @@
  * Related Files: - util/cli/with-subcommands.mts (implementation)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { meow } from '../../../../src/meow.mts'
 import {
@@ -31,6 +31,14 @@ import {
   stripAnsi,
 } from '../../../../src/util/cli/with-subcommands.mts'
 
+const { showHelpError, showVersionError, processExitError } = vi.hoisted(
+  () => ({
+    showHelpError: new Error('SHOW_HELP'),
+    showVersionError: new Error('SHOW_VERSION'),
+    processExitError: new Error('process.exit called'),
+  }),
+)
+
 // Mock meow.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
 const mockIsConfigFromFlag = vi.hoisted(() => vi.fn(() => false))
@@ -45,14 +53,18 @@ vi.mock(import('../../../../src/meow.mts'), () => ({
   // validationFlags) and by per-command flag blocks. Test mock just
   // returns the schema unchanged.
   defineFlags: <T,>(flags: T): T => flags,
-  meow: vi.fn((helpText, options) => {
+  meow: vi.fn((helpTextOrOptions, passedOptions) => {
+    const options =
+      typeof helpTextOrOptions === 'object' ? helpTextOrOptions : passedOptions
+    const helpText =
+      typeof helpTextOrOptions === 'string' ? helpTextOrOptions : options?.help
     // Simulate meow processing flags with defaults.
     const argv = options?.argv || []
     const processedFlags = {}
     if (options?.flags) {
       for (const [key, flag] of Object.entries(options.flags)) {
         // Check if flag is present in argv.
-        const flagName = `--${key}`
+        const flagName = `--${key.replace(/[A-Z]/gu, letter => `-${letter.toLowerCase()}`)}`
         const shortFlag = flag.shortFlag ? `-${flag.shortFlag}` : undefined
         const isPresent =
           argv.includes(flagName) || (shortFlag && argv.includes(shortFlag))
@@ -61,20 +73,19 @@ vi.mock(import('../../../../src/meow.mts'), () => ({
         if (isPresent && flag.type === 'boolean') {
           processedFlags[key] = true
         } else {
-          processedFlags[key] =
-            flag.default !== undefined ? flag.default : undefined
+          processedFlags[key] = flag.default
         }
       }
     }
     return {
       flags: processedFlags,
-      input: options?.argv || [],
+      input: argv,
       help: helpText || '',
       showHelp: vi.fn(() => {
-        throw new Error('SHOW_HELP')
+        throw showHelpError
       }),
       showVersion: vi.fn(() => {
-        throw new Error('SHOW_VERSION')
+        throw showVersionError
       }),
     }
   }),
@@ -118,14 +129,16 @@ vi.mock(import('../../../../src/util/terminal/link.mts'), () => ({
   socketPackageLink: mockSocketPackageLink,
 }))
 
-// Mock process.exit.
-vi.spyOn(process, 'exit').mockImplementation(() => {
-  throw new Error('process.exit called')
-})
-
 describe('meow-with-subcommands', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.spyOn(process, 'exit').mockImplementation(() => {
+      throw processExitError
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   describe('meowOrExit', () => {
@@ -717,19 +730,14 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      // No argv → root help path.
-      // showHelp throws in our mock to simulate process.exit, so we just
-      // verify it didn't crash.
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: [],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showHelp throw is expected.
-      }
+        }),
+      ).rejects.toBe(showHelpError)
       // None of the subcommands should have actually run.
       expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
@@ -741,16 +749,14 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'subgroup',
           argv: [],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showHelp throw is expected.
-      }
+        }),
+      ).rejects.toBe(showHelpError)
       expect(subcommands.nested.run).not.toHaveBeenCalled()
     })
 
@@ -762,8 +768,8 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      try {
-        await meowWithSubcommands(
+      await expect(
+        meowWithSubcommands(
           {
             name: 'socket',
             argv: [],
@@ -775,12 +781,12 @@ describe('meow-with-subcommands', () => {
               s: { argv: ['scan'], description: 'alias of scan' },
             },
           },
-        )
-      } catch {
-        // showHelp throw is expected.
-      }
-      // Just confirm no crash.
-      expect(true).toBe(true)
+        ),
+      ).rejects.toBe(showHelpError)
+      expect(vi.mocked(meow).mock.lastCall?.[0].help).not.toContain(
+        'alias of scan',
+      )
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
 
     it('shows --help-full output for root command when flag passed', async () => {
@@ -790,17 +796,17 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: ['--help-full'],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showHelp throw is expected.
-      }
-      expect(true).toBe(true)
+        }),
+      ).rejects.toBe(showHelpError)
+      expect(vi.mocked(meow).mock.lastCall?.[0].help).toContain(
+        'Environment variables for development',
+      )
     })
 
     it('shows --help-full bucketed help with all canonical subcommands', async () => {
@@ -850,40 +856,35 @@ describe('meow-with-subcommands', () => {
         whoami: stub('whoami'),
         wrapper: stub('wrapper'),
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: ['--help-full'],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showHelp throw is expected.
-      }
-      expect(true).toBe(true)
+        }),
+      ).rejects.toBe(showHelpError)
+      expect(vi.mocked(meow).mock.lastCall?.[0].help).toContain(
+        'Environment variables for development',
+      )
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
 
-    it('reports unknown subcommand and missing canonical commands when subcommands are partial', async () => {
-      // `extra` is NOT in the canonical Set → triggers
-      // `logger.fail('Received an unknown command:', name)` (line 697-698).
-      // Missing canonical commands trigger the `if (commands.size)` block
-      // (lines 700-711). Together this exercises both branches of the
-      // canonical-Set diff loop.
+    it('renders root help for a partial command set without dispatching a command', async () => {
       const subcommands = {
         scan: { description: 'scan', run: vi.fn(async () => undefined) },
         extra: { description: 'extra', run: vi.fn(async () => undefined) },
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: [],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showHelp throw is expected.
-      }
-      expect(true).toBe(true)
+        }),
+      ).rejects.toBe(showHelpError)
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
+      expect(subcommands.extra.run).not.toHaveBeenCalled()
     })
 
     it('handles dryRun without --help', async () => {
@@ -893,17 +894,16 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: ['--dry-run'],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // process.exit throw is expected.
-      }
-      expect(true).toBe(true)
+        }),
+      ).rejects.toBe(processExitError)
+      expect(process.exit).toHaveBeenCalledWith(0)
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
 
     it('handles --version flag at root level', async () => {
@@ -913,17 +913,18 @@ describe('meow-with-subcommands', () => {
           run: vi.fn(async () => undefined),
         },
       }
-      try {
-        await meowWithSubcommands({
+      await expect(
+        meowWithSubcommands({
           name: 'socket',
           argv: ['--version'],
           importMeta: import.meta,
           subcommands,
-        })
-      } catch {
-        // showVersion throw is expected.
-      }
-      expect(true).toBe(true)
+        }),
+      ).rejects.toBe(showVersionError)
+      expect(
+        vi.mocked(meow).mock.results.at(-1)?.value.showVersion,
+      ).toHaveBeenCalledOnce()
+      expect(subcommands.scan.run).not.toHaveBeenCalled()
     })
 
     it('suggests close-match command for typos (lines 414-418)', async () => {

@@ -8,7 +8,7 @@
  * integration.test.mts (the tracking-side tests).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockHomedir = vi.hoisted(() => vi.fn(() => '/Users/testuser'))
 const signals = { SIGHUP: 1, SIGINT: 2, SIGTERM: 15 }
@@ -37,6 +37,10 @@ describe('setupTelemetryExitHandlers', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   async function captureHandlers() {
@@ -91,14 +95,17 @@ describe('setupTelemetryExitHandlers', () => {
   })
 
   it('skips re-registration on a duplicate call', async () => {
+    const handlers = await captureHandlers()
     const { setupTelemetryExitHandlers } =
       await import('../../../../src/util/telemetry/integration.mts')
-    setupTelemetryExitHandlers()
-    const processOnSpy = vi.spyOn(process, 'on')
+    const processOnSpy = vi
+      .spyOn(process, 'on')
+      .mockImplementation(() => process)
 
     setupTelemetryExitHandlers()
 
     expect(processOnSpy).not.toHaveBeenCalled()
+    expect(handlers.size).toBe(4)
     processOnSpy.mockRestore()
   })
 })

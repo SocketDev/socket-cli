@@ -48,7 +48,7 @@ const EXEC_BIT_IS_ENFORCED = process.platform !== 'win32'
 
 const SHADOWED_TOOLS = ['git', 'node', 'npm', 'sbt', 'tar']
 
-let baseDir = ''
+let tempDir = ''
 let checkoutRoot = ''
 let searchPath = ''
 let shimDirs: string[] = []
@@ -62,9 +62,8 @@ function writeExecutable(dir: string, name: string): string {
 }
 
 beforeAll(() => {
-  baseDir = realpathSync(
-    mkdtempSync(path.join(os.tmpdir(), 'socket-hostile-checkout-')),
-  )
+  tempDir = mkdtempSync(path.join(os.tmpdir(), 'socket-hostile-checkout-'))
+  const baseDir = realpathSync(tempDir)
   checkoutRoot = path.join(baseDir, 'checkout')
   systemBin = path.join(baseDir, 'usr', 'bin')
   const checkoutBin = path.join(checkoutRoot, 'bin')
@@ -94,7 +93,7 @@ beforeAll(() => {
 
 afterAll(async () => {
   clearSystemToolCache()
-  await safeDelete(baseDir)
+  await safeDelete(tempDir, { maxRetries: 0 })
 })
 
 beforeEach(() => {

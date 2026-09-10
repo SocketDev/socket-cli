@@ -70,15 +70,15 @@ async function resolveMavenHome(
 
 describe('maven-extension build-jar.sh cache root', () => {
   let workDir: string
+  let tempDir: string
 
   beforeEach(() => {
-    workDir = realpathSync(
-      mkdtempSync(path.join(os.tmpdir(), 'build-jar-test-')),
-    )
+    tempDir = mkdtempSync(path.join(os.tmpdir(), 'build-jar-test-'))
+    workDir = realpathSync(tempDir)
   })
 
   afterEach(async () => {
-    await safeDelete(workDir)
+    await safeDelete(tempDir, { maxRetries: 0 })
   })
 
   it('anchors a relative SOCKET_CLI_MAVEN_HOME to the caller, not the extension directory', async () => {

@@ -11,7 +11,9 @@
  * gitlab-provider-list-prs.test.mts.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
 // Mock @gitbeaker/rest.
 const mockCreate = vi.hoisted(() => vi.fn())
@@ -42,18 +44,18 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debugDir: vi.fn(),
 }))
 
-// Set GITLAB_TOKEN env var before importing.
-process.env['GITLAB_TOKEN'] = 'test-token'
-
-import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
-
 describe('git/gitlab-provider', () => {
   let provider: GitLabProvider
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env['GITLAB_TOKEN'] = 'test-token'
+    vi.stubEnv('GITLAB_TOKEN', 'test-token')
     provider = new GitLabProvider()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
   })
 
   describe('constructor', () => {
@@ -153,6 +155,7 @@ describe('git/gitlab-provider', () => {
     })
 
     it('retries on failure', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
       mockCreate.mockRejectedValueOnce(new Error('Network error'))
       mockCreate.mockResolvedValueOnce({
         iid: 123,
@@ -160,7 +163,7 @@ describe('git/gitlab-provider', () => {
         web_url: 'https://gitlab.com/owner/repo/-/merge_requests/123',
       })
 
-      const result = await provider.createPr({
+      const pending = provider.createPr({
         base: 'main',
         body: 'Test',
         head: 'feature',
@@ -170,14 +173,17 @@ describe('git/gitlab-provider', () => {
         title: 'Test',
       })
 
+      await vi.runAllTimersAsync()
+      const result = await pending
       expect(result.number).toBe(123)
       expect(mockCreate).toHaveBeenCalledTimes(2)
     })
 
     it('throws after max retries', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
       mockCreate.mockRejectedValue(new Error('Network error'))
 
-      await expect(
+      const rejected = expect(
         provider.createPr({
           base: 'main',
           body: 'Test',
@@ -190,6 +196,9 @@ describe('git/gitlab-provider', () => {
       ).rejects.toThrow(
         /GitLab API rejected createMergeRequest for owner\/repo .*after 2 attempts/,
       )
+      await vi.runAllTimersAsync()
+      await rejected
+      expect(mockCreate).toHaveBeenCalledTimes(2)
     })
 
     it('does not retry on 400 errors', async () => {

@@ -11,7 +11,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { tolerantSleep } from '../../../../../../test/fleet/_shared/lib/timing.mts'
+import { TelemetryService } from '../../../../src/util/telemetry/service.mts'
+import { settlePromiseCallbacks } from '../../../helpers/promise-callbacks.mts'
 
 // Mock setupSdk.
 const mockSetupSdk = vi.hoisted(() => vi.fn())
@@ -21,8 +22,6 @@ const mockPostOrgTelemetry = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   setupSdk: mockSetupSdk,
 }))
-
-import { TelemetryService } from '../../../../src/util/telemetry/service.mts'
 
 describe('TelemetryService', () => {
   beforeEach(() => {
@@ -190,7 +189,7 @@ describe('TelemetryService', () => {
         context: {},
       })
       // Allow microtasks to settle.
-      await new Promise(resolve => setTimeout(resolve, tolerantSleep(10)))
+      await settlePromiseCallbacks()
       expect(mockPostOrgTelemetry).not.toHaveBeenCalled()
     })
 

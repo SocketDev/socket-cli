@@ -9,6 +9,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { downloadGitHubReleaseBinary } from '../../../../src/util/dlx/spawn.mts'
+
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
 const mockGetDlxCachePath = vi.hoisted(() => vi.fn(() => '/tmp/dlx-cache'))
@@ -89,8 +91,6 @@ vi.mock(import('node:fs'), () => ({
     },
   },
 }))
-
-import { downloadGitHubReleaseBinary } from '../../../../src/util/dlx/spawn.mts'
 
 describe('downloadGitHubReleaseBinary', () => {
   const baseSpec = {
@@ -354,6 +354,7 @@ describe('downloadGitHubReleaseBinary', () => {
   })
 
   it('waits and retries when the lock file already exists (alive PID)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     const eexistErr = Object.assign(new Error('EEXIST'), { code: 'EEXIST' })
     // First writeFile rejects with EEXIST; binary appears after waiting.
     let writeAttempt = 0
@@ -376,10 +377,13 @@ describe('downloadGitHubReleaseBinary', () => {
     const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
 
     try {
-      const result = await downloadGitHubReleaseBinary(baseSpec)
+      const pending = downloadGitHubReleaseBinary(baseSpec)
+      await vi.runAllTimersAsync()
+      const result = await pending
       expect(result).toContain('tool')
     } finally {
       killSpy.mockRestore()
+      vi.useRealTimers()
     }
   })
 

@@ -20,7 +20,6 @@ import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { extractBazelToPypi } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_pypi.mts'
-import { tolerantTimeout } from '../../../../../../../test/fleet/_shared/lib/timing.mts'
 
 const testDir = path.dirname(fileURLToPath(import.meta.url))
 
@@ -73,64 +72,60 @@ describe.skipIf(isSandboxed() || !existsSync(FIXTURE_DIR))(
       await safeDelete(tmp)
     })
 
-    it(
-      'produces exact requirements.txt matching the committed oracle',
-      async () => {
-        expect(existsSync(FIXTURE_DIR)).toBe(true)
+    it('produces exact requirements.txt matching the committed oracle', async () => {
+      expect(existsSync(FIXTURE_DIR)).toBe(true)
 
-        const result = await extractBazelToPypi({
-          bazelFlags: undefined,
-          bazelOutputBase: undefined,
-          bazelRc: undefined,
-          bin: undefined,
-          cwd: FIXTURE_DIR,
-          out: tmp,
-          verbose: true,
-        })
+      const result = await extractBazelToPypi({
+        bazelFlags: undefined,
+        bazelOutputBase: undefined,
+        bazelRc: undefined,
+        bin: undefined,
+        cwd: FIXTURE_DIR,
+        out: tmp,
+        verbose: true,
+      })
 
-        expect(result.ok).toBe(true)
-        expect(result.manifestPath).toBeDefined()
-        expect(existsSync(result.manifestPath!)).toBe(true)
+      expect(result.ok).toBe(true)
+      expect(result.manifestPath).toBeDefined()
+      expect(existsSync(result.manifestPath!)).toBe(true)
 
-        const actualContent = normalizeFinalNewline(
-          readFileSync(result.manifestPath!, 'utf8'),
-        )
-        const actualLines = actualContent
-          .split(/\r?\n/)
-          .filter(l => l.trim() !== '')
+      const actualContent = normalizeFinalNewline(
+        readFileSync(result.manifestPath!, 'utf8'),
+      )
+      const actualLines = actualContent
+        .split(/\r?\n/)
+        .filter(l => l.trim() !== '')
 
-        const oraclePath = path.resolve(
-          testDir,
-          '..',
-          '..',
-          '..',
-          '..',
-          'fixtures',
-          'manifest-bazel',
-          'python-pypi',
-          'requirements.golden.txt',
-        )
-        const expectedContent = normalizeFinalNewline(
-          readFileSync(oraclePath, 'utf8'),
-        )
-        expect(actualContent).toBe(expectedContent)
+      const oraclePath = path.resolve(
+        testDir,
+        '..',
+        '..',
+        '..',
+        '..',
+        'fixtures',
+        'manifest-bazel',
+        'python-pypi',
+        'requirements.golden.txt',
+      )
+      const expectedContent = normalizeFinalNewline(
+        readFileSync(oraclePath, 'utf8'),
+      )
+      expect(actualContent).toBe(expectedContent)
 
-        // Verify sorted order (sort by package name only, matching
-        // sortPackageLines).
-        const sorted = [...actualLines].toSorted((a, b) => {
-          const aName = a.split('==')[0]!.toLowerCase()
-          const bName = b.split('==')[0]!.toLowerCase()
-          if (aName < bName) {
-            return -1
-          }
-          if (aName > bName) {
-            return 1
-          }
-          return a.localeCompare(b)
-        })
-        expect(actualLines).toEqual(sorted)
-      },
-      tolerantTimeout(60_000),
-    )
+      // Verify sorted order (sort by package name only, matching
+      // sortPackageLines).
+      const sorted = [...actualLines].toSorted((a, b) => {
+        const aName = a.split('==')[0]!.toLowerCase()
+        const bName = b.split('==')[0]!.toLowerCase()
+        if (aName < bName) {
+          return -1
+        }
+        if (aName > bName) {
+          return 1
+        }
+        return a.localeCompare(b)
+      })
+      expect(actualLines).toEqual(sorted)
+    })
   },
 )
