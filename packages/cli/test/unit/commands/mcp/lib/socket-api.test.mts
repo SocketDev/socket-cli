@@ -329,7 +329,7 @@ describe('resolveSocketSdkForToken', () => {
     mockSetupSdk.mockResolvedValueOnce(failure)
     await expect(resolveSocketSdkForToken(token)).rejects.toBeInstanceOf(Error)
     const sdk = await resolveSocketSdkForToken(token)
-    expect(sdk.listOrganizations).toBe(mockListOrganizations)
+    expect(sdk).toHaveProperty('listOrganizations', mockListOrganizations)
     expect(mockSetupSdk).toHaveBeenCalledTimes(2)
   })
 })
