@@ -18,3 +18,39 @@
 	shallow = true
 	sparse-checkout = /lib/ /index.ts
 	verify = none
+
+# no-release-tag: Development reference pins the explicitly selected main commit.
+# socket-scan-patterns-main (2026-09-08) sha256:05e8d74c172adcb0a560f61442e33d962a6ccbf2cc567bb3c65ff973d05c4162
+[submodule "upstream/socket-scan-patterns"]
+	ignore = dirty
+	ref = 1db61636b5fa0693873b29dc171e855f54c48696
+	path = upstream/socket-scan-patterns
+	url = https://github.com/SocketDev/socket-scan-patterns.git
+	branch = main
+	shallow = true
+	sparse-checkout = src data
+	verify = none
+
+# no-release-tag: Development reference pins the explicitly selected main commit.
+# sdxgen-main (2026-09-10) sha256:bdc798ee3c6df237f167e9ea484c71e1639950358c89e5f8c593ed3f4c4fdfa9
+[submodule "upstream/sdxgen"]
+	ignore = dirty
+	ref = fa0671a21b1bef484b475487979342a73519bc7a
+	path = upstream/sdxgen
+	url = https://github.com/SocketDev/sdxgen.git
+	branch = main
+	shallow = true
+	sparse-checkout = src test
+	verify = none
+
+# no-release-tag: Development reference pins the explicitly selected main commit.
+# socket-patch-main (2026-09-08) sha256:40c6e9c3f5663a32d73eb2f3398be23ec2ea15f356a2a56fadc7749662dd3b49
+[submodule "upstream/socket-patch"]
+	ignore = dirty
+	ref = a0b04807d158ae5c0d980370ad31a15fcc9b030e
+	path = upstream/socket-patch
+	url = https://github.com/SocketDev/socket-patch.git
+	branch = main
+	shallow = true
+	sparse-checkout = crates/socket-patch-core crates/socket-patch-cli/src tests
+	verify = none
