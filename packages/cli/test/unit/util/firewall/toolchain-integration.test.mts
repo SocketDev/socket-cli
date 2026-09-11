@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import http from 'node:http'
 import https from 'node:https'
+import { createRequire } from 'node:module'
 import { access, mkdtemp, open, readFile, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -66,6 +67,17 @@ describe('installed package-manager firewall transit', () => {
       const directory = await mkdtemp(
         path.join(os.tmpdir(), 'firewall-toolchain-'),
       )
+      const storeDirectory = path.join(directory, 'store')
+      const stateDirectory = path.join(directory, 'state')
+      const clientArgs = [clientExecutable, 'install', '--ignore-scripts']
+      if (['pnpm', 'pnpm.exe'].includes(path.basename(clientExecutable))) {
+        clientArgs.push(
+          '--store-dir',
+          storeDirectory,
+          '--state-dir',
+          stateDirectory,
+        )
+      }
       const pack = tar.pack()
       pack.entry(
         { name: 'package/package.json' },
@@ -159,38 +171,36 @@ describe('installed package-manager firewall transit', () => {
               alerts: [{ type: 'malware', action }],
             }),
           )
-        const result = await runFirewallCommand(
-          [clientExecutable, 'install', '--ignore-scripts'],
-          {
-            cwd: directory,
-            stdio: ['ignore', output.fd, output.fd],
-            signal: AbortSignal.timeout(20_000),
-            env: {
-              PATH: path.dirname(process.execPath),
-              SFW_CA_CERT_PATH: ca.certificatePath,
-              SFW_CA_KEY_PATH: ca.keyPath,
-              SFW_CUSTOM_REGISTRIES: `npm:${registryUrl}`,
-              SFW_UNKNOWN_HOST_ACTION: 'block',
-              SFW_FAIL_ACTION: 'block',
-              SFW_UPSTREAM_PROXY: '',
-              SFW_JSON_REPORT_PATH: '',
-              SFW_REPORT_MESSAGE: '',
-              SOCKET_API_TOKEN: 'example-placeholder-token',
-              npm_config_registry: registryUrl,
-              npm_config_userconfig: userConfig,
-              npm_config_audit: 'false',
-              npm_config_fund: 'false',
-              npm_config_fetch_retries: '0',
-              npm_config_manage_package_manager_versions: 'false',
-              npm_config_store_dir: path.join(directory, 'store'),
-              npm_config_cache: path.join(directory, 'cache'),
-              AUBE_STORE_DIR: path.join(directory, 'aube-store'),
-              AUBE_CACHE_DIR: path.join(directory, 'aube-cache'),
-              NUB_STORE_DIR: path.join(directory, 'nub-store'),
-              NUB_CACHE_DIR: path.join(directory, 'nub-cache'),
-            },
+        const result = await runFirewallCommand(clientArgs, {
+          cwd: directory,
+          stdio: ['ignore', output.fd, output.fd],
+          signal: AbortSignal.timeout(20_000),
+          env: {
+            PATH: path.dirname(process.execPath),
+            SFW_CA_CERT_PATH: ca.certificatePath,
+            SFW_CA_KEY_PATH: ca.keyPath,
+            SFW_CUSTOM_REGISTRIES: `npm:${registryUrl}`,
+            SFW_UNKNOWN_HOST_ACTION: 'block',
+            SFW_FAIL_ACTION: 'block',
+            SFW_UPSTREAM_PROXY: '',
+            SFW_JSON_REPORT_PATH: '',
+            SFW_REPORT_MESSAGE: '',
+            SOCKET_API_TOKEN: 'example-placeholder-token',
+            npm_config_registry: registryUrl,
+            npm_config_userconfig: userConfig,
+            npm_config_audit: 'false',
+            npm_config_fund: 'false',
+            npm_config_fetch_retries: '0',
+            npm_config_manage_package_manager_versions: 'false',
+            npm_config_store_dir: storeDirectory,
+            npm_config_state_dir: stateDirectory,
+            npm_config_cache: path.join(directory, 'cache'),
+            AUBE_STORE_DIR: path.join(directory, 'aube-store'),
+            AUBE_CACHE_DIR: path.join(directory, 'aube-cache'),
+            NUB_STORE_DIR: path.join(directory, 'nub-store'),
+            NUB_CACHE_DIR: path.join(directory, 'nub-cache'),
           },
-        )
+        })
         const transcript = await readFile(stdoutPath, 'utf8')
         expect(api.isDone(), transcript).toBe(true)
         expect(artifactHits, transcript).toBe(action === 'error' ? 0 : 1)
@@ -209,16 +219,15 @@ describe('installed package-manager firewall transit', () => {
         } else {
           expect(result.code, transcript).toBe(0)
           expect(
-            await readFile(
+            createRequire(import.meta.url)(
               path.join(
                 directory,
                 'node_modules',
                 'example-module',
                 'index.js',
               ),
-              'utf8',
             ),
-          ).toBe('module.exports = "verified example artifact"\n')
+          ).toBe('verified example artifact')
         }
       } finally {
         await output.close()
