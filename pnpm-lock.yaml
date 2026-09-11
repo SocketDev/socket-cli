@@ -3823,6 +3823,8 @@ importers:
         specifier: 'catalog:'
         version: 26.4.0
 
+  .claude/hooks/fleet/task-scope-guard: {}
+
   .claude/hooks/fleet/test-dir-name-guard:
     dependencies:
       '@socketsecurity/lib-stable':
@@ -4120,6 +4122,16 @@ importers:
       shell-quote:
         specifier: 1.10.0
         version: 1.10.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.4.0
+
+  .claude/hooks/fleet/worktree-sweep:
+    dependencies:
+      '@socketsecurity/lib-stable':
+        specifier: npm:@socketsecurity/lib@7.0.1
+        version: '@socketsecurity/lib@7.0.1(typescript@7.0.2)'
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
