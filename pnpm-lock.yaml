@@ -325,6 +325,9 @@ catalogs:
     '@types/node':
       specifier: 26.4.0
       version: 26.4.0
+    '@types/node-forge':
+      specifier: 1.3.14
+      version: 1.3.14
     '@types/npm-package-arg':
       specifier: 6.1.4
       version: 6.1.4
@@ -448,6 +451,9 @@ catalogs:
     nock:
       specifier: 14.0.17
       version: 14.0.17
+    node-forge:
+      specifier: 1.4.0
+      version: 1.4.0
     npm-high-impact:
       specifier: 1.13.0
       version: 1.13.0
@@ -4523,6 +4529,9 @@ importers:
       '@types/adm-zip':
         specifier: 'catalog:'
         version: 0.5.8
+      '@types/node-forge':
+        specifier: 'catalog:'
+        version: 1.3.14
       '@vitiate/core':
         specifier: 'catalog:'
         version: 0.3.1(typescript@7.0.2)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@5.0.0)
@@ -4592,6 +4601,9 @@ importers:
       nanotar:
         specifier: 'catalog:'
         version: 0.2.1
+      node-forge:
+        specifier: 'catalog:'
+        version: 1.4.0
       npm-package-arg:
         specifier: 13.0.2
         version: 13.0.2
@@ -4814,11 +4826,6 @@ packages:
   '@babel/helpers@7.29.7':
     resolution: {integrity: sha512-1k2lAGRMfHTcwuNYcCNUmaUffmQv8KWMfh2iJUUeRlwlwH4FdNG7mfPI10NPfLHJFThE4Tyr4mv7kTNZOiPuBg==}
     engines: {node: '>=6.9.0'}
-
-  '@babel/parser@7.29.7':
-    resolution: {integrity: sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==}
-    engines: {node: '>=6.0.0'}
-    hasBin: true
 
   '@babel/parser@7.29.8':
     resolution: {integrity: sha512-E8lTAYNB1KW+FH+VGJuZM1ioAx2E6oVlvQFRrf5P8ZZmsiJXYAD9vTFV7yyEURNzgh1dFqMZuO6tUwcARbqFCA==}
@@ -6186,6 +6193,9 @@ packages:
 
   '@types/node-fetch@2.6.13':
     resolution: {integrity: sha512-QGpRVpzSaUs30JBSGPjOg4Uveu384erbHBoT1zeONvyCfwQxIkUshLAOqN/k9EjGviPRmWTTe6aH2qySWKTVSw==}
+
+  '@types/node-forge@1.3.14':
+    resolution: {integrity: sha512-mhVF2BnD4BO+jtOp7z1CdzaK4mbuK0LLQYAvdOLqHTavxFNq4zA1EmYkpnFjP8HOUzedfQkRnp0E2ulSAYSzAw==}
 
   '@types/node@18.19.130':
     resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
@@ -7956,6 +7966,10 @@ packages:
       encoding:
         optional: true
 
+  node-forge@1.4.0:
+    resolution: {integrity: sha512-LarFH0+6VfriEhqMMcLX2F7SwSXeWwnEAJEsYm5QKWchiVYVvJyV9v7UDvUv+w5HO23ZpQTXDv/GxdDdMyOuoQ==}
+    engines: {node: '>= 6.13.0'}
+
   node-gyp@12.4.0:
     resolution: {integrity: sha512-OMcPNvqTCFUnNaBlmdgq+lfNqY7gTiSmNRDjY3uAXRyudeKZEZxu3CLtjMQrx4zZxCX2b/mpNqTtwuCJgXhHkw==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -9225,10 +9239,6 @@ snapshots:
       '@babel/template': 7.29.7
       '@babel/types': 7.29.7
 
-  '@babel/parser@7.29.7':
-    dependencies:
-      '@babel/types': 7.29.7
-
   '@babel/parser@7.29.8':
     dependencies:
       '@babel/types': 7.29.8
@@ -10412,6 +10422,10 @@ snapshots:
     dependencies:
       '@types/node': 26.4.0
       form-data: 4.0.6
+
+  '@types/node-forge@1.3.14':
+    dependencies:
+      '@types/node': 26.4.0
 
   '@types/node@18.19.130':
     dependencies:
@@ -11716,8 +11730,8 @@ snapshots:
 
   magicast@0.5.4:
     dependencies:
-      '@babel/parser': 7.29.7
-      '@babel/types': 7.29.7
+      '@babel/parser': 7.29.8
+      '@babel/types': 7.29.8
       source-map-js: 1.2.1
 
   make-dir@4.0.0:
@@ -12268,6 +12282,8 @@ snapshots:
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
+
+  node-forge@1.4.0: {}
 
   node-gyp@12.4.0(patch_hash=140ba43d43d74f7d3577feb3f8a6efad544dbb0059784102b144a0e2daa437f9):
     dependencies:
