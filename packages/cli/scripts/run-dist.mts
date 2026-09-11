@@ -29,13 +29,13 @@ function main(): void {
     process.exitCode = 1
     return
   }
-  const result = spawnSync(
-    process.execPath,
-    [distPath, ...process.argv.slice(2)],
-    {
-      stdio: 'inherit',
-    },
-  )
+  const args = process.argv.slice(2)
+  if (args[0] === '--') {
+    args.shift()
+  }
+  const result = spawnSync(process.execPath, [distPath, ...args], {
+    stdio: 'inherit',
+  })
   process.exitCode = result.status ?? 1
 }
 

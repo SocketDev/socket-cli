@@ -121,7 +121,7 @@ function resolveSocketLibInternalsPlugin(): Plugin {
   }
   return {
     name: 'resolve-socket-lib-internals',
-    // socket-lib's prebundled dist files carry bundler-generated CJS factory
+    // Socket library and SDK prebundles carry bundler-generated CJS factory
     // names like `require_lib$36`. When rolldown flattens several of those
     // files into one output scope it deconflicts colliding names by appending
     // its own `$N` suffixes — and a generated name (`require_lib$10`) can
@@ -132,13 +132,14 @@ function resolveSocketLibInternalsPlugin(): Plugin {
     // so the deconflicter can't generate a colliding name.
     load(id) {
       if (
-        /[/\\]@socketsecurity[/\\]lib(?:-stable)?[/\\]dist[/\\]|[/\\]socket-lib[/\\]dist[/\\]/.test(
+        /[/\\]@socketsecurity[/\\](?:lib|sdk)(?:-stable)?[/\\]dist[/\\]|[/\\]socket-(?:lib|sdk)[/\\]dist[/\\]/.test(
           id,
         ) &&
         id.endsWith('.js')
       ) {
         const code = readFileSync(id, 'utf8')
         return {
+          __proto__: null,
           // Matches a whole CJS factory name: `require_` + identifier chars
           // (captured as $1), then a literal `$` + digits (the bundler's
           // numeric suffix, captured as $2), e.g. `require_lib$36`.
@@ -207,13 +208,17 @@ function stubProblematicPackagesPlugin(): Plugin {
       // (?:encoding|iconv-lite) matches exactly one of the two package names
       // (?:$|\/)                end of string, bare name, or `/` (subpath like `iconv-lite/stream`)
       if (/^(?:encoding|iconv-lite)(?:$|\/)/.test(source)) {
-        return { id: `${prefix}${source}` }
+        return { __proto__: null, id: `${prefix}${source}` }
       }
       return undefined
     },
     load(id) {
       if (id.startsWith(prefix)) {
-        return { code: 'module.exports = {}', moduleSideEffects: false }
+        return {
+          __proto__: null,
+          code: 'module.exports = {}',
+          moduleSideEffects: false,
+        }
       }
       return undefined
     },
@@ -234,10 +239,10 @@ function ignoreUnsupportedFilesPlugin(): Plugin {
         if (importer?.includes('/socket-lib/dist/')) {
           return undefined
         }
-        return { id: source, external: true }
+        return { __proto__: null, id: source, external: true }
       }
       if (/node-gyp/.test(source)) {
-        return { id: source, external: true }
+        return { __proto__: null, id: source, external: true }
       }
       return undefined
     },
