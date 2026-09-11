@@ -13,6 +13,7 @@
  */
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
@@ -100,8 +101,8 @@ export class EnvironmentVariables {
     const trufflehogVersion = getExternalToolVersion('trufflehog')
 
     // Build-time constants that can be overridden by environment variables.
-    const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
-    const sentryBuild = process.env['INLINED_SENTRY_BUILD'] === '1'
+    const publishedBuild = getEnvValue('INLINED_PUBLISHED_BUILD') === '1'
+    const sentryBuild = getEnvValue('INLINED_SENTRY_BUILD') === '1'
 
     // Compute version hash, matches Rollup implementation.
     const randUuidSegment = crypto.randomUUID().split('-')[0]

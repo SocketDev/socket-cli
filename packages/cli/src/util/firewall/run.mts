@@ -1,6 +1,10 @@
 import { constants } from 'node:fs'
 import { open } from 'node:fs/promises'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import {
+  getDefaultFormatting,
+  stringifyWithFormatting,
+} from '@socketsecurity/lib-stable/json/format'
 
 import { getDefaultApiToken } from '../socket/sdk.mts'
 import {
@@ -164,7 +168,7 @@ export async function runFirewallCommand(
     )
     try {
       await report.writeFile(
-        JSON.stringify(
+        stringifyWithFormatting(
           {
             command,
             code: result.code,
@@ -173,9 +177,8 @@ export async function runFirewallCommand(
             ...events.snapshot(),
             tunneledEcosystems: policy?.getTunneledEcosystems(),
           },
-          null,
-          2,
-        ) + '\n',
+          getDefaultFormatting(),
+        ),
       )
     } finally {
       await report.close()
