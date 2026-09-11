@@ -4205,8 +4205,6 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file: {}
 
-  .config/fleet/oxlint-plugin/fleet/no-floating-async-map: {}
-
   .config/fleet/oxlint-plugin/fleet/no-force-delete: {}
 
   .config/fleet/oxlint-plugin/fleet/no-handbuilt-file-url: {}
@@ -4224,6 +4222,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/no-logger-newline-literal: {}
 
   .config/fleet/oxlint-plugin/fleet/no-malformed-bypass-marker: {}
+
+  .config/fleet/oxlint-plugin/fleet/no-map-async-callback: {}
 
   .config/fleet/oxlint-plugin/fleet/no-minified-bundler-output: {}
 
@@ -4271,7 +4271,7 @@ importers:
 
   .config/fleet/oxlint-plugin/fleet/no-spawn-stream-double-consume: {}
 
-  .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field: {}
+  .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property: {}
 
   .config/fleet/oxlint-plugin/fleet/no-src-import-in-test-expect: {}
 
@@ -4366,6 +4366,8 @@ importers:
   .config/fleet/oxlint-plugin/fleet/prefer-shell-win32: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-compare-str: {}
+
+  .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-env: {}
 
   .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-error-message: {}
 
