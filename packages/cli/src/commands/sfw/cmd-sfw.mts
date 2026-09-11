@@ -1,27 +1,16 @@
-// product feature name / command wrapping npx; the literal is intentional.
-/* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
-/* oxlint-disable socket/no-npx-dlx -- intentional literal */
-
-/**
- * Socket Firewall (sfw) command.
- *
- * Explicit passthrough to the Socket Firewall tool for direct invocation.
- * Socket Firewall intercepts package manager commands to provide security
- * scanning before installation.
- *
- * While `socket npm`, `socket npx`, etc. use sfw internally, this command
- * allows direct access to sfw for advanced use cases and troubleshooting.
- */
+import os from 'node:os'
 
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { defineFlags } from '../../meow.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mts'
-import { spawnSfw } from '../../util/dlx/spawn.mts'
+import { runFirewallCommand } from '../../util/firewall/run.mts'
+import { runFirewallCaCommand } from '../../util/firewall/ca-command.mts'
+import { splitFirewallArguments } from '../../util/cli/firewall-arguments.mts'
 import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
-import { filterFlags, isHelpFlag } from '../../util/process/cmd.mts'
+import { isHelpFlag } from '../../util/process/cmd.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 
@@ -41,6 +30,7 @@ const config = {
   help: (command: string) => `
     Usage
       $ ${command} <package-manager> [args...]
+      $ ${command} ca <init|path|trust> [args...]
 
     Options
       ${getFlagListOutput(commonFlags)}
@@ -49,17 +39,17 @@ const config = {
     before installation. This command allows direct access to sfw.
 
     Supported Package Managers:
-      npm, npx, pnpm, yarn, pip, pip3, uv, cargo, go, gem, bundler, nuget
+      npm, pnpm, yarn, pip, uv, cargo, go, gem, bundler, nuget
 
     Note: For most use cases, prefer the dedicated commands:
       socket npm install <package>
-      socket npx <package>
+      socket pnpm install <package>
       socket pip install <package>
       etc.
 
     Examples
       $ ${command} npm install lodash
-      $ ${command} npx cowsay hello
+      $ ${command} pnpm install lodash
       $ ${command} pip install requests
       $ ${command} --help
   `,
@@ -82,8 +72,12 @@ export async function run(
     ...context,
   } as CliCommandContext
 
+  const { wrapperArgs, commandArgs } = splitFirewallArguments(argv, {
+    explicitCommand: true,
+  })
+
   // Check for help flag.
-  const hasHelpFlag = argv.some(a => isHelpFlag(a))
+  const hasHelpFlag = wrapperArgs.some(a => isHelpFlag(a))
 
   if (hasHelpFlag) {
     // Show Socket CLI wrapper help.
@@ -98,7 +92,7 @@ export async function run(
   }
 
   const cli = meowOrExit({
-    argv: argv.filter(a => !isHelpFlag(a)),
+    argv: wrapperArgs.filter(a => !isHelpFlag(a)),
     config,
     importMeta,
     parentName,
@@ -107,8 +101,7 @@ export async function run(
   // Extract typed flags (commonFlags defines dryRun as boolean).
   const { dryRun } = cli.flags
 
-  // Filter Socket-specific flags from argv, pass rest to sfw.
-  const sfwArgs = filterFlags(argv, commonFlags, [])
+  const sfwArgs = commandArgs
 
   if (!sfwArgs.length) {
     logger.fail('No package manager command specified.')
@@ -123,15 +116,17 @@ export async function run(
     return
   }
 
-  logger.info(`Invoking Socket Firewall: sfw ${sfwArgs.join(' ')}`)
+  if (sfwArgs[0] === 'ca') {
+    await runFirewallCaCommand(sfwArgs.slice(1))
+    return
+  }
 
-  const { spawnPromise } = await spawnSfw(sfwArgs, {
+  const result = await runFirewallCommand(sfwArgs, {
     stdio: 'inherit',
   })
 
-  const result = await spawnPromise
-
   if (result.signal) {
+    process.exitCode = 128 + (os.constants.signals[result.signal] ?? 0)
     process.kill(process.pid, result.signal)
   } else if (typeof result.code === 'number') {
     process.exitCode = result.code

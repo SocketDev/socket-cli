@@ -47,7 +47,7 @@ export class EnvironmentVariables {
       readFileSync(path.join(getPackageOutDir('cli'), 'package.json'), 'utf-8'),
     )
 
-    // Get current git commit hash.
+    // Get the current `git commit` hash.
     let gitHash = ''
     try {
       const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
@@ -98,8 +98,6 @@ export class EnvironmentVariables {
     const socketPatchVersion = getExternalToolVersion('socket-patch')
     const trivyVersion = getExternalToolVersion('trivy')
     const trufflehogVersion = getExternalToolVersion('trufflehog')
-    // sfw ships as a GitHub binary (sfw-free) used by both SEA and CLI dlx.
-    const sfwVersion = getExternalToolVersion('sfw')
 
     // Build-time constants that can be overridden by environment variables.
     const publishedBuild = process.env['INLINED_PUBLISHED_BUILD'] === '1'
@@ -111,18 +109,22 @@ export class EnvironmentVariables {
       publishedBuild ? '' : ':dev'
     }`
 
+    function getExternalToolChecksums(name: string) {
+      return externalTools[name]?.checksums || { __proto__: null }
+    }
+
     // Get checksums for all external tools that have them.
     // GitHub-released tools and PyPI packages have checksums for integrity verification.
-    const opengrepChecksums = externalTools.opengrep?.checksums || {}
-    const pythonChecksums = externalTools.python?.checksums || {}
-    const sfwChecksums = externalTools.sfw?.checksums || {}
-    const socketPatchChecksums = externalTools['socket-patch']?.checksums || {}
-    const pyCliChecksums = externalTools.socketsecurity?.checksums || {}
-    const trivyChecksums = externalTools.trivy?.checksums || {}
-    const trufflehogChecksums = externalTools.trufflehog?.checksums || {}
+    const opengrepChecksums = getExternalToolChecksums('opengrep')
+    const pythonChecksums = getExternalToolChecksums('python')
+    const socketPatchChecksums = getExternalToolChecksums('socket-patch')
+    const pyCliChecksums = getExternalToolChecksums('socketsecurity')
+    const trivyChecksums = getExternalToolChecksums('trivy')
+    const trufflehogChecksums = getExternalToolChecksums('trufflehog')
 
     // Return all environment variables with raw values.
     return {
+      __proto__: null,
       INLINED_CDXGEN_VERSION: cdxgenVersion,
       INLINED_COANA_VERSION: coanaVersion,
       INLINED_CYCLONEDX_CDXGEN_VERSION: cdxgenVersion,
@@ -136,8 +138,6 @@ export class EnvironmentVariables {
       INLINED_PYTHON_CHECKSUMS: JSON.stringify(pythonChecksums),
       INLINED_PYTHON_VERSION: pythonVersion,
       INLINED_SENTRY_BUILD: sentryBuild ? '1' : '',
-      INLINED_SFW_CHECKSUMS: JSON.stringify(sfwChecksums),
-      INLINED_SFW_VERSION: sfwVersion,
       INLINED_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
       INLINED_SOCKET_PATCH_VERSION: socketPatchVersion,
       INLINED_PYCLI_CHECKSUMS: JSON.stringify(pyCliChecksums),
@@ -164,9 +164,9 @@ export class EnvironmentVariables {
         readFileSync(path.join(rootPath, 'bundle-tools.json'), 'utf-8'),
       ).tools
       return {
+        __proto__: null,
         INLINED_COANA_VERSION: externalTools['@coana-tech/cli']?.version || '',
         INLINED_PYCLI_VERSION: externalTools.socketsecurity?.version || '',
-        INLINED_SFW_VERSION: externalTools.sfw?.version || '',
         INLINED_SOCKET_PATCH_VERSION:
           externalTools['socket-patch']?.version || '',
       }

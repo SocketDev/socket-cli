@@ -1,3 +1,10 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  spawnDlx,
+  spawnToolVfs,
+  validatePackageName,
+} from '../../../../src/util/dlx/spawn.mts'
+
 /**
  * Unit tests for util/dlx/spawn.
  *
@@ -5,8 +12,6 @@
  *
  * Related Files: - src/util/dlx/spawn.mts.
  */
-
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDlxPackage = vi.hoisted(() => vi.fn())
@@ -25,12 +30,6 @@ vi.mock(import('../../../../src/util/dlx/vfs-extract.mts'), () => ({
   areExternalToolsAvailable: mockAreExternalToolsAvailable,
   extractExternalTools: mockExtractExternalTools,
 }))
-
-import {
-  spawnDlx,
-  spawnToolVfs,
-  validatePackageName,
-} from '../../../../src/util/dlx/spawn.mts'
 
 describe('validatePackageName', () => {
   it('accepts plain package names', () => {
@@ -127,16 +126,16 @@ describe('spawnToolVfs', () => {
   it('throws when external tools are not available', async () => {
     mockAreExternalToolsAvailable.mockReturnValue(false)
 
-    await expect(spawnToolVfs('sfw', [])).rejects.toThrow(
-      /cannot spawn sfw from VFS/,
+    await expect(spawnToolVfs('trivy', [])).rejects.toThrow(
+      /cannot spawn trivy from VFS/,
     )
   })
 
   it('throws when extractExternalTools returns null', async () => {
     mockExtractExternalTools.mockResolvedValue(undefined)
 
-    await expect(spawnToolVfs('sfw', [])).rejects.toThrow(
-      /failed to extract sfw from VFS/,
+    await expect(spawnToolVfs('trivy', [])).rejects.toThrow(
+      /failed to extract trivy from VFS/,
     )
   })
 
@@ -145,21 +144,21 @@ describe('spawnToolVfs', () => {
       other: '/path/to/other',
     } as never)
 
-    await expect(spawnToolVfs('sfw', [])).rejects.toThrow(
-      /sfw was not in the output map/,
+    await expect(spawnToolVfs('trivy', [])).rejects.toThrow(
+      /trivy was not in the output map/,
     )
   })
 
   it('spawns the tool directly and returns spawnPromise', async () => {
     mockExtractExternalTools.mockResolvedValue({
-      sfw: '/path/to/sfw',
+      trivy: '/path/to/trivy',
     } as never)
     mockSpawn.mockReturnValue('p')
 
-    const result = await spawnToolVfs('sfw', ['arg1'], { env: { X: '1' } })
+    const result = await spawnToolVfs('trivy', ['arg1'], { env: { X: '1' } })
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      '/path/to/sfw',
+      '/path/to/trivy',
       ['arg1'],
       expect.objectContaining({ stdio: 'inherit' }),
     )
@@ -170,14 +169,14 @@ describe('spawnToolVfs', () => {
 
   it('honors custom stdio from spawnExtra', async () => {
     mockExtractExternalTools.mockResolvedValue({
-      sfw: '/path/to/sfw',
+      trivy: '/path/to/trivy',
     } as never)
     mockSpawn.mockReturnValue('p')
 
-    await spawnToolVfs('sfw', [], undefined, { stdio: 'pipe' })
+    await spawnToolVfs('trivy', [], undefined, { stdio: 'pipe' })
 
     expect(mockSpawn).toHaveBeenCalledWith(
-      '/path/to/sfw',
+      '/path/to/trivy',
       [],
       expect.objectContaining({ stdio: 'pipe' }),
     )

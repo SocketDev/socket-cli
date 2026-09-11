@@ -57,7 +57,6 @@ describe('socket-cli-* env bindings (additional)', () => {
     'socket-cli-pycli-local-path',
     'socket-cli-python-path',
     'socket-cli-sea-node-version',
-    'socket-cli-sfw-local-path',
     'socket-cli-skip-update-check',
     'socket-cli-socket-patch-local-path',
   ])('exports %s', async name => {

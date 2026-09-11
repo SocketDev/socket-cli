@@ -24,7 +24,6 @@ export const EXTERNAL_TOOLS = [
   'coana',
   'opengrep',
   'python',
-  'sfw',
   'socket-patch',
   'synp',
   'trivy',
@@ -35,7 +34,6 @@ export type ExternalTool = (typeof EXTERNAL_TOOLS)[number]
 
 // Map of npm package tools to their node_modules/ paths.
 // These are full npm packages with dependencies and node_modules/ subdirectories.
-// Note: sfw uses GitHub binary for SEA (standalone), npm package for CLI (dlx).
 export const TOOL_NPM_PATHS: Partial<
   Record<ExternalTool, { packageName: string; binPath: string }>
 > = {
@@ -55,16 +53,12 @@ export const TOOL_NPM_PATHS: Partial<
 
 // Map of standalone binary tools to their VFS paths.
 // These tools are single binaries from GitHub releases without npm dependencies.
-// sfw is stored under node_modules/@socketsecurity/sfw-bin/ for VFS structure.
 export const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
   // opengrep is a SAST/code analysis engine from GitHub releases (opengrep/opengrep).
   opengrep: 'opengrep',
   // python is a standalone runtime from GitHub releases (astral-sh/python-build-standalone).
   // Entire python/ directory is extracted, binary is at python/bin/python (Unix) or python/python.exe (Windows).
   python: 'python',
-  // sfw is a standalone binary from GitHub releases (SocketDev/sfw-free).
-  // Note: npm CLI uses the sfw npm package via dlx instead.
-  sfw: 'node_modules/@socketsecurity/sfw-bin/sfw',
   // socket-patch is a Rust binary downloaded from GitHub releases.
   // As of v2.0.0, it's bundled directly, not as an npm package.
   'socket-patch': 'socket-patch',
@@ -84,9 +78,7 @@ export const TOOL_STANDALONE_PATHS: Partial<Record<ExternalTool, string>> = {
  * node_modules/ ├── @coana-tech/cli/ │ ├── bin/coana │ └── node_modules/ ├──
  *
  * @returns Path to node-smol's dlx directory.
- *
- * @socketsecurity/sfw-bin/ # Standalone sfw binary (GitHub release) │ └── sfw
- * └── synp/ ├── bin/synp └── node_modules/
+ *   └── synp/ ├── bin/synp └── node_modules/
  */
 export function getNodeSmolBasePath(): string {
   // Get actual hash from process.smol if available, otherwise use process version.
@@ -148,7 +140,6 @@ export function getToolFilePath(
  *
  * @example
  *   const paths = getToolPaths()
- *   logger.log('sfw:', paths.sfw) // ~/.socket/_dlx/<hash>/node_modules/@socketsecurity/sfw-bin/sfw
  *   logger.log('cdxgen:', paths.cdxgen) // ~/.socket/_dlx/<hash>/node_modules/@cyclonedx/cdxgen/bin/cdxgen
  *
  * @returns Object with paths to each tool binary.

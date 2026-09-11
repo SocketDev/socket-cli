@@ -6,7 +6,7 @@
  *
  * Tool types:
  *
- * - Standalone binaries (GitHub releases): sfw, socket-patch
+ * - Standalone binaries (GitHub releases): socket-patch
  * - Npm packages, with dependencies: cdxgen, coana, synp
  *
  * Build-time package preparation: npm packages use @npmcli/arborist to download
@@ -33,8 +33,6 @@
  * GitHub release node_modules/ ├── @cyclonedx/cdxgen/ # Full package with
  * dependencies │ ├── bin/cdxgen │ ├── package.json │ └── node_modules/ #
  * Dependencies ├── @coana-tech/cli/ │ ├── bin/coana │ ├── package.json │ └──
- * node_modules/ ├── @socketsecurity/sfw-bin/ # Standalone binary from GitHub
- * release │ └── sfw └── synp/ ├── bin/synp ├── package.json └── node_modules/
  *
  * VFS Extraction with Full Directory Support: Uses process.smol.mount() API
  * from node-smol to extract both single files and complete directory trees with
@@ -142,13 +140,7 @@ export async function extractExternalTools(
     return undefined
   }
 
-  const processWithSmol = process as unknown as {
-    smol?:
-      | { mount?: ((vfsPath: string) => Promise<string>) | undefined }
-      | undefined
-  }
-
-  if (!isSeaBinary() || !processWithSmol.smol?.mount) {
+  if (!areExternalToolsAvailable()) {
     debugNs('notice', 'Not running in SEA mode - cannot extract VFS tools')
     return undefined
   }
@@ -170,37 +162,12 @@ export async function extractExternalTools(
   } catch (e: unknown) {
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
-      // Check if lock is stale by reading PID and checking if process exists.
-      let isStale = false
-      try {
-        const lockPid = await fs.readFile(lockFile, 'utf8')
-        const pid = Number.parseInt(lockPid.trim(), 10)
-        if (!Number.isNaN(pid) && pid > 0) {
-          try {
-            // Signal 0 checks if process exists without killing it.
-            process.kill(pid, 0)
-            // Process exists, lock is valid.
-          } catch {
-            // Process doesn't exist, lock is stale.
-            isStale = true
-            debugNs(
-              'notice',
-              `Stale lock file detected (PID ${pid} not running)`,
-            )
-          }
-        } else {
-          // Invalid PID in lock file, treat as stale.
-          isStale = true
-        }
-      } catch {
-        // Can't read lock file, treat as stale.
-        isStale = true
-      }
+      const isStale = await isVfsExtractionLockStale(lockFile)
 
       if (isStale) {
         // Clean up stale lock and partial extraction.
         logger.warn('Cleaning up stale extraction lock…')
-        await safeDelete(lockFile, { force: true })
+        await safeDelete(lockFile)
         // Retry extraction by calling ourselves recursively.
         return await extractExternalTools(depth + 1)
       }
@@ -239,46 +206,17 @@ export async function extractExternalTools(
           'notice',
           'Tool(s) disappeared during validation, re-extracting…',
         )
-        await safeDelete(cacheMarker, { force: true })
+        await safeDelete(cacheMarker)
         return await extractExternalTools(depth + 1)
       }
       // Cache marker exists but tools missing, remove marker and re-extract.
       debugNs('notice', 'Cache validation failed, re-extracting…')
-      await safeDelete(cacheMarker, { force: true })
+      await safeDelete(cacheMarker)
     }
 
     const toolPaths: Partial<Record<ExternalTool, string>> = {}
 
-    for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
-      const tool = EXTERNAL_TOOLS[i]!
-      const toolPath = getToolFilePath(tool, nodeSmolBase)
-      const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
-
-      // Check if tool already exists and is executable.
-      if (existsSync(toolPathWithExt)) {
-        try {
-          // Quick validation - check if executable.
-          // oxlint-disable-next-line socket/prefer-exists-sync -- fs.access(X_OK) checks executable permission, not existence.
-          await fs.access(toolPathWithExt, fs.constants.X_OK)
-          debugNs(
-            'notice',
-            `Tool ${tool} already extracted at ${toolPathWithExt}`,
-          )
-          toolPaths[tool] = toolPathWithExt
-          continue
-        } catch {
-          // File exists but not executable or accessible, re-extract.
-          debugNs(
-            'notice',
-            `Tool ${tool} exists but not executable, re-extracting…`,
-          )
-        }
-      }
-
-      // Extract tool from VFS.
-      const extractedPath = await extractTool(tool)
-      toolPaths[tool] = extractedPath
-    }
+    await extractMissingVfsTools(nodeSmolBase, { isPlatWin, toolPaths })
 
     // Verify all tools were extracted.
     /* c8 ignore start -- defensive: the for-loop above unconditionally assigns toolPaths[tool] for every entry unless extractTool throws, which already aborts via the outer catch, so this length-mismatch branch is unreachable from tests. */
@@ -301,11 +239,54 @@ export async function extractExternalTools(
   } finally {
     // Clean up lock file.
     try {
-      await safeDelete(lockFile, { force: true })
+      await safeDelete(lockFile)
     } catch (e) {
       const error = e as NodeJS.ErrnoException
       logger.warn(`Failed to cleanup lock file ${lockFile}: ${error.message}`)
     }
+  }
+}
+
+export async function extractMissingVfsTools(
+  nodeSmolBase: string,
+  config: {
+    isPlatWin: boolean
+    toolPaths: Partial<Record<ExternalTool, string>>
+  },
+): Promise<void> {
+  const { isPlatWin, toolPaths } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  for (let i = 0, { length } = EXTERNAL_TOOLS; i < length; i += 1) {
+    const tool = EXTERNAL_TOOLS[i]!
+    const toolPath = getToolFilePath(tool, nodeSmolBase)
+    const toolPathWithExt = isPlatWin ? `${toolPath}.exe` : toolPath
+
+    // Check if tool already exists and is executable.
+    if (existsSync(toolPathWithExt)) {
+      try {
+        // Quick validation - check if executable.
+        // oxlint-disable-next-line socket/prefer-exists-sync -- fs.access(X_OK) checks executable permission, not existence.
+        await fs.access(toolPathWithExt, fs.constants.X_OK)
+        debugNs(
+          'notice',
+          `Tool ${tool} already extracted at ${toolPathWithExt}`,
+        )
+        toolPaths[tool] = toolPathWithExt
+        continue
+      } catch {
+        // File exists but not executable or accessible, re-extract.
+        debugNs(
+          'notice',
+          `Tool ${tool} exists but not executable, re-extracting…`,
+        )
+      }
+    }
+
+    // Extract tool from VFS.
+    const extractedPath = await extractTool(tool)
+    toolPaths[tool] = extractedPath
   }
 }
 
@@ -394,14 +375,7 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
 
       extractedPath = isPlatWin ? `${binaryPath}.exe` : binaryPath
 
-      // Make executable on Unix.
-      if (!isPlatWin && existsSync(extractedPath)) {
-        try {
-          await fs.chmod(extractedPath, 0o755)
-        } catch {
-          // Ignore chmod errors - file might already be executable.
-        }
-      }
+      await makeVfsToolExecutable(extractedPath, { isPlatWin })
     }
 
     if (!existsSync(extractedPath)) {
@@ -415,5 +389,49 @@ export async function extractTool(tool: ExternalTool): Promise<string> {
     throw new Error(
       `failed to extract ${tool} from the SEA VFS (${getErrorCause(e)}); the embedded tool archive may be corrupt — rebuild the SEA binary`,
     )
+  }
+}
+
+export async function isVfsExtractionLockStale(
+  lockFile: string,
+): Promise<boolean> {
+  let isStale = false
+  try {
+    const lockPid = await fs.readFile(lockFile, 'utf8')
+    const pid = Number.parseInt(lockPid.trim(), 10)
+    if (!Number.isNaN(pid) && pid > 0) {
+      try {
+        // Signal 0 checks if process exists without killing it.
+        process.kill(pid, 0)
+        // Process exists, lock is valid.
+      } catch {
+        // Process doesn't exist, lock is stale.
+        isStale = true
+        debugNs('notice', `Stale lock file detected (PID ${pid} not running)`)
+      }
+    } else {
+      // Invalid PID in lock file, treat as stale.
+      isStale = true
+    }
+  } catch {
+    // Can't read lock file, treat as stale.
+    isStale = true
+  }
+
+  return isStale
+}
+
+export async function makeVfsToolExecutable(
+  extractedPath: string,
+  config: { isPlatWin: boolean },
+): Promise<void> {
+  const { isPlatWin } = { __proto__: null, ...config } as typeof config
+  // Make executable on Unix.
+  if (!isPlatWin && existsSync(extractedPath)) {
+    try {
+      await fs.chmod(extractedPath, 0o755)
+    } catch {
+      // Ignore chmod errors - file might already be executable.
+    }
   }
 }

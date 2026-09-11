@@ -196,56 +196,6 @@
         }
       }
     },
-    "sfw": {
-      "description": "Socket Firewall (sfw-free) - GitHub binary, bundled for SEA and CLI dlx",
-      "repository": "github:SocketDev/sfw-free",
-      "version": "v1.12.0",
-      "checksums": {
-        "sfw-free-linux-arm64": "598c8d19c80832ef5ca7fdb0a9fc35c045847fd02889126a7115c0345a478da3",
-        "sfw-free-linux-x86_64": "51824f02a242f892c61c42223e05b7e82bb624762337f026afc2ac229ffcade7",
-        "sfw-free-macos-arm64": "319aeba93d5e57c2db68d6709e5a04aa122e326b2d95a27c1074d0a84c567031",
-        "sfw-free-macos-x86_64": "b05fca25c8ba13fad01a16f05b99d21b866591c6b46f9c662f68ba3120b5a1b3",
-        "sfw-free-musl-linux-arm64": "b036cab9a76fa078540480fa92d6559bc2cede3683aacbbc59b91890157204ae",
-        "sfw-free-musl-linux-x86_64": "fe321d0b0f0c3bb9c84ca61c414563205b3d27b20b0061ad5f0c108e70b39488",
-        "sfw-free-windows-x86_64.exe": "820d0868b7870afb47c094c9368666bf9af18744d75c946533a334b57ed9f18a"
-      },
-      "bundled": true,
-      "origin": "gh-asset",
-      "platforms": {
-        "darwin-arm64": {
-          "asset": "sfw-free-macos-arm64",
-          "integrity": "sha256-MZrrqT1eV8LbaNZwnloEqhIuMmstlaJ8EHTQqExWcDE="
-        },
-        "darwin-x64": {
-          "asset": "sfw-free-macos-x86_64",
-          "integrity": "sha256-sF/KJci6E/rQGhbwW5nSG4Zlkca0b5xmL2i6MSC1obM="
-        },
-        "linux-arm64": {
-          "asset": "sfw-free-linux-arm64",
-          "integrity": "sha256-WYyNGcgIMu9cp/2wqfw1wEWEf9AoiRJqcRXANFpHjaM="
-        },
-        "linux-arm64-musl": {
-          "asset": "sfw-free-musl-linux-arm64",
-          "integrity": "sha256-sDbKuadvoHhUBID6ktZVm8LO3jaDqsu8WbkYkBVyBK4="
-        },
-        "linux-x64": {
-          "asset": "sfw-free-linux-x86_64",
-          "integrity": "sha256-UYJPAqJC+JLGHEIiPgW36Cu2JHYjN/Amr8KsIp/8rec="
-        },
-        "linux-x64-musl": {
-          "asset": "sfw-free-musl-linux-x86_64",
-          "integrity": "sha256-/jIdCw8MO7nITKYcQUVjIFs9J7ILAGGtXwwQjnCzlIg="
-        },
-        "win32-arm64": {
-          "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
-        },
-        "win32-x64": {
-          "asset": "sfw-free-windows-x86_64.exe",
-          "integrity": "sha256-gg0IaLeHCvtHwJTJNoZmv5rxh0TXXJRlM6M0tX7Z8Yo="
-        }
-      }
-    },
     "synp": {
       "description": "Tool for converting between yarn.lock and package-lock.json",
       "version": "1.9.14",

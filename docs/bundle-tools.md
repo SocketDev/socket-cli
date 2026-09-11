@@ -187,7 +187,6 @@ Environment variables for development/testing:
 | `SOCKET_CLI_CDXGEN_LOCAL_PATH`       | cdxgen         |
 | `SOCKET_CLI_COANA_LOCAL_PATH`        | coana          |
 | `SOCKET_CLI_PYCLI_LOCAL_PATH`        | socketsecurity |
-| `SOCKET_CLI_SFW_LOCAL_PATH`          | sfw            |
 | `SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH` | socket-patch   |
 
 ---

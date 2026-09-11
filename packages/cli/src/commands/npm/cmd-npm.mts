@@ -15,7 +15,6 @@ export const cmdNpm = defineHandoffCommand({
   description: 'Run npm with Socket Firewall security',
   // Use `auto` so SEA builds extract the npm shim from VFS while CLI
   // installs fall back to the dlx download path.
-  spawnMode: 'auto',
   examples: ['', 'install cowsay', 'install -g cowsay'],
   showApiRequirements: true,
   wrapperHint: true,

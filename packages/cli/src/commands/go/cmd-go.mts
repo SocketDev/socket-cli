@@ -9,7 +9,6 @@ import { defineHandoffCommand } from '../../util/cli/define-handoff.mts'
 export const cmdGo = defineHandoffCommand({
   name: 'go',
   description: 'Run go with Socket Firewall security',
-  spawnMode: 'dlx',
   examples: [
     'get github.com/gin-gonic/gin',
     'install golang.org/x/tools/cmd/goimports',

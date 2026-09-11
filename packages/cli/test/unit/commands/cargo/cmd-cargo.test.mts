@@ -1,264 +1,99 @@
-/**
- * Unit tests for cargo wrapper command.
- *
- * Tests the command entry point that wraps cargo with Socket Firewall security.
- * The wrapper intercepts cargo commands and forwards them to Socket Firewall
- * (sfw) for real-time security scanning.
- *
- * Test Coverage: - Command metadata, description, visibility - Help text
- * display - Flag filtering (Socket CLI vs cargo flags) - Exit code handling
- * with process.exit() - Signal propagation with process.kill()
- */
-
-import EventEmitter from 'node:events'
-
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cmdCargo } from '../../../../src/commands/cargo/cmd-cargo.mts'
-import { setupTestEnvironment } from '../../../helpers/index.mts'
 
-// Mock spawnSfwDlx.
-const mockSpawnSfwDlx = vi.hoisted(() => vi.fn())
-const mockMeowOrExit = vi.hoisted(() => vi.fn())
-const mockFilterFlags = vi.hoisted(() => vi.fn())
+const noChildExitCode: number | null = null
+const noChildSignal: NodeJS.Signals | null = null
 
-vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
-  spawnSfwDlx: mockSpawnSfwDlx,
+const mocks = vi.hoisted(() => ({ run: vi.fn(), which: vi.fn() }))
+vi.mock(import('../../../../src/util/firewall/run.mts'), () => ({
+  runFirewallCommand: mocks.run,
+}))
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
+  whichReal: mocks.which,
+}))
+vi.mock(import('../../../../src/util/telemetry/integration.mts'), () => ({
+  trackSubprocessStart: vi.fn(async () => undefined),
+  trackSubprocessExit: vi.fn(async () => undefined),
 }))
 
-vi.mock(import('../../../../src/util/cli/with-subcommands.mjs'), () => ({
-  meowOrExit: mockMeowOrExit,
-}))
-
-vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
-  filterFlags: mockFilterFlags,
-}))
-
-describe('cmd-cargo', () => {
-  setupTestEnvironment()
-
+const context = { parentName: 'socket' }
+describe('cargo firewall integration', () => {
   beforeEach(() => {
-    mockFilterFlags.mockReturnValue([])
+    vi.clearAllMocks()
+    mocks.run.mockResolvedValue({ code: 0, signal: noChildSignal })
+    mocks.which.mockResolvedValue('/example/bin/cargo')
+    process.exitCode = undefined
   })
-
-  describe('command metadata', () => {
-    it('should have correct description', () => {
-      expect(cmdCargo.description).toBe(
-        'Run cargo with Socket Firewall security',
-      )
-    })
-
-    it('should not be hidden', () => {
-      expect(cmdCargo.hidden).toBe(false)
-    })
-
-    it('should have a run function', () => {
-      expect(typeof cmdCargo.run).toBe('function')
-    })
-
-    it('renders help text via the meow help callback', async () => {
-      mockMeowOrExit.mockImplementation((args: unknown) => {
-        // Invoke the help callback so coverage records its lines.
-        const helpText = args.config.help('socket cargo')
-        expect(helpText).toContain('socket cargo')
-        return {
-          flags: {},
-          help: helpText,
-          input: [],
-          pkg: {},
-          showHelp: vi.fn(),
-          showVersion: vi.fn(),
-          unknownFlags: [],
-        }
-      })
-      // run() will fall through to spawning sfw; mock that to avoid
-      // touching the real binary.
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-      mockSpawnSfwDlx.mockResolvedValue({ spawnPromise: mockSpawnPromise })
-      mockFilterFlags.mockReturnValue([])
-      const runPromise = cmdCargo.run(
-        [],
-        { url: import.meta.url } as ImportMeta,
-        {
-          parentName: 'socket',
-        },
-      )
-      setImmediate(() => mockChildProcess.emit('exit', 0, undefined))
-      await runPromise
-      expect(mockMeowOrExit).toHaveBeenCalled()
+  afterEach(() => {
+    vi.restoreAllMocks()
+    process.exitCode = undefined
+  })
+  it('retains command metadata', () => {
+    expect(cmdCargo).toMatchObject({
+      description: 'Run cargo with Socket Firewall security',
+      hidden: false,
+      run: expect.any(Function),
     })
   })
-
-  describe('run', () => {
-    const importMeta = { url: import.meta.url } as ImportMeta
-    const context = { parentName: 'socket' }
-
-    it('should call meowOrExit with correct config', async () => {
-      const mockChildProcess = new EventEmitter()
-      const mockSpawnPromise = Promise.resolve({
-        code: 0,
-        signal: undefined,
-        stderr: Buffer.from(''),
-        stdout: Buffer.from(''),
-      })
-      ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-      mockSpawnSfwDlx.mockResolvedValue({
-        spawnPromise: mockSpawnPromise,
-      })
-
-      mockFilterFlags.mockReturnValue(['install', 'ripgrep'])
-
-      const runPromise = cmdCargo.run(
-        ['install', 'ripgrep'],
-        importMeta,
-        context,
-      )
-
-      // Simulate successful exit.
-      setImmediate(() => {
-        mockChildProcess.emit('exit', 0, undefined)
-      })
-
-      await runPromise
-
-      expect(mockMeowOrExit).toHaveBeenCalledWith({
-        argv: ['install', 'ripgrep'],
-        config: expect.objectContaining({
-          commandName: 'cargo',
-          description: 'Run cargo with Socket Firewall security',
-          hidden: false,
-        }),
-        importMeta,
-        parentName: 'socket',
-      })
+  it.each([
+    [],
+    ['install', 'example-package'],
+    ['install', 'example-package@1.2.3'],
+    ['install', '--global', 'example-package'],
+    ['exec', 'example-command'],
+    ['update'],
+    ['list'],
+    ['freeze'],
+    ['uninstall', 'example-package'],
+    ['install', '-r', 'requirements.txt'],
+    ['install', 'example-one', 'example-two'],
+  ])('forwards child arguments %j', async (...args) => {
+    await cmdCargo.run(args, import.meta, context)
+    expect(mocks.run).toHaveBeenCalledWith(['cargo', ...args], {
+      stdio: 'inherit',
     })
-
-    describe('flag filtering', () => {
-      it('should filter out Socket CLI flags and forward cargo flags', async () => {
-        const mockChildProcess = new EventEmitter()
-        const mockSpawnPromise = Promise.resolve({
-          code: 0,
-          signal: undefined,
-          stderr: Buffer.from(''),
-          stdout: Buffer.from(''),
-        })
-        ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-        mockSpawnSfwDlx.mockResolvedValue({
-          spawnPromise: mockSpawnPromise,
-        })
-
-        // Filtered args (Socket CLI flags removed).
-        mockFilterFlags.mockReturnValue(['build', '--release'])
-
-        const runPromise = cmdCargo.run(
-          ['--config', '{}', 'build', '--release'],
-          importMeta,
-          context,
-        )
-
-        // Simulate successful exit.
-        setImmediate(() => {
-          mockChildProcess.emit('exit', 0, undefined)
-        })
-
-        await runPromise
-
-        expect(mockFilterFlags).toHaveBeenCalled()
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-          ['cargo', 'build', '--release'],
-          {
-            stdio: 'inherit',
-          },
-        )
-      })
-    })
-
-    describe('command forwarding', () => {
-      it('should forward cargo commands to sfw with correct args', async () => {
-        const mockChildProcess = new EventEmitter()
-        const mockSpawnPromise = Promise.resolve({
-          code: 0,
-          signal: undefined,
-          stderr: Buffer.from(''),
-          stdout: Buffer.from(''),
-        })
-        ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-        mockSpawnSfwDlx.mockResolvedValue({
-          spawnPromise: mockSpawnPromise,
-        })
-
-        mockFilterFlags.mockReturnValue(['install', 'ripgrep'])
-
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
-
-        void cmdCargo.run(['install', 'ripgrep'], importMeta, context)
-
-        // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, undefined)
-
-        // Wait for event handler to execute.
-        await new Promise(resolve => {
-          setImmediate(resolve)
-        })
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(
-          ['cargo', 'install', 'ripgrep'],
-          {
-            stdio: 'inherit',
-          },
-        )
-
-        mockExit.mockRestore()
-      })
-
-      it('should handle empty arguments', async () => {
-        const mockChildProcess = new EventEmitter()
-        const mockSpawnPromise = Promise.resolve({
-          code: 0,
-          signal: undefined,
-          stderr: Buffer.from(''),
-          stdout: Buffer.from(''),
-        })
-        ;(mockSpawnPromise as unknown).process = mockChildProcess
-
-        mockSpawnSfwDlx.mockResolvedValue({
-          spawnPromise: mockSpawnPromise,
-        })
-
-        mockFilterFlags.mockReturnValue([])
-
-        const mockExit = vi
-          .spyOn(process, 'exit')
-          .mockImplementation((() => {}) as unknown)
-
-        void cmdCargo.run([], importMeta, context)
-
-        // Simulate successful exit.
-        mockChildProcess.emit('exit', 0, undefined)
-
-        // Wait for event handler to execute.
-        await new Promise(resolve => {
-          setImmediate(resolve)
-        })
-
-        expect(mockSpawnSfwDlx).toHaveBeenCalledWith(['cargo'], {
-          stdio: 'inherit',
-        })
-
-        mockExit.mockRestore()
-      })
-    })
+  })
+  it('filters wrapper prefix flags and preserves child configuration', async () => {
+    await cmdCargo.run(
+      ['--config', '{}', '--no-banner', 'install', '--config', 'child.json'],
+      import.meta,
+      context,
+    )
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['cargo', 'install', '--config', 'child.json'],
+      { stdio: 'inherit' },
+    )
+  })
+  it('forwards child flags without interpreting them as wrapper flags', async () => {
+    await cmdCargo.run(
+      ['--help', '--version', '--verbose'],
+      import.meta,
+      context,
+    )
+    expect(mocks.run).toHaveBeenCalledWith(
+      ['cargo', '--help', '--version', '--verbose'],
+      { stdio: 'inherit' },
+    )
+  })
+  it.each([0, 7])('propagates result %s after cleanup', async code => {
+    mocks.run.mockResolvedValue({ code, signal: noChildSignal })
+    await cmdCargo.run(['install', 'example-package'], import.meta, context)
+    expect(process.exitCode).toBe(code)
+  })
+  it.each(['SIGTERM', 'SIGINT'] as const)(
+    'propagates %s after cleanup',
+    async signal => {
+      const kill = vi.spyOn(process, 'kill').mockReturnValue(true)
+      mocks.run.mockResolvedValue({ code: noChildExitCode, signal })
+      await cmdCargo.run([], import.meta, context)
+      expect(kill).toHaveBeenCalledWith(process.pid, signal)
+    },
+  )
+  it('retains failure status when firewall setup rejects', async () => {
+    mocks.run.mockRejectedValue(new Error('example setup failure'))
+    await expect(cmdCargo.run([], import.meta, context)).rejects.toBeInstanceOf(
+      Error,
+    )
+    expect(process.exitCode).toBe(1)
   })
 })

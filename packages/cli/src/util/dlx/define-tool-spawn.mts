@@ -11,7 +11,7 @@
  * pure-binary tools, trufflehog, trivy, opengrep. This factory encapsulates
  * both so per-tool files can declare just `name + resolver` and get the rest.
  *
- * Hybrid tools that need local-path overrides or extra wiring (cdxgen, sfw,
+ * Hybrid tools that need local-path overrides or extra wiring (cdxgen,
  * socket-patch) keep their bespoke Dlx implementations and only call
  * `defineAutoDispatch` for the auto-dispatcher.
  */
@@ -97,7 +97,7 @@ export function defineGitHubReleaseSpawn(config: {
       stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
 
-    return { spawnPromise }
+    return { __proto__: null, spawnPromise }
   }
 }
 

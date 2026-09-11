@@ -43,7 +43,7 @@ type PlatformMapTools = Record<string, Record<string, string>>
  * Most assets are native for their target. Two deliberate substitutions are
  * encoded in bundle-tools.json rather than inferred here:
  *
- * - Trivy, OpenGrep and sfw have no native Windows ARM64 build, so `win32-arm64`
+ * - Trivy and OpenGrep have no native Windows ARM64 build, so `win32-arm64`
  *   points at the x64 asset. Windows 11 ARM64 emulates x64 transparently.
  * - Socket-patch ships neither an `x86_64-unknown-linux-gnu` nor an
  *   `aarch64-unknown-linux-musl` build, so `linux-x64` uses the statically

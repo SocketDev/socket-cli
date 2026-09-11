@@ -33,7 +33,6 @@ import { getPyCliVersion } from '../env/pycli-version.mts'
 import { getPythonBuildTag } from '../env/python-build-tag.mts'
 import { getPythonVersion } from '../env/python-version.mts'
 import { RUN_E2E_TESTS } from '../env/run-e2e-tests.mts'
-import { getSwfVersion } from '../env/sfw-version.mts'
 import { SOCKET_CLI_ACCEPT_RISKS } from '../env/socket-cli-accept-risks.mts'
 import { SOCKET_CLI_API_BASE_URL } from '../env/socket-cli-api-base-url.mts'
 import { SOCKET_CLI_API_PROXY } from '../env/socket-cli-api-proxy.mts'
@@ -62,7 +61,6 @@ import { SOCKET_CLI_ORG_SLUG } from '../env/socket-cli-org-slug.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_PYTHON_PATH } from '../env/socket-cli-python-path.mts'
 import { SOCKET_CLI_SEA_NODE_VERSION } from '../env/socket-cli-sea-node-version.mts'
-import { SOCKET_CLI_SFW_LOCAL_PATH } from '../env/socket-cli-sfw-local-path.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from '../env/socket-cli-skip-update-check.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../env/socket-cli-socket-patch-local-path.mts'
 import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
@@ -124,7 +122,6 @@ export {
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_PYTHON_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
-  SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
@@ -182,7 +179,6 @@ const envSnapshot = {
   INLINED_PYTHON_BUILD_TAG: getPythonBuildTag(),
   INLINED_PYTHON_VERSION: getPythonVersion(),
   INLINED_SENTRY_BUILD: isSentryBuild(),
-  INLINED_SFW_VERSION: getSwfVersion(),
   INLINED_SOCKET_PATCH_VERSION: getSocketPatchVersion(),
   INLINED_SYNP_VERSION: getSynpVersion(),
   INLINED_VERSION: getCliVersion(),
@@ -222,7 +218,6 @@ const envSnapshot = {
   SOCKET_CLI_PYCLI_LOCAL_PATH,
   SOCKET_CLI_PYTHON_PATH,
   SOCKET_CLI_SEA_NODE_VERSION,
-  SOCKET_CLI_SFW_LOCAL_PATH,
   SOCKET_CLI_SKIP_UPDATE_CHECK,
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH,
   SOCKET_CLI_VIEW_ALL_RISKS,
@@ -280,6 +275,7 @@ const ENV = new Proxy(envSnapshot, {
     if (isVitestMode && typeof prop === 'string') {
       if (prop in process.env) {
         return {
+          __proto__: null,
           configurable: true,
           enumerable: true,
           writable: true,
