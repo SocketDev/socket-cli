@@ -2203,6 +2203,8 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/no-logger-newline-literal/package.json
 .config/fleet/oxlint-plugin/fleet/no-malformed-bypass-marker/index.mts
 .config/fleet/oxlint-plugin/fleet/no-malformed-bypass-marker/package.json
+.config/fleet/oxlint-plugin/fleet/no-map-async-callback/index.mts
+.config/fleet/oxlint-plugin/fleet/no-map-async-callback/package.json
 .config/fleet/oxlint-plugin/fleet/no-minified-bundler-output/index.mts
 .config/fleet/oxlint-plugin/fleet/no-minified-bundler-output/package.json
 .config/fleet/oxlint-plugin/fleet/no-module-eval-side-effects/index.mts
@@ -2252,6 +2254,8 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/no-spawn-stream-double-consume/package.json
 .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field/index.mts
 .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field/package.json
+.config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property/index.mts
+.config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property/package.json
 .config/fleet/oxlint-plugin/fleet/no-src-import-in-test-expect/index.mts
 .config/fleet/oxlint-plugin/fleet/no-src-import-in-test-expect/package.json
 .config/fleet/oxlint-plugin/fleet/no-status-emoji/index.mts
@@ -2349,8 +2353,11 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/prefer-shell-win32/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-compare-str/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-compare-str/package.json
+.config/fleet/oxlint-plugin/fleet/prefer-socket-lib-env/index.mts
+.config/fleet/oxlint-plugin/fleet/prefer-socket-lib-env/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-error-message/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-error-message/package.json
+.config/fleet/oxlint-plugin/fleet/prefer-socket-lib-json-format/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-normalize-path/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-normalize-path/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-socket-lib-predicates/index.mts
@@ -2400,6 +2407,7 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/use-fleet-canonical-api-token-getter/index.mts
 .config/fleet/oxlint-plugin/fleet/use-fleet-canonical-api-token-getter/package.json
 .config/fleet/oxlint-plugin/index.mts
+.config/fleet/oxlint-plugin/lib/ast-children.mts
 .config/fleet/oxlint-plugin/lib/comment-checks.mts
 .config/fleet/oxlint-plugin/lib/comment-markers.mts
 .config/fleet/oxlint-plugin/lib/comparators.mts
@@ -2628,7 +2636,6 @@ docs/fleet/agents.md/worktree-hygiene.md
 docs/fleet/agents.md/writing-skills-well.md
 docs/fleet/ai-balancer.md
 docs/references/fleet/sfw-local-install.md
-opencode.json
 patches/brace-expansion@5.0.9.patch
 patches/minimatch@10.2.6.patch
 scripts/fleet/agent-orphan-sweep.mts
