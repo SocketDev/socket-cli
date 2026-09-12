@@ -11,13 +11,13 @@
  * through - the onerror callback routes SDK errors to the logger - Errors from
  * serveStdio propagate to the caller.
  *
- * Related Files: - src/command/mcp/transport-stdio.mts - Implementation -
- * src/command/mcp/server.mts - Server factory, mocked here.
+ * Related Files: - src/core/mcp/transport-stdio.mts - Implementation -
+ * src/core/mcp/server.mts - Server factory, mocked here.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runStdioTransport } from '../../../../src/command/mcp/transport-stdio.mts'
+import { runStdioTransport } from '../../../../src/core/mcp/transport-stdio.mts'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 
@@ -45,7 +45,7 @@ const { mockCreateConfiguredServer } = vi.hoisted(() => ({
   })),
 }))
 
-vi.mock(import('../../../../src/command/mcp/server.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/server.mts'), () => ({
   createConfiguredServer: mockCreateConfiguredServer,
 }))
 

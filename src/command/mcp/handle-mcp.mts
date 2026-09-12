@@ -3,11 +3,11 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { SOCKET_CLI_DEBUG } from '../../env/socket-cli-debug.mts'
 import { getSocketOauthRequireAudience } from '../../env/socket-oauth-require-audience.mts'
 import { getDefaultApiToken } from '../../util/socket/sdk.mts'
-import { runHttpTransport } from './transport-http.mts'
-import { runStdioTransport } from './transport-stdio.mts'
+import { runHttpTransport } from '../../core/mcp/transport-http.mts'
+import { runStdioTransport } from '../../core/mcp/transport-stdio.mts'
 import { constants } from '../../constants.mts'
 
-import type { ServerConfig } from './server.mts'
+import type { ServerConfig } from '../../core/mcp/server.mts'
 
 const logger = getDefaultLogger()
 

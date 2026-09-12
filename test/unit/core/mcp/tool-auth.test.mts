@@ -6,7 +6,7 @@
  * `resolveScopedToolAuthToken` fails closed; `resolveToolAuthToken` (public,
  * non-tenant data) may fall back.
  *
- * Related Files: - src/command/mcp/tool-auth.mts.
+ * Related Files: - src/core/mcp/tool-auth.mts.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -17,7 +17,7 @@ import {
   resolveScopedToolAuthToken,
   resolveToolAuthToken,
   textToolResult,
-} from '../../../../src/command/mcp/tool-auth.mts'
+} from '../../../../src/core/mcp/tool-auth.mts'
 
 // Spelled out rather than imported: an expected value built from the module
 // under test would pass even if that module's wording regressed.

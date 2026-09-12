@@ -7,25 +7,25 @@
  * caller-chosen content. The bounds on that scan — pattern length, per-line
  * slice, and wall-clock budget — are the reason these tests exist.
  *
- * Related Files: - src/command/mcp/tool-package-file-contents.mts -
- * src/command/mcp/tool-package-file-grep.mts.
+ * Related Files: - src/core/mcp/tool-package-file-contents.mts -
+ * src/core/mcp/tool-package-file-grep.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { definePackageFileContentsTool } from '../../../../src/command/mcp/tool-package-file-contents.mts'
+import { definePackageFileContentsTool } from '../../../../src/core/mcp/tool-package-file-contents.mts'
 import {
   definePackageFileGrepTool,
   MAX_GREP_PATTERN_LENGTH,
   renderGrepMatches,
   scanLinesForPattern,
-} from '../../../../src/command/mcp/tool-package-file-grep.mts'
+} from '../../../../src/core/mcp/tool-package-file-grep.mts'
 
 const { mockGetOrFetchSocketBlob } = vi.hoisted(() => ({
   mockGetOrFetchSocketBlob: vi.fn(),
 }))
 
-vi.mock(import('../../../../src/command/mcp/lib/blob-cache.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/lib/blob-cache.mts'), () => ({
   getOrFetchSocketBlob: mockGetOrFetchSocketBlob,
 }))
 

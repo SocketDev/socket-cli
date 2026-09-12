@@ -51,7 +51,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
-import { runHttpTransport } from '../../../../src/command/mcp/transport-http.mts'
+import { runHttpTransport } from '../../../../src/core/mcp/transport-http.mts'
 
 import type * as HttpModule from 'node:http'
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'

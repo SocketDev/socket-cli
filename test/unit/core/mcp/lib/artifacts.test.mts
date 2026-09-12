@@ -17,17 +17,17 @@
  * Missing namespace handled, key uses empty string - Empty input returns empty
  * output.
  *
- * Related Files: - src/command/mcp/lib/artifacts.mts - Implementation -
- * src/command/mcp/depscore.mts - Caller (NDJSON response dedup)
+ * Related Files: - src/core/mcp/lib/artifacts.mts - Implementation -
+ * src/core/mcp/depscore.mts - Caller (NDJSON response dedup)
  */
 
 import { describe, expect, it } from 'vitest'
 
 import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 
-import { deduplicateArtifacts } from '../../../../../src/command/mcp/lib/artifacts.mts'
+import { deduplicateArtifacts } from '../../../../../src/core/mcp/lib/artifacts.mts'
 
-import type { ArtifactData } from '../../../../../src/command/mcp/lib/artifacts.mts'
+import type { ArtifactData } from '../../../../../src/core/mcp/lib/artifacts.mts'
 
 export function art(overrides: Partial<ArtifactData>): ArtifactData {
   return {

@@ -9,8 +9,8 @@ import {
   emitAuditEvent,
   extractResources,
   maskArgs,
-} from '../../../../src/command/mcp/tool-audit.mts'
-import type { AuditEntry } from '../../../../src/command/mcp/tool-audit.mts'
+} from '../../../../src/core/mcp/tool-audit.mts'
+import type { AuditEntry } from '../../../../src/core/mcp/tool-audit.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 const JSON_NULL: unknown = JSON.parse('null')

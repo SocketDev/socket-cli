@@ -12,7 +12,7 @@
  * splitScopes: non-string / empty string / single / multiple / extra ws -
  * isLocalhostOrigin: localhost / 127.0.0.1 / other / malformed URL.
  *
- * Related Files: - src/command/mcp/transport-http-helpers.mts -
+ * Related Files: - src/core/mcp/transport-http-helpers.mts -
  * Implementation.
  *
  * - Src/commands/mcp/transport-http.mts - Caller (HTTP server)
@@ -28,7 +28,7 @@ import {
   getRequestHeaderValue,
   isLocalhostOrigin,
   splitScopes,
-} from '../../../../src/command/mcp/transport-http-helpers.mts'
+} from '../../../../src/core/mcp/transport-http-helpers.mts'
 
 describe('getRequestHeaderValue', () => {
   it('returns empty string when header is undefined', () => {

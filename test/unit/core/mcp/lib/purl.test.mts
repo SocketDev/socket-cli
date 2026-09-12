@@ -26,13 +26,13 @@
  * - Ecosystem case folded to lowercase (NPM → npm)
  *
  * Related Files:
- * - src/command/mcp/lib/purl.mts - Implementation
- * - src/command/mcp/lib/artifacts.mts - Sister helper for response dedup
+ * - src/core/mcp/lib/purl.mts - Implementation
+ * - src/core/mcp/lib/artifacts.mts - Sister helper for response dedup
  */
 
 import { describe, expect, it } from 'vitest'
 
-import { buildPurl } from '../../../../../src/command/mcp/lib/purl.mts'
+import { buildPurl } from '../../../../../src/core/mcp/lib/purl.mts'
 
 describe('buildPurl', () => {
   describe('npm ecosystem', () => {

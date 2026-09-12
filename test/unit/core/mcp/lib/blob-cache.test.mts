@@ -5,15 +5,15 @@ import {
   evictBlobCache,
   getOrFetchSocketBlob,
   resetBlobCache,
-} from '../../../../../src/command/mcp/lib/blob-cache.mts'
+} from '../../../../../src/core/mcp/lib/blob-cache.mts'
 
-import type { BlobResult } from '../../../../../src/command/mcp/lib/blob.mts'
+import type { BlobResult } from '../../../../../src/core/mcp/lib/blob.mts'
 
 const { mockFetchSocketBlob } = vi.hoisted(() => ({
   mockFetchSocketBlob: vi.fn(),
 }))
 
-vi.mock(import('../../../../../src/command/mcp/lib/blob.mts'), () => ({
+vi.mock(import('../../../../../src/core/mcp/lib/blob.mts'), () => ({
   fetchSocketBlob: mockFetchSocketBlob,
 }))
 

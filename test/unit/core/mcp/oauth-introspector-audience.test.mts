@@ -19,9 +19,9 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OAuthIntrospector } from '../../../../src/command/mcp/oauth-introspector.mts'
+import { OAuthIntrospector } from '../../../../src/core/mcp/oauth-introspector.mts'
 
-import type { OAuthIntrospectorOptions } from '../../../../src/command/mcp/oauth-introspector.mts'
+import type { OAuthIntrospectorOptions } from '../../../../src/core/mcp/oauth-introspector.mts'
 
 import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request/request'
 

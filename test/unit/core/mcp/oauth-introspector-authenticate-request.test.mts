@@ -17,7 +17,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OAuthIntrospector } from '../../../../src/command/mcp/oauth-introspector.mts'
+import { OAuthIntrospector } from '../../../../src/core/mcp/oauth-introspector.mts'
 
 import type { ServerResponse } from 'node:http'
 import type { IncomingMessage } from 'node:http'

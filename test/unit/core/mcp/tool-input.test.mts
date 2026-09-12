@@ -6,8 +6,8 @@
  * argument and an outbound URL, so the negative cases matter more than the
  * positive ones.
  *
- * Related Files: - src/command/mcp/tool-input.mts -
- * src/command/mcp/tool-args.mts.
+ * Related Files: - src/core/mcp/tool-input.mts -
+ * src/core/mcp/tool-args.mts.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -16,13 +16,13 @@ import {
   readToolBoolean,
   readToolNumber,
   readToolString,
-} from '../../../../src/command/mcp/tool-args.mts'
+} from '../../../../src/core/mcp/tool-args.mts'
 import {
   isBoundedToolString,
   isSocketBlobHash,
   isSocketOrgSlug,
   truncateToolLabel,
-} from '../../../../src/command/mcp/tool-input.mts'
+} from '../../../../src/core/mcp/tool-input.mts'
 
 // Pinned literal rather than the module's own constant: an expected value taken
 // from the code under test cannot catch that constant changing.

@@ -10,7 +10,7 @@
  * resourceMetadataUrl / scope - handleRequestSafely: success / thrown error /
  * already-streaming / non-Error throw - module-level constants.
  *
- * Related Files: - src/command/mcp/transport-http-helpers.mts -
+ * Related Files: - src/core/mcp/transport-http-helpers.mts -
  * Implementation.
  *
  * - Src/commands/mcp/transport-http.mts - Caller (HTTP server)
@@ -31,7 +31,7 @@ import {
   parseJsonObject,
   writeJson,
   writeOAuthError,
-} from '../../../../src/command/mcp/transport-http-helpers.mts'
+} from '../../../../src/core/mcp/transport-http-helpers.mts'
 
 describe('parseJsonObject', () => {
   it('returns the parsed object on valid JSON', () => {

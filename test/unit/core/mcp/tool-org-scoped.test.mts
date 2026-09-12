@@ -7,18 +7,18 @@
  * shared operator token is refused, and the filters a caller sends are mapped
  * onto documented query parameters rather than passed through.
  *
- * Related Files: - src/command/mcp/tool-organizations.mts -
- * src/command/mcp/tool-alerts.mts - src/command/mcp/tool-threat-feed.mts.
+ * Related Files: - src/core/mcp/tool-organizations.mts -
+ * src/core/mcp/tool-alerts.mts - src/core/mcp/tool-threat-feed.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { defineAlertsTool } from '../../../../src/command/mcp/tool-alerts.mts'
-import { defineOrganizationsTool } from '../../../../src/command/mcp/tool-organizations.mts'
+import { defineAlertsTool } from '../../../../src/core/mcp/tool-alerts.mts'
+import { defineOrganizationsTool } from '../../../../src/core/mcp/tool-organizations.mts'
 import {
   buildThreatFeedQueryParams,
   defineThreatFeedTool,
-} from '../../../../src/command/mcp/tool-threat-feed.mts'
+} from '../../../../src/core/mcp/tool-threat-feed.mts'
 
 const {
   mockFetchSocketAlerts,
@@ -30,7 +30,7 @@ const {
   mockFetchSocketThreatFeed: vi.fn(),
 }))
 
-vi.mock(import('../../../../src/command/mcp/lib/socket-api.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/lib/socket-api.mts'), () => ({
   fetchSocketAlerts: mockFetchSocketAlerts,
   fetchSocketOrganizations: mockFetchSocketOrganizations,
   fetchSocketThreatFeed: mockFetchSocketThreatFeed,

@@ -4,12 +4,12 @@
  * The namespace rendering differs per ecosystem, and getting it wrong produces
  * a link that 404s, so each shape is pinned.
  *
- * Related Files: - src/command/mcp/lib/socket-report-url.mts.
+ * Related Files: - src/core/mcp/lib/socket-report-url.mts.
  */
 
 import { describe, expect, it } from 'vitest'
 
-import { buildSocketReportUrl } from '../../../../../src/command/mcp/lib/socket-report-url.mts'
+import { buildSocketReportUrl } from '../../../../../src/core/mcp/lib/socket-report-url.mts'
 
 describe('buildSocketReportUrl', () => {
   it('builds an unscoped npm URL', () => {
