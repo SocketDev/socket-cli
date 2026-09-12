@@ -115,7 +115,7 @@ export async function trackSubprocessExit(
 /**
  * Track subprocess/command start event.
  *
- * Use this when spawning external commands like npm, npx, coana, cdxgen, etc.
+ * Use this when spawning external commands like npm, npx, coana, etc.
  *
  * @param command Command being executed (e.g., 'npm', 'npx', 'coana').
  * @param metadata Optional additional metadata (e.g., cwd, purpose).

@@ -270,7 +270,7 @@ function runBinaryTestSuite(binaryType: keyof typeof BINARIES) {
       const commands = [
         ['manifest', '--help'],
         ['manifest', 'auto', '--help'],
-        ['manifest', 'cdxgen', '--help'],
+        ['sbom', '--help'],
         ['manifest', 'conda', '--help'],
         ['manifest', 'gradle', '--help'],
         ['manifest', 'kotlin', '--help'],

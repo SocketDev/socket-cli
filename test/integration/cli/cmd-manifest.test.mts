@@ -52,7 +52,6 @@ describe('socket manifest', async () => {
             Commands
               auto                        Auto-detect build and attempt to generate manifest file
               bazel                       [beta] Bazel SBOM support \\u2014 generate manifest files for a Bazel project (Maven, PyPI)
-              cdxgen                      Run cdxgen for SBOM generation
               conda                       [beta] Convert a Conda environment.yml file to a python requirements.txt
               gradle                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Gradle/Java/Kotlin/etc project
               kotlin                      [beta] Generate a Socket facts file (or \`pom.xml\` with --pom) for a Kotlin project

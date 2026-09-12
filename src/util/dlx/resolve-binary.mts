@@ -7,11 +7,9 @@ import os from 'node:os'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 
-import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
 import { getCoanaVersion } from '../../env/coana-version.mts'
 import { requireOpengrepChecksum } from '../../env/opengrep-checksums.mts'
 import { getOpengrepVersion } from '../../env/opengrep-version.mts'
-import { SOCKET_CLI_CDXGEN_LOCAL_PATH } from '../../env/socket-cli-cdxgen-local-path.mts'
 import { SOCKET_CLI_COANA_LOCAL_PATH } from '../../env/socket-cli-coana-local-path.mts'
 import { SOCKET_CLI_PYCLI_LOCAL_PATH } from '../../env/socket-cli-pycli-local-path.mts'
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../../env/socket-cli-socket-patch-local-path.mts'
@@ -156,25 +154,6 @@ export function getTrufflehogAssetName(version: string): string | undefined {
 
   const pattern = TRUFFLEHOG_ASSET_PATTERNS[platformKey]
   return pattern ? pattern(version) : undefined
-}
-
-/**
- * Resolve path for cdxgen binary. Checks SOCKET_CLI_CDXGEN_LOCAL_PATH
- * environment variable first.
- */
-export function resolveCdxgen(): BinaryResolution {
-  if (SOCKET_CLI_CDXGEN_LOCAL_PATH) {
-    return { type: 'local', path: SOCKET_CLI_CDXGEN_LOCAL_PATH }
-  }
-
-  return {
-    type: 'dlx',
-    details: {
-      name: '@cyclonedx/cdxgen',
-      version: getCdxgenVersion(),
-      binaryName: 'cdxgen',
-    },
-  }
 }
 
 /**

@@ -1,7 +1,7 @@
 /**
  * Integration tests for `socket manifest setup` command.
  *
- * Tests installation of manifest generation tools like cdxgen.
+ * Tests installation of manifest generation tools like Maven.
  *
  * Test Coverage: - Help text display and usage examples - Dry-run behavior
  * validation - Tool installation verification.

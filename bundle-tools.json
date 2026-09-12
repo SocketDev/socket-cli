@@ -16,13 +16,6 @@
       "bundled": true,
       "origin": "npm"
     },
-    "@cyclonedx/cdxgen": {
-      "description": "CycloneDX SBOM generator for software bill of materials",
-      "version": "12.0.0",
-      "integrity": "sha512-RRXEZ1eKHcU+Y/2AnfIg30EQRbOmlEpaJddmMVetpXeYpnxDy/yjBM67jXNKkA4iZYjZzfWe7I5GuxckRmuoqg==",
-      "bundled": true,
-      "origin": "npm"
-    },
     "opengrep": {
       "description": "OpenGrep SAST/code analysis engine (fork of Semgrep)",
       "repository": "github:opengrep/opengrep",
@@ -195,13 +188,6 @@
           "integrity": "sha256-O5gKdGIfCE/5ISbk5ihPL3QuV+Zs9nJ+bgECVzdwF+g="
         }
       }
-    },
-    "synp": {
-      "description": "Tool for converting between yarn.lock and package-lock.json",
-      "version": "1.9.14",
-      "integrity": "sha512-0e4u7KtrCrMqvuXvDN4nnHSEQbPlONtJuoolRWzut0PfuT2mEOvIFnYFHEpn5YPIOv7S5Ubher0b04jmYRQOzQ==",
-      "bundled": true,
-      "origin": "npm"
     },
     "trivy": {
       "description": "Trivy container and filesystem vulnerability scanner",

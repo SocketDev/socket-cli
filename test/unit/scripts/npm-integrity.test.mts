@@ -57,7 +57,7 @@ describe('collectNpmToolPins', () => {
 
   it('keeps an npm tool that declares no integrity so it can be reported', () => {
     const pins = collectNpmToolPins({
-      synp: { origin: 'npm', version: '1.9.14' },
+      'example-tool': { origin: 'npm', version: '1.9.14' },
     })
 
     expect(pins[0]!.integrity).toBe(undefined)
@@ -66,25 +66,27 @@ describe('collectNpmToolPins', () => {
 
 describe('parseDeclaredToolIntegrity', () => {
   it('parses a well-formed sha512 SRI', () => {
-    expect(parseDeclaredToolIntegrity('synp', PINNED_SRI).sri).toBe(PINNED_SRI)
+    expect(parseDeclaredToolIntegrity('example-tool', PINNED_SRI).sri).toBe(
+      PINNED_SRI,
+    )
   })
 
   it('fails loud when the pin is absent rather than skipping', () => {
-    expect(() => parseDeclaredToolIntegrity('synp', undefined)).toThrow(
-      /Missing integrity pin for npm tool "synp"/,
+    expect(() => parseDeclaredToolIntegrity('example-tool', undefined)).toThrow(
+      /Missing integrity pin for npm tool "example-tool"/,
     )
   })
 
   it('fails loud when the pin is an empty string', () => {
-    expect(() => parseDeclaredToolIntegrity('synp', '')).toThrow(
+    expect(() => parseDeclaredToolIntegrity('example-tool', '')).toThrow(
       /Missing integrity pin/,
     )
   })
 
   it('fails loud when the pin is malformed', () => {
-    expect(() => parseDeclaredToolIntegrity('synp', 'not-an-sri')).toThrow(
-      /Malformed integrity pin for npm tool "synp"/,
-    )
+    expect(() =>
+      parseDeclaredToolIntegrity('example-tool', 'not-an-sri'),
+    ).toThrow(/Malformed integrity pin for npm tool "example-tool"/)
   })
 })
 

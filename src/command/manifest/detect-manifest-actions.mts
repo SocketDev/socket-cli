@@ -18,7 +18,6 @@ import type { SocketJson } from '../../util/socket/json.mts'
 
 export interface GeneratableManifests {
   bazel: boolean
-  cdxgen: boolean
   count: number
   conda: boolean
   gradle: boolean
@@ -34,7 +33,6 @@ export async function detectManifestActions(
 ): Promise<GeneratableManifests> {
   const output = {
     bazel: false,
-    cdxgen: false,
     count: 0,
     conda: false,
     gradle: false,

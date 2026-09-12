@@ -56,7 +56,7 @@ function rootSubcommands() {
     // main bucket.
     'fix',
     'optimize',
-    'cdxgen',
+    'sbom',
     'ci',
     'login',
     // api bucket.
@@ -108,7 +108,7 @@ const ROOT_BUCKETS: CliBuckets = {
   // main.
   fix: 'main',
   optimize: 'main',
-  cdxgen: 'main',
+  sbom: 'main',
   ci: 'main',
   login: 'main',
   // api.

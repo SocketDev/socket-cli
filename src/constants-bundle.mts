@@ -28,13 +28,11 @@ import {
 } from './constants/alerts.mts'
 import {
   INLINED_COANA_VERSION,
-  INLINED_CYCLONEDX_CDXGEN_VERSION,
   INLINED_HOMEPAGE,
   INLINED_NAME,
   INLINED_PUBLISHED_BUILD,
   INLINED_PYTHON_BUILD_TAG,
   INLINED_PYTHON_VERSION,
-  INLINED_SYNP_VERSION,
   INLINED_VERSION,
   INLINED_VERSION_HASH,
 } from './constants/build.mts'
@@ -83,7 +81,6 @@ import {
 } from './constants/config.mts'
 import {
   ENV,
-  getCdxgenVersion,
   getCliHomepage,
   getCliName,
   getCliVersion,
@@ -91,7 +88,6 @@ import {
   getCoanaVersion,
   getPythonBuildTag,
   getPythonVersion,
-  getSynpVersion,
   isPublishedBuild,
 } from './constants/env.mts'
 import {
@@ -266,7 +262,6 @@ export const constants = {
   getBlessedContribPath,
   getBlessedOptions,
   getBlessedPath,
-  getCdxgenVersion,
   getCliHomepage,
   getCliName,
   getCliVersion,
@@ -293,7 +288,6 @@ export const constants = {
   getSocketAppDataPath,
   getSocketCachePath,
   getSocketRegistryPath,
-  getSynpVersion,
   getZshRcPath,
   GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
@@ -307,13 +301,11 @@ export const constants = {
   HTTP_STATUS_TOO_MANY_REQUESTS,
   HTTP_STATUS_UNAUTHORIZED,
   INLINED_COANA_VERSION,
-  INLINED_CYCLONEDX_CDXGEN_VERSION,
   INLINED_HOMEPAGE,
   INLINED_NAME,
   INLINED_PUBLISHED_BUILD,
   INLINED_PYTHON_BUILD_TAG,
   INLINED_PYTHON_VERSION,
-  INLINED_SYNP_VERSION,
   INLINED_VERSION,
   INLINED_VERSION_HASH,
   isPublishedBuild,

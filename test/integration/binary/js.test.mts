@@ -1129,21 +1129,18 @@ if (BINARY.enabled) {
       )
 
       it.skipIf(!ENV.RUN_INTEGRATION_TESTS)(
-        'should handle manifest cdxgen command',
+        'should handle sbom command',
         async () => {
           if (!binaryExists) {
             return
           }
 
-          const result = await executeCliCommand(
-            ['manifest', 'cdxgen', '--help'],
-            {
-              binPath: BINARY.path,
-              isolateConfig: false,
-            },
-          )
+          const result = await executeCliCommand(['sbom', '--help'], {
+            binPath: BINARY.path,
+            isolateConfig: false,
+          })
 
-          // cdxgen spawns external binary - just verify command exists.
+          // The bundled generator exposes help without scanning a project.
           expect(result.code).toBeGreaterThanOrEqual(0)
         },
       )

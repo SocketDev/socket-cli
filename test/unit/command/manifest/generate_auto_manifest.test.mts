@@ -102,7 +102,6 @@ vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
 
 const baseDetected = {
   bazel: false,
-  cdxgen: false,
   conda: false,
   count: 0,
   gradle: false,

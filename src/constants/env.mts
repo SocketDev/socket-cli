@@ -6,7 +6,6 @@
 import process, { env } from 'node:process'
 
 // Import CLI-specific env modules.
-import { getCdxgenVersion } from '../env/cdxgen-version.mts'
 import { CI } from '../env/ci.mts'
 import { getCliHomepage } from '../env/cli-homepage.mts'
 import { getCliName } from '../env/cli-name.mts'
@@ -37,7 +36,6 @@ import { SOCKET_CLI_API_PROXY } from '../env/socket-cli-api-proxy.mts'
 import { SOCKET_CLI_API_TIMEOUT } from '../env/socket-cli-api-timeout.mts'
 import { SOCKET_CLI_API_TOKEN } from '../env/socket-cli-api-token.mts'
 import { SOCKET_CLI_BIN_PATH } from '../env/socket-cli-bin-path.mts'
-import { SOCKET_CLI_CDXGEN_LOCAL_PATH } from '../env/socket-cli-cdxgen-local-path.mts'
 import { SOCKET_CLI_COANA_LOCAL_PATH } from '../env/socket-cli-coana-local-path.mts'
 import { SOCKET_CLI_CONFIG } from '../env/socket-cli-config.mts'
 import { SOCKET_CLI_DEBUG } from '../env/socket-cli-debug.mts'
@@ -60,7 +58,6 @@ import { SOCKET_CLI_SKIP_UPDATE_CHECK } from '../env/socket-cli-skip-update-chec
 import { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH } from '../env/socket-cli-socket-patch-local-path.mts'
 import { SOCKET_CLI_VIEW_ALL_RISKS } from '../env/socket-cli-view-all-risks.mts'
 import { getSocketPatchVersion } from '../env/socket-patch-version.mts'
-import { getSynpVersion } from '../env/synp-version.mts'
 import { TEMP } from '../env/temp.mts'
 import { TERM } from '../env/term.mts'
 import { TMP } from '../env/tmp.mts'
@@ -94,7 +91,6 @@ export {
   SOCKET_CLI_API_TIMEOUT,
   SOCKET_CLI_API_TOKEN,
   SOCKET_CLI_BIN_PATH,
-  SOCKET_CLI_CDXGEN_LOCAL_PATH,
   SOCKET_CLI_COANA_LOCAL_PATH,
   SOCKET_CLI_CONFIG,
   SOCKET_CLI_DEBUG,
@@ -127,7 +123,6 @@ export {
 
 // Re-export build metadata getter functions.
 export {
-  getCdxgenVersion,
   getCliHomepage,
   getCliName,
   getCliVersion,
@@ -137,7 +132,6 @@ export {
   getPythonBuildTag,
   getPythonVersion,
   getSocketPatchVersion,
-  getSynpVersion,
   isPublishedBuild,
 }
 
@@ -159,9 +153,7 @@ const envSnapshot = {
   GITHUB_SERVER_URL,
   HOME,
   // Build metadata, inlined by esbuild define.
-  INLINED_CDXGEN_VERSION: getCdxgenVersion(),
   INLINED_COANA_VERSION: getCoanaVersion(),
-  INLINED_CYCLONEDX_CDXGEN_VERSION: getCdxgenVersion(),
   INLINED_HOMEPAGE: getCliHomepage(),
   INLINED_NAME: getCliName(),
   INLINED_PUBLISHED_BUILD: isPublishedBuild(),
@@ -169,7 +161,6 @@ const envSnapshot = {
   INLINED_PYTHON_BUILD_TAG: getPythonBuildTag(),
   INLINED_PYTHON_VERSION: getPythonVersion(),
   INLINED_SOCKET_PATCH_VERSION: getSocketPatchVersion(),
-  INLINED_SYNP_VERSION: getSynpVersion(),
   INLINED_VERSION: getCliVersion(),
   INLINED_VERSION_HASH: getCliVersionHash(),
   LOCALAPPDATA,
@@ -184,7 +175,6 @@ const envSnapshot = {
   SOCKET_CLI_API_TIMEOUT,
   SOCKET_CLI_API_TOKEN,
   SOCKET_CLI_BIN_PATH,
-  SOCKET_CLI_CDXGEN_LOCAL_PATH,
   SOCKET_CLI_COANA_LOCAL_PATH,
   SOCKET_CLI_CONFIG,
   SOCKET_CLI_DEBUG,

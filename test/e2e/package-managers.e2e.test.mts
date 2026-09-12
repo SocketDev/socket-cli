@@ -1,12 +1,11 @@
 /**
  * @file E2E tests for Socket CLI's package-manager wrappers. Ported from
  *   `packages/cli/test/smoke.sh`'s npm / npx / raw-npm / raw-npx / wrapper /
- *   optimize / cdxgen / dependencies sections. Covers: help / dry-run paths for
+ *   optimize / dependencies sections. Covers: help / dry-run paths for
  *   each wrapper; the wrapper on/off toggle (scratch-isolated so the
  *   developer's real shim install isn't touched); `dependencies` listing +
- *   pagination flags; `cdxgen`'s no-arg invocation; `optimize` flag matrix.
+ *   pagination flags; `optimize` flag matrix.
  *   Gated on `RUN_E2E_TESTS=1`. `dependencies` against the org list needs auth;
- *   `cdxgen` needs a real cdxgen install on PATH.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -179,18 +178,6 @@ describe('socket optimize (e2e)', () => {
     })
     expect(result.code).toBe(0)
   })
-})
-
-describe('socket cdxgen (e2e)', () => {
-  it.skipIf(!RUN)(
-    'cdxgen (no args, no real cdxgen on PATH) exits 1',
-    async () => {
-      // cdxgen may write SBOM artifacts into cwd if it succeeds; scratch keeps
-      // them out of the dev's repo.
-      const result = await executeCliInScratch(['cdxgen'])
-      expect(result.code).toBe(1)
-    },
-  )
 })
 
 describe('socket organization dependencies (e2e, auth required, scratch-isolated)', () => {

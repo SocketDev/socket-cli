@@ -11,7 +11,6 @@
  * bazel=true - environment.yml present → conda=true, count 1 -
  * environment.yaml present (when no .yml) → conda=true - Both .yml and .yaml
  * present → only counts once yml wins - All present → all true - sockJson
- * disabled flags suppress each generator - cdxgen field is always false, not
  * auto-detected.
  *
  * Related Files: - src/command/manifest/detect-manifest-actions.mts -
@@ -50,7 +49,6 @@ describe('detectManifestActions', () => {
     const result = await detectManifestActions(undefined, cwd)
     expect(result).toEqual({
       bazel: false,
-      cdxgen: false,
       count: 0,
       conda: false,
       gradle: false,
@@ -204,14 +202,6 @@ describe('detectManifestActions', () => {
     const result = await detectManifestActions(sockJson, cwd)
     expect(result.conda).toBe(false)
     expect(result.count).toBe(0)
-  })
-
-  it('always reports cdxgen as false (not auto-detected)', async () => {
-    touch('build.sbt')
-    touch('build.gradle')
-    touch('environment.yml')
-    const result = await detectManifestActions(undefined, cwd)
-    expect(result.cdxgen).toBe(false)
   })
 
   it('ignores other socket.json keys when checking specific generators', async () => {

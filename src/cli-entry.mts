@@ -29,6 +29,7 @@ import { getCliVersion } from './env/cli-version.mts'
 import { SOCKET_CLI_SKIP_UPDATE_CHECK } from './env/socket-cli-skip-update-check.mts'
 import { VITEST } from './env/vitest.mts'
 import { meow } from './meow.mts'
+import { normalizeSbomDirectoryArguments } from './util/cli/sbom-arguments.mts'
 import { meowWithSubcommands } from './util/cli/with-subcommands.mts'
 import {
   formatErrorForJson,
@@ -80,6 +81,11 @@ const cliStartTime = Date.now()
 setupTelemetryExitHandlers()
 
 void (async () => {
+  const argv = normalizeSbomDirectoryArguments(process.argv.slice(2))
+  if (argv[0] === 'sbom') {
+    await dispatchCliCommand(argv)
+    return
+  }
   // `--describe` answers before ANY side effect — telemetry included: a
   // caller inventorying tools must never show up in usage metrics or wait on
   // an update check.
@@ -120,21 +126,13 @@ void (async () => {
     )
 
     // Background preflight downloads for optional dependencies.
-    // This silently downloads @coana-tech/cli, @cyclonedx/cdxgen, and the
+    // This silently downloads @coana-tech/cli and the
     // Python tooling in the background so they're cached for future use.
     runPreflightDownloads()
   }
 
   try {
-    await meowWithSubcommands(
-      {
-        name: SOCKET_CLI_BIN_NAME,
-        argv: process.argv.slice(2),
-        importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
-        subcommands: rootCommands,
-      },
-      { aliases: rootAliases, buckets: rootCommandBuckets },
-    )
+    await dispatchCliCommand(argv)
 
     // Track successful CLI completion.
     await trackCliComplete(process.argv, cliStartTime, process.exitCode)
@@ -250,3 +248,17 @@ process.on('unhandledRejection', async (reason, promise) => {
     process.exit(1)
   }
 })
+
+export async function dispatchCliCommand(
+  argv: readonly string[],
+): Promise<void> {
+  await meowWithSubcommands(
+    {
+      name: SOCKET_CLI_BIN_NAME,
+      argv,
+      importMeta: { url: url.pathToFileURL(__filename).href } as ImportMeta,
+      subcommands: rootCommands,
+    },
+    { aliases: rootAliases, buckets: rootCommandBuckets },
+  )
+}
