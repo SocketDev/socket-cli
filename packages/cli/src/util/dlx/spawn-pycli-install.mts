@@ -55,25 +55,11 @@ export async function ensureSocketPyCli(
     const error = e as NodeJS.ErrnoException
     if (error.code === 'EEXIST') {
       // Check if lock is stale by reading PID.
-      let isStale = false
-      try {
-        const lockPid = await fs.readFile(lockFile, 'utf8')
-        const pid = Number.parseInt(lockPid.trim(), 10)
-        if (!Number.isNaN(pid) && pid > 0) {
-          if (!isProcessAlive(pid)) {
-            isStale = true
-          }
-        } else {
-          isStale = true
-        }
-      } catch {
-        // Could not read lock file, may have been removed.
-        isStale = true
-      }
+      const isStale = await isPyCliInstallLockStale(lockFile)
 
       if (isStale) {
         // Stale lock detected, remove and retry immediately.
-        await safeDelete(lockFile, { force: true })
+        await safeDelete(lockFile)
         return ensureSocketPyCli(pythonBin, retryCount + 1)
       }
 
@@ -92,7 +78,7 @@ export async function ensureSocketPyCli(
             const pid = Number.parseInt(lockPid.trim(), 10)
             if (!Number.isNaN(pid) && pid > 0 && !isProcessAlive(pid)) {
               // Lock holder died during wait, retry.
-              await safeDelete(lockFile, { force: true })
+              await safeDelete(lockFile)
               return ensureSocketPyCli(pythonBin, retryCount + 1)
             }
           } catch {
@@ -108,49 +94,53 @@ export async function ensureSocketPyCli(
   }
 
   try {
-    const pyCliVersion = getPyCliVersion()
+    await installSocketPyCli(pythonBin)
+  } finally {
+    // Clean up lock file.
+    await safeDelete(lockFile)
+  }
+}
 
-    // Get checksum for integrity verification.
-    // Checksums are keyed by wheel filename in bundle-tools.json.
-    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
-    const checksums = getPyCliChecksums()
-    const sha256 = checksums[wheelFilename]
+export async function installSocketPyCli(pythonBin: string): Promise<void> {
+  const pyCliVersion = getPyCliVersion()
 
-    // If checksums are available, download verified wheel and install from local file.
-    // Otherwise fall back to pip install, dev mode or missing checksums.
-    if (sha256) {
-      const wheelPath = await downloadPyPiWheel(
-        'socketsecurity',
-        pyCliVersion,
-        sha256,
-      )
-      if (wheelPath) {
-        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
-          shell: isWin32(),
-          stdio: 'inherit',
-        })
-        /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
-      } else {
-        throw new InputError(
-          `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
-        )
-      }
-      /* c8 ignore stop */
-    } else {
-      // Dev mode: no checksums inlined, install directly from PyPI.
-      const versionSpec = convertCaretToPipRange(pyCliVersion)
-      const packageSpec = versionSpec
-        ? `socketsecurity${versionSpec}`
-        : 'socketsecurity'
+  // Get checksum for integrity verification.
+  // Checksums are keyed by wheel filename in bundle-tools.json.
+  const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+  const checksums = getPyCliChecksums()
+  const sha256 = checksums[wheelFilename]
 
-      await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+  // If checksums are available, download verified wheel and install from local file.
+  // Otherwise fall back to pip install, dev mode or missing checksums.
+  if (sha256) {
+    const wheelPath = await downloadPyPiWheel(
+      'socketsecurity',
+      pyCliVersion,
+      sha256,
+    )
+    if (wheelPath) {
+      await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
         shell: isWin32(),
         stdio: 'inherit',
       })
+      /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
+    } else {
+      throw new InputError(
+        `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
+      )
     }
-  } finally {
-    // Clean up lock file.
-    await safeDelete(lockFile, { force: true })
+    /* c8 ignore stop */
+  } else {
+    // Dev mode: no checksums inlined, install directly from PyPI.
+    const versionSpec = convertCaretToPipRange(pyCliVersion)
+    const packageSpec = versionSpec
+      ? `socketsecurity${versionSpec}`
+      : 'socketsecurity'
+
+    await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+      shell: isWin32(),
+      stdio: 'inherit',
+    })
   }
 }
 
@@ -167,6 +157,27 @@ export function isProcessAlive(pid: number): boolean {
   } catch (e) {
     return (e as NodeJS.ErrnoException).code === 'EPERM'
   }
+}
+
+export async function isPyCliInstallLockStale(
+  lockFile: string,
+): Promise<boolean> {
+  let isStale = false
+  try {
+    const lockPid = await fs.readFile(lockFile, 'utf8')
+    const pid = Number.parseInt(lockPid.trim(), 10)
+    if (!Number.isNaN(pid) && pid > 0) {
+      if (!isProcessAlive(pid)) {
+        isStale = true
+      }
+    } else {
+      isStale = true
+    }
+  } catch {
+    // Could not read lock file, may have been removed.
+    isStale = true
+  }
+  return isStale
 }
 
 /**
