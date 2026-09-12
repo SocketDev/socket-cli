@@ -97,11 +97,6 @@ const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
 const MAX_CONFIG_READ_RETRIES = 3
 
-// Ensure export because dist/utils.js is required in src/constants.mts.
-if (typeof exports === 'object' && exports !== null) {
-  exports.getConfigValueOrUndef = getConfigValueOrUndef
-}
-
 let cachedConfig: LocalConfig | undefined
 
 let cachedConfigMtime: number | undefined

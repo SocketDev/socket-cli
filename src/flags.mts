@@ -33,11 +33,6 @@ let rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 
 let maxOldSpaceSizeFlag: number | undefined
 
-// Ensure export because dist/flags.js is required in src/constants.mts.
-if (typeof exports === 'object' && exports !== null) {
-  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
-}
-
 let maxSemiSpaceSizeFlag: number | undefined
 
 export function getMaxOldSpaceSizeFlag(): number {
@@ -204,11 +199,6 @@ export function resetFlagCache(): void {
  */
 export function stringFlagValue(value: unknown, fallback = ''): string {
   return typeof value === 'string' && value ? value : fallback
-}
-
-// Ensure export because dist/flags.js is required in src/constants.mts.
-if (typeof exports === 'object' && exports !== null) {
-  exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 }
 
 export const commonFlags = defineFlags({

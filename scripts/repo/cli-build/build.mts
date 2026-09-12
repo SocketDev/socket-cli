@@ -10,6 +10,7 @@ import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
+import { copyPastoralistAssets } from './pastoralist.mts'
 import { buildSdxgenBundle } from './sdxgen.mts'
 import { safeDelete } from '../../fleet/fs/safe.mts'
 
@@ -183,6 +184,7 @@ async function main(): Promise<void> {
   const results = await Promise.allSettled([
     writeCommandWrappers(),
     buildSdxgenBundle(packageRoot),
+    copyPastoralistAssets(packageRoot),
     copyManifestScripts(),
   ])
   const failed = results.find(result => result.status === 'rejected')
