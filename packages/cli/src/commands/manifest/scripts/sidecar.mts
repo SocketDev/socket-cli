@@ -1,3 +1,5 @@
+import { compareStr } from '@socketsecurity/lib-stable/sorts/strings'
+
 import { mavenCoordinateKey } from './facts.mts'
 
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
@@ -120,7 +122,7 @@ export function serializeSidecar(
   resolved.sort((a, b) => {
     const ka = `${a.group}:${a.name}:${a.ext}:${a.classifier ?? ''}:${a.version}`
     const kb = `${b.group}:${b.name}:${b.ext}:${b.classifier ?? ''}:${b.version}`
-    return ka < kb ? -1 : ka > kb ? 1 : 0
+    return compareStr(ka, kb)
   })
   return resolved
 }

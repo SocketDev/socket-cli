@@ -14,6 +14,8 @@ import { getBaseBranch, getRepoInfo } from '../../util/git/operations.mjs'
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../util/git/operations.mjs'
 
+const logger = getDefaultLogger()
+
 /**
  * Check which required CI environment variables are missing. Returns lists of
  * missing and present variables.
@@ -100,7 +102,6 @@ export async function getFixEnv(): Promise<FixEnv> {
     // CI is set but other required vars are missing.
     const missingExceptCi = envCheck.missing.filter(v => v !== 'CI')
     if (missingExceptCi.length) {
-      const logger = getDefaultLogger()
       logger.warn(
         'CI mode detected, but pull request creation is disabled due to missing environment variables:\n' +
           `  Missing: ${joinAnd(missingExceptCi)}\n` +

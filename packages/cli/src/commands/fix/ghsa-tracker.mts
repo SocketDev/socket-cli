@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { safeMkdir, strictDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
 
 import { getSocketFixBranchName } from './git.mts'
@@ -105,7 +105,7 @@ export async function markGhsaFixed(
             debug(
               `ghsa-tracker: removing stale lock from dead process ${lockPid}`,
             )
-            await safeDelete(lockFile, { force: true })
+            await strictDelete(lockFile)
             continue
           }
         } catch {
@@ -152,7 +152,7 @@ export async function markGhsaFixed(
   } finally {
     // Release lock.
     if (lockAcquired) {
-      await safeDelete(lockFile, { force: true })
+      await strictDelete(lockFile)
     }
   }
 }

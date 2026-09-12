@@ -186,7 +186,7 @@ export async function runMetadataCqueryForRepo(
     // — not in the try block. Classify by what we parsed (subset present =>
     // `partial`, nothing parsed => `error`) so that partial subset is written
     // best-effort rather than discarded as a hard error. Timeout stays
-    // distinct so the orchestrator can reap the wedged server.
+    // distinct so the orchestrator can terminate the unresponsive server.
     const code = typeof err.code === 'number' ? err.code : 1
     return {
       artifacts,
