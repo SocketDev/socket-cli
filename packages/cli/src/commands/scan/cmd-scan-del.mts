@@ -80,11 +80,11 @@ export async function run(
 
   const interactive = cli.flags['interactive']
 
-  const [scanId = ''] = cli.input
+  const { 0: scanId = '' } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
-  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  const { 0: orgSlug, 1: defaultOrgSlug } = await determineOrgSlug(
     orgFlag || '',
     interactive,
     dryRun,

@@ -72,7 +72,7 @@ export async function getLastCommitDetails({
     }
   }
 
-  const [lastCommit] = commits
+  const { 0: lastCommit } = commits
   const lastCommitSha = lastCommit?.sha
 
   if (!lastCommitSha) {

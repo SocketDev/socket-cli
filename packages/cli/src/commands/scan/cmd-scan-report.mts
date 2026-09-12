@@ -151,7 +151,7 @@ export async function run(
 
   const short = cli.flags['short']
 
-  const [scanId = '', filepath = ''] = cli.input
+  const { 0: scanId = '', 1: filepath = '' } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 

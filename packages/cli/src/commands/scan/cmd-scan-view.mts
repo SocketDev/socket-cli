@@ -93,7 +93,7 @@ export async function run(
 
   const interactive = cli.flags['interactive']
 
-  const [scanId = '', file = ''] = cli.input
+  const { 0: scanId = '', 1: file = '' } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 

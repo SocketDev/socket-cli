@@ -121,7 +121,7 @@ export async function run(
 
   const interactive = cli.flags['interactive']
 
-  let [id1 = '', id2 = ''] = cli.input
+  let { 0: id1 = '', 1: id2 = '' } = cli.input
   // Support dropping in full socket urls to an sbom.
   if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
     id1 = id1.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
