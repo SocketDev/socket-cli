@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { checkFirewallBundle } from '../../../scripts/repo/check/firewall-is-embedded.mts'
+import { checkFirewallBundle } from '../../../../scripts/repo/check/firewall-is-embedded.mts'
 
 describe('embedded firewall bundle gate', () => {
   it('rejects an external SFW binary', () => {

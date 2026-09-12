@@ -11,7 +11,7 @@
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 
-import { parseJsonObject } from './transport-http-util.mts'
+import { parseJsonObject } from './http-util.mts'
 
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 

@@ -39,11 +39,6 @@ export interface BabelVariableDeclarator extends BabelNode {
   init: BabelNode | null
 }
 
-export interface BabelVariableDeclaration extends BabelNode {
-  type: 'VariableDeclaration'
-  declarations: BabelVariableDeclarator[]
-}
-
 export interface BabelLogicalExpression extends BabelNode {
   type: 'LogicalExpression'
   left: BabelNode

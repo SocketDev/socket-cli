@@ -142,8 +142,7 @@ void (async () => {
   // an update check.
   const describeKind = describeRequest(process.argv.slice(2))
   if (describeKind) {
-    // oxlint-disable-next-line socket/no-direct-stream-write -- protocol output
-    process.stdout.write(
+    logger.info(
       renderDescribe(
         describeKind,
         buildRootManifest({
@@ -151,7 +150,7 @@ void (async () => {
           subcommands: rootCommands,
           version: getCliVersion() || '0.0.0',
         }),
-      ),
+      ).trimEnd(),
     )
     return
   }

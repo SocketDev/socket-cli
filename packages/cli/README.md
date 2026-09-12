@@ -162,6 +162,9 @@ Package-manager commands such as `socket npm install` use the same wrapper.
 3. Check package downloads against Socket policy before forwarding them.
 4. Close the proxy before returning the command's exit status.
 
+<details>
+<summary>Firewall configuration and command details</summary>
+
 The wrapper recognizes npm, PyPI, Go, Maven, RubyGems, Cargo, and NuGet downloads.
 It supports HTTP and HTTPS upstream proxies through `SFW_UPSTREAM_PROXY`.
 `SFW_CUSTOM_REGISTRIES` adds registry hosts and path prefixes.
@@ -189,6 +192,8 @@ JSON. `SFW_REPORT_MESSAGE` adds a report message. Firewall telemetry is disabled
 Known unsupported ecosystems pass through without inspection. Free-mode reports
 list the unsupported ecosystems contacted during the run.
 Service mode and standalone registry mode are unavailable.
+
+</details>
 
 ## Build System
 

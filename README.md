@@ -54,6 +54,9 @@ For the hosted service, use your client's native remote connector with
 `https://mcp.socket.dev/`. In Claude Desktop, add it through **Customize >
 Connectors**.
 
+<details>
+<summary>Configure clients that require a stdio bridge</summary>
+
 Clients that require a stdio bridge can use the verified `mcp-remote@0.8.3`
 release. Install it with `pnpm add --global mcp-remote@0.8.3`, then configure:
 
@@ -74,6 +77,8 @@ can open authorization after connection without starting that listener. The
 0.8.3. Update the bridge executable if authorization returns to an unavailable
 localhost callback. Reauthorization recovery was verified against the published
 bridge transport; a complete browser login remains a separate integration check.
+
+</details>
 
 ## Development
 

@@ -173,8 +173,7 @@ export async function runPipeline(
   )
 
   if (flags.printCacheKey) {
-    // oxlint-disable-next-line socket/no-direct-stream-write -- raw cache key
-    process.stdout.write(`${cacheKey}\n`)
+    logger.info(cacheKey)
     return undefined
   }
 

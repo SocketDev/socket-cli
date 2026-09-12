@@ -3,7 +3,7 @@
  *
  * These small functions handle header normalization, base-URL construction,
  * scope splitting, and origin classification. Pulled out of
- * transport-http-util.mts so they can be exercised directly without booting an
+ * http-util.mts so they can be exercised directly without booting an
  * HTTP server.
  *
  * Test Coverage (100% target): - getRequestHeaderValue: undefined / string /
@@ -13,10 +13,10 @@
  * splitScopes: non-string / empty string / single / multiple / extra ws -
  * isLocalhostOrigin: localhost / 127.0.0.1 / other / malformed URL.
  *
- * Related Files: - src/commands/mcp/transport-http-util.mts -
+ * Related Files: - src/commands/mcp/http-util.mts -
  * Implementation.
  *
- * - Src/commands/mcp/transport-http-util.mts - Caller (HTTP server)
+ * - Src/commands/mcp/http-util.mts - Caller (HTTP server)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -29,7 +29,7 @@ import {
   getRequestHeaderValue,
   isLocalhostOrigin,
   splitScopes,
-} from '../../../../src/commands/mcp/transport-http-util.mts'
+} from '../../../../src/commands/mcp/http-util.mts'
 
 describe('getRequestHeaderValue', () => {
   it('returns empty string when header is undefined', () => {
