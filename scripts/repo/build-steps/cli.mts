@@ -33,18 +33,18 @@ export function parseArgs(): ParsedArgs {
       continue
     }
     const next = args[i + 1]
-    if (arg === '--target' && next !== undefined) {
+    if (matchesValueOption(arg, '--target', next)) {
       target = next
       i += 1
-    } else if (arg === '--targets' && next !== undefined) {
-      targets = next.split(',').map(t => t.trim())
+    } else if (matchesValueOption(arg, '--targets', next)) {
+      targets = next!.split(',').map(t => t.trim())
       i += 1
-    } else if (arg === '--platform' && next !== undefined) {
+    } else if (matchesValueOption(arg, '--platform', next)) {
       platform = next
       i += 1
     } else if (arg.startsWith('--platform=')) {
       platform = arg.split('=')[1]
-    } else if (arg === '--arch' && next !== undefined) {
+    } else if (matchesValueOption(arg, '--arch', next)) {
       arch = next
       i += 1
     } else if (arg.startsWith('--arch=')) {
@@ -55,7 +55,7 @@ export function parseArgs(): ParsedArgs {
       parallel = true
     } else if (arg === '--force') {
       force = true
-    } else if (arg === '--help' || arg === '-h') {
+    } else if (['--help', '-h'].includes(arg)) {
       help = true
     } else {
       buildArgs.push(arg)
@@ -137,4 +137,12 @@ export function showHelp(): void {
     }
   }
   logger.log('')
+}
+
+function matchesValueOption(
+  arg: string,
+  expected: string,
+  next: string | undefined,
+): boolean {
+  return arg === expected && next !== undefined
 }
