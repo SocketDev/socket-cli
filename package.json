@@ -265,11 +265,18 @@
     "strict": true
   },
   "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": ">=11.0.0 <12.0.0",
-      "onFail": "error"
-    }
+    "packageManager": [
+      {
+        "name": "npm",
+        "version": "^11.19.0 || >=12.0.2",
+        "onFail": "error"
+      },
+      {
+        "name": "pnpm",
+        "version": "^11.25.0 || >=12.3.4",
+        "onFail": "error"
+      }
+    ]
   },
   "engines": {
     "node": ">=24",
