@@ -206,7 +206,15 @@ export function normalizeToMavenInstallJson(
       depsByKey.set(key, depCoords)
     }
   }
-  // Phase 2: edges. Emit only where both source and target are emitted keys.
+  pruneMavenEdges(out, depsByKey, prunedEdges)
+  return { droppedArtifacts, json: out, prunedEdges }
+}
+
+export function pruneMavenEdges(
+  out: MavenInstallJsonCurrent,
+  depsByKey: Map<string, Set<string>>,
+  prunedEdges: string[],
+): void {
   const validKeys = new Set(Object.keys(out.artifacts))
   for (const { 0: key, 1: depCoords } of depsByKey) {
     if (!validKeys.has(key)) {
@@ -227,7 +235,6 @@ export function normalizeToMavenInstallJson(
       out.dependencies[key] = kept
     }
   }
-  return { droppedArtifacts, json: out, prunedEdges }
 }
 
 // Splits "g:a:v" -> { groupArtifact: "g:a", version: "v" }.
