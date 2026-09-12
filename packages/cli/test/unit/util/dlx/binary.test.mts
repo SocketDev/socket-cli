@@ -26,7 +26,10 @@ describe('binary', () => {
   describe('getSocketHomePath', () => {
     it('should return correct path', () => {
       const result = normalizePath(getSocketHomePath())
-      const expected = normalizePath(path.join(os.homedir(), '.socket'))
+      const expected = normalizePath(
+        process.env['SOCKET_HOME'] ??
+          path.join(process.env['HOME'] ?? os.homedir(), '.socket'),
+      )
       expect(result).toBe(expected)
     })
   })
@@ -34,7 +37,13 @@ describe('binary', () => {
   describe('getDlxCachePath', () => {
     it('should return correct cache path', () => {
       const result = normalizePath(getDlxCachePath())
-      const expected = normalizePath(path.join(os.homedir(), '.socket', '_dlx'))
+      const expected = normalizePath(
+        path.join(
+          process.env['SOCKET_HOME'] ??
+            path.join(process.env['HOME'] ?? os.homedir(), '.socket'),
+          '_dlx',
+        ),
+      )
       expect(result).toBe(expected)
     })
   })
