@@ -5,6 +5,8 @@ import { REPO_ROOT } from '../../fleet/paths.mts'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
 import { runMain } from '../../fleet/process/run-main.mts'
 
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
+
 export function checkFirewallBundle(manifest: {
   tools?: Record<string, unknown> | undefined
 }): string[] {
@@ -34,10 +36,13 @@ export async function main(): Promise<void> {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'verifies that the CLI uses its embedded firewall instead of an external SFW binary',
+  help: 'Usage: node scripts/repo/check/firewall-is-embedded.mts [--json]',
+  json: 'result',
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe:
-      'verifies that the CLI uses its embedded firewall instead of an external SFW binary',
-    help: 'Usage: node scripts/repo/check/firewall-is-embedded.mts [--json]',
-  })
+  runMain(main, SCRIPT_META)
 }

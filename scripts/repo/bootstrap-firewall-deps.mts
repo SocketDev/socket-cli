@@ -38,6 +38,11 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { safeDeleteSync } from '@socketsecurity/lib-stable/fs/safe'
 
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // oxlint-disable-next-line socket/prefer-find-up-package-json, socket/prefer-find-repo-root -- this zero-dependency bootstrap cannot import the fleet/lib helpers it installs.
 const REPO_ROOT = path.resolve(__dirname, '..', '..')
@@ -274,7 +279,7 @@ const bootstrapPackage = async (pkgName: string): Promise<void> => {
   log(`${pkgName}@${version} → node_modules/${pkgName}`)
 }
 
-const main = async (): Promise<number> => {
+export async function main(): Promise<number> {
   log(
     `Bootstrapping ${BOOTSTRAP_PACKAGES.length} package(s) from npm registry…`,
   )
@@ -294,13 +299,16 @@ const main = async (): Promise<number> => {
   return 0
 }
 
-main().then(
-  code => process.exit(code),
-  (e: unknown) => {
-    err(`Bootstrap failed: ${bootstrapErrorMessage(e)}`)
-    process.exit(1)
-  },
-)
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'bootstrap pinned zero-dependency Socket packages before installation',
+  help: 'Usage: node scripts/repo/bootstrap-firewall-deps.mts [--json]',
+  json: 'result',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}
 
 function readCatalogVersion(pkgName: string): string | undefined {
   // (1) pnpm-workspace.yaml catalog

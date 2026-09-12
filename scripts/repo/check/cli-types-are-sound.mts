@@ -12,6 +12,7 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { isAgent } from '@socketsecurity/lib-stable/env/agents'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
@@ -65,7 +66,7 @@ export async function main(): Promise<void> {
     process.exitCode = 1
     return
   }
-  if (!quiet) {
+  if (!quiet && !isAgent()) {
     logger.success('packages/cli typechecks (tsc --noEmit).')
   }
 }
@@ -76,6 +77,7 @@ const SCRIPT_META: ScriptMeta = {
   help: `Usage: node scripts/repo/check/cli-types-are-sound.mts [--quiet]
 
   --quiet  suppress the success line`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

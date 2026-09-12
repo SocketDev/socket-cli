@@ -60,6 +60,7 @@ Platform targets: ${PLATFORM_TARGETS.join(', ')}
 
 Yoga WASM and node-smol binaries are downloaded from socket-btm; all
 pre-built binaries are cached in ~/.socket/.`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

@@ -1,8 +1,9 @@
 import process from 'node:process'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
 import { restoreCache } from './setup/cache.mts'
 import { ensureGhCli } from './setup/installers.mts'
 import {
@@ -11,6 +12,8 @@ import {
   generateSocketbinPackages,
 } from './setup/package-generation.mts'
 import { checkPrerequisite, hasCommand } from './setup/version-check.mts'
+
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 export { compareVersions } from './setup/version-check.mts'
 export { restoreCache } from './setup/cache.mts'
@@ -21,43 +24,6 @@ const autoInstall = process.argv.includes('--install')
 const quiet = process.argv.includes('--quiet')
 const skipPrereqs = process.argv.includes('--skip-prereqs')
 const skipGhCache = process.argv.includes('--skip-gh-cache')
-
-// Handle --help flag.
-const showHelp = process.argv.includes('--help') || process.argv.includes('-h')
-if (showHelp) {
-  logger.log('')
-  logger.log('Socket CLI Developer Setup')
-  logger.log('')
-  logger.log('Usage:')
-  logger.log('  pnpm run setup [options]')
-  logger.log('')
-  logger.log('Options:')
-  logger.log(
-    '  --install          Auto-install missing optional tools (gh CLI)',
-  )
-  logger.log('  --skip-prereqs     Skip prerequisite checks (for CI use)')
-  logger.log(
-    '  --skip-gh-cache    Skip GitHub cache restoration (useful when cache is corrupt)',
-  )
-  logger.log('  --quiet            Minimal output')
-  logger.log('  --help, -h         Show this help message')
-  logger.log('')
-  logger.log('Examples:')
-  logger.log(
-    '  pnpm run setup                      # Check prerequisites and restore cache',
-  )
-  logger.log(
-    '  pnpm run setup --install            # Auto-install optional tools',
-  )
-  logger.log(
-    '  pnpm run setup --skip-gh-cache      # Skip cache (useful if cache is corrupt)',
-  )
-  logger.log(
-    '  pnpm run setup --skip-prereqs       # Skip checks, only restore cache',
-  )
-  logger.log('')
-  process.exitCode = 0
-}
 
 /**
  * Main entry point.
@@ -198,14 +164,17 @@ async function main(): Promise<number> {
   return 0
 }
 
-if (!showHelp) {
-  main()
-    .then((code: number) => {
-      process.exitCode = code
-    })
-    .catch((e: unknown) => {
-      const message = errorMessage(e)
-      logger.error(message)
-      process.exitCode = 1
-    })
+const SCRIPT_META: ScriptMeta = {
+  describe:
+    'prepare Socket CLI development dependencies and generated packages',
+  help: `Usage: pnpm run setup [flags]
+  --install          install the optional GitHub CLI when missing
+  --skip-prereqs     skip prerequisite checks
+  --skip-gh-cache    skip GitHub cache restoration
+  --quiet            suppress status output`,
+  json: 'result',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
 }

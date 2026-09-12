@@ -18,6 +18,10 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { PLATFORM_MAP_TOOLS } from '../../packages/cli/scripts/constants/external-tools-platforms.mts'
 import { REPO_ROOT } from '../fleet/paths.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 export interface ExternalToolConfig {
   // oxlint-disable-next-line socket/prefer-refined-record -- JSON shape.
@@ -167,6 +171,16 @@ export function validateChecksums(): boolean {
   return true
 }
 
-// Run validation.
-const valid = validateChecksums()
-process.exit(valid ? 0 : 1)
+export function main(): number {
+  return validateChecksums() ? 0 : 1
+}
+
+const SCRIPT_META: ScriptMeta = {
+  describe: 'verify every bundled external-tool asset has a SHA-256 checksum',
+  help: 'Usage: node scripts/repo/validate-checksums.mts [--json]',
+  json: 'result',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

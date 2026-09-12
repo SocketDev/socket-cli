@@ -63,6 +63,7 @@ const SCRIPT_META: ScriptMeta = {
   describe:
     'warm the Socket dlx cache for external tools the test suite really executes (wired into the root pretest script)',
   help: `Usage: node scripts/repo/warm-dlx-cache.mts`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

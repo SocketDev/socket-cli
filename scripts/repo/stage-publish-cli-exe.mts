@@ -330,6 +330,7 @@ const SCRIPT_META: ScriptMeta = {
 Staging only - approval stays a human step: pnpm stage list, then
 pnpm stage approve <id> locally with 2FA. --provenance is added
 automatically under GITHUB_ACTIONS so OIDC trusted publishing applies.`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

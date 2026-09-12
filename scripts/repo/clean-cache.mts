@@ -256,6 +256,7 @@ const SCRIPT_META: ScriptMeta = {
   help: `Usage: node scripts/repo/clean-cache.mts [flags]
   --all       clean ALL caches, nuclear option
   --dry-run   show what would be deleted`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

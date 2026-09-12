@@ -11,6 +11,10 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { PLATFORM_CONFIGS } from '../../packages/build-infra/lib/platform-targets.mts'
+import { isMainModule } from '../fleet/process/is-main-module.mts'
+import { runMain } from '../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
@@ -22,7 +26,7 @@ interface MatrixEntry {
   runner: string
 }
 
-const matrix: { include: MatrixEntry[] } = {
+export const matrix: { include: MatrixEntry[] } = {
   include: PLATFORM_CONFIGS.map((c): MatrixEntry => ({
     arch: c.arch,
     libc: c.libc ?? undefined,
@@ -32,4 +36,16 @@ const matrix: { include: MatrixEntry[] } = {
   })),
 }
 
-logger.log(JSON.stringify(matrix))
+export function main(): void {
+  logger.log(JSON.stringify(matrix))
+}
+
+const SCRIPT_META: ScriptMeta = {
+  describe: 'print the GitHub Actions platform matrix as JSON',
+  help: 'Usage: node scripts/repo/get-platform-matrix.mts [--json]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}
