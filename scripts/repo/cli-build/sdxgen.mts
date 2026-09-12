@@ -77,6 +77,7 @@ export async function buildSdxgenBundle(root: string): Promise<void> {
     await bundle.write({
       file: path.join(output, 'index.cjs'),
       format: 'cjs',
+      comments: { legal: true, annotation: true, jsdoc: false },
       sourcemap: false,
     })
   } finally {
