@@ -81,23 +81,8 @@ export class GitLabProvider implements PrProvider {
         debugDir(e)
 
         // Don't retry on validation errors (400).
-        if (
-          e !== null &&
-          typeof e === 'object' &&
-          'cause' in e &&
-          e.cause &&
-          typeof e.cause === 'object' &&
-          'response' in e.cause
-        ) {
-          const { response } = e.cause
-          if (
-            response !== null &&
-            typeof response === 'object' &&
-            'status' in response &&
-            response.status === 400
-          ) {
-            break
-          }
+        if (isGitLabValidationError(e)) {
+          break
         }
 
         // Retry on 5xx errors or network failures with exponential backoff.
@@ -276,7 +261,7 @@ export class GitLabProvider implements PrProvider {
 }
 
 /**
- * Gets the GitLab API token from environment or git config.
+ * Gets the GitLab API token from environment or `git config`.
  *
  * Priority:
  *
@@ -293,6 +278,23 @@ export function getGitLabToken(): string {
 
   throw new Error(
     `GitLab access requires a token but process.env.GITLAB_TOKEN is not set; create a personal access token with the \`api\` scope at https://gitlab.com/-/user_settings/personal_access_tokens and export GITLAB_TOKEN=<token>`,
+  )
+}
+
+export function isGitLabValidationError(value: unknown): boolean {
+  if (value === null || typeof value !== 'object' || !('cause' in value)) {
+    return false
+  }
+  const { cause } = value
+  if (cause === null || typeof cause !== 'object' || !('response' in cause)) {
+    return false
+  }
+  const { response } = cause
+  return (
+    response !== null &&
+    typeof response === 'object' &&
+    'status' in response &&
+    response.status === 400
   )
 }
 

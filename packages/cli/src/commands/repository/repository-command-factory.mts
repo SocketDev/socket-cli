@@ -46,6 +46,7 @@ export type RepositoryCommandSpec = {
 
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {
   return {
+    __proto__: null,
     description: spec.description,
     hidden: spec.hidden ?? false,
     async run(
@@ -121,7 +122,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
 
       const noLegacy = !cli.flags['repoName']
 
-      const [repoName = ''] = cli.input
+      const { 0: repoName = '' } = cli.input
 
       const hasApiToken = hasDefaultApiToken()
 
@@ -178,25 +179,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
-        if (spec.commandName === 'create') {
-          outputDryRunUpload('repository', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'update') {
-          outputDryRunUpload('repository (update)', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'del') {
-          outputDryRunDelete('repository', identifier)
-        } else {
-          outputDryRunFetch(`repository ${identifier}`, {
-            organization: orgSlug,
-            repository: repoName || undefined,
-          })
-        }
+        outputRepositoryDryRun(spec, orgSlug, repoName)
         return
       }
 
@@ -231,4 +214,30 @@ export function findEmptyDefaultBranch(
     }
   }
   return undefined
+}
+
+export function outputRepositoryDryRun(
+  spec: RepositoryCommandSpec,
+  orgSlug: string,
+  repoName: string,
+): void {
+  const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+  if (spec.commandName === 'create') {
+    outputDryRunUpload('repository', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'update') {
+    outputDryRunUpload('repository (update)', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'del') {
+    outputDryRunDelete('repository', identifier)
+  } else {
+    outputDryRunFetch(`repository ${identifier}`, {
+      organization: orgSlug,
+      repository: repoName || undefined,
+    })
+  }
 }
