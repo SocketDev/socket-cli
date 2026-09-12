@@ -100,7 +100,7 @@ export async function setupGradle(
   if (facts === undefined) {
     return canceledByUser()
   }
-  if (facts === 'no' || facts === 'yes') {
+  if (['no', 'yes'].includes(facts)) {
     config.facts = facts === 'yes'
   } else {
     delete config.facts
@@ -213,7 +213,7 @@ export async function setupSbt(
   if (facts === undefined) {
     return canceledByUser()
   }
-  if (facts === 'no' || facts === 'yes') {
+  if (['no', 'yes'].includes(facts)) {
     config.facts = facts === 'yes'
   } else {
     delete config.facts
@@ -223,37 +223,13 @@ export async function setupSbt(
   // only apply when pom generation (--pom) is explicitly selected; otherwise
   // ask the facts-only options.
   if (config.facts === false) {
-    const stdout = await askForStdout(config.stdout)
-    if (stdout === undefined) {
-      return canceledByUser()
-    }
-    if (stdout === 'yes') {
-      config.stdout = true
-    } else if (stdout === 'no') {
-      config.stdout = false
-    } else {
-      delete config.stdout
-    }
-
-    if (config.stdout !== true) {
-      const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
-      if (out === undefined) {
-        return canceledByUser()
-      }
-      if (out === '-') {
-        config.stdout = true
-      } else {
-        delete config.stdout
-        if (out) {
-          config.outfile = out
-        } else {
-          delete config.outfile
-        }
-      }
+    const outputResult = await setupSbtOutput(config)
+    if (wasSetupCanceled(outputResult)) {
+      return outputResult
     }
   } else {
     const factsOptions = await setupFactsOptions(config)
-    if (!factsOptions.ok || factsOptions.data.canceled) {
+    if (wasSetupCanceled(factsOptions)) {
       return factsOptions
     }
   }
@@ -271,4 +247,46 @@ export async function setupSbt(
   }
 
   return notCanceled()
+}
+
+export async function setupSbtOutput(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const stdout = await askForStdout(config.stdout)
+  if (stdout === undefined) {
+    return canceledByUser()
+  }
+  if (stdout === 'yes') {
+    config.stdout = true
+  } else if (stdout === 'no') {
+    config.stdout = false
+  } else {
+    delete config.stdout
+  }
+  if (config.stdout === true) {
+    return notCanceled()
+  }
+  const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
+  if (out === undefined) {
+    return canceledByUser()
+  }
+  if (out === '-') {
+    config.stdout = true
+  } else {
+    delete config.stdout
+    if (out) {
+      config.outfile = out
+    } else {
+      delete config.outfile
+    }
+  }
+  return notCanceled()
+}
+
+export function wasSetupCanceled(
+  result: CResult<{ canceled: boolean }>,
+): boolean {
+  return !result.ok || result.data.canceled
 }
