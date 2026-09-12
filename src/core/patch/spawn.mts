@@ -34,6 +34,7 @@ export async function spawnSocketPatch(
 
     const spawnPromise = spawn(spawnCommand, spawnArgs, {
       ...dlxOptions,
+      throws: false,
       env: baseEnv,
       stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
     })
@@ -48,6 +49,7 @@ export async function spawnSocketPatch(
 
     const spawnPromise = spawn(binaryPath, args, {
       ...dlxOptions,
+      throws: false,
       env: {
         ...process.env,
         ...spawnEnv,
