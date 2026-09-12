@@ -18,13 +18,13 @@ import {
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type {
-  AddCommentOptions,
-  CreatePrOptions,
-  ListPrsOptions,
+  AddCommentConfig,
+  CreatePrConfig,
+  ListPrsConfig,
   PrMatch,
   PrProvider,
   PrResponse,
-  UpdatePrOptions,
+  UpdatePrConfig,
 } from './provider.mts'
 
 export type GqlPrNode = {
@@ -68,7 +68,7 @@ export type GqlPullRequestsResponse = {
  * Octokit.
  */
 export class GitHubProvider implements PrProvider {
-  async createPr(config: CreatePrOptions): Promise<PrResponse> {
+  async createPr(config: CreatePrConfig): Promise<PrResponse> {
     const {
       base,
       body,
@@ -108,7 +108,7 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async updatePr(config: UpdatePrOptions): Promise<void> {
+  async updatePr(config: UpdatePrConfig): Promise<void> {
     const { base, head, owner, prNumber, repo } = {
       __proto__: null,
       ...config,
@@ -175,7 +175,7 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async listPrs(config: ListPrsOptions): Promise<PrMatch[]> {
+  async listPrs(config: ListPrsConfig): Promise<PrMatch[]> {
     const {
       author,
       ghsaId,
@@ -186,13 +186,7 @@ export class GitHubProvider implements PrProvider {
     const checkAuthor = isNonEmptyString(author)
     const octokitGraphql = getOctokitGraphql()
     const matches: PrMatch[] = []
-    const states = (
-      typeof statesValue === 'string'
-        ? statesValue.toLowerCase() === 'all'
-          ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
-          : [statesValue]
-        : [statesValue]
-    ).map(s => s.toUpperCase())
+    const states = getGitHubPrStates(statesValue)
 
     try {
       let cursor: string | undefined = undefined
@@ -302,7 +296,7 @@ export class GitHubProvider implements PrProvider {
     }
   }
 
-  async addComment(config: AddCommentOptions): Promise<void> {
+  async addComment(config: AddCommentConfig): Promise<void> {
     const { body, owner, prNumber, repo } = {
       __proto__: null,
       ...config,
@@ -334,4 +328,16 @@ export class GitHubProvider implements PrProvider {
   supportsGraphQL(): boolean {
     return true
   }
+}
+
+export function getGitHubPrStates(
+  statesValue: NonNullable<ListPrsConfig['states']>,
+): string[] {
+  return (
+    typeof statesValue === 'string'
+      ? statesValue.toLowerCase() === 'all'
+        ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
+        : [statesValue]
+      : [statesValue]
+  ).map(s => s.toUpperCase())
 }

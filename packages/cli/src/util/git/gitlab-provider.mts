@@ -7,14 +7,14 @@ import { isNonEmptyString } from '@socketsecurity/lib-stable/strings/predicates'
 import { formatErrorWithDetail } from '../error/errors.mts'
 
 import type {
-  AddCommentOptions,
-  CreatePrOptions,
-  ListPrsOptions,
+  AddCommentConfig,
+  CreatePrConfig,
+  ListPrsConfig,
   MergeStateStatus,
   PrMatch,
   PrProvider,
   PrResponse,
-  UpdatePrOptions,
+  UpdatePrConfig,
 } from './provider.mts'
 import type { MergeRequestSchema } from '@gitbeaker/rest'
 
@@ -38,7 +38,7 @@ export class GitLabProvider implements PrProvider {
     })
   }
 
-  async createPr(config: CreatePrOptions): Promise<PrResponse> {
+  async createPr(config: CreatePrConfig): Promise<PrResponse> {
     const {
       base,
       body,
@@ -101,7 +101,7 @@ export class GitLabProvider implements PrProvider {
     )
   }
 
-  async updatePr(config: UpdatePrOptions): Promise<void> {
+  async updatePr(config: UpdatePrConfig): Promise<void> {
     const { owner, prNumber, repo } = {
       __proto__: null,
       ...config,
@@ -143,7 +143,7 @@ export class GitLabProvider implements PrProvider {
     }
   }
 
-  async listPrs(config: ListPrsOptions): Promise<PrMatch[]> {
+  async listPrs(config: ListPrsConfig): Promise<PrMatch[]> {
     const {
       author,
       ghsaId,
@@ -234,7 +234,7 @@ export class GitLabProvider implements PrProvider {
     /* c8 ignore stop */
   }
 
-  async addComment(config: AddCommentOptions): Promise<void> {
+  async addComment(config: AddCommentConfig): Promise<void> {
     const { body, owner, prNumber, repo } = {
       __proto__: null,
       ...config,

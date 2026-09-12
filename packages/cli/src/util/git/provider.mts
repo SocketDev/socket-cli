@@ -7,18 +7,18 @@
 
 export interface PrProvider {
   // Core operations.
-  createPr(options: CreatePrOptions): Promise<PrResponse>
-  updatePr(options: UpdatePrOptions): Promise<void>
-  listPrs(options: ListPrsOptions): Promise<PrMatch[]>
+  createPr(config: CreatePrConfig): Promise<PrResponse>
+  updatePr(config: UpdatePrConfig): Promise<void>
+  listPrs(config: ListPrsConfig): Promise<PrMatch[]>
   deleteBranch(branch: string): Promise<boolean>
-  addComment(options: AddCommentOptions): Promise<void>
+  addComment(config: AddCommentConfig): Promise<void>
 
   // Metadata.
   getProviderName(): 'github' | 'gitlab'
   supportsGraphQL(): boolean
 }
 
-export interface CreatePrOptions {
+export interface CreatePrConfig {
   owner: string
   repo: string
   title: string
@@ -28,7 +28,7 @@ export interface CreatePrOptions {
   retries?: number | undefined
 }
 
-export interface UpdatePrOptions {
+export interface UpdatePrConfig {
   owner: string
   repo: string
   prNumber: number
@@ -36,14 +36,14 @@ export interface UpdatePrOptions {
   base: string
 }
 
-export interface AddCommentOptions {
+export interface AddCommentConfig {
   owner: string
   repo: string
   prNumber: number
   body: string
 }
 
-export interface ListPrsOptions {
+export interface ListPrsConfig {
   owner: string
   repo: string
   author?: string | undefined
