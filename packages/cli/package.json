@@ -81,8 +81,8 @@
     "test:unit:all": "node --import=./scripts/load.mts scripts/test-wrapper.mts --all",
     "test:integration": "node --import=./scripts/load.mts scripts/test-wrapper.mts --config vitest.integration.config.mts --lane slow",
     "test:mid": "node --import=./scripts/load.mts scripts/test-wrapper.mts --lane mid",
-    "mcp:schema:update": "mcp-tada introspect --stdio \"node dist/index.js mcp\" --env SOCKET_API_TOKEN=YOUR_API_TOKEN --env MCP_HTTP_MODE=false --timeout 10000 --json --out test/integration/mcp-schema.golden.json && pnpm --workspace-root run format packages/cli/test/integration/mcp-schema.golden.json",
-    "mcp:schema:check": "mcp-tada check --stdio \"node dist/index.js mcp\" --env SOCKET_API_TOKEN=YOUR_API_TOKEN --env MCP_HTTP_MODE=false --timeout 10000 --against test/integration/mcp-schema.golden.json"
+    "mcp:schema:update": "node scripts/mcp-schema.mts update && pnpm --workspace-root run format packages/cli/test/integration/mcp-schema.golden.json",
+    "mcp:schema:check": "node scripts/mcp-schema.mts check"
   },
   "dependencies": {
     "@socketsecurity/odai": "0.2.1",

@@ -5,7 +5,7 @@ import { expect, it } from 'vitest'
 import { findUpPackageJson } from '@socketsecurity/lib-stable/packages/find'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
-it('preserves the built MCP server tool contract', async () => {
+it('preserves built MCP tool names and input/output schemas', async () => {
   const result = await spawn('pnpm', ['run', 'mcp:schema:check'], {
     cwd: path.dirname(findUpPackageJson(import.meta)),
     stdio: 'pipe',
