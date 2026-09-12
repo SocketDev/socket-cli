@@ -1,3 +1,5 @@
+import { CLI_BUILD_PATH } from './paths.mts'
+
 /**
  * @file Build script for Socket CLI. Delegates to rolldown config for actual
  *   build. Copies data/ and images from packages/cli.
@@ -58,7 +60,7 @@ async function main() {
     // Copy CLI to dist.
     logger.info('Copying CLI to dist…')
     await fs.copyFile(
-      path.join(rootPath, 'build', 'cli.js'),
+      CLI_BUILD_PATH,
       path.join(rootPath, 'dist', 'cli.js'),
     )
     logger.success('Copied CLI to dist')

@@ -1,3 +1,5 @@
+import { CLI_BUILD_PATH } from './paths.mts'
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -91,7 +93,7 @@ export async function validatePackage() {
 
   // Check build/cli.js exists.
   logger.info('Checking build/cli.js…')
-  const buildPath = path.join(packageRoot, 'build', 'cli.js')
+  const buildPath = CLI_BUILD_PATH
   if (!existsSync(buildPath)) {
     errors.push('build/cli.js does not exist')
   } else {

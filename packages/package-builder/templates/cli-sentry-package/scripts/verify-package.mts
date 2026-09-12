@@ -1,3 +1,5 @@
+import { CLI_BUILD_PATH } from './paths.mts'
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -98,7 +100,7 @@ export async function validatePackage() {
 
   // Verify Sentry is referenced in the build (check for @sentry/node require).
   logger.info('Checking for Sentry integration in build…')
-  const buildPath = path.join(packageRoot, 'build', 'cli.js')
+  const buildPath = CLI_BUILD_PATH
   if (existsSync(buildPath)) {
     const buildContent = await fs.readFile(buildPath, 'utf-8')
     if (!buildContent.includes('@sentry/node')) {
