@@ -85,23 +85,12 @@ export async function addOverrides(
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
   const workspace = isWorkspaceRoot ? 'root' : path.relative(rootPath, pkgPath)
-  if (
-    isWorkspace &&
-    isPnpm &&
-    // npmExecPath will === the agent name IF it CANNOT be resolved.
-    npmExecPath === NPM &&
-    !state.warnedPnpmWorkspaceRequiresNpm
-  ) {
-    state.warnedPnpmWorkspaceRequiresNpm = true
-    spinner?.stop()
-    logger?.warn(
-      cmdPrefixMessage(
-        CMD_NAME,
-        `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``,
-      ),
-    )
-    spinner?.start()
-  }
+  warnForPnpmWorkspaceFallback(pkgEnvDetails, state, {
+    isPnpm,
+    isWorkspace,
+    logger,
+    spinner,
+  })
 
   const overridesDataObjects = [] as GetOverridesResult[]
   if (isWorkspace || pkgEnvDetails.editablePkgJson.content.private) {
@@ -149,22 +138,7 @@ export async function addOverrides(
           // Add package aliases for direct dependencies to avoid npm EOVERRIDE
           // errors...
           // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
-          if (
-            // ...if the spec doesn't start with a valid Socket override.
-            !(
-              thisSpec.startsWith(sockOverridePrefix) &&
-              (() => {
-                // Check the validity of the spec by parsing it with npm-package-arg
-                // and seeing if it will coerce to a version.
-                const parsed = safeNpa(thisSpec)
-                if (!parsed || parsed.type !== 'alias') {
-                  return false
-                }
-                return semver.coerce((parsed as AliasResult).subSpec.rawSpec)
-                  ?.version
-              })()
-            )
-          ) {
+          if (!isValidSocketOverride(thisSpec, sockOverridePrefix)) {
             thisSpec = sockOverrideSpec
             depObj[origPkgName] = thisSpec
             state.added.add(sockRegPkgName)
@@ -203,59 +177,20 @@ export async function addOverrides(
               const origDepAlias = depAliasMap.get(origPkgName)
               const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
               const depAlias = sockRegDepAlias ?? origDepAlias
-              let newSpec = sockOverrideSpec
-              if (type === NPM && depAlias) {
-                // With npm one may not set an override for a package that one directly
-                // depends on unless both the dependency and the override itself share
-                // the exact same spec. To make this limitation easier to deal with,
-                // overrides may also be defined as a reference to a spec for a direct
-                // dependency by prefixing the name of the package to match the version
-                // of with a $.
-                // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
-                newSpec = `$${sockRegDepAlias ? sockRegPkgName : origPkgName}`
-              } else if (typeof oldSpec === 'string') {
-                const thisSpec = oldSpec.startsWith('$')
-                  ? depAlias || newSpec
-                  : oldSpec || newSpec
-                if (thisSpec.startsWith(sockOverridePrefix)) {
-                  if (
-                    pin &&
-                    getMajor(
-                      // Check the validity of the spec by parsing it with npm-package-arg
-                      // and seeing if it will coerce to a version. semver.coerce
-                      // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
-                      // and tildes (~). If not coerced to a valid version then
-                      // default to the manifest entry version.
-                      (() => {
-                        const parsed = safeNpa(thisSpec)
-                        /* c8 ignore start - defensive: alias-spec path with semver.coerce returning falsy is unreachable in current optimize tests */
-                        if (parsed && parsed.type === 'alias') {
-                          return (
-                            semver.coerce(
-                              (parsed as AliasResult).subSpec.rawSpec,
-                            )?.version ?? version
-                          )
-                        }
-                        /* c8 ignore stop */
-                        return version
-                      })(),
-                    ) !== major
-                  ) {
-                    const manifest = await fetchPackageManifest(thisSpec)
-                    const otherVersion = (
-                      manifest as { version?: string | undefined }
-                    )?.version
-                    if (otherVersion && otherVersion !== version) {
-                      const otherMajor = getMajor(otherVersion)
-                      if (otherMajor !== undefined) {
-                        newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${otherMajor}`}`
-                      }
-                    }
-                  }
-                } else {
-                  newSpec = oldSpec
-                }
-              }
+              const newSpec = await resolveOverrideSpec({
+                __proto__: null,
+                depAlias,
+                major,
+                oldSpec,
+                origPkgName,
+                pin,
+                sockOverridePrefix,
+                sockOverrideSpec,
+                sockRegDepAlias,
+                sockRegPkgName,
+                type,
+                version,
+              })
               if (newSpec !== oldSpec) {
                 overrides[origPkgName] = newSpec
                 const addedOrUpdated = overrideExists ? 'updated' : 'added'
@@ -325,4 +260,107 @@ export async function addOverrides(
   }
 
   return state
+}
+
+export function isValidSocketOverride(spec: string, prefix: string): boolean {
+  if (!spec.startsWith(prefix)) {
+    return false
+  }
+  const parsed = safeNpa(spec)
+  return Boolean(
+    parsed?.type === 'alias' &&
+    semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version,
+  )
+}
+
+export interface ResolveOverrideSpecConfig {
+  depAlias: string | undefined
+  major: number
+  oldSpec: string | undefined
+  origPkgName: string
+  pin: boolean | undefined
+  sockOverridePrefix: string
+  sockOverrideSpec: string
+  sockRegDepAlias: string | undefined
+  sockRegPkgName: string
+  type: string
+  version: string
+}
+
+export async function resolveOverrideSpec(
+  config: ResolveOverrideSpecConfig,
+): Promise<string> {
+  const cfg = { __proto__: null, ...config } as ResolveOverrideSpecConfig
+  if (cfg.type === NPM && cfg.depAlias) {
+    return `$${cfg.sockRegDepAlias ? cfg.sockRegPkgName : cfg.origPkgName}`
+  }
+  if (typeof cfg.oldSpec !== 'string') {
+    return cfg.sockOverrideSpec
+  }
+  const spec = cfg.oldSpec.startsWith('$')
+    ? cfg.depAlias || cfg.sockOverrideSpec
+    : cfg.oldSpec || cfg.sockOverrideSpec
+  if (!spec.startsWith(cfg.sockOverridePrefix)) {
+    return cfg.oldSpec
+  }
+  return await resolvePinnedOverrideSpec(spec, cfg)
+}
+
+export async function resolvePinnedOverrideSpec(
+  spec: string,
+  config: ResolveOverrideSpecConfig,
+): Promise<string> {
+  const cfg = { __proto__: null, ...config } as ResolveOverrideSpecConfig
+  const parsed = safeNpa(spec)
+  const parsedVersion =
+    parsed?.type === 'alias'
+      ? (semver.coerce((parsed as AliasResult).subSpec.rawSpec)?.version ??
+        cfg.version)
+      : cfg.version
+  if (!cfg.pin || getMajor(parsedVersion) === cfg.major) {
+    return cfg.sockOverrideSpec
+  }
+  const manifest = await fetchPackageManifest(spec)
+  const otherVersion = (manifest as { version?: string | undefined })?.version
+  if (!otherVersion || otherVersion === cfg.version) {
+    return cfg.sockOverrideSpec
+  }
+  const otherMajor = getMajor(otherVersion)
+  return otherMajor === undefined
+    ? cfg.sockOverrideSpec
+    : `${cfg.sockOverridePrefix}${cfg.pin ? otherVersion : `^${otherMajor}`}`
+}
+
+export function warnForPnpmWorkspaceFallback(
+  pkgEnvDetails: EnvDetails,
+  state: AddOverridesState,
+  config: {
+    isPnpm: boolean
+    isWorkspace: boolean
+    logger: Logger | undefined
+    spinner: SpinnerInstance | undefined
+  },
+): void {
+  const { isPnpm, isWorkspace, logger, spinner } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  const { agent, npmExecPath } = pkgEnvDetails
+  if (
+    !isWorkspace ||
+    !isPnpm ||
+    npmExecPath !== NPM ||
+    state.warnedPnpmWorkspaceRequiresNpm
+  ) {
+    return
+  }
+  state.warnedPnpmWorkspaceRequiresNpm = true
+  spinner?.stop()
+  logger?.warn(
+    cmdPrefixMessage(
+      CMD_NAME,
+      `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``,
+    ),
+  )
+  spinner?.start()
 }
