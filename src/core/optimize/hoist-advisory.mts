@@ -17,22 +17,17 @@ import path from 'node:path'
 
 import { getMajor as getMajorVersion } from '../../util/semver.mts'
 
-import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-// Feature-detects fetchChangelog, an odai >=0.3 export the pinned 0.2.1
-// type declarations don't carry yet.
-// oxlint-disable-next-line socket/no-namespace-import -- feature detection
-import * as odai from '@socketsecurity/odai'
 import {
   assessHoistSafety,
-  createOdaiModel,
-  probeAvailability,
-} from '@socketsecurity/odai'
-import type { HoistAssessment } from '@socketsecurity/odai'
+  fetchChangelog,
+  withOdaiModel,
+} from '@socketsecurity/odai/node'
+import type { HoistAssessment, OdaiModel } from '@socketsecurity/odai/node'
 
 export async function assessHoistChangelog(
-  model: Awaited<ReturnType<typeof createOdaiModel>>,
+  model: OdaiModel,
   changelog: string,
   lowest: string,
   target: string,
@@ -90,50 +85,6 @@ const BACKEND_NAMES: readonly string[] = [
 ]
 
 /**
- * Odai's changelog helper (odai >=0.3) with the pacote-README fallback for
- * the released line. Same contract either way: text plus its provenance.
- */
-export async function changelogFor(
-  root: string,
-  name: string,
-  target: string,
-): Promise<{ source: string; text: string }> {
-  const helper = (odai as Record<string, unknown>)['fetchChangelog']
-  if (typeof helper === 'function') {
-    const result = await (
-      helper as (
-        name: string,
-        options?:
-          | { root?: string | undefined; version?: string | undefined }
-          | undefined,
-      ) => Promise<{ source: string; text: string }>
-    )(name, { root, version: target })
-    return result.source === 'none' ? { source: 'none', text: '' } : result
-  }
-  const local = findLocalChangelog(root, name)
-  if (local !== undefined) {
-    return { __proto__: null, source: 'CHANGELOG.md', text: local } as {
-      source: string
-      text: string
-    }
-  }
-  const manifest = (await fetchPackageManifest(`${name}@${target}`)) as
-    | Record<string, unknown>
-    | undefined
-  const text =
-    typeof manifest?.['readme'] === 'string'
-      ? (manifest['readme'] as string).slice(0, 8000)
-      : ''
-  return {
-    __proto__: null,
-    source: text.length > 0 ? 'registry README' : 'none',
-    text,
-  } as { source: string; text: string }
-}
-
-const CHANGELOG_NAMES = ['CHANGELOG.md', 'CHANGELOG', 'HISTORY.md']
-
-/**
  * Packages present under two or more majors, from the pnpm lockfile's
  * package keys. The lockfile is the installed truth — the registry's view of
  * "latest" is irrelevant to what the tree actually carries.
@@ -183,30 +134,6 @@ export async function findCrossMajorDuplicates(
 }
 
 /**
- * The installed copy's changelog, when the package ships one. Scoped to the
- * top level of the package dir — nested paths belong to subtrees the
- * duplicate already covers by name.
- */
-export function findLocalChangelog(
-  root: string,
-  name: string,
-): string | undefined {
-  const pkgDir = path.join(root, 'node_modules', name)
-  for (let i = 0, { length } = CHANGELOG_NAMES; i < length; i += 1) {
-    const file = CHANGELOG_NAMES[i]!
-    const candidate = path.join(pkgDir, file)
-    if (existsSync(candidate)) {
-      try {
-        return readFileSync(candidate, 'utf8').slice(0, 8000)
-      } catch {
-        return undefined
-      }
-    }
-  }
-  return undefined
-}
-
-/**
  * The advisory. Cap at MAX_ADVISED duplicates (the worst offenders first by
  * major spread), verdict each when odai is available, and degrade to the
  * mechanical list with the reason when it is not.
@@ -227,92 +154,89 @@ export async function hoistAdvisory(
   )
   const advised = duplicates.slice(0, MAX_ADVISED)
 
-  const availability = await probeAvailability()
-  if (!availability.available) {
+  try {
+    return await withOdaiModel(
+      async (model, { abortSignal }) => {
+        const lines: HoistAdvisoryLine[] = []
+        for (let i = 0, { length } = advised; i < length; i += 1) {
+          const duplicate = advised[i]!
+          const lowest = duplicate.versions.find(
+            v => getMajorVersion(v) === duplicate.majors[0],
+          )!
+          const target = duplicate.versions.find(
+            v =>
+              getMajorVersion(v) ===
+              duplicate.majors[duplicate.majors.length - 1],
+          )!
+          const { source, text: changelog } = await fetchChangelog(
+            duplicate.name,
+            { root, version: target, abortSignal },
+          )
+
+          const { verdict, assessFailed, backend } = await assessHoistChangelog(
+            model,
+            changelog,
+            lowest,
+            target,
+            root,
+          )
+
+          // The model label appended to odai verdicts: the detected model identity
+          // (Gemini Nano today, Gemma 4 later), queried once and cached by odai.
+          // When detection fails, the stamp carries the backend's registry name
+          // instead (odai names backends by interface: chrome-builtin = Chrome's
+          // Prompt API, llama-server, apple-fm, windows-phi-silica, simulator) —
+          // and then the label says so explicitly: the model is UNKNOWN, the host
+          // is named.
+          // Produces: `(odai Gemini Nano)` with a detected identity;
+          // `(odai unknown model via chrome-builtin)` when only the backend is
+          // known; NO label when nothing is stamped at all — a meaningless label
+          // does not print.
+          const via =
+            backend === undefined
+              ? ''
+              : BACKEND_NAMES.includes(backend)
+                ? ` (odai unknown model via ${backend})`
+                : ` (odai ${backend})`
+          let suggestion: string
+          if (verdict !== undefined && verdict.verdict === 'safe') {
+            suggestion =
+              `${duplicate.name} ${lowest} → ${target}: safe to unify — ` +
+              `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc` +
+              ` (assessed against ${source}${via})`
+          } else if (verdict !== undefined) {
+            const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
+            suggestion =
+              `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
+              (reasons
+                ? ` (${reasons})`
+                : verdict.reason
+                  ? ` (${verdict.reason})`
+                  : '') +
+              ` (assessed against ${source}${via})`
+          } else if (changelog.length > 0 && assessFailed) {
+            suggestion =
+              `${duplicate.name} ${lowest} → ${target}: assessment failed against ` +
+              `${source} — review manually`
+          } else {
+            suggestion =
+              `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
+              'review unifying (no changelog to assess against)'
+          }
+          lines.push({ duplicate, suggestion, verdict })
+        }
+        return lines
+      },
+      { timeoutMs: 5000 },
+    )
+  } catch {
     debug('odai backend unavailable; mechanical hoist advisory only')
-    debugDir({ availability })
     return advised.map(duplicate => ({
       __proto__: null,
       duplicate,
-      suggestion:
-        `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
-        'review unifying on the higher major (odai backend unavailable; ' +
-        'install Chrome ≥148 for the hoist-safety verdict)',
+      suggestion: `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — review unifying on the higher major (odai backend unavailable; start a prepared local llama-server backend)`,
     }))
   }
-
-  const model = await createOdaiModel()
-  const lines: HoistAdvisoryLine[] = []
-  for (let i = 0, { length } = advised; i < length; i += 1) {
-    const duplicate = advised[i]!
-    const lowest = duplicate.versions.find(
-      v => getMajorVersion(v) === duplicate.majors[0],
-    )!
-    const target = duplicate.versions.find(
-      v => getMajorVersion(v) === duplicate.majors[duplicate.majors.length - 1],
-    )!
-    // Changelog source via odai's provenance helper (registry README when
-    // the released odai predates it). The source is LABELED in the output so
-    // a verdict's provenance is never invisible.
-    const { source, text: changelog } = await changelogFor(
-      root,
-      duplicate.name,
-      target,
-    )
-
-    const { verdict, assessFailed, backend } = await assessHoistChangelog(
-      model,
-      changelog,
-      lowest,
-      target,
-      root,
-    )
-
-    // The model label appended to odai verdicts: the detected model identity
-    // (Gemini Nano today, Gemma 4 later), queried once and cached by odai.
-    // When detection fails, the stamp carries the backend's registry name
-    // instead (odai names backends by interface: chrome-builtin = Chrome's
-    // Prompt API, llama-server, apple-fm, windows-phi-silica, simulator) —
-    // and then the label says so explicitly: the model is UNKNOWN, the host
-    // is named.
-    // Produces: `(odai Gemini Nano)` with a detected identity;
-    // `(odai unknown model via chrome-builtin)` when only the backend is
-    // known; NO label when nothing is stamped at all — a meaningless label
-    // does not print.
-    const via =
-      backend === undefined
-        ? ''
-        : BACKEND_NAMES.includes(backend)
-          ? ` (odai unknown model via ${backend})`
-          : ` (odai ${backend})`
-    let suggestion: string
-    if (verdict !== undefined && verdict.verdict === 'safe') {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: safe to unify — ` +
-        `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc` +
-        ` (assessed against ${source}${via})`
-    } else if (verdict !== undefined) {
-      const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
-        (reasons
-          ? ` (${reasons})`
-          : verdict.reason
-            ? ` (${verdict.reason})`
-            : '') +
-        ` (assessed against ${source}${via})`
-    } else if (changelog.length > 0 && assessFailed) {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: assessment failed against ` +
-        `${source} — review manually`
-    } else {
-      suggestion =
-        `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
-        'review unifying (no changelog to assess against)'
-    }
-    lines.push({ duplicate, suggestion, verdict })
-  }
-  return lines
 }
 
 export function nodeMajorOf(root: string): number {

@@ -9,26 +9,19 @@ import {
 } from '../../../../src/core/optimize/hoist-advisory.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
-const probeMock = vi.hoisted(() => vi.fn())
+const operationMock = vi.hoisted(() => vi.fn())
 const assessMock = vi.hoisted(() => vi.fn())
-const manifestMock = vi.hoisted(() => vi.fn())
+const changelogMock = vi.hoisted(() => vi.fn())
 
 vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
   debug: vi.fn(),
   debugDir: vi.fn(),
 }))
 
-vi.mock(import('@socketsecurity/odai'), () => ({
+vi.mock(import('@socketsecurity/odai/node'), () => ({
   assessHoistSafety: assessMock,
-  createOdaiModel: vi.fn(async () => ({})),
-  // Explicitly undefined: the advisory's feature detection falls back to
-  // its pacote/README path on the released odai line.
-  fetchChangelog: undefined,
-  probeAvailability: probeMock,
-}))
-
-vi.mock(import('@socketsecurity/lib-stable/packages/manifest'), () => ({
-  fetchPackageManifest: manifestMock,
+  withOdaiModel: operationMock,
+  fetchChangelog: changelogMock,
 }))
 
 const LOCKFILE = `
@@ -98,7 +91,7 @@ describe('hoistAdvisory', () => {
   })
 
   it('degrades to the mechanical list when odai is unavailable', async () => {
-    probeMock.mockResolvedValue({ available: false })
+    operationMock.mockRejectedValue(new Error('No eligible local backend'))
     const lines = await hoistAdvisory(dir)
     expect(lines).toHaveLength(1)
     expect(lines[0]!.suggestion).toContain('majors 3, 4, 6')
@@ -107,9 +100,12 @@ describe('hoistAdvisory', () => {
   })
 
   it('gives a safe-to-unify suggestion when odai says safe', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({
-      readme: '# Changelog\n\n## 6.0.0\nNothing scary.',
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'registry-readme',
+      text: '# Changelog\n\n## 6.0.0\nNothing scary.',
     })
     assessMock.mockResolvedValue({
       ok: true,
@@ -122,9 +118,12 @@ describe('hoistAdvisory', () => {
   })
 
   it('abstains when odai finds breaking changes', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({
-      readme: '# Changelog\n\n## 6.0.0\nDropped Node 14.',
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'registry-readme',
+      text: '# Changelog\n\n## 6.0.0\nDropped Node 14.',
     })
     assessMock.mockResolvedValue({
       ok: true,
@@ -137,16 +136,19 @@ describe('hoistAdvisory', () => {
     const lines = await hoistAdvisory(dir)
     expect(lines[0]!.suggestion).toContain('unsafe')
     expect(lines[0]!.suggestion).toContain('dropped Node 14 support')
-    expect(lines[0]!.suggestion).toContain('assessed against registry README')
+    expect(lines[0]!.suggestion).toContain('assessed against registry-readme')
     // No model stamp on the released odai line: a meaningless label ('odai
     // modern') does not print.
     expect(lines[0]!.suggestion).not.toContain('odai modern')
   })
 
   it('says the model is unknown when only the backend is known', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({
-      readme: '# Changelog\n\n## 6.0.0\nAll good.',
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'registry-readme',
+      text: '# Changelog\n\n## 6.0.0\nAll good.',
     })
     assessMock.mockResolvedValue({
       ok: true,
@@ -160,9 +162,12 @@ describe('hoistAdvisory', () => {
   })
 
   it('labels the stamped model identity when odai provides it', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({
-      readme: '# Changelog\n\n## 6.0.0\nAll good.',
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'registry-readme',
+      text: '# Changelog\n\n## 6.0.0\nAll good.',
     })
     assessMock.mockResolvedValue({
       ok: true,
@@ -173,34 +178,42 @@ describe('hoistAdvisory', () => {
     expect(lines[0]!.suggestion).toContain('(odai Gemini Nano)')
   })
 
-  it('prefers the installed CHANGELOG.md and labels it', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({ readme: '# marketing' })
+  it('preserves changelog provenance supplied by odai', async () => {
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'local-changelog',
+      text: '# Changes',
+    })
     assessMock.mockResolvedValue({
       ok: true,
       data: { breakingChanges: [], reason: '', verdict: 'safe' },
     })
-    const { mkdirSync } = await import('node:fs')
-    mkdirSync(path.join(dir, 'node_modules', 'ansi-styles'), {
-      recursive: true,
-    })
-    writeFileSync(
-      path.join(dir, 'node_modules', 'ansi-styles', 'CHANGELOG.md'),
-      '# Changelog',
-    )
     const lines = await hoistAdvisory(dir)
-    expect(lines[0]!.suggestion).toContain('assessed against CHANGELOG.md')
+    expect(lines[0]!.suggestion).toContain('assessed against local-changelog')
+    expect(changelogMock).toHaveBeenCalledWith('ansi-styles', {
+      root: dir,
+      version: '6.2.1',
+      abortSignal: expect.any(AbortSignal),
+    })
+    expect(operationMock).toHaveBeenCalledWith(expect.any(Function), {
+      timeoutMs: 5000,
+    })
   })
 
   it('says assessment failed when extraction errors on real text', async () => {
-    probeMock.mockResolvedValue({ available: true, namespace: 'modern' })
-    manifestMock.mockResolvedValue({
-      readme: '# Changelog\n\n## 6.0.0\nLots here.',
+    operationMock.mockImplementation(async callback =>
+      callback({}, { abortSignal: new AbortController().signal }),
+    )
+    changelogMock.mockResolvedValue({
+      source: 'registry-readme',
+      text: '# Changelog\n\n## 6.0.0\nLots here.',
     })
     assessMock.mockResolvedValue({ ok: false })
     const lines = await hoistAdvisory(dir)
     expect(lines[0]!.suggestion).toContain(
-      'assessment failed against registry README',
+      'assessment failed against registry-readme',
     )
     expect(lines[0]!.suggestion).toContain('review manually')
   })
