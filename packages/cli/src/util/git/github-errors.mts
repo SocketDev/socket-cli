@@ -32,6 +32,26 @@ export const GITHUB_ERR_GRAPHQL_RATE_LIMIT =
   'GitHub GraphQL rate limit exceeded'
 export const GITHUB_ERR_RATE_LIMIT = 'GitHub rate limit exceeded'
 
+export function getGitHubRetryWaitTime(e: RequestError): number | undefined {
+  const retryAfter = e.response?.headers?.['retry-after']
+  const resetHeader = e.response?.headers?.['x-ratelimit-reset']
+  let waitTime: number | undefined
+
+  if (retryAfter) {
+    waitTime = Number.parseInt(String(retryAfter), 10)
+    if (Number.isNaN(waitTime) || waitTime < 0) {
+      waitTime = undefined
+    }
+  } else if (resetHeader) {
+    const resetTimestamp = Number.parseInt(resetHeader, 10)
+    if (!Number.isNaN(resetTimestamp)) {
+      waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
+    }
+  }
+
+  return waitTime
+}
+
 /**
  * Convert GitHub API errors to user-friendly CResult failures. Handles rate
  * limits, authentication, and network errors with actionable messages.
@@ -44,124 +64,7 @@ export function handleGitHubApiError(
   debugDirNs('error', e)
 
   if (e instanceof RequestError) {
-    const { status } = e
-
-    // Abuse detection rate limit - check first since it's more specific than standard rate limit.
-    if (status === 403 && e.message.includes('secondary rate limit')) {
-      return {
-        ok: false,
-        message: GITHUB_ERR_ABUSE_DETECTION,
-        cause:
-          `GitHub abuse detection triggered while ${context}. ` +
-          'This happens when making too many requests in a short period. ' +
-          'Wait a few minutes before retrying.\n\n' +
-          'To avoid this:\n' +
-          '- Reduce the number of concurrent operations\n' +
-          '- Add delays between bulk operations',
-      }
-    }
-
-    // Standard rate limit errors (403 with rate limit message or 429).
-    if (
-      status === 429 ||
-      (status === 403 && e.message.includes('rate limit'))
-    ) {
-      const retryAfter = e.response?.headers?.['retry-after']
-      const resetHeader = e.response?.headers?.['x-ratelimit-reset']
-      let waitTime: number | undefined
-
-      if (retryAfter) {
-        waitTime = Number.parseInt(String(retryAfter), 10)
-        if (Number.isNaN(waitTime) || waitTime < 0) {
-          waitTime = undefined
-        }
-      } else if (resetHeader) {
-        const resetTimestamp = Number.parseInt(resetHeader, 10)
-        if (!Number.isNaN(resetTimestamp)) {
-          waitTime = Math.max(0, resetTimestamp - Math.floor(Date.now() / 1000))
-        }
-      }
-
-      return {
-        ok: false,
-        message: GITHUB_ERR_RATE_LIMIT,
-        cause:
-          `GitHub API rate limit exceeded while ${context}. ` +
-          (waitTime
-            ? `Try again in ${waitTime} seconds.`
-            : 'Try again in a few minutes.') +
-          '\n\n' +
-          'To increase your rate limit:\n' +
-          '- Set GITHUB_TOKEN environment variable with a valid token\n' +
-          '- In GitHub Actions, GITHUB_TOKEN is automatically available\n' +
-          '- Personal access tokens provide higher rate limits than unauthenticated requests',
-      }
-    }
-
-    // Authentication errors.
-    if (status === 401) {
-      return {
-        ok: false,
-        message: GITHUB_ERR_AUTH_FAILED,
-        cause:
-          `GitHub authentication failed while ${context}. ` +
-          'Your token may be invalid, expired, or missing required permissions.\n\n' +
-          'To resolve:\n' +
-          '- Verify your GitHub token is valid and not expired\n' +
-          '- Set GITHUB_TOKEN environment variable\n' +
-          '- Ensure the token has required scopes (repo, read:org)',
-      }
-    }
-
-    // Permission denied, valid token but insufficient permissions.
-    if (status === 403 && !e.message.includes('rate limit')) {
-      return {
-        ok: false,
-        message: 'GitHub permission denied',
-        cause:
-          `GitHub permission denied while ${context}. ` +
-          'Your token does not have access to this resource.\n\n' +
-          'Ensure your token has the required scopes:\n' +
-          '- repo: Full control of private repositories\n' +
-          '- read:org: Read org membership (for org repos)',
-      }
-    }
-
-    // Not found errors.
-    if (status === 404) {
-      return {
-        ok: false,
-        message: 'GitHub resource not found',
-        cause:
-          `GitHub resource not found while ${context}. ` +
-          'The repository, branch, or file may not exist, or you may not have access to it.\n\n' +
-          'Verify:\n' +
-          '- The repository name and owner are correct\n' +
-          '- The branch exists\n' +
-          '- Your token has access to the repository',
-      }
-    }
-
-    // Server errors (5xx).
-    if (status >= 500) {
-      return {
-        ok: false,
-        message: 'GitHub server error',
-        cause:
-          `GitHub server error (${status}) while ${context}. ` +
-          'GitHub may be experiencing issues.\n\n' +
-          'To resolve:\n' +
-          '- Check https://www.githubstatus.com for service status\n' +
-          '- Try again in a few moments',
-      }
-    }
-
-    // Other request errors.
-    return {
-      ok: false,
-      message: `GitHub API error (${status})`,
-      cause: `GitHub API error while ${context}: ${e.message}`,
-    }
+    return handleGitHubRequestError(e, context)
   }
 
   // Network errors (ECONNREFUSED, ETIMEDOUT, etc.).
@@ -190,6 +93,113 @@ export function handleGitHubApiError(
     ok: false,
     message: 'GitHub API error',
     cause: `Unexpected error while ${context}: ${errorMessage(e)}`,
+  }
+}
+
+export function handleGitHubRequestError(
+  e: RequestError,
+  context: string,
+): CResult<never> {
+  const { status } = e
+
+  // Abuse detection rate limit - check first since it's more specific than standard rate limit.
+  if (status === 403 && e.message.includes('secondary rate limit')) {
+    return {
+      ok: false,
+      message: GITHUB_ERR_ABUSE_DETECTION,
+      cause:
+        `GitHub abuse detection triggered while ${context}. ` +
+        'This happens when making too many requests in a short period. ' +
+        'Wait a few minutes before retrying.\n\n' +
+        'To avoid this:\n' +
+        '- Reduce the number of concurrent operations\n' +
+        '- Add delays between bulk operations',
+    }
+  }
+
+  // Standard rate limit errors (403 with rate limit message or 429).
+  if (status === 429 || (status === 403 && e.message.includes('rate limit'))) {
+    const waitTime = getGitHubRetryWaitTime(e)
+
+    return {
+      ok: false,
+      message: GITHUB_ERR_RATE_LIMIT,
+      cause:
+        `GitHub API rate limit exceeded while ${context}. ` +
+        (waitTime
+          ? `Try again in ${waitTime} seconds.`
+          : 'Try again in a few minutes.') +
+        '\n\n' +
+        'To increase your rate limit:\n' +
+        '- Set GITHUB_TOKEN environment variable with a valid token\n' +
+        '- In GitHub Actions, GITHUB_TOKEN is automatically available\n' +
+        '- Personal access tokens provide higher rate limits than unauthenticated requests',
+    }
+  }
+
+  // Authentication errors.
+  if (status === 401) {
+    return {
+      ok: false,
+      message: GITHUB_ERR_AUTH_FAILED,
+      cause:
+        `GitHub authentication failed while ${context}. ` +
+        'Your token may be invalid, expired, or missing required permissions.\n\n' +
+        'To resolve:\n' +
+        '- Verify your GitHub token is valid and not expired\n' +
+        '- Set GITHUB_TOKEN environment variable\n' +
+        '- Ensure the token has required scopes (repo, read:org)',
+    }
+  }
+
+  // Permission denied, valid token but insufficient permissions.
+  if (status === 403 && !e.message.includes('rate limit')) {
+    return {
+      ok: false,
+      message: 'GitHub permission denied',
+      cause:
+        `GitHub permission denied while ${context}. ` +
+        'Your token does not have access to this resource.\n\n' +
+        'Ensure your token has the required scopes:\n' +
+        '- repo: Full control of private repositories\n' +
+        '- read:org: Read org membership (for org repos)',
+    }
+  }
+
+  // Not found errors.
+  if (status === 404) {
+    return {
+      ok: false,
+      message: 'GitHub resource not found',
+      cause:
+        `GitHub resource not found while ${context}. ` +
+        'The repository, branch, or file may not exist, or you may not have access to it.\n\n' +
+        'Verify:\n' +
+        '- The repository name and owner are correct\n' +
+        '- The branch exists\n' +
+        '- Your token has access to the repository',
+    }
+  }
+
+  // Server errors (5xx).
+  if (status >= 500) {
+    return {
+      ok: false,
+      message: 'GitHub server error',
+      cause:
+        `GitHub server error (${status}) while ${context}. ` +
+        'GitHub may be experiencing issues.\n\n' +
+        'To resolve:\n' +
+        '- Check https://www.githubstatus.com for service status\n' +
+        '- Try again in a few moments',
+    }
+  }
+
+  // Other request errors.
+  return {
+    ok: false,
+    message: `GitHub API error (${status})`,
+    cause: `GitHub API error while ${context}: ${e.message}`,
   }
 }
 

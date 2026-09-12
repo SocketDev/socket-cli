@@ -30,6 +30,29 @@
  * - Command output formatting
  */
 
+export function getMarkdownColumnWidths(
+  logs: Array<Record<string, string>>,
+  cols: string[],
+  titles: string[],
+): number[] {
+  // Max col width required to fit all data in that column
+  const cws = cols.map(col => col.length)
+
+  for (let i = 0, { length } = logs; i < length; i += 1) {
+    const log = logs[i]!
+    for (let j = 0, { length: colsLength } = cols; j < colsLength; j += 1) {
+      const val: unknown = log[cols[j] ?? ''] ?? ''
+      cws[j] = Math.max(
+        cws[j] ?? 0,
+        String(val).length,
+        (titles[j] || '').length,
+      )
+    }
+  }
+
+  return cws
+}
+
 /**
  * Format an error message in markdown.
  *
@@ -181,20 +204,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
   cols: Array<string & keyof T[number]>,
   titles: string[] = cols,
 ): string {
-  // Max col width required to fit all data in that column
-  const cws = cols.map(col => col.length)
-
-  for (let i = 0, { length } = logs; i < length; i += 1) {
-    const log = logs[i]!
-    for (let j = 0, { length: colsLength } = cols; j < colsLength; j += 1) {
-      const val: unknown = log[cols[j] ?? ''] ?? ''
-      cws[j] = Math.max(
-        cws[j] ?? 0,
-        String(val).length,
-        (titles[j] || '').length,
-      )
-    }
-  }
+  const cws = getMarkdownColumnWidths(logs, cols, titles)
 
   let div = '|'
   for (let i = 0, { length } = cws; i < length; i += 1) {
