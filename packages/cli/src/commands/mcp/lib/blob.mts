@@ -92,7 +92,7 @@ export async function fetchSocketBlob(
   let contentType: string | undefined
   let originalSize: number
 
-  if (hash[0] === 'S') {
+  if (hash.charCodeAt(0) === 83 /* 'S' */) {
     const chunked = await fetchSocketChunkedBlobBytes(hash, maxBytes)
     buf = chunked.bytes
     originalSize = chunked.totalSize
@@ -128,28 +128,11 @@ export async function fetchSocketChunkedBlobBytes(
   const manifestHash = `Q${chunkedHash.slice(1)}`
   const manifestRaw = await fetchSocketRawBlobBytes(manifestHash)
 
-  let manifest: unknown
-  try {
-    manifest = JSON.parse(new TextDecoder('utf-8').decode(manifestRaw.bytes))
-  } catch (e) {
-    throw new Error(
-      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: ${errorMessage(e)}, wanted JSON. Fix: re-run \`package_files\` to get a current hash.`,
-    )
-  }
-  if (typeof manifest !== 'object' || manifest === null) {
-    throw new Error(
-      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: a non-object manifest, wanted a JSON object. Fix: re-run \`package_files\` to get a current hash.`,
-    )
-  }
-  const rawChunks = 'chunks' in manifest ? manifest.chunks : undefined
-  if (!isStringArray(rawChunks) || rawChunks.some(c => !c)) {
-    throw new Error(
-      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: no usable 'chunks' array, wanted an array of chunk hashes. Fix: re-run \`package_files\` to get a current hash.`,
-    )
-  }
-  const rawSize = 'size' in manifest ? manifest.size : undefined
+  const manifest = parseChunkedBlobManifest(manifestRaw.bytes, manifestHash)
+  const { chunks: rawChunks } = manifest
+  const rawSize = manifest.size
   const totalSize = typeof rawSize === 'number' ? rawSize : -1
-  const rawOffset = 'offset' in manifest ? manifest.offset : undefined
+  const rawOffset = manifest.offset
   // Offsets are usable only when every entry is numeric AND there is one per
   // chunk, so a single bad entry skips the optimization instead of producing a
   // short, mismatched read.
@@ -244,4 +227,38 @@ export function getBlobUserAgent(): string {
 
 export function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(v => typeof v === 'string')
+}
+
+export function parseChunkedBlobManifest(
+  bytes: Uint8Array,
+  manifestHash: string,
+): {
+  chunks: string[]
+  offset?: unknown | undefined
+  size?: unknown | undefined
+} {
+  let manifest: unknown
+  try {
+    manifest = JSON.parse(new TextDecoder('utf-8').decode(bytes))
+  } catch (e) {
+    throw new Error(
+      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: ${errorMessage(e)}, wanted JSON. Fix: re-run \`package_files\` to get a current hash.`,
+    )
+  }
+  if (typeof manifest !== 'object' || manifest === null) {
+    throw new Error(
+      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: a non-object manifest, wanted a JSON object. Fix: re-run \`package_files\` to get a current hash.`,
+    )
+  }
+  const chunks = 'chunks' in manifest ? manifest.chunks : undefined
+  if (!isStringArray(chunks) || chunks.some(chunk => !chunk)) {
+    throw new Error(
+      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: no usable 'chunks' array, wanted an array of chunk hashes. Fix: re-run \`package_files\` to get a current hash.`,
+    )
+  }
+  return {
+    chunks,
+    offset: 'offset' in manifest ? manifest.offset : undefined,
+    size: 'size' in manifest ? manifest.size : undefined,
+  }
 }
