@@ -120,7 +120,7 @@ export async function run(
 
   const noLegacy = !cli.flags['type']
 
-  const [typeFilter = ''] = cli.input
+  const { 0: typeFilter = '' } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -183,16 +183,7 @@ export async function run(
     return
   }
 
-  if (Number.isNaN(validatedPage) || validatedPage < 0) {
-    throw new InputError(
-      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
-    )
-  }
-  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
-    throw new InputError(
-      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
-    )
-  }
+  validatePagination(page, perPage, validatedPage, validatedPerPage)
 
   await handleAuditLog({
     orgSlug,
@@ -204,4 +195,22 @@ export async function run(
         ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
         : '',
   })
+}
+
+export function validatePagination(
+  page: number | string,
+  perPage: number | string,
+  validatedPage: number,
+  validatedPerPage: number,
+): void {
+  if (Number.isNaN(validatedPage) || validatedPage < 0) {
+    throw new InputError(
+      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
+    )
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
+    throw new InputError(
+      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
+  }
 }
