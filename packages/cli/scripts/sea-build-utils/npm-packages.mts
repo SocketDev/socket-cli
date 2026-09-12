@@ -25,6 +25,7 @@ import {
   assertInstalledMatchesPin,
   collectNpmToolPins,
 } from './npm-integrity.mts'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 const logger = getDefaultLogger()
 
@@ -73,20 +74,8 @@ async function combineVfsArchives(
     ),
   )
 
-  // Check if combined tar.gz already exists and is valid.
-  if (existsSync(combinedTarGz)) {
-    const stats = await fs.stat(combinedTarGz)
-
-    // Validate cached file is not empty or suspiciously small (> 1KB).
-    if (stats.size < 1024) {
-      logger.warn(
-        `Cached combined VFS tar.gz is too small (${stats.size} bytes), rebuilding…`,
-      )
-      await safeDelete(combinedTarGz)
-    } else {
-      logger.log(`Combined VFS tar.gz already exists: ${combinedTarGz}`)
-      return combinedTarGz
-    }
+  if (await reuseCombinedArchive(combinedTarGz)) {
+    return combinedTarGz
   }
 
   logger.step('Combining npm packages and external tools into VFS archive')
@@ -326,6 +315,26 @@ async function downloadNpmPackages() {
  */
 export function getSocketCacacheDir() {
   const homeDir =
-    process.env['HOME'] || process.env['USERPROFILE'] || os.tmpdir()
+    getEnvValue('HOME') || getEnvValue('USERPROFILE') || os.tmpdir()
   return normalizePath(path.join(homeDir, '.socket', '_cacache'))
+}
+
+async function reuseCombinedArchive(combinedTarGz) {
+  // Check if combined tar.gz already exists and is valid.
+  if (existsSync(combinedTarGz)) {
+    const stats = await fs.stat(combinedTarGz)
+
+    // Validate cached file is not empty or suspiciously small (> 1KB).
+    if (stats.size < 1024) {
+      logger.warn(
+        `Cached combined VFS tar.gz is too small (${stats.size} bytes), rebuilding…`,
+      )
+      await safeDelete(combinedTarGz)
+    } else {
+      logger.log(`Combined VFS tar.gz already exists: ${combinedTarGz}`)
+      return true
+    }
+  }
+
+  return false
 }

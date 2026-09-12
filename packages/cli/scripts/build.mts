@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 const logger = getDefaultLogger()
 
@@ -83,7 +84,7 @@ async function copyManifestScripts() {
       jarPath,
       path.join(destDir, 'maven-extension', 'coana-maven-extension.jar'),
     )
-  } else if (process.env['INLINED_PUBLISHED_BUILD'] === '1') {
+  } else if (getEnvValue('INLINED_PUBLISHED_BUILD') === '1') {
     throw new Error(
       `Maven manifest extension jar not found at ${jarPath} for a published build. Build it first: pnpm run build:maven-extension`,
     )
@@ -149,25 +150,7 @@ async function main() {
 
   // Delegate to watch mode.
   if (watch) {
-    if (!quiet) {
-      logger.info('Starting watch mode…')
-    }
-
-    const watchResult = await spawn(
-      process.execPath,
-      [...NODE_MEMORY_FLAGS, '.config/rolldown.cli.mts', '--watch'],
-      {
-        shell: isWin32(),
-        stdio: 'inherit',
-      },
-    )
-
-    if (!watchResult || watchResult.code !== 0) {
-      process.exitCode = watchResult?.code ?? 1
-      throw new Error(
-        `Watch mode failed with exit code ${watchResult?.code ?? 1}`,
-      )
-    }
+    await runWatchBuild({ quiet })
     return
   }
 
@@ -181,166 +164,20 @@ async function main() {
 
     // Phase 1: Clean, if needed.
     if (shouldClean) {
-      if (!quiet) {
-        logger.step('Phase 1: Cleaning…')
-      }
-      const result = await spawn('pnpm', ['run', 'clean:dist'], {
-        shell: isWin32(),
-        stdio: 'inherit',
-      })
-      if (result.code !== 0) {
-        if (!quiet) {
-          logger.error(`Clean failed (exit code: ${result.code})`)
-          printError('Build failed')
-        }
-        process.exitCode = 1
+      if (!(await cleanBuild({ quiet, verbose }))) {
         return
-      }
-      if (!quiet && verbose) {
-        logger.success('Clean completed')
       }
     }
 
-    // Phase 2: Generate packages and download assets in parallel.
-    if (!quiet) {
-      logger.step('Phase 2: Preparing build (parallel)...')
-    }
-
-    const parallelPrep = await Promise.allSettled([
-      spawn(process.execPath, [path.join(__dirname, 'generate-packages.mts')], {
-        shell: isWin32(),
-        stdio: 'inherit',
-      }).then(result => ({ name: 'Generate Packages', result })),
-      spawn(
-        process.execPath,
-        [...NODE_MEMORY_FLAGS, path.join(__dirname, 'download-assets.mts')],
-        {
-          shell: isWin32(),
-          stdio: 'inherit',
-        },
-      ).then(result => ({ name: 'Download Assets', result })),
-    ])
-
-    for (let i = 0, { length } = parallelPrep; i < length; i += 1) {
-      const settled = parallelPrep[i]
-      if (settled.status === 'rejected') {
-        if (!quiet) {
-          logger.error(`Parallel preparation failed: ${settled.reason}`)
-          printError('Build failed')
-        }
-        process.exitCode = 1
-        return
-      }
-
-      const { name, result } = settled.value
-
-      // Check for null spawn result.
-      if (!result) {
-        if (!quiet) {
-          logger.error(`${name} failed to start`)
-          printError('Build failed')
-        }
-        process.exitCode = 1
-        return
-      }
-
-      if (result.code !== 0) {
-        if (!quiet) {
-          logger.error(`${name} failed (exit code: ${result.code})`)
-          printError('Build failed')
-        }
-        process.exitCode = result.code ?? 1
-        return
-      }
-
-      if (!quiet && verbose) {
-        logger.success(`${name} completed`)
-      }
-    }
-
-    // Phase 3: Build all variants.
-    if (!quiet) {
-      logger.step('Phase 3: Building variants…')
-    }
-
-    // Ensure dist directory exists before building variants.
-    await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
-
-    const buildResult = await spawn(
-      process.execPath,
-      [...NODE_MEMORY_FLAGS, '.config/rolldown.build.mts', 'all'],
-      {
-        shell: isWin32(),
-        stdio: 'inherit',
-      },
-    )
-
-    if (buildResult.code !== 0) {
-      if (!quiet) {
-        logger.error(`Build failed (exit code: ${buildResult.code})`)
-        printError('Build failed')
-      }
-      process.exitCode = 1
+    if (!(await prepareBuild({ quiet, verbose }))) {
       return
     }
 
-    if (!quiet && verbose) {
-      logger.success('Build completed')
+    if (!(await buildVariants({ quiet, verbose }))) {
+      return
     }
 
-    // Phase 4: Post-processing (parallel).
-    if (!quiet) {
-      logger.step('Phase 4: Post-processing (parallel)...')
-    }
-
-    const postResults = await Promise.allSettled([
-      // Copy CLI bundle to dist (required for dist/index.js to work).
-      (async () => {
-        copyFileSync('build/cli.js', 'dist/cli.js')
-        if (!quiet && verbose) {
-          logger.success('CLI bundle copied')
-        }
-      })(),
-
-      // Fix node-gyp strings to prevent bundler issues.
-      (async () => {
-        await fixNodeGypStrings(path.join(packageRoot, 'build'), {
-          quiet,
-          verbose,
-        })
-        if (!quiet && verbose) {
-          logger.success('Build output post-processed')
-        }
-      })(),
-
-      // Copy CHANGELOG.md from repo root (LICENSE and logos are already in cli package).
-      (async () => {
-        await fs.cp(
-          path.join(repoRoot, 'CHANGELOG.md'),
-          path.join(packageRoot, 'CHANGELOG.md'),
-        )
-        if (!quiet && verbose) {
-          logger.success('CHANGELOG.md copied from repo root')
-        }
-      })(),
-
-      // Copy the JVM manifest emitter assets into dist/manifest-scripts.
-      (async () => {
-        await copyManifestScripts()
-        if (!quiet && verbose) {
-          logger.success('Manifest scripts copied')
-        }
-      })(),
-    ])
-
-    const postFailed = postResults.filter(r => r.status === 'rejected')
-    if (postFailed.length > 0) {
-      for (let i = 0, { length } = postFailed; i < length; i += 1) {
-        const r = postFailed[i]
-        logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
-      }
-      throw new Error('Post-processing step(s) failed')
-    }
+    await postprocessBuild({ quiet, verbose })
 
     if (!quiet) {
       printSuccess('Build completed')
@@ -361,3 +198,198 @@ main().catch(e => {
   logger.error(e)
   process.exitCode = 1
 })
+
+async function runWatchBuild({ quiet }) {
+  if (!quiet) {
+    logger.info('Starting watch mode…')
+  }
+
+  const watchResult = await spawn(
+    process.execPath,
+    [...NODE_MEMORY_FLAGS, '.config/rolldown.cli.mts', '--watch'],
+    {
+      shell: isWin32(),
+      stdio: 'inherit',
+    },
+  )
+
+  if (!watchResult || watchResult.code !== 0) {
+    process.exitCode = watchResult?.code ?? 1
+    throw new Error(
+      `Watch mode failed with exit code ${watchResult?.code ?? 1}`,
+    )
+  }
+}
+
+async function cleanBuild({ quiet, verbose }) {
+  if (!quiet) {
+    logger.step('Phase 1: Cleaning…')
+  }
+  const result = await spawn('pnpm', ['run', 'clean:dist'], {
+    shell: isWin32(),
+    stdio: 'inherit',
+  })
+  if (result.code !== 0) {
+    if (!quiet) {
+      logger.error(`Clean failed (exit code: ${result.code})`)
+      printError('Build failed')
+    }
+    process.exitCode = 1
+    return false
+  }
+  if (!quiet && verbose) {
+    logger.success('Clean completed')
+  }
+  return true
+}
+
+async function prepareBuild({ quiet, verbose }) {
+  // Phase 2: Generate packages and download assets in parallel.
+  if (!quiet) {
+    logger.step('Phase 2: Preparing build (parallel)...')
+  }
+
+  const parallelPrep = await Promise.allSettled([
+    spawn(process.execPath, [path.join(__dirname, 'generate-packages.mts')], {
+      shell: isWin32(),
+      stdio: 'inherit',
+    }).then(result => ({ __proto__: null, name: 'Generate Packages', result })),
+    spawn(
+      process.execPath,
+      [...NODE_MEMORY_FLAGS, path.join(__dirname, 'download-assets.mts')],
+      {
+        shell: isWin32(),
+        stdio: 'inherit',
+      },
+    ).then(result => ({ __proto__: null, name: 'Download Assets', result })),
+  ])
+
+  for (let i = 0, { length } = parallelPrep; i < length; i += 1) {
+    const settled = parallelPrep[i]
+    if (settled.status === 'rejected') {
+      if (!quiet) {
+        logger.error(`Parallel preparation failed: ${settled.reason}`)
+        printError('Build failed')
+      }
+      process.exitCode = 1
+      return false
+    }
+
+    const { name, result } = settled.value
+
+    // Check for null spawn result.
+    if (!result) {
+      if (!quiet) {
+        logger.error(`${name} failed to start`)
+        printError('Build failed')
+      }
+      process.exitCode = 1
+      return false
+    }
+
+    if (result.code !== 0) {
+      if (!quiet) {
+        logger.error(`${name} failed (exit code: ${result.code})`)
+        printError('Build failed')
+      }
+      process.exitCode = result.code ?? 1
+      return false
+    }
+
+    if (!quiet && verbose) {
+      logger.success(`${name} completed`)
+    }
+  }
+
+  return true
+}
+
+async function postprocessBuild({ quiet, verbose }) {
+  // Phase 4: Post-processing (parallel).
+  if (!quiet) {
+    logger.step('Phase 4: Post-processing (parallel)...')
+  }
+
+  const postResults = await Promise.allSettled([
+    // Copy CLI bundle to dist (required for dist/index.js to work).
+    (async () => {
+      copyFileSync('build/cli.js', 'dist/cli.js')
+      if (!quiet && verbose) {
+        logger.success('CLI bundle copied')
+      }
+    })(),
+
+    // Fix node-gyp strings to prevent bundler issues.
+    (async () => {
+      await fixNodeGypStrings(path.join(packageRoot, 'build'), {
+        quiet,
+        verbose,
+      })
+      if (!quiet && verbose) {
+        logger.success('Build output post-processed')
+      }
+    })(),
+
+    // Copy CHANGELOG.md from repo root (LICENSE and logos are already in cli package).
+    (async () => {
+      await fs.cp(
+        path.join(repoRoot, 'CHANGELOG.md'),
+        path.join(packageRoot, 'CHANGELOG.md'),
+      )
+      if (!quiet && verbose) {
+        logger.success('CHANGELOG.md copied from repo root')
+      }
+    })(),
+
+    // Copy the JVM manifest emitter assets into dist/manifest-scripts.
+    (async () => {
+      await copyManifestScripts()
+      if (!quiet && verbose) {
+        logger.success('Manifest scripts copied')
+      }
+    })(),
+  ])
+
+  const postFailed = postResults.filter(r => r.status === 'rejected')
+  if (postFailed.length > 0) {
+    for (let i = 0, { length } = postFailed; i < length; i += 1) {
+      const r = postFailed[i]
+      logger.error(`Post-processing failed: ${r.reason?.message ?? r.reason}`)
+    }
+    throw new Error('Post-processing step(s) failed')
+  }
+}
+
+async function buildVariants({ quiet, verbose }) {
+  // Phase 3: Build all variants.
+  if (!quiet) {
+    logger.step('Phase 3: Building variants…')
+  }
+
+  // Ensure dist directory exists before building variants.
+  await fs.mkdir(path.join(packageRoot, 'dist'), { recursive: true })
+
+  const buildResult = await spawn(
+    process.execPath,
+    [...NODE_MEMORY_FLAGS, '.config/rolldown.build.mts', 'all'],
+    {
+      shell: isWin32(),
+      stdio: 'inherit',
+    },
+  )
+
+  if (buildResult.code !== 0) {
+    if (!quiet) {
+      logger.error(`Build failed (exit code: ${buildResult.code})`)
+      printError('Build failed')
+    }
+    process.exitCode = 1
+    return false
+  }
+
+  if (!quiet && verbose) {
+    logger.success('Build completed')
+  }
+
+  return true
+}

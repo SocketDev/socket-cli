@@ -87,7 +87,7 @@ async function generateCacheKey() {
 }
 
 /**
- * Get current git commit SHA.
+ * Get current `git commit` SHA.
  */
 async function getCurrentCommit() {
   try {
@@ -271,39 +271,8 @@ async function restoreCache(repo, cacheKey) {
  * Main entry point.
  */
 async function main() {
-  if (!isQuiet()) {
-    logger.log('')
-    logger.log('CLI Build Cache Restoration')
-    logger.log('===========================')
-    logger.log('')
-  }
-
-  // Check if build artifacts already exist.
-  const buildDir = path.join(packageRoot, 'build')
-  const distDir = path.join(packageRoot, 'dist')
-
-  if (existsSync(buildDir) && existsSync(distDir)) {
-    if (!isQuiet()) {
-      logger.info('Build artifacts already exist, skipping cache restoration.')
-    }
-    return 0
-  }
-
-  // Check if gh CLI is available.
-  if (!(await hasGhCli())) {
-    if (!isQuiet()) {
-      logger.info('gh CLI not found (optional dependency).')
-      logger.info('Install from: https://cli.github.com/')
-    }
-    return 0
-  }
-
-  // Get current commit.
-  const commit = await getCurrentCommit()
+  const commit = await prepareCacheRestore()
   if (!commit) {
-    if (!isQuiet()) {
-      logger.info('Not in a git repository, skipping cache restoration.')
-    }
     return 0
   }
 
@@ -317,37 +286,9 @@ async function main() {
     logger.step(`Cache key: cli-build-Linux-${cacheKey.slice(0, 16)}...`)
   }
 
-  // Get repository name.
-  const repoResult = await spawn(
-    'git',
-    ['config', '--get', 'remote.origin.url'],
-    {
-      cwd: repoRoot,
-      stdio: 'pipe',
-    },
-  )
-  if (repoResult.code !== 0) {
-    if (!isQuiet()) {
-      logger.info('Could not determine repository, skipping cache restoration.')
-    }
+  const repo = await getCacheRepository()
+  if (!repo) {
     return 0
-  }
-
-  const repoUrl = repoResult.stdout.trim()
-  // Extract owner/repo from a GitHub remote URL — matches `github.com/` (HTTPS)
-  // or `github.com:` (SSH), captures everything after as `(.+?)` (non-greedy),
-  // strips an optional `.git` suffix via `(?:\.git)?`, anchored at end `$`.
-  const repoMatch = repoUrl.match(/github\.com[/:](.+?)(?:\.git)?$/)
-  if (!repoMatch) {
-    if (!isQuiet()) {
-      logger.info('Not a GitHub repository, skipping cache restoration.')
-    }
-    return 0
-  }
-
-  const repo = repoMatch[1]
-  if (!isQuiet()) {
-    logger.step(`Repository: ${repo}`)
   }
 
   // Check if cache exists.
@@ -396,3 +337,80 @@ main()
     }
     process.exitCode = 1
   })
+
+async function prepareCacheRestore() {
+  if (!isQuiet()) {
+    logger.log('')
+    logger.log('CLI Build Cache Restoration')
+    logger.log('===========================')
+    logger.log('')
+  }
+
+  // Check if build artifacts already exist.
+  const buildDir = path.join(packageRoot, 'build')
+  const distDir = path.join(packageRoot, 'dist')
+
+  if (existsSync(buildDir) && existsSync(distDir)) {
+    if (!isQuiet()) {
+      logger.info('Build artifacts already exist, skipping cache restoration.')
+    }
+    return undefined
+  }
+
+  // Check if gh CLI is available.
+  if (!(await hasGhCli())) {
+    if (!isQuiet()) {
+      logger.info('gh CLI not found (optional dependency).')
+      logger.info('Install from: https://cli.github.com/')
+    }
+    return undefined
+  }
+
+  // Get current commit.
+  const commit = await getCurrentCommit()
+  if (!commit) {
+    if (!isQuiet()) {
+      logger.info('Not in a git repository, skipping cache restoration.')
+    }
+    return undefined
+  }
+
+  return commit
+}
+
+async function getCacheRepository() {
+  // Get repository name.
+  const repoResult = await spawn(
+    'git',
+    ['config', '--get', 'remote.origin.url'],
+    {
+      cwd: repoRoot,
+      stdio: 'pipe',
+    },
+  )
+  if (repoResult.code !== 0) {
+    if (!isQuiet()) {
+      logger.info('Could not determine repository, skipping cache restoration.')
+    }
+    return undefined
+  }
+
+  const repoUrl = repoResult.stdout.trim()
+  // Extract owner/repo from a GitHub remote URL — matches `github.com/` (HTTPS)
+  // or `github.com:` (SSH), captures everything after as `(.+?)` (non-greedy),
+  // strips an optional `.git` suffix via `(?:\.git)?`, anchored at end `$`.
+  const repoMatch = repoUrl.match(/github\.com[/:](.+?)(?:\.git)?$/)
+  if (!repoMatch) {
+    if (!isQuiet()) {
+      logger.info('Not a GitHub repository, skipping cache restoration.')
+    }
+    return undefined
+  }
+
+  const repo = repoMatch[1]
+  if (!isQuiet()) {
+    logger.step(`Repository: ${repo}`)
+  }
+
+  return repo
+}
