@@ -102,6 +102,107 @@ export async function buildSpokeTagLookup(
   return lookup
 }
 
+export function collectDivergenceWarnings(
+  reached: ReachedPypiLabel[],
+  lockfileMap: Map<string, ExtractedPypiPackage>,
+  spokeTagLookup: Map<string, ExtractedPypiPackage>,
+  warnings: string[],
+): void {
+  for (let i = 0, { length } = reached; i < length; i += 1) {
+    const label = reached[i]!
+    const lockEntry = lockfileMap.get(label.normalizedName)
+    const spokeEntry = spokeTagLookup.get(label.normalizedName)
+    if (lockEntry && spokeEntry && lockEntry.version !== spokeEntry.version) {
+      warnings.push(
+        `Version divergence for ${label.originalLabel}: lockfile says ${lockEntry.version}, spoke tag says ${spokeEntry.version}. Using lockfile.`,
+      )
+    }
+  }
+}
+
+export async function collectHubPackages(
+  hubs: Awaited<ReturnType<typeof discoverPypiHubs>>,
+  cwd: string,
+  queryOpts: BazelQueryOptions,
+  options?: { verbose?: boolean | undefined } | undefined,
+): Promise<{ lines: PypiPackageLine[]; warnings: string[] }> {
+  const { verbose = false } = { __proto__: null, ...options } as {
+    verbose?: boolean | undefined
+  }
+  const allLines: PypiPackageLine[] = []
+  const warnings: string[] = []
+  for (const { 0: hubName, 1: hubInfo } of hubs) {
+    const lockfileMap = await resolveHubLockfile(hubInfo, cwd, { verbose })
+    const reached = await queryReachedPypiLabels(hubName, queryOpts, {
+      verbose,
+    })
+    const labelsToQuery = lockfileMap
+      ? reached.filter(label => !lockfileMap.has(label.normalizedName))
+      : reached
+    const divergenceLabels = lockfileMap && verbose ? reached : labelsToQuery
+    const spokeTagLookup = await buildSpokeTagLookup(
+      divergenceLabels,
+      queryOpts,
+      { verbose },
+    )
+    if (lockfileMap) {
+      collectDivergenceWarnings(reached, lockfileMap, spokeTagLookup, warnings)
+    }
+    const lines = collectPypiPackages(reached, lockfileMap, spokeTagLookup)
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const line = lines[i]!
+      allLines.push({
+        name: line.name,
+        source: line.source,
+        version: line.version,
+      })
+    }
+    logger.info(`@${hubName}: ${lines.length} package(s)`)
+  }
+  return { lines: allLines, warnings }
+}
+
+export async function discoverPypiCandidates(
+  mode: ReturnType<typeof detectWorkspaceMode>,
+  queryOpts: BazelQueryOptions,
+  options?: { verbose?: boolean | undefined } | undefined,
+): Promise<{
+  bazelCommandCandidates: PypiHubCandidate[] | undefined
+  nativeCandidates: string[] | undefined
+}> {
+  const { verbose = false } = { __proto__: null, ...options } as {
+    verbose?: boolean | undefined
+  }
+  if (!mode.bzlmod) {
+    return { bazelCommandCandidates: undefined, nativeCandidates: undefined }
+  }
+  const extensionResult = await runBazelModShowPipExtension(queryOpts)
+  const bazelCommandCandidates =
+    extensionResult.code === 0
+      ? parseBazelModPipExtensionCandidates(extensionResult.stdout, { verbose })
+      : undefined
+  if (extensionResult.code !== 0 && verbose) {
+    logger.log(
+      '[VERBOSE] bazel mod show_extension failed; falling back to bounded static candidate parsing:',
+      extensionResult.stderr,
+    )
+  }
+  const visibleRepos = await runBazelModShowVisibleRepos(queryOpts)
+  const nativeCandidates =
+    visibleRepos.code === 0
+      ? parseVisibleRepoCandidates(visibleRepos.stdout)
+      : undefined
+  if (visibleRepos.code === 0 && verbose) {
+    logger.log('[VERBOSE] Bzlmod visible repo candidates:', nativeCandidates)
+  } else if (visibleRepos.code !== 0 && verbose) {
+    logger.log(
+      '[VERBOSE] bazel mod dump_repo_mapping failed; falling back to static candidate parsing:',
+      visibleRepos.stderr,
+    )
+  }
+  return { bazelCommandCandidates, nativeCandidates }
+}
+
 export async function extractBazelToPypi(
   config: ExtractBazelToPypiOptions,
 ): Promise<ExtractBazelToPypiResult> {
@@ -116,79 +217,11 @@ export async function extractBazelToPypi(
   logger.groupEnd()
 
   try {
-    // Validate caller-provided Bazel filesystem settings before invoking Bazel.
-    if (cfg.bazelOutputBase) {
-      validateOutputBase(cfg.bazelOutputBase, cfg.cwd)
-    }
-    // Python shim (for rules_python workspace discovery).
-    const shim = await provisionPythonShim()
-    const baseEnv = shim.augmentedEnv ?? cfg.env
-
-    // Step 1: workspace detection.
-    const mode = detectWorkspaceMode(cwd)
-    logger.info(
-      `Workspace mode: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
-    )
-    const invocationFlags = getBazelInvocationFlags(mode)
-
-    // Step 2: bazel binary resolution.
-    const bin = await resolveBazelBinary(cfg.bin)
-    logger.info(`Using bazel: ${bin}`)
-    if (verbose) {
-      logger.log('[VERBOSE] resolved options:', {
-        bazelFlags: cfg.bazelFlags ?? '(unset)',
-        bazelOutputBase: cfg.bazelOutputBase ?? '(unset)',
-        bazelRc: cfg.bazelRc ?? '(unset)',
-        bin,
-        invocationFlags,
-      })
-    }
-
-    // Step 3: build the shared query options object.
-    const queryOpts: BazelQueryOptions = {
-      bin,
-      cwd,
-      invocationFlags,
-      ...(cfg.bazelRc ? { bazelRc: cfg.bazelRc } : {}),
-      ...(cfg.bazelFlags ? { bazelFlags: cfg.bazelFlags } : {}),
-      ...(cfg.bazelOutputBase ? { bazelOutputBase: cfg.bazelOutputBase } : {}),
-      ...(baseEnv ? { env: baseEnv } : {}),
-      verbose,
-    }
+    const { mode, queryOpts } = await preparePypiExtraction(cfg)
 
     // Step 4: discover validated PyPI hubs via the two-step recipe.
-    let bazelCommandCandidates: PypiHubCandidate[] | undefined
-    let nativeCandidates: string[] | undefined
-    if (mode.bzlmod) {
-      const extensionResult = await runBazelModShowPipExtension(queryOpts)
-      if (extensionResult.code === 0) {
-        bazelCommandCandidates = parseBazelModPipExtensionCandidates(
-          extensionResult.stdout,
-          { verbose },
-        )
-      } else if (verbose) {
-        logger.log(
-          '[VERBOSE] bazel mod show_extension failed; falling back to bounded static candidate parsing:',
-          extensionResult.stderr,
-        )
-      }
-
-      const visibleRepos = await runBazelModShowVisibleRepos(queryOpts)
-      if (visibleRepos.code === 0) {
-        nativeCandidates = parseVisibleRepoCandidates(visibleRepos.stdout)
-        if (verbose) {
-          logger.log(
-            '[VERBOSE] Bzlmod visible repo candidates:',
-            nativeCandidates,
-          )
-        }
-      } else if (verbose) {
-        logger.log(
-          '[VERBOSE] bazel mod dump_repo_mapping failed; falling back to static candidate parsing:',
-          visibleRepos.stderr,
-        )
-      }
-    }
+    const { bazelCommandCandidates, nativeCandidates } =
+      await discoverPypiCandidates(mode, queryOpts, { verbose })
     const probe = buildPypiProbeFor(queryOpts)
     const hubs = await discoverPypiHubs(cwd, probe, {
       bazelCommandCandidates,
@@ -215,73 +248,20 @@ export async function extractBazelToPypi(
 
     // Step 5: for each hub, resolve the requirements lockfile (fast path),
     // run the reached-closure query, and collect name==version pairs.
-    const allLines: PypiPackageLine[] = []
-    const warnings: string[] = []
-    for (const { 0: hubName, 1: hubInfo } of hubs) {
-      const lockfileMap = await resolveHubLockfile(hubInfo, cwd, { verbose })
-      const reached = await queryReachedPypiLabels(hubName, queryOpts, {
-        verbose,
-      })
-      const labelsToQuery = lockfileMap
-        ? reached.filter(label => !lockfileMap.has(label.normalizedName))
-        : reached
-      const divergenceLabels = lockfileMap && verbose ? reached : labelsToQuery
-      const spokeTagLookup = await buildSpokeTagLookup(
-        divergenceLabels,
-        queryOpts,
-        { verbose },
-      )
-
-      // Check for lockfile-vs-spoke-tag divergence and log warnings.
-      if (lockfileMap) {
-        for (let i = 0, { length } = reached; i < length; i += 1) {
-          const label = reached[i]!
-          const lockEntry = lockfileMap.get(label.normalizedName)
-          const spokeEntry = spokeTagLookup?.get(label.normalizedName)
-          if (
-            lockEntry &&
-            spokeEntry &&
-            lockEntry.version !== spokeEntry.version
-          ) {
-            warnings.push(
-              `Version divergence for ${label.originalLabel}: lockfile says ${lockEntry.version}, spoke tag says ${spokeEntry.version}. Using lockfile.`,
-            )
-          }
-        }
-      }
-
-      const lines = collectPypiPackages(reached, lockfileMap, spokeTagLookup)
-      for (let i = 0, { length } = lines; i < length; i += 1) {
-        const l = lines[i]!
-        allLines.push({ name: l.name, source: l.source, version: l.version })
-      }
-      logger.info(`@${hubName}: ${lines.length} package(s)`)
-    }
+    const { lines: allLines, warnings } = await collectHubPackages(
+      hubs,
+      cwd,
+      queryOpts,
+      verbose,
+    )
 
     // Step 6: cross-hub conflict check (same normalized name, different
     // version across multiple hubs).
-    const crossHubVersions = new Map<string, string>()
-    for (let i = 0, { length } = allLines; i < length; i += 1) {
-      const l = allLines[i]!
-      const normalized = normalizePypiName(l.name)
-      const existing = crossHubVersions.get(normalized)
-      if (existing && existing !== l.version) {
-        throw new Error(
-          `Conflicting versions for ${l.name}: ${existing} vs ${l.version} across hubs.`,
-        )
-      }
-      crossHubVersions.set(normalized, l.version)
-    }
+    validateCrossHubVersions(allLines)
 
     // Step 7: sort and write requirements.txt.
-    const sorted = sortPackageLines(allLines)
-    const lines = sorted.map(p => `${p.name}==${p.version}\n`)
     const layout = cfg.outLayout ?? 'standalone'
-    const manifestDir =
-      layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
-    mkdirSync(manifestDir, { recursive: true })
-    const manifestPath = path.join(manifestDir, 'requirements.txt')
-    await fs.writeFile(manifestPath, lines.join(''), 'utf8')
+    const manifestPath = await writePypiManifest(allLines, out, layout)
 
     if (verbose) {
       logger.log('[VERBOSE] outputs:', {
@@ -314,15 +294,49 @@ export async function extractBazelToPypi(
       ok: true,
     }
   } catch (e) {
-    logger.fail(`Unexpected error in bazel2pypi: ${errorMessage(e)}`)
-    if (verbose) {
-      logger.group('[VERBOSE] error:')
-      logger.log(e)
-      logger.groupEnd()
-    } else {
-      logger.info('Re-run with --verbose for the full stack.')
-    }
-    return { artifactCount: 0, ok: false }
+    return reportPypiExtractionError(e, { verbose })
+  }
+}
+
+export async function preparePypiExtraction(
+  cfg: ExtractBazelToPypiOptions,
+): Promise<{
+  mode: ReturnType<typeof detectWorkspaceMode>
+  queryOpts: BazelQueryOptions
+}> {
+  if (cfg.bazelOutputBase) {
+    validateOutputBase(cfg.bazelOutputBase, cfg.cwd)
+  }
+  const shim = await provisionPythonShim()
+  const baseEnv = shim.augmentedEnv ?? cfg.env
+  const mode = detectWorkspaceMode(cfg.cwd)
+  logger.info(
+    `Workspace mode: bzlmod=${mode.bzlmod} workspace=${mode.workspace}`,
+  )
+  const invocationFlags = getBazelInvocationFlags(mode)
+  const bin = await resolveBazelBinary(cfg.bin)
+  logger.info(`Using bazel: ${bin}`)
+  if (cfg.verbose) {
+    logger.log('[VERBOSE] resolved options:', {
+      bazelFlags: cfg.bazelFlags ?? '(unset)',
+      bazelOutputBase: cfg.bazelOutputBase ?? '(unset)',
+      bazelRc: cfg.bazelRc ?? '(unset)',
+      bin,
+      invocationFlags,
+    })
+  }
+  return {
+    mode,
+    queryOpts: {
+      bin,
+      cwd: cfg.cwd,
+      invocationFlags,
+      ...(cfg.bazelRc ? { bazelRc: cfg.bazelRc } : {}),
+      ...(cfg.bazelFlags ? { bazelFlags: cfg.bazelFlags } : {}),
+      ...(cfg.bazelOutputBase ? { bazelOutputBase: cfg.bazelOutputBase } : {}),
+      ...(baseEnv ? { env: baseEnv } : {}),
+      verbose: cfg.verbose,
+    },
   }
 }
 
@@ -347,6 +361,24 @@ export async function queryReachedPypiLabels(
     return []
   }
   return filterReachedPypiPackages(result.stdout, hubName)
+}
+
+export function reportPypiExtractionError(
+  error: unknown,
+  options?: { verbose?: boolean | undefined } | undefined,
+): ExtractBazelToPypiResult {
+  const { verbose = false } = { __proto__: null, ...options } as {
+    verbose?: boolean | undefined
+  }
+  logger.fail(`Unexpected error in bazel2pypi: ${errorMessage(error)}`)
+  if (verbose) {
+    logger.group('[VERBOSE] error:')
+    logger.log(error)
+    logger.groupEnd()
+  } else {
+    logger.info('Re-run with --verbose for the full stack.')
+  }
+  return { artifactCount: 0, ok: false }
 }
 
 // Resolve lockfile path and read/parse if within bounds.
@@ -378,14 +410,17 @@ export async function resolveHubLockfile(
 }
 
 export type ExtractBazelToPypiOptions = {
+  env?: NodeJS.ProcessEnv | undefined
+  outLayout?: 'flat' | 'standalone' | undefined
+} & ExtractBazelToPypiRequired
+
+export type ExtractBazelToPypiRequired = {
   bazelFlags: string | undefined
   bazelOutputBase: string | undefined
   bazelRc: string | undefined
   bin: string | undefined
   cwd: string
-  env?: NodeJS.ProcessEnv | undefined
   out: string
-  outLayout?: 'flat' | 'standalone' | undefined
   verbose: boolean
 }
 
@@ -416,4 +451,35 @@ export function sortPackageLines(lines: PypiPackageLine[]): PypiPackageLine[] {
     }
     return a.name.localeCompare(b.name)
   })
+}
+
+export function validateCrossHubVersions(lines: PypiPackageLine[]): void {
+  const versions = new Map<string, string>()
+  for (let i = 0, { length } = lines; i < length; i += 1) {
+    const line = lines[i]!
+    const normalized = normalizePypiName(line.name)
+    const existing = versions.get(normalized)
+    if (existing && existing !== line.version) {
+      throw new Error(
+        `Conflicting versions for ${line.name}: ${existing} vs ${line.version} across hubs.`,
+      )
+    }
+    versions.set(normalized, line.version)
+  }
+}
+
+export async function writePypiManifest(
+  lines: PypiPackageLine[],
+  out: string,
+  layout: 'flat' | 'standalone',
+): Promise<string> {
+  const manifestDir =
+    layout === 'flat' ? path.join(out, '.socket-auto-manifest') : out
+  mkdirSync(manifestDir, { recursive: true })
+  const manifestPath = path.join(manifestDir, 'requirements.txt')
+  const content = sortPackageLines(lines)
+    .map(line => `${line.name}==${line.version}\n`)
+    .join('')
+  await fs.writeFile(manifestPath, content, 'utf8')
+  return manifestPath
 }
