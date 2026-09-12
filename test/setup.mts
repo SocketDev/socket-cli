@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url'
 import { scrubAmbientSocketEnv } from './repo/_shared/lib/scrub-socket-env.mts'
 
 // Disable debug output during tests
-process.env.DEBUG = ''
-delete process.env.NODE_DEBUG
+process.env['DEBUG'] = ''
+delete process.env['NODE_DEBUG']
 
 // Drop ambient Socket credentials, developer shell tokens, so spawned CLI
 // children resolve tokens from each test's --config override, matching the
