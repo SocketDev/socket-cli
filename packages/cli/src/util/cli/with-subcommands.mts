@@ -7,7 +7,6 @@ import {
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { getOwn } from '@socketsecurity/lib-stable/objects/inspect'
 import { indentString } from '@socketsecurity/lib-stable/strings/format'
-
 import { DRY_RUN_LABEL } from '../../constants/cli.mts'
 import { VITEST } from '../../env/vitest.mts'
 import { commonFlags } from '../../flags.mts'
@@ -19,12 +18,23 @@ import {
   setMachineOutputMode,
 } from '../output/ambient-mode.mts'
 import { applyMachineOutputStreamPolicy } from '../output/machine-output-streams.mts'
-
 import { buildHelpLines } from './with-subcommands-help.mts'
 import { tryDispatchSubcommand } from './with-subcommands-dispatch.mts'
 import { applyRootCommandFlagVisibility } from './with-subcommands-root-flags.mts'
+import type { AsciiHeaderOptions } from './with-subcommands-banner.mts'
+import type { CliCommandName } from './command-name.mts'
 
 import type { MeowFlags } from '../../flags.mts'
+import type { CliSubcommand, MeowOptions } from './with-subcommands-shared.mts'
+import {
+  emitBanner,
+  getAsciiHeader,
+  getHeaderTheme,
+  getTokenOrigin,
+  shouldAnimateHeader,
+  shouldSuppressBanner,
+  stripAnsi,
+} from './with-subcommands-banner.mts'
 
 const HELP_INDENT = 2
 
@@ -40,8 +50,6 @@ export {
   type CliSubcommandRun,
   type MeowOptions,
 } from './with-subcommands-shared.mts'
-
-import type { CliSubcommand, MeowOptions } from './with-subcommands-shared.mts'
 
 // `findBestCommandMatch` / `levenshteinDistance` extracted to keep this
 // file under the 1000-line File-size cap. See with-subcommands-fuzzy-match.mts.
@@ -79,20 +87,11 @@ export interface MeowConfig {
   name: string
   argv: string[] | readonly string[]
   importMeta: ImportMeta
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<CliCommandName, CliSubcommand>
 }
 
 // Banner / ASCII-header rendering helpers extracted to keep this file
 // under the 1000-line File size cap. See with-subcommands-banner.mts.
-import {
-  emitBanner,
-  getAsciiHeader,
-  getHeaderTheme,
-  getTokenOrigin,
-  shouldAnimateHeader,
-  shouldSuppressBanner,
-  stripAnsi,
-} from './with-subcommands-banner.mts'
 
 export {
   emitBanner,
@@ -102,6 +101,54 @@ export {
   shouldAnimateHeader,
   shouldSuppressBanner,
   stripAnsi,
+}
+
+export function applySubcommandConfigOverride(
+  configFlag: string,
+): ReturnType<typeof overrideCachedConfig> | undefined {
+  let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined
+  const socketCliConfig = getSocketCliConfig()
+  if (socketCliConfig) {
+    configOverrideResult = overrideCachedConfig(socketCliConfig)
+  } else if (configFlag) {
+    configOverrideResult = overrideCachedConfig(configFlag)
+  }
+
+  if (getSocketCliNoApiToken()) {
+    // This overrides the config override and even the explicit token env var.
+    // The config will be marked as readOnly to prevent persisting it.
+    overrideConfigApiToken(undefined)
+  } else {
+    const tokenOverride = getSocketApiToken()
+    if (tokenOverride) {
+      // This will set the token, even if there was a config override, and
+      // set it to readOnly, making sure the temp token won't be persisted.
+      overrideConfigApiToken(tokenOverride)
+    }
+  }
+
+  return configOverrideResult
+}
+
+export function getPackageShorthandArgv(
+  commandName: string | undefined,
+  argv: readonly string[],
+  rawCommandArgv: readonly string[],
+): string[] | undefined {
+  if (commandName?.startsWith('pkg:')) {
+    return ['package', 'deep', ...argv]
+  }
+  if (/^[a-z]+\//.test(commandName || '')) {
+    return ['package', 'deep', `pkg:${commandName}`, ...rawCommandArgv]
+  }
+  return undefined
+}
+
+export function isRootCliInvocation(
+  name: string,
+  commandName: string | undefined,
+): boolean {
+  return name === 'socket' && (!commandName || commandName.startsWith('-'))
 }
 
 /**
@@ -149,35 +196,18 @@ export async function meowWithSubcommands(
   }
 
   // No further args or first arg is a flag (shrug).
-  const isRootCommand =
-    name === 'socket' &&
-    (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
+  const isRootCommand = isRootCliInvocation(name, commandOrAliasName)
 
-  // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
-    if (commandOrAliasName?.startsWith('pkg:')) {
+    const shorthandArgv = getPackageShorthandArgv(
+      commandOrAliasName,
+      argv,
+      rawCommandArgv,
+    )
+    if (shorthandArgv) {
       logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(
-        { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
-        options,
-      )
-    }
-    // Support `socket npm/lodash` or whatever as a shorthand, too.
-    // Accept any ecosystem and let the remote sort it out.
-    if (/^[a-z]+\//.test(commandOrAliasName || '')) {
-      logger.info('Invoking `socket package score`.')
-      return await meowWithSubcommands(
-        {
-          name,
-          argv: [
-            'package',
-            'deep',
-            `pkg:${commandOrAliasName}`,
-            ...rawCommandArgv,
-          ],
-          importMeta,
-          subcommands,
-        },
+        { name, argv: shorthandArgv, importMeta, subcommands },
         options,
       )
     }
@@ -248,26 +278,7 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined
-  const socketCliConfig = getSocketCliConfig()
-  if (socketCliConfig) {
-    configOverrideResult = overrideCachedConfig(socketCliConfig)
-  } else if (configFlag) {
-    configOverrideResult = overrideCachedConfig(configFlag)
-  }
-
-  if (getSocketCliNoApiToken()) {
-    // This overrides the config override and even the explicit token env var.
-    // The config will be marked as readOnly to prevent persisting it.
-    overrideConfigApiToken(undefined)
-  } else {
-    const tokenOverride = getSocketApiToken()
-    if (tokenOverride) {
-      // This will set the token, even if there was a config override, and
-      // set it to readOnly, making sure the temp token won't be persisted.
-      overrideConfigApiToken(tokenOverride)
-    }
-  }
+  const configOverrideResult = applySubcommandConfigOverride(configFlag)
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
@@ -323,6 +334,15 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
   })
 
+  showSubcommandHelp(cli2, name, { orgFlag, compactMode })
+}
+
+export function showSubcommandHelp(
+  cli2: ReturnType<typeof meow>,
+  name: string,
+  options?: AsciiHeaderOptions | undefined,
+): void {
+  const { orgFlag, compactMode } = { __proto__: null, ...options }
   const {
     dryRun,
     help: helpFlag,

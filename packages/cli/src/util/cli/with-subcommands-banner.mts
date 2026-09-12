@@ -37,6 +37,23 @@ import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 const logger = getDefaultLogger()
 
+export function combineHeaderLines(logo: string, infoLines: string[]): string {
+  // Combine logo and info side-by-side.
+  const logoLines = logo.split(/\r?\n/)
+  const combinedLines: string[] = []
+
+  for (let i = 0; i < Math.max(logoLines.length, infoLines.length); i++) {
+    const logoLine = logoLines[i] || ''
+    const infoLine = infoLines[i] || ''
+    // Pad logo line to consistent width (36 chars for the ASCII art).
+    const paddedLogo =
+      logoLine + ' '.repeat(Math.max(0, 36 - stripAnsi(logoLine).length))
+    combinedLines.push(`  ${paddedLogo}${infoLine}`)
+  }
+
+  return combinedLines.join('\n')
+}
+
 export interface AsciiHeaderOptions {
   orgFlag?: string | undefined
   compactMode?: boolean | undefined
@@ -59,6 +76,38 @@ export function emitBanner(
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
   logger.error(getAsciiHeader(name, options))
+}
+
+export function formatHeaderOrganization(
+  orgFlag: string | undefined,
+  defaultOrg: string | undefined,
+  options?: { redacting?: boolean | undefined } | undefined,
+): string {
+  const { redacting } = { __proto__: null, ...options }
+  return redacting
+    ? `org: ${REDACTED}`
+    : orgFlag
+      ? `org: ${colors.cyan(orgFlag)} (${FLAG_ORG} flag)`
+      : defaultOrg && defaultOrg !== 'null'
+        ? `org: ${colors.cyan(defaultOrg)} (config)`
+        : colors.yellow('org: (not set)')
+}
+
+export function formatHeaderToken(
+  tokenPrefix: string | undefined,
+  tokenOrigin: string,
+  options?:
+    | { redacting?: boolean | undefined; noApiToken?: boolean | undefined }
+    | undefined,
+): string {
+  const { redacting, noApiToken } = { __proto__: null, ...options }
+  return redacting
+    ? REDACTED
+    : noApiToken
+      ? colors.red('(disabled)')
+      : tokenPrefix
+        ? `${colors.green(tokenPrefix)}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+        : colors.yellow('(not set)')
 }
 
 /**
@@ -93,32 +142,21 @@ export function getAsciiHeader(
   const tokenPrefix = getVisibleTokenPrefix()
   const tokenOrigin = redacting ? '' : getTokenOrigin()
   const noApiToken = getSocketCliNoApiToken()
-  const shownToken = redacting
-    ? REDACTED
-    : noApiToken
-      ? colors.red('(disabled)')
-      : tokenPrefix
-        ? `${colors.green(tokenPrefix)}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
-        : colors.yellow('(not set)')
+  const shownToken = formatHeaderToken(tokenPrefix, tokenOrigin, {
+    redacting,
+    noApiToken,
+  })
 
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
 
   // Consolidated org display format.
-  const orgPart = redacting
-    ? `org: ${REDACTED}`
-    : orgFlag
-      ? `org: ${colors.cyan(orgFlag)} (${FLAG_ORG} flag)`
-      : defaultOrg && defaultOrg !== 'null'
-        ? `org: ${colors.cyan(defaultOrg)} (config)`
-        : colors.yellow('org: (not set)')
+  const orgPart = formatHeaderOrganization(orgFlag, defaultOrg, { redacting })
 
   // Compact mode for CI/automation.
   if (compactMode) {
-    const compactToken = noApiToken
-      ? '(disabled)'
-      : tokenPrefix
-        ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
-        : '(not set)'
+    const compactToken = getCompactHeaderToken(tokenPrefix, tokenOrigin, {
+      noApiToken,
+    })
     const compactOrg =
       orgFlag ||
       (defaultOrg && defaultOrg !== 'null' ? defaultOrg : '(not set)')
@@ -142,20 +180,20 @@ export function getAsciiHeader(
     `| Command: \`${command}\`, cwd: ${relCwd}`,
   ]
 
-  // Combine logo and info side-by-side.
-  const logoLines = logo.split(/\r?\n/)
-  const combinedLines: string[] = []
+  return combineHeaderLines(logo, infoLines)
+}
 
-  for (let i = 0; i < Math.max(logoLines.length, infoLines.length); i++) {
-    const logoLine = logoLines[i] || ''
-    const infoLine = infoLines[i] || ''
-    // Pad logo line to consistent width (36 chars for the ASCII art).
-    const paddedLogo =
-      logoLine + ' '.repeat(Math.max(0, 36 - stripAnsi(logoLine).length))
-    combinedLines.push(`  ${paddedLogo}${infoLine}`)
-  }
-
-  return combinedLines.join('\n')
+export function getCompactHeaderToken(
+  tokenPrefix: string | undefined,
+  tokenOrigin: string,
+  options?: { noApiToken?: boolean | undefined } | undefined,
+): string {
+  const { noApiToken } = { __proto__: null, ...options }
+  return noApiToken
+    ? '(disabled)'
+    : tokenPrefix
+      ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+      : '(not set)'
 }
 
 /**

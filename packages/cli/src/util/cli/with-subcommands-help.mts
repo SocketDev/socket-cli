@@ -17,6 +17,8 @@
  * for ecosystem-specific or experimental commands documented elsewhere.
  */
 
+import { isCliCommandName } from './command-name.mts'
+
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
@@ -49,7 +51,7 @@ const HELP_INDENT = 2
 const HELP_PAD_NAME = 28
 
 export interface BuildHelpLinesConfig<CommandName extends string> {
-  aliases: Record<string, CliAliases[string]>
+  aliases: CliAliases
   argv: readonly string[]
   /**
    * Per-subcommand bucket assignments. Only consumed for the root-command
@@ -168,7 +170,7 @@ export function groupCommandsByBucket<CommandName extends string>(
     if (cmd.hidden) {
       continue
     }
-    const bucket = buckets[cmdName]
+    const bucket = isCliCommandName(cmdName) ? buckets[cmdName] : undefined
     if (!bucket) {
       continue
     }
@@ -289,7 +291,7 @@ export function pushRootBucketedLayout<CommandName extends string>(
 export function pushSubcommandFlatList<CommandName extends string>(
   lines: string[],
   subcommands: Record<CommandName, CliSubcommand>,
-  aliases: Record<string, CliAliases[string]>,
+  aliases: CliAliases,
 ): void {
   lines.push('Commands')
   lines.push(

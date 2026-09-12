@@ -9,6 +9,8 @@
 
 import { indentString } from '@socketsecurity/lib-stable/strings/format'
 
+import type { CliCommandName } from './command-name.mts'
+
 import type { MeowOptions as MeowBaseOptions } from '../../meow.mts'
 
 export interface CliAlias {
@@ -17,7 +19,7 @@ export interface CliAlias {
   hidden?: boolean | undefined
 }
 
-export type CliAliases = Record<string, CliAlias>
+export type CliAliases = Record<CliCommandName, CliAlias>
 
 export type CliSubcommandRun = (
   argv: string[] | readonly string[],
@@ -44,7 +46,7 @@ export interface CliSubcommand {
  */
 export type CliBucket = 'main' | 'api' | 'tools' | 'config'
 
-export type CliBuckets = Readonly<Record<string, CliBucket>>
+export type CliBuckets = Readonly<Record<CliCommandName, CliBucket>>
 
 export interface MeowOptions extends Omit<
   MeowBaseOptions,
