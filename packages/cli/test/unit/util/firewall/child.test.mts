@@ -125,8 +125,27 @@ sys.exit(os.waitstatus_to_exitcode(status))`
 it.skipIf(process.platform === 'win32')(
   'kills detached descendants on normal exit and cancellation',
   async () => {
+    const terminal = vi
+      .spyOn(childProcesses, 'hasFirewallControllingTerminal')
+      .mockReturnValue(false)
     const directory = await mkdtemp(path.join(os.tmpdir(), 'firewall-child-'))
     try {
+      function isDescendantActive(pid: number): boolean {
+        const status = spawnSync(
+          '/bin/ps',
+          ['-o', 'stat=', '-p', String(pid)],
+          { encoding: 'utf8', timeout: 1000 },
+        )
+        if (status.error) {
+          throw status.error
+        }
+        if (status.status !== 0) {
+          return false
+        }
+        const state = status.stdout.trim()
+        return Boolean(state) && state[0] !== 'E' && state[0] !== 'Z'
+      }
+
       async function verifyDescendantCleanup(
         mode: 'exit-with-descendant' | 'wait-with-descendant',
       ): Promise<void> {
@@ -154,35 +173,22 @@ it.skipIf(process.platform === 'win32')(
             expect(outcome.signal).toBe('SIGTERM')
           }
           await expect
-            .poll(
-              () => {
-                try {
-                  process.kill(pid, 0)
-                  return true
-                } catch (error) {
-                  if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
-                    throw error
-                  }
-                  return false
-                }
-              },
-              { interval: 10, timeout: 5000 },
-            )
+            .poll(() => isDescendantActive(pid), {
+              interval: 10,
+              timeout: 5000,
+            })
             .toBe(false)
         } finally {
           controller.abort()
         }
       }
 
-      const results = await Promise.allSettled([
-        verifyDescendantCleanup('exit-with-descendant'),
-        verifyDescendantCleanup('wait-with-descendant'),
-      ])
-      expect(results).toEqual([
-        { status: 'fulfilled', value: undefined },
-        { status: 'fulfilled', value: undefined },
-      ])
+      const modes = ['exit-with-descendant', 'wait-with-descendant'] as const
+      for (let i = 0, { length } = modes; i < length; i += 1) {
+        await verifyDescendantCleanup(modes[i]!)
+      }
     } finally {
+      terminal.mockRestore()
       await safeDelete(directory)
     }
   },
