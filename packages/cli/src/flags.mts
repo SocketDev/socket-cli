@@ -4,6 +4,7 @@ import { NODE_OPTIONS } from './env/node-options.mts'
 import { defineFlags, meow } from './meow.mts'
 
 import type { MeowFlag as Flag } from './meow.mts'
+import type { FlagName } from './util/cli/flag-name.mts'
 
 // Meow doesn't expose this.
 export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
@@ -20,7 +21,7 @@ export type MeowFlag = AnyFlag & {
 }
 
 // We use this description in getFlagListOutput, meow doesn't care.
-export type MeowFlags = Record<string, MeowFlag>
+export type MeowFlags = Record<FlagName, MeowFlag>
 
 export type RawSpaceSizeFlags = {
   maxOldSpaceSize: number

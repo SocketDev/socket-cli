@@ -4,6 +4,8 @@
  *   interfaces.
  */
 
+import type { FlagName } from '../cli/flag-name.mts'
+
 import type { CResult } from '../../types.mts'
 import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
 
@@ -93,7 +95,7 @@ export interface CommandDefinition {
   /**
    * Flag definitions.
    */
-  flags?: Record<string, FlagDefinition> | undefined
+  flags?: Record<FlagName, FlagDefinition> | undefined
 
   /**
    * Main command handler.

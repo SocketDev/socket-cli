@@ -3,6 +3,8 @@
  *   registration, execution, middleware, and plugin support.
  */
 
+import { isFlagName } from '../cli/flag-name.mts'
+
 import process from 'node:process'
 
 import type {
@@ -10,6 +12,7 @@ import type {
   CommandDefinition,
   CommandPlugin,
   CommandRegistry as ICommandRegistry,
+  FlagDefinition,
   FlagValues,
   MiddlewareFn,
 } from './registry-types.mjs'
@@ -293,7 +296,10 @@ export class CommandRegistry implements ICommandRegistry {
 
       // Handle --flag=value
       const [flagName, ...valueParts] = arg.slice(2).split('=')
-      const flagDef = command.flags[flagName!]
+      if (!flagName || !isFlagName(flagName)) {
+        continue
+      }
+      const flagDef = command.flags[flagName]
 
       if (!flagDef) {
         // Unknown flag - skip for now, could warn
@@ -318,43 +324,10 @@ export class CommandRegistry implements ICommandRegistry {
         value = args[++i]
       }
 
-      // Type conversion
-      switch (flagDef.type) {
-        case 'number': {
-          const raw = value
-          value = Number(value)
-          if (Number.isNaN(value)) {
-            throw new Error(
-              `flag --${flagName} requires a numeric value (saw: "${String(raw)}"); pass an integer or decimal like --${flagName}=42`,
-            )
-          }
-          break
-        }
-        case 'boolean': {
-          value = value === 'true' || value === true
-          break
-        }
-        case 'array': {
-          if (!Array.isArray(flags[flagName!])) {
-            flags[flagName!] = []
-          }
-          ;(flags[flagName!] as unknown[]).push(value)
-          continue
-        }
-        // string: no conversion needed
-      }
-
-      flags[flagName!] = value
+      assignCommandFlag(flags, flagName, flagDef, value)
     }
 
-    // Validate required flags
-    for (const [name, def] of Object.entries(command.flags)) {
-      if (def.isRequired && flags[name] === undefined) {
-        throw new Error(
-          `command "${command.name}" requires --${name} but it was not provided; pass --${name}=<${def.type}-value>`,
-        )
-      }
-    }
+    validateRequiredCommandFlags(command, flags)
 
     return flags
   }
@@ -364,3 +337,55 @@ export class CommandRegistry implements ICommandRegistry {
  * Global registry instance.
  */
 export const registry = new CommandRegistry()
+
+export function assignCommandFlag(
+  flags: FlagValues,
+  flagName: string,
+  flagDef: FlagDefinition,
+  value: unknown,
+): void {
+  // Type conversion
+  switch (flagDef.type) {
+    case 'number': {
+      const raw = value
+      value = Number(value)
+      if (Number.isNaN(value)) {
+        throw new Error(
+          `flag --${flagName} requires a numeric value (saw: "${String(raw)}"); pass an integer or decimal like --${flagName}=42`,
+        )
+      }
+      break
+    }
+    case 'boolean': {
+      value = value === 'true' || value === true
+      break
+    }
+    case 'array': {
+      if (!Array.isArray(flags[flagName!])) {
+        flags[flagName!] = []
+      }
+      ;(flags[flagName!] as unknown[]).push(value)
+      return
+    }
+    // string: no conversion needed
+  }
+
+  flags[flagName!] = value
+}
+
+export function validateRequiredCommandFlags(
+  command: CommandDefinition,
+  flags: FlagValues,
+): void {
+  if (!command.flags) {
+    return
+  }
+  // Validate required flags
+  for (const [name, def] of Object.entries(command.flags)) {
+    if (def.isRequired && flags[name] === undefined) {
+      throw new Error(
+        `command "${command.name}" requires --${name} but it was not provided; pass --${name}=<${def.type}-value>`,
+      )
+    }
+  }
+}
