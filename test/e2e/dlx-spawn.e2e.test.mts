@@ -214,52 +214,6 @@ describe('dlx e2e tests', () => {
     )
   })
 
-  describe('spawnSynp e2e tests', () => {
-    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
-      'executes synp via dlx',
-      async () => {
-        const { spawnSynp } = await import('./spawn.mts')
-        await withScratchHome(async () => {
-          const result = await spawnSynp(['--help'])
-
-          expect(result.spawnPromise).toBeDefined()
-          const spawnResult = await result.spawnPromise
-          expect(spawnResult.code).toBe(0)
-          if (spawnResult.stdout) {
-            expect(spawnResult.stdout).toContain('synp')
-          }
-        })
-      },
-      30_000,
-    )
-
-    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
-      'handles error from spawn',
-      async () => {
-        const { spawnSynp } = await import('./spawn.mts')
-        await withScratchHome(async () => {
-          // Pass invalid args to trigger an error.
-          const result = await spawnSynp(['--invalid-flag-that-does-not-exist'])
-
-          // The command should fail with invalid flags.
-          // Just verify we get a result with spawnPromise.
-          expect(result).toBeDefined()
-          expect(result.spawnPromise).toBeDefined()
-
-          // The spawnPromise may throw or return with non-zero exit code
-          try {
-            const spawnResult = await result.spawnPromise
-            expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
-          } catch (e) {
-            // Command failed as expected - this is valid behavior
-            expect(error).toBeDefined()
-          }
-        })
-      },
-      30_000,
-    )
-  })
-
   describe('spawnDlx e2e tests', () => {
     it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
       'executes dlx command with package spec',

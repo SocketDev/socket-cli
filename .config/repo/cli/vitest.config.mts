@@ -53,9 +53,7 @@ if (existsSync(bundleToolsPath)) {
   try {
     const tools = JSON.parse(readFileSync(bundleToolsPath, 'utf8')).tools
     const toolVersions: Record<string, string | undefined> = {
-      INLINED_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
       INLINED_COANA_VERSION: tools['@coana-tech/cli']?.version,
-      INLINED_CYCLONEDX_CDXGEN_VERSION: tools['@cyclonedx/cdxgen']?.version,
       INLINED_HOMEPAGE: 'https://github.com/SocketDev/socket-cli',
       INLINED_NAME: '@socketsecurity/cli',
       INLINED_OPENGREP_VERSION: tools['opengrep']?.version,
@@ -64,7 +62,6 @@ if (existsSync(bundleToolsPath)) {
       INLINED_PYTHON_BUILD_TAG: tools['python']?.tag,
       INLINED_PYTHON_VERSION: tools['python']?.version,
       INLINED_SOCKET_PATCH_VERSION: tools['socket-patch']?.version,
-      INLINED_SYNP_VERSION: tools['synp']?.version,
       INLINED_TRIVY_VERSION: tools['trivy']?.version,
       INLINED_TRUFFLEHOG_VERSION: tools['trufflehog']?.version,
       INLINED_VERSION: '0.0.0-test',
@@ -221,7 +218,7 @@ const normalConfig = defineConfig({
           functions: 93,
           branches: 90,
         },
-        'src/{core/sdxgen/**,command/manifest/cmd-manifest-sdxgen.mts}': {
+        'src/{core/sdxgen/**,command/sbom/cmd-sbom.mts}': {
           statements: 99,
           lines: 99,
           functions: 99,

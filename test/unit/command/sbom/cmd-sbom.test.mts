@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { beforeEach, expect, it, vi } from 'vitest'
 
-import { run } from '../../../../src/command/manifest/cmd-manifest-sdxgen.mts'
+import { run } from '../../../../src/command/sbom/cmd-sbom.mts'
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
@@ -38,7 +38,7 @@ beforeEach(() => {
 })
 
 it('writes JSON to stdout by default with execution disabled', async () => {
-  await run([], import.meta, { parentName: 'socket manifest' })
+  await run([], import.meta, { parentName: 'socket' })
   expect(mocks.generate).toHaveBeenCalledWith(path.resolve('.'), {
     executeTools: false,
     recursive: false,
@@ -49,9 +49,7 @@ it('writes JSON to stdout by default with execution disabled', async () => {
   })
   expect(mocks.write).not.toHaveBeenCalled()
   const parsedConfig = mocks.parse.mock.calls[0]![0].config
-  expect(parsedConfig.help('socket manifest sdxgen')).toContain(
-    '--execute-tools',
-  )
+  expect(parsedConfig.help('socket sbom')).toContain('--execute-tools')
 })
 
 it('writes the requested output and forwards explicit build execution', async () => {
@@ -59,7 +57,7 @@ it('writes the requested output and forwards explicit build execution', async ()
     input: ['example-project'],
     flags: { executeTools: true, recursive: true, out: 'example-sbom.json' },
   })
-  await run([], import.meta, { parentName: 'socket manifest' })
+  await run([], import.meta, { parentName: 'socket' })
   expect(mocks.generate).toHaveBeenCalledWith(path.resolve('example-project'), {
     executeTools: true,
     recursive: true,
@@ -75,9 +73,9 @@ it('writes the requested output and forwards explicit build execution', async ()
 it('propagates generation failures without writing output', async () => {
   const failure = new Error('fixture parser failed')
   mocks.generate.mockRejectedValue(failure)
-  await expect(
-    run([], import.meta, { parentName: 'socket manifest' }),
-  ).rejects.toBe(failure)
+  await expect(run([], import.meta, { parentName: 'socket' })).rejects.toBe(
+    failure,
+  )
   expect(mocks.write).not.toHaveBeenCalled()
   expect(mocks.log).not.toHaveBeenCalled()
 })
@@ -88,7 +86,7 @@ it('does not generate or write in dry-run mode, even with execution enabled', as
     flags: { dryRun: true, executeTools: true, out: 'example-sbom.json' },
   })
   await run(['--dry-run', '--execute-tools'], import.meta, {
-    parentName: 'socket manifest',
+    parentName: 'socket',
   })
   expect(mocks.dryRun).toHaveBeenCalledOnce()
   expect(mocks.generate).not.toHaveBeenCalled()

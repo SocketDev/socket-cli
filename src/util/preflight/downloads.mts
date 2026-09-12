@@ -3,7 +3,7 @@
  *
  * Silently downloads dependencies in the background on first CLI run: 1.
  *
- * @coana-tech/cli 2. @cyclonedx/cdxgen 3. Python + socketsecurity
+ * @coana-tech/cli and Python + socketsecurity
  * (socket-python-cli)
  *
  * Downloads are staggered sequentially to avoid resource contention. This runs
@@ -17,7 +17,6 @@ import { downloadNpmPackage } from '@socketsecurity/lib-stable/dlx/package'
 import { isCI } from '@socketsecurity/lib-stable/env/ci'
 
 import { getCoanaVersion } from '../../env/coana-version.mts'
-import { getCdxgenVersion } from '../../env/cdxgen-version.mts'
 import { VITEST } from '../../env/vitest.mts'
 import { ensurePythonDlx, ensureSocketPyCli } from '../python/standalone.mts'
 
@@ -46,7 +45,6 @@ export function runPreflightDownloads(): void {
   void (async () => {
     try {
       // Stagger downloads sequentially with delays to avoid resource contention.
-      // Order: coana → delay → cdxgen → delay → Python → socketsecurity.
 
       // 1. @coana-tech/cli preflight.
       const coanaVersion = getCoanaVersion()
@@ -60,19 +58,7 @@ export function runPreflightDownloads(): void {
       // Delay before next download to avoid resource contention.
       await sleep(2000)
 
-      // 2. @cyclonedx/cdxgen preflight.
-      const cdxgenVersion = getCdxgenVersion()
-      const cdxgenSpec = `@cyclonedx/cdxgen@${cdxgenVersion}`
-      await downloadNpmPackage({
-        binaryName: 'cdxgen',
-        force: false,
-        spec: cdxgenSpec,
-      })
-
-      // Delay before next download to avoid resource contention.
-      await sleep(2000)
-
-      // 3. Python + socketsecurity (socket-python-cli) preflight.
+      // Python + socketsecurity (socket-python-cli) preflight.
       const pythonBin = await ensurePythonDlx()
       await ensureSocketPyCli(pythonBin)
     } catch {}

@@ -15,7 +15,6 @@ import { cmdInstall } from './command/install/cmd-install.mts'
 import { cmdJson } from './command/json/cmd-json.mts'
 import { cmdLogin } from './command/login/cmd-login.mts'
 import { cmdLogout } from './command/logout/cmd-logout.mts'
-import { cmdManifestCdxgen } from './command/manifest/cmd-manifest-cdxgen.mts'
 import { cmdManifest } from './command/manifest/cmd-manifest.mts'
 import { cmdMcp } from './command/mcp/cmd-mcp.mts'
 import { cmdNpm } from './command/npm/cmd-npm.mts'
@@ -35,6 +34,7 @@ import { cmdPyCli } from './command/pycli/cmd-pycli.mts'
 import { cmdRawNpm } from './command/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './command/raw-npx/cmd-raw-npx.mts'
 import { cmdRepository } from './command/repository/cmd-repository.mts'
+import { cmdSbom } from './command/sbom/cmd-sbom.mts'
 import { cmdScan } from './command/scan/cmd-scan.mts'
 import { cmdSfw } from './command/sfw/cmd-sfw.mts'
 import { cmdThreatFeed } from './command/threat-feed/cmd-threat-feed.mts'
@@ -50,7 +50,6 @@ export const rootCommands = {
   'audit-log': cmdAuditLog,
   bundler: cmdBundler,
   cargo: cmdCargo,
-  cdxgen: cmdManifestCdxgen,
   ci: cmdCI,
   config: cmdConfig,
   dependencies: cmdOrganizationDependencies,
@@ -79,6 +78,7 @@ export const rootCommands = {
   'raw-npm': cmdRawNpm,
   'raw-npx': cmdRawNpx,
   repository: cmdRepository,
+  sbom: cmdSbom,
   scan: cmdScan,
   security: cmdOrganizationPolicySecurity,
   sfw: cmdSfw,
@@ -117,8 +117,8 @@ export const rootCommandBuckets: Readonly<
   fix: 'main',
   optimize: 'main',
   doctor: 'main',
-  cdxgen: 'main',
   ci: 'main',
+  sbom: 'main',
   // Socket API — commands that hit the Socket.dev REST API.
   analytics: 'api',
   'audit-log': 'api',

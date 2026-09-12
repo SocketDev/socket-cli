@@ -40,10 +40,6 @@ vi.mock(import('../../../../src/env/coana-version.mts'), () => ({
   getCoanaVersion: () => '1.0.0',
 }))
 
-vi.mock(import('../../../../src/env/cdxgen-version.mts'), () => ({
-  getCdxgenVersion: () => '10.0.0',
-}))
-
 // Mock VITEST as a getter so it can be flipped per-test.
 const mockVitest = vi.hoisted(() => ({ VITEST: true }))
 vi.mock(import('../../../../src/env/vitest.mts'), () => mockVitest)
@@ -97,7 +93,7 @@ describe('preflight downloads', () => {
       runPreflightDownloads()
 
       await settlePromiseCallbacks()
-      expect(mockDownloadPackage).toHaveBeenCalledTimes(2)
+      expect(mockDownloadPackage).toHaveBeenCalledOnce()
       expect(mockEnsurePython).toHaveBeenCalledOnce()
       expect(mockEnsureSocketPyCli).toHaveBeenCalledOnce()
     })
@@ -134,15 +130,8 @@ describe('preflight downloads', () => {
       await settlePromiseCallbacks()
       expect(mockDownloadPackage.mock.calls).toEqual([
         [{ binaryName: 'coana', force: false, spec: '@coana-tech/cli@1.0.0' }],
-        [
-          {
-            binaryName: 'cdxgen',
-            force: false,
-            spec: '@cyclonedx/cdxgen@10.0.0',
-          },
-        ],
       ])
-      expect(mockSleep.mock.calls).toEqual([[2000], [2000]])
+      expect(mockSleep.mock.calls).toEqual([[2000]])
       expect(mockEnsurePython).toHaveBeenCalledOnce()
       expect(mockEnsureSocketPyCli).toHaveBeenCalledWith('/usr/bin/python3')
     })

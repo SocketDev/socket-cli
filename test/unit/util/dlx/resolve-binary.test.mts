@@ -1,10 +1,10 @@
 /**
  * Unit tests for binary path resolution utilities.
  *
- * Purpose: Tests the binary resolution logic for external tools like cdxgen,
+ * Purpose: Tests the binary resolution logic for external tools like Maven,
  * other bundled tools.
  *
- * Test Coverage: - resolveCdxgen function - resolvePyCli function -
+ * Test Coverage: - resolvePyCli function -
  * resolveSfw function - resolveSocketPatch function.
  *
  * Related Files: - src/util/dlx/resolve-binary.mts (implementation)
@@ -13,9 +13,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock all environment variable modules.
-const mockCdxgenLocalPath = vi.hoisted(() => ({
-  SOCKET_CLI_CDXGEN_LOCAL_PATH: '',
-}))
+
 const mockPyCliLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_PYCLI_LOCAL_PATH: '',
 }))
@@ -23,10 +21,6 @@ const mockSocketPatchLocalPath = vi.hoisted(() => ({
   SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: '',
 }))
 
-vi.mock(
-  import('../../../../src/env/socket-cli-cdxgen-local-path.mts'),
-  () => mockCdxgenLocalPath,
-)
 vi.mock(
   import('../../../../src/env/socket-cli-pycli-local-path.mts'),
   () => mockPyCliLocalPath,
@@ -37,15 +31,11 @@ vi.mock(
 )
 
 // Mock version getters.
-vi.mock(import('../../../../src/env/cdxgen-version.mts'), () => ({
-  getCdxgenVersion: () => '10.0.0',
-}))
+
 vi.mock(import('../../../../src/env/socket-patch-version.mts'), () => ({
   getSocketPatchVersion: () => '2.0.0',
 }))
-vi.mock(import('../../../../src/env/synp-version.mts'), () => ({
-  getSynpVersion: () => '3.0.0',
-}))
+
 vi.mock(import('../../../../src/env/trivy-version.mts'), () => ({
   getTrivyVersion: () => '0.50.0',
 }))
@@ -80,43 +70,11 @@ describe('binary resolution utilities', () => {
     vi.clearAllMocks()
     vi.resetModules()
     // Reset all local path mocks.
-    mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = ''
+
     mockPyCliLocalPath.SOCKET_CLI_PYCLI_LOCAL_PATH = ''
     mockSocketPatchLocalPath.SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH = ''
     mockOs.platform.mockReturnValue('darwin')
     mockOs.arch.mockReturnValue('arm64')
-  })
-
-  describe('resolveCdxgen', () => {
-    it('returns dlx spec when no local path is set', async () => {
-      const { resolveCdxgen } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveCdxgen()
-
-      expect(result).toEqual({
-        type: 'dlx',
-        details: {
-          name: '@cyclonedx/cdxgen',
-          version: '10.0.0',
-          binaryName: 'cdxgen',
-        },
-      })
-    })
-
-    it('returns local path when SOCKET_CLI_CDXGEN_LOCAL_PATH is set', async () => {
-      mockCdxgenLocalPath.SOCKET_CLI_CDXGEN_LOCAL_PATH = '/custom/path/cdxgen'
-
-      const { resolveCdxgen } =
-        await import('../../../../src/util/dlx/resolve-binary.mts')
-
-      const result = resolveCdxgen()
-
-      expect(result).toEqual({
-        type: 'local',
-        path: '/custom/path/cdxgen',
-      })
-    })
   })
 
   describe('resolvePyCli', () => {

@@ -9,7 +9,7 @@
  * package specs - Exit codes for valid invocations.
  *
  * Command Categories Validated: - Main commands (login, scan, fix, optimize,
- * cdxgen, ci) - Socket API commands (analytics, audit-log, organization,
+ * sbom, ci) - Socket API commands (analytics, audit-log, organization,
  * package, repository, scan, threat-feed) - Local tools (manifest, npm, npx,
  * raw-npm, raw-npx) - CLI configuration (config, install, login, logout,
  * uninstall, whoami, wrapper) - Global flags (--compact-header, --config,
@@ -49,7 +49,7 @@ describe('socket root command', async () => {
               socket login                Setup Socket CLI with an API token and defaults
               socket scan create          Create a new Socket scan and report
               socket npm/lodash@4.17.21   Request the Socket score of a package
-              cdxgen                      Run cdxgen for SBOM generation
+              sbom                        Generate a CycloneDX manifest with the bundled sdxgen parsers
               ci                          Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
               fix                         Fix CVEs in dependencies
               optimize                    Optimize dependencies with @socketregistry overrides

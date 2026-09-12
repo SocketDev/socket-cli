@@ -16,7 +16,6 @@ import { describe, expect, it } from 'vitest'
 import {
   CI,
   ENV,
-  getCdxgenVersion,
   getCliHomepage,
   getCliName,
   getCliVersion,
@@ -26,7 +25,6 @@ import {
   getPythonBuildTag,
   getPythonVersion,
   getSocketPatchVersion,
-  getSynpVersion,
   HOME,
   isPublishedBuild,
   processEnv,
@@ -71,11 +69,6 @@ describe('constants/env', () => {
   })
 
   describe('build metadata getters', () => {
-    it('getCdxgenVersion returns a string', () => {
-      const version = getCdxgenVersion()
-      expect(typeof version).toBe('string')
-    })
-
     it('getCliHomepage returns a string', () => {
       const homepage = getCliHomepage()
       expect(typeof homepage).toBe('string')
@@ -119,11 +112,6 @@ describe('constants/env', () => {
 
     it('getSocketPatchVersion returns a string', () => {
       const version = getSocketPatchVersion()
-      expect(typeof version).toBe('string')
-    })
-
-    it('getSynpVersion returns a string', () => {
-      const version = getSynpVersion()
       expect(typeof version).toBe('string')
     })
 

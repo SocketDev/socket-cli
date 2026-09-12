@@ -55,9 +55,9 @@ Complete reference for all Socket CLI commands, subcommands, and their integrati
 | Command            | Module                                  | Integrates With                               | Type       |
 | ------------------ | --------------------------------------- | --------------------------------------------- | ---------- |
 | **manifest**       | `manifest/cmd-manifest.mts`             | Parent command                                | Parent     |
+| sbom               | `sbom/cmd-sbom.mts`                     | Bundled sdxgen                                | Command    |
 | ├─ manifest auto   | `manifest/cmd-manifest-auto.mts`        | Auto-detect manifests                         | Subcommand |
 | ├─ manifest bazel  | `manifest/bazel/cmd-manifest-bazel.mts` | Bazel → maven_install.json / requirements.txt | Subcommand |
-| ├─ manifest cdxgen | `manifest/cmd-manifest-cdxgen.mts`      | @cyclonedx/cdxgen (SBOM)                      | Subcommand |
 | ├─ manifest conda  | `manifest/cmd-manifest-conda.mts`       | conda.yml → requirements.txt                  | Subcommand |
 | ├─ manifest gradle | `manifest/cmd-manifest-gradle.mts`      | Gradle → Socket facts / pom                   | Subcommand |
 | ├─ manifest kotlin | `manifest/cmd-manifest-kotlin.mts`      | Kotlin (Gradle) → facts/pom                   | Subcommand |
@@ -182,10 +182,8 @@ src/command/package/
 | Tool                         | Commands Using It                                             |
 | ---------------------------- | ------------------------------------------------------------- |
 | @coana-tech/cli              | scan reach                                                    |
-| @cyclonedx/cdxgen            | manifest cdxgen                                               |
 | @socketsecurity/socket-patch | patch                                                         |
 | Socket Firewall (sfw)        | bundler, cargo, gem, go, npm, npx, nuget, pip, pnpm, uv, yarn |
-| synp                         | (internal converter usage)                                    |
 
 ### System Integrations
 

@@ -48,13 +48,6 @@ vi.mock(
 )
 
 vi.mock(
-  import('../../../../src/command/manifest/cmd-manifest-cdxgen.mts'),
-  () => ({
-    cmdManifestCdxgen: { description: 'Run cdxgen', hidden: false },
-  }),
-)
-
-vi.mock(
   import('../../../../src/command/manifest/cmd-manifest-conda.mts'),
   () => ({
     cmdManifestConda: { description: 'Generate conda manifest', hidden: false },
@@ -136,7 +129,6 @@ describe('cmd-manifest', () => {
       const subcommands = callArgs[0].subcommands
 
       expect(subcommands).toHaveProperty('auto')
-      expect(subcommands).toHaveProperty('cdxgen')
       expect(subcommands).toHaveProperty('conda')
       expect(subcommands).toHaveProperty('gradle')
       expect(subcommands).toHaveProperty('kotlin')

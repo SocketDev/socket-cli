@@ -15,7 +15,7 @@ import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 const logger = getDefaultLogger()
 
 const config = {
-  commandName: 'sdxgen',
+  commandName: 'sbom',
   description: 'Generate a CycloneDX manifest with the bundled sdxgen parsers',
   flags: defineFlags({
     ...commonFlags,
@@ -67,7 +67,7 @@ export async function run(
   }
 }
 
-export const cmdManifestSdxgen = {
+export const cmdSbom = {
   description: config.description,
   hidden: false,
   run,

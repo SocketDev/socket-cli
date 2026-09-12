@@ -1,8 +1,8 @@
 {
-  "name": "socket-cli-packages-cli-test-fixtures-commands-cdxgen",
+  "name": "socket-cli-packages-cli-test-fixtures-commands-sbom-yarn",
   "version": "0.0.0",
   "private": true,
-  "description": "Test fixture for cdxgen command testing",
+  "description": "Test fixture for sbom command testing",
   "main": "index.js",
   "dependencies": {
     "lodash": "4.17.21"

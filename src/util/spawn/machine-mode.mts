@@ -148,13 +148,6 @@ const TOOLS = new Map<string, ToolRules>([
     },
   ],
   [
-    'cdxgen',
-    {
-      // Data comes via -o <file>, not stdout. Caller arranges the
-      // tempfile; here we just suppress stdout chatter where possible.
-    },
-  ],
-  [
     'coana',
     {
       // Caller wires --silent --socket-mode <tempfile>; there's nothing
@@ -228,12 +221,6 @@ const TOOLS = new Map<string, ToolRules>([
     'socket-patch',
     {
       // Opaque Rust binary; scrubber catches anything it emits.
-    },
-  ],
-  [
-    'synp',
-    {
-      // No flags exist; scrubber adapter handles the "Created ..." line.
     },
   ],
   [

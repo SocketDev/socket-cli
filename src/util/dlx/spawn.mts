@@ -4,13 +4,11 @@
  *
  * Key Functions:
  *
- * - SpawnCdxgenDlx: Execute CycloneDX generator via dlx
  * - SpawnCoanaDlx: Execute Coana CLI tool via dlx
  * - SpawnDlx: Execute packages using Socket's dlx
  * - SpawnSfwDlx: Execute Socket Firewall via dlx
  * - SpawnSocketPyCli: Execute Socket Python CLI
  * - SpawnSocketPatchDlx: Execute Socket Patch via dlx
- * - SpawnSynpDlx: Execute Synp converter via dlx
  *
  * Implementation:
  *
@@ -280,11 +278,7 @@ export function validatePackageName(name: string): void {
   }
 }
 
-export { spawnCdxgen } from './spawn-cdxgen.mts'
-
 export { spawnCoana } from './spawn-coana.mts'
-
-export { spawnSynp } from './spawn-synp.mts'
 
 /**
  * Python CLI spawn utilities. Re-exported from spawn-pycli.mts (extracted from

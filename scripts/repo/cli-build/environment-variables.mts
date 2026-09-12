@@ -79,9 +79,7 @@ export class EnvironmentVariables {
     }
 
     // npm packages use 'version' field.
-    const cdxgenVersion = getExternalToolVersion('@cyclonedx/cdxgen')
     const coanaVersion = getExternalToolVersion('@coana-tech/cli')
-    const synpVersion = getExternalToolVersion('synp')
     // pypi packages use 'version' field.
     const pyCliVersion = getExternalToolVersion('socketsecurity')
     // GitHub-released tools use 'version' field, release tag, any format.
@@ -117,9 +115,7 @@ export class EnvironmentVariables {
     // Return all environment variables with raw values.
     return {
       __proto__: null,
-      INLINED_CDXGEN_VERSION: cdxgenVersion,
       INLINED_COANA_VERSION: coanaVersion,
-      INLINED_CYCLONEDX_CDXGEN_VERSION: cdxgenVersion,
       INLINED_HOMEPAGE: packageJson.homepage,
       INLINED_NAME: packageJson.name,
       INLINED_OPENGREP_CHECKSUMS: JSON.stringify(opengrepChecksums),
@@ -132,7 +128,6 @@ export class EnvironmentVariables {
       INLINED_SOCKET_PATCH_CHECKSUMS: JSON.stringify(socketPatchChecksums),
       INLINED_SOCKET_PATCH_VERSION: socketPatchVersion,
       INLINED_PYCLI_CHECKSUMS: JSON.stringify(pyCliChecksums),
-      INLINED_SYNP_VERSION: synpVersion,
       INLINED_TRIVY_CHECKSUMS: JSON.stringify(trivyChecksums),
       INLINED_TRIVY_VERSION: trivyVersion,
       INLINED_TRUFFLEHOG_CHECKSUMS: JSON.stringify(trufflehogChecksums),

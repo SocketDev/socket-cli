@@ -824,7 +824,7 @@ describe('meow-with-subcommands', () => {
         'audit-log': stub('audit-log'),
         bundler: stub('bundler'),
         cargo: stub('cargo'),
-        cdxgen: stub('cdxgen'),
+        sbom: stub('sbom'),
         ci: stub('ci'),
         config: stub('config'),
         dependencies: stub('dependencies'),

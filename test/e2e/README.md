@@ -18,7 +18,7 @@ Per-domain smoke files (ported from the retired `smoke.sh`):
 - **`oops.e2e.test.mts`** - `socket oops`
 - **`organization.e2e.test.mts`** - `socket organization`
 - **`package.e2e.test.mts`** - `socket package`
-- **`package-managers.e2e.test.mts`** - `socket npm`, `npx`, `raw-npm`, `raw-npx`, `wrapper`, `optimize`, `cdxgen`, `dependencies`
+- **`package-managers.e2e.test.mts`** - `socket npm`, `npx`, `raw-npm`, `raw-npx`, `wrapper`, `optimize`, `dependencies`
 - **`repos.e2e.test.mts`** - `socket repos` (destructive round-trip behind `RUN_E2E_DESTRUCTIVE=1`)
 - **`scan.e2e.test.mts`** - `socket scan`
 - **`threat-feed.e2e.test.mts`** - `socket threat-feed`

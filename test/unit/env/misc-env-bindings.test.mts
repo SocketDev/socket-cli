@@ -38,7 +38,6 @@ describe('process env bindings', () => {
 describe('socket-cli-* env bindings (additional)', () => {
   it.each([
     'socket-cli-bin-path',
-    'socket-cli-cdxgen-local-path',
     'socket-cli-coana-local-path',
     'socket-cli-debug',
     'socket-cli-fix',
@@ -89,7 +88,7 @@ describe('process / system env bindings', () => {
 })
 
 describe('python build env bindings', () => {
-  it.each(['python-build-tag', 'cdxgen-version'])('exports %s', async name => {
+  it.each(['python-build-tag'])('exports %s', async name => {
     const mod = await import(`../../../src/env/${name}.mts`)
     expect(Object.keys(mod).length).toBeGreaterThan(0)
   })
