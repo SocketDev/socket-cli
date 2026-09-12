@@ -79,35 +79,9 @@ export async function setupConda(
     /* c8 ignore stop */
   }
 
-  const stdout = await askForStdout(config.stdout)
-  if (stdout === undefined) {
-    return canceledByUser()
-  }
-  if (stdout === 'yes') {
-    config.stdout = true
-  } else if (stdout === 'no') {
-    config.stdout = false
-  } else {
-    delete config.stdout
-  }
-
-  if (!config.stdout) {
-    const out = await askForOutputFile(config.outfile || REQUIREMENTS_TXT)
-    if (out === undefined) {
-      return canceledByUser()
-    }
-    if (out === '-') {
-      config.stdout = true
-    } else {
-      delete config.stdout
-      if (out) {
-        config.outfile = out
-        /* c8 ignore start - interactive prompt clearing outfile, empty input, requires raw inquirer mock setup */
-      } else {
-        delete config.outfile
-      }
-      /* c8 ignore stop */
-    }
+  const outputResult = await setupCondaOutput(config)
+  if (!outputResult.ok || outputResult.data.canceled) {
+    return outputResult
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
@@ -122,6 +96,44 @@ export async function setupConda(
     delete config.verbose
   }
 
+  return notCanceled()
+}
+
+export async function setupCondaOutput(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['conda']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const stdout = await askForStdout(config.stdout)
+  if (stdout === undefined) {
+    return canceledByUser()
+  }
+  if (stdout === 'yes') {
+    config.stdout = true
+  } else if (stdout === 'no') {
+    config.stdout = false
+  } else {
+    delete config.stdout
+  }
+  if (config.stdout) {
+    return notCanceled()
+  }
+  const out = await askForOutputFile(config.outfile || REQUIREMENTS_TXT)
+  if (out === undefined) {
+    return canceledByUser()
+  }
+  if (out === '-') {
+    config.stdout = true
+  } else {
+    delete config.stdout
+    if (out) {
+      config.outfile = out
+      /* c8 ignore start - interactive prompt clearing outfile, empty input, requires raw inquirer mock setup */
+    } else {
+      delete config.outfile
+    }
+    /* c8 ignore stop */
+  }
   return notCanceled()
 }
 
@@ -246,40 +258,7 @@ export async function setupManifestConfig(
     sockJson.defaults.manifest = {}
   }
 
-  let result: CResult<{ canceled: boolean }>
-  switch (targetEco) {
-    case 'conda': {
-      if (!sockJson.defaults.manifest.conda) {
-        sockJson.defaults.manifest.conda = {}
-      }
-      result = await setupConda(sockJson.defaults.manifest.conda)
-      break
-    }
-    case 'gradle': {
-      if (!sockJson.defaults.manifest.gradle) {
-        sockJson.defaults.manifest.gradle = {}
-      }
-      result = await setupGradle(sockJson.defaults.manifest.gradle)
-      break
-    }
-    case 'maven': {
-      if (!sockJson.defaults.manifest.maven) {
-        sockJson.defaults.manifest.maven = {}
-      }
-      result = await setupMaven(sockJson.defaults.manifest.maven)
-      break
-    }
-    case 'sbt': {
-      if (!sockJson.defaults.manifest.sbt) {
-        sockJson.defaults.manifest.sbt = {}
-      }
-      result = await setupSbt(sockJson.defaults.manifest.sbt)
-      break
-    }
-    default: {
-      result = canceledByUser()
-    }
-  }
+  const result = await setupSelectedManifest(targetEco, sockJson)
 
   if (!result.ok || result.data.canceled) {
     return result
@@ -310,4 +289,34 @@ export async function setupManifestConfig(
   }
 
   return canceledByUser()
+}
+
+export async function setupSelectedManifest(
+  targetEco: string | null,
+  sockJson: SocketJson,
+): Promise<CResult<{ canceled: boolean }>> {
+  sockJson.defaults ??= {}
+  sockJson.defaults.manifest ??= {}
+  const manifest = sockJson.defaults.manifest
+  switch (targetEco) {
+    case 'conda': {
+      manifest.conda ??= {}
+      return setupConda(manifest.conda)
+    }
+    case 'gradle': {
+      manifest.gradle ??= {}
+      return setupGradle(manifest.gradle)
+    }
+    case 'maven': {
+      manifest.maven ??= {}
+      return setupMaven(manifest.maven)
+    }
+    case 'sbt': {
+      manifest.sbt ??= {}
+      return setupSbt(manifest.sbt)
+    }
+    default: {
+      return canceledByUser()
+    }
+  }
 }
