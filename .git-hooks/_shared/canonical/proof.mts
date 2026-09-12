@@ -1,3 +1,4 @@
+import { canonicalBundleCopyMatches } from './bundle.mts'
 /**
  * @file Prove stage-zero bytes from signed producer trees or ordered template
  *   patches.
@@ -344,6 +345,9 @@ export function canonicalMemberCopyMatches(
         }
       }
     }
+  }
+  if (canonicalBundleCopyMatches(member, file, entry)) {
+    return true
   }
   const receipt = readCanonicalReceipt(member)
   return (

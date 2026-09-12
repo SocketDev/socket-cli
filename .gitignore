@@ -2337,6 +2337,8 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/prefer-async-spawn/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-cached-for-loop/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-cached-for-loop/package.json
+.config/fleet/oxlint-plugin/fleet/prefer-char-code-comparison/index.mts
+.config/fleet/oxlint-plugin/fleet/prefer-char-code-comparison/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-crlf-safe-split/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-crlf-safe-split/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-ellipsis-char/index.mts
@@ -3247,6 +3249,13 @@ scripts/fleet/checks/steps-release.mts
 scripts/fleet/checks/steps.mts
 scripts/fleet/checks/success-output.mts
 scripts/fleet/checks/untrack-offenders.mts
+scripts/fleet/ci/local/credential-contract.mts
+scripts/fleet/ci/local/credentials.mts
+scripts/fleet/ci/local/docker.mts
+scripts/fleet/ci/local/requirements.mts
+scripts/fleet/ci/local/run.mts
+scripts/fleet/ci/local/setup.mts
+scripts/fleet/ci/remote/setup.mts
 scripts/fleet/clean.mts
 scripts/fleet/cli/human-gate.mts
 scripts/fleet/cli/picker.mts
@@ -3440,7 +3449,6 @@ scripts/fleet/github/actions-runtime.mts
 scripts/fleet/github/app-credentials.mts
 scripts/fleet/github/apps.mts
 scripts/fleet/github/ci/secrets.json
-scripts/fleet/github/ci/variables.json
 scripts/fleet/github/commit.mts
 scripts/fleet/github/ghcr-package.mts
 scripts/fleet/github/managed-ruleset-identity.mts
@@ -3545,12 +3553,6 @@ scripts/fleet/lint/format-scope.mts
 scripts/fleet/lint/run.mts
 scripts/fleet/lint/scope-flags.mts
 scripts/fleet/lint/workflow-names.mts
-scripts/fleet/local-ci-skip-locks.mts
-scripts/fleet/local-ci/credential-contract.mts
-scripts/fleet/local-ci/credentials.mts
-scripts/fleet/local-ci/docker.mts
-scripts/fleet/local-ci/env.mts
-scripts/fleet/local-ci/requirements.mts
 scripts/fleet/lockstep-emit-mirror-globs.mts
 scripts/fleet/lockstep-emit-schema.mts
 scripts/fleet/lockstep.mts
@@ -3618,6 +3620,7 @@ scripts/fleet/npm-publish.mts
 scripts/fleet/offload-model.mts
 scripts/fleet/offload-providers.mts
 scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts
+scripts/fleet/pack/canonical-proof.mts
 scripts/fleet/pack/fetcher.mts
 scripts/fleet/pack/files.mts
 scripts/fleet/pack/inspect.mts
@@ -3674,10 +3677,13 @@ scripts/fleet/prune-workflow-runs.mts
 scripts/fleet/publish-from-snapshot.mts
 scripts/fleet/publish-pipeline.mts
 scripts/fleet/publish-shared.mts
+scripts/fleet/registry-infra/apple/csr.mts
 scripts/fleet/registry-infra/apple/developer-id-cert.mts
 scripts/fleet/registry-infra/apple/developer-id-page.mts
 scripts/fleet/registry-infra/apple/developer-id-plan.mts
+scripts/fleet/registry-infra/apple/identity.mts
 scripts/fleet/registry-infra/apple/keychain-csr.mts
+scripts/fleet/registry-infra/apple/util.mts
 scripts/fleet/registry-infra/brew/shared.mts
 scripts/fleet/registry-infra/cargo/approve.mts
 scripts/fleet/registry-infra/cargo/bump.mts
@@ -3838,8 +3844,6 @@ scripts/fleet/setup/ai-clients.mts
 scripts/fleet/setup/bootstrap-zero-dep-packages.d.mts
 scripts/fleet/setup/bootstrap-zero-dep-packages.mjs
 scripts/fleet/setup/brew.mts
-scripts/fleet/setup/ci-local.mts
-scripts/fleet/setup/ci-remote.mts
 scripts/fleet/setup/claude-config.mts
 scripts/fleet/setup/developer-tools.mts
 scripts/fleet/setup/ecosystems.mts

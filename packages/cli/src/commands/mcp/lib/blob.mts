@@ -92,7 +92,7 @@ export async function fetchSocketBlob(
   let contentType: string | undefined
   let originalSize: number
 
-  if (hash[0] === 'S') {
+  if (hash.charCodeAt(0) === 83 /* 'S' */) {
     const chunked = await fetchSocketChunkedBlobBytes(hash, maxBytes)
     buf = chunked.bytes
     originalSize = chunked.totalSize

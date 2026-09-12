@@ -68,7 +68,7 @@ inputs:
     default: ''
   payload-token-client-id:
     description: >-
-      Existing PR App Client ID. Pass vars.SOCKET_PR_CLIENT_ID. The optional
+      Existing PR App Client ID. Pass secrets.SOCKET_PR_CLIENT_ID. The optional
       private release fallback mints only when both credentials are present.
       Public GHCR hydration remains anonymous.
     required: false

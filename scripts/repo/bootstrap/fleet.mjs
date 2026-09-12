@@ -894,7 +894,7 @@ function fleetCanonicalEndBoundary(content) {
   const idx = content.indexOf(FLEET_CANONICAL_END_SENTINEL)
   if (idx === -1) return -1
   let boundary = idx + FLEET_CANONICAL_END_SENTINEL.length
-  if (content.charAt(boundary) === '"') boundary += 1
+  if (content.charCodeAt(boundary) === 34) boundary += 1
   return boundary
 }
 /**
@@ -931,7 +931,7 @@ function repoSeedFragment(sourceTail) {
   const idx = sourceTail.indexOf(REPO_REGION_END_TOKEN)
   if (idx === -1) return ''
   let end = idx + 7
-  if (sourceTail.charAt(end) === '"') end += 1
+  if (sourceTail.charCodeAt(end) === 34) end += 1
   return sourceTail.slice(0, end)
 }
 /**

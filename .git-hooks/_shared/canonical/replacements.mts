@@ -104,7 +104,7 @@ function replaceUniqueRun(
   const index = text.indexOf(run.before)
   if (
     index < 0 ||
-    (index > 0 && text[index - 1] !== '\n') ||
+    (index > 0 && text.charCodeAt(index - 1) !== 10) /* '\n' */ ||
     text.indexOf(run.before, index + 1) !== -1 ||
     (!run.before.endsWith('\n') && index + run.before.length !== text.length)
   ) {

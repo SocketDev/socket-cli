@@ -20,7 +20,7 @@
     "check": "node scripts/fleet/check.mts",
     "check:all": "node scripts/fleet/check.mts --all",
     "check:paths": "node scripts/fleet/check/paths-are-canonical.mts",
-    "ci:local": "node scripts/fleet/local-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
+    "ci:local": "node scripts/fleet/ci/local/run.mts run --all --quiet --pause-on-failure --github-token",
     "claude": "pnpm --filter @socketsecurity/cli run claude --",
     "clean": "node scripts/fleet/clean.mts",
     "clean:cache": "node scripts/repo/clean-cache.mts",
@@ -47,12 +47,13 @@
     "prebuild": "node scripts/repo/setup.mts --restore-cache --quiet",
     "prepare": "node scripts/repo/bootstrap/prepare.mts && node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
     "prepublishOnly": "echo 'ERROR: Use GitHub Actions workflow for publishing' && exit 1",
-    "pretest": "pnpm run build:cli && node scripts/repo/warm-dlx-cache.mts",
+    "pretest": "pnpm run build:cli",
     "pretest:all": "pnpm run build",
     "prune:backups": "node scripts/fleet/backup-branches.mts prune",
     "prune:caches": "node scripts/fleet/prune-actions-caches.mts",
     "security": "node scripts/fleet/security.mts",
     "setup": "node scripts/repo/setup.mts",
+    "setup:dlx-cache": "node scripts/repo/warm-dlx-cache.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "setup:brew": "node scripts/fleet/setup/brew.mts",
     "setup:go": "node scripts/fleet/setup/go.mts",
@@ -116,8 +117,8 @@
     "depot:auth": "node scripts/fleet/registry-infra/depot/browser-auth.mts",
     "integrity-refresh": "node scripts/fleet/external-tools/refresh.mts",
     "setup:1password": "node scripts/fleet/setup/one-password.mts",
-    "setup:ci:local": "node scripts/fleet/setup/ci-local.mts",
-    "setup:ci:remote": "node scripts/fleet/setup/ci-remote.mts",
+    "setup:ci:local": "node scripts/fleet/ci/local/setup.mts",
+    "setup:ci:remote": "node scripts/fleet/ci/remote/setup.mts",
     "setup:ai-clients": "node scripts/fleet/setup/ai-clients.mts",
     "setup:pgbot": "node scripts/fleet/setup/pgbot.mts",
     "mcp:connect": "node scripts/fleet/mcp/connect.mts",
@@ -267,7 +268,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": ">=11.0.0 <12.0.0",
+      "version": "^11.25.0 || >=12.3.4",
       "onFail": "error"
     }
   },
