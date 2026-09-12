@@ -11,6 +11,60 @@ import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../util/alert/artifact.mts'
 const logger = getDefaultLogger()
 
+export function addArtifactAlerts(
+  alerts: DedupedArtifact['alerts'],
+  artifact: SocketArtifact,
+): void {
+  const artifactAlerts = artifact.alerts ?? []
+  for (let i = 0, { length } = artifactAlerts; i < length; i += 1) {
+    const alert = artifactAlerts[i]!
+    const severity = alert.severity ?? ''
+    const { type } = alert
+    alerts.set(`${type}:${severity}`, { __proto__: null, type, severity })
+  }
+}
+
+export function artifactPurl(artifact: SocketArtifact): string {
+  return `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
+}
+
+export function collectArtifactPurls(artifacts: SocketArtifact[]): Set<string> {
+  const purls = new Set<string>()
+  for (let i = 0, { length } = artifacts; i < length; i += 1) {
+    const data = artifacts[i]!
+    purls.add(artifactPurl(data))
+    purls.add(`pkg:${data.type}/${data.name}@${data.version}`)
+    purls.add(`pkg:${data.type}/${data.name}`)
+    purls.add(
+      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}`,
+    )
+  }
+  return purls
+}
+
+export function createDedupedArtifact(
+  artifact: SocketArtifact,
+): DedupedArtifact {
+  const alerts = new Map<string, { type: string; severity: string }>()
+  addArtifactAlerts(alerts, artifact)
+  return {
+    __proto__: null,
+    ecosystem: artifact.type,
+    namespace: artifact.namespace || '',
+    name: artifact.name!,
+    version: artifact.version || '',
+    score: {
+      __proto__: null,
+      supplyChain: artifact.score?.supplyChain ?? 100,
+      maintenance: artifact.score?.maintenance ?? 100,
+      quality: artifact.score?.quality ?? 100,
+      vulnerability: artifact.score?.vulnerability ?? 100,
+      license: artifact.score?.license ?? 100,
+    },
+    alerts,
+  }
+}
+
 export function formatReportCard(
   artifact: DedupedArtifact,
   config: { colorize: boolean },
@@ -208,6 +262,33 @@ export interface DedupedArtifact {
   >
 }
 
+export function mergeArtifactRow(
+  row: DedupedArtifact,
+  artifact: SocketArtifact,
+): void {
+  row.score.supplyChain = Math.min(
+    row.score.supplyChain,
+    artifact.score?.supplyChain ?? 100,
+  )
+  row.score.maintenance = Math.min(
+    row.score.maintenance,
+    artifact.score?.maintenance ?? 100,
+  )
+  row.score.quality = Math.min(
+    row.score.quality,
+    artifact.score?.quality ?? 100,
+  )
+  row.score.vulnerability = Math.min(
+    row.score.vulnerability,
+    artifact.score?.vulnerability ?? 100,
+  )
+  row.score.license = Math.min(
+    row.score.license,
+    artifact.score?.license ?? 100,
+  )
+  addArtifactAlerts(row.alerts, artifact)
+}
+
 export function outputPurlsShallowScore(
   purls: string[],
   result: CResult<SocketArtifact[]>,
@@ -250,18 +331,7 @@ export function preProcess(
 
   // API does not tell us which purls were not found.
   // Generate all purls to try so we can try to match search request.
-  const purls: Set<string> = new Set()
-  for (let i = 0, { length } = artifacts; i < length; i += 1) {
-    const data = artifacts[i]!
-    purls.add(
-      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
-    )
-    purls.add(`pkg:${data.type}/${data.name}@${data.version}`)
-    purls.add(`pkg:${data.type}/${data.name}`)
-    purls.add(
-      `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}`,
-    )
-  }
+  const purls = collectArtifactPurls(artifacts)
   // Try to match the searched purls against this list
   const missing = requestedPurls.filter(purl => {
     if (purls.has(purl)) {
@@ -284,69 +354,12 @@ export function preProcess(
   const rows: Map<string, DedupedArtifact> = new Map()
   for (let i = 0, { length } = artifacts; i < length; i += 1) {
     const artifact = artifacts[i]!
-    const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
-    if (rows.has(purl)) {
-      const row = rows.get(purl)
-      /* c8 ignore start - rows.has just confirmed; .get cannot return undefined here */
-      if (!row) {
-        continue
-      }
-      /* c8 ignore stop */
-      if ((artifact.score?.supplyChain ?? 100) < row.score.supplyChain) {
-        row.score.supplyChain = artifact.score?.supplyChain ?? 100
-      }
-      if ((artifact.score?.maintenance ?? 100) < row.score.maintenance) {
-        row.score.maintenance = artifact.score?.maintenance ?? 100
-      }
-      if ((artifact.score?.quality ?? 100) < row.score.quality) {
-        row.score.quality = artifact.score?.quality ?? 100
-      }
-      if ((artifact.score?.vulnerability ?? 100) < row.score.vulnerability) {
-        row.score.vulnerability = artifact.score?.vulnerability ?? 100
-      }
-      if ((artifact.score?.license ?? 100) < row.score.license) {
-        row.score.license = artifact.score?.license ?? 100
-      }
-
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
-      artifact.alerts?.forEach(
-        (alert: { type: string; severity?: string | undefined }) => {
-          const severity = alert.severity ?? ''
-          const { type } = alert
-          row.alerts.set(`${type}:${severity}`, {
-            type,
-            severity,
-          })
-        },
-      )
+    const purl = artifactPurl(artifact)
+    const row = rows.get(purl)
+    if (row) {
+      mergeArtifactRow(row, artifact)
     } else {
-      const alerts = new Map<string, { type: string; severity: string }>()
-      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
-      artifact.alerts?.forEach(
-        (alert: { type: string; severity?: string | undefined }) => {
-          const severity = alert.severity ?? ''
-          const { type } = alert
-          alerts.set(`${type}:${severity}`, {
-            type,
-            severity,
-          })
-        },
-      )
-
-      rows.set(purl, {
-        ecosystem: artifact.type,
-        namespace: artifact.namespace || '',
-        name: artifact.name!,
-        version: artifact.version || '',
-        score: {
-          supplyChain: artifact.score?.supplyChain ?? 100,
-          maintenance: artifact.score?.maintenance ?? 100,
-          quality: artifact.score?.quality ?? 100,
-          vulnerability: artifact.score?.vulnerability ?? 100,
-          license: artifact.score?.license ?? 100,
-        },
-        alerts,
-      })
+      rows.set(purl, createDedupedArtifact(artifact))
     }
   }
 
