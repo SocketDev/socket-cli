@@ -65,92 +65,16 @@ export function formatErrorForDisplay(
   let message = ''
   let body: string | undefined
 
-  if (error instanceof RateLimitError) {
-    title = 'API rate limit exceeded'
-    message = error.message
-    if (error.retryAfter) {
-      message += ` (retry after ${error.retryAfter}s)`
-    }
-    message = appendCauseChain(message, error.cause)
-  } else if (error instanceof AuthError) {
-    title = 'Authentication error'
-    message = appendCauseChain(error.message, error.cause)
-  } else if (error instanceof NetworkError) {
-    title = 'Network error'
-    message = error.message
-    if (error.statusCode) {
-      message += ` (HTTP ${error.statusCode})`
-    }
-    message = appendCauseChain(message, error.cause)
-  } else if (error instanceof FileSystemError) {
-    title = 'File system error'
-    message = error.message
-    if (error.path) {
-      message += ` (${error.path})`
-    }
-    message = appendCauseChain(message, error.cause)
-  } else if (error instanceof ConfigError) {
-    title = 'Configuration error'
-    message = error.message
-    if (error.configKey) {
-      message += ` (key: ${error.configKey})`
-    }
-    message = appendCauseChain(message, error.cause)
-  } else if (error instanceof InputError) {
-    title = 'Invalid input'
-    message = appendCauseChain(error.message, error.cause)
-    body = error.body
+  const knownError = getKnownErrorDisplayDetails(error)
+  if (knownError) {
+    title = knownError.title
+    message = knownError.message
+    body = knownError.body
   } else if (isError(error)) {
     title = opts.title || 'Unexpected error'
     message = appendCauseChain(error.message, error.cause)
 
-    if (showStack && error.stack) {
-      // Format stack trace with proper indentation.
-      const stackLines = error.stack.split(/\r?\n/)
-      const formattedStack = stackLines
-        .slice(1)
-        .map(line => `  ${colors.dim(line.trim())}`)
-        .join('\n')
-
-      body = formattedStack
-    }
-
-    // Handle error causes, chain of errors.
-    if (error.cause && showStack) {
-      const causeLines = []
-      let currentCause: unknown = error.cause
-      let depth = 1
-
-      while (currentCause && depth <= 5) {
-        // Use .message here rather than errorMessage() for Errors —
-        // errorMessage() walks the entire remaining cause chain via
-        // messageWithCauses, which would duplicate messages since the outer
-        // while loop is already iterating the chain level-by-level. For
-        // non-Error causes errorMessage() is chain-free coercion (with an
-        // UNKNOWN_ERROR fallback instead of '[object Object]').
-        const causeMessage = isError(currentCause)
-          ? currentCause.message || String(currentCause)
-          : errorMessage(currentCause)
-
-        causeLines.push(
-          `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,
-        )
-
-        if (isError(currentCause) && currentCause.stack && depth === 1) {
-          const causeStack = currentCause.stack
-            .split(/\r?\n/)
-            .slice(1)
-            .map(line => `  ${colors.dim(line.trim())}`)
-            .join('\n')
-          causeLines.push(causeStack)
-        }
-
-        currentCause = isError(currentCause) ? currentCause.cause : undefined
-        depth++
-      }
-
-      body = body ? `${body}${causeLines.join('\n')}` : causeLines.join('\n')
-    }
+    body = getErrorStackBody(error, { showStack })
   } else if (typeof error === 'string') {
     message = error
   } else {
@@ -240,4 +164,108 @@ export function formatErrorForTerminal(
   }
 
   return lines.filter(Boolean).join('\n')
+}
+
+export function getErrorStackBody(
+  error: Error,
+  options?: { showStack?: boolean | undefined } | undefined,
+): string | undefined {
+  const opts = { __proto__: null, ...options } as typeof options
+  const showStack = opts?.showStack
+  let body: string | undefined
+  if (showStack && error.stack) {
+    // Format stack trace with proper indentation.
+    const stackLines = error.stack.split(/\r?\n/)
+    const formattedStack = stackLines
+      .slice(1)
+      .map(line => `  ${colors.dim(line.trim())}`)
+      .join('\n')
+
+    body = formattedStack
+  }
+
+  // Handle error causes, chain of errors.
+  if (error.cause && showStack) {
+    const causeLines = []
+    let currentCause: unknown = error.cause
+    let depth = 1
+
+    while (currentCause && depth <= 5) {
+      // Use .message here rather than errorMessage() for Errors —
+      // errorMessage() walks the entire remaining cause chain via
+      // messageWithCauses, which would duplicate messages since the outer
+      // while loop is already iterating the chain level-by-level. For
+      // non-Error causes errorMessage() is chain-free coercion (with an
+      // UNKNOWN_ERROR fallback instead of '[object Object]').
+      const causeMessage = isError(currentCause)
+        ? currentCause.message || String(currentCause)
+        : errorMessage(currentCause)
+
+      causeLines.push(
+        `\n${colors.dim(`Caused by [${depth}]:`)} ${colors.yellow(causeMessage)}`,
+      )
+
+      if (isError(currentCause) && currentCause.stack && depth === 1) {
+        const causeStack = currentCause.stack
+          .split(/\r?\n/)
+          .slice(1)
+          .map(line => `  ${colors.dim(line.trim())}`)
+          .join('\n')
+        causeLines.push(causeStack)
+      }
+
+      currentCause = isError(currentCause) ? currentCause.cause : undefined
+      depth++
+    }
+
+    body = body ? `${body}${causeLines.join('\n')}` : causeLines.join('\n')
+  }
+  return body
+}
+
+export function getKnownErrorDisplayDetails(
+  error: unknown,
+): { body?: string | undefined; message: string; title: string } | undefined {
+  let title = ''
+  let message = ''
+  let body: string | undefined
+  if (error instanceof RateLimitError) {
+    title = 'API rate limit exceeded'
+    message = error.message
+    if (error.retryAfter) {
+      message += ` (retry after ${error.retryAfter}s)`
+    }
+    message = appendCauseChain(message, error.cause)
+  } else if (error instanceof AuthError) {
+    title = 'Authentication error'
+    message = appendCauseChain(error.message, error.cause)
+  } else if (error instanceof NetworkError) {
+    title = 'Network error'
+    message = error.message
+    if (error.statusCode) {
+      message += ` (HTTP ${error.statusCode})`
+    }
+    message = appendCauseChain(message, error.cause)
+  } else if (error instanceof FileSystemError) {
+    title = 'File system error'
+    message = error.message
+    if (error.path) {
+      message += ` (${error.path})`
+    }
+    message = appendCauseChain(message, error.cause)
+  } else if (error instanceof ConfigError) {
+    title = 'Configuration error'
+    message = error.message
+    if (error.configKey) {
+      message += ` (key: ${error.configKey})`
+    }
+    message = appendCauseChain(message, error.cause)
+  } else if (error instanceof InputError) {
+    title = 'Invalid input'
+    message = appendCauseChain(error.message, error.cause)
+    body = error.body
+  } else {
+    return undefined
+  }
+  return { body, message, title }
 }
