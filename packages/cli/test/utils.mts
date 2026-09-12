@@ -197,7 +197,10 @@ export async function spawnSocketCli(
     // Create a Proxy env that handles Windows case-insensitivity issues.
     // This ensures PATH, TEMP, and other Windows env vars work regardless
     // of case (PATH vs Path vs path).
-    const env = createEnvProxy(constants.processEnv, spawnEnv)
+    const env = createEnvProxy(constants.processEnv, {
+      SOCKET_SHIM_ACTIVE_PNPM: '1',
+      ...spawnEnv,
+    })
 
     const output = await spawn(command, commandArgs, {
       cwd,
