@@ -2740,6 +2740,7 @@ scripts/fleet/ai/balancer/launch-model.mts
 scripts/fleet/ai/balancer/launch-opencode.mts
 scripts/fleet/ai/balancer/launch-settings.mts
 scripts/fleet/ai/balancer/launch.mts
+scripts/fleet/ai/balancer/liveness.mts
 scripts/fleet/ai/balancer/login.mts
 scripts/fleet/ai/balancer/measure-vision-fidelity.mts
 scripts/fleet/ai/balancer/memory-sentinel.mts
@@ -2766,6 +2767,7 @@ scripts/fleet/ai/balancer/training-warning.mts
 scripts/fleet/ai/balancer/transform-request.mts
 scripts/fleet/ai/balancer/transport.mts
 scripts/fleet/ai/balancer/upstream-head.mts
+scripts/fleet/ai/balancer/upstream-probe.mts
 scripts/fleet/ai/balancer/usage-ledger.mts
 scripts/fleet/ai/balancer/watchdog.mts
 scripts/fleet/ai/bounded-reader.mts
@@ -3347,6 +3349,7 @@ scripts/fleet/eco/go-workspaces.mts
 scripts/fleet/eco/pnpm-lockfile.mts
 scripts/fleet/eco/rust/tool-pins.mts
 scripts/fleet/eco/swift-targets.mts
+scripts/fleet/entry-scripts/analysis.mts
 scripts/fleet/entry-scripts/discovery.mts
 scripts/fleet/entry-scripts/syntax.mts
 scripts/fleet/errors/predicates.mts

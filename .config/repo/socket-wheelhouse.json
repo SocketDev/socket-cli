@@ -6,8 +6,8 @@
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "bundle": {
-    "ref": "fleet-pack-da45c3aeb1c3119b67f2a12f34f1b0c2176ac331",
-    "cascadeSha": "da45c3aeb1c3119b67f2a12f34f1b0c2176ac331"
+    "ref": "fleet-pack-b12f764b31ec17f8f08ab5a49c21c3852e46a385",
+    "cascadeSha": "b12f764b31ec17f8f08ab5a49c21c3852e46a385"
   },
   "repo": {
     "type": "mono"
@@ -181,6 +181,10 @@
       "mid": [
         "packages/cli/test/unit/commands/**",
         "packages/cli/test/unit/util/firewall/**",
+        "packages/cli/test/unit/util/git/spawn-git.test.mts",
+        "packages/cli/test/unit/util/spawn/spawn-node.test.mts",
+        "packages/cli/test/unit/util/spawn/system-tool.test.mts",
+        "packages/cli/test/unit/util/trusted-executable.test.mts",
         "packages/cli/test/unit/meow.test.mts"
       ],
       "slow": ["packages/cli/test/integration/**"]
