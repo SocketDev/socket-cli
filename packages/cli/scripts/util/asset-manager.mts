@@ -22,6 +22,7 @@ import { downloadReleaseAsset } from 'local-build-infra/lib/github-releases'
 
 import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import {
@@ -33,6 +34,12 @@ import {
 } from '../constants/base-assets.mts'
 import { ARCH_MAP, PLATFORM_MAP } from '../constants/platform-mappings.mts'
 import { computeFileHash } from './socket-btm-releases.mts'
+import {
+  getGhToken,
+  getGithubToken,
+} from '@socketsecurity/lib-stable/env/github'
+
+const logger = getDefaultLogger()
 
 // =============================================================================
 // Constants and Utilities.
@@ -86,7 +93,7 @@ export class AssetManager {
     }
 
     this.cacheEnabled = cacheEnabled
-    this.logger = getDefaultLogger()
+    this.logger = logger
     this.quiet = quiet
 
     // Default download directory: socket-cli/packages/build-infra/build/downloaded/
@@ -105,8 +112,9 @@ export class AssetManager {
    * @returns {Object} Headers object for GitHub API requests.
    */
   getAuthHeaders() {
-    const token = process.env['GH_TOKEN'] || process.env['GITHUB_TOKEN']
+    const token = getGhToken() || getGithubToken()
     return {
+      __proto__: null,
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -225,22 +233,9 @@ export class AssetManager {
       ...config,
     }
 
-    // Check for local override environment variable.
-    if (localOverride) {
-      const localPath = process.env[localOverride]
-      if (localPath && existsSync(localPath)) {
-        this.logger.log(`Using local ${tool} from: ${localPath}`)
-        return localPath
-      }
-
-      if (localPath && !existsSync(localPath)) {
-        this.logger.warn(
-          `${localOverride} is set but file not found: ${localPath}`,
-        )
-        this.logger.warn(
-          `Falling back to downloaded ${tool} from GitHub releases`,
-        )
-      }
+    const overridePath = this.getLocalBinaryOverride(localOverride, tool)
+    if (overridePath) {
+      return overridePath
     }
 
     const isPlatWin = platform === 'win32'
@@ -248,9 +243,10 @@ export class AssetManager {
     const toolDir = this.getDownloadDir(tool, platformArch)
 
     // Determine binary filename based on platform.
-    const isNodeSmol = tool === 'node-smol'
-    const binaryName = isNodeSmol ? 'node' : tool
-    const binaryFilename = isPlatWin ? `${binaryName}.exe` : binaryName
+    const { isNodeSmol, binaryName, binaryFilename } = getBinaryNames(
+      tool,
+      isPlatWin,
+    )
     const binaryPath = normalizePath(path.join(toolDir, binaryFilename))
     const versionPath = normalizePath(path.join(toolDir, '.version'))
 
@@ -267,26 +263,12 @@ export class AssetManager {
       await fs.writeFile(lockFile, process.pid.toString(), { flag: 'wx' })
     } catch (e) {
       if (e.code === 'EEXIST') {
-        // Another process is downloading, wait and check for completion.
-        this.logger.log(`Another process is downloading ${tool}, waiting…`)
-        for (let i = 0; i < 60; i++) {
-          await new Promise(resolve => {
-            setTimeout(resolve, 1000)
-          })
-          // Check if cached version matches requested version.
-          const tagPrefix = `${tool}-`
-          const cacheValid = await this.validateCache(
-            versionPath,
-            tag,
-            tagPrefix,
-          )
-          if (cacheValid && existsSync(binaryPath)) {
-            return binaryPath
-          }
-        }
-        throw new Error(
-          `Timeout waiting for another process to download ${tool}`,
-        )
+        return this.waitForBinaryDownload({
+          tool,
+          versionPath,
+          tag,
+          binaryPath,
+        })
       }
       throw e
     }
@@ -300,16 +282,7 @@ export class AssetManager {
         return binaryPath
       }
 
-      // Clear stale cache if it exists.
-      if (existsSync(toolDir)) {
-        // Remove version file and binary, but keep lock file.
-        if (existsSync(versionPath)) {
-          await safeDelete(versionPath)
-        }
-        if (existsSync(binaryPath)) {
-          await safeDelete(binaryPath)
-        }
-      }
+      await this.clearBinaryCache({ toolDir, versionPath, binaryPath })
 
       // Map platform/arch to release asset names. node-smol assets use the
       // shortened platform names ('win'); binject assets keep the raw Node.js
@@ -331,66 +304,13 @@ export class AssetManager {
       // SOCKET_CLI_SEA_NODE_VERSION) has no pin and only exists on socket-btm.
       const pinnedSha256 = BASE_ASSET_SHA256[tag]?.[assetFilename]
 
-      // Download using github-releases helper (handles HTTP 302 redirects automatically).
-      try {
-        if (pinnedSha256) {
-          const mirrorTag = `base-assets-${tag}`
-          this.logger.log(
-            `Downloading ${tool} from ${BASE_ASSETS_MIRROR_REPO} ${mirrorTag}...`,
-          )
-          try {
-            await downloadReleaseAsset(
-              BASE_ASSETS_MIRROR_OWNER,
-              BASE_ASSETS_MIRROR_REPO,
-              mirrorTag,
-              assetFilename,
-              binaryPath,
-            )
-          } catch (mirrorError) {
-            // TRANSITION FALLBACK: socket-btm is descoped but still serves the
-            // frozen source releases. Keep for one transition release, then
-            // remove once the socket-cli mirror has proven itself.
-            this.logger.warn(
-              `Mirror download failed (${mirrorError.message}), ` +
-                `falling back to ${BASE_ASSETS_FALLBACK_REPO} ${tag}...`,
-            )
-            await downloadReleaseAsset(
-              BASE_ASSETS_FALLBACK_OWNER,
-              BASE_ASSETS_FALLBACK_REPO,
-              tag,
-              assetFilename,
-              binaryPath,
-            )
-          }
-        } else {
-          this.logger.warn(
-            `No SHA-256 pin for ${tag}/${assetFilename} — downloading unverified from ${BASE_ASSETS_FALLBACK_REPO}...`,
-          )
-          await downloadReleaseAsset(
-            BASE_ASSETS_FALLBACK_OWNER,
-            BASE_ASSETS_FALLBACK_REPO,
-            tag,
-            assetFilename,
-            binaryPath,
-          )
-        }
-      } catch (e) {
-        await logTransientErrorHelp(e)
-        throw e
-      }
-
-      // Verify the download against the checked-in pin regardless of which
-      // home served it.
-      if (pinnedSha256) {
-        const actualSha256 = await computeFileHash(binaryPath)
-        if (actualSha256 !== pinnedSha256) {
-          await safeDelete(binaryPath)
-          throw new Error(
-            `SHA-256 mismatch for ${assetFilename} (${tag}): ` +
-              `expected ${pinnedSha256}, got ${actualSha256}`,
-          )
-        }
-      }
+      await this.downloadVerifiedBinary({
+        tool,
+        tag,
+        assetFilename,
+        binaryPath,
+        pinnedSha256,
+      })
 
       // Write version file, store full tag for consistency.
       await fs.writeFile(versionPath, tag, 'utf8')
@@ -412,4 +332,130 @@ export class AssetManager {
       }
     }
   }
+  getLocalBinaryOverride(localOverride, tool) {
+    // Check for local override environment variable.
+    if (localOverride) {
+      const localPath = getEnvValue(localOverride)
+      if (localPath && existsSync(localPath)) {
+        this.logger.log(`Using local ${tool} from: ${localPath}`)
+        return localPath
+      }
+
+      if (localPath && !existsSync(localPath)) {
+        this.logger.warn(
+          `${localOverride} is set but file not found: ${localPath}`,
+        )
+        this.logger.warn(
+          `Falling back to downloaded ${tool} from GitHub releases`,
+        )
+      }
+    }
+
+    return undefined
+  }
+
+  async waitForBinaryDownload({ tool, versionPath, tag, binaryPath }) {
+    // Another process is downloading, wait and check for completion.
+    this.logger.log(`Another process is downloading ${tool}, waiting…`)
+    for (let i = 0; i < 60; i++) {
+      await new Promise(resolve => {
+        setTimeout(resolve, 1000)
+      })
+      // Check if cached version matches requested version.
+      const tagPrefix = `${tool}-`
+      const cacheValid = await this.validateCache(versionPath, tag, tagPrefix)
+      if (cacheValid && existsSync(binaryPath)) {
+        return binaryPath
+      }
+    }
+    throw new Error(`Timeout waiting for another process to download ${tool}`)
+  }
+
+  async clearBinaryCache({ toolDir, versionPath, binaryPath }) {
+    // Clear stale cache if it exists.
+    if (existsSync(toolDir)) {
+      // Remove version file and binary, but keep lock file.
+      if (existsSync(versionPath)) {
+        await safeDelete(versionPath)
+      }
+      if (existsSync(binaryPath)) {
+        await safeDelete(binaryPath)
+      }
+    }
+  }
+  async downloadVerifiedBinary({
+    tool,
+    tag,
+    assetFilename,
+    binaryPath,
+    pinnedSha256,
+  }) {
+    // Download using github-releases helper (handles HTTP 302 redirects automatically).
+    try {
+      if (pinnedSha256) {
+        const mirrorTag = `base-assets-${tag}`
+        this.logger.log(
+          `Downloading ${tool} from ${BASE_ASSETS_MIRROR_REPO} ${mirrorTag}...`,
+        )
+        try {
+          await downloadReleaseAsset(
+            BASE_ASSETS_MIRROR_OWNER,
+            BASE_ASSETS_MIRROR_REPO,
+            mirrorTag,
+            assetFilename,
+            binaryPath,
+          )
+        } catch (mirrorError) {
+          // TRANSITION FALLBACK: socket-btm is descoped but still serves the
+          // frozen source releases. Keep for one transition release, then
+          // remove once the socket-cli mirror has proven itself.
+          this.logger.warn(
+            `Mirror download failed (${mirrorError.message}), ` +
+              `falling back to ${BASE_ASSETS_FALLBACK_REPO} ${tag}...`,
+          )
+          await downloadReleaseAsset(
+            BASE_ASSETS_FALLBACK_OWNER,
+            BASE_ASSETS_FALLBACK_REPO,
+            tag,
+            assetFilename,
+            binaryPath,
+          )
+        }
+      } else {
+        this.logger.warn(
+          `No SHA-256 pin for ${tag}/${assetFilename} — downloading unverified from ${BASE_ASSETS_FALLBACK_REPO}...`,
+        )
+        await downloadReleaseAsset(
+          BASE_ASSETS_FALLBACK_OWNER,
+          BASE_ASSETS_FALLBACK_REPO,
+          tag,
+          assetFilename,
+          binaryPath,
+        )
+      }
+    } catch (e) {
+      await logTransientErrorHelp(e)
+      throw e
+    }
+
+    // Verify the download against the checked-in pin regardless of which
+    // home served it.
+    if (pinnedSha256) {
+      const actualSha256 = await computeFileHash(binaryPath)
+      if (actualSha256 !== pinnedSha256) {
+        await safeDelete(binaryPath)
+        throw new Error(
+          `SHA-256 mismatch for ${assetFilename} (${tag}): ` +
+            `expected ${pinnedSha256}, got ${actualSha256}`,
+        )
+      }
+    }
+  }
+}
+
+function getBinaryNames(tool, isPlatWin) {
+  const isNodeSmol = tool === 'node-smol'
+  const binaryName = isNodeSmol ? 'node' : tool
+  const binaryFilename = isPlatWin ? `${binaryName}.exe` : binaryName
+  return { __proto__: null, isNodeSmol, binaryName, binaryFilename }
 }
