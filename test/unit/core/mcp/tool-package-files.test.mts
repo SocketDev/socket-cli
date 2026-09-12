@@ -5,8 +5,8 @@
  * accepting one from the caller, so the derivation and its bounds are the
  * interesting surface alongside the usual auth gating.
  *
- * Related Files: - src/command/mcp/tool-package-files.mts -
- * src/command/mcp/lib/files.mts.
+ * Related Files: - src/core/mcp/tool-package-files.mts -
+ * src/core/mcp/lib/files.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,13 +14,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildPackageFilesPurl,
   definePackageFilesTool,
-} from '../../../../src/command/mcp/tool-package-files.mts'
+} from '../../../../src/core/mcp/tool-package-files.mts'
 
 const { mockFetchSocketFileList } = vi.hoisted(() => ({
   mockFetchSocketFileList: vi.fn(),
 }))
 
-vi.mock(import('../../../../src/command/mcp/lib/files.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/lib/files.mts'), () => ({
   fetchSocketFileList: mockFetchSocketFileList,
 }))
 

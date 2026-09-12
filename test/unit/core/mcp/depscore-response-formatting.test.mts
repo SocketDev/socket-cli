@@ -28,7 +28,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { runDepscore } from '../../../../src/command/mcp/depscore.mts'
+import { runDepscore } from '../../../../src/core/mcp/depscore.mts'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 

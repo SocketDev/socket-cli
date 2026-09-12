@@ -5,7 +5,7 @@
  * and the manifest validation that keeps a malformed reply from producing a
  * silently short read. `httpRequest` is mocked — no test touches the network.
  *
- * Related Files: - src/command/mcp/lib/blob.mts.
+ * Related Files: - src/core/mcp/lib/blob.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -15,7 +15,7 @@ import {
   DEFAULT_BLOB_MAX_BYTES,
   fetchSocketBlob,
   isStringArray,
-} from '../../../../../src/command/mcp/lib/blob.mts'
+} from '../../../../../src/core/mcp/lib/blob.mts'
 
 // Pinned literal rather than the module's own constant: building the expected
 // URL from the code under test would hide a change of host.

@@ -4,7 +4,7 @@
  * The API response is untrusted input, so `extractSocketFileList` is tested for
  * what it drops as much as for what it keeps.
  *
- * Related Files: - src/command/mcp/lib/files.mts.
+ * Related Files: - src/core/mcp/lib/files.mts.
  */
 
 import { describe, expect, it, vi } from 'vitest'
@@ -15,13 +15,13 @@ import {
   fetchSocketFileList,
   formatFileSize,
   renderFileTree,
-} from '../../../../../src/command/mcp/lib/files.mts'
+} from '../../../../../src/core/mcp/lib/files.mts'
 
 const { mockFetchFileList } = vi.hoisted(() => ({
   mockFetchFileList: vi.fn(),
 }))
 
-vi.mock(import('../../../../../src/command/mcp/lib/socket-api.mts'), () => ({
+vi.mock(import('../../../../../src/core/mcp/lib/socket-api.mts'), () => ({
   fetchSocketPackageFileList: mockFetchFileList,
 }))
 

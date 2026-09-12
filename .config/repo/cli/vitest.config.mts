@@ -221,7 +221,7 @@ const normalConfig = defineConfig({
           functions: 93,
           branches: 90,
         },
-        'src/command/mcp/**': {
+        'src/{command,core}/mcp/**': {
           statements: 99,
           lines: 99,
           functions: 98,

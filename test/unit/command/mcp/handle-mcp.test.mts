@@ -65,11 +65,11 @@ const { mockRunHttpTransport, mockRunStdioTransport } = vi.hoisted(() => ({
   mockRunStdioTransport: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock(import('../../../../src/command/mcp/transport-stdio.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/transport-stdio.mts'), () => ({
   runStdioTransport: mockRunStdioTransport,
 }))
 
-vi.mock(import('../../../../src/command/mcp/transport-http.mts'), () => ({
+vi.mock(import('../../../../src/core/mcp/transport-http.mts'), () => ({
   runHttpTransport: mockRunHttpTransport,
 }))
 

@@ -3,7 +3,7 @@ import type { Server } from 'node:http'
 import { httpRequest } from '@socketsecurity/lib-stable/http-request/request'
 import { afterEach, expect, it, vi } from 'vitest'
 
-import { runHttpTransport } from '../../../../src/command/mcp/transport-http.mts'
+import { runHttpTransport } from '../../../../src/core/mcp/transport-http.mts'
 
 const { servers } = vi.hoisted(() => ({ servers: [] as Server[] }))
 

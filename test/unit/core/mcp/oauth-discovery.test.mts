@@ -27,7 +27,7 @@ import {
   discoverOAuthMetadata,
   fetchOAuthMetadataDocument,
   validateOAuthMetadataFields,
-} from '../../../../src/command/mcp/oauth-discovery.mts'
+} from '../../../../src/core/mcp/oauth-discovery.mts'
 
 import type * as HttpRequestModule from '@socketsecurity/lib-stable/http-request/request'
 

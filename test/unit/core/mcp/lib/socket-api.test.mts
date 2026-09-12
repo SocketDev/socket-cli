@@ -4,7 +4,7 @@
  * Covers the alerts query mapping, the What/Where/Saw/Fix error message shape,
  * the SDK-result envelope re-derivation, and the per-token SDK memoization.
  *
- * Related Files: - src/command/mcp/lib/socket-api.mts.
+ * Related Files: - src/core/mcp/lib/socket-api.mts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -19,7 +19,7 @@ import {
   socketApiErrorMessage,
   toSocketApiResult,
   unwrapSocketApiResult,
-} from '../../../../../src/command/mcp/lib/socket-api.mts'
+} from '../../../../../src/core/mcp/lib/socket-api.mts'
 
 // The SDK can genuinely hand back a JSON null; parsing one models that
 // faithfully and keeps a bare `null` literal out of the source.

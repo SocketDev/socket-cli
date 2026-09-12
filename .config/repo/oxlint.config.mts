@@ -30,6 +30,8 @@ export default defineConfig(
           '**/src/command/fix/**',
           '**/src/command/manifest/**',
           '**/src/command/mcp/**',
+          '**/src/core/mcp/**',
+          '**/src/core/patch/spawn.mts',
           '**/src/command/optimize/**',
           '**/src/core/optimize/**',
           '**/src/command/package/**',

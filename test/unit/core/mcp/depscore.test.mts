@@ -36,7 +36,7 @@ import {
   DEPSCORE_TOOL_NAME,
   DepscoreInputSchema,
   runDepscore,
-} from '../../../../src/command/mcp/depscore.mts'
+} from '../../../../src/core/mcp/depscore.mts'
 
 import type * as LoggerModule from '@socketsecurity/lib-stable/logger/default'
 

@@ -21,8 +21,8 @@
  * - Tools/call surfaces "Authentication is required." with no token
  * - A handler that throws becomes an isError result, not a protocol failure
  *
- * Related Files: - src/command/mcp/server.mts - Implementation -
- * src/command/mcp/depscore.mts - Tool worker, mocked here.
+ * Related Files: - src/core/mcp/server.mts - Implementation -
+ * src/core/mcp/depscore.mts - Tool worker, mocked here.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -33,18 +33,18 @@ import {
   buildSocketToolSpecs,
   createConfiguredServer,
   toToolHandlerExtra,
-} from '../../../../src/command/mcp/server.mts'
+} from '../../../../src/core/mcp/server.mts'
 
 import type { CallToolResult } from '@modelcontextprotocol/client'
-import type { ServerConfig } from '../../../../src/command/mcp/server.mts'
-import type * as DepscoreModule from '../../../../src/command/mcp/depscore.mts'
+import type { ServerConfig } from '../../../../src/core/mcp/server.mts'
+import type * as DepscoreModule from '../../../../src/core/mcp/depscore.mts'
 
 const { mockRunDepscore } = vi.hoisted(() => ({
   mockRunDepscore: vi.fn(),
 }))
 
 vi.mock(
-  import('../../../../src/command/mcp/depscore.mts'),
+  import('../../../../src/core/mcp/depscore.mts'),
   async importOriginal => {
     const actual = await importOriginal<typeof DepscoreModule>()
     return {
