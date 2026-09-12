@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { spawnSocketPatch } from '../../../../src/util/dlx/spawn-socket-patch.mts'
+import { spawnSocketPatch } from '../../../../src/core/patch/spawn.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn())
