@@ -47,7 +47,6 @@ describe('socket-cli-* env bindings (additional)', () => {
     'socket-cli-local-node-smol',
     'socket-cli-local-path',
     'socket-cli-mode',
-    'socket-cli-models-path',
     'socket-cli-npm-path',
     'socket-cli-optimize',
     'socket-cli-org-slug',
