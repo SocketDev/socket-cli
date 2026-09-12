@@ -378,7 +378,7 @@ export async function runBazelQuery(
   const spinner = getDefaultSpinner()
   let result: BazelQueryResult | undefined
   try {
-    spinner.start(`Running bazel query (${queryStr.slice(0, 80)})…`)
+    spinner.start(`Running bazel query: ${queryStr.slice(0, 80)}…`)
     const spawnOutput = await spawn(cfg.bin, argv, {
       cwd: cfg.cwd,
       timeout: BAZEL_QUERY_TIMEOUT_MS,

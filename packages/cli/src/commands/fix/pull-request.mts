@@ -325,7 +325,7 @@ export async function getSocketFixPrsWithContext(
         () =>
           octokitGraphql(
             `
-              query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
+              query PullRequests($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
                 repository(owner: $owner, name: $repo) {
                   pullRequests(first: 100, states: $states, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
                     pageInfo {
