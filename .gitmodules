@@ -41,7 +41,7 @@
 	url = https://github.com/SocketDev/sdxgen.git
 	branch = main
 	shallow = true
-	sparse-checkout = src test
+	sparse-checkout = src test .config/repo
 	verify = none
 
 # no-release-tag: Development reference pins the explicitly selected main commit.

@@ -221,6 +221,12 @@ const normalConfig = defineConfig({
           functions: 93,
           branches: 90,
         },
+        'src/{core/sdxgen/**,command/manifest/cmd-manifest-sdxgen.mts}': {
+          statements: 99,
+          lines: 99,
+          functions: 99,
+          branches: 99,
+        },
         'src/{command,core}/mcp/**': {
           statements: 99,
           lines: 99,

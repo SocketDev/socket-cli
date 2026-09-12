@@ -5,6 +5,7 @@ import { cmdManifestConda } from './cmd-manifest-conda.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestMaven } from './cmd-manifest-maven.mts'
+import { cmdManifestSdxgen } from './cmd-manifest-sdxgen.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
 import { defineSubcommandGroup } from '../../util/cli/define-subcommand-group.mts'
@@ -25,6 +26,7 @@ export const cmdManifest = defineSubcommandGroup({
     kotlin: cmdManifestKotlin,
     maven: cmdManifestMaven,
     scala: cmdManifestScala,
+    sdxgen: cmdManifestSdxgen,
     setup: cmdManifestSetup,
   },
   aliases: {
