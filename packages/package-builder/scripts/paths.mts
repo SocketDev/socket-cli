@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 
 import { cliExeBinaryName, cliExeUnscopedName } from './cli-exe-targets.mts'
 import type { CliExeTriplet } from './cli-exe-targets.mts'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -58,11 +59,12 @@ export function getBuildMode() {
     return 'prod'
   }
   // Check env var.
-  if (process.env['BUILD_MODE']) {
-    return process.env['BUILD_MODE']
+  const buildMode = getEnvValue('BUILD_MODE')
+  if (buildMode) {
+    return buildMode
   }
   // Default based on CI.
-  const isCI = process.env['CI'] === '1' || process.env['CI'] === 'true'
+  const isCI = getEnvValue('CI') === '1' || getEnvValue('CI') === 'true'
   return isCI ? 'prod' : 'dev'
 }
 
