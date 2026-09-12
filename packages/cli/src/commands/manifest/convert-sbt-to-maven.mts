@@ -76,7 +76,89 @@ export async function convertSbtToMaven({
   }
 
   const spinner = isTextMode ? getDefaultSpinner() : undefined
-  try {
+
+  function collectGeneratedPoms(stdout: string): string[] {
+    const poms: string[] = []
+    stdout.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
+      poms.push(fn)
+      return fn
+    })
+    return poms
+  }
+
+  async function handleStdoutOutput(
+    poms: string[],
+  ): Promise<CResult<ManifestResult> | undefined> {
+    if (out !== '-') {
+      return undefined
+    }
+    if (poms.length === 1 && isTextMode) {
+      logger.log('Result:\n```')
+      logger.log(await safeReadFile(poms[0]!))
+      logger.log('```')
+      logger.success('OK')
+      return {
+        data: { files: poms, success: true, type: 'sbt' },
+        ok: true,
+      }
+    }
+    const message =
+      'Requested output target was stdout but there are multiple generated files'
+    if (isTextMode) {
+      process.exitCode = 1
+      logger.error('')
+      logger.fail(message)
+      logger.error('')
+      for (let i = 0, { length } = poms; i < length; i += 1) {
+        logger.info('-', poms[i]!)
+      }
+      if (poms.length > 10) {
+        logger.error('')
+        logger.fail(message)
+      }
+      logger.error('')
+      logger.info('Exiting now…')
+    }
+    return { data: { files: poms }, message, ok: false }
+  }
+
+  async function copyGeneratedPoms(poms: string[]): Promise<string[]> {
+    const copied: string[] = []
+    const outBasename = path.basename(out) || 'pom.xml'
+    for (let i = 0, { length } = poms; i < length; i += 1) {
+      const pomPath = poms[i]!
+      let destPath: string
+      if (poms.length === 1 && out !== outBasename) {
+        destPath = path.resolve(cwd, out)
+      } else {
+        const projectRoot = findProjectRootAboveTarget(pomPath)
+        if (!projectRoot) {
+          if (isTextMode) {
+            logger.warn(
+              `Could not locate \`target/\` ancestor for \`${pomPath}\`, leaving in place`,
+            )
+          }
+          copied.push(pomPath)
+          continue
+        }
+        destPath = path.join(projectRoot, outBasename)
+      }
+      try {
+        await fs.mkdir(path.dirname(destPath), { recursive: true })
+        await fs.copyFile(pomPath, destPath)
+        copied.push(destPath)
+      } catch (e) {
+        if (isTextMode) {
+          logger.warn(
+            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${errorMessage(e)}`,
+          )
+        }
+      }
+    }
+    return copied
+  }
+
+  async function executeSbtConversion(): Promise<CResult<ManifestResult>> {
     spinner?.start(
       `Converting sbt to maven from \`${executable}\` on \`${cwd}\`...`,
     )
@@ -115,12 +197,7 @@ export async function convertSbtToMaven({
         cause: output.stderr,
       }
     }
-    const poms: string[] = []
-    const stdoutStr = output.stdout
-    stdoutStr.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
-      poms.push(fn)
-      return fn
-    })
+    const poms = collectGeneratedPoms(output.stdout)
     if (!poms.length) {
       const message =
         'There were no errors from sbt but it seems to not have generated any poms either'
@@ -133,87 +210,15 @@ export async function convertSbtToMaven({
         message,
       }
     }
-    // Handle stdout output: Only supported for single file output.
-    // Note: Multiple file stdout output could be supported in the future with separators
-    // or a flag to select specific files, but currently errors out for clarity.
-    if (out === '-' && poms.length === 1 && isTextMode) {
-      logger.log('Result:\n```')
-      logger.log(await safeReadFile(poms[0]!))
-      logger.log('```')
-      logger.success('OK')
-    } else if (out === '-') {
-      const message =
-        'Requested output target was stdout but there are multiple generated files'
-      if (isTextMode) {
-        process.exitCode = 1
-        logger.error('')
-        logger.fail(message)
-        logger.error('')
-        // oxlint-disable-next-line socket/prefer-cached-for-loop -- callback uses expression body
-        poms.forEach(fn => logger.info('-', fn))
-        if (poms.length > 10) {
-          logger.error('')
-          logger.fail(message)
-        }
-        logger.error('')
-        logger.info('Exiting now…')
-      }
-      return {
-        ok: false,
-        message,
-        data: { files: poms },
-      }
-    }
-
-    if (out === '-') {
-      return {
-        ok: true,
-        data: {
-          files: poms,
-          type: 'sbt',
-          success: true,
-        },
-      }
+    const stdoutResult = await handleStdoutOutput(poms)
+    if (stdoutResult) {
+      return stdoutResult
     }
 
     // sbt writes poms inside each project's `target/` directory, which is
     // typically gitignored. Copy them out to a sibling of `target/` so
     // downstream SBOM/scan steps see them.
-    const copied: string[] = []
-    const outBasename = path.basename(out) || 'pom.xml'
-    for (let i = 0, { length } = poms; i < length; i += 1) {
-      const pomPath = poms[i]!
-      let destPath: string
-      if (poms.length === 1 && out !== outBasename) {
-        // Honor the full `--out` path verbatim when exactly one pom was
-        // produced and the user (or default) supplied a path, not just a
-        // bare filename.
-        destPath = path.resolve(cwd, out)
-      } else {
-        const projectRoot = findProjectRootAboveTarget(pomPath)
-        if (!projectRoot) {
-          if (isTextMode) {
-            logger.warn(
-              `Could not locate \`target/\` ancestor for \`${pomPath}\`, leaving in place`,
-            )
-          }
-          copied.push(pomPath)
-          continue
-        }
-        destPath = path.join(projectRoot, outBasename)
-      }
-      try {
-        await fs.mkdir(path.dirname(destPath), { recursive: true })
-        await fs.copyFile(pomPath, destPath)
-        copied.push(destPath)
-      } catch (e) {
-        if (isTextMode) {
-          logger.warn(
-            `Failed to copy \`${pomPath}\` to \`${destPath}\`: ${errorMessage(e)}`,
-          )
-        }
-      }
-    }
+    const copied = await copyGeneratedPoms(poms)
 
     if (isTextMode) {
       logger.success(
@@ -232,6 +237,10 @@ export async function convertSbtToMaven({
         success: true,
       },
     }
+  }
+
+  try {
+    return await executeSbtConversion()
   } catch (e) {
     const summary =
       'There was an unexpected error while running this' +

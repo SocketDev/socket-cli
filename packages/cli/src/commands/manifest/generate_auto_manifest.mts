@@ -90,9 +90,14 @@ export async function generateAutoManifest({
     logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
-  if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
-    // Auto-manifest has no command line of its own, so every sbt value here
-    // comes from the scanned repository's socket.json.
+  const manifestDefaults = sockJson.defaults?.manifest
+
+  async function generateSbtManifest(): Promise<void> {
+    const defaults = manifestDefaults?.sbt
+    if (defaults?.disabled || !detected.sbt) {
+      return
+    }
+    const settings = defaults ?? {}
     const invocation = resolveSbtInvocation({
       cliBin: undefined,
       cliOpts: undefined,
@@ -103,24 +108,20 @@ export async function generateAutoManifest({
     const beforeExitCode = process.exitCode
     if (!invocation.ok) {
       await outputManifest(invocation, outputKind, '-')
-    } else if (sockJson.defaults?.manifest?.sbt?.facts !== false) {
-      // Socket facts is the default; opt into pom generation with
-      // `defaults.manifest.sbt.facts: false` in socket.json.
+    } else if (settings.facts !== false) {
       if (isTextMode) {
         logger.log('Detected a Scala sbt build, generating Socket facts…')
       }
       await convertSbtToFacts({
         bin: invocation.data.bin,
         cwd,
-        excludeConfigs: sockJson.defaults?.manifest?.sbt?.excludeConfigs ?? '',
+        excludeConfigs: settings.excludeConfigs ?? '',
         excludePaths,
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.sbt?.ignoreUnresolved,
-        ),
-        includeConfigs: sockJson.defaults?.manifest?.sbt?.includeConfigs ?? '',
+        ignoreUnresolved: Boolean(settings.ignoreUnresolved),
+        includeConfigs: settings.includeConfigs ?? '',
         sbtOpts: invocation.data.opts,
         sidecarAcc,
-        verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+        verbose: Boolean(settings.verbose),
         withFiles: computeArtifactsSidecar,
       })
     } else {
@@ -130,17 +131,21 @@ export async function generateAutoManifest({
       await convertSbtToMaven({
         bin: invocation.data.bin,
         cwd,
-        out:
-          sockJson.defaults?.manifest?.sbt?.outfile ?? './socket.sbt.pom.xml',
+        out: settings.outfile ?? './socket.sbt.pom.xml',
         outputKind,
         sbtOpts: invocation.data.opts,
-        verbose: Boolean(sockJson.defaults?.manifest?.sbt?.verbose),
+        verbose: Boolean(settings.verbose),
       })
     }
     abortManifestRunIfFailed('sbt', beforeExitCode)
   }
 
-  if (!sockJson?.defaults?.manifest?.gradle?.disabled && detected.gradle) {
+  async function generateGradleManifest(): Promise<void> {
+    const defaults = manifestDefaults?.gradle
+    if (defaults?.disabled || !detected.gradle) {
+      return
+    }
+    const settings = defaults ?? {}
     const invocation = resolveGradleInvocation({
       cliBin: undefined,
       cliOpts: undefined,
@@ -151,9 +156,7 @@ export async function generateAutoManifest({
     const beforeExitCode = process.exitCode
     if (!invocation.ok) {
       await outputManifest(invocation, outputKind, '-')
-    } else if (sockJson.defaults?.manifest?.gradle?.facts !== false) {
-      // Socket facts is the default; opt into pom generation with
-      // `defaults.manifest.gradle.facts: false` in socket.json.
+    } else if (settings.facts !== false) {
       if (isTextMode) {
         logger.log(
           'Detected a gradle build (Gradle, Kotlin, Scala), generating Socket facts…',
@@ -162,17 +165,13 @@ export async function generateAutoManifest({
       await convertGradleToFacts({
         bin: invocation.data.bin,
         cwd,
-        excludeConfigs:
-          sockJson.defaults?.manifest?.gradle?.excludeConfigs ?? '',
+        excludeConfigs: settings.excludeConfigs ?? '',
         excludePaths,
         gradleOpts: invocation.data.opts,
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.gradle?.ignoreUnresolved,
-        ),
-        includeConfigs:
-          sockJson.defaults?.manifest?.gradle?.includeConfigs ?? '',
+        ignoreUnresolved: Boolean(settings.ignoreUnresolved),
+        includeConfigs: settings.includeConfigs ?? '',
         sidecarAcc,
-        verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
+        verbose: Boolean(settings.verbose),
         withFiles: computeArtifactsSidecar,
       })
     } else {
@@ -186,13 +185,18 @@ export async function generateAutoManifest({
         cwd,
         gradleOpts: invocation.data.opts,
         outputKind,
-        verbose: Boolean(sockJson.defaults?.manifest?.gradle?.verbose),
+        verbose: Boolean(settings.verbose),
       })
     }
     abortManifestRunIfFailed('gradle', beforeExitCode)
   }
 
-  if (!sockJson?.defaults?.manifest?.maven?.disabled && detected.maven) {
+  async function generateMavenManifest(): Promise<void> {
+    const defaults = manifestDefaults?.maven
+    if (defaults?.disabled || !detected.maven) {
+      return
+    }
+    const settings = defaults ?? {}
     const invocation = resolveMavenInvocation({
       cliBin: undefined,
       cliOpts: undefined,
@@ -210,24 +214,25 @@ export async function generateAutoManifest({
       await convertMavenToFacts({
         bin: invocation.data.bin,
         cwd,
-        excludeConfigs:
-          sockJson.defaults?.manifest?.maven?.excludeConfigs ?? '',
+        excludeConfigs: settings.excludeConfigs ?? '',
         excludePaths,
-        ignoreUnresolved: Boolean(
-          sockJson.defaults?.manifest?.maven?.ignoreUnresolved,
-        ),
-        includeConfigs:
-          sockJson.defaults?.manifest?.maven?.includeConfigs ?? '',
+        ignoreUnresolved: Boolean(settings.ignoreUnresolved),
+        includeConfigs: settings.includeConfigs ?? '',
         mavenOpts: invocation.data.opts,
         sidecarAcc,
-        verbose: Boolean(sockJson.defaults?.manifest?.maven?.verbose),
+        verbose: Boolean(settings.verbose),
         withFiles: computeArtifactsSidecar,
       })
     }
     abortManifestRunIfFailed('maven', beforeExitCode)
   }
 
-  if (!sockJson?.defaults?.manifest?.conda?.disabled && detected.conda) {
+  async function generateCondaManifest(): Promise<void> {
+    const defaults = manifestDefaults?.conda
+    if (defaults?.disabled || !detected.conda) {
+      return
+    }
+    const settings = defaults ?? {}
     const beforeExitCode = process.exitCode
     const infile = resolveCondaInfile({
       cliFile: undefined,
@@ -256,13 +261,17 @@ export async function generateAutoManifest({
         filename: infile.data,
         out: outfile.data,
         outputKind,
-        verbose: Boolean(sockJson.defaults?.manifest?.conda?.verbose),
+        verbose: Boolean(settings.verbose),
       })
     }
     abortManifestRunIfFailed('conda', beforeExitCode)
   }
 
-  if (!sockJson?.defaults?.manifest?.bazel?.disabled && detected.bazel) {
+  async function generateBazelManifest(): Promise<void> {
+    const defaults = manifestDefaults?.bazel
+    if (defaults?.disabled || !detected.bazel) {
+      return
+    }
     const beforeExitCode = process.exitCode
     generatedFiles.push(
       ...(await runBazelAutoManifest({
@@ -275,6 +284,12 @@ export async function generateAutoManifest({
     )
     abortManifestRunIfFailed('bazel', beforeExitCode)
   }
+
+  await generateSbtManifest()
+  await generateGradleManifest()
+  await generateMavenManifest()
+  await generateCondaManifest()
+  await generateBazelManifest()
 
   return {
     generatedFiles,
