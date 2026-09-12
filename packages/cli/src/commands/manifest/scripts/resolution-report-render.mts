@@ -132,7 +132,12 @@ export function renderResolutionReport(
   // failure: ambiguity stays lenient, every other cause is fail-closed.
   const unscannableInfos = unscannable.map(u => {
     const category = dialect.classify(u.detail)
-    return { ...u, category, blocking: isBlocking(category) }
+    return {
+      __proto__: null,
+      ...u,
+      category,
+      blocking: isBlocking(category),
+    }
   })
   const blockingUnscannable = unscannableInfos.filter(u => u.blocking)
   const nonBlockingUnscannable = unscannableInfos.filter(u => !u.blocking)
@@ -158,6 +163,7 @@ export function renderResolutionReport(
 
   const groups = dialect.categories
     .map(spec => ({
+      __proto__: null,
       spec,
       infos: dedupCoords(
         allInfos.filter(i => i.category === spec.key).map(i => i.coord),
@@ -171,8 +177,11 @@ export function renderResolutionReport(
     blockingCount > 0 || blockingUnscannable.length > 0
   const willFail = hasBlockingFailures && !opts.ignoreUnresolved
 
-  const out: string[] = []
-  if (hasBlockingFailures) {
+  function buildSummary(): string[] {
+    const out: string[] = []
+    if (!hasBlockingFailures) {
+      return out
+    }
     if (blockingCount > 0) {
       out.push(
         opts.ignoreUnresolved
@@ -180,8 +189,7 @@ export function renderResolutionReport(
           : `Could not resolve ${blockingCount} dependency(ies) in ${perDepBlockingConfigs.size} configuration(s):`,
       )
       for (const { infos, spec } of blockingGroups) {
-        out.push('')
-        out.push(spec.header ? spec.header(name) : '')
+        out.push('', spec.header ? spec.header(name) : '')
         const shownInfos = infos.slice(0, RESOLUTION_REPORT_ARTIFACT_LIMIT)
         for (let i = 0, { length } = shownInfos; i < length; i += 1) {
           const info = shownInfos[i]!
@@ -196,32 +204,37 @@ export function renderResolutionReport(
         }
       }
     }
-    if (blockingUnscannable.length) {
-      // Separate from the per-dep block above, but only if there is one — otherwise
-      // the summary would lead with a blank line (a dangling ✗ under logger.fail).
-      if (out.length) {
-        out.push('')
-      }
-      out.push(
-        opts.ignoreUnresolved
-          ? `Ignored ${blockingUnscannable.length} configuration(s) that could not be scanned:`
-          : `Could not scan ${blockingUnscannable.length} configuration(s) (reason from ${name}):`,
-      )
-      const shownUnscannable = blockingUnscannable.slice(
-        0,
-        RESOLUTION_REPORT_CONFIG_LIMIT,
-      )
-      for (let i = 0, { length } = shownUnscannable; i < length; i += 1) {
-        const u = shownUnscannable[i]!
-        const fl = firstLine(u.detail)
-        out.push(`    - ${u.config}${fl ? `  [${fl}]` : ''}`)
-      }
-      if (blockingUnscannable.length > RESOLUTION_REPORT_CONFIG_LIMIT) {
-        out.push(
-          `    … and ${blockingUnscannable.length - RESOLUTION_REPORT_CONFIG_LIMIT} more`,
-        )
-      }
+    appendUnscannableSummary(out)
+    appendSummaryOutcome(out)
+    return out
+  }
+
+  function appendUnscannableSummary(out: string[]): void {
+    if (!blockingUnscannable.length) {
+      return
     }
+    if (out.length) {
+      out.push('')
+    }
+    out.push(
+      opts.ignoreUnresolved
+        ? `Ignored ${blockingUnscannable.length} configuration(s) that could not be scanned:`
+        : `Could not scan ${blockingUnscannable.length} configuration(s) (reason from ${name}):`,
+    )
+    const shown = blockingUnscannable.slice(0, RESOLUTION_REPORT_CONFIG_LIMIT)
+    for (let i = 0, { length } = shown; i < length; i += 1) {
+      const item = shown[i]!
+      const line = firstLine(item.detail)
+      out.push(`    - ${item.config}${line ? `  [${line}]` : ''}`)
+    }
+    if (blockingUnscannable.length > RESOLUTION_REPORT_CONFIG_LIMIT) {
+      out.push(
+        `    … and ${blockingUnscannable.length - RESOLUTION_REPORT_CONFIG_LIMIT} more`,
+      )
+    }
+  }
+
+  function appendSummaryOutcome(out: string[]): void {
     out.push('')
     if (succeeded.length) {
       out.push(
@@ -234,58 +247,69 @@ export function renderResolutionReport(
       )
     }
     if (willFail) {
-      out.push('')
-      out.push(`To proceed, re-run with either:`)
-      out.push(`    --ignore-unresolved`)
+      out.push('', 'To proceed, re-run with either:', '    --ignore-unresolved')
       if (blockingFailed.length) {
         out.push(`    --exclude-configs '${blockingFailed.join(',')}'`)
       }
     }
-    out.push('')
-    out.push(`Re-run with --verbose for ${name}'s full messages.`)
+    out.push('', `Re-run with --verbose for ${name}'s full messages.`)
   }
 
-  const notices: string[] = []
-  for (const { infos, spec } of nonBlockingGroups) {
-    if (!spec.notice) {
-      continue
-    }
-    const configCount = new Set(infos.flatMap(i => [...i.configs])).size
-    notices.push(spec.notice(name, infos.length, configCount))
-  }
-  // A config-level throw whose cause classifies as variant ambiguity is surfaced, not failed —
-  // matching the deliberately-lenient per-dep variant-ambiguity policy.
-  if (nonBlockingUnscannable.length) {
-    const n = new Set(nonBlockingUnscannable.map(u => u.config)).size
-    notices.push(
-      `Could not scan ${n} configuration(s) — re-run with --verbose for ${name}'s messages.`,
-    )
-  }
-
-  const detailLines = [`${name}'s full message for each unresolved dependency:`]
-  for (let i = 0, { length } = allInfos; i < length; i += 1) {
-    const info = allInfos[i]!
-    detailLines.push('')
-    detailLines.push(`  ${info.coord}:`)
-    const infoLines = (info.detail || '(no message)').split(/\r?\n/)
-    for (let j = 0, { length: lineCount } = infoLines; j < lineCount; j += 1) {
-      detailLines.push(`    ${infoLines[j]}`)
-    }
-  }
-  if (unscannable.length) {
-    detailLines.push('')
-    detailLines.push(`${name} configurations that could not be scanned:`)
-    for (const u of unscannable) {
-      detailLines.push('')
-      detailLines.push(`  ${u.config}:`)
-      const uLines = (u.detail || '(no message)').split(/\r?\n/)
-      for (let j = 0, { length: lineCount } = uLines; j < lineCount; j += 1) {
-        detailLines.push(`    ${uLines[j]}`)
+  function buildNotices(): string[] {
+    const notices: string[] = []
+    for (const { infos, spec } of nonBlockingGroups) {
+      if (spec.notice) {
+        const configCount = new Set(infos.flatMap(i => [...i.configs])).size
+        notices.push(spec.notice(name, infos.length, configCount))
       }
     }
+    if (nonBlockingUnscannable.length) {
+      const count = new Set(nonBlockingUnscannable.map(u => u.config)).size
+      notices.push(
+        `Could not scan ${count} configuration(s) — re-run with --verbose for ${name}'s messages.`,
+      )
+    }
+    return notices
   }
 
+  function buildDetails(): string[] {
+    const lines = [`${name}'s full message for each unresolved dependency:`]
+    for (let i = 0, { length } = allInfos; i < length; i += 1) {
+      const info = allInfos[i]!
+      lines.push('', `  ${info.coord}:`)
+      const infoLines = (info.detail || '(no message)').split(/\r?\n/)
+      for (
+        let j = 0, { length: lineCount } = infoLines;
+        j < lineCount;
+        j += 1
+      ) {
+        lines.push(`    ${infoLines[j]}`)
+      }
+    }
+    if (unscannable.length) {
+      lines.push('', `${name} configurations that could not be scanned:`)
+      for (let i = 0, { length } = unscannable; i < length; i += 1) {
+        const item = unscannable[i]!
+        lines.push('', `  ${item.config}:`)
+        const itemLines = (item.detail || '(no message)').split(/\r?\n/)
+        for (
+          let j = 0, { length: lineCount } = itemLines;
+          j < lineCount;
+          j += 1
+        ) {
+          lines.push(`    ${itemLines[j]}`)
+        }
+      }
+    }
+    return lines
+  }
+
+  const out = buildSummary()
+  const notices = buildNotices()
+  const detailLines = buildDetails()
+
   return {
+    __proto__: null,
     summary: out.join('\n'),
     details: detailLines.join('\n'),
     hasBlockingFailures,
@@ -307,8 +331,8 @@ function dialectFor(tool: BuildTool): ResolutionDialect {
 
 export function renderResolutionErrorReport(
   failures: ResolutionFailure[],
-  scannedConfigs: string[] = [],
-  tool: BuildTool = 'gradle',
+  scannedConfigs: string[],
+  tool: BuildTool,
   opts: {
     ignoreUnresolved?: boolean | undefined
     unscannable?: UnscannableConfig[] | undefined
