@@ -38,40 +38,14 @@ const binCliPath = getBinCliPath()
 
 describe('socket npm', async () => {
   cmdit(
-    [NPM, FLAG_HELP, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_HELP}`,
+    [NPM, FLAG_DRY_RUN, FLAG_CONFIG, '{}', FLAG_HELP],
+    `should forward ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Run npm with Socket Firewall security
-
-          Usage
-                $ socket npm ...
-          
-              API Token Requirements
-                - Quota: 100 units
-                - Permissions: packages:list
-          
-              Note: Everything after "npm" is forwarded to Socket Firewall (sfw).
-                    Socket Firewall provides real-time security scanning for npm packages.
-          
-              Use \`socket wrapper on\` to alias this command as \`npm\`.
-          
-              Examples
-                $ socket npm
-                $ socket npm install cowsay
-                $ socket npm install -g cowsay"
-      `)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket npm\`, cwd: <redacted>"
-      `)
-
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain('`socket npm`')
+      expectDryRunOutput(stderr)
+      expect(stderr).toContain('Arguments: npm --help')
+      expect(stdout).toBe('')
+      expect(code, 'forwarded help should exit with code 0').toBe(0)
     },
   )
 
@@ -107,13 +81,13 @@ describe('socket npm', async () => {
   cmdit(
     [
       'npm',
-      'exec',
-      FLAG_SILENT,
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      FLAG_SILENT,
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle npm exec with version',
     async cmd => {
@@ -125,12 +99,12 @@ describe('socket npm', async () => {
   cmdit(
     [
       'npm',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle npm exec with -c flag and issueRules for malware',
     async cmd => {
@@ -146,12 +120,12 @@ describe('socket npm', async () => {
   cmdit(
     [
       'npm',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle npm exec with --config flag and issueRules for malware',
     async cmd => {
@@ -167,12 +141,12 @@ describe('socket npm', async () => {
   cmdit(
     [
       'npm',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle npm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -191,12 +165,12 @@ describe('socket npm', async () => {
   cmdit(
     [
       'npm',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle npm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {

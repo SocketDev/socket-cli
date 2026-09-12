@@ -51,6 +51,7 @@ describe('socket root command', async () => {
               socket npm/lodash@4.17.21   Request the Socket score of a package
               cdxgen                      Run cdxgen for SBOM generation
               ci                          Alias for \`socket scan create --report\` (creates report and exits with error if unhealthy)
+              doctor                      Enforce dependency health policies (soak-time and more)
               fix                         Fix CVEs in dependencies
               optimize                    Optimize dependencies with @socketregistry overrides
           

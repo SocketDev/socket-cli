@@ -35,39 +35,14 @@ const binCliPath = getBinCliPath()
 
 describe('socket npx', async () => {
   cmdit(
-    [NPX, FLAG_HELP, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_HELP}`,
+    [NPX, FLAG_DRY_RUN, FLAG_CONFIG, '{}', FLAG_HELP],
+    `should forward ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Run pnpm exec with Socket Firewall security
-
-          Usage
-                $ socket npx ...
-          
-              API Token Requirements
-                - Quota: 100 units
-                - Permissions: packages:list
-          
-              Note: Everything after "npx" is forwarded to Socket Firewall (sfw).
-                    Socket Firewall provides real-time security scanning for npx packages.
-          
-              Use \`socket wrapper on\` to alias this command as \`npx\`.
-          
-              Examples
-                $ socket npx cowsay
-                $ socket npx cowsay@1.6.0 hello"
-      `)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket npx\`, cwd: <redacted>"
-      `)
-
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain('`socket npx`')
+      expectDryRunOutput(stderr)
+      expect(stderr).toContain('Arguments: npx --help')
+      expect(stdout).toBe('')
+      expect(code, 'forwarded help should exit with code 0').toBe(0)
     },
   )
 
@@ -103,12 +78,12 @@ describe('socket npx', async () => {
   cmdit(
     [
       'npx',
-      FLAG_SILENT,
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      FLAG_SILENT,
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle pnpm exec with version',
     async cmd => {
@@ -124,11 +99,11 @@ describe('socket npx', async () => {
   cmdit(
     [
       'npx',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle pnpm exec with -c flag and issueRules for malware',
     async cmd => {
@@ -144,11 +119,11 @@ describe('socket npx', async () => {
   cmdit(
     [
       'npx',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle pnpm exec with --config flag and issueRules for malware',
     async cmd => {
@@ -167,11 +142,11 @@ describe('socket npx', async () => {
   cmdit(
     [
       'npx',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle pnpm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -190,11 +165,11 @@ describe('socket npx', async () => {
   cmdit(
     [
       'npx',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle pnpm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {

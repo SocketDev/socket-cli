@@ -38,39 +38,14 @@ const binCliPath = getBinCliPath()
 
 describe('socket yarn', async () => {
   cmdit(
-    [YARN, FLAG_HELP, FLAG_CONFIG, '{}'],
-    `should support ${FLAG_HELP}`,
+    [YARN, FLAG_DRY_RUN, FLAG_CONFIG, '{}', FLAG_HELP],
+    `should forward ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
-        "Run yarn with Socket Firewall security
-
-          Usage
-                $ socket yarn ...
-          
-              API Token Requirements
-                (none)
-          
-              Note: Everything after "yarn" is forwarded to Socket Firewall (sfw).
-                    Socket Firewall provides real-time security scanning for yarn packages.
-          
-              Use \`socket wrapper on\` to alias this command as \`yarn\`.
-          
-              Examples
-                $ socket yarn
-                $ socket yarn install
-                $ socket yarn add package-name"
-      `)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _          /---------------
-            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
-            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev     | Command: \`socket yarn\`, cwd: <redacted>"
-      `)
-
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain('`socket yarn`')
+      expectDryRunOutput(stderr)
+      expect(stderr).toContain('Arguments: yarn --help')
+      expect(stdout).toBe('')
+      expect(code, 'forwarded help should exit with code 0').toBe(0)
     },
   )
 
@@ -93,11 +68,11 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'add',
-      'lodash',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'add',
+      'lodash',
     ],
     'should handle add with --dry-run flag',
     async cmd => {
@@ -112,13 +87,13 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'dlx',
-      FLAG_QUIET,
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      FLAG_QUIET,
+      'dlx',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle dlx with version',
     async cmd => {
@@ -131,7 +106,7 @@ describe('socket yarn', async () => {
   )
 
   cmdit(
-    [YARN, 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [YARN, FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}', 'install'],
     'should handle install with --dry-run flag',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -145,11 +120,11 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'add',
-      '@types/node@^20.0.0',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'add',
+      '@types/node@^20.0.0',
     ],
     'should handle scoped packages with version',
     async cmd => {
@@ -164,12 +139,12 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with -c flag and issueRules for malware',
     async cmd => {
@@ -187,12 +162,12 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with --config flag and issueRules for malware',
     async cmd => {
@@ -210,12 +185,12 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       '-c',
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -236,12 +211,12 @@ describe('socket yarn', async () => {
   cmdit(
     [
       'yarn',
-      'exec',
-      'cowsay@^1.6.0',
-      'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
+      'exec',
+      'cowsay@^1.6.0',
+      'hello',
     ],
     'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {

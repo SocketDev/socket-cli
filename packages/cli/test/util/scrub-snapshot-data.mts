@@ -71,9 +71,15 @@ function scrubVersions(output: string): string {
 }
 
 function scrubPaths(output: string): string {
-  return output
+  let scrubbed = output
     .replaceAll(WORKSPACE_ROOT, '[PROJECT]')
     .replaceAll(process.cwd(), '[PROJECT]')
+  for (const home of [process.env['HOME'], process.env['USERPROFILE']]) {
+    if (home) {
+      scrubbed = scrubbed.replaceAll(home, '/[HOME]')
+    }
+  }
+  return scrubbed
     .replace(/\/Users\/[^/\s]+/g, '/[HOME]')
     .replace(/\/home\/[^/\s]+/g, '/[HOME]')
     .replace(/C:\\Users\\[^\\]+/gi, 'C:\\[HOME]')

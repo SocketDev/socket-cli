@@ -61,6 +61,22 @@ describe('scrubSnapshotData', () => {
       expect(result).toBe('/[HOME]/project/src')
     })
 
+    it('should scrub the active isolated home directory', () => {
+      const previousHome = process.env['HOME']
+      process.env['HOME'] = '/private/var/example-home'
+      try {
+        expect(scrubSnapshotData('/private/var/example-home/config.json')).toBe(
+          '/[HOME]/config.json',
+        )
+      } finally {
+        if (previousHome === undefined) {
+          delete process.env['HOME']
+        } else {
+          process.env['HOME'] = previousHome
+        }
+      }
+    })
+
     it('should scrub Windows home directories', () => {
       const input =
         'C:\\Users\\jdalton\\projects and C:\\Users\\TestUser\\Documents'
@@ -72,6 +88,25 @@ describe('scrubSnapshotData', () => {
       const input = `Project located at ${WORKSPACE_ROOT}/src/utils`
       const result = scrubSnapshotData(input)
       expect(result).toBe('Project located at [PROJECT]/src/utils')
+    })
+
+    it('should prefer the project marker when the workspace is inside home', () => {
+      const previousHome = process.env['HOME']
+      process.env['HOME'] = WORKSPACE_ROOT.slice(
+        0,
+        WORKSPACE_ROOT.lastIndexOf('/'),
+      )
+      try {
+        expect(scrubSnapshotData(`${WORKSPACE_ROOT}/src/utils`)).toBe(
+          '[PROJECT]/src/utils',
+        )
+      } finally {
+        if (previousHome === undefined) {
+          delete process.env['HOME']
+        } else {
+          process.env['HOME'] = previousHome
+        }
+      }
     })
 
     it('should scrub Unix temp directories', () => {

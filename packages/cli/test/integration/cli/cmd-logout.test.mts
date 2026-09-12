@@ -70,10 +70,10 @@ describe('socket logout', async () => {
   cmdit(
     [
       'logout',
-      'mootools',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'mootools',
     ],
     'should require args with just dry-run',
     async cmd => {
