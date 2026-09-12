@@ -1,4 +1,4 @@
-# <picture><img width="32" height="32" alt="undefined" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark.svg"></picture> Socket CLI
+# <picture><img width="32" height="32" alt="socket-cli" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark.svg"></picture> Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 <picture><img src="assets/repo/coverage.svg?v=fce8b9cdc6e7" height="20" alt="Coverage" /></picture>
