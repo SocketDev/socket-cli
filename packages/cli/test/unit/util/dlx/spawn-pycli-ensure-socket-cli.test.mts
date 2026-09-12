@@ -10,8 +10,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as NodeFs from 'node:fs'
+import { ensureSocketPyCli } from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
@@ -66,8 +66,6 @@ vi.mock(import('../../../../src/env/pycli-version.mts'), () => ({
 vi.mock(import('../../../../src/env/pycli-checksums.mts'), () => ({
   getPyCliChecksums: mockGetPyCliChecksums,
 }))
-
-import { ensureSocketPyCli } from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const realSetTimeout = globalThis.setTimeout
 function stubFastTimers() {

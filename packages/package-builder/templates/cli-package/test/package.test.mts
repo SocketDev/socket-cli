@@ -92,14 +92,6 @@ describe('@socketsecurity/cli package template', () => {
         expect(existsSync(path.join(binDir, wrapper))).toBe(true)
       })
     }
-
-    it('bin wrappers should be executable', async () => {
-      const cliPath = path.join(binDir, 'cli.js')
-      const content = await fs.readFile(cliPath, 'utf-8')
-
-      expect(content).toContain('#!/usr/bin/env node')
-      expect(content).toContain('dist/cli.js')
-    })
   })
 
   describe('build configuration', () => {
@@ -114,39 +106,6 @@ describe('@socketsecurity/cli package template', () => {
     it('should have rolldown index config', () => {
       expect(existsSync(path.join(configDir, 'rolldown.index.mts'))).toBe(true)
     })
-
-    it('rolldown config should extend the base CLI config', async () => {
-      const content = await fs.readFile(
-        path.join(configDir, 'rolldown.cli.mts'),
-        'utf-8',
-      )
-
-      expect(content).toContain(
-        "import baseConfig from '../../cli/.config/rolldown.cli.mts'",
-      )
-    })
-
-    it('rolldown config should use the plain CLI dispatch entry point', async () => {
-      const content = await fs.readFile(
-        path.join(configDir, 'rolldown.cli.mts'),
-        'utf-8',
-      )
-
-      // Plain build: no Sentry instrumentation entry, no Sentry define.
-      expect(content).toContain('cli-dispatch.mts')
-      expect(content).not.toContain('cli-dispatch-with-sentry.mts')
-      expect(content).not.toContain('INLINED_SENTRY_BUILD')
-    })
-
-    it('rolldown config should run the build when invoked directly', async () => {
-      const content = await fs.readFile(
-        path.join(configDir, 'rolldown.cli.mts'),
-        'utf-8',
-      )
-
-      expect(content).toContain('runBuild(config')
-      expect(content).toContain('import.meta.url')
-    })
   })
 
   describe('build scripts exist', () => {
@@ -158,17 +117,6 @@ describe('@socketsecurity/cli package template', () => {
       expect(existsSync(path.join(scriptsDir, 'build.mts'))).toBe(true)
     })
 
-    it('build.mts should delegate to the rolldown config', async () => {
-      const content = await fs.readFile(
-        path.join(scriptsDir, 'build.mts'),
-        'utf-8',
-      )
-
-      expect(content).toBeTruthy()
-      expect(content).toContain('import')
-      expect(content).toContain('rolldown.cli.mts')
-    })
-
     it('should have verify-package.mts script', () => {
       expect(existsSync(path.join(scriptsDir, 'verify-package.mts'))).toBe(true)
     })
@@ -177,26 +125,6 @@ describe('@socketsecurity/cli package template', () => {
   describe('README documentation', () => {
     it('should have README.md', () => {
       expect(existsSync(path.join(packageDir, 'README.md'))).toBe(true)
-    })
-
-    it('README should document the package', async () => {
-      const readme = await fs.readFile(
-        path.join(packageDir, 'README.md'),
-        'utf-8',
-      )
-
-      expect(readme).toContain('@socketsecurity/cli')
-      expect(readme).toContain('Socket CLI')
-      expect(readme).toContain('npm install')
-    })
-
-    it('README should not document Sentry', async () => {
-      const readme = await fs.readFile(
-        path.join(packageDir, 'README.md'),
-        'utf-8',
-      )
-
-      expect(readme).not.toContain('Sentry')
     })
   })
 

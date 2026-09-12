@@ -6,6 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setupManifestConfig } from '../../../../src/commands/manifest/setup-manifest-config.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -52,8 +53,6 @@ vi.mock(import('node:fs'), () => ({
     existsSync: mockExistsSync,
   },
 }))
-
-import { setupManifestConfig } from '../../../../src/commands/manifest/setup-manifest-config.mts'
 
 describe('setup-manifest-config', () => {
   beforeEach(() => {

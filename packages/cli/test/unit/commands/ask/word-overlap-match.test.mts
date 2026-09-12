@@ -6,6 +6,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  extractWords,
+  normalizeQuery,
+  wordOverlap,
+  wordOverlapMatch,
+} from '../../../../src/commands/ask/word-overlap-match.mts'
 
 const mockReadFile = vi.hoisted(() => vi.fn())
 const mockGetHome = vi.hoisted(() => vi.fn())
@@ -24,13 +30,6 @@ vi.mock(import('node:fs'), async importOriginal => {
 vi.mock(import('@socketsecurity/lib-stable/env/home'), () => ({
   getHome: mockGetHome,
 }))
-
-import {
-  extractWords,
-  normalizeQuery,
-  wordOverlap,
-  wordOverlapMatch,
-} from '../../../../src/commands/ask/word-overlap-match.mts'
 
 describe('word-overlap-match edge cases', () => {
   beforeEach(() => {

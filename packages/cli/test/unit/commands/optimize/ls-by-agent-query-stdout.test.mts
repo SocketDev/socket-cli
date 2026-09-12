@@ -9,24 +9,21 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import {
   NPM,
   PNPM,
 } from '@socketsecurity/lib-stable/constants/package-managers'
+import {
+  lsNpm,
+  lsPnpm,
+} from '../../../../src/commands/optimize/ls-by-agent.mts'
+import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 // Mock spawn.
 const mockSpawn = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: mockSpawn,
 }))
-
-import {
-  lsNpm,
-  lsPnpm,
-} from '../../../../src/commands/optimize/ls-by-agent.mts'
-
-import type { EnvDetails } from '../../../../src/util/ecosystem/environment.mjs'
 
 function createMockEnvDetails(
   agent: string,

@@ -11,6 +11,7 @@
 
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GitHubProvider } from '../../../../src/util/git/github-provider.mts'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())
 const mockGetOctokitGraphql = vi.hoisted(() => vi.fn())
@@ -43,8 +44,6 @@ vi.mock(import('../../../../src/util/git/github.mts'), () => ({
 vi.mock(import('../../../../src/util/git/operations.mts'), () => ({
   gitDeleteRemoteBranch: mockGitDeleteRemoteBranch,
 }))
-
-import { GitHubProvider } from '../../../../src/util/git/github-provider.mts'
 
 describe('GitHubProvider', () => {
   let mockOctokit: unknown

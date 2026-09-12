@@ -6,6 +6,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  defineAutoDispatch,
+  defineGitHubReleaseSpawn,
+  defineToolSpawn,
+  defineVfsSpawn,
+} from '../../../../src/util/dlx/define-tool-spawn.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadGitHubReleaseBinary = vi.hoisted(() => vi.fn())
@@ -29,13 +35,6 @@ vi.mock(import('../../../../src/util/dlx/vfs-extract.mts'), () => ({
 vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
   isSeaBinary: mockIsSeaBinary,
 }))
-
-import {
-  defineAutoDispatch,
-  defineGitHubReleaseSpawn,
-  defineToolSpawn,
-  defineVfsSpawn,
-} from '../../../../src/util/dlx/define-tool-spawn.mts'
 
 describe('defineToolSpawn helpers', () => {
   beforeEach(() => {

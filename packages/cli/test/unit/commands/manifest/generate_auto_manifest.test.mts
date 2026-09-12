@@ -15,8 +15,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type { SidecarAccumulator } from '../../../../src/commands/manifest/scripts/sidecar.mts'
+import { generateAutoManifest } from '../../../../src/commands/manifest/generate_auto_manifest.mts'
 
 const mockConvertSbtToFacts = vi.hoisted(() =>
   vi.fn().mockResolvedValue(undefined),
@@ -102,8 +102,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-import { generateAutoManifest } from '../../../../src/commands/manifest/generate_auto_manifest.mts'
 
 const baseDetected = {
   bazel: false,

@@ -9,6 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { attemptLogin } from '../../../../src/commands/login/attempt-login.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -82,8 +83,6 @@ const mockFailMsgWithBadge = vi.hoisted(() =>
 vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: mockFailMsgWithBadge,
 }))
-
-import { attemptLogin } from '../../../../src/commands/login/attempt-login.mts'
 
 describe('attemptLogin', () => {
   beforeEach(() => {

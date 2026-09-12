@@ -11,6 +11,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { convertGradleToMaven } from '../../../../src/commands/manifest/convert-gradle-to-maven.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn(() => true))
 
@@ -51,8 +52,6 @@ vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
 vi.mock(import('../../../../src/constants/paths.mts'), () => ({
   distPath: '/dist',
 }))
-
-import { convertGradleToMaven } from '../../../../src/commands/manifest/convert-gradle-to-maven.mts'
 
 const baseOpts = {
   bin: 'gradlew',

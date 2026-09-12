@@ -7,9 +7,17 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { validateOutputBase } from '../../../../../src/commands/manifest/bazel/bazel-output-base-check.mts'
+import { parseBazelModPipExtensionCandidates } from '../../../../../src/commands/manifest/bazel/bazel-pypi-candidates.mts'
+import { discoverPypiHubs } from '../../../../../src/commands/manifest/bazel/bazel-pypi-discovery.mts'
+import {
+  runBazelModShowPipExtension,
+  runBazelQuery,
+} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
+import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
+import { extractBazelToPypi } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_pypi.mts'
 
 // Mock the logger so narration is capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -101,16 +109,6 @@ vi.mock(
     })),
   }),
 )
-
-import { validateOutputBase } from '../../../../../src/commands/manifest/bazel/bazel-output-base-check.mts'
-import { parseBazelModPipExtensionCandidates } from '../../../../../src/commands/manifest/bazel/bazel-pypi-candidates.mts'
-import { discoverPypiHubs } from '../../../../../src/commands/manifest/bazel/bazel-pypi-discovery.mts'
-import {
-  runBazelModShowPipExtension,
-  runBazelQuery,
-} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
-import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
-import { extractBazelToPypi } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_pypi.mts'
 
 describe('extractBazelToPypi', () => {
   let tmp: string

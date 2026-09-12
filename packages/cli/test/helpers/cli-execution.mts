@@ -166,24 +166,7 @@ interface SocketJsonErr {
 }
 type SocketJsonContract<T = unknown> = SocketJsonOk<T> | SocketJsonErr
 
-/**
- * Validate that `stdout` is JSON matching the Socket CLI's `--json` contract,
- * given the `expectedExitCode` the command actually returned. Returns the
- * parsed payload on success; throws with a diagnostic message on contract
- * violation.
- *
- * The contract being asserted is the same one `test/smoke.sh::validate_json`
- * enforced before being ported to TypeScript.
- *
- * @example
- *   const result = await executeCliCommand(['scan', 'list', '--json'])
- *   const payload = validateSocketJsonContract(result.stdout, 0)
- *   expect(payload.ok).toBe(true)
- */
-export function validateSocketJsonContract<T = unknown>(
-  stdout: string,
-  expectedExitCode: number,
-): SocketJsonContract<T> {
+function parseSocketJson(stdout: string): Record<string, unknown> {
   let parsed: unknown
   try {
     parsed = JSON.parse(stdout) as unknown
@@ -197,13 +180,15 @@ export function validateSocketJsonContract<T = unknown>(
       `Socket JSON contract violation: payload is not an object.\nstdout: ${stdout}`,
     )
   }
-  const obj = parsed as Record<string, unknown>
-  const ok = obj['ok']
-  if (typeof ok !== 'boolean') {
-    throw new Error(
-      `Socket JSON contract violation: "ok" must be a boolean (got ${typeof ok}).\nstdout: ${stdout}`,
-    )
-  }
+  return parsed as Record<string, unknown>
+}
+
+function validateSocketJsonExitCode(options: {
+  expectedExitCode: number
+  ok: boolean
+  stdout: string
+}): void {
+  const { expectedExitCode, ok, stdout } = options
   if (expectedExitCode === 0 && !ok) {
     throw new Error(
       `Socket JSON contract violation: exit code 0 but "ok" is ${ok} (expected true).\nstdout: ${stdout}`,
@@ -214,6 +199,14 @@ export function validateSocketJsonContract<T = unknown>(
       `Socket JSON contract violation: exit code ${expectedExitCode} but "ok" is ${ok} (expected false).\nstdout: ${stdout}`,
     )
   }
+}
+
+function validateSocketJsonPayload(options: {
+  obj: Record<string, unknown>
+  ok: boolean
+  stdout: string
+}): void {
+  const { obj, ok, stdout } = options
   if (ok && (obj['data'] === undefined || obj['data'] === null)) {
     throw new Error(
       `Socket JSON contract violation: ok:true must include a non-null "data" field (return an empty object/array if no payload).\nstdout: ${stdout}`,
@@ -232,6 +225,35 @@ export function validateSocketJsonContract<T = unknown>(
       `Socket JSON contract violation: "code" must be a number when present (got ${typeof obj['code']}).\nstdout: ${stdout}`,
     )
   }
+}
+
+/**
+ * Validate that `stdout` is JSON matching the Socket CLI's `--json` contract,
+ * given the `expectedExitCode` the command actually returned. Returns the
+ * parsed payload on success; throws with a diagnostic message on contract
+ * violation.
+ *
+ * The contract being asserted is the same one `test/smoke.sh::validate_json`
+ * enforced before being ported to TypeScript.
+ *
+ * @example
+ *   const result = await executeCliCommand(['scan', 'list', '--json'])
+ *   const payload = validateSocketJsonContract(result.stdout, 0)
+ *   expect(payload.ok).toBe(true)
+ */
+export function validateSocketJsonContract<T = unknown>(
+  stdout: string,
+  expectedExitCode: number,
+): SocketJsonContract<T> {
+  const obj = parseSocketJson(stdout)
+  const ok = obj['ok']
+  if (typeof ok !== 'boolean') {
+    throw new Error(
+      `Socket JSON contract violation: "ok" must be a boolean (got ${typeof ok}).\nstdout: ${stdout}`,
+    )
+  }
+  validateSocketJsonExitCode({ expectedExitCode, ok, stdout })
+  validateSocketJsonPayload({ obj, ok, stdout })
   return obj as unknown as SocketJsonContract<T>
 }
 

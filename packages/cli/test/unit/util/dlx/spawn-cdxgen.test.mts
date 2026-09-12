@@ -3,10 +3,11 @@
  *
  * The Vfs / auto-dispatch code is tested via define-tool-spawn.test.mts. This
  * file targets the cdxgen-specific paths: local-override execution (binary or
- * JS via node) and the `spawnDlx` fallback for the npm dlx route.
+ * JS via node) and the `spawnDlx` fallback for the `npm dlx` route.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { spawnCdxgenDlx } from '../../../../src/util/dlx/spawn-cdxgen.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnDlx = vi.hoisted(() => vi.fn())
@@ -41,8 +42,6 @@ vi.mock(import('../../../../src/util/dlx/cdxgen-diagnostics.mts'), () => ({
   formatMissingCdxgenLocalPathMessage: (p: string) =>
     `SOCKET_CLI_CDXGEN_LOCAL_PATH points at a file that does not exist: ${p}`,
 }))
-
-import { spawnCdxgenDlx } from '../../../../src/util/dlx/spawn-cdxgen.mts'
 
 describe('spawnCdxgenDlx', () => {
   beforeEach(() => {

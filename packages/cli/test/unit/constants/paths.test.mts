@@ -10,14 +10,7 @@
  */
 
 import path from 'node:path'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-// Mock dependencies.
-vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
-  getDefaultLogger: () => ({ warn: vi.fn() }),
-}))
-
 import {
   configPath,
   distPath,
@@ -48,6 +41,11 @@ import {
   UPDATE_STORE_FILE_NAME,
   YARN_LOCK,
 } from '../../../src/constants/paths.mts'
+
+// Mock dependencies.
+vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
+  getDefaultLogger: () => ({ warn: vi.fn() }),
+}))
 
 describe('paths constants', () => {
   describe('static constants', () => {

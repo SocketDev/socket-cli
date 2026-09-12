@@ -7,6 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { spawnSocketPatchDlx } from '../../../../src/util/dlx/spawn-socket-patch.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnDlx = vi.hoisted(() => vi.fn())
@@ -30,8 +31,6 @@ vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
 vi.mock(import('../../../../src/util/dlx/resolve-binary.mts'), () => ({
   resolveSocketPatch: mockResolveSocketPatch,
 }))
-
-import { spawnSocketPatchDlx } from '../../../../src/util/dlx/spawn-socket-patch.mts'
 
 describe('spawnSocketPatchDlx', () => {
   beforeEach(() => {

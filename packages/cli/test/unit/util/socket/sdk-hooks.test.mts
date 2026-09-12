@@ -12,6 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setupSdk } from '../../../../src/util/socket/sdk.mts'
 
 // Mock the config utility.
 const mockGetConfigValueOrUndef = vi.hoisted(() => vi.fn())
@@ -76,8 +77,6 @@ vi.mock(import('../../../../src/util/debug.mts'), () => ({
   debugApiRequest: vi.fn(),
   debugApiResponse: vi.fn(),
 }))
-
-import { setupSdk } from '../../../../src/util/socket/sdk.mts'
 
 describe('SDK Utilities', () => {
   beforeEach(() => {

@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createConfigCommand } from '../../../../src/commands/config/config-command-factory.mts'
 
 const mockMeowOrExit = vi.hoisted(() => vi.fn())
 const mockGetOutputKind = vi.hoisted(() => vi.fn(() => 'text'))
@@ -42,8 +43,6 @@ vi.mock(import('../../../../src/util/config.mts'), () => ({
 vi.mock(import('../../../../src/util/output/formatting.mts'), () => ({
   getFlagListOutput: mockGetFlagListOutput,
 }))
-
-import { createConfigCommand } from '../../../../src/commands/config/config-command-factory.mts'
 
 const baseSpec = {
   commandName: 'set',

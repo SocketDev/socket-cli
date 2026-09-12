@@ -8,6 +8,10 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  LOCKS,
+  readLockFileByAgent,
+} from '../../../../src/util/ecosystem/lockfile-readers.mts'
 
 const mockReadFileBinary = vi.hoisted(() => vi.fn())
 const mockReadFileUtf8 = vi.hoisted(() => vi.fn())
@@ -26,11 +30,6 @@ vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
 vi.mock(import('@socketregistry/hyrious__bun.lockb/index.cjs'), () => ({
   parse: mockParseBunLockb,
 }))
-
-import {
-  LOCKS,
-  readLockFileByAgent,
-} from '../../../../src/util/ecosystem/lockfile-readers.mts'
 
 describe('lockfile-readers', () => {
   beforeEach(() => {

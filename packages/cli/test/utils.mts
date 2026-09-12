@@ -144,6 +144,19 @@ export function cmdit(
   )
 }
 
+function isJavaScriptEntryPath(entryPath: string): boolean {
+  return ['.js', '.mjs', '.cjs', '.mts', '.ts'].some(extension =>
+    entryPath.endsWith(extension),
+  )
+}
+
+function cleanSpawnOutput(output: Buffer | string | undefined): string {
+  if (typeof output === 'string') {
+    return cleanOutput(output)
+  }
+  return cleanOutput(output?.toString() ?? '')
+}
+
 export async function spawnSocketCli(
   entryPath: string,
   args: string[],
@@ -174,12 +187,7 @@ export async function spawnSocketCli(
 
   // Detect if entryPath is a standalone binary (not a JS file).
   // Binaries include: yao-pkg, SEA, or any executable without JS extension.
-  const isJsFile =
-    entryPath.endsWith('.js') ||
-    entryPath.endsWith('.mjs') ||
-    entryPath.endsWith('.cjs') ||
-    entryPath.endsWith('.mts') ||
-    entryPath.endsWith('.ts')
+  const isJsFile = isJavaScriptEntryPath(entryPath)
 
   // For binaries, execute directly. For JS files, run through Node.
   const command = isJsFile ? constants.execPath : entryPath
@@ -203,16 +211,8 @@ export async function spawnSocketCli(
     return {
       status: true,
       code: 0,
-      stdout: cleanOutput(
-        typeof output.stdout === 'string'
-          ? output.stdout
-          : output.stdout.toString(),
-      ),
-      stderr: cleanOutput(
-        typeof output.stderr === 'string'
-          ? output.stderr
-          : output.stderr.toString(),
-      ),
+      stdout: cleanSpawnOutput(output.stdout),
+      stderr: cleanSpawnOutput(output.stderr),
     }
   } catch (e: unknown) {
     const error = e as {
@@ -229,16 +229,8 @@ export async function spawnSocketCli(
         message: error.message || '',
         stack: error.stack || '',
       },
-      stdout: cleanOutput(
-        typeof error.stdout === 'string'
-          ? error.stdout
-          : error.stdout?.toString() || '',
-      ),
-      stderr: cleanOutput(
-        typeof error.stderr === 'string'
-          ? error.stderr
-          : error.stderr?.toString() || '',
-      ),
+      stdout: cleanSpawnOutput(error.stdout),
+      stderr: cleanSpawnOutput(error.stderr),
     }
   }
 }

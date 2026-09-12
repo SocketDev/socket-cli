@@ -51,7 +51,7 @@ const FLAGS: MeowFlags = {
  * A representative subcommand registry covering all bucket categories, used by
  * most root-help tests.
  */
-function rootSubcommands(): Record<string, CliSubcommand> {
+function rootSubcommands(): { [key: string]: CliSubcommand } {
   const names = [
     // main bucket.
     'fix',
@@ -88,7 +88,7 @@ function rootSubcommands(): Record<string, CliSubcommand> {
     'bundler',
     'mcp',
   ]
-  const subs: Record<string, CliSubcommand> = {}
+  const subs: { [key: string]: CliSubcommand } = {}
   for (let i = 0, { length } = names; i < length; i += 1) {
     const n = names[i]
     subs[n] = makeSubcommand(`${n} description`)
@@ -259,7 +259,7 @@ describe('buildHelpLines', () => {
     it('skips empty buckets', () => {
       // Subcommands that only fill api + config; main and tools have
       // no entries, and main has hero rows so it still renders.
-      const apiOnlySubs: Record<string, CliSubcommand> = {
+      const apiOnlySubs: { [key: string]: CliSubcommand } = {
         analytics: makeSubcommand('analytics description'),
         config: makeSubcommand('config description'),
       }
@@ -380,7 +380,7 @@ describe('buildHelpLines', () => {
 
   describe('sub-command flat layout', () => {
     it('emits a flat alphabetised Commands list', () => {
-      const subs: Record<string, CliSubcommand> = {
+      const subs: { [key: string]: CliSubcommand } = {
         create: makeSubcommand('Create a scan'),
         list: makeSubcommand('List scans'),
         del: makeSubcommand('Delete a scan'),
@@ -404,7 +404,7 @@ describe('buildHelpLines', () => {
     })
 
     it('excludes hidden subcommands and aliases pointing at hidden cmds', () => {
-      const subs: Record<string, CliSubcommand> = {
+      const subs: { [key: string]: CliSubcommand } = {
         create: makeSubcommand('Create a scan'),
         secret: makeSubcommand('Hidden cmd', true),
       }

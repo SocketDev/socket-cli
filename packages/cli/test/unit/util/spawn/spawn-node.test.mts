@@ -11,6 +11,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  findSystemNodejs,
+  resolveNodeExecutable,
+  spawnNode,
+} from '../../../../src/util/spawn/spawn-node.mts'
 
 // Mock dependencies.
 const mockFindSystemTool = vi.hoisted(() => vi.fn())
@@ -44,12 +49,6 @@ vi.mock(import('../../../../src/util/sea/detect.mjs'), () => ({
 vi.mock(import('../../../../src/util/sea/boot.mjs'), () => ({
   sendBootstrapHandshake: mockSendBootstrapHandshake,
 }))
-
-import {
-  findSystemNodejs,
-  resolveNodeExecutable,
-  spawnNode,
-} from '../../../../src/util/spawn/spawn-node.mts'
 
 const SAFE_PATH = '/usr/bin:/bin'
 

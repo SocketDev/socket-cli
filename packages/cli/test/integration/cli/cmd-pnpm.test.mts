@@ -23,13 +23,10 @@
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { describe, expect, it, vi } from 'vitest'
-
 import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import {
   FLAG_CONFIG,
   FLAG_DRY_RUN,
@@ -40,10 +37,9 @@ import {
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
+import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 const binCliPath = getBinCliPath()
-
-import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 // Known issue: Several exec/install tests currently fail due to config flag handling.
 // Needs investigation and fix for proper config isolation in pnpm wrapper tests.

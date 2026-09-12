@@ -3,17 +3,15 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
-  spawn: vi.fn(),
-}))
-
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import {
   ensureJavaOnPath,
   resetJavaShimCacheForTests,
 } from '../../../../../src/commands/manifest/bazel/bazel-java-shim.mts'
+
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
+  spawn: vi.fn(),
+}))
 
 type SpawnResolution = Awaited<ReturnType<typeof spawn>>
 

@@ -3,15 +3,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
+import { resolveBazelBinary } from '../../../../../src/commands/manifest/bazel/bazel-bin-detect.mts'
 
 // Mock whichReal so tests run with no bazel on PATH.
 vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: vi.fn(),
 }))
-
-import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
-
-import { resolveBazelBinary } from '../../../../../src/commands/manifest/bazel/bazel-bin-detect.mts'
 
 describe('resolveBazelBinary', () => {
   const mocked = vi.mocked(whichReal)

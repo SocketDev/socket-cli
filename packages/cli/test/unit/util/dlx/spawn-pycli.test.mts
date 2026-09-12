@@ -13,8 +13,16 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as NodeFs from 'node:fs'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
+import {
+  convertCaretToPipRange,
+  downloadPyPiWheel,
+  getPythonBinPath,
+  getPythonCachePath,
+  getPythonStandaloneInfo,
+  isSocketPyCliInstalled,
+} from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnNode = vi.hoisted(() => vi.fn())
@@ -135,15 +143,6 @@ vi.mock(import('../../../../src/env/python-checksums.mts'), () => ({
   requirePythonChecksum: mockRequirePythonChecksum,
 }))
 
-import {
-  convertCaretToPipRange,
-  downloadPyPiWheel,
-  getPythonBinPath,
-  getPythonCachePath,
-  getPythonStandaloneInfo,
-  isSocketPyCliInstalled,
-} from '../../../../src/util/dlx/spawn-pycli.mts'
-
 describe('convertCaretToPipRange', () => {
   it('returns empty string for empty input', () => {
     expect(convertCaretToPipRange('')).toBe('')
@@ -173,7 +172,7 @@ describe('convertCaretToPipRange', () => {
 describe('getPythonBinPath', () => {
   it('returns POSIX bin path', () => {
     const result = getPythonBinPath('/cache/py')
-    expect(result).toMatch(/python\/bin\/python3$/)
+    expect(normalizePath(result)).toMatch(/python\/bin\/python3$/)
   })
 })
 

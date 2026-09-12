@@ -10,6 +10,9 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputScanView } from '../../../../src/commands/scan/output-scan-view.mts'
+import type { CResult } from '../../../../src/types.mts'
+import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
 // Mock fs.
 const mockWriteFile = vi.hoisted(() => vi.fn())
@@ -50,11 +53,6 @@ vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
 vi.mock(import('../../../../src/util/terminal/link.mts'), () => ({
   fileLink: (path: string) => path,
 }))
-
-import { outputScanView } from '../../../../src/commands/scan/output-scan-view.mts'
-
-import type { CResult } from '../../../../src/types.mts'
-import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
 
 describe('output-scan-view', () => {
   beforeEach(() => {

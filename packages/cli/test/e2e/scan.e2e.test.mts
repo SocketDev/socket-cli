@@ -22,16 +22,24 @@ import {
 } from '../helpers/cli-execution.mts'
 
 const RUN = ENV.RUN_E2E_TESTS
+const HAS_AUTH = RUN && Boolean(getDefaultApiToken())
+
+function readLatestScanIds(stdout: string): [string?, string?] {
+  try {
+    const payload = JSON.parse(stdout) as {
+      data?:
+        | { results?: Array<{ id?: string | undefined }> | undefined }
+        | undefined
+    }
+    const results = payload.data?.results
+    if (Array.isArray(results)) {
+      return [results[0]?.id, results[1]?.id]
+    }
+  } catch {}
+  return []
+}
 
 describe('socket scan (e2e)', () => {
-  let hasAuth = false
-
-  beforeAll(async () => {
-    if (RUN) {
-      hasAuth = !!getDefaultApiToken()
-    }
-  })
-
   describe('help and dry-run (no auth required)', () => {
     it.skipIf(!RUN)('exits 2 with no subcommand (prints help)', async () => {
       const result = await executeCliCommand(['scan'])
@@ -130,50 +138,34 @@ describe('socket scan (e2e)', () => {
     let secondSbomId: string | undefined
 
     beforeAll(async () => {
-      if (!RUN || !hasAuth) {
+      if (!HAS_AUTH) {
         return
       }
       // Resolve the two most-recent scan IDs for the configured default org.
       // These feed the per-id checks below.
       const result = await executeCliInScratch(['scan', 'list', '--json'])
       if (result.code === 0) {
-        try {
-          const payload = JSON.parse(result.stdout) as {
-            data?:
-              | { results?: Array<{ id?: string | undefined }> | undefined }
-              | undefined
-          }
-          const results = payload.data?.results
-          if (Array.isArray(results)) {
-            sbomId = results[0]?.id
-            secondSbomId = results[1]?.id
-          }
-        } catch {
-          // Fall through — per-id tests will skip themselves below.
-        }
+        ;[sbomId, secondSbomId] = readLatestScanIds(result.stdout)
       }
     })
 
-    it.skipIf(!RUN || !hasAuth)('scan list exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan list exits 0', async () => {
       const result = await executeCliInScratch(['scan', 'list'])
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan list --json conforms to contract',
-      async () => {
-        const result = await executeCliInScratch(['scan', 'list', '--json'])
-        expect(result.code).toBe(0)
-        validateSocketJsonContract(result.stdout, 0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan list --json conforms to contract', async () => {
+      const result = await executeCliInScratch(['scan', 'list', '--json'])
+      expect(result.code).toBe(0)
+      validateSocketJsonContract(result.stdout, 0)
+    })
 
-    it.skipIf(!RUN || !hasAuth)('scan list --markdown exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan list --markdown exits 0', async () => {
       const result = await executeCliInScratch(['scan', 'list', '--markdown'])
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)('scan view <id> exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan view <id> exits 0', async () => {
       if (!sbomId) {
         return
       }
@@ -181,7 +173,7 @@ describe('socket scan (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)(
+    it.skipIf(!HAS_AUTH)(
       'scan view <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -198,23 +190,20 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan view <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'view',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan view <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'view',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(!RUN || !hasAuth)('scan metadata <id> exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan metadata <id> exits 0', async () => {
       if (!sbomId) {
         return
       }
@@ -222,7 +211,7 @@ describe('socket scan (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)(
+    it.skipIf(!HAS_AUTH)(
       'scan metadata <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -239,23 +228,20 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan metadata <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'metadata',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan metadata <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'metadata',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(!RUN || !hasAuth)('scan report <id> exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan report <id> exits 0', async () => {
       if (!sbomId) {
         return
       }
@@ -263,7 +249,7 @@ describe('socket scan (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)(
+    it.skipIf(!HAS_AUTH)(
       'scan report <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -280,23 +266,20 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan report <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'report',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan report <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'report',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(!RUN || !hasAuth)('scan diff <id1> <id2> exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan diff <id1> <id2> exits 0', async () => {
       if (!sbomId || !secondSbomId) {
         return
       }
@@ -309,25 +292,22 @@ describe('socket scan (e2e)', () => {
       expect(result.code).toBe(0)
     })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan diff --json conforms to contract',
-      async () => {
-        if (!sbomId || !secondSbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          sbomId,
-          secondSbomId,
-          '--json',
-        ])
-        expect(result.code).toBe(0)
-        validateSocketJsonContract(result.stdout, 0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff --json conforms to contract', async () => {
+      if (!sbomId || !secondSbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        sbomId,
+        secondSbomId,
+        '--json',
+      ])
+      expect(result.code).toBe(0)
+      validateSocketJsonContract(result.stdout, 0)
+    })
 
-    it.skipIf(!RUN || !hasAuth)('scan diff --markdown exits 0', async () => {
+    it.skipIf(!HAS_AUTH)('scan diff --markdown exits 0', async () => {
       if (!sbomId || !secondSbomId) {
         return
       }
@@ -343,7 +323,7 @@ describe('socket scan (e2e)', () => {
   })
 
   describe('scan create (auth required, scratch-isolated)', () => {
-    it.skipIf(!RUN || !hasAuth)(
+    it.skipIf(!HAS_AUTH)(
       'scan create . exits 0 with --json contract',
       async () => {
         const result = await executeCliInScratch(
@@ -364,88 +344,73 @@ describe('socket scan (e2e)', () => {
   })
 
   describe('error paths — non-existent org', () => {
-    it.skipIf(!RUN || !hasAuth)(
-      'scan create --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch(
-          ['scan', 'create', '.', '--org', 'fake_org', '--json'],
-          {
-            seedFiles: {
-              'package.json': JSON.stringify({
-                name: 'socket-cli-e2e-fake-org',
-                version: '0.0.0',
-              }),
-            },
+    it.skipIf(!HAS_AUTH)('scan create --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch(
+        ['scan', 'create', '.', '--org', 'fake_org', '--json'],
+        {
+          seedFiles: {
+            'package.json': JSON.stringify({
+              name: 'socket-cli-e2e-fake-org',
+              version: '0.0.0',
+            }),
           },
-        )
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+        },
+      )
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan view --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'view',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan view --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'view',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan report --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'report',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan report --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'report',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan metadata --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'metadata',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan metadata --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'metadata',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(!RUN || !hasAuth)(
-      'scan diff --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          'placeholder',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        'placeholder',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
   })
 })

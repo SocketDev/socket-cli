@@ -14,6 +14,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { postinstallWrapper } from '../../../../src/commands/wrapper/postinstall-wrapper.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
@@ -23,8 +24,6 @@ vi.mock(import('node:fs'), () => ({
     existsSync: mockExistsSync,
   },
 }))
-
-import { postinstallWrapper } from '../../../../src/commands/wrapper/postinstall-wrapper.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),

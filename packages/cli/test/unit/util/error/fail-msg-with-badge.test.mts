@@ -14,6 +14,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { failMsgWithBadge } from '../../../../src/util/error/fail-msg-with-badge.mts'
 
 // Mock yoctocolors-cjs BEFORE importing the module under test
 vi.mock(import('yoctocolors-cjs'), () => ({
@@ -23,8 +24,6 @@ vi.mock(import('yoctocolors-cjs'), () => ({
     white: (str: string) => `[WHITE]${str}[/WHITE]`,
   },
 }))
-
-import { failMsgWithBadge } from '../../../../src/util/error/fail-msg-with-badge.mts'
 
 describe('failMsgWithBadge', () => {
   beforeEach(() => {

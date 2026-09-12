@@ -7,9 +7,22 @@
 import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { runMetadataCqueryForRepo } from '../../../../../src/commands/manifest/bazel/bazel-cquery.mts'
+import {
+  buildMavenProbeFor,
+  runBazelModShowMavenExtension,
+} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
+import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
+import { findWorkspaceRoots } from '../../../../../src/commands/manifest/bazel/bazel-workspace-walk.mts'
+import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
+import {
+  mkArt,
+  mkResult,
+  PROBE_NOT_DEFINED,
+  SHOW_EXT_HUB_ONLY,
+} from './extract-maven-test-helpers.mts'
 
 // Mock the logger so narration is capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -89,21 +102,6 @@ vi.mock(
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: vi.fn(async () => ({ code: 0, stderr: '', stdout: '' })),
 }))
-
-import { runMetadataCqueryForRepo } from '../../../../../src/commands/manifest/bazel/bazel-cquery.mts'
-import {
-  buildMavenProbeFor,
-  runBazelModShowMavenExtension,
-} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
-import { detectWorkspaceMode } from '../../../../../src/commands/manifest/bazel/bazel-workspace-detect.mts'
-import { findWorkspaceRoots } from '../../../../../src/commands/manifest/bazel/bazel-workspace-walk.mts'
-import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
-import {
-  mkArt,
-  mkResult,
-  PROBE_NOT_DEFINED,
-  SHOW_EXT_HUB_ONLY,
-} from './extract-maven-test-helpers.mts'
 
 describe('extractBazelToMaven hub discovery', () => {
   let tmp: string

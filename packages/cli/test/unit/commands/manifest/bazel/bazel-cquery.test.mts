@@ -4,18 +4,16 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
-  spawn: vi.fn(),
-}))
-
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import {
   buildMetadataCqueryArgv,
   runMetadataCqueryForRepo,
 } from '../../../../../src/commands/manifest/bazel/bazel-cquery.mts'
 import { ENVELOPE_FIXTURE, ruleEnvelope } from './cquery-test-fixtures.mts'
+
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
+  spawn: vi.fn(),
+}))
 
 type SpawnResolution = Awaited<ReturnType<typeof spawn>>
 

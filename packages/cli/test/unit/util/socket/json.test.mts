@@ -13,8 +13,15 @@
  */
 
 import path from 'node:path'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  findSocketJsonUp,
+  getDefaultSocketJson,
+  readOrDefaultSocketJson,
+  readOrDefaultSocketJsonUp,
+  readSocketJsonSync,
+  writeSocketJson,
+} from '../../../../src/util/socket/json.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -65,15 +72,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
   logger: mockLogger,
 }))
-
-import {
-  findSocketJsonUp,
-  getDefaultSocketJson,
-  readOrDefaultSocketJson,
-  readOrDefaultSocketJsonUp,
-  readSocketJsonSync,
-  writeSocketJson,
-} from '../../../../src/util/socket/json.mts'
 
 describe('socket-json utilities', () => {
   beforeEach(() => {

@@ -20,6 +20,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  commonFlags,
+  getMaxOldSpaceSizeFlag,
+  getMaxSemiSpaceSizeFlag,
+  outputFlags,
+  resetFlagCache,
+} from '../../src/flags.mts'
+import type * as OsModule from 'node:os'
 
 // Store mock values that can be changed per test.
 const mockValues = vi.hoisted(() => ({
@@ -60,16 +68,6 @@ vi.mock(import('../../src/env/node-options.mts'), () => ({
     return mockValues.nodeOptions
   },
 }))
-
-import {
-  commonFlags,
-  getMaxOldSpaceSizeFlag,
-  getMaxSemiSpaceSizeFlag,
-  outputFlags,
-  resetFlagCache,
-} from '../../src/flags.mts'
-
-import type * as OsModule from 'node:os'
 
 describe('flags', () => {
   beforeEach(() => {

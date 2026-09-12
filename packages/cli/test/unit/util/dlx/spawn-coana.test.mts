@@ -7,6 +7,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  spawnCoana,
+  spawnCoanaDlx,
+  spawnCoanaVfs,
+} from '../../../../src/util/dlx/spawn-coana.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnDlx = vi.hoisted(() => vi.fn())
@@ -67,12 +72,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: mockGetDefaultApiToken,
   getDefaultProxyUrl: mockGetDefaultProxyUrl,
 }))
-
-import {
-  spawnCoana,
-  spawnCoanaDlx,
-  spawnCoanaVfs,
-} from '../../../../src/util/dlx/spawn-coana.mts'
 
 describe('spawnCoanaDlx', () => {
   beforeEach(() => {

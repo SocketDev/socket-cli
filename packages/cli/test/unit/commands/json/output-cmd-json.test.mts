@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputCmdJson } from '../../../../src/commands/json/output-cmd-json.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 
@@ -34,8 +35,6 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/fs/inspect'), () => ({
   safeStatSync: (...args: unknown[]) => mockSafeStatsSync(...args),
 }))
-
-import { outputCmdJson } from '../../../../src/commands/json/output-cmd-json.mts'
 
 describe('output-cmd-json', () => {
   const originalExitCode = process.exitCode

@@ -15,14 +15,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { suggestTarget } from '../../../../src/commands/scan/suggest_target.mts'
 
 // Mock select prompt.
 const mockSelect = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/stdio/prompts'), () => ({
   select: mockSelect,
 }))
-
-import { suggestTarget } from '../../../../src/commands/scan/suggest_target.mts'
 
 describe('suggest_target', () => {
   beforeEach(() => {

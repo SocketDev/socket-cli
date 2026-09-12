@@ -11,6 +11,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
 // Mock @gitbeaker/rest.
 const mockCreate = vi.hoisted(() => vi.fn())
@@ -43,8 +44,6 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
 
 // Set GITLAB_TOKEN env var before importing.
 process.env['GITLAB_TOKEN'] = 'test-token'
-
-import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
 describe('git/gitlab-provider', () => {
   let provider: GitLabProvider

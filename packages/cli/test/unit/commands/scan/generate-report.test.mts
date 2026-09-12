@@ -11,13 +11,6 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-// Mock socket URL utility.
-vi.mock(import('../../../../src/util/socket/url.mts'), () => ({
-  getSocketDevPackageOverviewUrlFromPurl: (art: { name: string }) =>
-    `https://socket.dev/pkg/${art.name}`,
-}))
-
 import { generateReport } from '../../../../src/commands/scan/generate-report.mts'
 import {
   FOLD_SETTING_FILE,
@@ -32,8 +25,13 @@ import {
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
 } from '../../../../src/constants/reporting.mts'
-
 import type { SocketArtifact } from '../../../../src/util/alert/artifact.mts'
+
+// Mock socket URL utility.
+vi.mock(import('../../../../src/util/socket/url.mts'), () => ({
+  getSocketDevPackageOverviewUrlFromPurl: (art: { name: string }) =>
+    `https://socket.dev/pkg/${art.name}`,
+}))
 
 describe('generate-report', () => {
   beforeEach(() => {

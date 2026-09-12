@@ -6,6 +6,16 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  askForBin,
+  askForEnabled,
+  askForInputFile,
+  askForOutputFile,
+  askForStdout,
+  askForVerboseFlag,
+  canceledByUser,
+  notCanceled,
+} from '../../../../src/commands/manifest/setup-manifest-config.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -25,17 +35,6 @@ vi.mock(import('@socketsecurity/lib-stable/stdio/prompts'), () => ({
   input: mockInput,
   select: mockSelect,
 }))
-
-import {
-  askForBin,
-  askForEnabled,
-  askForInputFile,
-  askForOutputFile,
-  askForStdout,
-  askForVerboseFlag,
-  canceledByUser,
-  notCanceled,
-} from '../../../../src/commands/manifest/setup-manifest-config.mts'
 
 describe('setup-manifest-config', () => {
   beforeEach(() => {

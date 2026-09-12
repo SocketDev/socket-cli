@@ -10,8 +10,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as NodeFs from 'node:fs'
+import {
+  spawnSocketPyCli,
+  spawnSocketPyCliDlx,
+  spawnSocketPyCliVfs,
+} from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockSpawnNode = vi.hoisted(() => vi.fn())
@@ -88,12 +92,6 @@ vi.mock(import('../../../../src/env/pycli-version.mts'), () => ({
 vi.mock(import('../../../../src/env/pycli-checksums.mts'), () => ({
   getPyCliChecksums: mockGetPyCliChecksums,
 }))
-
-import {
-  spawnSocketPyCli,
-  spawnSocketPyCliDlx,
-  spawnSocketPyCliVfs,
-} from '../../../../src/util/dlx/spawn-pycli.mts'
 
 describe('spawnSocketPyCli', () => {
   beforeEach(() => {

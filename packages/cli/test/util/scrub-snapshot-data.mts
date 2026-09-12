@@ -44,6 +44,45 @@ interface ScrubOptions {
   custom?: Array<{ pattern: RegExp; replacement: string }> | undefined
 }
 
+function scrubTimestamps(output: string): string {
+  return output
+    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g, '[TIMESTAMP]')
+    .replace(/\d{4}-\d{2}-\d{2}/g, '[DATE]')
+    .replace(
+      // Match a number, supported time unit, and the `ago` suffix.
+      /\d+\s+(?:days?|hours?|minutes?|seconds?)\s+ago/g,
+      '[RELATIVE_TIME]',
+    )
+}
+
+function applyOptionalScrub(options: {
+  enabled: boolean
+  output: string
+  scrub: (value: string) => string
+}): string {
+  const { enabled, output, scrub } = options
+  return enabled ? scrub(output) : output
+}
+
+function scrubVersions(output: string): string {
+  return output
+    .replace(/v\d+\.\d+\.\d+/g, 'v[VERSION]')
+    .replace(/socket@\d+\.\d+\.\d+/g, 'socket@[VERSION]')
+}
+
+function scrubPaths(output: string): string {
+  return output
+    .replaceAll(WORKSPACE_ROOT, '[PROJECT]')
+    .replaceAll(process.cwd(), '[PROJECT]')
+    .replace(/\/Users\/[^/\s]+/g, '/[HOME]')
+    .replace(/\/home\/[^/\s]+/g, '/[HOME]')
+    .replace(/C:\\Users\\[^\\]+/gi, 'C:\\[HOME]')
+    .replace(/\/tmp\/[a-zA-Z0-9_-]+/g, '/[TEMP]')
+    .replace(/\\Temp\\[a-zA-Z0-9_-]+/gi, '\\[TEMP]')
+    .replace(/\S+[\\/]npm-cli\.js/g, '[NPM_CLI]')
+    .replace(/\S+[\\/]npx-cli\.js/g, '[NPX_CLI]')
+}
+
 /**
  * Scrub snapshot data to remove environment-specific and time-dependent values.
  *
@@ -73,49 +112,18 @@ export function scrubSnapshotData(
   let scrubbed = output
 
   // Phase 1: Timestamps.
-  if (timestamps) {
-    // ISO timestamps: 2025-04-02T01:47:26.914Z.
-    scrubbed = scrubbed.replace(
-      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z/g,
-      '[TIMESTAMP]',
-    )
-    // Date-only: 2025-04-02.
-    scrubbed = scrubbed.replace(/\d{4}-\d{2}-\d{2}/g, '[DATE]')
-    // Relative time: "2 days ago", "5 minutes ago".
-    scrubbed = scrubbed.replace(
-      /\d+\s+(?:days?|hours?|minutes?|seconds?)\s+ago/g,
-      '[RELATIVE_TIME]',
-    )
-  }
+  scrubbed = applyOptionalScrub({
+    enabled: timestamps,
+    output: scrubbed,
+    scrub: scrubTimestamps,
+  })
 
   // Phase 2: Absolute paths.
-  if (paths) {
-    // Workspace root - must come before user home scrubbing. Anchoring on
-    // WORKSPACE_ROOT (not process.cwd()) keeps [PROJECT] stable across test
-    // lanes: the fleet root vitest lane runs workers at the repo root while
-    // the packages/cli wrapper lane runs them at packages/cli.
-    scrubbed = scrubbed.replaceAll(WORKSPACE_ROOT, '[PROJECT]')
-    // Worker cwd, for the rare case it sits outside the workspace root
-    // (no-op when nested - the root pass already rewrote its prefix).
-    scrubbed = scrubbed.replaceAll(process.cwd(), '[PROJECT]')
-
-    // Unix home directories.
-    scrubbed = scrubbed.replace(/\/Users\/[^/\s]+/g, '/[HOME]')
-    scrubbed = scrubbed.replace(/\/home\/[^/\s]+/g, '/[HOME]')
-
-    // Windows home directories.
-    scrubbed = scrubbed.replace(/C:\\Users\\[^\\]+/gi, 'C:\\[HOME]')
-
-    // Temp directories.
-    scrubbed = scrubbed.replace(/\/tmp\/[a-zA-Z0-9_-]+/g, '/[TEMP]')
-    scrubbed = scrubbed.replace(/\\Temp\\[a-zA-Z0-9_-]+/gi, '\\[TEMP]')
-
-    // Resolved npm/npx binary paths. The raw-npm/raw-npx dry-run prints the
-    // npm install it resolved, which varies by machine (wheelhouse rack copy
-    // locally, hostedtoolcache npm in CI) and by rack npm version.
-    scrubbed = scrubbed.replace(/\S+[\\/]npm-cli\.js/g, '[NPM_CLI]')
-    scrubbed = scrubbed.replace(/\S+[\\/]npx-cli\.js/g, '[NPX_CLI]')
-  }
+  scrubbed = applyOptionalScrub({
+    enabled: paths,
+    output: scrubbed,
+    scrub: scrubPaths,
+  })
 
   // Phase 3: IDs and UUIDs.
   if (ids) {
@@ -131,12 +139,11 @@ export function scrubSnapshotData(
   }
 
   // Phase 4: Version numbers.
-  if (versions) {
-    // Node version: v22.11.0.
-    scrubbed = scrubbed.replace(/v\d+\.\d+\.\d+/g, 'v[VERSION]')
-    // Package versions: socket@1.1.25.
-    scrubbed = scrubbed.replace(/socket@\d+\.\d+\.\d+/g, 'socket@[VERSION]')
-  }
+  scrubbed = applyOptionalScrub({
+    enabled: versions,
+    output: scrubbed,
+    scrub: scrubVersions,
+  })
 
   // Detected package manager version: "Detected pnpm v11.11.0". This reads
   // whatever npm/pnpm/yarn/bun binary is on the ambient PATH, so it varies by

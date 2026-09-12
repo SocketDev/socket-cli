@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { applyLogin } from '../../../../src/commands/login/apply-login.mts'
 
 // Mock dependencies.
 const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
@@ -17,8 +18,6 @@ const mockUpdateConfigValue = vi.hoisted(() => vi.fn())
 vi.mock(import('../../../../src/util/config.mts'), () => ({
   updateConfigValue: mockUpdateConfigValue,
 }))
-
-import { applyLogin } from '../../../../src/commands/login/apply-login.mts'
 
 describe('apply-login', () => {
   beforeEach(() => {

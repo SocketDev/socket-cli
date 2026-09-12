@@ -9,6 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { attemptDeviceLogin } from '../../../../src/commands/login/attempt-device-login.mts'
 
 const { mockHttpRequest } = vi.hoisted(() => ({
   mockHttpRequest: vi.fn(),
@@ -85,8 +86,6 @@ vi.mock(import('../../../../src/util/organization.mts'), () => ({
   getEnterpriseOrgs: mockGetEnterpriseOrgs,
   getOrgSlugs: mockGetOrgSlugs,
 }))
-
-import { attemptDeviceLogin } from '../../../../src/commands/login/attempt-device-login.mts'
 
 function fakeResponse(opts: { status: number; body: unknown }) {
   const text = JSON.stringify(opts.body)

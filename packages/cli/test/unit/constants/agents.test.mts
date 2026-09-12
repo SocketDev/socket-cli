@@ -10,6 +10,19 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  BUN,
+  getMinimumVersionByAgent,
+  getNpmExecPath,
+  getPnpmExecPath,
+  NPM,
+  NPX,
+  PNPM,
+  VLT,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '../../../src/constants/agents.mts'
 
 // Mock dependencies using hoisted mocks.
 const mockWhichReal = vi.hoisted(() => vi.fn())
@@ -25,20 +38,6 @@ vi.mock(import('node:fs'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
   whichReal: mockWhichReal,
 }))
-
-import {
-  BUN,
-  getMinimumVersionByAgent,
-  getNpmExecPath,
-  getPnpmExecPath,
-  NPM,
-  NPX,
-  PNPM,
-  VLT,
-  YARN,
-  YARN_BERRY,
-  YARN_CLASSIC,
-} from '../../../src/constants/agents.mts'
 
 describe('agents constants', () => {
   beforeEach(() => {

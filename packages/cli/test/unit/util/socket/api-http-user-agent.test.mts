@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { socketHttpRequest } from '../../../../src/util/socket/api-http.mts'
 
 const mockHttpRequest = vi.hoisted(() => vi.fn(async () => ({ ok: true })))
 
@@ -25,8 +26,6 @@ vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
 vi.mock(import('../../../../src/util/socket/user-agent.mts'), () => ({
   getCliUserAgent: () => 'socket/9.9.9 node/v22.0.0 linux/x64',
 }))
-
-import { socketHttpRequest } from '../../../../src/util/socket/api-http.mts'
 
 describe('socketHttpRequest User-Agent', () => {
   beforeEach(() => {

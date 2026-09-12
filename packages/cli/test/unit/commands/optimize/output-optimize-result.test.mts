@@ -12,6 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputOptimizeResult } from '../../../../src/commands/optimize/output-optimize-result.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -44,8 +45,6 @@ vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
 vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
-
-import { outputOptimizeResult } from '../../../../src/commands/optimize/output-optimize-result.mts'
 
 describe('output-optimize-result', () => {
   beforeEach(() => {

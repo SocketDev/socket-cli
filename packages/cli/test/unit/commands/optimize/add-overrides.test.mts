@@ -9,6 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { addOverrides } from '../../../../src/commands/optimize/add-overrides.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -103,8 +104,6 @@ vi.mock(import('@socketsecurity/lib-stable/promises/iterate'), () => ({
     }
   },
 }))
-
-import { addOverrides } from '../../../../src/commands/optimize/add-overrides.mts'
 
 describe('addOverrides', () => {
   const mockEnvDetails: unknown = {

@@ -9,6 +9,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineCommand } from '../../../../src/util/command/registry-define.mts'
+import type { CommandDefinition } from '../../../../src/util/command/registry-types.mjs'
 
 // Mock dependencies.
 const mockRegister = vi.hoisted(() => vi.fn())
@@ -18,10 +20,6 @@ vi.mock(import('../../../../src/util/command/registry.mts'), () => ({
     register: mockRegister,
   },
 }))
-
-import { defineCommand } from '../../../../src/util/command/registry-define.mts'
-
-import type { CommandDefinition } from '../../../../src/util/command/registry-types.mjs'
 
 describe('registry-define', () => {
   beforeEach(() => {

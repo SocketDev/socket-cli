@@ -11,15 +11,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { overrideCachedConfig } from '../../../../src/util/config.mts'
+import { getDefaultApiBaseUrl } from '../../../../src/util/socket/api-http.mts'
 
 // Mock the SDK module to keep this suite off the SDK import chain.
 vi.mock(import('../../../../src/util/socket/sdk.mts'), () => ({
   getDefaultApiToken: vi.fn(),
   getExtraCaCerts: () => undefined,
 }))
-
-import { overrideCachedConfig } from '../../../../src/util/config.mts'
-import { getDefaultApiBaseUrl } from '../../../../src/util/socket/api-http.mts'
 
 describe('getDefaultApiBaseUrl', () => {
   beforeEach(() => {

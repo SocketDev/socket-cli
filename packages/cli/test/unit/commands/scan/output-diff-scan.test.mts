@@ -15,8 +15,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type { CResult } from '../../../../src/types.mts'
+import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.mts'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -69,8 +69,6 @@ vi.mock(import('node:fs'), () => ({
   },
 }))
 
-import { outputDiffScan } from '../../../../src/commands/scan/output-diff-scan.mts'
-
 // Helper to create error result.
 export function createErrorResult(
   message: string,
@@ -108,11 +106,11 @@ function createMockDiffData(overrides = {}) {
         created_at: '2024-01-02T00:00:00Z',
         pull_request: undefined,
       },
-      description: null,
-      external_href: null,
+      description: undefined,
+      external_href: undefined,
       merge: false,
       html_url: 'https://socket.dev/diff/123',
-      api_url: null,
+      api_url: undefined,
       incomplete: false,
       artifacts: {
         added: [],

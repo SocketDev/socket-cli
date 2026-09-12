@@ -4,6 +4,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import {
+  buildMavenProbeFor,
+  buildPypiProbeFor,
+  runBazelModShowMavenExtension,
+  runBazelModShowPipExtension,
+  runBazelModShowVisibleRepos,
+  runBazelQuery,
+} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
 
 vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
   spawn: vi.fn(),
@@ -34,17 +43,6 @@ const mockSpinner = vi.hoisted(() => ({
 vi.mock(import('@socketsecurity/lib-stable/spinner/default'), () => ({
   getDefaultSpinner: () => mockSpinner,
 }))
-
-import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
-import {
-  buildMavenProbeFor,
-  buildPypiProbeFor,
-  runBazelModShowMavenExtension,
-  runBazelModShowPipExtension,
-  runBazelModShowVisibleRepos,
-  runBazelQuery,
-} from '../../../../../src/commands/manifest/bazel/bazel-query-runner.mts'
 
 type SpawnResolution = Awaited<ReturnType<typeof spawn>>
 

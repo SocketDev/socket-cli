@@ -10,10 +10,10 @@
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { resolveScanCreateTargetsAndOrg } from '../../../../src/commands/scan/cmd-scan-create-interactive.mts'
+import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 const mockDetectManifestActions = vi.hoisted(() => vi.fn())
 const mockInfo = vi.hoisted(() => vi.fn())
@@ -31,10 +31,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     info: mockInfo,
   }),
 }))
-
-import { resolveScanCreateTargetsAndOrg } from '../../../../src/commands/scan/cmd-scan-create-interactive.mts'
-
-import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 describe('resolveScanCreateTargetsAndOrg auto-manifest hint', () => {
   let cwd = ''

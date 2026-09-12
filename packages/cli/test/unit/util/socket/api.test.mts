@@ -17,6 +17,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { overrideCachedConfig } from '../../../../src/util/config.mts'
+import {
+  getErrorMessageForHttpStatusCode,
+  handleApiCall,
+  handleApiCallNoSpinner,
+  logPermissionsFor403,
+  queryApi,
+} from '../../../../src/util/socket/api.mts'
 
 // Mock dependencies first.
 const mockSpinner = vi.hoisted(() => vi.fn())
@@ -97,15 +105,6 @@ function createHttpResponse(opts: {
     text: () => bodyStr,
   }
 }
-
-import { overrideCachedConfig } from '../../../../src/util/config.mts'
-import {
-  getErrorMessageForHttpStatusCode,
-  handleApiCall,
-  handleApiCallNoSpinner,
-  logPermissionsFor403,
-  queryApi,
-} from '../../../../src/util/socket/api.mts'
 
 describe('api utilities', () => {
   beforeEach(() => {

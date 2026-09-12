@@ -13,6 +13,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputRequirements } from '../../../../src/commands/manifest/output-requirements.mts'
+import type { CResult } from '../../../../src/types.mts'
 
 // Mock fs.
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
@@ -49,10 +51,6 @@ vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
 vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
-
-import { outputRequirements } from '../../../../src/commands/manifest/output-requirements.mts'
-
-import type { CResult } from '../../../../src/types.mts'
 
 describe('output-requirements', () => {
   beforeEach(() => {

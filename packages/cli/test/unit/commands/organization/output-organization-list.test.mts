@@ -11,6 +11,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputOrganizationList } from '../../../../src/commands/organization/output-organization-list.mts'
+import type { OrganizationsCResult } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock yoctocolors.
 vi.mock(import('yoctocolors-cjs'), () => ({
@@ -51,10 +53,6 @@ const mockGetVisibleTokenPrefix = vi.hoisted(() => vi.fn(() => 'sk_live_'))
 vi.mock(import('../../../../src/util/socket/sdk.mjs'), () => ({
   getVisibleTokenPrefix: mockGetVisibleTokenPrefix,
 }))
-
-import { outputOrganizationList } from '../../../../src/commands/organization/output-organization-list.mts'
-
-import type { OrganizationsCResult } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 describe('output-organization-list', () => {
   beforeEach(() => {

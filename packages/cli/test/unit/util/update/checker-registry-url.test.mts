@@ -13,6 +13,7 @@
 
 import { EventEmitter } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { NetworkUtils } from '../../../../src/util/update/checker.mts'
 
 // Mock https module.
 const mockRequest = vi.hoisted(() => vi.fn())
@@ -35,8 +36,6 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
     warn: vi.fn(),
   }),
 }))
-
-import { NetworkUtils } from '../../../../src/util/update/checker.mts'
 
 interface MockResponse extends EventEmitter {
   statusCode: number

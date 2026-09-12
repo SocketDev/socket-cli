@@ -12,6 +12,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputUninstallCompletion } from '../../../../src/commands/uninstall/output-uninstall-completion.mts'
+import type { CResult } from '../../../../src/types.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -31,10 +33,6 @@ vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
   failMsgWithBadge: (msg: string, cause?: string | undefined) =>
     cause ? `${msg}: ${cause}` : msg,
 }))
-
-import { outputUninstallCompletion } from '../../../../src/commands/uninstall/output-uninstall-completion.mts'
-
-import type { CResult } from '../../../../src/types.mts'
 
 describe('output-uninstall-completion', () => {
   beforeEach(() => {

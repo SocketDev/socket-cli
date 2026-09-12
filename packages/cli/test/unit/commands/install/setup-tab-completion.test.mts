@@ -11,6 +11,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  setupTabCompletion,
+  updateInstalledTabCompletionScript,
+} from '../../../../src/commands/install/setup-tab-completion.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -52,11 +56,6 @@ vi.mock(import('../../../../src/env/cli-version-hash.mts'), () => ({
 vi.mock(import('../../../../src/constants/paths.mts'), () => ({
   homePath: '/home/user',
 }))
-
-import {
-  setupTabCompletion,
-  updateInstalledTabCompletionScript,
-} from '../../../../src/commands/install/setup-tab-completion.mts'
 
 describe('setupTabCompletion', () => {
   beforeEach(() => {

@@ -11,6 +11,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { suggestToPersistOrgSlug } from '../../../../src/commands/scan/suggest-to-persist-orgslug.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -38,8 +39,6 @@ vi.mock(import('../../../../src/util/config.mts'), () => ({
   getConfigValue: mockGetConfigValue,
   updateConfigValue: mockUpdateConfigValue,
 }))
-
-import { suggestToPersistOrgSlug } from '../../../../src/commands/scan/suggest-to-persist-orgslug.mts'
 
 describe('suggest-to-persist-orgslug', () => {
   beforeEach(() => {

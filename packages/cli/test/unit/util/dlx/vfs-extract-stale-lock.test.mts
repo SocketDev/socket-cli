@@ -10,8 +10,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as NodeFs from 'node:fs'
+import {
+  EXTERNAL_TOOLS,
+  extractExternalTools,
+} from '../../../../src/util/dlx/vfs-extract.mts'
 
 const mockIsSeaBinary = vi.hoisted(() => vi.fn(() => false))
 const mockExistsSync = vi.hoisted(() => vi.fn(() => false))
@@ -51,11 +54,6 @@ vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeDelete: mockSafeDelete,
   safeMkdir: mockSafeMkdir,
 }))
-
-import {
-  EXTERNAL_TOOLS,
-  extractExternalTools,
-} from '../../../../src/util/dlx/vfs-extract.mts'
 
 const realProcessSmol = (process as unknown as { smol?: unknown | undefined })
   .smol

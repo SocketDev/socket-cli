@@ -10,6 +10,8 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputFixResult } from '../../../../src/commands/fix/output-fix-result.mts'
+import type { CResult } from '../../../../src/types.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -38,10 +40,6 @@ vi.mock(import('../../../../src/util/output/markdown.mts'), () => ({
 vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result, null, 2),
 }))
-
-import { outputFixResult } from '../../../../src/commands/fix/output-fix-result.mts'
-
-import type { CResult } from '../../../../src/types.mts'
 
 describe('output-fix-result', () => {
   beforeEach(() => {

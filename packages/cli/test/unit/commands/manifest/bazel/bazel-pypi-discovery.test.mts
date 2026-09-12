@@ -6,9 +6,13 @@
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  discoverPypiHubs,
+  validatePypiHub,
+} from '../../../../../src/commands/manifest/bazel/bazel-pypi-discovery.mts'
+import type { RepoProbe } from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
 
 // Mock the logger so verbose diagnostics are capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -24,13 +28,6 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import {
-  discoverPypiHubs,
-  validatePypiHub,
-} from '../../../../../src/commands/manifest/bazel/bazel-pypi-discovery.mts'
-
-import type { RepoProbe } from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
 
 const acceptingPypiProbe: RepoProbe = async () => ({
   code: 0,

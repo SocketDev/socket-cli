@@ -9,6 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputDeleteScan } from '../../../../src/commands/scan/output-delete-scan.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -29,8 +30,6 @@ vi.mock(import('../../../../src/util/error/fail-msg-with-badge.mts'), () => ({
 vi.mock(import('../../../../src/util/output/result-json.mjs'), () => ({
   serializeResultJson: (result: unknown) => JSON.stringify(result),
 }))
-
-import { outputDeleteScan } from '../../../../src/commands/scan/output-delete-scan.mts'
 
 describe('output-delete-scan', () => {
   beforeEach(() => {

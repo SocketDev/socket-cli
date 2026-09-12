@@ -13,19 +13,17 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-// Mock dependencies.
-vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
-  isSeaBinary: vi.fn(),
-}))
-
 import { SOCKET_IPC_HANDSHAKE } from '@socketsecurity/lib-stable/constants/socket'
-
 import { isSeaBinary } from '../../../../src/util/sea/detect.mts'
 import {
   isSubprocess,
   sendBootstrapHandshake,
 } from '../../../../src/util/sea/boot.mts'
+
+// Mock dependencies.
+vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
+  isSeaBinary: vi.fn(),
+}))
 
 describe('sea/boot', () => {
   beforeEach(() => {
@@ -83,18 +81,23 @@ describe('sea/boot', () => {
 
     it('resolves with handshake data when message arrives', async () => {
       // Stub process.channel + .on/.off so isSubprocess() reports true.
-      const handlers: Record<string, Array<(m: unknown) => void>> = {}
+      const handlers = new Map<string, Array<(message: unknown) => void>>()
       const onSpy = vi
         .spyOn(process, 'on')
         .mockImplementation((event, handler) => {
-          ;(handlers[String(event)] ??= []).push(handler)
+          const eventName = String(event)
+          const eventHandlers = handlers.get(eventName) ?? []
+          eventHandlers.push(handler)
+          handlers.set(eventName, eventHandlers)
           return process
         })
       const offSpy = vi
         .spyOn(process, 'off')
         .mockImplementation((event, handler) => {
-          handlers[String(event)] = (handlers[String(event)] ?? []).filter(
-            h => h !== handler,
+          const eventName = String(event)
+          handlers.set(
+            eventName,
+            (handlers.get(eventName) ?? []).filter(h => h !== handler),
           )
           return process
         })
@@ -115,7 +118,7 @@ describe('sea/boot', () => {
         const msg = {
           [SOCKET_IPC_HANDSHAKE]: { subprocess: true, parent_pid: 12_345 },
         }
-        for (const handler of handlers['message'] ?? []) {
+        for (const handler of handlers.get('message') ?? []) {
           handler(msg)
         }
         const result = await promise
@@ -158,11 +161,14 @@ describe('sea/boot', () => {
     })
 
     it('ignores non-handshake messages', async () => {
-      const handlers: Record<string, Array<(m: unknown) => void>> = {}
+      const handlers = new Map<string, Array<(message: unknown) => void>>()
       const onSpy = vi
         .spyOn(process, 'on')
         .mockImplementation((event, handler) => {
-          ;(handlers[String(event)] ??= []).push(handler)
+          const eventName = String(event)
+          const eventHandlers = handlers.get(eventName) ?? []
+          eventHandlers.push(handler)
+          handlers.set(eventName, eventHandlers)
           return process
         })
       const offSpy = vi.spyOn(process, 'off').mockImplementation(() => process)
@@ -180,7 +186,7 @@ describe('sea/boot', () => {
         const promise = waitForBootstrapHandshake(50)
         await new Promise(resolve => setImmediate(resolve))
         // Send a few non-handshake messages to exercise early-returns.
-        for (const handler of handlers['message'] ?? []) {
+        for (const handler of handlers.get('message') ?? []) {
           handler(undefined)
           handler('string')
           handler({ unrelated: true })

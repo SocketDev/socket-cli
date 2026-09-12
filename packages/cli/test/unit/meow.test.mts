@@ -12,6 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { meow } from '../../src/meow.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -28,8 +29,6 @@ const mockReadPackageJsonSync = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/packages/read'), () => ({
   readPackageJsonSync: mockReadPackageJsonSync,
 }))
-
-import { meow } from '../../src/meow.mts'
 
 describe('meow', () => {
   beforeEach(() => {

@@ -21,7 +21,10 @@ const SCHEMA_URL =
 
 const noopRun: CliSubcommand['run'] = async () => {}
 
-const FIXTURE_COMMANDS: Readonly<Record<string, CliSubcommand>> = {
+const FIXTURE_COMMANDS: Readonly<{
+  frob: CliSubcommand
+  probe: CliSubcommand
+}> = {
   frob: { description: 'Frob one widget', run: noopRun },
   probe: { description: 'Probe the frobber', hidden: true, run: noopRun },
 }

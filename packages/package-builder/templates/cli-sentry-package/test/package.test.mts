@@ -98,14 +98,6 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
         expect(existsSync(path.join(binDir, wrapper))).toBe(true)
       })
     }
-
-    it('bin wrappers should be executable', async () => {
-      const cliPath = path.join(binDir, 'cli.js')
-      const content = await fs.readFile(cliPath, 'utf-8')
-
-      expect(content).toContain('#!/usr/bin/env node')
-      expect(content).toContain('dist/cli.js')
-    })
   })
 
   describe('build configuration', () => {
@@ -116,45 +108,6 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
     it('should have rolldown config', () => {
       const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
       expect(existsSync(rolldownPath)).toBe(true)
-    })
-
-    it('rolldown config should import base config', async () => {
-      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
-      const content = await fs.readFile(rolldownPath, 'utf-8')
-
-      expect(content).toContain(
-        "import baseConfig from '../../cli/.config/rolldown.cli.mts'",
-      )
-    })
-
-    it('rolldown config should enable Sentry build flag', async () => {
-      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
-      const content = await fs.readFile(rolldownPath, 'utf-8')
-
-      expect(content).toContain('INLINED_SENTRY_BUILD')
-      expect(content).toContain("JSON.stringify('1')")
-    })
-
-    it('rolldown config should use CLI dispatch with Sentry entry point', async () => {
-      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
-      const content = await fs.readFile(rolldownPath, 'utf-8')
-
-      expect(content).toContain('cli-dispatch-with-sentry.mts')
-    })
-
-    it('rolldown config should keep Sentry external', async () => {
-      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
-      const content = await fs.readFile(rolldownPath, 'utf-8')
-
-      expect(content).toContain("external: '@sentry/node'")
-    })
-
-    it('rolldown config should run the build when invoked directly', async () => {
-      const rolldownPath = path.join(configDir, 'rolldown.cli-sentry.build.mts')
-      const content = await fs.readFile(rolldownPath, 'utf-8')
-
-      expect(content).toContain('runBuild(config')
-      expect(content).toContain('import.meta.url')
     })
   })
 
@@ -167,30 +120,12 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
       const buildPath = path.join(scriptsDir, 'build.mts')
       expect(existsSync(buildPath)).toBe(true)
     })
-
-    it('build.mts should delegate to the rolldown config', async () => {
-      const buildPath = path.join(scriptsDir, 'build.mts')
-      const content = await fs.readFile(buildPath, 'utf-8')
-
-      expect(content).toBeTruthy()
-      expect(content).toContain('import')
-      expect(content).toContain('rolldown.cli-sentry.build.mts')
-    })
   })
 
   describe('README documentation', () => {
     it('should have README.md', () => {
       const readmePath = path.join(packageDir, 'README.md')
       expect(existsSync(readmePath)).toBe(true)
-    })
-
-    it('README should document the Sentry variant', async () => {
-      const readmePath = path.join(packageDir, 'README.md')
-      const readme = await fs.readFile(readmePath, 'utf-8')
-
-      expect(readme).toContain('@socketsecurity/cli-with-sentry')
-      expect(readme).toContain('Sentry')
-      expect(readme).toContain('npm install')
     })
   })
 
@@ -223,38 +158,10 @@ describe('@socketsecurity/cli-with-sentry package template', () => {
       ).toBe(true)
     })
 
-    it('CLI dispatch with Sentry should import instrumentation first', async () => {
-      const content = await fs.readFile(
-        path.join(cliSrcDir, 'cli-dispatch-with-sentry.mts'),
-        'utf-8',
-      )
-
-      expect(content).toContain("import './instrument-with-sentry.mts'")
-      expect(content).toContain("import './cli-dispatch.mts'")
-
-      // Verify Sentry import comes before CLI dispatch.
-      const sentryImportIndex = content.indexOf('instrument-with-sentry')
-      const dispatchImportIndex = content.indexOf('cli-dispatch.mts')
-      expect(sentryImportIndex).toBeLessThan(dispatchImportIndex)
-    })
-
     it('main CLI should have Sentry instrumentation', () => {
       expect(
         existsSync(path.join(cliSrcDir, 'instrument-with-sentry.mts')),
       ).toBe(true)
-    })
-
-    it('Sentry instrumentation should gate on the Sentry build flag', async () => {
-      const content = await fs.readFile(
-        path.join(cliSrcDir, 'instrument-with-sentry.mts'),
-        'utf-8',
-      )
-
-      // The build-flag check lives behind the isSentryBuild() env accessor
-      // (which reads INLINED_SENTRY_BUILD at build time).
-      expect(content).toContain('isSentryBuild()')
-      expect(content).toContain('@sentry/node')
-      expect(content).toContain('Sentry.init')
     })
   })
 

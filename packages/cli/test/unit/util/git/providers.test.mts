@@ -14,9 +14,10 @@
 
 import os from 'node:os'
 import path from 'node:path'
-
 import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { GitHubProvider } from '../../../../src/util/git/github-provider.mts'
+import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
 const mockGetOctokit = vi.hoisted(() => vi.fn())
 const mockGetOctokitGraphql = vi.hoisted(() => vi.fn())
@@ -72,9 +73,6 @@ vi.mock(import('@gitbeaker/rest'), () => ({
     }
   }),
 }))
-
-import { GitHubProvider } from '../../../../src/util/git/github-provider.mts'
-import { GitLabProvider } from '../../../../src/util/git/gitlab-provider.mts'
 
 describe('provider-factory', () => {
   beforeEach(() => {

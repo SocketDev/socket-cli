@@ -8,8 +8,8 @@
  */
 
 import { EventEmitter } from 'node:events'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { convertCondaToRequirements } from '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -25,8 +25,6 @@ vi.mock(import('node:fs'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import { convertCondaToRequirements } from '../../../../src/commands/manifest/convert-conda-to-requirements.mts'
 
 const ENV_YAML = `name: env
 channels:

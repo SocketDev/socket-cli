@@ -11,6 +11,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  cleanupErrorBranches,
+  cleanupFailedPrBranches,
+  cleanupStaleBranch,
+  cleanupSuccessfulPrLocalBranch,
+} from '../../../../src/commands/fix/branch-cleanup.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -31,13 +37,6 @@ vi.mock(import('../../../../src/util/git/operations.mjs'), () => ({
   gitDeleteBranch: mockGitDeleteBranch,
   gitDeleteRemoteBranch: mockGitDeleteRemoteBranch,
 }))
-
-import {
-  cleanupErrorBranches,
-  cleanupFailedPrBranches,
-  cleanupStaleBranch,
-  cleanupSuccessfulPrLocalBranch,
-} from '../../../../src/commands/fix/branch-cleanup.mts'
 
 describe('branch-cleanup', () => {
   const cwd = '/test/repo'

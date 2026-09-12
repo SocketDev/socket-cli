@@ -4,6 +4,14 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  cmdManifestBazel,
+  evaluateEcosystemOutcomes,
+} from '../../../../../src/commands/manifest/bazel/cmd-manifest-bazel.mts'
+import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
+import { extractBazelToPypi } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_pypi.mts'
+import type { EcosystemOutcome } from '../../../../../src/commands/manifest/bazel/cmd-manifest-bazel.mts'
+import type { CliCommandContext } from '../../../../../src/util/cli/with-subcommands.mjs'
 
 // Mock the logger so outcome messaging is capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -45,16 +53,6 @@ vi.mock(
     })),
   }),
 )
-
-import {
-  cmdManifestBazel,
-  evaluateEcosystemOutcomes,
-} from '../../../../../src/commands/manifest/bazel/cmd-manifest-bazel.mts'
-import { extractBazelToMaven } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_maven.mts'
-import { extractBazelToPypi } from '../../../../../src/commands/manifest/bazel/extract_bazel_to_pypi.mts'
-
-import type { EcosystemOutcome } from '../../../../../src/commands/manifest/bazel/cmd-manifest-bazel.mts'
-import type { CliCommandContext } from '../../../../../src/util/cli/with-subcommands.mjs'
 
 const importMeta = {
   url: 'file:///cmd-manifest-bazel.test.mts',

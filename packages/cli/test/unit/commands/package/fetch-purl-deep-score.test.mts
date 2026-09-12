@@ -8,6 +8,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fetchPurlDeepScore } from '../../../../src/commands/package/fetch-purl-deep-score.mts'
 
 const mockQueryApiSafeJson = vi.hoisted(() => vi.fn())
 const mockLogger = vi.hoisted(() => ({
@@ -20,8 +21,6 @@ vi.mock(import('../../../../src/util/socket/api.mts'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import { fetchPurlDeepScore } from '../../../../src/commands/package/fetch-purl-deep-score.mts'
 
 describe('fetchPurlDeepScore', () => {
   beforeEach(() => {

@@ -7,9 +7,12 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  parseBazelModPipExtensionCandidates,
+  parsePypiHubCandidates,
+} from '../../../../../src/commands/manifest/bazel/bazel-pypi-candidates.mts'
 
 // Mock the logger so verbose diagnostics are capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -25,11 +28,6 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import {
-  parseBazelModPipExtensionCandidates,
-  parsePypiHubCandidates,
-} from '../../../../../src/commands/manifest/bazel/bazel-pypi-candidates.mts'
 
 const testDir = path.dirname(fileURLToPath(import.meta.url))
 

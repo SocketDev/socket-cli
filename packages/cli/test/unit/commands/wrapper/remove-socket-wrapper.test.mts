@@ -14,6 +14,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { removeSocketWrapper } from '../../../../src/commands/wrapper/remove-socket-wrapper.mts'
 
 const mockReadFileSync = vi.hoisted(() => vi.fn())
 const mockWriteFileSync = vi.hoisted(() => vi.fn())
@@ -26,8 +27,6 @@ vi.mock(import('node:fs'), () => ({
     writeFileSync: mockWriteFileSync,
   },
 }))
-
-import { removeSocketWrapper } from '../../../../src/commands/wrapper/remove-socket-wrapper.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),

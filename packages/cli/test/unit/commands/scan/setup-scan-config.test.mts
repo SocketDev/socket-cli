@@ -5,6 +5,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  canceledByUser,
+  configureGithub,
+  configureScan,
+  notCanceled,
+  setupScanConfig,
+} from '../../../../src/commands/scan/setup-scan-config.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),
@@ -70,14 +77,6 @@ vi.mock(import('node:fs'), () => ({
     existsSync: mockExistsSync,
   },
 }))
-
-import {
-  canceledByUser,
-  configureGithub,
-  configureScan,
-  notCanceled,
-  setupScanConfig,
-} from '../../../../src/commands/scan/setup-scan-config.mts'
 
 describe('setup-scan-config', () => {
   beforeEach(() => {

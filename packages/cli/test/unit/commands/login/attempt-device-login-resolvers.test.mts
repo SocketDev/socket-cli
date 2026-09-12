@@ -7,6 +7,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  attemptDeviceLogin,
+  resolveOauthBaseUrl,
+  resolveOauthClientId,
+} from '../../../../src/commands/login/attempt-device-login.mts'
 
 const { mockHttpRequest } = vi.hoisted(() => ({
   mockHttpRequest: vi.fn(),
@@ -109,12 +114,6 @@ vi.mock(import('../../../../src/util/organization.mts'), () => ({
   getEnterpriseOrgs: mockGetEnterpriseOrgs,
   getOrgSlugs: mockGetOrgSlugs,
 }))
-
-import {
-  attemptDeviceLogin,
-  resolveOauthBaseUrl,
-  resolveOauthClientId,
-} from '../../../../src/commands/login/attempt-device-login.mts'
 
 const DEVICE_AUTH_BODY = {
   device_code: 'device-code-123',

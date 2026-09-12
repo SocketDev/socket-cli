@@ -10,6 +10,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  areBasicsToolsAvailable,
+  extractBasicsTools,
+  getBasicsToolPaths,
+} from '../../../../src/util/basics/vfs-extract.mts'
 
 const mockLogger = vi.hoisted(() => ({
   warn: vi.fn(),
@@ -35,12 +40,6 @@ vi.mock(import('../../../../src/util/sea/detect.mts'), () => ({
 vi.mock(import('../../../../src/constants/paths.mts'), () => ({
   UPDATE_STORE_DIR: '.socket/_dlx',
 }))
-
-import {
-  areBasicsToolsAvailable,
-  extractBasicsTools,
-  getBasicsToolPaths,
-} from '../../../../src/util/basics/vfs-extract.mts'
 
 const realProcessSmol = (process as unknown).smol
 

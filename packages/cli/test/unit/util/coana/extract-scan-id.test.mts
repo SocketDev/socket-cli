@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { extractTier1ReachabilityScanId } from '../../../../src/util/coana/extract-scan-id.mts'
 
 // Mock dependencies.
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
@@ -17,8 +18,6 @@ const mockReadJsonSync = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
-
-import { extractTier1ReachabilityScanId } from '../../../../src/util/coana/extract-scan-id.mts'
 
 describe('extract-scan-id', () => {
   beforeEach(() => {

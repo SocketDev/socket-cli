@@ -3,6 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { checkSocketWrapperSetup } from '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
 
 const mockReadFileSync = vi.hoisted(() => vi.fn())
 
@@ -12,8 +13,6 @@ vi.mock(import('node:fs'), () => ({
     readFileSync: mockReadFileSync,
   },
 }))
-
-import { checkSocketWrapperSetup } from '../../../../src/commands/wrapper/check-socket-wrapper-setup.mts'
 
 const mockLogger = vi.hoisted(() => ({
   fail: vi.fn(),

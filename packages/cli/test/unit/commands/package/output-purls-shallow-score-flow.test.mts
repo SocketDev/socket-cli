@@ -9,6 +9,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputPurlsShallowScore } from '../../../../src/commands/package/output-purls-shallow-score.mts'
 
 const mockLogger = vi.hoisted(() => ({
   log: vi.fn(),
@@ -19,12 +20,9 @@ vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
 
-import { outputPurlsShallowScore } from '../../../../src/commands/package/output-purls-shallow-score.mts'
-
 const sampleArtifact = {
-  type: 'npm',
+  alerts: [],
   name: 'lodash',
-  version: '4.17.21',
   score: {
     supplyChain: 0.9,
     maintenance: 0.85,
@@ -32,7 +30,8 @@ const sampleArtifact = {
     vulnerability: 0.8,
     license: 0.99,
   },
-  alerts: [],
+  type: 'npm',
+  version: '4.17.21',
 } as unknown
 
 describe('outputPurlsShallowScore', () => {

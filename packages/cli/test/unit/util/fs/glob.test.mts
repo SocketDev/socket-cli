@@ -11,8 +11,14 @@
  */
 
 import path from 'node:path'
-
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  createSupportedFilesFilter,
+  getSupportedFilePatterns,
+  isReportSupportedFile,
+  pathsToGlobPatterns,
+} from '../../../../src/util/fs/glob.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock homePath.
 vi.mock(import('../../../../src/constants/paths.mts'), async importOriginal => {
@@ -31,15 +37,6 @@ vi.mock(import('@socketsecurity/lib-stable/fs/inspect'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
   safeReadFile: vi.fn(),
 }))
-
-import {
-  createSupportedFilesFilter,
-  getSupportedFilePatterns,
-  isReportSupportedFile,
-  pathsToGlobPatterns,
-} from '../../../../src/util/fs/glob.mts'
-
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock supported files data.
 const mockSupportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'] =

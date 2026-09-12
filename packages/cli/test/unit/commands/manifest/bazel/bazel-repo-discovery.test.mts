@@ -4,6 +4,19 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  classifyProbeResult,
+  classifyShowExtensionResult,
+  CONVENTIONAL_MAVEN_REPO_NAMES,
+  parseShowExtensionOutput,
+  probeCandidate,
+} from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
+import type {
+  ProbeResult,
+  ProbeStatus,
+  RepoProbe,
+  ShowExtensionStatus,
+} from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
 
 // Mock the logger so verbose diagnostics are capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({
@@ -19,21 +32,6 @@ const mockLogger = vi.hoisted(() => ({
 vi.mock(import('@socketsecurity/lib-stable/logger/default'), () => ({
   getDefaultLogger: () => mockLogger,
 }))
-
-import {
-  classifyProbeResult,
-  classifyShowExtensionResult,
-  CONVENTIONAL_MAVEN_REPO_NAMES,
-  parseShowExtensionOutput,
-  probeCandidate,
-} from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
-
-import type {
-  ProbeResult,
-  ProbeStatus,
-  RepoProbe,
-  ShowExtensionStatus,
-} from '../../../../../src/commands/manifest/bazel/bazel-repo-discovery.mts'
 
 // Truncated text-format report Bazel 8.4.2 emits on tink-java for
 // `bazel mod show_extension @rules_jvm_external//:extensions.bzl%maven`.

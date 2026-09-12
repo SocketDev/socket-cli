@@ -15,6 +15,13 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  resolveBazelAutoEcosystems,
+  resolveBazelAutoSettings,
+  runBazelAutoManifest,
+} from '../../../../src/commands/manifest/auto-manifest-bazel.mts'
+import { InputError } from '../../../../src/util/error/errors-types.mts'
+import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 const mockExtractBazelToMaven = vi.hoisted(() => vi.fn())
 const mockExtractBazelToPypi = vi.hoisted(() => vi.fn())
@@ -47,15 +54,6 @@ vi.mock(
     outputManifest: mockOutputManifest,
   }),
 )
-
-import {
-  resolveBazelAutoEcosystems,
-  resolveBazelAutoSettings,
-  runBazelAutoManifest,
-} from '../../../../src/commands/manifest/auto-manifest-bazel.mts'
-import { InputError } from '../../../../src/util/error/errors-types.mts'
-
-import type { SocketJson } from '../../../../src/util/socket/json.mts'
 
 function socketJsonWithBazel(
   bazel: Record<string, unknown>,

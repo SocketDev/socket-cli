@@ -21,6 +21,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from '../../../../src/commands/fix/env-helpers.mts'
+import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 // Mock @socketsecurity/lib/env/ci.
 const mockGetCI = vi.hoisted(() => vi.fn())
@@ -100,14 +106,6 @@ vi.mock(import('@socketsecurity/lib-stable/debug/output'), () => ({
 vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
 }))
-
-import {
-  checkCiEnvVars,
-  getCiEnvInstructions,
-  getFixEnv,
-} from '../../../../src/commands/fix/env-helpers.mts'
-
-import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 describe('env-helpers', () => {
   beforeEach(() => {

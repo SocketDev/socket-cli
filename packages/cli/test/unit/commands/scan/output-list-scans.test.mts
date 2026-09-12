@@ -15,6 +15,9 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { outputListScans } from '../../../../src/commands/scan/output-list-scans.mts'
+import type { CResult } from '../../../../src/types.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Mock the logger.
 const mockLogger = vi.hoisted(() => ({
@@ -52,11 +55,6 @@ const mockChalkTable = vi.hoisted(() => vi.fn(() => 'mocked-table-output'))
 vi.mock(import('chalk-table'), () => ({
   default: mockChalkTable,
 }))
-
-import { outputListScans } from '../../../../src/commands/scan/output-list-scans.mts'
-
-import type { CResult } from '../../../../src/types.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
 // Helper to create error result.
 export function createErrorResult(

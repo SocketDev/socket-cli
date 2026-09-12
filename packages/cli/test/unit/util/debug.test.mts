@@ -14,6 +14,18 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  debug,
+  debugDir,
+  debugNs,
+} from '@socketsecurity/lib-stable/debug/output'
+import {
+  debugApiRequest,
+  debugApiResponse,
+  debugConfig,
+  debugFileOp,
+  debugGit,
+} from '../../../src/util/debug.mts'
 
 // Mock the registry debug functions.
 const mockDebug = vi.hoisted(() => vi.fn())
@@ -35,20 +47,6 @@ vi.mock(import('@socketsecurity/lib-stable/debug/namespace'), () => ({
   isDebug: mockIsDebug,
   isDebugNs: mockIsDebugNs,
 }))
-
-import {
-  debug,
-  debugDir,
-  debugNs,
-} from '@socketsecurity/lib-stable/debug/output'
-
-import {
-  debugApiRequest,
-  debugApiResponse,
-  debugConfig,
-  debugFileOp,
-  debugGit,
-} from '../../../src/util/debug.mts'
 
 describe('debug utilities', () => {
   beforeEach(() => {

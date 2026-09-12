@@ -12,8 +12,12 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import type * as NodeFs from 'node:fs'
+import {
+  downloadPython,
+  ensurePython,
+  ensurePythonDlx,
+} from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockDownloadBinary = vi.hoisted(() => vi.fn())
@@ -111,12 +115,6 @@ vi.mock(import('../../../../src/env/python-build-tag.mts'), () => ({
 vi.mock(import('../../../../src/env/python-checksums.mts'), () => ({
   requirePythonChecksum: mockRequirePythonChecksum,
 }))
-
-import {
-  downloadPython,
-  ensurePython,
-  ensurePythonDlx,
-} from '../../../../src/util/dlx/spawn-pycli.mts'
 
 const realSetTimeout = globalThis.setTimeout
 function stubFastTimers() {

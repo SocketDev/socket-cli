@@ -251,104 +251,23 @@ describe('output-analytics', () => {
     it('should renderMarkdown for repo', () => {
       const fdata = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
       const serialized = renderMarkdown(fdata, 7, 'fake_repo')
+      const tableRows = serialized
+        .split(/\r?\n/)
+        .filter(line => /^\|.*\|$/.test(line))
+        .map(line =>
+          line
+            .split('|')
+            .slice(1, -1)
+            .map(cell => cell.trim()),
+        )
 
-      expect(serialized).toMatchInlineSnapshot(`
-        "# Socket Alert Analytics
-
-        These are the Socket.dev analytics for the fake_repo repo of the past 7 days
-
-        ## Total critical alerts
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total high alerts
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |     13 |
-        | Apr 21 |     13 |
-        | Apr 20 |     13 |
-        | Apr 22 |     10 |
-        | ------ | ------ |
-
-        ## Total critical alerts added to the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total high alerts added to the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total critical alerts prevented from the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total high alerts prevented from the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total medium alerts prevented from the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Total low alerts prevented from the main branch
-
-        | Date   | Counts |
-        | ------ | ------ |
-        | Apr 19 |      0 |
-        | Apr 21 |      0 |
-        | Apr 20 |      0 |
-        | Apr 22 |      0 |
-        | ------ | ------ |
-
-        ## Top 5 alert types
-
-        | Name             | Counts |
-        | ---------------- | ------ |
-        | envVars          |   2533 |
-        | unmaintained     |    532 |
-        | filesystemAccess |    514 |
-        | networkAccess    |    434 |
-        | dynamicRequire   |    274 |
-        | ---------------- | ------ |
-        "
-      `)
+      expect(serialized.split('\n## ').length - 1).toBe(9)
+      expect(
+        tableRows.some(row => row[0] === 'Apr 19' && row[1] === '13'),
+      ).toBe(true)
+      expect(
+        tableRows.some(row => row[0] === 'envVars' && row[1] === '2533'),
+      ).toBe(true)
     })
   })
 

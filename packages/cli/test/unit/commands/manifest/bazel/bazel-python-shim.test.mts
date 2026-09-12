@@ -5,20 +5,17 @@
 import { existsSync, readlinkSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
-  whichReal: vi.fn(),
-}))
-
 import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
-
 import {
   provisionPythonShim,
   resetPythonShimCacheForTests,
 } from '../../../../../src/commands/manifest/bazel/bazel-python-shim.mts'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+
+vi.mock(import('@socketsecurity/lib-stable/exe/path/which'), () => ({
+  whichReal: vi.fn(),
+}))
 
 describe('provisionPythonShim', () => {
   const mocked = vi.mocked(whichReal)

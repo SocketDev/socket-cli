@@ -10,6 +10,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { suggestOrgSlug } from '../../../../src/commands/scan/suggest-org-slug.mts'
 
 // Mock logger.
 const mockLogger = vi.hoisted(() => ({
@@ -37,8 +38,6 @@ vi.mock(
     fetchOrganization: mockFetchOrganization,
   }),
 )
-
-import { suggestOrgSlug } from '../../../../src/commands/scan/suggest-org-slug.mts'
 
 describe('suggest-org-slug', () => {
   beforeEach(() => {

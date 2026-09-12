@@ -12,6 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { generateAutoManifest } from '../../../../src/commands/manifest/generate_auto_manifest.mts'
 
 const mockConvertSbtToMaven = vi.hoisted(() => vi.fn().mockResolvedValue({}))
 const mockConvertGradleToMaven = vi.hoisted(() => vi.fn().mockResolvedValue({}))
@@ -63,8 +64,6 @@ vi.mock(
 vi.mock(import('../../../../src/util/socket/json.mts'), () => ({
   readOrDefaultSocketJson: mockReadOrDefaultSocketJson,
 }))
-
-import { generateAutoManifest } from '../../../../src/commands/manifest/generate_auto_manifest.mts'
 
 const baseDetected = {
   conda: false,

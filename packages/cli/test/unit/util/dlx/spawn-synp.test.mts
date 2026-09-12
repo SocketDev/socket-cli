@@ -7,6 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { spawnSynpDlx } from '../../../../src/util/dlx/spawn-synp.mts'
 
 const mockSpawnDlx = vi.hoisted(() => vi.fn())
 const mockGetSynpVersion = vi.hoisted(() => vi.fn(() => '1.9.0'))
@@ -18,8 +19,6 @@ vi.mock(import('../../../../src/util/dlx/spawn.mts'), () => ({
 vi.mock(import('../../../../src/env/synp-version.mts'), () => ({
   getSynpVersion: mockGetSynpVersion,
 }))
-
-import { spawnSynpDlx } from '../../../../src/util/dlx/spawn-synp.mts'
 
 describe('spawnSynpDlx', () => {
   beforeEach(() => {

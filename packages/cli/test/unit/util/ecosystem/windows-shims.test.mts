@@ -6,6 +6,10 @@
  */
 
 import { describe, expect, it, vi } from 'vitest'
+import {
+  preferWindowsCmdShim,
+  resolveBinPathSync,
+} from '../../../../src/util/ecosystem/windows-shims.mts'
 
 const mockExistsSync = vi.hoisted(() => vi.fn())
 const mockReadFileSync = vi.hoisted(() => vi.fn())
@@ -29,11 +33,6 @@ const mockWin32 = vi.hoisted(() => ({ WIN32: false }))
 vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
   isWin32: () => mockWin32.WIN32,
 }))
-
-import {
-  preferWindowsCmdShim,
-  resolveBinPathSync,
-} from '../../../../src/util/ecosystem/windows-shims.mts'
 
 describe('windows-shims', () => {
   describe('resolveBinPathSync', () => {
