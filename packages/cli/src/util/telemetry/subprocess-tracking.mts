@@ -34,10 +34,12 @@ export async function trackSubprocessComplete(
   debug(`Tracking subprocess complete: ${command}`)
 
   await trackEvent('subprocess_complete', buildContext(process.argv), {
-    command,
-    duration: calculateDuration(startTime),
-    exit_code: normalizeExitCode(exitCode, 0),
-    ...metadata,
+    metadata: {
+      command,
+      duration: calculateDuration(startTime),
+      exit_code: normalizeExitCode(exitCode, 0),
+      ...metadata,
+    },
   })
 }
 
@@ -61,19 +63,15 @@ export async function trackSubprocessError(
 ): Promise<void> {
   debug(`Tracking subprocess error: ${command}`)
 
-  await trackEvent(
-    'subprocess_error',
-    buildContext(process.argv),
-    {
+  await trackEvent('subprocess_error', buildContext(process.argv), {
+    metadata: {
       command,
       duration: calculateDuration(startTime),
       exit_code: normalizeExitCode(exitCode, 1),
       ...metadata,
     },
-    {
-      error: normalizeError(error),
-    },
-  )
+    error: normalizeError(error),
+  })
 }
 
 /**
@@ -131,8 +129,10 @@ export async function trackSubprocessStart(
   const startTime = Date.now()
 
   await trackEvent('subprocess_start', buildContext(process.argv), {
-    command,
-    ...metadata,
+    metadata: {
+      command,
+      ...metadata,
+    },
   })
 
   return startTime
