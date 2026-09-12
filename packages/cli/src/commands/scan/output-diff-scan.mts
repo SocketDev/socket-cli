@@ -64,67 +64,11 @@ export async function handleMarkdown(
   logger.log('')
   logger.log(mdHeader('Changes', 2))
   logger.log('')
-  logger.log(`- Added packages: ${diffScan.artifacts.added.length}`)
-
-  if (diffScan.artifacts.added.length > 0) {
-    const addedHead = diffScan.artifacts.added.slice(0, 10)
-    for (let i = 0, { length } = addedHead; i < length; i += 1) {
-      const artifact = addedHead[i]!
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    }
-    if (diffScan.artifacts.added.length > 10) {
-      logger.log(`  … and ${diffScan.artifacts.added.length - 10} more`)
-    }
-  }
-
-  logger.log(`- Removed packages: ${diffScan.artifacts.removed.length}`)
-  if (diffScan.artifacts.removed.length > 0) {
-    const removedHead = diffScan.artifacts.removed.slice(0, 10)
-    for (let i = 0, { length } = removedHead; i < length; i += 1) {
-      const artifact = removedHead[i]!
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    }
-    if (diffScan.artifacts.removed.length > 10) {
-      logger.log(`  … and ${diffScan.artifacts.removed.length - 10} more`)
-    }
-  }
-
-  logger.log(`- Replaced packages: ${diffScan.artifacts.replaced.length}`)
-  if (diffScan.artifacts.replaced.length > 0) {
-    const replacedHead = diffScan.artifacts.replaced.slice(0, 10)
-    for (let i = 0, { length } = replacedHead; i < length; i += 1) {
-      const artifact = replacedHead[i]!
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    }
-    if (diffScan.artifacts.replaced.length > 10) {
-      logger.log(`  … and ${diffScan.artifacts.replaced.length - 10} more`)
-    }
-  }
-
-  logger.log(`- Updated packages: ${diffScan.artifacts.updated.length}`)
-  if (diffScan.artifacts.updated.length > 0) {
-    const updatedHead = diffScan.artifacts.updated.slice(0, 10)
-    for (let i = 0, { length } = updatedHead; i < length; i += 1) {
-      const artifact = updatedHead[i]!
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    }
-    if (diffScan.artifacts.updated.length > 10) {
-      logger.log(`  … and ${diffScan.artifacts.updated.length - 10} more`)
-    }
-  }
-
-  const unchanged = diffScan.artifacts.unchanged ?? []
-  logger.log(`- Unchanged packages: ${unchanged.length}`)
-  if (unchanged.length > 0) {
-    const firstUpToTen = unchanged.slice(0, 10)
-    for (let i = 0, { length } = firstUpToTen; i < length; i += 1) {
-      const artifact = firstUpToTen[i]!
-      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    }
-    if (unchanged.length > 10) {
-      logger.log(`  … and ${unchanged.length - 10} more`)
-    }
-  }
+  outputDiffArtifactSummary('Added', diffScan.artifacts.added)
+  outputDiffArtifactSummary('Removed', diffScan.artifacts.removed)
+  outputDiffArtifactSummary('Replaced', diffScan.artifacts.replaced)
+  outputDiffArtifactSummary('Updated', diffScan.artifacts.updated)
+  outputDiffArtifactSummary('Unchanged', diffScan.artifacts.unchanged ?? [])
 
   logger.log('')
   logger.log(`## Scan ${beforeScan.id}`)
@@ -133,36 +77,33 @@ export async function handleMarkdown(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(beforeScan)) {
-    if (key === 'pull_request' && !value) {
-      continue
-    }
-    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
-      )
-      logger.groupEnd()
-    }
-  }
+  outputDiffScanMetadata(beforeScan)
 
   logger.log('')
   logger.log(`## Scan ${afterScan.id}`)
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
-  for (const { 0: key, 1: value } of Object.entries(afterScan)) {
-    if (key === 'pull_request' && !value) {
-      continue
-    }
-    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
-      logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
-      )
-      logger.groupEnd()
-    }
-  }
+  outputDiffScanMetadata(afterScan)
 
   logger.log('')
+}
+
+export function outputDiffArtifactSummary(
+  label: string,
+  artifacts: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['artifacts']['added'],
+): void {
+  logger.log(`- ${label} packages: ${artifacts.length}`)
+  if (artifacts.length > 0) {
+    const head = artifacts.slice(0, 10)
+    for (let index = 0, { length } = head; index < length; index += 1) {
+      const artifact = head[index]!
+      logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
+    }
+    if (artifacts.length > 10) {
+      logger.log(`  … and ${artifacts.length - 10} more`)
+    }
+  }
 }
 
 export async function outputDiffScan(
@@ -222,8 +163,24 @@ export async function outputDiffScan(
   )
   logger.error('')
   logger.info(
-    ' 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.',
+    ' To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.',
   )
   logger.error('')
   logger.info(dashboardMessage)
+}
+
+export function outputDiffScanMetadata(
+  scan: SocketSdkSuccessResult<'getDiffScanById'>['data']['diff_scan']['before_full_scan'],
+): void {
+  for (const { 0: key, 1: value } of Object.entries(scan)) {
+    if (key === 'pull_request' && !value) {
+      continue
+    }
+    if (!['id', 'organization_id', 'repository_id'].includes(key)) {
+      logger.group(
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${String(value)}`,
+      )
+      logger.groupEnd()
+    }
+  }
 }

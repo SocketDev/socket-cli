@@ -85,6 +85,12 @@ export async function configureGithub(
     /* c8 ignore stop */
   }
 
+  return configureGithubEndpoint(config)
+}
+
+export async function configureGithubEndpoint(
+  config: Parameters<typeof configureGithub>[0],
+): Promise<CResult<{ canceled: boolean }>> {
   const defaultGithubApiUrl = await input({
     message:
       '(--github-api-url) Do you want to override the default github url?',
@@ -183,6 +189,12 @@ export async function configureScan(
     delete config.branch
   }
 
+  return configureScanReporting(config)
+}
+
+export async function configureScanReporting(
+  config: Parameters<typeof configureScan>[0],
+): Promise<CResult<{ canceled: boolean }>> {
   const autoManifest = await select({
     message:
       '(--auto-manifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',

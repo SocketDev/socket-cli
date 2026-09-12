@@ -55,6 +55,7 @@ export function flattenReportAlerts(report: ScanReport): ReportAlertRow[] {
     ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {
       const { manifest, policy, type, url } = value
       return {
+        __proto__: null,
         alertType: type,
         introducedBy: keys[2] || '<unknown>',
         manifest: joinAnd(manifest),
@@ -113,6 +114,56 @@ export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
   return pairs.map(
     ([label, value]) => `  ${`${label}:`.padEnd(width + 1)}  ${value}`,
   )
+}
+
+export async function outputGeneratedScanReport(
+  scanReport: Extract<ReturnType<typeof generateReport>, { ok: true }>,
+  config: Pick<
+    OutputScanReportConfig,
+    'filepath' | 'includeLicensePolicy' | 'outputKind' | 'short'
+  >,
+): Promise<void> {
+  const { filepath, includeLicensePolicy, outputKind, short } = config
+  if (shouldOutputScanJson(outputKind, filepath)) {
+    const json = short
+      ? serializeResultJson(scanReport)
+      : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
+
+    if (filepath && filepath !== '-') {
+      logger.error('Writing json report to', filepath)
+      return await fs.writeFile(filepath, json)
+    }
+
+    logger.log(json)
+    return
+  }
+
+  if (outputKind === 'markdown' || filepath?.endsWith('.md')) {
+    const md = short
+      ? `healthy = ${scanReport.data.healthy}`
+      : toMarkdownReport(
+          // Not short so must be a regular report.
+          scanReport.data as ScanReport,
+          includeLicensePolicy,
+        )
+
+    if (filepath && filepath !== '-') {
+      logger.error('Writing markdown report to', filepath)
+      return await fs.writeFile(filepath, md)
+    }
+
+    logger.log(md)
+    logger.log('')
+    return
+  }
+
+  if (short) {
+    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
+  } else {
+    logger.log(
+      toPlainTextReport(scanReport.data as ScanReport, includeLicensePolicy),
+    )
+  }
 }
 
 export async function outputScanReport(
@@ -176,55 +227,22 @@ export async function outputScanReport(
     process.exitCode = 1
   }
 
-  // I don't think we emit the default error message with banner for an unhealthy report, do we?
-  // if (!scanReport.data.healthy) {
-  //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
-  //   return
-  // }
+  return outputGeneratedScanReport(scanReport, {
+    filepath,
+    includeLicensePolicy,
+    outputKind,
+    short,
+  })
+}
 
-  if (
+export function shouldOutputScanJson(
+  outputKind: OutputScanReportConfig['outputKind'],
+  filepath: OutputScanReportConfig['filepath'],
+): boolean {
+  return (
     outputKind === OUTPUT_JSON ||
-    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith('.json'))
-  ) {
-    const json = short
-      ? serializeResultJson(scanReport)
-      : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
-
-    if (filepath && filepath !== '-') {
-      logger.error('Writing json report to', filepath)
-      return await fs.writeFile(filepath, json)
-    }
-
-    logger.log(json)
-    return
-  }
-
-  if (outputKind === 'markdown' || filepath?.endsWith('.md')) {
-    const md = short
-      ? `healthy = ${scanReport.data.healthy}`
-      : toMarkdownReport(
-          // Not short so must be a regular report.
-          scanReport.data as ScanReport,
-          includeLicensePolicy,
-        )
-
-    if (filepath && filepath !== '-') {
-      logger.error('Writing markdown report to', filepath)
-      return await fs.writeFile(filepath, md)
-    }
-
-    logger.log(md)
-    logger.log('')
-    return
-  }
-
-  if (short) {
-    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
-  } else {
-    logger.log(
-      toPlainTextReport(scanReport.data as ScanReport, includeLicensePolicy),
-    )
-  }
+    (outputKind === OUTPUT_TEXT && !!filepath && filepath.endsWith('.json'))
+  )
 }
 
 // Collapsing into an options object would change call sites in
@@ -265,6 +283,7 @@ export function toMarkdownReport(
       : `up to ${report.options.fold}`
 
   const flatData = flattenReportAlerts(report).map(row => ({
+    __proto__: null,
     'Alert Type': row.alertType,
     Package: row.packageName,
     'Introduced by': row.introducedBy,
