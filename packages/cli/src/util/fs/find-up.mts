@@ -51,16 +51,9 @@ export async function findUp(
         return undefined
       }
       const thePath = path.join(dir, candidateName)
-      try {
-        // oxlint-disable-next-line socket/prefer-exists-sync -- reads .isFile() / .isDirectory() metadata to distinguish file vs dir matches.
-        const stats = await fs.stat(thePath)
-        if (!onlyDirectories && stats.isFile()) {
-          return thePath
-        }
-        if (!onlyFiles && stats.isDirectory()) {
-          return thePath
-        }
-      } catch {}
+      if (await matchesFindUpEntry(thePath, { onlyDirectories, onlyFiles })) {
+        return thePath
+      }
     }
     if (dir === root) {
       break
@@ -68,4 +61,24 @@ export async function findUp(
     dir = path.dirname(dir)
   } while (dir)
   return undefined
+}
+
+export async function matchesFindUpEntry(
+  candidatePath: string,
+  options?:
+    | { onlyDirectories?: boolean | undefined; onlyFiles?: boolean | undefined }
+    | undefined,
+): Promise<boolean> {
+  const opts = { __proto__: null, ...options } as typeof options
+  try {
+    // oxlint-disable-next-line socket/prefer-exists-sync -- stat type.
+    const stats = await fs.stat(candidatePath)
+    if (!opts.onlyDirectories && stats.isFile()) {
+      return true
+    }
+    if (!opts.onlyFiles && stats.isDirectory()) {
+      return true
+    }
+  } catch {}
+  return false
 }
