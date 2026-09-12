@@ -26,6 +26,7 @@
     "clean:cache": "node scripts/repo/clean-cache.mts",
     "clean:cache:all": "node scripts/repo/clean-cache.mts --all",
     "cover": "node scripts/fleet/cover.mts",
+    "cover:allowance": "node scripts/fleet/cover-allowance.mts",
     "cover:all": "pnpm --filter @socketsecurity/cli run cover",
     "dev": "pnpm run build:watch",
     "doctor": "node scripts/fleet/doctor.mts",

@@ -185,5 +185,21 @@
       ],
       "slow": ["packages/cli/test/integration/**"]
     }
+  },
+  "cover": {
+    "budgetAllowances": {
+      "slow": {
+        "maxMs": 168348,
+        "reason": "Instrumented CLI integration processes exceed the 60-second slow-lane target.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      },
+      "fast": {
+        "maxMs": 10049,
+        "reason": "Measured 9570.211 ms at 98da3281fd6ae67f1e1e55aeeb88525957e1c85b; 5% headroom; darwin/arm64, Node v24.10.0.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      }
+    }
   }
 }
