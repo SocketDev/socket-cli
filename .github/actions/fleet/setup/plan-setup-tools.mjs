@@ -59,6 +59,7 @@
 // oxlint-disable-next-line socket/prefer-async-spawn -- sync jq probe
 import { spawnSync } from 'node:child_process'
 import { realpathSync } from 'node:fs'
+import os from 'node:os'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
@@ -91,6 +92,28 @@ export function selectSfwFlavor(socketApiToken) {
   return socketApiToken
     ? { flavor: 'enterprise', repo: 'SocketDev/firewall-release' }
     : { flavor: 'free', repo: 'SocketDev/sfw-free' }
+}
+
+export function resolveSfwPlatform({
+  platformKey,
+  windowsRelease,
+  nativeAvailable,
+}) {
+  if (nativeAvailable || platformKey !== 'win32-arm64') {
+    return platformKey
+  }
+  // Read the Windows major, minor, and build components before any revision suffix.
+  const version = /^(\d+)\.(\d+)\.(\d+)(?:\.|$)/.exec(windowsRelease)
+  if (
+    version &&
+    (Number(version[1]) > 10 ||
+      (Number(version[1]) === 10 && Number(version[3]) >= 22_000))
+  ) {
+    return 'win32-x64'
+  }
+  throw new Error(
+    `SFW has no native ${platformKey} asset and Windows ${windowsRelease} does not support the required Windows 11 x64 emulation. Use a Windows 11 ARM64 runner.`,
+  )
 }
 
 /**
@@ -294,6 +317,23 @@ function main() {
         toolsFile: env('TOOLS_FILE'),
       })
       printLines([s.ns, s.shape, s.flavor, s.repo, s.versionPath, s.entryPath])
+      return 0
+    }
+    case 'sfw-platform': {
+      const platformKey = env('PLATFORM_KEY')
+      const entry = [env('NS'), ...env('SFW_PATH').split(' ')].filter(Boolean)
+      printLines([
+        resolveSfwPlatform({
+          platformKey,
+          windowsRelease: os.release(),
+          nativeAvailable: defaultProbe(env('TOOLS_FILE'), [
+            ...entry,
+            'platforms',
+            platformKey,
+            'asset',
+          ]),
+        }),
+      ])
       return 0
     }
     case 'fallback-sfw': {

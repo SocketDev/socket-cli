@@ -36,6 +36,8 @@ description: 'Restore the pnpm content-addressable store to skip cold downloads 
 #   - Key includes `hashFiles('**/pnpm-lock.yaml')` — a lockfile change (new
 #     or bumped dep) produces a fresh key; the previous store restores via
 #     restore-keys so only the delta downloads.
+#   - Explicit pnpm Cargo/Python ownership adds first-party native manifest and
+#     lockfile bytes through the shared ecosystem fingerprint.
 #   - Keyed per `runner.os` (store layout differs by platform) and per Node
 #     major (some packages ship prebuilt binaries per ABI).
 #   - `cache-version` (v1) is a manual global bust knob.

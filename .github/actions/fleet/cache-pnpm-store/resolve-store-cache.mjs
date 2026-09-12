@@ -46,6 +46,7 @@
  *     resolve-store-cache.mjs
  */
 
+import { pnpmEcosystemFingerprint } from './ecosystems.mjs'
 import { appendFileSync, realpathSync } from 'node:fs'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -158,6 +159,8 @@ export function runResolve({
   env = process.env,
   log = console.log,
   nodeVersion = process.versions.node,
+  root = process.cwd(),
+  ecosystemConfig,
 } = {}) {
   const settings = readStoreCacheEnv(env)
   const { fallback, storePath } = resolveStorePath({
@@ -170,10 +173,15 @@ export function runResolve({
     log(`ⓘ pnpm store path query failed; using default ${storePath}`)
   }
   const nodeMajor = nodeMajorForKey(nodeVersion)
+  const ecosystemHash = pnpmEcosystemFingerprint(root, {
+    config: ecosystemConfig,
+  })
   const cacheKey = composeCacheKey({
     cacheVersion: settings.cacheVersion,
     keyPrefix: settings.keyPrefix,
-    lockfileHash: settings.lockfileHash,
+    lockfileHash: ecosystemHash
+      ? `${settings.lockfileHash}-${ecosystemHash}`
+      : settings.lockfileHash,
     nodeMajor,
     runnerOs: settings.runnerOs,
   })

@@ -1,0 +1,42 @@
+diff --git a/dist/chunks/index.B89dZ0-N.js b/dist/chunks/index.B89dZ0-N.js
+index 50abf4fbed1dc8670b7941ee466a7c8443840c5f..052e1a468c25bbc7bf59d13491c7b2fb20c0eb81 100644
+--- a/dist/chunks/index.B89dZ0-N.js
++++ b/dist/chunks/index.B89dZ0-N.js
+@@ -11001,6 +11001,7 @@ class ForksPoolWorker {
+ 	entrypoint;
+ 	execArgv;
+ 	env;
++	sigkillTimeout;
+ 	_fork;
+ 	stdout;
+ 	stderr;
+@@ -11009,6 +11010,8 @@ class ForksPoolWorker {
+ 	constructor(options) {
+ 		this.execArgv = options.execArgv;
+ 		this.env = options.env;
++		const teardownTimeout = options.project.config.teardownTimeout;
++		this.sigkillTimeout = this.execArgv.includes("--cpu-prof") && Number.isFinite(teardownTimeout) && teardownTimeout > 0 && teardownTimeout <= 2147483647 ? teardownTimeout : SIGKILL_TIMEOUT;
+ 		this.stdout = options.project.vitest.logger.outputStream;
+ 		this.stderr = options.project.vitest.logger.errorStream;
+ 		/** Loads {@link file://./../../../runtime/workers/forks.ts} */
+@@ -11056,7 +11059,7 @@ class ForksPoolWorker {
+ 		* - https://github.com/jestjs/jest/blob/25a8785584c9d54a05887001ee7f498d489a5441/packages/jest-worker/src/workers/ChildProcessWorker.ts#L463-L477
+ 		* - https://github.com/tinylibs/tinypool/blob/40b4b3eb926dabfbfd3d0a7e3d1222d4dd1c0d2d/src/runtime/process-worker.ts#L56
+ 		*/
+-		const sigkillTimeout = setTimeout(() => fork.kill("SIGKILL"), SIGKILL_TIMEOUT);
++		const sigkillTimeout = setTimeout(() => fork.kill("SIGKILL"), this.sigkillTimeout);
+ 		fork.kill();
+ 		await waitForExit;
+ 		clearTimeout(sigkillTimeout);
+@@ -14942,10 +14945,7 @@ Update your dependencies and make sure the versions match.`));
+ 			const include = this.options.include;
+ 			this.globMatchers = {
+ 				matchExclude: exclude.length ? pm(exclude, { dot: true }) : () => false,
+-				matchInclude: include ? pm(include, {
+-					dot: true,
+-					ignore: exclude
+-				}) : () => true
++				matchInclude: include ? pm(include, { dot: true }) : () => true
+ 			};
+ 		}
+ 		return this.globMatchers;
