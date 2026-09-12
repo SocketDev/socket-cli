@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { strictDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { checkCiEnvVars, getCiEnvInstructions } from './env-helpers.mts'
@@ -14,6 +14,68 @@ import type { GhsaFixResult } from './coana-fix-ci.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
+
+export function buildLocalCoanaArgs(
+  fixConfig: FixConfig,
+  context: {
+    coanaExcludePatterns: string[]
+    coanaSilenceArgs: string[]
+    idsToProcess: string[]
+    tarHash: string
+    tmpFile: string
+  },
+): string[] {
+  const {
+    applyFixes,
+    cwd,
+    debug,
+    disableExternalToolChecks,
+    disableMajorUpdates,
+    ecosystems,
+    include,
+    minimumReleaseAge,
+    packageManagers,
+    rangeStyle,
+    showAffectedDirectDependencies,
+    unknownFlags,
+  } = fixConfig
+  const {
+    coanaExcludePatterns,
+    coanaSilenceArgs,
+    idsToProcess,
+    tarHash,
+    tmpFile,
+  } = context
+  return [
+    ...coanaSilenceArgs,
+    'compute-fixes-and-upgrade-purls',
+    cwd,
+    '--manifests-tar-hash',
+    tarHash,
+    '--apply-fixes-to',
+    ...idsToProcess,
+    ...(rangeStyle ? ['--range-style', rangeStyle] : []),
+    ...(minimumReleaseAge ? ['--minimum-release-age', minimumReleaseAge] : []),
+    ...(include.length ? ['--include', ...include] : []),
+    ...(coanaExcludePatterns.length
+      ? ['--exclude', ...coanaExcludePatterns]
+      : []),
+    ...(packageManagers.length
+      ? ['--package-managers', ...packageManagers]
+      : []),
+    ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+    ...(!applyFixes ? [FLAG_DRY_RUN] : []),
+    '--output-file',
+    tmpFile,
+    ...(debug ? ['--debug'] : []),
+    ...(disableExternalToolChecks ? ['--disable-external-tool-checks'] : []),
+    ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+    ...(showAffectedDirectDependencies
+      ? ['--show-affected-direct-dependencies']
+      : []),
+    ...unknownFlags,
+  ]
+}
 
 export async function runLocalCoanaFix(
   fixConfig: FixConfig,
@@ -91,41 +153,13 @@ export async function runLocalCoanaFix(
 
   try {
     const fixCResult = await spawnCoanaDlx(
-      [
-        ...coanaSilenceArgs,
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
+      buildLocalCoanaArgs(fixConfig, {
+        coanaExcludePatterns,
+        coanaSilenceArgs,
+        idsToProcess,
         tarHash,
-        '--apply-fixes-to',
-        ...idsToProcess,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(coanaExcludePatterns.length
-          ? ['--exclude', ...coanaExcludePatterns]
-          : []),
-        ...(packageManagers.length
-          ? ['--package-managers', ...packageManagers]
-          : []),
-        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ...(!applyFixes ? [FLAG_DRY_RUN] : []),
-        '--output-file',
         tmpFile,
-        ...(debugFlag ? ['--debug'] : []),
-        ...(disableExternalToolChecks
-          ? ['--disable-external-tool-checks']
-          : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ],
+      }),
       {
         orgSlug: fixConfig.orgSlug,
         coanaVersion,
@@ -155,6 +189,7 @@ export async function runLocalCoanaFix(
       data: {
         fixedAll: true,
         ghsaDetails: idsToProcess.map(id => ({
+          __proto__: null,
           ghsaId: id,
           fixed: true,
         })),
@@ -162,6 +197,6 @@ export async function runLocalCoanaFix(
     }
   } finally {
     // Clean up the temporary file.
-    await safeDelete(tmpFile, { force: true })
+    await strictDelete(tmpFile)
   }
 }
