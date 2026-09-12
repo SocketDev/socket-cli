@@ -45,6 +45,7 @@ import crypto from 'node:crypto'
 import {
   chmodSync,
   mkdirSync,
+  readFileSync,
   realpathSync,
   renameSync,
   rmSync,
@@ -121,21 +122,81 @@ export function toolDownloadHeaders(url, token) {
     : {}
 }
 
+export function toolCacheDirectory({ root, url, integrity }) {
+  const identity = crypto
+    .createHash('sha256')
+    .update(JSON.stringify([url, integrity]))
+    .digest('hex')
+  return path.join(root, identity)
+}
+
+export function toolIntegrityMatches(bytes, { algo, expected }) {
+  const actual = crypto.createHash(algo).update(bytes).digest('base64')
+  return actual.replace(/=+$/, '') === expected.replace(/=+$/, '')
+}
+
+export async function readToolArchive({
+  url,
+  headers,
+  algo,
+  expected,
+  cachePath,
+}) {
+  if (cachePath) {
+    try {
+      const cached = readFileSync(cachePath)
+      if (toolIntegrityMatches(cached, { algo, expected })) {
+        return cached
+      }
+    } catch (error) {
+      if (error?.code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
+  const response = await fetchToolResponse(url, headers)
+  if (!response.ok) {
+    logger.fail(
+      `Download failed: HTTP ${response.status} ${response.statusText} for ${url}`,
+    )
+    process.exit(1)
+  }
+  return new Uint8Array(await response.arrayBuffer())
+}
+
+function retryableToolDownloadError(error) {
+  const code = error?.cause?.code ?? error?.code
+  return [
+    'ERR_HTTP2_STREAM_ERROR',
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'EAI_AGAIN',
+    'UND_ERR_CONNECT_TIMEOUT',
+    'UND_ERR_HEADERS_TIMEOUT',
+  ].includes(code)
+}
+
 export async function fetchToolResponse(url, headers) {
   for (let attempt = 0; ; attempt++) {
-    // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dep-0 bootstrap
-    const response = await fetch(url, {
-      redirect: 'follow',
-      headers,
-      signal: AbortSignal.timeout(120_000),
-    })
-    if (
-      attempt === 2 ||
-      ![408, 429, 500, 502, 503, 504].includes(response.status)
-    ) {
-      return response
+    try {
+      // oxlint-disable-next-line socket/no-fetch-prefer-http-request -- dep-0 bootstrap
+      const response = await fetch(url, {
+        redirect: 'follow',
+        headers,
+        signal: AbortSignal.timeout(120_000),
+      })
+      if (
+        attempt === 2 ||
+        ![408, 429, 500, 502, 503, 504].includes(response.status)
+      ) {
+        return response
+      }
+      await response.body?.cancel()
+    } catch (error) {
+      if (attempt === 2 || !retryableToolDownloadError(error)) {
+        throw error
+      }
     }
-    await response.body?.cancel()
     await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** attempt))
   }
 }
@@ -164,15 +225,26 @@ function isMainModule() {
 // exported parseIntegrity helper) does NOT run the download/verify/extract
 // pipeline.
 async function run() {
+  if (process.argv[2] === '--directory') {
+    const [, , , root, url, integrity] = process.argv
+    if (!root || !url || !integrity) {
+      throw new Error('Tool cache directory requires root, URL, and integrity')
+    }
+    parseIntegrity(integrity)
+    process.stdout.write(`${toolCacheDirectory({ root, url, integrity })}\n`)
+    return
+  }
   // Positionals: <url> <integrity> <dest-dir> [<bin-name>]. Optional flags
   // --src <url> and --date <iso> carry the object-form integrity provenance
   // (forwarded by the composite actions from resolve-external-tool-asset.mjs's
   // JSON output) so the live src / staleness checks run after the SRI check.
-  const flags = { src: '', date: '' }
+  const flags = { src: '', date: '', cache: false }
   const positionals = []
   for (let i = 2; i < process.argv.length; i++) {
     const a = process.argv[i]
-    if (a === '--date' || a === '--src') {
+    if (a === '--cache') {
+      flags.cache = true
+    } else if (a === '--date' || a === '--src') {
       flags[a.slice(2)] = process.argv[++i] ?? ''
     } else {
       positionals.push(a)
@@ -193,6 +265,9 @@ async function run() {
 
   const assetName = path.basename(new URL(url).pathname)
   const archivePath = path.join(destDir, assetName)
+  const cachePath = flags.cache
+    ? path.join(destDir, '.verified-archive')
+    : undefined
 
   const headers = toolDownloadHeaders(url, process.env.GITHUB_TOKEN)
 
@@ -203,23 +278,19 @@ async function run() {
   // the never.
   // oxlint-disable-next-line socket/export-top-level-functions, typescript/consistent-return -- action helper
   async function main() {
-    const res = await fetchToolResponse(url, headers)
-    if (!res.ok) {
-      // oxlint-disable-next-line socket/no-logger-glyph-prefix -- bootstrap shim; logger.fail does not print a glyph
-      logger.fail(
-        `× download failed: HTTP ${res.status} ${res.statusText} for ${url}`,
-      )
-      process.exit(1)
-    }
-
-    const bytes = new Uint8Array(await res.arrayBuffer())
+    const bytes = await readToolArchive({
+      url,
+      headers,
+      algo,
+      expected,
+      cachePath,
+    })
     const actual = crypto.createHash(algo).update(bytes).digest('base64')
 
     // Compare base64 forms directly. Trailing `=` padding may differ
     // npm strips it, our hash adds it — strip both sides before
     // comparing so `sha512-...=` and `sha512-...` match.
-    const stripPadding = b64 => b64.replace(/=+$/, '')
-    if (stripPadding(actual) !== stripPadding(expected)) {
+    if (!toolIntegrityMatches(bytes, { algo, expected })) {
       // oxlint-disable-next-line socket/no-logger-glyph-prefix -- bootstrap shim; logger.fail does not print a glyph
       logger.fail(`× ${algo} integrity mismatch for ${assetName}`)
       logger.fail(`  Expected: ${algo}-${expected}`)
@@ -254,6 +325,9 @@ async function run() {
       }
     }
 
+    if (cachePath) {
+      writeFileSync(cachePath, bytes)
+    }
     writeFileSync(archivePath, bytes)
 
     const lower = assetName.toLowerCase()
@@ -271,8 +345,9 @@ async function run() {
         extractCmd = 'powershell'
         extractArgs = [
           '-NoProfile',
+          '-NonInteractive',
           '-Command',
-          `Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force`,
+          '$ErrorActionPreference = "Stop"; Expand-Archive -LiteralPath $env:FLEET_TOOL_ARCHIVE -DestinationPath $env:FLEET_TOOL_DESTINATION -Force',
         ]
       } else {
         extractCmd = 'unzip'
@@ -283,6 +358,11 @@ async function run() {
     if (extractCmd) {
       const r = spawnSync(extractCmd, extractArgs, {
         cwd: destDir,
+        env: {
+          ...process.env,
+          FLEET_TOOL_ARCHIVE: archivePath,
+          FLEET_TOOL_DESTINATION: destDir,
+        },
         stdio: 'inherit',
       })
       if (r.status !== 0) {

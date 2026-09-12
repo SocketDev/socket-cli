@@ -1,4 +1,5 @@
-name: 📦 npm Publish
+name: 📦 Publish npm
+run-name: Publish npm
 
 # Cascade-owned — every npm-publishing repo carries the byte-identical copy
 # (adopt by copying the template once; the sync then keeps it in lock-step;
@@ -11,12 +12,8 @@ name: 📦 npm Publish
 # npm provenance (OIDC trusted publishing — id-token: write, no long-lived
 # npm token).
 #
-# ORDER RULE: this workflow only STAGES — nothing is public, and NO git tag or
-# GitHub release exists yet. The tag + immutable GH release are cut LAST, by
-# the local `--approve` promote (publish-pipeline.mts / npm-publish.mts
-# --approve), only after the approved version is live on npm. The
-# github-release workflow independently refuses to cut for a version that is
-# not resolvable on the registry.
+# CI reserves the version, changelog, tag and configured release before npm
+# staging. An unaccepted stage consumes the version; approval only promotes npm.
 #
 # BACKFILL: to republish prior content as a skipped GAP version — 1.4.3
 # between a live 1.4.2 and 1.4.4 — dispatch from MAIN, where this file always
@@ -28,7 +25,7 @@ name: 📦 npm Publish
 #
 # NAPI ADDON PATH: not here. A member that declares a `napi` block in
 # .config/repo/socket-wheelhouse.json receives a SEPARATE, conditionally
-# cascaded `.github/workflows/npm-publish-napi.yml` carrying the per-platform
+# cascaded `.github/workflows/publish-npm-addons.yml` carrying the per-platform
 # `.node` build + platform-package publish. GitHub parses a workflow against
 # the repo's Actions allowlist BEFORE evaluating any job-level `if:`, so addon
 # jobs living in this fleet-wide file would force the Rust toolchain actions
@@ -65,8 +62,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: npm-publish-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   npm-publish:
+    name: Publish npm
     runs-on: ubuntu-latest
     # npm's trusted-publisher config pins this GitHub environment name; the
     # OIDC token exchange 404s if the job runs outside it.
@@ -159,7 +161,7 @@ jobs:
           fi
           echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
-      - name: Setup + install
+      - name: Set up and install
         uses: ./.github/actions/fleet/setup-and-install
         with:
           # Forward the backfill content ref — setup-and-install re-checks-out
@@ -169,36 +171,36 @@ jobs:
           # version. Empty forwards as unset, so normal dispatches keep the
           # dispatched-ref re-checkout.
           checkout-ref: ${{ inputs.checkout-ref }}
-          # Thin members download the wheelhouse release bundle during
-          # `pnpm install`, and the mint is what authorizes that download.
-          # Both stay EMPTY on a member that has not provisioned the payload
-          # App, which skips the mint and leaves the fetch a no-op — the same
-          # state a non-thin member wants. Wiring them here is inert until the
-          # credentials exist, so a thin member becomes publishable by adding
-          # the var and secret rather than by editing this cascaded workflow.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
-      # Build dist/ before publishing — the staged-publish script imports the
-      # package's own built output (`@socketsecurity/lib/stdio/prompts` self-
-      # resolves to dist/), and `files` ships dist/, so the tarball needs it.
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+      - name: Run full coverage
+        # Backfill republishes already-released historical content. Its hard
+        # content checks replace current-branch qualification.
+        if: ${{ inputs.backfill-version == '' }}
+        run: pnpm run cover
       - name: Build
         run: pnpm run build
-      - name: Mint release App token
+      - name: 'Mint release token'
         if: ${{ inputs.backfill-version == '' }}
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
           client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
-      # The version resolver consumes a prerelease hint or selects patch/minor
-      # from the committed changes. Backfills keep their declared version.
+          repositories: ${{ github.event.repository.name }}
+      # The version resolver consumes a prerelease hint, uses configured odai
+      # for patch/minor, or defaults to minor. Backfills keep their version.
       - name: Publish
         env:
           BACKFILL_VERSION: ${{ inputs.backfill-version }}
           CHECKOUT_REF: ${{ inputs.checkout-ref }}
           DIST_TAG: ${{ inputs.dist-tag }}
           RELEASE_APP_TOKEN: ${{ steps.release-app.outputs.token }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
         # CHECKOUT_REF forwards on its own so a checkout-ref dispatch WITHOUT
         # backfill-version is refused by the script instead of silently
         # bump-publishing historical content.
-        run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '') && '--bump' || '' }} --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}
+        run: node scripts/fleet/npm-publish.mts --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}

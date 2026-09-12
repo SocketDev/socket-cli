@@ -34,8 +34,8 @@ export function isSquashHistoryRepo(): boolean {
   const repo =
     REMOTE_REPO_RE.exec(remote)?.groups?.['repo'] ?? path.basename(root)
   const rosterRels = [
-    'template/base/universal/.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
-    '.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json',
+    'template/base/universal/.claude/skills/fleet/cascading-commits/lib/fleet-repos.json',
+    '.claude/skills/fleet/cascading-commits/lib/fleet-repos.json',
   ]
   for (let i = 0, { length } = rosterRels; i < length; i += 1) {
     const p = path.join(root, rosterRels[i]!)

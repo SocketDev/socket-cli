@@ -3,7 +3,7 @@
 # every job. When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
 
-name: 'GitHub Status Check'
+name: 'GitHub status check'
 description: >
   Probe githubstatus.com/api/v2/components.json and emit warning
   annotations when GitHub Actions, Git Operations, or API Requests are

@@ -173,28 +173,28 @@ export function findMissingAppPermissions(config) {
   return missing
 }
 
-// The four-part (What / Where / Saw vs. wanted / Fix) refusal for a permission
-// shortfall, ending in the exact GitHub App settings URL and the clicks to make
-// there. Pure + exported so it is unit-testable.
+function formatAppRegistrationGuidance(slug) {
+  return (
+    `Ask the ${slug} App owner or App manager to update its registration permissions. ` +
+    'The registration owner can be an enterprise, organization, or personal account. ' +
+    'Guide: https://docs.github.com/en/enterprise-cloud@latest/apps/maintaining-github-apps/modifying-a-github-app-registration'
+  )
+}
+
 export function formatAppPermissionShortfall(config) {
   const missing = config?.missing ?? []
   const owner = config?.owner ?? ''
   const slug = config?.slug ?? ''
-  const url = `https://github.com/organizations/${owner}/settings/apps/${slug}`
   const lines = [
     `the ${slug} GitHub App installation on ${owner} does not grant every requested permission.`,
-    `  Where: GET /orgs/${owner}/installation, before any token is minted or anything is published.`,
+    `  Where: GET /orgs/${owner}/installation, before any token is minted.`,
   ]
   for (const entry of missing) {
     lines.push(
       `  Saw: ${entry.scope} = ${entry.granted ?? '<not granted>'}; wanted ${entry.wanted}.`,
     )
   }
-  lines.push(
-    `  A missing scope fails LATE otherwise — the mint 422s, or the permission is first`,
-    `  exercised after the irreversible publish (the promote PR 403s mid-release).`,
-    `  Fix: ${url}`,
-  )
+  lines.push(`  Fix: ${formatAppRegistrationGuidance(slug)}`)
   for (const entry of missing) {
     lines.push(
       '    -> Permissions & events -> Repository permissions -> ' +
@@ -204,9 +204,22 @@ export function formatAppPermissionShortfall(config) {
     )
   }
   lines.push(
-    `  Then accept the pending permission request on the ${owner} installation and re-run.`,
+    `  If approval is pending, accept the permission request on the ${owner} installation. Then re-run.`,
   )
   return lines.join('\n')
+}
+
+export function formatAppTokenMintFailure(config) {
+  const { body, installationId, owner, slug, status } = config
+  return (
+    `token mint failed: HTTP ${status}. ` +
+    `Where: POST /app/installations/${installationId}/access_tokens. ` +
+    `Saw: ${body}. Fix: the requested permissions/repositories must be ` +
+    `a subset of what the app's installation on ${owner} grants. ` +
+    `${formatAppRegistrationGuidance(slug)} ` +
+    'Open Permissions & events -> Repository permissions. ' +
+    `If approval is pending, accept the permission request on the ${owner} installation. Then re-run.`
+  )
 }
 
 // Split a REPOSITORIES string (newline/comma repo NAMES) into the access-token
@@ -297,13 +310,13 @@ async function main() {
   )
   if (minted.status !== 201) {
     die(
-      `token mint failed: HTTP ${minted.status}. ` +
-        `Where: POST /app/installations/${installationId}/access_tokens. ` +
-        `Saw: ${minted.body}. Fix: the requested permissions/repositories must be ` +
-        `a subset of what the app's installation on ${owner} grants (a 422 means ` +
-        `the install lacks a requested scope). Grant it at ` +
-        `https://github.com/organizations/${owner}/settings/apps/${installation.app_slug ?? '<app>'}` +
-        ` -> Permissions & events -> Repository permissions.`,
+      formatAppTokenMintFailure({
+        body: minted.body,
+        installationId,
+        owner,
+        slug: installation.app_slug ?? '<app>',
+        status: minted.status,
+      }),
     )
   }
   const token = JSON.parse(minted.body).token

@@ -4,7 +4,7 @@
 # this file's new SHA. See the updating-workflows skill at
 # .claude/skills/updating-workflows/.
 
-name: 'Setup and Install'
+name: 'Set up and install'
 description: 'Aggregate: checkout + setup environment + install dependencies'
 
 # Dependencies:
@@ -68,18 +68,15 @@ inputs:
     default: ''
   payload-token-client-id:
     description: >-
-      Client ID of the GitHub App that mints the fleet-pack-distribution read-only
-      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
-      skips the mint entirely: a non-thin member needs no token, and its
-      `prepare` fetch no-ops. A thin member sets this so CI can download the
-      private wheelhouse release bundle during install.
+      Existing PR App Client ID. Pass vars.SOCKET_PR_CLIENT_ID. The optional
+      private release fallback mints only when both credentials are present.
+      Public GHCR hydration remains anonymous.
     required: false
     default: ''
   payload-token-private-key:
     description: >-
-      Private key of the payload-token GitHub App — pass
-      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
-      payload-token-client-id is set.
+      Existing PR App private key. Pass secrets.SOCKET_PR_APP_PRIVATE_KEY.
+      An absent key skips the optional mint and leaves public GHCR available.
     required: false
     default: ''
 
@@ -87,18 +84,14 @@ runs:
   using: 'composite'
   steps:
     - name: Checkout
-      if: inputs.checkout == 'true'
       uses: ./.github/actions/fleet/checkout
       with:
+        checkout: ${{ inputs.checkout }}
         fetch-depth: ${{ inputs.checkout-fetch-depth }}
         ref: ${{ inputs.checkout-ref }}
         working-directory: ${{ inputs.working-directory }}
-        # Forwarded so a thin member's payload can hydrate immediately after
-        # THIS checkout — before "Install zizmor" and every other reader that
-        # runs ahead of the "Install dependencies" step below. Empty on a
-        # non-thin member (or one that hasn't provisioned the payload App),
-        # which the checkout action's own detect step reads as "no hydration
-        # needed" regardless.
+        # Hydrate before setup even when the workflow already checked out its
+        # verified revision. Missing credentials keep public GHCR anonymous.
         payload-token-client-id: ${{ inputs.payload-token-client-id }}
         payload-token-private-key: ${{ inputs.payload-token-private-key }}
 
@@ -146,6 +139,7 @@ runs:
           printf '%s' "$1" | tr '\\' '/' | tr '[:upper:]' '[:lower:]' | sed -e 's:/*$::'
         }
 
+        PNPM_STORE_DIR_INPUT="$(node -e 'process.stdout.write(require("node:path").resolve(process.env.PNPM_STORE_DIR_INPUT))')"
         mkdir -p "$PNPM_STORE_DIR_INPUT"
         export pnpm_config_store_dir="$PNPM_STORE_DIR_INPUT"
         echo "pnpm_config_store_dir=${PNPM_STORE_DIR_INPUT}" >> "$GITHUB_ENV"
@@ -195,15 +189,8 @@ runs:
         working-directory: ${{ inputs.working-directory }}
 
     - name: Mint fleet payload read token
-      # Thin-distribution CI auth: mint a contents:read-only token scoped to the
-      # payload repo so the bootstrap fetch (`gh release download` fired by the
-      # `prepare` lifecycle during the install below) can read the private
-      # wheelhouse release bundle. Gated on the client-id: a non-thin member
-      # (and any caller not passing credentials) skips the mint, and its fetch
-      # no-ops with an empty token. The minted token is masked by the minter and
-      # only ever leaves this composite via the step output consumed below.
       id: payload-token
-      if: inputs.payload-token-client-id != ''
+      if: inputs.payload-token-client-id != '' && inputs.payload-token-private-key != ''
       uses: ./.github/actions/fleet/github-payload-app-token
       with:
         client-id: ${{ inputs.payload-token-client-id }}
@@ -236,20 +223,12 @@ runs:
           --path "$PNPM_STORE_PATH" \
           --key "$PNPM_STORE_CACHE_KEY"
 
-    - name: Build oxlint plugin
-      # oxlint-plugin.mjs is GENERATED (gitignored, never committed); tests that
-      # invoke oxlint need it, so build here after install. Builds the fleet's
-      # custom oxlint rules into a single ESM module.
-      run: node scripts/fleet/build-oxlint-bundle.mts
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-
     - name: Generate hook dispatch table
-      # dispatch-manifest.json + dispatch-table.mts are GENERATED (gitignored,
+      # dispatch-manifest.generated.json + dispatch-table.generated.mts are GENERATED (gitignored,
       # never committed); checks + tests read them, so regenerate here after
       # install. Uses gen/hook-dispatch (pure JS, cross-platform) rather than
       # build-hook-bundle (whose native rolldown spawn does not resolve on
-      # Windows) — the rolldown fleet-pack.cjs is only needed at hook-run time, not
+      # Windows) — the rolldown fleet-pack.generated.cjs is only needed at hook-run time, not
       # by the checks/tests. The per-machine snapshot blob/launcher is NOT built.
       run: node scripts/fleet/gen/hook-dispatch.mts
       shell: bash

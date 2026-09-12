@@ -91,8 +91,6 @@ runs:
         # Schema-lookup key for external-tools.json `platforms` (win32-*).
         # NOT $PLATFORM, which is the prose shape (win-*) and misses on Windows.
         PLATFORM_KEY="$(node "${GITHUB_ACTION_PATH}/../_shared/platform-key.mjs")"
-        PNPM_DIR="${RUNNER_TEMP:-/tmp}/pnpm-bin"
-        PNPM_BIN="$PNPM_DIR/pnpm"
         if [ -f "$TOOLS_FILE" ]; then
           # Copy the tools file to RUNNER_TEMP so consumer workflows and
           # Docker builds can reach it after `setup` finishes. Actions
@@ -103,7 +101,13 @@ runs:
           # into their build context without duplicating per-platform
           # SHAs across each Dockerfile.
           TOOLS_DEST="${RUNNER_TEMP:-/tmp}/fleet-external-tools.json"
-          cp "$TOOLS_FILE" "$TOOLS_DEST"
+          (
+            TOOLS_STAGE="$(mktemp "${TOOLS_DEST}.XXXXXX")"
+            trap 'rm -f "$TOOLS_STAGE"' EXIT
+            cp "$TOOLS_FILE" "$TOOLS_STAGE"
+            test -s "$TOOLS_STAGE"
+            mv -f "$TOOLS_STAGE" "$TOOLS_DEST"
+          )
           if [ ! -s "$TOOLS_DEST" ]; then
             echo "× failed to stage external-tools.json at ${TOOLS_DEST} (missing or empty after copy)." >&2
             exit 1
@@ -146,15 +150,15 @@ runs:
           [[ "$ASSET" == *.tgz ]] && SOURCE="npm-registry"
           BINARY_REL="$(node "$JQ" "$TOOLS_FILE" $NS pnpm platforms "$PLATFORM_KEY" binary 2>/dev/null || echo "")"
           BINARY_REL="${BINARY_REL:-package/bin/pnpm.cjs}"
-          [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
-          if [ ! -x "$PNPM_BIN" ]; then
-            if [ "$SOURCE" = "npm-registry" ]; then
-              URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
-            else
-              URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
-            fi
-            node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR"
+          if [ "$SOURCE" = "npm-registry" ]; then
+            URL="https://registry.npmjs.org/pnpm/-/${ASSET}"
+          else
+            URL="https://github.com/pnpm/pnpm/releases/download/v${PNPM_VERSION}/${ASSET}"
           fi
+          PNPM_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/pnpm-bin" "$URL" "$INTEGRITY")"
+          PNPM_BIN="$PNPM_DIR/pnpm"
+          [[ "$ASSET" == *.zip ]] && PNPM_BIN="$PNPM_DIR/pnpm.exe"
+          node "$INSTALL_TOOL" "$URL" "$INTEGRITY" "$PNPM_DIR" --cache
           # If the platform uses the npm-registry shape, the extracted
           # tarball is a JS package — no native binary. Write a wrapper
           # that runs it through the system Node.
@@ -184,8 +188,8 @@ runs:
           # downstream trusts this beyond that one install.
           echo "::warning::fleet setup: scripts/fleet/setup/external-tools.json not found — bootstrapping pnpm from package.json's devEngines.packageManager pin instead. This is expected on a thin member's first install; the pinned external-tools.json binary takes over once it lands."
           PACKAGE_JSON="${GITHUB_WORKSPACE}/package.json"
-          DEVENGINES_NAME="$(node "$JQ" "$PACKAGE_JSON" devEngines packageManager name 2>/dev/null || echo "")"
-          DEVENGINES_VERSION_RANGE="$(node "$JQ" "$PACKAGE_JSON" devEngines packageManager version 2>/dev/null || echo "")"
+          DEVENGINES_NAME="$(node "$BOOTSTRAP_PLAN" devengines-pin "$PACKAGE_JSON" name 2>/dev/null || echo "")"
+          DEVENGINES_VERSION_RANGE="$(node "$BOOTSTRAP_PLAN" devengines-pin "$PACKAGE_JSON" version 2>/dev/null || echo "")"
           # devEngines.packageManager.version is a SemVer RANGE
           # (sync-package-manager-pins.mts's majorBoundedRange, e.g.
           # `>=11.0.0 <12.0.0`), not a concrete version — there is no single
@@ -225,9 +229,9 @@ runs:
             read -r INTEGRITY
           } <<<"$DIST"
           ASSET="$(basename "$TARBALL_URL")"
-          if [ ! -x "$PNPM_BIN" ]; then
-            node "$INSTALL_TOOL" "$TARBALL_URL" "$INTEGRITY" "$PNPM_DIR"
-          fi
+          PNPM_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/pnpm-bin" "$TARBALL_URL" "$INTEGRITY")"
+          PNPM_BIN="$PNPM_DIR/pnpm"
+          node "$INSTALL_TOOL" "$TARBALL_URL" "$INTEGRITY" "$PNPM_DIR" --cache
           # The npm-registry tarball is always the JS-only package (no native
           # binary) — same wrapper shape as the npm-registry branch above.
           BINARY_PATH="$PNPM_DIR/package/bin/pnpm.cjs"
@@ -362,7 +366,7 @@ runs:
         fi
         echo "$UV_BIN_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
-    - name: Download sfw
+    - name: Download SFW
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -417,54 +421,26 @@ runs:
         # Schema-lookup key for external-tools.json `platforms` (win32-*).
         # NOT $PLATFORM, which is the prose shape (win-*) and misses on Windows.
         PLATFORM_KEY="$(node "${GITHUB_ACTION_PATH}/../_shared/platform-key.mjs")"
-        # Hard-fail with a clear message on unsupported platforms (eg
-        # win-arm64) rather than silently skipping. SFW is a required
-        # dependency of the install flow, unlike zizmor (audit-only).
-        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM_KEY" asset 2>/dev/null)"; then
-          echo "× SFW (${SFW_FLAVOR}) is not published for ${PLATFORM_KEY} at v${SFW_VERSION}." >&2
-          echo "  Supported: linux-{x64,arm64}{,-musl}, darwin-{x64,arm64}, win32-x64." >&2
-          echo "  win32-arm64 has no upstream binary — skip SFW-dependent steps on that runner or wait for upstream support." >&2
+        SFW_PLATFORM_KEY="$(PLATFORM_KEY="$PLATFORM_KEY" NS="$NS" SFW_PATH="$SFW_PATH" node "$PLAN" sfw-platform)"
+        if [ "$SFW_PLATFORM_KEY" != "$PLATFORM_KEY" ]; then
+          echo "SFW uses the verified $SFW_PLATFORM_KEY asset through Windows 11 emulation on $PLATFORM_KEY."
+        fi
+        if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" asset 2>/dev/null)"; then
+          echo "SFW (${SFW_FLAVOR}) v${SFW_VERSION} has no asset for ${SFW_PLATFORM_KEY}. Check the pinned tool platform inventory." >&2
           exit 1
         fi
-        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM_KEY" integrity)"
+        INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" integrity)"
         SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
         if [[ "$ASSET" == *.exe ]]; then
           SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
         fi
-        SFW_DIR="${RUNNER_TEMP:-/tmp}/sfw-bin"
+        SFW_URL="https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}"
+        SFW_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/sfw-bin" "$SFW_URL" "$INTEGRITY")"
         SFW_BIN="$SFW_DIR/$SFW_BIN_NAME"
-        # `install-tool.mjs` exits non-zero on download failure or
-        # integrity mismatch and bails the step via `set -e`. Wrap the
-        # invocation in an explicit branch so we can echo before/after
-        # — silent SFW provisioning broke install-action downstream in
-        # the past (binary path exported via $GITHUB_ENV but file
-        # missing on disk). Recover gracefully if a prior partial step
-        # left a non-executable file at the target path.
-        if [ -x "$SFW_BIN" ]; then
-          echo "sfw binary already present: $SFW_BIN"
-        else
-          echo "Installing sfw → $SFW_BIN (asset: $ASSET)"
-          if [ -e "$SFW_BIN" ]; then
-            # Non-executable artifact from an interrupted prior run.
-            echo "Removing stale non-executable artifact at $SFW_BIN"
-            rm -f "$SFW_BIN"
-          fi
-          node "$INSTALL_TOOL" \
-            "https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}" \
-            "$INTEGRITY" \
-            "$SFW_DIR" \
-            "$SFW_BIN_NAME"
-          # `install-tool.mjs` should produce an executable; surface
-          # the failure here with diagnostics if it didn't, instead of
-          # letting downstream steps fail with the opaque
-          # "sfw is not installed" message.
-          if [ ! -x "$SFW_BIN" ]; then
-            echo "× SFW install reported success but $SFW_BIN is missing or not executable." >&2
-            echo "  Contents of $SFW_DIR:" >&2
-            ls -la "$SFW_DIR" >&2 || true
-            exit 1
-          fi
-          echo "sfw installed: $(ls -la "$SFW_BIN")"
+        node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" --cache
+        if [ ! -x "$SFW_BIN" ]; then
+          echo "SFW install failed at $SFW_BIN: expected the verified executable. Check the pinned release asset." >&2
+          exit 1
         fi
         # Enterprise-flavor liveness probe. The enterprise binary reads
         # SOCKET_API_TOKEN at startup and calls Socket API to identify
@@ -492,7 +468,11 @@ runs:
           SFW_PROBE_OUT=""
           for delay in "${PROBE_DELAYS[@]}"; do
             PROBE_ATTEMPT=$((PROBE_ATTEMPT + 1))
-            SFW_PROBE_OUT="$("$SFW_BIN" --version 2>&1 || true)"
+            if SFW_PROBE_OUT="$("$SFW_BIN" --version 2>&1)"; then
+              PROBE_STATUS=0
+            else
+              PROBE_STATUS=$?
+            fi
             # Success = probe didn't surface a 5xx response. Anything else
             # (clean version output, 403/SKU error, hostname resolution
             # failure) takes us to the post-probe branches. The 5xx shapes
@@ -518,6 +498,10 @@ runs:
             echo "  Falling back to sfw-free for the rest of the workflow." >&2
             SFW_FALLBACK=true
           fi
+          if [ "$SFW_FALLBACK" != "true" ] && [ "$PROBE_STATUS" != "0" ]; then
+            echo "SFW execution failed at $SFW_BIN (status $PROBE_STATUS): $SFW_PROBE_OUT" >&2
+            exit "$PROBE_STATUS"
+          fi
           if [ "$SFW_FALLBACK" = "true" ]; then
             # Free-flavor re-selection: fallback-sfw echoes a NON-EMPTY
             # version path only when a re-read is due — canonical entries
@@ -532,33 +516,19 @@ runs:
             if [ -n "$SFW_VERSION_PATH" ]; then
               SFW_VERSION="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_VERSION_PATH)"
             fi
-            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM_KEY" asset 2>/dev/null)"; then
+            SFW_PLATFORM_KEY="$(PLATFORM_KEY="$PLATFORM_KEY" NS="$NS" SFW_PATH="$SFW_PATH" node "$PLAN" sfw-platform)"
+            if ! ASSET="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" asset 2>/dev/null)"; then
               echo "× SFW-free fallback: no asset for ${PLATFORM} at v${SFW_VERSION}." >&2
               exit 1
             fi
-            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$PLATFORM_KEY" integrity)"
+            INTEGRITY="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH platforms "$SFW_PLATFORM_KEY" integrity)"
             SFW_BIN_NAME="$(node "$JQ" "$TOOLS_FILE" $NS $SFW_PATH binaryName)"
             if [[ "$ASSET" == *.exe ]]; then
               SFW_BIN_NAME="${SFW_BIN_NAME}.exe"
             fi
-            rm -rf "$SFW_DIR"
-            mkdir -p "$SFW_DIR"
-            # DIVERGENCE from the pinned characterization behavior, the
-            # deliberate-fix path scenarios S5/S10/S11 reserved: the old
-            # re-install passed six args — repo, tag, asset, integrity, dir,
-            # bin — to install-tool.mjs, whose signature is <url> <integrity>
-            # <dest-dir> <bin-name>, so every SKU-403/outage fallback
-            # hard-failed at parseIntegrity with "unrecognized integrity
-            # format: v<version>" instead of downgrading. The call now
-            # mirrors the primary install above: URL composed from
-            # repo/version/asset, then integrity, dest dir, bin name — and
-            # the re-read bin name takes the same .exe suffix the primary
-            # path applies.
-            node "$INSTALL_TOOL" \
-              "https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}" \
-              "$INTEGRITY" \
-              "$SFW_DIR" \
-              "$SFW_BIN_NAME"
+            SFW_URL="https://github.com/${SFW_REPO}/releases/download/v${SFW_VERSION}/${ASSET}"
+            SFW_DIR="$(node "$INSTALL_TOOL" --directory "${RUNNER_TEMP:-/tmp}/sfw-bin" "$SFW_URL" "$INTEGRITY")"
+            node "$INSTALL_TOOL" "$SFW_URL" "$INTEGRITY" "$SFW_DIR" "$SFW_BIN_NAME" --cache
             SFW_BIN="${SFW_DIR}/${SFW_BIN_NAME}"
             if [ ! -x "$SFW_BIN" ]; then
               echo "× SFW-free fallback install failed: $SFW_BIN missing." >&2
@@ -567,6 +537,10 @@ runs:
             echo "sfw-free (fallback) installed: $(ls -la "$SFW_BIN")"
           fi
         fi
+        if [ "$SFW_FLAVOR" = "free" ]; then
+          "$SFW_BIN" --version
+        fi
+        echo "SFW_EXECUTION_PLATFORM=$SFW_PLATFORM_KEY" >> "${GITHUB_ENV:-/dev/null}"
         # The step's whole GITHUB_ENV plan — the API token under BOTH names
         # (SOCKET_API_TOKEN canonical + SOCKET_API_KEY, the dev-machine
         # keychain name) whenever it is present, the always-exported
@@ -577,7 +551,7 @@ runs:
         export SFW_BIN SFW_FLAVOR SFW_VERSION PLATFORM ASSET INTEGRITY
         node "$PLAN" sfw-env >> "${GITHUB_ENV:-/dev/null}"
 
-    - name: Create sfw shims
+    - name: Create SFW shims
       shell: bash
       run: | # zizmor: ignore[github-env]
         # Shim supported package managers so their commands route through sfw.
@@ -758,7 +732,7 @@ runs:
         echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
         echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
 
-    - name: Export SFW_CUSTOM_REGISTRIES bypass list
+    - name: Export registry bypass list
       shell: bash
       run: | # zizmor: ignore[github-env]
         # Ship an up-to-date host bypass list to both sfw-free and

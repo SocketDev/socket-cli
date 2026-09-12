@@ -31,7 +31,8 @@
 # Rust repo contract: `fuzz/run.sh <target> [seconds]` and
 # `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
 # optional and runs only where it exists.
-name: 🎯 Weekly Fuzz
+name: 🔁 Weekly fuzz
+run-name: Weekly fuzz
 
 # Fuzzing is NOT a per-commit gate, which is why there is no push or
 # pull_request trigger here. A randomized harness is budgeted by wall-clock, so
@@ -75,6 +76,7 @@ jobs:
   # Which toolchain legs fire, and the rust target list, read from the repo so
   # no job below hard-codes names.
   discover:
+    name: Discover fuzz targets
     runs-on: ubuntu-latest
     outputs:
       rustTargets: ${{ steps.rust.outputs.targets }}
@@ -125,7 +127,7 @@ jobs:
             echo "hasGo=$([ -f go.mod ] && echo true || echo false)"
             echo "hasCpp=$([ -f .clang-tidy ] || [ -f CMakeLists.txt ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
-      - name: Read rust fuzz targets from fuzz/Cargo.toml
+      - name: 'Read Rust fuzz targets'
         id: rust
         if: steps.markers.outputs.hasRust == 'true'
         run: |
@@ -145,6 +147,7 @@ jobs:
 
   # Weekly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
   fuzz-rust:
+    name: 'Fuzz Rust (${{ matrix.target }})'
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasRust == 'true'
     needs: discover
     runs-on: ubuntu-latest
@@ -177,11 +180,12 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - name: Hydrate fleet actions
-        uses: ./.github/actions/fleet/checkout
+      - name: Set up and install
+        uses: ./.github/actions/fleet/setup-and-install
         with:
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Rust toolchain
         uses: ./.github/actions/fleet/setup-rust-toolchain
         with:
@@ -295,6 +299,7 @@ jobs:
 
   # Weekly JS campaign: the vitiate lane, unbounded.
   fuzz-js:
+    name: Fuzz JavaScript
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasJs == 'true'
     needs: discover
     runs-on: ubuntu-latest
@@ -322,15 +327,17 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           # Without this the install runs the firewall unauthenticated while the
           # job still reports green.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Authorizes a thin member's bundle hydration right after checkout.
-          # Both stay empty on a member with no payload App, skipping the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Resolve JS fuzz runtime
         id: js-runtime
         run: |
@@ -403,6 +410,7 @@ jobs:
 
   # Weekly Go campaign: 10 min per fuzz function.
   fuzz-go:
+    name: Fuzz Go
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasGo == 'true'
     needs: discover
     runs-on: ubuntu-latest
@@ -428,27 +436,42 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - name: Hydrate fleet actions
+      - name: 'Hydrate fleet Actions'
         uses: ./.github/actions/fleet/checkout
         with:
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Go toolchain
         uses: ./.github/actions/fleet/setup-go-toolchain
         with:
           go-version-file: go.mod
-      - name: Run go fuzz functions, 10 minutes each
+      - name: Prepare Go fuzz dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          go mod download all
+          PACKAGES="$(go list ./...)"
+          PACKAGES_FILE="${RUNNER_TEMP}/fleet-go-fuzz-packages.txt"
+          printf '%s\n' "$PACKAGES" > "$PACKAGES_FILE"
+          echo "GO_FUZZ_PACKAGES=$PACKAGES_FILE" >> "$GITHUB_ENV"
+      - name: 'Run Go fuzz functions, 10 minutes each'
         uses: ./.github/actions/fleet/run-offline
         with:
           run: |
             set -euo pipefail
-            while IFS= read -r fn; do
-              echo "go test -fuzz=^${fn}\$ -fuzztime=600s"
-              go test -fuzz="^${fn}\$" -fuzztime=600s ./...
-            done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
+            while IFS= read -r package; do
+              [ -n "$package" ] || continue
+              FUNCTIONS="$(go test -list '^Fuzz' "$package")"
+              while IFS= read -r fn; do
+                if [[ "$fn" =~ ^Fuzz[^[:space:]]*$ ]]; then
+                  go test -run '^$' -fuzz="^${fn}\$" -fuzztime=600s "$package"
+                fi
+              done <<< "$FUNCTIONS"
+            done < "$GO_FUZZ_PACKAGES"
 
   # Weekly C++ campaign: 10 min per libFuzzer target.
   fuzz-cpp:
+    name: Fuzz C++
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.discover.outputs.hasCpp == 'true'
     needs: discover
     runs-on: ubuntu-latest
@@ -499,6 +522,7 @@ jobs:
   # install on every green run to prepare for a failure that usually is not
   # coming.
   report-crashes:
+    name: Report crashes
     # `always()` because the default `success()` gate would skip the reporter in
     # exactly the case it exists for. `contains(needs.*.result, 'failure')` so a
     # run where every leg was skipped (a repo with no markers) reports nothing.
@@ -532,24 +556,26 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           # Without this the install runs the firewall unauthenticated while the
           # job still reports green.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       # The PR App carries the issues:write grant this needs and already owns
       # the comment surface. The default GITHUB_TOKEN is deliberately not used:
       # an issue it opens is attributed to github-actions[bot] and, more to the
       # point, cannot trigger the on:issues workflows a member may hang off a
       # filed crash.
-      - name: Mint PR App token
+      - name: 'Mint PR token'
         id: pr-app
         uses: ./.github/actions/fleet/github-pr-app-token
         with:
           client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
+          repositories: ${{ github.event.repository.name }}
       - name: File an issue for each failed leg
         env:
           GH_TOKEN: ${{ steps.pr-app.outputs.token }}

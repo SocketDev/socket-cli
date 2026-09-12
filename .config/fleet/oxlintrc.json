@@ -178,6 +178,7 @@
     "socket/prefer-typebox-schema": "error",
     "socket/prefer-undefined-over-null": "error",
     "socket/prefer-windows-test-helpers": "error",
+    "socket/repository-paths-are-contained": "error",
     "socket/require-async-iife-entry": "error",
     "socket/require-regex-comment": "error",
     "socket/require-vitest-globals-import": "error",

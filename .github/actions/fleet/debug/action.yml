@@ -3,7 +3,7 @@
 # → external repos. See updating-workflows skill at
 # .claude/skills/updating-workflows/.
 
-name: 'Setup Debug'
+name: 'Set up debugging'
 description: 'Parse and setup debug environment variables'
 
 inputs:

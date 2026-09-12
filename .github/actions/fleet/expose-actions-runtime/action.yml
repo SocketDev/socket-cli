@@ -1,4 +1,4 @@
-name: expose-actions-runtime
+name: Expose Actions runtime
 description: >-
   Expose the runner-injected ACTIONS_RESULTS_URL + ACTIONS_RUNTIME_TOKEN to
   later run steps. The runner injects these into JavaScript-action processes

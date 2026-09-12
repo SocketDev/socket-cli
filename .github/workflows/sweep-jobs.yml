@@ -1,4 +1,5 @@
-name: 🧹 Prune Actions Storage
+name: 🧹 Sweep jobs
+run-name: Sweep jobs
 
 # Reclaims GitHub Actions storage on a weekly cadence, in two steps.
 #
@@ -16,7 +17,7 @@ name: 🧹 Prune Actions Storage
 # rebuilds cold.
 #
 # Byte-identical across the fleet (cascaded); edit
-# template/base/universal/.github/workflows/prune-workflow-runs.yml and re-cascade via
+# template/base/universal/.github/workflows/sweep-jobs.yml and re-cascade via
 # `pnpm run sync`.
 
 on:
@@ -49,6 +50,7 @@ concurrency:
 
 jobs:
   prune:
+    name: Sweep
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -76,17 +78,19 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - uses: ./.github/actions/fleet/setup-and-install
+      - name: 'Set up and install'
+        uses: ./.github/actions/fleet/setup-and-install
         with:
           # The org secret is the single source for both SOCKET_API_TOKEN and
           # SOCKET_API_KEY; the setup action exports the value under both names.
           # Every sibling workflow supplies it either here or as job env — this
           # one did neither, so its install ran the firewall unauthenticated.
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          # Authorizes a thin member's bundle download during install. Both
-          # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          # Reuse the PR App for a contents:read token scoped to wheelhouse.
+          # Both credentials enable the private release fallback. Without the
+          # key, hydration still pulls public GHCR anonymously.
+          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Prune workflow runs
         env:
           GH_TOKEN: ${{ github.token }}
