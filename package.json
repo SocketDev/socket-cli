@@ -118,7 +118,6 @@
     "integrity-refresh": "node scripts/fleet/external-tools/refresh.mts",
     "setup:1password": "node scripts/fleet/setup/one-password.mts",
     "setup:ci:local": "node scripts/fleet/ci/local/setup.mts",
-    "setup:ci:remote": "node scripts/fleet/setup/ci-remote.mts",
     "setup:ai-clients": "node scripts/fleet/setup/ai-clients.mts",
     "setup:pgbot": "node scripts/fleet/setup/pgbot.mts",
     "mcp:connect": "node scripts/fleet/mcp/connect.mts",

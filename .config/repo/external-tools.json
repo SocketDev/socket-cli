@@ -48,57 +48,6 @@
       ],
       "origin": "system"
     },
-    "pnpm": {
-      "notes": [
-        "Eight supported platforms use native binaries from the pnpm v12.4.1 GitHub release, including darwin-x64.",
-        "Linux glibc and musl platforms use distinct assets and integrity values.",
-        "Release asset bytes were verified against upstream SHA-256 digests before computing each SHA-512 SRI.",
-        "User approved this soak exception on 2026-09-10 for pnpm 12.4.1 pipeline symlink and input hashing fixes. Remove it on 2026-09-17."
-      ],
-      "description": "Fast, disk space efficient package manager",
-      "repository": "github:pnpm/pnpm",
-      "version": "12.4.1",
-      "platforms": {
-        "darwin-arm64": {
-          "asset": "pnpm-darwin-arm64.tar.gz",
-          "integrity": "sha512-jLS7YCM5I32wC2OHQBvE9wy54NKOKkQ2Urr3uwNt0qsAMpS148N09PkwPnzvZenk/4kJuS09ANbigXVukDEmKg=="
-        },
-        "darwin-x64": {
-          "asset": "pnpm-darwin-x64.tar.gz",
-          "integrity": "sha512-QHkx3MhxzKkDxnCujyPn7gaBuAtlkl6YLPq+HI7Jan+ngLYAoeFQYv0Nk37DwK9kdo0QmT3TaeH2iSTklPc4IQ=="
-        },
-        "linux-arm64": {
-          "asset": "pnpm-linux-arm64.tar.gz",
-          "integrity": "sha512-dDo8TY09lfdCLKDtc7ujE8WsxM4OjguQZYBZBRoZVqwYVq4rx3b6ZBrE6ZVVhnO6Gcu2KAsPcB8Wq6++DmzAQw=="
-        },
-        "linux-arm64-musl": {
-          "asset": "pnpm-linux-arm64-musl.tar.gz",
-          "integrity": "sha512-zlaNJj5erpbQwBoCzHhWmzIl2TAlfac9WE//tK30ez1Z126hbalggljqGI5W9cAUTMrB/DtUT+rv3839RjCLYA=="
-        },
-        "linux-x64": {
-          "asset": "pnpm-linux-x64.tar.gz",
-          "integrity": "sha512-HvJiD/dQTqAX/aO4rCSKESABd59+KvRjBwyJpOejKG7e6TgxSb7UqHX7xwiJHXnMeoDgP+H8GKKrR2J5ZHRJsg=="
-        },
-        "linux-x64-musl": {
-          "asset": "pnpm-linux-x64-musl.tar.gz",
-          "integrity": "sha512-VdTUaaTQjNZgyjzzUa20IcjPe+lDir19uM/IzzVoiMzwyBkuQ2buo6rxbSKeK+l64ae64JXTSNY0iHj3lTDr5w=="
-        },
-        "win32-arm64": {
-          "asset": "pnpm-win32-arm64.zip",
-          "integrity": "sha512-EZtHSXMWgpqyx6rDCNnZtQxWFiuPIdREvDqMpY9C+mhBYW+1JOjlWxXGqvf7hrRBPxuhNbZtQSvFSZTDL3Zxsw=="
-        },
-        "win32-x64": {
-          "asset": "pnpm-win32-x64.zip",
-          "integrity": "sha512-5Uq2JunTNv7QSED/1EzeV0+zBDSW2wlMMe3g3wcF3PjsQjQ7gfFL8LZgXjmkqdeAURMIIrCrf3NdHx6o+DXPuA=="
-        }
-      },
-      "origin": "gh-asset",
-      "soakBypass": {
-        "published": "2026-09-10",
-        "removable": "2026-09-17",
-        "version": "12.4.1"
-      }
-    },
     "sfw-enterprise": {
       "notes": [
         "SFW (Socket Firewall) enterprise flavor (private, SocketDev/firewall-release). Same 7-platform set as sfw-free. Enterprise downloads require GITHUB_TOKEN auth (private repo); install-tool.mjs forwards GITHUB_TOKEN automatically when set.",

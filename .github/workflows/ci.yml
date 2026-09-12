@@ -50,7 +50,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
+          TRIGGER_REF: ${{ github.sha }}
         run: |
           set -euo pipefail
           git init -q
@@ -70,8 +70,8 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           # Full history: the commit-history checks (AI-attribution,
           # release-boundary) read the default branch's history and refuse a
           # shallow clone rather than false-green.
@@ -103,7 +103,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SERVER_URL: ${{ github.server_url }}
           REPOSITORY: ${{ github.repository }}
-          TRIGGER_REF: ${{ github.ref }}
+          TRIGGER_REF: ${{ github.sha }}
         run: |
           set -euo pipefail
           git init -q
@@ -123,8 +123,8 @@ jobs:
         with:
           # Authorizes a thin member's bundle download during install. Both
           # stay empty on a member with no payload App, which skips the mint.
-          payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
-          payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
+          payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
       - name: Run checks
         uses: ./.github/actions/fleet/run-script
@@ -135,4 +135,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           setup-script: pnpm run build
-          main-script: pnpm test --all
+          main-script: pnpm test --ci
