@@ -14,10 +14,14 @@ import { fileURLToPath } from 'node:url'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const logger = getDefaultLogger()
 
-function main(): void {
+export function main(): void {
   const distPath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     '../../..',
@@ -39,4 +43,12 @@ function main(): void {
   process.exitCode = result.status ?? 1
 }
 
-main()
+const SCRIPT_META: ScriptMeta = {
+  describe: 'run the built Socket CLI with forwarded arguments',
+  help: 'Usage: pnpm run s [arguments]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

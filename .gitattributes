@@ -78,6 +78,7 @@
 .github/dependabot.yml linguist-generated=true
 .github/local-ci.Dockerfile linguist-generated=true
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
+.github/workflows/fleet-pack-current.yml linguist-generated=true
 .github/workflows/get-green.yml linguist-generated=true
 .github/workflows/publish-npm.yml linguist-generated=true
 .github/workflows/sweep-jobs.yml linguist-generated=true

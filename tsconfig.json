@@ -17,8 +17,8 @@
   "exclude": [
     ".cache/**",
     ".claude/**",
-    "build/**",
     "binaries/**",
+    "build/**",
     "dist/**",
     "external/**",
     "node_modules/**",

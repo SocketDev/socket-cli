@@ -1,0 +1,49 @@
+name: 🧰 Fleet pack current
+run-name: Fleet pack current
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */4 * * *'
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: fleet-pack-current-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  ensure-current:
+    name: Ensure current
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch source
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGER_REF: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git init -q
+          git config --local advice.detachedHead false
+          git remote add origin "${SERVER_URL}/${REPOSITORY}"
+          FETCH_ARGS=(--no-tags --prune --depth 1 origin "${TRIGGER_REF}")
+          AUTH_B64="$(printf 'x-access-token:%s' "${GITHUB_TOKEN}" | base64 | tr -d '\n')"
+          git -c "http.${SERVER_URL}/.extraheader=AUTHORIZATION: basic ${AUTH_B64}" fetch "${FETCH_ARGS[@]}"
+          git checkout -q --detach FETCH_HEAD
+
+      - name: Ensure current fleet pack
+        shell: bash
+        run: node scripts/repo/bootstrap/fleet.mjs --ensure-current
+
+      - name: Verify tracked tree stayed clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"

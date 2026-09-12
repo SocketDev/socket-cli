@@ -29,12 +29,19 @@
   },
   "bornTested": {
     "grandfathered": [
-      "scripts/repo/bootstrap/prepare.mts",
       "scripts/repo/build.mts",
       "scripts/repo/check/cli-types-are-sound.mts",
       "scripts/repo/clean-cache.mts",
-      "scripts/repo/validate-no-cdn-refs.mts",
-      "scripts/repo/warm-dlx-cache.mts"
+      "scripts/repo/cli-build/build-js.mts",
+      "scripts/repo/cli-build/build.mts",
+      "scripts/repo/cli-build/e2e.mts",
+      "scripts/repo/cli-build/repo/fuzz.mts",
+      "scripts/repo/cli-build/run-dist.mts",
+      "scripts/repo/cli-build/sync-checksums.mts",
+      "scripts/repo/cli-build/test-download-external-tools.mts",
+      "scripts/repo/cli-build/test-wrapper.mts",
+      "scripts/repo/cli-build/validate-bundle.mts",
+      "scripts/repo/validate-no-cdn-refs.mts"
     ]
   },
   "sharedModuleTests": {

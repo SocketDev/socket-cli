@@ -16,7 +16,7 @@ afterEach(() => {
 
 describe('single CLI build entry', () => {
   it('runs one Node build and forwards its options', async () => {
-    await runCliBuild(['--force', '--quiet'])
+    await runCliBuild({ args: ['--force', '--quiet'] })
     expect(spawn).toHaveBeenCalledExactlyOnceWith(
       process.execPath,
       [
@@ -31,6 +31,6 @@ describe('single CLI build entry', () => {
   it('propagates a failed build', async () => {
     const failure = new Error('example build failure')
     vi.mocked(spawn).mockRejectedValueOnce(failure)
-    await expect(runCliBuild([])).rejects.toBe(failure)
+    await expect(runCliBuild({ args: [] })).rejects.toBe(failure)
   })
 })

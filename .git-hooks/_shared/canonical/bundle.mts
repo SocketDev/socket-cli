@@ -1,9 +1,10 @@
 import { canonicalOriginAllowed } from './source.mts'
 import crypto from 'node:crypto'
+import { readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { canonicalPathIsSafe, readCanonicalIndexEntry } from './git.mts'
+import { canonicalPathIsSafe } from './git.mts'
 import type { CanonicalIndexEntry } from './git.mts'
 
 function record(value: unknown): Record<string, unknown> | undefined {
@@ -99,18 +100,15 @@ export function canonicalBundleCopyMatches(
     return false
   }
   try {
-    const config = readCanonicalIndexEntry(
+    const appliedPath = path.join(
       member,
-      '.config/repo/socket-wheelhouse.json',
+      '.cache/fleet/socket-wheelhouse/bundle-applied',
     )
-    if (!config) {
+    if (statSync(appliedPath).size > 128) {
       return false
     }
-    const parsed: unknown = JSON.parse(
-      Buffer.from(config.content).toString('utf8'),
-    )
-    const ref = record(record(parsed)?.['bundle'])?.['ref']
-    if (typeof ref !== 'string' || !/^fleet-pack-[0-9a-f]{40}$/u.test(ref)) {
+    const ref = readFileSync(appliedPath, 'utf8').trim()
+    if (!/^fleet-pack-[0-9a-f]{40}$/u.test(ref)) {
       return false
     }
     return canonicalBundleBytesMatch(

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/**
+/*
  * Sync checksums from GitHub releases to bundle-tools.json.
  *
  * For each GitHub-released tool, this script:
@@ -32,6 +32,10 @@ import { pipeline } from 'node:stream/promises'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { isMainModule } from '../../fleet/process/is-main-module.mts'
+import { runMain } from '../../fleet/process/run-main.mts'
+
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
 
 const bundleToolsSchema = Type.Object({
   tools: Type.Record(
@@ -251,7 +255,7 @@ async function writeUpdatedChecksums(
   }
 }
 
-async function main() {
+export async function main(): Promise<void> {
   const args = process.argv.slice(2)
   const force = args.includes('--force')
   const dryRun = args.includes('--dry-run')
@@ -364,10 +368,15 @@ async function main() {
   }
 }
 
-main().catch(error => {
-  logger.fail(`Sync failed: ${error.message}`)
-  process.exitCode = 1
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'refresh bundled-tool checksums from pinned GitHub releases',
+  help: 'Usage: node scripts/repo/cli-build/sync-checksums.mts [--tool=<tool>] [--force] [--dry-run]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}
 
 function readBundleToolsMetadata() {
   const config: unknown = JSON.parse(readFileSync(EXTERNAL_TOOLS_FILE, 'utf8'))

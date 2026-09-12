@@ -1,11 +1,11 @@
-import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
 import { getInvocationMode } from './util/cli/invocation-mode.mts'
+import { isMainModule } from '../scripts/fleet/process/is-main-module.mts'
+import { runMain } from '../scripts/fleet/process/run-main.mts'
 
-const logger = getDefaultLogger()
+import type { ScriptMeta } from '../scripts/fleet/process/run-main.mts'
 
 // Route to the appropriate CLI based on invocation mode.
-async function main() {
+export async function main(): Promise<void> {
   const mode = getInvocationMode()
 
   // Set environment variable for child processes.
@@ -17,8 +17,12 @@ async function main() {
   await import('./cli-entry.mjs')
 }
 
-// Run the appropriate CLI.
-main().catch(error => {
-  logger.error('Socket CLI Error:', error)
-  process.exit(1)
-})
+const SCRIPT_META: ScriptMeta = {
+  describe: 'dispatch a Socket CLI wrapper invocation to its command mode',
+  help: 'Usage: pnpm run dev [arguments]',
+  json: 'native',
+}
+
+if (isMainModule(import.meta.url)) {
+  runMain(main, SCRIPT_META)
+}

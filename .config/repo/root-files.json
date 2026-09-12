@@ -1,5 +1,7 @@
 {
   "allow": {
+    "DISCLOSURE": "security disclosure for the published package",
+    "bundle-tools.json": "repository-owned manifest for bundled executable assets",
     "install.sh": "published curl|sh installer at a stable raw URL"
   }
 }

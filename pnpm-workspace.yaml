@@ -79,6 +79,7 @@ catalog:
   '@socketregistry/packageurl-js-stable': 'npm:@socketregistry/packageurl-js@1.5.2'
   '@socketsecurity/lib': 7.0.1
   '@socketsecurity/lib-stable': 'npm:@socketsecurity/lib@7.0.1'
+  '@socketsecurity/odai': 0.2.1
   '@socketsecurity/registry': 2.0.5
   '@socketsecurity/registry-stable': 'npm:@socketsecurity/registry@2.0.5'
   '@socketsecurity/sdk': 4.1.4
@@ -123,6 +124,7 @@ catalog:
   'oxfmt': 0.66.0
   'oxlint': 1.81.0
   'oxlint-tsgolint': 7.0.2001
+  'pastoralist': 1.13.0
   # parse5 — the HTML parser half of the markdown story. mdast hands raw HTML
   # back as an opaque `html` node (README `<picture>`/`<img>` blocks), so
   # attribute-level edits need parse5's per-attribute source locations to land

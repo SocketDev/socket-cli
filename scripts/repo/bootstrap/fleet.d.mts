@@ -27,6 +27,146 @@ interface ScriptResult {
 type MainFn = () => number | void | ScriptResult | Promise<number | void | ScriptResult>;
 export declare function runMainMinimal(main: MainFn, meta: ScriptMeta): void;
 //#endregion
+//#region template/base/universal/scripts/fleet/constants/oci-media-types.d.mts
+declare const OCI_MANIFEST_ACCEPT: string;
+//#endregion
+//#region scripts/repo/gen/bootstrap/src/ghcr-fetch.d.mts
+export declare const GHCR_HOST = "ghcr.io";
+export interface GhcrHttpResponse {
+  readonly body: Buffer;
+  readonly headers: NodeJS.Dict<string | string[]>;
+  readonly status: number;
+}
+export interface GhcrHttpOptions {
+  readonly headers?: Record<string, string> | undefined;
+}
+export type GhcrHttpGetFn = (url: string, options?: GhcrHttpOptions | undefined) => Promise<GhcrHttpResponse>;
+export interface AuthChallenge {
+  readonly realm: string;
+  readonly scope: string | undefined;
+  readonly service: string | undefined;
+}
+export interface OciLayer {
+  readonly annotations?: Record<string, string> | undefined;
+  readonly digest?: string | undefined;
+  readonly mediaType?: string | undefined;
+}
+export interface OciManifest {
+  /**
+   * Manifest-level annotations. The pack carries
+   * `org.opencontainers.image.revision`, the template SHA it was built from,
+   * which is how a member resolves the newest pack from the moving tag.
+   */
+  readonly annotations?: Readonly<Record<string, string>> | undefined;
+  readonly config?: {
+    digest?: string | undefined;
+  } | undefined;
+  readonly layers?: readonly OciLayer[] | undefined;
+  readonly manifests?: ReadonlyArray<{
+    digest?: string | undefined;
+  }> | undefined;
+  readonly mediaType?: string | undefined;
+}
+export interface OciManifestReceipt {
+  readonly configDigest: string;
+  readonly created: string;
+  readonly manifestDigest: string;
+  readonly revision: string;
+  readonly layerDigests: readonly string[];
+}
+export declare function isOciManifestReceipt(value: unknown): value is OciManifestReceipt;
+export declare function ociManifestReceipt(body: Buffer, manifest: OciManifest): OciManifestReceipt;
+export declare function sameOciManifestReceipt(left: OciManifestReceipt, right: OciManifestReceipt): boolean;
+export interface PullBundleConfig {
+  readonly destDir: string;
+  readonly expectedReceipt?: OciManifestReceipt | undefined;
+  readonly httpFn?: GhcrHttpGetFn | undefined;
+  readonly registry?: string | undefined;
+  readonly repo: string;
+  readonly tag: string;
+}
+/**
+ * Read the first value of a possibly-array HTTP header.
+ */
+export declare function firstHeader(value: string | string[] | undefined): string | undefined;
+/**
+ * Dep-0 HTTPS GET returning raw bytes. Follows storage redirects (GHCR serves
+ * blobs from a redirected backend), dropping the Authorization header on any
+ * redirect so a pre-signed storage URL is never handed a stale bearer.
+ */
+export declare function httpGet(url: string, options?: GhcrHttpOptions | undefined): Promise<GhcrHttpResponse>;
+/**
+ * Parse a `WWW-Authenticate: Bearer realm="...",service="...",scope="..."`
+ * challenge into its realm/service/scope. Returns undefined for a non-Bearer or
+ * realm-less header. Reimplements docker.mts parseWwwAuthenticate dep-0.
+ */
+export declare function parseWwwAuthenticate(header: string): AuthChallenge | undefined;
+/**
+ * The GHCR anonymous pull-token URL for a repository.
+ */
+export declare function ghcrTokenUrl(repo: string, registry: string): string;
+/**
+ * Extract the bearer token from a token-endpoint JSON body (either `token` or
+ * `access_token`). Returns undefined when neither is present / parseable.
+ */
+export declare function tokenFromBody(body: Buffer): string | undefined;
+/**
+ * `Authorization: Basic` for GHCR's token endpoint, built from the workflow
+ * token when one is in the environment.
+ *
+ * A PUBLIC package needs none of this - anonymous pull is the common path and
+ * stays first. A package that is private, or newly published and not yet made
+ * public, answers the anonymous request with 403 and no token, which reads as
+ * "confirm the package is public" and is unactionable inside a job that already
+ * holds a credential for the same repo. GHCR accepts the workflow token as the
+ * password with any username.
+ *
+ * Returns undefined when no token is in the environment, so a local run keeps
+ * its anonymous behavior. Never logged: the value only ever becomes a header.
+ */
+export declare function ghcrBasicAuthHeader(env: Record<string, string | undefined>): string | undefined;
+/**
+ * Obtain a pull token. Hits the documented token endpoint first; on anything
+ * but a usable token, falls back to the 401 WWW-Authenticate challenge form
+ * (probe /v2/, follow the advertised realm), and finally retries the challenge
+ * WITH the workflow token when the environment carries one. Fails loud when no
+ * token can be obtained.
+ */
+export declare function getGhcrToken(repo: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<string>;
+/**
+ * GET one manifest by tag or digest. Resolves a multi-arch index to its first
+ * sub-manifest so a concrete image manifest that carries the artifact layer is
+ * always returned. Fails loud on a non-2xx.
+ */
+export declare function fetchOciManifest(repo: string, ref: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<OciManifest>;
+export declare function fetchOciManifestEnvelope(repo: string, ref: string, token: string, registry: string, options?: {
+  readonly httpFn?: GhcrHttpGetFn | undefined;
+} | undefined): Promise<{
+  readonly body: Buffer;
+  readonly manifest: OciManifest;
+}>;
+/**
+ * Choose the tarball layer from an artifact manifest: prefer a layer whose
+ * `org.opencontainers.image.title` ends in `.tar.gz`, then a gzip/tar media
+ * type, else the sole layer. Throws when no usable layer exists.
+ */
+export declare function pickBundleLayer(manifest: OciManifest): OciLayer;
+/**
+ * GET a blob by digest, following the storage redirect that GHCR issues for
+ * blobs. Fails loud on a non-2xx.
+ */
+export declare function fetchBlob(repo: string, digest: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<Buffer>;
+/**
+ * The SHA-256 hex digest of a Buffer.
+ */
+export declare function sha256Hex(buf: Buffer): string;
+/**
+ * Pull the fleet-pack tarball from GHCR and write it to `destDir`. Verifies
+ * the blob's SHA-256 against the manifest layer digest before writing — a
+ * mismatch aborts (fail closed). Returns the written tarball path.
+ */
+export declare function pullFleetBundleTarball(config: PullBundleConfig): Promise<string>;
+//#endregion
 //#region template/base/universal/scripts/fleet/lib/conditional-config.d.mts
 type ConfigFlag = 'bundlesVendoredDeps' | 'hasCodeql' | 'hasCratesRegistry' | 'hasGhcr' | 'hasGithubRelease' | 'hasNapi' | 'hasPrebakes' | 'hasRust' | 'isGithubAction';
 //#endregion
@@ -174,15 +314,20 @@ export declare function refreshFleetPackIgnores(config: {
   dest: string;
   manifest: FleetFileManifest;
 }): void;
+export declare function readFleetTrackedPaths(dest: string): Set<string>;
+export declare function refreshFleetPackCheckoutExcludes(config: {
+  dest: string;
+  manifest: FleetFileManifest;
+}): void;
 /**
  * Apply thin mode: refresh the gitignore block (refreshFleetPackIgnores), then
  * untrack those paths from git so the fetch action repopulates them going
  * forward. The `git rm --cached` is the CONVERSION step and is destructive —
  * it drops files from the index — so it stays behind an explicit `--thin` and
  * is never inferred from repo state. socket-vscode is the case that forces the
- * distinction: it carries a pinned `bundle.ref` AND 81 still-tracked payload
- * files, so inferring the untrack from the pin alone would silently delete
- * them from its index on the next ordinary hydrate.
+ * distinction: a repo can carry still-tracked payload files, so inferring
+ * conversion from runtime hydration state would silently delete them from its
+ * index on the next ordinary hydrate.
  */
 export declare function untrackFleetPackPaths(config: UntrackFleetPackConfig): void;
 //#endregion
@@ -213,16 +358,14 @@ export interface InstallConfig {
   readonly fromTemplate?: boolean | undefined;
   readonly preserveTracked?: boolean | undefined;
   readonly dryRun?: boolean | undefined;
-  readonly exitCode?: boolean | undefined;
-  readonly ifCurrent?: boolean | undefined;
+  readonly ensureCurrent?: boolean | undefined;
+  readonly expectedReceipt?: OciManifestReceipt | undefined;
   readonly json?: boolean | undefined;
   readonly manifest?: string | undefined;
-  readonly noHeader?: boolean | undefined;
   readonly quiet?: boolean | undefined;
   readonly refreshTracked?: boolean | undefined;
   readonly ref: string;
   readonly repo?: string | undefined;
-  readonly status?: boolean | undefined;
   readonly thin?: boolean | undefined;
   readonly wire?: boolean | undefined;
 }
@@ -344,19 +487,35 @@ export declare function verifyBundleFiles(filesDir: string, manifest: BundleMani
  */
 export declare function verifySegments(segmentsDir: string, manifest: BundleManifest): string[];
 //#endregion
+//#region scripts/repo/gen/bootstrap/src/resolve.d.mts
+export declare const GREEN_TAG = "green";
+/**
+ * Resolve the NEWEST pack ref from GHCR's moving `latest` tag.
+ *
+ * One anonymous call, and it has to work this way rather than by ordering a tag
+ * list. Measured against the live registry: `/v2/<repo>/tags/list` returns
+ * OLDEST first and pages at 100, so the first page began at the oldest tag and
+ * did not contain the newest pack. A member also cannot settle it by git
+ * ancestry, because its history is its own, not the wheelhouse's.
+ *
+ * So the publisher writes the same manifest at `latest` and stamps the template
+ * SHA into `org.opencontainers.image.revision`. This reads that annotation and
+ * rebuilds the ref from it.
+ *
+ * Returns undefined when the tag, the annotation, or the network is
+ * unavailable. The caller treats that as "cannot tell", the same as the old
+ * offline case, rather than as "up to date".
+ */
+export interface GreenPackResolution {
+  readonly receipt: OciManifestReceipt;
+  readonly ref: string;
+}
+export declare function resolveGreenPack(repo: string): Promise<GreenPackResolution | undefined>;
+//#endregion
 //#region scripts/repo/gen/bootstrap/src/applied-state.d.mts
 export declare const SETTINGS_CANDIDATES: string[];
 export declare function resolveSettingsPath(dest: string): string | undefined;
-/**
- * Default bundle ref for a member — `bundle.ref` in its wheelhouse settings
- * file. Lets install-fleet (and the prepare/CI wires) omit an explicit --ref so
- * the pin lives in exactly one place. Returns undefined when absent/malformed.
- */
-export declare function readBundleRef(dest: string): string | undefined;
-export interface BundleConfig {
-  readonly ref: string | undefined;
-  readonly cascadeSha: string | undefined;
-}
+export declare function readAppliedManifest(dest: string): Record<string, string> | undefined;
 export interface MemberBuildShape {
   readonly from: string | undefined;
   readonly type: string | undefined;
@@ -377,13 +536,6 @@ export declare function readBuildShape(dest: string): MemberBuildShape;
  * declares the capability.
  */
 export declare function readDeclaredCapabilities(dest: string): string[];
-/**
- * Read the member's full pinned `bundle` block (ref + cascadeSha) from the
- * wheelhouse settings file. The lock-step verify + the `fleet:status` verb need
- * BOTH halves — `readBundleRef` returns only the ref for the fetch default.
- * Returns both as undefined when the file is absent / malformed.
- */
-export declare function readBundleConfig(dest: string): BundleConfig;
 export declare function readAppliedRef(dest: string): string | undefined;
 /**
  * The file list the LAST applied bundle owned, or undefined when no record
@@ -396,6 +548,7 @@ export declare function readAppliedFiles(dest: string): string[] | undefined;
  * marker.
  */
 export declare function writeAppliedFiles(dest: string, files: readonly string[]): void;
+export declare function writeAppliedManifest(dest: string, manifest: Readonly<Record<string, string>>): void;
 export declare function writeAppliedRef(dest: string, ref: string): void;
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/bundle-source.d.mts
@@ -403,6 +556,7 @@ export type BundleFetchFn = (config: {
   readonly ref: string;
   readonly repo: string;
   readonly tmp: string;
+  readonly expectedReceipt?: OciManifestReceipt | undefined;
 }) => Promise<FetchedFiles>;
 export interface FetchedFiles {
   readonly manifest: string;
@@ -428,6 +582,7 @@ export declare function extractManifestFromTarball(tarball: string, destDir: str
  * the manifest out of it. Throws on any failure so the selector can fall back.
  */
 export declare function ghcrFetchBundle(config: {
+  readonly expectedReceipt?: OciManifestReceipt | undefined;
   readonly ref: string;
   readonly repo: string;
   readonly tmp: string;
@@ -443,134 +598,12 @@ export declare function ghcrFetchBundle(config: {
  * lets tests drive it without network.
  */
 export declare function fetchBundleSource(config: {
+  readonly expectedReceipt?: OciManifestReceipt | undefined;
   readonly ghcrFetch?: BundleFetchFn | undefined;
   readonly ref: string;
   readonly repo: string;
   readonly tmp: string;
 }): Promise<FetchedBundle>;
-//#endregion
-//#region template/base/universal/scripts/fleet/constants/oci-media-types.d.mts
-declare const OCI_MANIFEST_ACCEPT: string;
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/ghcr-fetch.d.mts
-export declare const GHCR_HOST = "ghcr.io";
-export interface GhcrHttpResponse {
-  readonly body: Buffer;
-  readonly headers: NodeJS.Dict<string | string[]>;
-  readonly status: number;
-}
-export interface GhcrHttpOptions {
-  readonly headers?: Record<string, string> | undefined;
-}
-export type GhcrHttpGetFn = (url: string, options?: GhcrHttpOptions | undefined) => Promise<GhcrHttpResponse>;
-export interface AuthChallenge {
-  readonly realm: string;
-  readonly scope: string | undefined;
-  readonly service: string | undefined;
-}
-export interface OciLayer {
-  readonly annotations?: Record<string, string> | undefined;
-  readonly digest?: string | undefined;
-  readonly mediaType?: string | undefined;
-}
-export interface OciManifest {
-  /**
-   * Manifest-level annotations. The pack carries
-   * `org.opencontainers.image.revision`, the template SHA it was built from,
-   * which is how a member resolves the newest pack from the moving tag.
-   */
-  readonly annotations?: Readonly<Record<string, string>> | undefined;
-  readonly config?: {
-    digest?: string | undefined;
-  } | undefined;
-  readonly layers?: readonly OciLayer[] | undefined;
-  readonly manifests?: ReadonlyArray<{
-    digest?: string | undefined;
-  }> | undefined;
-  readonly mediaType?: string | undefined;
-}
-export interface PullBundleConfig {
-  readonly destDir: string;
-  readonly httpFn?: GhcrHttpGetFn | undefined;
-  readonly registry?: string | undefined;
-  readonly repo: string;
-  readonly tag: string;
-}
-/**
- * Read the first value of a possibly-array HTTP header.
- */
-export declare function firstHeader(value: string | string[] | undefined): string | undefined;
-/**
- * Dep-0 HTTPS GET returning raw bytes. Follows storage redirects (GHCR serves
- * blobs from a redirected backend), dropping the Authorization header on any
- * redirect so a pre-signed storage URL is never handed a stale bearer.
- */
-export declare function httpGet(url: string, options?: GhcrHttpOptions | undefined): Promise<GhcrHttpResponse>;
-/**
- * Parse a `WWW-Authenticate: Bearer realm="...",service="...",scope="..."`
- * challenge into its realm/service/scope. Returns undefined for a non-Bearer or
- * realm-less header. Reimplements docker.mts parseWwwAuthenticate dep-0.
- */
-export declare function parseWwwAuthenticate(header: string): AuthChallenge | undefined;
-/**
- * The GHCR anonymous pull-token URL for a repository.
- */
-export declare function ghcrTokenUrl(repo: string, registry: string): string;
-/**
- * Extract the bearer token from a token-endpoint JSON body (either `token` or
- * `access_token`). Returns undefined when neither is present / parseable.
- */
-export declare function tokenFromBody(body: Buffer): string | undefined;
-/**
- * `Authorization: Basic` for GHCR's token endpoint, built from the workflow
- * token when one is in the environment.
- *
- * A PUBLIC package needs none of this - anonymous pull is the common path and
- * stays first. A package that is private, or newly published and not yet made
- * public, answers the anonymous request with 403 and no token, which reads as
- * "confirm the package is public" and is unactionable inside a job that already
- * holds a credential for the same repo. GHCR accepts the workflow token as the
- * password with any username.
- *
- * Returns undefined when no token is in the environment, so a local run keeps
- * its anonymous behavior. Never logged: the value only ever becomes a header.
- */
-export declare function ghcrBasicAuthHeader(env: Record<string, string | undefined>): string | undefined;
-/**
- * Obtain a pull token. Hits the documented token endpoint first; on anything
- * but a usable token, falls back to the 401 WWW-Authenticate challenge form
- * (probe /v2/, follow the advertised realm), and finally retries the challenge
- * WITH the workflow token when the environment carries one. Fails loud when no
- * token can be obtained.
- */
-export declare function getGhcrToken(repo: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<string>;
-/**
- * GET one manifest by tag or digest. Resolves a multi-arch index to its first
- * sub-manifest so a concrete image manifest that carries the artifact layer is
- * always returned. Fails loud on a non-2xx.
- */
-export declare function fetchOciManifest(repo: string, ref: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<OciManifest>;
-/**
- * Choose the tarball layer from an artifact manifest: prefer a layer whose
- * `org.opencontainers.image.title` ends in `.tar.gz`, then a gzip/tar media
- * type, else the sole layer. Throws when no usable layer exists.
- */
-export declare function pickBundleLayer(manifest: OciManifest): OciLayer;
-/**
- * GET a blob by digest, following the storage redirect that GHCR issues for
- * blobs. Fails loud on a non-2xx.
- */
-export declare function fetchBlob(repo: string, digest: string, token: string, registry: string, httpFn?: GhcrHttpGetFn): Promise<Buffer>;
-/**
- * The SHA-256 hex digest of a Buffer.
- */
-export declare function sha256Hex(buf: Buffer): string;
-/**
- * Pull the fleet-pack tarball from GHCR and write it to `destDir`. Verifies
- * the blob's SHA-256 against the manifest layer digest before writing — a
- * mismatch aborts (fail closed). Returns the written tarball path.
- */
-export declare function pullFleetBundleTarball(config: PullBundleConfig): Promise<string>;
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/install-prune.d.mts
 /**
@@ -585,7 +618,9 @@ export declare function pullFleetBundleTarball(config: PullBundleConfig): Promis
  * skipped, so a bad producer entry can never displace freshly placed payload.
  * Returns the count of paths acted on (renamed or cleaned up).
  */
-export declare function applyMovedPaths(dest: string, manifest: FleetFileManifest): number;
+export declare function applyMovedPaths(dest: string, manifest: FleetFileManifest, options?: {
+  preservedPaths?: ReadonlySet<string> | undefined;
+} | undefined): number;
 /**
  * Delete the manifest's TOMBSTONED paths (`removedPaths`) — files or whole
  * dirs a past bundle shipped that the wheelhouse has since moved/retired. The
@@ -596,7 +631,9 @@ export declare function applyMovedPaths(dest: string, manifest: FleetFileManifes
  * walk. Belt: a tombstone the current manifest ships a file at/under is
  * skipped, so a bad producer entry can never delete freshly placed payload.
  */
-export declare function removeTombstonedPaths(dest: string, manifest: FleetFileManifest): number;
+export declare function removeTombstonedPaths(dest: string, manifest: FleetFileManifest, options?: {
+  preservedPaths?: ReadonlySet<string> | undefined;
+} | undefined): number;
 /**
  * Prune stale fleet files so a fetch is a true SYNC (place + prune) — scoped
  * to what the bundle PREVIOUSLY owned. Only a file the last-applied manifest
@@ -612,6 +649,7 @@ export declare function removeTombstonedPaths(dest: string, manifest: FleetFileM
  */
 interface PruneStaleFleetFilesOptions {
   archiveManifest?: FleetFileManifest | undefined;
+  preservedPaths?: ReadonlySet<string> | undefined;
 }
 export declare function pruneStaleFleetFiles(dest: string, manifest: FleetFileManifest, previousFiles: readonly string[] | undefined, options?: PruneStaleFleetFilesOptions | undefined): number;
 //#endregion
@@ -716,7 +754,6 @@ export declare const PREPARE_FETCH = "node scripts/repo/bootstrap/prepare.mts";
  * mirrors.
  */
 export declare const PREPARE_FROM_TEMPLATE = "node scripts/repo/bootstrap/fleet.mjs --from-template";
-export declare const FLEET_STATUS_SCRIPT = "node scripts/repo/bootstrap/fleet.mjs --status";
 /**
  * Wire the consumer's package.json for thin distribution: a `sync-fleet` script
  * (manual full re-fetch) and the `prepare` BELT — the idempotent auto-fetch
@@ -726,199 +763,6 @@ export declare const FLEET_STATUS_SCRIPT = "node scripts/repo/bootstrap/fleet.mj
  * if package.json is absent. (Dep-0 file — raw JSON, not EditablePackageJson.)
  */
 export declare function wirePackageJson(dest: string): void;
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/lockstep.d.mts
-export type LockStepStateName = 'current' | 'out-of-sync' | 'update-available';
-export interface LockStepConfig {
-  readonly ref: string;
-  readonly cascadeSha: string;
-}
-export interface LockStepInputs {
-  readonly config: LockStepConfig;
-  readonly pinnedTemplateSha: string | undefined;
-  readonly newestTemplateSha: string | undefined;
-  readonly newestRef: string | undefined;
-}
-export interface LockStepState {
-  readonly state: LockStepStateName;
-  readonly inLockStep: boolean;
-  readonly updateAvailable: boolean;
-  readonly config: LockStepConfig;
-  readonly pinnedTemplateSha: string | undefined;
-  readonly newestTemplateSha: string | undefined;
-  readonly newestRef: string | undefined;
-}
-export interface RefValidation {
-  readonly ok: boolean;
-  readonly errors: readonly string[];
-}
-/**
- * Validate a `bundle.ref` value at WRITE time. Rejects an empty, fuzzy, ranged,
- * or aliased ref — only an exact `fleet-pack-<hex>` tag is legal. Returns the
- * list of problems (empty === valid).
- */
-export declare function validateRef(ref: unknown): RefValidation;
-/**
- * Validate a `bundle.cascadeSha` value at WRITE time. Rejects anything that is
- * not a bare 40-char lowercase hex SHA (no `v` prefix, no range, no alias).
- */
-export declare function validateCascadeSha(cascadeSha: unknown): RefValidation;
-/**
- * Validate a complete `bundle` block (both fields together). Used by the
- * write-time gate in the config reader + the cascade stamper.
- */
-export declare function validateBundleBlock(bundle: unknown): RefValidation;
-/**
- * Resolve the lock-step state from the PARSED inputs (never a substring scan).
- * Pure — no IO — so the three states + their exit codes unit-test offline.
- *
- * - CURRENT: inLockStep AND no newer release.
- * - UPDATE-AVAILABLE: inLockStep but a newer release exists.
- * - OUT-OF-SYNC: cascadeSha !== pinnedTemplateSha (broken invariant).
- *
- * When `pinnedTemplateSha` is undefined the ref's release could not be found,
- * so the invariant cannot be confirmed and the state is OUT-OF-SYNC — fail loud
- * rather than assume current.
- */
-export declare function resolveLockStepState(inputs: LockStepInputs): LockStepState;
-/**
- * The terraform `-detailed-exitcode`-style exit code for a resolved state.
- * 0  CURRENT, or UPDATE-AVAILABLE without --exit-code.
- * 10 UPDATE-AVAILABLE WITH --exit-code (a clean "drift detected" signal).
- * 1  OUT-OF-SYNC — ALWAYS (broken invariant, fail loud regardless of flags).
- */
-export declare function lockStepExitCode(state: LockStepState, options?: {
-  exitCode?: boolean | undefined;
-} | undefined): number;
-export declare const ERR_LOCKSTEP_MISMATCH = "ERR_WHEELHOUSE_LOCKSTEP_MISMATCH";
-export interface LockStepErrorParts {
-  readonly ref: string;
-  readonly pinnedTemplateSha: string | undefined;
-  readonly cascadeSha: string;
-}
-/**
- * Build the pnpm-style lock-step mismatch error from the PARSED fields (never
- * stitched from substrings). Lines: code + What / Where / Wanted / Saw / Fix.
- * Prints BOTH the raw ref and the resolved release templateSha so the operator
- * can see which side drifted.
- */
-export declare function formatLockStepError(parts: LockStepErrorParts): string;
-export declare const UPDATE_NOTIFIER_OPT_OUT_ENV = "WHEELHOUSE_NO_UPDATE_NOTIFIER";
-export interface NoticeStore {
-  readonly lastCheckMs: number;
-  readonly lastSeenRef: string | undefined;
-}
-export declare function readNoticeStore(dest: string): NoticeStore | undefined;
-export declare function writeNoticeStore(dest: string, store: NoticeStore): void;
-export interface NoticeDecisionInputs {
-  readonly updateAvailable: boolean;
-  readonly newestRef: string | undefined;
-  readonly store: NoticeStore | undefined;
-  readonly nowMs: number;
-  readonly ci: boolean;
-  readonly optedOut: boolean;
-}
-/**
- * Decide whether the passive update notice should print. Pure so the throttle +
- * CI-suppress + opt-out unit-test offline. The notice fires only when: a newer
- * release exists, we are NOT in CI, NOT opted out, and either the store is
- * empty, ≥24h have passed since the last check, OR the newest ref changed since
- * last seen. A fresh release bypasses the 24h throttle immediately.
- */
-export declare function shouldShowNotice(inputs: NoticeDecisionInputs): boolean;
-/**
- * Format the boxed passive notice. NAMES the re-cascade as the action (never a
- * bare re-fetch). Honors NO_COLOR by dropping the box-drawing emphasis to plain
- * ASCII when `color` is false.
- */
-export declare function formatUpdateNotice(config: {
-  readonly newestRef: string;
-  readonly color: boolean;
-}): string;
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/resolve.d.mts
-/**
- * @file Pack-ref resolution and lock-step assertion helpers.
- *   Extracted from fleet.mts to keep that file under the 500-line soft cap.
- *   Dep-0 (no socket-lib): pure logic plus the anonymous GHCR reads in
- *   ghcr-fetch.mts. None do filesystem writes.
- *   Lock-step note: assertLockStep enforces the cascadeSha === templateSha
- *   invariant but does not resolve refs itself - see packTemplateSha and
- *   resolveNewestRef.
- */
-/**
- * Assert the lock-step invariant before applying a release: the member's pinned
- * `bundle.cascadeSha` MUST equal the release's `templateSha`.
- * `--frozen-lockfile` semantics — a hard fail (never apply a mismatched
- * release). Returns true when intact OR when the member declares no
- * `cascadeSha` (a non-lock-step member — the legacy ref-only pin still
- * fetches). Logs the parsed error + returns false on mismatch.
- */
-export declare function assertLockStep(config: {
-  readonly cascadeSha: string | undefined;
-  readonly manifestTemplateSha: string;
-  readonly ref: string;
-}): boolean;
-export declare const ERR_BUNDLE_BEHIND_LOCAL = "ERR_WHEELHOUSE_BUNDLE_BEHIND_LOCAL_TEMPLATE";
-export declare function isBundleBehindLocalTemplate(config: {
-  readonly dest: string;
-  readonly manifestTemplateSha: string;
-}): boolean;
-/**
- * Resolve the NEWEST pack ref from GHCR's moving `latest` tag.
- *
- * One anonymous call, and it has to work this way rather than by ordering a tag
- * list. Measured against the live registry: `/v2/<repo>/tags/list` returns
- * OLDEST first and pages at 100, so the first page began at the oldest tag and
- * did not contain the newest pack. A member also cannot settle it by git
- * ancestry, because its history is its own, not the wheelhouse's.
- *
- * So the publisher writes the same manifest at `latest` and stamps the template
- * SHA into `org.opencontainers.image.revision`. This reads that annotation and
- * rebuilds the ref from it.
- *
- * Returns undefined when the tag, the annotation, or the network is
- * unavailable. The caller treats that as "cannot tell", the same as the old
- * offline case, rather than as "up to date".
- */
-export declare function resolveNewestRef(repo: string): Promise<string | undefined>;
-/**
- * The template SHA a pack ref names, read from the ref itself.
- *
- * No network and no `gh`. The publish workflow derives the OCI tag and the
- * bundle contents from one `git rev-parse HEAD`, so the tag sha IS the template
- * sha and a fetched manifest could only restate it. That matters beyond speed:
- * the old path shelled `gh release download` against a channel the pack no
- * longer publishes to, so it now returns undefined for every new pack and
- * `fleet:status` silently loses the pinned sha.
- *
- * Returns undefined for a ref that carries no full sha, which the caller treats
- * the same as the old "asset absent" case.
- */
-export declare function packTemplateSha(ref: string): string | undefined;
-//#endregion
-//#region scripts/repo/gen/bootstrap/src/status.d.mts
-/**
- * Fire the passive update notice opportunistically (update-notifier style). The
- * caller already resolved a newer release exists; this throttles to once/24h
- * via the out-of-tree store, suppresses in CI, honors the opt-out env +
- * NO_COLOR, and NAMES the re-cascade. NEVER weakens the fetch-path verify or
- * the status hard-fail — it only silences the box. Returns true when a notice
- * was printed.
- */
-export declare function maybeShowUpdateNotice(config: {
-  readonly dest: string;
-  readonly updateAvailable: boolean;
-  readonly newestRef: string | undefined;
-}): boolean;
-export declare function printStatusReport(state: LockStepState, config: {
-  noHeader: boolean;
-}): void;
-/**
- * Stable-keyed JSON shape for `fleet:status --json`. Keys never change between
- * states so a script can read them unconditionally.
- */
-export declare function statusJson(state: LockStepState): Record<string, unknown>;
 //#endregion
 //#region scripts/repo/gen/bootstrap/src/yaml-merge.d.mts
 export interface MergeWorkspaceConfig {
@@ -998,13 +842,30 @@ export declare function mergeWorkspaceYaml(config: MergeWorkspaceConfig): string
 //#region scripts/repo/gen/bootstrap/src/fleet.d.mts
 export declare function resolveRepoRoot(startDir: string): string;
 export declare function parseArgs(argv: readonly string[]): InstallConfig;
-/**
- * Render the `fleet:status` report. Read-only — NEVER mutates. Resolves the
- * pinned release's templateSha + the newest release, builds the lock-step
- * state, prints the table / JSON / line, and returns the terraform-style exit
- * code (0 CURRENT, 0|10 UPDATE-AVAILABLE, 1 OUT-OF-SYNC).
- */
-export declare function runStatus(config: InstallConfig): Promise<number>;
+interface EnsureCurrentReceipt {
+  readonly checkedAt: number;
+  readonly ref: string;
+  readonly oci: OciManifestReceipt;
+}
+export declare function readEnsureCurrentReceipt(dest: string): EnsureCurrentReceipt | undefined;
+export declare function isEnsureCurrentFresh(receipt: EnsureCurrentReceipt | undefined, options?: {
+  readonly now?: number | undefined;
+} | undefined): boolean;
+export interface EnsureCurrentLock {
+  readonly owner: string;
+  readonly path: string;
+}
+export declare function acquireEnsureCurrentLock(dest: string, options?: {
+  readonly now?: number | undefined;
+  readonly owner?: string | undefined;
+} | undefined): EnsureCurrentLock | undefined;
+export declare function ensureCurrentFleet(config: InstallConfig, dependencies?: {
+  readonly install?: typeof installFleet | undefined;
+  readonly lockAttempts?: number | undefined;
+  readonly now?: (() => number) | undefined;
+  readonly resolve?: typeof resolveGreenPack | undefined;
+  readonly wait?: ((ms: number) => Promise<void>) | undefined;
+} | undefined): Promise<number>;
 /**
  * Download, verify, and apply the fleet bundle identified by `config.ref`.
  * Returns 0 on success, 1 on any error.

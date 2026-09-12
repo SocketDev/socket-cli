@@ -14,6 +14,355 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import { execFileSync as pnpmExecFileSync } from 'node:child_process'
+import pnpmCrypto from 'node:crypto'
+import {
+  closeSync as pnpmCloseSync,
+  constants as pnpmConstants,
+  fstatSync as pnpmFstatSync,
+  lstatSync as pnpmLstatSync,
+  opendirSync as pnpmOpendirSync,
+  openSync as pnpmOpenSync,
+  readSync as pnpmReadSync,
+  realpathSync as pnpmRealpathSync,
+} from 'node:fs'
+import type { Dirent as PnpmDirectoryEntry } from 'node:fs'
+import pnpmPath from 'node:path'
+import pnpmProcess from 'node:process'
+const { pnpmEcosystemFingerprint } = (function () {
+  // The install fingerprint and Actions cache resolve before npm dependencies exist.
+  // oxlint-disable-next-line socket/prefer-spawn-over-execsync -- dep-0 config query
+
+  interface PnpmEcosystemOwnership {
+    cargo: boolean
+    python: boolean
+  }
+
+  interface PnpmEcosystemOptions {
+    config?: unknown | undefined
+    maxBytes?: number | undefined
+    maxEntries?: number | undefined
+  }
+
+  interface PnpmDirectoryIdentity {
+    readonly dev: number
+    readonly ino: number
+  }
+  interface PnpmEcosystemScan {
+    readonly root: string
+    readonly files: string[]
+    readonly directories: Map<string, PnpmDirectoryIdentity>
+  }
+
+  const PNPM_CONFIG_TIMEOUT_MS = 5000
+  const PNPM_CONFIG_MAX_BYTES = 1_048_576
+  const PNPM_INPUT_MAX_ENTRIES = 50_000
+  const PNPM_INPUT_MAX_BYTES = 16 * 1024 * 1024
+  const PNPM_INPUT_SKIP_DIRS = new Set([
+    '.cache',
+    '.git',
+    '.pnpm',
+    '.venv',
+    'build',
+    'coverage',
+    'deps',
+    'external',
+    'fixtures',
+    'node_modules',
+    'target',
+    'third_party',
+    'upstream',
+    'vendor',
+  ])
+
+  function pnpmConfigRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+  }
+
+  function pnpmEcosystemOwnership(config: unknown): PnpmEcosystemOwnership {
+    if (!pnpmConfigRecord(config)) {
+      throw new TypeError(
+        'Invalid pnpm configuration. Where: ecosystem ownership. Saw a non-object; wanted parsed pnpm config. Fix the workspace configuration.',
+      )
+    }
+    const ownership = { cargo: false, python: false }
+    for (const name of ['cargo', 'python'] as const) {
+      const section = config[name]
+      if (section === undefined || section === null) {
+        continue
+      }
+      if (
+        !pnpmConfigRecord(section) ||
+        (section['enabled'] !== undefined &&
+          typeof section['enabled'] !== 'boolean')
+      ) {
+        throw new TypeError(
+          `Invalid pnpm ${name} setting. Where: ecosystem ownership. Wanted an enabled boolean. Fix pnpm-workspace.yaml.`,
+        )
+      }
+      ownership[name] = section['enabled'] === true
+    }
+    return ownership
+  }
+
+  function readPnpmEcosystemOwnership(
+    root: string,
+    options: PnpmEcosystemOptions = {},
+  ): PnpmEcosystemOwnership {
+    if (options.config !== undefined) {
+      return pnpmEcosystemOwnership(options.config)
+    }
+    const args = ['config', 'list', '--json']
+    const windows = pnpmProcess.platform === 'win32'
+    let config: unknown
+    try {
+      config = JSON.parse(
+        pnpmExecFileSync(
+          windows ? 'bash' : 'pnpm',
+          windows ? ['-c', 'exec pnpm "$@"', 'pnpm', ...args] : args,
+          {
+            cwd: root,
+            encoding: 'utf8',
+            maxBuffer: PNPM_CONFIG_MAX_BYTES,
+            stdio: ['ignore', 'pipe', 'pipe'],
+            timeout: PNPM_CONFIG_TIMEOUT_MS,
+          },
+        ),
+      )
+    } catch {
+      throw new Error(
+        'Cannot read pnpm ecosystem ownership. Where: pnpm config list --json. Wanted valid configuration within five seconds. Fix pnpm setup or workspace configuration and retry.',
+      )
+    }
+    return pnpmEcosystemOwnership(config)
+  }
+
+  function isPnpmInputDirectory(name: string): boolean {
+    return (
+      !PNPM_INPUT_SKIP_DIRS.has(name) &&
+      !name.endsWith('-bundled') &&
+      !name.endsWith('-vendored')
+    )
+  }
+
+  function capturePnpmDirectory(directory: string): PnpmDirectoryIdentity {
+    const metadata = pnpmLstatSync(directory)
+    if (!metadata.isDirectory() || pnpmRealpathSync(directory) !== directory) {
+      throw new Error(
+        `Pnpm input directory changed. Where: ${directory}. Wanted a contained directory without symlinks. Retry after edits finish.`,
+      )
+    }
+    return {
+      __proto__: null,
+      dev: metadata.dev,
+      ino: metadata.ino,
+    } as PnpmDirectoryIdentity
+  }
+
+  function assertPnpmDirectories(
+    directory: string,
+    scan: Pick<PnpmEcosystemScan, 'root' | 'directories'>,
+  ): void {
+    let current = directory
+    while (true) {
+      const expected = scan.directories.get(current)
+      const actual = capturePnpmDirectory(current)
+      if (
+        !expected ||
+        expected.dev !== actual.dev ||
+        expected.ino !== actual.ino
+      ) {
+        throw new Error(
+          `Pnpm input directory changed. Where: ${current}. Wanted the directory recorded during discovery. Retry after edits finish.`,
+        )
+      }
+      if (current === scan.root) {
+        return
+      }
+      current = pnpmPath.dirname(current)
+    }
+  }
+
+  function pnpmEcosystemFiles(
+    root: string,
+    ownership: PnpmEcosystemOwnership,
+    options: PnpmEcosystemOptions = {},
+  ): string[] {
+    return collectPnpmEcosystemFiles(root, ownership, options).files
+  }
+
+  function collectPnpmEcosystemFiles(
+    root: string,
+    ownership: PnpmEcosystemOwnership,
+    config: PnpmEcosystemOptions,
+  ): PnpmEcosystemScan {
+    const names = new Set<string>()
+    if (ownership.cargo) {
+      names.add('Cargo.toml')
+      names.add('Cargo.lock')
+    }
+    if (ownership.python) {
+      names.add('pyproject.toml')
+      names.add('pylock.toml')
+    }
+    if (names.size === 0) {
+      return {
+        __proto__: null,
+        root,
+        directories: new Map<string, PnpmDirectoryIdentity>(),
+        files: [],
+      } as PnpmEcosystemScan
+    }
+    root = pnpmRealpathSync(root)
+    const scan = {
+      root,
+      directories: new Map([[root, capturePnpmDirectory(root)]]),
+    }
+    const { maxEntries = PNPM_INPUT_MAX_ENTRIES } = {
+      __proto__: null,
+      ...config,
+    } as PnpmEcosystemOptions
+    const stack = ['']
+    const files: string[] = []
+    let count = 0
+    while (stack.length) {
+      const relative = stack.pop()
+      if (relative === undefined) {
+        break
+      }
+      const directoryPath = pnpmPath.join(root, relative)
+      assertPnpmDirectories(directoryPath, scan)
+      const directory = pnpmOpendirSync(directoryPath)
+      try {
+        assertPnpmDirectories(directoryPath, scan)
+        let entry: PnpmDirectoryEntry | null
+        while ((entry = directory.readSync()) !== null) {
+          count += 1
+          if (count > maxEntries) {
+            throw new Error(
+              `Cannot fingerprint pnpm ecosystem inputs. Where: ${root}. Saw more than ${maxEntries} entries. Fix the workspace layout or its vendor exclusions.`,
+            )
+          }
+          if (entry.isSymbolicLink()) {
+            continue
+          }
+          const child = relative ? `${relative}/${entry.name}` : entry.name
+          if (entry.isDirectory()) {
+            if (isPnpmInputDirectory(entry.name)) {
+              const childPath = pnpmPath.join(root, child)
+              scan.directories.set(childPath, capturePnpmDirectory(childPath))
+              stack.push(child)
+            }
+          } else if (entry.isFile() && names.has(entry.name)) {
+            files.push(child)
+          }
+        }
+      } finally {
+        directory.closeSync()
+      }
+    }
+    return {
+      __proto__: null,
+      ...scan,
+      files: files.toSorted(),
+    } as PnpmEcosystemScan
+  }
+
+  function readPnpmInput(
+    file: string,
+    remainingBytes: number,
+    scan: PnpmEcosystemScan,
+  ): Buffer {
+    const parent = pnpmPath.dirname(file)
+    assertPnpmDirectories(parent, scan)
+    const metadata = pnpmLstatSync(file)
+    if (!metadata.isFile() || metadata.size > remainingBytes) {
+      throw new Error(
+        `Cannot fingerprint pnpm ecosystem input. Where: ${file}. Wanted a regular file within the remaining ${remainingBytes} bytes. Fix the workspace inputs.`,
+      )
+    }
+    const flags =
+      pnpmConstants.O_RDONLY |
+      (pnpmConstants.O_NOFOLLOW ?? 0) |
+      (pnpmConstants.O_NONBLOCK ?? 0)
+    const descriptor = pnpmOpenSync(file, flags)
+    try {
+      assertPnpmDirectories(parent, scan)
+      const opened = pnpmFstatSync(descriptor)
+      if (
+        !opened.isFile() ||
+        opened.size !== metadata.size ||
+        opened.ino !== metadata.ino ||
+        opened.dev !== metadata.dev
+      ) {
+        throw new Error(
+          `Pnpm input changed while opening. Where: ${file}. Wanted a stable regular file. Retry after edits finish.`,
+        )
+      }
+      const bytes = Buffer.alloc(metadata.size)
+      let offset = 0
+      while (offset < bytes.length) {
+        const count = pnpmReadSync(
+          descriptor,
+          bytes,
+          offset,
+          bytes.length - offset,
+          offset,
+        )
+        if (count === 0) {
+          throw new Error(
+            `Pnpm input changed while reading. Where: ${file}. Wanted complete file bytes. Retry after edits finish.`,
+          )
+        }
+        offset += count
+      }
+      if (pnpmReadSync(descriptor, Buffer.alloc(1), 0, 1, offset) !== 0) {
+        throw new Error(
+          `Pnpm input grew while reading. Where: ${file}. Wanted stable file bytes. Retry after edits finish.`,
+        )
+      }
+      assertPnpmDirectories(parent, scan)
+      return bytes
+    } finally {
+      pnpmCloseSync(descriptor)
+    }
+  }
+
+  function pnpmEcosystemFingerprint(
+    root: string,
+    options: PnpmEcosystemOptions = {},
+  ): string {
+    const ownership = readPnpmEcosystemOwnership(root, options)
+    if (!ownership.cargo && !ownership.python) {
+      return ''
+    }
+    const hash = pnpmCrypto
+      .createHash('sha256')
+      .update(JSON.stringify(ownership))
+    const maxBytes = options.maxBytes ?? PNPM_INPUT_MAX_BYTES
+    let totalBytes = 0
+    const scan = collectPnpmEcosystemFiles(root, ownership, options)
+    for (const relative of scan.files) {
+      const bytes = readPnpmInput(
+        pnpmPath.join(scan.root, relative),
+        maxBytes - totalBytes,
+        scan,
+      )
+      totalBytes += bytes.length
+      hash.update(JSON.stringify([relative, bytes.length])).update(bytes)
+    }
+    return hash.digest('hex')
+  }
+
+  const pnpmBootstrapApi = {
+    pnpmEcosystemOwnership,
+    readPnpmEcosystemOwnership,
+    pnpmEcosystemFiles,
+    pnpmEcosystemFingerprint,
+  }
+  return pnpmBootstrapApi
+})()
+
 import { readFileSync as bootstrapReadFileSync } from 'node:fs'
 import bootstrapProcess from 'node:process'
 const bootstrapRunner = (function (
@@ -369,32 +718,13 @@ export function fetchBundle(): boolean {
     }
     return true
   }
-  const pinnedRef = readPinnedRef(REPO_ROOT)
-  const appliedRef = readAppliedRefLocal(REPO_ROOT)
-  if (isAppliedRefCurrent(pinnedRef, appliedRef)) {
-    log(`bundle ${appliedRef} matches pin ${pinnedRef} — skipping fetch`)
-    return true
-  }
-  if (!tryRun('node', [fleet, '--if-current'])) {
-    log('bundle fetch (fleet.mjs --if-current) reported a problem — continuing')
+  if (!tryRun('node', [fleet, '--ensure-current'])) {
+    log(
+      'bundle refresh (fleet.mjs --ensure-current) reported a problem — continuing',
+    )
     return false
   }
   return true
-}
-
-const SETTINGS_CANDIDATES_LOCAL = [
-  '.config/repo/socket-wheelhouse.json',
-  '.config/socket-wheelhouse.json', // loose-config-ref: allow -- migration read
-  '.socket-wheelhouse.json',
-] as const
-
-const APPLIED_MARKER_PATH = '.cache/fleet/socket-wheelhouse/bundle-applied'
-
-export function isAppliedRefCurrent(
-  pinnedRef: string | undefined,
-  appliedRef: string | undefined,
-): boolean {
-  return pinnedRef !== undefined && pinnedRef !== '' && appliedRef === pinnedRef
 }
 
 export function isMainModule(): boolean {
@@ -416,105 +746,6 @@ export function log(message: string): void {
   }
   // oxlint-disable-next-line socket/no-console-prefer-logger -- dep-0 bootstrap
   console.log(`fleet-prepare: ${message}`)
-}
-
-const NOTICE_CHECK_TTL_MS = 864e5
-
-const OFFLINE_RETRY_TTL_MS = 36e5
-
-export async function maybeNotifyUpdate(): Promise<void> {
-  const fleet = path.join(HERE, 'fleet.mjs')
-  if (!existsSync(fleet)) {
-    return
-  }
-  try {
-    const {
-      UPDATE_NOTIFIER_OPT_OUT_ENV,
-      maybeShowUpdateNotice,
-      readBundleConfig,
-      readNoticeStore,
-      resolveNewestRef,
-      writeNoticeStore,
-    } =
-      // oxlint-disable-next-line socket/no-dynamic-import-outside-bundle -- dep-0 bootstrap resolves the fetcher lazily; a static import would execute it on every prepare run
-      (await import(pathToFileURL(fleet).href)) as {
-        UPDATE_NOTIFIER_OPT_OUT_ENV: string
-        maybeShowUpdateNotice: (o: {
-          dest: string
-          updateAvailable: boolean
-          newestRef: string | undefined
-        }) => boolean
-        readBundleConfig: (dest: string) => {
-          ref: string | undefined
-          cascadeSha: string | undefined
-        }
-        readNoticeStore: (
-          dest: string,
-        ) =>
-          | { lastCheckMs: number; lastSeenRef: string | undefined }
-          | undefined
-        resolveNewestRef: (repo: string) => Promise<string | undefined>
-        writeNoticeStore: (
-          dest: string,
-          store: { lastCheckMs: number; lastSeenRef: string | undefined },
-        ) => void
-      }
-    const cfg = readBundleConfig(REPO_ROOT)
-    if (!cfg.ref) {
-      return
-    }
-    if (process.env['CI'] || process.env[UPDATE_NOTIFIER_OPT_OUT_ENV]) {
-      return
-    }
-    const store = readNoticeStore(REPO_ROOT)
-    if (
-      store !== undefined &&
-      Date.now() - store.lastCheckMs < NOTICE_CHECK_TTL_MS
-    ) {
-      return
-    }
-    const repo = 'SocketDev/socket-wheelhouse'
-    const newestRef = await resolveNewestRef(repo)
-    if (newestRef !== undefined && newestRef !== cfg.ref) {
-      maybeShowUpdateNotice({
-        dest: REPO_ROOT,
-        newestRef,
-        updateAvailable: true,
-      })
-    }
-    writeNoticeStore(REPO_ROOT, {
-      lastCheckMs:
-        newestRef === undefined
-          ? Date.now() - NOTICE_CHECK_TTL_MS + OFFLINE_RETRY_TTL_MS
-          : Date.now(),
-      lastSeenRef: newestRef,
-    })
-  } catch {
-    // Best-effort: offline / no gh / a status hard-fail never breaks install.
-  }
-}
-
-function readAppliedRefLocal(dest: string): string | undefined {
-  const p = path.join(dest, APPLIED_MARKER_PATH)
-  return existsSync(p) ? readFileSync(p, 'utf8').trim() : undefined
-}
-
-function readPinnedRef(dest: string): string | undefined {
-  for (let i = 0, { length } = SETTINGS_CANDIDATES_LOCAL; i < length; i += 1) {
-    const p = path.join(dest, SETTINGS_CANDIDATES_LOCAL[i]!)
-    if (!existsSync(p)) {
-      continue
-    }
-    try {
-      const json = JSON.parse(readFileSync(p, 'utf8')) as {
-        bundle?: { ref?: string | undefined } | undefined
-      }
-      return json.bundle?.ref
-    } catch {
-      return undefined
-    }
-  }
-  return undefined
 }
 
 export function reconcileInstall(): boolean {
@@ -584,7 +815,9 @@ export async function hydrateWorkspace(
 }
 
 export function workspaceInstallFingerprint(
-  options?: { root?: string | undefined } | undefined,
+  options?:
+    | { root?: string | undefined; ecosystemConfig?: unknown }
+    | undefined,
 ): string {
   const root = options?.root ?? REPO_ROOT
   const files = ['package.json', 'pnpm-workspace.yaml']
@@ -603,6 +836,10 @@ export function workspaceInstallFingerprint(
     }
   }
   const hash = createHash('sha256')
+  const ecosystemFingerprint = pnpmEcosystemFingerprint(root, {
+    config: options?.ecosystemConfig,
+  })
+  if (ecosystemFingerprint) hash.update(ecosystemFingerprint)
   for (const relative of files.toSorted()) {
     const bytes = readFileSync(path.join(root, relative))
     hash.update(JSON.stringify([relative, bytes.length]))
@@ -656,7 +893,6 @@ export async function runPrepare(): Promise<number> {
     log('reconcile `pnpm install --ignore-scripts` failed')
     return 1
   }
-  await maybeNotifyUpdate()
   return 0
 }
 

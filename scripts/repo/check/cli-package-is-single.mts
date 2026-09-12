@@ -8,6 +8,8 @@ import { REPO_ROOT } from '../../fleet/paths.mts'
 import { isMainModule } from '../../fleet/process/is-main-module.mts'
 import { runMain } from '../../fleet/process/run-main.mts'
 
+import type { ScriptMeta } from '../../fleet/process/run-main.mts'
+
 const logger = getDefaultLogger()
 
 export interface CliPackageShape {
@@ -69,10 +71,12 @@ export function main(): void {
   }
 }
 
+const SCRIPT_META: ScriptMeta = {
+  describe: 'checks the single-package CLI layout and 2.x prerelease identity',
+  help: 'Usage: pnpm run check:cli-package [--json]',
+  json: 'native',
+}
+
 if (isMainModule(import.meta.url)) {
-  runMain(main, {
-    describe:
-      'checks the single-package CLI layout and 2.x prerelease identity',
-    help: 'Usage: pnpm run check:cli-package [--json]',
-  })
+  runMain(main, SCRIPT_META)
 }
