@@ -20,10 +20,6 @@ import { getMajor as getMajorVersion } from '../../util/semver.mts'
 import { fetchPackageManifest } from '@socketsecurity/lib-stable/packages/manifest'
 import { safeReadFile } from '@socketsecurity/lib-stable/fs/read-file'
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-// Feature-detects fetchChangelog, an odai >=0.3 export the pinned 0.2.1
-// type declarations don't carry yet.
-// oxlint-disable-next-line socket/no-namespace-import -- feature detection
-import * as odai from '@socketsecurity/odai'
 import {
   assessHoistSafety,
   createOdaiModel,
@@ -90,26 +86,13 @@ const BACKEND_NAMES: readonly string[] = [
 ]
 
 /**
- * Odai's changelog helper (odai >=0.3) with the pacote-README fallback for
- * the released line. Same contract either way: text plus its provenance.
+ * Load the installed changelog or the registry README with its provenance.
  */
 export async function changelogFor(
   root: string,
   name: string,
   target: string,
 ): Promise<{ source: string; text: string }> {
-  const helper = (odai as Record<string, unknown>)['fetchChangelog']
-  if (typeof helper === 'function') {
-    const result = await (
-      helper as (
-        name: string,
-        options?:
-          | { root?: string | undefined; version?: string | undefined }
-          | undefined,
-      ) => Promise<{ source: string; text: string }>
-    )(name, { root, version: target })
-    return result.source === 'none' ? { source: 'none', text: '' } : result
-  }
   const local = findLocalChangelog(root, name)
   if (local !== undefined) {
     return { __proto__: null, source: 'CHANGELOG.md', text: local } as {
