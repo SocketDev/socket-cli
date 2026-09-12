@@ -284,8 +284,6 @@ export { spawnCdxgen } from './spawn-cdxgen.mts'
 
 export { spawnCoana } from './spawn-coana.mts'
 
-export { spawnSocketPatch } from './spawn-socket-patch.mts'
-
 export { spawnSynp } from './spawn-synp.mts'
 
 /**

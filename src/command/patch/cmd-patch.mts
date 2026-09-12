@@ -1,6 +1,6 @@
 import { commonFlags } from '../../flags.mjs'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { spawnSocketPatch } from '../../util/dlx/spawn.mjs'
+import { spawnSocketPatch } from '../../core/patch/spawn.mts'
 import { outputDryRunExecute } from '../../util/dry-run/output.mjs'
 import { filterFlags } from '../../util/process/cmd.mjs'
 

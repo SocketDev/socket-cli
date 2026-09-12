@@ -44,7 +44,7 @@ vi.mock(
   },
 )
 
-vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
+vi.mock(import('../../../../src/core/patch/spawn.mts'), () => ({
   spawnSocketPatch: mockSpawnSocketPatchDlx,
 }))
 

@@ -1,149 +1,87 @@
-/**
- * Integration tests for `socket patch` root command.
- *
- * Tests the patch management root command which forwards to socket-patch
- * v2.0.0+ (a standalone Rust binary from GitHub releases).
- *
- * Test Coverage: - Help text display and subcommand listing - Subcommand
- * routing to socket-patch binary.
- *
- * Available socket-patch v2.0.0 Commands: - apply: Apply security patches from
- * local manifest - get (alias: download): Get security patches from Socket API.
- *
- * - List: List all patches in local manifest - remove: Remove a patch from
- *   manifest (replaces old 'rm') - repair (alias: gc): Download missing blobs
- *   and clean up - rollback: Rollback patches to restore original files - scan:
- *   Scan installed packages for available patches - setup: Configure
- *   package.json postinstall scripts.
- *
- * Related Files: - src/command/patch/cmd-patch.mts - Root command that
- * forwards to socket-patch.
- */
-
+import { mkdtempSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 
-import { describe, expect } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_HELP } from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
-import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
+import { spawnSocketCli } from '../../utils.mts'
+import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
 const binCliPath = getBinCliPath()
+let fixtureDir: string
+let fixturePath: string
 
-const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
-const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
+beforeAll(() => {
+  fixtureDir = mkdtempSync(path.join(os.tmpdir(), 'socket-patch-forwarding-'))
+  fixturePath = path.join(fixtureDir, 'patch-fixture.cjs')
+  writeFileSync(
+    fixturePath,
+    'console.log(JSON.stringify(process.argv.slice(2))); process.exitCode = Number(process.env.PATCH_FIXTURE_EXIT_CODE || 0)',
+  )
+})
 
-describe('socket patch', async () => {
-  describe('help display', () => {
-    cmdit(
-      ['patch', FLAG_HELP, FLAG_CONFIG, '{}'],
-      `should support ${FLAG_HELP}`,
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // Socket CLI help shows: "Manage CVE patches for dependencies"
-        expect(stdout).toContain('Manage CVE patches for dependencies')
-        expect(stderr).toContain('`socket patch`')
-        expect(code, 'explicit help should exit with code 0').toBe(0)
-      },
-    )
+afterAll(async () => {
+  await safeDelete(fixtureDir)
+})
 
-    cmdit(
-      ['patch', FLAG_CONFIG, '{}'],
-      'should show help when no arguments provided',
-      async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // Without subcommand, shows Socket CLI help and exits 2 (missing
-        // input), matching the with-subcommands convention.
-        expect(stdout).toContain('Manage CVE patches for dependencies')
-        expect(code, 'missing subcommand should exit with code 2').toBe(2)
-      },
-    )
+describe('socket patch', () => {
+  it('shows root help', async () => {
+    const result = await spawnSocketCli(binCliPath, [
+      'patch',
+      '--help',
+      '--config',
+      '{}',
+      '--no-banner',
+    ])
+    expect(result.code).toBe(0)
+    expect(result.stdout).toContain('Manage CVE patches for dependencies')
   })
 
-  describe('subcommand forwarding', () => {
-    cmdit(
-      ['patch', 'scan', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should forward scan subcommand to socket-patch',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        // socket-patch v2.0.0 scans for packages. Without node_modules it shows "No packages found".
-        expect(output).toMatch(
-          /No packages found|Found \d+ packages|patches available/i,
-        )
-        // socket-patch scan returns 0 even when no packages found.
-        expect(code).toBe(0)
-      },
-    )
-
-    cmdit(
-      ['patch', 'list', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should forward list subcommand to socket-patch',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        // socket-patch v2.0.0 lists patches from the fixture manifest.
-        expect(output).toMatch(/Found \d+ patch|No patches found|manifest/i)
-        // Exit code depends on whether manifest exists.
-        expect(typeof code).toBe('number')
-      },
-    )
-
-    cmdit(
-      ['patch', 'apply', FLAG_CONFIG, '{"apiToken":"fake-token"}'],
-      'should forward apply subcommand to socket-patch',
-      async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
-        const output = stdout + stderr
-        // socket-patch v2.0.0 applies patches. Without installed packages it
-        // reports that nothing matches the available patches.
-        expect(output).toMatch(
-          /Applied|No patches|No packages found|manifest|nothing to apply/i,
-        )
-        // Exit code depends on state.
-        expect(typeof code).toBe('number')
-      },
-    )
+  it('requires a subcommand', async () => {
+    const result = await spawnSocketCli(binCliPath, [
+      'patch',
+      '--config',
+      '{}',
+      '--no-banner',
+    ])
+    expect(result.code).toBe(2)
+    expect(result.stdout).toContain('Manage CVE patches for dependencies')
   })
 
-  describe('socket-patch binary help', () => {
-    cmdit(
-      ['patch', 'scan', '--help', FLAG_CONFIG, '{}'],
-      'should show socket-patch scan help',
-      async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // socket-patch shows its own help for subcommands.
-        expect(stdout).toContain('Scan')
-        expect(code).toBe(0)
-      },
+  it.each([
+    'scan',
+    'list',
+    'apply',
+    'get',
+    'remove',
+    'repair',
+    'rollback',
+    'setup',
+    'vendor',
+    'vex',
+  ])('forwards %s and filters global flags', async subcommand => {
+    const result = await spawnSocketCli(
+      binCliPath,
+      ['patch', subcommand, '--help', '--config', '{}', '--no-banner'],
+      { env: { SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: fixturePath } },
     )
+    expect(result.code).toBe(0)
+    expect(JSON.parse(result.stdout)).toEqual([subcommand, '--help'])
+  })
 
-    cmdit(
-      ['patch', 'get', '--help', FLAG_CONFIG, '{}'],
-      'should show socket-patch get help',
-      async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // socket-patch shows its own help for get command.
-        expect(stdout).toContain('Get')
-        expect(code).toBe(0)
+  it('preserves the patch process exit status', async () => {
+    const result = await spawnSocketCli(
+      binCliPath,
+      ['patch', 'apply', '--config', '{}', '--no-banner'],
+      {
+        env: {
+          SOCKET_CLI_SOCKET_PATCH_LOCAL_PATH: fixturePath,
+          PATCH_FIXTURE_EXIT_CODE: '7',
+        },
       },
     )
-
-    cmdit(
-      ['patch', 'remove', '--help', FLAG_CONFIG, '{}'],
-      'should show socket-patch remove help',
-      async cmd => {
-        const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
-        // socket-patch shows its own help for remove command.
-        expect(stdout).toContain('Remove')
-        expect(code).toBe(0)
-      },
-    )
+    expect(result.code).toBe(7)
+    expect(JSON.parse(result.stdout)).toEqual(['apply'])
   })
 })
