@@ -5,7 +5,7 @@ import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
 import { runCiCoanaFix } from './coana-fix-ci.mts'
 import { runLocalCoanaFix } from './coana-fix-local.mts'
-import { getFixEnv } from './env-helpers.mts'
+import { getFixEnv } from './ci-environment.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
 import { findSocketYmlSync } from '../../util/config.mts'
 import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'

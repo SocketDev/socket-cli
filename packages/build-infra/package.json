@@ -6,7 +6,7 @@
   "type": "module",
   "exports": {
     "./lib/constants": "./lib/constants.mts",
-    "./lib/esbuild-helpers": "./lib/esbuild-helpers.mts",
+    "./lib/esbuild-helpers": "./lib/esbuild-runtime-banner.mts",
     "./lib/esbuild-plugin-unicode-transform": "./lib/esbuild-plugin-unicode-transform.mts",
     "./lib/github-error-utils": "./lib/github-error-utils.mts",
     "./lib/github-releases": "./lib/github-releases.mts",

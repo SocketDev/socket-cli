@@ -28,7 +28,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchLicensePolicy } from '../../../../src/commands/organization/fetch-license-policy.mts'
 
 // Mock the dependencies.

@@ -12,7 +12,7 @@ import { GQL_PR_STATE_OPEN } from '../../constants/github.mts'
 import { fetchGhsaDetails } from '../../util/git/github.mts'
 import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
 
-import type { FixEnv } from './env-helpers.mts'
+import type { FixEnv } from './ci-environment.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()

@@ -5,7 +5,7 @@
  * introspection endpoint is read from.
  *
  * Discovery lives in `oauth-discovery.mts`; the protected-resource metadata
- * this server publishes lives in `transport-http-helpers.mts`.
+ * this server publishes lives in `transport-http-util.mts`.
  */
 
 import { checkResourceAllowed } from '@modelcontextprotocol/server'
@@ -24,10 +24,10 @@ import {
   splitScopes,
   writeJson,
   writeOAuthError,
-} from './transport-http-helpers.mts'
+} from './transport-http-util.mts'
 
 import type { OAuthMetadata } from './oauth-discovery.mts'
-import type { AuthenticatedRequest } from './transport-http-helpers.mts'
+import type { AuthenticatedRequest } from './transport-http-util.mts'
 import type { AuthInfo } from '@modelcontextprotocol/server'
 import type { HttpResponse } from '@socketsecurity/lib-stable/http-request/response-types'
 import type { ServerResponse } from 'node:http'

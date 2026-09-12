@@ -28,7 +28,7 @@ import {
   PROBE_NOT_DEFINED,
   readManifest,
   SHOW_EXT_HUB_ONLY,
-} from './extract-maven-test-helpers.mts'
+} from './extract-maven-fixtures.mts'
 
 // Mock the logger so narration is capturable without TTY noise.
 const mockLogger = vi.hoisted(() => ({

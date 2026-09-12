@@ -17,7 +17,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setupSdkSetupFailure } from '../../../helpers/sdk-test-helpers.mts'
+import { setupSdkSetupFailure } from '../../../helpers/sdk-fixtures.mts'
 import { fetchDiffScan } from '../../../../src/commands/scan/fetch-diff-scan.mts'
 
 import type * as ApiModule from '../../../../src/util/socket/api.mts'

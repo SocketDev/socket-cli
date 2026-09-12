@@ -55,7 +55,7 @@ import type {
   SharedBuildPaths,
   SourceMap,
 } from './pipeline-types.mts'
-import { getNodeVersion } from './version-helpers.mts'
+import { getNodeVersion } from './tool-version.mts'
 
 export {
   buildCacheKey,

@@ -18,7 +18,7 @@
  *
  * Related Files: - src/commands/analytics/fetch-org-analytics.mts -
  * Implementation - src/commands/analytics/handle-analytics.mts - Handler that
- * calls this fetcher - test/helpers/sdk-test-helpers.mts - SDK mocking
+ * calls this fetcher - test/helpers/sdk-fixtures.mts - SDK mocking
  * utilities.
  */
 
@@ -28,7 +28,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchOrgAnalyticsData } from '../../../../src/commands/analytics/fetch-org-analytics.mts'
 
 // Mock the dependencies.

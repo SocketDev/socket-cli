@@ -26,7 +26,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchOrganization } from '../../../../src/commands/organization/fetch-organization-list.mts'
 
 // Mock the dependencies.

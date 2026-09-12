@@ -90,7 +90,7 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock(import('../../../../src/commands/fix/env-helpers.mts'), () => ({
+vi.mock(import('../../../../src/commands/fix/ci-environment.mts'), () => ({
   checkCiEnvVars: mockCheckCiEnvVars,
   getCiEnvInstructions: vi.fn(() => 'Set CI env vars'),
   getFixEnv: mockGetFixEnv,
@@ -139,7 +139,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  strictDelete: mockStrictDelete,
+  safeDelete: mockStrictDelete,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
   safeReadFileSync: vi.fn(() => undefined),

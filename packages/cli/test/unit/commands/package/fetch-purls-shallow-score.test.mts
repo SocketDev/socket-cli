@@ -28,7 +28,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 
 // Mock the dependencies.
 const mockHandleApiCall = vi.hoisted(() => vi.fn())

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { checkCiEnvVars, getCiEnvInstructions } from './env-helpers.mts'
+import { checkCiEnvVars, getCiEnvInstructions } from './ci-environment.mts'
 import { strictDelete } from '../../util/fs/strict-delete.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'

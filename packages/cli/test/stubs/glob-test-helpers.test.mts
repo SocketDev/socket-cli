@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isGlobMatch } from './glob-test-helpers.mts'
+import { isGlobMatch } from './glob-fixtures.mts'
 
 describe('glob utilities', () => {
   describe('isGlobMatch', () => {

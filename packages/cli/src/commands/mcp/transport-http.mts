@@ -19,7 +19,7 @@ import {
   isLocalhostOrigin,
   OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
   writeJson,
-} from './transport-http-helpers.mts'
+} from './transport-http-util.mts'
 
 import type { NodeMcpRequestHandler } from '@modelcontextprotocol/node'
 import type { AuthInfo } from '@modelcontextprotocol/server'

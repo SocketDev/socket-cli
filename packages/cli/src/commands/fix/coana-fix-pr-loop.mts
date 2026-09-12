@@ -33,7 +33,7 @@ import {
 import { spawnCoanaDlx } from '../../util/dlx/spawn.mjs'
 
 import type { GhsaFixResult } from './coana-fix-ci.mts'
-import type { FixEnv } from './env-helpers.mts'
+import type { FixEnv } from './ci-environment.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { GhsaDetails } from '../../util/git/github.mts'

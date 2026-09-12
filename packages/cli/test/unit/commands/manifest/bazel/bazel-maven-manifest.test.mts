@@ -10,7 +10,7 @@ import {
   dedupArtifactsByCoord,
   normalizeToMavenInstallJson,
 } from '../../../../../src/commands/manifest/bazel/bazel-maven-manifest.mts'
-import { mkArt } from './extract-maven-test-helpers.mts'
+import { mkArt } from './extract-maven-fixtures.mts'
 
 describe('normalizeToMavenInstallJson', () => {
   it('dedupes exact duplicate coordinates without failing', () => {

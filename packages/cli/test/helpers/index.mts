@@ -5,10 +5,10 @@
 
 export * from './cli-execution.mts'
 export * from './environment.mts'
-export * from './generate-report-test-helpers.mts'
+export * from './report-fixtures.mts'
 export * from './git-spawn-assertions.mts'
-export * from './handle-test-helpers.mts'
+export * from './handle-fixtures.mts'
 export * from './mock-setup.mts'
 export * from './mocks.mts'
 export * from './test-fixtures.mts'
-export * from './workspace-helper.mts'
+export * from './workspace-fixtures.mts'

@@ -111,7 +111,7 @@ expectResult(result)
   })
 ```
 
-### 4. Workspace Helpers (`workspace-helper.mts`)
+### 4. Workspace Helpers (`workspace-fixtures.mts`)
 
 Create and manage temporary test workspaces with package manifests, lockfiles, and configurations.
 
