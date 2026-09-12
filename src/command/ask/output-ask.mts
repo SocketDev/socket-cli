@@ -26,6 +26,8 @@ export interface AskProjectContext {
 
 export interface OutputAskCommandOptions {
   explain?: boolean | undefined
+  suggestionOnly?: boolean | undefined
+  reason?: string | undefined
 }
 
 /**
@@ -128,7 +130,11 @@ export function outputAskCommand(
   context: AskProjectContext,
   options?: OutputAskCommandOptions | undefined,
 ): void {
-  const { explain = false } = {
+  const {
+    explain = false,
+    suggestionOnly = false,
+    reason,
+  } = {
     __proto__: null,
     ...options,
   } as OutputAskCommandOptions
@@ -140,6 +146,20 @@ export function outputAskCommand(
   logger.log('')
 
   if (!intent) {
+    const reasons: Record<string, string> = {
+      unavailable:
+        'Local AI is unavailable. Start a prepared local llama-server backend, then retry with --ai.',
+      'timed-out': 'Local AI exceeded its time limit.',
+      invalid: 'Local AI returned an invalid action.',
+      abstained: 'Local AI did not select an action.',
+      negated: 'The request contains negation.',
+      ambiguous: 'Ask for one action at a time.',
+      'invalid-query': 'Enter one request of at most 4096 characters.',
+      'missing-argument': 'The suggested action requires a valid package name.',
+    }
+    if (reason && reasons[reason]) {
+      logger.log(reasons[reason])
+    }
     logger.log(
       'No supported command matched this request. Nothing was executed.',
     )
@@ -148,13 +168,22 @@ export function outputAskCommand(
   }
 
   // Show interpretation.
-  logger.log(colors.bold(colors.magenta('🤖 I understood:')))
+  logger.log(
+    colors.bold(
+      colors.magenta(suggestionOnly ? 'AI suggestion:' : '🤖 I understood:'),
+    ),
+  )
   logger.log(`  ${intent.explanation}`)
 
   outputIntentDetails(intent)
+  if (suggestionOnly) {
+    logger.log(
+      'Suggestion only. Nothing was executed. Inspect the command before running it yourself.',
+    )
+  }
 
   // Show confidence if low.
-  if (intent.confidence < 0.6) {
+  if (!suggestionOnly && intent.confidence < 0.6) {
     logger.log('')
     logger.log(
       colors.yellow(

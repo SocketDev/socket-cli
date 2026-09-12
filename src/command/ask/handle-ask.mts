@@ -1,3 +1,10 @@
+import {
+  ASK_CANDIDATES,
+  ASK_PATTERNS,
+  lookupAskPattern,
+} from './intent-catalog.mts'
+import { assessAskQuery, isAskPackageName } from './intent-policy.mts'
+import { matchAskWithOdai } from './odai-match.mts'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
@@ -24,90 +31,6 @@ export interface ParsedIntent {
 }
 
 /**
- * Pattern matching rules for natural language.
- */
-const PATTERNS = {
-  __proto__: null,
-  // Fix patterns (highest priority - action words).
-  fix: {
-    keywords: ['fix', 'resolve', 'repair', 'remediate', 'update', 'upgrade'],
-    command: ['fix'],
-    explanation: 'Applying package updates to fix GitHub security alerts',
-    priority: 3,
-  },
-  // Issues patterns (lowest priority - descriptive words).
-  issues: {
-    keywords: ['problem', 'alert', 'warning', 'concern'],
-    command: ['scan', 'create'],
-    explanation: 'Finding issues in your dependencies',
-    priority: 1,
-  },
-  // Optimize patterns (high priority - action words).
-  optimize: {
-    keywords: [
-      'optimize',
-      'enhance',
-      'improve',
-      'replace',
-      'alternative',
-      'better',
-    ],
-    command: ['optimize'],
-    explanation: 'Replacing dependencies with Socket registry alternatives',
-    priority: 3,
-  },
-  // Package safety patterns, medium priority.
-  package: {
-    keywords: [
-      'safe',
-      'trust',
-      'score',
-      'rating',
-      'quality',
-      'package',
-      'dependency',
-    ],
-    command: ['package', 'score'],
-    explanation: 'Checking package security score',
-    priority: 2,
-  },
-  // Patch patterns (high priority - specific action).
-  patch: {
-    keywords: ['patch', 'apply patch'],
-    command: ['patch'],
-    explanation: 'Directly patching code to remove CVEs',
-    priority: 3,
-  },
-  // Scan patterns, medium priority.
-  scan: {
-    keywords: [
-      'scan',
-      'check',
-      'vulnerabilit',
-      'audit',
-      'analyze',
-      'inspect',
-      'review',
-    ],
-    command: ['scan', 'create'],
-    explanation: 'Scanning your project for security vulnerabilities',
-    priority: 2,
-  },
-} as const
-
-export type AskPattern = (typeof PATTERNS)[Exclude<
-  keyof typeof PATTERNS,
-  '__proto__'
->]
-
-// Widened view of PATTERNS for dynamic action strings from the semantic
-// matchers — plain assignment widening, no assertion needed. `null` appears in
-// the value union only because TS models the literal's `__proto__: null`
-// prototype marker as a property; lookupPattern folds it away.
-const PATTERNS_BY_ACTION: Record<string, AskPattern | null | undefined> =
-  PATTERNS
-
-/**
  * Severity levels mapping.
  */
 const SEVERITY_KEYWORDS = {
@@ -126,6 +49,25 @@ const ENVIRONMENT_KEYWORDS = {
   development: ['development', 'dev'],
   production: ['production', 'prod'],
 } as const
+
+export function getAskEnvironment(lowerQuery: string): string | undefined {
+  let environment: string | undefined
+  const environmentEntries = (['production', 'development'] as const).map(
+    environmentKey =>
+      [environmentKey, ENVIRONMENT_KEYWORDS[environmentKey]] as const,
+  )
+  for (const [env, keywords] of environmentEntries) {
+    if (
+      Array.isArray(keywords) &&
+      keywords.some(kw => lowerQuery.includes(kw))
+    ) {
+      environment = env
+      break
+    }
+  }
+
+  return environment
+}
 
 export function getCliReentryArgv(
   command: string[] | readonly string[],
@@ -159,6 +101,8 @@ export async function getProjectContext(cwd: string): Promise<{
 export interface HandleAskOptions {
   execute?: boolean | undefined
   explain?: boolean | undefined
+  ai?: boolean | undefined
+  abortSignal?: AbortSignal | undefined
 }
 
 /**
@@ -168,16 +112,32 @@ export async function handleAsk(
   query: string,
   options?: HandleAskOptions | undefined,
 ): Promise<void> {
-  const { execute = false, explain = false } = {
+  const {
+    execute = false,
+    explain = false,
+    ai = false,
+    abortSignal,
+  } = {
     __proto__: null,
     ...options,
   } as HandleAskOptions
 
   // Parse the intent.
-  const intent = await parseIntent(query)
+  abortSignal?.throwIfAborted()
+  const refusal = assessAskQuery(query)
+  if (refusal) {
+    outputAskCommand(
+      query,
+      undefined,
+      { hasPackageJson: false },
+      { reason: refusal },
+    )
+    return
+  }
+  const intent = await parseAskIntent(query)
 
   if (!intent) {
-    outputAskCommand(query, undefined, { hasPackageJson: false }, { explain })
+    await outputUnresolvedAsk(query, { ai, explain, abortSignal })
     return
   }
 
@@ -193,6 +153,8 @@ export async function handleAsk(
     logger.log('Tip: Add --execute or -e to run this command directly')
     return
   }
+
+  abortSignal?.throwIfAborted()
 
   // Execute the command.
   logger.log('')
@@ -223,19 +185,48 @@ export async function handleAsk(
   }
 }
 
-/**
- * Look up a PATTERNS entry from a dynamic matcher action string.
- */
-export function lookupPattern(action: string): AskPattern | undefined {
-  return PATTERNS_BY_ACTION[action] ?? undefined
+export async function outputUnresolvedAsk(
+  query: string,
+  config: HandleAskOptions,
+): Promise<void> {
+  const values = { __proto__: null, ...config }
+  const { ai = false, explain = false, abortSignal } = values
+  if (ai) {
+    const match = await matchAskWithOdai(query, ASK_CANDIDATES, {
+      abortSignal,
+    })
+    abortSignal?.throwIfAborted()
+    if (match.status === 'suggested') {
+      const suggestion = await parseAskIntent(query, {
+        actionId: match.actionId,
+      })
+      abortSignal?.throwIfAborted()
+      outputAskCommand(
+        query,
+        suggestion,
+        { hasPackageJson: false },
+        { explain, suggestionOnly: true, reason: 'missing-argument' },
+      )
+    } else {
+      outputAskCommand(
+        query,
+        undefined,
+        { hasPackageJson: false },
+        { reason: match.reason },
+      )
+    }
+  } else {
+    outputAskCommand(query, undefined, { hasPackageJson: false }, { explain })
+  }
 }
 
-/**
- * Parse natural language query into structured intent.
- */
-export async function parseIntent(
+export async function parseAskIntent(
   query: string,
+  options: { actionId?: string | undefined } = {},
 ): Promise<ParsedIntent | undefined> {
+  if (assessAskQuery(query)) {
+    return undefined
+  }
   // Normalize the query to handle verb tenses, plurals, etc.
   const lowerQuery = normalizeQuery(query)
 
@@ -290,7 +281,9 @@ export async function parseIntent(
       }
     }
 
-    return extractedPackageName
+    return extractedPackageName && isAskPackageName(extractedPackageName)
+      ? extractedPackageName
+      : undefined
   }
 
   // Detect severity.
@@ -308,21 +301,7 @@ export async function parseIntent(
     }
   }
 
-  // Detect environment.
-  let environment: string | undefined
-  const environmentEntries = (['production', 'development'] as const).map(
-    environmentKey =>
-      [environmentKey, ENVIRONMENT_KEYWORDS[environmentKey]] as const,
-  )
-  for (const [env, keywords] of environmentEntries) {
-    if (
-      Array.isArray(keywords) &&
-      keywords.some(kw => lowerQuery.includes(kw))
-    ) {
-      environment = env
-      break
-    }
-  }
+  const environment = getAskEnvironment(lowerQuery)
 
   // Match against patterns.
   let bestMatch:
@@ -338,17 +317,31 @@ export async function parseIntent(
   if (packageName && /\babout\b/u.test(lowerQuery)) {
     bestMatch = {
       action: 'package',
-      command: [...PATTERNS.package.command],
-      explanation: PATTERNS.package.explanation,
+      command: [...ASK_PATTERNS.package.command],
+      explanation: ASK_PATTERNS.package.explanation,
       confidence: 1,
       score: 1,
     }
   }
-  matchIntentPatterns()
+  if (options.actionId !== undefined) {
+    const pattern = lookupAskPattern(options.actionId)
+    if (!pattern) {
+      return undefined
+    }
+    bestMatch = {
+      action: options.actionId,
+      command: [...pattern.command],
+      explanation: pattern.explanation,
+      confidence: 0,
+      score: 0,
+    }
+  } else {
+    matchIntentPatterns()
+  }
   function matchIntentPatterns(): void {
     const patternEntries = (
       ['fix', 'patch', 'optimize', 'package', 'scan', 'issues'] as const
-    ).map(patternKey => [patternKey, PATTERNS[patternKey]] as const)
+    ).map(patternKey => [patternKey, ASK_PATTERNS[patternKey]] as const)
     for (const [action, pattern] of patternEntries) {
       if (
         !pattern ||
@@ -378,7 +371,9 @@ export async function parseIntent(
     }
   }
 
-  await matchSemanticIntent()
+  if (options.actionId === undefined) {
+    await matchSemanticIntent()
+  }
   async function matchSemanticIntent(): Promise<void> {
     // Hybrid semantic matching: try multiple strategies if confidence is low.
     if (!bestMatch || bestMatch.confidence < PATTERN_MATCH_THRESHOLD) {
@@ -387,8 +382,8 @@ export async function parseIntent(
 
       if (wordMatch && wordMatch.confidence > (bestMatch?.confidence || 0)) {
         // Use word-overlap match.
-        /* c8 ignore start - word-overlap match selected branch; requires wordOverlapMatch to return a specific PATTERNS-keyed action that beats the current pattern-match confidence; tests cover the matchers in isolation */
-        const pattern = lookupPattern(wordMatch.action)
+        /* c8 ignore start - word-overlap match selected branch; requires wordOverlapMatch to return a specific ASK_PATTERNS-keyed action that beats the current pattern-match confidence; tests cover the matchers in isolation */
+        const pattern = lookupAskPattern(wordMatch.action)
         if (pattern) {
           bestMatch = {
             action: wordMatch.action,
@@ -460,3 +455,7 @@ export async function parseIntent(
     return result
   }
 }
+
+/**
+ * Parse natural language query into structured intent.
+ */

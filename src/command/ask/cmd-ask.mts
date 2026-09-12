@@ -40,6 +40,12 @@ export async function run(
         default: false,
         description: 'Execute the command directly',
       },
+      ai: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Ask local odai for a suggestion when deterministic matching is unresolved',
+      },
       explain: {
         type: 'boolean',
         default: false,
@@ -89,5 +95,24 @@ export async function run(
   const execute = cli.flags['execute']
   const explain = cli.flags['explain']
 
-  await handleAsk(query, { execute, explain })
+  const controller = new AbortController()
+  function interruptAsk(): void {
+    controller.abort(new DOMException('Interrupted', 'AbortError'))
+    process.exitCode = 130
+  }
+  process.once('SIGINT', interruptAsk)
+  try {
+    await handleAsk(query, {
+      execute,
+      explain,
+      ai: cli.flags['ai'],
+      abortSignal: controller.signal,
+    })
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      throw error
+    }
+  } finally {
+    process.removeListener('SIGINT', interruptAsk)
+  }
 }

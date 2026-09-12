@@ -36,6 +36,7 @@ describe('socket ask', async () => {
       expect(stdout).toContain('<question>')
       expect(stdout).toContain('--execute')
       expect(stdout).toContain('--explain')
+      expect(stdout).toContain('--ai')
       expect(stdout).toContain('Examples')
       expect(stdout).toContain('scan for vulnerabilities')
       expect(code, 'explicit help should exit with code 0').toBe(0)
@@ -93,3 +94,16 @@ describe('socket ask', async () => {
     },
   )
 })
+
+cmdit(
+  ['ask', 'frobnicate project', '--execute', FLAG_CONFIG, '{}'],
+  'keeps an unsupported request unresolved with execution requested',
+  async cmd => {
+    const { code, stdout, stderr } = await spawnSocketCli(binCliPath, cmd)
+    expect(code).toBe(0)
+    expect(stdout).toContain('Nothing was executed')
+    expect(stdout).toContain('socket ask --help')
+    expect(stdout).not.toContain('Executing')
+    expect(stderr).not.toContain('API key')
+  },
+)

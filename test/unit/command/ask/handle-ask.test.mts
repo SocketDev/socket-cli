@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   getCliReentryArgv,
   handleAsk,
-  parseIntent,
+  parseAskIntent,
 } from '../../../../src/command/ask/handle-ask.mts'
 
 // Mock dependencies.
@@ -268,7 +268,7 @@ describe('wordOverlapMatch', () => {
   })
 })
 
-describe('parseIntent semantic match fallthrough', () => {
+describe('parseAskIntent semantic match fallthrough', () => {
   it('skips wordOverlapMatch when action not in PATTERNS (lines 512-514)', async () => {
     // Provide a semantic index whose top match action is unknown to PATTERNS,
     // so the fallback hits line 513 (`if (pattern)`) but skips the body.
@@ -283,7 +283,7 @@ describe('parseIntent semantic match fallthrough', () => {
     )
     // Use a query that matches 'xyz totally unrelated' but doesn't hit
     // any pattern keyword.
-    const result = await parseIntent('xyz totally unrelated query')
+    const result = await parseAskIntent('xyz totally unrelated query')
     expect(result).toBeUndefined()
   })
 })

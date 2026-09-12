@@ -1,7 +1,7 @@
 /**
  * Unit tests for ask command handler.
  *
- * Tests the `parseIntent` function that converts natural language queries
+ * Tests the `parseAskIntent` function that converts natural language queries
  * into Socket CLI commands: action detection, severity/environment/dry-run
  * extraction, package name extraction, confidence scoring, command building,
  * explanation generation, NLP normalization, and edge cases.
@@ -12,7 +12,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { parseIntent } from '../../../../src/command/ask/handle-ask.mts'
+import { parseAskIntent } from '../../../../src/command/ask/handle-ask.mts'
 
 // Mock dependencies.
 const mockLogger = vi.hoisted(() => ({
@@ -56,7 +56,7 @@ vi.mock(import('@socketsecurity/lib-stable/env/home'), () => ({
   getHome: mockGetHome,
 }))
 
-describe('parseIntent', () => {
+describe('parseAskIntent', () => {
   describe('action detection', () => {
     it('should detect fix action from "fix vulnerabilities"', async () => {
       const result = await requireIntent('fix vulnerabilities')
@@ -109,7 +109,7 @@ describe('parseIntent', () => {
     })
 
     it('should detect package action from "check package score"', async () => {
-      const result = await parseIntent('check package score')
+      const result = await parseAskIntent('check package score')
       expect(result).toBeUndefined()
     })
   })
@@ -203,7 +203,7 @@ describe('parseIntent', () => {
     })
 
     it('leaves unsupported requests unresolved', async () => {
-      const result = await parseIntent('help me')
+      const result = await parseAskIntent('help me')
       expect(result).toBeUndefined()
     })
   })
@@ -221,7 +221,7 @@ describe('parseIntent', () => {
     })
 
     it('should build package score command', async () => {
-      const result = await parseIntent('check package safety')
+      const result = await parseAskIntent('check package safety')
       expect(result).toBeUndefined()
     })
   })
@@ -304,9 +304,9 @@ describe('parseIntent', () => {
       expect(result.action).toBe('optimize')
     })
 
-    it('should detect apply patch as patch action', async () => {
-      const result = await requireIntent('apply patch to fix CVE')
-      expect(result.action).toBe('patch')
+    it('declines requests that name both patch and fix actions', async () => {
+      const result = await parseAskIntent('apply patch to fix CVE')
+      expect(result).toBeUndefined()
     })
 
     it('should detect trust as package action', async () => {
@@ -425,9 +425,9 @@ describe('parseIntent', () => {
       expect(result.packageName).toBeUndefined()
     })
 
-    it('should not extract patch as package name', async () => {
-      const result = await requireIntent('check patch score')
-      expect(result.packageName).toBeUndefined()
+    it('declines requests that mix checking and patching', async () => {
+      const result = await parseAskIntent('check patch score')
+      expect(result).toBeUndefined()
     })
 
     it('should extract package from "about" phrase', async () => {
@@ -445,12 +445,12 @@ describe('parseIntent', () => {
 
   describe('empty and edge case queries', () => {
     it('should handle empty query gracefully', async () => {
-      const result = await parseIntent('')
+      const result = await parseAskIntent('')
       expect(result).toBeUndefined()
     })
 
     it('should handle query with only whitespace', async () => {
-      const result = await parseIntent('   ')
+      const result = await parseAskIntent('   ')
       expect(result).toBeUndefined()
     })
 
@@ -459,17 +459,17 @@ describe('parseIntent', () => {
       expect(result.action).toBe('fix')
     })
 
-    it('should handle very long query', async () => {
+    it('declines a compound scan and check request', async () => {
       const longQuery =
         'please scan my project for vulnerabilities and check all the dependencies for security issues and problems'
-      const result = await requireIntent(longQuery)
-      expect(result.action).toBeDefined()
+      const result = await parseAskIntent(longQuery)
+      expect(result).toBeUndefined()
     })
   })
 })
 
 async function requireIntent(query: string) {
-  const result = await parseIntent(query)
+  const result = await parseAskIntent(query)
   if (!result) {
     throw new Error('Expected a deterministic command match')
   }
