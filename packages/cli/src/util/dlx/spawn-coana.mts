@@ -96,38 +96,16 @@ export async function spawnCoanaDlx(
 
     // Use local Coana CLI if available.
     if (resolution.type === 'local') {
-      const detection = detectExecutableType(resolution.path)
-
-      const baseEnv = stripNpmPackageEnvVars({
-        ...process.env,
-        ...mixinsEnv,
-        ...spawnEnv,
-      })
-
-      // A local override that is a JS file needs an interpreter, and a SEA
-      // build has to find one on PATH; resolve it trustedly and pass the child
-      // the sanitized PATH so its own lookups cannot reach back into the
-      // checkout.
-      const nodeResolution =
-        detection.type === 'binary' ? undefined : await resolveNodeExecutable()
-      const spawnArgs = nodeResolution ? [resolution.path, ...args] : [...args]
-      const spawnCommand = nodeResolution?.executable ?? resolution.path
-
-      const spawnPromise = spawn(spawnCommand, spawnArgs, {
-        ...dlxOptions,
-        env:
-          nodeResolution?.searchPath === undefined
-            ? baseEnv
-            : buildSystemToolEnv(baseEnv, nodeResolution.searchPath),
-        stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-      })
-
-      const output = await spawnPromise
-
-      return {
-        ok: true,
-        data: output.stdout?.toString() ?? '',
-      }
+      return await spawnLocalCoana(
+        resolution.path,
+        args,
+        mixinsEnv,
+        {
+          ...dlxOptions,
+          env: spawnEnv,
+        },
+        spawnExtra,
+      )
     }
 
     // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
@@ -234,6 +212,48 @@ export async function spawnCoanaVfs(
       data: e,
       message,
     }
+  }
+}
+
+export async function spawnLocalCoana(
+  localPath: string,
+  args: readonly string[],
+  mixinsEnv: Record<string, string>,
+  config: CoanaDlxOptions,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  const { env: spawnEnv, ...dlxOptions } = { __proto__: null, ...config }
+  const detection = detectExecutableType(localPath)
+
+  const baseEnv = stripNpmPackageEnvVars({
+    ...process.env,
+    ...mixinsEnv,
+    ...spawnEnv,
+  })
+
+  // A local override that is a JS file needs an interpreter, and a SEA
+  // build has to find one on PATH; resolve it trustedly and pass the child
+  // the sanitized PATH so its own lookups cannot reach back into the
+  // checkout.
+  const nodeResolution =
+    detection.type === 'binary' ? undefined : await resolveNodeExecutable()
+  const spawnArgs = nodeResolution ? [localPath, ...args] : [...args]
+  const spawnCommand = nodeResolution?.executable ?? localPath
+
+  const spawnPromise = spawn(spawnCommand, spawnArgs, {
+    ...dlxOptions,
+    env:
+      nodeResolution?.searchPath === undefined
+        ? baseEnv
+        : buildSystemToolEnv(baseEnv, nodeResolution.searchPath),
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
+  })
+
+  const output = await spawnPromise
+
+  return {
+    ok: true,
+    data: output.stdout?.toString() ?? '',
   }
 }
 

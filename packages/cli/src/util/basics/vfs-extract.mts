@@ -125,54 +125,7 @@ export async function extractBasicsTools(
       )
     }
 
-    // Validate all extracted binaries work after extraction.
-    logger.group('Validating extracted basics tools…')
-
-    const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
-    // The missing-tools check above already throws when python is absent.
-    const pythonDir = extractedPaths['python']!
-    const pythonPath = normalizePath(path.join(pythonDir, 'bin', pythonExe))
-
-    const validateResult = await spawn(pythonPath, ['--version'], {
-      stdio: 'pipe',
-      timeout: 5000,
-    })
-
-    if (!validateResult || validateResult.code !== 0) {
-      throw new Error(
-        `extracted Python at ${pythonPath} failed to run with exit code ${validateResult?.code ?? 'null'} (stderr: ${validateResult?.stderr || '<none>'}); the extracted binary may be corrupt or missing a shared lib — rebuild the SEA binary`,
-      )
-    }
-
-    const pythonVersion = (validateResult.stdout || '').trim()
-    logger.success(`Python: ${pythonVersion}`)
-
-    // Validate other security tools.
-    const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
-    for (let i = 0, { length } = toolsToValidate; i < length; i += 1) {
-      const tool = toolsToValidate[i]!
-      const toolPath = extractedPaths[tool]
-      /* c8 ignore start - defensive: extraction populates all toolsToValidate keys before this loop */
-      if (!toolPath) {
-        continue
-      }
-      /* c8 ignore stop */
-
-      const toolValidateResult = await spawn(toolPath, ['--version'], {
-        stdio: 'pipe',
-        timeout: 5000,
-      })
-
-      if (!toolValidateResult || toolValidateResult.code !== 0) {
-        throw new Error(
-          `extracted ${tool} at ${toolPath} failed to run with exit code ${toolValidateResult?.code ?? 'null'} (stderr: ${toolValidateResult?.stderr || '<none>'}); the extracted binary may be corrupt or missing a shared lib — rebuild the SEA binary`,
-        )
-      }
-
-      const toolVersion = (toolValidateResult.stdout || '').trim()
-      logger.success(`${tool}: ${toolVersion}`)
-    }
-    logger.groupEnd()
+    await validateExtractedBasicsTools(extractedPaths, { windows: isPlatWin })
 
     logger.success('Basics tools extracted and validated')
     // Return the Python directory path for backward compatibility.
@@ -238,6 +191,24 @@ export function getBasicsToolPaths(toolsDir: string): {
   }
 }
 
+export async function getExtractedToolVersion(
+  tool: string,
+  toolPath: string,
+): Promise<string> {
+  const validateResult = await spawn(toolPath, ['--version'], {
+    stdio: 'pipe',
+    timeout: 5000,
+  })
+
+  if (!validateResult || validateResult.code !== 0) {
+    throw new Error(
+      `extracted ${tool} at ${toolPath} failed to run with exit code ${validateResult?.code ?? 'null'} (stderr: ${validateResult?.stderr || '<none>'}); the extracted binary may be corrupt or missing a shared lib — rebuild the SEA binary`,
+    )
+  }
+
+  return (validateResult.stdout || '').trim()
+}
+
 /**
  * Get the base dlx directory path for node-smol. This is the shared extraction
  * directory: ~/.socket/_dlx/<node-smol-hash>/
@@ -268,4 +239,40 @@ export function getNodeSmolBasePath(): string {
   }
 
   return normalizePath(path.join(os.homedir(), UPDATE_STORE_DIR, nodeSmolHash))
+}
+
+export async function validateExtractedBasicsTools(
+  extractedPaths: Record<string, string>,
+  options?: { windows?: boolean | undefined } | undefined,
+): Promise<void> {
+  const { windows: isPlatWin = process.platform === 'win32' } = {
+    __proto__: null,
+    ...options,
+  }
+  // Validate all extracted binaries work after extraction.
+  logger.group('Validating extracted basics tools…')
+
+  const pythonExe = isPlatWin ? 'python3.exe' : 'python3'
+  // The missing-tools check above already throws when python is absent.
+  const pythonDir = extractedPaths['python']!
+  const pythonPath = normalizePath(path.join(pythonDir, 'bin', pythonExe))
+
+  const pythonVersion = await getExtractedToolVersion('Python', pythonPath)
+  logger.success(`Python: ${pythonVersion}`)
+
+  // Validate other security tools.
+  const toolsToValidate = ['trivy', 'trufflehog', 'opengrep'] as const
+  for (let i = 0, { length } = toolsToValidate; i < length; i += 1) {
+    const tool = toolsToValidate[i]!
+    const toolPath = extractedPaths[tool]
+    /* c8 ignore start - defensive: extraction populates all toolsToValidate keys before this loop */
+    if (!toolPath) {
+      continue
+    }
+    /* c8 ignore stop */
+
+    const toolVersion = await getExtractedToolVersion(tool, toolPath)
+    logger.success(`${tool}: ${toolVersion}`)
+  }
+  logger.groupEnd()
 }
