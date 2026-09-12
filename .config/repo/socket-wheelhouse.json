@@ -174,9 +174,7 @@
     ]
   },
   "workspace": {
-    "catalogDriftIgnore": [
-      "typescript"
-    ]
+    "catalogDriftIgnore": ["typescript"]
   },
   "vitest": {
     "lanes": {
@@ -184,9 +182,7 @@
         "packages/cli/test/unit/commands/**",
         "packages/cli/test/unit/meow.test.mts"
       ],
-      "slow": [
-        "packages/cli/test/integration/**"
-      ]
+      "slow": ["packages/cli/test/integration/**"]
     }
   }
 }
