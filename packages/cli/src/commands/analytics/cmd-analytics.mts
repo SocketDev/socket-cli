@@ -25,6 +25,12 @@ export interface AnalyticsFlags {
   markdown: boolean
 }
 
+export interface AnalyticsSelection {
+  repoName: string
+  scope: string
+  time: string
+}
+
 export const CMD_NAME = 'analytics'
 
 const description = 'Look up analytics data'
@@ -35,6 +41,41 @@ export const cmdAnalytics = {
   description,
   hidden,
   run,
+}
+
+export function parseAnalyticsSelection(
+  input: readonly string[],
+): AnalyticsSelection {
+  const first = input[0]
+  if (first === 'org') {
+    return {
+      __proto__: null,
+      repoName: '',
+      scope: 'org',
+      time: input[1] || '30',
+    }
+  }
+  if (first === 'repo') {
+    return {
+      __proto__: null,
+      repoName: input[1] || '',
+      scope: 'repo',
+      time: input[2] || '30',
+    }
+  }
+  return {
+    __proto__: null,
+    repoName: '',
+    scope: 'org',
+    time: first || '30',
+  }
+}
+
+export function resolveAnalyticsDays(time: string): 7 | 30 | 90 {
+  if (time === '90') {
+    return 90
+  }
+  return time === '30' ? 30 : 7
 }
 
 export async function run(
@@ -86,33 +127,7 @@ export async function run(
     importMeta,
   })
 
-  // Supported inputs:
-  // - [], no args
-  // - ['org']
-  // - ['org', '30']
-  // - ['repo', 'name']
-  // - ['repo', 'name', '30']
-  // - ['30']
-  // Validate final values in the next step
-  let scope = 'org'
-  let time = '30'
-  let repoName = ''
-
-  if (cli.input[0] === 'org') {
-    if (cli.input[1]) {
-      time = cli.input[1]
-    }
-  } else if (cli.input[0] === 'repo') {
-    scope = 'repo'
-    if (cli.input[1]) {
-      repoName = cli.input[1]
-    }
-    if (cli.input[2]) {
-      time = cli.input[2]
-    }
-  } else if (cli.input[0]) {
-    time = cli.input[0]
-  }
+  const { repoName, scope, time } = parseAnalyticsSelection(cli.input)
 
   const { file: filepath, json, markdown } = cli.flags
 
@@ -189,6 +204,6 @@ export async function run(
     outputKind,
     repo: repoName,
     scope,
-    time: time === '90' ? 90 : time === '30' ? 30 : 7,
+    time: resolveAnalyticsDays(time),
   })
 }

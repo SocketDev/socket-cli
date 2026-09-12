@@ -142,14 +142,33 @@ export function fsResolve(
     } catch {
       // Unreadable/invalid package.json - fall through to the index default.
     }
-    for (let i = 0, { length } = exts; i < length; i += 1) {
-      const candidate = path.join(joined, `index.${exts[i]}`)
-      if (isResolvableFile(candidate, surface)) {
-        return candidate
+  }
+  return undefined
+}
+
+export function getWalkReferences(
+  parsed: Map<string, ReturnType<typeof extract>>,
+  flags: Map<string, number>,
+): Reference[] {
+  const references: Reference[] = []
+  for (const [file, occurrences] of parsed) {
+    const fileFlags = flags.get(file) ?? 0
+    for (let i = 0, { length } = occurrences; i < length; i += 1) {
+      const occurrence = occurrences[i]!
+      const specifier = classifySpecifier(occurrence.spec)
+      if (specifier.kind === 'bare') {
+        references.push({
+          fromMain: (fileFlags & FROM_MAIN) !== 0,
+          fromSubpath: (fileFlags & FROM_SUBPATH) !== 0,
+          fromTypes: (fileFlags & FROM_TYPES) !== 0 || occurrence.typeOnly,
+          package: specifier.packageName,
+          raw: occurrence.spec,
+          soft: occurrence.soft,
+        })
       }
     }
   }
-  return undefined
+  return references
 }
 
 export function isResolvableFile(p: string, surface: Surface): boolean {
@@ -173,17 +192,12 @@ export function manifestEntry(
   return undefined
 }
 
-/**
- * Walk from `entryPoints` inside `root` (an already-extracted/installed
- * package directory), following relative edges and collecting bare
- * references. Each reachable file accumulates a provenance mask; a bare
- * reference inherits its file's final mask.
- */
-export function walk(root: string, entryPoints: readonly Entry[]): Walk {
-  const parsed = new Map<string, ReturnType<typeof extract>>()
-  const flags = new Map<string, number>()
-  const queue: string[] = []
-
+export function setupWalkQueue(
+  root: string,
+  entryPoints: readonly Entry[],
+  config: { flags: Map<string, number>; queue: string[] },
+): void {
+  const cfg = { __proto__: null, ...config } as typeof config
   for (let i = 0, { length } = entryPoints; i < length; i += 1) {
     const entry = entryPoints[i]!
     const surface: Surface = { preferDts: entry.kind === 'types' }
@@ -197,10 +211,24 @@ export function walk(root: string, entryPoints: readonly Entry[]): Walk {
         : entry.kind === 'subpath'
           ? FROM_SUBPATH
           : FROM_TYPES
-    if (addFlags(flags, resolved, bit)) {
-      queue.push(resolved)
+    if (addFlags(cfg.flags, resolved, bit)) {
+      cfg.queue.push(resolved)
     }
   }
+}
+
+/**
+ * Walk from `entryPoints` inside `root` (an already-extracted/installed
+ * package directory), following relative edges and collecting bare
+ * references. Each reachable file accumulates a provenance mask; a bare
+ * reference inherits its file's final mask.
+ */
+export function walk(root: string, entryPoints: readonly Entry[]): Walk {
+  const parsed = new Map<string, ReturnType<typeof extract>>()
+  const flags = new Map<string, number>()
+  const queue: string[] = []
+
+  setupWalkQueue(root, entryPoints, { flags, queue })
 
   while (queue.length > 0) {
     const file = queue.shift()!
@@ -243,24 +271,8 @@ export function walk(root: string, entryPoints: readonly Entry[]): Walk {
     }
   }
 
-  const references: Reference[] = []
-  for (const [file, occurrences] of parsed) {
-    const fflags = flags.get(file) ?? 0
-    for (let i = 0, { length } = occurrences; i < length; i += 1) {
-      const occ = occurrences[i]!
-      const spec = classifySpecifier(occ.spec)
-      if (spec.kind === 'bare') {
-        references.push({
-          fromMain: (fflags & FROM_MAIN) !== 0,
-          fromSubpath: (fflags & FROM_SUBPATH) !== 0,
-          fromTypes: (fflags & FROM_TYPES) !== 0 || occ.typeOnly,
-          package: spec.packageName,
-          raw: occ.spec,
-          soft: occ.soft,
-        })
-      }
-    }
+  return {
+    filesAnalyzed: parsed.size,
+    references: getWalkReferences(parsed, flags),
   }
-
-  return { filesAnalyzed: parsed.size, references }
 }
