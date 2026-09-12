@@ -46,6 +46,7 @@ export type RepositoryCommandSpec = {
 
 export function createRepositoryCommand(spec: RepositoryCommandSpec) {
   return {
+    __proto__: null,
     description: spec.description,
     hidden: spec.hidden ?? false,
     async run(
@@ -56,20 +57,8 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       // Only guard the commands that actually accept `--default-branch`
       // as a string (create / update). The list/view/delete commands
       // don't, so the check is a no-op for them.
-      if (
-        (spec.commandName === 'create' || spec.commandName === 'update') &&
-        spec.extraFlags?.['defaultBranch']
-      ) {
-        const emptyShape = findEmptyDefaultBranch(argv)
-        if (emptyShape) {
-          logger.fail(
-            emptyShape === 'empty-value'
-              ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
-              : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
-          )
-          process.exitCode = 2
-          return
-        }
+      if (!validateDefaultBranchArg(spec, argv)) {
+        return
       }
       const config: CliCommandConfig = {
         commandName: spec.commandName,
@@ -121,7 +110,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
 
       const noLegacy = !cli.flags['repoName']
 
-      const [repoName = ''] = cli.input
+      const { 0: repoName = '' } = cli.input
 
       const hasApiToken = hasDefaultApiToken()
 
@@ -231,4 +220,27 @@ export function findEmptyDefaultBranch(
     }
   }
   return undefined
+}
+
+export function validateDefaultBranchArg(
+  spec: RepositoryCommandSpec,
+  argv: readonly string[],
+): boolean {
+  const acceptsDefaultBranch =
+    (spec.commandName === 'create' || spec.commandName === 'update') &&
+    spec.extraFlags?.['defaultBranch']
+  if (!acceptsDefaultBranch) {
+    return true
+  }
+  const emptyShape = findEmptyDefaultBranch(argv)
+  if (!emptyShape) {
+    return true
+  }
+  logger.fail(
+    emptyShape === 'empty-value'
+      ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
+      : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
+  )
+  process.exitCode = 2
+  return false
 }
