@@ -26,6 +26,8 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 const logger = getDefaultLogger()
 
@@ -42,7 +44,7 @@ export interface CondaFlags {
   verbose: boolean | undefined
 }
 
-const config = {
+const commandConfig = {
   commandName: 'conda',
   description: `[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}`,
   flags: defineFlags({
@@ -107,9 +109,97 @@ const config = {
 }
 
 export const cmdManifestConda = {
-  description: config.description,
-  hidden: config.hidden,
+  description: commandConfig.description,
+  hidden: commandConfig.hidden,
   run,
+}
+
+export async function resolveCondaFilename(config: {
+  cwd: string
+  filename: string
+  stdin: boolean | undefined
+  trustSocketJson: boolean | undefined
+  sockJson: SocketJson
+  outputKind: OutputKind
+}): Promise<string | undefined> {
+  const { cwd, filename, outputKind, sockJson, stdin, trustSocketJson } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  let useStdin = stdin
+  if (
+    useStdin === undefined &&
+    sockJson.defaults?.manifest?.conda?.stdin !== undefined
+  ) {
+    useStdin = sockJson.defaults.manifest.conda.stdin
+    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, useStdin)
+  }
+  if (useStdin) {
+    return '-'
+  }
+  const infile = resolveCondaInfile({
+    cliFile: filename,
+    cwd,
+    socketJson: sockJson,
+    trustSocketJson,
+  })
+  if (!infile.ok) {
+    await outputRequirements(infile, outputKind, '-')
+    return undefined
+  }
+  return infile.data
+}
+
+export async function resolveCondaOutput(config: {
+  cwd: string
+  out: string
+  stdout: boolean | undefined
+  trustSocketJson: boolean | undefined
+  sockJson: SocketJson
+  outputKind: OutputKind
+}): Promise<string | undefined> {
+  const { cwd, out, outputKind, sockJson, stdout, trustSocketJson } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  let useStdout = stdout
+  if (
+    useStdout === undefined &&
+    sockJson.defaults?.manifest?.conda?.stdout !== undefined
+  ) {
+    useStdout = sockJson.defaults.manifest.conda.stdout
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, useStdout)
+  }
+  if (useStdout) {
+    return '-'
+  }
+  const outfile = resolveCondaOutfile({
+    cliOut: out,
+    cwd,
+    socketJson: sockJson,
+    trustSocketJson,
+  })
+  if (!outfile.ok) {
+    await outputRequirements(outfile, outputKind, '-')
+    return undefined
+  }
+  return outfile.data
+}
+
+export function resolveCondaVerbose(config: {
+  verbose: boolean | undefined
+  sockJson: SocketJson
+}): boolean {
+  const { sockJson, verbose } = { __proto__: null, ...config } as typeof config
+  if (
+    verbose === undefined &&
+    sockJson.defaults?.manifest?.conda?.verbose !== undefined
+  ) {
+    const configured = sockJson.defaults.manifest.conda.verbose
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, configured)
+    return configured
+  }
+  return verbose ?? false
 }
 
 export async function run(
@@ -119,7 +209,7 @@ export async function run(
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
-    config,
+    config: commandConfig,
     importMeta,
     parentName,
   })
@@ -128,72 +218,42 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  let { file: filename, out, stdin, stdout, verbose } = cli.flags
-
-  // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (
-    stdin === undefined &&
-    sockJson.defaults?.manifest?.conda?.stdin !== undefined
-  ) {
-    stdin = sockJson.defaults?.manifest?.conda?.stdin
-    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
+  const filename = await resolveCondaFilename({
+    cwd,
+    filename: cli.flags.file,
+    outputKind,
+    sockJson,
+    stdin: cli.flags.stdin,
+    trustSocketJson,
+  })
+  if (filename === undefined) {
+    return
   }
-  if (stdin) {
-    filename = '-'
-  } else {
-    const infile = resolveCondaInfile({
-      cliFile: filename,
-      cwd,
-      socketJson: sockJson,
-      trustSocketJson,
-    })
-    if (!infile.ok) {
-      await outputRequirements(infile, outputKind, '-')
-      return
-    }
-    filename = infile.data
+  const out = await resolveCondaOutput({
+    cwd,
+    out: cli.flags.out,
+    outputKind,
+    sockJson,
+    stdout: cli.flags.stdout,
+    trustSocketJson,
+  })
+  if (out === undefined) {
+    return
   }
-  if (
-    stdout === undefined &&
-    sockJson.defaults?.manifest?.conda?.stdout !== undefined
-  ) {
-    stdout = sockJson.defaults?.manifest?.conda?.stdout
-    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
-  }
-  if (stdout) {
-    out = '-'
-  } else {
-    const outfile = resolveCondaOutfile({
-      cliOut: out,
-      cwd,
-      socketJson: sockJson,
-      trustSocketJson,
-    })
-    if (!outfile.ok) {
-      await outputRequirements(outfile, outputKind, '-')
-      return
-    }
-    out = outfile.data
-  }
-  if (
-    verbose === undefined &&
-    sockJson.defaults?.manifest?.conda?.verbose !== undefined
-  ) {
-    verbose = sockJson.defaults?.manifest?.conda?.verbose
-    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
-  } else if (verbose === undefined) {
-    verbose = false
-  }
+  const verbose = resolveCondaVerbose({
+    sockJson,
+    verbose: cli.flags.verbose,
+  })
 
   if (verbose) {
-    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- ', parentName, commandConfig.commandName, ':')
     logger.group('- flags:', cli.flags)
     logger.groupEnd()
     logger.log('- target:', cwd)
