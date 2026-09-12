@@ -47,7 +47,6 @@ import { SOCKET_CLI_JS_PATH } from '../env/socket-cli-js-path.mts'
 import { SOCKET_CLI_LOCAL_NODE_SMOL } from '../env/socket-cli-local-node-smol.mts'
 import { SOCKET_CLI_LOCAL_PATH } from '../env/socket-cli-local-path.mts'
 import { SOCKET_CLI_MODE } from '../env/socket-cli-mode.mts'
-import { SOCKET_CLI_MODELS_PATH } from '../env/socket-cli-models-path.mts'
 import { SOCKET_CLI_NO_API_TOKEN } from '../env/socket-cli-no-api-token.mts'
 import { SOCKET_CLI_NPM_PATH } from '../env/socket-cli-npm-path.mts'
 import { SOCKET_CLI_OPTIMIZE } from '../env/socket-cli-optimize.mts'
@@ -102,7 +101,6 @@ export {
   SOCKET_CLI_LOCAL_NODE_SMOL,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
-  SOCKET_CLI_MODELS_PATH,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
@@ -186,7 +184,6 @@ const envSnapshot = {
   SOCKET_CLI_LOCAL_NODE_SMOL,
   SOCKET_CLI_LOCAL_PATH,
   SOCKET_CLI_MODE,
-  SOCKET_CLI_MODELS_PATH,
   SOCKET_CLI_NO_API_TOKEN,
   SOCKET_CLI_NPM_PATH,
   SOCKET_CLI_OPTIMIZE,
