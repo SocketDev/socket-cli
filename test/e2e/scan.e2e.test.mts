@@ -39,13 +39,6 @@ function readLatestScanIds(stdout: string): [string?, string?] {
   return []
 }
 
-function shouldSkipScanAuth(options: {
-  run: boolean
-  hasAuth: boolean
-}): boolean {
-  return !options.run || !options.hasAuth
-}
-
 describe('socket scan (e2e)', () => {
   describe('help and dry-run (no auth required)', () => {
     it.skipIf(!RUN)('exits 2 with no subcommand (prints help)', async () => {
@@ -156,43 +149,31 @@ describe('socket scan (e2e)', () => {
       }
     })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan list exits 0',
-      async () => {
-        const result = await executeCliInScratch(['scan', 'list'])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan list exits 0', async () => {
+      const result = await executeCliInScratch(['scan', 'list'])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan list --json conforms to contract',
-      async () => {
-        const result = await executeCliInScratch(['scan', 'list', '--json'])
-        expect(result.code).toBe(0)
-        validateSocketJsonContract(result.stdout, 0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan list --json conforms to contract', async () => {
+      const result = await executeCliInScratch(['scan', 'list', '--json'])
+      expect(result.code).toBe(0)
+      validateSocketJsonContract(result.stdout, 0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan list --markdown exits 0',
-      async () => {
-        const result = await executeCliInScratch(['scan', 'list', '--markdown'])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan list --markdown exits 0', async () => {
+      const result = await executeCliInScratch(['scan', 'list', '--markdown'])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan view <id> exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch(['scan', 'view', sbomId])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan view <id> exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch(['scan', 'view', sbomId])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
+    it.skipIf(!HAS_AUTH)(
       'scan view <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -209,34 +190,28 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan view <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'view',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan view <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'view',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan metadata <id> exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch(['scan', 'metadata', sbomId])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan metadata <id> exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch(['scan', 'metadata', sbomId])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
+    it.skipIf(!HAS_AUTH)(
       'scan metadata <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -253,34 +228,28 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan metadata <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'metadata',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan metadata <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'metadata',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan report <id> exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch(['scan', 'report', sbomId])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan report <id> exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch(['scan', 'report', sbomId])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
+    it.skipIf(!HAS_AUTH)(
       'scan report <id> --json conforms to contract',
       async () => {
         if (!sbomId) {
@@ -297,76 +266,64 @@ describe('socket scan (e2e)', () => {
       },
     )
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan report <id> --markdown exits 0',
-      async () => {
-        if (!sbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'report',
-          sbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan report <id> --markdown exits 0', async () => {
+      if (!sbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'report',
+        sbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan diff <id1> <id2> exits 0',
-      async () => {
-        if (!sbomId || !secondSbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          sbomId,
-          secondSbomId,
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff <id1> <id2> exits 0', async () => {
+      if (!sbomId || !secondSbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        sbomId,
+        secondSbomId,
+      ])
+      expect(result.code).toBe(0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan diff --json conforms to contract',
-      async () => {
-        if (!sbomId || !secondSbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          sbomId,
-          secondSbomId,
-          '--json',
-        ])
-        expect(result.code).toBe(0)
-        validateSocketJsonContract(result.stdout, 0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff --json conforms to contract', async () => {
+      if (!sbomId || !secondSbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        sbomId,
+        secondSbomId,
+        '--json',
+      ])
+      expect(result.code).toBe(0)
+      validateSocketJsonContract(result.stdout, 0)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan diff --markdown exits 0',
-      async () => {
-        if (!sbomId || !secondSbomId) {
-          return
-        }
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          sbomId,
-          secondSbomId,
-          '--markdown',
-        ])
-        expect(result.code).toBe(0)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff --markdown exits 0', async () => {
+      if (!sbomId || !secondSbomId) {
+        return
+      }
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        sbomId,
+        secondSbomId,
+        '--markdown',
+      ])
+      expect(result.code).toBe(0)
+    })
   })
 
   describe('scan create (auth required, scratch-isolated)', () => {
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
+    it.skipIf(!HAS_AUTH)(
       'scan create . exits 0 with --json contract',
       async () => {
         const result = await executeCliInScratch(
@@ -387,88 +344,73 @@ describe('socket scan (e2e)', () => {
   })
 
   describe('error paths — non-existent org', () => {
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan create --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch(
-          ['scan', 'create', '.', '--org', 'fake_org', '--json'],
-          {
-            seedFiles: {
-              'package.json': JSON.stringify({
-                name: 'socket-cli-e2e-fake-org',
-                version: '0.0.0',
-              }),
-            },
+    it.skipIf(!HAS_AUTH)('scan create --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch(
+        ['scan', 'create', '.', '--org', 'fake_org', '--json'],
+        {
+          seedFiles: {
+            'package.json': JSON.stringify({
+              name: 'socket-cli-e2e-fake-org',
+              version: '0.0.0',
+            }),
           },
-        )
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+        },
+      )
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan view --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'view',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan view --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'view',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan report --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'report',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan report --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'report',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan metadata --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'metadata',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan metadata --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'metadata',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
 
-    it.skipIf(shouldSkipScanAuth({ run: RUN, hasAuth }))(
-      'scan diff --org fake_org exits 1',
-      async () => {
-        const result = await executeCliInScratch([
-          'scan',
-          'diff',
-          'placeholder',
-          'placeholder',
-          '--org',
-          'fake_org',
-          '--json',
-        ])
-        expect(result.code).toBe(1)
-        validateSocketJsonContract(result.stdout, 1)
-      },
-    )
+    it.skipIf(!HAS_AUTH)('scan diff --org fake_org exits 1', async () => {
+      const result = await executeCliInScratch([
+        'scan',
+        'diff',
+        'placeholder',
+        'placeholder',
+        '--org',
+        'fake_org',
+        '--json',
+      ])
+      expect(result.code).toBe(1)
+      validateSocketJsonContract(result.stdout, 1)
+    })
   })
 })
