@@ -3,22 +3,12 @@
  *
  * Extracted from cmd-scan-create.mts to keep that file under the 1000-line
  * File-size hard cap. These helpers detect common mistakes around the
- * `--default-branch` / `--make-default-branch` flag pair, where the legacy flag
- * was a _boolean_ but users often tried to pass a value (e.g.
- * `--default-branch=main` or `--default-branch main`). The handler emits a
- * friendly error pointing at the right flag (`--branch <name>`) when one of
- * these misuses is detected.
+ * `--make-default-branch` flag, where users can try to pass a value. The
+ * handler emits a friendly error pointing at the right flag (`--branch <name>`)
+ * when one of these misuses is detected.
  */
 
-const LEGACY_DEFAULT_BRANCH_FLAGS = ['--default-branch', '--defaultBranch']
-const LEGACY_DEFAULT_BRANCH_PREFIXES = LEGACY_DEFAULT_BRANCH_FLAGS.map(
-  f => `${f}=`,
-)
-const DEFAULT_BRANCH_FLAGS = [
-  '--make-default-branch',
-  '--makeDefaultBranch',
-  ...LEGACY_DEFAULT_BRANCH_FLAGS,
-]
+const DEFAULT_BRANCH_FLAGS = ['--make-default-branch', '--makeDefaultBranch']
 const DEFAULT_BRANCH_PREFIXES = DEFAULT_BRANCH_FLAGS.map(f => `${f}=`)
 
 export function findDefaultBranchValueMisuse(
@@ -66,14 +56,6 @@ export function findDefaultBranchValueMisuse(
     return { form: `${arg} ${next}`, value: next }
   }
   return undefined
-}
-
-export function hasLegacyDefaultBranchFlag(argv: readonly string[]): boolean {
-  return argv.some(
-    arg =>
-      LEGACY_DEFAULT_BRANCH_FLAGS.includes(arg) ||
-      LEGACY_DEFAULT_BRANCH_PREFIXES.some(p => arg.startsWith(p)),
-  )
 }
 
 export function isBareIdentifier(token: string): boolean {

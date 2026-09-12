@@ -32,7 +32,6 @@ import type { PURL_Type } from '../../util/ecosystem/types.mts'
 import { generalFlags } from './cmd-scan-create-flags.mts'
 import {
   findDefaultBranchValueMisuse,
-  hasLegacyDefaultBranchFlag,
   isBareIdentifier,
 } from './cmd-scan-create-validation.mts'
 
@@ -46,7 +45,6 @@ export interface ScanCreateFlags {
   commitMessage: string
   committers: string
   cwd: string
-  defaultBranch: boolean
   makeDefaultBranch: boolean
   interactive: boolean
   json: boolean
@@ -86,17 +84,10 @@ const hidden = false
 
 // Flag schema extracted to keep this file under the 1000-line File-size cap.
 
-// Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
-// Detected here so we can warn on use and keep the misuse heuristic
-// working against both the primary and legacy names.
-// --default-branch / --make-default-branch validation helpers extracted
+// --make-default-branch validation helpers extracted
 // to keep this file under the 1000-line File-size cap.
 
-export {
-  findDefaultBranchValueMisuse,
-  hasLegacyDefaultBranchFlag,
-  isBareIdentifier,
-}
+export { findDefaultBranchValueMisuse, isBareIdentifier }
 
 export const cmdScanCreate = {
   description,
@@ -177,8 +168,7 @@ export async function run(
   `,
   }
 
-  // `--make-default-branch` (and its deprecated alias `--default-branch`)
-  // is a boolean flag, so meow/yargs-parser silently drops any value
+  // `--make-default-branch` is a boolean flag, so meow/yargs-parser silently drops any value
   // attached to it — the resulting scan is untagged and invisible in the
   // Main/PR dashboard tabs. Catch that shape before meow parses so the
   // user sees an actionable error instead of a mysteriously-mislabelled
@@ -197,15 +187,6 @@ export async function run(
     return
   }
 
-  // `--default-branch` / `--defaultBranch` is kept working via meow's
-  // aliases, but nudge callers to migrate so we can eventually retire
-  // the legacy name.
-  if (hasLegacyDefaultBranchFlag(argv)) {
-    logger.warn(
-      '--default-branch is deprecated on `socket scan create`; use --make-default-branch instead. The old flag still works for now.',
-    )
-  }
-
   const cli = meowOrExit({
     argv,
     config,
@@ -218,9 +199,8 @@ export async function run(
     commitMessage,
     committers,
     cwd: cwdOverride,
-    defaultBranch: legacyDefaultBranch,
     interactive,
-    makeDefaultBranch: makeDefaultBranchFlag,
+    makeDefaultBranch,
     json,
     markdown,
     org: orgFlag,
@@ -245,11 +225,6 @@ export async function run(
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as unknown as ScanCreateFlags
-
-  // Merge the legacy --default-branch flag into the primary. Both are
-  // declared as separate boolean flags in the config (see the comment
-  // on the `defaultBranch` flag definition above).
-  const makeDefaultBranch = makeDefaultBranchFlag || legacyDefaultBranch
 
   // Validate ecosystem values.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
