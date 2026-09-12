@@ -33,7 +33,7 @@ const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockStrictDelete = vi.hoisted(() => vi.fn())
 
 vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
   spawnCoanaDlx: mockSpawnCoanaDlx,
@@ -107,7 +107,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  safeDelete: mockSafeDelete,
+  strictDelete: mockStrictDelete,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
   // Return undefined so findSocketYmlSync treats socket.yml as absent.
@@ -181,7 +181,7 @@ describe('socket fix --limit behavior verification', () => {
     })
 
     mockReadJsonSync.mockReturnValue({ fixed: true })
-    mockSafeDelete.mockResolvedValue(undefined)
+    mockStrictDelete.mockResolvedValue(undefined)
   })
 
   describe('--id filtering with --limit', () => {

@@ -23,7 +23,7 @@
  * - Src/commands/package/fixtures/*.json, test fixtures
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import pythonDupes from '../../../../src/commands/package/fixtures/python_dupes.json' with { type: 'json' }
 import pythonShallow from '../../../../src/commands/package/fixtures/python_shallow.json' with { type: 'json' }
@@ -32,6 +32,31 @@ import {
   generateTextReport,
   preProcess,
 } from '../../../../src/commands/package/output-purls-shallow-score.mts'
+
+vi.mock(import('yoctocolors-cjs'), async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      bold(text: string) {
+        return `\u001B[1m${text}\u001B[22m`
+      },
+      dim(text: string) {
+        return `\u001B[2m${text}\u001B[22m`
+      },
+      green(text: string) {
+        return `\u001B[32m${text}\u001B[39m`
+      },
+      red(text: string) {
+        return `\u001B[31m${text}\u001B[39m`
+      },
+      yellow(text: string) {
+        return `\u001B[33m${text}\u001B[39m`
+      },
+    },
+  }
+})
 
 describe('package score output', async () => {
   describe('python', () => {

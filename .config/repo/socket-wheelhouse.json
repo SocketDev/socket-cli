@@ -180,6 +180,7 @@
     "lanes": {
       "mid": [
         "packages/cli/test/unit/commands/**",
+        "packages/cli/test/unit/util/firewall/**",
         "packages/cli/test/unit/meow.test.mts"
       ],
       "slow": ["packages/cli/test/integration/**"]
