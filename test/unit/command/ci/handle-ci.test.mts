@@ -86,10 +86,8 @@ vi.mock(
   }),
 )
 
-vi.mock(import('../../../../src/constants.mts'), () => ({
-  constants: {
-    REPORT_LEVEL_ERROR: 'error',
-  },
+vi.mock(import('../../../../src/constants/reporting.mts'), () => ({
+  REPORT_LEVEL_ERROR: 'error',
 }))
 
 vi.mock(import('../../../../src/util/git/operations.mjs'), () => ({

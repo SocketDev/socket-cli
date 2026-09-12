@@ -5,7 +5,7 @@ import { getSocketOauthRequireAudience } from '../../env/socket-oauth-require-au
 import { getDefaultApiToken } from '../../util/socket/sdk.mts'
 import { runHttpTransport } from '../../core/mcp/transport-http.mts'
 import { runStdioTransport } from '../../core/mcp/transport-stdio.mts'
-import { constants } from '../../constants.mts'
+import { getCliVersion } from '../../env/cli-version.mts'
 
 import type { ServerConfig } from '../../core/mcp/server.mts'
 
@@ -25,8 +25,7 @@ const DEFAULT_OAUTH_REQUIRED_SCOPES = ['packages:list'] as const
 
 export async function handleMcp(config: HandleMcpConfig): Promise<void> {
   const cfg = { __proto__: null, ...config } as typeof config
-  const ENV = constants['ENV'] as { INLINED_VERSION?: string | undefined }
-  const version = ENV.INLINED_VERSION || '0.0.0'
+  const version = getCliVersion() || '0.0.0'
 
   const baseConfig: ServerConfig = {
     getApiToken: () => getDefaultApiToken(),

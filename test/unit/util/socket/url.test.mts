@@ -21,13 +21,6 @@ import {
   getSocketDevPackageOverviewUrlFromPurl,
 } from '../../../../src/util/socket/url.mts'
 
-// Mock constants.
-vi.mock(import('../../../../src/constants.mts'), () => ({
-  constants: {
-    SOCKET_WEBSITE_URL: 'https://socket.dev',
-  },
-}))
-
 // Mock purl.
 const mockGetPurlObject = vi.hoisted(() => vi.fn())
 

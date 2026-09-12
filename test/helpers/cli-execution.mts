@@ -10,7 +10,7 @@ import path from 'node:path'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 
-import { constants } from '../../src/constants.mts'
+import { getBinCliPath } from '../../src/constants/paths.mts'
 import { spawnSocketCli } from '../utils.mts'
 
 import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
@@ -105,7 +105,7 @@ export async function executeCliCommand(
     ...options,
   } as CliExecutionOptions
 
-  const binCliPath = constants.getBinCliPath()
+  const binCliPath = getBinCliPath()
   const finalArgs = [...args]
 
   // Add config isolation if requested

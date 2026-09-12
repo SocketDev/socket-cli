@@ -19,7 +19,7 @@ import {
 } from '../../../../src/util/command/registry-help.mts'
 
 import type { CommandDefinition } from '../../../../src/util/command/registry-types.mjs'
-import type { CommandRegistry } from '../../../../src/util/command/registry.mts'
+import type { CommandRegistry } from '../../../../src/util/command/registry-core.mts'
 
 describe('registry-help', () => {
   describe('generateCommandHelp', () => {

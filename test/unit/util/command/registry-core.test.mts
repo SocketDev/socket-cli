@@ -6,7 +6,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { CommandRegistry } from '../../../../src/util/command/registry.mts'
+import { CommandRegistry } from '../../../../src/util/command/registry-core.mts'
 
 import type { CommandDefinition } from '../../../../src/util/command/registry-types.mts'
 

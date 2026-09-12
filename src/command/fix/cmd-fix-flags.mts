@@ -1,6 +1,6 @@
 import terminalLink from 'terminal-link'
 
-import { ENV } from '../../constants.mts'
+import { ENV } from '../../constants/env.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
 

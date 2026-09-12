@@ -13,12 +13,12 @@ import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import { FOLD_SETTING_VERSION } from '../../constants/reporting.mts'
 import {
-  DOT_SOCKET_DOT_FACTS_JSON,
-  FOLD_SETTING_VERSION,
   SCAN_TYPE_SOCKET,
   SCAN_TYPE_SOCKET_TIER1,
-} from '../../constants.mts'
+} from '../../constants/socket.mts'
 
 import { compressSocketFactsForUpload } from '../../util/coana/compress-facts.mts'
 import { findSocketYmlSync } from '../../util/config.mts'

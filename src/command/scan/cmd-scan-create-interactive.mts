@@ -7,7 +7,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
-import { SOCKET_JSON } from '../../constants.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { SocketJson } from '../../util/socket/json.mts'

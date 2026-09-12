@@ -1,6 +1,6 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { SOCKET_JSON } from '../../constants.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import {
   detectDefaultBranch,
   getRepoName,

@@ -7,7 +7,7 @@ import {
   FLAG_DRY_RUN,
   FLAG_HELP,
   FLAG_ORG,
-} from '../../../src/constants.mts'
+} from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 

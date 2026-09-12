@@ -6,7 +6,7 @@
  * file focus on the run() orchestration logic.
  */
 
-import { constants } from '../../constants.mts'
+import { REPORT_LEVEL_ERROR } from '../../constants/reporting.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 
 import type { MeowFlags } from '../../flags.mts'
@@ -106,8 +106,8 @@ export const generalFlags: MeowFlags = {
   },
   reportLevel: {
     type: 'string',
-    default: constants.REPORT_LEVEL_ERROR,
-    description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_ERROR}')`,
+    default: REPORT_LEVEL_ERROR,
+    description: `Which policy level alerts should be reported (default '${REPORT_LEVEL_ERROR}')`,
   },
   setAsAlertsPage: {
     type: 'boolean',

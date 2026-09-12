@@ -51,7 +51,8 @@ import { isError } from '@socketsecurity/lib-stable/errors/predicates'
 import { escapeRegExp } from '@socketsecurity/lib-stable/regexps/escape'
 
 import { TelemetryService } from './service.mts'
-import { CONFIG_KEY_DEFAULT_ORG, constants } from '../../constants.mts'
+import { CONFIG_KEY_DEFAULT_ORG } from '../../constants/config.mts'
+import { ENV } from '../../constants/env.mts'
 import { getConfigValueOrUndef } from '../config.mts'
 
 import type { TelemetryContext } from './types.mts'
@@ -81,7 +82,7 @@ export function buildContext(argv: string[]): TelemetryContext {
     argv: sanitizeArgv(argv),
     node_version: process.version,
     platform: process.platform,
-    version: constants.ENV.INLINED_VERSION,
+    version: ENV.INLINED_VERSION,
   }
 }
 
@@ -332,7 +333,7 @@ export async function trackEvent(
   } = {},
 ): Promise<void> {
   // Skip telemetry in test environments.
-  if (constants.ENV.VITEST) {
+  if (ENV.VITEST) {
     return
   }
 

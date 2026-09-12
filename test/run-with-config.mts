@@ -20,7 +20,7 @@
  */
 
 import { spawnSocketCli } from './utils.mts'
-import { constants } from '../src/constants.mts'
+import { getBinCliPath } from '../src/constants/paths.mts'
 
 /**
  * Run Socket CLI command with isolated configuration.
@@ -30,7 +30,7 @@ import { constants } from '../src/constants.mts'
  * @returns Object containing exitCode, stdout, and stderr.
  */
 export async function runWithConfig(...args: string[]) {
-  const binCliPath = constants.getBinCliPath()
+  const binCliPath = getBinCliPath()
   // Add --config {} if not present.
   if (!args.includes('--config')) {
     args.push('--config', '{}')

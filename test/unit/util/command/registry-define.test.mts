@@ -15,7 +15,7 @@ import type { CommandDefinition } from '../../../../src/util/command/registry-ty
 // Mock dependencies.
 const mockRegister = vi.hoisted(() => vi.fn())
 
-vi.mock(import('../../../../src/util/command/registry.mts'), () => ({
+vi.mock(import('../../../../src/util/command/registry-core.mts'), () => ({
   registry: {
     register: mockRegister,
   },

@@ -20,7 +20,8 @@ import {
   stripTrailingSlashFromIgnorePattern,
 } from './glob-ignore.mts'
 import { homePath } from '../../constants/paths.mts'
-import { NODE_MODULES, PNPM } from '../../constants.mts'
+import { NODE_MODULES } from '../../constants/packages.mts'
+import { PNPM } from '@socketsecurity/lib-stable/constants/package-managers'
 
 import type { IgnoreMatcher } from './glob-ignore.mts'
 import type { Agent } from '../ecosystem/environment.mts'

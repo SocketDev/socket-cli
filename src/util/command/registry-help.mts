@@ -4,7 +4,7 @@
  */
 
 import type { CommandDefinition, FlagDefinition } from './registry-types.mjs'
-import type { CommandRegistry } from './registry.mts'
+import type { CommandRegistry } from './registry-core.mjs'
 
 /**
  * Format a flag definition for help output.

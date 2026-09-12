@@ -76,13 +76,9 @@ vi.mock(import('../../../../src/core/mcp/transport-http.mts'), () => ({
 // Use a getter so individual tests can flip the inlined version to
 // undefined and exercise the `|| '0.0.0'` fallback branch.
 const versionRef = { current: '7.7.7' as string | undefined }
-vi.mock(import('../../../../src/constants.mts'), () => ({
-  constants: {
-    ENV: {
-      get INLINED_VERSION() {
-        return versionRef.current
-      },
-    },
+vi.mock(import('../../../../src/env/cli-version.mts'), () => ({
+  getCliVersion() {
+    return versionRef.current
   },
 }))
 

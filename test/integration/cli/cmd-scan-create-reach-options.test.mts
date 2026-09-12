@@ -2,7 +2,11 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import { FLAG_CONFIG, FLAG_DRY_RUN, FLAG_ORG } from '../../../src/constants.mts'
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_ORG,
+} from '../../../src/constants/cli.mts'
 import { getBinCliPath } from '../../../src/constants/paths.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../utils.mts'
 
