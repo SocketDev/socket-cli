@@ -2,6 +2,7 @@
 // lockdown check, the soak-exclude date-annotation check, and the AI-config
 // poison-fingerprint warner. Gate-free string logic built on scan-core.
 
+import { maskStringContents } from '../../scripts/fleet/hooks/guard-block-shape.mts'
 import { scanLines } from './scan-core.mts'
 
 import type { LineHit } from './scan-core.mts'
@@ -39,7 +40,8 @@ const BAD_PERMISSION_MODE_RE =
 const BYPASS_PERMISSIONS_RE = /\bbypassPermissions\b/
 
 export const scanProgrammaticClaudeLockdown = (text: string): LineHit[] => {
-  if (!CLAUDE_DRIVER_RE.test(text)) {
+  const executable = maskStringContents(text)
+  if (!CLAUDE_DRIVER_RE.test(executable)) {
     return []
   }
   // A forbidden mode anywhere is an immediate fail, pointed at its line.
@@ -60,7 +62,12 @@ export const scanProgrammaticClaudeLockdown = (text: string): LineHit[] => {
   if (missing.length === 0) {
     return []
   }
-  return scanLines(text, CLAUDE_DRIVER_RE)
+  const lines = text.split(/\r?\n/)
+  const hits = scanLines(executable, CLAUDE_DRIVER_RE)
+  for (const hit of hits) {
+    hit.line = lines[hit.lineNumber - 1]!
+  }
+  return hits
 }
 
 // ── Soak-exclude date annotations (HARD block, pnpm-workspace.yaml) ──
