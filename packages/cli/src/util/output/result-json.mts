@@ -4,6 +4,8 @@ import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 
 import type { CResult } from '../../types.mjs'
 
+const logger = getDefaultLogger()
+
 // Serialize the final result object before printing it
 // All commands that support the --json flag should call this before printing
 export function serializeResultJson(data: CResult<unknown>): string {
@@ -30,7 +32,6 @@ export function serializeResultJson(data: CResult<unknown>): string {
     const message =
       'There was a problem converting the data set to JSON. Please try again without --json'
 
-    const logger = getDefaultLogger()
     logger.fail(message)
     debugNs('error', 'JSON serialization failed')
     debugDirNs('error', e)

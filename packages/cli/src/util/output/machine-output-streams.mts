@@ -25,6 +25,8 @@ import { isMachineOutputMode } from './mode.mts'
 import type { MachineModeFlags } from './mode.mts'
 import type { Logger } from '@socketsecurity/lib-stable/logger/logger'
 
+const logger = getDefaultLogger()
+
 export type StatusMethod = (msg: string, ...extras: unknown[]) => Logger
 
 export interface SavedStatusMethods {
@@ -56,7 +58,6 @@ export function engageMachineOutputStreams(): void {
   if (saved) {
     return
   }
-  const logger = getDefaultLogger()
   saved = {
     step: logger.step?.bind(logger),
     substep: logger.substep?.bind(logger),
@@ -77,7 +78,6 @@ export function restoreMachineOutputStreams(): void {
   if (!saved) {
     return
   }
-  const logger = getDefaultLogger()
   const { step, substep } = saved
   if (step) {
     logger.step = step

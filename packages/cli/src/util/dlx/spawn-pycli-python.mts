@@ -128,7 +128,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
 
         if (isStale) {
           // Stale lock detected, remove and retry.
-          await safeDelete(lockFile, { force: true })
+          await safeDelete(lockFile)
           return ensurePythonDlx(retryCount + 1)
         }
 
@@ -163,7 +163,7 @@ export async function ensurePythonDlx(retryCount = 0): Promise<string> {
       }
     } finally {
       // Clean up lock file.
-      await safeDelete(lockFile, { force: true })
+      await safeDelete(lockFile)
     }
   }
 

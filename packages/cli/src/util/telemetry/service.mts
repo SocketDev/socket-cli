@@ -90,8 +90,8 @@ const DEFAULT_TELEMETRY_CONFIG = {
  * Static configuration for telemetry service behavior.
  */
 const TELEMETRY_SERVICE_CONFIG = {
-  batch_size: 10, // Auto-flush when queue reaches this size.
-  flush_timeout: 2000, // 2 second maximum for flush operations.
+  batchSize: 10, // Auto-flush when queue reaches this size.
+  flushTimeout: 2000, // 2 second maximum for flush operations.
 } as const
 
 /**
@@ -307,7 +307,7 @@ export class TelemetryService {
     this.eventQueue.push(completeEvent)
 
     // Auto-flush if batch size reached.
-    const batchSize = TELEMETRY_SERVICE_CONFIG.batch_size
+    const batchSize = TELEMETRY_SERVICE_CONFIG.batchSize
     if (this.eventQueue.length >= batchSize) {
       debug(`Batch size reached (${batchSize}), flushing events`)
       void this.flush()
@@ -345,8 +345,8 @@ export class TelemetryService {
     try {
       await withTimeout(
         this.sendEvents(eventsToSend),
-        TELEMETRY_SERVICE_CONFIG.flush_timeout,
-        `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
+        TELEMETRY_SERVICE_CONFIG.flushTimeout,
+        `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flushTimeout}ms`,
       )
 
       const flushDuration = Date.now() - flushStartTime
@@ -360,10 +360,10 @@ export class TelemetryService {
       // Check if this is a timeout error.
       if (
         errMsg.includes('timed out') ||
-        flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
+        flushDuration >= TELEMETRY_SERVICE_CONFIG.flushTimeout
       ) {
         debug(
-          `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
+          `Telemetry flush timed out after ${TELEMETRY_SERVICE_CONFIG.flushTimeout}ms`,
         )
         debug(`Failed to send ${eventsToSend.length} events due to timeout`)
       } else {
@@ -400,7 +400,7 @@ export class TelemetryService {
           this.orgSlug,
           event as unknown as Record<string, unknown>,
         )
-        return { event, result }
+        return { __proto__: null, event, result }
       }),
     )
 
@@ -455,8 +455,8 @@ export class TelemetryService {
       try {
         await withTimeout(
           this.sendEvents(eventsToFlush),
-          TELEMETRY_SERVICE_CONFIG.flush_timeout,
-          `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
+          TELEMETRY_SERVICE_CONFIG.flushTimeout,
+          `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flushTimeout}ms`,
         )
         const flushDuration = Date.now() - flushStartTime
         debug(`Events flushed successfully during destroy (${flushDuration}ms)`)
@@ -467,10 +467,10 @@ export class TelemetryService {
         // Check if this is a timeout error.
         if (
           errMsg.includes('timed out') ||
-          flushDuration >= TELEMETRY_SERVICE_CONFIG.flush_timeout
+          flushDuration >= TELEMETRY_SERVICE_CONFIG.flushTimeout
         ) {
           debug(
-            `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flush_timeout}ms`,
+            `Telemetry flush during destroy timed out after ${TELEMETRY_SERVICE_CONFIG.flushTimeout}ms`,
           )
           debug(
             `Failed to send ${eventsToFlush.length} events during destroy due to timeout`,

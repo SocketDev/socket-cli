@@ -71,7 +71,7 @@ export async function compressSocketFactsForUpload(
     if (targets.length === 0) {
       return
     }
-    await safeDelete(targets, { force: true })
+    await safeDelete(targets)
   }
   return { __proto__: null, cleanup, paths } as CompressedScanPaths
 }

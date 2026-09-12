@@ -1,12 +1,12 @@
 import { YARN_CLASSIC } from '@socketsecurity/lib-stable/constants/package-managers'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
+
+const logger = getDefaultLogger()
 
 const YARN = YARN_CLASSIC
 
-import { findBinPathDetailsSync } from '../fs/path-resolve.mts'
-
 export function exitWithBinPathError(binName: string): never {
-  const logger = getDefaultLogger()
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
