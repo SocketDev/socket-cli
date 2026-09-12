@@ -111,6 +111,7 @@ export function getInlinedEnvVars() {
 }
 
 interface RunBuildOptions {
+  description?: string | undefined
   // Post-write transforms applied to the emitted output text, in order. The
   // unicode-property-escape transform + env-var replacement run here because
   // rolldown, like esbuild, can't express them as a pure config option.
@@ -125,11 +126,10 @@ interface RunBuildOptions {
  */
 export async function runBuild(
   config: RolldownOptions,
-  description = 'Build',
   options: RunBuildOptions = {},
 ): Promise<void> {
   const { rolldown } = await import('rolldown')
-  const { envVars, unicodeTransform = false } = options
+  const { description = 'Build', envVars, unicodeTransform = false } = options
   try {
     if (description) {
       logger.info(`Building: ${description}`)

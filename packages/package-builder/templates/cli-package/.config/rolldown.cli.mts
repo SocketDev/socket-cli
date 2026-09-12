@@ -26,7 +26,8 @@ const config = {
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, 'CLI bundle', {
+  runBuild(config, {
+    description: 'CLI bundle',
     envVars: getInlinedEnvVars(),
     unicodeTransform: true,
   }).catch(() => {

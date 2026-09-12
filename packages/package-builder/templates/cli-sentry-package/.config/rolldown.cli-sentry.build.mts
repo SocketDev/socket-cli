@@ -40,7 +40,8 @@ const config: RolldownOptions = {
 }
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, 'CLI bundle (Sentry)', {
+  runBuild(config, {
+    description: 'CLI bundle (Sentry)',
     envVars: getInlinedEnvVars(),
     unicodeTransform: true,
   }).catch(() => {

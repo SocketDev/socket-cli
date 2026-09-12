@@ -22,7 +22,7 @@ const config = createIndexConfig({
 })
 
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
-  runBuild(config, 'Entry point', { envVars: getInlinedEnvVars() })
+  runBuild(config, { description: 'Entry point', envVars: getInlinedEnvVars() })
 }
 
 export default config

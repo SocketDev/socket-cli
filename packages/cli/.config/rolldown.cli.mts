@@ -277,7 +277,8 @@ const config: RolldownOptions = {
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   // The unicode + env-var post-write transforms run here (rolldown can't
   // express them as config), matching the esbuild onEnd plugin order.
-  runBuild(config, 'CLI bundle', {
+  runBuild(config, {
+    description: 'CLI bundle',
     envVars: inlinedEnvVars,
     unicodeTransform: true,
   }).catch(() => {

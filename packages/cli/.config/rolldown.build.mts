@@ -57,7 +57,7 @@ async function main(): Promise<void> {
   const results = await Promise.allSettled(
     names.map(name => {
       const { config, options } = VARIANTS[name]
-      return runBuild(config, name, options)
+      return runBuild(config, { ...options, description: name })
     }),
   )
   if (results.some(r => r.status === 'rejected')) {

@@ -23,11 +23,12 @@ const config = createIndexConfig({
 if (fileURLToPath(import.meta.url) === process.argv[1]) {
   // Index loader has no unicode-escape concerns but still inlines env vars;
   // run the env-var post-write pass for the mangled forms.
-  runBuild(config, 'Entry point', { envVars: getInlinedEnvVars() }).catch(
-    () => {
-      process.exitCode = 1
-    },
-  )
+  runBuild(config, {
+    description: 'Entry point',
+    envVars: getInlinedEnvVars(),
+  }).catch(() => {
+    process.exitCode = 1
+  })
 }
 
 export default config
