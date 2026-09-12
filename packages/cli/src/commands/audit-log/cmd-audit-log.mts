@@ -181,8 +181,8 @@ export async function run(
   }
 
   const { 0: validatedPage, 1: validatedPerPage } = validateAuditPagination(
-    page ?? 1,
-    perPage ?? 30,
+    page,
+    perPage,
   )
 
   await handleAuditLog({
@@ -198,8 +198,8 @@ export async function run(
 }
 
 export function validateAuditPagination(
-  page: number | string,
-  perPage: number | string,
+  page: number | string | undefined,
+  perPage: number | string | undefined,
 ): [number, number] {
   const validatedPage = Number(page || 0)
   const validatedPerPage = Number(perPage || 0)
