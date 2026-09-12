@@ -57,7 +57,7 @@ jobs:
         with:
           checkout: 'false'
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       # Provision the on-device model. Fail-open by contract: ready=false only
@@ -99,7 +99,7 @@ jobs:
         id: pr-app
         uses: ./.github/actions/fleet/github-pr-app-token
         with:
-          client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
 

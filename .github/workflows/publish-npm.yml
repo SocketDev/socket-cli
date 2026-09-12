@@ -174,7 +174,7 @@ jobs:
           # Reuse the PR App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
       - name: Run full coverage
         # Backfill republishes already-released historical content. Its hard
@@ -188,7 +188,7 @@ jobs:
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
         with:
-          client-id: ${{ vars.SOCKET_RELEASE_CLIENT_ID }}
+          client-id: ${{ secrets.SOCKET_RELEASE_CLIENT_ID }}
           private-key: ${{ secrets.SOCKET_RELEASE_APP_PRIVATE_KEY }}
           repositories: ${{ github.event.repository.name }}
       # The version resolver consumes a prerelease hint, uses configured odai

@@ -11,7 +11,7 @@ description: >-
 
 inputs:
   client-id:
-    description: 'PR App Client ID — pass vars.SOCKET_PR_CLIENT_ID.'
+    description: 'PR App Client ID — pass secrets.SOCKET_PR_CLIENT_ID.'
     required: true
   private-key:
     description: 'PR App private key — pass secrets.SOCKET_PR_APP_PRIVATE_KEY.'

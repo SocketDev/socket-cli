@@ -84,7 +84,7 @@ jobs:
           # Reuse the PR App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       - name: Verify model CPU capacity
@@ -230,7 +230,7 @@ jobs:
           # Reuse the PR App for a contents:read token scoped to wheelhouse.
           # Both credentials enable the private release fallback. Without the
           # key, hydration still pulls public GHCR anonymously.
-          payload-token-client-id: ${{ vars.SOCKET_PR_CLIENT_ID }}
+          payload-token-client-id: ${{ secrets.SOCKET_PR_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PR_APP_PRIVATE_KEY }}
 
       - name: Verify model CPU capacity

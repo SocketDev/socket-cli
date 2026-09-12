@@ -143,6 +143,7 @@
     "socket/prefer-array-from": "error",
     "socket/prefer-async-spawn": "error",
     "socket/prefer-cached-for-loop": "error",
+    "socket/prefer-char-code-comparison": "error",
     "socket/prefer-crlf-safe-split": "error",
     "socket/prefer-ellipsis-char": "error",
     "socket/prefer-env-as-boolean": "error",
