@@ -23,9 +23,14 @@ export type TraverseFn = (
 // `@babel/traverse`'s CJS default export lands nested under `.default` when
 // required through Node's ESM/CJS interop - the imported binding's own
 // `default` property is the traversal function, not the module itself.
-const traverse: TraverseFn =
-  (babelTraverseImport as unknown as { default?: TraverseFn | undefined })
-    .default ?? (babelTraverseImport as unknown as TraverseFn)
+const traverseModule: unknown = babelTraverseImport
+const traverseCandidate =
+  (typeof traverseModule === 'object' ||
+    typeof traverseModule === 'function') &&
+  traverseModule !== null &&
+  'default' in traverseModule
+    ? (traverseModule.default ?? traverseModule)
+    : traverseModule
 
 /**
  * The minimal slice of a source position this module needs. `@babel/traverse`
@@ -106,11 +111,11 @@ export function extract(filePath: string, content: string): Occurrence[] {
   }
 
   const fromSource = (
-    path: WalkPath<SourceNode & KindNode>,
+    path: WalkPath<Partial<SourceNode> & KindNode>,
     kindField: 'importKind' | 'exportKind',
   ): void => {
     const { source } = path.node
-    if (source.type === 'StringLiteral' && typeof source.value === 'string') {
+    if (source?.type === 'StringLiteral' && typeof source.value === 'string') {
       push({
         soft: isInsideTryBlock(path),
         spec: source.value,
@@ -127,12 +132,17 @@ export function extract(filePath: string, content: string): Occurrence[] {
       }>,
     ) {
       const { arguments: args, callee } = path.node
-      const first = args[0] as StringLiteralNode | undefined
+      const first = args[0]
       if (
         callee.type === 'Identifier' &&
         callee.name === 'require' &&
         args.length === 1 &&
-        first?.type === 'StringLiteral'
+        typeof first === 'object' &&
+        first !== null &&
+        'type' in first &&
+        first.type === 'StringLiteral' &&
+        'value' in first &&
+        typeof first.value === 'string'
       ) {
         push({
           soft: isInsideTryBlock(path),
@@ -146,7 +156,7 @@ export function extract(filePath: string, content: string): Occurrence[] {
     },
     ExportNamedDeclaration(path: WalkPath<Partial<SourceNode> & KindNode>) {
       if (path.node.source) {
-        fromSource(path as WalkPath<SourceNode & KindNode>, 'exportKind')
+        fromSource(path, 'exportKind')
       }
     },
     ImportDeclaration(path: WalkPath<SourceNode & KindNode>) {
@@ -154,7 +164,10 @@ export function extract(filePath: string, content: string): Occurrence[] {
     },
     ImportExpression(path: WalkPath<SourceNode>) {
       const { source } = path.node
-      if (source.type === 'StringLiteral' && typeof source.value === 'string') {
+      if (
+        source?.type === 'StringLiteral' &&
+        typeof source.value === 'string'
+      ) {
         push({
           soft: isInsideTryBlock(path),
           spec: source.value,
@@ -182,4 +195,16 @@ export function isInsideTryBlock(path: WalkPath<unknown>): boolean {
     start >= block.start &&
     end <= block.end
   )
+}
+
+export function traverse(
+  ast: unknown,
+  visitors: Record<string, unknown>,
+): void {
+  if (typeof traverseCandidate !== 'function') {
+    throw new TypeError(
+      'Cannot traverse source in phantom dependency extraction: expected a Babel traversal function. Reinstall dependencies.',
+    )
+  }
+  Reflect.apply(traverseCandidate, undefined, [ast, visitors])
 }

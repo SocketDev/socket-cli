@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { extract } from './extract.mts'
-import { isDtsLike, isJsLike } from './manifest.mts'
+import { isDtsLike, isJsLike, isManifestObject } from './manifest.mts'
 import { classifySpecifier } from './specifier.mts'
 
 import type { Entry } from './manifest.mts'
@@ -131,10 +131,7 @@ export function fsResolve(
   const pkgJsonPath = path.join(joined, 'package.json')
   if (existsSync(pkgJsonPath)) {
     try {
-      const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf8')) as Record<
-        string,
-        unknown
-      >
+      const pkg: unknown = JSON.parse(readFileSync(pkgJsonPath, 'utf8'))
       const entry = manifestEntry(pkg, surface)
       if (entry) {
         return fsResolve(root, joined, entry, surface, depth + 1)
@@ -179,9 +176,12 @@ export function isResolvableFile(p: string, surface: Surface): boolean {
 }
 
 export function manifestEntry(
-  pkg: Record<string, unknown>,
+  pkg: unknown,
   surface: Surface,
 ): string | undefined {
+  if (!isManifestObject(pkg)) {
+    return undefined
+  }
   const fields = surface.preferDts ? ['types', 'typings'] : ['main']
   for (let i = 0, { length } = fields; i < length; i += 1) {
     const value = pkg[fields[i]!]

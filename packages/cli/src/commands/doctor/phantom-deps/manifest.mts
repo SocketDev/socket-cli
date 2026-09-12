@@ -80,7 +80,7 @@ export function collectExportTypes(node: unknown, out: string[]): void {
     return
   }
   if (typeof node === 'object' && node !== null) {
-    const entries = Object.entries(node as Record<string, unknown>)
+    const entries = Object.entries<unknown>(node)
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: key, 1: child } = entries[i]!
       if ((key === 'types' || key === 'typings') && typeof child === 'string') {
@@ -92,10 +92,7 @@ export function collectExportTypes(node: unknown, out: string[]): void {
   }
 }
 
-export function collectKeys(
-  value: Record<string, unknown> | undefined,
-  out: Set<string>,
-): void {
+export function collectKeys(value: unknown, out: Set<string>): void {
   if (typeof value === 'object' && value !== null) {
     const keys = Object.keys(value)
     for (let i = 0, { length } = keys; i < length; i += 1) {
@@ -133,7 +130,7 @@ export function collectManifestBin(
     typeof bin === 'string'
       ? [bin]
       : typeof bin === 'object' && bin !== null
-        ? Object.values(bin as Record<string, unknown>)
+        ? Object.values<unknown>(bin)
         : []
   for (let i = 0, { length } = values; i < length; i += 1) {
     const value = values[i]
@@ -159,7 +156,7 @@ export function collectManifestExports(
   ) {
     return
   }
-  const entries = Object.entries(exportsField as Record<string, unknown>)
+  const entries = Object.entries<unknown>(exportsField)
   if (!entries.some(({ 0: key }) => key.startsWith('.'))) {
     walkExports(exportsField, 'main', out, seen)
     return
@@ -247,6 +244,12 @@ export function isJsLike(filePath: string): boolean {
   return ext !== undefined && JS_EXTS.has(ext)
 }
 
+export function isManifestObject(
+  value: unknown,
+): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 export function isSfcLike(filePath: string): boolean {
   const ext = extensionOf(filePath)
   return ext !== undefined && SFC_EXTS.has(ext)
@@ -270,7 +273,11 @@ export function normalizeRel(p: string): string {
 export function parseManifest(raw: string): Manifest | undefined {
   let pkg: Record<string, unknown>
   try {
-    pkg = JSON.parse(raw) as Record<string, unknown>
+    const parsed: unknown = JSON.parse(raw)
+    if (!isManifestObject(parsed)) {
+      return undefined
+    }
+    pkg = parsed
   } catch {
     return undefined
   }
@@ -280,28 +287,23 @@ export function parseManifest(raw: string): Manifest | undefined {
   }
 
   const deps = new Set<string>()
-  collectKeys(pkg['dependencies'] as Record<string, unknown> | undefined, deps)
-  collectKeys(
-    pkg['optionalDependencies'] as Record<string, unknown> | undefined,
-    deps,
-  )
+  collectKeys(pkg['dependencies'], deps)
+  collectKeys(pkg['optionalDependencies'], deps)
 
   const requiredPeers = new Set<string>()
-  collectKeys(
-    pkg['peerDependencies'] as Record<string, unknown> | undefined,
-    requiredPeers,
-  )
+  collectKeys(pkg['peerDependencies'], requiredPeers)
 
   const optionalPeers = new Set<string>()
   const peerMeta = pkg['peerDependenciesMeta']
   if (typeof peerMeta === 'object' && peerMeta !== null) {
-    const entries = Object.entries(peerMeta as Record<string, unknown>)
+    const entries = Object.entries<unknown>(peerMeta)
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: peer, 1: cfg } = entries[i]!
       const optional =
         typeof cfg === 'object' &&
         cfg !== null &&
-        (cfg as Record<string, unknown>)['optional'] === true
+        'optional' in cfg &&
+        cfg.optional === true
       if (optional) {
         requiredPeers.delete(peer)
         optionalPeers.add(peer)
@@ -358,7 +360,7 @@ export function walkExports(
     return
   }
   if (typeof node === 'object' && node !== null) {
-    const entries = Object.entries(node as Record<string, unknown>)
+    const entries = Object.entries<unknown>(node)
     for (let i = 0, { length } = entries; i < length; i += 1) {
       const { 0: key, 1: child } = entries[i]!
       if (key === 'types' || key === 'typings') {

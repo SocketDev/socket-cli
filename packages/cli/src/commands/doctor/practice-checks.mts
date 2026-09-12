@@ -77,10 +77,17 @@ export function checkSfwWrap(root: string): PracticeViolation[] {
   const pkgPath = path.join(root, 'package.json')
   if (existsSync(pkgPath)) {
     try {
-      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
-      for (const [name, body] of Object.entries(
-        (pkg['scripts'] ?? {}) as Record<string, string>,
+      const pkg: unknown = JSON.parse(readFileSync(pkgPath, 'utf8'))
+      const scripts =
+        typeof pkg === 'object' && pkg !== null && 'scripts' in pkg
+          ? pkg.scripts
+          : undefined
+      for (const [name, body] of Object.entries<unknown>(
+        typeof scripts === 'object' && scripts !== null ? scripts : {},
       )) {
+        if (typeof body !== 'string') {
+          continue
+        }
         if (BARE_INSTALL_RE.test(`run: ${body}`) && !isSfwWrapped(body)) {
           violations.push({
             file: 'package.json',

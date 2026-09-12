@@ -17,7 +17,7 @@ import path from 'node:path'
 
 import { classify } from './classify.mts'
 import { walk } from './graph.mts'
-import { parseManifest } from './manifest.mts'
+import { isManifestObject, parseManifest } from './manifest.mts'
 
 import type { Finding } from './classify.mts'
 
@@ -39,7 +39,7 @@ export function declaredDependencyNames(
   for (let i = 0, { length } = fields; i < length; i += 1) {
     const value = rootPkg[fields[i]!]
     if (typeof value === 'object' && value !== null) {
-      const keys = Object.keys(value as Record<string, unknown>)
+      const keys = Object.keys(value)
       for (let j = 0, jlen = keys.length; j < jlen; j += 1) {
         names.add(keys[j]!)
       }
@@ -61,10 +61,11 @@ export function scanPhantomDependencies(root: string): PhantomDepFinding[] {
   }
   let rootPkg: Record<string, unknown>
   try {
-    rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf8')) as Record<
-      string,
-      unknown
-    >
+    const parsed: unknown = JSON.parse(readFileSync(rootPkgPath, 'utf8'))
+    if (!isManifestObject(parsed)) {
+      return []
+    }
+    rootPkg = parsed
   } catch {
     return []
   }
