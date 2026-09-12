@@ -120,7 +120,7 @@ export async function run(
 
   const noLegacy = !cli.flags['type']
 
-  const [typeFilter = ''] = cli.input
+  const { 0: typeFilter = '' } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -170,29 +170,20 @@ export async function run(
   }
 
   // Validate numeric pagination parameters.
-  const validatedPage = Number(page || 0)
-  const validatedPerPage = Number(perPage || 0)
-
   if (dryRun) {
     outputDryRunFetch('audit log entries', {
       organization: orgSlug,
       filter: typeFilter || 'any',
-      page: validatedPage || 1,
-      perPage: validatedPerPage || 30,
+      page: Number(page || 0) || 1,
+      perPage: Number(perPage || 0) || 30,
     })
     return
   }
 
-  if (Number.isNaN(validatedPage) || validatedPage < 0) {
-    throw new InputError(
-      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
-    )
-  }
-  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
-    throw new InputError(
-      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
-    )
-  }
+  const { 0: validatedPage, 1: validatedPerPage } = validateAuditPagination(
+    page,
+    perPage,
+  )
 
   await handleAuditLog({
     orgSlug,
@@ -204,4 +195,23 @@ export async function run(
         ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
         : '',
   })
+}
+
+export function validateAuditPagination(
+  page: number | string,
+  perPage: number | string,
+): [number, number] {
+  const validatedPage = Number(page || 0)
+  const validatedPerPage = Number(perPage || 0)
+  if (Number.isNaN(validatedPage) || validatedPage < 0) {
+    throw new InputError(
+      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
+    )
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
+    throw new InputError(
+      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
+  }
+  return [validatedPage, validatedPerPage]
 }

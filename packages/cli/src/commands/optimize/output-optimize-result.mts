@@ -7,6 +7,16 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 
 import type { CResult, OutputKind } from '../../types.mts'
 
+export type OptimizeData = {
+  addedCount: number
+  updatedCount: number
+  pkgJsonChanged: boolean
+  updatedInWorkspaces: number
+  addedInWorkspaces: number
+}
+
+const logger = getDefaultLogger()
+
 export function createActionMessage(
   verb: string,
   overrideCount: number,
@@ -15,18 +25,32 @@ export function createActionMessage(
   return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', { count: overrideCount })}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', { count: workspaceCount })}` : ''}`
 }
 
+export function outputOptimizeMarkdown(data: OptimizeData): void {
+  logger.log(mdHeader('Optimize Complete'))
+  logger.log('')
+  if (!data.pkgJsonChanged) {
+    logger.log('No Socket.dev optimized overrides applied.')
+    return
+  }
+  const changes = []
+  if (data.updatedCount > 0) {
+    changes.push(
+      `**Updated**: ${data.updatedCount} ${pluralize('override', { count: data.updatedCount })}${data.updatedInWorkspaces ? ` in ${data.updatedInWorkspaces} ${pluralize('workspace', { count: data.updatedInWorkspaces })}` : ''}`,
+    )
+  }
+  if (data.addedCount > 0) {
+    changes.push(
+      `**Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`,
+    )
+  }
+  logger.log(mdList(changes))
+  logger.success('Finished!')
+}
+
 export async function outputOptimizeResult(
-  result: CResult<{
-    addedCount: number
-    updatedCount: number
-    pkgJsonChanged: boolean
-    updatedInWorkspaces: number
-    addedInWorkspaces: number
-  }>,
+  result: CResult<OptimizeData>,
   outputKind: OutputKind,
 ) {
-  const logger = getDefaultLogger()
-
   if (!result.ok) {
     process.exitCode = result.code ?? 1
   }
@@ -42,25 +66,7 @@ export async function outputOptimizeResult(
       return
     }
 
-    const data = result.data
-    logger.log(mdHeader('Optimize Complete'))
-    logger.log('')
-
-    if (data.pkgJsonChanged) {
-      const changes = []
-      if (data.updatedCount > 0) {
-        const updatedText = `**Updated**: ${data.updatedCount} ${pluralize('override', { count: data.updatedCount })}${data.updatedInWorkspaces ? ` in ${data.updatedInWorkspaces} ${pluralize('workspace', { count: data.updatedInWorkspaces })}` : ''}`
-        changes.push(updatedText)
-      }
-      if (data.addedCount > 0) {
-        const addedText = `**Added**: ${data.addedCount} ${pluralize('override', { count: data.addedCount })}${data.addedInWorkspaces ? ` in ${data.addedInWorkspaces} ${pluralize('workspace', { count: data.addedInWorkspaces })}` : ''}`
-        changes.push(addedText)
-      }
-      logger.log(mdList(changes))
-      logger.success('Finished!')
-    } else {
-      logger.log('No Socket.dev optimized overrides applied.')
-    }
+    outputOptimizeMarkdown(result.data)
     return
   }
 
@@ -69,8 +75,10 @@ export async function outputOptimizeResult(
     return
   }
 
-  const data = result.data
+  outputOptimizeText(result.data)
+}
 
+export function outputOptimizeText(data: OptimizeData): void {
   if (data.updatedCount > 0) {
     logger?.log(
       `${createActionMessage('Updated', data.updatedCount, data.updatedInWorkspaces)}${data.addedCount ? '.' : '🚀'}`,

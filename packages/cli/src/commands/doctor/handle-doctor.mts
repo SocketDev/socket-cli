@@ -16,6 +16,8 @@ import type { MinReleaseAgeOutcome } from '../optimize/update-pnpm-workspace-yam
 import type { OutputKind } from '../../types.mts'
 import type { PracticeViolation } from './practice-checks.mts'
 
+const logger = getDefaultLogger()
+
 export type DoctorReport = {
   minReleaseAge:
     | { enforceable: false; outcome: 'non-pnpm'; agent: string }
@@ -40,8 +42,6 @@ export async function handleDoctor({
   cwd: string
   outputKind: OutputKind
 }): Promise<void> {
-  const logger = getDefaultLogger()
-
   debug(`Starting dependency health check for ${cwd}`)
   debugDir({ cwd, outputKind })
 
@@ -119,29 +119,41 @@ export async function handleDoctor({
           ? 'soak-time: raised to 7 days in pnpm-workspace.yaml.'
           : 'soak-time: already enforced at 7 days.'
     logger.info(cmdPrefixMessage(CMD_NAME, line))
-    if (violations.length === 0) {
-      logger.success(
-        cmdPrefixMessage(CMD_NAME, 'workflows + sfw + phantom-deps: clean.'),
-      )
-    } else {
-      for (let i = 0, { length } = violations; i < length; i += 1) {
-        const v = violations[i]!
-        const where = v.line > 0 ? `${v.file}:${v.line}` : v.file
-        logger.warn(
-          cmdPrefixMessage(CMD_NAME, `${v.practice}: ${where} - ${v.text}`),
-        )
-      }
-      logger.fail(
-        cmdPrefixMessage(
-          CMD_NAME,
-          `${violations.length} practice violation(s): wrap installs in sfw, run Socket in CI (SocketDev/action), and declare every import a phantom dependency finding names.`,
-        ),
-      )
-      process.exitCode = 1
-    }
+    outputPracticeViolations(violations)
     return
   }
   if (violations.length > 0) {
     process.exitCode = 1
   }
+}
+
+export function outputPracticeViolations(
+  violations: PracticeViolation[],
+): void {
+  if (violations.length === 0) {
+    logger.success(
+      cmdPrefixMessage(CMD_NAME, 'workflows + sfw + phantom-deps: clean.'),
+    )
+    return
+  }
+  for (let i = 0, { length } = violations; i < length; i += 1) {
+    const violation = violations[i]!
+    const where =
+      violation.line > 0
+        ? `${violation.file}:${violation.line}`
+        : violation.file
+    logger.warn(
+      cmdPrefixMessage(
+        CMD_NAME,
+        `${violation.practice}: ${where} - ${violation.text}`,
+      ),
+    )
+  }
+  logger.fail(
+    cmdPrefixMessage(
+      CMD_NAME,
+      `${violations.length} practice violation(s): wrap installs in sfw, run Socket in CI (SocketDev/action), and declare every import a phantom dependency finding names.`,
+    ),
+  )
+  process.exitCode = 1
 }
