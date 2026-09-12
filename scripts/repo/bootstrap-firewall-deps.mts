@@ -4,11 +4,11 @@
  *   before extraction. Why: setup.mts, and downstream tooling, imports
  *   `@socketsecurity/lib-stable` and other zero-dep Socket helpers at
  *   module-load time. On a fresh clone, `pnpm install` itself runs scripts that
- *   import these — but pnpm install hasn't completed yet, so the imports fail
+ *   import these — but `pnpm install` hasn't completed yet, so the imports fail
  *   with `ERR_MODULE_NOT_FOUND`. Bootstrap solves this by fetching the pinned
  *   tarball from the npm registry, running it through Socket Firewall
  *   (refuse-on-alert), and extracting the verified tarball into
- *   node_modules/<scope>/<name>/. Subsequent pnpm install will see the
+ *   node_modules/<scope>/<name>/. Subsequent `pnpm install` will see the
  *   directory and either keep it, if version matches, or replace it with the
  *   workspace-resolved version. Pinned versions come from
  *   `pnpm-workspace.yaml`'s `catalog:` — single source of truth. ---
@@ -46,7 +46,7 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..')
 //   1. Be zero-dependency (or only depend on already-bootstrapped
 //      packages) so we don't have to recurse into their dep graph.
 //   2. Be imported by setup.mts or another script that runs BEFORE
-//      pnpm install completes — otherwise normal install handles it.
+//      `pnpm install` completes — otherwise normal install handles it.
 const BOOTSTRAP_PACKAGES = [
   '@sinclair/typebox',
   '@socketregistry/packageurl-js-stable',
@@ -138,8 +138,10 @@ const err = (msg: string): void => {
  * cannot import the fleet's normal `errorMessage()` helper.
  */
 function bootstrapErrorMessage(error: unknown): string {
-  // oxlint-disable-next-line socket/prefer-error-message, socket/prefer-error-message-helper -- bootstrap's zero-dependency equivalent of the unavailable fleet helper.
-  return error instanceof Error ? error.message : String(error)
+  if (error instanceof Error) {
+    return error.message
+  }
+  return String(error)
 }
 
 /**
@@ -160,45 +162,9 @@ function bootstrapErrorMessage(error: unknown): string {
 const stripRange = (v: string): string => v.replace(/^[\^~>=<]+/, '').trim()
 
 const readPinnedVersion = (pkgName: string): string => {
-  // (1) pnpm-workspace.yaml catalog
-  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
-  if (existsSync(wsPath)) {
-    const content = readFileSync(wsPath, 'utf8')
-    const lines = content.split(/\r?\n/)
-    let inCatalog = false
-    for (let i = 0, { length } = lines; i < length; i += 1) {
-      const rawLine = lines[i] ?? ''
-      const line = rawLine.replace(/\r$/, '')
-      if (/^catalog:\s*$/.test(line)) {
-        inCatalog = true
-        continue
-      }
-      if (inCatalog) {
-        // Leave the catalog block on the next top-level key (no
-        // leading whitespace, ends with ':').
-        if (/^\S.*:\s*$/.test(line)) {
-          inCatalog = false
-          continue
-        }
-        // Catalog entry: `  'pkg-name': 'version'`
-        // \s+                — leading indentation, catalog entries are indented
-        // ['"]?              — optional quote wrapping the package name
-        // ([@A-Za-z0-9_/-]+) — group 1: package name, including `@scope/` prefix
-        // \s*:\s*            — colon separator with optional surrounding whitespace
-        // ['"]?              — optional quote wrapping the version value
-        // ([^'"\s]+)         — group 2: version string, no quotes, no whitespace
-        // \s*$               — optional trailing whitespace before end of line
-        const m = line.match(
-          /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
-        )
-        if (m && m[1] === pkgName) {
-          const pinned = m[2]
-          if (pinned !== undefined) {
-            return stripRange(pinned)
-          }
-        }
-      }
-    }
+  const catalogVersion = readCatalogVersion(pkgName)
+  if (catalogVersion !== undefined) {
+    return catalogVersion
   }
 
   // (2) Root package.json dependencies / devDependencies
@@ -335,3 +301,48 @@ main().then(
     process.exit(1)
   },
 )
+
+function readCatalogVersion(pkgName: string): string | undefined {
+  // (1) pnpm-workspace.yaml catalog
+  const wsPath = path.join(REPO_ROOT, 'pnpm-workspace.yaml')
+  if (existsSync(wsPath)) {
+    const content = readFileSync(wsPath, 'utf8')
+    const lines = content.split(/\r?\n/)
+    let inCatalog = false
+    for (let i = 0, { length } = lines; i < length; i += 1) {
+      const rawLine = lines[i] ?? ''
+      const line = rawLine.replace(/\r$/, '')
+      if (/^catalog:\s*$/.test(line)) {
+        inCatalog = true
+        continue
+      }
+      if (inCatalog) {
+        // Leave the catalog block on the next top-level key (no
+        // leading whitespace, ends with ':').
+        if (/^\S.*:\s*$/.test(line)) {
+          inCatalog = false
+          continue
+        }
+        // Catalog entry: `  'pkg-name': 'version'`
+        // \s+                — leading indentation, catalog entries are indented
+        // ['"]?              — optional quote wrapping the package name
+        // ([@A-Za-z0-9_/-]+) — group 1: package name, including `@scope/` prefix
+        // \s*:\s*            — colon separator with optional surrounding whitespace
+        // ['"]?              — optional quote wrapping the version value
+        // ([^'"\s]+)         — group 2: version string, no quotes, no whitespace
+        // \s*$               — optional trailing whitespace before end of line
+        const m = line.match(
+          /^\s+['"]?([@A-Za-z0-9_/-]+)['"]?\s*:\s*['"]?([^'"\s]+)['"]?\s*$/,
+        )
+        if (m && m[1] === pkgName) {
+          const pinned = m[2]
+          if (pinned !== undefined) {
+            return stripRange(pinned)
+          }
+        }
+      }
+    }
+  }
+
+  return undefined
+}
