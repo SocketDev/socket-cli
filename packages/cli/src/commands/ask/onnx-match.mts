@@ -15,7 +15,7 @@ export type EmbeddingPipeline = {
 }
 const embeddingPipeline: EmbeddingPipeline | undefined = undefined
 let embeddingPipelineFailure = false
-const commandEmbeddings: Record<string, Float32Array> = {}
+const commandEmbeddings = new Map<string, Float32Array>()
 
 /**
  * Compute cosine similarity between two vectors. Since our embeddings are
@@ -40,7 +40,7 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
  */
 export async function ensureCommandEmbeddings(): Promise<void> {
   /* c8 ignore start -- defensive: commandEmbeddings only populates when the ONNX pipeline is enabled, which is currently disabled (see getEmbeddingPipeline). */
-  if (Object.keys(commandEmbeddings).length > 0) {
+  if (commandEmbeddings.size > 0) {
     return
   }
   /* c8 ignore stop */
@@ -60,7 +60,7 @@ export async function ensureCommandEmbeddings(): Promise<void> {
       const embedding = await getEmbedding(description)
       /* c8 ignore start -- defensive: getEmbedding always returns undefined while the ONNX pipeline is disabled. */
       if (embedding) {
-        commandEmbeddings[action] = embedding
+        commandEmbeddings.set(action, embedding)
       }
       /* c8 ignore stop */
     }
@@ -142,7 +142,7 @@ export async function onnxSemanticMatch(query: string): Promise<
   await ensureCommandEmbeddings()
 
   const queryEmbedding = await getEmbedding(query)
-  if (!queryEmbedding || !Object.keys(commandEmbeddings).length) {
+  if (!queryEmbedding || commandEmbeddings.size === 0) {
     return undefined
   }
 
@@ -150,7 +150,7 @@ export async function onnxSemanticMatch(query: string): Promise<
   let bestAction = ''
   let bestScore = 0
 
-  for (const [action, embedding] of Object.entries(commandEmbeddings)) {
+  for (const [action, embedding] of commandEmbeddings) {
     const similarity = cosineSimilarity(queryEmbedding, embedding)
     if (similarity > bestScore) {
       bestScore = similarity

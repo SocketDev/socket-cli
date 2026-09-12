@@ -10,16 +10,15 @@ export interface ArtifactData {
   [key: string]: unknown
 }
 
-const PLATFORM_PATTERNS = {
-  __proto__: null,
-  'darwin-arm64': [/macosx.*arm64/i],
-  'darwin-x64': [/macosx.*x86_64/i],
+const PLATFORM_PATTERNS = new Map<string, RegExp[]>([
+  ['darwin-arm64', [/macosx.*arm64/i]],
+  ['darwin-x64', [/macosx.*x86_64/i]],
   // (?:linux|manylinux) — any linux variant prefix; .* — anything between; (?:aarch64|arm64) — either arm64 name
-  'linux-arm64': [/(?:linux|manylinux).*(?:aarch64|arm64)/i],
-  'linux-x64': [/(?:linux|manylinux).*x86_64/i],
-  'win32-ia32': [/win.*win32/i],
-  'win32-x64': [/win.*(?:amd64|x86_64)/i],
-} as unknown as Record<string, RegExp[]>
+  ['linux-arm64', [/(?:linux|manylinux).*(?:aarch64|arm64)/i]],
+  ['linux-x64', [/(?:linux|manylinux).*x86_64/i]],
+  ['win32-ia32', [/win.*win32/i]],
+  ['win32-x64', [/win.*(?:amd64|x86_64)/i]],
+])
 
 export function artifactGroupKey(artifact: ArtifactData): string {
   const ns = artifact.namespace || ''
@@ -60,7 +59,7 @@ export function isUniversalWheel(release: string): boolean {
 }
 
 export function matchesPlatform(release: string, platform: string): boolean {
-  const patterns = PLATFORM_PATTERNS[platform]
+  const patterns = PLATFORM_PATTERNS.get(platform)
   if (patterns) {
     return patterns.some(p => p.test(release))
   }

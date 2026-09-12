@@ -27,7 +27,7 @@ const WORKFLOW_SOCKET_RE =
 // ^\s*-?\s*          — optional YAML list-item dash, e.g. a workflow `run:` step
 // (?:run:\s*)?       — optional YAML `run:` key
 // (?:sudo\s+)?       — optional sudo prefix
-// (?:npm ci|...)     — the bare install command itself
+// (?:`npm ci`|...)     — the bare install command itself
 const BARE_INSTALL_RE =
   /^\s*-?\s*(?:run:\s*)?(?:sudo\s+)?(?:npm ci|npm install|pnpm install|pnpm i|yarn install|yarn add|pip install|uv pip install|cargo fetch|cargo install)\b/
 
@@ -39,6 +39,7 @@ const BARE_INSTALL_RE =
  */
 export function checkPhantomDependencies(root: string): PracticeViolation[] {
   return scanPhantomDependencies(root).map(finding => ({
+    __proto__: null,
     file: `node_modules/${finding.importer}`,
     line: 0,
     practice: 'phantom-deps',

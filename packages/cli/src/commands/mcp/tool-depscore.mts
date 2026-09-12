@@ -27,7 +27,9 @@ export function defineDepscoreTool(): ToolSpec {
       }
       const result = await runDepscore(readDepscoreInput(args), { apiToken })
       return {
+        __proto__: null,
         content: result.content.map(c => ({
+          __proto__: null,
           text: c.text,
           type: 'text' as const,
         })),

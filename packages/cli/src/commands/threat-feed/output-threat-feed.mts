@@ -14,6 +14,7 @@ export function formatThreatFeedTable(data: ThreadFeedResponse): string {
   const rows = data.results.map(r => {
     const purlObj = getPurlObject(r.purl, { throws: false })
     return {
+      __proto__: null,
       created: r.createdAt,
       ecosystem: purlObj?.type ?? '',
       name: purlObj?.name ?? '',

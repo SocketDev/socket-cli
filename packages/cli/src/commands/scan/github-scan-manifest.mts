@@ -10,7 +10,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
-import { safeDelete, safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
+import { safeMkdirSync, strictDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
@@ -28,7 +28,7 @@ const logger = getDefaultLogger()
 // its catch handler doesn't shadow the caller's catch binding.
 export async function cleanupPartialDownload(localPath: string): Promise<void> {
   try {
-    await safeDelete(localPath, { force: true })
+    await strictDelete(localPath)
   } catch (e) {
     logger.fail(
       formatErrorWithDetail(`Error deleting partial file ${localPath}`, e),

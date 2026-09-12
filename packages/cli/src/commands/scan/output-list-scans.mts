@@ -42,6 +42,7 @@ export async function outputListScans(
 
   const formattedResults = result.data.results.map((d: ScanListItem) => {
     return {
+      __proto__: null,
       id: d.id,
       report_url: colors.underline(`${d.html_report_url}`),
       created_at: d.created_at

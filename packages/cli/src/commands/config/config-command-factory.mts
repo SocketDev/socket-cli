@@ -76,6 +76,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
   }
 
   return {
+    __proto__: null,
     description: config.description,
     hidden: config.hidden,
     run: async (

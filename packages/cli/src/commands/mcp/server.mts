@@ -71,6 +71,7 @@ const toolEntries = new Map<string, ToolEntry>(
 )
 
 const toolListing = toolSpecs.map(spec => ({
+  __proto__: null,
   ...(spec.annotations ? { annotations: spec.annotations } : {}),
   description: spec.description,
   inputSchema: schemaToJsonSchema(spec.inputSchema),
@@ -97,6 +98,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
   }
 
   server.setRequestHandler('tools/list', () => ({
+    __proto__: null,
     tools: toolListing,
   }))
 
@@ -106,6 +108,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
     const entry = toolEntries.get(name)
     if (!entry) {
       return {
+        __proto__: null,
         content: [{ text: `Unknown tool: ${name}`, type: 'text' as const }],
         isError: true,
       }
@@ -120,6 +123,7 @@ export function createConfiguredServer(config: ServerConfig): Server {
         .map(e => `${e.path}: ${e.message}`)
         .join('; ')
       return {
+        __proto__: null,
         content: [
           {
             text: `Invalid arguments for ${name}: ${errors}`,
@@ -136,7 +140,9 @@ export function createConfiguredServer(config: ServerConfig): Server {
       context,
     )
     return {
+      __proto__: null,
       content: result.content.map(c => ({
+        __proto__: null,
         text: c.text,
         type: 'text' as const,
       })),

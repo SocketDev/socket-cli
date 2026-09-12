@@ -4,8 +4,8 @@
  * compiles their input schemas once, and dispatches `tools/list` + `tools/call`
  * by name.
  *
- * Nothing here imports the MCP SDK, so the seam survives an SDK major bump: the
- * only SDK-shaped code is the two `setRequestHandler` registrations in
+ * Nothing here imports the MCP SDK, so the boundary survives an SDK major bump:
+ * the only SDK-shaped code is the two `setRequestHandler` registrations in
  * `server.mts`.
  */
 

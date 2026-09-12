@@ -60,6 +60,7 @@ export async function outputAsJson(
           user_email,
         } = log
         return {
+          __proto__: null,
           event_id,
           created_at,
           ip_address,
@@ -88,6 +89,7 @@ export async function outputAsMarkdown(
 ): Promise<string> {
   try {
     const rows = auditLogs.results.map(log => ({
+      __proto__: null,
       event_id: log.event_id ?? '',
       created_at: log.created_at ?? '',
       type: log.type ?? '',

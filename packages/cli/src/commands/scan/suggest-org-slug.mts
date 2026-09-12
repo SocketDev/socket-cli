@@ -3,10 +3,11 @@ import { select } from '@socketsecurity/lib-stable/stdio/prompts'
 
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
+const logger = getDefaultLogger()
+
 export async function suggestOrgSlug(): Promise<string | undefined> {
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
-    const logger = getDefaultLogger()
     logger.fail(
       'Failed to lookup organization list from API, unable to suggest',
     )
@@ -23,6 +24,7 @@ export async function suggestOrgSlug(): Promise<string | undefined> {
         // display names may contain spaces that break API URLs.
         const display = o.name ?? o.slug
         return {
+          __proto__: null,
           name: `Yes [${display}]`,
           value: o.slug,
           description: `Use "${display}" as the organization`,

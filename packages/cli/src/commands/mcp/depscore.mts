@@ -109,7 +109,7 @@ export async function runDepscore(
     ) {
       logger.info(`Using version ${cleanedVersion} for ${pkg.depname}`)
     }
-    return { purl }
+    return { __proto__: null, purl }
   })
 
   let sdk: SocketSdk

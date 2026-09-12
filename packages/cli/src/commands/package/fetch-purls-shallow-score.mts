@@ -8,6 +8,8 @@ import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../util/socket/sdk.mjs'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
 
+const logger = getDefaultLogger()
+
 export type FetchPurlsShallowScoreOptions = {
   commandPath?: string | undefined
   sdkOpts?: SetupSdkOptions | undefined
@@ -32,14 +34,13 @@ export async function fetchPurlsShallowScore(
     purls.length > 3
       ? `${purls.slice(0, 3).join(', ')} … and ${purls.length - 3} more`
       : joinAnd(purls)
-  const logger = getDefaultLogger()
   logger.info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${displayPurls}`,
   )
 
   const batchPackageCResult = await handleApiCall<'batchPackageFetch'>(
     sockSdk.batchPackageFetch(
-      { components: purls.map(purl => ({ purl })) },
+      { components: purls.map(purl => ({ __proto__: null, purl })) },
       {
         alerts: 'true',
       },

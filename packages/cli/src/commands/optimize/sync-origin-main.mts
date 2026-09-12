@@ -17,6 +17,8 @@ import {
 } from '../../util/git/git-remote-info.mts'
 import { spawnGit } from '../../util/git/spawn-git.mts'
 
+const logger = getDefaultLogger()
+
 export type SyncOriginMainResult = {
   ok: boolean
   reason: string
@@ -36,8 +38,6 @@ export function skip(reason: string): SyncOriginMainResult {
 export async function syncOriginMain(
   cwd: string,
 ): Promise<SyncOriginMainResult> {
-  const logger = getDefaultLogger()
-
   try {
     const branch = await gitBranch(cwd)
     const defaultBranch = await detectDefaultBranch(cwd)

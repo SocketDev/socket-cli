@@ -40,6 +40,7 @@ export async function selectFocus(repos: string[]): Promise<CResult<string[]>> {
     message: 'Please select the repo to process:',
     choices: repos
       .map(slug => ({
+        __proto__: null,
         name: slug,
         value: slug,
         description: `Create scan for the ${slug} repo through GitHub`,

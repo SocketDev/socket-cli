@@ -1,4 +1,5 @@
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+import { compareStr } from '@socketsecurity/lib-stable/sorts/strings'
 
 import { failMsgWithBadge } from '../../util/error/fail-msg-with-badge.mts'
 import { mdHeader, mdTableOfPairs } from '../../util/output/markdown.mts'
@@ -44,7 +45,7 @@ export async function outputLicensePolicy(
           : ' no',
       ] as const,
   )
-  mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  mapped.sort(([a], [b]) => compareStr(a, b))
   logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
   logger.log('')
 }

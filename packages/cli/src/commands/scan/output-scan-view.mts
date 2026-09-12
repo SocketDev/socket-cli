@@ -70,6 +70,7 @@ export async function outputScanView(
           ? ''
           : art.author
     return {
+      __proto__: null,
       type: art.type,
       name: art.name,
       version: art.version,

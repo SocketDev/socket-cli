@@ -14,6 +14,8 @@ import { cmdPrefixMessage } from '../../util/process/cmd.mts'
 
 import type { OutputKind } from '../../types.mts'
 
+const logger = getDefaultLogger()
+
 export async function handleOptimize({
   cwd,
   outputKind,
@@ -25,8 +27,6 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
-  const logger = getDefaultLogger()
-
   debug(`Starting optimization for ${cwd}`)
   debugDir({ cwd, outputKind, pin, prod })
 

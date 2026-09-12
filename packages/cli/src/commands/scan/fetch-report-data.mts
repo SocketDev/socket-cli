@@ -129,6 +129,7 @@ export async function fetchScanData(
     fetchScanResult().catch(e => {
       updateScan('failure; unknown blocking error occurred')
       return {
+        __proto__: null,
         ok: false as const,
         message: 'Socket API error',
         cause:
@@ -139,6 +140,7 @@ export async function fetchScanData(
     fetchSecurityPolicy().catch(e => {
       updatePolicy('failure; unknown blocking error occurred')
       return {
+        __proto__: null,
         ok: false as const,
         message: 'Socket API error',
         cause:

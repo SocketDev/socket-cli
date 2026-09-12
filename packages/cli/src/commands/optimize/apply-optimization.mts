@@ -8,6 +8,8 @@ import { updateDependencies } from './update-dependencies.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../util/ecosystem/environment.mjs'
 
+const logger = getDefaultLogger()
+
 export type OptimizeConfig = {
   pin: boolean
   prod: boolean
@@ -25,7 +27,6 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
-  const logger = getDefaultLogger()
   const spinner = getDefaultSpinner()
 
   spinner?.start()
