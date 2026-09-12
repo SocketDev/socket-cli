@@ -6,6 +6,10 @@ import process from 'node:process'
 
 import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import {
+  getEnvValue,
+  safeProcessEnv,
+} from '@socketsecurity/lib-stable/env/rewire'
 import { rolldown } from 'rolldown'
 
 export function readSdxgenToolVersions(
@@ -113,6 +117,7 @@ export async function ensureSdxgenSource(
   upstream: string,
 ): Promise<void> {
   if (!existsSync(path.join(upstream, '.config/repo/external-tools.json'))) {
+    const cloneEnv = getSdxgenCloneEnvironment()
     const result = await spawn(
       process.execPath,
       [
@@ -120,7 +125,7 @@ export async function ensureSdxgenSource(
         'clone',
         'upstream/sdxgen',
       ],
-      { cwd: root, stdio: 'inherit' },
+      { cwd: root, env: cloneEnv, stdio: 'inherit' },
     )
     if (result.code !== 0) {
       throw new Error(
@@ -134,7 +139,7 @@ export async function ensureSdxgenSource(
         'restore-sparse',
         'upstream/sdxgen',
       ],
-      { cwd: root, stdio: 'inherit' },
+      { cwd: root, env: cloneEnv, stdio: 'inherit' },
     )
     if (sparse.code !== 0) {
       throw new Error(
@@ -174,5 +179,26 @@ export async function ensureSdxgenSource(
     throw new Error(
       'Cannot verify the generator source. Where: sdxgen build. Saw modified or mismatched source; wanted the committed upstream pin. Fix: preserve upstream edits separately and materialize the pinned source.',
     )
+  }
+}
+
+export function getSdxgenCloneEnvironment(): NodeJS.ProcessEnv | undefined {
+  const token = getEnvValue('SDXGEN_GITHUB_TOKEN')
+  if (!token) {
+    if (getEnvValue('GITHUB_ACTIONS') === 'true') {
+      throw new Error(
+        'Cannot authenticate the generator clone. Where: sdxgen build in GitHub Actions. Saw no scoped installation token; wanted SDXGEN_GITHUB_TOKEN. Fix: mint the contents:read sdxgen App token before the build step.',
+      )
+    }
+    return undefined
+  }
+  const authorization = Buffer.from(`x-access-token:${token}`).toString(
+    'base64',
+  )
+  return {
+    ...safeProcessEnv(),
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${authorization}`,
   }
 }
