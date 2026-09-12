@@ -12,18 +12,14 @@
 # subdirectory, which is what a publish job collecting one artifact per
 # build-matrix leg needs, since the legs are the list of names.
 
-name: 'Download Artifact'
+name: 'Download artifact'
 description: >-
-  Download one named GitHub Actions artifact from the current run into a
-  directory via the first-party artifact-service client
-  (scripts/fleet/artifact/download.mts). The zip's relative paths are
-  preserved under the destination.
+  Download one named GitHub Actions artifact from the current run into a directory via the first-party artifact-service client (scripts/fleet/artifact/download.mts). The zip's relative paths are preserved under the destination.
 
 inputs:
   name:
     description: >-
-      The artifact name to download. Omit to download EVERY artifact in the
-      run, each under its own `<path>/<name>/` subdirectory.
+      The artifact name to download. Omit to download EVERY artifact in the run, each under its own `<path>/<name>/` subdirectory.
     required: false
     default: ''
   path:
@@ -34,6 +30,7 @@ runs:
   using: 'composite'
   steps:
     - uses: ./.github/actions/fleet/expose-actions-runtime
+      name: Expose Actions runtime
     - name: Download artifact
       shell: bash
       env:

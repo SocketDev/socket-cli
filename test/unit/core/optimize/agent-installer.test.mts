@@ -1,0 +1,318 @@
+/**
+ * Unit tests for agent-installer utilities.
+ *
+ * Tests the package manager installation logic used by the optimize command.
+ * These tests use mocked spawn/spinner to verify correct command construction.
+ *
+ * Test Coverage: - pnpm: Special flags (--config.confirmModulesPurge=false,
+ * --no-frozen-lockfile, CI=1) - yarn: Basic install command - Custom args
+ * pass-through (--frozen-lockfile, --production, etc.) - Spinner integration
+ * for progress indication - Unknown/future package managers, fallback behavior.
+ *
+ * - Option merging, args, env, stdio.
+ *
+ * Npm Behavior (NOT tested here): - npm uses Socket Firewall (sfw) for security
+ * scanning - This cannot be reliably mocked due to ESM module resolution
+ * issues.
+ *
+ * - Npm behavior is tested via integration tests at:
+ *   test/integration/cli/cmd-optimize.test.mts.
+ *
+ * Related Files: - src/core/optimize/agent-installer.mts - Implementation -
+ * src/util/dlx/spawn.mts - Socket Firewall (sfw) spawn utilities -
+ * test/integration/cli/cmd-optimize.test.mts - Integration tests for full
+ * optimize flow.
+ */
+
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { runAgentInstall } from '../../../../src/core/optimize/agent-installer.mts'
+
+// Mock dependencies.
+vi.mock(import('@socketsecurity/lib-stable/process/spawn/child'), () => ({
+  spawn: vi.fn(),
+}))
+
+vi.mock(import('@socketsecurity/lib-stable/spinner/spinner'), () => ({
+  Spinner: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+  })),
+}))
+
+vi.mock(import('../../../../src/util/process/cmd.mts'), () => ({
+  cmdFlagsToString: vi.fn(flags =>
+    Object.entries(flags || {})
+      .map(([k, v]) => `--${k}=${String(v)}`)
+      .join(' '),
+  ),
+  mergeNodeOptions: vi.fn((envNodeOptions, addedFlags) =>
+    [envNodeOptions, ...(addedFlags || [])].filter(Boolean).join(' '),
+  ),
+}))
+
+vi.mock(
+  import('@socketsecurity/lib-stable/constants/package-managers'),
+  async importOriginal => {
+    const actual = await importOriginal()
+    return {
+      ...actual,
+      NPM: 'npm',
+      PNPM: 'pnpm',
+      YARN: 'yarn',
+    }
+  },
+)
+
+vi.mock(
+  import('@socketsecurity/lib-stable/constants/node'),
+  async importOriginal => {
+    const actual = await importOriginal()
+    return {
+      ...actual,
+      getNodeDisableSigusr1Flags: vi.fn(() => []),
+      getNodeHardenFlags: vi.fn(() => []),
+      getNodeNoWarningsFlags: vi.fn(() => []),
+    }
+  },
+)
+
+vi.mock(import('@socketsecurity/lib-stable/constants/platform'), () => ({
+  isWin32: () => false,
+}))
+
+describe('agent installer utilities', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('runAgentInstall', () => {
+    // Note: npm agent behavior is covered by integration tests.
+    // The mock-based test was removed due to ESM module resolution issues that
+    // prevented proper interception. The 6 tests below cover pnpm/yarn/unknown agents.
+
+    it('uses spawn for npm agent with --no-audit --no-fund', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'npm',
+        agentExecPath: '/usr/bin/npm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/npm',
+        ['install', '--no-audit', '--no-fund'],
+        expect.objectContaining({
+          cwd: '/test/project',
+        }),
+      )
+    })
+
+    it('preserves an inherited NODE_OPTIONS instead of clobbering it', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'npm',
+        agentExecPath: '/usr/bin/npm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 10, minor: 0, patch: 0 },
+      } as unknown
+
+      const originalNodeOptions = process.env['NODE_OPTIONS']
+      process.env['NODE_OPTIONS'] = '--max-old-space-size=4096'
+      try {
+        await runAgentInstall(pkgEnvDetails)
+      } finally {
+        if (originalNodeOptions === undefined) {
+          delete process.env['NODE_OPTIONS']
+        } else {
+          process.env['NODE_OPTIONS'] = originalNodeOptions
+        }
+      }
+
+      const spawnEnv = (
+        spawn.mock.calls[0]![2] as { env: Record<string, string> }
+      ).env
+      expect(spawnEnv['NODE_OPTIONS']).toContain('--max-old-space-size=4096')
+    })
+
+    it('uses spawn for pnpm agent', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'pnpm',
+        agentExecPath: '/usr/bin/pnpm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 8, minor: 0, patch: 0 },
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/pnpm',
+        [
+          'install',
+          '--config.confirmModulesPurge=false',
+          '--no-frozen-lockfile',
+        ],
+        expect.objectContaining({
+          cwd: '/test/project',
+          env: expect.objectContaining({
+            CI: '1',
+          }),
+        }),
+      )
+    })
+
+    it('uses spawn for yarn agent', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'yarn',
+        agentExecPath: '/usr/bin/yarn',
+        pkgPath: '/test/project',
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/yarn',
+        ['install'],
+        expect.objectContaining({
+          cwd: '/test/project',
+        }),
+      )
+    })
+
+    it('passes args to the agent command', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'yarn',
+        agentExecPath: '/usr/bin/yarn',
+        pkgPath: '/test/project',
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails, {
+        args: ['--frozen-lockfile', '--production'],
+      })
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/yarn',
+        ['install', '--frozen-lockfile', '--production'],
+        expect.any(Object),
+      )
+    })
+
+    it('uses spinner when provided', async () => {
+      const { Spinner } = vi.mocked(
+        await import('@socketsecurity/lib-stable/spinner/spinner'),
+      )
+      const mockSpinner = {
+        start: vi.fn(),
+        stop: vi.fn(),
+      }
+      Spinner.mockReturnValue(mockSpinner as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'pnpm',
+        agentExecPath: '/usr/bin/pnpm',
+        pkgPath: '/test/project',
+        agentVersion: { major: 8, minor: 0, patch: 0 },
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails, {
+        spinner: mockSpinner as unknown,
+      })
+
+      // Spinner would be passed through to spawn.
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/pnpm',
+        [
+          'install',
+          '--config.confirmModulesPurge=false',
+          '--no-frozen-lockfile',
+        ],
+        expect.objectContaining({
+          spinner: mockSpinner,
+        }),
+      )
+    })
+
+    it('handles unknown agent', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'unknown-agent',
+        agentExecPath: '/usr/bin/unknown-agent',
+        pkgPath: '/test/project',
+      } as unknown
+
+      await runAgentInstall(pkgEnvDetails)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/unknown-agent',
+        ['install'],
+        expect.any(Object),
+      )
+    })
+
+    it('merges options correctly', async () => {
+      const { spawn } = vi.mocked(
+        await import('@socketsecurity/lib-stable/process/spawn/child'),
+      )
+      spawn.mockReturnValue(Promise.resolve({ status: 0 }) as unknown)
+
+      const pkgEnvDetails = {
+        agent: 'yarn',
+        agentExecPath: '/usr/bin/yarn',
+        pkgPath: '/test/project',
+      } as unknown
+
+      const options = {
+        args: ['--prod'],
+        env: { NODE_ENV: 'production' },
+        stdio: 'inherit' as const,
+      }
+
+      await runAgentInstall(pkgEnvDetails, options)
+
+      expect(spawn).toHaveBeenCalledWith(
+        '/usr/bin/yarn',
+        ['install', '--prod'],
+        expect.objectContaining({
+          cwd: '/test/project',
+          env: expect.objectContaining({
+            NODE_ENV: 'production',
+          }),
+          stdio: 'inherit',
+        }),
+      )
+    })
+  })
+})

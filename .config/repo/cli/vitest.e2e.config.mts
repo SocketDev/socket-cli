@@ -1,0 +1,39 @@
+import { fileURLToPath } from 'node:url'
+import os from 'node:os'
+
+import { defineConfig } from 'vitest/config'
+
+// vitest config file requires default export
+// oxlint-disable-next-line socket/no-default-export -- default export required
+export default defineConfig({
+  root: fileURLToPath(new URL('../../../', import.meta.url)),
+  resolve: {
+    preserveSymlinks: false,
+  },
+  test: {
+    globals: false,
+    environment: 'node',
+    include: ['**/*.e2e.test.{mts,ts}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.{idea,git,cache,output,temp}/**',
+      '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
+    ],
+    reporters: ['default'],
+    setupFiles: ['./test/setup.mts'],
+    // Use threads for better performance.
+    pool: 'threads',
+    maxWorkers: os.cpus().length,
+    // E2E tests need full isolation for clean execution.
+    isolate: true,
+    deps: {
+      interopDefault: false,
+    },
+    // E2E tests need longer timeouts for spawning processes.
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
+    // Enable sharding for parallel E2E execution.
+    fileParallelism: true,
+  },
+})

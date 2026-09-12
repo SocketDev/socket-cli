@@ -362,7 +362,7 @@ runs:
         fi
         echo "$UV_BIN_DIR" >> "${GITHUB_PATH:-/dev/null}"
 
-    - name: Download sfw
+    - name: Download SFW
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
@@ -577,7 +577,7 @@ runs:
         export SFW_BIN SFW_FLAVOR SFW_VERSION PLATFORM ASSET INTEGRITY
         node "$PLAN" sfw-env >> "${GITHUB_ENV:-/dev/null}"
 
-    - name: Create sfw shims
+    - name: Create SFW shims
       shell: bash
       run: | # zizmor: ignore[github-env]
         # Shim supported package managers so their commands route through sfw.
@@ -758,7 +758,7 @@ runs:
         echo "$SHIM_DIR" >> "${GITHUB_PATH:-/dev/null}"
         echo "SFW_SHIM_DIR=$SHIM_DIR" >> "${GITHUB_ENV:-/dev/null}"
 
-    - name: Export SFW_CUSTOM_REGISTRIES bypass list
+    - name: Export registry bypass list
       shell: bash
       run: | # zizmor: ignore[github-env]
         # Ship an up-to-date host bypass list to both sfw-free and

@@ -4,7 +4,7 @@
 # this file's new SHA. See the updating-workflows skill at
 # .claude/skills/updating-workflows/.
 
-name: 'Setup and Install'
+name: 'Set up and install'
 description: 'Aggregate: checkout + setup environment + install dependencies'
 
 # Dependencies:
@@ -58,28 +58,17 @@ inputs:
     default: '.'
   store-dir:
     description: >-
-      Pin the pnpm store to this path for the whole job (exported as
-      pnpm_config_store_dir before restore + install, then asserted against
-      `pnpm store path`). Pass a workspace-relative path when a later step
-      runs pnpm inside a container/sandbox that mounts the workspace but not
-      the runner home — node_modules linked against the default home store
-      are unreadable there and pnpm fails with a store mismatch.
+      Pin the pnpm store to this path for the whole job (exported as pnpm_config_store_dir before restore + install, then asserted against `pnpm store path`). Pass a workspace-relative path when a later step runs pnpm inside a container/sandbox that mounts the workspace but not the runner home — node_modules linked against the default home store are unreadable there and pnpm fails with a store mismatch.
     required: false
     default: ''
   payload-token-client-id:
     description: >-
-      Client ID of the GitHub App that mints the fleet-pack-distribution read-only
-      payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default)
-      skips the mint entirely: a non-thin member needs no token, and its
-      `prepare` fetch no-ops. A thin member sets this so CI can download the
-      private wheelhouse release bundle during install.
+      Client ID of the GitHub App that mints the fleet-pack-distribution read-only payload token — pass vars.SOCKET_PAYLOAD_CLIENT_ID. Empty (the default) skips the mint entirely: a non-thin member needs no token, and its `prepare` fetch no-ops. A thin member sets this so CI can download the private wheelhouse release bundle during install.
     required: false
     default: ''
   payload-token-private-key:
     description: >-
-      Private key of the payload-token GitHub App — pass
-      secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when
-      payload-token-client-id is set.
+      Private key of the payload-token GitHub App — pass secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY. Only consumed when payload-token-client-id is set.
     required: false
     default: ''
 

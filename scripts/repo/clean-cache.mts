@@ -1,261 +1,38 @@
-/**
- * Clean stale caches across all packages.
- *
- * Usage: `pnpm run` clean:cache # Clean all stale caches `pnpm run` clean:cache
- * --all # Clean ALL caches, nuclear option, `pnpm run` clean:cache --dry-run #
- * Show what would be deleted.
- */
-
-import { readdirSync, statSync } from 'node:fs'
-import path from 'node:path'
+import { existsSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { errorMessage } from '@socketsecurity/lib-stable/errors/message'
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { getGlobalCacheDirs } from '../../packages/cli/scripts/constants/paths.mts'
+import { REPO_CACHE_DIR } from './cli-build/constants/paths.mts'
 import { isMainModule } from '../fleet/process/is-main-module.mts'
 import { runMain } from '../fleet/process/run-main.mts'
 import type { ScriptMeta } from '../fleet/process/run-main.mts'
-import { REPO_ROOT } from '../fleet/paths.mts'
 
 const logger = getDefaultLogger()
 
-const ROOT_DIR = REPO_ROOT
-
-const { values } = parseArgs({
-  options: {
-    all: { type: 'boolean' },
-    'dry-run': { type: 'boolean' },
-  },
-  strict: false,
-})
-
-const dryRun = values['dry-run']
-const cleanAll = values.all
-
-interface CacheDirInfo {
-  package: string
-  path: string
-}
-
-interface CacheEntry {
-  name: string
-  path: string
-  size: number
-  mtime: Date
-  ageD: number
-}
-
-/**
- * Analyze cache directory and determine what to clean.
- */
-function analyzeCacheDir(cacheDir: string): CacheEntry[] {
-  const entries: CacheEntry[] = []
-
-  try {
-    const items = readdirSync(cacheDir)
-    for (let i = 0, { length } = items; i < length; i += 1) {
-      const item = items[i]
-      if (item === undefined) {
-        continue
-      }
-      const itemPath = path.join(cacheDir, item)
-      const stats = statSync(itemPath)
-
-      if (stats.isDirectory()) {
-        entries.push({
-          name: item,
-          path: itemPath,
-          size: getDirSize(itemPath),
-          mtime: stats.mtime,
-          ageD: Math.floor(
-            (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60 * 24),
-          ),
-        })
-      }
-    }
-  } catch (e) {
-    logger.error(`Error analyzing ${cacheDir}: ${errorMessage(e)}`)
+export async function cleanCliCache(
+  options: { cacheDir?: string | undefined; dryRun?: boolean | undefined } = {},
+): Promise<void> {
+  const { cacheDir = REPO_CACHE_DIR, dryRun = false } = options
+  if (!existsSync(cacheDir)) {
+    return
   }
-
-  return entries.toSorted((a, b) => b.mtime.getTime() - a.mtime.getTime())
-}
-
-/**
- * Find all .cache directories in packages.
- */
-function findCacheDirs(): CacheDirInfo[] {
-  const cacheDirs: CacheDirInfo[] = []
-  const packagesDir = path.join(ROOT_DIR, 'packages')
-
-  try {
-    const packages = readdirSync(packagesDir)
-    for (let i = 0, { length } = packages; i < length; i += 1) {
-      const pkg = packages[i]
-      if (pkg === undefined) {
-        continue
-      }
-      const cacheDir = path.join(packagesDir, pkg, '.cache')
-      try {
-        statSync(cacheDir)
-        cacheDirs.push({ package: pkg, path: cacheDir })
-      } catch {
-        // No cache dir, skip.
-      }
-    }
-  } catch (e) {
-    logger.error(`Error scanning packages: ${errorMessage(e)}`)
+  if (dryRun) {
+    logger.log(`Would remove ${cacheDir}`)
+    return
   }
-
-  return cacheDirs
-}
-
-/**
- * Format bytes to human readable.
- */
-function formatSize(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
-/**
- * Get directory size recursively.
- */
-function getDirSize(dir: string): number {
-  let size = 0
-  try {
-    const items = readdirSync(dir)
-    for (let i = 0, { length } = items; i < length; i += 1) {
-      const item = items[i]
-      if (item === undefined) {
-        continue
-      }
-      const itemPath = path.join(dir, item)
-      const stats = statSync(itemPath)
-      if (stats.isDirectory()) {
-        size += getDirSize(itemPath)
-      } else {
-        size += stats.size
-      }
-    }
-  } catch {
-    // Ignore errors.
-  }
-  return size
+  await safeDelete(cacheDir)
 }
 
 async function main(): Promise<void> {
-  const cacheDirs = findCacheDirs()
-
-  if (!cacheDirs.length) {
-    logger.log('No cache directories found.')
-    return
-  }
-
-  logger.log(
-    `Found ${cacheDirs.length} cache director${cacheDirs.length === 1 ? 'y' : 'ies'}:`,
-  )
-  logger.log('')
-
-  let totalDeleted = 0
-  let totalSize = 0
-
-  for (const { package: pkg, path: cacheDir } of cacheDirs) {
-    const entries = analyzeCacheDir(cacheDir)
-
-    if (!entries.length) {
-      logger.log(`${pkg}: Empty cache`)
-      continue
-    }
-
-    logger.log(`${pkg}:`)
-
-    const latest = entries[0]
-    if (!cleanAll && latest) {
-      logger.success(
-        `  ${latest.name} (${formatSize(latest.size)}, ${latest.ageD}d old) - KEEP`,
-      )
-    }
-    const staleEntries = cleanAll ? entries : entries.slice(1)
-    await cleanCacheEntries(staleEntries)
-
-    async function cleanCacheEntries(
-      cacheEntries: CacheEntry[],
-    ): Promise<void> {
-      for (let i = 0, { length } = cacheEntries; i < length; i += 1) {
-        const entry = cacheEntries[i]
-        if (!entry) {
-          continue
-        }
-        logger.log(
-          `  ${dryRun ? '[DRY RUN]' : '✗'} ${entry.name} (${formatSize(entry.size)}, ${entry.ageD}d old)`,
-        )
-        if (!dryRun) {
-          await safeDelete(entry.path)
-        }
-        totalDeleted += 1
-        totalSize += entry.size
-      }
-    }
-
-    logger.log('')
-  }
-
-  if (totalDeleted > 0) {
-    logger.log(
-      `${dryRun ? 'Would delete' : 'Deleted'} ${totalDeleted} cache entr${totalDeleted === 1 ? 'y' : 'ies'} (${formatSize(totalSize)})`,
-    )
-  } else {
-    logger.success('All caches are current - nothing to delete')
-  }
-
-  if (cleanAll) {
-    await cleanGlobalCaches()
-  }
-
-  async function cleanGlobalCaches(): Promise<void> {
-    logger.log('')
-    logger.log('Cleaning global caches:')
-
-    const globalCaches = getGlobalCacheDirs()
-
-    for (const { name, path: cachePath } of globalCaches) {
-      try {
-        const stats = statSync(cachePath)
-        const size = stats.isDirectory() ? getDirSize(cachePath) : stats.size
-        logger.log(
-          `  ${dryRun ? '[DRY RUN]' : '✗'} ${name} (${formatSize(size)})`,
-        )
-        if (!dryRun) {
-          await safeDelete(cachePath)
-        }
-      } catch {
-        // Cache doesn't exist, skip.
-      }
-    }
-  }
-
-  if (dryRun) {
-    logger.log('')
-    logger.log('Run without --dry-run to actually delete.')
-  }
+  const { values } = parseArgs({ options: { 'dry-run': { type: 'boolean' } } })
+  await cleanCliCache({ dryRun: values['dry-run'] ?? false })
 }
 
 const SCRIPT_META: ScriptMeta = {
-  describe: 'clean stale caches across all packages',
-  help: `Usage: node scripts/repo/clean-cache.mts [flags]
-  --all       clean ALL caches, nuclear option
-  --dry-run   show what would be deleted`,
+  describe: 'clean the repository CLI cache',
+  help: 'Usage: pnpm run clean:cache [--dry-run]',
 }
 
 if (isMainModule(import.meta.url)) {

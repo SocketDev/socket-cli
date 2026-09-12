@@ -1,11 +1,5 @@
 /**
- * @file Repo check — the `packages/cli` source tree typechecks. The fleet
- *   check runner's tsc step covers only the script-tree tsconfig
- *   (`.config/fleet/tsconfig.check.json`), so without this gate a type error
- *   in `packages/cli/src` rides along silently until a build or an editor
- *   surfaces it. Runs `tsc --noEmit -p packages/cli/tsconfig.json` (the same
- *   config `pnpm --filter @socketsecurity/cli run type` uses) and fails with
- *   the diagnostics when the tree does not compile.
+ * @file Checks the root CLI source against its product TypeScript configuration.
  *   Usage: node scripts/repo/check/cli-types-are-sound.mts [--quiet]
  */
 
@@ -35,7 +29,7 @@ export async function main(): Promise<void> {
         path.join(REPO_ROOT, 'node_modules', 'typescript', 'bin', 'tsc'),
         '--noEmit',
         '-p',
-        path.join(REPO_ROOT, 'packages', 'cli', 'tsconfig.json'),
+        path.join(REPO_ROOT, 'tsconfig.json'),
       ],
       { cwd: REPO_ROOT, stdio: 'pipe', stdioString: true },
     )
@@ -57,7 +51,7 @@ export async function main(): Promise<void> {
         : ''
     const output = `${stdout}${stderr}`.trim()
     logger.error(
-      'packages/cli does not typecheck — fix the tsc diagnostics below (repro: node node_modules/typescript/bin/tsc --noEmit -p packages/cli/tsconfig.json):',
+      'CLI type checking failed in src. Expected no diagnostics. Fix the diagnostics below and run pnpm run type:cli.',
     )
     if (output) {
       logger.error(output)
@@ -66,13 +60,13 @@ export async function main(): Promise<void> {
     return
   }
   if (!quiet) {
-    logger.success('packages/cli typechecks (tsc --noEmit).')
+    logger.success('CLI source typechecks (tsc --noEmit).')
   }
 }
 
 const SCRIPT_META: ScriptMeta = {
   describe:
-    'checks the packages/cli source tree typechecks (tsc --noEmit against its own tsconfig)',
+    'checks the root CLI source against its product TypeScript configuration',
   help: `Usage: node scripts/repo/check/cli-types-are-sound.mts [--quiet]
 
   --quiet  suppress the success line`,

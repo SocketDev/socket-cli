@@ -1,4 +1,4 @@
-name: 📦 npm Publish
+name: 📦 Publish npm
 
 # Cascade-owned — every npm-publishing repo carries the byte-identical copy
 # (adopt by copying the template once; the sync then keeps it in lock-step;
@@ -48,17 +48,12 @@ on:
         default: 'latest'
       backfill-version:
         description: >-
-          Backfill a never-published GAP version below registry latest with
-          the content at checkout-ref. Bypasses the bump/changelog gate
-          behind hard gap-fill-only guards; requires checkout-ref and a
-          non-latest dist-tag.
+          Backfill a never-published GAP version below registry latest with the content at checkout-ref. Bypasses the bump/changelog gate behind hard gap-fill-only guards; requires checkout-ref and a non-latest dist-tag.
         type: string
         default: ''
       checkout-ref:
         description: >-
-          Backfill only — the branch/tag/SHA whose CONTENT is republished.
-          The workflow definition always comes from the dispatched ref,
-          main, so historical content stays reachable.
+          Backfill only — the branch/tag/SHA whose CONTENT is republished. The workflow definition always comes from the dispatched ref, main, so historical content stays reachable.
         type: string
         default: ''
 
@@ -159,7 +154,7 @@ jobs:
           fi
           echo "dist-tag 'latest' is allowed from $REF (consumable line: $LATEST_BRANCH)."
 
-      - name: Setup + install
+      - name: Set up and install
         uses: ./.github/actions/fleet/setup-and-install
         with:
           # Forward the backfill content ref — setup-and-install re-checks-out
@@ -183,7 +178,7 @@ jobs:
       # resolves to dist/), and `files` ships dist/, so the tarball needs it.
       - name: Build
         run: pnpm run build
-      - name: Mint release App token
+      - name: Mint release token
         if: ${{ inputs.backfill-version == '' }}
         id: release-app
         uses: ./.github/actions/fleet/github-release-app-token
@@ -202,3 +197,5 @@ jobs:
         # backfill-version is refused by the script instead of silently
         # bump-publishing historical content.
         run: node scripts/fleet/npm-publish.mts --staged ${{ (inputs.backfill-version == '') && '--bump' || '' }} --tag "$DIST_TAG" ${BACKFILL_VERSION:+--backfill "$BACKFILL_VERSION"} ${CHECKOUT_REF:+--checkout-ref "$CHECKOUT_REF"} ${{ inputs.publish != true && '--dry-run' || '' }}
+    name: Publish npm
+run-name: Publish npm

@@ -31,7 +31,7 @@
 # Rust repo contract: `fuzz/run.sh <target> [seconds]` and
 # `fuzz/no-unsafe-without-fuzz.sh` are required; `fuzz/seed-corpus.py` is
 # optional and runs only where it exists.
-name: 🎯 Weekly Fuzz
+name: 🔁 Weekly fuzz
 
 # Fuzzing is NOT a per-commit gate, which is why there is no push or
 # pull_request trigger here. A randomized harness is budgeted by wall-clock, so
@@ -125,7 +125,7 @@ jobs:
             echo "hasGo=$([ -f go.mod ] && echo true || echo false)"
             echo "hasCpp=$([ -f .clang-tidy ] || [ -f CMakeLists.txt ] && echo true || echo false)"
           } >> "$GITHUB_OUTPUT"
-      - name: Read rust fuzz targets from fuzz/Cargo.toml
+      - name: Read Rust fuzz targets
         id: rust
         if: steps.markers.outputs.hasRust == 'true'
         run: |
@@ -142,6 +142,7 @@ jobs:
           ')"
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
           echo "Discovered rust targets: $targets"
+    name: Discover fuzz targets
 
   # Weekly coverage-guided campaign: 10 min/rust target, corpus cached across runs.
   fuzz-rust:
@@ -177,7 +178,7 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - name: Hydrate fleet actions
+      - name: Hydrate fleet Actions
         uses: ./.github/actions/fleet/checkout
         with:
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
@@ -292,6 +293,7 @@ jobs:
         uses: ./.github/actions/fleet/setup-rust-cache
         with:
           phase: save
+    name: Fuzz Rust (${{ matrix.target }})
 
   # Weekly JS campaign: the vitiate lane, unbounded.
   fuzz-js:
@@ -331,6 +333,7 @@ jobs:
           # Both stay empty on a member with no payload App, skipping the mint.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+        name: Set up and install
       - name: Resolve JS fuzz runtime
         id: js-runtime
         run: |
@@ -400,6 +403,7 @@ jobs:
           if-no-files-found: ignore
           name: fuzz-js-replay-corpus
           path: .vitiate/
+    name: Fuzz JavaScript
 
   # Weekly Go campaign: 10 min per fuzz function.
   fuzz-go:
@@ -428,7 +432,7 @@ jobs:
             git fetch "${FETCH_ARGS[@]}"
           fi
           git checkout -q --detach FETCH_HEAD
-      - name: Hydrate fleet actions
+      - name: Hydrate fleet Actions
         uses: ./.github/actions/fleet/checkout
         with:
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
@@ -437,7 +441,7 @@ jobs:
         uses: ./.github/actions/fleet/setup-go-toolchain
         with:
           go-version-file: go.mod
-      - name: Run go fuzz functions, 10 minutes each
+      - name: Run Go fuzz functions, 10 minutes each
         uses: ./.github/actions/fleet/run-offline
         with:
           run: |
@@ -446,6 +450,7 @@ jobs:
               echo "go test -fuzz=^${fn}\$ -fuzztime=600s"
               go test -fuzz="^${fn}\$" -fuzztime=600s ./...
             done < <(grep -rhoE '^func (Fuzz[A-Za-z0-9_]+)' --include='*_test.go' . | awk '{print $2}' | sort -u)
+    name: Fuzz Go
 
   # Weekly C++ campaign: 10 min per libFuzzer target.
   fuzz-cpp:
@@ -488,6 +493,7 @@ jobs:
             clang++ -std=c++17 -g -fsanitize=fuzzer,address "$src" -o "$bin"
             "$bin" -max_total_time=600
           done
+    name: Fuzz C++
 
   # A scheduled run nobody watches needs to speak up, so one reporting job
   # covers every leg. It runs AFTER the campaigns, only when one of them failed,
@@ -539,12 +545,13 @@ jobs:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+        name: Set up and install
       # The PR App carries the issues:write grant this needs and already owns
       # the comment surface. The default GITHUB_TOKEN is deliberately not used:
       # an issue it opens is attributed to github-actions[bot] and, more to the
       # point, cannot trigger the on:issues workflows a member may hang off a
       # filed crash.
-      - name: Mint PR App token
+      - name: Mint PR token
         id: pr-app
         uses: ./.github/actions/fleet/github-pr-app-token
         with:
@@ -575,3 +582,5 @@ jobs:
                 --sha "${COMMIT_SHA}"
             fi
           done
+    name: Report crashes
+run-name: Weekly fuzz

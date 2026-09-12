@@ -1,0 +1,16 @@
+/**
+ * Build-time inlined constant names for Socket CLI. These are environment
+ * variable names that get inlined during build.
+ */
+
+export const INLINED_COANA_VERSION = 'INLINED_COANA_VERSION'
+export const INLINED_CYCLONEDX_CDXGEN_VERSION =
+  'INLINED_CYCLONEDX_CDXGEN_VERSION'
+export const INLINED_HOMEPAGE = 'INLINED_HOMEPAGE'
+export const INLINED_NAME = 'INLINED_NAME'
+export const INLINED_PUBLISHED_BUILD = 'INLINED_PUBLISHED_BUILD'
+export const INLINED_PYTHON_BUILD_TAG = 'INLINED_PYTHON_BUILD_TAG'
+export const INLINED_PYTHON_VERSION = 'INLINED_PYTHON_VERSION'
+export const INLINED_SYNP_VERSION = 'INLINED_SYNP_VERSION'
+export const INLINED_VERSION = 'INLINED_VERSION'
+export const INLINED_VERSION_HASH = 'INLINED_VERSION_HASH'

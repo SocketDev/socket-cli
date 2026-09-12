@@ -9,12 +9,9 @@
 # so this runs expose-actions-runtime first to surface them to the upload step.
 # No third-party actions/upload-artifact dependency.
 
-name: 'Upload Artifact'
+name: 'Upload artifact'
 description: >-
-  Upload one or more paths as a named GitHub Actions artifact via the
-  first-party artifact-service client (scripts/fleet/artifact/upload.mts). A
-  missing path or an empty set fails loud - the actions/upload-artifact
-  if-no-files-found: error default.
+  Upload one or more paths as a named GitHub Actions artifact via the first-party artifact-service client (scripts/fleet/artifact/upload.mts). A missing path or an empty set fails loud - the actions/upload-artifact if-no-files-found: error default.
 
 inputs:
   name:
@@ -22,13 +19,11 @@ inputs:
     required: true
   path:
     description: >-
-      A path (file or directory) to include. Repeatable as a newline-separated
-      list.
+      A path (file or directory) to include. Repeatable as a newline-separated list.
     required: true
   if-no-files-found:
     description: >-
-      Fail when no files match (error) or skip silently (ignore). Default
-      error.
+      Fail when no files match (error) or skip silently (ignore). Default error.
     required: false
     default: 'error'
 
@@ -36,6 +31,7 @@ runs:
   using: 'composite'
   steps:
     - uses: ./.github/actions/fleet/expose-actions-runtime
+      name: Expose Actions runtime
     - name: Upload artifact
       shell: bash
       env:
