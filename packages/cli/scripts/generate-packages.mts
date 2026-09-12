@@ -26,7 +26,7 @@ const scripts = [
 async function main(): Promise<void> {
   for (let i = 0, { length } = scripts; i < length; i += 1) {
     const script = scripts[i]
-    const result = await spawn('node', [script], { stdio: 'inherit' })
+    const result = await spawn(process.execPath, [script], { stdio: 'inherit' })
 
     if (!result) {
       process.exitCode = 1

@@ -14,7 +14,7 @@ async function main() {
   try {
     logger.step('Building CLI bundle')
     const buildResult = await spawn(
-      'node',
+      process.execPath,
       ['--max-old-space-size=8192', '.config/rolldown.build.mts', 'cli'],
       { stdio: 'inherit' },
     )
@@ -34,7 +34,7 @@ async function main() {
     // Step 4: Validate bundle.
     logger.step('Validating bundle')
     const validateResult = await spawn(
-      'node',
+      process.execPath,
       ['scripts/validate-bundle.mts'],
       {
         stdio: 'inherit',

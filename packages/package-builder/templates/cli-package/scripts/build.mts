@@ -25,7 +25,7 @@ async function main() {
 
     // Build CLI bundle.
     logger.info('Building CLI bundle…')
-    let result = await spawn('node', ['.config/rolldown.cli.mts'], {
+    let result = await spawn(process.execPath, ['.config/rolldown.cli.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -42,7 +42,7 @@ async function main() {
 
     // Build index loader.
     logger.info('Building index loader…')
-    result = await spawn('node', ['.config/rolldown.index.mts'], {
+    result = await spawn(process.execPath, ['.config/rolldown.index.mts'], {
       shell: WIN32,
       stdio: 'inherit',
       cwd: rootPath,
@@ -59,10 +59,7 @@ async function main() {
 
     // Copy CLI to dist.
     logger.info('Copying CLI to dist…')
-    await fs.copyFile(
-      CLI_BUILD_PATH,
-      path.join(rootPath, 'dist', 'cli.js'),
-    )
+    await fs.copyFile(CLI_BUILD_PATH, path.join(rootPath, 'dist', 'cli.js'))
     logger.success('Copied CLI to dist')
 
     // Copy data directory from packages/cli.

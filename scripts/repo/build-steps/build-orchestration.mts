@@ -27,6 +27,7 @@ import {
 import { CLI_BUILD_PACKAGE, TARGET_PACKAGES } from './config.mts'
 import type { BuildTargetResult } from './config.mts'
 import { logger, rootDir } from './context.mts'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 /**
  * Run multiple targeted builds in parallel.
@@ -244,7 +245,7 @@ export async function runSmartBuild(force: boolean): Promise<void> {
       {
         name: CHECKPOINTS.SEA,
         skip: ctx =>
-          !force && (ctx.buildMode !== 'prod' || !!process.env['CI']),
+          !force && (ctx.buildMode !== 'prod' || !!getEnvValue('CI')),
         // Hash the CLI output into this stage's cache key. Without it,
         // shouldRun() only sees external-tools.json + package.json, so a
         // CLI rebuild that leaves those files untouched would skip SEA

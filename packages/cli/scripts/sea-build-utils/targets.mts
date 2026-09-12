@@ -4,6 +4,7 @@
  */
 
 import { NODE_SMOL_VERSION } from '../constants/base-assets.mts'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 /**
  * Generate build targets for different platforms. Returns array of 8 platform
@@ -89,5 +90,5 @@ export async function getBuildTargets() {
  * @returns Node.js version tag suffix.
  */
 export async function getDefaultNodeVersion() {
-  return process.env['SOCKET_CLI_SEA_NODE_VERSION'] || NODE_SMOL_VERSION
+  return getEnvValue('SOCKET_CLI_SEA_NODE_VERSION') || NODE_SMOL_VERSION
 }

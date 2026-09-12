@@ -20,10 +20,14 @@ async function runScript(scriptName, description) {
   logger.log(`▶ ${description}...`)
   logger.log('─'.repeat(50))
 
-  const result = await spawn('node', [path.join(__dirname, scriptName)], {
-    cwd: path.dirname(__dirname),
-    stdio: 'inherit',
-  })
+  const result = await spawn(
+    process.execPath,
+    [path.join(__dirname, scriptName)],
+    {
+      cwd: path.dirname(__dirname),
+      stdio: 'inherit',
+    },
+  )
 
   if (result.code !== 0) {
     const error = new Error(

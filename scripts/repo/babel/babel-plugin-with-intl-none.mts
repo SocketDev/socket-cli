@@ -24,8 +24,8 @@
 
 import type {
   BabelCallExpressionNode,
-  BabelNode,
   BabelMemberExpressionNode,
+  BabelNode,
   BabelPath,
   BabelProgramNode,
   BabelRegExpLiteralNode,
