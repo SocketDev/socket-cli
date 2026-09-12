@@ -53,20 +53,7 @@ export async function validatePackage() {
     }
 
     // Validate files array.
-    const requiredInFiles = [
-      'CHANGELOG.md',
-      'LICENSE',
-      'data/**',
-      'dist/**',
-      'logo-dark.png',
-      'logo-light.png',
-    ]
-    for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
-      const required = requiredInFiles[i]
-      if (!pkg.files?.includes(required)) {
-        errors.push(`package.json files array missing: ${required}`)
-      }
-    }
+    validateFilesList(pkg, errors)
     if (errors.length === 0) {
       logger.success('package.json files array is correct')
     }
@@ -98,19 +85,7 @@ export async function validatePackage() {
     }
   }
 
-  // Verify Sentry is referenced in the build (check for @sentry/node require).
-  logger.info('Checking for Sentry integration in build…')
-  const buildPath = CLI_BUILD_PATH
-  if (existsSync(buildPath)) {
-    const buildContent = await fs.readFile(buildPath, 'utf-8')
-    if (!buildContent.includes('@sentry/node')) {
-      errors.push('Sentry integration not found in build/cli.js')
-    } else {
-      logger.success('Sentry integration found in build')
-    }
-  } else {
-    errors.push('build/cli.js does not exist (required for Sentry validation)')
-  }
+  await validateSentryBuild(errors)
 
   // Check data directory exists.
   logger.info('Checking data directory…')
@@ -168,3 +143,36 @@ validatePackage().catch(e => {
   logger.error('')
   process.exitCode = 1
 })
+
+function validateFilesList(pkg, errors) {
+  const requiredInFiles = [
+    'CHANGELOG.md',
+    'LICENSE',
+    'data/**',
+    'dist/**',
+    'logo-dark.png',
+    'logo-light.png',
+  ]
+  for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
+    const required = requiredInFiles[i]
+    if (!pkg.files?.includes(required)) {
+      errors.push(`package.json files array missing: ${required}`)
+    }
+  }
+}
+
+async function validateSentryBuild(errors) {
+  // Verify Sentry is referenced in the build (check for @sentry/node require).
+  logger.info('Checking for Sentry integration in build…')
+  const buildPath = CLI_BUILD_PATH
+  if (existsSync(buildPath)) {
+    const buildContent = await fs.readFile(buildPath, 'utf-8')
+    if (!buildContent.includes('@sentry/node')) {
+      errors.push('Sentry integration not found in build/cli.js')
+    } else {
+      logger.success('Sentry integration found in build')
+    }
+  } else {
+    errors.push('build/cli.js does not exist (required for Sentry validation)')
+  }
+}

@@ -36,20 +36,7 @@ export async function validatePackage() {
       errors.push(`Failed to parse package.json: ${e.message}`)
       return errors
     }
-    const requiredInFiles = [
-      'CHANGELOG.md',
-      'LICENSE',
-      'data/**',
-      'dist/**',
-      'logo-dark.png',
-      'logo-light.png',
-    ]
-    for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
-      const required = requiredInFiles[i]
-      if (!pkg.files?.includes(required)) {
-        errors.push(`package.json files array missing: ${required}`)
-      }
-    }
+    validateFilesList(pkg, errors)
     if (errors.length === 0) {
       logger.success('package.json files array is correct')
     }
@@ -137,3 +124,20 @@ validatePackage().catch(e => {
   logger.error('')
   process.exitCode = 1
 })
+
+function validateFilesList(pkg, errors) {
+  const requiredInFiles = [
+    'CHANGELOG.md',
+    'LICENSE',
+    'data/**',
+    'dist/**',
+    'logo-dark.png',
+    'logo-light.png',
+  ]
+  for (let i = 0, { length } = requiredInFiles; i < length; i += 1) {
+    const required = requiredInFiles[i]
+    if (!pkg.files?.includes(required)) {
+      errors.push(`package.json files array missing: ${required}`)
+    }
+  }
+}
