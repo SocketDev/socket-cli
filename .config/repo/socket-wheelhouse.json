@@ -10,7 +10,7 @@
     "cascadeSha": "34b047176c416cd46f1919ad0bba35a0bb7b84b3"
   },
   "repo": {
-    "type": "mono"
+    "type": "solo"
   },
   "build": {
     "from": "npm-registry",
@@ -18,21 +18,14 @@
   },
   "release": {
     "latestDistTagBranch": "v1.x",
-    "publishedPackages": [
-      "socket",
-      "@socketsecurity/cli",
-      "@socketsecurity/cli-with-sentry"
-    ]
+    "publishedPackages": ["@socketsecurity/cli"]
   },
   "vite": {
     "allowEsbuild": "esbuild resolves only as vite 8's optional peer and is never invoked; nothing imports it and the bundler is rolldown"
   },
   "contentPolicy": {
     "class": "dual-use",
-    "packages": [
-      "packages/cli",
-      "packages/package-builder/templates/socket-package"
-    ]
+    "packages": ["."]
   },
   "bornTested": {
     "grandfathered": [
@@ -40,7 +33,6 @@
       "scripts/repo/build.mts",
       "scripts/repo/check/cli-types-are-sound.mts",
       "scripts/repo/clean-cache.mts",
-      "scripts/repo/stage-publish-cli-exe.mts",
       "scripts/repo/validate-no-cdn-refs.mts",
       "scripts/repo/warm-dlx-cache.mts"
     ]
@@ -174,19 +166,12 @@
     ]
   },
   "workspace": {
-    "catalogDriftIgnore": [
-      "typescript"
-    ]
+    "catalogDriftIgnore": ["typescript"]
   },
   "vitest": {
     "lanes": {
-      "mid": [
-        "packages/cli/test/unit/commands/**",
-        "packages/cli/test/unit/meow.test.mts"
-      ],
-      "slow": [
-        "packages/cli/test/integration/**"
-      ]
+      "mid": ["test/unit/command/**", "test/unit/meow.test.mts"],
+      "slow": ["test/integration/**"]
     }
   }
 }

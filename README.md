@@ -8,12 +8,12 @@
 
 CLI for [Socket.dev](https://socket.dev) - bring Socket's supply-chain security analysis to your terminal and CI.
 
-Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This repository is the source for the published `socket` package on npm; end-user documentation lives on [socket.dev](https://docs.socket.dev) and the [`socket` npm page](https://socket.dev/npm/package/socket).
+Socket CLI is the command-line interface to [Socket.dev](https://socket.dev), letting you scan dependencies, audit packages, and gate installs from your terminal or CI. This branch develops the 2.x prerelease of `@socketsecurity/cli`. End-user documentation lives on [socket.dev](https://docs.socket.dev).
 
 ## Install
 
 ```sh
-npm install -g socket
+pnpm add --global @socketsecurity/cli
 ```
 
 Then run:
@@ -75,13 +75,17 @@ can open authorization after connection without starting that listener. The
 localhost callback. Reauthorization recovery was verified against the published
 bridge transport; a complete browser login remains a separate integration check.
 
+## Architecture
+
+CLI entrypoints live in `src/command/`. Shared implementations live in `src/core/`. See the [architecture guide](docs/repo/architecture.md) for the source and test layout.
+
 ## Development
 
 <details>
 <summary>Contributor commands</summary>
 
 ```sh
-git clone https://github.com/SocketDev/socket-cli.git
+git clone --depth=1 --single-branch https://github.com/SocketDev/socket-cli.git
 cd socket-cli
 pnpm install
 pnpm run build
@@ -90,28 +94,27 @@ pnpm test
 
 Requires Node.js (see `.node-version`) and pnpm (see the `packageManager` field in `package.json`).
 
-| Command                  | Description                   |
-| ------------------------ | ----------------------------- |
-| `pnpm run build`         | Smart build (skips unchanged) |
-| `pnpm run build --force` | Force rebuild everything      |
-| `pnpm run build:cli`     | Build CLI package only        |
-| `pnpm run build:sea`     | Build SEA binaries            |
-| `pnpm dev`               | Watch mode (auto-rebuild)     |
-| `pnpm test`              | Run all tests                 |
-| `pnpm testu`             | Update test snapshots         |
-| `pnpm run check`         | Lint + typecheck              |
-| `pnpm run fix`           | Auto-fix lint + formatting    |
+| Command                       | Description                   |
+| ----------------------------- | ----------------------------- |
+| `pnpm run build`              | Smart build (skips unchanged) |
+| `pnpm run build --force`      | Force rebuild everything      |
+| `pnpm run build:cli`          | Build CLI package only        |
+| `pnpm run build:watch`        | Rebuild the CLI on changes    |
+| `pnpm test`                   | Run all tests                 |
+| `pnpm run test:unit -- --all` | Run all product unit tests    |
+| `pnpm run check`              | Lint + typecheck              |
+| `pnpm run fix`                | Auto-fix lint + formatting    |
 
 Run the built CLI from source:
 
 ```sh
-node packages/cli/dist/index.js --help
+pnpm run s --help
 ```
 
 Enable debug logging:
 
 ```sh
-SOCKET_CLI_DEBUG=1 node packages/cli/dist/index.js <command>
+SOCKET_CLI_DEBUG=1 pnpm run s <command>
 ```
 
 Key development environment variables:
@@ -141,11 +144,9 @@ allow every other private host.
 
 Further contributor reading:
 
-- [`docs/build-guide.md`](docs/build-guide.md) - build pipeline, SEA binaries, cache management
+- [`docs/build-guide.md`](docs/build-guide.md) - single-package build and verification
 - [`docs/bundle-tools.md`](docs/bundle-tools.md) - how bundled tools (opengrep, trivy, etc.) are integrated
-- [`packages/cli/README.md`](packages/cli/README.md) - CLI package architecture
-- [`packages/build-infra/README.md`](packages/build-infra/README.md) - shared build tooling
-- [`packages/package-builder/README.md`](packages/package-builder/README.md) - template-based package generation
+- [`docs/repo/architecture.md`](docs/repo/architecture.md) - source and command layout
 
 </details>
 

@@ -28,7 +28,7 @@ import type { ScriptMeta } from '../fleet/process/run-main.mts'
 const logger = getDefaultLogger()
 
 const repoRoot = path.join(fileURLToPath(import.meta.url), '..', '..', '..')
-const cliPath = path.join(repoRoot, 'packages', 'cli', 'dist', 'index.js')
+const cliPath = path.join(repoRoot, 'dist', 'index.js')
 
 const WARM_TIMEOUT_MS = 600_000
 

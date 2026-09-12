@@ -1,7 +1,7 @@
 {
   "$schema": "../fleet/lockstep.schema.json",
   "area": "socket-cli",
-  "description": "Lock-step manifest. Both of socket-cli's upstream ties are MCP: the TypeScript SDK `socket mcp` is written against, tracked sparse so only the serving surface counts as drift, and `@socketsecurity/mcp`, whose fixes socket-cli absorbs until that package is retired.",
+  "description": "Upstream references for MCP compatibility and selected development snapshots. Reference pins do not assert implementation parity.",
   "upstreams": {
     "modelcontextprotocol-typescript-sdk": {
       "submodule": "upstream/modelcontextprotocol-typescript-sdk",
@@ -10,6 +10,18 @@
     "socket-mcp": {
       "submodule": "upstream/socket-mcp",
       "repo": "https://github.com/SocketDev/socket-mcp"
+    },
+    "socket-scan-patterns": {
+      "submodule": "upstream/socket-scan-patterns",
+      "repo": "https://github.com/SocketDev/socket-scan-patterns"
+    },
+    "sdxgen": {
+      "submodule": "upstream/sdxgen",
+      "repo": "https://github.com/SocketDev/sdxgen"
+    },
+    "socket-patch": {
+      "submodule": "upstream/socket-patch",
+      "repo": "https://github.com/SocketDev/socket-patch"
     }
   },
   "rows": [
@@ -22,7 +34,7 @@
       "materialization": "sparse",
       "sparse_cone": ["packages/server/src", "packages/middleware/node/src"],
       "pinned_tag": "@modelcontextprotocol/server@2.0.0",
-      "conformance_test": "packages/cli/test/unit/commands/mcp/transport-http.test.mts",
+      "conformance_test": "test/unit/command/mcp/transport-http.test.mts",
       "notes": "`socket mcp` consumes the SDK as an npm dependency, not vendored source, so the port is behavioral: server.mts registers handlers by the string method names the low-level `Server` dispatches on, transport-stdio.mts hands a factory to `serveStdio`, and transport-http.mts composes `createMcpHandler` with `toNodeHandler`. Those four entry points live under the cone, which is why drift is scoped to `packages/server/src` (serving entries + the low-level Server) and `packages/middleware/node/src` (the node:http adapter). The rest of the monorepo — the codemod, the express/fastify/hono middlewares, server-legacy — is deliberately outside the port. `major-gate` because a v2 minor is additive to these entries while a major moved them once already (v1's `Server` + `StreamableHTTPServerTransport` became `createMcpHandler`, and HTTP went stateless)."
     },
     {
@@ -30,8 +42,8 @@
       "id": "mcp/socket-mcp-absorption",
       "upstream": "socket-mcp",
       "criticality": 10,
-      "local_area": "packages/cli/src/commands/mcp",
-      "test_area": "packages/cli/test/unit/commands/mcp",
+      "local_area": "src/command/mcp",
+      "test_area": "test/unit/command/mcp",
       "code_patterns": [
         "checkResourceAllowed\\(",
         "resourceUrlFromServerUrl\\(",

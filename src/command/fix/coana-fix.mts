@@ -1,0 +1,162 @@
+import path from 'node:path'
+
+import { debugDir } from '@socketsecurity/lib-stable/debug/output'
+import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
+
+import { runCiCoanaFix } from './coana-fix-ci.mts'
+import { runLocalCoanaFix } from './coana-fix-local.mts'
+import { getFixEnv } from './env-helpers.mts'
+import { DOT_SOCKET_DOT_FACTS_JSON } from '../../constants/paths.mts'
+import { findSocketYmlSync } from '../../util/config.mts'
+import { getPackageFilesForScan } from '../../util/fs/path-resolve.mjs'
+import { handleApiCall } from '../../util/socket/api.mjs'
+import { setupSdk } from '../../util/socket/sdk.mjs'
+import { excludePathToProjectIgnorePath } from '../scan/exclude-paths.mts'
+import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
+
+import type { FixConfig } from './types.mts'
+import type { CResult } from '../../types.mts'
+import type { GhsaFixResult } from './coana-fix-ci.mts'
+
+export type { GhsaFixResult } from './coana-fix-ci.mts'
+
+export async function coanaFix(
+  fixConfig: FixConfig,
+): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
+  const { all, cwd, excludePaths, ghsas, orgSlug, outputKind, spinner } =
+    fixConfig
+
+  // Under json/markdown mode we route coana's chatter away from our
+  // stdout (its JSON report comes from --output-file, not stdout, so
+  // coana stdout is entirely informational). 'ignore' drops it; that
+  // was the previous behavior and it remains safe. When interactive we
+  // inherit so the user sees coana progress in real-time.
+  const coanaStdio = outputKind === 'json' ? 'ignore' : 'inherit'
+  // Ask coana to silence its own Winston logger under json mode. Belt
+  // and braces with stdio:'ignore' and harmless if coana ignores the
+  // flag.
+  const coanaSilenceArgs = outputKind === 'json' ? ['--silent'] : []
+
+  const fixEnv = await getFixEnv()
+  debugDir({ fixEnv })
+
+  spinner?.start()
+
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
+  }
+
+  const sockSdk = sockSdkCResult.data
+
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  if (!supportedFilesCResult.ok) {
+    return supportedFilesCResult
+  }
+
+  const supportedFiles = supportedFilesCResult.data
+
+  const effectiveSocketConfig = resolveFixSocketConfig(cwd, excludePaths)
+
+  const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
+    config: effectiveSocketConfig,
+    cwd,
+  })
+
+  // A .socket.facts.json in the scan folder is an analysis artifact from an
+  // earlier run, not a manifest. Uploading it silently poisons the fix input,
+  // so stop and name the files to delete.
+  const factsFiles = scanFilepaths.filter(
+    p => path.basename(p).toLowerCase() === DOT_SOCKET_DOT_FACTS_JSON,
+  )
+  if (factsFiles.length) {
+    spinner?.stop()
+    return {
+      ok: false,
+      message: `Found ${DOT_SOCKET_DOT_FACTS_JSON} among the manifest files collected under ${cwd}`,
+      cause: `Delete the following ${pluralize('file', { count: factsFiles.length })} and run socket fix again:\n${factsFiles.map(p => `  - ${p}`).join('\n')}`,
+    }
+  }
+  const uploadCResult = (await handleApiCall(
+    sockSdk.uploadManifestFiles(orgSlug, scanFilepaths, {
+      pathsRelativeTo: cwd,
+    }),
+    {
+      commandPath: 'socket fix',
+      description: 'upload manifests',
+      spinner,
+    },
+  )) as CResult<{ tarHash?: string | undefined }>
+
+  if (!uploadCResult.ok) {
+    return uploadCResult
+  }
+
+  const tarHash: string | undefined = uploadCResult.data.tarHash
+  if (!tarHash) {
+    spinner?.stop()
+    return {
+      ok: false,
+      message:
+        'No tar hash returned from Socket API upload-manifest-files endpoint',
+      data: uploadCResult.data,
+    }
+  }
+
+  const shouldDiscoverGhsaIds = discoverAllFixes(all, ghsas)
+
+  const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
+
+  if (!shouldOpenPrs) {
+    return await runLocalCoanaFix(fixConfig, {
+      coanaSilenceArgs,
+      coanaStdio,
+      shouldDiscoverGhsaIds,
+      tarHash,
+    })
+  }
+
+  return await runCiCoanaFix(fixConfig, {
+    coanaSilenceArgs,
+    coanaStdio,
+    fixEnv,
+    scanFilepaths,
+    shouldDiscoverGhsaIds,
+    tarHash,
+  })
+}
+
+export function discoverAllFixes(
+  all: FixConfig['all'],
+  ghsas: string[],
+): boolean {
+  return all || !ghsas.length || (ghsas.length === 1 && ghsas[0] === 'all')
+}
+
+export function resolveFixSocketConfig(cwd: string, excludePaths: string[]) {
+  // Load socket.yml so projectIgnorePaths is respected when collecting files.
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+
+  // --exclude-paths joins socket.yml's projectIgnorePaths so manifest
+  // discovery skips those subtrees. Without it a directory the running user
+  // cannot enter aborts collection before coana is ever invoked, and the user
+  // has no way to route around it.
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+
+  return effectiveSocketConfig
+}

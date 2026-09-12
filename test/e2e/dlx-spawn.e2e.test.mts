@@ -1,0 +1,325 @@
+import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
+
+import { beforeAll, describe, expect, it } from 'vitest'
+
+import { ENV } from '../../src/constants/env.mts'
+import { spawnDlx } from '../../src/util/dlx/spawn.mts'
+import { findUp } from '../../src/util/fs/find-up.mts'
+import { getDefaultApiToken } from '../../src/util/socket/sdk.mts'
+import { withScratchHome } from '../helpers/cli-execution.mts'
+
+describe('dlx e2e tests', () => {
+  let hasAuth = false
+
+  beforeAll(async () => {
+    // Check if running e2e tests and if Socket API token is available.
+    if (ENV.RUN_E2E_TESTS) {
+      const apiToken = getDefaultApiToken()
+      hasAuth = !!apiToken
+      if (!apiToken) {
+        logger.log()
+        logger.warn('E2E tests require Socket authentication.')
+        logger.log('Please run one of the following:')
+        logger.log('  1. socket login (to authenticate with Socket)')
+        logger.log('  2. Set SOCKET_SECURITY_API_KEY environment variable')
+        logger.log('  3. Skip e2e tests by not setting RUN_E2E_TESTS')
+        logger.log('')
+        logger.log('E2E tests will be skipped due to missing authentication.')
+        logger.log('')
+      }
+    }
+  })
+  describe('pnpm exec regression test', () => {
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'successfully runs pnpm exec with cowsay (verifies no unsupported flags)',
+      async () => {
+        // Check if we're in a pnpm project.
+        const pnpmLock = await findUp('pnpm-lock.yaml')
+        if (!pnpmLock) {
+          logger.log('Skipping test - not in a pnpm project')
+          return
+        }
+
+        // Use cowsay as a safe, pinned package for testing.
+        const packageSpec = {
+          name: 'cowsay',
+          version: '1.6.0', // Pinned version for consistency.
+        }
+
+        // Scratch HOME so spawnDlx installs to <scratch>/.socket/_dlx rather
+        // than the dev's ~/.socket/_dlx.
+        await withScratchHome(async () => {
+          // Run cowsay with a test message.
+          const result = await spawnDlx(packageSpec, [
+            'Hello from Socket CLI tests!',
+          ])
+
+          // Verify it succeeded.
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult.code).toBe(0)
+          if (spawnResult.stdout) {
+            // Cowsay should output our message in a speech bubble.
+            expect(spawnResult.stdout).toContain('Hello from Socket CLI tests!')
+            // Should have the cow ASCII art.
+            expect(spawnResult.stdout).toMatch(/\\\s+/)
+            expect(spawnResult.stdout).toMatch(/\^__\^/)
+          }
+        })
+      },
+      30_000, // 30 second timeout for download.
+    )
+
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'verifies pnpm exec command construction uses only supported flags',
+      async () => {
+        // This test verifies by checking what command would be run.
+        const pnpmLock = await findUp('pnpm-lock.yaml')
+        if (!pnpmLock) {
+          logger.log('Skipping test - not in a pnpm project')
+          return
+        }
+
+        // We can't easily intercept the actual spawn call in e2e,
+        // but we can verify the command that would be constructed
+        // by checking our unit tests pass and the actual execution works.
+
+        // Try to run a simple `pnpm dlx` command directly to ensure it works.
+        // Scratch HOME so pnpm's store + cache land outside the dev's home.
+        await withScratchHome(async () => {
+          try {
+            const r = spawnSync(
+              'pnpm',
+              ['exec', 'cowsay@1.6.0', 'Direct test'],
+              {
+                stdio: 'pipe',
+                stdioString: true,
+              },
+            )
+            if (r.status !== 0) {
+              throw new Error(r.stderr ?? r.stdout ?? '')
+            }
+            expect(r.stdout).toContain('Direct test')
+
+            // Verify that adding unsupported flags would fail.
+            // For example, --ignore-scripts is only for `pnpm install`, not dlx.
+            expect(() => {
+              const r2 = spawnSync(
+                'pnpm',
+                ['exec', '--ignore-scripts', 'cowsay@1.6.0', 'Should fail'],
+                { stdio: 'pipe', stdioString: true },
+              )
+              if (r2.status !== 0) {
+                throw new Error(r2.stderr ?? r2.stdout ?? '')
+              }
+            }).toThrow()
+          } catch (e) {
+            // If pnpm is not available globally, skip this part.
+            logger.log('Could not run direct pnpm test:', e.message)
+          }
+        })
+      },
+      15_000,
+    )
+  })
+
+  describe('npm pnpm exec regression test', () => {
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'successfully runs npm/pnpm exec with cowsay',
+      async () => {
+        // Force npm by not finding any pnpm/yarn lockfiles.
+        const npmLock = await findUp('package-lock.json')
+        const pnpmLock = await findUp('pnpm-lock.yaml')
+        const yarnLock = await findUp('yarn.lock')
+
+        // Skip if we're in a pnpm/yarn project to ensure npm is used.
+        if (pnpmLock || yarnLock) {
+          logger.log('Skipping npm test - in pnpm/yarn project')
+          return
+        }
+
+        const packageSpec = {
+          name: 'cowsay',
+          version: '1.6.0',
+        }
+
+        await withScratchHome(async () => {
+          // Force npm agent.
+          const result = await spawnDlx(packageSpec, ['Moo from npm!'], {
+            agent: 'npm',
+          })
+
+          expect(result.ok).toBe(true)
+          if (result.ok && result.data) {
+            expect(result.data).toContain('Moo from npm!')
+          }
+        })
+      },
+      30_000,
+    )
+  })
+
+  describe('spawnCoana e2e tests', () => {
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'executes @coana-tech/cli via dlx with correct binary name',
+      async () => {
+        const { spawnCoana } = await import('../../src/util/dlx/spawn.mts')
+        await withScratchHome(async () => {
+          const result = await spawnCoana(['--help'])
+
+          // Coana should succeed - if it fails, it indicates a real issue.
+          expect(result).toBeDefined()
+          expect(result.ok).toBe(true)
+
+          if (result.ok && result.data) {
+            // Verify we got output from coana binary.
+            expect(result.data).toContain('coana')
+          } else {
+            // If coana fails, the test should fail to catch real issues.
+            throw new Error(`Coana execution failed: ${result.message}`)
+          }
+        })
+      },
+      30_000,
+    )
+
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'verifies coana binary is correctly resolved from package name',
+      async () => {
+        const { spawnCoana } = await import('../../src/util/dlx/spawn.mts')
+        const { resolveCoana } =
+          await import('../../src/util/dlx/resolve-binary.mts')
+
+        // Verify the resolution includes correct binary name.
+        const resolution = resolveCoana()
+        if (resolution.type === 'dlx') {
+          expect(resolution.details.name).toBe('@coana-tech/cli')
+          expect(resolution.details.binaryName).toBe('coana')
+        }
+
+        await withScratchHome(async () => {
+          // Verify execution works with resolved binary name.
+          const result = await spawnCoana(['--version'])
+
+          expect(result).toBeDefined()
+          expect(result.ok).toBe(true)
+
+          if (result.ok && result.data) {
+            // Version output should contain coana information.
+            expect(result.data).toBeTruthy()
+          }
+        })
+      },
+      30_000,
+    )
+  })
+
+  describe('spawnSynp e2e tests', () => {
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'executes synp via dlx',
+      async () => {
+        const { spawnSynp } = await import('./spawn.mts')
+        await withScratchHome(async () => {
+          const result = await spawnSynp(['--help'])
+
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult.code).toBe(0)
+          if (spawnResult.stdout) {
+            expect(spawnResult.stdout).toContain('synp')
+          }
+        })
+      },
+      30_000,
+    )
+
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'handles error from spawn',
+      async () => {
+        const { spawnSynp } = await import('./spawn.mts')
+        await withScratchHome(async () => {
+          // Pass invalid args to trigger an error.
+          const result = await spawnSynp(['--invalid-flag-that-does-not-exist'])
+
+          // The command should fail with invalid flags.
+          // Just verify we get a result with spawnPromise.
+          expect(result).toBeDefined()
+          expect(result.spawnPromise).toBeDefined()
+
+          // The spawnPromise may throw or return with non-zero exit code
+          try {
+            const spawnResult = await result.spawnPromise
+            expect(spawnResult.code).toBeGreaterThan(0) // Should fail with non-zero exit code
+          } catch (e) {
+            // Command failed as expected - this is valid behavior
+            expect(error).toBeDefined()
+          }
+        })
+      },
+      30_000,
+    )
+  })
+
+  describe('spawnDlx e2e tests', () => {
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'executes dlx command with package spec',
+      async () => {
+        const packageSpec = {
+          name: 'cowsay',
+          version: '1.6.0',
+        }
+
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['--help'])
+
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
+      },
+      30_000,
+    )
+
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'handles force flag in options',
+      async () => {
+        const packageSpec = {
+          name: 'cowsay',
+          version: '1.6.0',
+        }
+
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['Test with force'], {
+            force: true,
+          })
+
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
+      },
+      30_000,
+    )
+
+    it.skipIf(!ENV.RUN_E2E_TESTS || !hasAuth)(
+      'handles silent flag in options',
+      async () => {
+        const packageSpec = {
+          name: 'cowsay',
+          version: '^1.6.0', // Range version should trigger silent.
+        }
+
+        await withScratchHome(async () => {
+          const result = await spawnDlx(packageSpec, ['Silent test'], {
+            silent: true,
+          })
+
+          expect(result.spawnPromise).toBeDefined()
+          const spawnResult = await result.spawnPromise
+          expect(spawnResult).toBeDefined()
+        })
+      },
+      30_000,
+    )
+  })
+})

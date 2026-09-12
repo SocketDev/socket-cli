@@ -1,0 +1,99 @@
+import path from 'node:path'
+
+import { handleManifestSetup } from './handle-manifest-setup.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
+import { outputDryRunWrite } from '../../util/dry-run/output.mts'
+import { defineFlags } from '../../meow.mts'
+import { commonFlags } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import { getFlagListOutput } from '../../util/output/formatting.mts'
+
+import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { MeowFlags } from '../../flags.mts'
+
+const config = {
+  commandName: 'setup',
+  description:
+    'Start interactive configurator to customize default flag values for `socket manifest` in this dir',
+  flags: defineFlags({
+    ...commonFlags,
+    defaultOnReadError: {
+      type: 'boolean',
+      description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
+    },
+  }),
+  help: (command: string, helpConfig: { flags: MeowFlags }) => `
+    Usage
+      $ ${command} [CWD=.]
+
+    Options
+      ${getFlagListOutput(helpConfig.flags)}
+
+    This command will try to detect all supported ecosystems in given CWD. Then
+    it starts a configurator where you can setup default values for certain flags
+    when creating manifest files in that dir. These configuration details are
+    then stored in a local \`${SOCKET_JSON}\` file (which you may or may not commit
+    to the repo). Next time you run \`socket manifest ...\` it will load this
+    json file and any flags which are not explicitly set in the command but which
+    have been registered in the json file will get the default value set to that
+    value you stored rather than the hardcoded defaults.
+
+    This helps with for example when your build binary is in a particular path
+    or when your build tool needs specific opts and you don't want to specify
+    them when running the command every time.
+
+    You can also disable manifest generation for certain ecosystems.
+
+    This generated configuration file will only be used locally by the CLI. You
+    can commit it to the repo (useful for collaboration) or choose to add it to
+    your .gitignore all the same. Only this CLI will use it.
+
+    Examples
+      $ ${command}
+      $ ${command} ./proj
+  `,
+  hidden: false,
+}
+
+export const cmdManifestSetup = {
+  description: config.description,
+  hidden: config.hidden,
+  run,
+}
+
+export async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: CliCommandContext,
+): Promise<void> {
+  const cli = meowOrExit({
+    argv,
+    config,
+    importMeta,
+    parentName,
+  })
+
+  const { defaultOnReadError = false } = cli.flags
+  const dryRun = cli.flags['dryRun']
+
+  let { 0: cwd = '.' } = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
+
+  if (dryRun) {
+    const socketJsonPath = path.join(cwd, SOCKET_JSON)
+    outputDryRunWrite(
+      socketJsonPath,
+      'create or update manifest configuration',
+      [
+        'Detect supported ecosystems',
+        'Configure manifest generation defaults',
+        'Enable/disable specific ecosystems',
+      ],
+    )
+    return
+  }
+
+  await handleManifestSetup(cwd, defaultOnReadError)
+}

@@ -1,0 +1,238 @@
+import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
+
+import { FLAG_JSON, FLAG_MARKDOWN } from '../../constants/cli.mts'
+import { V1_MIGRATION_GUIDE_URL } from '../../constants/socket.mts'
+import {
+  outputDryRunDelete,
+  outputDryRunFetch,
+  outputDryRunUpload,
+} from '../../util/dry-run/output.mts'
+import { commonFlags, outputFlags, stringFlagValue } from '../../flags.mts'
+import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../util/output/formatting.mts'
+import { getOutputKind } from '../../util/output/mode.mjs'
+import { determineOrgSlug } from '../../util/socket/org-slug.mjs'
+import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
+import { webLink } from '../../util/terminal/link.mts'
+import { checkCommandInput } from '../../util/validation/check-input.mts'
+
+import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mjs'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../util/cli/with-subcommands.mjs'
+
+const logger = getDefaultLogger()
+
+export type RepositoryCommandSpec = {
+  commandName: string
+  description: string
+  extraFlags?: MeowFlags | undefined
+  handler: (params: {
+    orgSlug: string
+    repoName: string
+    outputKind: OutputKind
+    flags: Record<string, unknown>
+  }) => Promise<void>
+  helpDescription?: string | undefined
+  helpExamples: string[]
+  hidden?: boolean | undefined
+  needsRepoName?: boolean | undefined
+}
+
+export function createRepositoryCommand(spec: RepositoryCommandSpec) {
+  return {
+    __proto__: null,
+    description: spec.description,
+    hidden: spec.hidden ?? false,
+    async run(
+      argv: string[] | readonly string[],
+      importMeta: ImportMeta,
+      { parentName }: CliCommandContext,
+    ): Promise<void> {
+      // Only guard the commands that actually accept `--default-branch`
+      // as a string (create / update). The list/view/delete commands
+      // don't, so the check is a no-op for them.
+      if (
+        (spec.commandName === 'create' || spec.commandName === 'update') &&
+        spec.extraFlags?.['defaultBranch']
+      ) {
+        const emptyShape = findEmptyDefaultBranch(argv)
+        if (emptyShape) {
+          logger.fail(
+            emptyShape === 'empty-value'
+              ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
+              : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
+          )
+          process.exitCode = 2
+          return
+        }
+      }
+      const config: CliCommandConfig = {
+        commandName: spec.commandName,
+        description: spec.description,
+        flags: {
+          ...commonFlags,
+          ...outputFlags,
+          interactive: {
+            default: true,
+            description:
+              'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+            type: 'boolean',
+          },
+          org: {
+            description:
+              'Force override the organization slug, overrides the default org from config',
+            type: 'string',
+          },
+          ...spec.extraFlags,
+        },
+        help: (command, helpConfig) => `
+    Usage
+      $ ${command} [options]${spec.needsRepoName !== false ? ' <REPO>' : ''}
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${spec.commandName}`)}
+${spec.helpDescription ? `\n    ${spec.helpDescription}\n` : ''}
+    Options
+      ${getFlagListOutput(helpConfig.flags)}
+
+    Examples
+${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
+  `,
+        hidden: spec.hidden ?? false,
+      }
+
+      const cli = meowOrExit({
+        argv,
+        config,
+        importMeta,
+        parentName,
+      })
+
+      const { json, markdown, org: orgFlag } = cli.flags
+
+      const dryRun = !!cli.flags['dryRun']
+
+      const interactive = !!cli.flags['interactive']
+
+      const noLegacy = !cli.flags['repoName']
+
+      const { 0: repoName = '' } = cli.input
+
+      const hasApiToken = hasDefaultApiToken()
+
+      const { 0: orgSlug } = await determineOrgSlug(
+        stringFlagValue(orgFlag),
+        interactive,
+        dryRun,
+      )
+
+      const outputKind = getOutputKind(json, markdown)
+
+      const validations = [
+        {
+          fail: 'received legacy flags',
+          message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
+          nook: true,
+          test: noLegacy,
+        },
+        {
+          fail: 'missing',
+          message: 'Org name by default setting, --org, or auto-discovered',
+          nook: true,
+          test: !!orgSlug,
+        },
+      ]
+
+      if (spec.needsRepoName !== false) {
+        validations.push({
+          fail: 'missing',
+          message: 'Repository name as first argument',
+          nook: false,
+          test: !!repoName,
+        })
+      }
+
+      validations.push(
+        {
+          fail: 'bad',
+          message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
+          nook: true,
+          test: !json || !markdown,
+        },
+        {
+          fail: 'try `socket login`',
+          message: 'This command requires a Socket API token for access',
+          nook: true,
+          test: hasApiToken,
+        },
+      )
+
+      const wasValidInput = checkCommandInput(outputKind, ...validations)
+      if (!wasValidInput) {
+        return
+      }
+
+      if (dryRun) {
+        outputRepositoryDryRun()
+        return
+      }
+
+      await spec.handler({
+        flags: cli.flags,
+        orgSlug,
+        outputKind,
+        repoName,
+      })
+      function outputRepositoryDryRun() {
+        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+        if (spec.commandName === 'create') {
+          outputDryRunUpload('repository', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'update') {
+          outputDryRunUpload('repository (update)', {
+            organization: orgSlug,
+            repository: repoName,
+          })
+        } else if (spec.commandName === 'del') {
+          outputDryRunDelete('repository', identifier)
+        } else {
+          outputDryRunFetch(`repository ${identifier}`, {
+            organization: orgSlug,
+            repository: repoName || undefined,
+          })
+        }
+      }
+    },
+  }
+}
+
+// If the user wrote `--default-branch`, bare, no value, or
+// `--default-branch=`, meow would coerce it to an empty string and
+// silently persist a blank default-branch name on the repo record.
+// Detect that before meow parses so we can stop with an actionable
+// error instead of saving junk data.
+export function findEmptyDefaultBranch(
+  argv: readonly string[],
+): 'bare' | 'empty-value' | undefined {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!
+    if (arg === '--default-branch=' || arg === '--defaultBranch=') {
+      return 'empty-value'
+    }
+    if (arg === '--default-branch' || arg === '--defaultBranch') {
+      const next = argv[i + 1]
+      if (next === undefined || next.startsWith('-')) {
+        return 'bare'
+      }
+    }
+  }
+  return undefined
+}

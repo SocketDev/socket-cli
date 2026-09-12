@@ -2,7 +2,7 @@
 # edit it here. Fleet CI runs check + test through the LOCAL composite
 # actions under .github/actions/, inlined, so there is no cross-repo
 # reusable workflow and no first-party `uses:@sha`.
-name: ⚡ CI
+name: 🧪 CI
 
 # PUSH, never pull_request. The fleet takes no outside contributions and
 # lands on main directly, so a pull_request trigger adds no coverage a push
@@ -33,7 +33,7 @@ jobs:
   # zizmor Actions audit (its own `strategy.job-total < 2` skip runs it in the
   # non-matrix check job, skips it in the test matrix).
   check:
-    name: 🔎 Check
+    name: Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -75,12 +75,14 @@ jobs:
           # shallow clone rather than false-green.
           checkout-fetch-depth: '0'
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+        name: Set up and install
       - uses: ./.github/actions/fleet/run-script
         with:
           main-script: pnpm run check --all
+        name: Run script
 
   test:
-    name: 🧪 Test
+    name: Test (${{ matrix.os }})
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -122,6 +124,7 @@ jobs:
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
+        name: Set up and install
       - uses: ./.github/actions/fleet/run-script
         env:
           # Authenticate build-time GitHub API reads (release listings,
@@ -131,3 +134,5 @@ jobs:
         with:
           setup-script: pnpm run build
           main-script: pnpm test --all
+        name: Run tests
+run-name: CI

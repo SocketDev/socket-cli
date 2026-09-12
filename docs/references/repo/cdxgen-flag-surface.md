@@ -32,8 +32,8 @@ surfaces much later as a malformed SBOM.
 
 Upstream sources for the pinned version:
 
-- Parser config: https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64
-- `isSecureMode`: https://github.com/CycloneDX/cdxgen/blob/v11.2.7/lib/helpers/utils.js#L66
+- [Parser config](https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64)
+- [`isSecureMode`](https://github.com/CycloneDX/cdxgen/blob/v11.2.7/lib/helpers/utils.js#L66)
 
 ## Frozen output
 

@@ -1,0 +1,137 @@
+/**
+ * Integration tests for `socket wrapper` command.
+ *
+ * Tests enabling/disabling Socket npm/npx wrappers globally.
+ *
+ * Test Coverage: - Help text display and usage examples - Dry-run behavior
+ * validation - Wrapper activation (on) - Wrapper deactivation (off) - Status
+ * checking.
+ *
+ * Wrapper Feature: When enabled, aliases `npm` and `npx` commands to `socket
+ * npm` and `socket npx` in the shell, applying security scanning to all package
+ * operations.
+ *
+ * Related Files: - src/command/wrapper/cmd-wrapper.mts - Command definition -
+ * src/command/wrapper/handle-wrapper.mts - Wrapper management logic.
+ */
+
+import path from 'node:path'
+
+import { describe, expect } from 'vitest'
+
+import {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants/cli.mts'
+import { getBinCliPath } from '../../../src/constants/paths.mts'
+import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
+import { cmdit, spawnSocketCli } from '../../utils.mts'
+
+const binCliPath = getBinCliPath()
+
+// The wrapper dry-run lists whichever of ~/.bashrc / ~/.zshrc exist, so the
+// real HOME makes the output machine-dependent (macOS has .zshrc, the CI
+// runner has .bashrc). Point HOME at a fixture with both files; the fixture
+// lives inside the workspace so the snapshot scrubber renders it as
+// [PROJECT]/... on every lane. The dir is named rc-home, not home, so the
+// scrubber's /home/<x> pattern can't match inside the fixture path.
+const fixtureHome = path.join(
+  import.meta.dirname,
+  '../../fixtures/commands/wrapper/rc-home',
+)
+const fixtureHomeEnv = { HOME: fixtureHome, USERPROFILE: fixtureHome }
+
+describe('socket wrapper', async () => {
+  cmdit(
+    ['wrapper', FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`
+        "Enable or disable the Socket npm/pnpm exec wrapper
+
+          Usage
+                $ socket wrapper <"on" | "off">
+          
+              Options
+                --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
+          
+              While enabled, the wrapper makes it so that when you call npm/npx on your
+              machine, it will automatically actually run \`socket npm\` / \`socket npx\`
+              instead.
+          
+              Examples
+                $ socket wrapper on
+                $ socket wrapper off"
+      `)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>"
+      `)
+
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket wrapper`',
+      )
+    },
+  )
+
+  cmdit(
+    ['wrapper', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>
+
+        \\xd7  Input error:  Please review the input requirements and try again
+
+          \\xd7 Must specify "on" or "off" argument (missing)"
+      `)
+
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+    },
+  )
+
+  cmdit(
+    ['wrapper', FLAG_DRY_RUN, 'on', FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    'should require args with just dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: fixtureHomeEnv,
+      })
+
+      // Validate dry-run output to prevent flipped snapshots.
+      expectDryRunOutput(stderr)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _          /---------------
+            |   __|___ ___| |_ ___| |_        | CLI: <redacted>
+            |__   | . |  _| '_| -_|  _|       | token: <redacted>, org: <redacted>
+            |_____|___|___|_,_|___|_|.dev     | Command: \`socket wrapper\`, cwd: <redacted>
+
+
+        [DryRun]: Would enable Socket npm/pnpm exec wrapper
+
+          Target file: [PROJECT]/test/fixtures/commands/wrapper/rc-home/.bashrc, [PROJECT]/test/fixtures/commands/wrapper/rc-home/.zshrc
+          Changes:
+            - Add shell aliases/functions to wrap npm/pnpm exec commands
+            - Redirect npm/pnpm exec calls to socket npm/socket npx
+
+          Run without --dry-run to apply these changes."
+      `)
+
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+})

@@ -3,36 +3,25 @@
 # every job. When this file bumps, cascade is: 2b → 3 → 4 → external
 # repos. See updating-workflows skill at .claude/skills/updating-workflows/.
 
-name: 'GitHub Status Check'
+name: 'GitHub status check'
 description: >
-  Probe githubstatus.com/api/v2/components.json and emit warning
-  annotations when GitHub Actions, Git Operations, or API Requests are
-  degraded or experiencing an incident. The job continues regardless —
-  degraded != down — but the warning appears in the run summary so
-  operators know to correlate unexpected CI failures with an upstream
-  outage rather than blaming their code.
+  Probe githubstatus.com/api/v2/components.json and emit warning annotations when GitHub Actions, Git Operations, or API Requests are degraded or experiencing an incident. The job continues regardless — degraded != down — but the warning appears in the run summary so operators know to correlate unexpected CI failures with an upstream outage rather than blaming their code.
 
 inputs:
   fail-on-incident:
     description: >
-      When "true", exit 1 if any monitored component reports an active
-      incident (major_outage or partial_outage). Use for release-blocking
-      workflows where you'd rather retry clean than risk a partial publish.
+      When "true", exit 1 if any monitored component reports an active incident (major_outage or partial_outage). Use for release-blocking workflows where you'd rather retry clean than risk a partial publish.
     required: false
     default: 'false'
 
 outputs:
   status:
     description: >
-      Worst-case status across all monitored components:
-      "operational" | "degraded_performance" | "partial_outage" |
-      "major_outage" | "unknown" (when the probe itself fails).
+      Worst-case status across all monitored components: "operational" | "degraded_performance" | "partial_outage" | "major_outage" | "unknown" (when the probe itself fails).
     value: ${{ steps.probe.outputs.status }}
   summary:
     description: >
-      Human-readable one-liner, e.g.
-      "All monitored GitHub components operational" or
-      "⚠️  Actions: degraded_performance".
+      Human-readable one-liner, e.g. "All monitored GitHub components operational" or "⚠️  Actions: degraded_performance".
     value: ${{ steps.probe.outputs.summary }}
 
 runs:

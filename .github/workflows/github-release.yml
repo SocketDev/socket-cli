@@ -1,4 +1,4 @@
-name: 🚀 GitHub Release
+name: 🚀 GitHub release
 
 # PRESET — seeded once from template/presets/ (onboarding or first cascade),
 # then repo-owned: customize what THIS repo releases. The fleet base actions
@@ -90,6 +90,7 @@ jobs:
         run: |
           set -euo pipefail
           echo 'release.github is false in .config/repo/socket-wheelhouse.json — this repo does not cut GitHub Releases. Skipping.'
+    name: Check release eligibility
 
   github-release:
     needs: gate
@@ -181,3 +182,5 @@ jobs:
           tag: ${{ steps.tag.outputs.tag }}
           dry-run: ${{ (github.event_name == 'push' || inputs.release) && 'false' || 'true' }}
           token: ${{ steps.app-token.outputs.token }}
+    name: Publish GitHub release
+run-name: GitHub release

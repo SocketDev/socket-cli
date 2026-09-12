@@ -160,13 +160,13 @@
 
 ## 🏗️ CLI-Specific
 
-**Commands:** `pnpm run build` (smart; `--force` / `build:cli` / `build:sea`); `pnpm test` (root) or `pnpm --filter @socketsecurity/cli run test:unit <path>`; `pnpm run lint` / `type` / `check` / `fix`; `pnpm dev` (watch); run built via `node packages/cli/dist/index.js <args>`.
+**Commands:** `pnpm run build` (smart; `build:force` / `build:cli`); `pnpm test` (repository tooling) or `pnpm run test:unit <path>` (product tests); `pnpm run lint` / `type` / `check` / `fix`; `pnpm run build:watch` (watch); run built via `pnpm run s <args>`.
 
 ### Testing
 
 - 🚨 **NEVER use `--` before test file paths** - runs ALL tests
 - Always build before testing: `pnpm run build:cli`
-- Update snapshots: `pnpm testu <path>` or `--update` flag
+- Update snapshots: `pnpm run test:unit <path> --update`
 - NEVER write source-code-scanning tests - verify behavior, not string patterns
 
 ### Command Pattern

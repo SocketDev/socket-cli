@@ -1,4 +1,4 @@
-name: 🟢 Get Green
+name: 🟢 Get green
 
 # PLAIN workflow — no gh-aw, no ANTHROPIC_API_KEY. This was a gh-aw agentic
 # workflow whose multi-turn fix step ran on a per-repo Claude key; that key is
@@ -115,12 +115,14 @@ jobs:
           socket-api-token: ${{ secrets.SOCKET_API_TOKEN_FOR_CLI_AND_SFW }}
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+        name: Set up and install
 
       # Provision the on-device model. Fail-open by contract: ready=false only
       # means the digest is skipped and the run stays deterministic-only, which
       # is a weaker report, never a wrong verdict.
       - uses: ./.github/actions/fleet/setup-odai
         id: odai
+        name: Set up odai
 
       # The whole ladder. Exits 0 only when the branch is green AFTER the
       # deterministic fixer, so every later step is gated on a real pass.
@@ -182,3 +184,5 @@ jobs:
         env:
           SERVER_URL: ${{ github.server_url }}
         run: git config --local --unset-all "http.${SERVER_URL}/.extraheader" || true
+    name: Get green
+run-name: Get green

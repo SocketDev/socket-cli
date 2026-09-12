@@ -1,4 +1,4 @@
-name: ✨ Weekly Odai Cache
+name: 🔁 Weekly odai cache
 
 # Fleet-canonical on-device model cache. The fleet's keyless-AI lane (the
 # weekly-update decision leg, every odai-driven assist) needs the on-device
@@ -37,7 +37,7 @@ env:
 
 jobs:
   fill:
-    name: 🫗 Fill the model profile
+    name: Prepare model cache
     runs-on: ubuntu-latest
     timeout-minutes: 50
     outputs:
@@ -98,6 +98,7 @@ jobs:
           # client-id var + private-key secret.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+        name: Set up and install
 
       # Cache the model components + activation state ONLY — the same set the
       # bridge's clone mode copies from a system profile. The rest of the
@@ -186,7 +187,7 @@ jobs:
             --key "$CACHE_KEY"
 
   verify:
-    name: 🧊 Offline verify on a fresh runner
+    name: Verify model cache
     needs: fill
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -244,6 +245,7 @@ jobs:
           # client-id var + private-key secret.
           payload-token-client-id: ${{ vars.SOCKET_PAYLOAD_CLIENT_ID }}
           payload-token-private-key: ${{ secrets.SOCKET_PAYLOAD_APP_PRIVATE_KEY }}
+        name: Set up and install
 
       - name: Restore the filled profile (miss = failure)
         shell: bash
@@ -290,3 +292,4 @@ jobs:
             console.log("summary:", r.summary)
           '
           echo "restored-profile prompt wall time: ${ELAPSED}s"
+run-name: Weekly odai cache

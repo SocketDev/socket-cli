@@ -1,7 +1,4 @@
 packages:
-  - packages/*
-  - tools/*
-  - '!packages/package-builder/build'
   - '.config/fleet/oxlint-plugin'
   - '.config/fleet/oxlint-plugin/fleet/*'
   - '.claude/hooks/fleet/*'
@@ -715,7 +712,7 @@ enablePrePostScripts: true
 patchedDependencies:
   # Splits the 'node-gyp/bin/node-gyp.js' literal in require.resolve so the
   # CLI's rolldown bundle keeps the lookup at runtime instead of inlining a
-  # build-machine path. Consumer: packages/cli bundled npm shim.
+  # build-machine path. Consumer: bundled npm shim.
   '@npmcli/run-script@10.0.4': patches/@npmcli__run-script@10.0.4.patch
   # de-http2: inline the HTTP header/status constants in dist/external/fetch.js
   # so @sigstore/sign resolves without the node:http2 builtin, keeping the CLI
@@ -733,7 +730,7 @@ patchedDependencies:
   mount-point@3.0.0: patches/mount-point@3.0.0.patch
   # Drops the bundled Find-VisualStudio.cs source (compiled ad hoc on Windows
   # hosts) so the CLI package payload carries no compilable C# for AV/pack
-  # scanners to flag. Consumer: packages/cli bundled npm tooling.
+  # scanners to flag. Consumer: bundled npm tooling.
   node-gyp@12.4.0: patches/node-gyp@12.4.0.patch
   # Same df 5 ESM/named-export move as mount-point: the require becomes a
   # dynamic import inside the already-async `all()`, calling diskSpace()

@@ -1,0 +1,310 @@
+import { UNKNOWN_VALUE } from '@socketsecurity/lib-stable/constants/sentinels'
+
+import {
+  FOLD_SETTING_FILE,
+  FOLD_SETTING_PKG,
+  FOLD_SETTING_VERSION,
+} from '../../constants/cli.mts'
+import {
+  REPORT_LEVEL_DEFER,
+  REPORT_LEVEL_ERROR,
+  REPORT_LEVEL_IGNORE,
+  REPORT_LEVEL_MONITOR,
+  REPORT_LEVEL_WARN,
+} from '../../constants/reporting.mts'
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../util/socket/url.mts'
+
+import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
+import type { CResult } from '../../types.mts'
+import type { SocketArtifact } from '../../util/alert/artifact.mts'
+import type { SpinnerInstance } from '@socketsecurity/lib-stable/spinner/types'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+
+export type AlertKey = string
+export type EcoMap = Map<string, ReportLeafNode | PackageMap>
+export type FileMap = Map<
+  string,
+  ReportLeafNode | Map<AlertKey, ReportLeafNode>
+>
+export type PackageMap = Map<string, ReportLeafNode | VersionMap>
+export type VersionMap = Map<string, ReportLeafNode | FileMap>
+
+export type ViolationsMap = Map<string, EcoMap>
+
+export interface ScanReport {
+  orgSlug: string
+  scanId: string
+  options: {
+    fold: FOLD_SETTING
+    reportLevel: REPORT_LEVEL
+  }
+  healthy: boolean
+  alerts: ViolationsMap
+}
+
+export type ReportLeafNode = {
+  type: string
+  policy: REPORT_LEVEL
+  url: string
+  manifest: string[]
+}
+
+export function addAlert(
+  art: SocketArtifact,
+  violations: ViolationsMap,
+  fold: FOLD_SETTING,
+  ecosystem: string,
+  pkgName: string,
+  version: string,
+  alert: NonNullable<SocketArtifact['alerts']>[number],
+  policyAction: REPORT_LEVEL,
+): void {
+  if (!violations.has(ecosystem)) {
+    violations.set(ecosystem, new Map())
+  }
+  const ecoMap: EcoMap = violations.get(ecosystem)!
+  if (fold === FOLD_SETTING_PKG) {
+    const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
+    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+      ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
+    }
+  } else {
+    if (!ecoMap.has(pkgName)) {
+      ecoMap.set(pkgName, new Map())
+    }
+    const pkgMap = ecoMap.get(pkgName) as PackageMap
+    if (fold === FOLD_SETTING_VERSION) {
+      const existing = pkgMap.get(version) as ReportLeafNode | undefined
+      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        pkgMap.set(version, createLeaf(art, alert, policyAction))
+      }
+    } else {
+      if (!pkgMap.has(version)) {
+        pkgMap.set(version, new Map())
+      }
+      const file = alert.file || UNKNOWN_VALUE
+      const verMap = pkgMap.get(version) as VersionMap
+
+      addFileAlert(verMap, file)
+    }
+  }
+
+  function addFileAlert(verMap: VersionMap, file: string) {
+    if (fold === FOLD_SETTING_FILE) {
+      const existing = verMap.get(file) as ReportLeafNode | undefined
+      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        verMap.set(file, createLeaf(art, alert, policyAction))
+      }
+    } else {
+      if (!verMap.has(file)) {
+        verMap.set(file, new Map())
+      }
+      const key = `${alert.type} at ${alert.start}:${alert.end}`
+      const fileMap: FileMap = verMap.get(file) as FileMap
+      const existing = fileMap.get(key) as ReportLeafNode | undefined
+      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        fileMap.set(key, createLeaf(art, alert, policyAction))
+      }
+    }
+  }
+}
+
+export function createLeaf(
+  art: SocketArtifact,
+  alert: NonNullable<SocketArtifact['alerts']>[number],
+  policyAction: REPORT_LEVEL,
+): ReportLeafNode {
+  const leaf: ReportLeafNode = {
+    type: alert.type,
+    policy: policyAction,
+    url: getSocketDevPackageOverviewUrlFromPurl(art),
+    manifest: art.manifestFiles?.map((o: { file: string }) => o.file) ?? [],
+  }
+  return leaf
+}
+
+// Note: The returned cResult will only be ok:false when the generation
+//       failed. It won't reflect the healthy state.
+export function generateReport(
+  scan: SocketArtifact[],
+  securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data'],
+  {
+    fold,
+    orgSlug,
+    reportLevel,
+    scanId,
+    short,
+    spinner,
+  }: {
+    fold: FOLD_SETTING
+    orgSlug: string
+    reportLevel: REPORT_LEVEL
+    scanId: string
+    short?: boolean | undefined
+    spinner?: SpinnerInstance | undefined
+  },
+): CResult<ScanReport | { healthy: boolean }> {
+  const now = Date.now()
+
+  spinner?.start('Generating report…')
+
+  // Create an object that includes:
+  //   healthy: boolean
+  //   worst violation level;
+  //   per eco
+  //     per package
+  //       per version
+  //         per offending file
+  //           reported issue -> policy action
+
+  // In the context of a report;
+  // - the alert.severity is irrelevant
+  // - the securityPolicyDefault is irrelevant
+  // - the report defaults to healthy:true with no alerts
+  // - the appearance of an alert will trigger the policy action;
+  //   - error: healthy will end up as false, add alerts to report
+  //   - warn: healthy unchanged, add alerts to report
+  //   - monitor/ignore: no action
+  //   - defer: unknown, no action
+
+  // Note: the server will emit alerts for license policy violations but
+  //       those are only included if you set the flag when requesting the scan
+  //       data. The alerts map to a single security policy key that determines
+  //       what to do with any violation, regardless of the concrete license.
+  //       That rule is called "License Policy Violation".
+  // The license policy part is implicitly handled here. Either they are
+  // included and may show up, or they are not and won't show up.
+
+  const violations = new Map()
+
+  let healthy = true
+
+  const securityRules = securityPolicy.securityPolicyRules
+  if (securityRules) {
+    // Note: reportLevel: error > warn > monitor > ignore > defer
+    for (let i = 0, { length } = scan; i < length; i += 1) {
+      const artifact = scan[i]!
+      const {
+        alerts,
+        name: pkgName = UNKNOWN_VALUE,
+        type: ecosystem,
+        version = UNKNOWN_VALUE,
+      } = artifact
+
+      // oxlint-disable-next-line socket/prefer-cached-for-loop -- call result is consumed, not a standalone statement
+      alerts?.forEach(
+        (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
+          const alertName = alert.type // => policy[type]
+          const action = (securityRules[alertName]?.action ||
+            '') as REPORT_LEVEL
+          if (action === REPORT_LEVEL_ERROR) {
+            healthy = false
+          }
+          if (!short && shouldIncludeReportAlert(action, reportLevel)) {
+            addAlert(
+              artifact,
+              violations,
+              fold,
+              ecosystem,
+              pkgName,
+              version,
+              alert,
+              action,
+            )
+          }
+        },
+      )
+    }
+  }
+
+  spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)
+
+  if (short) {
+    return {
+      ok: true,
+      data: { healthy },
+    }
+  }
+
+  const report = {
+    healthy,
+    orgSlug,
+    scanId,
+    options: { fold, reportLevel },
+    alerts: violations,
+  }
+
+  if (!healthy) {
+    return {
+      ok: true,
+      message:
+        'The report contains at least one alert that violates the policies set by your organization',
+      data: report,
+    }
+  }
+
+  return {
+    ok: true,
+    data: report,
+  }
+}
+
+export function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
+  // error > warn > monitor > ignore > defer > {unknown}
+  if (was === REPORT_LEVEL_ERROR) {
+    return false
+  }
+  if (is === REPORT_LEVEL_ERROR) {
+    return true
+  }
+  if (was === REPORT_LEVEL_WARN) {
+    return false
+  }
+  if (is === REPORT_LEVEL_WARN) {
+    return true
+  }
+  if (was === REPORT_LEVEL_MONITOR) {
+    return false
+  }
+  if (is === REPORT_LEVEL_MONITOR) {
+    return true
+  }
+  if (was === REPORT_LEVEL_IGNORE) {
+    return false
+  }
+  if (is === REPORT_LEVEL_IGNORE) {
+    return true
+  }
+  if (was === REPORT_LEVEL_DEFER) {
+    return false
+  }
+  if (is === REPORT_LEVEL_DEFER) {
+    return false
+  }
+  // unreachable?
+  return false
+}
+
+export function shouldIncludeReportAlert(
+  action: REPORT_LEVEL,
+  reportLevel: REPORT_LEVEL,
+): boolean {
+  switch (action) {
+    case REPORT_LEVEL_ERROR:
+      return true
+    case REPORT_LEVEL_WARN:
+      return reportLevel !== REPORT_LEVEL_ERROR
+    case REPORT_LEVEL_MONITOR:
+      return ![REPORT_LEVEL_ERROR, REPORT_LEVEL_WARN].includes(reportLevel)
+    case REPORT_LEVEL_IGNORE:
+      return ![
+        REPORT_LEVEL_ERROR,
+        REPORT_LEVEL_WARN,
+        REPORT_LEVEL_MONITOR,
+      ].includes(reportLevel)
+    case REPORT_LEVEL_DEFER:
+      return reportLevel === REPORT_LEVEL_DEFER
+    default:
+      return false
+  }
+}
