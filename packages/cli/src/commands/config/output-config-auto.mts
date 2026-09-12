@@ -49,74 +49,91 @@ export async function outputConfigAuto(
       }
     }
     logger.log('')
-  } else {
-    if (result.message) {
-      logger.log(result.message)
-      logger.log('')
-    }
-    logger.log(`- ${key}: ${String(result.data)}`)
-    logger.log('')
-
-    if (isConfigFromFlag()) {
-      logger.log(
-        '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
-      )
-    } else if (key === 'defaultOrg') {
-      const proceed = await select({
-        message:
-          'Would you like to update the default org in local config to this value?',
-        choices: (Array.isArray(result.data) ? result.data : [result.data])
-          .map(slug => ({
-            name: `Yes [${slug}]`,
-            value: slug,
-            description: `Use "${slug}" as the default organization`,
-          }))
-          .concat({
-            name: 'No',
-            value: '',
-            description: 'Do not use any of these organizations',
-          }),
-      })
-      if (proceed) {
-        logger.log(`Setting defaultOrg to "${proceed}"...`)
-        const updateResult = updateConfigValue('defaultOrg', proceed)
-        if (updateResult.ok) {
-          logger.log(
-            `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`,
-          )
-        } else {
-          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
-        }
-      } else {
-        logger.log('OK. No changes made.')
-      }
-    } else if (key === 'enforcedOrgs') {
-      const proceed = await select({
-        message:
-          'Would you like to update the enforced orgs in local config to this value?',
-        choices: (Array.isArray(result.data) ? result.data : [result.data])
-          .map(slug => ({
-            name: `Yes [${slug}]`,
-            value: slug,
-            description: `Enforce the security policy of "${slug}" on this machine`,
-          }))
-          .concat({
-            name: 'No',
-            value: '',
-            description: 'Do not use any of these organizations',
-          }),
-      })
-      if (proceed) {
-        logger.log(`Setting enforcedOrgs key to "${proceed}"...`)
-        const updateResult = updateConfigValue('defaultOrg', proceed)
-        if (updateResult.ok) {
-          logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
-        } else {
-          logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
-        }
-      } else {
-        logger.log('OK. No changes made.')
-      }
-    }
+    return
   }
+  await outputDiscoveredConfigText(key, result.data, result.message)
+}
+
+export async function outputDiscoveredConfigText(
+  key: keyof LocalConfig,
+  data: unknown,
+  message: string | undefined,
+): Promise<void> {
+  if (message) {
+    logger.log(message)
+    logger.log('')
+  }
+  logger.log(`- ${key}: ${String(data)}`)
+  logger.log('')
+  if (isConfigFromFlag()) {
+    logger.log(
+      '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
+    )
+    return
+  }
+  if (key === 'defaultOrg') {
+    await persistDefaultOrg(data)
+  } else if (key === 'enforcedOrgs') {
+    await persistEnforcedOrgs(data)
+  }
+}
+
+export async function persistDefaultOrg(data: unknown): Promise<void> {
+  const proceed = await select({
+    message:
+      'Would you like to update the default org in local config to this value?',
+    choices: (Array.isArray(data) ? data : [data])
+      .map(slug => ({
+        __proto__: null,
+        name: `Yes [${slug}]`,
+        value: slug,
+        description: `Use "${slug}" as the default organization`,
+      }))
+      .concat({
+        name: 'No',
+        value: '',
+        description: 'Do not use any of these organizations',
+      }),
+  })
+  if (!proceed) {
+    logger.log('OK. No changes made.')
+    return
+  }
+  logger.log(`Setting defaultOrg to "${proceed}"...`)
+  const updateResult = updateConfigValue('defaultOrg', proceed)
+  logger.log(
+    updateResult.ok
+      ? `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`
+      : failMsgWithBadge(updateResult.message, updateResult.cause),
+  )
+}
+
+export async function persistEnforcedOrgs(data: unknown): Promise<void> {
+  const proceed = await select({
+    message:
+      'Would you like to update the enforced orgs in local config to this value?',
+    choices: (Array.isArray(data) ? data : [data])
+      .map(slug => ({
+        __proto__: null,
+        name: `Yes [${slug}]`,
+        value: slug,
+        description: `Enforce the security policy of "${slug}" on this machine`,
+      }))
+      .concat({
+        name: 'No',
+        value: '',
+        description: 'Do not use any of these organizations',
+      }),
+  })
+  if (!proceed) {
+    logger.log('OK. No changes made.')
+    return
+  }
+  logger.log(`Setting enforcedOrgs key to "${proceed}"...`)
+  const updateResult = updateConfigValue('defaultOrg', proceed)
+  logger.log(
+    updateResult.ok
+      ? `OK. Updated enforcedOrgs to "${proceed}".`
+      : failMsgWithBadge(updateResult.message, updateResult.cause),
+  )
 }

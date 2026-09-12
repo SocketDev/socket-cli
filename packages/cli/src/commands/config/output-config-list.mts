@@ -18,6 +18,52 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
+export function outputConfigJson(full: boolean): void {
+  const readOnly = isConfigFromFlag()
+  const supportedConfigKeys = getSupportedConfigKeys()
+  let failed = false
+  const config: Record<string, unknown> = {}
+  for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+    const key = supportedConfigKeys[i]!
+    const result = getConfigValue(key)
+    let value = result.data
+    if (!result.ok) {
+      value = `Failed to retrieve: ${result.message}`
+      failed = true
+    } else if (!full && isSensitiveConfigKey(key)) {
+      value = '********'
+    }
+    if (full || value !== undefined) {
+      config[key] = value ?? '<none>'
+    }
+  }
+  if (failed) {
+    process.exitCode = 1
+  }
+  logger.log(
+    serializeResultJson(
+      failed
+        ? {
+            ok: false,
+            message: 'At least one config key failed to be fetched…',
+            data: JSON.stringify({
+              full,
+              config,
+              readOnly,
+            }),
+          }
+        : {
+            ok: true,
+            data: {
+              full,
+              config,
+              readOnly,
+            },
+          },
+    ),
+  )
+}
+
 export async function outputConfigList({
   full,
   outputKind,
@@ -25,85 +71,47 @@ export async function outputConfigList({
   full: boolean
   outputKind: OutputKind
 }) {
-  const readOnly = isConfigFromFlag()
-  const supportedConfigKeys = getSupportedConfigKeys()
   if (outputKind === 'json') {
-    let failed = false
-    const obj: Record<string, unknown> = {}
-    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
-      const key = supportedConfigKeys[i]!
-      const result = getConfigValue(key)
-      let value = result.data
-      if (!result.ok) {
-        value = `Failed to retrieve: ${result.message}`
-        failed = true
-      } else if (!full && isSensitiveConfigKey(key)) {
-        value = '********'
-      }
-      if (full || value !== undefined) {
-        obj[key] = value ?? '<none>'
-      }
-    }
-    if (failed) {
-      process.exitCode = 1
-    }
-    logger.log(
-      serializeResultJson(
-        failed
-          ? {
-              ok: false,
-              message: 'At least one config key failed to be fetched…',
-              data: JSON.stringify({
-                full,
-                config: obj,
-                readOnly,
-              }),
-            }
-          : {
-              ok: true,
-              data: {
-                full,
-                config: obj,
-                readOnly,
-              },
-            },
-      ),
-    )
-  } else {
-    const maxWidth = supportedConfigKeys.reduce(
-      (a, b) => Math.max(a, b.length),
-      0,
-    )
+    outputConfigJson(full)
+    return
+  }
+  outputConfigText(full)
+}
 
-    logger.log(mdHeader('Local CLI Config'))
-    logger.log('')
-    logger.log(`This is the local CLI config (full=${full}):`)
-    logger.log('')
-    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
-      const key = supportedConfigKeys[i]!
-      const result = getConfigValue(key)
-      if (!result.ok) {
-        logger.log(`- ${key}: failed to read: ${result.message}`)
-      } else {
-        let value = result.data
-        if (!full && isSensitiveConfigKey(key)) {
-          value = '********'
-        }
-        if (full || value !== undefined) {
-          const displayValue = Array.isArray(value)
-            ? value.join(', ') || '<none>'
-            : String(value ?? '<none>')
-          logger.log(
-            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
-          )
-        }
-      }
+export function outputConfigText(full: boolean): void {
+  const supportedConfigKeys = getSupportedConfigKeys()
+  const maxWidth = supportedConfigKeys.reduce(
+    (a, b) => Math.max(a, b.length),
+    0,
+  )
+  logger.log(mdHeader('Local CLI Config'))
+  logger.log('')
+  logger.log(`This is the local CLI config (full=${full}):`)
+  logger.log('')
+  for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+    const key = supportedConfigKeys[i]!
+    const result = getConfigValue(key)
+    if (!result.ok) {
+      logger.log(`- ${key}: failed to read: ${result.message}`)
+      continue
     }
-    if (readOnly) {
-      logger.log('')
+    let value = result.data
+    if (!full && isSensitiveConfigKey(key)) {
+      value = '********'
+    }
+    if (full || value !== undefined) {
+      const displayValue = Array.isArray(value)
+        ? value.join(', ') || '<none>'
+        : String(value ?? '<none>')
       logger.log(
-        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
+        `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
       )
     }
+  }
+  if (isConfigFromFlag()) {
+    logger.log('')
+    logger.log(
+      'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
+    )
   }
 }
