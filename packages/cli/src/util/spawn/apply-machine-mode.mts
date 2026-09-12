@@ -27,7 +27,7 @@ export function applyMachineModeIfActive(
 
 /**
  * Heuristic for "what's the subcommand" from an argv array. The first non-flag
- * token is the subcommand (npm install, pnpm ls, yarn add, etc.). Returns
+ * token is the subcommand (`npm install`, pnpm ls, `yarn add`, etc.). Returns
  * undefined if args starts with a flag or is empty.
  */
 export function inferSubcommand(args: readonly string[]): string | undefined {

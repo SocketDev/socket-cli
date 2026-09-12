@@ -140,100 +140,102 @@ const ZPM_JSON_CMDS: readonly string[] = [
 
 const GO_JSON_CMDS: readonly string[] = ['build', 'list', 'test', 'vet']
 
-const TOOLS: Record<string, ToolRules> = {
-  __proto__: undefined as never,
-  cargo: {
-    prependArgs: ['-q'],
-  },
-  cdxgen: {
-    // Data comes via -o <file>, not stdout. Caller arranges the
-    // tempfile; here we just suppress stdout chatter where possible.
-  },
-  coana: {
-    // Caller wires --silent --socket-mode <tempfile>; there's nothing
-    // to prepend here (socket-mode takes a file path computed at the
-    // call site).
-  },
-  gem: {
-    prependArgs: ['--quiet', '--no-color'],
-  },
-  go: {
-    subcommands: Object.fromEntries(GO_JSON_CMDS.map(c => [c, ['-json']])),
-  },
-  npm: {
-    prependArgs: ['--loglevel=error'],
-    subcommands: Object.fromEntries(NPM_JSON_CMDS.map(c => [c, ['--json']])),
-  },
-  nuget: {
-    // Only pack/push accept --json. Scrubber handles the rest.
-  },
-  pip: {
-    env: { PIP_NO_COLOR: '1' },
-    prependArgs: ['-q'],
-  },
-  pip3: {
-    env: { PIP_NO_COLOR: '1' },
-    prependArgs: ['-q'],
-  },
-  pnpm: {
-    // --reporter is applied per-subcommand: `json` for JSON-emitting
-    // subcommands, `silent` for everything else. Emitting both relies on
-    // pnpm's last-wins flag parsing (an undocumented implementation
-    // detail) and risks warnings or rejection in future pnpm versions.
-    //
-    // Non-JSON subcommands inherit `--reporter=silent` via the
-    // fallback path in applyMachineMode.
-    subcommands: Object.fromEntries(
-      PNPM_JSON_CMDS.map(c => [c, ['--reporter=json']]),
-    ),
-    fallbackArgs: ['--reporter=silent'],
-  },
-  sfw: {
-    // Transparent proxy — nothing to add at the sfw level; inner tool
-    // rules apply when callers classify the inner command.
-  },
-  'socket-patch': {
-    // Opaque Rust binary; scrubber catches anything it emits.
-  },
-  synp: {
-    // No flags exist; scrubber adapter handles the "Created ..." line.
-  },
-  uv: {
-    prependArgs: ['--quiet'],
-  },
-  vlt: {
-    prependArgs: ['--view=json'],
-  },
-  vltpkg: {
-    prependArgs: ['--view=json'],
-  },
-  yarn: {
-    // Classic v1. For Berry/v4 and zpm/v6 callers should use keys
-    // 'yarn-berry' or 'zpm' instead.
-    subcommands: Object.fromEntries(
-      YARN_CLASSIC_JSON_CMDS.map(c => [c, ['--json', '--silent']]),
-    ),
-  },
-  'yarn-berry': {
-    env: {
-      YARN_ENABLE_COLORS: '0',
-      YARN_ENABLE_HYPERLINKS: '0',
-      YARN_ENABLE_INLINE_BUILDS: '0',
-      YARN_ENABLE_MESSAGE_NAMES: '0',
-      YARN_ENABLE_PROGRESS_BARS: '0',
+const TOOLS = new Map<string, ToolRules>(
+  Object.entries({
+    __proto__: null,
+    cargo: {
+      prependArgs: ['-q'],
     },
-    subcommands: Object.fromEntries(
-      YARN_BERRY_JSON_CMDS.map(c => [c, ['--json']]),
-    ),
-  },
-  zpm: {
-    subcommands: {
-      ...Object.fromEntries(ZPM_JSON_CMDS.map(c => [c, ['--json']])),
-      add: ['--silent'],
-      install: ['--silent'],
+    cdxgen: {
+      // Data comes via -o <file>, not stdout. Caller arranges the
+      // tempfile; here we just suppress stdout chatter where possible.
     },
-  },
-}
+    coana: {
+      // Caller wires --silent --socket-mode <tempfile>; there's nothing
+      // to prepend here (socket-mode takes a file path computed at the
+      // call site).
+    },
+    gem: {
+      prependArgs: ['--quiet', '--no-color'],
+    },
+    go: {
+      subcommands: Object.fromEntries(GO_JSON_CMDS.map(c => [c, ['-json']])),
+    },
+    npm: {
+      prependArgs: ['--loglevel=error'],
+      subcommands: Object.fromEntries(NPM_JSON_CMDS.map(c => [c, ['--json']])),
+    },
+    nuget: {
+      // Only pack/push accept --json. Scrubber handles the rest.
+    },
+    pip: {
+      env: { PIP_NO_COLOR: '1' },
+      prependArgs: ['-q'],
+    },
+    pip3: {
+      env: { PIP_NO_COLOR: '1' },
+      prependArgs: ['-q'],
+    },
+    pnpm: {
+      // --reporter is applied per-subcommand: `json` for JSON-emitting
+      // subcommands, `silent` for everything else. Emitting both relies on
+      // pnpm's last-wins flag parsing (an undocumented implementation
+      // detail) and risks warnings or rejection in future pnpm versions.
+      //
+      // Non-JSON subcommands inherit `--reporter=silent` via the
+      // fallback path in applyMachineMode.
+      subcommands: Object.fromEntries(
+        PNPM_JSON_CMDS.map(c => [c, ['--reporter=json']]),
+      ),
+      fallbackArgs: ['--reporter=silent'],
+    },
+    sfw: {
+      // Transparent proxy — nothing to add at the sfw level; inner tool
+      // rules apply when callers classify the inner command.
+    },
+    'socket-patch': {
+      // Opaque Rust binary; scrubber catches anything it emits.
+    },
+    synp: {
+      // No flags exist; scrubber adapter handles the "Created ..." line.
+    },
+    uv: {
+      prependArgs: ['--quiet'],
+    },
+    vlt: {
+      prependArgs: ['--view=json'],
+    },
+    vltpkg: {
+      prependArgs: ['--view=json'],
+    },
+    yarn: {
+      // Classic v1. For Berry/v4 and zpm/v6 callers should use keys
+      // 'yarn-berry' or 'zpm' instead.
+      subcommands: Object.fromEntries(
+        YARN_CLASSIC_JSON_CMDS.map(c => [c, ['--json', '--silent']]),
+      ),
+    },
+    'yarn-berry': {
+      env: {
+        YARN_ENABLE_COLORS: '0',
+        YARN_ENABLE_HYPERLINKS: '0',
+        YARN_ENABLE_INLINE_BUILDS: '0',
+        YARN_ENABLE_MESSAGE_NAMES: '0',
+        YARN_ENABLE_PROGRESS_BARS: '0',
+      },
+      subcommands: Object.fromEntries(
+        YARN_BERRY_JSON_CMDS.map(c => [c, ['--json']]),
+      ),
+    },
+    zpm: {
+      subcommands: {
+        ...Object.fromEntries(ZPM_JSON_CMDS.map(c => [c, ['--json']])),
+        add: ['--silent'],
+        install: ['--silent'],
+      },
+    },
+  }),
+)
 
 /**
  * Compute the spawn args and env for a child under machine-output mode.
@@ -245,7 +247,7 @@ const TOOLS: Record<string, ToolRules> = {
  * "unknown option" errors on unrecognized subcommands).
  */
 export function applyMachineMode(input: MachineModeInput): MachineModeOutput {
-  const rules = TOOLS[input.tool]
+  const rules = TOOLS.get(input.tool)
   if (!rules) {
     return {
       args: [...input.args],

@@ -26,7 +26,11 @@ import { VITEST } from '../../env/vitest.mts'
 import { findUp } from '../fs/find-up.mts'
 import { cmdPrefixMessage } from '../process/cmd.mts'
 import { getAgentExecPath, getAgentVersion } from './environment-agent.mts'
-import { LOCKS, readLockFileByAgent } from './lockfile-readers.mts'
+import {
+  getLockFileAgent,
+  LOCKS,
+  readLockFileByAgent,
+} from './lockfile-readers.mts'
 import { AGENTS } from './supported-agents.mts'
 
 import type {
@@ -202,7 +206,7 @@ export async function detectPackageEnvironment({
     typeof pkgJsonPath === 'string' &&
     typeof lockName === 'string'
   ) {
-    agent = LOCKS[lockName]
+    agent = getLockFileAgent(lockName)
   }
   if (agent === undefined) {
     agent = NPM

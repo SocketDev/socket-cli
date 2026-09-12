@@ -1,25 +1,11 @@
-/**
- * Lockfile registration + per-agent reader Map.
- *
- * Extracted from `environment.mts` to keep that file under the 1000-line
- * File-size cap. The `LOCKS` map names every lockfile filename Socket knows
- * about and the agent that owns it; `readLockFileByAgent` maps an Agent to a
- * reader that returns the lockfile contents (binary or utf8) — bun gets a
- * special reader that handles `.lockb` via the parser or shells out to `bun
- * bun.lockb` as a last resort.
- */
-
 import path from 'node:path'
-
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-
 import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import {
   readFileBinary,
   readFileUtf8,
 } from '@socketsecurity/lib-stable/fs/read-file'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
-
 import {
   BUN,
   BUN_LOCK,
@@ -36,12 +22,22 @@ import {
   YARN_LOCK,
 } from '@socketsecurity/lib-stable/constants/package-managers'
 import { EXT_LOCK, EXT_LOCKB, NODE_MODULES } from '../../constants/packages.mts'
+import type { Agent } from './environment.mts'
+
+/**
+ * Lockfile registration + per-agent reader Map.
+ *
+ * Extracted from `environment.mts` to keep that file under the 1000-line
+ * File-size cap. The `LOCKS` map names every lockfile filename Socket knows
+ * about and the agent that owns it; `readLockFileByAgent` maps an Agent to a
+ * reader that returns the lockfile contents (binary or utf8) — bun gets a
+ * special reader that handles `.lockb` via the parser or shells out to `bun
+ * bun.lockb` as a last resort.
+ */
 
 // `.package-lock.json` is the npm "hidden lockfile" name. Defined locally
 // because @socketsecurity/lib doesn't export this constant.
 const DOT_PACKAGE_LOCK_JSON = '.package-lock.json'
-
-import type { Agent } from './environment.mts'
 
 export type ReadLockFile =
   | ((lockPath: string) => Promise<string | Buffer | undefined>)
@@ -128,7 +124,17 @@ export const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
  * `node_modules/.package-lock.json` is intentionally last (treated as a
  * fallback for repos that disable lockfile generation via `.npmrc`).
  */
-export const LOCKS: Record<string, Agent> = {
+export type LockFileName =
+  | typeof BUN_LOCK
+  | typeof BUN_LOCKB
+  | typeof NPM_SHRINKWRAP_JSON
+  | typeof PACKAGE_LOCK_JSON
+  | typeof PNPM_LOCK_YAML
+  | typeof YARN_LOCK
+  | typeof VLT_LOCK_JSON
+  | `${typeof NODE_MODULES}/${typeof DOT_PACKAGE_LOCK_JSON}`
+
+export const LOCKS: Record<LockFileName, Agent> = {
   [BUN_LOCK]: BUN,
   [BUN_LOCKB]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present at the root
@@ -147,4 +153,12 @@ export const LOCKS: Record<string, Agent> = {
   // Unlike the other LOCKS keys this key contains a directory AND filename
   // so it must be matched differently.
   [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
+}
+
+export function getLockFileAgent(name: string): Agent | undefined {
+  return isLockFileName(name) ? LOCKS[name] : undefined
+}
+
+export function isLockFileName(name: string): name is LockFileName {
+  return Object.hasOwn(LOCKS, name)
 }
