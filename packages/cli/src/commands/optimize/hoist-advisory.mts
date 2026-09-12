@@ -170,6 +170,51 @@ export function findLocalChangelog(
   return undefined
 }
 
+export function formatHoistSuggestion(config: {
+  assessFailed: boolean
+  backend: string | undefined
+  changelog: string
+  duplicate: HoistDuplicate
+  lowest: string
+  source: string
+  target: string
+  verdict: HoistAssessment | undefined
+}): string {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const via =
+    cfg.backend === undefined
+      ? ''
+      : BACKEND_NAMES.includes(cfg.backend)
+        ? ` (odai unknown model via ${cfg.backend})`
+        : ` (odai ${cfg.backend})`
+  if (cfg.verdict?.verdict === 'safe') {
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: safe to unify — ` +
+      `add \`hoistPattern: ['${cfg.duplicate.name}']\` to .npmrc` +
+      ` (assessed against ${cfg.source}${via})`
+    )
+  }
+  if (cfg.verdict) {
+    const reasons = cfg.verdict.breakingChanges.slice(0, 2).join('; ')
+    const reason = reasons || cfg.verdict.reason
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: ${cfg.verdict.verdict}` +
+      (reason ? ` (${reason})` : '') +
+      ` (assessed against ${cfg.source}${via})`
+    )
+  }
+  if (cfg.changelog.length > 0 && cfg.assessFailed) {
+    return (
+      `${cfg.duplicate.name} ${cfg.lowest} → ${cfg.target}: assessment failed against ` +
+      `${cfg.source} — review manually`
+    )
+  }
+  return (
+    `${cfg.duplicate.name} sits on majors ${cfg.duplicate.majors.join(', ')} — ` +
+    'review unifying (no changelog to assess against)'
+  )
+}
+
 /**
  * The advisory. Cap at MAX_ADVISED duplicates (the worst offenders first by
  * major spread), verdict each when odai is available, and degrade to the
@@ -196,6 +241,7 @@ export async function hoistAdvisory(
     debug('odai backend unavailable; mechanical hoist advisory only')
     debugDir({ availability })
     return advised.map(duplicate => ({
+      __proto__: null,
       duplicate,
       suggestion:
         `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
@@ -256,37 +302,16 @@ export async function hoistAdvisory(
     // `(odai unknown model via chrome-builtin)` when only the backend is
     // known; NO label when nothing is stamped at all — a meaningless label
     // does not print.
-    const via =
-      backend === undefined
-        ? ''
-        : BACKEND_NAMES.includes(backend)
-          ? ` (odai unknown model via ${backend})`
-          : ` (odai ${backend})`
-    let suggestion: string
-    if (verdict !== undefined && verdict.verdict === 'safe') {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: safe to unify — ` +
-        `add \`hoistPattern: ['${duplicate.name}']\` to .npmrc` +
-        ` (assessed against ${source}${via})`
-    } else if (verdict !== undefined) {
-      const reasons = verdict.breakingChanges.slice(0, 2).join('; ')
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: ${verdict.verdict}` +
-        (reasons
-          ? ` (${reasons})`
-          : verdict.reason
-            ? ` (${verdict.reason})`
-            : '') +
-        ` (assessed against ${source}${via})`
-    } else if (changelog.length > 0 && assessFailed) {
-      suggestion =
-        `${duplicate.name} ${lowest} → ${target}: assessment failed against ` +
-        `${source} — review manually`
-    } else {
-      suggestion =
-        `${duplicate.name} sits on majors ${duplicate.majors.join(', ')} — ` +
-        'review unifying (no changelog to assess against)'
-    }
+    const suggestion = formatHoistSuggestion({
+      assessFailed,
+      backend,
+      changelog,
+      duplicate,
+      lowest,
+      source,
+      target,
+      verdict,
+    })
     lines.push({ duplicate, suggestion, verdict })
   }
   return lines

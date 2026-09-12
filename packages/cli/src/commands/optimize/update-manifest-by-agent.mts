@@ -52,6 +52,79 @@ export function getLowestEntryIndex(
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
+export function resolvePkgJsonInsertPosition(
+  entries: Array<[string | symbol, unknown]>,
+  field: string,
+): { index: number; placeAfter: boolean } {
+  let index = -1
+  let placeAfter = false
+  if (field === OVERRIDES) {
+    index = getLowestEntryIndex(entries, [RESOLUTIONS])
+    if (index === -1) {
+      placeAfter = true
+      index = getHighestEntryIndex(entries, [...depFields, PNPM])
+    }
+  } else if (field === RESOLUTIONS) {
+    placeAfter = true
+    index = getHighestEntryIndex(entries, [...depFields, OVERRIDES, PNPM])
+  } else if (field === PNPM) {
+    index = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS])
+    if (index === -1) {
+      placeAfter = true
+      index = getHighestEntryIndex(entries, depFields)
+    }
+  }
+  if (index === -1) {
+    index = getLowestEntryIndex(entries, ['engines', 'files'])
+  }
+  if (index === -1) {
+    placeAfter = true
+    index = getHighestEntryIndex(entries, ['exports', 'imports', 'main'])
+  }
+  return {
+    __proto__: null,
+    index: index === -1 ? entries.length : index,
+    placeAfter: index !== -1 && placeAfter,
+  }
+}
+
+export function updateExistingPkgJsonField(
+  editablePkgJson: EditablePackageJson,
+  field: string,
+  value: unknown,
+): void {
+  const oldValue = editablePkgJson.content[field]
+  if (field === PNPM) {
+    const isPnpmObj = isObject(oldValue)
+    if (hasKeys(value)) {
+      editablePkgJson.update({
+        [field]: {
+          ...(isPnpmObj ? oldValue : {}),
+          [OVERRIDES]: value,
+        },
+      })
+    } else if (isPnpmObj) {
+      const { overrides: _omitted, ...rest } = oldValue as Record<
+        string,
+        unknown
+      >
+      editablePkgJson.update({
+        [field]: hasKeys(rest) ? rest : undefined,
+      })
+    } else {
+      editablePkgJson.update({ [field]: undefined })
+    }
+    return
+  }
+  if (field === OVERRIDES || field === RESOLUTIONS) {
+    editablePkgJson.update({
+      [field]: hasKeys(value) ? value : undefined,
+    })
+    return
+  }
+  editablePkgJson.update({ [field]: value })
+}
+
 /**
  * Apply overrides to the host repo's manifest, picking the correct destination
  * based on agent + version:
@@ -116,38 +189,7 @@ export function updatePkgJsonField(
 ) {
   const oldValue = editablePkgJson.content[field]
   if (oldValue) {
-    // The field already exists so we simply update the field value.
-    if (field === PNPM) {
-      const isPnpmObj = isObject(oldValue)
-      if (hasKeys(value)) {
-        editablePkgJson.update({
-          [field]: {
-            ...(isPnpmObj ? oldValue : {}),
-            [OVERRIDES]: value,
-          },
-        })
-      } else if (isPnpmObj) {
-        // Drop the overrides key but keep the rest of the `pnpm config`.
-        const { overrides: _omitted, ...rest } = oldValue as Record<
-          string,
-          unknown
-        >
-        editablePkgJson.update({
-          [field]: hasKeys(rest) ? rest : undefined,
-        })
-      } else {
-        editablePkgJson.update({
-          [field]: undefined,
-        })
-      }
-    } else if (field === OVERRIDES || field === RESOLUTIONS) {
-      // Properties with undefined values are deleted when saved as JSON.
-      editablePkgJson.update({
-        [field]: hasKeys(value) ? value : undefined,
-      })
-    } else {
-      editablePkgJson.update({ [field]: value })
-    }
+    updateExistingPkgJsonField(editablePkgJson, field, value)
     return
   }
   if (
@@ -160,36 +202,8 @@ export function updatePkgJsonField(
   // in a place that makes sense, e.g. close to the "dependencies" field. If
   // we can't find a place to insert the field we'll add it to the bottom.
   const entries = Object.entries(editablePkgJson.content)
-  let insertIndex = -1
-  let isPlacingHigher = false
-  if (field === OVERRIDES) {
-    insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS])
-    if (insertIndex === -1) {
-      isPlacingHigher = true
-      insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM])
-    }
-  } else if (field === RESOLUTIONS) {
-    isPlacingHigher = true
-    insertIndex = getHighestEntryIndex(entries, [...depFields, OVERRIDES, PNPM])
-  } else if (field === PNPM) {
-    insertIndex = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS])
-    if (insertIndex === -1) {
-      isPlacingHigher = true
-      insertIndex = getHighestEntryIndex(entries, depFields)
-    }
-  }
-  if (insertIndex === -1) {
-    insertIndex = getLowestEntryIndex(entries, ['engines', 'files'])
-  }
-  if (insertIndex === -1) {
-    isPlacingHigher = true
-    insertIndex = getHighestEntryIndex(entries, ['exports', 'imports', 'main'])
-  }
-  if (insertIndex === -1) {
-    insertIndex = entries.length
-  } else if (isPlacingHigher) {
-    insertIndex += 1
-  }
+  const position = resolvePkgJsonInsertPosition(entries, field)
+  const insertIndex = position.index + (position.placeAfter ? 1 : 0)
   entries.splice(insertIndex, 0, [
     field,
     field === PNPM ? { [OVERRIDES]: value } : value,

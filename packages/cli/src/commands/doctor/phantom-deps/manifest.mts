@@ -75,65 +75,15 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
     }
   }
 
-  const bin = pkg['bin']
-  if (typeof bin === 'string') {
-    pushEntry(bin, 'main', out, seen)
-  } else if (typeof bin === 'object' && bin !== null) {
-    const values = Object.values(bin as Record<string, unknown>)
-    for (let i = 0, { length } = values; i < length; i += 1) {
-      const value = values[i]
-      if (typeof value === 'string') {
-        pushEntry(value, 'main', out, seen)
-      }
-    }
-  }
-
+  collectManifestBin(pkg['bin'], out, seen)
   const exportsField = pkg['exports']
-  if (
-    typeof exportsField === 'object' &&
-    exportsField !== null &&
-    !Array.isArray(exportsField)
-  ) {
-    const map = exportsField as Record<string, unknown>
-    const keys = Object.keys(map)
-    const hasDotKeys = keys.some(k => k.startsWith('.'))
-    if (hasDotKeys) {
-      const entries = Object.entries(map)
-      for (let i = 0, { length } = entries; i < length; i += 1) {
-        const [key, child] = entries[i]!
-        walkExports(child, key === '.' ? 'main' : 'subpath', out, seen)
-      }
-    } else {
-      walkExports(exportsField, 'main', out, seen)
-    }
-  } else if (typeof exportsField === 'string') {
-    walkExports(exportsField, 'main', out, seen)
-  }
+  collectManifestExports(exportsField, out, seen)
 
   if (out.length === 0) {
     out.push({ kind: 'main', path: 'index.js' })
   }
 
-  const typeTargets: string[] = []
-  const typeFields = ['types', 'typings']
-  for (let i = 0, { length } = typeFields; i < length; i += 1) {
-    const value = pkg[typeFields[i]!]
-    if (typeof value === 'string') {
-      typeTargets.push(value)
-    }
-  }
-  if (exportsField) {
-    collectExportTypes(exportsField, typeTargets)
-  }
-  if (typeTargets.length === 0) {
-    for (let i = 0, { length } = out; i < length; i += 1) {
-      const entry = out[i]!
-      if (entry.kind === 'main') {
-        typeTargets.push(entry.path)
-      }
-    }
-    typeTargets.push('index.d.ts')
-  }
+  const typeTargets = collectManifestTypes(pkg, exportsField, out)
   for (let i = 0, { length } = typeTargets; i < length; i += 1) {
     pushEntry(typeTargets[i]!, 'types', out, seen)
   }
@@ -151,7 +101,7 @@ export function collectExportTypes(node: unknown, out: string[]): void {
   if (typeof node === 'object' && node !== null) {
     const entries = Object.entries(node as Record<string, unknown>)
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [key, child] = entries[i]!
+      const { 0: key, 1: child } = entries[i]!
       if ((key === 'types' || key === 'typings') && typeof child === 'string') {
         out.push(child)
       } else {
@@ -171,6 +121,79 @@ export function collectKeys(
       out.add(keys[i]!)
     }
   }
+}
+
+export function collectManifestBin(
+  bin: unknown,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
+  const values =
+    typeof bin === 'string'
+      ? [bin]
+      : typeof bin === 'object' && bin !== null
+        ? Object.values(bin as Record<string, unknown>)
+        : []
+  for (let i = 0, { length } = values; i < length; i += 1) {
+    const value = values[i]
+    if (typeof value === 'string') {
+      pushEntry(value, 'main', out, seen)
+    }
+  }
+}
+
+export function collectManifestExports(
+  exportsField: unknown,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
+  if (typeof exportsField === 'string') {
+    walkExports(exportsField, 'main', out, seen)
+    return
+  }
+  if (
+    typeof exportsField !== 'object' ||
+    exportsField === null ||
+    Array.isArray(exportsField)
+  ) {
+    return
+  }
+  const entries = Object.entries(exportsField as Record<string, unknown>)
+  if (!entries.some(({ 0: key }) => key.startsWith('.'))) {
+    walkExports(exportsField, 'main', out, seen)
+    return
+  }
+  for (let i = 0, { length } = entries; i < length; i += 1) {
+    const { 0: key, 1: child } = entries[i]!
+    walkExports(child, key === '.' ? 'main' : 'subpath', out, seen)
+  }
+}
+
+export function collectManifestTypes(
+  pkg: Record<string, unknown>,
+  exportsField: unknown,
+  entries: Entry[],
+): string[] {
+  const targets: string[] = []
+  for (const field of ['types', 'typings']) {
+    const value = pkg[field]
+    if (typeof value === 'string') {
+      targets.push(value)
+    }
+  }
+  if (exportsField) {
+    collectExportTypes(exportsField, targets)
+  }
+  if (targets.length === 0) {
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const entry = entries[i]!
+      if (entry.kind === 'main') {
+        targets.push(entry.path)
+      }
+    }
+    targets.push('index.d.ts')
+  }
+  return targets
 }
 
 export function extensionOf(filePath: string): string | undefined {
@@ -254,7 +277,7 @@ export function parseManifest(raw: string): Manifest | undefined {
   if (typeof peerMeta === 'object' && peerMeta !== null) {
     const entries = Object.entries(peerMeta as Record<string, unknown>)
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [peer, cfg] = entries[i]!
+      const { 0: peer, 1: cfg } = entries[i]!
       const optional =
         typeof cfg === 'object' &&
         cfg !== null &&
@@ -317,7 +340,7 @@ export function walkExports(
   if (typeof node === 'object' && node !== null) {
     const entries = Object.entries(node as Record<string, unknown>)
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [key, child] = entries[i]!
+      const { 0: key, 1: child } = entries[i]!
       if (key === 'types' || key === 'typings') {
         continue
       }
