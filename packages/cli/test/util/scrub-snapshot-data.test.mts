@@ -1,4 +1,4 @@
-// "jdalton" / "testuser" are fixture inputs exercising the snapshot scrubber's
+// "octocat" / "testuser" are fixture inputs exercising the snapshot scrubber's
 // path/username detection; the rule under test SHOULD scrub these.
 /* oxlint-disable-next-line socket/no-file-scope-oxlint-disable -- legitimate file-scope: domain-grouped layout or test fixture; per-call would produce many redundant disables. */
 /* oxlint-disable socket/personal-path-placeholders -- fixture usernames */
@@ -79,7 +79,7 @@ describe('scrubSnapshotData', () => {
 
     it('should scrub Windows home directories', () => {
       const input =
-        'C:\\Users\\jdalton\\projects and C:\\Users\\TestUser\\Documents'
+        'C:\\Users\\octocat\\projects and C:\\Users\\TestUser\\Documents'
       const result = scrubSnapshotData(input)
       expect(result).toBe('C:\\[HOME]\\projects and C:\\[HOME]\\Documents')
     })
@@ -123,9 +123,9 @@ describe('scrubSnapshotData', () => {
     })
 
     it('should preserve paths when disabled', () => {
-      const input = '/Users/jdalton/projects/socket-cli'
+      const input = '/Users/octocat/projects/socket-cli'
       const result = scrubSnapshotData(input, { paths: false })
-      expect(result).toBe('/Users/jdalton/projects/socket-cli')
+      expect(result).toBe('/Users/octocat/projects/socket-cli')
     })
   })
 
@@ -198,15 +198,15 @@ describe('scrubSnapshotData', () => {
 
   describe('emails', () => {
     it('should scrub email addresses when enabled', () => {
-      const input = 'Contact: person@socket.dev or admin@example.com'
+      const input = 'Contact: person@example.com or admin@example.com'
       const result = scrubSnapshotData(input, { emails: true })
       expect(result).toBe('Contact: [EMAIL] or [EMAIL]')
     })
 
     it('should preserve emails by default', () => {
-      const input = 'Contact: person@socket.dev'
+      const input = 'Contact: person@example.com'
       const result = scrubSnapshotData(input)
-      expect(result).toBe('Contact: person@socket.dev')
+      expect(result).toBe('Contact: person@example.com')
     })
   })
 
@@ -304,7 +304,7 @@ Updated: 2 days ago
     it('should apply default scrubbing options', () => {
       const input = `
 Time: 2025-04-02T01:47:26.914Z
-Path: /Users/jdalton/test
+Path: /Users/octocat/test
 ID: 550e8400-e29b-41d4-a716-446655440000
 Version: v22.11.0
 Email: test@example.com

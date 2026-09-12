@@ -39,7 +39,7 @@ export async function mockGitHubAuth(
       user: {
         id: 'github-user-123',
         login: 'testuser',
-        email: 'test@github.com',
+        email: 'octocat@example.com',
         name: 'Test User',
       },
     },

@@ -153,7 +153,7 @@ describe('firewall policy lifecycle', () => {
     })
     for (const url of [
       'ftp://registry.npmjs.org/example.tgz',
-      'https://user:password@registry.npmjs.org/example.tgz',
+      'https://user:password@registry.npmjs.org/example.tgz', // real-identity: allow
       'https://packages.example.com/',
     ]) {
       expect(await policy.checkRequest(new URL(url), 'GET')).toMatchObject({
