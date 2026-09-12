@@ -252,3 +252,7 @@ export function getSocketRegistryPath(): string {
 export function getZshRcPath(): string {
   return path.join(os.homedir(), '.zshrc')
 }
+
+export function resolveCompletionScriptPath(basePath: string): string {
+  return path.join(basePath, 'data', 'socket-completion.bash')
+}

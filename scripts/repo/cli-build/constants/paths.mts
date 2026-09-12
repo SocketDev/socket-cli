@@ -4,13 +4,11 @@
 
 import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { NODE_MODULES } from './packages.mts'
+import { rootPath } from '../../paths.mts'
 
-// Compute root path from this file's location.
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-export const rootPath = path.resolve(__dirname, '../../../..')
+export * from '../../paths.mts'
 
 // Base directory paths, no dist dependency.
 export const configPath = path.join(rootPath, '.config')

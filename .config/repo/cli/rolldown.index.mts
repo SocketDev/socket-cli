@@ -11,12 +11,13 @@ import {
   getInlinedEnvVars,
   runBuild,
 } from '../../../scripts/repo/cli-build/rolldown-utils.mts'
+import { resolveRepoSourceIndexPath } from '../../../scripts/repo/paths.mts'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '../../..')
 
 const config = createIndexConfig({
-  entryPoint: path.join(rootPath, 'src', 'index.mts'),
+  entryPoint: resolveRepoSourceIndexPath(rootPath),
   outfile: path.join(rootPath, 'dist', 'index.js'),
 })
 

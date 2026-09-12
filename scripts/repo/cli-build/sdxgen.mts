@@ -7,6 +7,8 @@ import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 import { rolldown } from 'rolldown'
 
+import { resolveRepoSourceIndexPath } from '../paths.mts'
+
 export function readSdxgenToolVersions(
   value: unknown,
 ): Record<string, { minimum: string }> {
@@ -52,7 +54,7 @@ export async function buildSdxgenBundle(root: string): Promise<void> {
   const acornDir = path.dirname(require.resolve('@ultrathink/acorn.rs.wasm'))
   await fs.mkdir(output, { recursive: true })
   const bundle = await rolldown({
-    input: path.join(upstream, 'src', 'index.mts'),
+    input: resolveRepoSourceIndexPath(upstream),
     platform: 'node',
     tsconfig: path.join(root, 'tsconfig.json'),
     transform: {
