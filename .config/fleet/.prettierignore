@@ -73,13 +73,6 @@
 # dirties what the next apply rewrites.
 **/.config/repo/external-tools.json
 
-# The per-repo config JSON Schema, emitted from the TypeBox source by
-# scripts/fleet/socket-wheelhouse-emit-schema.mts. Same split as its two
-# siblings above: the explicit-path formatter already skips it, so leaving it
-# in the --all walk let the two disagree the moment a description grew long
-# enough to rewrap. The emitter owns the bytes.
-**/.config/repo/socket-wheelhouse-schema.json
-
 # Generated build/test output — machine-written trees whose generators own the
 # bytes; formatting them is churn against the next build. These are the
 # GENERATED_GLOBS twins (scripts/fleet/constants/generated-globs.mts is the
