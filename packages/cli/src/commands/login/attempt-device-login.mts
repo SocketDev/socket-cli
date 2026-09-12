@@ -167,64 +167,10 @@ export async function attemptDeviceLogin(
     return result
   }
 
-  const apiToken = tokenResponse.access_token
-
-  const sockSdkCResult = await setupSdk({
+  return await verifyDeviceLoginToken(tokenResponse.access_token, {
     apiBaseUrl,
     apiProxy: effectiveApiProxy,
-    apiToken,
   })
-  if (!sockSdkCResult.ok) {
-    logger.fail(sockSdkCResult.message)
-    process.exitCode = 1
-    return sockSdkCResult
-  }
-
-  const orgsCResult = await fetchOrganization({
-    description: 'token verification',
-    sdk: sockSdkCResult.data,
-  })
-  if (!orgsCResult.ok) {
-    logger.fail(orgsCResult.message)
-    process.exitCode = 1
-    return orgsCResult
-  }
-
-  const { organizations } = orgsCResult.data
-  const orgSlugs = getOrgSlugs(organizations)
-
-  if (!orgSlugs.length) {
-    const result: CResult<void> = {
-      ok: false,
-      message:
-        'No organizations found. Please contact Socket support to set up your account.',
-    }
-    logger.fail(result.message)
-    process.exitCode = 1
-    return result
-  }
-
-  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
-
-  const enterpriseOrgs = getEnterpriseOrgs(organizations)
-  const enforcedOrgs =
-    enterpriseOrgs.length === 1 ? [enterpriseOrgs[0]!['id']] : []
-
-  const defaultOrg = orgSlugs[0]?.trim()
-  if (defaultOrg) {
-    updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
-  }
-
-  applyLogin(apiToken, enforcedOrgs, apiBaseUrl, effectiveApiProxy)
-  logger.success('API credentials set')
-  if (isConfigFromFlag()) {
-    logger.log('')
-    logger.warn(
-      'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
-    )
-  }
-
-  return { ok: true, data: undefined }
 }
 
 export async function pollForDeviceToken(
@@ -352,4 +298,67 @@ export function resolveOauthBaseUrl(): string {
 
 export function resolveOauthClientId(): string {
   return getSocketCliOauthClientIdOverride() || SOCKET_CLI_OAUTH_CLIENT_ID
+}
+
+export async function verifyDeviceLoginToken(
+  apiToken: string,
+  config: { apiBaseUrl: string | undefined; apiProxy: string | undefined },
+): Promise<CResult<void>> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const sockSdkCResult = await setupSdk({
+    apiBaseUrl: cfg.apiBaseUrl,
+    apiProxy: cfg.apiProxy,
+    apiToken,
+  })
+  if (!sockSdkCResult.ok) {
+    logger.fail(sockSdkCResult.message)
+    process.exitCode = 1
+    return sockSdkCResult
+  }
+
+  const orgsCResult = await fetchOrganization({
+    description: 'token verification',
+    sdk: sockSdkCResult.data,
+  })
+  if (!orgsCResult.ok) {
+    logger.fail(orgsCResult.message)
+    process.exitCode = 1
+    return orgsCResult
+  }
+
+  const { organizations } = orgsCResult.data
+  const orgSlugs = getOrgSlugs(organizations)
+
+  if (!orgSlugs.length) {
+    const result: CResult<void> = {
+      ok: false,
+      message:
+        'No organizations found. Please contact Socket support to set up your account.',
+    }
+    logger.fail(result.message)
+    process.exitCode = 1
+    return result
+  }
+
+  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
+
+  const enterpriseOrgs = getEnterpriseOrgs(organizations)
+  const enforcedOrgs =
+    enterpriseOrgs.length === 1 ? [enterpriseOrgs[0]!['id']] : []
+
+  const defaultOrg = orgSlugs[0]?.trim()
+  if (defaultOrg) {
+    updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
+  }
+
+  applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
+  logger.success('API credentials set')
+  if (isConfigFromFlag()) {
+    logger.log('')
+    logger.warn(
+      'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
+    )
+  }
+
+  return { ok: true, data: undefined }
 }
