@@ -95,7 +95,7 @@ export async function generateSeaConfig(
   }
 
   await fs.writeFile(configPath, JSON.stringify(config, null, 2))
-  return { blobPath, configPath }
+  return { __proto__: null, blobPath, configPath }
 }
 
 /**
@@ -125,7 +125,7 @@ export async function loadToolPaths() {
     logger.fail('Run: node scripts/test-download-external-tools.mts')
     throw new Error('Invalid tool paths JSON')
   }
-  return { platform, toolPaths: toolPathsData.tools }
+  return { __proto__: null, platform, toolPaths: toolPathsData.tools }
 }
 
 /**
@@ -144,5 +144,5 @@ export function parseArgs() {
     throw new Error('Invalid mode')
   }
 
-  return { mode }
+  return { __proto__: null, mode }
 }

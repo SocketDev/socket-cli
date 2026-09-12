@@ -51,7 +51,7 @@ function formatResults(results) {
     }
   }
 
-  return { errors, infos, warnings }
+  return { __proto__: null, errors, infos, warnings }
 }
 
 /**
@@ -229,6 +229,7 @@ async function validateTestFile(testFile) {
   }
 
   return {
+    __proto__: null,
     file: path.relative(rootPath, testFile),
     issues: allIssues,
     hasErrors: allIssues.some(issue => issue.severity === 'error'),

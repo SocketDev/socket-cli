@@ -164,7 +164,7 @@ async function main() {
 
       await buildTarget(target, entryPoint, { outputPath })
       logger.success(`${targetName} -> ${path.relative(rootPath, outputPath)}`)
-      return { outputPath, success: true, target }
+      return { __proto__: null, outputPath, success: true, target }
     }),
   )
 
@@ -179,6 +179,7 @@ async function main() {
       `${targetName} failed: ${result.reason?.message || result.reason}`,
     )
     return {
+      __proto__: null,
       error: result.reason?.message || String(result.reason),
       success: false,
       target,

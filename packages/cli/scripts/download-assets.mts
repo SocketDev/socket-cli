@@ -23,6 +23,7 @@ import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import { downloadSocketBtmRelease } from '@socketsecurity/lib-stable/releases/socket-btm'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.join(__dirname, '..')
@@ -104,7 +105,7 @@ async function downloadAsset(config) {
         `${name} pre-warm skipped: ${errorMessage(e)} — the consuming build stage will download it on demand.`,
       )
       logger.groupEnd()
-      return { name, ok: true, skipped: true }
+      return { __proto__: null, name, ok: true, skipped: true }
     }
 
     // Process based on asset type.
@@ -114,14 +115,14 @@ async function downloadAsset(config) {
 
     logger.groupEnd()
     logger.success(`${name} extraction complete`)
-    return { name, ok: true }
+    return { __proto__: null, name, ok: true }
   } catch (e) {
     // Same pre-warm contract as the download catch above: an extraction
     // failure only loses the warm cache, never the build.
     logger.groupEnd()
     logger.warn(`${name} pre-warm extraction skipped: ${errorMessage(e)}`)
     await logTransientErrorHelp(e)
-    return { name, ok: true, skipped: true }
+    return { __proto__: null, name, ok: true, skipped: true }
   }
 }
 
@@ -240,7 +241,7 @@ async function main() {
   // Skip downloads entirely when SKIP_ASSET_DOWNLOAD is set.
   // Useful for repeated local builds where assets are already cached,
   // or when GitHub API rate limits are exhausted.
-  if (process.env.SKIP_ASSET_DOWNLOAD) {
+  if (getEnvValue('SKIP_ASSET_DOWNLOAD')) {
     logger.info('Skipping asset downloads (SKIP_ASSET_DOWNLOAD is set)')
     return
   }
