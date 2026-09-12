@@ -6,7 +6,11 @@ The root package is `@socketsecurity/cli`. It builds one Node CLI distribution.
 
 `src/command/` owns CLI arguments, help, aliases, and dispatch. Rich implementations live under `src/core/`, so several commands can call the same implementation.
 
-The local firewall implementation lives in `src/core/firewall/`. Optimize implementation modules live in `src/core/optimize/`. External source references live under `upstream/` and are declared in `.gitmodules`.
+The firewall, optimize, and MCP implementations live in `src/core/firewall/`, `src/core/optimize/`, and `src/core/mcp/`. The binary integration for Socket Patch lives in `src/core/patch/`.
+
+`src/core/sdxgen/` loads the bundled manifest generator when requested. The build compiles pinned TypeScript from `upstream/sdxgen/`. Its JavaScript, Acorn WebAssembly parser, and Gradle script ship under `dist/sdxgen/` in the same published package. Project tool execution requires `--execute-tools`.
+
+External source references live under `upstream/` and are declared in `.gitmodules`.
 
 ## Tooling
 

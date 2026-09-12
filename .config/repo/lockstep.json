@@ -61,6 +61,25 @@
         "defaults the ecosystem to npm"
       ],
       "notes": "The MCP runtime is integrated under src/core/mcp. The command adapter configures authentication, environment settings, and transport selection. Security parity covers RFC 8707 resource audience validation, RFC 8414 issuer discovery, token expiry, trusted proxy origin handling, and artifact integrity. Audience-less tokens remain optional by default; a supplied foreign audience is always rejected. The reference pins socket-mcp main at eb4d933a9b29cbb9cb5c85588607e45b304e5896. Source and behavioral tests remain the parity evidence."
+    },
+    {
+      "kind": "feature-parity",
+      "id": "sdxgen/bundled-manifest-api",
+      "upstream": "sdxgen",
+      "criticality": 8,
+      "local_area": "src/core/sdxgen",
+      "test_area": "test/unit/core/sdxgen",
+      "code_patterns": [
+        "generateSbom",
+        "executeTools: options\\.executeTools \\?\\? false",
+        "isSdxgenDocument"
+      ],
+      "test_patterns": [
+        "loads the bundled generator",
+        "disables execution by default",
+        "propagates parser failures"
+      ],
+      "notes": "The CLI builds the pinned TypeScript API into dist/sdxgen/index.cjs. Acorn CJS and WebAssembly, the Gradle init script, and the upstream license ship beside it. Project tool execution requires an explicit command flag. The isolated bundle integration test checks real npm parsing and Acorn execution."
     }
   ]
 }
