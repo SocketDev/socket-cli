@@ -302,7 +302,7 @@ describe('git utilities', () => {
         await import('@socketsecurity/lib-stable/process/spawn/child'),
       )
       // gitEnsureIdentity calls spawn first - allow those to succeed.
-      // Then the git add call should fail.
+      // Then the `git add` call should fail.
       spawn.mockImplementation((_cmd: unknown, args: unknown) => {
         if (args?.includes('add')) {
           return Promise.reject(new Error('add failed')) as unknown

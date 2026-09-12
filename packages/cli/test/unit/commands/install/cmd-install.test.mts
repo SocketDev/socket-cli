@@ -51,7 +51,8 @@ describe('cmd-install', () => {
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
 
-      const [meowConfig, options] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: meowConfig, 1: options } =
+        mockMeowWithSubcommands.mock.calls[0]
 
       // Verify config structure.
       expect(meowConfig).toMatchObject({
@@ -76,7 +77,7 @@ describe('cmd-install', () => {
     it('should include completion subcommand', async () => {
       await cmdInstall.run([], importMeta, context)
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: meowConfig } = mockMeowWithSubcommands.mock.calls[0]
 
       expect(meowConfig.subcommands).toHaveProperty('completion')
       expect(meowConfig.subcommands.completion).toMatchObject({
@@ -91,7 +92,7 @@ describe('cmd-install', () => {
 
       await cmdInstall.run([], importMeta, customContext)
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: meowConfig } = mockMeowWithSubcommands.mock.calls[0]
 
       expect(meowConfig.name).toBe('custom-socket install')
     })
@@ -101,7 +102,7 @@ describe('cmd-install', () => {
 
       await cmdInstall.run(customArgv, importMeta, context)
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: meowConfig } = mockMeowWithSubcommands.mock.calls[0]
 
       expect(meowConfig.argv).toBe(customArgv)
     })
@@ -111,7 +112,7 @@ describe('cmd-install', () => {
 
       await cmdInstall.run([], customImportMeta, context)
 
-      const [meowConfig] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: meowConfig } = mockMeowWithSubcommands.mock.calls[0]
 
       expect(meowConfig.importMeta).toBe(customImportMeta)
     })

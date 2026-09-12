@@ -60,7 +60,7 @@ describe('cmd-organization-policy', () => {
       await cmdOrganizationPolicy.run(['security'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: subcommandsCallArgs } = mockMeowWithSubcommands.mock.calls[0]
       expect(
         subcommandsCallArgs.subcommands.license ===
           cmdOrganizationPolicyLicense,

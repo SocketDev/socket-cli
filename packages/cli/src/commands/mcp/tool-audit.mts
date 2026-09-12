@@ -22,6 +22,8 @@ import process from 'node:process'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { errorMessage } from '@socketsecurity/lib/errors/message'
 
+const logger = getDefaultLogger()
+
 /**
  * One audit event. The shape is stable so a SIEM or export consumer can parse
  * it without per-version logic.
@@ -84,7 +86,7 @@ export function auditLogPath(): string {
   return path.join(os.homedir(), '.socket', 'mcp-audit.jsonl')
 }
 
-const auditLogger = getDefaultLogger()
+const auditLogger = logger
 
 /**
  * Emit a structured audit event to the append-only JSONL store. The parent

@@ -33,10 +33,10 @@ export function evictBlobCache(): void {
     if (oldest === undefined) {
       break
     }
-    const victim = cache.get(oldest)
+    const target = cache.get(oldest)
     cache.delete(oldest)
-    if (victim) {
-      cacheBytes = Math.max(0, cacheBytes - blobCacheWeight(victim))
+    if (target) {
+      cacheBytes = Math.max(0, cacheBytes - blobCacheWeight(target))
     }
   }
 }

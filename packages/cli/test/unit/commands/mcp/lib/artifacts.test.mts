@@ -108,7 +108,7 @@ describe('deduplicateArtifacts', () => {
       const linux = art({ release: 'foo-1.0.0-manylinux_x86_64.whl' })
       const macarm = art({ release: 'foo-1.0.0-macosx_arm64.whl' })
       const macx64 = art({ release: 'foo-1.0.0-macosx_x86_64.whl' })
-      const [picked] = deduplicateArtifacts(
+      const { 0: picked } = deduplicateArtifacts(
         [linux, macarm, macx64],
         'darwin-arm64',
       )
@@ -119,7 +119,7 @@ describe('deduplicateArtifacts', () => {
       const linux = art({ release: 'foo-1.0.0-manylinux_x86_64.whl' })
       const macarm = art({ release: 'foo-1.0.0-macosx_arm64.whl' })
       const macx64 = art({ release: 'foo-1.0.0-macosx_x86_64.whl' })
-      const [picked] = deduplicateArtifacts(
+      const { 0: picked } = deduplicateArtifacts(
         [linux, macarm, macx64],
         'darwin-x64',
       )
@@ -129,35 +129,35 @@ describe('deduplicateArtifacts', () => {
     it('selects manylinux x86_64 for linux-x64', () => {
       const win = art({ release: 'foo-1.0.0-win_amd64.whl' })
       const linux = art({ release: 'foo-1.0.0-manylinux_x86_64.whl' })
-      const [picked] = deduplicateArtifacts([win, linux], 'linux-x64')
+      const { 0: picked } = deduplicateArtifacts([win, linux], 'linux-x64')
       expect(picked).toBe(linux)
     })
 
     it('selects aarch64 wheel for linux-arm64', () => {
       const x86 = art({ release: 'foo-1.0.0-manylinux_x86_64.whl' })
       const arm = art({ release: 'foo-1.0.0-manylinux_aarch64.whl' })
-      const [picked] = deduplicateArtifacts([x86, arm], 'linux-arm64')
+      const { 0: picked } = deduplicateArtifacts([x86, arm], 'linux-arm64')
       expect(picked).toBe(arm)
     })
 
     it('selects amd64 wheel for win32-x64', () => {
       const win32 = art({ release: 'foo-1.0.0-win32.whl' })
       const win64 = art({ release: 'foo-1.0.0-win_amd64.whl' })
-      const [picked] = deduplicateArtifacts([win32, win64], 'win32-x64')
+      const { 0: picked } = deduplicateArtifacts([win32, win64], 'win32-x64')
       expect(picked).toBe(win64)
     })
 
     it('selects win32 wheel for win32-ia32', () => {
       const win32 = art({ release: 'foo-1.0.0-win32.whl' })
       const win64 = art({ release: 'foo-1.0.0-win_amd64.whl' })
-      const [picked] = deduplicateArtifacts([win32, win64], 'win32-ia32')
+      const { 0: picked } = deduplicateArtifacts([win32, win64], 'win32-ia32')
       expect(picked).toBe(win32)
     })
 
     it('falls back to substring match for unknown platforms', () => {
       const a = art({ release: 'foo-1.0.0-freebsd.whl' })
       const b = art({ release: 'foo-1.0.0-linux.whl' })
-      const [picked] = deduplicateArtifacts([a, b], 'freebsd')
+      const { 0: picked } = deduplicateArtifacts([a, b], 'freebsd')
       expect(picked).toBe(a)
     })
 
@@ -165,7 +165,7 @@ describe('deduplicateArtifacts', () => {
       const sdist = art({ release: 'foo-1.0.0.tar.gz' })
       const wheel = art({ release: 'foo-1.0.0-manylinux_x86_64.whl' })
       // No darwin artifact present — falls through to sdist preference.
-      const [picked] = deduplicateArtifacts([wheel, sdist], 'darwin-arm64')
+      const { 0: picked } = deduplicateArtifacts([wheel, sdist], 'darwin-arm64')
       expect(picked).toBe(sdist)
     })
   })
@@ -174,28 +174,28 @@ describe('deduplicateArtifacts', () => {
     it('prefers source distribution over wheels', () => {
       const wheel = art({ release: 'foo-1.0.0-cp310-manylinux_x86_64.whl' })
       const sdist = art({ release: 'foo-1.0.0.tar.gz' })
-      const [picked] = deduplicateArtifacts([wheel, sdist])
+      const { 0: picked } = deduplicateArtifacts([wheel, sdist])
       expect(picked).toBe(sdist)
     })
 
     it('recognizes .tar.bz2 as source distribution', () => {
       const wheel = art({ release: 'foo-1.0.0-cp310-manylinux_x86_64.whl' })
       const sdist = art({ release: 'foo-1.0.0.tar.bz2' })
-      const [picked] = deduplicateArtifacts([wheel, sdist])
+      const { 0: picked } = deduplicateArtifacts([wheel, sdist])
       expect(picked).toBe(sdist)
     })
 
     it('recognizes .zip as source distribution', () => {
       const wheel = art({ release: 'foo-1.0.0-cp310-manylinux_x86_64.whl' })
       const sdist = art({ release: 'foo-1.0.0.zip' })
-      const [picked] = deduplicateArtifacts([wheel, sdist])
+      const { 0: picked } = deduplicateArtifacts([wheel, sdist])
       expect(picked).toBe(sdist)
     })
 
     it('recognizes "sdist" in the release name', () => {
       const wheel = art({ release: 'foo-1.0.0-cp310-manylinux_x86_64.whl' })
       const sdist = art({ release: 'foo-1.0.0-sdist-extra' })
-      const [picked] = deduplicateArtifacts([wheel, sdist])
+      const { 0: picked } = deduplicateArtifacts([wheel, sdist])
       expect(picked).toBe(sdist)
     })
 
@@ -204,7 +204,7 @@ describe('deduplicateArtifacts', () => {
         release: 'foo-1.0.0-cp310-manylinux_x86_64.whl',
       })
       const universal = art({ release: 'foo-1.0.0-py3-none-any.whl' })
-      const [picked] = deduplicateArtifacts([linuxWheel, universal])
+      const { 0: picked } = deduplicateArtifacts([linuxWheel, universal])
       expect(picked).toBe(universal)
     })
 
@@ -213,21 +213,21 @@ describe('deduplicateArtifacts', () => {
         release: 'foo-1.0.0-cp310-manylinux_x86_64.whl',
       })
       const universal = art({ release: 'foo-1.0.0-none-any.whl' })
-      const [picked] = deduplicateArtifacts([linuxWheel, universal])
+      const { 0: picked } = deduplicateArtifacts([linuxWheel, universal])
       expect(picked).toBe(universal)
     })
 
     it('falls back to first artifact when no sdist/universal/platform', () => {
       const a = art({ release: 'foo-1.0.0-cp310-manylinux_x86_64.whl' })
       const b = art({ release: 'foo-1.0.0-cp311-manylinux_x86_64.whl' })
-      const [picked] = deduplicateArtifacts([a, b])
+      const { 0: picked } = deduplicateArtifacts([a, b])
       expect(picked).toBe(a)
     })
 
     it('returns first artifact when releases are missing', () => {
       const a = art({ release: undefined })
       const b = art({ release: undefined })
-      const [picked] = deduplicateArtifacts([a, b])
+      const { 0: picked } = deduplicateArtifacts([a, b])
       expect(picked).toBe(a)
     })
   })

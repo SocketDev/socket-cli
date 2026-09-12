@@ -15,7 +15,6 @@ import { distPath } from '../../../constants/paths.mts'
 import type { BuildTool } from './build-tool.mts'
 import type { ResolvedArtifactPaths, SocketFactsSbom } from './facts.mts'
 import type { ResolutionReport } from './resolution-report.mts'
-
 export type ManifestScriptOptions = {
   // Unset ⇒ resolved to the project wrapper, else PATH (resolveBuildToolBin).
   bin?: string | undefined

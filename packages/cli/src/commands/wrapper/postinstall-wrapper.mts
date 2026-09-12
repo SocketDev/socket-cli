@@ -63,7 +63,7 @@ Do you want to install the Socket npm wrapper (this will create an alias to the 
   }
   if (!updatedTabCompletion) {
     // Setting up tab completion requires bashrc modification. I'm not sure if
-    // it's cool to just do that from an npm install...
+    // it's cool to just do that from an `npm install`...
     logger.log('Run `socket install completion` to setup bash tab completion')
   }
 }

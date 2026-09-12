@@ -106,7 +106,7 @@ describe('cacheFetch', () => {
     // Resolve the slow fetcher.
     resolvePromise!({ value: 'slow-result' })
 
-    const [result1, result2] = await Promise.all([promise1, promise2])
+    const { 0: result1, 1: result2 } = await Promise.all([promise1, promise2])
 
     expect(result1).toEqual({ value: 'slow-result' })
     expect(result2).toEqual({ value: 'slow-result' })

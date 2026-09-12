@@ -333,7 +333,7 @@ describe('cmd-ci', () => {
       it('should handle boolean conversion correctly', async () => {
         await cmdCI.run(['--auto-manifest'], importMeta, context)
 
-        const [config] = mockHandleCi.mock.calls[0]
+        const { 0: config } = mockHandleCi.mock.calls[0]
         expect(typeof config.autoManifest).toBe('boolean')
         expect(config.autoManifest).toBe(true)
       })

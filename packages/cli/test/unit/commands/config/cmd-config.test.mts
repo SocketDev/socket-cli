@@ -61,7 +61,7 @@ describe('cmd-config', () => {
       await cmdConfig.run(['auto'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: subcommandsCallArgs } = mockMeowWithSubcommands.mock.calls[0]
       expect(subcommandsCallArgs.subcommands.auto === cmdConfigAuto).toBe(true)
       expect(subcommandsCallArgs.subcommands.get === cmdConfigGet).toBe(true)
       expect(subcommandsCallArgs.subcommands.list === cmdConfigList).toBe(true)

@@ -58,7 +58,7 @@ describe('cmd-package', () => {
       await cmdPackage.run(['score'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      const [subcommandsCallArgs] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: subcommandsCallArgs } = mockMeowWithSubcommands.mock.calls[0]
       expect(subcommandsCallArgs.subcommands.score === cmdPackageScore).toBe(
         true,
       )

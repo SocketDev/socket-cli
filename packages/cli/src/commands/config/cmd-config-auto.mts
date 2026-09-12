@@ -79,7 +79,7 @@ ${getSupportedConfigEntries()
 
   const dryRun = cli.flags['dryRun']
 
-  const [key = ''] = cli.input
+  const { 0: key = '' } = cli.input
 
   const outputKind = getOutputKind(json, markdown)
 

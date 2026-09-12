@@ -119,7 +119,7 @@ describe('cmd-uninstall-completion', () => {
       it('should include correct resource type in dry-run output', async () => {
         await cmdUninstallCompletion.run(['--dry-run'], importMeta, context)
 
-        const [resourceType] = mockOutputDryRunDelete.mock.calls[0]
+        const { 0: resourceType } = mockOutputDryRunDelete.mock.calls[0]
         expect(resourceType).toBe('bash completion')
       })
 

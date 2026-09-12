@@ -173,7 +173,7 @@ describe('runDepscore — payload shaping', () => {
       { apiToken: 'test_a' },
     )
     expect(mockBatchPackageFetch).toHaveBeenCalledTimes(1)
-    const [arg, query] = mockBatchPackageFetch.mock.calls[0]
+    const { 0: arg, 1: query } = mockBatchPackageFetch.mock.calls[0]
     expect(arg.components).toHaveLength(2)
     expect(arg.components[0].purl).toBe('pkg:npm/lodash@4.17.21')
     expect(arg.components[1].purl).toBe('pkg:pypi/requests@2.31.0')

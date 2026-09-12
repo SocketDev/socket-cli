@@ -61,7 +61,8 @@ describe('cmd-repository', () => {
       await cmdRepository.run(['list'], importMeta, context)
 
       expect(mockMeowWithSubcommands).toHaveBeenCalledTimes(1)
-      const [config, callOptions] = mockMeowWithSubcommands.mock.calls[0]
+      const { 0: config, 1: callOptions } =
+        mockMeowWithSubcommands.mock.calls[0]
       expect(config).toMatchObject({
         argv: ['list'],
         name: 'socket repository',

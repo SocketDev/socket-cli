@@ -74,7 +74,7 @@ async function connectClient(
   config: ServerConfig = baseConfig,
 ): Promise<Client> {
   const server = createConfiguredServer(config)
-  const [clientTransport, serverTransport] =
+  const { 0: clientTransport, 1: serverTransport } =
     InMemoryTransport.createLinkedPair()
   await server.connect(serverTransport)
   const client = new Client({ name: 'test', version: '0.0.0' }, {})
@@ -89,7 +89,7 @@ async function connectClient(
 // The text of a tool result's first content block. `content` is a union of
 // block kinds, so narrow on `type` rather than casting.
 function firstText(result: CallToolResult): string {
-  const [block] = result.content
+  const { 0: block } = result.content
   return block?.type === 'text' ? block.text : ''
 }
 

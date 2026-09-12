@@ -89,7 +89,7 @@ export async function run(
 
   const dryRun = cli.flags['dryRun']
 
-  const [ecosystem = '', purl] = cli.input
+  const { 0: ecosystem = '', 1: purl } = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 

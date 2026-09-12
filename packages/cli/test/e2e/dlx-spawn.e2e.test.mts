@@ -84,7 +84,7 @@ describe('dlx e2e tests', () => {
         // but we can verify the command that would be constructed
         // by checking our unit tests pass and the actual execution works.
 
-        // Try to run a simple pnpm dlx command directly to ensure it works.
+        // Try to run a simple `pnpm dlx` command directly to ensure it works.
         // Scratch HOME so pnpm's store + cache land outside the dev's home.
         await withScratchHome(async () => {
           try {
@@ -102,7 +102,7 @@ describe('dlx e2e tests', () => {
             expect(r.stdout).toContain('Direct test')
 
             // Verify that adding unsupported flags would fail.
-            // For example, --ignore-scripts is only for pnpm install, not dlx.
+            // For example, --ignore-scripts is only for `pnpm install`, not dlx.
             expect(() => {
               const r2 = spawnSync(
                 'pnpm',
