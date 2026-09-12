@@ -1,0 +1,266 @@
+{
+  "tools": {
+    "alerts": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "alert_type": {
+            "description": "Comma-separated Socket alert types (e.g. \"usesEval,unmaintained\")",
+            "type": "string"
+          },
+          "artifact_name": {
+            "description": "Filter to a specific package name",
+            "type": "string"
+          },
+          "artifact_type": {
+            "description": "Comma-separated ecosystems: subset of npm,pypi,gem,maven,golang,nuget,cargo,chrome,openvsx",
+            "type": "string"
+          },
+          "category": {
+            "description": "Comma-separated categories: subset of supplyChainRisk,maintenance,quality,license,vulnerability",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Pagination cursor — the `endCursor` from a previous response's metadata",
+            "type": "string"
+          },
+          "org_slug": {
+            "description": "Organization slug, e.g. \"my-org\" (use the `organizations` tool to discover this)",
+            "type": "string"
+          },
+          "per_page": {
+            "description": "Results per page (default 100, max 5000)",
+            "maximum": 5000,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "repo_slug": {
+            "description": "Comma-separated repo slugs",
+            "type": "string"
+          },
+          "severity": {
+            "description": "Comma-separated severities to include: subset of low,medium,high,critical",
+            "type": "string"
+          },
+          "status": {
+            "description": "Filter to open or cleared alerts",
+            "anyOf": [
+              {
+                "const": "open",
+                "type": "string"
+              },
+              {
+                "const": "cleared",
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "required": ["org_slug"]
+      }
+    },
+    "depscore": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "packages": {
+            "description": "Array of packages to check",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["depname"],
+              "properties": {
+                "depname": {
+                  "description": "The name of the dependency",
+                  "type": "string"
+                },
+                "ecosystem": {
+                  "default": "npm",
+                  "description": "Package ecosystem (PURL type): npm (JS/TS), pypi (Python), golang (Go), maven (Java/Scala/Kotlin), gem (Ruby), nuget (.NET), cargo (Rust), composer (PHP; \"packagist\" also accepted). See https://docs.socket.dev/docs/language-support",
+                  "type": "string"
+                },
+                "version": {
+                  "default": "unknown",
+                  "description": "The version of the dependency, use 'unknown' if not known",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "platform": {
+            "description": "Optional OS-architecture hint (e.g., 'linux-x64', 'darwin-arm64', 'win32-x64'). Used to select the most relevant artifact when a package has platform-specific builds.",
+            "type": "string"
+          }
+        },
+        "required": ["packages"]
+      }
+    },
+    "organizations": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "package_file_contents": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "hash": {
+            "description": "Blob hash exactly as shown by `package_files` (the token printed after each file size)",
+            "type": "string"
+          },
+          "path": {
+            "description": "Optional file path for display only; does not affect the lookup",
+            "type": "string"
+          }
+        },
+        "required": ["hash"]
+      }
+    },
+    "package_file_grep": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "caseInsensitive": {
+            "description": "Match case-insensitively (default: false)",
+            "type": "boolean"
+          },
+          "contextLines": {
+            "description": "Lines of context to show before and after each match (0-5, default: 0)",
+            "maximum": 5,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "hash": {
+            "description": "Blob hash exactly as shown by `package_files` (the token printed after each file size)",
+            "type": "string"
+          },
+          "maxMatches": {
+            "description": "Cap on number of matching lines returned (default: 100, max: 500)",
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "path": {
+            "description": "Optional file path for display only; does not affect the lookup",
+            "type": "string"
+          },
+          "pattern": {
+            "description": "JavaScript regular expression. Plain literal strings work too. Anchors and character classes are supported.",
+            "type": "string"
+          }
+        },
+        "required": ["hash", "pattern"]
+      }
+    },
+    "package_files": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "ecosystem": {
+            "default": "npm",
+            "description": "Package ecosystem (e.g., npm, pypi, gem, cargo, maven, golang, nuget, chrome, openvsx)",
+            "type": "string"
+          },
+          "depname": {
+            "description": "Package name (e.g., \"lodash\", \"@babel/core\", \"org.springframework:spring-core\", \"meta/pyrefly\" for openvsx)",
+            "type": "string"
+          },
+          "version": {
+            "description": "Package version",
+            "type": "string"
+          },
+          "artifactId": {
+            "description": "Per-version artifact disambiguator (e.g. PyPI filename, Maven artifact id, NuGet asset). Required when an ecosystem ships multiple artifacts per version.",
+            "type": "string"
+          },
+          "platform": {
+            "description": "Platform qualifier for ecosystems with per-OS/arch artifacts (e.g. openvsx: 'linux-x64', 'darwin-arm64', 'win32-x64').",
+            "type": "string"
+          }
+        },
+        "required": ["depname", "version"]
+      }
+    },
+    "threat_feed": {
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "created_after": {
+            "description": "ISO timestamp; only return items created after this",
+            "type": "string"
+          },
+          "cursor": {
+            "description": "Pagination cursor — the `nextPageCursor` from a previous response",
+            "type": "string"
+          },
+          "direction": {
+            "description": "Sort direction (default `desc`)",
+            "anyOf": [
+              {
+                "const": "asc",
+                "type": "string"
+              },
+              {
+                "const": "desc",
+                "type": "string"
+              }
+            ]
+          },
+          "ecosystem": {
+            "description": "Ecosystem filter, e.g. npm, pypi, gem, maven, golang, nuget, cargo, chrome, openvsx, vscode, huggingface",
+            "type": "string"
+          },
+          "filter": {
+            "description": "Threat category filter (default `mal`). Common values: `mal` (malware), `vuln`, `typ` (typosquat), `obf` (obfuscated), `mjo`, `kes`, `spy`, `ano`, `ucf`, `ptp`, `ual`",
+            "type": "string"
+          },
+          "is_human_reviewed": {
+            "description": "Only return human-reviewed items (default false)",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Filter by package name",
+            "type": "string"
+          },
+          "org_slug": {
+            "description": "Organization slug, e.g. \"my-org\" (use the `organizations` tool to discover this)",
+            "type": "string"
+          },
+          "per_page": {
+            "description": "Results per page (default 30, max 100)",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "description": "Sort field (default `updated_at`)",
+            "anyOf": [
+              {
+                "const": "id",
+                "type": "string"
+              },
+              {
+                "const": "created_at",
+                "type": "string"
+              },
+              {
+                "const": "updated_at",
+                "type": "string"
+              }
+            ]
+          },
+          "updated_after": {
+            "description": "ISO timestamp; only return items updated after this",
+            "type": "string"
+          },
+          "version": {
+            "description": "Filter by package version",
+            "type": "string"
+          }
+        },
+        "required": ["org_slug"]
+      }
+    }
+  }
+}

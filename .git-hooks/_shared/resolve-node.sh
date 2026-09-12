@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-# Resolve the repo-pinned Node onto PATH before a hook runs `node`.
+# Resolve pinned Node and protected pnpm onto PATH before hook work.
 #
 # Git invokes hooks with the OS login shell's PATH, not the terminal's —
 # so a GUI client (or a plain `git commit` outside an nvm-activated
@@ -44,4 +44,12 @@ for _rn_bin in \
   fi
 done
 
-unset _rn_dir _rn_file _rn_want _rn_nvm _rn_fnm _rn_bin
+_rn_tools="$HOME/.socket/_wheelhouse/bin"
+if [ ! -x "$_rn_tools/pnpm" ]; then
+  printf '%s\n' "Hook tool resolution failed at $_rn_tools/pnpm; wanted the protected pnpm launcher. Run fleet tools setup." >&2
+  exit 1
+fi
+PATH="$_rn_tools:$PATH"
+export PATH
+
+unset _rn_dir _rn_file _rn_want _rn_nvm _rn_fnm _rn_bin _rn_tools

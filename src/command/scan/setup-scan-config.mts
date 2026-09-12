@@ -85,46 +85,48 @@ export async function configureGithub(
     /* c8 ignore stop */
   }
 
-  return await configureGithubDestination()
+  return configureGithubEndpoint(config)
+}
 
-  async function configureGithubDestination() {
-    const defaultGithubApiUrl = await input({
-      message:
-        '(--github-api-url) Do you want to override the default github url?',
+export async function configureGithubEndpoint(
+  config: Parameters<typeof configureGithub>[0],
+): Promise<CResult<{ canceled: boolean }>> {
+  const defaultGithubApiUrl = await input({
+    message:
+      '(--github-api-url) Do you want to override the default github url?',
 
-      default: config.githubApiUrl || getGithubApiUrl() || '',
-      required: false,
-      // validate: async string => bool
-    })
-    /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup not provided by unit tests */
-    if (defaultGithubApiUrl === undefined) {
-      return canceledByUser()
-    }
-    /* c8 ignore stop */
-    if (defaultGithubApiUrl && defaultGithubApiUrl !== getGithubApiUrl()) {
-      config.githubApiUrl = defaultGithubApiUrl
-    } else {
-      delete config.githubApiUrl
-    }
-
-    const defaultOrgGithub = await input({
-      message:
-        '(--org-github) Do you want to change the org slug that is used when talking to the GitHub API? Defaults to your Socket org slug.',
-      default: config.orgGithub || '',
-      required: false,
-      // validate: async string => bool
-    })
-    if (defaultOrgGithub === undefined) {
-      return canceledByUser()
-    }
-    if (defaultOrgGithub) {
-      config.orgGithub = defaultOrgGithub
-    } else {
-      delete config.orgGithub
-    }
-
-    return notCanceled()
+    default: config.githubApiUrl || getGithubApiUrl() || '',
+    required: false,
+    // validate: async string => bool
+  })
+  /* c8 ignore start - interactive prompt cancellation, undefined return, requires raw inquirer mock setup not provided by unit tests */
+  if (defaultGithubApiUrl === undefined) {
+    return canceledByUser()
   }
+  /* c8 ignore stop */
+  if (defaultGithubApiUrl && defaultGithubApiUrl !== getGithubApiUrl()) {
+    config.githubApiUrl = defaultGithubApiUrl
+  } else {
+    delete config.githubApiUrl
+  }
+
+  const defaultOrgGithub = await input({
+    message:
+      '(--org-github) Do you want to change the org slug that is used when talking to the GitHub API? Defaults to your Socket org slug.',
+    default: config.orgGithub || '',
+    required: false,
+    // validate: async string => bool
+  })
+  if (defaultOrgGithub === undefined) {
+    return canceledByUser()
+  }
+  if (defaultOrgGithub) {
+    config.orgGithub = defaultOrgGithub
+  } else {
+    delete config.orgGithub
+  }
+
+  return notCanceled()
 }
 
 export async function configureScan(
@@ -187,84 +189,86 @@ export async function configureScan(
     delete config.branch
   }
 
-  return await configureScanReportDefaults()
+  return configureScanReporting(config)
+}
 
-  async function configureScanReportDefaults() {
-    const autoManifest = await select({
-      message:
-        '(--auto-manifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',
-      choices: [
-        {
-          name: 'no',
-          value: 'no',
-          description: 'Do not generate local manifest files',
-        },
-        {
-          name: 'yes',
-          value: 'yes',
-          description:
-            'Locally generate manifest files for languages like gradle, sbt, and conda (see `socket manifest auto`), before creating a scan',
-        },
-        {
-          name: '(leave default)',
-          value: '',
-          description: 'Do not store a setting for this',
-        },
-      ],
-      default:
-        config.autoManifest === true
-          ? 'yes'
-          : config.autoManifest === false
-            ? 'no'
-            : '',
-    })
-    if (autoManifest === undefined) {
-      return canceledByUser()
-    }
-    if (autoManifest === 'yes') {
-      config.autoManifest = true
-    } else if (autoManifest === 'no') {
-      config.autoManifest = false
-    } else {
-      delete config.autoManifest
-    }
-
-    const alwaysReport = await select({
-      message: '(--report) Do you want to enable --report by default?',
-      choices: [
-        {
-          name: 'no',
-          value: 'no',
-          description: 'Do not wait for Scan result and report by default',
-        },
-        {
-          name: 'yes',
-          value: 'yes',
-          description:
-            'After submitting a Scan request, wait for scan to complete, then show a report (like --report would)',
-        },
-        {
-          name: '(leave default)',
-          value: '',
-          description: 'Do not store a setting for this',
-        },
-      ],
-      default:
-        config.report === true ? 'yes' : config.report === false ? 'no' : '',
-    })
-    if (alwaysReport === undefined) {
-      return canceledByUser()
-    }
-    if (alwaysReport === 'yes') {
-      config.report = true
-    } else if (alwaysReport === 'no') {
-      config.report = false
-    } else {
-      delete config.report
-    }
-
-    return notCanceled()
+export async function configureScanReporting(
+  config: Parameters<typeof configureScan>[0],
+): Promise<CResult<{ canceled: boolean }>> {
+  const autoManifest = await select({
+    message:
+      '(--auto-manifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Do not generate local manifest files',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'Locally generate manifest files for languages like gradle, sbt, and conda (see `socket manifest auto`), before creating a scan',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default:
+      config.autoManifest === true
+        ? 'yes'
+        : config.autoManifest === false
+          ? 'no'
+          : '',
+  })
+  if (autoManifest === undefined) {
+    return canceledByUser()
   }
+  if (autoManifest === 'yes') {
+    config.autoManifest = true
+  } else if (autoManifest === 'no') {
+    config.autoManifest = false
+  } else {
+    delete config.autoManifest
+  }
+
+  const alwaysReport = await select({
+    message: '(--report) Do you want to enable --report by default?',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Do not wait for Scan result and report by default',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'After submitting a Scan request, wait for scan to complete, then show a report (like --report would)',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default:
+      config.report === true ? 'yes' : config.report === false ? 'no' : '',
+  })
+  if (alwaysReport === undefined) {
+    return canceledByUser()
+  }
+  if (alwaysReport === 'yes') {
+    config.report = true
+  } else if (alwaysReport === 'no') {
+    config.report = false
+  } else {
+    delete config.report
+  }
+
+  return notCanceled()
 }
 
 export function notCanceled(): CResult<{ canceled: boolean }> {

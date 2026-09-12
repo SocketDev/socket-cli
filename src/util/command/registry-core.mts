@@ -3,6 +3,8 @@
  *   registration, execution, middleware, and plugin support.
  */
 
+import { isFlagName } from '../cli/flag-name.mts'
+
 import process from 'node:process'
 
 import type {
@@ -10,6 +12,7 @@ import type {
   CommandDefinition,
   CommandPlugin,
   CommandRegistry as ICommandRegistry,
+  FlagDefinition,
   FlagValues,
   MiddlewareFn,
 } from './registry-types.mjs'
@@ -293,7 +296,10 @@ export class CommandRegistry implements ICommandRegistry {
 
       // Handle --flag=value
       const [flagName, ...valueParts] = arg.slice(2).split('=')
-      const flagDef = command.flags[flagName!]
+      if (!flagName || !isFlagName(flagName)) {
+        continue
+      }
+      const flagDef = command.flags[flagName]
 
       if (!flagDef) {
         // Unknown flag - skip for now, could warn
@@ -318,17 +324,10 @@ export class CommandRegistry implements ICommandRegistry {
         value = args[++i]
       }
 
-      assignParsedFlag(flags, flagName!, flagDef.type, value)
+      assignCommandFlag(flags, flagName, flagDef, value)
     }
 
-    // Validate required flags
-    for (const [name, def] of Object.entries(command.flags)) {
-      if (def.isRequired && flags[name] === undefined) {
-        throw new Error(
-          `command "${command.name}" requires --${name} but it was not provided; pass --${name}=<${def.type}-value>`,
-        )
-      }
-    }
+    validateRequiredCommandFlags(command, flags)
 
     return flags
   }
@@ -339,14 +338,14 @@ export class CommandRegistry implements ICommandRegistry {
  */
 export const registry = new CommandRegistry()
 
-export function assignParsedFlag(
+export function assignCommandFlag(
   flags: FlagValues,
   flagName: string,
-  type: string,
+  flagDef: FlagDefinition,
   value: unknown,
 ): void {
   // Type conversion
-  switch (type) {
+  switch (flagDef.type) {
     case 'number': {
       const raw = value
       value = Number(value)
@@ -362,14 +361,31 @@ export function assignParsedFlag(
       break
     }
     case 'array': {
-      if (!Array.isArray(flags[flagName])) {
-        flags[flagName] = []
+      if (!Array.isArray(flags[flagName!])) {
+        flags[flagName!] = []
       }
-      ;(flags[flagName] as unknown[]).push(value)
+      ;(flags[flagName!] as unknown[]).push(value)
       return
     }
     // string: no conversion needed
   }
 
-  flags[flagName] = value
+  flags[flagName!] = value
+}
+
+export function validateRequiredCommandFlags(
+  command: CommandDefinition,
+  flags: FlagValues,
+): void {
+  if (!command.flags) {
+    return
+  }
+  // Validate required flags
+  for (const [name, def] of Object.entries(command.flags)) {
+    if (def.isRequired && flags[name] === undefined) {
+      throw new Error(
+        `command "${command.name}" requires --${name} but it was not provided; pass --${name}=<${def.type}-value>`,
+      )
+    }
+  }
 }

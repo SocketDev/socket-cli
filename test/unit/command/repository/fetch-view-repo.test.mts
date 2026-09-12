@@ -23,7 +23,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchViewRepo } from '../../../../src/command/repository/fetch-view-repo.mts'
 
 // Mock the dependencies.

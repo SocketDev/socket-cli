@@ -6,7 +6,9 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { NODE_MODULES } from './packages.mts'
+import { packageNodeModulesBinPath } from '../paths.mts'
+
+export * from '../paths.mts'
 
 // Compute root path from this file's location.
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -18,7 +20,7 @@ export const externalPath = path.join(rootPath, 'external')
 export const srcPath = path.join(rootPath, 'src')
 
 // Package and lockfile paths.
-export const rootNodeModulesBinPath = path.join(rootPath, NODE_MODULES, '.bin')
+export const rootNodeModulesBinPath = packageNodeModulesBinPath(rootPath)
 
 // Cache directory paths.
 // Repo-owned tool-cache segment at the repo root, NOT inside node_modules:

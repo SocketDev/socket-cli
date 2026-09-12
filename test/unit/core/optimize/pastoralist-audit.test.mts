@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import process from 'node:process'
 
 import { runPastoralistAudit } from '../../../../src/core/optimize/pastoralist-audit.mts'
 

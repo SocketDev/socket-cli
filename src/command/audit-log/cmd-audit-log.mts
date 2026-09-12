@@ -132,26 +132,58 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: noLegacy,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
+      fail: 'received legacy flags',
+    },
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'missing',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
+      fail: 'bad',
+    },
+    {
+      nook: true,
+      test: /^[a-zA-Z]*$/.test(typeFilter),
+      message: 'The filter must be an a-zA-Z string, it is an enum',
+      fail: 'it was given but not a-zA-Z',
+    },
+  )
   if (!wasValidInput) {
     return
   }
 
   // Validate numeric pagination parameters.
-  const validatedPage = Number(page || 0)
-  const validatedPerPage = Number(perPage || 0)
-
   if (dryRun) {
     outputDryRunFetch('audit log entries', {
       organization: orgSlug,
       filter: typeFilter || 'any',
-      page: validatedPage || 1,
-      perPage: validatedPerPage || 30,
+      page: Number(page || 0) || 1,
+      perPage: Number(perPage || 0) || 30,
     })
     return
   }
 
-  validatePagination()
+  const { 0: validatedPage, 1: validatedPerPage } = validateAuditPagination(
+    page,
+    perPage,
+  )
 
   await handleAuditLog({
     orgSlug,
@@ -163,52 +195,23 @@ export async function run(
         ? typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)
         : '',
   })
+}
 
-  function validatePagination() {
-    if (Number.isNaN(validatedPage) || validatedPage < 0) {
-      throw new InputError(
-        `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
-      )
-    }
-    if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
-      throw new InputError(
-        `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
-      )
-    }
-  }
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: noLegacy,
-        message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-        fail: 'received legacy flags',
-      },
-      {
-        nook: true,
-        test: !!orgSlug,
-        message: 'Org name by default setting, --org, or auto-discovered',
-        fail: 'missing',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-        fail: 'bad',
-      },
-      {
-        nook: true,
-        test: /^[a-zA-Z]*$/.test(typeFilter),
-        message: 'The filter must be an a-zA-Z string, it is an enum',
-        fail: 'it was given but not a-zA-Z',
-      },
+export function validateAuditPagination(
+  page: number | string | undefined,
+  perPage: number | string | undefined,
+): [number, number] {
+  const validatedPage = Number(page || 0)
+  const validatedPerPage = Number(perPage || 0)
+  if (Number.isNaN(validatedPage) || validatedPage < 0) {
+    throw new InputError(
+      `--page must be a non-negative integer (saw: "${page}"); pass a number like --page=1`,
     )
   }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 0) {
+    throw new InputError(
+      `--per-page must be a non-negative integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
+  }
+  return [validatedPage, validatedPerPage]
 }

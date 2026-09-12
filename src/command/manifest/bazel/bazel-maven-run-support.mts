@@ -73,7 +73,7 @@ export function makeOutputUserRoot(): string {
 }
 
 // Best-effort reap of a Bazel server. Spawned with a short timeout so
-// a unresponsive server can't itself hang the cleanup; failures are swallowed
+// an unresponsive server cannot block cleanup; failures are swallowed
 // because the caller will remove the output_user_root regardless.
 export async function reapBazelServer(
   bin: string,

@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { safeMkdirSync } from '@socketsecurity/lib-stable/fs/safe'
 import { getCliVersionHash } from '../../env/cli-version-hash.mts'
-import { homePath } from '../../constants/paths.mts'
+import { getPackagedCompletionPath, homePath } from '../../constants/paths.mts'
 import { getBashrcDetails } from '../../util/cli/completion.mts'
 import type { CResult } from '../../types.mts'
 
@@ -25,7 +25,7 @@ export function getTabCompletionScriptRaw(): CResult<string> {
   try {
     const cliPackageJson = require.resolve('@socketsecurity/cli/package.json')
     const cliPackageRoot = path.dirname(cliPackageJson)
-    sourcePath = path.join(cliPackageRoot, 'data', 'socket-completion.bash')
+    sourcePath = getPackagedCompletionPath(cliPackageRoot)
     /* c8 ignore start - fallback for source-tree development; require.resolve always succeeds in tests because the workspace package is installed */
   } catch {
     sourcePath = path.resolve(__dirname, '../../../data/socket-completion.bash')

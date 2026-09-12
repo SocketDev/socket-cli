@@ -26,17 +26,13 @@ export async function trackCliComplete(
 ): Promise<void> {
   debug('Capture end of command')
 
-  await trackEvent(
-    'cli_complete',
-    buildContext(argv),
-    {
+  await trackEvent('cli_complete', buildContext(argv), {
+    metadata: {
       duration: calculateDuration(startTime),
       exit_code: normalizeExitCode(exitCode, 0),
     },
-    {
-      flush: true,
-    },
-  )
+    flush: true,
+  })
 }
 
 /**
@@ -56,18 +52,14 @@ export async function trackCliError(
 ): Promise<void> {
   debug('Capture error and stack trace of command')
 
-  await trackEvent(
-    'cli_error',
-    buildContext(argv),
-    {
+  await trackEvent('cli_error', buildContext(argv), {
+    metadata: {
       duration: calculateDuration(startTime),
       exit_code: normalizeExitCode(exitCode, 1),
     },
-    {
-      error: normalizeError(error),
-      flush: true,
-    },
-  )
+    error: normalizeError(error),
+    flush: true,
+  })
 }
 
 /**
@@ -85,7 +77,7 @@ export async function trackCliEvent(
 ): Promise<void> {
   debug(`Tracking CLI event: ${eventType}`)
 
-  await trackEvent(eventType, buildContext(argv), metadata)
+  await trackEvent(eventType, buildContext(argv), { metadata: metadata })
 }
 
 /**

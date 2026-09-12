@@ -217,7 +217,7 @@ export async function setupSbt(
   if (facts === undefined) {
     return canceledByUser()
   }
-  if (facts === 'no' || facts === 'yes') {
+  if (['no', 'yes'].includes(facts)) {
     config.facts = facts === 'yes'
   } else {
     delete config.facts

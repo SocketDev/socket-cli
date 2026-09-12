@@ -71,6 +71,10 @@ export type ParsedRecords = {
   unscannable: UnscannableConfig[]
 }
 
+export function recordField(fields: string[], index: number): string {
+  return fields[index] ?? ''
+}
+
 export function unescapeField(s: string): string {
   if (!s.includes('\\')) {
     return s
@@ -92,6 +96,154 @@ function bool(s: string | undefined): boolean {
   return s === '1' || s === 'true'
 }
 
+export function applyOutcomeRecord(
+  fields: string[],
+  result: ParsedRecords,
+  scanned: Set<string>,
+): void {
+  switch (fields[0]) {
+    case 'file': {
+      const node = getOrCreateRoot(result, recordField(fields, 1)).nodes.get(
+        recordField(fields, 2),
+      )
+      if (node && fields[3]) {
+        node.targets.push(fields[3])
+      }
+      break
+    }
+    case 'scanned':
+      if (fields[1]) {
+        scanned.add(fields[1])
+      }
+      break
+    case 'failure':
+      if (fields[1]) {
+        result.failures.push({
+          coord: fields[1],
+          detail: recordField(fields, 2),
+          config: recordField(fields, 3),
+        })
+      }
+      break
+    case 'unscannable':
+      if (fields[1]) {
+        result.unscannable.push({
+          config: fields[1],
+          detail: recordField(fields, 2),
+        })
+      }
+      break
+  }
+}
+
+export function applyStructureRecord(
+  fields: string[],
+  result: ParsedRecords,
+): void {
+  switch (fields[0]) {
+    case 'meta':
+      result.tool = recordField(fields, 1)
+      result.toolVersion = recordField(fields, 2)
+      result.javaVersion = recordField(fields, 3)
+      break
+    case 'project': {
+      const project = getOrCreateProject(result, recordField(fields, 1))
+      project.group = recordField(fields, 2)
+      project.name = recordField(fields, 3)
+      project.version = recordField(fields, 4)
+      project.dir = recordField(fields, 5)
+      break
+    }
+    case 'projectSrc': {
+      if (fields[2]) {
+        getOrCreateProject(result, recordField(fields, 1)).sources.push(
+          fields[2],
+        )
+      }
+      break
+    }
+    case 'projectTgt': {
+      if (fields[2]) {
+        getOrCreateProject(result, recordField(fields, 1)).targets.push(
+          fields[2],
+        )
+      }
+      break
+    }
+    case 'root': {
+      const root = getOrCreateRoot(result, recordField(fields, 1))
+      root.projectKey = recordField(fields, 2)
+      root.config = recordField(fields, 3)
+      root.prod = bool(fields[4])
+      break
+    }
+    case 'node': {
+      const root = getOrCreateRoot(result, recordField(fields, 1))
+      const coordId = recordField(fields, 2)
+      root.nodes.set(coordId, {
+        coordId,
+        coord: {
+          group: recordField(fields, 3),
+          name: recordField(fields, 4),
+          version: recordField(fields, 5),
+          ext: recordField(fields, 6),
+          classifier: recordField(fields, 7),
+        },
+        direct: bool(fields[8]),
+        targets: [],
+      })
+      break
+    }
+    case 'edge': {
+      const parent = recordField(fields, 2)
+      const child = recordField(fields, 3)
+      if (parent !== child) {
+        getOrCreateRoot(result, recordField(fields, 1)).edges.push([
+          parent,
+          child,
+        ])
+      }
+      break
+    }
+  }
+}
+
+export function getOrCreateProject(
+  result: ParsedRecords,
+  key: string,
+): RawProject {
+  let project = result.projects.get(key)
+  if (!project) {
+    project = {
+      projectKey: key,
+      group: '',
+      name: '',
+      version: '',
+      dir: '',
+      sources: [],
+      targets: [],
+    }
+    result.projects.set(key, project)
+  }
+  return project
+}
+
+export function getOrCreateRoot(result: ParsedRecords, id: string): RawRoot {
+  let root = result.roots.get(id)
+  if (!root) {
+    root = {
+      rootId: id,
+      projectKey: '',
+      config: '',
+      prod: false,
+      nodes: new Map(),
+      edges: [],
+    }
+    result.roots.set(id, root)
+  }
+  return root
+}
+
 export function parseRecords(text: string): ParsedRecords {
   const result: ParsedRecords = {
     tool: '',
@@ -105,38 +257,6 @@ export function parseRecords(text: string): ParsedRecords {
   }
   const scanned = new Set<string>()
 
-  const root = (id: string): RawRoot => {
-    let r = result.roots.get(id)
-    if (!r) {
-      r = {
-        rootId: id,
-        projectKey: '',
-        config: '',
-        prod: false,
-        nodes: new Map(),
-        edges: [],
-      }
-      result.roots.set(id, r)
-    }
-    return r
-  }
-  const project = (key: string): RawProject => {
-    let p = result.projects.get(key)
-    if (!p) {
-      p = {
-        projectKey: key,
-        group: '',
-        name: '',
-        version: '',
-        dir: '',
-        sources: [],
-        targets: [],
-      }
-      result.projects.set(key, p)
-    }
-    return p
-  }
-
   const lines = text.split(/\r?\n/)
   for (let i = 0, { length } = lines; i < length; i += 1) {
     const rawLine = lines[i]!
@@ -144,156 +264,9 @@ export function parseRecords(text: string): ParsedRecords {
       continue
     }
     const f = rawLine.split('\t').map(unescapeField)
-    switch (f[0]) {
-      case 'meta':
-        parseMetaRecord(f, result)
-        break
-      case 'project':
-        parseProjectRecord(f, project)
-        break
-      case 'projectSrc':
-        parseProjectSrcRecord(f, project)
-        break
-      case 'projectTgt':
-        parseProjectTgtRecord(f, project)
-        break
-      case 'root':
-        parseRootRecord(f, root)
-        break
-      case 'node':
-        parseNodeRecord(f, root)
-        break
-      case 'edge':
-        parseEdgeRecord(f, root)
-        break
-      case 'file':
-        parseFileRecord(f, root)
-        break
-      case 'scanned':
-        parseScannedRecord(f, scanned)
-        break
-      case 'failure':
-        parseFailureRecord(f, result)
-        break
-      case 'unscannable':
-        parseUnscannableRecord(f, result)
-        break
-    }
+    applyStructureRecord(f, result)
+    applyOutcomeRecord(f, result, scanned)
   }
   result.scannedConfigs = [...scanned].toSorted()
   return result
-}
-
-export function parseMetaRecord(f: string[], result: ParsedRecords): void {
-  result.tool = f[1] ?? ''
-  result.toolVersion = f[2] ?? ''
-  result.javaVersion = f[3] ?? ''
-}
-
-export function parseProjectRecord(
-  f: string[],
-  project: (key: string) => RawProject,
-): void {
-  const p = project(f[1] ?? '')
-  p.group = f[2] ?? ''
-  p.name = f[3] ?? ''
-  p.version = f[4] ?? ''
-  p.dir = f[5] ?? ''
-}
-
-export function parseProjectSrcRecord(
-  f: string[],
-  project: (key: string) => RawProject,
-): void {
-  if (f[2]) {
-    project(f[1] ?? '').sources.push(f[2])
-  }
-}
-
-export function parseProjectTgtRecord(
-  f: string[],
-  project: (key: string) => RawProject,
-): void {
-  if (f[2]) {
-    project(f[1] ?? '').targets.push(f[2])
-  }
-}
-
-export function parseRootRecord(
-  f: string[],
-  root: (id: string) => RawRoot,
-): void {
-  const r = root(f[1] ?? '')
-  r.projectKey = f[2] ?? ''
-  r.config = f[3] ?? ''
-  r.prod = bool(f[4])
-}
-
-export function parseNodeRecord(
-  f: string[],
-  root: (id: string) => RawRoot,
-): void {
-  const r = root(f[1] ?? '')
-  const coordId = f[2] ?? ''
-  r.nodes.set(coordId, {
-    coordId,
-    coord: {
-      group: f[3] ?? '',
-      name: f[4] ?? '',
-      version: f[5] ?? '',
-      ext: f[6] ?? '',
-      classifier: f[7] ?? '',
-    },
-    direct: bool(f[8]),
-    targets: [],
-  })
-}
-
-export function parseEdgeRecord(
-  f: string[],
-  root: (id: string) => RawRoot,
-): void {
-  const parent = f[2] ?? ''
-  const child = f[3] ?? ''
-  if (parent !== child) {
-    root(f[1] ?? '').edges.push([parent, child])
-  }
-}
-
-export function parseFileRecord(
-  f: string[],
-  root: (id: string) => RawRoot,
-): void {
-  const node = root(f[1] ?? '').nodes.get(f[2] ?? '')
-  if (node && f[3]) {
-    node.targets.push(f[3])
-  }
-}
-
-export function parseScannedRecord(f: string[], scanned: Set<string>): void {
-  if (f[1]) {
-    scanned.add(f[1])
-  }
-}
-
-export function parseFailureRecord(f: string[], result: ParsedRecords): void {
-  if (f[1]) {
-    result.failures.push({
-      coord: f[1],
-      detail: f[2] ?? '',
-      config: f[3] ?? '',
-    })
-  }
-}
-
-export function parseUnscannableRecord(
-  f: string[],
-  result: ParsedRecords,
-): void {
-  if (f[1]) {
-    result.unscannable.push({
-      config: f[1],
-      detail: f[2] ?? '',
-    })
-  }
 }

@@ -1,7 +1,7 @@
 # <picture><img width="32" height="32" alt="socket-cli" src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/logomark.svg"></picture> Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
-<picture><img src="assets/repo/coverage.svg?v=fce8b9cdc6e7" height="20" alt="Coverage" /></picture>
+<picture><img src="https://raw.githubusercontent.com/SocketDev/socket-cli/HEAD/assets/repo/coverage.svg?v=fce8b9cdc6e7" height="20" alt="Coverage" /></picture>
 
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 [![Follow @socket.dev on Bluesky](https://img.shields.io/badge/Follow-@socket.dev-1DA1F2?style=social&logo=bluesky)](https://bsky.app/profile/socket.dev)
@@ -54,6 +54,9 @@ For the hosted service, use your client's native remote connector with
 `https://mcp.socket.dev/`. In Claude Desktop, add it through **Customize >
 Connectors**.
 
+<details>
+<summary>Configure clients that require a stdio bridge</summary>
+
 Clients that require a stdio bridge can use the verified `mcp-remote@0.8.3`
 release. Install it with `pnpm add --global mcp-remote@0.8.3`, then configure:
 
@@ -74,6 +77,8 @@ can open authorization after connection without starting that listener. The
 0.8.3. Update the bridge executable if authorization returns to an unavailable
 localhost callback. Reauthorization recovery was verified against the published
 bridge transport; a complete browser login remains a separate integration check.
+
+</details>
 
 ## Architecture
 

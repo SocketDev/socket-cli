@@ -18,64 +18,11 @@ import { serializeResultJson } from '../../util/output/result-json.mjs'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
 
-export async function outputConfigList({
-  full,
-  outputKind,
-}: {
-  full: boolean
-  outputKind: OutputKind
-}) {
+export function outputConfigJson(full: boolean): void {
   const readOnly = isConfigFromFlag()
   const supportedConfigKeys = getSupportedConfigKeys()
-  if (outputKind === 'json') {
-    outputConfigListJson({ full, readOnly, supportedConfigKeys })
-  } else {
-    const maxWidth = supportedConfigKeys.reduce(
-      (a, b) => Math.max(a, b.length),
-      0,
-    )
-
-    logger.log(mdHeader('Local CLI Config'))
-    logger.log('')
-    logger.log(`This is the local CLI config (full=${full}):`)
-    logger.log('')
-    for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
-      const key = supportedConfigKeys[i]!
-      const result = getConfigValue(key)
-      if (!result.ok) {
-        logger.log(`- ${key}: failed to read: ${result.message}`)
-      } else {
-        let value = result.data
-        if (!full && isSensitiveConfigKey(key)) {
-          value = '********'
-        }
-        if (full || value !== undefined) {
-          const displayValue = Array.isArray(value)
-            ? value.join(', ') || '<none>'
-            : String(value ?? '<none>')
-          logger.log(
-            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
-          )
-        }
-      }
-    }
-    if (readOnly) {
-      logger.log('')
-      logger.log(
-        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
-      )
-    }
-  }
-}
-
-export function outputConfigListJson(config: {
-  full: boolean
-  readOnly: boolean
-  supportedConfigKeys: ReturnType<typeof getSupportedConfigKeys>
-}) {
-  const { full, readOnly, supportedConfigKeys } = config
   let failed = false
-  const obj: Record<string, unknown> = {}
+  const config: Record<string, unknown> = {}
   for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
     const key = supportedConfigKeys[i]!
     const result = getConfigValue(key)
@@ -87,7 +34,7 @@ export function outputConfigListJson(config: {
       value = '********'
     }
     if (full || value !== undefined) {
-      obj[key] = value ?? '<none>'
+      config[key] = value ?? '<none>'
     }
   }
   if (failed) {
@@ -101,7 +48,7 @@ export function outputConfigListJson(config: {
             message: 'At least one config key failed to be fetched…',
             data: JSON.stringify({
               full,
-              config: obj,
+              config,
               readOnly,
             }),
           }
@@ -109,10 +56,62 @@ export function outputConfigListJson(config: {
             ok: true,
             data: {
               full,
-              config: obj,
+              config,
               readOnly,
             },
           },
     ),
   )
+}
+
+export async function outputConfigList({
+  full,
+  outputKind,
+}: {
+  full: boolean
+  outputKind: OutputKind
+}) {
+  if (outputKind === 'json') {
+    outputConfigJson(full)
+    return
+  }
+  outputConfigText(full)
+}
+
+export function outputConfigText(full: boolean): void {
+  const supportedConfigKeys = getSupportedConfigKeys()
+  const maxWidth = supportedConfigKeys.reduce(
+    (a, b) => Math.max(a, b.length),
+    0,
+  )
+  logger.log(mdHeader('Local CLI Config'))
+  logger.log('')
+  logger.log(`This is the local CLI config (full=${full}):`)
+  logger.log('')
+  for (let i = 0, { length } = supportedConfigKeys; i < length; i += 1) {
+    const key = supportedConfigKeys[i]!
+    const result = getConfigValue(key)
+    if (!result.ok) {
+      logger.log(`- ${key}: failed to read: ${result.message}`)
+      continue
+    }
+    let value = result.data
+    if (!full && isSensitiveConfigKey(key)) {
+      value = '********'
+    }
+    if (full || value !== undefined) {
+      const displayValue = Array.isArray(value)
+        ? value.join(', ') || '<none>'
+        : String(value ?? '<none>')
+      logger.log(
+        `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${displayValue}`,
+      )
+    }
+  }
+  if (isConfigFromFlag()) {
+    logger.log('')
+    logger.log(
+      'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
+    )
+  }
 }

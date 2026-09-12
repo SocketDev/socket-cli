@@ -220,7 +220,9 @@ export function getConfigValues(retryCount = 0): LocalConfig {
           }
         }
 
-        loadConfigContents(raw, configFilePath)
+        if (raw !== undefined) {
+          loadConfigContents(raw, configFilePath)
+        }
         cachedConfigMtime = currentMtime
         cachedConfigPath = configFilePath
       }
@@ -262,38 +264,36 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 }
 
 export function loadConfigContents(
-  raw: string | Buffer | undefined,
+  raw: string | Buffer,
   configFilePath: string,
 ): void {
-  if (raw !== undefined) {
-    try {
-      const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
-      const decoded = Buffer.from(rawString, 'base64').toString('utf8')
-      // Check for invalid UTF-8 sequences, replacement character.
-      if (decoded.includes('\ufffd')) {
-        throw new Error(
-          `SOCKET_CLI_CONFIG contains invalid UTF-8 after base64-decode (replacement-character in output); the env var may have been truncated or double-encoded — re-export it with \`echo '{...}' | base64\``,
-        )
-      }
-      const parsed = JSON.parse(decoded)
-      // Only copy supported config keys to prevent prototype pollution.
-      if (parsed !== null && typeof parsed === 'object') {
-        const keys = Object.keys(parsed)
-        for (let i = 0, { length } = keys; i < length; i += 1) {
-          const key = keys[i]!
-          if (isSupportedConfigKey(key)) {
-            ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
-          }
+  try {
+    const rawString = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw
+    const decoded = Buffer.from(rawString, 'base64').toString('utf8')
+    // Check for invalid UTF-8 sequences, replacement character.
+    if (decoded.includes('\ufffd')) {
+      throw new Error(
+        `SOCKET_CLI_CONFIG contains invalid UTF-8 after base64-decode (replacement-character in output); the env var may have been truncated or double-encoded — re-export it with \`echo '{...}' | base64\``,
+      )
+    }
+    const parsed = JSON.parse(decoded)
+    // Only copy supported config keys to prevent prototype pollution.
+    if (parsed !== null && typeof parsed === 'object') {
+      const keys = Object.keys(parsed)
+      for (let i = 0, { length } = keys; i < length; i += 1) {
+        const key = keys[i]!
+        if (isSupportedConfigKey(key)) {
+          ;(cachedConfig as Record<string, unknown>)[key] = parsed[key]
         }
       }
-      debugConfig(configFilePath, true)
-      /* c8 ignore start - config parse failure path; tests pass valid JSON or use empty config */
-    } catch (e) {
-      logger.warn(`Failed to parse config at ${configFilePath}`)
-      debugConfig(configFilePath, false, e)
     }
-    /* c8 ignore stop */
+    debugConfig(configFilePath, true)
+    /* c8 ignore start - config parse failure path; tests pass valid JSON or use empty config */
+  } catch (e) {
+    logger.warn(`Failed to parse config at ${configFilePath}`)
+    debugConfig(configFilePath, false, e)
   }
+  /* c8 ignore stop */
 }
 
 export function normalizeConfigKey(

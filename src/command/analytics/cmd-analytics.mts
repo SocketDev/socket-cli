@@ -25,6 +25,13 @@ export interface AnalyticsFlags {
   markdown: boolean
 }
 
+export interface AnalyticsSelection {
+  readonly __proto__: null
+  repoName: string
+  scope: string
+  time: string
+}
+
 export const CMD_NAME = 'analytics'
 
 const description = 'Look up analytics data'
@@ -37,28 +44,39 @@ export const cmdAnalytics = {
   run,
 }
 
-export function parseAnalyticsInput(input: readonly string[]) {
-  let scope = 'org'
-  let time = '30'
-  let repoName = ''
-
-  if (input[0] === 'org') {
-    if (input[1]) {
-      time = input[1]
+export function parseAnalyticsSelection(
+  input: readonly string[],
+): AnalyticsSelection {
+  const first = input[0]
+  if (first === 'org') {
+    return {
+      __proto__: null,
+      repoName: '',
+      scope: 'org',
+      time: input[1] || '30',
     }
-  } else if (input[0] === 'repo') {
-    scope = 'repo'
-    if (input[1]) {
-      repoName = input[1]
-    }
-    if (input[2]) {
-      time = input[2]
-    }
-  } else if (input[0]) {
-    time = input[0]
   }
+  if (first === 'repo') {
+    return {
+      __proto__: null,
+      repoName: input[1] || '',
+      scope: 'repo',
+      time: input[2] || '30',
+    }
+  }
+  return {
+    __proto__: null,
+    repoName: '',
+    scope: 'org',
+    time: first || '30',
+  }
+}
 
-  return { __proto__: null, scope, time, repoName }
+export function resolveAnalyticsDays(time: string): 7 | 30 | 90 {
+  if (time === '90') {
+    return 90
+  }
+  return time === '30' ? 30 : 7
 }
 
 export async function run(
@@ -110,7 +128,7 @@ export async function run(
     importMeta,
   })
 
-  const { scope, time, repoName } = parseAnalyticsInput(cli.input)
+  const { repoName, scope, time } = parseAnalyticsSelection(cli.input)
 
   const { file: filepath, json, markdown } = cli.flags
 
@@ -123,7 +141,52 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: noLegacy,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
+      fail: 'received legacy flags',
+    },
+    {
+      nook: true,
+      test: scope === 'org' || !!repoName,
+      message: 'When scope=repo, repo name should be the second argument',
+      fail: 'missing',
+    },
+    {
+      nook: true,
+      test:
+        scope === 'org' ||
+        (repoName !== '7' && repoName !== '30' && repoName !== '90'),
+      message: 'When scope is repo, the second arg should be repo, not time',
+      fail: 'missing',
+    },
+    {
+      test: time === '7' || time === '30' || time === '90',
+      message: 'The time filter must either be 7, 30 or 90',
+      fail: 'invalid range set, see --help for command arg details.',
+    },
+    {
+      nook: true,
+      test: !filepath || json || markdown,
+      message: `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
+      fail: 'bad',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
+      fail: 'bad',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+  )
   if (!wasValidInput) {
     return
   }
@@ -142,53 +205,6 @@ export async function run(
     outputKind,
     repo: repoName,
     scope,
-    time: time === '90' ? 90 : time === '30' ? 30 : 7,
+    time: resolveAnalyticsDays(time),
   })
-
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: noLegacy,
-        message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-        fail: 'received legacy flags',
-      },
-      {
-        nook: true,
-        test: scope === 'org' || !!repoName,
-        message: 'When scope=repo, repo name should be the second argument',
-        fail: 'missing',
-      },
-      {
-        nook: true,
-        test: scope === 'org' || !['7', '30', '90'].includes(repoName),
-        message: 'When scope is repo, the second arg should be repo, not time',
-        fail: 'missing',
-      },
-      {
-        test: ['7', '30', '90'].includes(time),
-        message: 'The time filter must either be 7, 30 or 90',
-        fail: 'invalid range set, see --help for command arg details.',
-      },
-      {
-        nook: true,
-        test: !filepath || json || markdown,
-        message: `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
-        fail: 'bad',
-      },
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
-        fail: 'bad',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-    )
-  }
 }

@@ -51,7 +51,47 @@ export interface RawBlobResult {
   contentType: string | undefined
 }
 
+export interface ChunkManifest {
+  readonly __proto__: null
+  chunks: string[]
+  offsets: number[] | undefined
+  totalSize: number
+}
+
 let cachedUserAgent: string | undefined
+
+export function concatChunkBuffers(chunkBuffers: Uint8Array[]): Uint8Array {
+  let total = 0
+  for (let i = 0, { length } = chunkBuffers; i < length; i += 1) {
+    total += chunkBuffers[i]!.length
+  }
+  const concat = new Uint8Array(total)
+  let position = 0
+  for (let i = 0, { length } = chunkBuffers; i < length; i += 1) {
+    const chunk = chunkBuffers[i]!
+    concat.set(chunk, position)
+    position += chunk.length
+  }
+  return concat
+}
+
+export function countNeededChunks(
+  offsets: number[] | undefined,
+  chunkCount: number,
+  maxBytes: number,
+): number {
+  if (!offsets) {
+    return chunkCount
+  }
+  let needed = 0
+  for (let i = 0; i < chunkCount; i += 1) {
+    if (offsets[i]! >= maxBytes) {
+      break
+    }
+    needed = i + 1
+  }
+  return needed
+}
 
 /**
  * Decode bytes as strict UTF-8. Returns undefined when the bytes are not valid
@@ -92,7 +132,7 @@ export async function fetchSocketBlob(
   let contentType: string | undefined
   let originalSize: number
 
-  if (hash[0] === 'S') {
+  if (hash.charCodeAt(0) === 83 /* 'S' */) {
     const chunked = await fetchSocketChunkedBlobBytes(hash, maxBytes)
     buf = chunked.bytes
     originalSize = chunked.totalSize
@@ -128,42 +168,23 @@ export async function fetchSocketChunkedBlobBytes(
   const manifestHash = `Q${chunkedHash.slice(1)}`
   const manifestRaw = await fetchSocketRawBlobBytes(manifestHash)
 
-  const { rawChunks, totalSize, offsets } = parseChunkedBlobManifest(
-    manifestRaw.bytes,
+  const manifest = parseChunkedBlobManifest(manifestRaw.bytes, manifestHash)
+  const { chunks, offsets, totalSize } = parseChunkManifest(
+    manifest,
     manifestHash,
   )
-
-  let needed = rawChunks.length
-  if (offsets) {
-    needed = 0
-    for (let i = 0; i < rawChunks.length; i += 1) {
-      if (offsets[i]! >= maxBytes) {
-        break
-      }
-      needed = i + 1
-    }
-  }
+  const needed = countNeededChunks(offsets, chunks.length, maxBytes)
 
   const chunkBuffers = await Promise.all(
-    rawChunks
+    chunks
       .slice(0, needed)
       .map(async c => (await fetchSocketRawBlobBytes(c)).bytes),
   )
-
-  let total = 0
-  for (const cb of chunkBuffers) {
-    total += cb.length
-  }
-  const concat = new Uint8Array(total)
-  let pos = 0
-  for (const cb of chunkBuffers) {
-    concat.set(cb, pos)
-    pos += cb.length
-  }
+  const concat = concatChunkBuffers(chunkBuffers)
 
   return {
     bytes: concat,
-    totalSize: totalSize >= 0 ? totalSize : total,
+    totalSize: totalSize >= 0 ? totalSize : concat.length,
   }
 }
 
@@ -222,7 +243,7 @@ export function isStringArray(value: unknown): value is string[] {
 export function parseChunkedBlobManifest(
   bytes: Uint8Array,
   manifestHash: string,
-) {
+): object {
   let manifest: unknown
   try {
     manifest = JSON.parse(new TextDecoder('utf-8').decode(bytes))
@@ -236,24 +257,31 @@ export function parseChunkedBlobManifest(
       `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: a non-object manifest, wanted a JSON object. Fix: re-run \`package_files\` to get a current hash.`,
     )
   }
+  return manifest
+}
+
+export function parseChunkManifest(
+  manifest: object,
+  manifestHash: string,
+): ChunkManifest {
   const rawChunks = 'chunks' in manifest ? manifest.chunks : undefined
-  if (!isStringArray(rawChunks) || rawChunks.some(c => !c)) {
+  if (!isStringArray(rawChunks) || rawChunks.some(chunk => !chunk)) {
     throw new Error(
       `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: no usable 'chunks' array, wanted an array of chunk hashes. Fix: re-run \`package_files\` to get a current hash.`,
     )
   }
   const rawSize = 'size' in manifest ? manifest.size : undefined
-  const totalSize = typeof rawSize === 'number' ? rawSize : -1
   const rawOffset = 'offset' in manifest ? manifest.offset : undefined
-  // Offsets are usable only when every entry is numeric AND there is one per
-  // chunk, so a single bad entry skips the optimization instead of producing a
-  // short, mismatched read.
   const offsets =
     Array.isArray(rawOffset) &&
     rawOffset.length === rawChunks.length &&
-    rawOffset.every(n => typeof n === 'number')
+    rawOffset.every(value => typeof value === 'number')
       ? rawOffset
       : undefined
-
-  return { __proto__: null, rawChunks, totalSize, offsets }
+  return {
+    __proto__: null,
+    chunks: rawChunks,
+    offsets,
+    totalSize: typeof rawSize === 'number' ? rawSize : -1,
+  }
 }

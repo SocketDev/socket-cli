@@ -27,7 +27,7 @@ import type * as FsModule from 'node:fs'
 
 // Mock file system operations.
 const mockReadJson = vi.hoisted(() => vi.fn())
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockStrictDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdir = vi.hoisted(() => vi.fn())
 const mockWriteJson = vi.hoisted(() => vi.fn())
 
@@ -52,7 +52,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJson: mockReadJson,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  safeDelete: mockSafeDelete,
+  safeDelete: mockStrictDelete,
   safeMkdir: mockSafeMkdir,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/write-json'), () => ({
@@ -68,7 +68,7 @@ describe('ghsa-tracker', () => {
     // Default: lock file creation succeeds.
     mockFsWriteFile.mockResolvedValue(undefined)
     mockFsReadFile.mockResolvedValue('12345')
-    mockSafeDelete.mockResolvedValue(undefined)
+    mockStrictDelete.mockResolvedValue(undefined)
   })
 
   describe('markGhsaFixed', () => {

@@ -28,7 +28,7 @@ import {
   setupSdkMockError,
   setupSdkMockSuccess,
   setupSdkSetupFailure,
-} from '../../../helpers/sdk-test-helpers.mts'
+} from '../../../helpers/sdk-fixtures.mts'
 import { fetchQuota } from '../../../../src/command/organization/fetch-quota.mts'
 
 // Mock the dependencies.

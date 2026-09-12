@@ -3,10 +3,10 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { joinAnd } from '@socketsecurity/lib-stable/arrays/join'
-import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
-import { checkCiEnvVars, getCiEnvInstructions } from './env-helpers.mts'
+import { checkCiEnvVars, getCiEnvInstructions } from './ci-environment.mts'
+import { strictDelete } from '../../util/fs/strict-delete.mts'
 import { FLAG_DRY_RUN } from '../../constants/cli.mts'
 import { spawnCoana } from '../../util/dlx/spawn.mjs'
 
@@ -14,6 +14,68 @@ import type { GhsaFixResult } from './coana-fix-ci.mts'
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 const logger = getDefaultLogger()
+
+export function buildLocalCoanaArgs(
+  fixConfig: FixConfig,
+  context: {
+    coanaExcludePatterns: string[]
+    coanaSilenceArgs: string[]
+    idsToProcess: string[]
+    tarHash: string
+    tmpFile: string
+  },
+): string[] {
+  const {
+    applyFixes,
+    cwd,
+    debug,
+    disableExternalToolChecks,
+    disableMajorUpdates,
+    ecosystems,
+    include,
+    minimumReleaseAge,
+    packageManagers,
+    rangeStyle,
+    showAffectedDirectDependencies,
+    unknownFlags,
+  } = fixConfig
+  const {
+    coanaExcludePatterns,
+    coanaSilenceArgs,
+    idsToProcess,
+    tarHash,
+    tmpFile,
+  } = context
+  return [
+    ...coanaSilenceArgs,
+    'compute-fixes-and-upgrade-purls',
+    cwd,
+    '--manifests-tar-hash',
+    tarHash,
+    '--apply-fixes-to',
+    ...idsToProcess,
+    ...(rangeStyle ? ['--range-style', rangeStyle] : []),
+    ...(minimumReleaseAge ? ['--minimum-release-age', minimumReleaseAge] : []),
+    ...(include.length ? ['--include', ...include] : []),
+    ...(coanaExcludePatterns.length
+      ? ['--exclude', ...coanaExcludePatterns]
+      : []),
+    ...(packageManagers.length
+      ? ['--package-managers', ...packageManagers]
+      : []),
+    ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
+    ...(!applyFixes ? [FLAG_DRY_RUN] : []),
+    '--output-file',
+    tmpFile,
+    ...(debug ? ['--debug'] : []),
+    ...(disableExternalToolChecks ? ['--disable-external-tool-checks'] : []),
+    ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
+    ...(showAffectedDirectDependencies
+      ? ['--show-affected-direct-dependencies']
+      : []),
+    ...unknownFlags,
+  ]
+}
 
 export async function runLocalCoanaFix(
   fixConfig: FixConfig,
@@ -29,19 +91,11 @@ export async function runLocalCoanaFix(
     applyFixes,
     coanaVersion,
     cwd,
-    debug: debugFlag,
-    disableExternalToolChecks,
-    disableMajorUpdates,
-    ecosystems,
     exclude,
     excludePaths,
     ghsas,
-    include,
-    minimumReleaseAge,
-    packageManagers,
     outputFile,
     prLimit,
-    showAffectedDirectDependencies,
     spinner,
   } = fixConfig
   // --exclude-paths is the canonical path exclusion; forward it to coana's
@@ -82,11 +136,7 @@ export async function runLocalCoanaFix(
   const idsToProcess = shouldDiscoverGhsaIds ? ['all'] : ghsas.slice(0, prLimit)
   if (!idsToProcess.length) {
     spinner?.stop()
-    return {
-      __proto__: null,
-      ok: true,
-      data: { fixedAll: false, ghsaDetails: [] },
-    }
+    return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
   }
 
   // Create a temporary file for the output.
@@ -94,51 +144,23 @@ export async function runLocalCoanaFix(
   const tmpFile = path.join(tmpDir, `socket-fix-${Date.now()}.json`)
 
   try {
-    const fixCResult = await spawnCoana(buildCoanaArguments(), {
-      orgSlug: fixConfig.orgSlug,
-      coanaVersion,
-      cwd,
-      spinner,
-      stdio: coanaStdio,
-    })
-
-    function buildCoanaArguments() {
-      return [
-        ...coanaSilenceArgs,
-        'compute-fixes-and-upgrade-purls',
-        cwd,
-        '--manifests-tar-hash',
+    const fixCResult = await spawnCoana(
+      buildLocalCoanaArgs(fixConfig, {
+        coanaExcludePatterns,
+        coanaSilenceArgs,
+        idsToProcess,
         tarHash,
-        '--apply-fixes-to',
-        ...idsToProcess,
-        ...(fixConfig.rangeStyle
-          ? ['--range-style', fixConfig.rangeStyle]
-          : []),
-        ...(minimumReleaseAge
-          ? ['--minimum-release-age', minimumReleaseAge]
-          : []),
-        ...(include.length ? ['--include', ...include] : []),
-        ...(coanaExcludePatterns.length
-          ? ['--exclude', ...coanaExcludePatterns]
-          : []),
-        ...(packageManagers.length
-          ? ['--package-managers', ...packageManagers]
-          : []),
-        ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ...(!applyFixes ? [FLAG_DRY_RUN] : []),
-        '--output-file',
         tmpFile,
-        ...(debugFlag ? ['--debug'] : []),
-        ...(disableExternalToolChecks
-          ? ['--disable-external-tool-checks']
-          : []),
-        ...(disableMajorUpdates ? ['--disable-major-updates'] : []),
-        ...(showAffectedDirectDependencies
-          ? ['--show-affected-direct-dependencies']
-          : []),
-        ...fixConfig.unknownFlags,
-      ]
-    }
+      }),
+      {
+        orgSlug: fixConfig.orgSlug,
+        coanaVersion,
+        cwd,
+        spinner,
+        stdio: coanaStdio,
+      },
+    )
+
     spinner?.stop()
 
     if (!fixCResult.ok) {
@@ -155,7 +177,6 @@ export async function runLocalCoanaFix(
     }
 
     return {
-      __proto__: null,
       ok: true,
       data: {
         fixedAll: true,
@@ -168,9 +189,6 @@ export async function runLocalCoanaFix(
     }
   } finally {
     // Clean up the temporary file.
-    // Remove owned files at caller-configurable paths outside cwd.
-    // The pinned filesystem API has no strictDelete.
-    // oxlint-disable-next-line socket/no-force-delete -- owned path
-    await safeDelete(tmpFile, { force: true })
+    await strictDelete(tmpFile)
   }
 }

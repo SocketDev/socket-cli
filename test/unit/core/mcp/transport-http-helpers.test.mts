@@ -2,8 +2,9 @@
  * Unit tests for the MCP HTTP transport's header/URL and scope/origin helpers.
  *
  * These small functions handle header normalization, base-URL construction,
- * scope splitting, and origin classification. Pulled out of transport-http.mts
- * so they can be exercised directly without booting an HTTP server.
+ * scope splitting, and origin classification. Pulled out of
+ * http-util.mts so they can be exercised directly without booting an
+ * HTTP server.
  *
  * Test Coverage (100% target): - getRequestHeaderValue: undefined / string /
  * array / empty array - getForwardedHeaderValue: empty / single / comma-list /
@@ -12,10 +13,10 @@
  * splitScopes: non-string / empty string / single / multiple / extra ws -
  * isLocalhostOrigin: localhost / 127.0.0.1 / other / malformed URL.
  *
- * Related Files: - src/core/mcp/transport-http-helpers.mts -
+ * Related Files: - src/core/mcp/http-util.mts -
  * Implementation.
  *
- * - Src/commands/mcp/transport-http.mts - Caller (HTTP server)
+ * - Src/commands/mcp/http-util.mts - Caller (HTTP server)
  */
 
 import { describe, expect, it } from 'vitest'
@@ -28,7 +29,7 @@ import {
   getRequestHeaderValue,
   isLocalhostOrigin,
   splitScopes,
-} from '../../../../src/core/mcp/transport-http-helpers.mts'
+} from '../../../../src/core/mcp/http-util.mts'
 
 describe('getRequestHeaderValue', () => {
   it('returns empty string when header is undefined', () => {

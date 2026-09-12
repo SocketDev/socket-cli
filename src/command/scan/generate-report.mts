@@ -65,7 +65,7 @@ export function addAlert(
   const ecoMap: EcoMap = violations.get(ecosystem)!
   if (fold === FOLD_SETTING_PKG) {
     const existing = ecoMap.get(pkgName) as ReportLeafNode | undefined
-    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+    if (shouldReplaceReportLeaf(existing, policyAction)) {
       ecoMap.set(pkgName, createLeaf(art, alert, policyAction))
     }
   } else {
@@ -75,7 +75,7 @@ export function addAlert(
     const pkgMap = ecoMap.get(pkgName) as PackageMap
     if (fold === FOLD_SETTING_VERSION) {
       const existing = pkgMap.get(version) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+      if (shouldReplaceReportLeaf(existing, policyAction)) {
         pkgMap.set(version, createLeaf(art, alert, policyAction))
       }
     } else {
@@ -85,25 +85,21 @@ export function addAlert(
       const file = alert.file || UNKNOWN_VALUE
       const verMap = pkgMap.get(version) as VersionMap
 
-      addFileAlert(verMap, file)
-    }
-  }
-
-  function addFileAlert(verMap: VersionMap, file: string) {
-    if (fold === FOLD_SETTING_FILE) {
-      const existing = verMap.get(file) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-        verMap.set(file, createLeaf(art, alert, policyAction))
-      }
-    } else {
-      if (!verMap.has(file)) {
-        verMap.set(file, new Map())
-      }
-      const key = `${alert.type} at ${alert.start}:${alert.end}`
-      const fileMap: FileMap = verMap.get(file) as FileMap
-      const existing = fileMap.get(key) as ReportLeafNode | undefined
-      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
-        fileMap.set(key, createLeaf(art, alert, policyAction))
+      if (fold === FOLD_SETTING_FILE) {
+        const existing = verMap.get(file) as ReportLeafNode | undefined
+        if (shouldReplaceReportLeaf(existing, policyAction)) {
+          verMap.set(file, createLeaf(art, alert, policyAction))
+        }
+      } else {
+        if (!verMap.has(file)) {
+          verMap.set(file, new Map())
+        }
+        const key = `${alert.type} at ${alert.start}:${alert.end}`
+        const fileMap: FileMap = verMap.get(file) as FileMap
+        const existing = fileMap.get(key) as ReportLeafNode | undefined
+        if (shouldReplaceReportLeaf(existing, policyAction)) {
+          fileMap.set(key, createLeaf(art, alert, policyAction))
+        }
       }
     }
   }
@@ -200,7 +196,7 @@ export function generateReport(
           if (action === REPORT_LEVEL_ERROR) {
             healthy = false
           }
-          if (!short && shouldIncludeReportAlert(action, reportLevel)) {
+          if (!short && shouldIncludeReportAction(action, reportLevel)) {
             addAlert(
               artifact,
               violations,
@@ -285,7 +281,7 @@ export function isStricterPolicy(was: REPORT_LEVEL, is: REPORT_LEVEL): boolean {
   return false
 }
 
-export function shouldIncludeReportAlert(
+export function shouldIncludeReportAction(
   action: REPORT_LEVEL,
   reportLevel: REPORT_LEVEL,
 ): boolean {
@@ -295,16 +291,25 @@ export function shouldIncludeReportAlert(
     case REPORT_LEVEL_WARN:
       return reportLevel !== REPORT_LEVEL_ERROR
     case REPORT_LEVEL_MONITOR:
-      return ![REPORT_LEVEL_ERROR, REPORT_LEVEL_WARN].includes(reportLevel)
+      return (
+        reportLevel !== REPORT_LEVEL_WARN && reportLevel !== REPORT_LEVEL_ERROR
+      )
     case REPORT_LEVEL_IGNORE:
-      return ![
-        REPORT_LEVEL_ERROR,
-        REPORT_LEVEL_WARN,
-        REPORT_LEVEL_MONITOR,
-      ].includes(reportLevel)
+      return (
+        reportLevel !== REPORT_LEVEL_MONITOR &&
+        reportLevel !== REPORT_LEVEL_WARN &&
+        reportLevel !== REPORT_LEVEL_ERROR
+      )
     case REPORT_LEVEL_DEFER:
       return reportLevel === REPORT_LEVEL_DEFER
     default:
       return false
   }
+}
+
+export function shouldReplaceReportLeaf(
+  existing: ReportLeafNode | undefined,
+  policyAction: REPORT_LEVEL,
+): boolean {
+  return !existing || isStricterPolicy(existing.policy, policyAction)
 }

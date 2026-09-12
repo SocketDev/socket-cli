@@ -99,46 +99,7 @@ export async function ensureSocketPyCli(
   }
 
   try {
-    const pyCliVersion = getPyCliVersion()
-
-    // Get checksum for integrity verification.
-    // Checksums are keyed by wheel filename in bundle-tools.json.
-    const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
-    const checksums = getPyCliChecksums()
-    const sha256 = checksums[wheelFilename]
-
-    // If checksums are available, download verified wheel and install from local file.
-    // Otherwise fall back to pip install, dev mode or missing checksums.
-    if (sha256) {
-      const wheelPath = await downloadPyPiWheel(
-        'socketsecurity',
-        pyCliVersion,
-        sha256,
-      )
-      if (wheelPath) {
-        await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
-          shell: isWin32(),
-          stdio: 'inherit',
-        })
-        /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
-      } else {
-        throw new InputError(
-          `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
-        )
-      }
-      /* c8 ignore stop */
-    } else {
-      // Dev mode: no checksums inlined, install directly from PyPI.
-      const versionSpec = convertCaretToPipRange(pyCliVersion)
-      const packageSpec = versionSpec
-        ? `socketsecurity${versionSpec}`
-        : 'socketsecurity'
-
-      await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
-        shell: isWin32(),
-        stdio: 'inherit',
-      })
-    }
+    await installSocketPyCli(pythonBin)
   } finally {
     // Clean up lock file.
     // Remove owned files at caller-configurable paths outside cwd.
@@ -148,6 +109,55 @@ export async function ensureSocketPyCli(
   }
 }
 
+export async function installSocketPyCli(pythonBin: string): Promise<void> {
+  const pyCliVersion = getPyCliVersion()
+
+  // Get checksum for integrity verification.
+  // Checksums are keyed by wheel filename in bundle-tools.json.
+  const wheelFilename = `socketsecurity-${pyCliVersion}-py3-none-any.whl`
+  const checksums = getPyCliChecksums()
+  const sha256 = checksums[wheelFilename]
+
+  // If checksums are available, download verified wheel and install from local file.
+  // Otherwise fall back to pip install, dev mode or missing checksums.
+  if (sha256) {
+    const wheelPath = await downloadPyPiWheel(
+      'socketsecurity',
+      pyCliVersion,
+      sha256,
+    )
+    if (wheelPath) {
+      await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', wheelPath], {
+        shell: isWin32(),
+        stdio: 'inherit',
+      })
+      /* c8 ignore start - defensive: downloadPyPiWheel returns a string or throws */
+    } else {
+      throw new InputError(
+        `could not download the verified socketsecurity==${pyCliVersion} wheel (downloadPyPiWheel returned null — likely a checksum mismatch or missing wheel asset); re-run with --debug for details, or bump the version in bundle-tools.json if the checksum needs refreshing`,
+      )
+    }
+    /* c8 ignore stop */
+  } else {
+    // Dev mode: no checksums inlined, install directly from PyPI.
+    const versionSpec = convertCaretToPipRange(pyCliVersion)
+    const packageSpec = versionSpec
+      ? `socketsecurity${versionSpec}`
+      : 'socketsecurity'
+
+    await spawn(pythonBin, ['-m', 'pip', 'install', '--quiet', packageSpec], {
+      shell: isWin32(),
+      stdio: 'inherit',
+    })
+  }
+}
+
+/**
+ * Whether the process at `pid` is still alive. Signal 0 sends no actual
+ * signal, only checking existence/permission. EPERM means the process exists
+ * but we lack permission to signal it, treat as alive; any other error
+ * (e.g. ESRCH) means it's dead.
+ */
 export function isDeadPythonInstallLockPid(pid: number): boolean {
   return !Number.isNaN(pid) && pid > 0 && !isProcessAlive(pid)
 }

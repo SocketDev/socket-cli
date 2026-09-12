@@ -56,10 +56,12 @@ describe('socket login', async () => {
               Options
                 --api-base-url      API server to connect to for login
                 --api-proxy         Proxy to use when making connection to API server
+                --device            Log in by approving a device code in your browser instead of pasting an API token
                 --quiet             Route non-essential output (status, progress, warnings) to stderr so stdout carries only the payload. Implied by --json and --markdown.
           
               Examples
                 $ socket login
+                $ socket login --device
                 $ socket login --api-proxy=http://localhost:1234"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -78,10 +80,10 @@ describe('socket login', async () => {
   cmdit(
     [
       'login',
-      'mootools',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
+      'mootools',
     ],
     'should require args with just dry-run',
     async cmd => {

@@ -1,4 +1,3 @@
-import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 /**
  * Unit tests for util/dlx/spawn-pycli.
  *
@@ -15,6 +14,7 @@ import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as NodeFs from 'node:fs'
+import { normalizePath } from '@socketsecurity/lib-stable/paths/normalize'
 import {
   convertCaretToPipRange,
   downloadPyPiWheel,

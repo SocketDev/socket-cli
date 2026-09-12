@@ -101,89 +101,92 @@ export async function createScanFromGithub({
     }
   }
 
-  return await scanSelectedRepositories()
+  return scanGithubRepositories(targetRepos, {
+    githubApiUrl,
+    githubToken,
+    orgSlug,
+    orgGithub,
+    outputKind,
+    repos,
+  })
+}
 
-  async function scanSelectedRepositories(): Promise<CResult<undefined>> {
-    let scansCreated = 0
-    let reposScanned = 0
-    // Track a blocking error (rate limit / auth) so we can surface it
-    // instead of reporting silent success with "0 manifests". Without
-    // this, a rate-limited GitHub token made every repo fail its tree
-    // fetch, the outer loop swallowed each error, and the final summary
-    // ("N repos / 0 manifests") misled users into thinking the scan
-    // worked.
-    let blockingError: CResult<undefined> | undefined
-    const perRepoFailures: Array<{ repo: string; message: string }> = []
-    for (let i = 0, { length } = targetRepos; i < length; i += 1) {
-      const repoSlug = targetRepos[i]!
-      reposScanned += 1
-      const scanCResult = await scanRepo(repoSlug, {
-        githubApiUrl,
-        githubToken,
-        orgSlug,
-        orgGithub,
-        outputKind,
-        repos,
-      })
-      if (scanCResult.ok) {
-        const { scanCreated } = scanCResult.data
-        if (scanCreated) {
-          scansCreated += 1
-        }
-        continue
+export async function scanGithubRepositories(
+  targetRepos: string[],
+  config: Parameters<typeof scanRepo>[1],
+): Promise<CResult<undefined>> {
+  let scansCreated = 0
+  let reposScanned = 0
+  // Track a blocking error (rate limit / auth) so we can surface it
+  // instead of reporting silent success with "0 manifests". Without
+  // this, a rate-limited GitHub token made every repo fail its tree
+  // fetch, the outer loop swallowed each error, and the final summary
+  // ("N repos / 0 manifests") misled users into thinking the scan
+  // worked.
+  let blockingError: CResult<undefined> | undefined
+  const perRepoFailures: Array<{ repo: string; message: string }> = []
+  for (let i = 0, { length } = targetRepos; i < length; i += 1) {
+    const repoSlug = targetRepos[i]!
+    reposScanned += 1
+    const scanCResult = await scanRepo(repoSlug, config)
+    if (scanCResult.ok) {
+      const { scanCreated } = scanCResult.data
+      if (scanCreated) {
+        scansCreated += 1
       }
-      perRepoFailures.push({
-        repo: repoSlug,
-        message: scanCResult.message,
-      })
-      // Stop on rate-limit / auth failures: every subsequent repo will
-      // fail for the same reason and continuing only burns more quota
-      // while delaying the real error.
-      if (
-        scanCResult.message === GITHUB_ERR_ABUSE_DETECTION ||
-        scanCResult.message === GITHUB_ERR_AUTH_FAILED ||
-        scanCResult.message === GITHUB_ERR_GRAPHQL_RATE_LIMIT ||
-        scanCResult.message === GITHUB_ERR_RATE_LIMIT
-      ) {
-        blockingError = {
-          ok: false,
-          message: scanCResult.message,
-          cause: scanCResult.cause,
-        }
-        break
-      }
+      continue
     }
-
-    if (blockingError) {
-      logger.fail(blockingError.message)
-      return blockingError
-    }
-
-    logger.success(reposScanned, 'GitHub repos processed')
-    logger.success(scansCreated, 'with supported Manifest files')
-
-    // If every repo failed but not for a known-blocking reason, treat
-    // the run as an error so scripts know something went wrong instead
-    // of inferring success from an ok: true with 0 scans.
+    perRepoFailures.push({
+      repo: repoSlug,
+      message: scanCResult.message,
+    })
+    // Stop on rate-limit / auth failures: every subsequent repo will
+    // fail for the same reason and continuing only burns more quota
+    // while delaying the real error.
     if (
-      reposScanned > 0 &&
-      scansCreated === 0 &&
-      perRepoFailures.length === reposScanned
+      scanCResult.message === GITHUB_ERR_ABUSE_DETECTION ||
+      scanCResult.message === GITHUB_ERR_AUTH_FAILED ||
+      scanCResult.message === GITHUB_ERR_GRAPHQL_RATE_LIMIT ||
+      scanCResult.message === GITHUB_ERR_RATE_LIMIT
     ) {
-      const firstFailure = perRepoFailures[0]!
-      return {
+      blockingError = {
         ok: false,
-        message: 'All repos failed to scan',
-        cause:
-          `All ${reposScanned} repos failed to scan. First failure for ${firstFailure.repo}: ${firstFailure.message}. ` +
-          'Check the log above for per-repo details.',
+        message: scanCResult.message,
+        cause: scanCResult.cause,
       }
+      break
     }
+  }
 
+  if (blockingError) {
+    logger.fail(blockingError.message)
+    return blockingError
+  }
+
+  logger.success(reposScanned, 'GitHub repos processed')
+  logger.success(scansCreated, 'with supported Manifest files')
+
+  // If every repo failed but not for a known-blocking reason, treat
+  // the run as an error so scripts know something went wrong instead
+  // of inferring success from an ok: true with 0 scans.
+  if (
+    reposScanned > 0 &&
+    scansCreated === 0 &&
+    perRepoFailures.length === reposScanned
+  ) {
+    const firstFailure = perRepoFailures[0]!
     return {
-      ok: true,
-      data: undefined,
+      ok: false,
+      message: 'All repos failed to scan',
+      cause:
+        `All ${reposScanned} repos failed to scan. First failure for ${firstFailure.repo}: ${firstFailure.message}. ` +
+        'Check the log above for per-repo details.',
     }
+  }
+
+  return {
+    ok: true,
+    data: undefined,
   }
 }
 

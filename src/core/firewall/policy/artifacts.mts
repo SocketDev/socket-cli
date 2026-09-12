@@ -36,7 +36,7 @@ export function firewallPathHasUnsafeCharacters(path: string): boolean {
 export function isFirewallArtifactPath(
   kind: FirewallEcosystem,
   pathname: string,
-): boolean {
+): boolean | undefined {
   let path: string
   try {
     path = decodeURIComponent(pathname)

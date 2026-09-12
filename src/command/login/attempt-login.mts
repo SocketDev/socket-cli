@@ -96,37 +96,80 @@ export async function attemptLogin(
     name: org['name'] ?? 'undefined',
     value: org['id'],
   }))
-
-  const enforcedOrgs = await selectEnforcedOrganizations(enforcedChoices)
-  if (!Array.isArray(enforcedOrgs)) {
-    return enforcedOrgs
+  const enforcedOrgs = await chooseEnforcedOrgs(enforcedChoices)
+  if (enforcedOrgs === undefined) {
+    logger.fail('Canceled by user')
+    return {
+      __proto__: null,
+      ok: false,
+      message: 'Canceled',
+      cause: 'Canceled by user',
+    }
+  }
+  if (!(await promptForTabCompletion())) {
+    logger.fail('Canceled by user')
+    return {
+      __proto__: null,
+      ok: false,
+      message: 'Canceled',
+      cause: 'Canceled by user',
+    }
   }
 
-  const completionResult = await setupLoginCompletion()
-  if (completionResult) {
-    return completionResult
+  finishLogin(apiToken, enforcedOrgs, orgSlugs, { apiBaseUrl, apiProxy })
+  return undefined
+}
+
+export async function chooseEnforcedOrgs(
+  enforcedChoices: OrgChoices,
+): Promise<string[] | undefined> {
+  if (enforcedChoices.length > 1) {
+    const choices = [
+      ...enforcedChoices,
+      {
+        __proto__: null,
+        name: 'None',
+        value: '',
+        description: 'Pick "None" if this is a personal device',
+      },
+    ]
+    const id = await select({
+      message:
+        "Which organization's policies should Socket enforce system-wide?",
+      choices,
+    })
+    return id === undefined ? undefined : id ? [id] : []
   }
 
+  const { 0: firstChoice } = enforcedChoices
+  if (!firstChoice?.name) {
+    return []
+  }
+  const shouldEnforce = await confirm({
+    message: `Should Socket enforce ${firstChoice.name}'s security policies system-wide?`,
+    default: true,
+  })
+  if (shouldEnforce === undefined) {
+    return undefined
+  }
+  return shouldEnforce && firstChoice.value ? [firstChoice.value] : []
+}
+
+export function finishLogin(
+  apiToken: string,
+  enforcedOrgs: string[],
+  orgSlugs: string[],
+  config: { apiBaseUrl: string | undefined; apiProxy: string | undefined },
+): void {
+  const cfg = { __proto__: null, ...config } as typeof config
   const defaultOrg = orgSlugs[0]?.trim()
   if (defaultOrg) {
     updateConfigValue(CONFIG_KEY_DEFAULT_ORG, defaultOrg)
   }
 
-  persistLoginCredentials({ apiToken, enforcedOrgs, apiBaseUrl, apiProxy })
-
-  return undefined
-}
-
-export function persistLoginCredentials(config: {
-  apiToken: string
-  enforcedOrgs: string[]
-  apiBaseUrl: string | undefined
-  apiProxy: string | undefined
-}): void {
-  const { apiToken, enforcedOrgs, apiBaseUrl, apiProxy } = config
   const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
-    applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
+    applyLogin(apiToken, enforcedOrgs, cfg.apiBaseUrl, cfg.apiProxy)
     logger.success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )
@@ -142,99 +185,45 @@ export function persistLoginCredentials(config: {
   }
 }
 
-export async function selectEnforcedOrganizations(enforcedChoices: OrgChoices) {
-  let enforcedOrgs: string[] = []
-  if (enforcedChoices.length > 1) {
-    const id = await select({
-      message:
-        "Which organization's policies should Socket enforce system-wide?",
-      choices: [
-        ...enforcedChoices,
-        {
-          name: 'None',
-          value: '',
-          description: 'Pick "None" if this is a personal device',
-        },
-      ],
-    })
-    if (id === undefined) {
-      logger.fail('Canceled by user')
-      return {
-        __proto__: null,
-        ok: false,
-        message: 'Canceled',
-        cause: 'Canceled by user',
-      }
-    }
-    if (id) {
-      enforcedOrgs = [id]
-    }
-  } else if (enforcedChoices.length) {
-    const { 0: firstChoice } = enforcedChoices
-    if (firstChoice?.name) {
-      const shouldEnforce = await confirm({
-        message: `Should Socket enforce ${firstChoice.name}'s security policies system-wide?`,
-        default: true,
-      })
-      if (shouldEnforce === undefined) {
-        logger.fail('Canceled by user')
-        return {
-          __proto__: null,
-          ok: false,
-          message: 'Canceled',
-          cause: 'Canceled by user',
-        }
-      }
-      if (shouldEnforce && firstChoice.value) {
-        enforcedOrgs = [firstChoice.value]
-      }
-    }
-  }
-
-  return enforcedOrgs
-}
-
-export async function setupLoginCompletion() {
+export async function promptForTabCompletion(): Promise<boolean> {
+  const choices = [
+    {
+      __proto__: null,
+      name: 'Yes',
+      value: true,
+      description:
+        'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.',
+    },
+    {
+      __proto__: null,
+      name: 'No',
+      value: false,
+      description:
+        'Will skip tab completion setup. Does not change how Socket works.',
+    },
+  ]
   const wantToComplete = await select({
     message: 'Would you like to install bash tab completion?',
-    choices: [
-      {
-        name: 'Yes',
-        value: true,
-        description:
-          'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.',
-      },
-      {
-        name: 'No',
-        value: false,
-        description:
-          'Will skip tab completion setup. Does not change how Socket works.',
-      },
-    ],
+    choices,
   })
   if (wantToComplete === undefined) {
-    logger.fail('Canceled by user')
-    return {
-      __proto__: null,
-      ok: false,
-      message: 'Canceled',
-      cause: 'Canceled by user',
-    }
+    return false
   }
-  if (wantToComplete) {
-    logger.log('')
-    logger.log('Setting up tab completion…')
-    const setupCResult = await setupTabCompletion('socket')
-    if (setupCResult.ok) {
-      logger.success(
-        'Tab completion will be enabled after restarting your terminal',
-      )
-    } else {
-      logger.fail(
-        'Failed to install tab completion script. Try `socket install completion` later.',
-      )
-    }
+  if (!wantToComplete) {
+    return true
   }
 
-  return undefined
+  logger.log('')
+  logger.log('Setting up tab completion…')
+  const setupCResult = await setupTabCompletion('socket')
+  if (setupCResult.ok) {
+    logger.success(
+      'Tab completion will be enabled after restarting your terminal',
+    )
+  } else {
+    logger.fail(
+      'Failed to install tab completion script. Try `socket install completion` later.',
+    )
+  }
+  return true
 }

@@ -125,51 +125,70 @@ sys.exit(os.waitstatus_to_exitcode(status))`
 it.skipIf(process.platform === 'win32')(
   'kills detached descendants on normal exit and cancellation',
   async () => {
+    const terminal = vi
+      .spyOn(childProcesses, 'hasFirewallControllingTerminal')
+      .mockReturnValue(false)
     const directory = await mkdtemp(path.join(os.tmpdir(), 'firewall-child-'))
     try {
-      for (const mode of ['exit-with-descendant', 'wait-with-descendant']) {
+      function isDescendantActive(pid: number): boolean {
+        const status = spawnSync(
+          '/bin/ps',
+          ['-o', 'stat=', '-p', String(pid)],
+          { encoding: 'utf8', timeout: 1000 },
+        )
+        if (status.error) {
+          throw status.error
+        }
+        if (status.status !== 0) {
+          return false
+        }
+        const state = status.stdout.trim()
+        return Boolean(state) && state[0] !== 'E' && state[0] !== 'Z'
+      }
+
+      async function verifyDescendantCleanup(
+        mode: 'exit-with-descendant' | 'wait-with-descendant',
+      ): Promise<void> {
         const pidPath = path.join(directory, `${mode}.pid`)
         const controller = new AbortController()
-        controllers.push(controller)
-        const result = spawnFirewallChild({
-          executable: process.execPath,
-          args: [fixture, mode, pidPath],
-          env: {},
-          stdio: 'ignore',
-          signal: controller.signal,
-        })
-        for (
-          let attempt = 0;
-          attempt < 100 && !existsSync(pidPath);
-          attempt += 1
-        ) {
-          await delay(20)
-        }
-        expect(existsSync(pidPath)).toBe(true)
-        const pid = Number(readFileSync(pidPath, 'utf8'))
-        if (mode === 'wait-with-descendant') {
+        try {
+          const result = spawnFirewallChild({
+            executable: process.execPath,
+            args: [fixture, mode, pidPath],
+            env: {},
+            stdio: 'ignore',
+            signal: controller.signal,
+          })
+          await expect
+            .poll(() => existsSync(pidPath), { interval: 10, timeout: 5000 })
+            .toBe(true)
+          const pid = Number(readFileSync(pidPath, 'utf8'))
+          if (mode === 'wait-with-descendant') {
+            controller.abort()
+          }
+          const outcome = await result
+          if (mode === 'exit-with-descendant') {
+            expect(outcome.code).toBe(23)
+          } else {
+            expect(outcome.signal).toBe('SIGTERM')
+          }
+          await expect
+            .poll(() => isDescendantActive(pid), {
+              interval: 10,
+              timeout: 5000,
+            })
+            .toBe(false)
+        } finally {
           controller.abort()
         }
-        if (mode === 'exit-with-descendant') {
-          expect((await result).code).toBe(23)
-        } else {
-          expect((await result).signal).toBe('SIGTERM')
-        }
-        await expect
-          .poll(() => {
-            try {
-              process.kill(pid, 0)
-              return true
-            } catch (error) {
-              if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
-                throw error
-              }
-              return false
-            }
-          })
-          .toBe(false)
+      }
+
+      const modes = ['exit-with-descendant', 'wait-with-descendant'] as const
+      for (let i = 0, { length } = modes; i < length; i += 1) {
+        await verifyDescendantCleanup(modes[i]!)
       }
     } finally {
+      terminal.mockRestore()
       await safeDelete(directory)
     }
   },

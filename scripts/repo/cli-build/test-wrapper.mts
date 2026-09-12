@@ -20,6 +20,8 @@ import { isWin32 } from '@socketsecurity/lib-stable/constants/platform'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
+import { rootNodeModulesBinPath } from './constants/paths.mts'
+
 import { REPO_ROOT } from '../../fleet/paths.mts'
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'
@@ -29,7 +31,6 @@ import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootPath = path.resolve(__dirname, '../../..')
-const rootNodeModulesBinPath = path.join(rootPath, 'node_modules', '.bin')
 
 /**
  * Check if required build artifacts exist.

@@ -1,6 +1,7 @@
-import { compareStr } from '@socketsecurity/lib-stable/sorts/strings'
 import crypto from 'node:crypto'
 import { existsSync } from 'node:fs'
+
+import { compareStr } from '@socketsecurity/lib-stable/sorts/strings'
 
 import { mavenCoordinateKey } from './facts.mts'
 import type {
@@ -361,6 +362,27 @@ function unionInto(
   }
 }
 
+function addTargetsByGav(
+  targetsByGav: Map<string, string[]>,
+  gavKey: string | undefined,
+  targets: string[],
+): void {
+  if (!gavKey) {
+    return
+  }
+  const acc = targetsByGav.get(gavKey)
+  if (!acc) {
+    targetsByGav.set(gavKey, [...targets])
+    return
+  }
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const file = targets[i]!
+    if (!acc.includes(file)) {
+      acc.push(file)
+    }
+  }
+}
+
 function buildArtifactPaths(
   finalNodes: Map<string, MergedNode>,
   projects: RawProject[],
@@ -411,9 +433,7 @@ function buildArtifactPaths(
       artifactId: c.name,
       version: c.version,
     })
-    if (gavKey) {
-      unionInto(targetsByGav, gavKey, targets)
-    }
+    addTargetsByGav(targetsByGav, gavKey, targets)
   }
   // A top-level module is a `project` but usually not a dependency node, so its
   // source roots (where reachability starts) are missed by the node loop above;

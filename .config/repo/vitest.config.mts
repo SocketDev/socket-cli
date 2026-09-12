@@ -279,6 +279,7 @@ const repoResolveConditions = resolveVitestConditions()
 // Lane resolution. The runner sets FLEET_LANE (bare `pnpm test` → 'fast'); the
 // filter also applies under coverage. An unset lane traverses every lane.
 const vitestLanes = readVitestLanes()
+const fastLaneGlobs = vitestLanes.fast
 const slowLaneGlobs = vitestLanes.slow ?? []
 const midLaneGlobs = vitestLanes.mid ?? []
 const activeLane = process.env['FLEET_LANE']
@@ -361,9 +362,9 @@ const config = defineConfig({
       'test/fleet/scripts/setup.mts',
       'test/repo/scripts/setup.mts',
     ].filter(p => existsSync(p)),
-    // `--lane mid|slow` runs ONLY that lane (include = its globs); every other
-    // run (bare-fast, --all, scoped, cover) uses the full-suite glob and lets
-    // the exclude below drop the fast-lane's mid+slow. `**/`-anchored so a
+    // Explicit fast membership makes mid the complement of fast and slow.
+    // Legacy configs retain implicit fast membership and explicit mid globs.
+    // `**/`-anchored so a
     // monorepo's nested `packages/<name>/test/**` trees are discovered from this
     // one root config — a bare `test/**/*.test...` only anchors at the repo
     // root, silently missing every sub-package's tests (each scoped `vitest run`
@@ -373,11 +374,13 @@ const config = defineConfig({
       ? [...FUZZ_GLOBS]
       : conformanceTier
         ? laneToTestGlobs(conformanceGlobs)
-        : laneFilterActive && activeLane === 'mid'
-          ? laneToTestGlobs(midLaneGlobs)
-          : laneFilterActive && activeLane === 'slow'
-            ? laneToTestGlobs(slowLaneGlobs)
-            : ['**/test/**/*.test.{js,ts,mjs,mts,cjs}'],
+        : laneFilterActive && activeLane === 'fast' && fastLaneGlobs
+          ? laneToTestGlobs(fastLaneGlobs)
+          : laneFilterActive && activeLane === 'mid' && !fastLaneGlobs
+            ? laneToTestGlobs(midLaneGlobs)
+            : laneFilterActive && activeLane === 'slow'
+              ? laneToTestGlobs(slowLaneGlobs)
+              : ['**/test/**/*.test.{js,ts,mjs,mts,cjs}'],
     // Vitest treats `test/**` as `**/test/**`, so without an explicit
     // exclude it picks up every nested `test/` directory in the repo
     // — including the `.git-hooks/test/`, the oxlint plugin's per-rule
@@ -434,14 +437,13 @@ const config = defineConfig({
       // settings file's `vitest.nodeTestExclude`. The same key feeds
       // prefer-vitest-guard's allowlist so the two never drift.
       ...repoNodeTestExcludeGlobs(),
-      // Fast lane (`--lane fast`, the bare `pnpm test` default) skips the mid +
-      // slow lane globs (heavy/isolated suites) for a quick local loop. Inert
-      // for an unset lane. Coverage explicitly selects each lane in turn;
-      // `--lane mid|slow` scopes via the
-      // include above instead, so no exclusion is applied for them here.
+      // With explicit fast membership, mid owns every test outside fast and
+      // slow. Legacy configs keep fast as the complement of mid and slow.
       ...(laneFilterActive && activeLane === 'fast'
         ? [...midLaneGlobs, ...slowLaneGlobs]
-        : []),
+        : laneFilterActive && activeLane === 'mid' && fastLaneGlobs
+          ? [...fastLaneGlobs, ...slowLaneGlobs]
+          : []),
     ],
     // Some repos in the fleet (scaffolding-only, hook-only, etc.) ship
     // this config but don't yet have a `test/` directory — vitest's
@@ -514,7 +516,8 @@ const config = defineConfig({
     // drifted copy here.
     coverage: {
       enabled: isCoverageEnabled,
-      ...resolveCoverageConfig(),
+      // Ordinary tests do not need the workspace scan for coverage aliases.
+      ...(isCoverageEnabled ? resolveCoverageConfig() : {}),
     },
   },
 })

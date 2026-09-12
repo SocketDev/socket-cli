@@ -32,36 +32,41 @@
 # so each is ignored in BOTH the repo-root live copy AND the template/base/universal/
 # mirror — the fleet keeps ignores in this root block, not nested per-dir
 # files. Keep in lock-step with RELEASE_ONLY_DIR_MIRROR_FILES (scripts/repo/
-# sync-scaffolding/dir-mirror-skip.mts). See docs/fleet/agents.md/release-vs-cascade.md.
-**/.claude/hooks/fleet/_dist/fleet-pack.cjs
+# commit-cascade/dir-mirror-skip.mts). See docs/fleet/agents.md/release-vs-cascade.md.
+**/.claude/hooks/fleet/_dist/fleet-pack.generated.cjs
+# The model-pricing module gen/model-pricing-module.mts bakes from the pricing
+# JSON so rolldown inlines the prices into fleet-pack.generated.cjs. A build output in
+# BOTH trees, shipped in the pack, never cascaded.
+**/scripts/fleet/constants/model-pricing.generated.mts
+**/scripts/fleet/constants/fleet-pack-version.generated.mts
 # Prebuilt dispatch-launcher variants (one per platform-arch), CI
 # cross-compiled and hydrated from the release bundle; the host build
 # copies its match into _shared/ instead of invoking cc. Contract:
-# scripts/fleet/_shared/launcher-variants.mts.
+# scripts/fleet/pack/launcher-variants.mts.
 **/.claude/hooks/fleet/_dist/launchers/
 # Legacy pre-v1.0.16 dispatch layout: socket-sdk-js still tracks the
 # _dispatch/index.cjs loader, which requires ./fleet-pack.cjs — that generated
 # bundle must stay untracked there. This path stays _dispatch/ on purpose: it
 # describes a layout that member still has on disk, so renaming it here would
 # un-ignore that repo's generated bundle. Keep the entry until every member
-# has migrated to the fleet/index.cjs + _dist/fleet-pack.cjs layout; it
+# has migrated to the fleet/index.cjs + _dist/fleet-pack.generated.cjs layout; it
 # matches nothing once the legacy bundle is gone.
 **/.claude/hooks/fleet/_dispatch/fleet-pack.cjs
 **/.claude/hooks/fleet/_shared/dispatch-launcher
 **/.claude/hooks/fleet/_shared/dispatch-launcher.exe
-**/.claude/hooks/fleet/_shared/dispatch-table-excluded.mts
-**/.claude/hooks/fleet/_shared/dispatch-table-snapshot.mts
-**/.claude/hooks/fleet/_shared/dispatch-table.mts
-**/.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs
-**/.claude/hooks/fleet/_shared/generated-validators.mts
+**/.claude/hooks/fleet/_shared/dispatch-table.excluded.generated.mts
+**/.claude/hooks/fleet/_shared/dispatch-table.snapshot.generated.mts
+**/.claude/hooks/fleet/_shared/dispatch-table.generated.mts
+**/.claude/hooks/fleet/_dist/fleet-pack.excluded.generated.cjs
+**/.claude/hooks/fleet/_shared/validators.generated.mts
 **/.claude/hooks/fleet/_shared/node.path
 **/.claude/hooks/fleet/_shared/snapshot-blob.path
-**/.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs
-**/.claude/hooks/fleet/_shared/dispatch-manifest.json
+**/.claude/hooks/fleet/_dist/fleet-pack.snapshot.generated.cjs
+**/.claude/hooks/fleet/_shared/dispatch-manifest.generated.json
 # The rolldown-bundled fleet oxlint plugin (build-oxlint-bundle.mts): members
 # load this single artifact via jsPlugins instead of the ~100 rule source
 # dirs. Release-only + gitignored like the hook bundles above.
-**/.config/fleet/oxlint-plugin.mjs
+**/.config/fleet/oxlint-plugin.generated.mjs
 
 # Derived cross-harness rule adapters — generated per-repo, per-platform by
 # the multi-agent scaffolding (setup / init / sync) script from .claude/skills/
@@ -82,6 +87,7 @@
 /.github/copilot-instructions.md
 /.janus/
 /.kiro/
+/.opencode/
 /.windsurf/
 /AGENTS.md
 /opencode.json
@@ -106,6 +112,7 @@ Thumbs.db
 # generated-globs.mts) by generated-globs-are-consistent.mts.
 **/build/
 **/dist/
+**/tmp/
 /template/generated/
 **/out/
 **/.cache/
@@ -130,6 +137,14 @@ node_modules
 npm-debug.log
 pnpm-debug.log
 *.tgz
+**/*.generated.cjs
+**/*.generated.cts
+**/*.generated.js
+**/*.generated.json
+**/*.generated.mjs
+**/*.generated.mts
+**/*.generated.ts
+**/template/generated/**
 # <fleet-pack>
 # Fleet-pack untrack set — managed by scripts/repo/bootstrap/fleet.mjs.
 # REGENERATED from the release-bundle manifest on every hydrate; stale
@@ -174,8 +189,15 @@ opencode.json
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-darwin-x64
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-linux-arm64
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-linux-x64
-.claude/hooks/fleet/_dist/launchers/dispatch-launcher-win32-ia32.exe
+.claude/hooks/fleet/_dist/launchers/dispatch-launcher-win32-arm64.exe
 .claude/hooks/fleet/_dist/launchers/dispatch-launcher-win32-x64.exe
+.claude/hooks/fleet/_dist/statusline/statusline-render-darwin-arm64
+.claude/hooks/fleet/_dist/statusline/statusline-render-darwin-x64
+.claude/hooks/fleet/_dist/statusline/statusline-render-linux-arm64
+.claude/hooks/fleet/_dist/statusline/statusline-render-linux-arm64-musl
+.claude/hooks/fleet/_dist/statusline/statusline-render-linux-x64
+.claude/hooks/fleet/_dist/statusline/statusline-render-linux-x64-musl
+.claude/hooks/fleet/_dist/statusline/statusline-render-win32-x64.exe
 .claude/hooks/fleet/_shared/.clangd
 .claude/hooks/fleet/_shared/README.md
 .claude/hooks/fleet/_shared/active-edits-ledger.mts
@@ -230,7 +252,6 @@ opencode.json
 .claude/hooks/fleet/_shared/es-polyfills.mts
 .claude/hooks/fleet/_shared/evasion-normalize.mts
 .claude/hooks/fleet/_shared/excluded-entry.mts
-.claude/hooks/fleet/_shared/excluded-fleet-pack.cjs
 .claude/hooks/fleet/_shared/failing-tests-ledger.mts
 .claude/hooks/fleet/_shared/fetch-allowlist.mts
 .claude/hooks/fleet/_shared/fleet-context.mts
@@ -243,7 +264,6 @@ opencode.json
 .claude/hooks/fleet/_shared/fleet-roster.mts
 .claude/hooks/fleet/_shared/footgun-admission.mts
 .claude/hooks/fleet/_shared/foreign-linters.mts
-.claude/hooks/fleet/_shared/generated-validators.mts
 .claude/hooks/fleet/_shared/gh-invocation.mts
 .claude/hooks/fleet/_shared/gh-pr-command.mts
 .claude/hooks/fleet/_shared/gh-target-repo.mts
@@ -297,7 +317,6 @@ opencode.json
 .claude/hooks/fleet/_shared/sfw-ca.mts
 .claude/hooks/fleet/_shared/shell-command.mts
 .claude/hooks/fleet/_shared/snapshot-cache-path.cjs
-.claude/hooks/fleet/_shared/snapshot-fleet-pack.cjs
 .claude/hooks/fleet/_shared/snapshot-hostile-builtins.mts
 .claude/hooks/fleet/_shared/snapshot-loader.cjs
 .claude/hooks/fleet/_shared/snapshot-notes.md
@@ -449,10 +468,6 @@ opencode.json
 .claude/hooks/fleet/bot-comment-collapse-guard/index.mts
 .claude/hooks/fleet/bot-comment-collapse-guard/package.json
 .claude/hooks/fleet/bot-comment-collapse-guard/tsconfig.json
-.claude/hooks/fleet/branch-worktree-sweep-nudge/README.md
-.claude/hooks/fleet/branch-worktree-sweep-nudge/index.mts
-.claude/hooks/fleet/branch-worktree-sweep-nudge/package.json
-.claude/hooks/fleet/branch-worktree-sweep-nudge/tsconfig.json
 .claude/hooks/fleet/brew-supply-chain-is-hardened-at-edit/README.md
 .claude/hooks/fleet/brew-supply-chain-is-hardened-at-edit/index.mts
 .claude/hooks/fleet/brew-supply-chain-is-hardened-at-edit/package.json
@@ -612,6 +627,7 @@ opencode.json
 .claude/hooks/fleet/cross-repo-guard/README.md
 .claude/hooks/fleet/cross-repo-guard/index.mts
 .claude/hooks/fleet/cross-repo-guard/package.json
+.claude/hooks/fleet/cross-repo-guard/runtime.mts
 .claude/hooks/fleet/cross-repo-guard/tsconfig.json
 .claude/hooks/fleet/default-branch-guard/README.md
 .claude/hooks/fleet/default-branch-guard/index.mts
@@ -1897,6 +1913,7 @@ opencode.json
 .claude/skills/fleet/_shared/scripts/fleet-roster.mts
 .claude/skills/fleet/_shared/scripts/git-default-branch.mts
 .claude/skills/fleet/_shared/scripts/logger-guardrails.mts
+.claude/skills/fleet/_shared/scripts/repository-paths.mts
 .claude/skills/fleet/_shared/scripts/resolve-tools.mts
 .claude/skills/fleet/_shared/scripts/utils.mts
 .claude/skills/fleet/_shared/security-tools.md
@@ -1908,6 +1925,7 @@ opencode.json
 .claude/skills/fleet/agent-ci/reference.md
 .claude/skills/fleet/auditing-api-surface/SKILL.md
 .claude/skills/fleet/auditing-api-surface/lib/audit-api-surface.mts
+.claude/skills/fleet/auditing-api-surface/lib/evidence.mts
 .claude/skills/fleet/auditing-gha/SKILL.md
 .claude/skills/fleet/auditing-gha/canonical-patterns.mts
 .claude/skills/fleet/auditing-gha/run-report.mts
@@ -1916,14 +1934,14 @@ opencode.json
 .claude/skills/fleet/authoring-charts/references/markdown-comparisons.md
 .claude/skills/fleet/authoring-spec/SKILL.md
 .claude/skills/fleet/building-tdd/SKILL.md
-.claude/skills/fleet/cascading-fleet/SKILL.md
-.claude/skills/fleet/cascading-fleet/lib/cascade-template.mts
-.claude/skills/fleet/cascading-fleet/lib/fleet-repos.json
-.claude/skills/fleet/cascading-fleet/lib/precascade-gate.mts
-.claude/skills/fleet/cascading-fleet/lib/reconcile-lockfiles.mts
-.claude/skills/fleet/cascading-fleet/references/lockfile-reconciliation.md
-.claude/skills/fleet/cascading-fleet/references/pre-cascade-gate.md
-.claude/skills/fleet/cascading-fleet/references/recovery-playbook.md
+.claude/skills/fleet/cascading-commits/SKILL.md
+.claude/skills/fleet/cascading-commits/lib/cascade-template.mts
+.claude/skills/fleet/cascading-commits/lib/fleet-repos.json
+.claude/skills/fleet/cascading-commits/lib/precascade-gate.mts
+.claude/skills/fleet/cascading-commits/lib/reconcile-lockfiles.mts
+.claude/skills/fleet/cascading-commits/references/lockfile-reconciliation.md
+.claude/skills/fleet/cascading-commits/references/pre-cascade-gate.md
+.claude/skills/fleet/cascading-commits/references/recovery-playbook.md
 .claude/skills/fleet/cleaning-ci/SKILL.md
 .claude/skills/fleet/cleaning-ci/lib/clean-ci.mts
 .claude/skills/fleet/cleaning-ci/references/exclusions.md
@@ -2035,18 +2053,9 @@ opencode.json
 .claude/skills/fleet/patching-findings/SKILL.md
 .claude/skills/fleet/patching-findings/references/procedure.md
 .claude/skills/fleet/plugging-promise-race/SKILL.md
-.claude/skills/fleet/property-and-fuzz-testing/SKILL.md
-.claude/skills/fleet/property-and-fuzz-testing/references/cpp.md
-.claude/skills/fleet/property-and-fuzz-testing/references/escalation-engines.md
-.claude/skills/fleet/property-and-fuzz-testing/references/go.md
-.claude/skills/fleet/property-and-fuzz-testing/references/high-value-targets.md
-.claude/skills/fleet/property-and-fuzz-testing/references/javascript-typescript.md
-.claude/skills/fleet/property-and-fuzz-testing/references/lock-step.md
-.claude/skills/fleet/property-and-fuzz-testing/references/rust.md
 .claude/skills/fleet/prose/SKILL.md
 .claude/skills/fleet/prose/references/conversational.md
 .claude/skills/fleet/prose/references/examples.md
-.claude/skills/fleet/prose/references/idioms.md
 .claude/skills/fleet/prose/references/phrases.md
 .claude/skills/fleet/prose/references/structures.md
 .claude/skills/fleet/pushing/SKILL.md
@@ -2218,8 +2227,6 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/no-file-scope-oxlint-disable/package.json
 .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file/index.mts
 .config/fleet/oxlint-plugin/fleet/no-fileoverview-prefer-file/package.json
-.config/fleet/oxlint-plugin/fleet/no-floating-async-map/index.mts
-.config/fleet/oxlint-plugin/fleet/no-floating-async-map/package.json
 .config/fleet/oxlint-plugin/fleet/no-force-delete/index.mts
 .config/fleet/oxlint-plugin/fleet/no-force-delete/package.json
 .config/fleet/oxlint-plugin/fleet/no-handbuilt-file-url/index.mts
@@ -2287,8 +2294,6 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/no-source-sniffing/package.json
 .config/fleet/oxlint-plugin/fleet/no-spawn-stream-double-consume/index.mts
 .config/fleet/oxlint-plugin/fleet/no-spawn-stream-double-consume/package.json
-.config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field/index.mts
-.config/fleet/oxlint-plugin/fleet/no-spawnsync-code-field/package.json
 .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property/index.mts
 .config/fleet/oxlint-plugin/fleet/no-spawnsync-code-property/package.json
 .config/fleet/oxlint-plugin/fleet/no-src-import-in-test-expect/index.mts
@@ -2340,6 +2345,8 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/prefer-async-spawn/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-cached-for-loop/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-cached-for-loop/package.json
+.config/fleet/oxlint-plugin/fleet/prefer-char-code-comparison/index.mts
+.config/fleet/oxlint-plugin/fleet/prefer-char-code-comparison/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-crlf-safe-split/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-crlf-safe-split/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-ellipsis-char/index.mts
@@ -2409,6 +2416,8 @@ opencode.json
 .config/fleet/oxlint-plugin/fleet/prefer-undefined-over-null/package.json
 .config/fleet/oxlint-plugin/fleet/prefer-windows-test-helpers/index.mts
 .config/fleet/oxlint-plugin/fleet/prefer-windows-test-helpers/package.json
+.config/fleet/oxlint-plugin/fleet/repository-paths-are-contained/index.mts
+.config/fleet/oxlint-plugin/fleet/repository-paths-are-contained/package.json
 .config/fleet/oxlint-plugin/fleet/require-async-iife-entry/index.mts
 .config/fleet/oxlint-plugin/fleet/require-async-iife-entry/package.json
 .config/fleet/oxlint-plugin/fleet/require-regex-comment/index.mts
@@ -2704,6 +2713,7 @@ docs/fleet/workflows/practices.md
 docs/fleet/workflows/publishing.md
 docs/fleet/workflows/registry-settings.md
 docs/references/fleet/sfw-local-install.md
+opencode.json
 patches/brace-expansion@5.0.9.patch
 patches/minimatch@10.2.6.patch
 scripts/fleet/agent-orphan-sweep.mts
@@ -2739,6 +2749,7 @@ scripts/fleet/ai/balancer/launch-model.mts
 scripts/fleet/ai/balancer/launch-opencode.mts
 scripts/fleet/ai/balancer/launch-settings.mts
 scripts/fleet/ai/balancer/launch.mts
+scripts/fleet/ai/balancer/liveness.mts
 scripts/fleet/ai/balancer/login.mts
 scripts/fleet/ai/balancer/measure-vision-fidelity.mts
 scripts/fleet/ai/balancer/memory-sentinel.mts
@@ -2765,6 +2776,7 @@ scripts/fleet/ai/balancer/training-warning.mts
 scripts/fleet/ai/balancer/transform-request.mts
 scripts/fleet/ai/balancer/transport.mts
 scripts/fleet/ai/balancer/upstream-head.mts
+scripts/fleet/ai/balancer/upstream-probe.mts
 scripts/fleet/ai/balancer/usage-ledger.mts
 scripts/fleet/ai/balancer/watchdog.mts
 scripts/fleet/ai/bounded-reader.mts
@@ -2816,6 +2828,7 @@ scripts/fleet/ai/odai/cache/run.mts
 scripts/fleet/ai/odai/cache/upload.mts
 scripts/fleet/ai/odai/cache/util.mts
 scripts/fleet/ai/odai/diagnostics.mts
+scripts/fleet/ai/odai/run.mts
 scripts/fleet/ai/opencode-auth-store.mts
 scripts/fleet/ai/opencode-auth.mts
 scripts/fleet/ai/provider-apis.mts
@@ -2852,6 +2865,7 @@ scripts/fleet/attest/statement.mts
 scripts/fleet/attest/store.mts
 scripts/fleet/attest/subject.mts
 scripts/fleet/audit-transcript.mts
+scripts/fleet/audit/consumer-source.mts
 scripts/fleet/auditing-history/patch-id.mts
 scripts/fleet/auditing-history/types.mts
 scripts/fleet/backup-branches.mts
@@ -2903,6 +2917,7 @@ scripts/fleet/build-infra/lib/release-checksums/producer.mts
 scripts/fleet/build-infra/release-assets.schema.json
 scripts/fleet/build-oxlint-bundle.mts
 scripts/fleet/build-snapshot-launcher.mts
+scripts/fleet/build/infra/lib/external-tools-schema.json
 scripts/fleet/bump.mts
 scripts/fleet/bump/invocation.mts
 scripts/fleet/bump/lockstep-write.mts
@@ -2974,7 +2989,6 @@ scripts/fleet/check/check-names.mts
 scripts/fleet/check/check-registrations-resolve.mts
 scripts/fleet/check/check-success-is-agent-silent.mts
 scripts/fleet/check/checks-are-wired.mts
-scripts/fleet/check/checks-carry-no-burn-down-lists.mts
 scripts/fleet/check/ci-local-is-canonical.mts
 scripts/fleet/check/classic-branch-protections-are-absent.mts
 scripts/fleet/check/claude-config-is-hardened.mts
@@ -3025,6 +3039,7 @@ scripts/fleet/check/doc-references-resolve.mts
 scripts/fleet/check/docs-file-references-resolve.mts
 scripts/fleet/check/dual-use-declarations-are-complete.mts
 scripts/fleet/check/endpoints-are-outside-china-jurisdiction.mts
+scripts/fleet/check/entry-script-contracts-are-enforced.mts
 scripts/fleet/check/entry-scripts-are-born-tested.mts
 scripts/fleet/check/entry-scripts-are-fail-soft.mts
 scripts/fleet/check/entry-scripts-are-self-describing.mts
@@ -3177,6 +3192,7 @@ scripts/fleet/check/release-tags-match-provenance.mts
 scripts/fleet/check/repo-glyphs-are-current.mts
 scripts/fleet/check/repo-owned-claude-paths-are-tracked.mts
 scripts/fleet/check/report-paths-are-helper-built.mts
+scripts/fleet/check/repository-paths-are-contained.mts
 scripts/fleet/check/researching-recency-contract-is-current.mts
 scripts/fleet/check/review-stages-are-ordered.mts
 scripts/fleet/check/root-files-are-sanctioned.mts
@@ -3269,6 +3285,13 @@ scripts/fleet/checks/steps-release.mts
 scripts/fleet/checks/steps.mts
 scripts/fleet/checks/success-output.mts
 scripts/fleet/checks/untrack-offenders.mts
+scripts/fleet/ci/local/credential-contract.mts
+scripts/fleet/ci/local/credentials.mts
+scripts/fleet/ci/local/docker.mts
+scripts/fleet/ci/local/requirements.mts
+scripts/fleet/ci/local/run.mts
+scripts/fleet/ci/local/setup.mts
+scripts/fleet/ci/remote/setup.mts
 scripts/fleet/clean.mts
 scripts/fleet/cli/human-gate.mts
 scripts/fleet/cli/picker.mts
@@ -3360,6 +3383,7 @@ scripts/fleet/eco/go-workspaces.mts
 scripts/fleet/eco/pnpm-lockfile.mts
 scripts/fleet/eco/rust/tool-pins.mts
 scripts/fleet/eco/swift-targets.mts
+scripts/fleet/entry-scripts/analysis.mts
 scripts/fleet/entry-scripts/discovery.mts
 scripts/fleet/entry-scripts/syntax.mts
 scripts/fleet/errors/predicates.mts
@@ -3614,6 +3638,7 @@ scripts/fleet/mcp/protocol.mts
 scripts/fleet/mcp/providers.mts
 scripts/fleet/mcp/reset-process.mts
 scripts/fleet/mcp/reset.mts
+scripts/fleet/mcp/schemas.mts
 scripts/fleet/mcp/slack/client.mts
 scripts/fleet/mcp/slack/credential.mts
 scripts/fleet/mcp/slack/errors.mts
@@ -3640,6 +3665,7 @@ scripts/fleet/npm-publish.mts
 scripts/fleet/offload-model.mts
 scripts/fleet/offload-providers.mts
 scripts/fleet/optimizing-submodules/collect-submodule-consumers.mts
+scripts/fleet/pack/canonical-proof.mts
 scripts/fleet/pack/fetcher.mts
 scripts/fleet/pack/files.mts
 scripts/fleet/pack/inspect.mts
@@ -3696,10 +3722,13 @@ scripts/fleet/prune-workflow-runs.mts
 scripts/fleet/publish-from-snapshot.mts
 scripts/fleet/publish-pipeline.mts
 scripts/fleet/publish-shared.mts
+scripts/fleet/registry-infra/apple/csr.mts
 scripts/fleet/registry-infra/apple/developer-id-cert.mts
 scripts/fleet/registry-infra/apple/developer-id-page.mts
 scripts/fleet/registry-infra/apple/developer-id-plan.mts
+scripts/fleet/registry-infra/apple/identity.mts
 scripts/fleet/registry-infra/apple/keychain-csr.mts
+scripts/fleet/registry-infra/apple/util.mts
 scripts/fleet/registry-infra/brew/shared.mts
 scripts/fleet/registry-infra/cargo/approve.mts
 scripts/fleet/registry-infra/cargo/bump.mts
@@ -3742,10 +3771,7 @@ scripts/fleet/registry-infra/npm/bump.mts
 scripts/fleet/registry-infra/npm/challenge-gate.mts
 scripts/fleet/registry-infra/npm/lifecycle-scripts.mts
 scripts/fleet/registry-infra/npm/login.mts
-scripts/fleet/registry-infra/npm/org-sweep.mts
-scripts/fleet/registry-infra/npm/org-web.mts
 scripts/fleet/registry-infra/npm/otp-runner.mts
-scripts/fleet/registry-infra/npm/owner-sweep.mts
 scripts/fleet/registry-infra/npm/pack-manifest-lock.mts
 scripts/fleet/registry-infra/npm/pack-manifest.mts
 scripts/fleet/registry-infra/npm/pack-preflight.mts
@@ -3763,6 +3789,7 @@ scripts/fleet/registry-infra/npm/settings/migrations.mts
 scripts/fleet/registry-infra/npm/settings/org-sweep.mts
 scripts/fleet/registry-infra/npm/settings/org-web.mts
 scripts/fleet/registry-infra/npm/settings/owner-sweep.mts
+scripts/fleet/registry-infra/npm/settings/publisher-source.mts
 scripts/fleet/registry-infra/npm/settings/sweep.mts
 scripts/fleet/registry-infra/npm/settings/trust-sweep.mts
 scripts/fleet/registry-infra/npm/settings/trust.mts
@@ -3778,45 +3805,21 @@ scripts/fleet/registry-infra/npm/staged-cross-check.mts
 scripts/fleet/registry-infra/npm/staged-workspace.mts
 scripts/fleet/registry-infra/npm/staged.mts
 scripts/fleet/registry-infra/npm/threat-scan.mts
-scripts/fleet/registry-infra/npm/trust-sweep.mts
-scripts/fleet/registry-infra/npm/trust.mts
-scripts/fleet/registry-infra/npm/trusted-publisher-browser.mts
-scripts/fleet/registry-infra/npm/trusted-publisher-page.mts
-scripts/fleet/registry-infra/npm/trusted-publisher-parse.mts
-scripts/fleet/registry-infra/npm/trusted-publisher-plan.mts
 scripts/fleet/registry-infra/npm/versions-browser-read.mts
 scripts/fleet/registry-infra/npm/versions-context-schema.mts
 scripts/fleet/registry-infra/npm/web-auth-batch.mts
 scripts/fleet/registry-infra/npm/workspace-plan.mts
 scripts/fleet/registry-infra/npm/workspace.mts
 scripts/fleet/registry-infra/pin-readme.mts
-scripts/fleet/registry-infra/reconcile.mts
 scripts/fleet/registry-infra/release-branch.mts
 scripts/fleet/registry-infra/release.mts
 scripts/fleet/registry-infra/remote-dispatch.mts
-scripts/fleet/registry-infra/remote-github-release.mts
 scripts/fleet/registry-infra/remote-npm-publish.mts
 scripts/fleet/registry-infra/shared.mts
 scripts/fleet/registry-infra/socket-oauth.mts
 scripts/fleet/registry-liveness-gate.d.mts
 scripts/fleet/registry-liveness-gate.mjs
 scripts/fleet/registry-publish-date.mts
-scripts/fleet/release-pipeline.mts
-scripts/fleet/release-pipeline/deps.mts
-scripts/fleet/release-pipeline/gate-runners.mts
-scripts/fleet/release-pipeline/reconcile-gap-subject.mts
-scripts/fleet/release-pipeline/reconcile-gap.mts
-scripts/fleet/release-pipeline/release-runners.mts
-scripts/fleet/release-pipeline/release-runners/promote.mts
-scripts/fleet/release-pipeline/release-runners/release-markers.mts
-scripts/fleet/release-pipeline/release-runners/scan-stage.mts
-scripts/fleet/release-pipeline/release-runners/stage-replacement.mts
-scripts/fleet/release-pipeline/release-runners/staging.mts
-scripts/fleet/release-pipeline/release-runners/verify.mts
-scripts/fleet/release-pipeline/staged-commit.mts
-scripts/fleet/release-pipeline/stages.mts
-scripts/fleet/release-pipeline/state.mts
-scripts/fleet/release-pipeline/summary.mts
 scripts/fleet/release/changelog-path.mts
 scripts/fleet/release/channels.mts
 scripts/fleet/release/gap-recovery.mts
@@ -4044,6 +4047,7 @@ scripts/fleet/update/_shared.mts
 scripts/fleet/update/brew-parse.mts
 scripts/fleet/update/brew.mts
 scripts/fleet/update/cargo.mts
+scripts/fleet/update/chrome.mts
 scripts/fleet/update/docker.mts
 scripts/fleet/update/external-tools.mts
 scripts/fleet/update/fleet-pins.mts
@@ -4094,8 +4098,6 @@ scripts/fleet/worktree/sweep/worker.mts
 scripts/fleet/write-handoff.mts
 test/fleet/_shared/lib/coverage-env.mts
 test/fleet/_shared/lib/env.mts
-test/fleet/_shared/lib/fake-git.mts
-test/fleet/_shared/lib/git-fixture.mts
 test/fleet/_shared/lib/isolate-home-env.mts
 test/fleet/_shared/lib/matchers.mts
 test/fleet/_shared/lib/network-preload.mjs
@@ -4104,6 +4106,8 @@ test/fleet/_shared/lib/package-bin.mts
 test/fleet/_shared/lib/platform.mts
 test/fleet/_shared/lib/tags.mts
 test/fleet/_shared/lib/timing.mts
+test/fleet/common/fixture/fake-git.mts
+test/fleet/common/fixture/git.mts
 test/fleet/e2e/comment-voice.test.mts
 test/fleet/integration/comment-voice.test.mts
 test/fleet/nock-loopback-passthrough.test.mts
@@ -4242,6 +4246,10 @@ yarn-error.log*
 # fleet-canonical globs would otherwise ignore (untrack-ignored-files fix) ───
 !/test/fixtures/
 !/.node-version
+!/.config/repo/vitest.config.mts
+!/.config/repo/vitest.settings.mts
+!/docs/repo/agents.md/
+!/docs/repo/agents.md/releasing-v1x.md
 
 # vitiate coverage-guided fuzz lane caches (regenerable; never commit)
 /.swc/

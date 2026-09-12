@@ -11,11 +11,11 @@
  * variable checking.
  *
  * Testing Approach: Uses direct function invocation without mocks since
- * env-helpers.mts provides pure instruction generation functions. Tests verify
- * string output format and content. Actual environment variable checking is
- * tested via integration tests.
+ * ci-environment.mts provides pure instruction generation functions. Tests
+ * verify string output format and content. Actual environment variable checking
+ * is tested via integration tests.
  *
- * Related Files: - src/command/fix/env-helpers.mts - Environment variable
+ * Related Files: - src/command/fix/ci-environment.mts - Environment variable
  * helper functions - src/command/fix/handle-fix.mts - Main fix command handler
  * that uses env helpers.
  */
@@ -25,7 +25,7 @@ import {
   checkCiEnvVars,
   getCiEnvInstructions,
   getFixEnv,
-} from '../../../../src/command/fix/env-helpers.mts'
+} from '../../../../src/command/fix/ci-environment.mts'
 import type * as SocketCliModule from '@socketsecurity/lib-stable/env/socket-cli'
 
 // Mock @socketsecurity/lib/env/ci.

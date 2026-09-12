@@ -44,7 +44,7 @@
     "check:fleet": "node scripts/fleet/check.mts",
     "check:paths": "node scripts/fleet/check/paths-are-canonical.mts",
     "check:test-budget-headroom": "node scripts/fleet/check/test-budget-headroom.mts",
-    "ci:local": "node scripts/fleet/local-ci-skip-locks.mts run --all --quiet --pause-on-failure --github-token",
+    "ci:local": "node scripts/fleet/ci/local/run.mts run --all --quiet --pause-on-failure --github-token",
     "clean": "node scripts/fleet/clean.mts",
     "clean:cache": "node scripts/repo/clean-cache.mts",
     "cover": "node scripts/fleet/cover.mts",
@@ -56,7 +56,7 @@
     "fix:all": "node scripts/fleet/fix.mts --all",
     "fix:js": "node scripts/fleet/fix.mts --js",
     "fix:repo": "node scripts/fleet/fix.mts --repo",
-    "fleet:update": "node scripts/repo/bootstrap/fleet.mjs --update",
+    "fleet:update": "node scripts/repo/bootstrap/fleet.mjs --if-current",
     "fmt:js": "node scripts/fleet/format.mts",
     "format": "node scripts/fleet/format.mts",
     "format:check": "node scripts/fleet/format.mts --check",
@@ -70,14 +70,14 @@
     "lockstep": "node scripts/fleet/lockstep.mts",
     "lockstep:emit-mirror-globs": "node scripts/fleet/lockstep-emit-mirror-globs.mts",
     "lockstep:emit-schema": "node scripts/fleet/lockstep-emit-schema.mts",
-    "mcp:reset": "node scripts/fleet/mcp-reset.mts",
+    "mcp:reset": "node scripts/fleet/mcp/reset.mts",
     "npm:approve": "node scripts/fleet/publish-pipeline.mts --approve",
     "npm:auth": "node scripts/fleet/npm-auth.mts",
     "npm:auth:browser": "node scripts/fleet/npm-auth-browser.mts",
     "npm:auth:cli": "node scripts/fleet/npm-auth-cli.mts",
     "npm:publish": "node scripts/fleet/publish-pipeline.mts",
     "npm:staged": "node scripts/fleet/publish-pipeline.mts --status",
-    "npm:trust": "node scripts/fleet/registry-infra/npm/trust.mts",
+    "npm:trust": "node scripts/fleet/registry-infra/npm/settings/trust.mts",
     "offload:model": "node scripts/fleet/offload-model.mts",
     "preflight": "node scripts/fleet/preflight.mts",
     "prepare": "node scripts/repo/bootstrap/prepare.mts && node scripts/fleet/install-git-hooks.mts && node scripts/fleet/prepare.mts",
@@ -93,7 +93,6 @@
     "security": "node scripts/fleet/security.mts",
     "setup-security-tools": "node .claude/hooks/fleet/setup-security-tools/install.mts",
     "setup:brew": "node scripts/fleet/setup/brew.mts",
-    "setup:fireconnect": "node scripts/fleet/setup/fireconnect.mts",
     "setup:go": "node scripts/fleet/setup/go.mts",
     "setup:offload-providers": "node scripts/fleet/setup/offload-providers.mts",
     "setup:python": "node scripts/fleet/setup/python.mts",
@@ -115,7 +114,44 @@
     "type:cli": "node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
     "update": "node scripts/fleet/update.mts",
     "weekly-update": "node scripts/fleet/weekly-update.mts",
-    "weekly-update:ci": "gh workflow run weekly-update.yml"
+    "weekly-update:ci": "gh workflow run weekly-update.yml",
+    "cover:allowance": "node scripts/fleet/cover-allowance.mts",
+    "audit:consumer-source": "node scripts/fleet/audit/consumer-source.mts",
+    "ai-balancer": "node scripts/fleet/ai/balancer/launch.mts",
+    "ai-balancer:auth": "node scripts/fleet/ai/balancer/login.mts",
+    "ai-balancer:refresh": "node scripts/fleet/ai/balancer/service.mts refresh",
+    "ai-balancer:service": "node scripts/fleet/ai/balancer/service.mts",
+    "ai:odai:cache": "node scripts/fleet/ai/odai/run.mts cache",
+    "ai:odai:diagnose": "node scripts/fleet/ai/odai/run.mts diagnose",
+    "ai:read": "node scripts/fleet/ai/bounded-reader.mts",
+    "spend-usage": "node scripts/fleet/spend-usage.mts",
+    "update:chrome": "node scripts/fleet/ai/odai/run.mts verify-chrome",
+    "build:oxlint-bundle": "node scripts/fleet/build-oxlint-bundle.mts",
+    "build:hook-bundle": "node scripts/fleet/build-hook-bundle.mts",
+    "build:hook-snapshot": "node scripts/fleet/build-hook-snapshot.mts",
+    "build:snapshot-launcher": "node scripts/fleet/build-snapshot-launcher.mts",
+    "check:workspace-installation": "node scripts/fleet/check/workspace-installation.mts",
+    "cover:types": "node scripts/fleet/cover/types/run.mts",
+    "depot:auth": "node scripts/fleet/registry-infra/depot/browser-auth.mts",
+    "integrity-refresh": "node scripts/fleet/external-tools/refresh.mts",
+    "setup:1password": "node scripts/fleet/setup/one-password.mts",
+    "setup:ci:local": "node scripts/fleet/ci/local/setup.mts",
+    "setup:ai-clients": "node scripts/fleet/setup/ai-clients.mts",
+    "setup:pgbot": "node scripts/fleet/setup/pgbot.mts",
+    "mcp:connect": "node scripts/fleet/mcp/connect.mts",
+    "mcp:pgbot": "node scripts/fleet/mcp/pgbot/run.mts",
+    "mcp:schemas:check": "node scripts/fleet/mcp/schemas.mts check",
+    "mcp:schemas:save": "node scripts/fleet/mcp/schemas.mts save",
+    "mcp:status": "node scripts/fleet/mcp/connect.mts --status",
+    "npm:inventory": "node scripts/fleet/registry-infra/npm/account-inventory-read.mts",
+    "soak:check": "node scripts/fleet/check/soak-time-is-consistent.mts",
+    "sweep:worktrees": "node scripts/fleet/worktree-sweep.mts",
+    "sweep:worktrees:visit": "node scripts/fleet/worktree/sweep/run.mts",
+    "test:profile": "node scripts/fleet/test/profile.mts",
+    "update:pnpm": "node scripts/fleet/update/pnpm.mts",
+    "setup:ci:remote": "node scripts/fleet/ci/remote/setup.mts",
+    "mcp:schema:check": "node scripts/repo/cli-build/mcp-schema.mts check",
+    "mcp:schema:update": "node scripts/repo/cli-build/mcp-schema.mts update && pnpm run format test/integration/mcp-schema.golden.json"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
@@ -130,6 +166,7 @@
     "@babel/runtime": "catalog:",
     "@babel/traverse": "catalog:",
     "@babel/types": "catalog:",
+    "@bcoe/v8-coverage": "catalog:",
     "@gitbeaker/rest": "catalog:",
     "@iarna/toml": "catalog:",
     "@mdn/browser-compat-data": "catalog:",
@@ -189,6 +226,7 @@
     "adm-zip": "catalog:",
     "ajv-dist": "catalog:",
     "ansi-regex": "catalog:",
+    "ast-v8-to-istanbul": "catalog:",
     "brace-expansion": "catalog:",
     "browserslist": "catalog:",
     "c8": "catalog:",
@@ -213,6 +251,7 @@
     "lru-cache": "11.2.6",
     "magic-string": "catalog:",
     "markdownlint-cli2": "catalog:",
+    "mcp-tada": "catalog:",
     "mdast-util-from-markdown": "catalog:",
     "mdast-util-gfm": "catalog:",
     "mdast-util-to-markdown": "catalog:",
@@ -275,16 +314,23 @@
     "strict": true
   },
   "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": ">=11.25.0",
-      "onFail": "error"
-    }
+    "packageManager": [
+      {
+        "name": "npm",
+        "version": "^11.19.0 || >=12.0.2",
+        "onFail": "error"
+      },
+      {
+        "name": "pnpm",
+        "version": "^11.25.0 || >=12.3.4",
+        "onFail": "error"
+      }
+    ]
   },
   "engines": {
     "node": ">=24",
-    "npm": ">=12.0.2",
-    "pnpm": ">=11.0.5"
+    "npm": "^11.19.0 || >=12.0.2",
+    "pnpm": "^11.25.0 || >=12.3.4"
   },
   "allowScripts": {
     "cpu-features": false,

@@ -3,10 +3,11 @@ import path from 'node:path'
 
 import { debug, debugDir } from '@socketsecurity/lib-stable/debug/output'
 import { readJson } from '@socketsecurity/lib-stable/fs/read-json'
-import { safeDelete, safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
+import { safeMkdir } from '@socketsecurity/lib-stable/fs/safe'
 import { writeJson } from '@socketsecurity/lib-stable/fs/write-json'
 
 import { getSocketFixBranchName } from './git.mts'
+import { strictDelete } from '../../util/fs/strict-delete.mts'
 
 export type GhsaFixRecord = {
   branch: string
@@ -105,10 +106,7 @@ export async function markGhsaFixed(
             debug(
               `ghsa-tracker: removing stale lock from dead process ${lockPid}`,
             )
-            // Remove owned files at caller-configurable paths outside cwd.
-            // The pinned filesystem API has no strictDelete.
-            // oxlint-disable-next-line socket/no-force-delete -- owned path
-            await safeDelete(lockFile, { force: true })
+            await strictDelete(lockFile)
             continue
           }
         } catch {
@@ -155,10 +153,7 @@ export async function markGhsaFixed(
   } finally {
     // Release lock.
     if (lockAcquired) {
-      // Remove owned files at caller-configurable paths outside cwd.
-      // The pinned filesystem API has no strictDelete.
-      // oxlint-disable-next-line socket/no-force-delete -- owned path
-      await safeDelete(lockFile, { force: true })
+      await strictDelete(lockFile)
     }
   }
 }

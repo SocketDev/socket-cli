@@ -12,7 +12,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { IMPORT_META_URL_BANNER } from '../../../scripts/repo/build-infra/esbuild-helpers.mts'
+import { IMPORT_META_URL_BANNER } from '../../../scripts/repo/build-infra/esbuild-runtime-banner.mts'
 
 import {
   createBaseConfig,
@@ -128,18 +128,11 @@ export function resolveSocketLibInternalsPlugin(): Plugin {
   }
   return {
     name: 'resolve-socket-lib-internals',
-    // Socket library and SDK prebundles carry bundler-generated CJS factory
-    // names like `require_lib$36`. When rolldown flattens several of those
-    // files into one output scope it deconflicts colliding names by appending
-    // its own `$N` suffixes — and a generated name (`require_lib$10`) can
-    // collide with a DIFFERENT file's pre-existing `require_lib$10`, silently
-    // rebinding e.g. Arborist's `pacote` to libnpmpack ("pacote.manifest is
-    // not a function" during dlx installs). Rewrite the pre-suffixed factory
-    // names, file-internal, never imported across files, to a `$`-free form
-    // so the deconflicter can't generate a colliding name.
+    // Socket Lib and SDK prebundles use $N factory names that can collide
+    // with Rolldown's generated suffixes. Normalize them before bundling.
     load(id) {
       if (
-        /[/\\]@socketsecurity[/\\](?:lib|sdk)(?:-stable)?[/\\]dist[/\\]|[/\\]socket-(?:lib|sdk)[/\\]dist[/\\]/.test(
+        /[/\\]@socketsecurity[/\\](?:lib|sdk)(?:-stable)?[/\\]dist[/\\]|[/\\]socket-(?:lib|sdk(?:-js)?)[/\\]dist[/\\]/.test(
           id,
         ) &&
         id.endsWith('.js')

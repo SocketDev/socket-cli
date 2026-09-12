@@ -85,31 +85,16 @@ export async function spawnCoana(
 
     // Use local Coana CLI if available.
     if (resolution.type === 'local') {
-      const detection = detectExecutableType(resolution.path)
-
-      const baseEnv = stripNpmPackageEnvVars({
-        ...process.env,
-        ...mixinsEnv,
-        ...spawnEnv,
-      })
-
-      const nodeResolution =
-        detection.type === 'binary' ? undefined : getExecPath()
-      const spawnArgs = nodeResolution ? [resolution.path, ...args] : [...args]
-      const spawnCommand = nodeResolution ?? resolution.path
-
-      const spawnPromise = spawn(spawnCommand, spawnArgs, {
-        ...dlxOptions,
-        env: baseEnv,
-        stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
-      })
-
-      const output = await spawnPromise
-
-      return {
-        ok: true,
-        data: output.stdout?.toString() ?? '',
-      }
+      return await spawnLocalCoana(
+        resolution.path,
+        args,
+        mixinsEnv,
+        {
+          ...dlxOptions,
+          env: spawnEnv,
+        },
+        spawnExtra,
+      )
     }
 
     // Use dlx version (resolveCoana only returns 'local' or 'dlx' types).
@@ -147,6 +132,40 @@ export async function spawnCoana(
       data: e,
       message,
     }
+  }
+}
+
+export async function spawnLocalCoana(
+  localPath: string,
+  args: readonly string[],
+  mixinsEnv: Record<string, string>,
+  config: CoanaDlxOptions,
+  spawnExtra?: SpawnExtra | undefined,
+): Promise<CResult<string>> {
+  const { env: spawnEnv, ...dlxOptions } = { __proto__: null, ...config }
+  const detection = detectExecutableType(localPath)
+
+  const baseEnv = stripNpmPackageEnvVars({
+    ...process.env,
+    ...mixinsEnv,
+    ...spawnEnv,
+  })
+
+  const nodeResolution = detection.type === 'binary' ? undefined : getExecPath()
+  const spawnArgs = nodeResolution ? [localPath, ...args] : [...args]
+  const spawnCommand = nodeResolution ?? localPath
+
+  const spawnPromise = spawn(spawnCommand, spawnArgs, {
+    ...dlxOptions,
+    env: baseEnv,
+    stdio: (spawnExtra?.['stdio'] as StdioOptions | undefined) ?? 'inherit',
+  })
+
+  const output = await spawnPromise
+
+  return {
+    ok: true,
+    data: output.stdout?.toString() ?? '',
   }
 }
 

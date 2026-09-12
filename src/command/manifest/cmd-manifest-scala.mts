@@ -43,7 +43,7 @@ export interface ScalaFlags {
   verbose: boolean | undefined
 }
 
-const config = {
+const commandConfig = {
   commandName: 'scala',
   description:
     '[beta] Generate a Socket facts file (or `pom.xml` with --pom) from a Scala `build.sbt` project',
@@ -157,8 +157,8 @@ const config = {
 }
 
 export const cmdManifestScala = {
-  description: config.description,
-  hidden: config.hidden,
+  description: commandConfig.description,
+  hidden: commandConfig.hidden,
   run,
 }
 
@@ -169,7 +169,7 @@ export async function run(
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
-    config,
+    config: commandConfig,
     importMeta,
     parentName,
   })
@@ -303,7 +303,7 @@ export async function run(
 
   async function executeManifestConversion() {
     if (resolvedVerbose) {
-      logger.group('- ', parentName, config.commandName, ':')
+      logger.group('- ', parentName, commandConfig.commandName, ':')
       logger.group('- flags:', cli.flags)
       logger.groupEnd()
       logger.log('- input:', cli.input)

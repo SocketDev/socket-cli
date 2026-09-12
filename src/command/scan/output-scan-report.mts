@@ -116,6 +116,56 @@ export function formatLabelledPairs(pairs: Array<[string, string]>): string[] {
   )
 }
 
+export async function outputGeneratedScanReport(
+  scanReport: Extract<ReturnType<typeof generateReport>, { ok: true }>,
+  config: Pick<
+    OutputScanReportConfig,
+    'filepath' | 'includeLicensePolicy' | 'outputKind' | 'short'
+  >,
+): Promise<void> {
+  const { filepath, includeLicensePolicy, outputKind, short } = config
+  if (shouldOutputScanJson(outputKind, filepath)) {
+    const json = short
+      ? serializeResultJson(scanReport)
+      : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
+
+    if (filepath && filepath !== '-') {
+      logger.error('Writing json report to', filepath)
+      return await fs.writeFile(filepath, json)
+    }
+
+    logger.log(json)
+    return
+  }
+
+  if (outputKind === 'markdown' || filepath?.endsWith('.md')) {
+    const md = short
+      ? `healthy = ${scanReport.data.healthy}`
+      : toMarkdownReport(
+          // Not short so must be a regular report.
+          scanReport.data as ScanReport,
+          includeLicensePolicy,
+        )
+
+    if (filepath && filepath !== '-') {
+      logger.error('Writing markdown report to', filepath)
+      return await fs.writeFile(filepath, md)
+    }
+
+    logger.log(md)
+    logger.log('')
+    return
+  }
+
+  if (short) {
+    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
+  } else {
+    logger.log(
+      toPlainTextReport(scanReport.data as ScanReport, includeLicensePolicy),
+    )
+  }
+}
+
 export async function outputScanReport(
   result: CResult<{
     scan: SocketArtifact[]
@@ -177,65 +227,26 @@ export async function outputScanReport(
     process.exitCode = 1
   }
 
-  // I don't think we emit the default error message with banner for an unhealthy report, do we?
-  // if (!scanReport.data.healthy) {
-  //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
-  //   return
-  // }
+  return outputGeneratedScanReport(scanReport, {
+    filepath,
+    includeLicensePolicy,
+    outputKind,
+    short,
+  })
+}
 
-  const reportData = scanReport.data
-  const markdownOutput = outputKind === 'markdown' || filepath?.endsWith('.md')
-  return await renderGeneratedScanReport()
-
-  async function renderGeneratedScanReport() {
-    if (
-      outputKind === OUTPUT_JSON ||
-      (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith('.json'))
-    ) {
-      const json = short
-        ? serializeResultJson(scanReport)
-        : toJsonReport(reportData as ScanReport, includeLicensePolicy)
-
-      if (filepath && filepath !== '-') {
-        logger.error('Writing json report to', filepath)
-        return await fs.writeFile(filepath, json)
-      }
-
-      logger.log(json)
-      return
-    }
-
-    if (markdownOutput) {
-      const md = short
-        ? `healthy = ${reportData.healthy}`
-        : toMarkdownReport(
-            // Not short so must be a regular report.
-            reportData as ScanReport,
-            includeLicensePolicy,
-          )
-
-      if (filepath && filepath !== '-') {
-        logger.error('Writing markdown report to', filepath)
-        return await fs.writeFile(filepath, md)
-      }
-
-      logger.log(md)
-      logger.log('')
-      return
-    }
-
-    if (short) {
-      logger.log(reportData.healthy ? 'OK' : 'ERR')
-    } else {
-      logger.log(
-        toPlainTextReport(reportData as ScanReport, includeLicensePolicy),
-      )
-    }
-  }
+export function shouldOutputScanJson(
+  outputKind: OutputScanReportConfig['outputKind'],
+  filepath: OutputScanReportConfig['filepath'],
+): boolean {
+  return (
+    outputKind === OUTPUT_JSON ||
+    (outputKind === OUTPUT_TEXT && !!filepath && filepath.endsWith('.json'))
+  )
 }
 
 // Collapsing into an options object would change call sites in
-// test/unit/command/scan/output-scan-report.test.mts, which is out of scope
+// test/unit/commands/scan/output-scan-report.test.mts, which is out of scope
 // for this pass.
 export function toJsonReport(
   report: ScanReport,
@@ -257,7 +268,7 @@ export function toJsonReport(
 }
 
 // Collapsing into an options object would change call sites in
-// test/unit/command/scan/output-scan-report.test.mts, which is out of scope
+// test/unit/commands/scan/output-scan-report.test.mts, which is out of scope
 // for this pass.
 export function toMarkdownReport(
   report: ScanReport,

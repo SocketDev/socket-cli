@@ -178,6 +178,10 @@ export function getNmYarnPath(): string | undefined {
   }
 }
 
+export function getPackagedCompletionPath(packageRoot: string): string {
+  return path.join(packageRoot, 'data', 'socket-completion.bash')
+}
+
 export function getPackageJsonPath(): string {
   return path.join(rootPath, 'package.json')
 }
@@ -203,7 +207,6 @@ export function getSocketAppDataPath(): string | undefined {
     /* c8 ignore start - WIN32-only fallback when LOCALAPPDATA env var missing; tests run on macOS/Linux */
     if (isWin32) {
       dataHome = path.join(home, 'AppData', 'Local')
-
       logger.warn('LOCALAPPDATA not set, using fallback path.')
       /* c8 ignore stop */
     } else {

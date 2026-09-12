@@ -83,7 +83,12 @@ describe('socket ci', async () => {
   )
 
   cmdit(
-    ['ci', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
+    [
+      'ci',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken","defaultOrg":"example-org"}',
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -105,7 +110,7 @@ describe('socket ci', async () => {
             autoManifest: false
             branchName: "[BRANCH]"
             cwd: "[PROJECT]"
-            organizationSlug: "(from API token)"
+            organizationSlug: "example-org"
             repoName: "socket-cli"
             report: true
             targets:

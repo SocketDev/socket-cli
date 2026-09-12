@@ -36,7 +36,7 @@ const mockGetSocketFixPrs = vi.hoisted(() => vi.fn())
 const mockFetchGhsaDetails = vi.hoisted(() => vi.fn())
 const mockGitUnstagedModifiedFiles = vi.hoisted(() => vi.fn())
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockStrictDelete = vi.hoisted(() => vi.fn())
 
 vi.mock(import('../../../../src/util/dlx/spawn.mjs'), () => ({
   spawnCoana: mockSpawnCoanaDlx,
@@ -61,7 +61,7 @@ vi.mock(import('../../../../src/util/socket/api.mjs'), () => ({
   handleApiCall: mockHandleApiCall,
 }))
 
-vi.mock(import('../../../../src/command/fix/env-helpers.mts'), () => ({
+vi.mock(import('../../../../src/command/fix/ci-environment.mts'), () => ({
   checkCiEnvVars: vi.fn(() => ({ missing: [], present: [] })),
   getCiEnvInstructions: vi.fn(() => 'Set CI env vars'),
   getFixEnv: mockGetFixEnv,
@@ -110,7 +110,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  safeDelete: mockSafeDelete,
+  safeDelete: mockStrictDelete,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
   // Return undefined so findSocketYmlSync treats socket.yml as absent.
@@ -184,7 +184,7 @@ describe('socket fix --limit behavior verification', () => {
     })
 
     mockReadJsonSync.mockReturnValue({ fixed: true })
-    mockSafeDelete.mockResolvedValue(undefined)
+    mockStrictDelete.mockResolvedValue(undefined)
   })
 
   describe('local mode (no PRs)', () => {

@@ -7,27 +7,12 @@ import { mdHeader } from '../../util/output/markdown.mts'
 import { serializeResultJson } from '../../util/output/result-json.mjs'
 import { getVisibleTokenPrefix } from '../../util/socket/sdk.mjs'
 
-import type { OrganizationsCResult } from './fetch-organization-list.mts'
+import type {
+  Organizations,
+  OrganizationsCResult,
+} from './fetch-organization-list.mts'
 import type { OutputKind } from '../../types.mts'
 const logger = getDefaultLogger()
-
-export function measureOrganizationColumns(
-  organizations: Extract<
-    OrganizationsCResult,
-    { ok: true }
-  >['data']['organizations'],
-) {
-  let mw1 = 4
-  let mw2 = 2
-  let mw3 = 4
-  for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]!
-    mw1 = Math.max(mw1, o.name?.length ?? 0)
-    mw2 = Math.max(mw2, o.id.length)
-    mw3 = Math.max(mw3, o.plan.length)
-  }
-  return { __proto__: null, mw1, mw2, mw3 }
-}
 
 export async function outputOrganizationList(
   orgsCResult: OrganizationsCResult,
@@ -51,25 +36,24 @@ export async function outputOrganizationList(
   const visibleTokenPrefix = getVisibleTokenPrefix()
 
   if (outputKind !== 'markdown') {
-    logger.log(
-      `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`,
-    )
-    logger.log('')
-    // Just dump.
-    for (let i = 0, { length } = organizations; i < length; i += 1) {
-      const o = organizations[i]!
-      logger.log(
-        `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
-      )
-    }
+    outputOrganizationText(organizations, visibleTokenPrefix)
     return
   }
+  outputOrganizationMarkdown(organizations, visibleTokenPrefix)
+}
 
-  // | Syntax      | Description |
-  // | ----------- | ----------- |
-  // | Header      | Title       |
-  // | Paragraph   | Text        |
-  const { mw1, mw2, mw3 } = measureOrganizationColumns(organizations)
+export function outputOrganizationMarkdown(
+  organizations: Organizations,
+  visibleTokenPrefix: string,
+): void {
+  let nameWidth = 4
+  let idWidth = 2
+  let planWidth = 4
+  for (const organization of organizations) {
+    nameWidth = Math.max(nameWidth, organization.name?.length ?? 0)
+    idWidth = Math.max(idWidth, organization.id.length)
+    planWidth = Math.max(planWidth, organization.plan.length)
+  }
   logger.log(mdHeader('Organizations'))
   logger.log('')
   logger.log(
@@ -77,14 +61,32 @@ export async function outputOrganizationList(
   )
   logger.log('')
   logger.log(
-    `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
+    `| Name${' '.repeat(nameWidth - 4)} | ID${' '.repeat(idWidth - 2)} | Plan${' '.repeat(planWidth - 4)} |`,
   )
-  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
-  for (let i = 0, { length } = organizations; i < length; i += 1) {
-    const o = organizations[i]!
+  logger.log(
+    `| ${'-'.repeat(nameWidth)} | ${'-'.repeat(idWidth)} | ${'-'.repeat(planWidth)} |`,
+  )
+  for (const organization of organizations) {
     logger.log(
-      `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
+      `| ${(organization.name || '').padEnd(nameWidth, ' ')} | ${(organization.id || '').padEnd(idWidth, ' ')} | ${(organization.plan || '').padEnd(planWidth, ' ')} |`,
     )
   }
-  logger.log(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`)
+  logger.log(
+    `| ${'-'.repeat(nameWidth)} | ${'-'.repeat(idWidth)} | ${'-'.repeat(planWidth)} |`,
+  )
+}
+
+export function outputOrganizationText(
+  organizations: Organizations,
+  visibleTokenPrefix: string,
+): void {
+  logger.log(
+    `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}`,
+  )
+  logger.log('')
+  for (const organization of organizations) {
+    logger.log(
+      `- Name: ${colors.bold(organization.name ?? 'undefined')}, ID: ${colors.bold(organization.id)}, Plan: ${colors.bold(organization.plan)}`,
+    )
+  }
 }

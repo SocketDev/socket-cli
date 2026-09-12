@@ -88,7 +88,7 @@ const LEGACY_ZIZMOR_MARKER_RE = /(?:#|\/\*|\/\/)\s*zizmor:\s*[\w-]+/
 // Anything else falls through to `#` (shell / YAML / TOML / Dockerfile /
 // Makefile / Python / Ruby / etc).
 const SLASH_COMMENT_EXT_RE =
-  /\.(m?ts|tsx|cts|m?js|jsx|cjs|rs|go|c|cc|cpp|cxx|h|hpp|java|swift|kt|scala|dart|php|css|scss|less)$/i
+  /\.(?:m?ts|tsx|cts|m?js|jsx|cjs|rs|go|c|cc|cpp|cxx|h|hpp|java|swift|kt|scala|dart|php|css|scss|less)$/i
 
 /**
  * The suppression a contributor should paste into `filePath` to waive `rule`.
@@ -148,9 +148,9 @@ export function suppressionCoversLine(
 //     (multi-line JSDoc bodies use leading ` * ` which we already match).
 //   - Lines whose entire interesting content sits inside a backtick span
 //     (markdown / template-literal example).
-const COMMENT_LINE_RE = /^\s*(#|\*|\/\/)/
+const COMMENT_LINE_RE = /^\s*(?:#|\*|\/\/)/
 // Matches a JSDoc tag (@example, @param, @returns/@return, @see, @link) at a word boundary.
-const JSDOC_TAG_RE = /@(example|link|param|returns?|see)\b/
+const JSDOC_TAG_RE = /@(?:example|link|param|returns?|see)\b/
 
 export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
   // Find every backtick-delimited span on the line and test if the
@@ -158,7 +158,7 @@ export function isInsideBackticks(line: string, needleRe: RegExp): boolean {
   // hit is *outside* a span, treat the line as runtime code.
   const spans: Array<[number, number]> = []
   for (let i = 0; i < line.length; i++) {
-    if (line[i] === '`') {
+    if (line.charCodeAt(i) === 96 /* '`' */) {
       const end = line.indexOf('`', i + 1)
       if (end < 0) {
         break

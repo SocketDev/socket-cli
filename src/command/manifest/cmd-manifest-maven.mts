@@ -1,4 +1,3 @@
-import { resolveManifestDefault } from './manifest-defaults.mts'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -23,6 +22,7 @@ import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 const logger = getDefaultLogger()
 
@@ -119,6 +119,77 @@ export const cmdManifestMaven = {
   run,
 }
 
+export function resolveMavenExcludeConfigs(
+  socketJson: SocketJson,
+  value: string | undefined,
+): string {
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.excludeConfigs
+  if (configured === undefined) {
+    return ''
+  }
+  logger.info(
+    `Using default --exclude-configs from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenIgnoreUnresolved(
+  socketJson: SocketJson,
+  options?: { value?: boolean | undefined } | undefined,
+): boolean {
+  const { value } = { __proto__: null, ...options }
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.ignoreUnresolved
+  if (configured === undefined) {
+    return false
+  }
+  logger.info(
+    `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenIncludeConfigs(
+  socketJson: SocketJson,
+  value: string | undefined,
+): string {
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.includeConfigs
+  if (configured === undefined) {
+    return ''
+  }
+  logger.info(
+    `Using default --include-configs from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenVerbose(
+  socketJson: SocketJson,
+  options?: { value?: boolean | undefined } | undefined,
+): boolean {
+  const { value } = { __proto__: null, ...options }
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.verbose
+  if (configured === undefined) {
+    return false
+  }
+  logger.info(`Using default --verbose from ${SOCKET_JSON}:`, configured)
+  return configured
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -144,7 +215,6 @@ export async function run(
   cwd = path.resolve(process.cwd(), cwd)
 
   const sockJson = readOrDefaultSocketJson(cwd)
-  const manifestSettings = sockJson.defaults?.manifest?.maven ?? {}
 
   debug(
     `override: ${SOCKET_JSON} maven: ${JSON.stringify(sockJson.defaults?.manifest?.maven)}`,
@@ -152,7 +222,8 @@ export async function run(
 
   const { bin: binFlag, mavenOpts: mavenOptsFlag, trustSocketJson } = cli.flags
 
-  let { excludeConfigs, ignoreUnresolved, includeConfigs, verbose } = cli.flags
+  const { excludeConfigs, ignoreUnresolved, includeConfigs, verbose } =
+    cli.flags
 
   // The bin and its options choose what gets executed, so they route through
   // the socket.json trust gate. The remaining socket.json defaults below only
@@ -171,90 +242,72 @@ export async function run(
 
   const { bin, opts: mavenOpts } = invocation.data
 
-  includeConfigs = resolveManifestDefault(
-    includeConfigs,
-    manifestSettings.includeConfigs,
-    '',
-    'include-configs',
-  )
-  excludeConfigs = resolveManifestDefault(
+  const resolvedExcludeConfigs = resolveMavenExcludeConfigs(
+    sockJson,
     excludeConfigs,
-    manifestSettings.excludeConfigs,
-    '',
-    'exclude-configs',
   )
-  ignoreUnresolved = resolveManifestDefault(
-    ignoreUnresolved,
-    manifestSettings.ignoreUnresolved,
-    false,
-    'ignore-unresolved',
+  const resolvedIgnoreUnresolved = resolveMavenIgnoreUnresolved(sockJson, {
+    value: ignoreUnresolved,
+  })
+  const resolvedIncludeConfigs = resolveMavenIncludeConfigs(
+    sockJson,
+    includeConfigs,
   )
-  verbose = resolveManifestDefault(
-    verbose,
-    manifestSettings.verbose,
-    false,
-    'verbose',
-  )
+  const resolvedVerbose = resolveMavenVerbose(sockJson, { value: verbose })
 
-  const resolvedVerbose = verbose
-  const resolvedIgnoreunresolved = ignoreUnresolved
-  return await executeManifestConversion()
-
-  async function executeManifestConversion() {
-    if (resolvedVerbose) {
-      logger.group('- ', parentName, config.commandName, ':')
-      logger.group('- flags:', cli.flags)
-      logger.groupEnd()
-      logger.log('- input:', cli.input)
-      logger.groupEnd()
-    }
-
-    // Note: stdin input not supported. Maven manifest generation requires a
-    // directory context with a pom.xml that can't be meaningfully provided via
-    // stdin.
-
-    const wasValidInput = checkCommandInput(outputKind, {
-      nook: true,
-      test: cli.input.length <= 1,
-      message: 'Can only accept one DIR (make sure to escape spaces!)',
-      fail: `received ${cli.input.length}`,
-    })
-    if (!wasValidInput) {
-      return
-    }
-
-    if (resolvedVerbose) {
-      logger.group()
-      logger.info('- cwd:', cwd)
-      logger.info('- maven bin:', bin)
-      logger.groupEnd()
-    }
-
-    if (dryRun) {
-      const args = [cwd, '--bin', bin]
-      if (mavenOpts.length) {
-        args.push('--maven-opts', mavenOpts.join(' '))
-      }
-      outputDryRunExecute(
-        'mvn',
-        args,
-        'generate .socket.facts.json from Maven project',
-      )
-      return
-    }
-
-    const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
-    assertNoNegationPatterns(excludePaths)
-
-    await convertMavenToFacts({
-      bin,
-      cwd,
-      excludeConfigs: excludeConfigs || '',
-      excludePaths,
-      ignoreUnresolved: resolvedIgnoreunresolved,
-      includeConfigs: includeConfigs || '',
-      mavenOpts,
-      verbose: resolvedVerbose,
-    })
+  if (resolvedVerbose) {
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- input:', cli.input)
+    logger.groupEnd()
   }
+
+  // Note: stdin input not supported. Maven manifest generation requires a
+  // directory context with a pom.xml that can't be meaningfully provided via
+  // stdin.
+
+  const wasValidInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: cli.input.length <= 1,
+    message: 'Can only accept one DIR (make sure to escape spaces!)',
+    fail: `received ${cli.input.length}`,
+  })
+  if (!wasValidInput) {
+    return
+  }
+
+  if (resolvedVerbose) {
+    logger.group()
+    logger.info('- cwd:', cwd)
+    logger.info('- maven bin:', bin)
+    logger.groupEnd()
+  }
+
+  if (dryRun) {
+    const args = [cwd, '--bin', bin]
+    if (mavenOpts.length) {
+      args.push('--maven-opts', mavenOpts.join(' '))
+    }
+    outputDryRunExecute(
+      'mvn',
+      args,
+      'generate .socket.facts.json from Maven project',
+    )
+    return
+  }
+
+  const excludePaths = cmdFlagValueToArray(cli.flags['excludePaths'])
+  assertNoNegationPatterns(excludePaths)
+
+  await convertMavenToFacts({
+    bin,
+    cwd,
+    excludeConfigs: resolvedExcludeConfigs,
+    excludePaths,
+    ignoreUnresolved: resolvedIgnoreUnresolved,
+    includeConfigs: resolvedIncludeConfigs,
+    mavenOpts,
+    verbose: resolvedVerbose,
+  })
 }

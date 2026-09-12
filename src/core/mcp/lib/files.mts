@@ -87,12 +87,12 @@ export function extractSocketFileList(
       : []
   const entries: FileListEntry[] = []
   for (let i = 0, { length } = raw; i < length; i += 1) {
-    const item: unknown = raw[i]
-    const entry = parseSocketFileEntry(item, opts)
-    if (!entry) {
-      continue
+    const entry = parseFileListEntry(raw[i], {
+      includeHashes: opts.includeHashes === true,
+    })
+    if (entry) {
+      entries.push(entry)
     }
-    entries.push(entry)
   }
   entries.sort((a, b) => a.path.localeCompare(b.path))
   return entries
@@ -130,11 +130,10 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}M`
 }
 
-export function parseSocketFileEntry(
+export function parseFileListEntry(
   item: unknown,
-  config: { includeHashes?: boolean | undefined },
+  options?: { includeHashes?: boolean | undefined } | undefined,
 ): FileListEntry | undefined {
-  const { includeHashes } = { __proto__: null, ...config } as typeof config
   if (typeof item !== 'object' || item === null || !('path' in item)) {
     return undefined
   }
@@ -152,10 +151,10 @@ export function parseSocketFileEntry(
     entry.size = rawSize
   }
   const rawHash = 'hash' in item ? item.hash : undefined
-  if (includeHashes && typeof rawHash === 'string') {
+  const opts = { __proto__: null, ...options }
+  if (opts.includeHashes && typeof rawHash === 'string') {
     entry.hash = rawHash
   }
-
   return entry
 }
 

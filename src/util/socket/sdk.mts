@@ -159,12 +159,6 @@ export function getExtraCaCerts(): string[] | undefined {
   /* c8 ignore stop */
 }
 
-export type SetupSdkOptions = {
-  apiBaseUrl?: string | undefined
-  apiProxy?: string | undefined
-  apiToken?: string | undefined
-}
-
 export function getSdkAgentOptions(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined,
@@ -203,6 +197,28 @@ export function invalidateDefaultApiToken(): void {
   defaultToken = undefined
 }
 
+export function resolveSdkApiBaseUrl(
+  configuredUrl: string | undefined,
+): string | undefined {
+  const apiBaseUrl = configuredUrl ?? getDefaultApiBaseUrl()
+  if (isNonEmptyString(apiBaseUrl)) {
+    assertSafeSocketApiBaseUrl(apiBaseUrl)
+  }
+  return apiBaseUrl
+}
+
+export function resolveSdkProxyUrl(
+  configuredUrl: string | undefined,
+): string | undefined {
+  return isUrl(configuredUrl) ? configuredUrl : getDefaultProxyUrl()
+}
+
+export type SetupSdkOptions = {
+  apiBaseUrl?: string | undefined
+  apiProxy?: string | undefined
+  apiToken?: string | undefined
+}
+
 export async function setupSdk(
   options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
@@ -227,19 +243,13 @@ export async function setupSdk(
     }
   }
 
-  let { apiProxy } = opts
-  if (!isUrl(apiProxy)) {
-    apiProxy = getDefaultProxyUrl()
-  }
+  const apiProxy = resolveSdkProxyUrl(opts.apiProxy)
 
   // `socket login --api-base-url` supplies this directly, so guard the
   // resolved value rather than trusting the getter alone.
   let apiBaseUrl: string | undefined
   try {
-    apiBaseUrl = opts.apiBaseUrl ?? getDefaultApiBaseUrl()
-    if (isNonEmptyString(apiBaseUrl)) {
-      assertSafeSocketApiBaseUrl(apiBaseUrl)
-    }
+    apiBaseUrl = resolveSdkApiBaseUrl(opts.apiBaseUrl)
   } catch (e) {
     return {
       ok: false,

@@ -1,13 +1,19 @@
 import { spawnSync } from '@socketsecurity/lib-stable/process/spawn/child'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { readCanonicalIndexEntry, readCanonicalTreeEntry } from './git.mts'
+import { canonicalMemberCopyMatches } from './proof.mts'
+import type { CanonicalIndexEntry } from './git.mts'
 
 import {
   fleetCanonicalEntries,
   isOperatorLocalPath,
   isPerRepoMarkerPath,
-} from '../../.claude/hooks/fleet/_shared/fleet-fork.mts'
-import { textHasFleetBlockMarkers } from '../../.claude/hooks/fleet/_shared/fleet-markers.mts'
+} from '../../../.claude/hooks/fleet/_shared/fleet-fork.mts'
+import {
+  findFleetRegions,
+  textHasFleetBlockMarkers,
+} from '../../../.claude/hooks/fleet/_shared/fleet-markers.mts'
 
 // Each child names one capability or member, never an arbitrary generated
 // bucket. Generated universal files map directly to the destination tree.
@@ -62,18 +68,26 @@ export function templateTwinPaths(repoRoot: string, file: string): string[] {
 export function matchesTemplateTwin(
   repoRoot: string,
   file: string,
-  content: string,
+  content: string | Uint8Array,
+  mode = '100644',
 ): boolean {
   const candidates = templateTwinPaths(repoRoot, file)
   for (let i = 0, { length } = candidates; i < length; i += 1) {
-    let twin: string
     try {
-      twin = readFileSync(candidates[i]!, 'utf8')
+      const stat = lstatSync(candidates[i]!)
+      const candidateMode = stat.mode & 0o111 ? '100755' : '100644'
+      if (!stat.isFile() || candidateMode !== mode) {
+        continue
+      }
+      if (
+        readFileSync(candidates[i]!).equals(
+          typeof content === 'string' ? Buffer.from(content) : content,
+        )
+      ) {
+        return true
+      }
     } catch {
       continue
-    }
-    if (twin === content) {
-      return true
     }
   }
   return false
@@ -199,27 +213,48 @@ export function scanCanonicalForkPaths(
     if (!isCanonical) {
       continue
     }
-    if (matchesMergeParentIndex(repoRoot, file)) {
-      continue
-    }
-    // Fleet-block allowance: a canonical file carrying `<fleet-canonical>`
-    // markers is only PART fleet-managed — content outside the markers is
-    // repo-owned, so staging it is normal repo work, not a fork.
-    let content = ''
-    try {
-      content = readFileSync(path.join(repoRoot, file), 'utf8')
-    } catch {
-      // Unreadable (permissions, binary) — fall through as non-exempt; a
-      // canonical path staged unreadable is still worth surfacing.
-    }
-    if (textHasFleetBlockMarkers(content)) {
-      continue
-    }
-    // Byte-identical to canonical is propagation, not divergence.
-    if (matchesTemplateTwin(repoRoot, file, content)) {
+    const entry = readCanonicalIndexEntry(repoRoot, file)
+    if (entry && stagedCanonicalFileIsAllowed(repoRoot, file, entry)) {
       continue
     }
     findings.push({ file })
   }
   return findings
+}
+
+function fleetRegionBodies(content: Uint8Array): string[] {
+  const text = Buffer.from(content).toString('utf8')
+  if (!textHasFleetBlockMarkers(text)) {
+    return []
+  }
+  const lines = text.split(/(?<=\n)/u)
+  return findFleetRegions(lines).map(region =>
+    lines.slice(region.start, region.end + 1).join(''),
+  )
+}
+
+function stagedCanonicalFileIsAllowed(
+  repoRoot: string,
+  file: string,
+  entry: CanonicalIndexEntry,
+): boolean {
+  if (matchesMergeParentIndex(repoRoot, file)) {
+    return true
+  }
+  const baseline = readCanonicalTreeEntry(repoRoot, 'HEAD', file)
+  if (baseline && baseline.mode === entry.mode) {
+    const before = fleetRegionBodies(baseline.content)
+    const after = fleetRegionBodies(entry.content)
+    if (
+      before.length > 0 &&
+      before.length === after.length &&
+      before.every((body, index) => body === after[index])
+    ) {
+      return true
+    }
+  }
+  return (
+    matchesTemplateTwin(repoRoot, file, entry.content, entry.mode) ||
+    canonicalMemberCopyMatches(repoRoot, file, entry)
+  )
 }

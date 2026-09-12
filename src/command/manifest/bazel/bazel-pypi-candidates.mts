@@ -242,102 +242,106 @@ export function parsePypiHubCandidates(
   }
   const candidates: PypiHubCandidate[] = []
 
-  collectBzlmodCandidates()
-
-  // Legacy path: scan WORKSPACE + top-level .bzl files for pip_parse,
-  // pip_install, and pip_repository.
-  const legacyFiles = listLegacyStarlarkFiles(cwd)
-  if (verbose) {
-    logger.log(
-      '[VERBOSE] discovery: legacy files considered:',
-      legacyFiles.length ? legacyFiles : '(none)',
-    )
-  }
-  for (let i = 0, { length } = legacyFiles; i < length; i += 1) {
-    const file = legacyFiles[i]!
-    const content = safeReadWorkspaceFile(file)
-    if (!content) {
-      continue
-    }
-    const fileHits: PypiHubCandidate[] = []
-    const source: PypiHubInfo['source'] = file.endsWith('.bzl')
-      ? '.bzl'
-      : path.basename(file) === 'WORKSPACE.bazel'
-        ? 'WORKSPACE.bazel'
-        : 'WORKSPACE'
-
-    for (const pattern of [
-      PIP_PARSE_NAME_RE,
-      PIP_INSTALL_NAME_RE,
-      PIP_REPOSITORY_NAME_RE,
-    ]) {
-      for (const match of content.matchAll(pattern)) {
-        const info = extractHubInfoFromArgBlob(match[1] ?? '', source, 'legacy')
-        if (info) {
-          fileHits.push(info)
-        }
+  function collectModuleCandidates(): void {
+    const moduleBazel = path.join(cwd, 'MODULE.bazel')
+    const moduleContent = safeReadWorkspaceFile(moduleBazel)
+    if (!moduleContent) {
+      if (verbose) {
+        logger.log(
+          '[VERBOSE] discovery:',
+          moduleBazel,
+          'not present (skipping bzlmod scan)',
+        )
       }
+      return
     }
-
-    candidates.push(...fileHits)
+    const bindings = Array.from(
+      moduleContent.matchAll(USE_EXTENSION_PIP_RE),
+      match => match[1] as string,
+    )
     if (verbose) {
       logger.log(
         '[VERBOSE] discovery: scanned',
-        file,
-        `(${fileHits.length} legacy pip hub match(es))`,
+        moduleBazel,
+        `(${bindings.length} use_extension pip binding(s))`,
+      )
+    }
+    for (let i = 0, { length } = bindings; i < length; i += 1) {
+      const parseRe = buildPipParseRe(bindings[i]!)
+      collectMatches(
+        moduleContent,
+        parseRe,
+        'MODULE.bazel',
+        'bzlmod',
+        candidates,
+      )
+    }
+    if (verbose) {
+      logger.log(
+        '[VERBOSE] discovery: MODULE.bazel pip.parse hits:',
+        candidates.length,
       )
     }
   }
 
-  return dedupCapped(candidates, { verbose })
-
-  function collectBzlmodCandidates() {
-    // Bzlmod path: parse MODULE.bazel for use_extension bindings to pip,
-    // then match ${binding}.parse(...).
-    const moduleBazel = path.join(cwd, 'MODULE.bazel')
-    const moduleContent = safeReadWorkspaceFile(moduleBazel)
-    if (moduleContent) {
-      const bindings: string[] = []
-      for (const m of moduleContent.matchAll(USE_EXTENSION_PIP_RE)) {
-        bindings.push(m[1] as string)
+  function collectMatches(
+    content: string,
+    matcher: RegExp,
+    source: PypiHubInfo['source'],
+    mode: PypiHubInfo['workspaceMode'],
+    out: PypiHubCandidate[],
+  ): void {
+    for (const match of content.matchAll(matcher)) {
+      const info = extractHubInfoFromArgBlob(match[1] ?? '', source, mode)
+      if (info) {
+        out.push(info)
       }
+    }
+  }
+
+  function collectLegacyCandidates(): void {
+    const legacyFiles = listLegacyStarlarkFiles(cwd)
+    if (verbose) {
+      logger.log(
+        '[VERBOSE] discovery: legacy files considered:',
+        legacyFiles.length ? legacyFiles : '(none)',
+      )
+    }
+    for (let i = 0, { length } = legacyFiles; i < length; i += 1) {
+      const file = legacyFiles[i]!
+      const content = safeReadWorkspaceFile(file)
+      if (!content) {
+        continue
+      }
+      const fileHits: PypiHubCandidate[] = []
+      const source: PypiHubInfo['source'] = file.endsWith('.bzl')
+        ? '.bzl'
+        : path.basename(file) === 'WORKSPACE.bazel'
+          ? 'WORKSPACE.bazel'
+          : 'WORKSPACE'
+      collectMatches(content, PIP_PARSE_NAME_RE, source, 'legacy', fileHits)
+      collectMatches(content, PIP_INSTALL_NAME_RE, source, 'legacy', fileHits)
+      collectMatches(
+        content,
+        PIP_REPOSITORY_NAME_RE,
+        source,
+        'legacy',
+        fileHits,
+      )
+      candidates.push(...fileHits)
       if (verbose) {
         logger.log(
           '[VERBOSE] discovery: scanned',
-          moduleBazel,
-          `(${bindings.length} use_extension pip binding(s))`,
+          file,
+          `(${fileHits.length} legacy pip hub match(es))`,
         )
       }
-
-      for (let i = 0, { length } = bindings; i < length; i += 1) {
-        const parseRe = buildPipParseRe(bindings[i]!)
-        for (const m of moduleContent.matchAll(parseRe)) {
-          const argBlob = m[1] ?? ''
-          const info = extractHubInfoFromArgBlob(
-            argBlob,
-            'MODULE.bazel',
-            'bzlmod',
-          )
-          if (info) {
-            candidates.push(info)
-          }
-        }
-      }
-
-      if (verbose) {
-        logger.log(
-          '[VERBOSE] discovery: MODULE.bazel pip.parse hits:',
-          candidates.length,
-        )
-      }
-    } else if (verbose) {
-      logger.log(
-        '[VERBOSE] discovery:',
-        moduleBazel,
-        'not present (skipping bzlmod scan)',
-      )
     }
   }
+
+  collectModuleCandidates()
+  collectLegacyCandidates()
+  return dedupCapped(candidates, { verbose })
 }
 
 // Parse `bazel mod dump_repo_mapping "" --output=json` output. Also accepts

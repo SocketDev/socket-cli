@@ -96,36 +96,41 @@ export async function resolveScanCreateTargetsAndOrg(
     }
   }
 
-  await reportScanSuggestions()
+  await suggestScanManifestGeneration(sockJson, cwd, { autoManifest })
 
-  async function reportScanSuggestions() {
-    const detected = await detectManifestActions(sockJson, cwd)
-    // A `.socket.facts.json` at cwd is the output of `socket manifest auto` (and
-    // of `--facts` mode on the per-ecosystem manifest commands). The scan already
-    // picks it up, so nudging the user to regenerate it would be misleading.
-    const hasFactsFile = existsSync(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
-    if (detected.count > 0 && !autoManifest && !hasFactsFile) {
-      logger.info(
-        `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
-      )
-    }
-
-    if (updatedInput && resolvedOrgSlug && targets.length) {
-      logger.info(
-        'Note: You can invoke this command next time to skip the interactive questions:',
-      )
-      logger.error('```')
-      logger.error(
-        `    socket scan create [other flags...] ${resolvedOrgSlug} ${targets.join(' ')}`,
-      )
-      logger.error('```')
-      logger.error('')
-      logger.info(
-        `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
-      )
-      logger.error('')
-    }
+  if (updatedInput && resolvedOrgSlug && targets.length) {
+    logger.info(
+      'Note: You can invoke this command next time to skip the interactive questions:',
+    )
+    logger.error('```')
+    logger.error(
+      `    socket scan create [other flags...] ${resolvedOrgSlug} ${targets.join(' ')}`,
+    )
+    logger.error('```')
+    logger.error('')
+    logger.info(
+      `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
+    )
+    logger.error('')
   }
 
   return { canceled: false, orgSlug: resolvedOrgSlug, targets }
+}
+
+export async function suggestScanManifestGeneration(
+  sockJson: SocketJson,
+  cwd: string,
+  options?: { autoManifest?: boolean | undefined } | undefined,
+): Promise<void> {
+  const { autoManifest } = options ?? {}
+  const detected = await detectManifestActions(sockJson, cwd)
+  // A `.socket.facts.json` at cwd is the output of `socket manifest auto` (and
+  // of `--facts` mode on the per-ecosystem manifest commands). The scan already
+  // picks it up, so nudging the user to regenerate it would be misleading.
+  const hasFactsFile = existsSync(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
+  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
+    logger.info(
+      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
+    )
+  }
 }

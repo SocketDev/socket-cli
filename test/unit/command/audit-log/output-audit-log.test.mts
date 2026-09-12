@@ -76,7 +76,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateOrganizationSetting",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "122421",
@@ -84,7 +84,7 @@ describe('output-audit-log', () => {
                 "ip_address": "123.123.321.213",
                 "type": "createApiToken",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "121392",
@@ -92,7 +92,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateOrganizationSetting",
                 "user_agent": "super ai .com",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "121391",
@@ -100,7 +100,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateOrganizationSetting",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "120287",
@@ -108,7 +108,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateAlertTriage",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "118431",
@@ -116,7 +116,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateOrganizationSetting",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               },
               {
                 "event_id": "116928",
@@ -124,7 +124,7 @@ describe('output-audit-log', () => {
                 "ip_address": "",
                 "type": "updateApiTokenScopes",
                 "user_agent": "",
-                "user_email": "person@socket.dev"
+                "user_email": "person@example.com"
               }
             ]
           }
@@ -166,7 +166,7 @@ describe('output-audit-log', () => {
           '123112',
           '2025-04-02T01:47:26.914Z',
           'updateOrganizationSetting',
-          'person@socket.dev',
+          'person@example.com',
           '',
           '',
         ],
@@ -174,7 +174,7 @@ describe('output-audit-log', () => {
           '122421',
           '2025-03-31T15:19:55.299Z',
           'createApiToken',
-          'person@socket.dev',
+          'person@example.com',
           '123.123.321.213',
           '',
         ],
@@ -182,7 +182,7 @@ describe('output-audit-log', () => {
           '121392',
           '2025-03-27T16:24:36.344Z',
           'updateOrganizationSetting',
-          'person@socket.dev',
+          'person@example.com',
           '',
           'super ai .com',
         ],
@@ -190,7 +190,7 @@ describe('output-audit-log', () => {
           '121391',
           '2025-03-27T16:24:33.912Z',
           'updateOrganizationSetting',
-          'person@socket.dev',
+          'person@example.com',
           '',
           '',
         ],
@@ -198,7 +198,7 @@ describe('output-audit-log', () => {
           '120287',
           '2025-03-24T21:52:12.879Z',
           'updateAlertTriage',
-          'person@socket.dev',
+          'person@example.com',
           '',
           '',
         ],
@@ -206,7 +206,7 @@ describe('output-audit-log', () => {
           '118431',
           '2025-03-17T15:57:29.885Z',
           'updateOrganizationSetting',
-          'person@socket.dev',
+          'person@example.com',
           '',
           '',
         ],
@@ -214,7 +214,7 @@ describe('output-audit-log', () => {
           '116928',
           '2025-03-10T22:53:35.734Z',
           'updateApiTokenScopes',
-          'person@socket.dev',
+          'person@example.com',
           '',
           '',
         ],
@@ -233,6 +233,9 @@ describe('output-audit-log', () => {
       )
       expect(process.exitCode).toBe(1)
       expect(parseMarkdownTableRows(r)).toEqual([])
+      expect(r).toBeTypeOf('string')
+      expect(r.length).toBeGreaterThan(0)
+      expect(r.split(/\r?\n/)).toHaveLength(1)
     })
   })
 })

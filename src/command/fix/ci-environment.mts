@@ -13,6 +13,7 @@ import { getBaseBranch, getRepoInfo } from '../../util/git/operations.mjs'
 
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../util/git/operations.mjs'
+
 const logger = getDefaultLogger()
 
 /**

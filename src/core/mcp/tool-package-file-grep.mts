@@ -12,7 +12,7 @@ import { errorToolResult, textToolResult } from './tool-auth.mts'
 import { truncateToolLabel } from './tool-input.mts'
 import { invalidBlobHashResult } from './tool-package-file-contents.mts'
 
-import type { ToolSpec } from './tool-types.mts'
+import type { ToolCallResult, ToolSpec } from './tool-types.mts'
 
 export const PACKAGE_FILE_GREP_TOOL_NAME = 'package_file_grep'
 
@@ -69,78 +69,68 @@ export interface GrepScanResult {
   matchIndexes: number[]
 }
 
+export interface PackageFileGrepRequest {
+  contextLines: number
+  flags: string
+  hash: string
+  label: string
+  maxMatches: number
+  pattern: string
+  regexp: RegExp
+}
+
 export function definePackageFileGrepTool(): ToolSpec {
   return {
     annotations: { readOnlyHint: true },
     description: PACKAGE_FILE_GREP_TOOL_DESCRIPTION,
-    handler: async args => {
-      const hash = readToolString(args, 'hash')
-      const invalid = invalidBlobHashResult('Searching a package file', hash)
-      if (invalid || !hash) {
-        return errorToolResult(invalid ?? 'Searching a package file failed.')
-      }
-      const pattern = readToolString(args, 'pattern')
-      if (!pattern || pattern.length > MAX_GREP_PATTERN_LENGTH) {
-        return errorToolResult(
-          `Searching a package file failed. Where: the \`pattern\` argument. Saw: ${pattern ? `${pattern.length} characters` : 'an empty pattern'}, wanted 1 to ${MAX_GREP_PATTERN_LENGTH} characters. Fix: search for a shorter expression.`,
-        )
-      }
-      const { contextLines, maxMatches, label, flags } = readGrepOptions(
-        args,
-        hash,
-      )
-
-      let regexp: RegExp
-      try {
-        regexp = new RegExp(pattern, flags)
-      } catch (e) {
-        return errorToolResult(
-          `Searching a package file failed. Where: the \`pattern\` argument. Saw: ${errorMessage(e)}, wanted a valid JavaScript regular expression. Fix: escape the special characters, or search for a plain literal string.`,
-        )
-      }
-
-      try {
-        const blob = await getOrFetchSocketBlob(hash)
-        if (blob.binary) {
-          return errorToolResult(
-            `Searching a package file failed. Where: ${label}. Saw: binary content (${blob.bytes} bytes, content-type: ${blob.contentType ?? 'unknown'}), wanted UTF-8 text. Fix: pick a text file from the \`package_files\` listing.`,
-          )
-        }
-        const lines = blob.text.split(/\r?\n/)
-        const { budgetExceeded, matchIndexes } = scanLinesForPattern(
-          lines,
-          regexp,
-          maxMatches,
-        )
-        if (budgetExceeded && !matchIndexes.length) {
-          return errorToolResult(
-            `Searching a package file failed. Where: ${label}. Saw: the search exceeded its ${GREP_BUDGET_MS}ms budget with no match, wanted a pattern that completes. Fix: simplify the expression — stacked quantifiers backtrack exponentially, so a plain literal or an anchored search is far cheaper.`,
-          )
-        }
-        if (!matchIndexes.length) {
-          return textToolResult(`${label}: no matches for /${pattern}/${flags}`)
-        }
-        return outputGrepMatches({
-          blob,
-          matchIndexes,
-          maxMatches,
-          budgetExceeded,
-          label,
-          pattern,
-          flags,
-          lines,
-          contextLines,
-        })
-      } catch (e) {
-        return errorToolResult(errorMessage(e))
-      }
-    },
+    handler: handlePackageFileGrep,
     inputSchema: PackageFileGrepInputSchema,
     name: PACKAGE_FILE_GREP_TOOL_NAME,
     title: 'Package File Grep Tool',
   }
 }
 
+export async function handlePackageFileGrep(
+  args: Record<string, unknown>,
+): Promise<ToolCallResult> {
+  const hash = readToolString(args, 'hash')
+  const invalid = invalidBlobHashResult('Searching a package file', hash)
+  if (invalid || !hash) {
+    return errorToolResult(invalid ?? 'Searching a package file failed.')
+  }
+  const pattern = readToolString(args, 'pattern')
+  if (!pattern || pattern.length > MAX_GREP_PATTERN_LENGTH) {
+    return errorToolResult(
+      `Searching a package file failed. Where: the \`pattern\` argument. Saw: ${pattern ? `${pattern.length} characters` : 'an empty pattern'}, wanted 1 to ${MAX_GREP_PATTERN_LENGTH} characters. Fix: search for a shorter expression.`,
+    )
+  }
+  const { contextLines, maxMatches, label, flags } = readGrepOptions(args, hash)
+
+  let regexp: RegExp
+  try {
+    regexp = new RegExp(pattern, flags)
+  } catch (e) {
+    return errorToolResult(
+      `Searching a package file failed. Where: the \`pattern\` argument. Saw: ${errorMessage(e)}, wanted a valid JavaScript regular expression. Fix: escape the special characters, or search for a plain literal string.`,
+    )
+  }
+  const request = {
+    __proto__: null,
+    contextLines,
+    flags,
+    hash,
+    label,
+    maxMatches,
+    pattern,
+    regexp,
+  }
+  return await searchPackageFile(request)
+}
+
+/**
+ * Render matched lines in `grep -n` form, inserting `--` separators between
+ * non-adjacent context windows.
+ */
 export function outputGrepMatches(config: {
   blob: Awaited<ReturnType<typeof getOrFetchSocketBlob>>
   matchIndexes: number[]
@@ -253,4 +243,48 @@ export function scanLinesForPattern(
     }
   }
   return { budgetExceeded: false, matchIndexes }
+}
+
+export async function searchPackageFile(
+  config: PackageFileGrepRequest,
+): Promise<ToolCallResult> {
+  const { contextLines, flags, hash, label, maxMatches, pattern, regexp } = {
+    __proto__: null,
+    ...config,
+  } as PackageFileGrepRequest
+  try {
+    const blob = await getOrFetchSocketBlob(hash)
+    if (blob.binary) {
+      return errorToolResult(
+        `Searching a package file failed. Where: ${label}. Saw: binary content (${blob.bytes} bytes, content-type: ${blob.contentType ?? 'unknown'}), wanted UTF-8 text. Fix: pick a text file from the \`package_files\` listing.`,
+      )
+    }
+    const lines = blob.text.split(/\r?\n/)
+    const { budgetExceeded, matchIndexes } = scanLinesForPattern(
+      lines,
+      regexp,
+      maxMatches,
+    )
+    if (budgetExceeded && !matchIndexes.length) {
+      return errorToolResult(
+        `Searching a package file failed. Where: ${label}. Saw: the search exceeded its ${GREP_BUDGET_MS}ms budget with no match, wanted a pattern that completes. Fix: simplify the expression — stacked quantifiers backtrack exponentially, so a plain literal or an anchored search is far cheaper.`,
+      )
+    }
+    if (!matchIndexes.length) {
+      return textToolResult(`${label}: no matches for /${pattern}/${flags}`)
+    }
+    return outputGrepMatches({
+      blob,
+      matchIndexes,
+      maxMatches,
+      budgetExceeded,
+      label,
+      pattern,
+      flags,
+      lines,
+      contextLines,
+    })
+  } catch (e) {
+    return errorToolResult(errorMessage(e))
+  }
 }

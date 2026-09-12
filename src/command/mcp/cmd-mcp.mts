@@ -34,15 +34,18 @@ export function parseRequiredScopes(raw: string): string[] {
     .filter(Boolean)
 }
 
-export function resolveMcpPort(value: unknown): number {
-  // Coerce at the meow boundary — garbage input arrives as the raw string,
-  // which Number() turns into NaN so the > 0 guard rejects it.
-  const portFlag = Number(value)
+export function resolveMcpPort(flag: number | string): number {
+  const portFlag = Number(flag)
   const portRaw =
     portFlag > 0
       ? portFlag
       : Number.parseInt(getMcpPort() || `${DEFAULT_PORT}`, 10)
   return Number.isFinite(portRaw) && portRaw > 0 ? portRaw : DEFAULT_PORT
+}
+
+export function resolveRequiredScopes(flag: string): string[] | undefined {
+  const raw = flag || getSocketOauthRequiredScopes() || ''
+  return raw ? parseRequiredScopes(raw) : undefined
 }
 
 export async function run(
@@ -154,8 +157,6 @@ export async function run(
 
   const http = cli.flags.http || getMcpHttpMode()
 
-  const port = resolveMcpPort(cli.flags.port)
-
   const oauthIssuer = cli.flags['oauth-issuer'] || getSocketOauthIssuer() || ''
   const oauthClientId =
     cli.flags['oauth-client-id'] || getSocketOauthIntrospectionClientId() || ''
@@ -163,12 +164,6 @@ export async function run(
     cli.flags['oauth-client-secret'] ||
     getSocketOauthIntrospectionClientSecret() ||
     ''
-  const oauthRequiredScopesRaw =
-    cli.flags['oauth-required-scopes'] || getSocketOauthRequiredScopes() || ''
-  const oauthRequiredScopes = oauthRequiredScopesRaw
-    ? parseRequiredScopes(oauthRequiredScopesRaw)
-    : undefined
-
   const trustProxy = cli.flags['trust-proxy'] || getTrustProxy()
 
   await handleMcp({
@@ -176,8 +171,10 @@ export async function run(
     oauthClientId,
     oauthClientSecret,
     oauthIssuer,
-    oauthRequiredScopes,
-    port,
+    oauthRequiredScopes: resolveRequiredScopes(
+      cli.flags['oauth-required-scopes'],
+    ),
+    port: resolveMcpPort(cli.flags.port),
     trustProxy,
   })
 }

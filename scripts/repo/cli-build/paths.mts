@@ -26,3 +26,13 @@ function resolvePackageRoot(): string {
 
 export const PACKAGE_ROOT = resolvePackageRoot()
 export const WORKSPACE_ROOT = PACKAGE_ROOT
+
+export * from '../../fleet/paths.mts'
+
+export function packageNodeModulesBinPath(packageRoot: string): string {
+  return path.join(packageRoot, 'node_modules', '.bin')
+}
+
+export function sourceIndexPath(sourceRoot: string): string {
+  return path.join(sourceRoot, 'src', 'index.mts')
+}

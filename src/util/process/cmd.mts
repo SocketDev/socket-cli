@@ -22,6 +22,40 @@ const helpFlags = new Set<string>()
 helpFlags.add(FLAG_HELP)
 helpFlags.add('-h')
 
+export function buildFilterFlagSets(
+  flagsToFilter: Parameters<typeof filterFlags>[1],
+): {
+  readonly __proto__: null
+  flagsToFilterSet: Set<string>
+  flagsWithValueSet: Set<string>
+} {
+  // Build set of flags to filter from the provided flag objects.
+  const flagsToFilterSet = new Set<string>()
+  const flagsWithValueSet = new Set<string>()
+
+  for (const [flagName, flag] of Object.entries(flagsToFilter)) {
+    const longFlag = `--${camelToKebab(flagName)}`
+    // Special case for negated booleans.
+    if (flagName === 'banner' || flagName === 'spinner') {
+      flagsToFilterSet.add(`--no-${flagName}`)
+    } else {
+      flagsToFilterSet.add(longFlag)
+    }
+    if (flag?.shortFlag) {
+      flagsToFilterSet.add(`-${flag.shortFlag}`)
+    }
+    // Track flags that take values.
+    if (flag.type !== 'boolean') {
+      flagsWithValueSet.add(longFlag)
+      if (flag?.shortFlag) {
+        flagsWithValueSet.add(`-${flag.shortFlag}`)
+      }
+    }
+  }
+
+  return { __proto__: null, flagsToFilterSet, flagsWithValueSet }
+}
+
 /**
  * Convert command arguments to a properly formatted string representation.
  */
@@ -67,36 +101,6 @@ export function cmdPrefixMessage(cmdName: string, text: string): string {
   return `${cmdPrefix}${text}`
 }
 
-export function collectFilteredFlagNames(
-  flagsToFilter: Parameters<typeof filterFlags>[1],
-) {
-  // Build set of flags to filter from the provided flag objects.
-  const flagsToFilterSet = new Set<string>()
-  const flagsWithValueSet = new Set<string>()
-
-  for (const [flagName, flag] of Object.entries(flagsToFilter)) {
-    const longFlag = `--${camelToKebab(flagName)}`
-    // Special case for negated booleans.
-    if (flagName === 'banner' || flagName === 'spinner') {
-      flagsToFilterSet.add(`--no-${flagName}`)
-    } else {
-      flagsToFilterSet.add(longFlag)
-    }
-    if (flag?.shortFlag) {
-      flagsToFilterSet.add(`-${flag.shortFlag}`)
-    }
-    // Track flags that take values.
-    if (flag.type !== 'boolean') {
-      flagsWithValueSet.add(longFlag)
-      if (flag?.shortFlag) {
-        flagsWithValueSet.add(`-${flag.shortFlag}`)
-      }
-    }
-  }
-
-  return { __proto__: null, flagsToFilterSet, flagsWithValueSet }
-}
-
 /**
  * Filter out Socket flags from argv before passing to subcommands.
  */
@@ -111,7 +115,7 @@ export function filterFlags(
   const filtered: string[] = []
 
   const { flagsToFilterSet, flagsWithValueSet } =
-    collectFilteredFlagNames(flagsToFilter)
+    buildFilterFlagSets(flagsToFilter)
 
   for (let i = 0, { length } = argv; i < length; i += 1) {
     const arg = argv[i]!

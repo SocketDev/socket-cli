@@ -1,4 +1,4 @@
-import path from 'node:path'
+import { resolveScanCwd } from './util.mts'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { applyScanCreateDefaults } from './cmd-scan-create-defaults.mts'
 import {
@@ -102,6 +102,35 @@ export const cmdScanCreate = {
   description,
   hidden,
   run,
+}
+
+export function outputDryRunScanCreate(config: {
+  orgSlug: string
+  targets: string[]
+  repoName: string
+  branchName: string
+  reach: boolean
+  reachEcosystems: PURL_Type[]
+}): void {
+  const { orgSlug, targets, repoName, branchName, reach, reachEcosystems } =
+    config
+  const details: Record<string, unknown> = {
+    organization: orgSlug,
+    targets: targets.join(', '),
+  }
+  if (repoName) {
+    details['repository'] = repoName
+  }
+  if (branchName) {
+    details['branch'] = branchName
+  }
+  if (reach) {
+    details['reachabilityAnalysis'] = 'enabled'
+    if (reachEcosystems.length > 0) {
+      details['ecosystems'] = reachEcosystems.join(', ')
+    }
+  }
+  outputDryRunUpload('scan', details)
 }
 
 export async function run(
@@ -275,10 +304,7 @@ export async function run(
   )
 
   const processCwd = process.cwd()
-  const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
-      ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+  const cwd = resolveScanCwd(processCwd, cwdOverride)
 
   const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
@@ -362,89 +388,72 @@ export async function run(
     return
   }
 
-  return await executeValidatedScanCreate({ autoManifest, report })
-
-  async function executeValidatedScanCreate(scanOptions: {
-    autoManifest: boolean
-    report: boolean
-  }) {
-    const opts = { __proto__: null, ...scanOptions } as typeof scanOptions
-    if (dryRun) {
-      const details: Record<string, unknown> = {
-        organization: orgSlug,
-        targets: targets.join(', '),
-      }
-      if (repoName) {
-        details['repository'] = repoName
-      }
-      if (branchName) {
-        details['branch'] = branchName
-      }
-      if (reach) {
-        details['reachabilityAnalysis'] = 'enabled'
-        if (reachEcosystems.length > 0) {
-          details['ecosystems'] = reachEcosystems.join(', ')
-        }
-      }
-      outputDryRunUpload('scan', details)
-      return
-    }
-
-    // Validate numeric flag conversions.
-    const {
-      validatedPullRequest,
-      validatedReachAnalysisMemoryLimit,
-      validatedReachAnalysisTimeout,
-      validatedReachConcurrency,
-    } = validateScanCreateNumericFlags({
-      pullRequest,
-      reachAnalysisMemoryLimit,
-      reachAnalysisTimeout,
-      reachConcurrency,
-    })
-
-    await handleCreateNewScan({
-      autoManifest: opts.autoManifest,
-      branchName: branchName,
-      commitHash: (commitHash && commitHash) || '',
-      commitMessage: (commitMessage && commitMessage) || '',
-      committers: (committers && committers) || '',
-      cwd,
-      defaultBranch: makeDefaultBranch,
-      interactive: interactive,
+  if (dryRun) {
+    outputDryRunScanCreate({
       orgSlug,
-      outputKind,
-      pendingHead: pendingHead,
-      pullRequest: validatedPullRequest,
-      reach: {
-        excludePaths,
-        runReachabilityAnalysis: reach,
-        reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
-        reachAnalysisTimeout: validatedReachAnalysisTimeout,
-        reachConcurrency: validatedReachConcurrency,
-        reachDebug: reachDebug,
-        reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
-        reachDisableAnalytics: reachDisableAnalytics,
-        reachDisableExternalToolChecks: reachDisableExternalToolChecks,
-        reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
-        reachEcosystems,
-        reachExcludePaths,
-        reachLazyMode: reachLazyMode,
-        reachMinSeverity: reachMinSeverity,
-        reachSkipCache: reachSkipCache,
-        reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
-        reachUseUnreachableFromPrecomputation:
-          reachUseUnreachableFromPrecomputation,
-        reachVersion: reachVersion || undefined,
-      },
-      readOnly: readOnly,
-      repoName,
-      report: opts.report,
-      reportLevel,
       targets,
-      tmp: tmp,
-      trustSocketJson: Boolean(trustSocketJson),
-      workspace: (workspace && workspace) || '',
+      repoName,
+      branchName,
+      reach,
+      reachEcosystems,
     })
+    return
   }
+
+  // Validate numeric flag conversions.
+  const {
+    validatedPullRequest,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanCreateNumericFlags({
+    pullRequest,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
+
+  await handleCreateNewScan({
+    autoManifest: autoManifest,
+    branchName: branchName,
+    commitHash: commitHash || '',
+    commitMessage: commitMessage || '',
+    committers: committers || '',
+    cwd,
+    defaultBranch: makeDefaultBranch,
+    interactive: interactive,
+    orgSlug,
+    outputKind,
+    pendingHead: pendingHead,
+    pullRequest: validatedPullRequest,
+    reach: {
+      excludePaths,
+      runReachabilityAnalysis: reach,
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
+      reachEcosystems,
+      reachExcludePaths,
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
+        reachUseUnreachableFromPrecomputation,
+      reachVersion: reachVersion || undefined,
+    },
+    readOnly: readOnly,
+    repoName,
+    report,
+    reportLevel,
+    targets,
+    tmp: tmp,
+    trustSocketJson: Boolean(trustSocketJson),
+    workspace: workspace || '',
+  })
 }

@@ -131,8 +131,8 @@ export type { ExternalIssueRef } from './external-issue-ref.mts'
 // path a Workflow agent() subagent (or any git command) forked outside the
 // cascade, closing the gap where the PreToolUse no-fleet-fork-guard cannot
 // attribute or fire for that subagent's Bash calls.
-export { scanCanonicalForkPaths } from './canonical-fork-scan.mts'
-export type { CanonicalForkFinding } from './canonical-fork-scan.mts'
+export { scanCanonicalForkPaths } from './canonical/fork-scan.mts'
+export type { CanonicalForkFinding } from './canonical/fork-scan.mts'
 
 // Hard-fail if Node is below 25. This runs at module load — every
 // hook invocation imports _shared/helpers.mts before doing anything, so the

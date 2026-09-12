@@ -6,8 +6,8 @@
   "schemaVersion": 1,
   "repoName": "socket-cli",
   "bundle": {
-    "ref": "fleet-pack-34b047176c416cd46f1919ad0bba35a0bb7b84b3",
-    "cascadeSha": "34b047176c416cd46f1919ad0bba35a0bb7b84b3"
+    "ref": "fleet-pack-b12f764b31ec17f8f08ab5a49c21c3852e46a385",
+    "cascadeSha": "b12f764b31ec17f8f08ab5a49c21c3852e46a385"
   },
   "repo": {
     "type": "solo"
@@ -170,8 +170,32 @@
   },
   "vitest": {
     "lanes": {
-      "mid": ["test/unit/command/**", "test/unit/meow.test.mts"],
+      "mid": [
+        "test/unit/command/**",
+        "test/unit/meow.test.mts",
+        "test/unit/core/firewall/**",
+        "test/unit/util/git/spawn-git.test.mts",
+        "test/unit/util/spawn/spawn-node.test.mts",
+        "test/unit/util/spawn/system-tool.test.mts",
+        "test/unit/util/trusted-executable.test.mts"
+      ],
       "slow": ["test/integration/**"]
+    }
+  },
+  "cover": {
+    "budgetAllowances": {
+      "slow": {
+        "maxMs": 168348,
+        "reason": "Instrumented CLI integration processes exceed the 60-second slow-lane target.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      },
+      "fast": {
+        "maxMs": 10049,
+        "reason": "Measured 9570.211 ms at 98da3281fd6ae67f1e1e55aeeb88525957e1c85b; 5% headroom; darwin/arm64, Node v24.10.0.",
+        "created": "2026-09-12",
+        "expires": "2026-10-12"
+      }
     }
   }
 }

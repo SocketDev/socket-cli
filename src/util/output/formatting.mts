@@ -19,6 +19,9 @@ import { naturalCompare } from '@socketsecurity/lib-stable/sorts/natural'
 import { indentString } from '@socketsecurity/lib-stable/strings/format'
 import { pluralize } from '@socketsecurity/lib-stable/words/pluralize'
 
+import { isFlagName } from '../cli/flag-name.mts'
+import type { FlagName } from '../cli/flag-name.mts'
+
 import { camelToKebab } from '../data/strings.mts'
 import {
   getRequirements,
@@ -98,8 +101,7 @@ export function getFlagListOutput(
 export const getFlagsHelpOutput = getFlagListOutput
 
 export function getHelpListOutput(
-  // oxlint-disable-next-line socket/prefer-refined-record -- Open CLI keys.
-  list: Record<string, ListDescription>,
+  list: Record<FlagName, ListDescription>,
   options?: HelpListOptions | undefined,
 ): string {
   const {
@@ -114,6 +116,11 @@ export function getHelpListOutput(
   const names = Object.keys(list).toSorted(naturalCompare)
   for (let i = 0, { length } = names; i < length; i += 1) {
     const name = names[i]!
+    if (!isFlagName(name)) {
+      throw new TypeError(
+        `Invalid CLI help name "${name}"; expected an ASCII letter first; rename the entry`,
+      )
+    }
     const entry = list[name]
     const entryIsObj = isObject(entry)
     if (entryIsObj && 'hidden' in entry && entry['hidden']) {

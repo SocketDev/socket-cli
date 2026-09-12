@@ -300,7 +300,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`imports`** — node-builtin — remove dead fs imports in 5 test files
 - **`types`** — consistent-type-imports — hoist 12 inline import() annotations across 5 test files
 - **`imports`** — node-builtin — 7 files converted to named imports
-- **`types`** — consistent-type-imports — hoist inline import() in sdk-test-helpers.mts
+- **`types`** — consistent-type-imports — hoist inline import() in sdk-fixtures.mts
 - **`regex`** — sort-regex-alternations — 8 rewrites + 1 order-significant disable
 - **`types`** — consistent-type-imports — hoist inline import() in iocraft.mts
 - **`types`** — consistent-type-imports — hoist inline import() in spawn-node.mts
@@ -1367,7 +1367,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **`imports`** — node-builtin — remove dead fs imports in 5 test files
 - **`types`** — consistent-type-imports — hoist 12 inline import() annotations across 5 test files
 - **`imports`** — node-builtin — 7 files converted to named imports
-- **`types`** — consistent-type-imports — hoist inline import() in sdk-test-helpers.mts
+- **`types`** — consistent-type-imports — hoist inline import() in sdk-fixtures.mts
 - **`regex`** — sort-regex-alternations — 8 rewrites + 1 order-significant disable
 - **`types`** — consistent-type-imports — hoist inline import() in iocraft.mts
 - **`types`** — consistent-type-imports — hoist inline import() in spawn-node.mts

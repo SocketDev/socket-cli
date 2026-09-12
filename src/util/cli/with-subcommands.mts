@@ -20,6 +20,9 @@ import { applyMachineOutputStreamPolicy } from '../output/machine-output-streams
 import { buildHelpLines } from './with-subcommands-help.mts'
 import { tryDispatchSubcommand } from './with-subcommands-dispatch.mts'
 import { applyRootCommandFlagVisibility } from './with-subcommands-root-flags.mts'
+import type { AsciiHeaderOptions } from './with-subcommands-banner.mts'
+import type { CliCommandName } from './command-name.mts'
+
 import type { MeowFlags } from '../../flags.mts'
 import type { CliSubcommand, MeowOptions } from './with-subcommands-shared.mts'
 import {
@@ -83,8 +86,7 @@ export interface MeowConfig {
   name: string
   argv: string[] | readonly string[]
   importMeta: ImportMeta
-  // oxlint-disable-next-line socket/prefer-refined-record -- Open CLI keys.
-  subcommands: Record<string, CliSubcommand>
+  subcommands: Record<CliCommandName, CliSubcommand>
 }
 
 // Banner / ASCII-header rendering helpers extracted to keep this file
@@ -100,10 +102,9 @@ export {
   stripAnsi,
 }
 
-export function applyCliConfigOverrides(configFlag: string) {
-  // Hard override the config if instructed to do so.
-  // The env var overrides the --flag, which overrides the persisted config
-  // Also, when either of these are used, config updates won't persist.
+export function applySubcommandConfigOverride(
+  configFlag: string,
+): ReturnType<typeof overrideCachedConfig> | undefined {
   let configOverrideResult: ReturnType<typeof overrideCachedConfig> | undefined
   const socketCliConfig = getSocketCliConfig()
   if (socketCliConfig) {
@@ -126,6 +127,27 @@ export function applyCliConfigOverrides(configFlag: string) {
   }
 
   return configOverrideResult
+}
+
+export function getPackageShorthandArgv(
+  commandName: string | undefined,
+  argv: readonly string[],
+  rawCommandArgv: readonly string[],
+): string[] | undefined {
+  if (commandName?.startsWith('pkg:')) {
+    return ['package', 'deep', ...argv]
+  }
+  if (/^[a-z]+\//.test(commandName || '')) {
+    return ['package', 'deep', `pkg:${commandName}`, ...rawCommandArgv]
+  }
+  return undefined
+}
+
+export function isRootCliInvocation(
+  name: string,
+  commandName: string | undefined,
+): boolean {
+  return name === 'socket' && (!commandName || commandName.startsWith('-'))
 }
 
 /**
@@ -173,19 +195,21 @@ export async function meowWithSubcommands(
   }
 
   // No further args or first arg is a flag (shrug).
-  const isRootCommand =
-    name === 'socket' &&
-    (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
+  const isRootCommand = isRootCliInvocation(name, commandOrAliasName)
 
-  if (
-    await tryDispatchPackageShorthand(config, {
+  if (!isRootCommand) {
+    const shorthandArgv = getPackageShorthandArgv(
       commandOrAliasName,
+      argv,
       rawCommandArgv,
-      isRootCommand,
-      options,
-    })
-  ) {
-    return
+    )
+    if (shorthandArgv) {
+      logger.info('Invoking `socket package score`.')
+      return await meowWithSubcommands(
+        { name, argv: shorthandArgv, importMeta, subcommands },
+        options,
+      )
+    }
   }
 
   applyRootCommandFlagVisibility(flags, { isRootCommand })
@@ -239,7 +263,10 @@ export async function meowWithSubcommands(
   })
 
   const compactMode = compactHeaderFlag || (isCI() && !VITEST)
-  const configOverrideResult = applyCliConfigOverrides(configFlag)
+  // Hard override the config if instructed to do so.
+  // The env var overrides the --flag, which overrides the persisted config
+  // Also, when either of these are used, config updates won't persist.
+  const configOverrideResult = applySubcommandConfigOverride(configFlag)
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
@@ -295,19 +322,20 @@ export async function meowWithSubcommands(
     help: lines.map(l => indentString(l, { count: HELP_INDENT })).join('\n'),
   })
 
-  showCliCommandHelp(cli2, { name, orgFlag, compactMode })
+  showSubcommandHelp(cli2, name, { orgFlag, compactMode })
 }
 
-export function showCliCommandHelp(
-  cli: ReturnType<typeof meow>,
-  config: { name: string; orgFlag: string; compactMode: boolean },
+export function showSubcommandHelp(
+  cli2: ReturnType<typeof meow>,
+  name: string,
+  options?: AsciiHeaderOptions | undefined,
 ): void {
-  const { name, orgFlag, compactMode } = config
+  const { orgFlag, compactMode } = { __proto__: null, ...options }
   const {
     dryRun,
     help: helpFlag,
     version: versionFlag,
-  } = cli.flags as {
+  } = cli2.flags as {
     dryRun: boolean
     help: boolean
     version: boolean
@@ -316,13 +344,13 @@ export function showCliCommandHelp(
   // Handle --version flag at root level.
   /* c8 ignore start - --version causes meow to print and exit; tests avoid invoking this path to prevent process.exit */
   if (versionFlag) {
-    cli.showVersion()
+    cli2.showVersion()
   }
   /* c8 ignore stop */
 
   // ...else we provide basic instructions and help.
-  if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(name, { orgFlag, compactMode, flags: cli.flags })
+  if (!shouldSuppressBanner(cli2.flags)) {
+    emitBanner(name, { orgFlag, compactMode, flags: cli2.flags })
     // Meow will add newline so don't add stderr spacing here.
   }
   /* c8 ignore start - dry-run process.exit branch; tests avoid invoking this to prevent process termination */
@@ -336,52 +364,6 @@ export function showCliCommandHelp(
   } else {
     // When you explicitly request --help, the command should be successful
     // so we exit(0). If we do it because we need more input, we exit(2).
-    cli.showHelp(helpFlag ? 0 : 2)
+    cli2.showHelp(helpFlag ? 0 : 2)
   }
-}
-
-export async function tryDispatchPackageShorthand(
-  config: MeowConfig,
-  context: {
-    commandOrAliasName: string | undefined
-    rawCommandArgv: string[]
-    isRootCommand: boolean
-    options: MeowOptions | undefined
-  },
-): Promise<boolean> {
-  const { name, argv, importMeta, subcommands } = config
-  const { commandOrAliasName, rawCommandArgv, isRootCommand, options } = context
-  // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
-  if (!isRootCommand) {
-    if (commandOrAliasName?.startsWith('pkg:')) {
-      logger.info('Invoking `socket package score`.')
-      await meowWithSubcommands(
-        { name, argv: ['package', 'deep', ...argv], importMeta, subcommands },
-        options,
-      )
-      return true
-    }
-    // Support `socket npm/lodash` or whatever as a shorthand, too.
-    // Accept any ecosystem and let the remote sort it out.
-    if (/^[a-z]+\//.test(commandOrAliasName || '')) {
-      logger.info('Invoking `socket package score`.')
-      await meowWithSubcommands(
-        {
-          name,
-          argv: [
-            'package',
-            'deep',
-            `pkg:${commandOrAliasName}`,
-            ...rawCommandArgv,
-          ],
-          importMeta,
-          subcommands,
-        },
-        options,
-      )
-      return true
-    }
-  }
-
-  return false
 }

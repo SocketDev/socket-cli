@@ -20,6 +20,7 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mts'
 
 const logger = getDefaultLogger()
 
@@ -27,7 +28,7 @@ export const CMD_NAME = 'threat-feed'
 
 // alphabetical by ecosystem name; NPM constant sits between 'maven' and 'nuget'
 // which would be its sort position if inlined.
-// oxlint-disable-next-line socket/sort-set-args -- dynamic values
+// oxlint-disable-next-line socket/sort-set-args -- no enforced literal order
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([
@@ -52,6 +53,116 @@ export const cmdThreatFeed = {
   description,
   hidden,
   run,
+}
+
+export interface ThreatFeedFilters {
+  eco: string
+  name: string
+  remaining: string[]
+  type: string
+  version: string
+}
+
+export interface ThreatFeedExecutionConfig extends Omit<
+  ThreatFeedFilters,
+  'remaining'
+> {
+  direction: string
+  dryRun: boolean
+  orgSlug: string
+  outputKind: OutputKind
+  page: string
+  perPage: number | string
+}
+
+export async function executeThreatFeed(
+  config: ThreatFeedExecutionConfig,
+): Promise<void> {
+  const cfg = { __proto__: null, ...config } as typeof config
+  const perPage = Number(cfg.perPage) || 30
+  if (cfg.dryRun) {
+    outputDryRunFetch('threat feed data', {
+      organization: cfg.orgSlug,
+      ecosystem: cfg.eco || 'all',
+      type: cfg.type || 'mal (default)',
+      package: cfg.name || undefined,
+      version: cfg.version || undefined,
+      perPage,
+      page: cfg.page || '1',
+      direction: cfg.direction || 'desc',
+    })
+    return
+  }
+  if (Number.isNaN(perPage) || perPage < 1) {
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${cfg.perPage}"); pass a number like --per-page=30`,
+    )
+  }
+  await handleThreatFeed({
+    direction: cfg.direction || 'desc',
+    ecosystem: cfg.eco,
+    filter: cfg.type,
+    outputKind: cfg.outputKind,
+    orgSlug: cfg.orgSlug,
+    page: cfg.page || '1',
+    perPage,
+    pkg: cfg.name,
+    version: cfg.version,
+  })
+}
+
+export function parseThreatFeedFilters(
+  input: readonly string[],
+  config: { eco: string; name: string; type: string; version: string },
+): ThreatFeedFilters {
+  const cfg = { __proto__: null, ...config } as typeof config
+  let eco = cfg.eco
+  let name = cfg.name
+  let type = cfg.type
+  let version = cfg.version
+  const remaining = new Set(input)
+  input.some(value => {
+    if (ECOSYSTEMS.has(value)) {
+      eco = value
+      remaining.delete(value)
+      return true
+    }
+    return false
+  })
+  input.some(value => {
+    if (/^v?\d+\.\d+\.\d+$/.test(value)) {
+      version = value
+      remaining.delete(value)
+      return true
+    }
+    return false
+  })
+  input.some(value => {
+    if (TYPE_FILTERS.has(value)) {
+      type = value
+      remaining.delete(value)
+      return true
+    }
+    return false
+  })
+  const assigned = new Set([eco, type, version])
+  input.some(value => {
+    if (!assigned.has(value)) {
+      name = value
+      remaining.delete(value)
+      return true
+    }
+    return false
+  })
+  const filters = {
+    __proto__: null,
+    eco,
+    name,
+    remaining: Array.from(remaining),
+    type,
+    version,
+  }
+  return filters
 }
 
 export async function run(
@@ -194,8 +305,22 @@ export async function run(
 
   const interactive = cli.flags['interactive']
 
-  const { ecoFilter, versionFilter, typeFilter, nameFilter } =
-    resolveThreatFilters()
+  const filters = parseThreatFeedFilters(cli.input, {
+    eco: eco || '',
+    name: pkg || '',
+    type: stringFlagValue(typef),
+    version: version || '',
+  })
+  const {
+    eco: ecoFilter,
+    name: nameFilter,
+    remaining,
+    type: typeFilter,
+    version: versionFilter,
+  } = filters
+  if (remaining.length) {
+    logger.info(`Warning: ignoring these excessive args: ${joinAnd(remaining)}`)
+  }
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -207,131 +332,41 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'missing',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+  )
   if (!wasValidInput) {
     return
   }
 
-  // Validate numeric pagination parameter.
-  const validatedPerPage = Number(cli.flags['perPage']) || 30
-
-  if (dryRun) {
-    outputDryRunFetch('threat feed data', {
-      organization: orgSlug,
-      ecosystem: ecoFilter || 'all',
-      type: typeFilter || 'mal (default)',
-      package: nameFilter || undefined,
-      version: versionFilter || undefined,
-      perPage: validatedPerPage,
-      page: cli.flags['page'] || '1',
-      direction: cli.flags['direction'] || 'desc',
-    })
-    return
-  }
-  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new InputError(
-      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
-    )
-  }
-
-  await handleThreatFeed({
+  await executeThreatFeed({
     direction: cli.flags['direction'] || 'desc',
-    ecosystem: ecoFilter,
-    filter: typeFilter,
-    outputKind,
+    dryRun,
+    eco: ecoFilter,
+    name: nameFilter,
     orgSlug,
+    outputKind,
     page: cli.flags['page'] || '1',
-    perPage: validatedPerPage,
-    pkg: nameFilter,
+    perPage: cli.flags['perPage'],
+    type: typeFilter,
     version: versionFilter,
   })
-
-  function resolveThreatFilters() {
-    let resolvedEcoFilter = eco || ''
-    let resolvedVersionFilter = version || ''
-    let resolvedTypeFilter = stringFlagValue(typef)
-    let resolvedNameFilter = pkg || ''
-
-    const argSet = new Set(cli.input)
-    cli.input.some(str => {
-      if (ECOSYSTEMS.has(str)) {
-        resolvedEcoFilter = str
-        argSet.delete(str)
-        return true
-      }
-      return false
-    })
-
-    cli.input.some(str => {
-      if (/^v?\d+\.\d+\.\d+$/.test(str)) {
-        resolvedVersionFilter = str
-        argSet.delete(str)
-        return true
-      }
-      return false
-    })
-
-    cli.input.some(str => {
-      if (TYPE_FILTERS.has(str)) {
-        resolvedTypeFilter = str
-        argSet.delete(str)
-        return true
-      }
-      return false
-    })
-
-    // elements are runtime variables, not literals, so there is no comparable
-    // sort order to enforce.
-    // oxlint-disable-next-line socket/sort-set-args -- dynamic values
-    const haves = new Set([
-      resolvedEcoFilter,
-      resolvedVersionFilter,
-      resolvedTypeFilter,
-    ])
-    cli.input.some(str => {
-      if (!haves.has(str)) {
-        resolvedNameFilter = str
-        argSet.delete(str)
-        return true
-      }
-      return false
-    })
-
-    if (argSet.size) {
-      logger.info(
-        `Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`,
-      )
-    }
-
-    return {
-      __proto__: null,
-      ecoFilter: resolvedEcoFilter,
-      versionFilter: resolvedVersionFilter,
-      typeFilter: resolvedTypeFilter,
-      nameFilter: resolvedNameFilter,
-    }
-  }
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: !!orgSlug,
-        message: 'Org name by default setting, --org, or auto-discovered',
-        fail: 'missing',
-      },
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-    )
-  }
 }

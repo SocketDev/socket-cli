@@ -1,3 +1,4 @@
+import { sourceIndexPath } from './paths.mts'
 import { existsSync, promises as fs } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -52,7 +53,7 @@ export async function buildSdxgenBundle(root: string): Promise<void> {
   const acornDir = path.dirname(require.resolve('@ultrathink/acorn.rs.wasm'))
   await fs.mkdir(output, { recursive: true })
   const bundle = await rolldown({
-    input: path.join(upstream, 'src', 'index.mts'),
+    input: sourceIndexPath(upstream),
     platform: 'node',
     tsconfig: path.join(root, 'tsconfig.json'),
     transform: {

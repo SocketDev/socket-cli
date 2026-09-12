@@ -233,6 +233,7 @@ const SCRIPT_META: ScriptMeta = {
   describe:
     'validate the tree carries no hardcoded CDN reference (unpkg.com, cdn.jsdelivr.net, esm.sh, cdn.skypack.dev, ga.jspm.io)',
   help: `Usage: node scripts/repo/validate-no-cdn-refs.mts`,
+  json: 'result',
 }
 
 if (isMainModule(import.meta.url)) {

@@ -52,10 +52,7 @@ export function getNetworkErrorDiagnostics(
   const errorMessage = getErrorMessage(error) || String(error)
 
   // Timeout errors.
-  if (
-    networkTimeoutCodes.has(errorCode) ||
-    (durationMs && durationMs > 30_000)
-  ) {
+  if (isNetworkTimeout(errorCode, durationMs)) {
     const timeInfo = durationMs
       ? ` after ${Math.round(durationMs / 1000)}s`
       : ''
@@ -99,10 +96,7 @@ export function getNetworkErrorDiagnostics(
   }
 
   // Certificate/SSL errors.
-  if (
-    networkCertificateCodes.has(errorCode) ||
-    errorMessage.includes('certificate')
-  ) {
+  if (isNetworkCertificateError(errorCode, errorMessage)) {
     return (
       'SSL/TLS certificate error. Unable to verify server identity.\n' +
       'Try:\n' +
@@ -133,5 +127,29 @@ export function getNetworkErrorDiagnostics(
     '  • Verify proxy settings if using a proxy\n' +
     `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
     '  • Try again in a few moments'
+  )
+}
+
+export function isNetworkCertificateError(
+  errorCode: string | undefined,
+  errorMessage: string,
+): boolean {
+  return (
+    errorCode === 'CERT_HAS_EXPIRED' ||
+    errorCode === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    errorCode === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    errorMessage.includes('certificate')
+  )
+}
+
+export function isNetworkTimeout(
+  errorCode: string | undefined,
+  durationMs: number | undefined,
+): boolean {
+  return Boolean(
+    errorCode === 'ETIMEDOUT' ||
+    errorCode === 'ESOCKETTIMEDOUT' ||
+    errorCode === 'ECONNRESET' ||
+    (durationMs && durationMs > 30_000),
   )
 }

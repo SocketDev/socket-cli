@@ -33,6 +33,82 @@ export const cmdScanList: CliSubcommand = {
   run,
 }
 
+export async function fetchValidatedScanList(config: {
+  flags: {
+    page?: number | undefined
+    perPage?: number | undefined
+    direction?: string | undefined
+    fromTime?: string | undefined
+    sort?: string | undefined
+  }
+  branch: string
+  repo: string
+  orgSlug: string
+  outputKind: Parameters<typeof handleListScans>[0]['outputKind']
+  validatedPage: number
+  validatedPerPage: number
+}): Promise<void> {
+  const {
+    flags,
+    branch,
+    repo,
+    orgSlug,
+    outputKind,
+    validatedPage,
+    validatedPerPage,
+  } = config
+  validateScanListPagination(
+    flags.page,
+    flags.perPage,
+    validatedPage,
+    validatedPerPage,
+  )
+
+  await handleListScans({
+    branch: normalizeScanListFilter(branch),
+    direction: normalizeScanListFilter(flags.direction),
+    from_time: normalizeScanListFilter(flags.fromTime),
+    orgSlug,
+    outputKind,
+    page: validatedPage,
+    perPage: validatedPerPage,
+    repo: normalizeScanListFilter(repo),
+    sort: normalizeScanListFilter(flags.sort),
+  })
+}
+
+export function normalizeScanListFilter(value: string | undefined): string {
+  return value || ''
+}
+
+export function outputScanListDryRun(
+  options?:
+    | {
+        branch?: string | undefined
+        direction?: string | undefined
+        orgSlug?: string | undefined
+        page?: number | undefined
+        perPage?: number | undefined
+        repo?: string | undefined
+        sort?: string | undefined
+      }
+    | undefined,
+): void {
+  const { branch, direction, orgSlug, page, perPage, repo, sort } = {
+    __proto__: null,
+    ...options,
+  }
+  outputDryRunFetch('scans', {
+    organization: orgSlug,
+    repo: repo || undefined,
+    branch: branch || undefined,
+    sort: sort || 'created_at',
+    direction: direction || 'desc',
+    page,
+    perPage,
+  })
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -135,7 +211,7 @@ export async function run(
 
   const { 0: repo = '', 1: branchArg = '' } = cli.input
 
-  const branch = branchFlag || branchArg || ''
+  const branch = branchFlag || branchArg
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -147,89 +223,96 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = validateCommandInput()
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: noLegacy,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
+      fail: 'received legacy flags',
+    },
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'dot is an invalid org, most likely you forgot the org name here?',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+    {
+      nook: true,
+      test: !branchFlag || !branchArg,
+      message:
+        'You should not set --branch and also give a second arg for branch name',
+      fail: 'received flag and second arg',
+    },
+  )
   if (!wasValidInput) {
     return
   }
 
-  return await executeValidatedScanList()
+  // Validate numeric pagination parameters.
+  const validatedPage = Number(cli.flags['page'] || 1)
+  const validatedPerPage = Number(cli.flags['perPage'] || 30)
 
-  async function executeValidatedScanList() {
-    // Validate numeric pagination parameters.
-    const validatedPage = Number(cli.flags['page'] || 1)
-    const validatedPerPage = Number(cli.flags['perPage'] || 30)
-
-    if (dryRun) {
-      outputDryRunFetch('scans', {
-        organization: orgSlug,
-        repo: repo || undefined,
-        branch: branch || undefined,
-        sort: cli.flags['sort'] || 'created_at',
-        direction: cli.flags['direction'] || 'desc',
-        page: validatedPage,
-        perPage: validatedPerPage,
-      })
-      return
-    }
-
-    if (Number.isNaN(validatedPage) || validatedPage < 1) {
-      throw new InputError(
-        `--page must be a positive integer (saw: "${cli.flags['page']}"); pass a number like --page=1`,
-      )
-    }
-    if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-      throw new InputError(
-        `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
-      )
-    }
-
-    await handleListScans({
+  if (dryRun) {
+    outputScanListDryRun({
       branch,
-      direction: cli.flags['direction'] || '',
-      from_time: cli.flags['fromTime'] || '',
+      direction: cli.flags.direction,
       orgSlug,
-      outputKind,
       page: validatedPage,
       perPage: validatedPerPage,
       repo,
-      sort: cli.flags['sort'] || '',
+      sort: cli.flags.sort,
     })
+    return
   }
 
-  function validateCommandInput() {
-    return checkCommandInput(
-      outputKind,
-      {
-        nook: true,
-        test: noLegacy,
-        message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
-        fail: 'received legacy flags',
-      },
-      {
-        nook: true,
-        test: !!orgSlug,
-        message: 'Org name by default setting, --org, or auto-discovered',
-        fail: 'dot is an invalid org, most likely you forgot the org name here?',
-      },
-      {
-        nook: true,
-        test: !json || !markdown,
-        message: 'The json and markdown flags cannot be both set, pick one',
-        fail: 'omit one',
-      },
-      {
-        nook: true,
-        test: hasApiToken,
-        message: 'This command requires a Socket API token for access',
-        fail: 'try `socket login`',
-      },
-      {
-        nook: true,
-        test: !branchFlag || !branchArg,
-        message:
-          'You should not set --branch and also give a second arg for branch name',
-        fail: 'received flag and second arg',
-      },
+  await fetchValidatedScanList({
+    flags: {
+      direction:
+        typeof cli.flags.direction === 'string'
+          ? cli.flags.direction
+          : undefined,
+      fromTime:
+        typeof cli.flags.fromTime === 'string' ? cli.flags.fromTime : undefined,
+      page: validatedPage,
+      perPage: validatedPerPage,
+      sort: typeof cli.flags.sort === 'string' ? cli.flags.sort : undefined,
+    },
+    branch,
+    repo,
+    orgSlug,
+    outputKind,
+    validatedPage,
+    validatedPerPage,
+  })
+}
+
+export function validateScanListPagination(
+  page: number | undefined,
+  perPage: number | undefined,
+  validatedPage: number,
+  validatedPerPage: number,
+): void {
+  if (Number.isNaN(validatedPage) || validatedPage < 1) {
+    throw new InputError(
+      `--page must be a positive integer (saw: "${page}"); pass a number like --page=1`,
+    )
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${perPage}"); pass a number like --per-page=30`,
     )
   }
 }

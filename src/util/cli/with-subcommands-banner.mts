@@ -37,7 +37,7 @@ import type { HeaderTheme } from '../terminal/ascii-header.mts'
 
 const logger = getDefaultLogger()
 
-export function combineBannerLines(logo: string, infoLines: string[]): string {
+export function combineHeaderLines(logo: string, infoLines: string[]): string {
   // Combine logo and info side-by-side.
   const logoLines = logo.split(/\r?\n/)
   const combinedLines: string[] = []
@@ -78,15 +78,12 @@ export function emitBanner(
   logger.error(getAsciiHeader(name, options))
 }
 
-export function formatBannerOrg({
-  redacting,
-  orgFlag,
-  defaultOrg,
-}: {
-  redacting: boolean
-  orgFlag: string | undefined
-  defaultOrg: string | undefined
-}): string {
+export function formatHeaderOrganization(
+  orgFlag: string | undefined,
+  defaultOrg: string | undefined,
+  options?: { redacting?: boolean | undefined } | undefined,
+): string {
+  const { redacting } = { __proto__: null, ...options }
   return redacting
     ? `org: ${REDACTED}`
     : orgFlag
@@ -96,17 +93,14 @@ export function formatBannerOrg({
         : colors.yellow('org: (not set)')
 }
 
-export function formatBannerToken({
-  redacting,
-  noApiToken,
-  tokenPrefix,
-  tokenOrigin,
-}: {
-  redacting: boolean
-  noApiToken: boolean
-  tokenPrefix: string | undefined
-  tokenOrigin: string
-}): string {
+export function formatHeaderToken(
+  tokenPrefix: string | undefined,
+  tokenOrigin: string,
+  options?:
+    | { redacting?: boolean | undefined; noApiToken?: boolean | undefined }
+    | undefined,
+): string {
+  const { redacting, noApiToken } = { __proto__: null, ...options }
   return redacting
     ? REDACTED
     : noApiToken
@@ -114,22 +108,6 @@ export function formatBannerToken({
       : tokenPrefix
         ? `${colors.green(tokenPrefix)}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
         : colors.yellow('(not set)')
-}
-
-export function formatCompactBannerToken({
-  noApiToken,
-  tokenPrefix,
-  tokenOrigin,
-}: {
-  noApiToken: boolean
-  tokenPrefix: string | undefined
-  tokenOrigin: string
-}): string {
-  return noApiToken
-    ? '(disabled)'
-    : tokenPrefix
-      ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
-      : '(not set)'
 }
 
 /**
@@ -164,24 +142,20 @@ export function getAsciiHeader(
   const tokenPrefix = getVisibleTokenPrefix()
   const tokenOrigin = redacting ? '' : getTokenOrigin()
   const noApiToken = getSocketCliNoApiToken()
-  const shownToken = formatBannerToken({
+  const shownToken = formatHeaderToken(tokenPrefix, tokenOrigin, {
     redacting,
     noApiToken,
-    tokenPrefix,
-    tokenOrigin,
   })
 
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
 
   // Consolidated org display format.
-  const orgPart = formatBannerOrg({ redacting, orgFlag, defaultOrg })
+  const orgPart = formatHeaderOrganization(orgFlag, defaultOrg, { redacting })
 
   // Compact mode for CI/automation.
   if (compactMode) {
-    const compactToken = formatCompactBannerToken({
+    const compactToken = getCompactHeaderToken(tokenPrefix, tokenOrigin, {
       noApiToken,
-      tokenPrefix,
-      tokenOrigin,
     })
     const compactOrg =
       orgFlag ||
@@ -206,7 +180,20 @@ export function getAsciiHeader(
     `| Command: \`${command}\`, cwd: ${relCwd}`,
   ]
 
-  return combineBannerLines(logo, infoLines)
+  return combineHeaderLines(logo, infoLines)
+}
+
+export function getCompactHeaderToken(
+  tokenPrefix: string | undefined,
+  tokenOrigin: string,
+  options?: { noApiToken?: boolean | undefined } | undefined,
+): string {
+  const { noApiToken } = { __proto__: null, ...options }
+  return noApiToken
+    ? '(disabled)'
+    : tokenPrefix
+      ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+      : '(not set)'
 }
 
 /**

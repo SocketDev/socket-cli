@@ -191,7 +191,12 @@ export function traversePhantomDependencies(
   visitors: Record<string, unknown>,
 ): void {
   const module: unknown = babelTraverseImport
-  const candidate = isObject(module) ? module['default'] : module
+  const candidate =
+    (typeof module === 'object' || typeof module === 'function') &&
+    module !== null &&
+    'default' in module
+      ? (module.default ?? module)
+      : module
   if (typeof candidate !== 'function') {
     throw new TypeError(
       'Babel traversal module does not expose a traversal function',

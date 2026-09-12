@@ -11,6 +11,18 @@ index 43bbfddb76eaa4decfa824fb8939d58193e6cd6a..6549dc315bef7a310bdb91993b1999d2
          if (missing.length > 0) {
              perFile.push({ file: wf, missing });
              for (const n of missing) {
+diff --git a/dist/runner/git-shim.js b/dist/runner/git-shim.js
+index 3fa09c1efad16c729e3a584aced064a219057b19..eea7ff9efabd00dc86a34381a6270df4d900a6fb 100644
+--- a/dist/runner/git-shim.js
++++ b/dist/runner/git-shim.js
+@@ -44,6 +44,7 @@ if [[ "$*" == *"fetch"* ]]; then
+     /usr/bin/git.real commit --allow-empty -m "workspace" 2>/dev/null
+   fi
+   /usr/bin/git.real update-ref refs/remotes/origin/main HEAD 2>/dev/null || true
++  /usr/bin/git.real rev-parse HEAD > "$(/usr/bin/git.real rev-parse --git-path FETCH_HEAD)" || exit $?
+   exit 0
+ fi
+ 
 diff --git a/dist/workflow/workflow-parser.js b/dist/workflow/workflow-parser.js
 index 3b4b66db324c513c22f26dedad8888a7fed2580b..ce8ed57e5d2fd99177f4d13f62cbce22c3da40ed 100644
 --- a/dist/workflow/workflow-parser.js

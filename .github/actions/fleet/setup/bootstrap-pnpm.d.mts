@@ -54,3 +54,7 @@ export declare function resolveHighestSatisfying(
   range: string | undefined,
   versions: readonly string[],
 ): string | undefined
+
+export declare function readPnpmDevEngine(
+  manifest: unknown,
+): { name: 'pnpm'; version: string } | undefined

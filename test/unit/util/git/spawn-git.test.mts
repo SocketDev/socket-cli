@@ -3,7 +3,7 @@
  *
  * Purpose: prove the four hardening properties every CLI git invocation is
  * supposed to carry, by asserting on the argv and env handed to the injected
- * spawn mock rather than by running git.
+ * spawn callback rather than by running git.
  *
  * Test Coverage:
  *

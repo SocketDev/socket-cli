@@ -7,6 +7,8 @@
  * File size hard cap.
  */
 
+import { isCliCommandName } from './command-name.mts'
+
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 
 import { lookupSubcommand } from './lookup-subcommand.mts'
@@ -51,7 +53,9 @@ export async function tryDispatchSubcommand<CommandName extends string>(
     return false
   }
 
-  const alias = aliases[commandOrAliasName]
+  const alias = isCliCommandName(commandOrAliasName)
+    ? aliases[commandOrAliasName]
+    : undefined
   // First: Resolve argv data from alias if its an alias that's been given.
   const [commandName, ...commandArgv] = alias
     ? [...alias.argv, ...rawCommandArgv]
