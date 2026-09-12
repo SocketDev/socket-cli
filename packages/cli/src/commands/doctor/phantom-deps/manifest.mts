@@ -67,6 +67,48 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
   const seen: EntrySeen = { seen: new Set() }
   const out: Entry[] = []
 
+  collectMainEntries(pkg, out, seen)
+  collectTypeEntries(pkg, out, seen)
+  return out
+}
+
+export function collectExportTypes(node: unknown, out: string[]): void {
+  if (Array.isArray(node)) {
+    for (let i = 0, { length } = node; i < length; i += 1) {
+      collectExportTypes(node[i], out)
+    }
+    return
+  }
+  if (typeof node === 'object' && node !== null) {
+    const entries = Object.entries(node as Record<string, unknown>)
+    for (let i = 0, { length } = entries; i < length; i += 1) {
+      const { 0: key, 1: child } = entries[i]!
+      if ((key === 'types' || key === 'typings') && typeof child === 'string') {
+        out.push(child)
+      } else {
+        collectExportTypes(child, out)
+      }
+    }
+  }
+}
+
+export function collectKeys(
+  value: Record<string, unknown> | undefined,
+  out: Set<string>,
+): void {
+  if (typeof value === 'object' && value !== null) {
+    const keys = Object.keys(value)
+    for (let i = 0, { length } = keys; i < length; i += 1) {
+      out.add(keys[i]!)
+    }
+  }
+}
+
+export function collectMainEntries(
+  pkg: Record<string, unknown>,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
   const mainFields = ['main', 'module']
   for (let i = 0, { length } = mainFields; i < length; i += 1) {
     const value = pkg[mainFields[i]!]
@@ -100,7 +142,7 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
     if (hasDotKeys) {
       const entries = Object.entries(map)
       for (let i = 0, { length } = entries; i < length; i += 1) {
-        const [key, child] = entries[i]!
+        const { 0: key, 1: child } = entries[i]!
         walkExports(child, key === '.' ? 'main' : 'subpath', out, seen)
       }
     } else {
@@ -110,9 +152,15 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
     walkExports(exportsField, 'main', out, seen)
   }
 
-  if (out.length === 0) {
-    out.push({ kind: 'main', path: 'index.js' })
-  }
+  ensureMainEntry(out)
+}
+
+export function collectTypeEntries(
+  pkg: Record<string, unknown>,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
+  const exportsField = pkg['exports']
 
   const typeTargets: string[] = []
   const typeFields = ['types', 'typings']
@@ -137,39 +185,11 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
   for (let i = 0, { length } = typeTargets; i < length; i += 1) {
     pushEntry(typeTargets[i]!, 'types', out, seen)
   }
-
-  return out
 }
 
-export function collectExportTypes(node: unknown, out: string[]): void {
-  if (Array.isArray(node)) {
-    for (let i = 0, { length } = node; i < length; i += 1) {
-      collectExportTypes(node[i], out)
-    }
-    return
-  }
-  if (typeof node === 'object' && node !== null) {
-    const entries = Object.entries(node as Record<string, unknown>)
-    for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [key, child] = entries[i]!
-      if ((key === 'types' || key === 'typings') && typeof child === 'string') {
-        out.push(child)
-      } else {
-        collectExportTypes(child, out)
-      }
-    }
-  }
-}
-
-export function collectKeys(
-  value: Record<string, unknown> | undefined,
-  out: Set<string>,
-): void {
-  if (typeof value === 'object' && value !== null) {
-    const keys = Object.keys(value)
-    for (let i = 0, { length } = keys; i < length; i += 1) {
-      out.add(keys[i]!)
-    }
+export function ensureMainEntry(out: Entry[]): void {
+  if (out.length === 0) {
+    out.push({ kind: 'main', path: 'index.js' })
   }
 }
 
@@ -254,7 +274,7 @@ export function parseManifest(raw: string): Manifest | undefined {
   if (typeof peerMeta === 'object' && peerMeta !== null) {
     const entries = Object.entries(peerMeta as Record<string, unknown>)
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [peer, cfg] = entries[i]!
+      const { 0: peer, 1: cfg } = entries[i]!
       const optional =
         typeof cfg === 'object' &&
         cfg !== null &&
@@ -317,7 +337,7 @@ export function walkExports(
   if (typeof node === 'object' && node !== null) {
     const entries = Object.entries(node as Record<string, unknown>)
     for (let i = 0, { length } = entries; i < length; i += 1) {
-      const [key, child] = entries[i]!
+      const { 0: key, 1: child } = entries[i]!
       if (key === 'types' || key === 'typings') {
         continue
       }
