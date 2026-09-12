@@ -24,6 +24,49 @@ import { getDefaultApiToken } from './sdk.mts'
 
 import type { CResult } from '../../types.mts'
 
+export async function buildApiQueryFailure(
+  result: Awaited<ReturnType<typeof queryApi>>,
+  path: string,
+  config: {
+    startTime: number
+    requestedAt: string
+    fullUrl: string
+    description: string | undefined
+    commandPath: string | undefined
+  },
+): Promise<CResult<ApiTextResult>> {
+  const { startTime, requestedAt, fullUrl, description, commandPath } = config
+  const { status } = result
+  const durationMs = Date.now() - startTime
+  // Include response headers, for cf-ray, and a truncated body so
+  // support tickets have everything needed to file against Cloudflare
+  // or backend teams.
+  debugApiResponse(description || 'Query API', {
+    status,
+    requestInfo: {
+      method: 'GET',
+      url: fullUrl,
+      durationMs,
+      requestedAt,
+      headers: { Authorization: '[REDACTED]' },
+      responseHeaders: result.headers,
+      responseBody: tryReadResponseText(result),
+    },
+  })
+  // Log required permissions for 403 errors when in a command context.
+  if (commandPath && status === 403) {
+    logPermissionsFor403(commandPath)
+  }
+  return {
+    ok: false,
+    message: 'Socket API error',
+    cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
+    data: {
+      code: status,
+    },
+  }
+}
+
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
   /* c8 ignore start - getDefaultApiBaseUrl returns API_V0_URL by default; only undefined when env is misconfigured */
@@ -179,35 +222,13 @@ export async function queryApiSafeTextWithStatus(
   }
 
   if (!result.ok) {
-    const { status } = result
-    const durationMs = Date.now() - startTime
-    // Include response headers, for cf-ray, and a truncated body so
-    // support tickets have everything needed to file against Cloudflare
-    // or backend teams.
-    debugApiResponse(description || 'Query API', {
-      status,
-      requestInfo: {
-        method: 'GET',
-        url: fullUrl,
-        durationMs,
-        requestedAt,
-        headers: { Authorization: '[REDACTED]' },
-        responseHeaders: result.headers,
-        responseBody: tryReadResponseText(result),
-      },
+    return await buildApiQueryFailure(result, path, {
+      startTime,
+      requestedAt,
+      fullUrl,
+      description,
+      commandPath,
     })
-    // Log required permissions for 403 errors when in a command context.
-    if (commandPath && status === 403) {
-      logPermissionsFor403(commandPath)
-    }
-    return {
-      ok: false,
-      message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)}) (path: ${path})`,
-      data: {
-        code: status,
-      },
-    }
   }
 
   try {
