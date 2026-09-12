@@ -13,7 +13,7 @@ export function firewallArtifactPurls(artifact: FirewallArtifact): string[] {
   const base = `pkg:${artifact.type}/${artifact.name}@${artifact.version}`
   if (artifact.type === 'gem' && artifact.qualifiers?.['platform']) {
     return [
-      `${base}?${new URLSearchParams(artifact.qualifiers)}`,
+      `${base}?${new URLSearchParams(artifact.qualifiers).toString()}`,
       `${base}?platform=ruby`,
     ]
   }
@@ -36,7 +36,7 @@ export function firewallPathHasUnsafeCharacters(path: string): boolean {
 export function isFirewallArtifactPath(
   kind: FirewallEcosystem,
   pathname: string,
-): boolean {
+): boolean | undefined {
   let path: string
   try {
     path = decodeURIComponent(pathname)
@@ -83,6 +83,7 @@ export function isFirewallArtifactPath(
     case 'nuget':
       return /\.nupkg(?:\/|$)/i.test(normalizePath(path))
   }
+  return undefined
 }
 
 export function parseFirewallArtifact(
@@ -126,6 +127,7 @@ export function parseFirewallArtifact(
     case 'nuget':
       return parseFirewallNugetArtifact(path)
   }
+  return undefined
 }
 
 export function parseFirewallCargoArtifact(

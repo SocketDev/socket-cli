@@ -104,8 +104,9 @@ export async function runFirewallCommand(
     })
     proxy = await startFirewallProxy({
       certificateAuthority: authority,
-      checkRequest: policy.checkRequest,
-      resolveDestination: policy.resolveDestination,
+      checkRequest: (...requestArgs) => policy.checkRequest(...requestArgs),
+      resolveDestination: (...destinationArgs) =>
+        policy.resolveDestination(...destinationArgs),
       upstreamCa: trust.certificates,
       upstreamProxy: config.upstreamProxy,
       onRequestError(diagnostic) {

@@ -1,3 +1,4 @@
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { constants, existsSync, fstatSync } from 'node:fs'
 import { open } from 'node:fs/promises'
 import os from 'node:os'
@@ -35,14 +36,14 @@ export function firewallVltConfigHome(
 }
 
 export function hasFirewallRegistrySetting(value: unknown): boolean {
-  if (!value || typeof value !== 'object') {
+  if (!isObject(value)) {
     return false
   }
-  const config = (value as Record<string, unknown>)['config']
-  if (!config || typeof config !== 'object') {
+  const config = value['config']
+  if (!isObject(config)) {
     return false
   }
-  const record = config as Record<string, unknown>
+  const record = config
   if ('registry' in record || 'registries' in record) {
     return true
   }

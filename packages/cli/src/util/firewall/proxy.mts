@@ -28,7 +28,7 @@ export function firewallProxyHeaders(
   headers: http.IncomingHttpHeaders,
 ): http.OutgoingHttpHeaders {
   const result = { ...headers }
-  const connection = String(headers.connection ?? '')
+  const connection = (headers.connection ?? '')
     .split(',')
     .map(value => value.trim().toLowerCase())
   for (const name of [

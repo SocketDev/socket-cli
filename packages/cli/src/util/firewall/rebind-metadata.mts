@@ -1,3 +1,4 @@
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 export const FIREWALL_REBIND_ORIGIN = 'https://registry.npmjs.org'
 
 export function firewallRebindTarget(raw: string): URL {
@@ -18,13 +19,13 @@ export function rewriteFirewallRegistryMetadata(
   value: unknown,
   register: (target: URL) => string,
 ): void {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+  if (!isObject(value) || Array.isArray(value)) {
     throw new Error('Invalid vlt registry metadata')
   }
-  const object = value as Record<string, unknown>
+  const object = value
   const dist = object['dist']
-  if (dist !== null && typeof dist === 'object' && !Array.isArray(dist)) {
-    const distribution = dist as Record<string, unknown>
+  if (isObject(dist) && !Array.isArray(dist)) {
+    const distribution = dist
     if (typeof distribution['tarball'] !== 'string') {
       throw new Error('Invalid vlt tarball URL')
     }

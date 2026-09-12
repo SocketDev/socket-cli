@@ -72,15 +72,21 @@ export function isFirewallRegistryHostname(hostname: string): boolean {
   return !hostname.includes('*') || /^\*\.[^*]+$/.test(hostname)
 }
 
+export function isFirewallRegistryKind(
+  kind: string,
+): kind is FirewallRegistryKind {
+  return /^(?:block|bypass|cargo|gem|golang|maven|npm|nuget|pypi|wrap)$/.test(
+    kind,
+  )
+}
+
 export function parseFirewallRegistry(input: string): FirewallRegistry {
   const colon = input.indexOf(':')
   const kind = input.slice(0, colon)
   const address = input.slice(colon + 1)
   if (
     colon < 1 ||
-    !/^(?:block|bypass|cargo|gem|golang|maven|npm|nuget|pypi|wrap)$/.test(
-      kind,
-    ) ||
+    !isFirewallRegistryKind(kind) ||
     !address ||
     /[\\\s?#%]/.test(address) ||
     // Reject dot segments before URL normalization can hide them.
@@ -108,7 +114,7 @@ export function parseFirewallRegistry(input: string): FirewallRegistry {
     host: url.host,
     prefix: url.pathname === '/' ? '' : url.pathname.replace(/\/$/, ''),
     protocol: explicitProtocol ? url.protocol : undefined,
-    kind: kind as FirewallRegistryKind,
+    kind,
   }
 }
 

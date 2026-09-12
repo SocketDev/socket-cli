@@ -87,7 +87,7 @@ export function fetchFirewallTransport(
         rejectUnauthorized: true,
         ...(ca ? { ca } : {}),
         method: init.method,
-        headers: init.headers as Record<string, string>,
+        headers: Object.fromEntries(new Headers(init.headers)),
         signal: init.signal ?? undefined,
       },
       response => {

@@ -1,3 +1,4 @@
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import { closeSync, constants, openSync } from 'node:fs'
 import tty from 'node:tty'
 
@@ -118,7 +119,7 @@ export function signalFirewallDescendants(
       try {
         process.kill(entry.pid, signal)
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+        if (!isObject(error) || error['code'] !== 'ESRCH') {
           throw error
         }
       }
@@ -134,12 +135,13 @@ export function signalFirewallProcessGroup(
     process.kill(-pid, signal)
   } catch (error) {
     if (
-      (error as NodeJS.ErrnoException).code === 'EPERM' &&
+      isObject(error) &&
+      error['code'] === 'EPERM' &&
       isFirewallProcessGroupInactive(pid)
     ) {
       return
     }
-    if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+    if (!isObject(error) || error['code'] !== 'ESRCH') {
       throw error
     }
   }

@@ -1,3 +1,4 @@
+import { isObject } from '@socketsecurity/lib-stable/objects/predicates'
 import crypto from 'node:crypto'
 import { constants, existsSync } from 'node:fs'
 import { access, lstat, mkdir, mkdtemp, open, rename } from 'node:fs/promises'
@@ -28,7 +29,7 @@ export async function ensureFirewallCertificateAuthority(config: {
           await access(certificateFilePath)
           return true
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          if (isObject(error) && error['code'] === 'ENOENT') {
             return false
           }
           throw error
@@ -316,7 +317,7 @@ export async function withFirewallCertificateLock<T>(
   try {
     await mkdir(lockPath, { mode: 0o700 })
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') {
+    if (isObject(error) && error['code'] === 'EEXIST') {
       throw Object.assign(
         new Error(
           'Firewall CA setup is already active in this directory. Wait for setup to finish before retrying.',
