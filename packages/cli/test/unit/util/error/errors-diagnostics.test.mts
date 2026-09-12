@@ -172,7 +172,7 @@ describe('Network Error Diagnostics', () => {
       const diagnostics = getNetworkErrorDiagnostics(error, 5000)
       expect(diagnostics).toContain('timeout')
       expect(diagnostics).toContain('5s')
-      expect(diagnostics).toContain('💡 Try:')
+      expect(diagnostics).toContain('Try:')
       expect(diagnostics).toContain('internet connection')
     })
 
@@ -218,7 +218,7 @@ describe('Network Error Diagnostics', () => {
       const error = new Error('Unknown network issue')
       const diagnostics = getNetworkErrorDiagnostics(error)
       expect(diagnostics).toContain('Network error')
-      expect(diagnostics).toContain('💡 Try:')
+      expect(diagnostics).toContain('Try:')
       expect(diagnostics).toContain('internet connection')
     })
 

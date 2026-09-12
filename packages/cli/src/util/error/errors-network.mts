@@ -40,18 +40,13 @@ export function getNetworkErrorDiagnostics(
   const errorMessage = getErrorMessage(error) || String(error)
 
   // Timeout errors.
-  if (
-    errorCode === 'ETIMEDOUT' ||
-    errorCode === 'ESOCKETTIMEDOUT' ||
-    errorCode === 'ECONNRESET' ||
-    (durationMs && durationMs > 30_000)
-  ) {
+  if (isNetworkTimeout(errorCode, durationMs)) {
     const timeInfo = durationMs
       ? ` after ${Math.round(durationMs / 1000)}s`
       : ''
     return (
       `Request timeout${timeInfo}. The server took too long to respond.\n` +
-      '💡 Try:\n' +
+      'Try:\n' +
       '  • Check your internet connection speed\n' +
       '  • Retry the request - the server may be temporarily slow\n' +
       `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
@@ -63,7 +58,7 @@ export function getNetworkErrorDiagnostics(
   if (errorCode === 'ECONNREFUSED') {
     return (
       'Connection refused. The server actively rejected the connection.\n' +
-      '💡 Try:\n' +
+      'Try:\n' +
       '  • Check if you are using a proxy or VPN that may be blocking the connection\n' +
       '  • Verify your firewall settings\n' +
       `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
@@ -79,7 +74,7 @@ export function getNetworkErrorDiagnostics(
   ) {
     return (
       'DNS resolution failed. Unable to resolve the server hostname.\n' +
-      '💡 Try:\n' +
+      'Try:\n' +
       '  • Check your internet connection\n' +
       '  • Verify DNS settings (try 8.8.8.8 or 1.1.1.1)\n' +
       '  • Check if a VPN or proxy is interfering\n' +
@@ -89,15 +84,10 @@ export function getNetworkErrorDiagnostics(
   }
 
   // Certificate/SSL errors.
-  if (
-    errorCode === 'CERT_HAS_EXPIRED' ||
-    errorCode === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-    errorCode === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-    errorMessage.includes('certificate')
-  ) {
+  if (isNetworkCertificateError(errorCode, errorMessage)) {
     return (
       'SSL/TLS certificate error. Unable to verify server identity.\n' +
-      '💡 Try:\n' +
+      'Try:\n' +
       '  • Check your system date and time are correct\n' +
       '  • Update your system certificates\n' +
       '  • Check if a proxy is intercepting HTTPS traffic\n' +
@@ -109,7 +99,7 @@ export function getNetworkErrorDiagnostics(
   if (errorCode === 'EHOSTUNREACH' || errorCode === 'ENETUNREACH') {
     return (
       'Network unreachable. Cannot reach the destination network.\n' +
-      '💡 Try:\n' +
+      'Try:\n' +
       '  • Check your internet connection\n' +
       '  • Verify network/WiFi is connected\n' +
       '  • Check if VPN or firewall is blocking access\n' +
@@ -120,10 +110,34 @@ export function getNetworkErrorDiagnostics(
   // Generic network error with basic guidance.
   return (
     `Network error: ${errorMessage}\n` +
-    '💡 Try:\n' +
+    'Try:\n' +
     '  • Check your internet connection\n' +
     '  • Verify proxy settings if using a proxy\n' +
     `  • Check Socket status: ${SOCKET_STATUS_URL}\n` +
     '  • Try again in a few moments'
+  )
+}
+
+export function isNetworkCertificateError(
+  errorCode: string | undefined,
+  errorMessage: string,
+): boolean {
+  return (
+    errorCode === 'CERT_HAS_EXPIRED' ||
+    errorCode === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    errorCode === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    errorMessage.includes('certificate')
+  )
+}
+
+export function isNetworkTimeout(
+  errorCode: string | undefined,
+  durationMs: number | undefined,
+): boolean {
+  return Boolean(
+    errorCode === 'ETIMEDOUT' ||
+    errorCode === 'ESOCKETTIMEDOUT' ||
+    errorCode === 'ECONNRESET' ||
+    (durationMs && durationMs > 30_000),
   )
 }
