@@ -6,6 +6,11 @@ import { PackageURL } from '@socketregistry/packageurl-js-stable'
 // chrome extensions genuinely publish it.
 const PLACEHOLDER_VERSION_ECOSYSTEMS = new Set(['npm', 'pypi'])
 
+export interface PurlName {
+  name: string
+  namespace: string | undefined
+}
+
 /**
  * Build a PURL using packageurl-js for correct encoding across all ecosystems.
  * Handles namespace/name splitting per ecosystem (e.g. npm scoped @scope/name,
@@ -27,42 +32,7 @@ export function buildPurl(
   const rawEcoLower = ecosystem.toLowerCase()
   const ecoLower = rawEcoLower === 'packagist' ? 'composer' : rawEcoLower
   const type = ecoLower === 'openvsx' ? 'vscode' : ecoLower
-  let namespace: string | undefined
-  let name: string
-
-  if (ecoLower === 'npm' && depname.startsWith('@') && depname.includes('/')) {
-    const slash = depname.indexOf('/')
-    namespace = depname.slice(0, slash)
-    name = depname.slice(slash + 1)
-  } else if (
-    ecoLower === 'maven' &&
-    (depname.includes(':') || depname.includes('/'))
-  ) {
-    const sep = depname.includes(':') ? ':' : '/'
-    const idx = depname.indexOf(sep)
-    namespace = depname.slice(0, idx)
-    name = depname.slice(idx + 1)
-  } else if (ecoLower === 'golang' && depname.includes('/')) {
-    const lastSlash = depname.lastIndexOf('/')
-    namespace = depname.slice(0, lastSlash)
-    name = depname.slice(lastSlash + 1)
-  } else if (
-    (ecoLower === 'openvsx' || ecoLower === 'vscode') &&
-    depname.includes('/')
-  ) {
-    const slash = depname.indexOf('/')
-    namespace = depname.slice(0, slash)
-    name = depname.slice(slash + 1)
-  } else if (ecoLower === 'composer' && depname.includes('/')) {
-    // Composer packages are `vendor/package`; the vendor is the PURL namespace
-    // (e.g. `pkg:composer/laravel/framework`). Without this split the vendor
-    // folds into the name and the lookup returns no score.
-    const slash = depname.indexOf('/')
-    namespace = depname.slice(0, slash)
-    name = depname.slice(slash + 1)
-  } else {
-    name = depname
-  }
+  const { name, namespace } = parsePurlName(ecoLower, depname)
 
   const merged: Record<string, string> = { ...qualifiers }
   if (ecoLower === 'openvsx' && !merged['repository_url']) {
@@ -84,4 +54,42 @@ export function buildPurl(
     undefined,
   )
   return purl.toString()
+}
+
+export function parsePurlName(ecosystem: string, depname: string): PurlName {
+  if (ecosystem === 'npm' && depname.startsWith('@')) {
+    return splitPurlName(depname, '/')
+  }
+  if (ecosystem === 'maven') {
+    return splitPurlName(depname, depname.includes(':') ? ':' : '/')
+  }
+  if (ecosystem === 'golang') {
+    return splitPurlName(depname, '/', { fromEnd: true })
+  }
+  if (
+    ecosystem === 'composer' ||
+    ecosystem === 'openvsx' ||
+    ecosystem === 'vscode'
+  ) {
+    return splitPurlName(depname, '/')
+  }
+  return { __proto__: null, name: depname, namespace: undefined }
+}
+
+export function splitPurlName(
+  depname: string,
+  separator: string,
+  options?: { fromEnd?: boolean | undefined } | undefined,
+): PurlName {
+  const opts = { __proto__: null, ...options }
+  const index = opts.fromEnd
+    ? depname.lastIndexOf(separator)
+    : depname.indexOf(separator)
+  return index < 0
+    ? { __proto__: null, name: depname, namespace: undefined }
+    : {
+        __proto__: null,
+        name: depname.slice(index + separator.length),
+        namespace: depname.slice(0, index),
+      }
 }
