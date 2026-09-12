@@ -2881,9 +2881,9 @@ scripts/fleet/browser/open-url.mts
 scripts/fleet/browser/timeouts.mts
 scripts/fleet/build-hook-bundle.mts
 scripts/fleet/build-hook-snapshot.mts
-scripts/fleet/build-infra/lib/external-tools-schema.json
 scripts/fleet/build-oxlint-bundle.mts
 scripts/fleet/build-snapshot-launcher.mts
+scripts/fleet/build/infra/lib/external-tools-schema.json
 scripts/fleet/bump.mts
 scripts/fleet/bump/invocation.mts
 scripts/fleet/bump/lockstep-write.mts
@@ -3004,6 +3004,7 @@ scripts/fleet/check/doc-references-resolve.mts
 scripts/fleet/check/docs-file-references-resolve.mts
 scripts/fleet/check/dual-use-declarations-are-complete.mts
 scripts/fleet/check/endpoints-are-outside-china-jurisdiction.mts
+scripts/fleet/check/entry-script-contracts-are-enforced.mts
 scripts/fleet/check/entry-scripts-are-born-tested.mts
 scripts/fleet/check/entry-scripts-are-fail-soft.mts
 scripts/fleet/check/entry-scripts-are-self-describing.mts

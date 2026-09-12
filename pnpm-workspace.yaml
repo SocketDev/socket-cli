@@ -67,7 +67,7 @@ catalog:
   # pinned while the fleet migrates; the 0.x entry is deleted once no member
   # imports the scoped name. 1.3.10 is inside the 7-day soak, so it carries a
   # dated minimumReleaseAgeExclude entry above.
-  'typebox': 1.3.25
+  'typebox': 1.3.26
   '@socketregistry/packageurl-js': 1.5.2
   # -stable aliases: pnpm `overrides:` can't redirect a package's own
   # name when used INSIDE that same package — Node ESM treats it as a
@@ -133,7 +133,7 @@ catalog:
   # playwright-core — headless Chromium driver for the seeing-rendered-output
   # skill (render a page / unpacked MV3 extension popup to PNG). Fleet-canonical
   # catalog dep; source of truth is template/pnpm-workspace.fleet.yaml.
-  'playwright-core': 1.62.1
+  'playwright-core': 1.63.0
   # portless — stable HTTPS `.localhost` URLs for local page tests and rendered UI checks.
   'portless': 0.15.6
   # Direct bundler pin for repos that run rolldown as their build
@@ -154,7 +154,7 @@ catalog:
   # high, GHSA-v6wh-96g9-6wx3 medium). Tracked here so the pnpm
   # override below pins every transitive `vite` (vitest, @vitest/*,
   # plugin authors) to it.
-  'typescript': 7.1.0-dev.20260903.1
+  'typescript': 7.1.0-dev.20260904.1
   'vitest': 5.0.0
   '@vitest/coverage-v8': 5.0.0
   '@bcoe/v8-coverage': 1.0.2
@@ -378,9 +378,9 @@ blockExoticSubdeps: true
 peerDependencyRules:
   allowedVersions:
     'type-coverage-core>typescript': '6 || 7'
-    '@socketsecurity/lib>typescript': 7.1.0-dev.20260903.1
-    '@socketsecurity/registry>typescript': 7.1.0-dev.20260903.1
-    mcp-tada>typescript: 7.1.0-dev.20260903.1
+    '@socketsecurity/lib>typescript': 7.1.0-dev.20260904.1
+    '@socketsecurity/registry>typescript': 7.1.0-dev.20260904.1
+    mcp-tada>typescript: 7.1.0-dev.20260904.1
 
 # pnpm `overrides` block — two purposes:
 #

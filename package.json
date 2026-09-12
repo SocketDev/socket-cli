@@ -130,7 +130,8 @@
     "sweep:worktrees": "node scripts/fleet/worktree-sweep.mts",
     "sweep:worktrees:visit": "node scripts/fleet/worktree/sweep/run.mts",
     "test:profile": "node scripts/fleet/test/profile.mts",
-    "update:pnpm": "node scripts/fleet/update/pnpm.mts"
+    "update:pnpm": "node scripts/fleet/update/pnpm.mts",
+    "setup:ci:remote": "node scripts/fleet/ci/remote/setup.mts"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "catalog:",
