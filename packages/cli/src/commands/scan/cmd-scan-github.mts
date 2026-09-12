@@ -20,6 +20,7 @@ import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
+import type { SocketJson } from '../../util/socket/json.mts'
 import type { MeowFlags } from '../../flags.mts'
 
 // Flags interface for type safety.
@@ -47,6 +48,57 @@ export const cmdScanGithub = {
   description,
   hidden,
   run,
+}
+
+export function resolveGithubScanEndpointDefaults(
+  sockJson: SocketJson,
+  config: Pick<ScanGithubFlags, 'all' | 'githubApiUrl'>,
+) {
+  let { all, githubApiUrl } = config
+  if (all === undefined) {
+    if (sockJson.defaults?.scan?.github?.all !== undefined) {
+      all = sockJson.defaults?.scan?.github?.all
+    } else {
+      all = false
+    }
+  }
+  /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
+  if (!githubApiUrl) {
+    if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
+      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
+    } else {
+      githubApiUrl = DEFAULT_GITHUB_URL
+    }
+  }
+  /* c8 ignore stop */
+  return { __proto__: null, all, githubApiUrl }
+}
+
+export function resolveGithubScanRepoDefaults(
+  sockJson: SocketJson,
+  config: Pick<ScanGithubFlags, 'all' | 'orgGithub' | 'repos'> & {
+    orgSlug: string
+  },
+) {
+  const { all, orgSlug } = config
+  let { orgGithub, repos } = config
+  if (!orgGithub) {
+    if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
+      orgGithub = sockJson.defaults.scan.github.orgGithub
+    } else {
+      // Default to Socket org slug. Often that's fine. Vanity and all that.
+      orgGithub = orgSlug
+    }
+  }
+  if (!all && !repos) {
+    if (sockJson.defaults?.scan?.github?.repos !== undefined) {
+      repos = sockJson.defaults.scan.github.repos
+    } else {
+      repos = ''
+    }
+  }
+
+  return { __proto__: null, orgGithub, repos }
 }
 
 export async function run(
@@ -143,7 +195,7 @@ export async function run(
 
   let { all, githubApiUrl, orgGithub, repos } = cli.flags
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
@@ -155,37 +207,16 @@ export async function run(
   )
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  if (all === undefined) {
-    if (sockJson.defaults?.scan?.github?.all !== undefined) {
-      all = sockJson.defaults?.scan?.github?.all
-    } else {
-      all = false
-    }
-  }
-  /* c8 ignore start - githubApiUrl flag has DEFAULT_GITHUB_URL as its default, so this block only runs when both the flag default AND CLI input are empty */
-  if (!githubApiUrl) {
-    if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
-      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
-    } else {
-      githubApiUrl = DEFAULT_GITHUB_URL
-    }
-  }
-  /* c8 ignore stop */
-  if (!orgGithub) {
-    if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
-      orgGithub = sockJson.defaults.scan.github.orgGithub
-    } else {
-      // Default to Socket org slug. Often that's fine. Vanity and all that.
-      orgGithub = orgSlug
-    }
-  }
-  if (!all && !repos) {
-    if (sockJson.defaults?.scan?.github?.repos !== undefined) {
-      repos = sockJson.defaults.scan.github.repos
-    } else {
-      repos = ''
-    }
-  }
+  ;({ all, githubApiUrl } = resolveGithubScanEndpointDefaults(sockJson, {
+    all,
+    githubApiUrl,
+  }))
+  ;({ orgGithub, repos } = resolveGithubScanRepoDefaults(sockJson, {
+    all,
+    orgGithub,
+    orgSlug,
+    repos,
+  }))
 
   // We will also be needing that GitHub token.
   const hasGithubApiToken = !!githubToken
@@ -220,26 +251,12 @@ export async function run(
     }
   }
 
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      nook: true,
-      test: !json || !markdown,
-      message: 'The json and markdown flags cannot be both set, pick one',
-      fail: 'omit one',
-    },
-    {
-      nook: true,
-      test: hasSocketApiToken,
-      message: 'This command requires a Socket API token for access',
-      fail: 'try `socket login`',
-    },
-    {
-      test: hasGithubApiToken,
-      message: 'This command requires a GitHub API token for access',
-      fail: 'missing',
-    },
-  )
+  const wasValidInput = validateGithubScanInput(outputKind, {
+    json,
+    markdown,
+    hasSocketApiToken,
+    hasGithubApiToken,
+  })
   if (!wasValidInput) {
     return
   }
@@ -270,4 +287,36 @@ export async function run(
     outputKind,
     repos,
   })
+}
+
+export function validateGithubScanInput(
+  outputKind: Parameters<typeof checkCommandInput>[0],
+  config: {
+    json: boolean
+    markdown: boolean
+    hasSocketApiToken: boolean
+    hasGithubApiToken: boolean
+  },
+): boolean {
+  const { json, markdown, hasSocketApiToken, hasGithubApiToken } = config
+  return checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+    {
+      nook: true,
+      test: hasSocketApiToken,
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
+    },
+    {
+      test: hasGithubApiToken,
+      message: 'This command requires a GitHub API token for access',
+      fail: 'missing',
+    },
+  )
 }

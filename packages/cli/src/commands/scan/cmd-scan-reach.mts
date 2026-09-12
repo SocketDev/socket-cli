@@ -1,4 +1,4 @@
-import path from 'node:path'
+import { resolveScanCwd } from './util.mts'
 
 import { assertNoNegationPatterns } from './exclude-paths.mts'
 import { validateReachEcosystems } from './cmd-scan-create-checks.mts'
@@ -179,10 +179,7 @@ export async function run(
   const reachEcosystems = validateReachEcosystems(reachEcosystemsRaw)
 
   const processCwd = process.cwd()
-  const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
-      ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+  const cwd = resolveScanCwd(processCwd, cwdOverride)
 
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input.length ? [...cli.input] : [cwd]
@@ -272,6 +269,54 @@ export async function run(
     return
   }
 
+  const {
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  } = validateScanReachNumbers({
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachConcurrency,
+  })
+
+  await handleScanReach({
+    cwd,
+    interactive,
+    orgSlug,
+    outputKind,
+    outputPath: outputPath || '',
+    targets,
+    reachabilityOptions: {
+      excludePaths,
+      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
+      reachAnalysisTimeout: validatedReachAnalysisTimeout,
+      reachConcurrency: validatedReachConcurrency,
+      reachDebug: reachDebug,
+      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
+      reachDisableAnalytics: reachDisableAnalytics,
+      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
+      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
+      reachEcosystems,
+      reachExcludePaths,
+      reachLazyMode: reachLazyMode,
+      reachMinSeverity: reachMinSeverity,
+      reachSkipCache: reachSkipCache,
+      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
+      reachUseUnreachableFromPrecomputation:
+        reachUseUnreachableFromPrecomputation,
+      reachVersion: reachVersion || undefined,
+    },
+  })
+}
+
+export function validateScanReachNumbers(
+  config: Pick<
+    ScanReachFlags,
+    'reachAnalysisMemoryLimit' | 'reachAnalysisTimeout' | 'reachConcurrency'
+  >,
+) {
+  const { reachAnalysisMemoryLimit, reachAnalysisTimeout, reachConcurrency } =
+    config
   // Validate numeric flag conversions.
   const validatedReachAnalysisMemoryLimit = Number(reachAnalysisMemoryLimit)
   if (
@@ -305,32 +350,10 @@ export async function run(
     )
   }
 
-  await handleScanReach({
-    cwd,
-    interactive,
-    orgSlug,
-    outputKind,
-    outputPath: outputPath || '',
-    targets,
-    reachabilityOptions: {
-      excludePaths,
-      reachAnalysisMemoryLimit: validatedReachAnalysisMemoryLimit,
-      reachAnalysisTimeout: validatedReachAnalysisTimeout,
-      reachConcurrency: validatedReachConcurrency,
-      reachDebug: reachDebug,
-      reachDetailedAnalysisLogFile: reachDetailedAnalysisLogFile,
-      reachDisableAnalytics: reachDisableAnalytics,
-      reachDisableExternalToolChecks: reachDisableExternalToolChecks,
-      reachEnableAnalysisSplitting: reachEnableAnalysisSplitting,
-      reachEcosystems,
-      reachExcludePaths,
-      reachLazyMode: reachLazyMode,
-      reachMinSeverity: reachMinSeverity,
-      reachSkipCache: reachSkipCache,
-      reachUseOnlyPregeneratedSboms: reachUseOnlyPregeneratedSboms,
-      reachUseUnreachableFromPrecomputation:
-        reachUseUnreachableFromPrecomputation,
-      reachVersion: reachVersion || undefined,
-    },
-  })
+  return {
+    __proto__: null,
+    validatedReachAnalysisMemoryLimit,
+    validatedReachAnalysisTimeout,
+    validatedReachConcurrency,
+  }
 }

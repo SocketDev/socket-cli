@@ -1,9 +1,5 @@
-import path from 'node:path'
-
+import { resolveScanCwd } from './util.mts'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
-
-const logger = getDefaultLogger()
-
 import { applyScanCreateDefaults } from './cmd-scan-create-defaults.mts'
 import {
   computeReachabilityFlagUsage,
@@ -30,10 +26,17 @@ import { readOrDefaultSocketJsonUp } from '../../util/socket/json.mts'
 import { determineOrgSlug } from '../../util/socket/org-slug.mts'
 import { hasDefaultApiToken } from '../../util/socket/sdk.mts'
 import { socketDashboardLink } from '../../util/terminal/link.mts'
-
 import type { REPORT_LEVEL } from './types.mts'
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mts'
 import type { PURL_Type } from '../../util/ecosystem/types.mts'
+import { generalFlags } from './cmd-scan-create-flags.mts'
+import {
+  findDefaultBranchValueMisuse,
+  hasLegacyDefaultBranchFlag,
+  isBareIdentifier,
+} from './cmd-scan-create-validation.mts'
+
+const logger = getDefaultLogger()
 
 // Flags interface for type safety.
 export interface ScanCreateFlags {
@@ -83,18 +86,12 @@ const description = 'Create a new Socket scan and report'
 const hidden = false
 
 // Flag schema extracted to keep this file under the 1000-line File-size cap.
-import { generalFlags } from './cmd-scan-create-flags.mts'
 
 // Legacy flag names kept working via meow aliases on `makeDefaultBranch`.
 // Detected here so we can warn on use and keep the misuse heuristic
 // working against both the primary and legacy names.
 // --default-branch / --make-default-branch validation helpers extracted
 // to keep this file under the 1000-line File-size cap.
-import {
-  findDefaultBranchValueMisuse,
-  hasLegacyDefaultBranchFlag,
-  isBareIdentifier,
-} from './cmd-scan-create-validation.mts'
 
 export {
   findDefaultBranchValueMisuse,
@@ -106,6 +103,35 @@ export const cmdScanCreate = {
   description,
   hidden,
   run,
+}
+
+export function outputDryRunScanCreate(config: {
+  orgSlug: string
+  targets: string[]
+  repoName: string
+  branchName: string
+  reach: boolean
+  reachEcosystems: PURL_Type[]
+}): void {
+  const { orgSlug, targets, repoName, branchName, reach, reachEcosystems } =
+    config
+  const details: Record<string, unknown> = {
+    organization: orgSlug,
+    targets: targets.join(', '),
+  }
+  if (repoName) {
+    details['repository'] = repoName
+  }
+  if (branchName) {
+    details['branch'] = branchName
+  }
+  if (reach) {
+    details['reachabilityAnalysis'] = 'enabled'
+    if (reachEcosystems.length > 0) {
+      details['ecosystems'] = reachEcosystems.join(', ')
+    }
+  }
+  outputDryRunUpload('scan', details)
 }
 
 export async function run(
@@ -279,10 +305,7 @@ export async function run(
   )
 
   const processCwd = process.cwd()
-  const cwd =
-    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
-      ? path.resolve(processCwd, cwdOverride)
-      : processCwd
+  const cwd = resolveScanCwd(processCwd, cwdOverride)
 
   const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
@@ -367,23 +390,14 @@ export async function run(
   }
 
   if (dryRun) {
-    const details: Record<string, unknown> = {
-      organization: orgSlug,
-      targets: targets.join(', '),
-    }
-    if (repoName) {
-      details['repository'] = repoName
-    }
-    if (branchName) {
-      details['branch'] = branchName
-    }
-    if (reach) {
-      details['reachabilityAnalysis'] = 'enabled'
-      if (reachEcosystems.length > 0) {
-        details['ecosystems'] = reachEcosystems.join(', ')
-      }
-    }
-    outputDryRunUpload('scan', details)
+    outputDryRunScanCreate({
+      orgSlug,
+      targets,
+      repoName,
+      branchName,
+      reach,
+      reachEcosystems,
+    })
     return
   }
 
@@ -404,9 +418,9 @@ export async function run(
     autoManifest: autoManifest,
     basics: Boolean(basics),
     branchName: branchName,
-    commitHash: (commitHash && commitHash) || '',
-    commitMessage: (commitMessage && commitMessage) || '',
-    committers: (committers && committers) || '',
+    commitHash: commitHash || '',
+    commitMessage: commitMessage || '',
+    committers: committers || '',
     cwd,
     defaultBranch: makeDefaultBranch,
     interactive: interactive,
@@ -442,6 +456,6 @@ export async function run(
     targets,
     tmp: tmp,
     trustSocketJson: Boolean(trustSocketJson),
-    workspace: (workspace && workspace) || '',
+    workspace: workspace || '',
   })
 }

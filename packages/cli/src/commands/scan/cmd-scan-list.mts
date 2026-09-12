@@ -33,6 +33,54 @@ export const cmdScanList: CliSubcommand = {
   run,
 }
 
+export async function fetchValidatedScanList(config: {
+  flags: {
+    page?: number | undefined
+    perPage?: number | undefined
+    direction?: string | undefined
+    fromTime?: string | undefined
+    sort?: string | undefined
+  }
+  branch: string
+  repo: string
+  orgSlug: string
+  outputKind: Parameters<typeof handleListScans>[0]['outputKind']
+  validatedPage: number
+  validatedPerPage: number
+}): Promise<void> {
+  const {
+    flags,
+    branch,
+    repo,
+    orgSlug,
+    outputKind,
+    validatedPage,
+    validatedPerPage,
+  } = config
+  if (Number.isNaN(validatedPage) || validatedPage < 1) {
+    throw new InputError(
+      `--page must be a positive integer (saw: "${flags['page']}"); pass a number like --page=1`,
+    )
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${flags['perPage']}"); pass a number like --per-page=30`,
+    )
+  }
+
+  await handleListScans({
+    branch: branch ? branch : '',
+    direction: flags['direction'] || '',
+    from_time: flags['fromTime'] || '',
+    orgSlug,
+    outputKind,
+    page: validatedPage,
+    perPage: validatedPerPage,
+    repo: repo ? repo : '',
+    sort: flags['sort'] || '',
+  })
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -133,9 +181,9 @@ export async function run(
 
   const noLegacy = !cli.flags['repo']
 
-  const [repo = '', branchArg = ''] = cli.input
+  const { 0: repo = '', 1: branchArg = '' } = cli.input
 
-  const branch = branchFlag || branchArg || ''
+  const branch = branchFlag || branchArg
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -202,26 +250,13 @@ export async function run(
     return
   }
 
-  if (Number.isNaN(validatedPage) || validatedPage < 1) {
-    throw new InputError(
-      `--page must be a positive integer (saw: "${cli.flags['page']}"); pass a number like --page=1`,
-    )
-  }
-  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new InputError(
-      `--per-page must be a positive integer (saw: "${cli.flags['perPage']}"); pass a number like --per-page=30`,
-    )
-  }
-
-  await handleListScans({
-    branch: branch ? branch : '',
-    direction: cli.flags['direction'] || '',
-    from_time: cli.flags['fromTime'] || '',
+  await fetchValidatedScanList({
+    flags: cli.flags,
+    branch,
+    repo,
     orgSlug,
     outputKind,
-    page: validatedPage,
-    perPage: validatedPerPage,
-    repo: repo ? repo : '',
-    sort: cli.flags['sort'] || '',
+    validatedPage,
+    validatedPerPage,
   })
 }
