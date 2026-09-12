@@ -1,9 +1,10 @@
 import { existsSync, promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
+import { env } from 'node:process'
 
 import { safeDelete } from '@socketsecurity/lib-stable/fs/safe'
+import { envAsString } from '@socketsecurity/lib-stable/env/string'
 import { spawn } from '@socketsecurity/lib-stable/process/spawn/child'
 
 import { assembleFacts } from './assemble.mts'
@@ -255,7 +256,7 @@ async function runSbt(
     ]
     // sbt's launcher doesn't always honor JAVA_HOME; never override a
     // caller-supplied --java-home.
-    const javaHome = cfg.env?.['JAVA_HOME'] ?? process.env['JAVA_HOME']
+    const javaHome = envAsString(cfg.env?.['JAVA_HOME'] ?? env['JAVA_HOME'])
     const javaHomeOpt =
       javaHome && !(cfg.toolOpts ?? []).includes('--java-home')
         ? ['--java-home', javaHome]
