@@ -202,10 +202,7 @@
         "test/unit/util/telemetry/**",
         "test/unit/util/trusted-executable.test.mts"
       ],
-      "slow": [
-        "test/integration/**",
-        "test/unit/core/firewall/**"
-      ]
+      "slow": ["test/integration/**", "test/unit/core/firewall/**"]
     }
   }
 }
