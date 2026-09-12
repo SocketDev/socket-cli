@@ -177,6 +177,22 @@ export function invalidateDefaultApiToken(): void {
   defaultToken = undefined
 }
 
+export function resolveSdkApiBaseUrl(
+  configuredUrl: string | undefined,
+): string | undefined {
+  const apiBaseUrl = configuredUrl ?? getDefaultApiBaseUrl()
+  if (isNonEmptyString(apiBaseUrl)) {
+    assertSafeSocketApiBaseUrl(apiBaseUrl)
+  }
+  return apiBaseUrl
+}
+
+export function resolveSdkProxyUrl(
+  configuredUrl: string | undefined,
+): string | undefined {
+  return isUrl(configuredUrl) ? configuredUrl : getDefaultProxyUrl()
+}
+
 export type SetupSdkOptions = {
   apiBaseUrl?: string | undefined
   apiProxy?: string | undefined
@@ -207,19 +223,13 @@ export async function setupSdk(
     }
   }
 
-  let { apiProxy } = opts
-  if (!isUrl(apiProxy)) {
-    apiProxy = getDefaultProxyUrl()
-  }
+  const apiProxy = resolveSdkProxyUrl(opts.apiProxy)
 
   // `socket login --api-base-url` supplies this directly, so guard the
   // resolved value rather than trusting the getter alone.
   let apiBaseUrl: string | undefined
   try {
-    apiBaseUrl = opts.apiBaseUrl ?? getDefaultApiBaseUrl()
-    if (isNonEmptyString(apiBaseUrl)) {
-      assertSafeSocketApiBaseUrl(apiBaseUrl)
-    }
+    apiBaseUrl = resolveSdkApiBaseUrl(opts.apiBaseUrl)
   } catch (e) {
     return {
       ok: false,
