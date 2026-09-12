@@ -95,12 +95,10 @@ vi.mock(
   }),
 )
 
-const mockStrictDelete = vi.hoisted(() => vi.fn())
 const mockSafeDelete = vi.hoisted(() => vi.fn())
 const mockSafeMkdirSync = vi.hoisted(() => vi.fn())
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
   safeDelete: mockSafeDelete,
-  strictDelete: mockStrictDelete,
   safeMkdirSync: mockSafeMkdirSync,
 }))
 
@@ -112,7 +110,6 @@ describe('create-scan-from-github (coverage)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockSafeDelete.mockResolvedValue(undefined)
-    mockStrictDelete.mockResolvedValue(undefined)
     mockSafeMkdirSync.mockReturnValue(undefined)
   })
 
@@ -216,17 +213,18 @@ describe('create-scan-from-github (coverage)', () => {
   })
 
   describe('streamDownloadWithFetch inner cleanup error', () => {
-    it('logs the inner cleanup error when strictDelete also throws', async () => {
+    it('logs the inner cleanup error when deletion also throws', async () => {
       mockSocketHttpRequest.mockRejectedValueOnce(new Error('boom'))
-      mockStrictDelete.mockRejectedValueOnce(
+      mockSafeDelete.mockRejectedValueOnce(
         Object.assign(new Error('EACCES'), { code: 'EACCES' }),
       )
       const result = await streamDownloadWithFetch(
         '/tmp/download-target',
         'https://example.com/file',
       )
-      expect(mockStrictDelete).toHaveBeenCalledExactlyOnceWith(
+      expect(mockSafeDelete).toHaveBeenCalledExactlyOnceWith(
         '/tmp/download-target',
+        {},
       )
       expect(mockLoggerFail).toHaveBeenCalledTimes(2)
       expect(result.ok).toBe(false)

@@ -52,7 +52,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJson: mockReadJson,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  strictDelete: mockStrictDelete,
+  safeDelete: mockStrictDelete,
   safeMkdir: mockSafeMkdir,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/write-json'), () => ({
