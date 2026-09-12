@@ -96,16 +96,7 @@ export async function resolveScanCreateTargetsAndOrg(
     }
   }
 
-  const detected = await detectManifestActions(sockJson, cwd)
-  // A `.socket.facts.json` at cwd is the output of `socket manifest auto` (and
-  // of `--facts` mode on the per-ecosystem manifest commands). The scan already
-  // picks it up, so nudging the user to regenerate it would be misleading.
-  const hasFactsFile = existsSync(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
-  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
-    logger.info(
-      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
-    )
-  }
+  await suggestScanManifestGeneration(sockJson, cwd, { autoManifest })
 
   if (updatedInput && resolvedOrgSlug && targets.length) {
     logger.info(
@@ -124,4 +115,22 @@ export async function resolveScanCreateTargetsAndOrg(
   }
 
   return { canceled: false, orgSlug: resolvedOrgSlug, targets }
+}
+
+export async function suggestScanManifestGeneration(
+  sockJson: SocketJson,
+  cwd: string,
+  options?: { autoManifest?: boolean | undefined } | undefined,
+): Promise<void> {
+  const { autoManifest } = options ?? {}
+  const detected = await detectManifestActions(sockJson, cwd)
+  // A `.socket.facts.json` at cwd is the output of `socket manifest auto` (and
+  // of `--facts` mode on the per-ecosystem manifest commands). The scan already
+  // picks it up, so nudging the user to regenerate it would be misleading.
+  const hasFactsFile = existsSync(path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON))
+  if (detected.count > 0 && !autoManifest && !hasFactsFile) {
+    logger.info(
+      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
+    )
+  }
 }

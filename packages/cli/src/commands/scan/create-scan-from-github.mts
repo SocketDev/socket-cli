@@ -1,7 +1,6 @@
 import { mkdtempSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-
 import { debug } from '@socketsecurity/lib-stable/debug/output'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
@@ -14,9 +13,21 @@ import {
 } from '../../util/git/github.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 import { testAndDownloadManifestFiles } from './github-scan-manifest.mts'
-
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk-stable'
+import { makeSure, selectFocus } from './create-scan-from-github-prompts.mts'
+import {
+  getLastCommitDetails,
+  getRepoBranchTree,
+  getRepoDetails,
+} from './create-scan-from-github-api.mts'
+import {
+  cleanupPartialDownload,
+  downloadManifestFile,
+  streamDownloadWithFetch,
+  testAndDownloadManifestFile,
+} from './github-scan-manifest.mts'
+
 const logger = getDefaultLogger()
 
 export type RepoListItem =
@@ -90,6 +101,20 @@ export async function createScanFromGithub({
     }
   }
 
+  return scanGithubRepositories(targetRepos, {
+    githubApiUrl,
+    githubToken,
+    orgSlug,
+    orgGithub,
+    outputKind,
+    repos,
+  })
+}
+
+export async function scanGithubRepositories(
+  targetRepos: string[],
+  config: Parameters<typeof scanRepo>[1],
+): Promise<CResult<undefined>> {
   let scansCreated = 0
   let reposScanned = 0
   // Track a blocking error (rate limit / auth) so we can surface it
@@ -103,14 +128,7 @@ export async function createScanFromGithub({
   for (let i = 0, { length } = targetRepos; i < length; i += 1) {
     const repoSlug = targetRepos[i]!
     reposScanned += 1
-    const scanCResult = await scanRepo(repoSlug, {
-      githubApiUrl,
-      githubToken,
-      orgSlug,
-      orgGithub,
-      outputKind,
-      repos,
-    })
+    const scanCResult = await scanRepo(repoSlug, config)
     if (scanCResult.ok) {
       const { scanCreated } = scanCResult.data
       if (scanCreated) {
@@ -328,26 +346,14 @@ export async function scanRepo(
 }
 
 // Interactive prompts extracted to keep this file under the 500-line File-size cap.
-import { makeSure, selectFocus } from './create-scan-from-github-prompts.mts'
 
 export { makeSure, selectFocus }
 
 // GitHub API helpers extracted to keep this file under the 500-line File-size cap.
-import {
-  getLastCommitDetails,
-  getRepoBranchTree,
-  getRepoDetails,
-} from './create-scan-from-github-api.mts'
 
 export { getLastCommitDetails, getRepoBranchTree, getRepoDetails }
 
 // Manifest download helpers extracted to keep this file under the 500-line File-size cap.
-import {
-  cleanupPartialDownload,
-  downloadManifestFile,
-  streamDownloadWithFetch,
-  testAndDownloadManifestFile,
-} from './github-scan-manifest.mts'
 
 export {
   cleanupPartialDownload,
