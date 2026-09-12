@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import process from 'node:process'
 
 import { runPastoralistAudit } from '../../../../src/commands/optimize/pastoralist-audit.mts'
 
@@ -40,7 +41,7 @@ describe('runPastoralistAudit', () => {
     const result = await runPastoralistAudit('/repo')
     expect(result.ok).toBe(true)
     expect(spawnMock).toHaveBeenCalledWith(
-      'node',
+      process.execPath,
       [
         expect.stringMatching(/pastoralist[/\\]dist[/\\]index\.js$/),
         '--root',

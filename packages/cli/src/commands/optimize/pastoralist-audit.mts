@@ -25,6 +25,8 @@ export type PastoralistAuditResult = {
   reason?: string | undefined
 }
 
+const logger = getDefaultLogger()
+
 /**
  * Run pastoralist's override audit against `root`: its update flow writes
  * the override review appendix and prunes overrides whose reason is gone.
@@ -34,8 +36,6 @@ export type PastoralistAuditResult = {
 export async function runPastoralistAudit(
   root: string,
 ): Promise<PastoralistAuditResult> {
-  const logger = getDefaultLogger()
-
   let binPath: string
   try {
     // pastoralist's exports map carries only an `import` condition for `.`
@@ -48,7 +48,7 @@ export async function runPastoralistAudit(
     return { ok: false, reason: 'pastoralist is not installed' }
   }
 
-  const result = await spawn('node', [binPath, '--root', root], {
+  const result = await spawn(process.execPath, [binPath, '--root', root], {
     cwd: root,
     stdio: 'inherit',
   })
