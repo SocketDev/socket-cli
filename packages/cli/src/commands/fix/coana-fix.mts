@@ -18,6 +18,11 @@ import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 import type { GhsaFixResult } from './coana-fix-ci.mts'
 
+export type SocketSdk = Extract<
+  Awaited<ReturnType<typeof setupSdk>>,
+  { ok: true }
+>['data']
+
 export type { GhsaFixResult } from './coana-fix-ci.mts'
 
 export async function coanaFix(
@@ -41,49 +46,11 @@ export async function coanaFix(
   debugDir({ fixEnv })
 
   spinner?.start()
-
-  const sockSdkCResult = await setupSdk()
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+  const scanCResult = await prepareCoanaFixScan(fixConfig)
+  if (!scanCResult.ok) {
+    return scanCResult
   }
-
-  const sockSdk = sockSdkCResult.data
-
-  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
-  if (!supportedFilesCResult.ok) {
-    return supportedFilesCResult
-  }
-
-  const supportedFiles = supportedFilesCResult.data
-
-  // Load socket.yml so projectIgnorePaths is respected when collecting files.
-  const socketYmlResult = findSocketYmlSync(cwd)
-  const socketConfig = socketYmlResult.ok
-    ? socketYmlResult.data?.parsed
-    : undefined
-
-  // --exclude-paths joins socket.yml's projectIgnorePaths so manifest
-  // discovery skips those subtrees. Without it a directory the running user
-  // cannot enter aborts collection before coana is ever invoked, and the user
-  // has no way to route around it.
-  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
-  const effectiveSocketConfig = scaExcludeGlobs.length
-    ? {
-        ...socketConfig,
-        version: socketConfig?.version ?? 2,
-        issueRules: socketConfig?.issueRules ?? {},
-        githubApp: socketConfig?.githubApp ?? {},
-        projectIgnorePaths: [
-          ...(socketConfig?.projectIgnorePaths ?? []),
-          ...scaExcludeGlobs,
-        ],
-      }
-    : socketConfig
-
-  const scanFilepaths = await getPackageFilesForScan(['.'], supportedFiles, {
-    config: effectiveSocketConfig,
-    cwd,
-  })
+  const { scanFilepaths, sockSdk } = scanCResult.data
 
   // A .socket.facts.json in the scan folder is an analysis artifact from an
   // earlier run, not a manifest. Uploading it silently poisons the fix input,
@@ -147,4 +114,44 @@ export async function coanaFix(
     shouldDiscoverGhsaIds,
     tarHash,
   })
+}
+
+export async function prepareCoanaFixScan(
+  fixConfig: FixConfig,
+): Promise<CResult<{ scanFilepaths: string[]; sockSdk: SocketSdk }>> {
+  const { cwd, excludePaths, spinner } = fixConfig
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
+  }
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
+  if (!supportedFilesCResult.ok) {
+    return supportedFilesCResult
+  }
+  const socketYmlResult = findSocketYmlSync(cwd)
+  const socketConfig = socketYmlResult.ok
+    ? socketYmlResult.data?.parsed
+    : undefined
+  const scaExcludeGlobs = excludePaths.map(excludePathToProjectIgnorePath)
+  const effectiveSocketConfig = scaExcludeGlobs.length
+    ? {
+        ...socketConfig,
+        version: socketConfig?.version ?? 2,
+        issueRules: socketConfig?.issueRules ?? {},
+        githubApp: socketConfig?.githubApp ?? {},
+        projectIgnorePaths: [
+          ...(socketConfig?.projectIgnorePaths ?? []),
+          ...scaExcludeGlobs,
+        ],
+      }
+    : socketConfig
+  const scanFilepaths = await getPackageFilesForScan(
+    ['.'],
+    supportedFilesCResult.data,
+    { config: effectiveSocketConfig, cwd },
+  )
+  return {
+    ok: true,
+    data: { __proto__: null, scanFilepaths, sockSdk: sockSdkCResult.data },
+  }
 }

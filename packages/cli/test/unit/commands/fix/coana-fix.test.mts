@@ -62,7 +62,7 @@ const mockGetOctokit = vi.hoisted(() =>
 )
 const mockSetGitRemoteGithubRepoUrl = vi.hoisted(() => vi.fn())
 const mockReadJsonSync = vi.hoisted(() => vi.fn())
-const mockSafeDelete = vi.hoisted(() => vi.fn())
+const mockStrictDelete = vi.hoisted(() => vi.fn())
 const mockReadFile = vi.hoisted(() => vi.fn())
 const mockWriteFile = vi.hoisted(() => vi.fn())
 const mockLogPrEvent = vi.hoisted(() => vi.fn())
@@ -139,7 +139,7 @@ vi.mock(import('@socketsecurity/lib-stable/fs/read-json'), () => ({
   readJsonSync: mockReadJsonSync,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/safe'), () => ({
-  safeDelete: mockSafeDelete,
+  strictDelete: mockStrictDelete,
 }))
 vi.mock(import('@socketsecurity/lib-stable/fs/read-file'), () => ({
   safeReadFileSync: vi.fn(() => undefined),
@@ -225,7 +225,7 @@ function setupHappyDefaults() {
   mockGetSocketFixPrs.mockResolvedValue([])
   mockFetchGhsaDetails.mockResolvedValue(new Map())
   mockIsGhsaFixed.mockResolvedValue(false)
-  mockSafeDelete.mockResolvedValue(undefined)
+  mockStrictDelete.mockResolvedValue(undefined)
   mockReadFile.mockResolvedValue('payload')
   mockWriteFile.mockResolvedValue(undefined)
   mockCheckCiEnvVars.mockReturnValue({ missing: [], present: [] })
@@ -307,6 +307,7 @@ describe('coanaFix (coverage)', () => {
       if (!result.ok) {
         expect(result.cause).toBe('no coana available')
       }
+      expect(mockStrictDelete).toHaveBeenCalledOnce()
     })
 
     it('returns empty result when prLimit is 0 in local mode', async () => {

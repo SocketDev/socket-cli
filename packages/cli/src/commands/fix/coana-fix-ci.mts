@@ -24,6 +24,124 @@ export type GhsaFixResult = {
   pullRequestNumber?: number | undefined
 }
 
+export async function discoverCoanaGhsaIds(
+  fixConfig: FixConfig,
+  config: {
+    adjustedLimit: number
+    shouldDiscoverGhsaIds: boolean
+    tarHash: string
+  },
+): Promise<string[] | undefined> {
+  const { adjustedLimit, shouldDiscoverGhsaIds, tarHash } = {
+    __proto__: null,
+    ...config,
+  } as typeof config
+  if (adjustedLimit <= 0) {
+    return undefined
+  }
+  if (!shouldDiscoverGhsaIds) {
+    return fixConfig.ghsas.slice(0, adjustedLimit)
+  }
+  try {
+    const result = await spawnCoanaDlx(
+      [
+        'find-vulnerabilities',
+        fixConfig.cwd,
+        '--manifests-tar-hash',
+        tarHash,
+        ...(fixConfig.ecosystems.length
+          ? ['--purl-types', ...fixConfig.ecosystems]
+          : []),
+      ],
+      {
+        orgSlug: fixConfig.orgSlug,
+        coanaVersion: fixConfig.coanaVersion,
+        cwd: fixConfig.cwd,
+        spinner: fixConfig.spinner,
+      },
+      { stdio: 'pipe' },
+    )
+    return result.ok
+      ? parseDiscoveredGhsaIds(result.data).slice(0, adjustedLimit)
+      : undefined
+  } catch (e) {
+    debug('Failed to discover vulnerabilities')
+    debugDir(e)
+    return undefined
+  }
+}
+
+export async function getAdjustedPrLimit(
+  fixEnv: FixEnv,
+  prLimit: number,
+): Promise<number> {
+  if (!fixEnv.isCi || !fixEnv.repoInfo) {
+    return prLimit
+  }
+  try {
+    const openPrs = await getSocketFixPrs(
+      fixEnv.repoInfo.owner,
+      fixEnv.repoInfo.repo,
+      { states: GQL_PR_STATE_OPEN },
+    )
+    const adjustedLimit = Math.max(0, prLimit - openPrs.length)
+    if (openPrs.length > 0) {
+      debug(
+        `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrs.length} open Socket Fix ${pluralize('PR', { count: openPrs.length })}`,
+      )
+    }
+    return adjustedLimit
+  } catch (e) {
+    debug('Failed to count open PRs, using original limit')
+    debugDir(e)
+    return prLimit
+  }
+}
+
+export function getGhsaIdSummary(ids: string[]): string {
+  return ids.length > 3
+    ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
+    : joinAnd(ids)
+}
+
+export async function getUnprocessedGhsaIds(
+  cwd: string,
+  ids: string[],
+): Promise<string[]> {
+  const unprocessedIds: string[] = []
+  for (let i = 0, { length } = ids; i < length; i += 1) {
+    const ghsaId = ids[i]!
+    if (!(await isGhsaFixed(cwd, ghsaId))) {
+      unprocessedIds.push(ghsaId)
+    }
+  }
+  return unprocessedIds
+}
+
+export function parseDiscoveredGhsaIds(output: string): string[] {
+  try {
+    const lines = output
+      .trim()
+      .split(/\r?\n/)
+      .filter(line => line.trim())
+    const raw = lines.length > 0 ? lines[lines.length - 1] : ''
+    if (!raw?.trim()) {
+      return []
+    }
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      throw new TypeError(
+        `coana find-vulnerabilities returned non-array JSON on last line (got: ${typeof parsed}); expected an array of GHSA ID strings`,
+      )
+    }
+    return parsed as string[]
+  } catch (e) {
+    debug('Failed to parse GHSA IDs from find-vulnerabilities output')
+    debugDir(e)
+    return []
+  }
+}
+
 export async function runCiCoanaFix(
   fixConfig: FixConfig,
   context: {
@@ -35,7 +153,7 @@ export async function runCiCoanaFix(
     tarHash: string
   },
 ): Promise<CResult<{ fixedAll: boolean; ghsaDetails: GhsaFixResult[] }>> {
-  const { coanaVersion, cwd, ecosystems, ghsas, prLimit, spinner } = fixConfig
+  const { cwd, prLimit, spinner } = fixConfig
   const {
     coanaSilenceArgs,
     coanaStdio,
@@ -47,87 +165,12 @@ export async function runCiCoanaFix(
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
-  // Adjust PR limit based on open Socket Fix PRs.
-  let adjustedLimit = prLimit
-  if (shouldOpenPrs && fixEnv.repoInfo) {
-    try {
-      const openPrs = await getSocketFixPrs(
-        fixEnv.repoInfo.owner,
-        fixEnv.repoInfo.repo,
-        {
-          states: GQL_PR_STATE_OPEN,
-        },
-      )
-      const openPrCount = openPrs.length
-      // Reduce limit by number of open PRs to avoid creating too many.
-      adjustedLimit = Math.max(0, prLimit - openPrCount)
-      if (openPrCount > 0) {
-        debug(
-          `prLimit: adjusted from ${prLimit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', { count: openPrCount })}`,
-        )
-      }
-    } catch (e) {
-      debug('Failed to count open PRs, using original limit')
-      debugDir(e)
-    }
-  }
-
-  const shouldSpawnCoana = adjustedLimit > 0
-
-  let ids: string[] | undefined
-
-  // When shouldDiscoverGhsaIds is true, discover vulnerabilities using find-vulnerabilities command.
-  // This gives us the GHSA IDs needed to create individual PRs in CI mode.
-  if (shouldSpawnCoana && shouldDiscoverGhsaIds) {
-    try {
-      const discoverCResult = await spawnCoanaDlx(
-        [
-          'find-vulnerabilities',
-          cwd,
-          '--manifests-tar-hash',
-          tarHash,
-          ...(ecosystems.length ? ['--purl-types', ...ecosystems] : []),
-        ],
-        {
-          orgSlug: fixConfig.orgSlug,
-          coanaVersion,
-          cwd,
-          spinner,
-        },
-        { stdio: 'pipe' },
-      )
-
-      if (discoverCResult.ok) {
-        // Coana prints ghsaIds as json-formatted string on the final line of the output.
-        const discoveredIds: string[] = []
-        try {
-          const lines = discoverCResult.data
-            .trim()
-            .split(/\r?\n/)
-            .filter(line => line.trim())
-          const ghsaIdsRaw = lines.length > 0 ? lines[lines.length - 1] : ''
-          if (ghsaIdsRaw?.trim()) {
-            const parsed = JSON.parse(ghsaIdsRaw)
-            if (!Array.isArray(parsed)) {
-              throw new Error(
-                `coana find-vulnerabilities returned non-array JSON on last line (got: ${typeof parsed}); expected an array of GHSA ID strings`,
-              )
-            }
-            discoveredIds.push(...parsed)
-          }
-        } catch (e) {
-          debug('Failed to parse GHSA IDs from find-vulnerabilities output')
-          debugDir(e)
-        }
-        ids = discoveredIds.slice(0, adjustedLimit)
-      }
-    } catch (e) {
-      debug('Failed to discover vulnerabilities')
-      debugDir(e)
-    }
-  } else if (shouldSpawnCoana) {
-    ids = ghsas.slice(0, adjustedLimit)
-  }
+  const adjustedLimit = await getAdjustedPrLimit(fixEnv, prLimit)
+  const ids = await discoverCoanaGhsaIds(fixConfig, {
+    adjustedLimit,
+    shouldDiscoverGhsaIds,
+    tarHash,
+  })
 
   if (!ids?.length) {
     debug('miss: no GHSA IDs to process')
@@ -144,10 +187,7 @@ export async function runCiCoanaFix(
     return { ok: true, data: { fixedAll: false, ghsaDetails: [] } }
   }
 
-  const displayIds =
-    ids.length > 3
-      ? `${ids.slice(0, 3).join(', ')} … and ${ids.length - 3} more`
-      : joinAnd(ids)
+  const displayIds = getGhsaIdSummary(ids)
   debug(`fetch: ${ids.length} GHSA details for ${displayIds}`)
 
   const ghsaDetails = await fetchGhsaDetails(ids)
@@ -156,14 +196,7 @@ export async function runCiCoanaFix(
   debug(`found: ${ghsaDetails.size} GHSA details`)
 
   // Filter out already-fixed GHSAs to avoid duplicate work.
-  const unprocessedIds: string[] = []
-  for (let i = 0, { length } = ids; i < length; i += 1) {
-    const ghsaId = ids[i]!
-    const alreadyFixed = await isGhsaFixed(cwd, ghsaId)
-    if (!alreadyFixed) {
-      unprocessedIds.push(ghsaId)
-    }
-  }
+  const unprocessedIds = await getUnprocessedGhsaIds(cwd, ids)
 
   const skippedCount = ids.length - unprocessedIds.length
   if (skippedCount > 0) {
