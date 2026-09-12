@@ -89,6 +89,7 @@
     "prune:branch-backups": "node scripts/fleet/backup-branches.mts prune",
     "prune:caches": "node scripts/fleet/prune-actions-caches.mts",
     "prune:gha-caches": "node scripts/fleet/prune-actions-caches.mts",
+    "remote:github:release": "node scripts/fleet/release/github/remote.mts",
     "ruleset:bypass": "node scripts/fleet/grant-ruleset-bypass.mts",
     "s": "node scripts/repo/cli-build/run-dist.mts --",
     "security": "node scripts/fleet/security.mts",
