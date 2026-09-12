@@ -10,7 +10,6 @@ import { stripAnsi } from '@socketsecurity/lib-stable/term/ansi/strip'
 import type { SpawnOptions } from '@socketsecurity/lib-stable/process/spawn/types'
 
 import { scrubSnapshotData } from './util/scrub-snapshot-data.mts'
-import { execPath } from '../src/constants/paths.mts'
 import { WORKSPACE_ROOT } from '../scripts/repo/cli-build/paths.mts'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -27,7 +26,7 @@ if (!process.env['VITEST']) {
 // Backward compatibility object for tests.
 // In VITEST mode, use a Proxy to keep env vars live and handle case-sensitivity.
 const constants = {
-  execPath,
+  execPath: process.execPath,
   processEnv: process.env['VITEST'] ? createEnvProxy(process.env) : process.env,
 }
 

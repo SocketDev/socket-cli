@@ -9,30 +9,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  getExecPath,
-  getNodeHardenFlags,
-  getNodeNoWarningsFlags,
-} from '@socketsecurity/lib-stable/constants/node'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { DOT_SOCKET_DIR } from '@socketsecurity/lib-stable/paths/dirnames'
 
 import { ENV } from './env.mts'
 
-// Import socket constants for re-export.
-import { SOCKET_JSON } from './socket.mts'
 const logger = getDefaultLogger()
-
-// Re-export socket constants for backward compatibility.
-export { SOCKET_JSON }
-
-// Re-export node-related constants from registry for convenience.
-export { getExecPath, getNodeHardenFlags, getNodeNoWarningsFlags }
-
-// Export as non-function constants for backward compatibility.
-export const execPath = getExecPath()
-export const nodeHardenFlags = getNodeHardenFlags()
-export const nodeNoWarningsFlags = getNodeNoWarningsFlags()
 
 // Get base paths relative to this file's location
 const __filename = fileURLToPath(import.meta.url)

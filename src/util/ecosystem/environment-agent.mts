@@ -3,6 +3,10 @@ import path from 'node:path'
 
 import { whichReal } from '@socketsecurity/lib-stable/exe/path/which'
 import {
+  getExecPath,
+  getNodeNoWarningsFlags,
+} from '@socketsecurity/lib-stable/constants/node'
+import {
   BUN,
   NPM,
   PNPM,
@@ -19,7 +23,6 @@ import semver from 'semver'
 
 import { getNpmExecPath, getPnpmExecPath } from '../../constants/agents.mts'
 import { FLAG_VERSION } from '../../constants/cli.mts'
-import { execPath, nodeNoWarningsFlags } from '../../constants/paths.mts'
 import { preferWindowsCmdShim, resolveBinPathSync } from './windows-shims.mts'
 
 import type { Agent } from './supported-agents.mts'
@@ -33,6 +36,9 @@ const binByAgent = new Map<Agent, string>([
   [YARN_CLASSIC, YARN],
   [VLT, VLT],
 ])
+
+const nodeExecPath = getExecPath()
+const nodeNoWarningsFlags = getNodeNoWarningsFlags()
 
 export async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
@@ -118,7 +124,7 @@ export async function getAgentVersion(
 
     if (shouldRunWithNode) {
       const spawnResult = await spawn(
-        execPath,
+        nodeExecPath,
         [...nodeNoWarningsFlags, shouldRunWithNode, FLAG_VERSION],
         { cwd },
       )

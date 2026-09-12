@@ -5,7 +5,7 @@ import { getGithubApiUrl } from '@socketsecurity/lib-stable/env/github'
 import { getDefaultLogger } from '@socketsecurity/lib-stable/logger/default'
 import { input, select } from '@socketsecurity/lib-stable/stdio/prompts'
 
-import { SOCKET_JSON } from '../../constants/paths.mts'
+import { SOCKET_JSON } from '../../constants/socket.mts'
 import {
   detectDefaultBranch,
   getRepoName,
