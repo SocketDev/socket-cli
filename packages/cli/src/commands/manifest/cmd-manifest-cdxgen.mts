@@ -50,6 +50,23 @@ export interface CdxgenFlags {
 export function arrayToLower(arg: string[]): string[] {
   return arg.map(toLower)
 }
+
+export function partitionCdxgenArgs(positionals: string[]): {
+  pathArgs: string[]
+  unknowns: string[]
+} {
+  const pathArgs: string[] = []
+  const unknowns: string[] = []
+  for (let i = 0, { length } = positionals; i < length; i += 1) {
+    const arg = positionals[i]!
+    if (isPath(arg)) {
+      pathArgs.push(arg)
+    } else {
+      unknowns.push(arg)
+    }
+  }
+  return { pathArgs, unknowns }
+}
 export function toLower(arg: string): string {
   return arg.toLowerCase()
 }
@@ -207,17 +224,8 @@ export async function run(
     // eslint-disable-next-line typescript-eslint/no-explicit-any -- yargs-parser returns a dynamic flag bag; downstream code reads .help/.lifecycle/.output/.type/_/--.
   } as any
 
-  const pathArgs: string[] = []
-  const unknowns: string[] = []
   const positionals = yargv._ as string[]
-  for (let i = 0, { length } = positionals; i < length; i += 1) {
-    const a = positionals[i]!
-    if (isPath(a)) {
-      pathArgs.push(a)
-    } else {
-      unknowns.push(a)
-    }
-  }
+  const { pathArgs, unknowns } = partitionCdxgenArgs(positionals)
 
   yargv._ = pathArgs
 

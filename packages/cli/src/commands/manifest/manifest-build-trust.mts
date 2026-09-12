@@ -159,6 +159,42 @@ export function refuseSocketJsonPath({
   }
 }
 
+export function resolveBuildToolOpts({
+  cliOpts,
+  cwd,
+  field,
+  flag,
+  reason,
+  socketJsonOpts,
+  tool,
+  trustSocketJson,
+}: {
+  cliOpts: unknown
+  cwd: string
+  field: string
+  flag: string
+  reason: string
+  socketJsonOpts: unknown
+  tool: string
+  trustSocketJson: boolean
+}): CResult<string[]> {
+  if (cliOpts) {
+    return { ok: true, data: splitBuildToolOpts(cliOpts) }
+  }
+  const opts = splitBuildToolOpts(socketJsonOpts)
+  if (opts.length && !trustSocketJson) {
+    return refuseSocketJsonOpts({
+      cwd,
+      field,
+      flag,
+      reason,
+      saw: opts.join(' '),
+      tool,
+    })
+  }
+  return { ok: true, data: opts }
+}
+
 /**
  * Decide which conda input file a run may read. The `-` sentinel means stdin
  * and passes through untouched.
@@ -304,25 +340,21 @@ export function resolveGradleInvocation({
     bin = resolved
   }
 
-  let opts: string[] = []
-  if (cliOpts) {
-    opts = splitBuildToolOpts(cliOpts)
-  } else if (splitBuildToolOpts(socketJsonOpts).length) {
-    if (!trustSocketJson) {
-      return refuseSocketJsonOpts({
-        cwd,
-        field: 'defaults.manifest.gradle.gradleOpts',
-        flag: '--gradle-opts',
-        reason:
-          'Gradle options redirect execution: `-I`/`--init-script` and `--include-build` load arbitrary build logic, `-g`/`--gradle-user-home` points at an `init.d` directory Gradle runs on startup, and `-D org.gradle.java.home` / `-D org.gradle.jvmargs` choose the JVM and its agents.',
-        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
-        tool: 'gradle',
-      })
-    }
-    opts = splitBuildToolOpts(socketJsonOpts)
+  const optsResult = resolveBuildToolOpts({
+    cliOpts,
+    cwd,
+    field: 'defaults.manifest.gradle.gradleOpts',
+    flag: '--gradle-opts',
+    reason:
+      'Gradle options redirect execution: `-I`/`--init-script` and `--include-build` load arbitrary build logic, `-g`/`--gradle-user-home` points at an `init.d` directory Gradle runs on startup, and `-D org.gradle.java.home` / `-D org.gradle.jvmargs` choose the JVM and its agents.',
+    socketJsonOpts,
+    tool: 'gradle',
+    trustSocketJson,
+  })
+  if (!optsResult.ok) {
+    return optsResult
   }
-
-  return { ok: true, data: { bin, opts } }
+  return { ok: true, data: { bin, opts: optsResult.data } }
 }
 
 /**
@@ -368,25 +400,21 @@ export function resolveMavenInvocation({
     bin = resolved
   }
 
-  let opts: string[] = []
-  if (cliOpts) {
-    opts = splitBuildToolOpts(cliOpts)
-  } else if (splitBuildToolOpts(socketJsonOpts).length) {
-    if (!trustSocketJson) {
-      return refuseSocketJsonOpts({
-        cwd,
-        field: 'defaults.manifest.maven.mavenOpts',
-        flag: '--maven-opts',
-        reason:
-          'Maven options redirect execution: `-Dmaven.ext.class.path` loads arbitrary extension jars, `-s`/`--settings` and `-t`/`--toolchains` point Maven at repository-supplied configuration, and `-Dmaven.repo.local` relocates the artifact store the build executes from.',
-        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
-        tool: 'maven',
-      })
-    }
-    opts = splitBuildToolOpts(socketJsonOpts)
+  const optsResult = resolveBuildToolOpts({
+    cliOpts,
+    cwd,
+    field: 'defaults.manifest.maven.mavenOpts',
+    flag: '--maven-opts',
+    reason:
+      'Maven options redirect execution: `-Dmaven.ext.class.path` loads arbitrary extension jars, `-s`/`--settings` and `-t`/`--toolchains` point Maven at repository-supplied configuration, and `-Dmaven.repo.local` relocates the artifact store the build executes from.',
+    socketJsonOpts,
+    tool: 'maven',
+    trustSocketJson,
+  })
+  if (!optsResult.ok) {
+    return optsResult
   }
-
-  return { ok: true, data: { bin, opts } }
+  return { ok: true, data: { bin, opts: optsResult.data } }
 }
 
 /**
@@ -431,25 +459,21 @@ export function resolveSbtInvocation({
     bin = socketJsonBin
   }
 
-  let opts: string[] = []
-  if (cliOpts) {
-    opts = splitBuildToolOpts(cliOpts)
-  } else if (splitBuildToolOpts(socketJsonOpts).length) {
-    if (!trustSocketJson) {
-      return refuseSocketJsonOpts({
-        cwd,
-        field: 'defaults.manifest.sbt.sbtOpts',
-        flag: '--sbt-opts',
-        reason:
-          'sbt options redirect execution: `-J` passes JVM arguments straight through, `-D sbt.global.base` / `-D sbt.boot.directory` relocate the plugin and launcher directories sbt loads, and a bare argument is an sbt command such as `eval`, which evaluates Scala.',
-        saw: splitBuildToolOpts(socketJsonOpts).join(' '),
-        tool: 'sbt',
-      })
-    }
-    opts = splitBuildToolOpts(socketJsonOpts)
+  const optsResult = resolveBuildToolOpts({
+    cliOpts,
+    cwd,
+    field: 'defaults.manifest.sbt.sbtOpts',
+    flag: '--sbt-opts',
+    reason:
+      'sbt options redirect execution: `-J` passes JVM arguments straight through, `-D sbt.global.base` / `-D sbt.boot.directory` relocate the plugin and launcher directories sbt loads, and a bare argument is an sbt command such as `eval`, which evaluates Scala.',
+    socketJsonOpts,
+    tool: 'sbt',
+    trustSocketJson,
+  })
+  if (!optsResult.ok) {
+    return optsResult
   }
-
-  return { ok: true, data: { bin, opts } }
+  return { ok: true, data: { bin, opts: optsResult.data } }
 }
 
 export interface BuildToolInvocation {

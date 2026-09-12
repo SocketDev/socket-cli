@@ -6,11 +6,6 @@
 import { IGNORED_DIRS } from '../../../util/fs/glob.mts'
 
 export type ExtractBazelOptions = {
-  bazelFlags: string | undefined
-  bazelOutputBase: string | undefined
-  bazelRc: string | undefined
-  bin: string | undefined
-  cwd: string
   // Optional env override used for python-shim PATH augmentation.
   env?: NodeJS.ProcessEnv | undefined
   // Directory basenames the workspace walker must not descend into.
@@ -22,7 +17,6 @@ export type ExtractBazelOptions = {
   // into. Caller-supplied so the orchestrator stays generic; the CLI
   // command supplies `bazel-` for Bazel's output_base symlinks.
   ignoreDirPrefixes?: readonly string[] | undefined
-  out: string
   // Use the auto-manifest sibling directory instead of writing directly to `out`.
   outLayout?: 'flat' | undefined
   // Per-repo cquery timeout in milliseconds. When the caller leaves this
@@ -31,6 +25,15 @@ export type ExtractBazelOptions = {
   // `socket manifest bazel` command wires this to a CLI flag with a longer
   // default.
   perRepoTimeoutMs?: number | undefined
+} & ExtractBazelRequired
+
+export type ExtractBazelRequired = {
+  bazelFlags: string | undefined
+  bazelOutputBase: string | undefined
+  bazelRc: string | undefined
+  bin: string | undefined
+  cwd: string
+  out: string
   verbose: boolean
 }
 

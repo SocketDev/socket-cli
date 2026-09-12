@@ -29,28 +29,9 @@ export async function convertGradleToMaven({
   // We don't resolve against $PATH since gradlew is typically a local wrapper script.
   // Users can provide absolute paths if they need to reference system-wide installations.
   const rBin = path.resolve(cwd, bin)
-  const binExists = existsSync(rBin)
-  const cwdExists = existsSync(cwd)
-
   // Only show logging in text mode.
   const isTextMode = outputKind === 'text'
-
-  if (isTextMode) {
-    logger.group('gradle2maven:')
-    logger.info(`- executing: \`${rBin}\``)
-    if (!binExists) {
-      logger.warn(
-        'Warning: It appears the executable could not be found. An error might be printed later because of that.',
-      )
-    }
-    logger.info(`- src dir: \`${cwd}\``)
-    if (!cwdExists) {
-      logger.warn(
-        'Warning: It appears the src dir could not be found. An error might be printed later because of that.',
-      )
-    }
-    logger.groupEnd()
-  }
+  logGradleEnvironment(rBin, cwd, outputKind)
 
   try {
     // Run gradlew with the init script we provide which should yield zero or more
@@ -198,4 +179,28 @@ export async function execGradleWithSpinner(
       spinner?.failAndStop('There was an error while trying to run gradlew.')
     }
   }
+}
+
+export function logGradleEnvironment(
+  bin: string,
+  cwd: string,
+  outputKind: OutputKind,
+): void {
+  if (outputKind !== 'text') {
+    return
+  }
+  logger.group('gradle2maven:')
+  logger.info(`- executing: \`${bin}\``)
+  if (!existsSync(bin)) {
+    logger.warn(
+      'Warning: It appears the executable could not be found. An error might be printed later because of that.',
+    )
+  }
+  logger.info(`- src dir: \`${cwd}\``)
+  if (!existsSync(cwd)) {
+    logger.warn(
+      'Warning: It appears the src dir could not be found. An error might be printed later because of that.',
+    )
+  }
+  logger.groupEnd()
 }

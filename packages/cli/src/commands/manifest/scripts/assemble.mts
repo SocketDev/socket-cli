@@ -1,6 +1,8 @@
 import crypto from 'node:crypto'
 import { existsSync } from 'node:fs'
 
+import { compareStr } from '@socketsecurity/lib-stable/sorts/strings'
+
 import { mavenCoordinateKey } from './facts.mts'
 import type {
   ResolvedArtifactPaths,
@@ -334,7 +336,7 @@ function buildProjects(
   projects.sort((a, b) => {
     const ka = `${a.subprojectDir} ${a.namespace}:${a.name}`
     const kb = `${b.subprojectDir} ${b.namespace}:${b.name}`
-    return ka < kb ? -1 : ka > kb ? 1 : 0
+    return compareStr(ka, kb)
   })
   return projects
 }
@@ -357,6 +359,27 @@ function unionInto(
     }
   } else {
     map.set(key, [...add])
+  }
+}
+
+function addTargetsByGav(
+  targetsByGav: Map<string, string[]>,
+  gavKey: string | undefined,
+  targets: string[],
+): void {
+  if (!gavKey) {
+    return
+  }
+  const acc = targetsByGav.get(gavKey)
+  if (!acc) {
+    targetsByGav.set(gavKey, [...targets])
+    return
+  }
+  for (let i = 0, { length } = targets; i < length; i += 1) {
+    const file = targets[i]!
+    if (!acc.includes(file)) {
+      acc.push(file)
+    }
   }
 }
 
@@ -410,19 +433,7 @@ function buildArtifactPaths(
       artifactId: c.name,
       version: c.version,
     })
-    if (gavKey) {
-      const acc = targetsByGav.get(gavKey)
-      if (acc) {
-        for (let i = 0, { length } = targets; i < length; i += 1) {
-          const f = targets[i]!
-          if (!acc.includes(f)) {
-            acc.push(f)
-          }
-        }
-      } else {
-        targetsByGav.set(gavKey, [...targets])
-      }
-    }
+    addTargetsByGav(targetsByGav, gavKey, targets)
   }
   // A top-level module is a `project` but usually not a dependency node, so its
   // source roots (where reachability starts) are missed by the node loop above;

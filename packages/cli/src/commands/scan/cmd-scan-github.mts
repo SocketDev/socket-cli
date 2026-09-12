@@ -20,8 +20,9 @@ import { hasDefaultApiToken } from '../../util/socket/sdk.mjs'
 import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
-import type { SocketJson } from '../../util/socket/json.mts'
 import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 // Flags interface for type safety.
 export interface ScanGithubFlags {
@@ -50,6 +51,34 @@ export const cmdScanGithub = {
   run,
 }
 
+export function outputGithubScanDryRun(
+  options?:
+    | {
+        all?: boolean | undefined
+        githubApiUrl?: string | undefined
+        orgGithub?: string | undefined
+        orgSlug?: string | undefined
+        repos?: string | undefined
+      }
+    | undefined,
+): void {
+  const { all, githubApiUrl, orgGithub, orgSlug, repos } = {
+    __proto__: null,
+    ...options,
+  }
+  const details: Record<string, unknown> = {
+    organization: orgSlug,
+    githubOrganization: orgGithub,
+    githubApiUrl,
+  }
+  if (all) {
+    details['scope'] = 'all repositories'
+  } else if (repos) {
+    details['repositories'] = repos
+  }
+  outputDryRunUpload('GitHub scan', details)
+}
+
 export function resolveGithubScanEndpointDefaults(
   sockJson: SocketJson,
   config: Pick<ScanGithubFlags, 'all' | 'githubApiUrl'>,
@@ -72,6 +101,29 @@ export function resolveGithubScanEndpointDefaults(
   }
   /* c8 ignore stop */
   return { __proto__: null, all, githubApiUrl }
+}
+
+export async function resolveGithubScanOrgSlug(
+  orgSlug: string,
+  mode: 'suggest' | 'use-current',
+  outputKind: OutputKind,
+): Promise<string | undefined> {
+  if (mode === 'use-current' || orgSlug) {
+    return orgSlug
+  }
+  const suggestion = await suggestOrgSlug()
+  if (suggestion === undefined) {
+    await outputScanGithub(
+      {
+        ok: false,
+        message: 'Canceled by user',
+        cause: 'Org selector was canceled by user',
+      },
+      outputKind,
+    )
+    return undefined
+  }
+  return suggestion || orgSlug
 }
 
 export function resolveGithubScanRepoDefaults(
@@ -200,7 +252,7 @@ export async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let { 0: orgSlug } = await determineOrgSlug(
+  const { 0: detectedOrgSlug } = await determineOrgSlug(
     orgFlag || '',
     interactive,
     dryRun,
@@ -214,7 +266,7 @@ export async function run(
   ;({ orgGithub, repos } = resolveGithubScanRepoDefaults(sockJson, {
     all,
     orgGithub,
-    orgSlug,
+    orgSlug: detectedOrgSlug,
     repos,
   }))
 
@@ -231,24 +283,13 @@ export async function run(
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   // Only do suggestions with an apiToken and when not in dryRun mode
-  if (hasSocketApiToken && !dryRun && interactive) {
-    if (!orgSlug) {
-      const suggestion = await suggestOrgSlug()
-      if (suggestion === undefined) {
-        await outputScanGithub(
-          {
-            ok: false,
-            message: 'Canceled by user',
-            cause: 'Org selector was canceled by user',
-          },
-          outputKind,
-        )
-        return
-      }
-      if (suggestion) {
-        orgSlug = suggestion
-      }
-    }
+  const orgSlug = await resolveGithubScanOrgSlug(
+    detectedOrgSlug,
+    hasSocketApiToken && !dryRun && interactive ? 'suggest' : 'use-current',
+    outputKind,
+  )
+  if (orgSlug === undefined) {
+    return
   }
 
   const wasValidInput = validateGithubScanInput(outputKind, {
@@ -263,17 +304,13 @@ export async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    const details: Record<string, unknown> = {
-      organization: orgSlug,
-      githubOrganization: orgGithub,
+    outputGithubScanDryRun({
+      all,
       githubApiUrl,
-    }
-    if (all) {
-      details['scope'] = 'all repositories'
-    } else if (repos) {
-      details['repositories'] = repos
-    }
-    outputDryRunUpload('GitHub scan', details)
+      orgGithub,
+      orgSlug,
+      repos,
+    })
     return
   }
 

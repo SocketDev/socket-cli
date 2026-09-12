@@ -22,6 +22,7 @@ import { excludePathsFlag } from '../scan/reachability-flags.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { SocketJson } from '../../util/socket/json.mts'
 
 const logger = getDefaultLogger()
 
@@ -118,6 +119,77 @@ export const cmdManifestMaven = {
   run,
 }
 
+export function resolveMavenExcludeConfigs(
+  socketJson: SocketJson,
+  value: string | undefined,
+): string {
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.excludeConfigs
+  if (configured === undefined) {
+    return ''
+  }
+  logger.info(
+    `Using default --exclude-configs from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenIgnoreUnresolved(
+  socketJson: SocketJson,
+  options?: { value?: boolean | undefined } | undefined,
+): boolean {
+  const { value } = { __proto__: null, ...options }
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.ignoreUnresolved
+  if (configured === undefined) {
+    return false
+  }
+  logger.info(
+    `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenIncludeConfigs(
+  socketJson: SocketJson,
+  value: string | undefined,
+): string {
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.includeConfigs
+  if (configured === undefined) {
+    return ''
+  }
+  logger.info(
+    `Using default --include-configs from ${SOCKET_JSON}:`,
+    configured,
+  )
+  return configured
+}
+
+export function resolveMavenVerbose(
+  socketJson: SocketJson,
+  options?: { value?: boolean | undefined } | undefined,
+): boolean {
+  const { value } = { __proto__: null, ...options }
+  if (value !== undefined) {
+    return value
+  }
+  const configured = socketJson.defaults?.manifest?.maven?.verbose
+  if (configured === undefined) {
+    return false
+  }
+  logger.info(`Using default --verbose from ${SOCKET_JSON}:`, configured)
+  return configured
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -137,7 +209,7 @@ export async function run(
   // Feature request: Pass outputKind to convertMavenToFacts for json/md output support.
   const outputKind = getOutputKind(json, markdown)
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
@@ -150,7 +222,8 @@ export async function run(
 
   const { bin: binFlag, mavenOpts: mavenOptsFlag, trustSocketJson } = cli.flags
 
-  let { excludeConfigs, ignoreUnresolved, includeConfigs, verbose } = cli.flags
+  const { excludeConfigs, ignoreUnresolved, includeConfigs, verbose } =
+    cli.flags
 
   // The bin and its options choose what gets executed, so they route through
   // the socket.json trust gate. The remaining socket.json defaults below only
@@ -169,49 +242,20 @@ export async function run(
 
   const { bin, opts: mavenOpts } = invocation.data
 
-  if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.maven?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.maven?.includeConfigs
-      logger.info(
-        `Using default --include-configs from ${SOCKET_JSON}:`,
-        includeConfigs,
-      )
-    } else {
-      includeConfigs = ''
-    }
-  }
-  if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.maven?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.maven?.excludeConfigs
-      logger.info(
-        `Using default --exclude-configs from ${SOCKET_JSON}:`,
-        excludeConfigs,
-      )
-    } else {
-      excludeConfigs = ''
-    }
-  }
-  if (ignoreUnresolved === undefined) {
-    if (sockJson.defaults?.manifest?.maven?.ignoreUnresolved !== undefined) {
-      ignoreUnresolved = sockJson.defaults?.manifest?.maven?.ignoreUnresolved
-      logger.info(
-        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
-        ignoreUnresolved,
-      )
-    } else {
-      ignoreUnresolved = false
-    }
-  }
-  if (verbose === undefined) {
-    if (sockJson.defaults?.manifest?.maven?.verbose !== undefined) {
-      verbose = sockJson.defaults?.manifest?.maven?.verbose
-      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
-    } else {
-      verbose = false
-    }
-  }
+  const resolvedExcludeConfigs = resolveMavenExcludeConfigs(
+    sockJson,
+    excludeConfigs,
+  )
+  const resolvedIgnoreUnresolved = resolveMavenIgnoreUnresolved(sockJson, {
+    value: ignoreUnresolved,
+  })
+  const resolvedIncludeConfigs = resolveMavenIncludeConfigs(
+    sockJson,
+    includeConfigs,
+  )
+  const resolvedVerbose = resolveMavenVerbose(sockJson, { value: verbose })
 
-  if (verbose) {
+  if (resolvedVerbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
     logger.groupEnd()
@@ -233,7 +277,7 @@ export async function run(
     return
   }
 
-  if (verbose) {
+  if (resolvedVerbose) {
     logger.group()
     logger.info('- cwd:', cwd)
     logger.info('- maven bin:', bin)
@@ -259,11 +303,11 @@ export async function run(
   await convertMavenToFacts({
     bin,
     cwd,
-    excludeConfigs: excludeConfigs || '',
+    excludeConfigs: resolvedExcludeConfigs,
     excludePaths,
-    ignoreUnresolved: ignoreUnresolved,
-    includeConfigs: includeConfigs || '',
+    ignoreUnresolved: resolvedIgnoreUnresolved,
+    includeConfigs: resolvedIncludeConfigs,
     mavenOpts,
-    verbose: verbose,
+    verbose: resolvedVerbose,
   })
 }

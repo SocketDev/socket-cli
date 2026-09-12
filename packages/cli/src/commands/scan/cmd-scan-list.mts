@@ -57,27 +57,55 @@ export async function fetchValidatedScanList(config: {
     validatedPage,
     validatedPerPage,
   } = config
-  if (Number.isNaN(validatedPage) || validatedPage < 1) {
-    throw new InputError(
-      `--page must be a positive integer (saw: "${flags['page']}"); pass a number like --page=1`,
-    )
-  }
-  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
-    throw new InputError(
-      `--per-page must be a positive integer (saw: "${flags['perPage']}"); pass a number like --per-page=30`,
-    )
-  }
+  validateScanListPagination(
+    flags.page,
+    flags.perPage,
+    validatedPage,
+    validatedPerPage,
+  )
 
   await handleListScans({
-    branch: branch ? branch : '',
-    direction: flags['direction'] || '',
-    from_time: flags['fromTime'] || '',
+    branch: normalizeScanListFilter(branch),
+    direction: normalizeScanListFilter(flags.direction),
+    from_time: normalizeScanListFilter(flags.fromTime),
     orgSlug,
     outputKind,
     page: validatedPage,
     perPage: validatedPerPage,
-    repo: repo ? repo : '',
-    sort: flags['sort'] || '',
+    repo: normalizeScanListFilter(repo),
+    sort: normalizeScanListFilter(flags.sort),
+  })
+}
+
+export function normalizeScanListFilter(value: string | undefined): string {
+  return value || ''
+}
+
+export function outputScanListDryRun(
+  options?:
+    | {
+        branch?: string | undefined
+        direction?: string | undefined
+        orgSlug?: string | undefined
+        page?: number | undefined
+        perPage?: number | undefined
+        repo?: string | undefined
+        sort?: string | undefined
+      }
+    | undefined,
+): void {
+  const { branch, direction, orgSlug, page, perPage, repo, sort } = {
+    __proto__: null,
+    ...options,
+  }
+  outputDryRunFetch('scans', {
+    organization: orgSlug,
+    repo: repo || undefined,
+    branch: branch || undefined,
+    sort: sort || 'created_at',
+    direction: direction || 'desc',
+    page,
+    perPage,
   })
 }
 
@@ -238,14 +266,14 @@ export async function run(
   const validatedPerPage = Number(cli.flags['perPage'] || 30)
 
   if (dryRun) {
-    outputDryRunFetch('scans', {
-      organization: orgSlug,
-      repo: repo || undefined,
-      branch: branch || undefined,
-      sort: cli.flags['sort'] || 'created_at',
-      direction: cli.flags['direction'] || 'desc',
+    outputScanListDryRun({
+      branch,
+      direction: cli.flags.direction,
+      orgSlug,
       page: validatedPage,
       perPage: validatedPerPage,
+      repo,
+      sort: cli.flags.sort,
     })
     return
   }
@@ -259,4 +287,22 @@ export async function run(
     validatedPage,
     validatedPerPage,
   })
+}
+
+export function validateScanListPagination(
+  page: number | undefined,
+  perPage: number | undefined,
+  validatedPage: number,
+  validatedPerPage: number,
+): void {
+  if (Number.isNaN(validatedPage) || validatedPage < 1) {
+    throw new InputError(
+      `--page must be a positive integer (saw: "${page}"); pass a number like --page=1`,
+    )
+  }
+  if (Number.isNaN(validatedPerPage) || validatedPerPage < 1) {
+    throw new InputError(
+      `--per-page must be a positive integer (saw: "${perPage}"); pass a number like --per-page=30`,
+    )
+  }
 }

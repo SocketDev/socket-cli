@@ -8,12 +8,20 @@ import { convertGradleToFacts } from './convert-gradle-to-facts.mts'
 import { convertGradleToMaven } from './convert-gradle-to-maven.mts'
 import { resolveGradleInvocation } from './manifest-build-trust.mts'
 import { outputManifest } from './output-manifest.mts'
+import {
+  outputGradleManifestDryRun,
+  resolveGradleExcludeConfigs,
+  resolveGradleFacts,
+  resolveGradleIgnoreUnresolved,
+  resolveGradleIncludeConfigs,
+  resolveGradleVerbose,
+  warnGradlePomOnlyFlags,
+} from './gradle-command-defaults.mts'
 import { REQUIREMENTS_TXT } from '../../constants/paths.mjs'
 import { SOCKET_JSON } from '../../constants/socket.mts'
 import { commonFlags } from '../../flags.mts'
 import { defineFlags } from '../../meow.mts'
 import { meowOrExit } from '../../util/cli/with-subcommands.mjs'
-import { outputDryRunExecute } from '../../util/dry-run/output.mts'
 import { getFlagListOutput } from '../../util/output/formatting.mts'
 import { getOutputKind } from '../../util/output/mode.mjs'
 import { cmdFlagValueToArray } from '../../util/process/cmd.mts'
@@ -165,7 +173,7 @@ export async function run(
   // Feature request: Pass outputKind to convertGradleToMaven for json/md output support.
   const outputKind = getOutputKind(json, markdown)
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
@@ -181,9 +189,6 @@ export async function run(
     gradleOpts: gradleOptsFlag,
     trustSocketJson,
   } = cli.flags
-
-  let { excludeConfigs, facts, ignoreUnresolved, includeConfigs, verbose } =
-    cli.flags
 
   // The bin and its options choose what gets executed, so they route through
   // the socket.json trust gate. The remaining socket.json defaults below only
@@ -201,83 +206,35 @@ export async function run(
   }
 
   const { bin, opts: gradleOpts } = invocation.data
-
-  if (verbose === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
-      verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
-    } else {
-      verbose = false
-    }
-  }
-  if (facts === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.facts !== undefined) {
-      facts = sockJson.defaults?.manifest?.gradle?.facts
-      logger.info(`Using default --facts from ${SOCKET_JSON}:`, facts)
-    } else {
-      // Socket facts generation is the default; pass --pom to generate poms.
-      facts = true
-    }
-  }
-  // --pom opts into legacy pom.xml generation. It overrides the facts default
-  // (and the socket.json default) but conflicts with an explicit --facts.
-  if (cli.flags['pom']) {
-    if (cli.flags['facts'] !== undefined) {
-      logger.warn(
-        'The `--facts` and `--pom` options are mutually exclusive; generating Socket facts.',
-      )
-    } else {
-      facts = false
-    }
-  }
-  if (includeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.includeConfigs !== undefined) {
-      includeConfigs = sockJson.defaults?.manifest?.gradle?.includeConfigs
-      logger.info(
-        `Using default --include-configs from ${SOCKET_JSON}:`,
-        includeConfigs,
-      )
-    } else {
-      includeConfigs = ''
-    }
-  }
-  if (excludeConfigs === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.excludeConfigs !== undefined) {
-      excludeConfigs = sockJson.defaults?.manifest?.gradle?.excludeConfigs
-      logger.info(
-        `Using default --exclude-configs from ${SOCKET_JSON}:`,
-        excludeConfigs,
-      )
-    } else {
-      excludeConfigs = ''
-    }
-  }
-  if (ignoreUnresolved === undefined) {
-    if (sockJson.defaults?.manifest?.gradle?.ignoreUnresolved !== undefined) {
-      ignoreUnresolved = sockJson.defaults?.manifest?.gradle?.ignoreUnresolved
-      logger.info(
-        `Using default --ignore-unresolved from ${SOCKET_JSON}:`,
-        ignoreUnresolved,
-      )
-    } else {
-      ignoreUnresolved = false
-    }
-  }
+  const facts = resolveGradleFacts(sockJson, {
+    facts: cli.flags.facts,
+    pom: cli.flags.pom,
+  })
+  const includeConfigs = resolveGradleIncludeConfigs(
+    sockJson,
+    cli.flags.includeConfigs,
+  )
+  const excludeConfigs = resolveGradleExcludeConfigs(
+    sockJson,
+    cli.flags.excludeConfigs,
+  )
+  const ignoreUnresolved = resolveGradleIgnoreUnresolved(sockJson, {
+    value: cli.flags.ignoreUnresolved,
+  })
+  const verbose = resolveGradleVerbose(sockJson, {
+    value: cli.flags.verbose,
+  })
+  const manifestMode = facts ? 'facts' : 'pom'
 
   // `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` only
   // affect facts generation; the pom path has no equivalent knobs. Warn rather
   // than silently ignore an explicitly-passed flag. A socket.json default does
   // not trip this — only a flag actually present on the command line does.
-  if (
-    !facts &&
-    (cli.flags['includeConfigs'] !== undefined ||
-      cli.flags['excludeConfigs'] !== undefined ||
-      cli.flags['ignoreUnresolved'] !== undefined)
-  ) {
-    logger.warn(
-      'The `--include-configs`, `--exclude-configs`, and `--ignore-unresolved` options only apply when generating Socket facts (not with `--pom`); ignoring them.',
-    )
-  }
+  warnGradlePomOnlyFlags(manifestMode, {
+    excludeConfigs: cli.flags.excludeConfigs,
+    ignoreUnresolved: cli.flags.ignoreUnresolved,
+    includeConfigs: cli.flags.includeConfigs,
+  })
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -309,17 +266,7 @@ export async function run(
   }
 
   if (dryRun) {
-    const args = [cwd, '--bin', bin]
-    if (gradleOpts.length) {
-      args.push('--gradle-opts', gradleOpts.join(' '))
-    }
-    outputDryRunExecute(
-      'gradlew',
-      args,
-      facts
-        ? 'generate .socket.facts.json from Kotlin project'
-        : 'generate pom.xml from Kotlin project',
-    )
+    outputGradleManifestDryRun(cwd, bin, gradleOpts, manifestMode, 'Kotlin')
     return
   }
 
@@ -330,11 +277,11 @@ export async function run(
     await convertGradleToFacts({
       bin,
       cwd,
-      excludeConfigs: excludeConfigs || '',
+      excludeConfigs,
       excludePaths,
       gradleOpts,
       ignoreUnresolved: ignoreUnresolved,
-      includeConfigs: includeConfigs || '',
+      includeConfigs,
       verbose: verbose,
     })
     return

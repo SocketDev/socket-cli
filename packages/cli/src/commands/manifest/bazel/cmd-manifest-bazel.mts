@@ -259,7 +259,7 @@ export async function run(
 
   const outputKind = getOutputKind(json, markdown)
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
@@ -273,69 +273,137 @@ export async function run(
   let { bazel, bazelFlags, bazelOutputBase, bazelRc, out, verbose } = cli.flags
   let perRepoTimeout = cli.flags['perRepoTimeout'] as number | undefined
 
+  function resolveBazelBinaryDefault(): void {
+    if (!bazel) {
+      bazel =
+        sockJson.defaults?.manifest?.bazel?.bazel ??
+        sockJson.defaults?.manifest?.bazel?.bin
+      if (bazel) {
+        logger.info(`Using default --bazel from ${SOCKET_JSON}:`, bazel)
+      }
+    }
+  }
+
+  function resolveBazelFlagDefault(): void {
+    if (!bazelFlags) {
+      bazelFlags = sockJson.defaults?.manifest?.bazel?.bazelFlags ?? ''
+      if (bazelFlags) {
+        logger.info(
+          `Using default --bazel-flags from ${SOCKET_JSON}:`,
+          bazelFlags,
+        )
+      }
+    }
+  }
+
+  function resolveBazelPathDefaults(): void {
+    if (
+      !bazelOutputBase &&
+      sockJson.defaults?.manifest?.bazel?.bazelOutputBase
+    ) {
+      bazelOutputBase = sockJson.defaults.manifest.bazel.bazelOutputBase
+      logger.info(
+        `Using default --bazel-output-base from ${SOCKET_JSON}:`,
+        bazelOutputBase,
+      )
+    }
+    if (!bazelRc && sockJson.defaults?.manifest?.bazel?.bazelRc) {
+      bazelRc = sockJson.defaults.manifest.bazel.bazelRc
+      logger.info(`Using default --bazel-rc from ${SOCKET_JSON}:`, bazelRc)
+    }
+  }
+
+  function resolveManifestOutputDefault(): void {
+    if (!out) {
+      out =
+        sockJson.defaults?.manifest?.bazel?.out ??
+        path.join(cwd, '.socket', 'bazel-manifests')
+      if (sockJson.defaults?.manifest?.bazel?.out) {
+        logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
+      }
+    }
+  }
+
+  function resolveVerboseDefault(): void {
+    if (verbose === undefined) {
+      verbose = sockJson.defaults?.manifest?.bazel?.verbose ?? false
+      if (sockJson.defaults?.manifest?.bazel?.verbose !== undefined) {
+        logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
+      }
+    }
+  }
+
+  function resolveTimeoutDefault(): void {
+    if (perRepoTimeout === undefined) {
+      perRepoTimeout =
+        sockJson.defaults?.manifest?.bazel?.perRepoTimeout ??
+        EXPLICIT_PER_REPO_TIMEOUT_MS
+      if (sockJson.defaults?.manifest?.bazel?.perRepoTimeout !== undefined) {
+        logger.info(
+          `Using default --per-repo-timeout from ${SOCKET_JSON}:`,
+          perRepoTimeout,
+        )
+      }
+    }
+  }
+
+  function validateEcosystems(ecosystems: string[]): void {
+    for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+      const ecosystemName = ecosystems[i]!
+      if (!SUPPORTED_ECOSYSTEMS.includes(ecosystemName)) {
+        throw new InputError(
+          `Unsupported --ecosystem value: ${ecosystemName}. Supported values: maven, pypi.`,
+        )
+      }
+    }
+  }
+
+  async function extractEcosystems(
+    ecosystems: string[],
+  ): Promise<EcosystemOutcome[]> {
+    const outcomes: EcosystemOutcome[] = []
+    for (let i = 0, { length } = ecosystems; i < length; i += 1) {
+      const ecosystemName = ecosystems[i]!
+      if (ecosystemName === 'maven') {
+        const result = await extractBazelToMaven({
+          bazelFlags: bazelFlags as string | undefined,
+          bazelOutputBase: bazelOutputBase as string | undefined,
+          bazelRc: bazelRc as string | undefined,
+          bin: bazel as string | undefined,
+          cwd,
+          out: out as string,
+          perRepoTimeoutMs: perRepoTimeout,
+          verbose: verbose,
+        })
+        outcomes.push({
+          complete: result.complete,
+          ecosystem: 'maven',
+          manifestPaths: result.manifestPaths,
+          status: result.status,
+        })
+      } else {
+        const result = await extractBazelToPypi({
+          bazelFlags: bazelFlags as string | undefined,
+          bazelOutputBase: bazelOutputBase as string | undefined,
+          bazelRc: bazelRc as string | undefined,
+          bin: bazel as string | undefined,
+          cwd,
+          out: out as string,
+          verbose: verbose,
+        })
+        outcomes.push({ ecosystem: 'pypi', ...pypiOutcome(result) })
+      }
+    }
+    return outcomes
+  }
+
   // Set defaults for any flag/arg that is not given. Check socket.json first.
-  if (!bazel) {
-    const defaultBazel =
-      sockJson.defaults?.manifest?.bazel?.bazel ??
-      sockJson.defaults?.manifest?.bazel?.bin
-    if (defaultBazel) {
-      bazel = defaultBazel
-      logger.info(`Using default --bazel from ${SOCKET_JSON}:`, bazel)
-    }
-    // Otherwise leave undefined; resolveBazelBinary performs the PATH
-    // lookup for bazelisk/bazel.
-  }
-  if (!bazelFlags) {
-    if (sockJson.defaults?.manifest?.bazel?.bazelFlags) {
-      bazelFlags = sockJson.defaults?.manifest?.bazel?.bazelFlags
-      logger.info(
-        `Using default --bazel-flags from ${SOCKET_JSON}:`,
-        bazelFlags,
-      )
-    } else {
-      bazelFlags = ''
-    }
-  }
-  if (!bazelOutputBase && sockJson.defaults?.manifest?.bazel?.bazelOutputBase) {
-    bazelOutputBase = sockJson.defaults?.manifest?.bazel?.bazelOutputBase
-    logger.info(
-      `Using default --bazel-output-base from ${SOCKET_JSON}:`,
-      bazelOutputBase,
-    )
-  }
-  if (!bazelRc && sockJson.defaults?.manifest?.bazel?.bazelRc) {
-    bazelRc = sockJson.defaults?.manifest?.bazel?.bazelRc
-    logger.info(`Using default --bazel-rc from ${SOCKET_JSON}:`, bazelRc)
-  }
-  if (!out) {
-    if (sockJson.defaults?.manifest?.bazel?.out) {
-      out = sockJson.defaults?.manifest?.bazel?.out
-      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
-    } else {
-      out = path.join(cwd, '.socket', 'bazel-manifests')
-    }
-  }
-  if (verbose === undefined) {
-    if (sockJson.defaults?.manifest?.bazel?.verbose !== undefined) {
-      verbose = sockJson.defaults?.manifest?.bazel?.verbose
-      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
-    } else {
-      verbose = false
-    }
-  }
-  if (perRepoTimeout === undefined) {
-    if (sockJson.defaults?.manifest?.bazel?.perRepoTimeout !== undefined) {
-      perRepoTimeout = sockJson.defaults?.manifest?.bazel?.perRepoTimeout
-      logger.info(
-        `Using default --per-repo-timeout from ${SOCKET_JSON}:`,
-        perRepoTimeout,
-      )
-    } else {
-      // Explicit invocation default; longer than the auto-manifest default
-      // because the user is waiting on this single extraction.
-      perRepoTimeout = EXPLICIT_PER_REPO_TIMEOUT_MS
-    }
-  }
+  resolveBazelBinaryDefault()
+  resolveBazelFlagDefault()
+  resolveBazelPathDefaults()
+  resolveManifestOutputDefault()
+  resolveVerboseDefault()
+  resolveTimeoutDefault()
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -371,14 +439,7 @@ export async function run(
     ? (ecosystem as string[])
     : ['maven']
 
-  for (let i = 0, { length } = ecosystems; i < length; i += 1) {
-    const eco = ecosystems[i]!
-    if (!SUPPORTED_ECOSYSTEMS.includes(eco)) {
-      throw new InputError(
-        `Unsupported --ecosystem value: ${eco}. Supported values: maven, pypi.`,
-      )
-    }
-  }
+  validateEcosystems(ecosystems)
 
   if (dryRun) {
     outputDryRunExecute(
@@ -389,43 +450,7 @@ export async function run(
     return
   }
 
-  const outcomes: EcosystemOutcome[] = []
-
-  for (let i = 0, { length } = ecosystems; i < length; i += 1) {
-    const eco = ecosystems[i]!
-    if (eco === 'maven') {
-      const mavenResult = await extractBazelToMaven({
-        bazelFlags: bazelFlags as string | undefined,
-        bazelOutputBase: bazelOutputBase as string | undefined,
-        bazelRc: bazelRc as string | undefined,
-        bin: bazel as string | undefined,
-        cwd,
-        out: out as string,
-        perRepoTimeoutMs: perRepoTimeout,
-        verbose: verbose,
-      })
-      outcomes.push({
-        complete: mavenResult.complete,
-        ecosystem: 'maven',
-        manifestPaths: mavenResult.manifestPaths,
-        status: mavenResult.status,
-      })
-    } else if (eco === 'pypi') {
-      const pypiResult = await extractBazelToPypi({
-        bazelFlags: bazelFlags as string | undefined,
-        bazelOutputBase: bazelOutputBase as string | undefined,
-        bazelRc: bazelRc as string | undefined,
-        bin: bazel as string | undefined,
-        cwd,
-        out: out as string,
-        verbose: verbose,
-      })
-      outcomes.push({
-        ecosystem: 'pypi',
-        ...pypiOutcome(pypiResult),
-      })
-    }
-  }
+  const outcomes = await extractEcosystems(ecosystems)
 
   evaluateEcosystemOutcomes(outcomes, {
     isExplicit: wasExplicitEcosystemSelection,

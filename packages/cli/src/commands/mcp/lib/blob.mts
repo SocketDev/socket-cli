@@ -167,19 +167,7 @@ export async function fetchSocketChunkedBlobBytes(
   const manifestHash = `Q${chunkedHash.slice(1)}`
   const manifestRaw = await fetchSocketRawBlobBytes(manifestHash)
 
-  let manifest: unknown
-  try {
-    manifest = JSON.parse(new TextDecoder('utf-8').decode(manifestRaw.bytes))
-  } catch (e) {
-    throw new Error(
-      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: ${errorMessage(e)}, wanted JSON. Fix: re-run \`package_files\` to get a current hash.`,
-    )
-  }
-  if (typeof manifest !== 'object' || manifest === null) {
-    throw new Error(
-      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: a non-object manifest, wanted a JSON object. Fix: re-run \`package_files\` to get a current hash.`,
-    )
-  }
+  const manifest = parseChunkedBlobManifest(manifestRaw.bytes, manifestHash)
   const { chunks, offsets, totalSize } = parseChunkManifest(
     manifest,
     manifestHash,
@@ -249,6 +237,26 @@ export function getBlobUserAgent(): string {
 
 export function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(v => typeof v === 'string')
+}
+
+export function parseChunkedBlobManifest(
+  bytes: Uint8Array,
+  manifestHash: string,
+): object {
+  let manifest: unknown
+  try {
+    manifest = JSON.parse(new TextDecoder('utf-8').decode(bytes))
+  } catch (e) {
+    throw new Error(
+      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: ${errorMessage(e)}, wanted JSON. Fix: re-run \`package_files\` to get a current hash.`,
+    )
+  }
+  if (typeof manifest !== 'object' || manifest === null) {
+    throw new Error(
+      `Reading a chunked package file failed. Where: manifest ${manifestHash}. Saw: a non-object manifest, wanted a JSON object. Fix: re-run \`package_files\` to get a current hash.`,
+    )
+  }
+  return manifest
 }
 
 export function parseChunkManifest(

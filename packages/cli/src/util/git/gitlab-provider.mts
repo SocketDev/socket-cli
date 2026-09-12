@@ -281,26 +281,21 @@ export function getGitLabToken(): string {
   )
 }
 
-export function isGitLabValidationError(e: unknown): boolean {
-  if (
-    e !== null &&
-    typeof e === 'object' &&
-    'cause' in e &&
-    e.cause &&
-    typeof e.cause === 'object' &&
-    'response' in e.cause
-  ) {
-    const { response } = e.cause
-    if (
-      response !== null &&
-      typeof response === 'object' &&
-      'status' in response &&
-      response.status === 400
-    ) {
-      return true
-    }
+export function isGitLabValidationError(value: unknown): boolean {
+  if (value === null || typeof value !== 'object' || !('cause' in value)) {
+    return false
   }
-  return false
+  const { cause } = value
+  if (cause === null || typeof cause !== 'object' || !('response' in cause)) {
+    return false
+  }
+  const { response } = cause
+  return (
+    response !== null &&
+    typeof response === 'object' &&
+    'status' in response &&
+    response.status === 400
+  )
 }
 
 /**

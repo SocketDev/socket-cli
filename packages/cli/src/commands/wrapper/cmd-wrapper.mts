@@ -21,10 +21,11 @@ import { checkCommandInput } from '../../util/validation/check-input.mts'
 
 import type { CliCommandContext } from '../../util/cli/with-subcommands.mjs'
 import type { MeowFlags } from '../../flags.mts'
+import type { OutputKind } from '../../types.mts'
 
 const logger = getDefaultLogger()
 
-const commandConfig = {
+const config = {
   commandName: 'wrapper',
   description: 'Enable or disable the Socket npm/pnpm exec wrapper',
   flags: defineFlags({
@@ -37,9 +38,7 @@ const commandConfig = {
     Options
       ${getFlagListOutput(helpConfig.flags)}
 
-    While enabled, the wrapper makes it so that when you call npm/npx on your
-    machine, it will automatically actually run \`socket npm\` / \`socket npx\`
-    instead.
+    While enabled, package manager commands run through Socket automatically.
 
     Examples
       $ ${command} on
@@ -49,66 +48,80 @@ const commandConfig = {
 }
 
 export const cmdWrapper = {
-  description: commandConfig.description,
-  hidden: commandConfig.hidden,
+  description: config.description,
+  hidden: config.hidden,
   run,
 }
 
-export interface WrapperUpdateResult {
-  modifiedFiles: string[]
-  skippedFiles: string[]
-}
-
-export async function applyWrapperUpdate(
-  files: string[],
-  config: { enable: boolean },
-): Promise<WrapperUpdateResult> {
-  const { enable } = { __proto__: null, ...config } as typeof config
+export async function applySocketWrapper(
+  action: 'disable' | 'enable',
+  files: readonly string[],
+): Promise<{ modifiedFiles: string[]; skippedFiles: string[] }> {
   const modifiedFiles: string[] = []
   const skippedFiles: string[] = []
   for (let i = 0, { length } = files; i < length; i += 1) {
     const file = files[i]!
-    if (enable && checkSocketWrapperSetup(file)) {
-      skippedFiles.push(file)
-      continue
-    }
-    if (enable) {
-      await addSocketWrapper(file)
+    if (action === 'enable') {
+      if (checkSocketWrapperSetup(file)) {
+        skippedFiles.push(file)
+      } else {
+        await addSocketWrapper(file)
+        modifiedFiles.push(file)
+      }
     } else {
       removeSocketWrapper(file)
+      modifiedFiles.push(file)
     }
-    modifiedFiles.push(file)
   }
-  return { __proto__: null, modifiedFiles, skippedFiles }
+  return { modifiedFiles, skippedFiles }
+}
+
+export function getWrapperFiles(): string[] {
+  return [getBashRcPath(), getZshRcPath()].filter(file => existsSync(file))
+}
+
+export function outputWrapperDryRun(
+  action: 'disable' | 'enable',
+  files: readonly string[],
+): void {
+  const changes =
+    action === 'enable'
+      ? [
+          'Add shell aliases/functions to wrap npm/pnpm exec commands',
+          'Redirect package manager execution through Socket',
+        ]
+      : [
+          'Remove Socket wrapper aliases/functions from shell config',
+          'Restore original npm/pnpm exec behavior',
+        ]
+  outputDryRunWrite(
+    files.join(', '),
+    `${action} Socket npm/pnpm exec wrapper`,
+    changes,
+  )
 }
 
 export function outputWrapperResult(
-  result: WrapperUpdateResult,
-  config: { enable: boolean; outputKind: ReturnType<typeof getOutputKind> },
+  action: 'disable' | 'enable',
+  outputKind: OutputKind,
+  modifiedFiles: readonly string[],
+  skippedFiles: readonly string[],
 ): void {
-  const { enable, outputKind } = { __proto__: null, ...config } as typeof config
-  const { modifiedFiles, skippedFiles } = result
   if (outputKind === 'json') {
-    logger.log(
-      JSON.stringify(
-        {
-          __proto__: null,
-          action: enable ? 'enabled' : 'disabled',
-          modifiedFiles,
-          skippedFiles,
-          success: modifiedFiles.length > 0 || skippedFiles.length > 0,
-        },
-        null,
-        2,
-      ),
-    )
+    const result = {
+      action: action === 'enable' ? 'enabled' : 'disabled',
+      modifiedFiles,
+      skippedFiles,
+      success: modifiedFiles.length > 0 || skippedFiles.length > 0,
+    }
+    logger.log(JSON.stringify(result, null, 2))
     return
   }
   if (outputKind !== 'markdown') {
     return
   }
-  const arr: string[] = [
-    `# Socket Wrapper ${enable ? 'Enabled' : 'Disabled'}`,
+  const arr = [
+    `# Socket Wrapper ${action === 'enable' ? 'Enabled' : 'Disabled'}`,
     '',
   ]
   if (modifiedFiles.length > 0) {
@@ -128,20 +141,20 @@ export function outputWrapperResult(
   arr.push(
     '## Status',
     '',
-    `Socket npm/npx wrapper has been **${enable ? 'enabled' : 'disabled'}**.`,
+    `Socket npm/npx wrapper has been **${action === 'enable' ? 'enabled' : 'disabled'}**.`,
     '',
   )
   logger.log(arr.join('\n'))
 }
 
-export function parseWrapperAction(
+export function resolveWrapperAction(
   arg: string | undefined,
-): boolean | undefined {
+): 'disable' | 'enable' | undefined {
   if (arg === 'enable' || arg === 'enabled' || arg === 'on') {
-    return true
+    return 'enable'
   }
   if (arg === 'disable' || arg === 'disabled' || arg === 'off') {
-    return false
+    return 'disable'
   }
   return undefined
 }
@@ -159,7 +172,7 @@ export async function run(
 
   const cli = meowOrExit({
     argv,
-    config: commandConfig,
+    config,
     importMeta,
     parentName,
   })
@@ -170,14 +183,14 @@ export async function run(
   const dryRun = cli.flags['dryRun']
 
   const { 0: arg } = cli.input
-  const enable = parseWrapperAction(arg)
+  const action = resolveWrapperAction(arg)
 
   const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      test: enable !== undefined,
+      test: action !== undefined,
       message: 'Must specify "on" or "off" argument',
       fail: 'missing',
     },
@@ -188,46 +201,28 @@ export async function run(
       fail: 'got multiple',
     },
   )
-  if (!wasValidInput || enable === undefined) {
+  if (!wasValidInput) {
     return
   }
 
-  const files = [getBashRcPath(), getZshRcPath()].filter(file =>
-    existsSync(file),
-  )
+  const resolvedAction = action!
+
+  const files = getWrapperFiles()
 
   if (dryRun) {
-    writeWrapperDryRun(files, { enable })
+    outputWrapperDryRun(resolvedAction, files)
     return
   }
-  if (!files.length) {
+  const { modifiedFiles, skippedFiles } = await applySocketWrapper(
+    resolvedAction,
+    files,
+  )
+
+  if (files.length === 0) {
     logger.fail('There was an issue setting up the alias in your bash profile')
     return
   }
-  outputWrapperResult(await applyWrapperUpdate(files, { enable }), {
-    enable,
-    outputKind,
-  })
-}
 
-export function writeWrapperDryRun(
-  files: string[],
-  config: { enable: boolean },
-): void {
-  const { enable } = { __proto__: null, ...config } as typeof config
-  outputDryRunWrite(
-    files.join(', '),
-    enable
-      ? 'enable Socket npm/pnpm exec wrapper'
-      : 'disable Socket npm/pnpm exec wrapper',
-    enable
-      ? [
-          'Add shell aliases/functions to wrap npm/pnpm exec commands',
-          'Redirect npm/pnpm exec calls to socket npm/socket npx',
-        ]
-      : [
-          'Remove Socket wrapper aliases/functions from shell config',
-          'Restore original npm/pnpm exec behavior',
-        ],
-  )
+  outputWrapperResult(resolvedAction, outputKind, modifiedFiles, skippedFiles)
+  // Text mode output is already handled by add/remove functions.
 }

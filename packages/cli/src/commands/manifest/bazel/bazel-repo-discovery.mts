@@ -272,6 +272,7 @@ export function parseShowExtensionOutput(stdout: string): ShowExtensionRepo[] {
     importersByName.set(name, importers)
   }
   return [...importersByName.keys()].toSorted().map(name => ({
+    __proto__: null,
     importers: [...importersByName.get(name)!].toSorted(),
     name,
   }))

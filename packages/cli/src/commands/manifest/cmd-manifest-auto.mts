@@ -88,7 +88,7 @@ export async function run(
 
   const verbose = verboseFlag
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)

@@ -84,6 +84,150 @@ export const cmdFix = {
   run,
 }
 
+export function normalizeFixEcosystems(
+  ecosystems: string[],
+): PURL_Type[] | undefined {
+  const values = cmdFlagValueToArray(ecosystems).map(value =>
+    value.toLowerCase(),
+  )
+  const choices = getEcosystemChoicesForMeow()
+  const validated: PURL_Type[] = []
+  for (let i = 0, { length } = values; i < length; i += 1) {
+    const ecosystem = values[i]!
+    if (!choices.includes(ecosystem)) {
+      logger.fail(
+        `--ecosystems must be one of: ${joinAnd(choices)} (saw: "${ecosystem}"); pass a supported ecosystem like --ecosystems=${choices[0]}`,
+      )
+      process.exitCode = 1
+      return undefined
+    }
+    validated.push(ecosystem as PURL_Type)
+  }
+  return validated
+}
+
+export function normalizeFixPackageManagers(
+  packageManagers: string[],
+): string[] | undefined {
+  const values = cmdFlagValueToArray(packageManagers).map(value =>
+    value.toUpperCase(),
+  )
+  const validated: string[] = []
+  for (let i = 0, { length } = values; i < length; i += 1) {
+    const packageManager = values[i]!
+    if (!isCoanaPackageManager(packageManager)) {
+      logger.fail(
+        `--package-managers must be one of: ${joinAnd([...COANA_PACKAGE_MANAGERS])} (saw: "${packageManager}"); pass a supported package manager like --package-managers=${COANA_PACKAGE_MANAGERS[0]}`,
+      )
+      process.exitCode = 1
+      return undefined
+    }
+    validated.push(packageManager)
+  }
+  return validated
+}
+
+export function outputFixDryRun(
+  options?:
+    | {
+        all?: boolean | undefined
+        applyFixes?: boolean | undefined
+        cwd?: string | undefined
+        disableMajorUpdates?: boolean | undefined
+        ecosystems?: readonly PURL_Type[] | undefined
+        ghsas?: readonly string[] | undefined
+        orgSlug?: string | undefined
+        rangeStyle?: RangeStyle | undefined
+      }
+    | undefined,
+): void {
+  const {
+    all,
+    applyFixes,
+    cwd,
+    disableMajorUpdates,
+    ecosystems = [],
+    ghsas = [],
+    orgSlug,
+    rangeStyle,
+  } = { __proto__: null, ...options }
+  const actions: DryRunAction[] = [
+    {
+      type: 'fetch',
+      description: 'Scan project dependencies for vulnerabilities',
+      target: cwd,
+      details: {
+        organization: orgSlug,
+        ecosystems: ecosystems.length ? ecosystems.join(', ') : 'all',
+      },
+    },
+    {
+      type: 'fetch',
+      description: 'Analyze vulnerability fix options',
+      details: {
+        targets: all
+          ? 'all vulnerabilities'
+          : ghsas.length
+            ? ghsas.join(', ')
+            : 'auto-discovered',
+        majorUpdates: disableMajorUpdates ? 'disabled' : 'enabled',
+        rangeStyle,
+      },
+    },
+  ]
+  if (applyFixes) {
+    actions.push(
+      {
+        type: 'modify',
+        description: 'Update package manifest files with fixes',
+        target: 'package.json and lock files',
+      },
+      {
+        type: 'execute',
+        description: 'Run package manager to install updated dependencies',
+      },
+    )
+  }
+  const targetDescription = all
+    ? 'all vulnerabilities'
+    : ghsas.length
+      ? `${ghsas.length} specified ${pluralize('vulnerability', { count: ghsas.length })}`
+      : 'discovered vulnerabilities'
+  const fixModeDescription = applyFixes
+    ? 'compute and apply fixes'
+    : 'compute fixes only (not applying)'
+  outputDryRunPreview({
+    summary: `Analyze and ${fixModeDescription} for ${targetDescription}`,
+    actions,
+    wouldSucceed: true,
+  })
+}
+
+export function rejectPositionalVulnerability(
+  rawInput: string | undefined,
+): boolean {
+  if (!rawInput) {
+    return false
+  }
+  const upperInput = rawInput.toUpperCase()
+  const isGhsa = upperInput.startsWith('GHSA-')
+  const isCve = upperInput.startsWith('CVE-')
+  const isPurl = rawInput.startsWith('pkg:')
+  if (!isCve && !isGhsa && !isPurl) {
+    return false
+  }
+  const suggestion = isGhsa
+    ? 'GHSA-' + rawInput.slice(5).toLowerCase()
+    : isCve
+      ? 'CVE-' + rawInput.slice(4)
+      : rawInput
+  logger.fail(
+    `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${suggestion}`,
+  )
+  process.exitCode = 1
+  return true
+}
+
 export async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
@@ -185,41 +329,16 @@ export async function run(
 
   // Process comma-separated values for ecosystems flag. The choice list is
   // lowercase, so normalize the input for a case-insensitive match.
-  const ecosystemsRaw = cmdFlagValueToArray(ecosystems).map(value =>
-    value.toLowerCase(),
-  )
-
-  // Validate ecosystem values early, before dry-run check.
-  const validatedEcosystems: PURL_Type[] = []
-  const validEcosystemChoices = getEcosystemChoicesForMeow()
-  for (let i = 0, { length } = ecosystemsRaw; i < length; i += 1) {
-    const ecosystem = ecosystemsRaw[i]!
-    if (!validEcosystemChoices.includes(ecosystem)) {
-      logger.fail(
-        `--ecosystems must be one of: ${joinAnd(validEcosystemChoices)} (saw: "${ecosystem}"); pass a supported ecosystem like --ecosystems=${validEcosystemChoices[0]}`,
-      )
-      process.exitCode = 1
-      return
-    }
-    validatedEcosystems.push(ecosystem as PURL_Type)
+  const validatedEcosystems = normalizeFixEcosystems(ecosystems)
+  if (validatedEcosystems === undefined) {
+    return
   }
 
   // Coana uppercases --package-managers input and rejects unknown values, so
   // normalize and validate here for the same UX and an early failure.
-  const packageManagersRaw = cmdFlagValueToArray(packageManagers).map(value =>
-    value.toUpperCase(),
-  )
-  const validatedPackageManagers: string[] = []
-  for (let i = 0, { length } = packageManagersRaw; i < length; i += 1) {
-    const packageManager = packageManagersRaw[i]!
-    if (!isCoanaPackageManager(packageManager)) {
-      logger.fail(
-        `--package-managers must be one of: ${joinAnd([...COANA_PACKAGE_MANAGERS])} (saw: "${packageManager}"); pass a supported package manager like --package-managers=${COANA_PACKAGE_MANAGERS[0]}`,
-      )
-      process.exitCode = 1
-      return
-    }
-    validatedPackageManagers.push(packageManager)
+  const validatedPackageManagers = normalizeFixPackageManagers(packageManagers)
+  if (validatedPackageManagers === undefined) {
+    return
   }
 
   const ghsas = arrayUnique([
@@ -258,34 +377,11 @@ export async function run(
   // and eventually fail with a confusing upload error. Run this before
   // `getDefaultOrgSlug()` so users still get the helpful message when no
   // API token is configured.
-  const rawInput = cli.input[0]
-  if (rawInput) {
-    const upperInput = rawInput.toUpperCase()
-    const isGhsa = upperInput.startsWith('GHSA-')
-    const isCve = upperInput.startsWith('CVE-')
-    const isPurl = rawInput.startsWith('pkg:')
-    if (isCve || isGhsa || isPurl) {
-      // `handle-fix.mts` validates IDs with case-sensitive format regexes:
-      //   * GHSA — prefix must be uppercase, body segments lowercase [a-z0-9]
-      //   * CVE  — prefix must be uppercase, body is all digits (case-free)
-      // PURLs are intentionally lowercase and validated separately.
-      let suggestion: string
-      if (isGhsa) {
-        suggestion = 'GHSA-' + rawInput.slice(5).toLowerCase()
-      } else if (isCve) {
-        suggestion = 'CVE-' + rawInput.slice(4)
-      } else {
-        suggestion = rawInput
-      }
-      logger.fail(
-        `"${rawInput}" looks like a vulnerability identifier, not a directory path.\nDid you mean: socket fix ${FLAG_ID} ${suggestion}`,
-      )
-      process.exitCode = 1
-      return
-    }
+  if (rejectPositionalVulnerability(cli.input[0])) {
+    return
   }
 
-  let [cwd = '.'] = cli.input
+  let { 0: cwd = '.' } = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
@@ -325,59 +421,15 @@ export async function run(
   }
 
   if (dryRun) {
-    const actions: DryRunAction[] = [
-      {
-        type: 'fetch',
-        description: 'Scan project dependencies for vulnerabilities',
-        target: cwd,
-        details: {
-          organization: orgSlug,
-          ecosystems: validatedEcosystems.length
-            ? validatedEcosystems.join(', ')
-            : 'all',
-        },
-      },
-      {
-        type: 'fetch',
-        description: 'Analyze vulnerability fix options',
-        details: {
-          targets: all
-            ? 'all vulnerabilities'
-            : ghsas.length
-              ? ghsas.join(', ')
-              : 'auto-discovered',
-          majorUpdates: disableMajorUpdates ? 'disabled' : 'enabled',
-          rangeStyle,
-        },
-      },
-    ]
-
-    if (applyFixes) {
-      actions.push({
-        type: 'modify',
-        description: 'Update package manifest files with fixes',
-        target: 'package.json and lock files',
-      })
-      actions.push({
-        type: 'execute',
-        description: 'Run package manager to install updated dependencies',
-      })
-    }
-
-    const targetDescription = all
-      ? 'all vulnerabilities'
-      : ghsas.length
-        ? `${ghsas.length} specified ${pluralize('vulnerability', { count: ghsas.length })}`
-        : 'discovered vulnerabilities'
-
-    const fixModeDescription = applyFixes
-      ? 'compute and apply fixes'
-      : 'compute fixes only (not applying)'
-
-    outputDryRunPreview({
-      summary: `Analyze and ${fixModeDescription} for ${targetDescription}`,
-      actions,
-      wouldSucceed: true,
+    outputFixDryRun({
+      all,
+      applyFixes,
+      cwd,
+      disableMajorUpdates,
+      ecosystems: validatedEcosystems,
+      ghsas,
+      orgSlug,
+      rangeStyle,
     })
     return
   }

@@ -3,41 +3,45 @@ import type {
   ResolutionDialect,
 } from './resolution-report-render.mts'
 
+const MAVEN_CONFIG_PATTERNS = [
+  'failed to read artifact descriptor',
+  'invalid pom',
+  'could not parse pom',
+]
+const MAVEN_NOT_FOUND_PATTERNS = [
+  'could not find artifact',
+  'failure to find',
+  'could not resolve',
+  'no versions available',
+  'not found',
+]
+const MAVEN_REPOSITORY_PATTERNS = [
+  'could not transfer',
+  'connection refused',
+  'connect timed out',
+  'connection timed out',
+  'read timed out',
+  'status code: 401',
+  'status code: 403',
+  'unauthorized',
+  'forbidden',
+  'peer not authenticated',
+  'certpathbuilderexception',
+]
+
 // Maven's resolver (Aether/maven-resolver): no attribute-based variants. Two
 // failure shapes (artifact-resolution miss with config = scope, dependency-graph
 // build failure with config = "graph") both classify off the root-cause message.
 export function classifyMavenFailure(detail: string): FailureCategory {
   const t = (detail || '').toLowerCase()
-  if (
-    t.includes('could not transfer') ||
-    t.includes('connection refused') ||
-    t.includes('connect timed out') ||
-    t.includes('connection timed out') ||
-    t.includes('read timed out') ||
-    t.includes('status code: 401') ||
-    t.includes('status code: 403') ||
-    t.includes('unauthorized') ||
-    t.includes('forbidden') ||
-    t.includes('peer not authenticated') ||
-    t.includes('certpathbuilderexception')
-  ) {
+  if (MAVEN_REPOSITORY_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'repository-or-network'
   }
-  if (
-    t.includes('could not find artifact') ||
-    t.includes('failure to find') ||
-    t.includes('could not resolve') ||
-    t.includes('no versions available') ||
-    t.includes('not found')
-  ) {
+  if (MAVEN_NOT_FOUND_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'not-found'
   }
   // POM exists but can't be read/parsed.
-  if (
-    t.includes('failed to read artifact descriptor') ||
-    t.includes('invalid pom') ||
-    t.includes('could not parse pom')
-  ) {
+  if (MAVEN_CONFIG_PATTERNS.some(pattern => t.includes(pattern))) {
     return 'config-problem'
   }
   return 'other'

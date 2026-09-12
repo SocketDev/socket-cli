@@ -67,27 +67,8 @@ export function collectEntryPoints(pkg: Record<string, unknown>): Entry[] {
   const seen: EntrySeen = { seen: new Set() }
   const out: Entry[] = []
 
-  const mainFields = ['main', 'module']
-  for (let i = 0, { length } = mainFields; i < length; i += 1) {
-    const value = pkg[mainFields[i]!]
-    if (typeof value === 'string') {
-      pushEntry(value, 'main', out, seen)
-    }
-  }
-
-  collectManifestBin(pkg['bin'], out, seen)
-  const exportsField = pkg['exports']
-  collectManifestExports(exportsField, out, seen)
-
-  if (out.length === 0) {
-    out.push({ kind: 'main', path: 'index.js' })
-  }
-
-  const typeTargets = collectManifestTypes(pkg, exportsField, out)
-  for (let i = 0, { length } = typeTargets; i < length; i += 1) {
-    pushEntry(typeTargets[i]!, 'types', out, seen)
-  }
-
+  collectMainEntries(pkg, out, seen)
+  collectTypeEntries(pkg, out, seen)
   return out
 }
 
@@ -121,6 +102,26 @@ export function collectKeys(
       out.add(keys[i]!)
     }
   }
+}
+
+export function collectMainEntries(
+  pkg: Record<string, unknown>,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
+  const mainFields = ['main', 'module']
+  for (let i = 0, { length } = mainFields; i < length; i += 1) {
+    const value = pkg[mainFields[i]!]
+    if (typeof value === 'string') {
+      pushEntry(value, 'main', out, seen)
+    }
+  }
+
+  collectManifestBin(pkg['bin'], out, seen)
+  const exportsField = pkg['exports']
+  collectManifestExports(exportsField, out, seen)
+
+  ensureMainEntry(out)
 }
 
 export function collectManifestBin(
@@ -194,6 +195,25 @@ export function collectManifestTypes(
     targets.push('index.d.ts')
   }
   return targets
+}
+
+export function collectTypeEntries(
+  pkg: Record<string, unknown>,
+  out: Entry[],
+  seen: EntrySeen,
+): void {
+  const exportsField = pkg['exports']
+
+  const typeTargets = collectManifestTypes(pkg, exportsField, out)
+  for (let i = 0, { length } = typeTargets; i < length; i += 1) {
+    pushEntry(typeTargets[i]!, 'types', out, seen)
+  }
+}
+
+export function ensureMainEntry(out: Entry[]): void {
+  if (out.length === 0) {
+    out.push({ kind: 'main', path: 'index.js' })
+  }
 }
 
 export function extensionOf(filePath: string): string | undefined {

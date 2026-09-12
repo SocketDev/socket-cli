@@ -57,8 +57,20 @@ export function createRepositoryCommand(spec: RepositoryCommandSpec) {
       // Only guard the commands that actually accept `--default-branch`
       // as a string (create / update). The list/view/delete commands
       // don't, so the check is a no-op for them.
-      if (!validateDefaultBranchArg(spec, argv)) {
-        return
+      if (
+        (spec.commandName === 'create' || spec.commandName === 'update') &&
+        spec.extraFlags?.['defaultBranch']
+      ) {
+        const emptyShape = findEmptyDefaultBranch(argv)
+        if (emptyShape) {
+          logger.fail(
+            emptyShape === 'empty-value'
+              ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
+              : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
+          )
+          process.exitCode = 2
+          return
+        }
       }
       const config: CliCommandConfig = {
         commandName: spec.commandName,
@@ -167,25 +179,7 @@ ${spec.helpExamples.map(ex => `      $ ${command} ${ex}`).join('\n')}
       }
 
       if (dryRun) {
-        const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
-        if (spec.commandName === 'create') {
-          outputDryRunUpload('repository', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'update') {
-          outputDryRunUpload('repository (update)', {
-            organization: orgSlug,
-            repository: repoName,
-          })
-        } else if (spec.commandName === 'del') {
-          outputDryRunDelete('repository', identifier)
-        } else {
-          outputDryRunFetch(`repository ${identifier}`, {
-            organization: orgSlug,
-            repository: repoName || undefined,
-          })
-        }
+        outputRepositoryDryRun(spec, orgSlug, repoName)
         return
       }
 
@@ -222,25 +216,28 @@ export function findEmptyDefaultBranch(
   return undefined
 }
 
-export function validateDefaultBranchArg(
+export function outputRepositoryDryRun(
   spec: RepositoryCommandSpec,
-  argv: readonly string[],
-): boolean {
-  const acceptsDefaultBranch =
-    (spec.commandName === 'create' || spec.commandName === 'update') &&
-    spec.extraFlags?.['defaultBranch']
-  if (!acceptsDefaultBranch) {
-    return true
+  orgSlug: string,
+  repoName: string,
+): void {
+  const identifier = repoName ? `${orgSlug}/${repoName}` : orgSlug
+  if (spec.commandName === 'create') {
+    outputDryRunUpload('repository', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'update') {
+    outputDryRunUpload('repository (update)', {
+      organization: orgSlug,
+      repository: repoName,
+    })
+  } else if (spec.commandName === 'del') {
+    outputDryRunDelete('repository', identifier)
+  } else {
+    outputDryRunFetch(`repository ${identifier}`, {
+      organization: orgSlug,
+      repository: repoName || undefined,
+    })
   }
-  const emptyShape = findEmptyDefaultBranch(argv)
-  if (!emptyShape) {
-    return true
-  }
-  logger.fail(
-    emptyShape === 'empty-value'
-      ? '--default-branch requires a value (e.g. --default-branch=main). Leaving it empty would persist a blank default-branch name on the repo record.'
-      : '--default-branch requires a value (e.g. --default-branch=main). Bare --default-branch with no value would persist a blank default-branch name on the repo record.',
-  )
-  process.exitCode = 2
-  return false
 }

@@ -13,7 +13,9 @@
  * spawning logic.
  */
 
-import { beforeAll, describe, expect } from 'vitest'
+import path from 'node:path'
+
+import { describe, expect } from 'vitest'
 
 import {
   FLAG_CONFIG,
@@ -25,36 +27,30 @@ import { expectDryRunOutput } from '../../helpers/output-assertions.mts'
 import { cmdit, spawnSocketCli } from '../../utils.mts'
 
 const binCliPath = getBinCliPath()
-
-// Warm the cdxgen dlx cache before the suite runs. The --help tests execute a
-// REAL @cyclonedx/cdxgen run through Socket dlx — on a cold cache (every CI
-// run starts cold) that first spawn downloads and installs cdxgen plus its
-// full dependency tree from npm, which routinely blows the 30s per-test
-// budget. Paying the download here once, under a timeout sized for a cold
-// network install, keeps the tests below measuring CLI routing/help behavior
-// instead of npm download throughput. No assertions: if this warm-up fails
-// network flake, the tests still run and report their own failures.
-beforeAll(async () => {
-  await spawnSocketCli(binCliPath, [
-    'manifest',
-    'cdxgen',
-    FLAG_HELP,
-    FLAG_CONFIG,
-    '{}',
-  ])
-}, 240_000)
+const cdxgenEnv = {
+  ...process.env,
+  SOCKET_CLI_CDXGEN_LOCAL_PATH: path.resolve(
+    import.meta.dirname,
+    '../../fixtures/cdxgen.mjs',
+  ),
+}
 
 describe('socket manifest cdxgen', async () => {
   cmdit(
     ['manifest', 'cdxgen', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: cdxgenEnv,
+      })
       // cdxgen --help is passed through to cdxgen itself. cdxgen prints its
       // version banner to stdout and the usage/examples body to stderr, so
       // check the combined output.
       expect(stdout + stderr).toContain('cdxgen')
-      expect(code, 'help should exit with code 0').toBe(0)
+      expect(
+        code,
+        `help should exit with code 0\nstdout:\n${stdout}\nstderr:\n${stderr}`,
+      ).toBe(0)
     },
   )
 
@@ -62,7 +58,9 @@ describe('socket manifest cdxgen', async () => {
     ['manifest', 'cdxgen', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     `should support ${FLAG_DRY_RUN}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: cdxgenEnv,
+      })
       expectDryRunOutput(stderr)
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
@@ -72,7 +70,9 @@ describe('socket manifest cdxgen', async () => {
     ['manifest', 'cdxgen', FLAG_DRY_RUN, '.', FLAG_CONFIG, '{}'],
     `should support ${FLAG_DRY_RUN} with path argument`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: cdxgenEnv,
+      })
       expectDryRunOutput(stderr)
       expect(code, 'dry-run should exit with code 0').toBe(0)
     },
@@ -96,9 +96,14 @@ describe('socket cdxgen (alias)', async () => {
     ['cdxgen', FLAG_HELP, FLAG_CONFIG, '{}'],
     `should route to manifest cdxgen and support ${FLAG_HELP}`,
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        env: cdxgenEnv,
+      })
       expect(stdout + stderr).toContain('cdxgen')
-      expect(code, 'help should exit with code 0').toBe(0)
+      expect(
+        code,
+        `help should exit with code 0\nstdout:\n${stdout}\nstderr:\n${stderr}`,
+      ).toBe(0)
     },
   )
 
