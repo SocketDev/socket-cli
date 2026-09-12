@@ -22,6 +22,7 @@ import { transformUnicodePropertyEscapes } from './unicode-property-escape-trans
  */
 export function unicodeTransformPlugin() {
   return {
+    __proto__: null,
     name: 'unicode-transform',
     setup(build: PluginBuild) {
       build.onEnd((result: BuildResult) => {

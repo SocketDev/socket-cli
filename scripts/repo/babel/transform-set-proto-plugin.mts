@@ -38,6 +38,7 @@ function unwrapProto(
 
 export default function ({ types: t }: BabelApi) {
   return {
+    __proto__: null,
     name: 'transform-set-proto',
     visitor: {
       ExpressionStatement(path: BabelPath<BabelExpressionStatement>) {

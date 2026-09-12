@@ -10,6 +10,7 @@ import type {
 
 export default function ({ types: t }: BabelApi) {
   return {
+    __proto__: null,
     name: 'transform-url-parse',
     visitor: {
       CallExpression(path: BabelPath<BabelCallExpression>) {

@@ -77,6 +77,7 @@ export default function stripDebug(
   const debugIds = new Set(identifiers)
 
   return {
+    __proto__: null,
     name: 'strip-debug',
 
     visitor: {

@@ -17,6 +17,11 @@
  * identical across repos.
  */
 
+import {
+  getDefaultFormatting,
+  stringifyWithFormatting,
+} from '@socketsecurity/lib-stable/json/format'
+
 import crypto from 'node:crypto'
 import { existsSync, promises as fs, readFileSync } from 'node:fs'
 import path from 'node:path'
@@ -192,7 +197,11 @@ export async function createCheckpoint(
   }
 
   const file = checkpointFile(buildDir, packageName, name)
-  await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
+  await fs.writeFile(
+    file,
+    stringifyWithFormatting(data, getDefaultFormatting()),
+    'utf8',
+  )
 
   const relRoot = packageRoot ? path.relative(packageRoot, file) : file
   // substep takes its own indent prefix; ✓ marks completion.

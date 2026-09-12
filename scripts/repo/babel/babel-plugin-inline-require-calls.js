@@ -12,6 +12,7 @@ module.exports = function inlineRequireCalls(babel) {
   const { types: t } = babel
 
   return {
+    __proto__: null,
     name: 'inline-require-calls',
 
     visitor: {

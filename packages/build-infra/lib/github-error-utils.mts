@@ -43,6 +43,7 @@ export async function checkGitHubStatus() {
     if (response.ok) {
       const data = await response.json()
       return {
+        __proto__: null,
         status: data.status?.indicator || 'unknown',
         description: data.status?.description || 'Unknown status',
         url: 'https://www.githubstatus.com',

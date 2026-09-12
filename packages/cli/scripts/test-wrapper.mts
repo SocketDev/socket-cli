@@ -24,6 +24,7 @@ import { REPO_ROOT } from '../../../scripts/fleet/paths.mts'
 import { EnvironmentVariables } from './environment-variables.mts'
 import { loadEnvFile } from './util/load-env.mts'
 import { resolvePackageTestScope } from './test-lanes.mts'
+import { getEnvValue } from '@socketsecurity/lib-stable/env/rewire'
 
 const logger = getDefaultLogger()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -84,7 +85,7 @@ async function main() {
       'SOCKET_API_TOKEN',
       'SOCKET_API_TOKEN',
     ]
-    const foundEnvVars = problematicEnvVars.filter(v => process.env[v])
+    const foundEnvVars = problematicEnvVars.filter(v => getEnvValue(v))
     if (foundEnvVars.length > 0) {
       logger.warn(
         `Detected environment variable(s) that may cause snapshot test failures: ${foundEnvVars.join(', ')}`,
@@ -108,7 +109,7 @@ async function main() {
       // Use 8GB in CI, 4GB locally.
       // Add --max-semi-space-size for better GC with RegExp-heavy tests.
       NODE_OPTIONS:
-        `${process.env.NODE_OPTIONS || ''} --max-old-space-size=${process.env.CI ? 8192 : 4096} --max-semi-space-size=512`.trim(),
+        `${getEnvValue('NODE_OPTIONS') || ''} --max-old-space-size=${getEnvValue('CI') ? 8192 : 4096} --max-semi-space-size=512`.trim(),
       // Clear problematic environment variables that cause snapshot mismatches.
       // Tests should use .env.test configuration instead.
       SOCKET_CLI_API_KEY: undefined,

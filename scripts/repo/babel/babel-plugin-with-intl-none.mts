@@ -24,6 +24,8 @@
 
 import type {
   BabelCallExpressionNode,
+  BabelNode,
+  BabelMemberExpressionNode,
   BabelPath,
   BabelProgramNode,
   BabelRegExpLiteralNode,
@@ -31,14 +33,6 @@ import type {
   BabelTypes,
   HelperName,
 } from './babel-ast-types.mts'
-
-/**
- * Helper Functions (injected at runtime via Babel template.ast):
- *
- * __formatNumber(num) - Format with comma thousands separators
- * __formatDate(date) - Format in YYYY-MM-DD __formatDateTime(date) - Format
- * with time __simpleCompare(a, b) - Basic string comparison.
- */
 
 export default function babelPluginWithIntlNone({
   template,
@@ -107,6 +101,7 @@ export default function babelPluginWithIntlNone({
   }
 
   return {
+    __proto__: null,
     name: 'babel-plugin-with-intl-none',
 
     visitor: {
@@ -127,27 +122,12 @@ export default function babelPluginWithIntlNone({
         const { node } = path
 
         // Handle toLocaleString() on numbers
-        if (
-          t.isMemberExpression(node.callee) &&
-          t.isIdentifier(node.callee.property, { name: 'toLocaleString' })
-        ) {
+        if (isLocaleStringCall(node, t)) {
           const objectType = path.get('callee.object')
           const objectNode = objectType.node
 
           // Check if it's likely a number, numeric literal or number-type identifier
-          const isNumber =
-            t.isNumericLiteral(objectNode) ||
-            (t.isIdentifier(objectNode) &&
-              [
-                'count',
-                'size',
-                'length',
-                'total',
-                'num',
-                'number',
-                'amount',
-                'bytes',
-              ].some(n => objectNode.name.toLowerCase().includes(n)))
+          const isNumber = isLikelyNumber(objectNode, t)
 
           if (isNumber) {
             ensureHelper(path, '__formatNumber')
@@ -166,10 +146,7 @@ export default function babelPluginWithIntlNone({
           }
 
           // Handle Date.prototype.toLocaleString()
-          if (
-            t.isNewExpression(objectNode) &&
-            t.isIdentifier(objectNode.callee, { name: 'Date' })
-          ) {
+          if (isDateConstruction(objectNode, t)) {
             ensureHelper(path, '__formatDateTime')
             path.replaceWith(
               t.callExpression(t.identifier('__formatDateTime'), [
@@ -482,4 +459,38 @@ ICU Removal Stats:
       },
     },
   }
+}
+
+function isLikelyNumber(objectNode: BabelNode, t: BabelTypes): boolean {
+  return (
+    t.isNumericLiteral(objectNode) ||
+    (t.isIdentifier(objectNode) &&
+      [
+        'count',
+        'size',
+        'length',
+        'total',
+        'num',
+        'number',
+        'amount',
+        'bytes',
+      ].some(n => objectNode.name.toLowerCase().includes(n)))
+  )
+}
+
+function isDateConstruction(objectNode: BabelNode, t: BabelTypes): boolean {
+  return (
+    t.isNewExpression(objectNode) &&
+    t.isIdentifier(objectNode.callee, { name: 'Date' })
+  )
+}
+
+function isLocaleStringCall(
+  node: BabelCallExpressionNode,
+  t: BabelTypes,
+): node is BabelCallExpressionNode & { callee: BabelMemberExpressionNode } {
+  return (
+    t.isMemberExpression(node.callee) &&
+    t.isIdentifier(node.callee.property, { name: 'toLocaleString' })
+  )
 }

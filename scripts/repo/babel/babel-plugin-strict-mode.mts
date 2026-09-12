@@ -110,6 +110,7 @@ export default function babelPluginStrictMode({
   }
 
   return {
+    __proto__: null,
     name: 'babel-plugin-strict-mode',
 
     visitor: {
@@ -347,8 +348,7 @@ function transformOctalEscapes(str: string): string {
     result = result.replace(
       // Escaping a literal backslash inside an octal escape-sequence key, not
       // a filesystem path; normalizePath does not apply.
-      // oxlint-disable-next-line socket/prefer-normalize-path -- not a path
-      new RegExp(`${octal.replace(/\\/g, '\\\\')}(?![0-7])`, 'g'),
+      new RegExp(`${octal.replaceAll('\\', '\\\\')}(?![0-7])`, 'g'),
       () => replacement,
     )
   }
