@@ -170,8 +170,42 @@
   },
   "vitest": {
     "lanes": {
-      "mid": ["test/unit/command/**", "test/unit/meow.test.mts"],
-      "slow": ["test/integration/**"]
+      "fast": [
+        "test/unit/constants/**",
+        "test/unit/core/mcp/lib/**",
+        "test/unit/core/mcp/tool-*.test.mts",
+        "test/unit/core/patch/**",
+        "test/unit/flags.test.mts",
+        "test/unit/types.test.mts",
+        "test/unit/util/data/**",
+        "test/unit/util/ecosystem/**",
+        "test/unit/util/output/**",
+        "test/unit/util/process/**",
+        "test/unit/util/purl/**",
+        "test/unit/util/sanitize-names*.test.mts",
+        "test/unit/util/url/**"
+      ],
+      "mid": [
+        "test/mock-auth.test.mts",
+        "test/unit/command/**",
+        "test/unit/core/mcp/transport-http*.test.mts",
+        "test/unit/core/optimize/**",
+        "test/unit/core/sdxgen/**",
+        "test/unit/env/**",
+        "test/unit/meow.test.mts",
+        "test/unit/scripts/**",
+        "test/unit/util/dlx/**",
+        "test/unit/util/error/**",
+        "test/unit/util/fs/**",
+        "test/unit/util/git/**",
+        "test/unit/util/spawn/**",
+        "test/unit/util/telemetry/**",
+        "test/unit/util/trusted-executable.test.mts"
+      ],
+      "slow": [
+        "test/integration/**",
+        "test/unit/core/firewall/**"
+      ]
     }
   }
 }
