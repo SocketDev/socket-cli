@@ -21,6 +21,7 @@
     "socket-yarn": "dist/socket-yarn.js"
   },
   "files": [
+    "CHANGELOG.md",
     "DISCLOSURE",
     "README.md",
     "data/**",
